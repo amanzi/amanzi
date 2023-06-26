@@ -717,8 +717,8 @@ ShallowWater_PK::TotalDepthEdgeValue(
 // To be used for the shallow water model only 
 //--------------------------------------------------------------------
 std::vector<double>
-ShallowWater_PK::NumericalSourceBedSlope(
-    int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n)
+ShallowWater_PK::NumericalSourceBedSlope( int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n,
+                                          std::vector<int> bc_model, std::vector<double> bc_value_h)
 {
   AmanziMesh::Entity_ID_List cfaces, cnodes;
   mesh_->cell_get_faces(c, &cfaces);
@@ -768,8 +768,6 @@ ShallowWater_PK::NumericalSourceBedSlope(int c, double hc)
 
   auto& b_grad = *bathymetry_grad_->data()->ViewComponent("cell", true);
   double BGrad = b_grad[0][c];
- // if (c==11) BGrad = -0.1;
- // if (c==12) BGrad = 0.1;
 
   S[0] = 0.0;
   S[1] = -g_ * hc * BGrad;
@@ -925,7 +923,7 @@ void ShallowWater_PK::UpdateSecondaryFields(){
    int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
    for (int c = 0; c < ncells_owned; ++c) {
-       ht_c[0][c] = h_c[0][c] + B_c[0][c];
+       ht_c[0][c] = ComputeTotalDepth(h_c[0][c], B_c[0][c], 0);
    }
 
 }
@@ -951,13 +949,44 @@ void ShallowWater_PK::InitializeFields(){
         const auto& h_c = *S_->Get<CV_t>(primary_variable_key_).ViewComponent("cell");
         auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
-        for (int c = 0; c < ncells_owned; c++) { ht_c[0][c] = h_c[0][c] + B_c[0][c]; }
+        for (int c = 0; c < ncells_owned; c++) { ht_c[0][c] = ComputeTotalDepth(h_c[0][c], B_c[0][c], 0); }
 
         S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
      }
 
       InitializeCVField(S_, *vo_, wetted_angle_key_, Tags::DEFAULT, wetted_angle_key_, Pi);
       S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
+
+}
+
+//--------------------------------------------------------------
+// Compute external forcing on cells
+//--------------------------------------------------------------
+void ShallowWater_PK::ComputeExternalForcingOnCells(std::vector<double> &forcing){
+
+     for (int i = 0; i < srcs_.size(); ++i) {
+         for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
+             int c = it->first;
+             forcing[c] = it->second[0] / mesh_->cell_volume(c); // [m/s] for SW
+         }
+     }
+
+}
+
+//--------------------------------------------------------------------
+// Compute ponded depth at edge location
+//--------------------------------------------------------------------
+std::vector<double> ShallowWater_PK::ComputeFieldsOnEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n)
+{
+
+  std::vector <double> W(2,0.0); //vector to return
+
+  double ht_rec = TotalDepthEdgeValue(c, e, htc, Bc, Bmax, B_n);
+  double B_rec = BathymetryEdgeValue(e, B_n);
+  W[0] = ht_rec - B_rec;
+  W[1] = 0.0;
+
+  return W;
 
 }
 

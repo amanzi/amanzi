@@ -51,12 +51,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double factor = inverse_with_tolerance(h_temp[0][c], cell_area2_max_);
     vel_c[0][c] = factor * q_temp[0][c];
     vel_c[1][c] = factor * q_temp[1][c];
-    if(shallow_water_model_){
-       ht_c[0][c] = h_temp[0][c] + B_c[0][c];
-    }
-    else{
-       ht_c[0][c] = ComputeTotalDepth(h_temp[0][c], WettedAngle_c[0][c], B_c[0][c]);
-    }
+    ht_c[0][c] = ComputeTotalDepth(h_temp[0][c], B_c[0][c], WettedAngle_c[0][c]);
   }
 
   // allocate memory for temporary fields
@@ -124,13 +119,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
              bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
              bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
              bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
-             if (shallow_water_model_){
-                bc_value_ht[f] = bc_value_h[f] + bc_value_b[f];
-             }
-             else {
-                double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
-                bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], WettedAngle_f, bc_value_b[f]);
-             }
+             double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
+             bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], bc_value_b[f], WettedAngle_f);
           }
        } 
     }
@@ -147,13 +137,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
              bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
              bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
              bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
-             if (shallow_water_model_){
-                bc_value_ht[f] = bc_value_h[f] + bc_value_b[f];
-             }
-             else {
-                double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
-                bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], WettedAngle_f, bc_value_b[f]);
-             }
+             double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
+             bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], bc_value_b[f], WettedAngle_f);
           }
        }
     }
@@ -225,24 +210,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // coupling submodel="rate" returns volumetric flux [m^3/s] integrated over
   // the time step in the last (the second) component of local data vector
   std::vector<double> ext_S_cell(ncells_owned, 0.0);
-  if (shallow_water_model_){
-     for (int i = 0; i < srcs_.size(); ++i) {
-         for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
-             int c = it->first;
-             ext_S_cell[c] = it->second[0] / mesh_->cell_volume(c); // [m/s] for SW
-         }
-     }
-  }
-  else {
-     for (int i = 0; i < srcs_.size(); ++i) {
-         for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
-             int c = it->first;
-             double dx;
-             GetDx_(c, dx);
-             ext_S_cell[c] = it->second[0] / dx; // [m^2 / s] for pipe
-         }
-     }
-  }
+  ComputeExternalForcingOnCells(ext_S_cell);
 
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
@@ -273,25 +241,12 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     normal /= farea;
 
     std::vector<double> W_rec(2,0.0);
-    double ht_rec;
-    double B_rec = BathymetryEdgeValue(f, B_n);
     double h_rec;
 
-    if (shallow_water_model_)  {
-        ht_rec = TotalDepthEdgeValue(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
-        h_rec = ht_rec - B_rec;
-        ierr = ErrorDiagnostics_(t, c1, h_rec, B_rec, ht_rec);
-        if (ierr < 0) break;
-    }
-    else{
-
-       W_rec = ComputeWettedQuantitiesEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
-       h_rec = W_rec[0];
-       ht_rec = ComputeTotalDepth(h_rec, W_rec[1], B_c[0][c1]); //this is for the call below
-       ierr = ErrorDiagnostics_(t, c1, h_rec, B_rec, ht_rec);
-       if (ierr < 0) break;
-
-    }
+    W_rec = ComputeFieldsOnEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
+    h_rec = W_rec[0];
+    ierr = ErrorDiagnostics_(t, c1, h_rec);
+    if (ierr < 0) break;
 
     double qx_rec = discharge_x_grad_->getValue(c1, xf);
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
@@ -335,21 +290,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     } 
     else {
 
-      if (shallow_water_model_)  {
-         ht_rec = TotalDepthEdgeValue(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
-         h_rec = ht_rec - B_rec;
-         ierr = ErrorDiagnostics_(t, c2, h_rec, B_rec, ht_rec);
-         if (ierr < 0) break;
-      }
-      else{
-
-        W_rec = ComputeWettedQuantitiesEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
-        h_rec = W_rec[0];
-        ht_rec = ComputeTotalDepth(h_rec, W_rec[1], B_c[0][c2]); //this is for the call below
-        ierr = ErrorDiagnostics_(t, c2, h_rec, B_rec, ht_rec);
-        if (ierr < 0) break;
-
-      }
+       W_rec = ComputeFieldsOnEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
+       h_rec = W_rec[0];
+       ierr = ErrorDiagnostics_(t, c2, h_rec);
+       if (ierr < 0) break;
 
       qx_rec = discharge_x_grad_->getValue(c2, xf);
       qy_rec = discharge_y_grad_->getValue(c2, xf);
@@ -413,12 +357,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     U[2] = q_temp[1][c];
     U[3] = WettedAngle_c[0][c];
 
-    if (shallow_water_model_){
-       BedSlopeSource = NumericalSourceBedSlope(c, U[0] + B_c[0][c], B_c[0][c], B_max[0][c], B_n);
-    }
-    else{
-       BedSlopeSource = NumericalSourceBedSlope(c, ht_c[0][c], B_c[0][c], B_max[0][c], B_n, bc_model_scalar, bc_value_h);
-    }
+    BedSlopeSource = NumericalSourceBedSlope(c, ht_c[0][c], B_c[0][c], B_max[0][c], B_n, bc_model_scalar, bc_value_h);
     FrictionSource = NumericalSourceFriction(U[0], U[1], U[3]); 
 
     h = h_c_tmp[0][c] + BedSlopeSource[0] + ext_S_cell[c];
@@ -437,7 +376,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 // Error diagnostics
 //--------------------------------------------------------------
 int
-ShallowWater_PK::ErrorDiagnostics_(double t, int c, double h, double B, double ht)
+ShallowWater_PK::ErrorDiagnostics_(double t, int c, double h)
 {
   if (h < 0.0) {
 
@@ -446,7 +385,7 @@ ShallowWater_PK::ErrorDiagnostics_(double t, int c, double h, double B, double h
     if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "negative primary variable in cell " << c << ", xc=(" << xc[0] << ", " << xc[1] << ")"
-                 << ", total depth=" << ht << ", bathymetry=" << B << ", primary variable=" << h << std::endl;
+                 << ", primary variable=" << h << std::endl;
     }
     return -1;
   }

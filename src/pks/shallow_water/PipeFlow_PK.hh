@@ -39,7 +39,7 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual void UpdateSecondaryFields() override;
 
-  virtual double ComputeTotalDepth(double WettedArea, double WettedAngle, double Bathymetry) override;
+  virtual double ComputeTotalDepth(double PrimaryVar, double Bathymetry, double WettedAngle) override;
 
   virtual double ComputeWaterDepth(double WettedAngle) override;
 
@@ -65,7 +65,9 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual void InitializeFields() override;
 
-  virtual std::vector<double> ComputeWettedQuantitiesEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n) override;
+  virtual void ComputeExternalForcingOnCells(std::vector<double> &forcing) override;
+
+  virtual std::vector<double> ComputeFieldsOnEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n) override;
 
  private:
   static RegisteredPKFactory<PipeFlow_PK> reg_;

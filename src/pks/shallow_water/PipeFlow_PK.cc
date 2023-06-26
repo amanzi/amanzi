@@ -97,7 +97,8 @@ double PipeFlow_PK::NumericalSourceFriction(double h, double qx, double WettedAn
 // Discretization of the bed slope source term
 //--------------------------------------------------------------------
 std::vector<double>
-PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n, std::vector<int> bc_model, std::vector<double> bc_value_h)
+PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n, 
+                                     std::vector<int> bc_model, std::vector<double> bc_value_h)
 {
 
   std::vector<double> S(3, 0.0);
@@ -134,7 +135,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
            BGrad = BathymetryEdgeValue(f, B_n); //B_(j+1/2)
 
-           W = ComputeWettedQuantitiesEdge(c1, f, htc, Bc, Bmax, B_n);
+           W = ComputeFieldsOnEdge(c1, f, htc, Bc, Bmax, B_n);
 
            UL[0] = W[0]; //wetted area
            UL[1] = W[1]; //wetted angle
@@ -162,7 +163,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
            } else {                                               
                                                                  
              // default outflow BC                              
-             W = ComputeWettedQuantitiesEdge(c1, f, htc, Bc, Bmax, B_n);
+             W = ComputeFieldsOnEdge(c1, f, htc, Bc, Bmax, B_n);
 
              UR[0] = W[0]; //wetted area
              UR[1] = W[1]; //wetted angle
@@ -172,7 +173,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
            } else {
 
-              W = ComputeWettedQuantitiesEdge(c2, f, htc, Bc, Bmax, B_n);
+              W = ComputeFieldsOnEdge(c2, f, htc, Bc, Bmax, B_n);
 
               UR[0] = W[0];
               UR[1] = W[1];
@@ -247,7 +248,7 @@ void PipeFlow_PK::UpdateSecondaryFields(){
    for (int c = 0; c < ncells_owned; ++c) {
 
        WettedAngle_c[0][c] = ComputeWettedAngleNewton(WettedArea_c[0][c]);
-       TotalDepth_c[0][c] = ComputeTotalDepth(WettedArea_c[0][c], WettedAngle_c[0][c], B_c[0][c]);
+       TotalDepth_c[0][c] = ComputeTotalDepth(WettedArea_c[0][c], B_c[0][c], WettedAngle_c[0][c]);
 
    }
 
@@ -257,19 +258,19 @@ void PipeFlow_PK::UpdateSecondaryFields(){
 //--------------------------------------------------------------------
 // Compute total depth
 //--------------------------------------------------------------------
-double PipeFlow_PK::ComputeTotalDepth(double WettedArea, double WettedAngle, double Bathymetry){
+double PipeFlow_PK::ComputeTotalDepth(double PrimaryVar, double Bathymetry, double WettedAngle){
 
    double TotalDepth = 0.0;
 
-   if( WettedArea >= 0.0 && WettedArea < pipe_cross_section_){
+   if( PrimaryVar >= 0.0 && PrimaryVar < pipe_cross_section_){
 
       TotalDepth = ComputeWaterDepth(WettedAngle) + Bathymetry;
 
    }
 
-   else if ( WettedArea >= pipe_cross_section_) {
+   else if ( PrimaryVar >= pipe_cross_section_) {
 
-      TotalDepth = pipe_diameter_ + Bathymetry + ComputePressureHead(WettedArea);
+      TotalDepth = pipe_diameter_ + Bathymetry + ComputePressureHead(PrimaryVar);
 
    }
 
@@ -288,7 +289,7 @@ double PipeFlow_PK::ComputeTotalDepth(double WettedArea, double WettedAngle, dou
 //--------------------------------------------------------------------
 // Compute wetted area and wetted angle at edge location
 //--------------------------------------------------------------------
-std::vector<double> PipeFlow_PK::ComputeWettedQuantitiesEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n)
+std::vector<double> PipeFlow_PK::ComputeFieldsOnEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n)
 {
 
   std::vector <double> W(2,0.0); //vector to return 
@@ -501,6 +502,22 @@ void PipeFlow_PK::InitializeFields(){
      S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
      S_->GetRecordW(water_depth_key_, Tags::DEFAULT, water_depth_key_).set_initialized();
      S_->GetRecordW(pressure_head_key_, Tags::DEFAULT, pressure_head_key_).set_initialized();
+
+}
+
+//--------------------------------------------------------------
+// Compute external forcing on cells
+//--------------------------------------------------------------
+void PipeFlow_PK::ComputeExternalForcingOnCells(std::vector<double> &forcing){
+
+     for (int i = 0; i < srcs_.size(); ++i) {
+         for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
+             int c = it->first;
+             double dx;
+             GetDx_(c, dx);
+             forcing[c] = it->second[0] / dx; // [m^2 / s] for pipe
+         }
+     }
 
 }
 
