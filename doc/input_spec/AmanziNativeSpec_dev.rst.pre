@@ -821,7 +821,7 @@ conserved quantity.
 
 By default, the error norm used by solvers is given by:
 
-:math:`ENORM(u, du) = |du| / ( a_tol + r_tol * |u| )`
+:math:`ENORM(u, du) = |du| / ( a_{{tol}} + r_{{tol}} * |u| )`
 
 The defaults here are typically good, or else good defaults are set in the
 code, so usually are not supplied by the user.
@@ -2639,7 +2639,7 @@ Notes and example
       </ParameterList>
     </ParameterList>
     <ParameterList name="_ENTIRE MESH">
-      <ParameterList name="region: all"\>
+      <ParameterList name="region: all"/>
     </ParameterList>
   </ParameterList>
   </ParameterList>

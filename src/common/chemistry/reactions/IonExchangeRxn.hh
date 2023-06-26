@@ -23,7 +23,7 @@ Each sublist is named after the exchanger site and has the following parameters:
       <Parameter name="location" type="string" value="Bulk"/>
       <Parameter name="charge" type="int" value="-1"/>
     </ParameterList>
-  <o/ParameterList>
+  </ParameterList>
 */
 
 #ifndef AMANZI_CHEMISTRY_IONEXCHANGERXN_HH_

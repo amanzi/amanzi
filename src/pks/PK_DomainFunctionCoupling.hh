@@ -16,19 +16,6 @@ conditions. For the manifold, the coupling creates a list of sources.
 Typically, the manifold mesh provides map manifold (cell) -> space (face).
 In space, we need the reverse map.
 
-The following parameter names were changed:
-    "flux_key" -> "flux key"
-    "copy_flux_tag" -> "flux copy key"
-
-    "field_in_key" -> removed
-    "copy_field_in_key" -> removed
-
-    "field_out_key" -> "external field key"
-    "copy_field_out_tag" -> "external field copy key"
-
-    "conserved_quantity_key" -> "conserved quantity key"
-    "copy_conserved_quantity_key" -> "conserved quantity copy key"
-
 There are three submodels.
 (A) submodel="rate". The computed data are given by formulas:
 
@@ -48,6 +35,21 @@ face f) is shared by two (resp. one) space cells.
 
   (D) submodel="".
 
+*/
+
+/*
+The following parameter names were changed:
+    "flux_key" -> "flux key"
+    "copy_flux_tag" -> "flux copy key"
+
+    "field_in_key" -> removed
+    "copy_field_in_key" -> removed
+
+    "field_out_key" -> "external field key"
+    "copy_field_out_tag" -> "external field copy key"
+
+    "conserved_quantity_key" -> "conserved quantity key"
+    "copy_conserved_quantity_key" -> "conserved quantity copy key"
 */
 
 #ifndef AMANZI_PK_DOMAIN_FUNCTION_COUPLING_HH_
