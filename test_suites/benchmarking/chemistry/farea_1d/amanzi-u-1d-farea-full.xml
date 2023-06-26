@@ -676,11 +676,9 @@
       <liquid_phase name="water">
         <liquid_component name="water">
           <inward_mass_flux function="constant" start="0.0 s" value="7.91317859E-6"/>
-          <inward_mass_flux function="constant" start="1.5778463e9 s" value="7.91317859E-6"/>
         </liquid_component>
         <geochemistry_component>
           <constraint function="constant" name="seepage" start="0.0 s"/>
-          <constraint function="constant" name="seepage" start="1.5778463e9 s"/>
         </geochemistry_component>
       </liquid_phase>
     </boundary_condition>
@@ -689,11 +687,9 @@
       <liquid_phase name="water">
         <liquid_component name="water">
           <uniform_pressure function="constant" start="0.0 s" value="201325.0"/>
-          <uniform_pressure function="constant" start="1.5778463e9 s" value="201325.0"/>
         </liquid_component>
       <geochemistry_component>
         <constraint function="constant" name="background" start="0.0 s"/>
-        <constraint function="constant" name="background" start="1.5778463e9 s"/>
       </geochemistry_component>
     </liquid_phase>
     </boundary_condition>

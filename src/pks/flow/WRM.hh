@@ -22,12 +22,17 @@ includes a few mandatory parameters: region name, model name, and parameters for
   The later is used only to set up a simple analytic solution for convergence study. 
 
   * The model `"van Genuchten`" requires `"van Genuchten alpha`" [double],
-    `"van Genuchten m`" [double], `"van Genuchten l`" [double], `"residual saturation`" [double],
+    `"van Genuchten m`" [double], `"van Genuchten l`" [double], `"residual saturation liquid`" [double],
     and `"relative permeability model`" [string].
 
   * The model `"Brooks-Corey`" requires `"Brooks Corey lambda`" [double], `"Brooks Corey alpha`" [double],
-    `"Brooks Corey l`" [double], `"residual saturation`" [double],
+    `"Brooks Corey l`" [double], `"residual saturation liquid`" [double],
     and `"relative permeability model`" [string].
+
+  * The model `"saturated`" does not require any parameters. It is equaivalent to the Darcy model if
+    all other parameters (e.g. porosity) are constant
+
+  * The model `"linear`" requires `"alpha`" [double] and `"residual saturation liquid`" [double].
 
 * `"relative permeability model`" [string] The available options are `"Mualem`" (default) 
   and `"Burdine`".
@@ -53,12 +58,12 @@ if the list *output* is provided. This list has two mandatory parameters:
   <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="water retention models">
     <ParameterList name="_SOIL_1">
-      <Parameter name="regions" type="Array(string)" value="{_TOP HALF}"/>
+      <Parameter name="regions" type="Array(string)" value="{_TOP}"/>
       <Parameter name="water retention model" type="string" value="van Genuchten"/>
       <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
       <Parameter name="van Genuchten m" type="double" value="0.28571"/>
       <Parameter name="van Genuchten l" type="double" value="0.5"/>
-      <Parameter name="residual saturation" type="double" value="0.103"/>
+      <Parameter name="residual saturation liquid" type="double" value="0.103"/>
       <Parameter name="regularization interval" type="double" value="100.0"/>
       <Parameter name="relative permeability model" type="string" value="Mualem"/>
       <ParameterList name="output">
@@ -68,19 +73,25 @@ if the list *output* is provided. This list has two mandatory parameters:
     </ParameterList>
 
     <ParameterList name="_SOIL_2">
-      <Parameter name="regions" type="Array(string)" value="{_BOTTOM HALF}"/>
+      <Parameter name="regions" type="Array(string)" value="{_BOTTOM}"/>
       <Parameter name="water retention model" type="string" value="Brooks Corey"/>
       <Parameter name="Brooks Corey lambda" type="double" value="0.0014"/>
       <Parameter name="Brooks Corey alpha" type="double" value="0.000194"/>
       <Parameter name="Brooks Corey l" type="double" value="0.51"/>
-      <Parameter name="residual saturation" type="double" value="0.103"/>
+      <Parameter name="residual saturation liquid" type="double" value="0.103"/>
       <Parameter name="regularization interval" type="double" value="0.0"/>
       <Parameter name="relative permeability model" type="string" value="Burdine"/>
+    </ParameterList>
+
+    <ParameterList name="_SOIL_3">
+      <Parameter name="regions" type="Array(string)" value="{_MIDDLE}"/>
+      <Parameter name="alpha" type="double" value="5e-5"/>  <!-- Pa^-1 -->
+      <Parameter name="residual saturation liquid" type="double" value="0.02"/>
     </ParameterList>
   </ParameterList>
   </ParameterList>
 
-In this example, we define two different water retention models in two soils.
+In this example, we define three different water retention models in three soils.
 
 */
 

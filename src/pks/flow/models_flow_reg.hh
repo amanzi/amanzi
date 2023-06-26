@@ -20,6 +20,7 @@
 #include "WRM_BrooksCorey.hh"
 #include "WRM_saturated.hh"
 #include "WRM_vanGenuchten.hh"
+#include "WRM_linear.hh"
 
 #include "MultiscaleFlowPorosityFactory.hh"
 #include "MultiscaleFlowPorosity_DPM.hh"
@@ -53,6 +54,7 @@ Utils::RegisteredFactory<SpecificStorage, SpecificStorage_Standard>
 Utils::RegisteredFactory<WRM, WRM_BrooksCorey> WRM_BrooksCorey::reg_("Brooks Corey");
 Utils::RegisteredFactory<WRM, WRM_vanGenuchten> WRM_vanGenuchten::reg_("van Genuchten");
 Utils::RegisteredFactory<WRM, WRM_saturated> WRM_saturated::reg_("saturated");
+Utils::RegisteredFactory<WRM, WRM_linear> WRM_linear::reg_("linear");
 
 Utils::RegisteredFactory<MultiscaleFlowPorosity, MultiscaleFlowPorosity_DPM>
   MultiscaleFlowPorosity_DPM::reg_("dual porosity");

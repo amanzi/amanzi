@@ -252,7 +252,7 @@ InputConverterU::TranslateWRM_(const std::string& pk_name)
     DOMNode* inode = children->item(i);
 
     node = GetUniqueElementByTagsString_(inode, "cap_pressure", flag);
-    model = GetAttributeValueS_(node, "model", "van_genuchten, brooks_corey, saturated");
+    model = GetAttributeValueS_(node, "model", "van_genuchten, brooks_corey, saturated, linear");
     DOMNode* nnode = GetUniqueElementByTagsString_(node, "parameters", flag);
     DOMElement* element_cp = static_cast<DOMElement*>(nnode);
 
@@ -345,6 +345,16 @@ InputConverterU::TranslateWRM_(const std::string& pk_name)
 
         *vo_->os() << "water retention curve file:" << name << std::endl;
       }
+    } else if (strcmp(model.c_str(), "linear") == 0) {
+      double alpha =
+        GetAttributeValueD_(element_cp, "alpha", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "Pa^-1");
+      double sr = GetAttributeValueD_(element_cp, "sr", TYPE_NUMERICAL, 0.0, 1.0);
+
+      wrm_list.set<std::string>("water retention model", "linear")
+        .set<Teuchos::Array<std::string>>("regions", regions)
+        .set<double>("pc0", 1.0 / alpha)
+        .set<double>("residual saturation liquid", sr);
+
     } else if (strcmp(model.c_str(), "saturated") == 0) {
       wrm_list.set<std::string>("water retention model", "saturated")
         .set<Teuchos::Array<std::string>>("regions", regions);
