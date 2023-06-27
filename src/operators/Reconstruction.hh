@@ -22,7 +22,7 @@ and their extensions for various PKs.
  * `"polynomial order`" [int] defines the polynomial order of the reconstructed function. 
    Default is 1.
 
- * `"weight`" [string] defined weight fr reconstruction. Available options are
+ * `"weight`" [string] defines weight for reconstruction. Available options are
    `"constant`" (default) and `"inverse distance`".
 
  * `"limiter`" [string] specifies limiting method. Available options are 

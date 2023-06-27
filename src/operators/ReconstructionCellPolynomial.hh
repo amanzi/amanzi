@@ -66,6 +66,7 @@ class ReconstructionCellPolynomial : public Reconstruction {
   virtual Teuchos::RCP<CompositeVector> data() override { return poly_; }
 
   // compute gradient only in specified cells
+  // -- NOTE: algorithm uses data in the neighbooring cells
   void Compute(const AmanziMesh::Entity_ID_List& ids,
                const Teuchos::RCP<const Epetra_MultiVector>& field,
                int component,

@@ -67,9 +67,7 @@ ReconstructionCellLinear::Compute(const AmanziMesh::Entity_ID_List& ids,
   WhetStone::DenseMatrix matrix(dim, dim);
   WhetStone::DenseVector rhs(dim);
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int c : ids) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
     // mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &cells);

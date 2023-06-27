@@ -78,6 +78,7 @@ class ReconstructionCellLinear : public Reconstruction {
   virtual Teuchos::RCP<CompositeVector> data() override { return gradient_; }
 
   // compute gradient only in specified cells
+  // -- NOTE: algorithm uses data in the neighbooring cells
   void Compute(const AmanziMesh::Entity_ID_List& ids,
                const Teuchos::RCP<const Epetra_MultiVector>& field,
                int component,

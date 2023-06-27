@@ -77,14 +77,12 @@ ReconstructionCellPolynomial::Compute(const AmanziMesh::Entity_ID_List& ids,
   WhetStone::DenseMatrix matrix(npoly, npoly);
   WhetStone::DenseVector rhs(npoly), coef(npoly);
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-
   WhetStone::Polynomial quad(d_, 2);
   std::vector<const WhetStone::WhetStoneFunction*> funcs(1);
   funcs[0] = &quad;
   WhetStone::NumericalIntegration numi(mesh_);
 
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int c : ids) {
     double vol = mesh_->cell_volume(c);
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     quad.set_origin(xc);
@@ -209,7 +207,6 @@ ReconstructionCellPolynomial::CellAllAdjCells_(AmanziMesh::Entity_ID c,
                                                AmanziMesh::Parallel_type ptype,
                                                std::set<AmanziMesh::Entity_ID>& cells) const
 {
-  std::set<int> ids;
   AmanziMesh::Entity_ID_List nodes, vcells;
 
   cells.clear();
