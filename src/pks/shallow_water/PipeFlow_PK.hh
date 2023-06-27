@@ -67,7 +67,11 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual void ComputeExternalForcingOnCells(std::vector<double> &forcing) override;
 
-  virtual void GetDx(const int & cell, double & dx) override;
+  void GetDx(const int & cell, double & dx);
+
+  virtual void InitializeCellArrays() override;
+
+  bool IsJunction(const int & cell);
 
   virtual std::vector<double> ComputeFieldsOnEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n) override;
 

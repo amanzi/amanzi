@@ -6,7 +6,8 @@
  The terms of use and "as is" disclaimer for this license are
  provided in the top-level COPYRIGHT file.
 
- Author: Svetlana Tokareva (tokareva@lanl.gov)
+ Authors: Svetlana Tokareva (tokareva@lanl.gov)
+          Giacomo Capodaglio (gcapodaglio@lanl.gov)
 */
 
 #include <algorithm>
@@ -371,6 +372,7 @@ ShallowWater_PK::Initialize()
   // calculate cell area square (used as a tolerance)  
   cell_area2_max_ = cell_area_max * cell_area_max;
 
+  InitializeCellArrays();
   InitializeFields();
 
   InitializeCVField(S_, *vo_, velocity_key_, Tags::DEFAULT, passwd_, 0.0);
@@ -448,7 +450,6 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   iters_++;
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
 
@@ -598,9 +599,10 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
     // min-max values
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     double hmin(DBL_MAX), hmax(DBL_MIN);
-    for (int c = 0; c < ncells_owned; ++c) {
-      hmin = std::min(hmin, h_c[0][c]);
-      hmax = std::max(hmax, h_c[0][c]);
+    for (int c = 0; c < model_cells_owned_.size(); ++c) {
+      int cell = model_cells_owned_[c];  
+      hmin = std::min(hmin, h_c[0][cell]);
+      hmax = std::max(hmax, h_c[0][cell]);
     }
 
     double qmin(DBL_MAX), qmax(DBL_MIN);
@@ -990,6 +992,28 @@ std::vector<double> ShallowWater_PK::ComputeFieldsOnEdge(int c, int e, double ht
   V_rec[1] = -1.0;
 
   return V_rec;
+
+}
+
+
+//--------------------------------------------------------------
+// Initialize cell array of model cells (all cells)
+//--------------------------------------------------------------
+void ShallowWater_PK::InitializeCellArrays(){
+
+    int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+
+    junction_cells_owned_.resize(0);
+    junction_cells_wghost_.resize(0);
+
+    for (int c = 0; c < ncells_owned; c++) {
+       model_cells_owned_.push_back(c);
+    }
+
+    for (int c = 0; c < ncells_wghost; c++) {
+       model_cells_wghost_.push_back(c);
+    }
 
 }
 

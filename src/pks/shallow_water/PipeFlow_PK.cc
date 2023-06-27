@@ -251,17 +251,22 @@ double PipeFlow_PK::ComputeHydrostaticPressureForce (std::vector<double> SolArra
 //--------------------------------------------------------------------
 void PipeFlow_PK::UpdateSecondaryFields(){ 
 
-   auto& WettedArea_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+   auto& PrimaryVar_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
    auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
    auto& TotalDepth_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
    auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-   for (int c = 0; c < ncells_owned; ++c) {
-
-       WettedAngle_c[0][c] = ComputeWettedAngleNewton(WettedArea_c[0][c]);
-       TotalDepth_c[0][c] = ComputeTotalDepth(WettedArea_c[0][c], B_c[0][c], WettedAngle_c[0][c]);
-
+   for (int c = 0; c < model_cells_owned_.size(); ++c) {
+       int cell = model_cells_owned_[c];
+       WettedAngle_c[0][cell] = ComputeWettedAngleNewton(PrimaryVar_c[0][cell]);
+       TotalDepth_c[0][cell] = ComputeTotalDepth(PrimaryVar_c[0][cell], B_c[0][cell], WettedAngle_c[0][cell]);
+   }
+   for (int c = 0; c < junction_cells_owned_.size(); ++c) {
+       int cell = junction_cells_owned_[c];
+       WettedAngle_c[0][cell] = -1.0;
+       // NOTE: the primary variable for junctions store the water depth
+       TotalDepth_c[0][cell] = ShallowWater_PK::ComputeTotalDepth(PrimaryVar_c[0][cell], 
+                                                   B_c[0][cell], WettedAngle_c[0][cell]);
    }
 
 }
@@ -304,13 +309,25 @@ double PipeFlow_PK::ComputeTotalDepth(double PrimaryVar, double Bathymetry, doub
 std::vector<double> PipeFlow_PK::ComputeFieldsOnEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n)
 {
 
-  std::vector <double> V_rec(2,0.0); //vector to return 
+  std::vector <double> V_rec(2,0.0); //vector to return
 
   double ht_edge = TotalDepthEdgeValue(c, e, htc, Bc, Bmax, B_n);
   double B_edge = BathymetryEdgeValue(e, B_n);
   double h_edge = std::max( (ht_edge - B_edge), 0.0);
-  V_rec[1] = ComputeWettedAngle(h_edge);
-  V_rec[0] = ComputeWettedArea(V_rec[1]);
+
+  if(IsJunction(c)){
+
+     V_rec[1] = - 1.0;
+     V_rec[0] = h_edge;
+
+  }
+
+  else {
+
+     V_rec[1] = ComputeWettedAngle(h_edge);
+     V_rec[0] = ComputeWettedArea(V_rec[1]);
+
+  }
 
   return V_rec;
 
@@ -454,48 +471,50 @@ void PipeFlow_PK::SetPrimaryVariableBC(Teuchos::RCP<Teuchos::ParameterList> &bc_
 void PipeFlow_PK::InitializeFields(){
 
      int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-
-     auto& WettedArea_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+     auto& PrimaryVar_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& WaterDepth_c = *S_->GetW<CV_t>(water_depth_key_, Tags::DEFAULT, water_depth_key_).ViewComponent("cell");
      auto& PressureHead_c = *S_->GetW<CV_t>(pressure_head_key_, Tags::DEFAULT, pressure_head_key_).ViewComponent("cell");
      auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
-     if(direction_key_.empty()){
-        auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-        for (int c = 0; c < ncells_owned; c++) {
-           dir_c[0][c] = 1.0;
-           dir_c[1][c] = 0.0;
-        }
-     }
+     for (int c = 0; c < model_cells_owned_.size(); c++) {
 
-     for (int c = 0; c < ncells_owned; c++) {
+        int cell = model_cells_owned_[c]; 
 
-        double maxDepth = B_c[0][c] + pipe_diameter_;
-        if (ht_c[0][c] >= maxDepth){ // cell is pressurized
+        double maxDepth = B_c[0][cell] + pipe_diameter_;
+        if (ht_c[0][cell] >= maxDepth){ // cell is pressurized
 
             double PipeCrossSection = Pi * 0.25 * pipe_diameter_ * pipe_diameter_;
-            PressureHead_c[0][c] = ht_c[0][c] - pipe_diameter_ - B_c[0][c];
-            WettedArea_c[0][c] = (g_ * PipeCrossSection * PressureHead_c[0][c]) / (celerity_ * celerity_) + PipeCrossSection;
-            WettedAngle_c[0][c] = TwoPi;
-            WaterDepth_c[0][c] = pipe_diameter_;
+            PressureHead_c[0][cell] = ht_c[0][cell] - pipe_diameter_ - B_c[0][cell];
+            PrimaryVar_c[0][cell] = (g_ * PipeCrossSection * PressureHead_c[0][cell]) / (celerity_ * celerity_) + PipeCrossSection;
+            WettedAngle_c[0][cell] = TwoPi;
+            WaterDepth_c[0][cell] = pipe_diameter_;
         }
-        else if ((std::fabs(ht_c[0][c] - B_c[0][c]) < 1.e-15) || (ht_c[0][c] < B_c[0][c])){ //cell is dry
+        else if ((std::fabs(ht_c[0][cell] - B_c[0][cell]) < 1.e-15) || (ht_c[0][cell] < B_c[0][cell])){ //cell is dry
 
-            WettedArea_c[0][c] = 0.0;
-            WettedAngle_c[0][c] = 0.0;
-            WaterDepth_c[0][c] = 0.0;
-
-        }
-
-        else if (ht_c[0][c] < maxDepth && B_c[0][c] < ht_c[0][c]) { //cell is ventilated
-
-           WaterDepth_c[0][c] = ht_c[0][c] - B_c[0][c];
-           WettedAngle_c[0][c] = ComputeWettedAngle(WaterDepth_c[0][c]);
-           WettedArea_c[0][c] = ComputeWettedArea(WettedAngle_c[0][c]);
+            PrimaryVar_c[0][cell] = 0.0;
+            WettedAngle_c[0][cell] = 0.0;
+            WaterDepth_c[0][cell] = 0.0;
 
         }
+
+        else if (ht_c[0][cell] < maxDepth && B_c[0][cell] < ht_c[0][cell]) { //cell is ventilated
+
+           WaterDepth_c[0][cell] = ht_c[0][cell] - B_c[0][cell];
+           WettedAngle_c[0][cell] = ComputeWettedAngle(WaterDepth_c[0][cell]);
+           PrimaryVar_c[0][cell] = ComputeWettedArea(WettedAngle_c[0][cell]);
+
+        }
+
+     }
+
+     for (int c = 0; c < junction_cells_owned_.size(); c++) {
+
+        int cell = junction_cells_owned_[c];
+        PrimaryVar_c[0][cell] = ht_c[0][cell] - B_c[0][cell];
+        WettedAngle_c[0][cell] = - 1.0;
+
 
      }
 
@@ -506,11 +525,11 @@ void PipeFlow_PK::InitializeFields(){
 
         for (int c = 0; c < ncells_owned; c++) {
             for (int i = 0; i < 2; ++i) {
-             if(std::fabs(WettedArea_c[0][c]) < 1.0e-12){
+             if(std::fabs(PrimaryVar_c[0][c]) < 1.0e-12){
                 u_c[i][c] = 0.0;
              }
              else{
-                u_c[i][c] = q_c[i][c] / WettedArea_c[0][c];
+                u_c[i][c] = q_c[i][c] / PrimaryVar_c[0][c];
              }
             }
         }
@@ -523,6 +542,64 @@ void PipeFlow_PK::InitializeFields(){
      S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
      S_->GetRecordW(water_depth_key_, Tags::DEFAULT, water_depth_key_).set_initialized();
      S_->GetRecordW(pressure_head_key_, Tags::DEFAULT, pressure_head_key_).set_initialized();
+
+}
+
+//---------------------------------------------------------------
+// Initialize cell array of pipe cells (model cells) and junction
+//---------------------------------------------------------------
+void PipeFlow_PK::InitializeCellArrays(){
+
+    int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+    // initialize pipe direction if not
+    // specified from file
+    if(direction_key_.empty()){
+       for (int c = 0; c < ncells_wghost; c++) {
+          dir_c[0][c] = 1.0;
+          dir_c[1][c] = 0.0;
+       }
+    }
+
+    for (int c = 0; c < ncells_owned; c++) {
+       // both components of pipe direction zero
+       // is code for junction cell
+       if(IsJunction(c)){ 
+          junction_cells_owned_.push_back(c); 
+       }
+       else {
+          model_cells_owned_.push_back(c);
+       }
+    }
+    
+    for (int c = 0; c < ncells_wghost; c++) {
+       // both components of pipe direction zero
+       // is code for junction cell
+       if(IsJunction(c)){
+          junction_cells_wghost_.push_back(c);
+       }
+       else {
+          model_cells_wghost_.push_back(c);
+       }
+    }
+
+}
+
+//--------------------------------------------------------------
+// Checks if a pipe cell is a junction 
+//--------------------------------------------------------------
+bool PipeFlow_PK::IsJunction(const int &cell)
+{
+    bool isJunction = 0;
+
+    auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+    // both components of pipe direction equal to zero is the definition of junction cell
+    if(std::fabs(dir_c[0][cell]) < 1.e-14 && std::fabs(dir_c[0][cell]) < 1.e-14){ 
+       isJunction = 1;
+    }
+
+    return isJunction;
 
 }
 

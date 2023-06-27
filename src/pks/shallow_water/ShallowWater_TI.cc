@@ -6,7 +6,8 @@
  The terms of use and "as is" disclaimer for this license are
  provided in the top-level COPYRIGHT file.
 
- Author: Svetlana Tokareva (tokareva@lanl.gov)
+ Authors: Svetlana Tokareva (tokareva@lanl.gov)
+          Giacomo Capodaglio (gcapodaglio@lanl.gov)
  */
 
 #include "errors.hh"
@@ -47,11 +48,20 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   auto& WettedAngle_c = *S_->GetW<CompositeVector>(wetted_angle_key_, passwd_).ViewComponent("cell", true); 
 
-  for (int c = 0; c < ncells_wghost; ++c) {
-    double factor = inverse_with_tolerance(h_temp[0][c], cell_area2_max_);
-    vel_c[0][c] = factor * q_temp[0][c];
-    vel_c[1][c] = factor * q_temp[1][c];
-    ht_c[0][c] = ComputeTotalDepth(h_temp[0][c], B_c[0][c], WettedAngle_c[0][c]);
+  for (int c = 0; c < model_cells_wghost_.size(); ++c) {
+    int cell = model_cells_wghost_[c];  
+    double factor = inverse_with_tolerance(h_temp[0][cell], cell_area2_max_);
+    vel_c[0][cell] = factor * q_temp[0][cell];
+    vel_c[1][cell] = factor * q_temp[1][cell];
+    ht_c[0][cell] = ComputeTotalDepth(h_temp[0][cell], B_c[0][cell], WettedAngle_c[0][cell]);
+  }
+
+  for (int c = 0; c < junction_cells_wghost_.size(); ++c) {
+    int cell = junction_cells_wghost_[c];
+    double factor = inverse_with_tolerance(h_temp[0][cell], cell_area2_max_);
+    vel_c[0][cell] = factor * q_temp[0][cell];
+    vel_c[1][cell] = factor * q_temp[1][cell];
+    ht_c[0][cell] = ShallowWater_PK::ComputeTotalDepth(h_temp[0][cell], B_c[0][cell], WettedAngle_c[0][cell]);
   }
 
   // allocate memory for temporary fields
@@ -73,6 +83,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   std::vector<double> bc_value_qx(nfaces_wghost, 0.0);
   std::vector<double> bc_value_qy(nfaces_wghost, 0.0);
   unsigned primary_variable_Dirichlet = 0;
+
+  // NOTE: right now we are assuming that the junction cells cannot be boundary cells
+  // so the code below does not take into account a scenario where such a thing happens
 
   // ponded depth or wetted area BCs 
   for (int i = 0; i < bcs_.size(); ++i) {
@@ -351,22 +364,45 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // the code should not fail after that
   U.resize(4);
 
-  for (int c = 0; c < ncells_owned; ++c) {
-    U[0] = h_temp[0][c];
-    U[1] = q_temp[0][c];
-    U[2] = q_temp[1][c];
-    U[3] = WettedAngle_c[0][c];
+  for (int c = 0; c < model_cells_owned_.size(); ++c) {
+    int cell = model_cells_owned_[c];  
+    U[0] = h_temp[0][cell];
+    U[1] = q_temp[0][cell];
+    U[2] = q_temp[1][cell];
+    U[3] = WettedAngle_c[0][cell];
 
-    BedSlopeSource = NumericalSourceBedSlope(c, ht_c[0][c], B_c[0][c], B_max[0][c], B_n, bc_model_scalar, bc_value_h);
+    BedSlopeSource = NumericalSourceBedSlope(cell, ht_c[0][cell], B_c[0][cell], B_max[0][cell], B_n, bc_model_scalar, bc_value_h);
     FrictionSource = NumericalSourceFriction(U[0], U[1], U[3]); 
 
-    h = h_c_tmp[0][c] + BedSlopeSource[0] + ext_S_cell[c];
-    qx = q_c_tmp[0][c] + BedSlopeSource[1] + FrictionSource;
-    qy = q_c_tmp[1][c] + BedSlopeSource[2];
+    h = h_c_tmp[0][cell] + BedSlopeSource[0] + ext_S_cell[cell];
+    qx = q_c_tmp[0][cell] + BedSlopeSource[1] + FrictionSource;
+    qy = q_c_tmp[1][cell] + BedSlopeSource[2];
 
-    f_temp0[0][c] = h;
-    f_temp1[0][c] = qx;
-    f_temp1[1][c] = qy;
+    f_temp0[0][cell] = h;
+    f_temp1[0][cell] = qx;
+    f_temp1[1][cell] = qy;
+  }
+
+  // NOTE: we are currently assuming that the manholes cannot be
+  // on cells where there is a junction of the pipe network
+  // so the term ext_S_cell is currently not computed at junctions cells
+  for (int c = 0; c < junction_cells_owned_.size(); ++c) {
+    int cell = junction_cells_owned_[c];
+    U[0] = h_temp[0][cell];
+    U[1] = q_temp[0][cell];
+    U[2] = q_temp[1][cell];
+    U[3] = WettedAngle_c[0][cell];
+
+    BedSlopeSource = ShallowWater_PK::NumericalSourceBedSlope(cell, ht_c[0][cell], 
+                                      B_c[0][cell], B_max[0][cell], B_n, bc_model_scalar, bc_value_h);
+
+    h = h_c_tmp[0][cell] + BedSlopeSource[0];
+    qx = q_c_tmp[0][cell] + BedSlopeSource[1];
+    qy = q_c_tmp[1][cell] + BedSlopeSource[2];
+
+    f_temp0[0][cell] = h;
+    f_temp1[0][cell] = qx;
+    f_temp1[1][cell] = qy;
   }
 
 }

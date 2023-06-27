@@ -6,7 +6,8 @@
  The terms of use and "as is" disclaimer for this license are
  provided in the top-level COPYRIGHT file.
 
- Author: Svetlana Tokareva (tokareva@lanl.gov)
+ Authors: Svetlana Tokareva (tokareva@lanl.gov)
+          Giacomo Capodaglio (gcapodaglio@lanl.gov)
  */
 
 #ifndef AMANZI_SHALLOW_WATER_PK_HH_
@@ -84,6 +85,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual void InitializeFields();
 
+  virtual void InitializeCellArrays();
+
   virtual void ComputeExternalForcingOnCells(std::vector<double> &forcing); 
 
   // Commit any secondary (dependent) variables.
@@ -143,8 +146,6 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   // access
   double get_total_source() const { return total_source_; }
 
-  virtual void GetDx(const int & cell, double & dx){};
-
  private:
   void
   InitializeFieldFromField_(const std::string& field0,
@@ -196,6 +197,11 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   double Pi = 3.14159265359;
   double TwoPi = 6.28318530718;
+
+  std::vector<int> model_cells_owned_;
+  std::vector<int> junction_cells_owned_;
+  std::vector<int> model_cells_wghost_;
+  std::vector<int> junction_cells_wghost_;
 
  private:
   // boundary conditions
