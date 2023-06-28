@@ -1,5 +1,3 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-
 #include <UnitTest++.h>
 
 #include <mpi.h>
@@ -8,6 +6,7 @@
 #include "Teuchos_RCP.hpp"
 #include "AmanziComm.hh"
 
+#include "MeshDefs.hh"
 #include "RegionEnumerated.hh"
 #include "MeshLogical.hh"
 #include "MeshLogicalFactory.hh"
@@ -16,6 +15,7 @@
 
 #include "demo_mesh.hh"
 
+using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 

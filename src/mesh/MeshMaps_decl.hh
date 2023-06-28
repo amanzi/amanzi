@@ -71,6 +71,7 @@
 #pragma once
 
 #include "AmanziTypes.hh"
+#include "ViewUtils.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {

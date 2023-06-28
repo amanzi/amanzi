@@ -13,6 +13,7 @@
 #include "Point.hh"
 #include "Geometry.hh"
 #include "MeshDefs.hh"
+#include "ViewUtils.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
