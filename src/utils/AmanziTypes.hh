@@ -20,7 +20,7 @@
 
 #include <memory>
 #include "Teuchos_RCPDecl.hpp"
-
+#include "Kokkos_Core.hpp"
 
 #ifdef TRILINOS_TPETRA_STACK
 #  include "Teuchos_Comm.hpp"
@@ -58,6 +58,16 @@ typedef Epetra_SerialComm SerialComm_type;
 #endif
 
 typedef Teuchos::RCP<const Comm_type> Comm_ptr_type;
+
+
+enum class MemSpace_kind {
+  HOST,
+  DEVICE
+};
+
+template<MemSpace_kind MEM>
+using MemoryLocation = std::conditional_t<MEM==MemSpace_kind::DEVICE, Kokkos::DefaultExecutionSpace, Kokkos::HostSpace>;
+
 
 } // namespace Amanzi
 
