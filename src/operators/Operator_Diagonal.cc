@@ -91,16 +91,16 @@ Operator_Diagonal::SymbolicAssembleMatrixOp(const Op_Diagonal& op,
 
   int ierr(0);
   for (int n = 0; n != col_lids.size(); ++n) {
-    int ndofs = col_lids[n].size();
+    int ncols = col_lids[n].size();
+    int nrows = row_lids[n].size();
 
     lid_r.clear();
     lid_c.clear();
 
-    for (int i = 0; i != ndofs; ++i) {
-      lid_r.push_back(row_gids[row_lids[n][i]]);
-      lid_c.push_back(col_gids[col_lids[n][i]]);
-    }
-    ierr |= graph.InsertMyIndices(ndofs, lid_r.data(), ndofs, lid_c.data());
+    for (int i = 0; i != ncols; ++i) lid_c.push_back(col_gids[col_lids[n][i]]);
+    for (int i = 0; i != nrows; ++i) lid_r.push_back(row_gids[row_lids[n][i]]);
+
+    ierr |= graph.InsertMyIndices(nrows, lid_r.data(), ncols, lid_c.data());
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -126,15 +126,14 @@ Operator_Diagonal::AssembleMatrixOp(const Op_Diagonal& op,
 
   int ierr(0);
   for (int n = 0; n != col_lids.size(); ++n) {
-    int ndofs = col_lids[n].size();
+    int ncols = col_lids[n].size();
+    int nrows = row_lids[n].size();
 
     lid_r.clear();
     lid_c.clear();
 
-    for (int i = 0; i != ndofs; ++i) {
-      lid_r.push_back(row_gids[row_lids[n][i]]);
-      lid_c.push_back(col_gids[col_lids[n][i]]);
-    }
+    for (int i = 0; i != ncols; ++i) lid_c.push_back(col_gids[col_lids[n][i]]);
+    for (int i = 0; i != nrows; ++i) lid_r.push_back(row_gids[row_lids[n][i]]);
 
     ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[n]);
   }

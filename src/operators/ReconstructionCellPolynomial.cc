@@ -225,6 +225,37 @@ ReconstructionCellPolynomial::CellAllAdjCells_(AmanziMesh::Entity_ID c,
 
 
 void
+ReconstructionCellPolynomial::CellAdjCellsTwoLevels_(AmanziMesh::Entity_ID c,
+                                                     AmanziMesh::Parallel_type ptype,
+                                                     std::set<AmanziMesh::Entity_ID>& cells) const
+{
+  AmanziMesh::Entity_ID_List faces, fcells;
+
+  cells.clear();
+
+  // face neighboors
+  mesh_->cell_get_faces(c, &faces);
+  for (int f : faces) {
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
+    for (int c1 : fcells) {
+      if (cells.find(c1) == cells.end() && c != c1) cells.insert(c1);
+    }
+  }
+
+  // neighboors of neighboors
+  for (int c1 : cells) {
+    mesh_->cell_get_faces(c1, &faces);
+    for (int f : faces) {
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
+      for (int c2 : fcells) {
+        if (cells.find(c2) == cells.end() && c != c2) cells.insert(c2);
+      }
+    }
+  }
+}
+
+
+void
 ReconstructionCellPolynomial::CellAllAdjFaces_(AmanziMesh::Entity_ID c,
                                                const std::set<AmanziMesh::Entity_ID>& cells,
                                                std::set<AmanziMesh::Entity_ID>& faces) const
@@ -324,13 +355,23 @@ ReconstructionCellPolynomial::ComputeReconstructionMap(int c,
 
   int ncells, nfaces(0);
   std::set<AmanziMesh::Entity_ID> cells, faces;
-  CellAllAdjCells_(c, AmanziMesh::Parallel_type::ALL, cells);
+  try {
+    CellAllAdjCells_(c, AmanziMesh::Parallel_type::ALL, cells);
+  } catch (...) {
+    // some meshes have no nodes, so we try a different algorithm based on
+    // cell->face->cell connectivities. It extract two level of cell neighboors
+    CellAdjCellsTwoLevels_(c, AmanziMesh::Parallel_type::ALL, cells);
+  }
   cells.insert(c);
   ncells = cells.size();
 
   if (bc.get()) {
+    const auto& bc_model = bc->bc_model();
+
     CellAllAdjFaces_(c, cells, faces);
-    nfaces = faces.size();
+    for (int f : faces) {
+      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) nfaces++;
+    }
   }
 
   // populate least-squate matrix
