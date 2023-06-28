@@ -130,10 +130,10 @@ class Amanzi_PK : public Chemistry_PK {
   BeakerState beaker_state_, beaker_state_copy_;
   BeakerFields bf_;
 
-  Key prev_saturation_key_;  // move to base class ???
+  Key prev_saturation_key_; // move to base class ???
 
   std::string dt_control_method_;
-  double dt_int_, dt_global_;  // interpolation and global times 
+  double dt_int_, dt_global_; // interpolation and global times
 
   std::vector<std::string> aux_names_;
   std::vector<int> aux_index_;

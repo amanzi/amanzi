@@ -54,10 +54,7 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
                      const Teuchos::RCP<Teuchos::ParameterList>& glist,
                      const Teuchos::RCP<State>& S,
                      const Teuchos::RCP<TreeVector>& soln)
-  : PK(pk_tree, glist, S, soln),
-    Chemistry_PK(pk_tree, glist, S, soln),
-    chem_(NULL),
-    dt_global_(0.0)
+  : PK(pk_tree, glist, S, soln), Chemistry_PK(pk_tree, glist, S, soln), chem_(NULL), dt_global_(0.0)
 {
   // obtain key of fields
   tcc_key_ = Keys::getKey(domain_, "total_component_concentration");

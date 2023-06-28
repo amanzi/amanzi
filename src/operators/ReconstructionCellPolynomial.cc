@@ -315,7 +315,7 @@ ReconstructionCellPolynomial::getPolynomial(int c) const
 void
 ReconstructionCellPolynomial::ComputeReconstructionMap(int c,
                                                        const Teuchos::RCP<const BCs>& bc,
-                                                       WhetStone::DenseMatrix& R, 
+                                                       WhetStone::DenseMatrix& R,
                                                        AmanziMesh::Entity_ID_List& ids_c,
                                                        AmanziMesh::Entity_ID_List& ids_f,
                                                        int basis)

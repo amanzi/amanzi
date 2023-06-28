@@ -459,7 +459,7 @@ InputConverterU::TranslateMultiphaseBCs_()
   Errors::Message msg;
   MemoryManager mm;
 
-  char *text;
+  char* text;
   DOMNodeList *node_list, *children;
   DOMNode* node;
 

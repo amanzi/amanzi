@@ -1075,7 +1075,7 @@ InputConverterU::TranslateFlowFractures_(const std::string& domain)
     *vo_->os() << "Translating optional fracture models, domain=" << domain << std::endl;
 
   MemoryManager mm;
-  DOMNodeList *children;
+  DOMNodeList* children;
   DOMNode* node;
   DOMElement* element;
 
