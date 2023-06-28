@@ -243,4 +243,49 @@ TEST(RECONSTRUCTION_QUADRATIC_2D)
   auto measure = indicator.get_measure();
 
   for (int c = 0; c < measure.size(); ++c) { CHECK_CLOSE(measure[c], 1.0, 1e-12); }
+
+  // Analyze reconstruction map
+  const AmanziGeometry::Point xc = mesh->cell_centroid(0);
+  WhetStone::DenseMatrix R;
+  AmanziMesh::Entity_ID_List ids_c, ids_f;
+  lifting->ComputeReconstructionMap(0, bcs, R, ids_c, ids_f);
+
+  int nrow = R.NumRows();
+  int ncol = R.NumCols();
+  WhetStone::DenseVector x(ncol), y(ncol), v(nrow), xx(ncol), xy(ncol), yy(ncol);
+  int n = 0;
+  for (int c : ids_c) {
+    x(n) = (mesh->cell_centroid(c))[0] - xc[0];
+    y(n) = (mesh->cell_centroid(c))[1] - xc[1];
+    n++;
+  }
+  for (int f : ids_f) {
+    x(n) = (mesh->face_centroid(f))[0] - xc[0];
+    y(n) = (mesh->face_centroid(f))[1] - xc[1];
+    n++;
+  }
+  for (int n = 0; n < ncol; ++n) {
+    xx(n) = x(n) * x(n);
+    xy(n) = x(n) * y(n);
+    yy(n) = y(n) * y(n);
+  }
+  R.Multiply(x, v, false);
+  CHECK_CLOSE(v(0), 0.0, 1e-12);
+  CHECK_CLOSE(v(1), 1.0, 1e-12);
+
+  R.Multiply(y, v, false);
+  CHECK_CLOSE(v(0), 0.0, 1e-12);
+  CHECK_CLOSE(v(2), 1.0, 1e-12);
+
+  R.Multiply(xx, v, false);
+  CHECK_CLOSE(v(0), 0.0, 1e-12);
+  CHECK_CLOSE(v(3), 1.0, 1e-12);
+
+  R.Multiply(xy, v, false);
+  CHECK_CLOSE(v(0), 0.0, 1e-12);
+  CHECK_CLOSE(v(4), 1.0, 1e-12);
+
+  R.Multiply(yy, v, false);
+  CHECK_CLOSE(v(0), 0.0, 1e-12);
+  CHECK_CLOSE(v(5), 1.0, 1e-12);
 }

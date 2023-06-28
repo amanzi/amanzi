@@ -308,5 +308,92 @@ ReconstructionCellPolynomial::getPolynomial(int c) const
   return tmp;
 }
 
+
+/* ******************************************************************
+* A map from data to polynomial coefficients
+****************************************************************** */
+void
+ReconstructionCellPolynomial::ComputeReconstructionMap(int c,
+                                                       const Teuchos::RCP<const BCs>& bc,
+                                                       WhetStone::DenseMatrix& R, 
+                                                       AmanziMesh::Entity_ID_List& ids_c,
+                                                       AmanziMesh::Entity_ID_List& ids_f,
+                                                       int basis)
+{
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+
+  int ncells, nfaces(0);
+  std::set<AmanziMesh::Entity_ID> cells, faces;
+  CellAllAdjCells_(c, AmanziMesh::Parallel_type::ALL, cells);
+  cells.insert(c);
+  ncells = cells.size();
+
+  if (bc.get()) {
+    CellAllAdjFaces_(c, cells, faces);
+    nfaces = faces.size();
+  }
+
+  // populate least-squate matrix
+  int n(0);
+  int ncol = WhetStone::PolynomialSpaceDimension(d_, degree_);
+  WhetStone::DenseMatrix B(ncells + nfaces, ncol);
+
+  AmanziGeometry::Point xcc(d_);
+
+  ids_c.clear();
+  for (int c1 : cells) {
+    const AmanziGeometry::Point& xc1 = mesh_->cell_centroid(c1);
+    xcc = xc1 - xc;
+
+    int m = 0;
+    B(n, m++) = 1.0;
+    // -- linear terms
+    for (int i = 0; i < d_; ++i) B(n, m++) = xcc[i];
+    // -- quadratic terms
+    for (int i = 0; i < d_; ++i) {
+      for (int j = i; j < d_; ++j) B(n, m++) = xcc[i] * xcc[j];
+    }
+
+    ids_c.push_back(c1);
+    n++;
+  }
+
+  // -- add boundary faces
+  ids_f.clear();
+  if (bc.get()) {
+    const auto& bc_model = bc->bc_model();
+
+    for (int f : faces) {
+      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+        xcc = xf - xc;
+
+        int m = 0;
+        B(n, m++) = 1.0;
+        // -- linear terms
+        for (int i = 0; i < d_; ++i) B(n, m++) = xcc[i];
+        // -- quadratic terms
+        for (int i = 0; i < d_; ++i) {
+          for (int j = i; j < d_; ++j) B(n, m++) = xcc[i] * xcc[j];
+        }
+
+        ids_f.push_back(f);
+        n++;
+      }
+    }
+  }
+
+  // final map
+  WhetStone::DenseMatrix BTB(ncol, ncol);
+  BTB.Multiply(B, B, true);
+  BTB.Inverse();
+
+  WhetStone::DenseMatrix BT(ncol, ncells + nfaces);
+  BT.Transpose(B);
+
+  R.Reshape(ncol, ncells + nfaces);
+  R.Multiply(BTB, BT, false);
+}
+
 } // namespace Operators
 } // namespace Amanzi

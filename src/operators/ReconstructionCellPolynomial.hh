@@ -10,7 +10,7 @@
 /*
   Operators
 
-  Polynomials conservative reconstrution on cell data.
+  Polynomial conservative reconstrution on cell data.
   Due to conservation, only slope data have to be stored.
 */
 
@@ -71,6 +71,15 @@ class ReconstructionCellPolynomial : public Reconstruction {
                const Teuchos::RCP<const Epetra_MultiVector>& field,
                int component,
                const Teuchos::RCP<const BCs>& bc = Teuchos::null);
+
+  // A map (a rectangular matrix) from data, cell and boundary, to polynomial 
+  // coefficients. NOTE: polynomial basis is natural
+  void ComputeReconstructionMap(int c,
+                                const Teuchos::RCP<const BCs>& bc,
+                                WhetStone::DenseMatrix& R, 
+                                AmanziMesh::Entity_ID_List& ids_c, 
+                                AmanziMesh::Entity_ID_List& ids_f,
+                                int basis = WhetStone::TAYLOR_BASIS_NATURAL);
 
  private:
   void PopulateLeastSquareSystem_(WhetStone::DenseVector& coef,
