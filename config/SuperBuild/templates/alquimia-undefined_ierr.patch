@@ -1,0 +1,12 @@
+diff -Naur alquimia-1.0.9-source/alquimia/pflotran_alquimia_interface.F90 alquimia-1.0.9-source-new/alquimia/pflotran_alquimia_interface.F90
+--- alquimia-1.0.9-source/alquimia/pflotran_alquimia_interface.F90	2023-06-30 15:34:53
++++ alquimia-1.0.9-source-new/alquimia/pflotran_alquimia_interface.F90	2023-06-30 15:34:43
+@@ -537,7 +537,7 @@
+ !!$  call RTAuxVarCompute(engine_state%rt_auxvar, &
+ !!$                       engine_state%global_auxvar, &
+ !!$                       engine_state%reaction, engine_state%option)
+-
++  ierror = 0 ! PFLOTRAN does not set this unless it errors
+   call RReact(guess, engine_state%rt_auxvar, engine_state%global_auxvar, &
+        engine_state%material_auxvar, num_newton_iterations, &
+        reaction, natural_id, engine_state%option, ierror)
