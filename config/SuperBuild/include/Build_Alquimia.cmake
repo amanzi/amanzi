@@ -18,7 +18,9 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # Alquimia and Amanzi disagree about how to find PETSc, so we override 
 set(Alquimia_patch_file alquimia-cmake.patch
                         alquimia-FindPETSc.patch
-                        alquimia-MPIlocation.patch)
+                        alquimia-MPIlocation.patch
+                        alquimia-undefined_ierr.patch
+                      )
 set(Alquimia_sh_patch ${Alquimia_prefix_dir}/alquimia-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-patch-step.sh.in
                ${Alquimia_sh_patch}
