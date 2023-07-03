@@ -65,7 +65,8 @@ set(transport_inc_files
   TransportDefs.hh
   Transport_PK.hh
   TransportImplicit_PK.hh
-  TransportExplicit_PK.hh)
+  TransportExplicit_PK.hh
+  models_transport_reg.hh)
 
 set(transport_src_files Transport_PK.cc Transport_TI.cc
                         TransportImplicit_PK.cc TransportImplicit_TI.cc 
