@@ -15,7 +15,6 @@
 */
 
 #include "InverseFactory.hh"
-#include "Op_Diagonal.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "TransportImplicit_PK.hh"
