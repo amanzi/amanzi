@@ -352,17 +352,18 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
   // -- variable
   Teuchos::ParameterList tmp, tmp2;
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, d * d);
+  cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, d);
 
-  Schema schema(AmanziMesh::CELL, d * d);
+  Schema schema(AmanziMesh::CELL, d);
   Operator_Schema global_op(cvs, cvs, tmp, schema, schema);
 
   auto op = Teuchos::rcp(new Op_Face_Schema(schema, schema, mesh_));
   global_op.OpPushBack(op);
 
+  bf_ = std::make_shared<std::vector<AmanziGeometry::Point>>(nfaces_wghost, AmanziGeometry::Point(d));
+
   // -- problem
-  auto& rhs = *global_op.rhs();
-  LSProblemSetup_(op->matrices, rhs);
+  LSProblemSetupMatrix_(op->matrices);
 
   // -- solution
   global_op.SymbolicAssembleMatrix();
@@ -378,10 +379,16 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
      .set<std::string>("verbosity level", "medium");
   global_op.set_inverse_parameters("Hypre AMG", tmp, "PCG", tmp2);
 
+  auto& rhs = *global_op.rhs();
   auto sol(rhs);
-  global_op.ApplyInverse(rhs, sol);
 
-  LSProblemPrimarySolution_(sol);
+  for (int i = 0; i < d; ++i) {
+    LSProblemSetupRHS_(rhs, i);
+
+    global_op.ApplyInverse(rhs, sol);
+
+    LSProblemPrimarySolution_(sol, i);
+  }
 
   // error analysis
   double err(0.0);
@@ -396,11 +403,10 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
 * Setup problem A A^T w = I - A xref
 ****************************************************************** */
 void
-PDE_DiffusionCurvedFace::LSProblemSetup_(std::vector<WhetStone::DenseMatrix>& matrices,
-                                         CompositeVector& rhs)
+PDE_DiffusionCurvedFace::LSProblemSetupMatrix_(std::vector<WhetStone::DenseMatrix>& matrices)
 {
   int d = mesh_->space_dimension();
-  AmanziMesh::Entity_ID_List cells, faces;
+  AmanziMesh::Entity_ID_List cells;
   std::vector<int> dirs;
 
   // matrix A A^T
@@ -411,39 +417,41 @@ PDE_DiffusionCurvedFace::LSProblemSetup_(std::vector<WhetStone::DenseMatrix>& ma
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
-    int nrows = ncells * d * d;
+    int nrows = ncells * d;
     WhetStone::DenseMatrix Aface(nrows, nrows);
     Aface.PutScalar(0.0);
 
-    for (int i = 0; i < d; ++i) {
-      for (int j = 0; j < d; ++j) {
-        double val = normal[i] * normal[j];
-        for (int k = 0; k < d; ++k) {
-          int i1 = k * d + i;
-          int j1 = k * d + j;
-          Aface(i1, j1) = val;
-          if (ncells == 2) {
-            int i2 = i1 + d * d;
-            int j2 = j1 + d * d;
-            Aface(i2, j2) = val;
-            Aface(i1, j2) = -val;
-            Aface(i2, j1) = -val;
-          }
+    for (int i1 = 0; i1 < d; ++i1) {
+      for (int j1 = 0; j1 < d; ++j1) {
+        double val = normal[i1] * normal[j1];
+        Aface(i1, j1) = val;
+        if (ncells == 2) {
+          int i2 = i1 + d;
+          int j2 = j1 + d;
+          Aface(i2, j2) = val;
+          Aface(i1, j2) = -val;
+          Aface(i2, j1) = -val;
         } 
       }
     }
 
     matrices[f] = Aface;
   }
+}
+
+
+void
+PDE_DiffusionCurvedFace::LSProblemSetupRHS_(CompositeVector& rhs, int i0)
+{
+  int d = mesh_->space_dimension();
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
 
   // right-hand side is given by scaled identity matrices
   auto& rhs_c = *rhs.ViewComponent("cell", false);
   for (int c = 0; c < ncells_owned; ++c) {
     double vol = mesh_->cell_volume(c);
-    int m(0);
-    for (int i = 0; i < d; ++i) {
-      for (int j = 0; j < d; ++j) rhs_c[m++][c] = ((i == j) ? vol : 0.0);
-    }
+    for (int j = 0; j < d; ++j) rhs_c[j][c] = ((i0 == j) ? vol : 0.0);
   }
 
   // shift by vector A {xf} 
@@ -456,10 +464,7 @@ PDE_DiffusionCurvedFace::LSProblemSetup_(std::vector<WhetStone::DenseMatrix>& ma
       const auto& normal = mesh_->face_normal(f);
       const auto& xf = mesh_->face_centroid(f);
 
-      int m(0);
-      for (int i = 0; i < d; ++i) {
-        for (int j = 0; j < d; ++j) rhs_c[m++][c] -= normal[j] * xf[i] * dirs[n];
-      }
+      for (int j = 0; j < d; ++j) rhs_c[j][c] -= normal[j] * xf[i0] * dirs[n];
     }
   }
 }
@@ -469,7 +474,7 @@ PDE_DiffusionCurvedFace::LSProblemSetup_(std::vector<WhetStone::DenseMatrix>& ma
 * Recover solution vector x = A^T w
 ****************************************************************** */
 void
-PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol)
+PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol, int i0)
 {
   const auto& sol_c = *sol.ViewComponent("cell", true);
   sol.ScatterMasterToGhosted();
@@ -477,13 +482,13 @@ PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol)
   // initialize generalized face centroids
   int d = mesh_->space_dimension();
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, d);
+  cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
   auto bf = Teuchos::rcp(new CompositeVector(*cvs));
 
   auto bf_f = *bf->ViewComponent("face", true);
   for (int f = 0; f < nfaces_wghost; ++f) {
     const auto& xf = mesh_->face_centroid(f);
-    for (int i = 0; i < d; ++i) bf_f[i][f] = xf[i];
+    bf_f[0][f] = xf[i0];
   }
 
   // add correction to generalized face centroid
@@ -498,19 +503,15 @@ PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol)
       int f = faces[n];
       const auto& normal = mesh_->face_normal(f);
 
-      int m(0);
-      for (int i = 0; i < d; ++i) {
-        for (int j = 0; j < d; ++j) bf_f[i][f] += sol_c[m++][c] * normal[j] * dirs[n];
-      }
+      for (int j = 0; j < d; ++j) bf_f[0][f] += sol_c[j][c] * normal[j] * dirs[n];
     }
   }
 
   bf->ScatterMasterToGhosted();
 
   // save to vector whocu could be shared with WhetStone
-  bf_ = std::make_shared<std::vector<AmanziGeometry::Point>>(nfaces_wghost, AmanziGeometry::Point(d));
   for (int f = 0; f < nfaces_wghost; ++f) {
-    for (int i = 0; i < d; ++i) (*bf_)[f][i] = bf_f[i][f];
+    (*bf_)[f][i0] = bf_f[0][f];
   }
 }
 

@@ -64,6 +64,11 @@ Additional options available only for the MFD family of discretizations include:
 
 */
 
+/*
+  Properties of a minimum norm solution are described here:
+  https://faculty.math.illinois.edu/~mlavrov/docs/484-spring-2019/ch4lec4.pdf
+*/
+
 namespace Amanzi {
 namespace Operators {
 
@@ -147,8 +152,9 @@ class PDE_DiffusionCurvedFace : public virtual PDE_Diffusion {
  protected:
   void Init_(Teuchos::ParameterList& plist);
   void CreateMassMatrices_();
-  void LSProblemSetup_(std::vector<WhetStone::DenseMatrix>& matrices, CompositeVector& rhs);
-  void LSProblemPrimarySolution_(const CompositeVector& sol);
+  void LSProblemSetupMatrix_(std::vector<WhetStone::DenseMatrix>& matrices);
+  void LSProblemSetupRHS_(CompositeVector& rhs, int i0);
+  void LSProblemPrimarySolution_(const CompositeVector& sol, int i0);
 
  protected:
   Teuchos::ParameterList plist_;
