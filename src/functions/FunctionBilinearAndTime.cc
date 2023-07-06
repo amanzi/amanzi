@@ -23,11 +23,13 @@ FunctionBilinearAndTime::FunctionBilinearAndTime(const std::string& filename,
                                                  const std::string& row_coordinate,
                                                  const std::string& col_header,
                                                  const std::string& col_coordinate,
-                                                 const std::string& val_header)
+                                                 const std::string& val_header,
+                                                 Form_kind form)
   : row_header_(row_header),
     col_header_(col_header),
     val_header_(val_header),
     filename_(filename),
+    form_(form),
     t_before_(-1.0),
     t_after_(-1.0),
     current_interval_(-2)
@@ -57,6 +59,7 @@ FunctionBilinearAndTime::FunctionBilinearAndTime(const FunctionBilinearAndTime& 
     val_header_(other.val_header_),
     row_index_(other.row_index_),
     col_index_(other.col_index_),
+    form_(other.form_),
     times_(other.times_),
     filename_(other.filename_),
     t_before_(other.t_before_),
@@ -72,6 +75,15 @@ FunctionBilinearAndTime::operator()(const std::vector<double>& x) const
 {
   // get the interval of the current time
   int interval = std::lower_bound(times_.begin(), times_.end(), x[0]) - times_.begin() - 1;
+
+  if ((interval < times_.size() - 1) && (x[0] + 1.e-6 > times_[interval + 1]) && form_ == Form_kind::CONSTANT) {
+    // basicaly on the right-side endpoint -- need to deal with roundoff error
+    // as this is a discontinuous case.  Note 1e-6 is chosen so that dt in
+    // seconds is bigger than machine precision of a double on 100 years in
+    // seconds
+    interval++;
+  }
+
   if (interval != current_interval_) {
     if ((current_interval_ == -2) || (interval != current_interval_ + 1)) {
       // completely uninitialized, or not an increment, load both
@@ -89,7 +101,11 @@ FunctionBilinearAndTime::operator()(const std::vector<double>& x) const
     } else {
       // an increment, we can move after --> before
       val_before_ = std::move(val_after_);
-      val_after_ = Load_(interval + 1);
+      if ((interval + 1) < times_.size()) {
+        val_after_ = Load_(interval + 1);
+      } else {
+        val_after_ = nullptr;
+      }
     }
     current_interval_ = interval;
   }
@@ -100,8 +116,13 @@ FunctionBilinearAndTime::operator()(const std::vector<double>& x) const
   } else if (interval == times_.size() - 1) {
     return (*val_before_)(x);
   } else {
-    double s = (x[0] - times_[interval]) / (times_[interval + 1] - times_[interval]);
-    return (*val_after_)(x)*s + (*val_before_)(x) * (1.0 - s);
+    if (form_ == Form_kind::LINEAR) {
+      double s = (x[0] - times_[interval]) / (times_[interval + 1] - times_[interval]);
+      return (*val_after_)(x)*s + (*val_before_)(x) * (1.0 - s);
+    } else {
+      // form CONSTANT takes the left endpoint
+      return (*val_before_)(x);
+    }
   }
 }
 

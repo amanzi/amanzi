@@ -34,6 +34,8 @@ Note, this does not follow the `"typed`" format for legacy reasons.
 
 namespace Amanzi {
 
+enum class Form_kind { LINEAR, CONSTANT, FUNCTION };
+
 class Function {
  public:
   virtual ~Function() {}

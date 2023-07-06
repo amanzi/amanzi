@@ -172,15 +172,15 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
     reader.ReadData(x, vec_x);
     reader.ReadData(y, vec_y);
     if (params.isParameter("forms")) {
-      std::vector<FunctionTabular::Form> form;
+      std::vector<Form_kind> form;
       if (params.isType<Teuchos::Array<std::string>>("forms")) {
         Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string>>("forms"));
         form.resize(form_strings.size());
         for (int i = 0; i < form_strings.size(); ++i) {
           if (form_strings[i] == "linear")
-            form[i] = FunctionTabular::LINEAR;
+            form[i] = Form_kind::LINEAR;
           else if (form_strings[i] == "constant")
-            form[i] = FunctionTabular::CONSTANT;
+            form[i] = Form_kind::CONSTANT;
           else {
             Errors::Message m;
             m << "unknown form \"" << form_strings[i].c_str() << "\"";
@@ -191,9 +191,9 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
         std::string form_string = params.get<std::string>("forms");
 
         if (form_string == "linear") {
-          form.resize(vec_x.size() - 1, FunctionTabular::LINEAR);
+          form.resize(vec_x.size() - 1, Form_kind::LINEAR);
         } else if (form_string == "constant") {
-          form.resize(vec_x.size() - 1, FunctionTabular::CONSTANT);
+          form.resize(vec_x.size() - 1, Form_kind::CONSTANT);
         } else {
           Errors::Message m;
           m << "unknown form \"" << form_string << "\"";
@@ -208,17 +208,6 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
       f = std::make_unique<FunctionTabular>(vec_x, vec_y, xi);
     }
 
-    // }
-    // catch (Teuchos::Exceptions::InvalidParameter& msg) {
-    //   Errors::Message m;
-    //   m << "FunctionFactory: function-tabular parameter error: " << msg.what();
-    //   Exceptions::amanzi_throw(m);
-    // }
-    // catch (Errors::Message& msg) {
-    //   Errors::Message m;
-    //   m << "FunctionFactory: function-tabular parameter error: " << msg.what();
-    //   Exceptions::amanzi_throw(m);
-    // }
   } else {
     try {
       std::vector<double> x(params.get<Teuchos::Array<double>>("x values").toVector());
@@ -237,18 +226,18 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
       if (params.isParameter("forms")) {
         Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string>>("forms"));
         int nforms = form_strings.size();
-        std::vector<FunctionTabular::Form> form(nforms);
+        std::vector<Form_kind> form(nforms);
 
         bool flag_func(false);
         std::vector<std::unique_ptr<Function>> func(nforms);
 
         for (int i = 0; i < nforms; ++i) {
           if (form_strings[i] == "linear")
-            form[i] = FunctionTabular::LINEAR;
+            form[i] = Form_kind::LINEAR;
           else if (form_strings[i] == "constant")
-            form[i] = FunctionTabular::CONSTANT;
+            form[i] = Form_kind::CONSTANT;
           else {
-            form[i] = FunctionTabular::FUNCTION;
+            form[i] = Form_kind::FUNCTION;
             if (params.isSublist(form_strings[i])) {
               Teuchos::ParameterList& f1_params = params.sublist(form_strings[i]);
 
@@ -685,8 +674,21 @@ FunctionFactory::create_bilinear_and_time(Teuchos::ParameterList& params) const
   }
   std::string time_header = params.get<std::string>("time header");
   std::string value_header = params.get<std::string>("value header");
+
+  std::string form_string = params.get<std::string>("forms", "linear");
+  Form_kind form;
+  if (form_string == "linear") {
+    form = Form_kind::LINEAR;
+  } else if (form_string == "constant") {
+    form = Form_kind::CONSTANT;
+  } else {
+    Errors::Message m;
+    m << "FunctionFactory: function-bilinear-and-time provided invalid value for \"form\" of \""
+      << form_string << "\" -- valid are \"linear\" and \"constant\"";
+    Exceptions::amanzi_throw(m);
+  }
   return std::make_unique<FunctionBilinearAndTime>(
-    filename, time_header, row_header, row_coordinate, col_header, col_coordinate, value_header);
+    filename, time_header, row_header, row_coordinate, col_header, col_coordinate, value_header, form);
 }
 
 
