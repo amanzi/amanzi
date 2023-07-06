@@ -727,12 +727,13 @@ Amanzi_PK::InitializeBeakerFields_()
 
 
 /* ******************************************************************
-* Estimate next time step, including for subcycling
+* We estimate stable time step and report it to CD via get_dt()
 ******************************************************************* */
 void
 Amanzi_PK::EstimateNextTimeStep_(double t_old, double t_new)
 {
-  // we keep own estimate of stable time step and report it to CD via get_dt()
+  dt_next_ = dt_;
+
   if (dt_control_method_ == "simple") {
     double dt_next_tmp(dt_next_);
 

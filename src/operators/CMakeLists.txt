@@ -170,12 +170,14 @@ set(operators_src_files
   PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc
   PDE_AdvectionUpwindFracturedMatrix.cc PDE_AdvectionUpwindDFN.cc                              
   PDE_CouplingFlux.cc
+  PDE_DiffusionCurvedFace.cc
   PDE_DiffusionMFD.cc PDE_DiffusionMFDwithGravity.cc
   PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
   PDE_DiffusionFVonManifolds.cc
   PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
   PDE_DiffusionNLFVwithBndFaces.cc PDE_DiffusionNLFVwithBndFacesGravity.cc
   PDE_DiffusionDG.cc
+  PDE_DiffusionCurvedFace.cc
   PDE_DiffusionFracturedMatrix.cc
   PDE_DiffusionFactory.cc
   PDE_HelperDiscretization.cc
@@ -322,6 +324,10 @@ if (ENABLE_TESTS)
 
     endif()
 
+    add_amanzi_test(operators_diffusion_curved_face operators_diffusion_curved_face
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_diffusion_curved_face.cc
+                    LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
                     
     add_amanzi_test(operators_diffusion operators_diffusion
                     KIND unit

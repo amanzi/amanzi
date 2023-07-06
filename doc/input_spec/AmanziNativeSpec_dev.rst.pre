@@ -803,6 +803,18 @@ PK_Physical
 -----------
 Physical PKs are the physical capability implemented within Amanzi.
 
+.. admonition:: pks-typed-spec
+
+   - `"darcy`" See `PK: Flow`_
+   - `"richards`" See `PK: Flow`_
+   - `"transport`" See `PK: Transport`_
+   - `"transport implicit`" See `PK: Transport`_
+   - `"one-phase energy`" See `PK: Energy`_
+   - `"chemistry alquimia`" See `PK: Chemistry Alquimia`_
+   - `"chemistry amanzi`" See `PK: Chemistry Amanzi`_
+   - `"shallow water`" See `PK: Shallow Water`_
+   - `"navier stokes`" See `PK: Navier-Stokes`_
+   - `"multiphase`" See `PK: Multiphase`_
 
 PK_BDF
 ------
@@ -851,6 +863,8 @@ Physical PKs
 ============
 Physical PKs are the physical capability implemented within ATS.
 
+
+.. _`PK: Flow`:
 
 Flow PK
 -------
@@ -1495,6 +1509,8 @@ The incomplete list is
   CycleDriver      |   New time(y) = 1.19185
 
 
+.. _`PK: Transport`:
+
 Transport PK
 ------------
 { Transport_PK }
@@ -1764,15 +1780,21 @@ Chemistry PK
 { Chemistry_PK }
 
 
+.. _`PK: Chemistry Alquimia`:
+
 Alquimia
 ````````
 { Alquimia_PK }
 
 
+.. _`PK: Chemistry Amanzi`:
+
 Amanzi
 ``````
 { Amanzi_PK }
 
+
+.. _`PK: Energy`:
 
 Energy PK
 ---------
@@ -1911,6 +1933,8 @@ Again, constant functions can be replaced by any of the available functions.
   </ParameterList>
 
 
+.. _`PK: Navier-Stokes`:
+
 Navier Stokes PK
 ----------------
 { NavierStokes_PK }
@@ -1980,6 +2004,8 @@ This section to be written.
   </ParameterList>
 
 
+.. _`PK: Multiphase`:
+
 Multiphase PK
 -------------
 
@@ -1987,6 +2013,9 @@ Mathematical models
 ...................
 { Multiphase_PK }
 
+
+
+.. _`PK: Shallow Water`:
 
 Shallow water PK
 ----------------
@@ -2014,21 +2043,34 @@ sublist, described in Reconstruction_. Here is the example:
   </ParameterList>
 
 
-Coupled process kernels
-=======================
+Coupled PKs (MPCs)
+==================
 Coupling of process kernels requires additional parameters for PK 
 described above.
 
+.. admonition:: mpcs-typed-spec
+
+   - `"reactive transport`" See `MPC: Reactive Transport`_
+   - `"flow reactive transport`" See `MPC: Flow and Reactive Transport`_
+   - `"thermal flow`" See `MPC: Thermal Flow`_
+   - `"darcy matrix fracture`" See `MPC: Flow in Fractured Rock`_
+
+
+.. _`MPC: Reactive Transport`:
 
 Reactive transport PK
 ---------------------
 { ReactiveTransport_PK }
 
 
+.. _`MPC: Flow and Reactive Transport`:
+
 Flow and reactive transport PK
 ------------------------------
 { FlowReactiveTransport_PK }
 
+
+.. _`MPC: Thermal Flow`:
 
 Thermal flow PK
 ---------------
@@ -2056,6 +2098,8 @@ Diffusion operator
    </ParameterList>
    </ParameterList>
 
+
+.. _`MPC: Flow in Fractured Rock`:
 
 Coupled matrix-fracture Darcy flow PK
 -------------------------------------

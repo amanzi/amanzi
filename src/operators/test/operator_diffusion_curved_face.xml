@@ -1,0 +1,55 @@
+<ParameterList name="Main">
+
+  <!--  REGIONS  -->
+  <ParameterList name="regions">
+    <ParameterList name="Top side">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{1.0,1.0,1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- SOLVERS -->
+  <ParameterList name="solvers">
+    <ParameterList name="PCG">
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        <Parameter name="maximum number of iterations" type="int" value="400"/>
+        <Parameter name="error tolerance" type="double" value="1e-8"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- PRECONDITIONERS -->
+  <ParameterList name="preconditioners">
+    <ParameterList name="Hypre AMG">
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="use block indices" type="bool" value="true"/>
+        <Parameter name="cycle applications" type="int" value="2"/>
+        <Parameter name="smoother sweeps" type="int" value="3"/>
+        <Parameter name="strong threshold" type="double" value="0.25"/>
+        <Parameter name="tolerance" type="double" value="0.0"/>
+        <Parameter name="relaxation type" type="int" value="6"/>
+        <Parameter name="verbosity" type="int" value="0"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!--  OPERATORS  -->
+  <ParameterList name="PK operator">
+    <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+
+    <ParameterList name="diffusion curved face">
+      <Parameter name="discretization primary" type="string" value="mfd: curved face"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: default"/>
+      <Parameter name="schema" type="Array(string)" value="{face,cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face,cell}"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+

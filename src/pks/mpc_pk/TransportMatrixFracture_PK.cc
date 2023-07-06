@@ -161,10 +161,6 @@ TransportMatrixFracture_PK::Initialize()
     flag_dispersion_ |=
       Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(pk)->get_flag_dispersion();
   }
-
-  // decision to create this field could be possibly made during setup
-  if (!flag_dispersion_)
-    InitializeCVField(S_, *vo_, solute_diffusion_to_matrix_key_, Tags::DEFAULT, "state", 0.0);
 }
 
 
