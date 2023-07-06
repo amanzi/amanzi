@@ -687,8 +687,14 @@ FunctionFactory::create_bilinear_and_time(Teuchos::ParameterList& params) const
       << form_string << "\" -- valid are \"linear\" and \"constant\"";
     Exceptions::amanzi_throw(m);
   }
-  return std::make_unique<FunctionBilinearAndTime>(
-    filename, time_header, row_header, row_coordinate, col_header, col_coordinate, value_header, form);
+  return std::make_unique<FunctionBilinearAndTime>(filename,
+                                                   time_header,
+                                                   row_header,
+                                                   row_coordinate,
+                                                   col_header,
+                                                   col_coordinate,
+                                                   value_header,
+                                                   form);
 }
 
 

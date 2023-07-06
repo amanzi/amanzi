@@ -76,7 +76,8 @@ FunctionBilinearAndTime::operator()(const std::vector<double>& x) const
   // get the interval of the current time
   int interval = std::lower_bound(times_.begin(), times_.end(), x[0]) - times_.begin() - 1;
 
-  if ((interval < times_.size() - 1) && (x[0] + 1.e-6 > times_[interval + 1]) && form_ == Form_kind::CONSTANT) {
+  if ((interval < times_.size() - 1) && (x[0] + 1.e-6 > times_[interval + 1]) &&
+      form_ == Form_kind::CONSTANT) {
     // basicaly on the right-side endpoint -- need to deal with roundoff error
     // as this is a discontinuous case.  Note 1e-6 is chosen so that dt in
     // seconds is bigger than machine precision of a double on 100 years in

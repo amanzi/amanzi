@@ -127,9 +127,7 @@ TEST(tabular_test)
   CHECK_EQUAL((*g)(z), 2.0);
 
   // Now try with optional form argument
-  Form_kind form[3] = { Form_kind::CONSTANT,
-                        Form_kind::LINEAR,
-                        Form_kind::CONSTANT };
+  Form_kind form[3] = { Form_kind::CONSTANT, Form_kind::LINEAR, Form_kind::CONSTANT };
   std::vector<Form_kind> formvec(form, form + 3);
   f = new FunctionTabular(xvec, yvec, xi, formvec);
   z[0] = -1.0;
@@ -540,162 +538,163 @@ TEST(bilinear_and_time_test)
   //        [ 6 8 ]
   //        [ 7 9 ]
   {
-  FunctionBilinearAndTime f("test/bilinear_and_time.h5", "time", "x", "x", "y", "y", "values", Form_kind::LINEAR);
-  CHECK_CLOSE(0., f(std::vector<double>{ -1., 0., 0. }), 1.e-7);
-  CHECK_CLOSE(0., f(std::vector<double>{ 0., 0., 0. }), 1.e-7);
-  CHECK_CLOSE(1., f(std::vector<double>{ .25, 0., 0. }), 1.e-7);
-  CHECK_CLOSE(1., f(std::vector<double>{ .25, -1., -1. }), 1.e-7);
-  CHECK_CLOSE(1., f(std::vector<double>{ .25, 3., 3. }), 1.e-7);
-  CHECK_CLOSE(3., f(std::vector<double>{ .75, 0., 0. }), 1.e-7);
-  CHECK_CLOSE(3., f(std::vector<double>{ .75, 3., 3. }), 1.e-7);
-  CHECK_CLOSE(4., f(std::vector<double>{ 1., 0., 0. }), 1.e-7);
-  CHECK_CLOSE(4., f(std::vector<double>{ 1., 3., 3. }), 1.e-7);
+    FunctionBilinearAndTime f(
+      "test/bilinear_and_time.h5", "time", "x", "x", "y", "y", "values", Form_kind::LINEAR);
+    CHECK_CLOSE(0., f(std::vector<double>{ -1., 0., 0. }), 1.e-7);
+    CHECK_CLOSE(0., f(std::vector<double>{ 0., 0., 0. }), 1.e-7);
+    CHECK_CLOSE(1., f(std::vector<double>{ .25, 0., 0. }), 1.e-7);
+    CHECK_CLOSE(1., f(std::vector<double>{ .25, -1., -1. }), 1.e-7);
+    CHECK_CLOSE(1., f(std::vector<double>{ .25, 3., 3. }), 1.e-7);
+    CHECK_CLOSE(3., f(std::vector<double>{ .75, 0., 0. }), 1.e-7);
+    CHECK_CLOSE(3., f(std::vector<double>{ .75, 3., 3. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 1., 0., 0. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 1., 3., 3. }), 1.e-7);
 
-  CHECK_CLOSE(4., f(std::vector<double>{ 2.0, -1., -1. }), 1.e-7);
-  CHECK_CLOSE(4., f(std::vector<double>{ 2.0, 0., -1. }), 1.e-7);
-  CHECK_CLOSE(4.05, f(std::vector<double>{ 2.0, 0.1, -1. }), 1.e-7);
-  CHECK_CLOSE(4.5, f(std::vector<double>{ 2.0, 1., -1. }), 1.e-7);
-  CHECK_CLOSE(4.95, f(std::vector<double>{ 2.0, 1.9, -1. }), 1.e-7);
-  CHECK_CLOSE(5., f(std::vector<double>{ 2.0, 2, -1. }), 1.e-7);
-  CHECK_CLOSE(5., f(std::vector<double>{ 2.0, 2.1, -1. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 2.0, -1., -1. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 2.0, 0., -1. }), 1.e-7);
+    CHECK_CLOSE(4.05, f(std::vector<double>{ 2.0, 0.1, -1. }), 1.e-7);
+    CHECK_CLOSE(4.5, f(std::vector<double>{ 2.0, 1., -1. }), 1.e-7);
+    CHECK_CLOSE(4.95, f(std::vector<double>{ 2.0, 1.9, -1. }), 1.e-7);
+    CHECK_CLOSE(5., f(std::vector<double>{ 2.0, 2, -1. }), 1.e-7);
+    CHECK_CLOSE(5., f(std::vector<double>{ 2.0, 2.1, -1. }), 1.e-7);
 
-  CHECK_CLOSE(4., f(std::vector<double>{ 2.0, -1., 0. }), 1.e-7);
-  CHECK_CLOSE(4., f(std::vector<double>{ 2.0, 0., 0. }), 1.e-7);
-  CHECK_CLOSE(4.05, f(std::vector<double>{ 2.0, 0.1, 0. }), 1.e-7);
-  CHECK_CLOSE(4.5, f(std::vector<double>{ 2.0, 1., 0. }), 1.e-7);
-  CHECK_CLOSE(4.95, f(std::vector<double>{ 2.0, 1.9, 0. }), 1.e-7);
-  CHECK_CLOSE(5., f(std::vector<double>{ 2.0, 2, 0. }), 1.e-7);
-  CHECK_CLOSE(5., f(std::vector<double>{ 2.0, 2.1, 0. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 2.0, -1., 0. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 2.0, 0., 0. }), 1.e-7);
+    CHECK_CLOSE(4.05, f(std::vector<double>{ 2.0, 0.1, 0. }), 1.e-7);
+    CHECK_CLOSE(4.5, f(std::vector<double>{ 2.0, 1., 0. }), 1.e-7);
+    CHECK_CLOSE(4.95, f(std::vector<double>{ 2.0, 1.9, 0. }), 1.e-7);
+    CHECK_CLOSE(5., f(std::vector<double>{ 2.0, 2, 0. }), 1.e-7);
+    CHECK_CLOSE(5., f(std::vector<double>{ 2.0, 2.1, 0. }), 1.e-7);
 
-  CHECK_CLOSE(4.05, f(std::vector<double>{ 2.0, -1., 0.1 }), 1.e-7);
-  CHECK_CLOSE(4.05, f(std::vector<double>{ 2.0, 0., 0.1 }), 1.e-7);
-  CHECK_CLOSE(4.1, f(std::vector<double>{ 2.0, 0.1, 0.1 }), 1.e-7);
-  CHECK_CLOSE(4.55, f(std::vector<double>{ 2.0, 1., 0.1 }), 1.e-7);
-  CHECK_CLOSE(5., f(std::vector<double>{ 2.0, 1.9, 0.1 }), 1.e-7);
-  CHECK_CLOSE(5.05, f(std::vector<double>{ 2.0, 2, 0.1 }), 1.e-7);
-  CHECK_CLOSE(5.05, f(std::vector<double>{ 2.0, 2.1, 0.1 }), 1.e-7);
+    CHECK_CLOSE(4.05, f(std::vector<double>{ 2.0, -1., 0.1 }), 1.e-7);
+    CHECK_CLOSE(4.05, f(std::vector<double>{ 2.0, 0., 0.1 }), 1.e-7);
+    CHECK_CLOSE(4.1, f(std::vector<double>{ 2.0, 0.1, 0.1 }), 1.e-7);
+    CHECK_CLOSE(4.55, f(std::vector<double>{ 2.0, 1., 0.1 }), 1.e-7);
+    CHECK_CLOSE(5., f(std::vector<double>{ 2.0, 1.9, 0.1 }), 1.e-7);
+    CHECK_CLOSE(5.05, f(std::vector<double>{ 2.0, 2, 0.1 }), 1.e-7);
+    CHECK_CLOSE(5.05, f(std::vector<double>{ 2.0, 2.1, 0.1 }), 1.e-7);
 
-  CHECK_CLOSE(5., f(std::vector<double>{ 2.0, -1., 2.0 }), 1.e-7);
-  CHECK_CLOSE(5., f(std::vector<double>{ 2.0, 0., 2.0 }), 1.e-7);
-  CHECK_CLOSE(5.05, f(std::vector<double>{ 2.0, 0.1, 2.0 }), 1.e-7);
-  CHECK_CLOSE(5.5, f(std::vector<double>{ 2.0, 1., 2.0 }), 1.e-7);
-  CHECK_CLOSE(5.95, f(std::vector<double>{ 2.0, 1.9, 2.0 }), 1.e-7);
-  CHECK_CLOSE(6., f(std::vector<double>{ 2.0, 2, 2.0 }), 1.e-7);
-  CHECK_CLOSE(6., f(std::vector<double>{ 2.0, 2.1, 2.0 }), 1.e-7);
+    CHECK_CLOSE(5., f(std::vector<double>{ 2.0, -1., 2.0 }), 1.e-7);
+    CHECK_CLOSE(5., f(std::vector<double>{ 2.0, 0., 2.0 }), 1.e-7);
+    CHECK_CLOSE(5.05, f(std::vector<double>{ 2.0, 0.1, 2.0 }), 1.e-7);
+    CHECK_CLOSE(5.5, f(std::vector<double>{ 2.0, 1., 2.0 }), 1.e-7);
+    CHECK_CLOSE(5.95, f(std::vector<double>{ 2.0, 1.9, 2.0 }), 1.e-7);
+    CHECK_CLOSE(6., f(std::vector<double>{ 2.0, 2, 2.0 }), 1.e-7);
+    CHECK_CLOSE(6., f(std::vector<double>{ 2.0, 2.1, 2.0 }), 1.e-7);
 
-  CHECK_CLOSE(5.05, f(std::vector<double>{ 2.0, -1., 2.1 }), 1.e-7);
-  CHECK_CLOSE(5.05, f(std::vector<double>{ 2.0, 0., 2.1 }), 1.e-7);
-  CHECK_CLOSE(5.1, f(std::vector<double>{ 2.0, 0.1, 2.1 }), 1.e-7);
-  CHECK_CLOSE(5.55, f(std::vector<double>{ 2.0, 1., 2.1 }), 1.e-7);
-  CHECK_CLOSE(6., f(std::vector<double>{ 2.0, 1.9, 2.1 }), 1.e-7);
-  CHECK_CLOSE(6.05, f(std::vector<double>{ 2.0, 2, 2.1 }), 1.e-7);
-  CHECK_CLOSE(6.05, f(std::vector<double>{ 2.0, 2.1, 2.1 }), 1.e-7);
+    CHECK_CLOSE(5.05, f(std::vector<double>{ 2.0, -1., 2.1 }), 1.e-7);
+    CHECK_CLOSE(5.05, f(std::vector<double>{ 2.0, 0., 2.1 }), 1.e-7);
+    CHECK_CLOSE(5.1, f(std::vector<double>{ 2.0, 0.1, 2.1 }), 1.e-7);
+    CHECK_CLOSE(5.55, f(std::vector<double>{ 2.0, 1., 2.1 }), 1.e-7);
+    CHECK_CLOSE(6., f(std::vector<double>{ 2.0, 1.9, 2.1 }), 1.e-7);
+    CHECK_CLOSE(6.05, f(std::vector<double>{ 2.0, 2, 2.1 }), 1.e-7);
+    CHECK_CLOSE(6.05, f(std::vector<double>{ 2.0, 2.1, 2.1 }), 1.e-7);
 
-  CHECK_CLOSE(5.5, f(std::vector<double>{ 2.0, -1., 3.0 }), 1.e-7);
-  CHECK_CLOSE(5.5, f(std::vector<double>{ 2.0, 0., 3.0 }), 1.e-7);
-  CHECK_CLOSE(5.55, f(std::vector<double>{ 2.0, 0.1, 3.0 }), 1.e-7);
-  CHECK_CLOSE(6., f(std::vector<double>{ 2.0, 1., 3.0 }), 1.e-7);
-  CHECK_CLOSE(6.45, f(std::vector<double>{ 2.0, 1.9, 3.0 }), 1.e-7);
-  CHECK_CLOSE(6.5, f(std::vector<double>{ 2.0, 2, 3.0 }), 1.e-7);
-  CHECK_CLOSE(6.5, f(std::vector<double>{ 2.0, 2.1, 3.0 }), 1.e-7);
+    CHECK_CLOSE(5.5, f(std::vector<double>{ 2.0, -1., 3.0 }), 1.e-7);
+    CHECK_CLOSE(5.5, f(std::vector<double>{ 2.0, 0., 3.0 }), 1.e-7);
+    CHECK_CLOSE(5.55, f(std::vector<double>{ 2.0, 0.1, 3.0 }), 1.e-7);
+    CHECK_CLOSE(6., f(std::vector<double>{ 2.0, 1., 3.0 }), 1.e-7);
+    CHECK_CLOSE(6.45, f(std::vector<double>{ 2.0, 1.9, 3.0 }), 1.e-7);
+    CHECK_CLOSE(6.5, f(std::vector<double>{ 2.0, 2, 3.0 }), 1.e-7);
+    CHECK_CLOSE(6.5, f(std::vector<double>{ 2.0, 2.1, 3.0 }), 1.e-7);
 
-  CHECK_CLOSE(5.5, f(std::vector<double>{ 2.0, -1., 4.0 }), 1.e-7);
-  CHECK_CLOSE(5.5, f(std::vector<double>{ 2.0, 0., 4.0 }), 1.e-7);
-  CHECK_CLOSE(5.55, f(std::vector<double>{ 2.0, 0.1, 4.0 }), 1.e-7);
-  CHECK_CLOSE(6., f(std::vector<double>{ 2.0, 1., 4.0 }), 1.e-7);
-  CHECK_CLOSE(6.45, f(std::vector<double>{ 2.0, 1.9, 4.0 }), 1.e-7);
-  CHECK_CLOSE(6.5, f(std::vector<double>{ 2.0, 2, 4.0 }), 1.e-7);
-  CHECK_CLOSE(6.5, f(std::vector<double>{ 2.0, 2.1, 4.0 }), 1.e-7);
+    CHECK_CLOSE(5.5, f(std::vector<double>{ 2.0, -1., 4.0 }), 1.e-7);
+    CHECK_CLOSE(5.5, f(std::vector<double>{ 2.0, 0., 4.0 }), 1.e-7);
+    CHECK_CLOSE(5.55, f(std::vector<double>{ 2.0, 0.1, 4.0 }), 1.e-7);
+    CHECK_CLOSE(6., f(std::vector<double>{ 2.0, 1., 4.0 }), 1.e-7);
+    CHECK_CLOSE(6.45, f(std::vector<double>{ 2.0, 1.9, 4.0 }), 1.e-7);
+    CHECK_CLOSE(6.5, f(std::vector<double>{ 2.0, 2, 4.0 }), 1.e-7);
+    CHECK_CLOSE(6.5, f(std::vector<double>{ 2.0, 2.1, 4.0 }), 1.e-7);
 
-  // check again (can we go out of order in time)
-  CHECK_CLOSE(0., f(std::vector<double>{ -1., 0., 0. }), 1.e-7);
-  CHECK_CLOSE(0., f(std::vector<double>{ 0., 0., 0. }), 1.e-7);
-  CHECK_CLOSE(1., f(std::vector<double>{ .25, 0., 0. }), 1.e-7);
-  CHECK_CLOSE(1., f(std::vector<double>{ .25, -1., -1. }), 1.e-7);
-  CHECK_CLOSE(1., f(std::vector<double>{ .25, 3., 3. }), 1.e-7);
-  CHECK_CLOSE(3., f(std::vector<double>{ .75, 0., 0. }), 1.e-7);
-  CHECK_CLOSE(3., f(std::vector<double>{ .75, 3., 3. }), 1.e-7);
-  CHECK_CLOSE(4., f(std::vector<double>{ 1., 0., 0. }), 1.e-7);
-  CHECK_CLOSE(4., f(std::vector<double>{ 1., 3., 3. }), 1.e-7);
+    // check again (can we go out of order in time)
+    CHECK_CLOSE(0., f(std::vector<double>{ -1., 0., 0. }), 1.e-7);
+    CHECK_CLOSE(0., f(std::vector<double>{ 0., 0., 0. }), 1.e-7);
+    CHECK_CLOSE(1., f(std::vector<double>{ .25, 0., 0. }), 1.e-7);
+    CHECK_CLOSE(1., f(std::vector<double>{ .25, -1., -1. }), 1.e-7);
+    CHECK_CLOSE(1., f(std::vector<double>{ .25, 3., 3. }), 1.e-7);
+    CHECK_CLOSE(3., f(std::vector<double>{ .75, 0., 0. }), 1.e-7);
+    CHECK_CLOSE(3., f(std::vector<double>{ .75, 3., 3. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 1., 0., 0. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 1., 3., 3. }), 1.e-7);
 
-  CHECK_CLOSE(4., f(std::vector<double>{ 2.0, -1., -1. }), 1.e-7);
-  CHECK_CLOSE(4., f(std::vector<double>{ 2.0, 0., -1. }), 1.e-7);
-  CHECK_CLOSE(4.05, f(std::vector<double>{ 2.0, 0.1, -1. }), 1.e-7);
-  CHECK_CLOSE(4.5, f(std::vector<double>{ 2.0, 1., -1. }), 1.e-7);
-  CHECK_CLOSE(4.95, f(std::vector<double>{ 2.0, 1.9, -1. }), 1.e-7);
-  CHECK_CLOSE(5., f(std::vector<double>{ 2.0, 2, -1. }), 1.e-7);
-  CHECK_CLOSE(5., f(std::vector<double>{ 2.0, 2.1, -1. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 2.0, -1., -1. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 2.0, 0., -1. }), 1.e-7);
+    CHECK_CLOSE(4.05, f(std::vector<double>{ 2.0, 0.1, -1. }), 1.e-7);
+    CHECK_CLOSE(4.5, f(std::vector<double>{ 2.0, 1., -1. }), 1.e-7);
+    CHECK_CLOSE(4.95, f(std::vector<double>{ 2.0, 1.9, -1. }), 1.e-7);
+    CHECK_CLOSE(5., f(std::vector<double>{ 2.0, 2, -1. }), 1.e-7);
+    CHECK_CLOSE(5., f(std::vector<double>{ 2.0, 2.1, -1. }), 1.e-7);
   }
   {
-  FunctionBilinearAndTime f("test/bilinear_and_time.h5", "time", "x", "x", "y", "y", "values", Form_kind::CONSTANT);
-  CHECK_CLOSE(0., f(std::vector<double>{ -1., 0., 0. }), 1.e-7);
-  CHECK_CLOSE(0., f(std::vector<double>{ 0., 0., 0. }), 1.e-7);
-  CHECK_CLOSE(0., f(std::vector<double>{ .25, 0., 0. }), 1.e-7);
-  CHECK_CLOSE(0., f(std::vector<double>{ .25, -1., -1. }), 1.e-7);
-  CHECK_CLOSE(0., f(std::vector<double>{ .25, 3., 3. }), 1.e-7);
-  CHECK_CLOSE(0., f(std::vector<double>{ .75, 0., 0. }), 1.e-7);
-  CHECK_CLOSE(0., f(std::vector<double>{ .75, 3., 3. }), 1.e-7);
+    FunctionBilinearAndTime f(
+      "test/bilinear_and_time.h5", "time", "x", "x", "y", "y", "values", Form_kind::CONSTANT);
+    CHECK_CLOSE(0., f(std::vector<double>{ -1., 0., 0. }), 1.e-7);
+    CHECK_CLOSE(0., f(std::vector<double>{ 0., 0., 0. }), 1.e-7);
+    CHECK_CLOSE(0., f(std::vector<double>{ .25, 0., 0. }), 1.e-7);
+    CHECK_CLOSE(0., f(std::vector<double>{ .25, -1., -1. }), 1.e-7);
+    CHECK_CLOSE(0., f(std::vector<double>{ .25, 3., 3. }), 1.e-7);
+    CHECK_CLOSE(0., f(std::vector<double>{ .75, 0., 0. }), 1.e-7);
+    CHECK_CLOSE(0., f(std::vector<double>{ .75, 3., 3. }), 1.e-7);
 
-  CHECK_CLOSE(4., f(std::vector<double>{ 1., 0., 0. }), 1.e-7);
-  CHECK_CLOSE(4., f(std::vector<double>{ 1., 3., 3. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 1., 0., 0. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 1., 3., 3. }), 1.e-7);
 
-  CHECK_CLOSE(4., f(std::vector<double>{ 2., 0., 0. }), 1.e-7);
-  CHECK_CLOSE(4., f(std::vector<double>{ 2., 3., 3. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 2., 0., 0. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 2., 3., 3. }), 1.e-7);
 
-  CHECK_CLOSE(4., f(std::vector<double>{ 2.9, 0., 0. }), 1.e-7);
-  CHECK_CLOSE(4., f(std::vector<double>{ 2.9, 3., 3. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 2.9, 0., 0. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 2.9, 3., 3. }), 1.e-7);
 
-  CHECK_CLOSE(4., f(std::vector<double>{ 3.0, -1., 0. }), 1.e-7);
-  CHECK_CLOSE(4., f(std::vector<double>{ 3.0, 0., 0. }), 1.e-7);
-  CHECK_CLOSE(4.1, f(std::vector<double>{ 3.0, 0.1, 0. }), 1.e-7);
-  CHECK_CLOSE(5, f(std::vector<double>{ 3.0, 1., 0. }), 1.e-7);
-  CHECK_CLOSE(5.9, f(std::vector<double>{ 3.0, 1.9, 0. }), 1.e-7);
-  CHECK_CLOSE(6., f(std::vector<double>{ 3.0, 2, 0. }), 1.e-7);
-  CHECK_CLOSE(6., f(std::vector<double>{ 3.0, 2.1, 0. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 3.0, -1., 0. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 3.0, 0., 0. }), 1.e-7);
+    CHECK_CLOSE(4.1, f(std::vector<double>{ 3.0, 0.1, 0. }), 1.e-7);
+    CHECK_CLOSE(5, f(std::vector<double>{ 3.0, 1., 0. }), 1.e-7);
+    CHECK_CLOSE(5.9, f(std::vector<double>{ 3.0, 1.9, 0. }), 1.e-7);
+    CHECK_CLOSE(6., f(std::vector<double>{ 3.0, 2, 0. }), 1.e-7);
+    CHECK_CLOSE(6., f(std::vector<double>{ 3.0, 2.1, 0. }), 1.e-7);
 
-  CHECK_CLOSE(4.1, f(std::vector<double>{ 3.0, -1., 0.1 }), 1.e-7);
-  CHECK_CLOSE(4.1, f(std::vector<double>{ 3.0, 0., 0.1 }), 1.e-7);
-  CHECK_CLOSE(4.2, f(std::vector<double>{ 3.0, 0.1, 0.1 }), 1.e-7);
-  CHECK_CLOSE(5.1, f(std::vector<double>{ 3.0, 1., 0.1 }), 1.e-7);
-  CHECK_CLOSE(6., f(std::vector<double>{ 3.0, 1.9, 0.1 }), 1.e-7);
-  CHECK_CLOSE(6.1, f(std::vector<double>{ 3.0, 2, 0.1 }), 1.e-7);
-  CHECK_CLOSE(6.1, f(std::vector<double>{ 3.0, 2.1, 0.1 }), 1.e-7);
+    CHECK_CLOSE(4.1, f(std::vector<double>{ 3.0, -1., 0.1 }), 1.e-7);
+    CHECK_CLOSE(4.1, f(std::vector<double>{ 3.0, 0., 0.1 }), 1.e-7);
+    CHECK_CLOSE(4.2, f(std::vector<double>{ 3.0, 0.1, 0.1 }), 1.e-7);
+    CHECK_CLOSE(5.1, f(std::vector<double>{ 3.0, 1., 0.1 }), 1.e-7);
+    CHECK_CLOSE(6., f(std::vector<double>{ 3.0, 1.9, 0.1 }), 1.e-7);
+    CHECK_CLOSE(6.1, f(std::vector<double>{ 3.0, 2, 0.1 }), 1.e-7);
+    CHECK_CLOSE(6.1, f(std::vector<double>{ 3.0, 2.1, 0.1 }), 1.e-7);
 
-  CHECK_CLOSE(4.1, f(std::vector<double>{ 4.0, -1., 0.1 }), 1.e-7);
-  CHECK_CLOSE(4.1, f(std::vector<double>{ 4.0, 0., 0.1 }), 1.e-7);
-  CHECK_CLOSE(4.2, f(std::vector<double>{ 4.0, 0.1, 0.1 }), 1.e-7);
-  CHECK_CLOSE(5.1, f(std::vector<double>{ 4.0, 1., 0.1 }), 1.e-7);
-  CHECK_CLOSE(6., f(std::vector<double>{ 4.0, 1.9, 0.1 }), 1.e-7);
-  CHECK_CLOSE(6.1, f(std::vector<double>{ 4.0, 2, 0.1 }), 1.e-7);
-  CHECK_CLOSE(6.1, f(std::vector<double>{ 4.0, 2.1, 0.1 }), 1.e-7);
+    CHECK_CLOSE(4.1, f(std::vector<double>{ 4.0, -1., 0.1 }), 1.e-7);
+    CHECK_CLOSE(4.1, f(std::vector<double>{ 4.0, 0., 0.1 }), 1.e-7);
+    CHECK_CLOSE(4.2, f(std::vector<double>{ 4.0, 0.1, 0.1 }), 1.e-7);
+    CHECK_CLOSE(5.1, f(std::vector<double>{ 4.0, 1., 0.1 }), 1.e-7);
+    CHECK_CLOSE(6., f(std::vector<double>{ 4.0, 1.9, 0.1 }), 1.e-7);
+    CHECK_CLOSE(6.1, f(std::vector<double>{ 4.0, 2, 0.1 }), 1.e-7);
+    CHECK_CLOSE(6.1, f(std::vector<double>{ 4.0, 2.1, 0.1 }), 1.e-7);
 
 
-  // check again (can we go out of order in time)
-  CHECK_CLOSE(0., f(std::vector<double>{ -1., 0., 0. }), 1.e-7);
-  CHECK_CLOSE(0., f(std::vector<double>{ 0., 0., 0. }), 1.e-7);
-  CHECK_CLOSE(0., f(std::vector<double>{ .25, 0., 0. }), 1.e-7);
-  CHECK_CLOSE(0., f(std::vector<double>{ .25, -1., -1. }), 1.e-7);
-  CHECK_CLOSE(0., f(std::vector<double>{ .25, 3., 3. }), 1.e-7);
-  CHECK_CLOSE(0., f(std::vector<double>{ .75, 0., 0. }), 1.e-7);
-  CHECK_CLOSE(0., f(std::vector<double>{ .75, 3., 3. }), 1.e-7);
-  CHECK_CLOSE(4., f(std::vector<double>{ 1., 0., 0. }), 1.e-7);
-  CHECK_CLOSE(4., f(std::vector<double>{ 1., 3., 3. }), 1.e-7);
+    // check again (can we go out of order in time)
+    CHECK_CLOSE(0., f(std::vector<double>{ -1., 0., 0. }), 1.e-7);
+    CHECK_CLOSE(0., f(std::vector<double>{ 0., 0., 0. }), 1.e-7);
+    CHECK_CLOSE(0., f(std::vector<double>{ .25, 0., 0. }), 1.e-7);
+    CHECK_CLOSE(0., f(std::vector<double>{ .25, -1., -1. }), 1.e-7);
+    CHECK_CLOSE(0., f(std::vector<double>{ .25, 3., 3. }), 1.e-7);
+    CHECK_CLOSE(0., f(std::vector<double>{ .75, 0., 0. }), 1.e-7);
+    CHECK_CLOSE(0., f(std::vector<double>{ .75, 3., 3. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 1., 0., 0. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 1., 3., 3. }), 1.e-7);
 
-  CHECK_CLOSE(4., f(std::vector<double>{ 2.0, -1., -1. }), 1.e-7);
-  CHECK_CLOSE(4., f(std::vector<double>{ 2.0, 0., -1. }), 1.e-7);
-  CHECK_CLOSE(4.1, f(std::vector<double>{ 3.0, 0.1, -1. }), 1.e-7);
-  CHECK_CLOSE(5, f(std::vector<double>{ 3.0, 1., -1. }), 1.e-7);
-  CHECK_CLOSE(5.9, f(std::vector<double>{ 3.0, 1.9, -1. }), 1.e-7);
-  CHECK_CLOSE(6., f(std::vector<double>{ 3.0, 2, -1. }), 1.e-7);
-  CHECK_CLOSE(6., f(std::vector<double>{ 3.0, 2.1, -1. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 2.0, -1., -1. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 2.0, 0., -1. }), 1.e-7);
+    CHECK_CLOSE(4.1, f(std::vector<double>{ 3.0, 0.1, -1. }), 1.e-7);
+    CHECK_CLOSE(5, f(std::vector<double>{ 3.0, 1., -1. }), 1.e-7);
+    CHECK_CLOSE(5.9, f(std::vector<double>{ 3.0, 1.9, -1. }), 1.e-7);
+    CHECK_CLOSE(6., f(std::vector<double>{ 3.0, 2, -1. }), 1.e-7);
+    CHECK_CLOSE(6., f(std::vector<double>{ 3.0, 2.1, -1. }), 1.e-7);
 
-  CHECK_CLOSE(4., f(std::vector<double>{ 4.0, -1., -1. }), 1.e-7);
-  CHECK_CLOSE(4., f(std::vector<double>{ 4.0, 0., -1. }), 1.e-7);
-  CHECK_CLOSE(4.1, f(std::vector<double>{ 4.0, 0.1, -1. }), 1.e-7);
-  CHECK_CLOSE(5, f(std::vector<double>{ 4.0, 1., -1. }), 1.e-7);
-  CHECK_CLOSE(5.9, f(std::vector<double>{ 4.0, 1.9, -1. }), 1.e-7);
-  CHECK_CLOSE(6., f(std::vector<double>{ 4.0, 2, -1. }), 1.e-7);
-  CHECK_CLOSE(6., f(std::vector<double>{ 4.0, 2.1, -1. }), 1.e-7);
-
+    CHECK_CLOSE(4., f(std::vector<double>{ 4.0, -1., -1. }), 1.e-7);
+    CHECK_CLOSE(4., f(std::vector<double>{ 4.0, 0., -1. }), 1.e-7);
+    CHECK_CLOSE(4.1, f(std::vector<double>{ 4.0, 0.1, -1. }), 1.e-7);
+    CHECK_CLOSE(5, f(std::vector<double>{ 4.0, 1., -1. }), 1.e-7);
+    CHECK_CLOSE(5.9, f(std::vector<double>{ 4.0, 1.9, -1. }), 1.e-7);
+    CHECK_CLOSE(6., f(std::vector<double>{ 4.0, 2, -1. }), 1.e-7);
+    CHECK_CLOSE(6., f(std::vector<double>{ 4.0, 2.1, -1. }), 1.e-7);
   }
 }
