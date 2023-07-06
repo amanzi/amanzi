@@ -116,18 +116,15 @@ namespace Amanzi {
 
 class FunctionTabular : public Function {
  public:
-  enum Form { LINEAR, CONSTANT, FUNCTION };
-
- public:
   FunctionTabular(const std::vector<double>& x, const std::vector<double>& y, const int xi);
   FunctionTabular(const std::vector<double>& x,
                   const std::vector<double>& y,
                   const int xi,
-                  const std::vector<Form>& form);
+                  const std::vector<Form_kind>& form);
   FunctionTabular(const std::vector<double>& x,
                   const std::vector<double>& y,
                   const int xi,
-                  const std::vector<Form>& form,
+                  const std::vector<Form_kind>& form,
                   std::vector<std::unique_ptr<Function>> func);
   FunctionTabular(const FunctionTabular& other);
   ~FunctionTabular(){};
@@ -138,13 +135,13 @@ class FunctionTabular : public Function {
  private:
   std::vector<double> x_, y_;
   int xi_;
-  std::vector<Form> form_;
+  std::vector<Form_kind> form_;
   std::vector<std::unique_ptr<Function>> func_;
 
  private: // helper functions
   void check_args(const std::vector<double>&,
                   const std::vector<double>&,
-                  const std::vector<Form>&) const;
+                  const std::vector<Form_kind>&) const;
 };
 
 } // namespace Amanzi

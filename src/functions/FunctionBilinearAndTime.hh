@@ -29,6 +29,10 @@ bounds.
 * `"column header`" ``[string]`` **y** name of the column dataset, the :math:`y_i`
 * `"column coordinate`" ``[string]`` **y** one of `"x`",`"y`",`"z`"
 * `"value header`" ``[string]`` name of the values dataset, the :math:`u_{{i,j}}`
+* `"forms`" ``[string]`` **linear** Describes the temporal interpolant, one
+  of `"linear`" or `"constant`", where `"linear`" is therefore trilinear
+  interpolation (2x space and time) and `"constant`" indicates that the value
+  on an interval is provided by the left point's (earlier in time) value.
 
 Example1:
 
@@ -73,7 +77,8 @@ class FunctionBilinearAndTime : public Function {
                           const std::string& row_coordinate,
                           const std::string& column_header,
                           const std::string& column_coordinate,
-                          const std::string& val_header);
+                          const std::string& val_header,
+                          Form_kind form);
 
   FunctionBilinearAndTime(const FunctionBilinearAndTime& other);
 
@@ -93,6 +98,8 @@ class FunctionBilinearAndTime : public Function {
   int row_index_, col_index_;
   std::vector<double> times_;
   std::string filename_;
+  Form_kind form_;
+
   mutable double t_before_;
   mutable double t_after_;
   mutable int current_interval_;
