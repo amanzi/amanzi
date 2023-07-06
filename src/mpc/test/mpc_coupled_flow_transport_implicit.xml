@@ -262,6 +262,21 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="fracture-solute_diffusion_to_matrix">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0e-6"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
@@ -296,19 +311,6 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="3.9240e-07"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="fracture-solute_diffusion_to_matrix">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0e-6"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -684,8 +686,8 @@
     <ParameterList name="transport matrix">
       <Parameter name="domain name" type="string" value="domain"/>      
       <Parameter name="cfl" type="double" value="0.5"/>   
-      <Parameter name="spatial discretization order" type="int" value="1"/>   
-      <Parameter name="temporal discretization order" type="int" value="1"/>
+      <Parameter name="spatial discretization order" type="int" value="2"/>   
+      <Parameter name="temporal discretization order" type="int" value="2"/>
       <Parameter name="transport subcycling" type="bool" value="false"/>      
       <!-- developers parameters --> 
       <Parameter name="enable internal tests" type="bool" value="true"/>   
@@ -782,8 +784,8 @@
     <ParameterList name="transport fracture">
       <Parameter name="domain name" type="string" value="fracture"/>      
       <Parameter name="cfl" type="double" value="0.5"/>   
-      <Parameter name="spatial discretization order" type="int" value="1"/>   
-      <Parameter name="temporal discretization order" type="int" value="1"/>
+      <Parameter name="spatial discretization order" type="int" value="2"/>   
+      <Parameter name="temporal discretization order" type="int" value="2"/>
       <Parameter name="transport subcycling" type="bool" value="false"/>
       <!-- developers parameters --> 
       <Parameter name="enable internal tests" type="bool" value="true"/>   

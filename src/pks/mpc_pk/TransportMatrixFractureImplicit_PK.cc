@@ -87,10 +87,12 @@ TransportMatrixFractureImplicit_PK::Setup()
        ->SetGhosted(true) = *cvs;
   }
 
-  S_->Require<CV_t, CVS_t>("fracture-solute_diffusion_to_matrix", Tags::DEFAULT, "state")
+  S_->Require<CV_t, CVS_t>(
+    "fracture-solute_diffusion_to_matrix", Tags::DEFAULT, "fracture-solute_diffusion_to_matrix")
     .SetMesh(mesh_fracture_)
     ->SetGhosted(true)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
+    ->SetComponent("cell", AmanziMesh::CELL, 2);
+  S_->RequireEvaluator("fracture-solute_diffusion_to_matrix", Tags::DEFAULT);
 
   // process other PKs
   PK_MPCStrong<PK_BDF>::Setup();
@@ -244,9 +246,6 @@ TransportMatrixFractureImplicit_PK::Initialize()
   inv_list.setName(name);
   op_tree_matrix_->set_inverse_parameters(inv_list);
   op_tree_matrix_->InitializeInverse();
-
-  if (!flag_dispersion_)
-    InitializeCVField(S_, *vo_, "fracture-solute_diffusion_to_matrix", Tags::DEFAULT, "state", 0.0);
 
   // time integrators
   if (nspace_m_ == 2 && nspace_f_ == 2) {
