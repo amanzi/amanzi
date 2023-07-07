@@ -326,6 +326,7 @@ if (ENABLE_TESTS)
 
     add_amanzi_test(operators_diffusion_curved_face operators_diffusion_curved_face
                     KIND unit
+                    NPROCS 2
                     SOURCE test/Main.cc test/operator_diffusion_curved_face.cc
                     LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
                     

@@ -40,7 +40,7 @@
 * Exactness test for diffusion solver on meshes with curved faces.
 ***************************************************************** */
 void
-RunTestDiffusionCurved(const std::string& filename)
+RunTestDiffusionCurved(const std::string& filename, int icase)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -86,18 +86,32 @@ RunTestDiffusionCurved(const std::string& filename)
   auto op = Teuchos::rcp(new PDE_DiffusionCurvedFace(op_list, mesh));
 
   // -- boundary data
+  int nneu(0);
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
-  for (int f = 0; f < nfaces_wghost; f++) {
+  const auto fmap = mesh->face_map(true);
+  const auto bfmap = mesh->exterior_face_map(true);
+
+  // for (int f = 0; f < nfaces_wghost; ++f) {
+  for (int n = 0; n < bfmap.NumMyElements(); ++n) {
+    int f = fmap.LID(bfmap.GID(n));
     const Point& xf = mesh->face_centroid(f);
 
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
-        fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
-      auto yf = (*op->get_bf())[f];
-      bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value[f] = ana.pressure_exact(yf, 0.0);
+    auto yf = (*op->get_bf())[f];
+    bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+    bc_value[f] = ana.pressure_exact(yf, 0.0);
+
+    // overwrite boundary data on case-by-case basis
+    if (icase == 1) {
+      if (fabs(xf[1]) < 1e-6) {
+        double area = mesh->face_area(f);
+        const Point& normal = mesh->face_normal(f);
+        bc_model[f] = OPERATOR_BC_NEUMANN;
+        bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
+        nneu++;
+      }
     }
   }
   op->SetBCs(bc, bc);
@@ -133,7 +147,7 @@ RunTestDiffusionCurved(const std::string& filename)
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << global_op->residual()
               << " itr=" << global_op->num_itrs() << " code=" << global_op->returned_code()
-              << std::endl;
+              << ",  Neumann BCs: " << nneu << std::endl;
   }
 
   // Post-processing
@@ -158,7 +172,7 @@ RunTestDiffusionCurved(const std::string& filename)
            uinf_err,
            global_op->num_itrs());
 
-    CHECK(pl2_err < 0.001 && ul2_err < 0.01);
+    CHECK(pl2_err < 1e-10 && ul2_err < 1e-10);
     CHECK(global_op->num_itrs() < 1000);
   }
 }
@@ -166,6 +180,7 @@ RunTestDiffusionCurved(const std::string& filename)
 
 TEST(OPERATOR_DIFFUSION_CURVED)
 {
-  RunTestDiffusionCurved("test/random3D_05.exo");
-  RunTestDiffusionCurved("test/hexes.exo");
+  RunTestDiffusionCurved("test/random3D_05.exo", 1);
+  RunTestDiffusionCurved("test/hexes.exo", 1);
+  RunTestDiffusionCurved("test/sphere.exo", 0);
 }

@@ -316,7 +316,9 @@ void
 PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
 {
   int d = mesh_->space_dimension();
-  AMANZI_ASSERT(nfaces_owned > d * ncells_owned);
+  int nfaces_all = mesh_->face_map(false).NumGlobalElements();
+  int ncells_all = mesh_->cell_map(false).NumGlobalElements();
+  AMANZI_ASSERT(nfaces_all > d * ncells_all);
 
   if (global_op_ == Teuchos::null) { // create operator
     global_op_schema_ = OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE;
@@ -395,7 +397,9 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
   for (int f = 0; f < nfaces_owned; ++f) {
     err += norm((*bf_)[f] - mesh_->face_centroid(f));
   }
-  std::cout << "new face centroids: deviation=" << err / nfaces_owned << "\n\n";
+  if (mesh_->get_comm()->MyPID() == 0) {
+    std::cout << "new face centroids deviation on rank zero is " << err / nfaces_owned << "\n\n";
+  }
 }
 
 
@@ -495,7 +499,7 @@ PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol, i
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  for (int c = 0; c < ncells_owned; ++c) {
+  for (int c = 0; c < ncells_wghost; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -509,7 +513,7 @@ PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol, i
 
   bf->ScatterMasterToGhosted();
 
-  // save to vector whocu could be shared with WhetStone
+  // save to a vector which could be shared with WhetStone
   for (int f = 0; f < nfaces_wghost; ++f) {
     (*bf_)[f][i0] = bf_f[0][f];
   }
