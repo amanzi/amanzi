@@ -750,7 +750,7 @@
       <Parameter name="minerals" type="Array(string)" value="{Quartz, Goethite, Kaolinite, Schoepite, Gibbsite, Jurbanite, Basaluminite, Opal}"/>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
-      <Parameter name="tolerance" type="double" value="1.0e-12"/>
+      <Parameter name="tolerance" type="double" value="1.0e-10"/>
       <Parameter name="max time step (s)" type="double" value="1.0e+10"/>
       <Parameter name="min time step (s)" type="double" value="1.0e+10"/>
       <Parameter name="initial time step (s)" type="double" value="1.0e+07"/>
@@ -762,6 +762,8 @@
       <Parameter name="sorption sites" type="Array(string)" value="{>davis_OH}"/>
       <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="14"/>
+      <Parameter name="log formulation" type="bool" value="true"/>
+      <Parameter name="convergence criterion" type="string" value="pflotran"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="physics module" type="string" value="Amanzi"/>
       </ParameterList>

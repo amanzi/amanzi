@@ -1202,7 +1202,6 @@ PorousMedia::initData ()
     is_grid_changed_after_regrid = false;
 
     // Call chemistry to relax initial data to equilibrium
-    bool chem_relax_ics = false;
     if (do_tracer_chemistry>0  &&  ic_chem_relax_dt>0) {
       MultiFab& Fcnt = get_new_data(FuncCount_Type);
       Fcnt.setVal(1);

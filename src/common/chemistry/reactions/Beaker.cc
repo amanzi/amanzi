@@ -77,6 +77,7 @@ Beaker::Beaker(const Teuchos::Ptr<VerboseObject> vo)
     rhs_(),
     jacobian_(),
     lu_solver_(),
+    convergence_criterion_(ConvergenceType::PFLOTRAN),
     use_log_formulation_(true),
     sorption_isotherm_params_(4, 0.0)
 {
@@ -318,8 +319,6 @@ Beaker::ReactionStep(BeakerState* state, const BeakerParameters& parameters, dou
   int max_rel_index = -1;
   unsigned int num_iterations = 0;
 
-  // set_use_log_formulation(false);
-
   // lagging activity coefficients by a time step in this case
   // UpdateActivityCoefficients_();
 
@@ -351,11 +350,11 @@ Beaker::ReactionStep(BeakerState* state, const BeakerParameters& parameters, dou
       }
     }
 
-    // solve J dlnc = r
+    // solve J d(ln C) = r
     lu_solver_.Solve(&jacobian_, &rhs_);
 
     // units of solution: mol/kg water (change in molality)
-    // calculate update truncating at a maximum of 5 in nat log space
+    // calculate update truncating at a maximum of 5 in natural log space
     // update with exp(-dlnc)
     UpdateMolalitiesWithTruncation(5.0);
     // calculate maximum relative change in concentration over all species
@@ -1352,11 +1351,9 @@ Beaker::ScaleRHSAndJacobian()
 {
   for (int i = 0; i < jacobian_.size(); i++) {
     double max = jacobian_.GetRowAbsMax(i);
-    if (max > 1.0) {
-      double scale = 1.0 / max;
-      rhs_.at(i) *= scale;
-      jacobian_.ScaleRow(i, scale);
-    }
+    double scale = 1.0 / max;
+    rhs_.at(i) *= scale;
+    jacobian_.ScaleRow(i, scale);
   }
 }
 
@@ -1388,8 +1385,8 @@ Beaker::UpdateMolalitiesWithTruncation(const double max_ln_change)
   }
 
   // update primary species molalities (log formulation)
+  double molality;
   for (int i = 0; i < ncomp_; ++i) {
-    double molality;
     if (use_log_formulation_) {
       molality = prev_molal_.at(i) * std::exp(-rhs_.at(i));
     } else {
@@ -1409,9 +1406,14 @@ Beaker::CalculateMaxRelChangeInMolality(double* max_rel_change, int* max_rel_ind
 {
   *max_rel_change = 0.0;
   *max_rel_index = -1;
+
+  double floor(0.0);
+  if (convergence_criterion_ == ConvergenceType::LINEAR_ALGEBRA_MAX_NORM) {
+    for (int i = 0; i < ncomp_; i++) floor = std::max(floor, prev_molal_.at(i));
+  }
+
   for (int i = 0; i < ncomp_; i++) {
-    double delta =
-      std::fabs(primary_species().at(i).molality() - prev_molal_.at(i)) / prev_molal_.at(i);
+    double delta = std::fabs(primary_species().at(i).molality() - prev_molal_.at(i)) / (prev_molal_.at(i) + floor);
     if (delta > *max_rel_change) {
       *max_rel_change = delta;
       *max_rel_index = i;

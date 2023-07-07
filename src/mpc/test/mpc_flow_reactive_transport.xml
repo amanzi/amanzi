@@ -207,6 +207,7 @@
       <Parameter name="maximum Newton iterations" type="int" value="50"/>
       <Parameter name="minerals" type="Array(string)" value="{Halite}"/>
       <Parameter name="number of component concentrations" type="int" value="4"/>
+      <Parameter name="log formulation" type="bool" value="true"/>
 
       <ParameterList name="thermodynamic database">
         <Parameter name="file" type="string" value="test/mpc_flow_reactive_transport_bgd.xml"/>

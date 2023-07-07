@@ -313,6 +313,14 @@ Amanzi_PK::XMLParameters()
 
   // currently we only support the simple format.
   chem_ = std::make_shared<SimpleThermoDatabase>(tdb_list, vo_);
+
+  bool flag = plist_->get<bool>("log formulation");
+  std::string criterion = plist_->get<std::string>("convergence criterion", "pflotran");
+  chem_->set_use_log_formulation(flag);
+  chem_->set_convergence_criterion(
+    (criterion == "pflotran") ? Beaker::ConvergenceType::PFLOTRAN 
+                              : Beaker::ConvergenceType::LINEAR_ALGEBRA_MAX_NORM);
+
   beaker_parameters_.tolerance = 1e-12;
   beaker_parameters_.max_iterations = 250;
   beaker_parameters_.activity_model_name = "unit";
@@ -732,8 +740,6 @@ Amanzi_PK::InitializeBeakerFields_()
 void
 Amanzi_PK::EstimateNextTimeStep_(double t_old, double t_new)
 {
-  dt_next_ = dt_;
-
   if (dt_control_method_ == "simple") {
     double dt_next_tmp(dt_next_);
 
@@ -753,8 +759,7 @@ Amanzi_PK::EstimateNextTimeStep_(double t_old, double t_new)
 
     if (dt_next_tmp != dt_next_ && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "controller changed dt_next from " << dt_next_tmp << " to " << dt_next_
-                 << std::endl;
+      *vo_->os() << "controller changed dt_next to " << dt_next_ << std::endl;
     }
   } else if (dt_control_method_ == "fixed") {
     // dt_next could be reduced by the base PK. To avoid small time step, we reset it here.

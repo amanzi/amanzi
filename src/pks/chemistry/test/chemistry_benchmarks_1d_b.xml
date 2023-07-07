@@ -516,6 +516,7 @@
       <Parameter name="auxiliary data" type="Array(string)" value="{pH}"/>
       <Parameter name="initial conditions time" type="double" value="0.e+00"/>
       <Parameter name="number of component concentrations" type="int" value="3"/>
+      <Parameter name="log formulation" type="bool" value="true"/>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>

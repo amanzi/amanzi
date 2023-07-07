@@ -72,6 +72,10 @@
       <unstr_flow_controls>
         <preconditioning_strategy>linearized_operator</preconditioning_strategy>
       </unstr_flow_controls>
+      <unstr_chemistry_controls>
+        <log_formulation>off</log_formulation>
+        <convergence_criterion>linear algebra: max norm</convergence_criterion>
+      </unstr_chemistry_controls>
       <unstr_transport_controls>
         <algorithm>explicit first-order</algorithm>
         <sub_cycling>on</sub_cycling>

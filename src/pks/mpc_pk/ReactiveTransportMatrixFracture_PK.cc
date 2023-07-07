@@ -247,7 +247,7 @@ ReactiveTransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool
 
   if (fail) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "\nStep failed. Last chemistry step was " << dt_next << "\n";
+    *vo_->os() << "\nStep failed. Recovered two tcc fields. Last dt=" << dt_next << "\n\n";
   }
 
   return fail;

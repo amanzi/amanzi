@@ -608,6 +608,7 @@
       <Parameter name="time step control method" type="string" value="fixed"/>
       <Parameter name="initial conditions time" type="double" value="0.00000000000000000e+00"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
+      <Parameter name="log formulation" type="bool" value="true"/>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
@@ -630,6 +631,7 @@
       <Parameter name="time step control method" type="string" value="fixed"/>
       <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
+      <Parameter name="log formulation" type="bool" value="true"/>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>

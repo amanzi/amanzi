@@ -61,6 +61,11 @@ class Beaker {
     bool converged;
   };
 
+  typedef enum {
+    PFLOTRAN,
+    LINEAR_ALGEBRA_MAX_NORM
+  } ConvergenceType;
+
   // inheriting classes setup the species, etc
   virtual void Initialize(BeakerState& state, const BeakerParameters& parameters);
 
@@ -91,8 +96,10 @@ class Beaker {
   DisplayTotalColumns(const double time, const BeakerState& total, const bool display_free) const;
   void DisplayResults() const;
 
-  // access
+  // accessors and modifiers
   SolverStatus status() const { return status_; }
+  void set_use_log_formulation(bool flag) { use_log_formulation_ = flag; }
+  void set_convergence_criterion(const ConvergenceType& i) { convergence_criterion_ = i; }
 
   const std::vector<Mineral>& minerals() const { return minerals_; }
   const std::vector<Species>& primary_species() const { return primary_species_; }
@@ -250,6 +257,7 @@ class Beaker {
 
   SolverStatus status_;
   LUSolver lu_solver_;
+  ConvergenceType convergence_criterion_;
 
   bool use_log_formulation_;
 

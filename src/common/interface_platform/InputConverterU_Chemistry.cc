@@ -398,7 +398,8 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   double tol(1e-12), dt_max(1e+10), dt_min(1e+10), dt_init(1e+7), dt_cut(2.0), dt_increase(1.2);
 
   double ion_value;
-  bool ion_guess(false);
+  bool ion_guess(false), log_form(true);
+  std::string conv_criterion("pflotran");
 
   std::string activity_model("unit"), dt_method("fixed"), pitzer_database;
   std::vector<std::string> aux_data;
@@ -415,12 +416,12 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
         activity_model = GetTextContentS_(inode, "unit, debye-huckel, pitzer-hwm");
       } else if (strcmp(text, "maximum_newton_iterations") == 0) {
         max_itrs = strtol(mm.transcode(inode->getTextContent()), NULL, 10);
-      } else if (strcmp(text, "tolerance") == 0) {
+      } else if (strcmp(text, "max_residual_tolerance") == 0) {
         tol = strtod(mm.transcode(inode->getTextContent()), NULL);
       } else if (strcmp(text, "min_time_step") == 0) {
         dt_min = strtod(mm.transcode(inode->getTextContent()), NULL);
       } else if (strcmp(text, "max_time_step") == 0) {
-        dt_max = strtod(mm.transcode(inode->getTextContent()), NULL);
+        dt_max = GetTextContentD_(inode, "", true);
       } else if (strcmp(text, "initial_time_step") == 0) {
         dt_init = strtod(mm.transcode(inode->getTextContent()), NULL);
       } else if (strcmp(text, "time_step_control_method") == 0) {
@@ -433,6 +434,10 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
         increase_threshold = strtol(mm.transcode(inode->getTextContent()), NULL, 10);
       } else if (strcmp(text, "time_step_increase_factor") == 0) {
         dt_increase = strtod(mm.transcode(inode->getTextContent()), NULL);
+      } else if (strcmp(text, "log_formulation") == 0) {
+        log_form = strcmp(mm.transcode(inode->getTextContent()), "on") == 0;
+      } else if (strcmp(text, "convergence_criterion") == 0) {
+        conv_criterion = GetTextContentS_(inode, "pflotran, linear algebra: max norm");
       } else if (strcmp(text, "auxiliary_data") == 0) {
         aux_data = CharToStrings_(mm.transcode(inode->getTextContent()));
       } else if (strcmp(text, "free_ion_guess") == 0) {
@@ -456,6 +461,8 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
   out_list.set<int>("time step increase threshold", increase_threshold);
   out_list.set<double>("time step increase factor", dt_increase);
   out_list.set<std::string>("time step control method", dt_method);
+  out_list.set<bool>("log formulation", log_form);
+  out_list.set<std::string>("convergence criterion", conv_criterion);
   if (aux_data.size() > 0) out_list.set<Teuchos::Array<std::string>>("auxiliary data", aux_data);
   if (sorption_sites.size() > 0)
     out_list.set<Teuchos::Array<std::string>>("sorption sites", sorption_sites);

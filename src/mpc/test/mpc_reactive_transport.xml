@@ -102,6 +102,7 @@
       <Parameter name="initial time step (s)" type="double" value="20.0"/>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="50"/>
+      <Parameter name="log formulation" type="bool" value="true"/>
       <ParameterList name="initial conditions">
 	<ParameterList name="mineral_volume_fractions">
           <Parameter name="function" type="string" value="list was moved to state"/>

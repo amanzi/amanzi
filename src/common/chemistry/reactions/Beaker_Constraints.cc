@@ -107,7 +107,6 @@ Beaker::EnforceConstraint(BeakerState* state,
       msg << "Unknown geochemical constraint: " << names[i] << "\n";
       Exceptions::amanzi_throw(msg);
     }
-
     // total_.at(i) = state->total.at(i);
   }
 
@@ -193,8 +192,10 @@ Beaker::EnforceConstraint(BeakerState* state,
     // scale and solve
     rhs_ = residual_;
 
-    for (int i = 0; i < ncomp_; i++) {
-      jacobian_.ScaleColumn(i, primary_species().at(i).molality());
+    if (use_log_formulation_) {
+      for (int i = 0; i < ncomp_; i++) {
+        jacobian_.ScaleColumn(i, primary_species().at(i).molality());
+      }
     }
 
     lu_solver_.Solve(&jacobian_, &rhs_);

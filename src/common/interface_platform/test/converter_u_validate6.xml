@@ -712,6 +712,8 @@
       <Parameter name="time step control method" type="string" value="fixed"/>
       <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
+      <Parameter name="log formulation" type="bool" value="false"/>
+      <Parameter name="convergence criterion" type="string" value="linear algebra: max norm"/>
 
       <ParameterList name="physical models and assumptions">
         <Parameter name="physics module" type="string" value="Amanzi"/>
@@ -737,6 +739,8 @@
       <Parameter name="time step control method" type="string" value="fixed"/>
       <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
+      <Parameter name="log formulation" type="bool" value="false"/>
+      <Parameter name="convergence criterion" type="string" value="linear algebra: max norm"/>
 
       <ParameterList name="physical models and assumptions">
         <Parameter name="physics module" type="string" value="Amanzi"/>
