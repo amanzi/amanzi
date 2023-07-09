@@ -413,19 +413,11 @@
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="WRM_2">
-	  <Parameter name="water retention model" type="string" value="van Genuchten"/>
-	  <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
-	  <Parameter name="van Genuchten m" type="double" value="0.3006"/>
-          <Parameter name="van Genuchten n" type="double" value="1.42979696883042595e+00"/>
-	  <Parameter name="van Genuchten l" type="double" value="0.5"/>
-	  <Parameter name="van Genuchten alpha" type="double" value="2.0674e-03"/>
-	  <Parameter name="residual saturation liquid" type="double" value="0.0e+00"/>
-	  <Parameter name="regularization interval" type="double" value="0.0e+00"/>
-	  <Parameter name="relative permeability model" type="string" value="Mualem"/>
-	  <ParameterList name="output">
-	    <Parameter name="file" type="string" value="WRM_2.txt"/>
-	    <Parameter name="number of points" type="int" value="1000"/>
-	  </ParameterList>
+          <Parameter name="water retention model" type="string" value="tabular"/>
+          <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
+          <Parameter name="cap pressure" type="Array(double)" value="{0.0, 10.0, 100.0, 1000.0}"/>
+          <Parameter name="permeability" type="Array(double)" value="{1.0, 0.7, 0.2, 0.05}"/>
+          <Parameter name="saturation" type="Array(double)" value="{1.0, 0.7, 0.2, 0.05}"/>
 	</ParameterList>
       </ParameterList>
       <ParameterList name="operators">
@@ -674,19 +666,11 @@
           </ParameterList>
         </ParameterList>
         <ParameterList name="WRM_2">
-          <Parameter name="water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="water retention model" type="string" value="tabular"/>
           <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
-          <Parameter name="van Genuchten m" type="double" value="3.00599999999999978e-01"/>
-          <Parameter name="van Genuchten n" type="double" value="1.42979696883042595e+00"/>
-          <Parameter name="van Genuchten l" type="double" value="0.5"/>
-          <Parameter name="van Genuchten alpha" type="double" value="2.0674e-03"/>
-          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
-          <Parameter name="relative permeability model" type="string" value="Mualem"/>
-          <Parameter name="regularization interval" type="double" value="0.0"/>
-          <ParameterList name="output">
-            <Parameter name="file" type="string" value="WRM_2.txt"/>
-            <Parameter name="number of points" type="int" value="1000"/>
-          </ParameterList>
+          <Parameter name="cap pressure" type="Array(double)" value="{0.0, 10.0, 100.0, 1000.0}"/>
+          <Parameter name="permeability" type="Array(double)" value="{1.0, 0.7, 0.2, 0.05}"/>
+          <Parameter name="saturation" type="Array(double)" value="{1.0, 0.7, 0.2, 0.05}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="absolute permeability">

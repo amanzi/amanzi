@@ -186,8 +186,10 @@
         <porosity value="0.2340"/>
       </mechanical_properties>
       <permeability x="2.0706E-09 m^2" z="2.0706E-10 m^2" />
-      <cap_pressure model="van_genuchten">
-        <parameters alpha="2.0674E-03" m="0.3006" sr="0.0"/>
+      <cap_pressure model="tabular">
+        <parameters cp="0.0, 10.0, 100.0, 1000.0" 
+                    kr="1.0, 0.7, 0.2, 0.05" 
+                    s="1.0, 0.7, 0.2, 0.05"/>
       </cap_pressure>
       <rel_perm model="mualem"/>
       <assigned_regions>RegionTop</assigned_regions>

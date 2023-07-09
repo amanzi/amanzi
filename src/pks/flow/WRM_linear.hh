@@ -37,7 +37,7 @@ class WRM_linear : public WRM {
   double saturation(double pc) const;
   double dSdPc(double pc) const;
   double capillaryPressure(double saturation) const;
-  double residualSaturation() const { return 0.0; }
+  double residualSaturation() const { return sr_; }
   double dKdPc(double pc) const;
 
  private:

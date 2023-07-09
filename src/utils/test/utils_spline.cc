@@ -2160,4 +2160,39 @@ SUITE(SPLINED_CURVE)
       CHECK_CLOSE(test_dy[i], s.Derivative(test_x[i]), 1.e-6);
     }
   }
+
+
+  TEST(MISSING_DERIVATIVES_WITH_LIMITER_FOR_MONO)
+  {
+    int n(20);
+    double h(1.0 / (n - 1));
+    std::vector<double> x(n), y(n), dy(n);
+    for (int i = 0; i < n; ++i) {
+      x[i] = i * h;
+      y[i] = std::pow(x[i], 3.0);
+      dy[i] = 3 * std::pow(x[i], 2.0);
+    }
+
+    auto s = Amanzi::Utils::SplinedCurve(
+      x,
+      y,
+      std::make_pair(Amanzi::Utils::SplinedCurve::SplineExtrapolation_t::CONSTANT,
+                     Amanzi::Utils::SplinedCurve::SplineExtrapolation_t::CONSTANT),
+      true);
+
+    // proximity
+    for (int i = 0; i < n; ++i) CHECK_CLOSE(y[i], s.Value(x[i]), 1.e-6);
+    for (int i = 1; i < n - 1; ++i) CHECK_CLOSE(dy[i], s.Derivative(x[i]), 0.003);
+
+    // monotonicity
+    double xcur(0.0), ycur(0.0), step(0.001), tmp;
+    while (xcur < 0.999) {
+      xcur += step;
+      tmp = s.Value(xcur);
+      CHECK(ycur < tmp && s.Derivative(xcur) > 0.0);
+      ycur = tmp; 
+    }
+    CHECK(s.Derivative(0.0) == 0.0);
+    CHECK(s.Derivative(1.0) == 0.0);
+  }
 }

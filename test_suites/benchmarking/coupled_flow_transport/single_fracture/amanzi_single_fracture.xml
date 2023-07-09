@@ -198,6 +198,7 @@
         <!--permeability model="cubic law"/>
         <aperture model="constant" value="KFT"/-->
         <flow_diffusion_to_matrix model="constant" value="KFN"/>
+        <solute_diffusion_to_matrix model="constant" value="0.0"/>
         <assigned_regions>fracture</assigned_regions>
       </material>
     </materials>

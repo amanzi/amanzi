@@ -46,7 +46,7 @@ set(flow_src_files Flow_PK.cc
                    PorosityModelPartition.cc PorosityEvaluator.cc
                    PermeabilityModelPartition.cc PermeabilityEvaluator.cc
                    RelPermEvaluator.cc
-                   WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_linear.cc
+                   WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_linear.cc WRM_tabular.cc
                    WRMPartition.cc WRMFactory.cc WRMEvaluator.cc 
                    WaterStorage.cc
                    DarcyVelocityEvaluator.cc
@@ -93,6 +93,7 @@ set(flow_inc_files
   WRM_BrooksCorey.hh
   WRM_linear.hh
   WRM_saturated.hh
+  WRM_tabular.hh
   WRM_vanGenuchten.hh
   WRMEvaluator.hh
   WRMFactory.hh
@@ -201,10 +202,11 @@ if (BUILD_TESTS)
     add_amanzi_test(flow_darcy_misc_2pe flow_darcy_misc NPROCS 2 KIND unit)
     add_amanzi_test(flow_darcy_misc_4pe flow_darcy_misc NPROCS 4 KIND unit)
 
-    # Test: van Genuchten flow routines
-    add_amanzi_test(flow_vanGenuchten flow_vanGenuchten
+    # Test: WRM tests
+    add_amanzi_test(flow_wrm flow_wrm
                     KIND int
                     SOURCE test/Main.cc test/flow_vanGenuchten.cc
+                                        test/flow_wrm_tabular.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: flow-bc-factory

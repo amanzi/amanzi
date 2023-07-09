@@ -252,7 +252,7 @@ InputConverterU::TranslateWRM_(const std::string& pk_name)
     DOMNode* inode = children->item(i);
 
     node = GetUniqueElementByTagsString_(inode, "cap_pressure", flag);
-    model = GetAttributeValueS_(node, "model", "van_genuchten, brooks_corey, saturated, linear");
+    model = GetAttributeValueS_(node, "model", "van_genuchten, brooks_corey, saturated, linear, tabular");
     DOMNode* nnode = GetUniqueElementByTagsString_(node, "parameters", flag);
     DOMElement* element_cp = static_cast<DOMElement*>(nnode);
 
@@ -358,6 +358,17 @@ InputConverterU::TranslateWRM_(const std::string& pk_name)
     } else if (strcmp(model.c_str(), "saturated") == 0) {
       wrm_list.set<std::string>("water retention model", "saturated")
         .set<Teuchos::Array<std::string>>("regions", regions);
+
+    } else if (strcmp(model.c_str(), "tabular") == 0) {
+      auto cp = GetAttributeVectorD_(element_cp, "cp");
+      auto kr = GetAttributeVectorD_(element_cp, "kr");
+      auto sat = GetAttributeVectorD_(element_cp, "s");
+
+      wrm_list.set<std::string>("water retention model", "tabular")
+        .set<Teuchos::Array<std::string>>("regions", regions)
+        .set<Teuchos::Array<double>>("cap pressure", cp)
+        .set<Teuchos::Array<double>>("permeability", kr)
+        .set<Teuchos::Array<double>>("saturation", sat);
     }
   }
 
