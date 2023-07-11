@@ -225,17 +225,15 @@ ReconstructionCellPolynomial::CellAllAdjCells_(AmanziMesh::Entity_ID c,
 
 void
 ReconstructionCellPolynomial::CellAdjCellsTwoLevels_(AmanziMesh::Entity_ID c,
-                                                     AmanziMesh::Parallel_type ptype,
+                                                     AmanziMesh::Parallel_kind ptype,
                                                      std::set<AmanziMesh::Entity_ID>& cells) const
 {
-  AmanziMesh::Entity_ID_List faces, fcells;
-
   cells.clear();
 
   // face neighboors
-  mesh_->cell_get_faces(c, &faces);
+  auto faces = mesh_->getCellFaces(c);
   for (int f : faces) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
+    auto fcells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     for (int c1 : fcells) {
       if (cells.find(c1) == cells.end() && c != c1) cells.insert(c1);
     }
@@ -243,9 +241,9 @@ ReconstructionCellPolynomial::CellAdjCellsTwoLevels_(AmanziMesh::Entity_ID c,
 
   // neighboors of neighboors
   for (int c1 : cells) {
-    mesh_->cell_get_faces(c1, &faces);
+    auto faces = mesh_->getCellFaces(c1);
     for (int f : faces) {
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
+      auto fcells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       for (int c2 : fcells) {
         if (cells.find(c2) == cells.end() && c != c2) cells.insert(c2);
       }
@@ -348,16 +346,16 @@ ReconstructionCellPolynomial::ComputeReconstructionMap(int c,
                                                        AmanziMesh::Entity_ID_List& ids_f,
                                                        int basis)
 {
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
   int ncells, nfaces(0);
   std::set<AmanziMesh::Entity_ID> cells, faces;
   try {
-    CellAllAdjCells_(c, AmanziMesh::Parallel_type::ALL, cells);
+    CellAllAdjCells_(c, AmanziMesh::Parallel_kind::ALL, cells);
   } catch (...) {
     // some meshes have no nodes, so we try a different algorithm based on
     // cell->face->cell connectivities. It extract two level of cell neighboors
-    CellAdjCellsTwoLevels_(c, AmanziMesh::Parallel_type::ALL, cells);
+    CellAdjCellsTwoLevels_(c, AmanziMesh::Parallel_kind::ALL, cells);
   }
   cells.insert(c);
   ncells = cells.size();
@@ -380,7 +378,7 @@ ReconstructionCellPolynomial::ComputeReconstructionMap(int c,
 
   ids_c.clear();
   for (int c1 : cells) {
-    const AmanziGeometry::Point& xc1 = mesh_->cell_centroid(c1);
+    const AmanziGeometry::Point& xc1 = mesh_->getCellCentroid(c1);
     xcc = xc1 - xc;
 
     int m = 0;
@@ -403,7 +401,7 @@ ReconstructionCellPolynomial::ComputeReconstructionMap(int c,
 
     for (int f : faces) {
       if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-        const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+        const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
         xcc = xf - xc;
 
         int m = 0;

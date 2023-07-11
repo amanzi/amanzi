@@ -95,7 +95,7 @@ class ReconstructionCellPolynomial : public Reconstruction {
                         std::set<AmanziMesh::Entity_ID>& cells) const;
 
   void CellAdjCellsTwoLevels_(AmanziMesh::Entity_ID c,
-                              AmanziMesh::Parallel_type ptype,
+                              AmanziMesh::Parallel_kind ptype,
                               std::set<AmanziMesh::Entity_ID>& cells) const;
 
   void CellAllAdjFaces_(AmanziMesh::Entity_ID c,

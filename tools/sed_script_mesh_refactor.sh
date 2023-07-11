@@ -17,6 +17,10 @@ ${SED} ${SED_ARGS} -E 's|AmanziMesh::QUAD|AmanziMesh::Cell_type::QUAD|g' "$1"
 ${SED} ${SED_ARGS} -E 's|AmanziMesh::POLYGON|AmanziMesh::Cell_type::POLYGON|g' "$1"
 ${SED} ${SED_ARGS} -E 's|AmanziMesh::TET|AmanziMesh::Cell_type::TET|g' "$1"
 ${SED} ${SED_ARGS} -E 's|AmanziMesh::TRI|AmanziMesh::Cell_type::TRI|g' "$1"
+${SED} ${SED_ARGS} -E 's|Parallel_type|Parallel_kind|g' "$1"
+
+${SED} ${SED_ARGS} -E 's|cells_of_column|columns.getCells|g' "$1"
+${SED} ${SED_ARGS} -E 's|faces_of_column|columns.getFaces|g' "$1"
 
 ${SED} ${SED_ARGS} -E 's|(^[ \t]*)(.*)face_get_cells\(([^,\)]*),([^,\)]*),[ ]*&([^,\)]*)\)|\1\5 = \2getFaceCells\(\3,\4\)|g' "$1" # Need change for type 
 ${SED} ${SED_ARGS} -E 's|(^.*) (\S*)cell_get_faces\(([^,\)]*),[ ]*&([^,\)]*)\)|\1 \4 = \2getCellFaces\(\3\)|g' "$1" # Need change for type 
@@ -110,3 +114,4 @@ ${SED} ${SED_ARGS} -E 's|get_indexing_parent\(|getIndexingParent\(|g' "$1"
 
 
 git -P diff --shortstat $1
+
