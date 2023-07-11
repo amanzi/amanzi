@@ -27,7 +27,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
@@ -44,7 +44,7 @@ class MFD3D_Diffusion_CurvedFace : public DeRham_Face {
  public:
   // constructor for backward compatibility
   MFD3D_Diffusion_CurvedFace(const Teuchos::ParameterList& plist,
-                             const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
+                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : DeRham_Face(mesh){};
   ~MFD3D_Diffusion_CurvedFace(){};
 

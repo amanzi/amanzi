@@ -75,7 +75,7 @@ PDE_DiffusionCurvedFace::UpdateMatrices(const Teuchos::Ptr<const CompositeVector
   WhetStone::MFD3D_Diffusion_CurvedFace mfd(plist_, mesh_);
   mfd.set_generalized_centroids(bf_);
 
-  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+  WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
   Kc(0, 0) = 1.0;
   if (const_K_.rank() > 0) Kc = const_K_;
 
@@ -113,7 +113,7 @@ PDE_DiffusionCurvedFace::ApplyBCs(bool primary, bool eliminate, bool essential_e
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
 
   for (int c = 0; c != ncells_owned; ++c) {
-    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
 
     bool flag(true);
@@ -159,17 +159,17 @@ PDE_DiffusionCurvedFace::ApplyBCs(bool primary, bool eliminate, bool essential_e
         }
 
       } else if (bc_model_trial[f] == OPERATOR_BC_NEUMANN && primary) {
-        rhs_face[0][f] -= value * mesh_->face_area(f);
+        rhs_face[0][f] -= value * mesh_->getFaceArea(f);
 
       } else if (bc_model_trial[f] == OPERATOR_BC_TOTAL_FLUX && primary) {
-        rhs_face[0][f] -= value * mesh_->face_area(f);
+        rhs_face[0][f] -= value * mesh_->getFaceArea(f);
 
       } else if (bc_model_trial[f] == OPERATOR_BC_MIXED && primary) {
         if (flag) { // make a copy of elemental matrix
           local_op_->matrices_shadow[c] = Acell;
           flag = false;
         }
-        double area = mesh_->face_area(f);
+        double area = mesh_->getFaceArea(f);
         rhs_face[0][f] -= value * area;
         Acell(n, n) += bc_mixed[f] * area;
       }
@@ -199,7 +199,7 @@ PDE_DiffusionCurvedFace::ModifyMatrices(const CompositeVector& u)
 
   Epetra_MultiVector& rhs_f = *global_op_->rhs()->ViewComponent("face", true);
   for (int c = 0; c != ncells_owned; ++c) {
-    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
@@ -237,8 +237,7 @@ PDE_DiffusionCurvedFace::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u
   std::vector<int> hits(nfaces_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
-    const auto& faces = mesh_->cell_get_faces(c);
-    const auto& dirs = mesh_->cell_get_face_dirs(c);
+    const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
     int nfaces = faces.size();
 
     WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
@@ -278,7 +277,7 @@ PDE_DiffusionCurvedFace::CreateMassMatrices_()
   WhetStone::DenseMatrix Wff;
   Wff_cells_.resize(ncells_owned);
 
-  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+  WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
   Kc(0, 0) = 1.0;
   if (const_K_.rank() > 0) Kc = const_K_;
 
@@ -315,9 +314,9 @@ PDE_DiffusionCurvedFace::ScaleMassMatrices(double s)
 void
 PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
 {
-  int d = mesh_->space_dimension();
-  int nfaces_all = mesh_->face_map(false).NumGlobalElements();
-  int ncells_all = mesh_->cell_map(false).NumGlobalElements();
+  int d = mesh_->getSpaceDimension();
+  int nfaces_all = mesh_->getMap(AmanziMesh::Entity_kind::FACE,false).NumGlobalElements();
+  int ncells_all = mesh_->getMap(AmanziMesh::Entity_kind::CELL,false).NumGlobalElements();
   AMANZI_ASSERT(nfaces_all > d * ncells_all);
 
   if (global_op_ == Teuchos::null) { // create operator
@@ -395,9 +394,9 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
   // error analysis
   double err(0.0);
   for (int f = 0; f < nfaces_owned; ++f) {
-    err += norm((*bf_)[f] - mesh_->face_centroid(f));
+    err += norm((*bf_)[f] - mesh_->getFaceCentroid(f));
   }
-  if (mesh_->get_comm()->MyPID() == 0) {
+  if (mesh_->getComm()->MyPID() == 0) {
     std::cout << "new face centroids deviation on rank zero is " << err / nfaces_owned << "\n\n";
   }
 }
@@ -409,16 +408,14 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
 void
 PDE_DiffusionCurvedFace::LSProblemSetupMatrix_(std::vector<WhetStone::DenseMatrix>& matrices)
 {
-  int d = mesh_->space_dimension();
-  AmanziMesh::Entity_ID_List cells;
-  std::vector<int> dirs;
+  int d = mesh_->getSpaceDimension();
 
   // matrix A A^T
   matrices.resize(nfaces_owned);
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    const auto& normal = mesh_->face_normal(f);
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    const auto& normal = mesh_->getFaceNormal(f);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     int nrows = ncells * d;
@@ -447,26 +444,24 @@ PDE_DiffusionCurvedFace::LSProblemSetupMatrix_(std::vector<WhetStone::DenseMatri
 void
 PDE_DiffusionCurvedFace::LSProblemSetupRHS_(CompositeVector& rhs, int i0)
 {
-  int d = mesh_->space_dimension();
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
+  int d = mesh_->getSpaceDimension();
 
   // right-hand side is given by scaled identity matrices
   auto& rhs_c = *rhs.ViewComponent("cell", false);
   for (int c = 0; c < ncells_owned; ++c) {
-    double vol = mesh_->cell_volume(c);
+    double vol = mesh_->getCellVolume(c);
     for (int j = 0; j < d; ++j) rhs_c[j][c] = ((i0 == j) ? vol : 0.0);
   }
 
   // shift by vector A {xf} 
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
-      const auto& normal = mesh_->face_normal(f);
-      const auto& xf = mesh_->face_centroid(f);
+      const auto& normal = mesh_->getFaceNormal(f);
+      const auto& xf = mesh_->getFaceCentroid(f);
 
       for (int j = 0; j < d; ++j) rhs_c[j][c] -= normal[j] * xf[i0] * dirs[n];
     }
@@ -484,28 +479,26 @@ PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol, i
   sol.ScatterMasterToGhosted();
 
   // initialize generalized face centroids
-  int d = mesh_->space_dimension();
+  int d = mesh_->getSpaceDimension();
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
   auto bf = Teuchos::rcp(new CompositeVector(*cvs));
 
   auto bf_f = *bf->ViewComponent("face", true);
   for (int f = 0; f < nfaces_wghost; ++f) {
-    const auto& xf = mesh_->face_centroid(f);
+    const auto& xf = mesh_->getFaceCentroid(f);
     bf_f[0][f] = xf[i0];
   }
 
   // add correction to generalized face centroid
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
 
   for (int c = 0; c < ncells_wghost; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
-      const auto& normal = mesh_->face_normal(f);
+      const auto& normal = mesh_->getFaceNormal(f);
 
       for (int j = 0; j < d; ++j) bf_f[0][f] += sol_c[j][c] * normal[j] * dirs[n];
     }

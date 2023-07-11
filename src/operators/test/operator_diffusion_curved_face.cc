@@ -69,14 +69,14 @@ RunTestDiffusionCurved(const std::string& filename, int icase)
   // populate diffusion coefficient using the problem with analytic solution.
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic00 ana(mesh, 1);
   // Analytic02 ana(mesh);
 
   for (int c = 0; c < ncells_owned; c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
@@ -91,13 +91,13 @@ RunTestDiffusionCurved(const std::string& filename, int icase)
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
-  const auto fmap = mesh->face_map(true);
-  const auto bfmap = mesh->exterior_face_map(true);
+  const auto fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE,true);
+  const auto bfmap = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
 
   // for (int f = 0; f < nfaces_wghost; ++f) {
   for (int n = 0; n < bfmap.NumMyElements(); ++n) {
     int f = fmap.LID(bfmap.GID(n));
-    const Point& xf = mesh->face_centroid(f);
+    const Point& xf = mesh->getFaceCentroid(f);
 
     auto yf = (*op->get_bf())[f];
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -106,8 +106,8 @@ RunTestDiffusionCurved(const std::string& filename, int icase)
     // overwrite boundary data on case-by-case basis
     if (icase == 1) {
       if (fabs(xf[1]) < 1e-6) {
-        double area = mesh->face_area(f);
-        const Point& normal = mesh->face_normal(f);
+        double area = mesh->getFaceArea(f);
+        const Point& normal = mesh->getFaceNormal(f);
         bc_model[f] = OPERATOR_BC_NEUMANN;
         bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
         nneu++;

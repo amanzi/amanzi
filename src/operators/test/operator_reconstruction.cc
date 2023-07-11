@@ -244,7 +244,7 @@ TEST(RECONSTRUCTION_QUADRATIC_2D)
   for (int c = 0; c < measure.size(); ++c) { CHECK_CLOSE(measure[c], 1.0, 1e-12); }
 
   // Analyze reconstruction map
-  const AmanziGeometry::Point xc = mesh->cell_centroid(0);
+  const AmanziGeometry::Point xc = mesh->getCellCentroid(0);
   WhetStone::DenseMatrix R;
   AmanziMesh::Entity_ID_List ids_c, ids_f;
   lifting->ComputeReconstructionMap(0, bcs, R, ids_c, ids_f);
@@ -254,13 +254,13 @@ TEST(RECONSTRUCTION_QUADRATIC_2D)
   WhetStone::DenseVector x(ncol), y(ncol), v(nrow), xx(ncol), xy(ncol), yy(ncol);
   int n = 0;
   for (int c : ids_c) {
-    x(n) = (mesh->cell_centroid(c))[0] - xc[0];
-    y(n) = (mesh->cell_centroid(c))[1] - xc[1];
+    x(n) = (mesh->getCellCentroid(c))[0] - xc[0];
+    y(n) = (mesh->getCellCentroid(c))[1] - xc[1];
     n++;
   }
   for (int f : ids_f) {
-    x(n) = (mesh->face_centroid(f))[0] - xc[0];
-    y(n) = (mesh->face_centroid(f))[1] - xc[1];
+    x(n) = (mesh->getFaceCentroid(f))[0] - xc[0];
+    y(n) = (mesh->getFaceCentroid(f))[1] - xc[1];
     n++;
   }
   for (int n = 0; n < ncol; ++n) {
