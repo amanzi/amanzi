@@ -86,7 +86,11 @@ CompositeVectorSpace::SubsetOf(const CompositeVectorSpace& other) const
 {
   if (mesh_ != other.mesh_) return false;
   for (name_iterator name = begin(); name != end(); ++name) {
-    if (!other.HasComponent(*name)) return false;
+    if (*name == std::string("boundary_face")) {
+      if (!other.HasComponent("face") && !other.HasComponent("boundary_face")) return false;
+    } else {
+      if (!other.HasComponent(*name)) return false;
+    }
     if (NumVectors(*name) != other.NumVectors(*name)) return false;
     if (Location(*name) != other.Location(*name)) return false;
   }
