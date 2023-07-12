@@ -372,6 +372,7 @@
     <ParameterList name="transient:flow and shallow water">
       <Parameter name="PKs order" type="Array(string)" value="{transient:flow, transient:shallow water}"/>
       <Parameter name="master PK index" type="int" value="0"/>
+      <Parameter name="PK type" type="string" value="surface subsurface"/>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{residual}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>

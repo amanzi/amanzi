@@ -38,7 +38,9 @@ XERCES_CPP_NAMESPACE_USE
 * Create flow list.
 ****************************************************************** */
 Teuchos::ParameterList
-InputConverterU::TranslateFlow_(const std::string& mode, const std::string& domain)
+InputConverterU::TranslateFlow_(const std::string& mode,
+                                const std::string& domain,
+                                const std::string& pk_model)
 {
   Teuchos::ParameterList out_list;
   Teuchos::ParameterList* flow_list = nullptr;
@@ -86,7 +88,7 @@ InputConverterU::TranslateFlow_(const std::string& mode, const std::string& doma
       .set<bool>("flow and transport in fractures", true);
   }
 
-  if (pk_model_["flow"] == "darcy") {
+  if (pk_model == "darcy") {
     flow_list = &out_list;
     flow_single_phase_ = true;
 
@@ -97,7 +99,7 @@ InputConverterU::TranslateFlow_(const std::string& mode, const std::string& doma
         .set<std::string>("multiscale model", "dual continuum discontinuous matrix");
     }
 
-  } else if (pk_model_["flow"] == "richards") {
+  } else if (pk_model == "richards") {
     Teuchos::ParameterList& upw_list = out_list.sublist("relative permeability");
     upw_list.set<std::string>("upwind method", rel_perm_out);
     upw_list.set<std::string>("upwind frequency", update_upwind);
@@ -128,7 +130,7 @@ InputConverterU::TranslateFlow_(const std::string& mode, const std::string& doma
 
   } else {
     Errors::Message msg;
-    msg << "Internal error for flow model \"" << pk_model_["flow"] << "\".\n";
+    msg << "Internal error for flow model \"" << pk_model << "\".\n";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -142,7 +144,7 @@ InputConverterU::TranslateFlow_(const std::string& mode, const std::string& doma
   if (flag) disc_method = mm.transcode(node->getTextContent());
 
   std::string pc_method("linearized_operator");
-  if (pk_model_["flow"] == "darcy") pc_method = "diffusion_operator";
+  if (pk_model == "darcy") pc_method = "diffusion_operator";
   node = GetUniqueElementByTagsString_(
     "unstructured_controls, unstr_flow_controls, preconditioning_strategy", flag);
   if (flag) pc_method = GetTextContentS_(node, "linearized_operator, diffusion_operator");

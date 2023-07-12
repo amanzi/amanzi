@@ -79,7 +79,7 @@ InputConverterU::TranslateSolvers_()
     TranslateLinearSolvers_("unstr_flow_controls, saturated_linear_solver", "pcg", "");
 
   if (pk_model_.find("flow") != pk_model_.end()) {
-    std::string enforce = (pk_model_["flow"] == "richards") ? "gmres" : "";
+    std::string enforce = HasSubmodel_("flow", "richards") ? "gmres" : "";
     out_list.sublist("GMRES with Hypre AMG") = TranslateLinearSolvers_(
       "unstr_flow_controls, constraints_linear_solver", LINEAR_SOLVER_METHOD, enforce);
   }

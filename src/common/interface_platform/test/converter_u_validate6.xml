@@ -490,6 +490,7 @@
     <ParameterList name="steady:coupled flow">
       <Parameter name="PKs order" type="Array(string)" value="{steady:flow matrix, steady:flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
+      <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
 
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
@@ -689,11 +690,13 @@
     <ParameterList name="transient:coupled reactive transport">
       <Parameter name="PKs order" type="Array(string)" value="{transient:coupled chemistry, transient:coupled transport}"/>
       <Parameter name="master PK index" type="int" value="1"/>
+      <Parameter name="PK type" type="string" value="reactive transport matrix fracture"/>
     </ParameterList>
 
     <ParameterList name="transient:coupled chemistry">
       <Parameter name="PKs order" type="Array(string)" value="{transient:chemistry matrix, transient:chemistry fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
+      <Parameter name="PK type" type="string" value="chemistry matrix fracture"/>
     </ParameterList>
 
     <ParameterList name="transient:chemistry matrix">
@@ -755,6 +758,7 @@
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="solver" type="string" value="Dispersion Solver"/>
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="PK type" type="string" value="transport matrix fracture"/>
     </ParameterList>
 
     <ParameterList name="transient:transport matrix">

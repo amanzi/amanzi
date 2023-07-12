@@ -491,6 +491,7 @@
     <ParameterList name="steady:coupled flow">
       <Parameter name="PKs order" type="Array(string)" value="{steady:flow matrix, steady:flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
+      <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
@@ -711,6 +712,7 @@
     <ParameterList name="transient:coupled flow and energy">
       <Parameter name="PKs order" type="Array(string)" value="{transient:flow and energy, transient:flow and energy fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
+      <Parameter name="PK type" type="string" value="thermal flow matrix fracture"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
@@ -765,6 +767,7 @@
       <Parameter name="PKs order" type="Array(string)" value="{transient:flow, transient:energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="domain name" type="string" value="domain"/>
+      <Parameter name="PK type" type="string" value="thermal flow"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="vapor diffusion" type="bool" value="false"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
@@ -969,6 +972,7 @@
       <Parameter name="PKs order" type="Array(string)" value="{transient:flow fracture, transient:energy fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="domain name" type="string" value="fracture"/>
+      <Parameter name="PK type" type="string" value="thermal flow"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
         <Parameter name="vapor diffusion" type="bool" value="false"/>

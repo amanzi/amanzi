@@ -191,7 +191,9 @@ class InputConverterU : public InputConverter {
                                        double val);
 
   // -- flow
-  Teuchos::ParameterList TranslateFlow_(const std::string& mode, const std::string& domain);
+  Teuchos::ParameterList TranslateFlow_(const std::string& mode,
+                                        const std::string& domain,
+                                        const std::string& pk_model);
   Teuchos::ParameterList TranslateWRM_(const std::string& pk_name);
   Teuchos::ParameterList TranslatePOM_();
   Teuchos::ParameterList TranslatePPM_();
@@ -228,7 +230,7 @@ class InputConverterU : public InputConverter {
 
   // -- chemistry and energy
   Teuchos::ParameterList TranslateChemistry_(const std::string& domain);
-  Teuchos::ParameterList TranslateEnergy_(const std::string& domain);
+  Teuchos::ParameterList TranslateEnergy_(const std::string& domain, const std::string& pk_model);
   Teuchos::ParameterList TranslateEnergyBCs_(const std::string& domain);
 
   // -- multiphase
@@ -281,6 +283,7 @@ class InputConverterU : public InputConverter {
   bool WeightVolumeSubmodel_(const std::vector<std::string>& regions);
   std::string CreateUniqueName_(const Teuchos::Array<std::string>& list);
   void PrintStatistics_();
+  bool HasSubmodel_(const std::string& model, const std::string& submodel);
 
  private:
   int dim_;
@@ -294,7 +297,8 @@ class InputConverterU : public InputConverter {
   Teuchos::RCP<Teuchos::ParameterList> glist_;
 
   // global data
-  std::map<std::string, std::string> pk_model_, pk_domain_, pk_region_;
+  std::map<std::string, std::string> pk_domain_, pk_region_;
+  std::map<std::string, std::vector<std::string>> pk_model_;
   std::map<std::string, bool> pk_master_;
   std::map<std::string, double> dt_cut_, dt_inc_;
 
@@ -350,6 +354,21 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList verb_list_;
   VerboseObject* vo_;
 };
+
+
+/* ******************************************************************
+* Short functions
+****************************************************************** */
+inline
+bool
+InputConverterU::HasSubmodel_(const std::string& model, const std::string& submodel)
+{
+  int n = pk_model_[model].size();
+  for (int i = 0; i < n; ++i) {
+   if (pk_model_[model][i] == submodel) return true;
+  }
+  return false;
+}
 
 
 /* ******************************************************************

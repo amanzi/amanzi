@@ -101,7 +101,7 @@ InputConverterU::Translate(int rank, int num_proc)
 
   // -- additional saturated flow fields
   //    various data flow scenarios require both ic and ev to be defined FIXME
-  bool flag1 = (pk_model_["flow"] == "darcy");
+  bool flag1 = HasSubmodel_("flow", "darcy");
   bool flag2 = !phases_[LIQUID].active && !phases_[GAS].active && phases_[SOLID].active;
   if (flag1 || flag2) {
     Teuchos::Array<std::string> regions(1, "All");
@@ -152,7 +152,7 @@ InputConverterU::Translate(int rank, int num_proc)
   }
 
   // temperature evaluators for systems with constant temperature
-  if (pk_model_["flow"] == "richards" || pk_model_["chemistry"] != "") {
+  if (HasSubmodel_("flow", "richards") || pk_model_["chemistry"].size() > 0) {
     auto& out_ev = out_list.sublist("state").sublist("evaluators");
     auto& out_ic = out_list.sublist("state").sublist("initial conditions");
 
@@ -225,7 +225,7 @@ InputConverterU::Translate(int rank, int num_proc)
     }
   }
 
-  if (pk_model_["chemistry"] == "amanzi") {
+  if (HasSubmodel_("chemistry", "amanzi")) {
     out_list.sublist("thermodynamic database") = TranslateThermodynamicDatabase_();
   }
 
