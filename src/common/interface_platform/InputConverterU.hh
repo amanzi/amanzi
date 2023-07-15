@@ -191,9 +191,8 @@ class InputConverterU : public InputConverter {
                                        double val);
 
   // -- flow
-  Teuchos::ParameterList TranslateFlow_(const std::string& mode,
-                                        const std::string& domain,
-                                        const std::string& pk_model);
+  Teuchos::ParameterList
+  TranslateFlow_(const std::string& mode, const std::string& domain, const std::string& pk_model);
   Teuchos::ParameterList TranslateWRM_(const std::string& pk_name);
   Teuchos::ParameterList TranslatePOM_();
   Teuchos::ParameterList TranslatePPM_();
@@ -359,13 +358,12 @@ class InputConverterU : public InputConverter {
 /* ******************************************************************
 * Short functions
 ****************************************************************** */
-inline
-bool
+inline bool
 InputConverterU::HasSubmodel_(const std::string& model, const std::string& submodel)
 {
   int n = pk_model_[model].size();
   for (int i = 0; i < n; ++i) {
-   if (pk_model_[model][i] == submodel) return true;
+    if (pk_model_[model][i] == submodel) return true;
   }
   return false;
 }

@@ -327,7 +327,7 @@ InputConverterU::TranslateCycleDriverNew_()
     case 20:
       PopulatePKTree_(pk_tree_list, Keys::merge(mode, "flow and shallow water", delimiter));
       // for integrated hydrology, SW is defined on manifold
-      pk_domain_["shallow_water"] = "surface"; 
+      pk_domain_["shallow_water"] = "surface";
       break;
     case 32:
       pk_master_["multiphase"] = true;

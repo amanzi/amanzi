@@ -61,10 +61,7 @@ class Beaker {
     bool converged;
   };
 
-  typedef enum {
-    PFLOTRAN,
-    LINEAR_ALGEBRA_MAX_NORM
-  } ConvergenceType;
+  typedef enum { PFLOTRAN, LINEAR_ALGEBRA_MAX_NORM } ConvergenceType;
 
   // inheriting classes setup the species, etc
   virtual void Initialize(BeakerState& state, const BeakerParameters& parameters);

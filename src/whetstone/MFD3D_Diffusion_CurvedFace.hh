@@ -76,7 +76,10 @@ class MFD3D_Diffusion_CurvedFace : public DeRham_Face {
                       const Polynomial* moments,
                       Polynomial& vc) override;
 
-  void set_generalized_centroids(const std::shared_ptr<std::vector<AmanziGeometry::Point>>& bf) { bf_ = bf; }
+  void set_generalized_centroids(const std::shared_ptr<std::vector<AmanziGeometry::Point>>& bf)
+  {
+    bf_ = bf;
+  }
 
  private:
   void RescaleMassMatrixInverse_(int c, DenseMatrix& W);
