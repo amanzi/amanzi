@@ -26,9 +26,12 @@ TEST(WRM_TABULAR)
   using namespace Amanzi::Flow;
 
   Teuchos::ParameterList plist;
-  plist.set<Teuchos::Array<double>>("cap pressure", std::vector<double>({ 0.0, 100.0, 500.0, 1000.0, 10000.0 }));
-  plist.set<Teuchos::Array<double>>("permeability", std::vector<double>({ 1.0, 0.5, 0.1, 0.05, 0.02 }));
-  plist.set<Teuchos::Array<double>>("saturation", std::vector<double>({ 1.0, 0.5, 0.1, 0.05, 0.02 }));
+  plist.set<Teuchos::Array<double>>("cap pressure",
+                                    std::vector<double>({ 0.0, 100.0, 500.0, 1000.0, 10000.0 }));
+  plist.set<Teuchos::Array<double>>("permeability",
+                                    std::vector<double>({ 1.0, 0.5, 0.1, 0.05, 0.02 }));
+  plist.set<Teuchos::Array<double>>("saturation",
+                                    std::vector<double>({ 1.0, 0.5, 0.1, 0.05, 0.02 }));
 
   WRM_tabular wrm(plist);
 
@@ -36,7 +39,7 @@ TEST(WRM_TABULAR)
 
   for (double pc = 0.0; pc < 10000.0; pc += 123.0) {
     double s = wrm.saturation(pc);
-    double pc_new = wrm.capillaryPressure(s); 
+    double pc_new = wrm.capillaryPressure(s);
     CHECK_CLOSE(pc, pc_new, 1e-10 * (pc + 1));
     CHECK(wrm.get_itrs() < 30);
   }

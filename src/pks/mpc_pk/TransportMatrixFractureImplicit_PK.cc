@@ -88,7 +88,7 @@ TransportMatrixFractureImplicit_PK::Setup()
   }
 
   S_->Require<CV_t, CVS_t>(
-    "fracture-solute_diffusion_to_matrix", Tags::DEFAULT, "fracture-solute_diffusion_to_matrix")
+      "fracture-solute_diffusion_to_matrix", Tags::DEFAULT, "fracture-solute_diffusion_to_matrix")
     .SetMesh(mesh_fracture_)
     ->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::CELL, 2);

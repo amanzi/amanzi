@@ -254,7 +254,8 @@ InputConverterU::TranslateWRM_(const std::string& pk_name)
     DOMNode* inode = children->item(i);
 
     node = GetUniqueElementByTagsString_(inode, "cap_pressure", flag);
-    model = GetAttributeValueS_(node, "model", "van_genuchten, brooks_corey, saturated, linear, tabular");
+    model =
+      GetAttributeValueS_(node, "model", "van_genuchten, brooks_corey, saturated, linear, tabular");
     DOMNode* nnode = GetUniqueElementByTagsString_(node, "parameters", flag);
     DOMElement* element_cp = static_cast<DOMElement*>(nnode);
 

@@ -40,11 +40,7 @@ SplinedCurve::SplinedCurve(std::vector<double> x,
                            std::vector<double> y,
                            SplineEndpoints_t endpoints,
                            bool enforce_monotonicity)
-  : x_(x),
-    y_(y),
-    left_(endpoints.first),
-    right_(endpoints.second),
-    mono_(enforce_monotonicity)
+  : x_(x), y_(y), left_(endpoints.first), right_(endpoints.second), mono_(enforce_monotonicity)
 {
   // approximate derivatives
   int n = x.size();

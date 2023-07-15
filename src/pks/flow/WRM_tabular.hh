@@ -54,7 +54,7 @@ class WRM_tabular : public WRM {
   double residualSaturation() const { return sr_; }
   double dKdPc(double pc) const { return spline_kr_->Derivative(pc); }
 
-  // access 
+  // access
   boost::uintmax_t get_itrs() { return itrs_; }
 
  private:

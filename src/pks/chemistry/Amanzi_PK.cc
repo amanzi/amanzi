@@ -317,9 +317,9 @@ Amanzi_PK::XMLParameters()
   bool flag = plist_->get<bool>("log formulation");
   std::string criterion = plist_->get<std::string>("convergence criterion", "pflotran");
   chem_->set_use_log_formulation(flag);
-  chem_->set_convergence_criterion(
-    (criterion == "pflotran") ? Beaker::ConvergenceType::PFLOTRAN 
-                              : Beaker::ConvergenceType::LINEAR_ALGEBRA_MAX_NORM);
+  chem_->set_convergence_criterion((criterion == "pflotran") ?
+                                     Beaker::ConvergenceType::PFLOTRAN :
+                                     Beaker::ConvergenceType::LINEAR_ALGEBRA_MAX_NORM);
 
   beaker_parameters_.tolerance = 1e-12;
   beaker_parameters_.max_iterations = 250;
