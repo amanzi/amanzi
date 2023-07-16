@@ -207,6 +207,7 @@ if (BUILD_TESTS)
                     KIND int
                     SOURCE test/Main.cc test/flow_vanGenuchten.cc
                                         test/flow_wrm_tabular.cc
+                                        test/flow_wrm_solvers.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: flow-bc-factory
