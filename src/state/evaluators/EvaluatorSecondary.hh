@@ -60,14 +60,10 @@ class EvaluatorSecondary : public Evaluator {
   virtual bool
   UpdateDerivative(State& S, const Key& request, const Key& wrt_key, const Tag& wrt_tag) override;
 
+  virtual bool IsDirectDependency(const Key& key, const Tag& tag) const;
   virtual bool IsDependency(const State& S, const Key& key, const Tag& tag) const override;
   virtual bool ProvidesKey(const Key& key, const Tag& tag) const override;
-  virtual bool
-  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override
-  {
-    // note, provides key means the value is 1, and there may be times we have to use this value...
-    return ProvidesKey(wrt_key, wrt_tag) || IsDependency(S, wrt_key, wrt_tag);
-  }
+  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override;
 
   virtual std::string WriteToString() const override;
 
