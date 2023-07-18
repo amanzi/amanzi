@@ -56,6 +56,19 @@ DomainSet::doImport(const std::string& subdomain,
   }
 }
 
+// import from subdomains to parent domain
+void
+DomainSet::doImport(const std::vector<const Epetra_MultiVector*>& sources,
+                    Epetra_MultiVector& target) const
+{
+  AMANZI_ASSERT(sources.size() == size());
+  auto source = sources.begin();
+  for (const auto& subdomain : *this) {
+    doImport(subdomain, **source, target);
+    ++source;
+  }
+}
+
 void
 DomainSet::doExport(const std::string& subdomain,
                     const Epetra_MultiVector& src, Epetra_MultiVector& target) const

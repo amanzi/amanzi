@@ -89,6 +89,9 @@ class DomainSet {
   getSubdomainMaps() const { return maps_; }
 
   // import from subdomain to parent domain
+  void doImport(const std::vector<const Epetra_MultiVector*>& src, Epetra_MultiVector& target) const;
+
+  // import from subdomain to parent domain
   void doImport(const std::string& subdomain,
                 const Epetra_MultiVector& src, Epetra_MultiVector& target) const;
 
