@@ -17,22 +17,22 @@ jobs:
     - name: Extract the branch name
       id: branch
       run:
-        echo "::set-output name=AMANZI_BRANCH::$(echo $GITHUB_REF | sed -e 's/refs\/heads\///')"
+        echo "AMANZI_BRANCH=$GITHUB_REF_NAME" >> $GITHUB_ENV
     - name: Filter the branch name to generate a tag for Docker
       id: tag
       run:
-        echo "::set-output name=AMANZI_BRANCH_TAG::$(echo ${{steps.branch.outputs.AMANZI_BRANCH}} | sed -e 's/\//-/g' | sed -e 's/+/x/g')"
+        echo "AMANZI_BRANCH_TAG=$(echo ${{env.AMANZI_BRANCH}} | sed -e 's/\//--/g')" >> $GITHUB_ENV
     - name: Output the branch name
       run:
-        echo "Amanzi Branch = ${{steps.branch.outputs.AMANZI_BRANCH}}"
+        echo "Amanzi Branch = ${{env.AMANZI_BRANCH}}"
     - name: Get TPLs version
       id: version 
       working-directory: Docker
       run:
-        echo "::set-output name=AMANZI_TPLS_VER::$(./get_tpls_version.sh)"
+        echo "AMANZI_TPLS_VER=$(./get_tpls_version.sh)" >> $GITHUB_ENV
     - name: Output the TPLs version
       run:
-        echo "TPLs version = ${{steps.version.outputs.AMANZI_TPLS_VER}}"
+        echo "TPLs version = ${{env.AMANZI_TPLS_VER}}"
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
     - name: Set up docker buildx
@@ -45,16 +45,16 @@ jobs:
     - name: Build and push multiarch image
       uses: docker/build-push-action@v4
       with:
-        tags: metsi/amanzi:${{steps.tag.outputs.AMANZI_BRANCH_TAG}}-latest
+        tags: metsi/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest
         platforms: linux/amd64,linux/arm64
         push: true
         build-args: |
-          amanzi_branch=${{steps.branch.outputs.AMANZI_BRANCH}}
-          amanzi_tpls_ver=${{steps.version.outputs.AMANZI_TPLS_VER}}
+          amanzi_branch=${{env.AMANZI_BRANCH}}
+          amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}}
         file: Docker/Dockerfile-Amanzi-build
         context: ./Docker
     - name: Run tests
       id: tests
       working-directory: Docker
       run:
-        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{steps.tag.outputs.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest"
+        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest"
