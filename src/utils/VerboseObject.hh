@@ -105,6 +105,9 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   // Is process 0 and verbosity is included?
   inline bool os_OK(Teuchos::EVerbosityLevel verbosity) const;
 
+  // is the verbosity included?
+  inline bool includesVerbLevel(Teuchos::EVerbosityLevel verbosity) const;
+
   // Get the stream (errors if !os_OK()).
   inline Teuchos::RCP<Teuchos::FancyOStream> os() const;
 
@@ -142,8 +145,14 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
 bool
 VerboseObject::os_OK(Teuchos::EVerbosityLevel verbosity) const
 {
-  return getOStream().get() && includesVerbLevel(getVerbLevel(), verbosity, true);
+  return getOStream().get() && includesVerbLevel(verbosity);
 };
+
+bool
+VerboseObject::includesVerbLevel(Teuchos::EVerbosityLevel verbosity) const
+{
+  return Teuchos::includesVerbLevel(getVerbLevel(), verbosity, true);
+}
 
 
 Teuchos::RCP<Teuchos::FancyOStream>
