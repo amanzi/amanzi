@@ -302,7 +302,7 @@ Alquimia_PK::Initialize()
       auto& aux_state =
         *S_->GetW<CompositeVector>(aux_names_[i], tag_next_, passwd_).ViewComponent("cell");
       for (int j = 0; j < aux_subfield_names_[i].size(); ++j) {
-        *aux_state[j] = *(*aux_output_)[counter++];
+        *aux_state(j) = *(*aux_output_)(counter++);
       }
     }
   }
@@ -954,7 +954,7 @@ Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       auto& aux_state =
         *S_->GetW<CompositeVector>(aux_names_[i], tag_next_, passwd_).ViewComponent("cell");
       for (int j = 0; j < aux_subfield_names_[i].size(); ++j) {
-        *aux_state[j] = *(*aux_output_)[counter++];
+        *aux_state(j) = *(*aux_output_)(counter++);
       }
     }
   }
