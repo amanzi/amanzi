@@ -58,6 +58,16 @@ jobs:
     name: Run amanzi tests on amd64 image
     needs: buildx_test
     steps:
+      - name: Check out the Amanzi repo
+          uses: actions/checkout@v3
+      - name: Extract the branch name
+          id: branch
+          run:
+            echo "AMANZI_BRANCH=$GITHUB_REF_NAME" >> $GITHUB_ENV
+      - name: Filter the branch name to generate a tag for Docker
+          id: tag
+          run:
+            echo "AMANZI_BRANCH_TAG=$(echo ${{env.AMANZI_BRANCH}} | sed -e 's/\//--/g')" >> $GITHUB_ENV
       - name: Run amd64 tests
         id: tests_amd64
         working-directory: Docker
@@ -68,6 +78,16 @@ jobs:
     name: Run amanzi tests on amd64 image
     needs: buildx_test
     steps:
+      - name: Check out the Amanzi repo
+          uses: actions/checkout@v3
+      - name: Extract the branch name
+          id: branch
+          run:
+            echo "AMANZI_BRANCH=$GITHUB_REF_NAME" >> $GITHUB_ENV
+      - name: Filter the branch name to generate a tag for Docker
+          id: tag
+          run:
+            echo "AMANZI_BRANCH_TAG=$(echo ${{env.AMANZI_BRANCH}} | sed -e 's/\//--/g')" >> $GITHUB_ENV
       - name: Run arm64 tests
         id: arm64_tests
         working-directory: Docker
