@@ -53,14 +53,24 @@ jobs:
           amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}}
         file: Docker/Dockerfile-Amanzi-build
         context: ./Docker
-    - name: Run amd64 tests
-      id: amd64_tests
-      working-directory: Docker
-      run:
-        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest"
-    - name: Run arm64 tests
-      id: arm64_tests
-      working-directory: Docker
-      run:
-        docker run --platform=linux/arm64 --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest"
+  amd64_tests:
+    runs-on: ubuntu-latest
+    name: Run amanzi tests on amd64 image
+    needs: buildx_test
+    steps:
+      - name: Run amd64 tests
+        id: tests_amd64
+        working-directory: Docker
+        run:
+          docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest"
+  arm64_tests:
+    runs-on: ubuntu-latest
+    name: Run amanzi tests on amd64 image
+    needs: buildx_test
+    steps:
+      - name: Run arm64 tests
+        id: arm64_tests
+        working-directory: Docker
+        run:
+          docker run --platform=linux/arm64 --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest"
     
