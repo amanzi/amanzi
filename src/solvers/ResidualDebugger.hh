@@ -61,7 +61,7 @@ class ResidualDebugger : public IOEvent {
       tag_(tag)
   {
     filebasename_ = plist_.get<std::string>("file name base", "amanzi_dbg");
-    additional_vars_ = plist_.get<Teuchos::Array<std::string>>("additional variables");
+    additional_vars_ = plist_.get<Teuchos::Array<std::string>>("additional variables", {});
   }
 
   template <class VectorSpace>
