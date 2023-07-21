@@ -20,6 +20,7 @@
 #include "CompositeVector.hh"
 #include "TreeVector.hh"
 #include "TreeVector_Utils.hh"
+#include "State.hh"
 
 #include "ResidualDebugger.hh"
 
@@ -47,8 +48,8 @@ ResidualDebugger::StartIteration<TreeVectorSpace>(double time,
     for (int i = 0; i != leaves.size(); ++i) {
       if (leaves[i]->Data()->HasComponent("cell")) {
         std::stringstream filename;
-        filename << filebasename_ << cycle << "_a" << attempt << "_v" << i;
-        vis_[i] = Teuchos::rcp(new HDF5_MPI(leaves[i]->Data()->Mesh()->get_comm()));
+        filename << filebasename_ << "_" << cycle << "_attempt" << attempt << "_vec" << i;
+        vis_[i] = Teuchos::rcp(new HDF5_MPI(leaves[i]->Data()->Mesh()->get_comm(), false));
         vis_[i]->setTrackXdmf(true);
         vis_[i]->createMeshFile(leaves[i]->Data()->Mesh(), filename.str() + "_mesh");
         vis_[i]->createDataFile(filename.str());
@@ -75,6 +76,7 @@ ResidualDebugger::WriteVector<TreeVector>(int iter,
         (*it)->writeMesh(time_, iter);
         (*it)->createTimestep(time_, iter, "");
         (*it)->open_h5file();
+        (*it)->writeAttrReal(S_->Get<double>("dt", tag_), "dt");
       }
     }
 
@@ -87,6 +89,21 @@ ResidualDebugger::WriteVector<TreeVector>(int iter,
           std::stringstream my_name;
           my_name << "residual.cell." << j;
           vis_[i]->writeCellDataReal(*vec(j), my_name.str());
+        }
+
+        // write additional info
+        if (additional_vars_.size() > 0) {
+          auto mesh = r_leaves[i]->Data()->Mesh();
+          for (const std::string& additional_var : additional_vars_) {
+            if (S_->GetMesh(Keys::getDomain(additional_var)) == mesh) {
+              const auto& vec = *S_->Get<CompositeVector>(additional_var, tag_).ViewComponent("cell", false);
+              for (int j = 0; j != vec.NumVectors(); ++j) {
+                std::stringstream my_name;
+                my_name << additional_var << ".cell." << j;
+                vis_[i]->writeCellDataReal(*vec(j), my_name.str());
+              }
+            }
+          }
         }
       }
     }

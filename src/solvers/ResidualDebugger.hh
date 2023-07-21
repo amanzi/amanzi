@@ -36,21 +36,32 @@ process for use with vis tools.
 #include "Teuchos_Ptr.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "Tag.hh"
 #include "VerboseObject.hh"
 #include "IOEvent.hh"
 #include "TreeVector.hh"
 #include "TreeVector_Utils.hh"
 #include "HDF5_MPI.hh"
+#include "StateDefs.hh"
 
 namespace Amanzi {
+
+class State;
+
 namespace AmanziSolvers {
 
 class ResidualDebugger : public IOEvent {
  public:
   // Constructor
-  ResidualDebugger(Teuchos::ParameterList& plist) : IOEvent(plist)
+  ResidualDebugger(Teuchos::ParameterList& plist,
+                   const Teuchos::RCP<State>& S = Teuchos::null,
+                   const Tag& tag = Tags::DEFAULT)
+    : IOEvent(plist),
+      S_(S),
+      tag_(tag)
   {
     filebasename_ = plist_.get<std::string>("file name base", "amanzi_dbg");
+    additional_vars_ = plist_.get<Teuchos::Array<std::string>>("additional variables");
   }
 
   template <class VectorSpace>
@@ -70,6 +81,10 @@ class ResidualDebugger : public IOEvent {
   bool on_;
   double time_;
   std::vector<Teuchos::RCP<HDF5_MPI>> vis_;
+
+  Teuchos::RCP<State> S_;
+  Teuchos::Array<std::string> additional_vars_;
+  Tag tag_;
 };
 
 

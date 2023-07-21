@@ -271,9 +271,9 @@ CompositeVector::operator=(const CompositeVector& other)
 // Ghosted views are simply the vector itself, while non-ghosted views are
 // lazily generated.
 Teuchos::RCP<const Epetra_MultiVector>
-CompositeVector::ViewComponent(std::string name, bool ghosted) const
+CompositeVector::ViewComponent(const std::string& name, bool ghosted) const
 {
-  if (name == std::string("boundary_face")) {
+  if (name == "boundary_face") {
     if (!mastervec_->HasComponent("boundary_face") && mastervec_->HasComponent("face")) {
       ApplyVandelay_();
       return vandelay_vector_;
@@ -289,9 +289,9 @@ CompositeVector::ViewComponent(std::string name, bool ghosted) const
 
 
 Teuchos::RCP<Epetra_MultiVector>
-CompositeVector::ViewComponent(std::string name, bool ghosted)
+CompositeVector::ViewComponent(const std::string& name, bool ghosted)
 {
-  if (name == std::string("boundary_face")) {
+  if (name == "boundary_face") {
     if (!mastervec_->HasComponent("boundary_face") && mastervec_->HasComponent("face")) {
       ApplyVandelay_();
       ChangedValue("face");
@@ -310,7 +310,7 @@ CompositeVector::ViewComponent(std::string name, bool ghosted)
 
 // Set data by pointer if possible, otherwise by copy.
 void
-CompositeVector::SetComponent(std::string name, const Teuchos::RCP<Epetra_MultiVector>& data)
+CompositeVector::SetComponent(const std::string& name, const Teuchos::RCP<Epetra_MultiVector>& data)
 {
   ChangedValue(name);
 
@@ -347,7 +347,7 @@ CompositeVector::ScatterMasterToGhosted(bool force) const
 
 
 void
-CompositeVector::ScatterMasterToGhosted(std::string name, bool force) const
+CompositeVector::ScatterMasterToGhosted(const std::string& name, bool force) const
 {
   // NOTE: allowing const is a hack to allow non-owning PKs to nonetheless
   // update ghost cells, which may be necessary for their discretization
@@ -399,7 +399,7 @@ CompositeVector::ScatterMasterToGhosted(Epetra_CombineMode mode) const
 //
 // This Scatter() is not managed, and is always done.  Tags changed.
 void
-CompositeVector::ScatterMasterToGhosted(std::string name, Epetra_CombineMode mode) const
+CompositeVector::ScatterMasterToGhosted(const std::string& name, Epetra_CombineMode mode) const
 {
   ChangedValue(name);
 
@@ -428,7 +428,7 @@ CompositeVector::GatherGhostedToMaster(Epetra_CombineMode mode)
 
 
 void
-CompositeVector::GatherGhostedToMaster(std::string name, Epetra_CombineMode mode)
+CompositeVector::GatherGhostedToMaster(const std::string& name, Epetra_CombineMode mode)
 {
   ChangedValue(name);
 #ifdef HAVE_MPI
@@ -476,7 +476,7 @@ CompositeVector::ApplyVandelay_() const
 
 // return non-empty importer
 const Epetra_Import&
-CompositeVector::importer(std::string name) const
+CompositeVector::importer(const std::string& name) const
 {
   return Mesh()->importer(Location(name));
 }
