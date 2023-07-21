@@ -28,6 +28,9 @@ include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${MFUNCS_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR}/data)
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -65,13 +68,14 @@ set(solvers_link_libs data_structures
 		      geometry
 		      error_handling
 		      whetstone
-		      atk)
+		      atk
+                      state
+                      mesh_functions)
 
 add_amanzi_library(solvers
                    SOURCE ${solvers_source_files} 
                    HEADERS ${solvers_inc_files}
-		   LINK_LIBS data_structures output whetstone atk
-                             ${solver_depends} ${solvers_tpl_libs} ${Epetra_LIBRARIES})
+		   LINK_LIBS ${solvers_link_libs} ${solvers_tpl_libs})
 
 if (BUILD_TESTS)
     set(solvers_test_link_libs solvers ${solvers_link_libs})
