@@ -1,0 +1,62 @@
+diff -Naur alquimia-1.0.9-source/drivers/DriverOutput.c alquimia-1.0.9-source-new/drivers/DriverOutput.c
+--- alquimia-1.0.9-source/drivers/DriverOutput.c	2023-07-26 17:22:47
++++ alquimia-1.0.9-source-new/drivers/DriverOutput.c	2023-07-26 17:29:14
+@@ -63,7 +63,7 @@
+   fprintf(file, "\n");
+ }
+ 
+-DriverOutput* GnuplotDriverOutput_New()
++DriverOutput* GnuplotDriverOutput_New(void)
+ {
+   return DriverOutput_New(GnuplotWrite);
+ }
+@@ -87,7 +87,7 @@
+   }
+ }
+ 
+-DriverOutput* PythonDriverOutput_New()
++DriverOutput* PythonDriverOutput_New(void)
+ {
+   return DriverOutput_New(PythonWrite);
+ }
+diff -Naur alquimia-1.0.9-source/drivers/DriverOutput.h alquimia-1.0.9-source-new/drivers/DriverOutput.h
+--- alquimia-1.0.9-source/drivers/DriverOutput.h	2023-07-26 17:22:47
++++ alquimia-1.0.9-source-new/drivers/DriverOutput.h	2023-07-26 17:29:05
+@@ -35,11 +35,11 @@
+ typedef struct DriverOutput DriverOutput;
+ 
+ // Creates a DriverOutput object that writes columnated data sensible to Gnuplot.
+-DriverOutput* GnuplotDriverOutput_New();
++DriverOutput* GnuplotDriverOutput_New(void);
+ 
+ // Creates a DriverOutput object that writes a Python module that can be imported
+ // by an analysis script.
+-DriverOutput* PythonDriverOutput_New();
++DriverOutput* PythonDriverOutput_New(void);
+ 
+ // Writes the given vector(s) to the file with the given name.
+ void DriverOutput_WriteVectors(DriverOutput* output, 
+diff -Naur alquimia-1.0.9-source/drivers/batch_chem.c alquimia-1.0.9-source-new/drivers/batch_chem.c
+--- alquimia-1.0.9-source/drivers/batch_chem.c	2023-07-26 17:34:08
++++ alquimia-1.0.9-source-new/drivers/batch_chem.c	2023-07-26 17:32:58
+@@ -31,7 +31,7 @@
+ #include "BatchChemDriver.h"
+ #include "DriverOutput.h"
+ 
+-void Usage()
++void Usage(void)
+ {
+   printf("batch_chem: usage:\n");
+   printf("batch_chem <input_file>\n\n");
+diff -Naur alquimia-1.0.9-source/drivers/transport.c alquimia-1.0.9-source-new/drivers/transport.c
+--- alquimia-1.0.9-source/drivers/transport.c	2023-07-26 17:34:49
++++ alquimia-1.0.9-source-new/drivers/transport.c	2023-07-26 17:35:51
+@@ -31,7 +31,7 @@
+ #include "TransportDriver.h"
+ #include "DriverOutput.h"
+ 
+-void Usage()
++void Usage(void)
+ {
+   printf("transport: usage:\n");
+   printf("transport <input_file>\n\n");
