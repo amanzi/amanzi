@@ -1,12 +1,90 @@
 diff --git a/packages/ifpack/src/Ifpack_Hypre.cpp b/packages/ifpack/src/Ifpack_Hypre.cpp
-index d70f232946b..a7beafea8de 100644
+index 373147a5338..ddf18d058f7 100644
 --- a/packages/ifpack/src/Ifpack_Hypre.cpp
 +++ b/packages/ifpack/src/Ifpack_Hypre.cpp
-@@ -784,6 +784,7 @@ int Ifpack_Hypre::Compute(){
+@@ -381,7 +381,7 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
+   SolveOrPrec_(Solver),
+   NumFunsToCall_(0),
+   SolverType_(PCG),
+-  PrecondType_(Euclid),
++  PrecondType_(ILU),
+   UsePreconditioner_(false),
+   Dump_(false)
+ {
+@@ -479,6 +479,7 @@ int Ifpack_Hypre::SetParameters(Teuchos::ParameterList& list){
+   solverMap["BoomerAMG"] = BoomerAMG;
+   solverMap["ParaSails"] = ParaSails;
+   solverMap["Euclid"] = Euclid;
++  solverMap["ILU"] = ILU;
+   solverMap["AMS"] = AMS;
+   solverMap["Hybrid"] = Hybrid;
+   solverMap["PCG"] = PCG;
+@@ -502,7 +503,7 @@ int Ifpack_Hypre::SetParameters(Teuchos::ParameterList& list){
+   if (list.isType<std::string>("hypre: Preconditioner"))
+     precType = solverMap[list.get<std::string>("hypre: Preconditioner")];
+   else
+-    precType = list.get("hypre: Preconditioner", Euclid);
++    precType = list.get("hypre: Preconditioner", ILU);
+   PrecondType_ = precType;
+   Hypre_Chooser chooser;
+   if (list.isType<std::string>("hypre: SolveOrPrecondition"))
+@@ -780,6 +781,7 @@ int Ifpack_Hypre::Compute(){
      IFPACK_CHK_ERR(Initialize());
    }
    Time_.ResetStartTime();
 +  CopyEpetraToHypre();
  
-   // Hypre Setup must be called after matrix has values
-   if(SolveOrPrec_ == Solver){
+   // Create the Hypre matrix and copy values.  Note this uses values (which
+   // Initialize() shouldn't do) but it doesn't care what they are (for
+@@ -1163,7 +1165,17 @@ int Ifpack_Hypre::SetPrecondType(Hypre_Solver Precond){
+       PrecondSetupPtr_ = &HYPRE_EuclidSetup;
+       PrecondSolvePtr_ = &HYPRE_EuclidSolve;
+       break;
+-    case AMS:
++    case ILU:
++      if(IsPrecondCreated_){
++        PrecondDestroyPtr_(Preconditioner_);
++        IsPrecondCreated_ = false;
++      }
++      PrecondCreatePtr_ = &Ifpack_Hypre::Hypre_ILUCreate;
++      PrecondDestroyPtr_ = &HYPRE_ILUDestroy;
++      PrecondSetupPtr_ = &HYPRE_ILUSetup;
++      PrecondSolvePtr_ = &HYPRE_ILUSolve;
++      break;
++  case AMS:
+       if(IsPrecondCreated_){
+         PrecondDestroyPtr_(Preconditioner_);
+         IsPrecondCreated_ = false;
+@@ -1238,6 +1250,10 @@ int Ifpack_Hypre::Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver)
+ int Ifpack_Hypre::Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver)
+     { return HYPRE_EuclidCreate(comm, solver);}
+ 
++//==============================================================================
++int Ifpack_Hypre::Hypre_ILUCreate(MPI_Comm comm, HYPRE_Solver *solver)
++    { return HYPRE_ILUCreate(solver);}
++
+ //==============================================================================
+ int Ifpack_Hypre::Hypre_AMSCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
+     { return HYPRE_AMSCreate(solver);}
+diff --git a/packages/ifpack/src/Ifpack_Hypre.h b/packages/ifpack/src/Ifpack_Hypre.h
+index 112398c5f0f..9883ee9a4e1 100644
+--- a/packages/ifpack/src/Ifpack_Hypre.h
++++ b/packages/ifpack/src/Ifpack_Hypre.h
+@@ -95,6 +95,7 @@ enum Hypre_Solver{
+     BoomerAMG,
+     ParaSails,
+     Euclid,
++    ILU,
+     AMS,
+     Hybrid,
+     PCG,
+@@ -518,6 +519,9 @@ private:
+   //! Create a Euclid solver.
+   int Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver);
+ 
++  //! Create a ILU solver.
++  int Hypre_ILUCreate(MPI_Comm comm, HYPRE_Solver *solver);
++
+   //! Create an AMS solver.
+   int Hypre_AMSCreate(MPI_Comm comm, HYPRE_Solver *solver);
+ 

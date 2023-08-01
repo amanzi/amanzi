@@ -176,6 +176,8 @@
 #                - update PFLOTRAN to 3.0.2 (compatible with PETSc and Alqumia)
 #                - update PETSc to 3.16.0
 #   0.98.6       - update Alquimia to version 1.0.9
+#   0.98.7       - Update Trilinis to fc55b9cd (Also 14.2.0)
+#                - Update Hypre to 8f6bdc6a (Also 2.29.0)
 
 include(CMakeParseArguments)
 
@@ -418,7 +420,7 @@ set(MOAB_MD5_SUM        935d18f8edf7dc3df625d9426a2d59e1)
 # TPL: HYPRE
 #
 set(HYPRE_VERSION_MAJOR  2)
-set(HYPRE_VERSION_MINOR  22)
+set(HYPRE_VERSION_MINOR  29)
 set(HYPRE_VERSION_PATCH  0)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
 set(HYPRE_URL_STRING     "https://github.com/hypre-space/hypre/archive/")
@@ -426,7 +428,7 @@ set(HYPRE_ARCHIVE_FILE   v${HYPRE_VERSION}.tar.gz)
 set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
 set(HYPRE_MD5_SUM        0b3abc221b216db97175709aa0bf94d7)
 set(HYPRE_GIT_REPOSITORY "https://github.com/hypre-space/hypre")
-set(HYPRE_GIT_TAG        "09b6b53ca5873573b8c40b78de6a4b531579de68")
+set(HYPRE_GIT_TAG        "8f6bdc6ab8c9d01961fa0b3024a1969c6cb7877f")
 
 #
 # TPL: ParMetis
@@ -489,19 +491,18 @@ set(PETSc_ARCHIVE_FILE   petsc-v${PETSc_VERSION}.tar.gz)
 set(PETSc_SAVEAS_FILE    petsc-${PETSc_VERSION}.tar.gz)
 set(PETSc_MD5_SUM        b231f5dcb7ecbb11c6ccf4caa2472fee)
 
-
 #
 # TPL: Trilinos
 #
-set(Trilinos_VERSION_MAJOR 13)
-set(Trilinos_VERSION_MINOR 0)
-set(Trilinos_VERSION_PATCH afc4e525)
+set(Trilinos_VERSION_MAJOR 14)
+set(Trilinos_VERSION_MINOR 2)
+set(Trilinos_VERSION_PATCH fc55b9cd)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
 set(Trilinos_GIT_REPOSITORY "https://github.com/trilinos/Trilinos")
-set(Trilinos_GIT_TAG        "afc4e52595ab82f449f8a4676febbcfbf8223afc")
+set(Trilinos_GIT_TAG        "fc55b9cd3703754ec187d7e7e5220f3116d4f523")
 
 #
 # TPL: SEACAS

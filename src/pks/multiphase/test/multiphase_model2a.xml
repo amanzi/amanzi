@@ -90,7 +90,7 @@
 
     <Parameter name="Jacobian type" type="string" value="analytic"/>
     <Parameter name="linear solver" type="string" value="GMRES"/>
-    <Parameter name="preconditioner" type="string" value="Euclid"/>
+    <Parameter name="preconditioner" type="string" value="ILU"/>
     <Parameter name="error control options" type="Array(string)" value="{residual}"/>
 
     <ParameterList name="molecular diffusion">
@@ -635,9 +635,9 @@
       <ParameterList name="block ilu parameters">
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Euclid">
-      <Parameter name="preconditioning method" type="string" value="euclid"/>
-      <ParameterList name="euclid parameters">
+    <ParameterList name="ILU">
+      <Parameter name="preconditioning method" type="string" value="ILU"/>
+      <ParameterList name="ILU parameters">
         <Parameter name="ilu(k) fill level" type="int" value="5"/>
         <!--Parameter name="ilut drop tolerance" type="double" value="0.01"/-->
         <Parameter name="rescale rows" type="bool" value="true"/>

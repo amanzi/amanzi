@@ -315,7 +315,6 @@ if (ENABLE_Trilinos_Patch)
     trilinos-duplicate-parameters.patch
     trilinos-superludist.patch
     trilinos-ifpack.patch
-    trilinos-ifpack2.patch
     )
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
                  ${Trilinos_prefix_dir}/trilinos-patch-step.sh

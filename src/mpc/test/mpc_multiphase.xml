@@ -534,11 +534,10 @@
         <Parameter name="schwarz: combine mode" type="string" value="Add"/>
       </ParameterList>
       <!--
-      <Parameter name="preconditioner type" type="string" value="euclid"/>
-      <ParameterList name="euclid parameters">
+      <Parameter name="preconditioner type" type="string" value="ILU"/>
+      <ParameterList name="ILU parameters">
         <Parameter name="ILU(k) fill level" type="int" value="6"/>
         <Parameter name="ILUT drop tolerance" type="double" value="0.01"/>
-        <Parameter name="rescale rows" type="bool" value="true"/>
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
       -->
