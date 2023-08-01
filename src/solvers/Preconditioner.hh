@@ -13,7 +13,7 @@
 
 This sublist contains entries for various
 preconditioners required by a simulation. At the moment, we support Trilinos multilevel
-preconditioner, Hypre BoomerAMG preconditioner, ILU preconditioner, Hypre's Euclid ILU
+preconditioner, Hypre BoomerAMG preconditioner, ILU preconditioner, Hypre's ILU
 preconditioner, and identity preconditioner. 
 
 * `"preconditioning method`" [string] defines preconditioner algorithm.

@@ -204,28 +204,24 @@ PreconditionerHypre::InitBoomer_()
 * Initialize modified ILU preconditioner.
 ****************************************************************** */
 void
-PreconditionerHypre::InitEuclid_()
+PreconditionerHypre::InitILU_()
 {
 #ifdef HAVE_HYPRE
-  method_ = Euclid;
+  method_ = ILU;
 
   if (plist_.isParameter("verbosity"))
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_EuclidSetStats, plist_.get<int>("verbosity"));
+    IfpHypre_->SetParameter(
+      (Hypre_Chooser)1, &HYPRE_ILUSetPrintLevel, plist_.get<int>("verbosity"));
 
   if (plist_.isParameter("ilu(k) fill level"))
     IfpHypre_->SetParameter(
-      (Hypre_Chooser)1, &HYPRE_EuclidSetLevel, plist_.get<int>("ilu(k) fill level"));
-
-  if (plist_.isParameter("rescale rows")) {
-    bool rescale_rows = plist_.get<bool>("rescale rows");
-    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_EuclidSetRowScale, rescale_rows ? 1 : 0);
-  }
+      (Hypre_Chooser)1, &HYPRE_ILUSetLevelOfFill, plist_.get<int>("ilu(k) fill level"));
 
   if (plist_.isParameter("ilut drop tolerance"))
     IfpHypre_->SetParameter(
-      (Hypre_Chooser)1, &HYPRE_EuclidSetILUT, plist_.get<double>("ilut drop tolerance"));
+      (Hypre_Chooser)1, &HYPRE_ILUSetTol, plist_.get<double>("ilut drop tolerance"));
 #else
-  Errors::Message msg("Hypre (Euclid) is not available in this installation of Amanzi.  To use "
+  Errors::Message msg("Hypre (ILU) is not available in this installation of Amanzi.  To use "
                       "Hypre, please reconfigure.");
   Exceptions::amanzi_throw(msg);
 #endif
@@ -327,8 +323,8 @@ PreconditionerHypre::InitializeInverse()
   std::string method_name = plist_.get<std::string>("method");
   if (method_name == "boomer amg") {
     InitBoomer_();
-  } else if (method_name == "euclid") {
-    InitEuclid_();
+  } else if (method_name == "ILU") {
+    InitILU_();
   } else if (method_name == "ams") {
     InitAMS_();
   } else {

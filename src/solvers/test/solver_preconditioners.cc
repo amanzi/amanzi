@@ -117,7 +117,7 @@ SUITE(SOLVERS)
     for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
 
     for (const auto& prec_name : {
-           "identity", "diagonal", "block ilu", "boomer amg", "euclid", "ml"
+           "identity", "diagonal", "block ilu", "boomer amg", "ILU", "ml"
 #if defined(HAVE_MUELU_EPETRA)
              ,
              "muelu"

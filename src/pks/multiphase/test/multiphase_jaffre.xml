@@ -84,7 +84,7 @@
 
     <Parameter name="Jacobian type" type="string" value="analytic"/>
     <Parameter name="linear solver" type="string" value="GMRES"/>
-    <Parameter name="preconditioner" type="string" value="Euclid"/>
+    <Parameter name="preconditioner" type="string" value="ILU"/>
     <Parameter name="error control options" type="Array(string)" value="{residual}"/>
     <Parameter name="number aqueous components" type="int" value="1"/>
     <Parameter name="number gaseous components" type="int" value="0"/>
@@ -583,12 +583,11 @@
 
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
-    <ParameterList name="Euclid">
-      <Parameter name="preconditioning method" type="string" value="euclid"/>
-      <ParameterList name="euclid parameters">
+    <ParameterList name="ILU">
+      <Parameter name="preconditioning method" type="string" value="ILU"/>
+      <ParameterList name="ILU parameters">
         <Parameter name="ilu(k) fill level" type="int" value="5"/>
         <!--<Parameter name="ILUT drop tolerance" type="double" value="0.000001"/>-->
-        <Parameter name="rescale rows" type="bool" value="true"/>
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
