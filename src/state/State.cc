@@ -674,7 +674,8 @@ State::InitializeEvaluators()
         *vo_->os() << "initializing eval: \"" << e.first << "\" @ \"" << tag.first << "\""
                    << std::endl;
       }
-
+      *vo_->os() << "initializing eval: \"" << e.first << "\" @ \"" << tag.first << "\""
+                 << std::endl;
       tag.second->Update(*this, "state");
     }
     GetRecordSetW(e.first).initializeTags();
