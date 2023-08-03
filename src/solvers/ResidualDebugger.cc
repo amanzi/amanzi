@@ -33,13 +33,11 @@ namespace AmanziSolvers {
 // -----------------------------------------------------------------------------
 template <>
 void
-ResidualDebugger::StartIteration<TreeVectorSpace>(double time,
-                                                  int cycle,
-                                                  int attempt,
+ResidualDebugger::StartIteration<TreeVectorSpace>(int attempt,
                                                   const TreeVectorSpace& space)
 {
-  on_ = DumpRequested(cycle, time);
-  time_ = time;
+  int cycle = S_->Get<int>("cycle", tag_);
+  on_ = DumpRequested(cycle, S_->Get<double>("time", tag_));
   if (on_) {
     // iterate through the TreeVector finding leaf nodes and write them
     std::vector<Teuchos::RCP<const TreeVectorSpace>> leaves = collectTreeVectorLeaves_const(space);
@@ -73,10 +71,11 @@ ResidualDebugger::WriteVector<TreeVector>(int iter,
     // open files
     for (std::vector<Teuchos::RCP<HDF5_MPI>>::iterator it = vis_.begin(); it != vis_.end(); ++it) {
       if (it->get()) {
-        (*it)->writeMesh(time_, iter);
-        (*it)->createTimestep(time_, iter, "");
+        (*it)->writeMesh(S_->Get<double>("time", tag_), iter);
+        (*it)->createTimestep(S_->Get<double>("time", tag_), iter, "");
         (*it)->open_h5file();
         (*it)->writeAttrReal(S_->Get<double>("dt", tag_), "dt");
+        (*it)->writeAttrInt(S_->Get<int>("cycle", tag_), "dt");
       }
     }
 

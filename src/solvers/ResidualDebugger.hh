@@ -65,8 +65,7 @@ class ResidualDebugger : public IOEvent {
   }
 
   template <class VectorSpace>
-  void StartIteration(double time, int cycle, int attempt, const VectorSpace& space)
-  {}
+  void StartIteration(int attempt, const VectorSpace& space) {}
 
   template <class Vector>
   void WriteVector(int iter,
@@ -79,7 +78,6 @@ class ResidualDebugger : public IOEvent {
  protected:
   std::string filebasename_;
   bool on_;
-  double time_;
   std::vector<Teuchos::RCP<HDF5_MPI>> vis_;
 
   Teuchos::RCP<State> S_;
@@ -90,9 +88,7 @@ class ResidualDebugger : public IOEvent {
 
 template <>
 void
-ResidualDebugger::StartIteration<TreeVectorSpace>(double time,
-                                                  int cycle,
-                                                  int attempt,
+ResidualDebugger::StartIteration<TreeVectorSpace>(int attempt,
                                                   const TreeVectorSpace& space);
 template <>
 void
