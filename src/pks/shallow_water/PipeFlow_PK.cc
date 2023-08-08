@@ -595,7 +595,7 @@ bool PipeFlow_PK::IsJunction(const int &cell)
 
     auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
     // both components of pipe direction equal to zero is the definition of junction cell
-    if(std::fabs(dir_c[0][cell]) < 1.e-14 && std::fabs(dir_c[0][cell]) < 1.e-14){ 
+    if(std::fabs(dir_c[0][cell]) < 1.e-14 && std::fabs(dir_c[1][cell]) < 1.e-14){ 
        isJunction = 1;
     }
 
