@@ -75,14 +75,22 @@ void PipeFlow_PK::Setup()
    }
 
    // -- direction
-  if (!S_->HasRecord(direction_key_)) {
-    S_->Require<CV_t, CVS_t>(direction_key_, Tags::DEFAULT, passwd_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 2);
-    AddDefaultPrimaryEvaluator_(direction_key_);
-  }
-   
+   if (!S_->HasRecord(direction_key_)) {
+
+      S_->Require<CV_t, CVS_t>(direction_key_, Tags::DEFAULT, direction_key_)
+         .SetMesh(mesh_)
+         ->SetGhosted(true)
+         ->SetComponent("cell", AmanziMesh::CELL, 2);
+
+      if(direction_key_.empty()){
+         AddDefaultPrimaryEvaluator_(direction_key_);
+      }
+      else{
+        S_->RequireEvaluator(direction_key_, Tags::DEFAULT);  
+      }
+
+   }  
+
 }
 
 //--------------------------------------------------------------------
@@ -121,7 +129,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
      mesh_->cell_get_faces(c, &cfaces);
      double vol = mesh_->cell_volume(c);
      int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-     auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+     auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, direction_key_).ViewComponent("cell", true);
 
      double BGrad = 0.0;
      double OtherTermLeft = 0.0;
@@ -552,7 +560,7 @@ void PipeFlow_PK::InitializeCellArrays(){
 
     int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-    auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+    auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, direction_key_).ViewComponent("cell", true);
     // initialize pipe direction if not
     // specified from file
     if(direction_key_.empty()){
@@ -593,7 +601,7 @@ bool PipeFlow_PK::IsJunction(const int &cell)
 {
     bool isJunction = 0;
 
-    auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+    auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, direction_key_).ViewComponent("cell", true);
     // both components of pipe direction equal to zero is the definition of junction cell
     if(std::fabs(dir_c[0][cell]) < 1.e-14 && std::fabs(dir_c[1][cell]) < 1.e-14){ 
        isJunction = 1;
@@ -613,7 +621,7 @@ void PipeFlow_PK::GetDx(const int &cell, double &dx)
   mesh_->cell_get_faces(cell, &cell_faces);
   AmanziGeometry::Point x1;
   AmanziGeometry::Point x2;
-  auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, direction_key_).ViewComponent("cell", true);
   for (int n = 0; n < cell_faces.size(); ++n) {
      int f = cell_faces[n];
      int orient;
