@@ -522,6 +522,7 @@ void PipeFlow_PK::InitializeFields(){
         int cell = junction_cells_owned_[c];
         PrimaryVar_c[0][cell] = ht_c[0][cell] - B_c[0][cell];
         WettedAngle_c[0][cell] = - 1.0;
+        WaterDepth_c[0][cell] = ht_c[0][cell] - B_c[0][cell];
 
 
      }

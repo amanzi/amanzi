@@ -63,7 +63,7 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
   cfl_positivity_ = sw_list_->get<double>("depth positivity cfl", 0.95);
   shallow_water_model_ = sw_list_->get<int>("use shallow water model", 1);
   pipe_diameter_ = sw_list_->get<double>("pipe diameter", 1.0);
-  celerity_ = sw_list_->get<double>("celerity", 100); // m/s
+  celerity_ = sw_list_->get<double>("celerity", 2); // m/s
   source_key_ = sw_list_->get<std::string>("source key", "");
 
   Teuchos::ParameterList vlist;

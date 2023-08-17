@@ -30,7 +30,7 @@ PressureHeadEvaluator::PressureHeadEvaluator(Teuchos::ParameterList& plist)
   wetted_angle_key_ = plist_.get<std::string>("wetted angle key", Keys::getKey(domain, "wetted_angle"));
   wetted_area_key_ = plist_.get<std::string>("wetted area key", Keys::getKey(domain, "wetted_area"));
 
-  celerity_ = plist_.get<double>("celerity", 100);
+  celerity_ = plist_.get<double>("celerity", 2);
   pipe_diameter_ = plist_.get<double>("pipe diameter", 1.0);
 
   dependencies_.insert(std::make_pair(wetted_area_key_, Tags::DEFAULT));
