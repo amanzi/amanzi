@@ -2398,7 +2398,7 @@ Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
       int ncell = num_entities(CELL, Parallel_type::ALL);
 
       for (int icell = 0; icell < ncell; icell++) {
-        Entity_ID gid = MEnt_GlobalID(cell_id_to_handle[icell]);
+        Entity_ID gid = MEnt_GlobalID(cell_id_to_handle[icell]) - 1;
         for (const auto& jset : rgn->entities()) {
           if (jset == gid) {
             MSet_Add(mset, cell_id_to_handle[icell]);
