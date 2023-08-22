@@ -41,6 +41,7 @@ add_amanzi_library(atk
                    HEADERS Abbreviations.hh
                            AmanziComm.hh
                            AmanziTypes.hh
+                           Brent.hh
                            ExprTK.hh
                            Factory.hh
                            FIFO_Set.hh
@@ -121,6 +122,11 @@ if (BUILD_TESTS)
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
     add_amanzi_test(utils_reducer_np2 utils_reducer NPROCS 2 KIND unit)
     add_amanzi_test(utils_reducer_np5 utils_reducer NPROCS 5 KIND unit)
+
+    add_amanzi_test(utils_brent utils_brent
+                    KIND unit
+                    SOURCE test/Main.cc test/utils_brent.cc
+                    LINK_LIBS atk ${UnitTest_LIBRARIES})
 
 endif()
 

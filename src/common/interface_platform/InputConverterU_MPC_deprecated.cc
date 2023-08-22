@@ -193,18 +193,18 @@ InputConverterU::TranslateCycleDriver_()
 
     if (strcmp(tagname, "flow") == 0) {
       flow_model_ = GetAttributeValueS_(inode, "model", "richards, saturated, constant");
-      pk_model_["flow"] = (flow_model_ == "richards") ? "richards" : "darcy";
+      pk_model_["flow"].push_back((flow_model_ == "richards") ? "richards" : "darcy");
       pk_master_["flow"] = true;
       if (flow_model_ != "constant") transient_model += 4 * pk_state[tagname];
 
     } else if (strcmp(tagname, "chemistry") == 0) {
       std::string model = GetAttributeValueS_(inode, "engine", TYPE_NONE, false, "none");
-      pk_model_["chemistry"] = model;
+      pk_model_["chemistry"].push_back(model);
       transient_model += pk_state[tagname];
 
     } else if (strcmp(tagname, "transport") == 0) {
       transient_model += 2 * pk_state[tagname];
-      pk_model_["transport"] = "transport";
+      pk_model_["transport"].push_back("transport");
       pk_domain_["transport"] = "domain";
     }
   }
@@ -236,7 +236,7 @@ InputConverterU::TranslateCycleDriver_()
     if (!coupled_flow_) {
       tmp_list.sublist("PK tree")
         .sublist("steady:flow")
-        .set<std::string>("PK type", pk_model_["flow"]);
+        .set<std::string>("PK type", *pk_model_["flow"].rbegin());
     } else {
       Teuchos::ParameterList& aux_list = tmp_list.sublist("PK tree").sublist("steady:coupled flow");
       aux_list.set<std::string>("PK type", "darcy matrix fracture");

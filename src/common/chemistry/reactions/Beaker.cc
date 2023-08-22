@@ -1413,7 +1413,8 @@ Beaker::CalculateMaxRelChangeInMolality(double* max_rel_change, int* max_rel_ind
   }
 
   for (int i = 0; i < ncomp_; i++) {
-    double delta = std::fabs(primary_species().at(i).molality() - prev_molal_.at(i)) / (prev_molal_.at(i) + floor);
+    double delta = std::fabs(primary_species().at(i).molality() - prev_molal_.at(i)) /
+                   (prev_molal_.at(i) + floor);
     if (delta > *max_rel_change) {
       *max_rel_change = delta;
       *max_rel_index = i;

@@ -45,7 +45,8 @@ namespace Operators {
 * Initialization of the operator, scalar coefficient.
 ****************************************************************** */
 void
-PDE_DiffusionCurvedFace::SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K)
+PDE_DiffusionCurvedFace::SetTensorCoefficient(
+  const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K)
 {
   K_ = K;
   mass_matrices_initialized_ = false;
@@ -272,7 +273,7 @@ PDE_DiffusionCurvedFace::CreateMassMatrices_()
 {
   WhetStone::MFD3D_Diffusion_CurvedFace mfd(plist_, mesh_);
   mfd.set_generalized_centroids(bf_);
-  
+
   mfd.ModifyStabilityScalingFactor(factor_);
 
   WhetStone::DenseMatrix Wff;
@@ -338,7 +339,8 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
   }
 
   // create the local Op and register it with the global Operator
-  local_op_schema_ = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE | OPERATOR_SCHEMA_DOFS_CELL;
+  local_op_schema_ =
+    OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE | OPERATOR_SCHEMA_DOFS_CELL;
   std::string name = "DiffusionCurvedFace: CELL_FACE+CELL";
   local_op_ = Teuchos::rcp(new Op_Cell_FaceCell(name, mesh_));
   global_op_->OpPushBack(local_op_);
@@ -362,7 +364,8 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
   auto op = Teuchos::rcp(new Op_Face_Schema(schema, schema, mesh_));
   global_op.OpPushBack(op);
 
-  bf_ = std::make_shared<std::vector<AmanziGeometry::Point>>(nfaces_wghost, AmanziGeometry::Point(d));
+  bf_ =
+    std::make_shared<std::vector<AmanziGeometry::Point>>(nfaces_wghost, AmanziGeometry::Point(d));
 
   // -- problem
   LSProblemSetupMatrix_(op->matrices);
@@ -372,13 +375,19 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
   global_op.AssembleMatrix();
 
   tmp.sublist("Hypre AMG")
-     .set<std::string>("preconditioning method", "boomer amg").sublist("boomer amg parameters")
-     .set<double>("tolerance", 0.0);
-  tmp2.sublist("PCG").set<std::string>("iterative method", "pcg").sublist("pcg parameters")
-     .set<Teuchos::Array<std::string>>("convergence criteria", std::vector<std::string>({"absolute residual", "relative residual", "make one iteration"}))
-     .set<double>("error tolerance", 1e-12)
-     .set<int>("maximum number of iterations", 400).sublist("verbose object")
-     .set<std::string>("verbosity level", "medium");
+    .set<std::string>("preconditioning method", "boomer amg")
+    .sublist("boomer amg parameters")
+    .set<double>("tolerance", 0.0);
+  tmp2.sublist("PCG")
+    .set<std::string>("iterative method", "pcg")
+    .sublist("pcg parameters")
+    .set<Teuchos::Array<std::string>>(
+      "convergence criteria",
+      std::vector<std::string>({ "absolute residual", "relative residual", "make one iteration" }))
+    .set<double>("error tolerance", 1e-12)
+    .set<int>("maximum number of iterations", 400)
+    .sublist("verbose object")
+    .set<std::string>("verbosity level", "medium");
   global_op.set_inverse_parameters("Hypre AMG", tmp, "PCG", tmp2);
 
   auto& rhs = *global_op.rhs();
@@ -394,9 +403,7 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
 
   // error analysis
   double err(0.0);
-  for (int f = 0; f < nfaces_owned; ++f) {
-    err += norm((*bf_)[f] - mesh_->face_centroid(f));
-  }
+  for (int f = 0; f < nfaces_owned; ++f) { err += norm((*bf_)[f] - mesh_->face_centroid(f)); }
   if (mesh_->get_comm()->MyPID() == 0) {
     std::cout << "new face centroids deviation on rank zero is " << err / nfaces_owned << "\n\n";
   }
@@ -435,7 +442,7 @@ PDE_DiffusionCurvedFace::LSProblemSetupMatrix_(std::vector<WhetStone::DenseMatri
           Aface(i2, j2) = val;
           Aface(i1, j2) = -val;
           Aface(i2, j1) = -val;
-        } 
+        }
       }
     }
 
@@ -458,7 +465,7 @@ PDE_DiffusionCurvedFace::LSProblemSetupRHS_(CompositeVector& rhs, int i0)
     for (int j = 0; j < d; ++j) rhs_c[j][c] = ((i0 == j) ? vol : 0.0);
   }
 
-  // shift by vector A {xf} 
+  // shift by vector A {xf}
   for (int c = 0; c < ncells_owned; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -514,9 +521,7 @@ PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol, i
   bf->ScatterMasterToGhosted();
 
   // save to a vector which could be shared with WhetStone
-  for (int f = 0; f < nfaces_wghost; ++f) {
-    (*bf_)[f][i0] = bf_f[0][f];
-  }
+  for (int f = 0; f < nfaces_wghost; ++f) { (*bf_)[f][i0] = bf_f[0][f]; }
 }
 
 } // namespace Operators

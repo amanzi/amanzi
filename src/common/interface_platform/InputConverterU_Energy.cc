@@ -36,7 +36,7 @@ XERCES_CPP_NAMESPACE_USE
 * Create energy list.
 ****************************************************************** */
 Teuchos::ParameterList
-InputConverterU::TranslateEnergy_(const std::string& domain)
+InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& pk_model)
 {
   Teuchos::ParameterList out_list;
 
@@ -80,7 +80,7 @@ InputConverterU::TranslateEnergy_(const std::string& domain)
   // insert thermal conductivity evaluator with the default values (no 2.2 support yet)
   Teuchos::ParameterList& thermal =
     out_list.sublist("thermal conductivity evaluator").sublist("thermal conductivity parameters");
-  if (pk_model_["energy"] == "two-phase energy") {
+  if (pk_model == "two-phase energy") {
     thermal.set<std::string>("thermal conductivity type", "two-phase Peters-Lidard");
     thermal.set<double>("thermal conductivity of gas", 0.02);
     thermal.set<double>("unsaturated alpha", 1.0);

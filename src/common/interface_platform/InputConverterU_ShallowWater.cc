@@ -75,7 +75,7 @@ InputConverterU::TranslateShallowWater_(const std::string& domain)
   }
 
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain)
-    .set<std::string>("numerical flux", pk_model_["shallow_water"])
+    .set<std::string>("numerical flux", *pk_model_["shallow_water"].begin())
     .set<int>("number of reduced cfl cycles", 10)
     .set<double>("cfl", cfl);
 

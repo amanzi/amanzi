@@ -80,12 +80,60 @@ PDE_Accumulation::AddAccumulationTerm(const CompositeVector& du,
     Epetra_MultiVector& volc = *vol.ViewComponent(name);
 
     for (int k = 0; k < m; k++) {
-      for (int i = 0; i < n; i++) { diag[k][i] += volc[0][i] * duc[k][i] / dT; }
+      for (int i = 0; i < n; i++) diag[k][i] += volc[0][i] * duc[k][i] / dT;
     }
 
   } else {
     for (int k = 0; k < m; k++) {
-      for (int i = 0; i < n; i++) { diag[k][i] += duc[k][i] / dT; }
+      for (int i = 0; i < n; i++) diag[k][i] += duc[k][i] / dT;
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Op += alpha * du1 * du2 * vol. Both du1 and du2 may scalar.
+****************************************************************** */
+void
+PDE_Accumulation::AddAccumulationTerm(const CompositeVector& du1,
+                                      const CompositeVector& du2,
+                                      double alpha,
+                                      const std::string& name,
+                                      bool volume)
+{
+  Teuchos::RCP<Op> op = FindOp_(name);
+  Epetra_MultiVector& diag = *op->diag;
+
+  const Epetra_MultiVector& du1c = *du1.ViewComponent(name);
+  const Epetra_MultiVector& du2c = *du2.ViewComponent(name);
+
+  int n1 = du1c.MyLength();
+  int m1 = du1c.NumVectors();
+
+  int n2 = du2c.MyLength();
+  int m2 = du2c.NumVectors();
+
+  int n0 = diag.MyLength();
+  int m0 = diag.NumVectors();
+
+  AMANZI_ASSERT(m1 == m0 || m1 == 1);
+  AMANZI_ASSERT(m2 == m0 || m2 == 1);
+  AMANZI_ASSERT(n1 == n0 && n2 == n0);
+
+  if (volume) {
+    CompositeVector vol(du1);
+    CalculateEntityVolume_(vol, name);
+    Epetra_MultiVector& volc = *vol.ViewComponent(name);
+
+    for (int k = 0; k < m0; k++) {
+      int k0 = std::min(0, k);
+      for (int i = 0; i < n0; i++) diag[k][i] += alpha * volc[0][i] * du1c[k0][i] * du2c[k0][i];
+    }
+
+  } else {
+    for (int k = 0; k < m0; k++) {
+      int k0 = std::min(0, k);
+      for (int i = 0; i < n0; i++) { diag[k][i] += alpha * du1c[k0][i] * du2c[k0][i]; }
     }
   }
 }

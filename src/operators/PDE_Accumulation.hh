@@ -122,6 +122,11 @@ class PDE_Accumulation : public PDE_HelperBCsList {
                            double dT,
                            const std::string& name,
                            bool volume = true);
+  void AddAccumulationTerm(const CompositeVector& du1,
+                           const CompositeVector& du2,
+                           double alpha,
+                           const std::string& name,
+                           bool volume = true);
   // -- modifiers for diagonal operators and rhs
   void AddAccumulationRhs(const CompositeVector& s1,
                           const CompositeVector& s2,

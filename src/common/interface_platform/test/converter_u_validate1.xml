@@ -670,6 +670,7 @@
     <ParameterList name="transient:flow and transport">
       <Parameter name="PKs order" type="Array(string)" value="{transient:flow, transient:transport}"/>
       <Parameter name="master PK index" type="int" value="0"/>
+      <Parameter name="PK type" type="string" value="flow reactive transport"/>
     </ParameterList>
     <ParameterList name="transient:transport">
       <Parameter name="domain name" type="string" value="domain"/>

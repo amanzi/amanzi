@@ -771,7 +771,7 @@ InputConverterU::TranslateTransportGeochemistry_(DOMNode* node,
 void
 InputConverterU::TranslateTransportBCsAmanziGeochemistry_(Teuchos::ParameterList& out_list)
 {
-  if (out_list.isSublist("geochemical") && pk_model_["chemistry"] == "amanzi") {
+  if (out_list.isSublist("geochemical") && HasSubmodel_("chemistry", "amanzi")) {
     bool flag;
     std::string name, bc_name;
     DOMNode* node;

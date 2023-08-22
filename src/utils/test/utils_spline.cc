@@ -2190,7 +2190,7 @@ SUITE(SPLINED_CURVE)
       xcur += step;
       tmp = s.Value(xcur);
       CHECK(ycur < tmp && s.Derivative(xcur) > 0.0);
-      ycur = tmp; 
+      ycur = tmp;
     }
     CHECK(s.Derivative(0.0) == 0.0);
     CHECK(s.Derivative(1.0) == 0.0);
