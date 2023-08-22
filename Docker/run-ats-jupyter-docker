@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#
+#  Run user installed jupyter lab in ATS docker container
+#
+#  Customize as you like, this is a simple example and assumes you want to run
+#  in your current / present working directory:
+#
+#  --mount provides the mount type,source, and target, e.g.,
+#          --mount type=bind,source=mount_point_on_host,target=mount_point_on_container
+#  --init  uses the default tini as the "init" for the container
+#  -w      sets current working directory on the container
+#  -it     -i and -t together provide an interactive terminal (a tty) for the container
+#  -p      map host_port:container_port, e.g., -p 8899:8899 
+#  --rm    deletes the container on exit
+#
+#
+
+#  On the host, we recommend that the current pwd is a clone of the ats-short-course repository
+#  or the top-level of your desired workspace.
+#
+HOST_MNT=`pwd -P`
+
+#  On the container, we recommend your mount point is the short-course directory and that is also
+#  your PWD on startup.
+#
+CONT_MNT=/home/amanzi_user/work
+CONT_PWD=/home/amanzi_user/work
+
+# docker run -it --init --mount type=bind,source=$HOST_MNT,target=$CONT_MNT -w $CONT_PWD -p 8899:8899 moulton/amanzi:ats-jupyter-v2 /bin/bash -c 'conda env list; jupyter lab --port 8899'
+
+docker run --rm -it --init --mount type=bind,source=$HOST_MNT,target=$CONT_MNT -w $CONT_PWD -p 8899:8899 moulton/amanzi:ats-jupyter-v3 /bin/bash -c 'source /home/amanzi_user/anaconda/Anaconda3-2023.07-2/etc/profile.d/conda.sh; conda activate base; jupyter lab --port 8899'
+
