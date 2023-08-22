@@ -83,7 +83,8 @@ docker exec -it -u 0 ideas_ats_container /bin/bash
 Now we have a root shell and we are ready to go
 
 ```console
-show root shell
+root@bda2ca690491:/home/amanzi_user/work# whoami
+root
 ```
 
 The Ubuntu image was created using apt in a non-interactive mode.  Now if you are working on the command line its best to install a dialog utility first as this enables reporting and interaction with the terminal.
