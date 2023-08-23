@@ -14,6 +14,8 @@
 #include "Mesh.hh"
 #include "MeshFrameworkColumn.hh"
 #include "MeshSurfaceCell.hh"
+#include "MeshLogical.hh"
+#include "MeshLogicalFactory.hh"
 #include "MeshFactory.hh"
 
 namespace Amanzi {
@@ -51,6 +53,18 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& parent_mesh,
   mesh->setParentMesh(parent_mesh);
   return mesh;
 }
+
+
+Teuchos::RCP<Mesh>
+MeshFactory::createLogical(Teuchos::ParameterList& log_plist)
+{
+  MeshLogicalFactory log_fac(comm_, gm_);
+  Teuchos::RCP<MeshFramework> mesh_fw = log_fac.Create(log_plist);
+  auto mesh = Teuchos::rcp(new Mesh(mesh_fw,
+          Teuchos::rcp(new MeshLogicalAlgorithms()), Teuchos::null));
+  return mesh;
+}
+
 
 // Create a 1D Column Mesh from a columnar structured volume mesh.
 //

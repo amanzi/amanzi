@@ -68,6 +68,13 @@ struct MeshFactory : public MeshFrameworkFactory {
          const Entity_kind setkind,
          const bool flatten=false);
 
+
+  // Create a logical mesh, which is reduced functionality and reduced
+  // geometric/topologic connections.
+  Teuchos::RCP<Mesh>
+  createLogical(Teuchos::ParameterList& log_plist);
+
+
   // Create a 1D Column Mesh from a columnar structured volume mesh.
   //
   Teuchos::RCP<Mesh>
