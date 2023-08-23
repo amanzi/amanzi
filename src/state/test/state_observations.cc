@@ -88,8 +88,8 @@ struct obs_test {
 
     auto plist = Teuchos::rcp(new Teuchos::ParameterList("mesh factory"));
     plist->set<std::string>("partitioner", "zoltan_rcb");
-    AmanziMesh::MeshFactory meshfactory(comm, gm, plist);
-    Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory.create(-1, -1, -1, 1, 1, 1, 3, 3, 3);
+    meshfactory = Teuchos::rcp(new AmanziMesh::MeshFactory(comm, gm, plist));
+    Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory->create(-1, -1, -1, 1, 1, 1, 3, 3, 3);
 
     Teuchos::ParameterList state_list("state");
     state_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
@@ -159,6 +159,7 @@ struct obs_test {
 
  public:
   Teuchos::RCP<State> S;
+  Teuchos::RCP<AmanziMesh::MeshFactory> meshfactory;
 };
 
 
@@ -187,9 +188,8 @@ struct obs_domain_set_test : public obs_test {
     // create subdomain meshes
     int i = 0;
     for (auto& ds : *domain_set) {
-      auto parent_list = Teuchos::rcp(new Teuchos::ParameterList(*parent->getParameterList()));
       Teuchos::RCP<AmanziMesh::Mesh> col_mesh =
-        AmanziMesh::createColumnMesh(parent, i, parent_list);
+        meshfactory->createColumn(parent, i);
       S->RegisterMesh(ds, col_mesh);
       i++;
     }
