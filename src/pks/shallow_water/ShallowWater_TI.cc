@@ -124,13 +124,13 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
           for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
              int f = it->first;
              bc_model_vector[f] = Operators::OPERATOR_BC_DIRICHLET; 
-             bc_value_qx[f] = bc_value_h[f] * it->second[0];
-             bc_value_qy[f] = bc_value_h[f] * it->second[1];
              AmanziMesh::Entity_ID_List nodes;
              mesh_->face_get_nodes(f, &nodes);
              int n0 = nodes[0], n1 = nodes[1];
-             bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
              bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
+             bc_value_qx[f] = bc_value_h[f] * it->second[0];
+             bc_value_qy[f] = bc_value_h[f] * it->second[1];
+             bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
              bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
              double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
              bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], bc_value_b[f], WettedAngle_f);
