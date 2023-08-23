@@ -135,7 +135,7 @@ HighOrderCrouzeixRaviartSerendipity(int dim, std::string file_name)
             << "D, file=" << file_name << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm;
   auto fac_list = Teuchos::rcp(new Teuchos::ParameterList()); 
   if(dim == 3) fac_list->set<bool>("request edges", true); 
   MeshFactory meshfactory(comm, gm, fac_list);
@@ -214,7 +214,7 @@ HighOrderLagrange2D(std::string file_name)
   std::cout << "\nTest: High-order Lagrange element, file=" << file_name << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm;
   auto fac_list = Teuchos::rcp(new Teuchos::ParameterList()); 
   fac_list->set<bool>("request edges", true); 
   MeshFactory meshfactory(comm, gm, fac_list);
@@ -305,7 +305,7 @@ HighOrderLagrange3D(const std::string& filename1, const std::string& filename2)
             << filename2 << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm;
   auto fac_list = Teuchos::rcp(new Teuchos::ParameterList()); 
   fac_list->set<bool>("request edges", true); 
   MeshFactory meshfactory(comm, gm, fac_list);  meshfactory.set_preference(Preference({ Framework::MSTK }));
@@ -400,7 +400,7 @@ HighOrderLagrangeSerendipity(const std::string& filename)
   std::cout << "\nTest: High-order Lagrange Serendipity element, file=" << filename << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm;
   auto fac_list = Teuchos::rcp(new Teuchos::ParameterList()); 
   fac_list->set<bool>("request edges", true); 
   MeshFactory meshfactory(comm, gm, fac_list);  meshfactory.set_preference(Preference({ Framework::MSTK }));
@@ -495,7 +495,7 @@ TEST(HIGH_ORDER_LAGRANGE_SURFACE)
   std::cout << "\nTest: High-order Lagrange element on surface" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm;
   auto fac_list = Teuchos::rcp(new Teuchos::ParameterList()); 
   MeshFactory meshfactory1(comm, gm, fac_list);  meshfactory1.set_preference(Preference({ Framework::MSTK }));
   fac_list->set<bool>("request edges", true); 

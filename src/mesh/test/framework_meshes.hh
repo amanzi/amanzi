@@ -29,7 +29,7 @@ inline
 Teuchos::RCP<AmanziMesh::MeshFramework> createFrameworkStructuredUnitQuad(
   const AmanziMesh::Preference& pref, int nx, int ny,
   Comm_ptr_type comm=Teuchos::null,
-  const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null,
+  const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm=Teuchos::null,
   const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null,
   double dx=1.0, double dy=1.0)
 {
@@ -43,7 +43,7 @@ inline
 Teuchos::RCP<AmanziMesh::Mesh>  createStructuredUnitQuad(
   const AmanziMesh::Preference& pref, int nx, int ny,
   Comm_ptr_type comm=Teuchos::null,
-  const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null,
+  const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm=Teuchos::null,
   const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null,
   double dx=1.0, double dy=1.0)
 {
@@ -59,7 +59,7 @@ Teuchos::RCP<AmanziMesh::MeshFramework> createFrameworkStructuredUnitHex(
   const AmanziMesh::Preference& pref,
   int nx, int ny, int nz,
   Comm_ptr_type comm=Teuchos::null,
-  const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null,
+  const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm=Teuchos::null,
   const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null,
   double dx=1.0, double dy=1.0, double dz=1.0)
 {
@@ -74,7 +74,7 @@ Teuchos::RCP<AmanziMesh::Mesh> createStructuredUnitHex(
   const AmanziMesh::Preference& pref,
   int nx, int ny, int nz,
   Comm_ptr_type comm=Teuchos::null,
-  const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null,
+  const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm=Teuchos::null,
   const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null,
   double dx=1.0, double dy=1.0, double dz=1.0)
 {
@@ -89,7 +89,7 @@ Teuchos::RCP<AmanziMesh::MeshFramework> createFrameworkUnstructured(
   const AmanziMesh::Preference& pref,
   const std::string& filename,
   Comm_ptr_type comm=Teuchos::null,
-  const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null,
+  const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm=Teuchos::null,
   const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null)
 {
   if (comm == Teuchos::null) comm = getDefaultComm();
@@ -103,7 +103,7 @@ Teuchos::RCP<AmanziMesh::Mesh> createUnstructured(
   const AmanziMesh::Preference& pref,
   const std::string& filename,
   Comm_ptr_type comm=Teuchos::null,
-  const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null,
+  const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm=Teuchos::null,
   const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null)
 {
   AmanziMesh::MeshFactory fac(comm, gm, plist);

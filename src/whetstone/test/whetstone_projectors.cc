@@ -48,7 +48,7 @@ TEST(PROJECTORS_SQUARE_CR)
   std::cout << "\nTest: Crouziex-Raviart harmonic projectors for square" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(-1.2, 0.0, 1.2, 1.1, 2, 1);
@@ -140,7 +140,7 @@ TEST(PROJECTORS_POLYGON_CR)
   std::cout << "\nTest: Crouzeix-Raviart harmonic projector for pentagon" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
@@ -336,7 +336,7 @@ TEST(L2_PROJECTORS_SQUARE_CR)
   std::cout << "\nTest: Crouzeix-Raviart L2 projector for square" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 2.0, 4.0, 1, 2);
@@ -383,7 +383,7 @@ TEST(L2GRADIENT_PROJECTORS_SQUARE_CR)
   std::cout << "\nTest: Crouzeix-Raviart L2 projector of gradient for square" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 4.0, 2.0, 2, 1);
@@ -441,7 +441,7 @@ TEST(PROJECTORS_SQUARE_PK)
   std::cout << "\nTest: HO Lagrange projectors for square (linear deformation)" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(-1.2, 0.0, 1.2, 1.1, 2, 1);
@@ -529,7 +529,7 @@ TEST(PROJECTORS_POLYGON_PK)
   std::cout << "\nTest: HO Lagrange projectors for pentagon (linear deformation)" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
@@ -724,7 +724,7 @@ SerendipityProjectorPolygon()
             << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
@@ -852,7 +852,7 @@ Projector3DLagrangeSerendipity(const std::string& filename)
   std::cout << "\nTest: HO Serendipity Lagrange projectors for " << filename << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
   auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
   fac_plist->set("request edges", true);  
   MeshFactory meshfactory(comm, gm, fac_plist);
@@ -985,7 +985,7 @@ Projector3DLagrangeSerendipitySurface(const std::string& filename)
   std::cout << "\nTest: HO Serendipity Lagrange projectors on surface: " << filename << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
   auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
   fac_plist->set("request edges", true);  
   MeshFactory meshfactory(comm, gm, fac_plist);

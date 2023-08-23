@@ -48,7 +48,7 @@ TEST(NUMI_CELL_2D_EULER_FORMULA)
   std::cout << "Test: Numerical integration: Euler's formula for polygon" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
   auto fac_list = Teuchos::rcp(new Teuchos::ParameterList()); 
   fac_list->set<bool>("request edges", true); 
   MeshFactory meshfactory(comm, gm, fac_list);
@@ -90,7 +90,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON)
   std::cout << "Test: Numerical integration: quadrature rules in 2D" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
   auto fac_list = Teuchos::rcp(new Teuchos::ParameterList()); 
   fac_list->set<bool>("request edges", true); 
   MeshFactory meshfactory(comm, gm, fac_list);
@@ -148,7 +148,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE)
   std::cout << "Test: Numerical integration: quadrature rule for square" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 2, 2);
@@ -220,7 +220,7 @@ TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON)
   std::cout << "Test: Numerical integration: quadrature rules in 3D" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
   auto fac_list = Teuchos::rcp(new Teuchos::ParameterList()); 
   fac_list->set<bool>("request edges", true); 
   MeshFactory meshfactory(comm, gm, fac_list);
@@ -280,7 +280,7 @@ TEST(NUMI_CELL_3D_QUADRATURE_CUBE)
   std::cout << "Test: Numerical integration: quadrature rule for cube" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
   AmanziMesh::MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(AmanziMesh::Preference({ AmanziMesh::Framework::MSTK }));
   Teuchos::RCP<AmanziMesh::Mesh> mesh =
