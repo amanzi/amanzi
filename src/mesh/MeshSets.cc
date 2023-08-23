@@ -478,7 +478,6 @@ resolveMeshSetBoundary(const AmanziGeometry::Region& region,
   return ents;
 }
 
-
 View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
                          const Entity_kind kind,
@@ -486,29 +485,22 @@ resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
                          const MeshCache<MemSpace_kind::HOST>& mesh)
 {
   if (kind == createEntityKind(region.entity_str())) {
-    Entity_ID_View region_entities;
-    auto vregion_entities = region.entities();
-    vectorToView(region_entities, vregion_entities);
+    Entity_ID_List region_entities = region.entities();
     bool ghosted = (ptype != Parallel_kind::OWNED);
-    auto mesh_map = mesh.getMap(kind, ghosted);
-    Entity_ID_View mesh_ents("mesh_ents", mesh_map.NumMyElements());
-    for (int i = 0; i != mesh_map.NumMyElements(); ++i) mesh_ents[i] = mesh_map.GID(i);
+    auto& mesh_map = mesh.getMap(kind, ghosted);
 
-    Entity_ID_List vresult;
-    vresult.reserve(mesh_ents.size());
-    std::set_intersection(mesh_ents.begin(),
-                          mesh_ents.end(),
-                          region_entities.begin(),
-                          region_entities.end(),
-                          std::back_inserter(vresult));
-    Entity_ID_View result;
-    vectorToView(result, vresult);
+    std::size_t cpt = 0;
+    Entity_ID_View result("SetEnumerated", mesh_map.NumMyElements());
+    for (Entity_GID gid : region_entities) {
+      Entity_ID lid = mesh_map.LID(gid);
+      if (lid >= 0) result[cpt++] = lid;
+    }
+    Kokkos::resize(result, cpt);
     return result;
   } else {
     return Entity_ID_View();
   }
 }
-
 
 View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetGeometric(const AmanziGeometry::Region& region,

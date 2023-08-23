@@ -32,21 +32,13 @@ class MeshFramework;
 class MeshColumn;
 
 // -------------------------------------------------------------
-// Factory for creating a MeshColumn object from a parent and a column ID
-// -------------------------------------------------------------
-Teuchos::RCP<Mesh>
-createColumnMesh(const Teuchos::RCP<const Mesh>& parent_mesh,
-                 int col_id,
-                 const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
-
-// -------------------------------------------------------------
 //  class MeshFrameworkFactory
 // -------------------------------------------------------------
 class MeshFrameworkFactory {
  public:
   explicit MeshFrameworkFactory(
     const Comm_ptr_type& comm,
-    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+    const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm = Teuchos::null,
     const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
   // undefined copy constructor to avoid unwanted copies
@@ -62,11 +54,8 @@ class MeshFrameworkFactory {
   const Preference& get_preference() const { return preference_; }
 
   // Get/set the geometric model
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model() const { return gm_; }
-  void set_geometric_model(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
-  {
-    gm_ = gm;
-  }
+  Teuchos::RCP<AmanziGeometry::GeometricModel> geometric_model() const { return gm_; }
+  void set_geometric_model(const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm) { gm_ = gm; }
 
   // Get/set the parameter list
   Teuchos::RCP<const Teuchos::ParameterList> parameter_list() const { return plist_; }
@@ -145,7 +134,7 @@ class MeshFrameworkFactory {
   Teuchos::RCP<Teuchos::ParameterList> plist_;
 
   // The geometric model describing the space within which the mesh lives
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_;
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm_;
 
   // logging
   Teuchos::RCP<VerboseObject> vo_;

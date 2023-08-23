@@ -72,7 +72,7 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED_SETS)
       mesh->getSetSize("Top LS", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED));
 
     // Create a column mesh from one of the columns
-    auto mesh_col = fac.createColumn(mesh, 0);
+    auto mesh_col = fac.createColumn(mesh, 0, mesh_plist);
 
     // Create a surface cell from that column
     auto mesh_sc = fac.createSurfaceCell(mesh_col);
