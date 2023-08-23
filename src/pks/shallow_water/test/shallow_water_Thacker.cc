@@ -59,10 +59,11 @@ analytical_exact_field(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
 {
   double x, y, h, u, v;
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
 
     x = xc[0];
     y = xc[1];
@@ -78,7 +79,8 @@ analytical_exact_field(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
 void
 analytical_setIC(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<State>& S)
 {
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   std::string passwd("");
 
@@ -94,7 +96,7 @@ analytical_setIC(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<State>&
                      .ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     double h, u, v;
     analytical_exact(0., xc[0], xc[1], h, u, v);
     h_vec_c[0][c] = h;
@@ -121,7 +123,8 @@ error(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
       double& err_max_v,
       double& err_L1_v)
 {
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   err_max = 0.;
   err_L1 = 0.;
@@ -134,16 +137,16 @@ error(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   for (int c = 0; c < ncells_owned; c++) {
     double tmp = std::abs(hh_ex[0][c] - hh[0][c]);
     err_max = std::max(err_max, tmp);
-    err_L1 += tmp * mesh->cell_volume(c);
-    hmax = std::sqrt(mesh->cell_volume(c));
+    err_L1 += tmp * mesh->getCellVolume(c);
+    hmax = std::sqrt(mesh->getCellVolume(c));
 
     tmp = std::abs(vel_ex[0][c] - vel[0][c]);
     err_max_u = std::max(err_max_u, tmp);
-    err_L1_u += tmp * mesh->cell_volume(c);
+    err_L1_u += tmp * mesh->getCellVolume(c);
 
     tmp = std::abs(vel_ex[1][c] - vel[1][c]);
     err_max_v = std::max(err_max_v, tmp);
-    err_L1_v += tmp * mesh->cell_volume(c);
+    err_L1_v += tmp * mesh->getCellVolume(c);
   }
 
   double err_max_tmp;
@@ -153,12 +156,12 @@ error(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   double err_max_tmp_v;
   double err_L1_tmp_v;
 
-  mesh->get_comm()->MaxAll(&err_max, &err_max_tmp, 1);
-  mesh->get_comm()->SumAll(&err_L1, &err_L1_tmp, 1);
-  mesh->get_comm()->MaxAll(&err_max_u, &err_max_tmp_u, 1);
-  mesh->get_comm()->SumAll(&err_L1_u, &err_L1_tmp_u, 1);
-  mesh->get_comm()->MaxAll(&err_max_v, &err_max_tmp_v, 1);
-  mesh->get_comm()->SumAll(&err_L1_v, &err_L1_tmp_v, 1);
+  mesh->getComm()->MaxAll(&err_max, &err_max_tmp, 1);
+  mesh->getComm()->SumAll(&err_L1, &err_L1_tmp, 1);
+  mesh->getComm()->MaxAll(&err_max_u, &err_max_tmp_u, 1);
+  mesh->getComm()->SumAll(&err_L1_u, &err_L1_tmp_u, 1);
+  mesh->getComm()->MaxAll(&err_max_v, &err_max_tmp_v, 1);
+  mesh->getComm()->SumAll(&err_L1_v, &err_L1_tmp_v, 1);
 
   err_max = err_max_tmp;
   err_L1 = err_L1_tmp;
@@ -169,7 +172,7 @@ error(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   err_max_v = err_max_tmp_v;
   err_L1_v = err_L1_tmp_v;
 
-  if (mesh->get_comm()->MyPID() == 0) {
+  if (mesh->getComm()->MyPID() == 0) {
     std::cout << "err_max = " << err_max << std::endl;
     std::cout << "err_L1  = " << err_L1 << std::endl;
 
@@ -218,14 +221,13 @@ RunTest(int icase)
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   // create a mesh
-  bool request_faces = true, request_edges = false;
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   std::vector<double> dx, Linferror, L1error, L2error;
 
   for (int NN = 40; NN <= 160; NN *= 2) {
-    RCP<Mesh> mesh = meshfactory.create(-3.0, -3.0, 3.0, 3.0, NN, NN, request_faces, request_edges);
+    RCP<Mesh> mesh = meshfactory.create(-3.0, -3.0, 3.0, 3.0, NN, NN);
     // works only with first order, no reconstruction
 
     // create a state

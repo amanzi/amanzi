@@ -46,13 +46,15 @@ CellToFace_ScaleInverse(Teuchos::RCP<const CompositeVector> f1, Teuchos::RCP<Com
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = f1->Map().Mesh();
 
   // cell-part of the map
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
   for (int c = 0; c < ncells_wghost; ++c) { f2c[0][c] /= f1c[0][c]; }
 
   // face-part of the map
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
   for (int f = 0; f < nfaces_wghost; ++f) {
-    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
     int ncells = cells.size();
 
     double tmp(0.0);
@@ -65,7 +67,7 @@ CellToFace_ScaleInverse(Teuchos::RCP<const CompositeVector> f1, Teuchos::RCP<Com
     Epetra_MultiVector& f2f_g = *f2->ViewComponent("grav", true);
 
     for (int f = 0; f < nfaces_wghost; ++f) {
-      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      cells = mesh->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
       int ncells = cells.size();
 
       double tmp(0.0);

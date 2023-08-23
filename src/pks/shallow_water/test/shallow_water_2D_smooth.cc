@@ -77,11 +77,11 @@ vortex_2D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 {
   double x, y, h, u, v;
 
-  int ncells_owned =
-    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
+                                          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
-    const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
 
     x = xc[0];
     y = xc[1];
@@ -97,8 +97,8 @@ vortex_2D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 void
 vortex_2D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos::RCP<Amanzi::State>& S)
 {
-  int ncells_owned =
-    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
+                                          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   std::string passwd("");
 
@@ -113,7 +113,7 @@ vortex_2D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos::RCP<
                      .ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; c++) {
-    const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     double h, u, v;
     vortex_2D_exact(0., xc[0], xc[1], h, u, v);
     h_vec_c[0][c] = h;
@@ -135,8 +135,8 @@ error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       double& err_L1,
       double& hmax)
 {
-  int ncells_owned =
-    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
+                                          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   err_max = 0.;
   err_L1 = 0.;
@@ -145,15 +145,15 @@ error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   for (int c = 0; c < ncells_owned; c++) {
     double tmp = std::abs(hh_ex[0][c] - hh[0][c]);
     err_max = std::max(err_max, tmp);
-    err_L1 += tmp * mesh->cell_volume(c);
-    hmax = std::sqrt(mesh->cell_volume(c));
+    err_L1 += tmp * mesh->getCellVolume(c);
+    hmax = std::sqrt(mesh->getCellVolume(c));
   }
 
   double err_max_tmp;
   double err_L1_tmp;
 
-  mesh->get_comm()->MaxAll(&err_max, &err_max_tmp, 1);
-  mesh->get_comm()->SumAll(&err_L1, &err_L1_tmp, 1);
+  mesh->getComm()->MaxAll(&err_max, &err_max_tmp, 1);
+  mesh->getComm()->SumAll(&err_L1, &err_L1_tmp, 1);
 
   err_max = err_max_tmp;
   err_L1 = err_L1_tmp;
@@ -185,14 +185,13 @@ TEST(SHALLOW_WATER_2D_SMOOTH)
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   // create a mesh
-  bool request_faces = true, request_edges = false;
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   std::vector<double> dx, Linferror, L1error, L2error, dt_val;
 
   for (int NN = 20; NN <= 80; NN *= 2) {
-    RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 10.0, NN, NN, request_faces, request_edges);
+    RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 10.0, NN, NN);
     // mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges);
     // works only with first order, no reconstruction
 

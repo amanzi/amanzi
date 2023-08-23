@@ -66,7 +66,7 @@ EnergyOnePhase_PK::Setup()
     S_->Require<CV_t, CVS_t>(energy_key_, Tags::DEFAULT, energy_key_)
       .SetMesh(mesh_)
       ->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     Teuchos::ParameterList elist = ep_list_->sublist("energy evaluator");
     elist.set<std::string>("energy key", energy_key_)
@@ -90,8 +90,8 @@ EnergyOnePhase_PK::Setup()
     S_->Require<CV_t, CVS_t>(enthalpy_key_, Tags::DEFAULT, enthalpy_key_)
       .SetMesh(mesh_)
       ->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
     Teuchos::ParameterList elist = ep_list_->sublist("enthalpy evaluator");
     elist.set("enthalpy key", enthalpy_key_).set<std::string>("tag", "");
@@ -109,7 +109,7 @@ EnergyOnePhase_PK::Setup()
     S_->Require<CV_t, CVS_t>(conductivity_key_, Tags::DEFAULT, conductivity_key_)
       .SetMesh(mesh_)
       ->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     Teuchos::ParameterList elist = ep_list_->sublist("thermal conductivity evaluator");
     elist.set("thermal conductivity key", conductivity_key_).set<std::string>("tag", "");
@@ -179,7 +179,8 @@ EnergyOnePhase_PK::Initialize()
       S_->GetPtr<CV_t>(conductivity_gen_key_, Tags::DEFAULT), Teuchos::null);
   }
 
-  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_preconditioner_));
+  op_acc_ = Teuchos::rcp(
+    new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op_preconditioner_));
   if (prec_include_enthalpy_) {
     op_preconditioner_advection_ = opfactory_adv.Create(oplist_adv, op_preconditioner_);
     op_preconditioner_advection_->SetBCs(op_bc_enth_, op_bc_enth_);

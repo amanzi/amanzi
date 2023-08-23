@@ -68,6 +68,7 @@ Example:
 #include "IOEvent.hh"
 #include "Output.hh"
 #include "Tag.hh"
+#include "Key.hh"
 
 namespace Amanzi {
 

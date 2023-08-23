@@ -65,7 +65,7 @@ PDE_Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
 {
   WhetStone::DenseMatrix Acell;
 
-  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+  WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
   Kc(0, 0) = K_default_;
 
   for (int c = 0; c < ncells_owned; c++) {

@@ -31,8 +31,10 @@ FCT::Compute(const CompositeVector& flux_lo,
              const BCs& bc,
              CompositeVector& flux)
 {
-  int nfaces_owned = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int ncells_owned = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned =
+    mesh0_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh0_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   AmanziMesh::Entity_ID_List cells, faces;
 
@@ -42,7 +44,7 @@ FCT::Compute(const CompositeVector& flux_lo,
 
   // allocate memory
   CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+  cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   CompositeVector dlo(cvs), pos(cvs), neg(cvs);
 
   auto& dlo_c = *dlo.ViewComponent("cell", true);
@@ -53,10 +55,10 @@ FCT::Compute(const CompositeVector& flux_lo,
   int dir;
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    mesh0_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh0_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
     int ncells = cells.size();
 
-    mesh0_->face_normal(f, false, cells[0], &dir);
+    mesh0_->getFaceNormal(f, cells[0], &dir);
     double tmp0 = -flux_lo_f[0][f];
     double dtmp = -flux_ho_f[0][f] + flux_lo_f[0][f];
 
@@ -90,8 +92,8 @@ FCT::Compute(const CompositeVector& flux_lo,
   std::vector<double> alpha(nfaces_owned, 1.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    double vol0 = mesh0_->cell_volume(c);
-    double vol1 = mesh1_->cell_volume(c);
+    double vol0 = mesh0_->getCellVolume(c);
+    double vol1 = mesh1_->getCellVolume(c);
 
     if (weight0_ != Teuchos::null) vol0 *= (*weight0_)[0][c];
     if (weight0_ != Teuchos::null) vol1 *= (*weight1_)[0][c];
@@ -114,7 +116,7 @@ FCT::Compute(const CompositeVector& flux_lo,
 
   // move cell-limiters to face limiters
   for (int f = 0; f < nfaces_owned; ++f) {
-    mesh0_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh0_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
 
     if (cells.size() == 2) {
       double tmp = -flux_ho_f[0][f] + flux_lo_f[0][f];
@@ -133,7 +135,7 @@ FCT::Compute(const CompositeVector& flux_lo,
   }
 
   double tmp(alpha_mean_);
-  mesh0_->get_comm()->SumAll(&tmp, &alpha_mean_, 1);
+  mesh0_->getComm()->SumAll(&tmp, &alpha_mean_, 1);
   alpha_mean_ /= flux_f.GlobalLength();
 }
 

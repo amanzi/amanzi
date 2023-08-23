@@ -33,6 +33,7 @@
 #endif
 #include "Mesh_simple.hh"
 
+
 /* **************************************************************** */
 void
 RunTest(const std::string regname, int* cells, int* edges)
@@ -55,18 +56,17 @@ RunTest(const std::string regname, int* cells, int* edges)
   auto mesh_list = Teuchos::sublist(plist, "mesh", false);
 
   for (int i = 0; i < 3; ++i) {
-    RCP<const Mesh> mesh3D;
+    RCP<MeshFramework> mesh3D;
     if (i == 0) {
 #ifdef HAVE_MESH_MSTK
       std::cout << "\nMesh framework: MSTK (" << regname << ")\n";
       // mesh3D = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list, true, true));
-      mesh3D = Teuchos::rcp(
-        new Mesh_MSTK("test/mesh_extracted_fracture.exo", comm, gm, mesh_list, true, true));
+      mesh3D = Teuchos::rcp(new Mesh_MSTK("test/mesh_extracted_fracture.exo", comm, gm, mesh_list));
 #endif
     } else if (i == 1 && comm->NumProc() == 1) {
       std::cout << "\nMesh framework: simple\n";
       mesh3D = Teuchos::rcp(
-        new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list, true, true));
+        new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list));
     } else if (i == 2) {
 #ifdef HAVE_MESH_MOAB
       if (comm->NumProc() > 1) continue;
@@ -79,19 +79,27 @@ RunTest(const std::string regname, int* cells, int* edges)
 
     // extract fractures mesh
     try {
-      RCP<Mesh> mesh = Teuchos::rcp(
-        new MeshExtractedManifold(mesh3D, setname, AmanziMesh::FACE, comm, gm, plist, true, false));
+      auto mesh3D_cache = Teuchos::rcp(new Mesh(mesh3D));
+      RCP<MeshFramework> mesh = Teuchos::rcp(new MeshExtractedManifold(
+        mesh3D_cache, setname, AmanziMesh::Entity_kind::FACE, comm, gm, plist));
 
-      int ncells = mesh->cell_map(false).NumGlobalElements();
-      int nfaces = mesh->face_map(false).NumGlobalElements();
-      int mfaces = (i == 0) ? mesh->exterior_face_map(false).NumGlobalElements() : 0;
+
+      int ncells =
+        mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      int nfaces =
+        mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+      int mfaces = (i == 0) ? mesh->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE,
+                                                   AmanziMesh::Parallel_type::OWNED) :
+                              0;
       std::cout << i << " pid=" << comm->MyPID() << " cells: " << ncells << " faces: " << nfaces
                 << " bnd faces: " << mfaces << std::endl;
       CHECK(cells[i] == ncells);
       CHECK(edges[i] == mfaces);
 
+      RCP<Mesh> mesh_cache = Teuchos::rcp(new Mesh(mesh));
+
       // verify mesh
-      MeshAudit audit(mesh);
+      MeshAudit audit(mesh_cache);
       int ok = audit.Verify();
       CHECK(ok == 0);
 

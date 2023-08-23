@@ -56,7 +56,7 @@ class PointCloud {
 
 // At the moment, only one KDTree is used
 typedef nanoflann::
-  KDTreeSingleIndexAdaptor<nanoflann::L2_Adaptor<double, PointCloud>, PointCloud, -1, size_t>
+  KDTreeSingleIndexAdaptor<nanoflann::L2_Adaptor<double, PointCloud>, PointCloud, -1>
     KDTree_L2Adaptor;
 
 class KDTree {
@@ -75,7 +75,7 @@ class KDTree {
   }
 
   // find the first n points closest to the given point p
-  std::vector<size_t>
+  std::vector<unsigned int>
   SearchNearest(const AmanziGeometry::Point& p, std::vector<double>& dist_sqr, int n = 1)
   {
     AMANZI_ASSERT(tree_ != NULL);
@@ -83,7 +83,7 @@ class KDTree {
     double query[3];
     for (int i = 0; i < p.dim(); ++i) query[i] = p[i];
 
-    std::vector<size_t> idx(n);
+    std::vector<unsigned int> idx(n);
     dist_sqr.resize(n);
 
     int m = tree_->knnSearch(&query[0], n, &idx[0], &dist_sqr[0]);
@@ -104,7 +104,7 @@ class KDTree {
     double query[3];
     for (int i = 0; i < p.dim(); ++i) query[i] = p[i];
 
-    std::vector<std::pair<size_t, double>> matches;
+    std::vector<std::pair<unsigned int, double>> matches;
     nanoflann::SearchParams params;
 
     // params.sorted = false;

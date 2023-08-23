@@ -82,8 +82,8 @@ MyRemapDG::StabilityCondition()
   double dt(1e+99), alpha(0.2), tmp;
 
   for (int f = 0; f < nfaces_wghost_; ++f) {
-    double area = mesh0_->face_area(f);
-    const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
+    double area = mesh0_->getFaceArea(f);
+    const AmanziGeometry::Point& xf = mesh0_->getFaceCentroid(f);
     velf_vec_[f].Value(xf).Norm2(&tmp);
     dt = std::min(dt, area / tmp);
   }
@@ -112,7 +112,7 @@ MyRemapDG::InitialMass(const CompositeVector& p1, int order)
     mass += numi.IntegratePolynomialCell(c, poly);
   }
 
-  mesh0_->get_comm()->SumAll(&mass, &mass0, 1);
+  mesh0_->getComm()->SumAll(&mass, &mass0, 1);
   return mass0;
 }
 
@@ -146,7 +146,7 @@ MyRemapDG::CollectStatistics(double t, const CompositeVector& u)
       lim.MeanValue(&lavg);
     }
 
-    if (mesh0_->get_comm()->MyPID() == 0) {
+    if (mesh0_->getComm()->MyPID() == 0) {
       printf("t=%8.5f  L2=%9.5g  nfnc=%5d  sharp=%5.1f%%  limiter: %6.3f %6.3f %6.3f  umax/umin: "
              "%9.5g %9.5g\n",
              tglob,
@@ -251,15 +251,16 @@ RemapTestsDualRK(std::string map_name,
     mesh1 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
   }
 
-  int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh0->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   // create and initialize cell-based field
   CompositeVectorSpace cvs1, cvs2;
-  cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
   Teuchos::RCP<CompositeVector> p1 = Teuchos::rcp(new CompositeVector(cvs1));
   Epetra_MultiVector& p1c = *p1->ViewComponent("cell", true);
 
-  cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
   CompositeVector p2(cvs2);
   Epetra_MultiVector& p2c = *p2.ViewComponent("cell");
 
@@ -337,7 +338,7 @@ RemapTestsDualRK(std::string map_name,
     if (order > 0 && order < 3 && dim == 2) {
       poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
       remap.maps()->ProjectPolynomial(c, poly);
-      poly.ChangeOrigin(mesh1->cell_centroid(c));
+      poly.ChangeOrigin(mesh1->getCellCentroid(c));
       for (int i = 0; i < nk; ++i) q2c[i][c] = poly(i);
     }
   }
@@ -362,7 +363,7 @@ RemapTestsDualRK(std::string map_name,
 
   for (int c = 0; c < ncells_owned; ++c) {
     double vol1 = numi.IntegratePolynomialCell(c, det[c].Value(1.0));
-    double vol2 = mesh1->cell_volume(c);
+    double vol2 = mesh1->getCellVolume(c);
 
     area += vol1;
     area1 += vol2;
@@ -376,7 +377,7 @@ RemapTestsDualRK(std::string map_name,
     auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
 
     WhetStone::Polynomial tmp(det[c].Value(1.0));
-    tmp.ChangeOrigin(mesh0->cell_centroid(c));
+    tmp.ChangeOrigin(mesh0->getCellCentroid(c));
     poly *= tmp;
     mass1 += numi.IntegratePolynomialCell(c, poly);
   }
@@ -402,8 +403,8 @@ RemapTestsDualRK(std::string map_name,
   OutputXDMF io(iolist, mesh1, true, false);
 
   io.InitializeCycle(t, 1, "");
-  io.WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
-  io.WriteVector(*q2c(0), "solution-prj", AmanziMesh::CELL);
+  io.WriteVector(*p2c(0), "solution", AmanziMesh::Entity_kind::CELL);
+  io.WriteVector(*q2c(0), "solution-prj", AmanziMesh::Entity_kind::CELL);
   io.FinalizeCycle();
 }
 

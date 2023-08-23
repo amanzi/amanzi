@@ -37,16 +37,17 @@ namespace Operators {
 void
 ReconstructionCellPolynomial::Init(Teuchos::ParameterList& plist)
 {
-  d_ = mesh_->space_dimension();
+  d_ = mesh_->getSpaceDimension();
 
   CompositeVectorSpace cvs, cvs2;
   cvs.SetMesh(mesh_)->SetGhosted(true)->SetComponent(
-    "cell", AmanziMesh::CELL, d_ * (d_ + 1) / 2 + d_);
+    "cell", AmanziMesh::Entity_kind::CELL, d_ * (d_ + 1) / 2 + d_);
 
   poly_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
   poly_c_ = poly_->ViewComponent("cell", true);
 
-  cvs2.SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, d_ * (d_ + 1) / 2);
+  cvs2.SetMesh(mesh_)->SetGhosted(true)->SetComponent(
+    "cell", AmanziMesh::Entity_kind::CELL, d_ * (d_ + 1) / 2);
   ortho_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs2, true));
   ortho_c_ = ortho_->ViewComponent("cell", true);
 
@@ -83,8 +84,8 @@ ReconstructionCellPolynomial::Compute(const AmanziMesh::Entity_ID_List& ids,
   WhetStone::NumericalIntegration numi(mesh_);
 
   for (int c : ids) {
-    double vol = mesh_->cell_volume(c);
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    double vol = mesh_->getCellVolume(c);
+    const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     quad.set_origin(xc);
 
     CellAllAdjCells_(c, AmanziMesh::Parallel_type::ALL, cells);
@@ -104,8 +105,8 @@ ReconstructionCellPolynomial::Compute(const AmanziMesh::Entity_ID_List& ids,
     rhs.PutScalar(0.0);
 
     for (int c1 : cells) {
-      double vol1 = mesh_->cell_volume(c1);
-      const AmanziGeometry::Point& xc1 = mesh_->cell_centroid(c1);
+      double vol1 = mesh_->getCellVolume(c1);
+      const AmanziGeometry::Point& xc1 = mesh_->getCellCentroid(c1);
       xcc = xc1 - xc;
 
       // -- gradient terms
@@ -136,7 +137,7 @@ ReconstructionCellPolynomial::Compute(const AmanziMesh::Entity_ID_List& ids,
       CellAllAdjFaces_(c, cells, faces);
       for (int f : faces) {
         if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-          const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+          const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
           xcc = xf - xc;
 
           // -- gradient
@@ -211,10 +212,10 @@ ReconstructionCellPolynomial::CellAllAdjCells_(AmanziMesh::Entity_ID c,
 
   cells.clear();
 
-  mesh_->cell_get_nodes(c, &nodes);
+  nodes = mesh_->getCellNodes(c);
   for (int i = 0; i < nodes.size(); i++) {
     int v = nodes[i];
-    mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &vcells);
+    vcells = mesh_->getNodeCells(v, AmanziMesh::Parallel_type::ALL);
 
     for (int k = 0; k < vcells.size(); ++k) {
       int c1 = vcells[k];
@@ -264,9 +265,9 @@ ReconstructionCellPolynomial::CellAllAdjFaces_(AmanziMesh::Entity_ID c,
 
   faces.clear();
   for (int c1 : cells) {
-    mesh_->cell_get_faces(c1, &cfaces);
+    cfaces = mesh_->getCellFaces(c1);
     for (int f : cfaces) {
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
+      fcells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
       if (fcells.size() == 1 && faces.find(f) == faces.end()) faces.insert(f);
     }
   }
@@ -279,7 +280,7 @@ ReconstructionCellPolynomial::CellAllAdjFaces_(AmanziMesh::Entity_ID c,
 double
 ReconstructionCellPolynomial::getValue(int c, const AmanziGeometry::Point& p)
 {
-  AmanziGeometry::Point xcc = p - mesh_->cell_centroid(c);
+  AmanziGeometry::Point xcc = p - mesh_->getCellCentroid(c);
 
   double value = (*field_)[0][c];
   for (int i = 0; i < d_; i++) value += (*poly_c_)[i][c] * xcc[i];
@@ -301,7 +302,7 @@ ReconstructionCellPolynomial::getValue(int c, const AmanziGeometry::Point& p)
 double
 ReconstructionCellPolynomial::getValueSlope(int c, const AmanziGeometry::Point& p)
 {
-  AmanziGeometry::Point xcc = p - mesh_->cell_centroid(c);
+  AmanziGeometry::Point xcc = p - mesh_->getCellCentroid(c);
 
   double value(0.0);
   for (int i = 0; i < d_; i++) value += (*poly_c_)[i][c] * xcc[i];
@@ -335,7 +336,7 @@ ReconstructionCellPolynomial::getPolynomial(int c) const
     }
   }
 
-  tmp.set_origin(mesh_->cell_centroid(c));
+  tmp.set_origin(mesh_->getCellCentroid(c));
   return tmp;
 }
 

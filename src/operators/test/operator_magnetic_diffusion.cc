@@ -97,21 +97,25 @@ MagneticDiffusion2D(double dt,
 
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     Kc = ana.Tensor(xc, tnew);
     K->push_back(Kc);
   }
 
   // create miscalleneous data
-  int nnodes_owned = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
 
   Teuchos::RCP<BCs> bc1 =
-    Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::SCALAR));
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::SCALAR));
 
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("electromagnetics operator");
@@ -124,7 +128,7 @@ MagneticDiffusion2D(double dt,
   const CompositeVectorSpace& cvs_e = global_op->DomainMap();
 
   Teuchos::RCP<CompositeVectorSpace> cvs_b = Teuchos::rcp(new CompositeVectorSpace());
-  cvs_b->SetMesh(mesh)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
+  cvs_b->SetMesh(mesh)->SetGhosted(true)->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
   CompositeVector E(cvs_e);
   CompositeVector B(*cvs_b);
@@ -139,14 +143,14 @@ MagneticDiffusion2D(double dt,
   Bf.PutScalar(0.0);
 
   for (int v = 0; v < nnodes_owned; ++v) {
-    mesh->node_get_coordinates(v, &xv);
+    xv = mesh->getNodeCoordinate(v);
     Ee[0][v] = (ana.electric_exact(xv, told))[2];
   }
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    double area = mesh->face_area(f);
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+    double area = mesh->getFaceArea(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
+    const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
 
     Bf[0][f] = (normal * ana.magnetic_exact(xf, told)) / area;
   }
@@ -168,7 +172,7 @@ MagneticDiffusion2D(double dt,
     phi.PutScalar(1.0 / Kc(0, 0));
 
     Teuchos::RCP<PDE_Accumulation> op_acc =
-      Teuchos::rcp(new PDE_Accumulation(AmanziMesh::NODE, global_op));
+      Teuchos::rcp(new PDE_Accumulation(AmanziMesh::Entity_kind::NODE, global_op));
     op_acc->SetBCs(bc1, bc1);
     op_acc->AddAccumulationTerm(phi, 1.0, "node");
 
@@ -177,7 +181,7 @@ MagneticDiffusion2D(double dt,
     std::vector<double>& bc_value = bc1->bc_value();
 
     for (int v = 0; v < nnodes_wghost; ++v) {
-      mesh->node_get_coordinates(v, &xv);
+      xv = mesh->getNodeCoordinate(v);
 
       if (fabs(xv[0] - Xa) < 1e-6 || fabs(xv[0] - Xb) < 1e-6 || fabs(xv[1] - Ya) < 1e-6 ||
           fabs(xv[1] - Yb) < 1e-6) {
@@ -213,7 +217,7 @@ MagneticDiffusion2D(double dt,
 
     // reconstruction
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 2);
+    cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 2);
 
     CompositeVector Bvec(*cvs);
     Epetra_MultiVector& sol = *Bvec.ViewComponent("cell");
@@ -221,17 +225,17 @@ MagneticDiffusion2D(double dt,
 
     double avgB(0.0), divB(0.0), errB(0.0);
     for (int c = 0; c < ncells_owned; ++c) {
-      double vol = mesh->cell_volume(c);
-      const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      const auto& faces = mesh->cell_get_faces(c);
-      const auto& dirs = mesh->cell_get_face_dirs(c);
+      double vol = mesh->getCellVolume(c);
+      const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
+      const auto& faces = mesh->getCellFaces(c);
+      const auto& dirs = mesh->getCellFacesAndDirections(c);
       int nfaces = faces.size();
 
       double tmp(0.0);
       for (int n = 0; n < nfaces; ++n) {
         int f = faces[n];
-        double area = mesh->face_area(f);
-        const Amanzi::AmanziGeometry::Point& xf = mesh->face_centroid(f);
+        double area = mesh->getFaceArea(f);
+        const Amanzi::AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
         for (int k = 0; k < 2; ++k) {
           sol[k][c] += Bf[0][f] * dirs[n] * area * (xf[k] - xc[k]) / vol;
         }
@@ -345,15 +349,16 @@ MagneticDiffusion3D(double dt,
     mesh = meshfactory.create(name, request_faces, request_edges);
   // mesh = meshfactory.create("test/hex_split_faces5.exo", request_faces, request_edges);
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   Analytic ana(mesh);
 
   if (deform > 0) {
     double vol0(0.0), vol1(0.0);
-    for (int c = 0; c < ncells_owned; ++c) vol0 += mesh->cell_volume(c);
+    for (int c = 0; c < ncells_owned; ++c) vol0 += mesh->getCellVolume(c);
     DeformMesh(mesh, deform, 0.0);
-    for (int c = 0; c < ncells_owned; ++c) vol1 += mesh->cell_volume(c);
+    for (int c = 0; c < ncells_owned; ++c) vol1 += mesh->getCellVolume(c);
 
     vol0 -= vol1;
     ana.GlobalOp("sum", &vol0, 1);
@@ -368,20 +373,23 @@ MagneticDiffusion3D(double dt,
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
 
   for (int c = 0; c < ncells_owned; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     Kc = ana.Tensor(xc, tnew);
     K->push_back(Kc);
   }
 
   // create boundary data
-  int nedges_owned = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nedges_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
 
   Teuchos::RCP<BCs> bc1 =
-    Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, WhetStone::DOF_Type::SCALAR));
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::EDGE, WhetStone::DOF_Type::SCALAR));
   Teuchos::RCP<BCs> bc2 =
-    Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
 
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("electromagnetics operator");
@@ -394,7 +402,7 @@ MagneticDiffusion3D(double dt,
   const CompositeVectorSpace& cvs_e = global_op->DomainMap();
 
   Teuchos::RCP<CompositeVectorSpace> cvs_b = Teuchos::rcp(new CompositeVectorSpace());
-  cvs_b->SetMesh(mesh)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
+  cvs_b->SetMesh(mesh)->SetGhosted(true)->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
   CompositeVector E(cvs_e);
   CompositeVector B(*cvs_b);
@@ -407,17 +415,17 @@ MagneticDiffusion3D(double dt,
   Bf.PutScalar(0.0);
 
   for (int e = 0; e < nedges_owned; ++e) {
-    double len = mesh->edge_length(e);
-    const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-    const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
+    double len = mesh->getEdgeLength(e);
+    const AmanziGeometry::Point& tau = mesh->getEdgeVector(e);
+    const AmanziGeometry::Point& xe = mesh->getEdgeCentroid(e);
 
     Ee[0][e] = (ana.electric_exact(xe, told) * tau) / len;
   }
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    double area = mesh->face_area(f);
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+    double area = mesh->getFaceArea(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
+    const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
 
     Bf[0][f] = (ana.magnetic_exact(xf, told) * normal) / area;
   }
@@ -441,7 +449,7 @@ MagneticDiffusion3D(double dt,
     AmanziMesh::Entity_ID_List cells, edges;
 
     for (int f = 0; f < nfaces_wghost; ++f) {
-      const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+      const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
 
       if (fabs(xf[0] - Xa) < 1e-6 && !convergence) {
         bc_model2[f] = OPERATOR_BC_NEUMANN;
@@ -449,13 +457,13 @@ MagneticDiffusion3D(double dt,
       } else if ((fabs(xf[0] - Xa) < 1e-6 && convergence) || fabs(xf[0] - Xb) < 1e-6 ||
                  fabs(xf[1] - Ya) < 1e-6 || fabs(xf[1] - Yb) < 1e-6 || fabs(xf[2] - Za) < 1e-6 ||
                  fabs(xf[2] - Zb) < 1e-6) {
-        mesh->face_get_edges_and_dirs(f, &edges, &edirs);
+        mesh->getFaceEdgesAndDirections(f, &edges, &edirs);
         int nedges = edges.size();
         for (int i = 0; i < nedges; ++i) {
           int e = edges[i];
-          double len = mesh->edge_length(e);
-          const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-          const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
+          double len = mesh->getEdgeLength(e);
+          const AmanziGeometry::Point& tau = mesh->getEdgeVector(e);
+          const AmanziGeometry::Point& xe = mesh->getEdgeCentroid(e);
 
           bc_model[e] = OPERATOR_BC_DIRICHLET;
           bc_value[e] = (ana.electric_exact(xe, tnew - dt / 2) * tau) / len;
@@ -500,7 +508,7 @@ MagneticDiffusion3D(double dt,
 
     // -- magnetic field
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 3);
+    cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 3);
 
     CompositeVector Bvec(*cvs);
     Epetra_MultiVector& sol_b = *Bvec.ViewComponent("cell");
@@ -508,17 +516,17 @@ MagneticDiffusion3D(double dt,
 
     double avgB(0.0), divB(0.0), errB(0.0);
     for (int c = 0; c < ncells_owned; ++c) {
-      double vol = mesh->cell_volume(c);
-      const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      const auto& faces = mesh->cell_get_faces(c);
-      const auto& dirs = mesh->cell_get_face_dirs(c);
+      double vol = mesh->getCellVolume(c);
+      const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
+      const auto& faces = mesh->getCellFaces(c);
+      const auto& dirs = mesh->getCellFacesAndDirections(c);
       int nfaces = faces.size();
 
       double tmp(0.0);
       for (int n = 0; n < nfaces; ++n) {
         int f = faces[n];
-        double area = mesh->face_area(f);
-        const Amanzi::AmanziGeometry::Point& xf = mesh->face_centroid(f);
+        double area = mesh->getFaceArea(f);
+        const Amanzi::AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
         for (int k = 0; k < 3; ++k) {
           sol_b[k][c] += Bf[0][f] * dirs[n] * area * (xf[k] - xc[k]) / vol;
         }
@@ -542,7 +550,7 @@ MagneticDiffusion3D(double dt,
     Ic(0, 0) = 1.0;
 
     for (int c = 0; c < ncells_owned; ++c) {
-      mesh->cell_get_edges(c, &edges);
+      edges = mesh->getCellEdges(c);
       int nedges = edges.size();
 
       WhetStone::DenseMatrix R(nedges, 3), W(nedges, nedges);
@@ -553,7 +561,7 @@ MagneticDiffusion3D(double dt,
       mfd.L2consistencyInverse(c, Ic, R, W, true);
       R.Multiply(v1, v2, true);
 
-      double vol = mesh->cell_volume(c);
+      double vol = mesh->getCellVolume(c);
       for (int k = 0; k < 3; ++k) { sol_e[k][c] = v2(k) / vol; }
     }
 

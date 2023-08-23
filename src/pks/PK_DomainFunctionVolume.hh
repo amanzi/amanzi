@@ -100,10 +100,10 @@ void
 PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
 {
   // create the input tuple (time + space)
-  int dim = (*mesh_).space_dimension();
+  int dim = (*mesh_).getSpaceDimension();
   std::vector<double> args(1 + dim);
 
-  int nowned = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::OWNED);
+  int nowned = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_type::OWNED);
 
   for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end();
        ++uspec) {
@@ -113,11 +113,11 @@ PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
     domain_volume_ = 0.0;
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
       if (*c < nowned)
-        domain_volume_ +=
-          (kind_ == AmanziMesh::CELL) ? mesh_->cell_volume(*c) : mesh_->face_area(*c);
+        domain_volume_ += (kind_ == AmanziMesh::Entity_kind::CELL) ? mesh_->getCellVolume(*c) :
+                                                                     mesh_->getFaceArea(*c);
     }
     double tmp(domain_volume_);
-    mesh_->get_comm()->SumAll(&tmp, &domain_volume_, 1);
+    mesh_->getComm()->SumAll(&tmp, &domain_volume_, 1);
     int nfun = (*uspec)->first->second->size();
     std::vector<double> val_vec(nfun);
 

@@ -38,11 +38,11 @@ CalculatePressureCellError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiVect
   double f1 = sqrt(1.0 - g * k1 / cr);
   double f2 = sqrt(g * k2 / cr - 1.0);
 
-  int dim = mesh->space_dimension();
+  int dim = mesh->getSpaceDimension();
   double pexact, error_L2 = 0.0;
   for (int c = 0; c < p.MyLength(); c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-    double volume = mesh->cell_volume(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
+    double volume = mesh->getCellVolume(c);
 
     double z = xc[dim - 1];
     if (z < -a) {
@@ -63,20 +63,21 @@ CalculatePressureCellError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiVect
 double
 CalculateDarcyFluxError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiVector& flux)
 {
-  int dim = mesh->space_dimension();
+  int dim = mesh->getSpaceDimension();
   AmanziGeometry::Point velocity_exact(dim);
 
   double cr = 1.02160895462971866; // analytical data
   velocity_exact[dim - 1] = -cr;
 
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
 
   double error_l2 = 0.0;
   for (int f = 0; f < nfaces_owned; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     error_l2 += std::pow(flux[0][f] - velocity_exact * normal, 2.0);
     // std::cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal
-    //           << " xf=" << mesh->face_centroid(f) << std::endl;
+    //           << " xf=" << mesh->getFaceCentroid(f) << std::endl;
   }
   return sqrt(error_l2 / nfaces_owned);
 }
@@ -89,13 +90,14 @@ double
 CalculateDarcyDivergenceError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiVector& flux)
 {
   double error_L2 = 0.0;
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;
 
-    mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh->getCellFacesAndDirections(c, &faces, &dirs);
     int nfaces = faces.size();
 
     double div = 0.0;
@@ -103,7 +105,7 @@ CalculateDarcyDivergenceError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiV
       int f = faces[i];
       div += flux[0][f] * dirs[i];
     }
-    error_L2 += div * div / mesh->cell_volume(c);
+    error_L2 += div * div / mesh->getCellVolume(c);
     //std::cout << c << " div=" << div << " exact=0.0" << std::endl;
   }
   return sqrt(error_L2);

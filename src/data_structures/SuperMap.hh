@@ -37,9 +37,9 @@ class CompositeVector;
 class TreeVectorSpace;
 class TreeVector;
 
-namespace AmanziMesh {
-class Mesh;
-}
+//namespace AmanziMesh {
+//class Mesh;
+//}
 
 
 namespace Operators {

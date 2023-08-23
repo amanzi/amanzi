@@ -124,7 +124,7 @@ PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
     func->Init(plist, keyword);
     return func;
   } else if (model == "first order exchange") {
-    AMANZI_ASSERT(kind == AmanziMesh::CELL);
+    AMANZI_ASSERT(kind == AmanziMesh::Entity_kind::CELL);
     plist.sublist("source function")
       .set<std::string>("total component concentration copy", tag.get());
     Teuchos::RCP<PK_DomainFunctionFirstOrderExchange<FunctionBase>> func =
@@ -132,14 +132,14 @@ PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
     func->Init(plist, keyword);
     return func;
   } else if (model == "subgrid") {
-    AMANZI_ASSERT(kind == AmanziMesh::FACE);
+    AMANZI_ASSERT(kind == AmanziMesh::Entity_kind::FACE);
     plist.sublist(keyword).set<std::string>("copy_field_out_tag", tag.get());
     Teuchos::RCP<PK_DomainFunctionSubgrid<FunctionBase>> func =
       Teuchos::rcp(new PK_DomainFunctionSubgrid<FunctionBase>(mesh_));
     func->Init(plist, keyword, kind);
     return func;
   } else if (model == "subgrid return") {
-    AMANZI_ASSERT(kind == AmanziMesh::CELL);
+    AMANZI_ASSERT(kind == AmanziMesh::Entity_kind::CELL);
     plist.sublist("source function").set<std::string>("copy subgrid field", tag.get());
     Teuchos::RCP<PK_DomainFunctionSubgridReturn<FunctionBase>> func =
       Teuchos::rcp(new PK_DomainFunctionSubgridReturn<FunctionBase>(mesh_, plist));

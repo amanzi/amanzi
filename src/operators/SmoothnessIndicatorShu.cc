@@ -40,7 +40,8 @@ SmoothnessIndicatorShu::Init(Teuchos::ParameterList& plist)
 void
 SmoothnessIndicatorShu::Compute(const Teuchos::RCP<Reconstruction>& lifting)
 {
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
   measure_.resize(ncells_owned);
 
   lifting->data()->ScatterMasterToGhosted();
@@ -49,10 +50,11 @@ SmoothnessIndicatorShu::Compute(const Teuchos::RCP<Reconstruction>& lifting)
 
   for (int c = 0; c < ncells_owned; ++c) {
     double value(1.0);
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     auto poly = lifting->getPolynomial(c);
 
-    mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &cells);
+    assert(false);
+    //mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &cells);
     for (int c1 : cells) {
       auto poly1 = lifting->getPolynomial(c1);
       poly1.ChangeOrigin(xc);

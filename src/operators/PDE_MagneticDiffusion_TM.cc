@@ -37,8 +37,7 @@ PDE_MagneticDiffusion_TM::ModifyMatrices(CompositeVector& E, CompositeVector& B,
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
   Epetra_MultiVector& rhs_v = *global_op_->rhs()->ViewComponent("node", true);
 
-  std::vector<int> dirs;
-  AmanziMesh::Entity_ID_List faces, nodes;
+  AmanziMesh::Entity_ID_List nodes;
 
   for (int c = 0; c < ncells_owned; ++c) {
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
@@ -47,8 +46,8 @@ PDE_MagneticDiffusion_TM::ModifyMatrices(CompositeVector& E, CompositeVector& B,
     const WhetStone::DenseMatrix& Mcell = mass_op_[c];
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    mesh_->cell_get_nodes(c, &nodes);
+    auto [faces, dirs] = mesh_->getCellFacesAndDirections(c);
+    nodes = mesh_->getCellNodes(c);
 
     int nfaces = faces.size();
     int nnodes = nodes.size();
@@ -57,7 +56,7 @@ PDE_MagneticDiffusion_TM::ModifyMatrices(CompositeVector& E, CompositeVector& B,
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
-      v1(n) = Bf[0][f] * dirs[n] * mesh_->face_area(f);
+      v1(n) = Bf[0][f] * dirs[n] * mesh_->getFaceArea(f);
     }
 
     Mcell.Multiply(v1, v2, false);
@@ -92,8 +91,8 @@ PDE_MagneticDiffusion_TM::ModifyFields(CompositeVector& E, CompositeVector& B, d
   for (int c = 0; c < ncells_owned; ++c) {
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    mesh_->cell_get_nodes(c, &nodes);
+    auto [faces, dirs] = mesh_->getCellFacesAndDirections(c);
+    nodes = mesh_->getCellNodes(c);
 
     int nfaces = faces.size();
     int nnodes = nodes.size();
@@ -110,7 +109,7 @@ PDE_MagneticDiffusion_TM::ModifyFields(CompositeVector& E, CompositeVector& B, d
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
       if (!fflag[f]) {
-        Bf[0][f] -= dt * v2(n) * dirs[n] / mesh_->face_area(f);
+        Bf[0][f] -= dt * v2(n) * dirs[n] / mesh_->getFaceArea(f);
         fflag[f] = true;
       }
     }
@@ -127,12 +126,13 @@ PDE_MagneticDiffusion_TM::ModifyFields(CompositeVector& E, CompositeVector& B, d
 void
 PDE_MagneticDiffusion_TM::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  if (local_schema_col_.get_base() == AmanziMesh::CELL && mesh_->space_dimension() == 2) {
+  if (local_schema_col_.get_base() == AmanziMesh::Entity_kind::CELL &&
+      mesh_->getSpaceDimension() == 2) {
     Teuchos::RCP<const BCs> bc_f, bc_v;
     for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
-      if ((*bc)->kind() == AmanziMesh::FACE) {
+      if ((*bc)->kind() == AmanziMesh::Entity_kind::FACE) {
         bc_f = *bc;
-      } else if ((*bc)->kind() == AmanziMesh::NODE) {
+      } else if ((*bc)->kind() == AmanziMesh::Entity_kind::NODE) {
         bc_v = *bc;
       }
     }
@@ -161,7 +161,7 @@ PDE_MagneticDiffusion_TM::ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_f,
   // move to properties of BCs (lipnikov@lanl.gov)
   std::vector<int> node_get_cells(nnodes_wghost, 0);
   for (int c = 0; c != ncells_wghost; ++c) {
-    mesh_->cell_get_nodes(c, &nodes);
+    nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
 
     for (int n = 0; n < nnodes; ++n) { node_get_cells[nodes[n]]++; }
@@ -176,7 +176,7 @@ PDE_MagneticDiffusion_TM::ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_f,
       const std::vector<int>& bc_model = bc_v->bc_model();
       const std::vector<double>& bc_value = bc_v->bc_value();
 
-      mesh_->cell_get_nodes(c, &nodes);
+      nodes = mesh_->getCellNodes(c);
       int nnodes = nodes.size();
 
       // essential conditions for test functions
@@ -234,10 +234,10 @@ PDE_MagneticDiffusion_TM::CalculateOhmicHeating(const CompositeVector& E)
 
   double energy(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_nodes(c, &nodes);
+    nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
 
-    double volume = mesh_->cell_volume(c);
+    double volume = mesh_->getCellVolume(c);
     double tmp = volume / (*K_)[c](0, 0) / nnodes;
     for (int n = 0; n < nnodes; ++n) {
       int v = nodes[n];
@@ -246,7 +246,7 @@ PDE_MagneticDiffusion_TM::CalculateOhmicHeating(const CompositeVector& E)
   }
 
   double tmp(energy);
-  mesh_->get_comm()->SumAll(&tmp, &energy, 1);
+  mesh_->getComm()->SumAll(&tmp, &energy, 1);
 
   return energy;
 }

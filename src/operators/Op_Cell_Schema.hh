@@ -34,8 +34,9 @@ class Op_Cell_Schema : public Op {
     : Op(schema_row, schema_col, mesh)
   {
     WhetStone::DenseMatrix null_matrix;
-    matrices.resize(mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED),
-                    null_matrix);
+    matrices.resize(
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED),
+      null_matrix);
     matrices_shadow = matrices;
   }
   ~Op_Cell_Schema(){};

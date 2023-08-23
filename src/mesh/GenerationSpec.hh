@@ -17,8 +17,7 @@
  *
  */
 
-#ifndef __H_GenerationSpec
-#define __H_GenerationSpec
+#pragma once
 
 #include "Region.hh"
 #include "RegionBox.hh"
@@ -81,7 +80,7 @@ class GenerationSpec {
 
   AmanziGeometry::RegionVector blocks_; /**< list of mesh subdomains */
 
-  Partitioner_type partitioner_ = PARTITIONER_DEFAULT; /**< partitioner type */
+  Partitioner_type partitioner_;
 
   /// fill attributes from specified list
   void parse_(const Teuchos::ParameterList& parameter_list);
@@ -95,5 +94,3 @@ class GenerationSpec {
 
 } // end namespace AmanziMesh
 } // end namespace Amanzi
-
-#endif

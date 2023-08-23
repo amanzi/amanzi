@@ -62,11 +62,11 @@ dam_break_1D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   hL = 10.;
   x0 = 1000.;
 
-  int ncells_owned =
-    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
+                                          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
-    Amanzi::AmanziGeometry::Point xc = mesh->cell_centroid(c);
+    Amanzi::AmanziGeometry::Point xc = mesh->getCellCentroid(c);
 
     x = xc[0];
 
@@ -83,8 +83,8 @@ error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
       const Epetra_MultiVector& hh,
       const Epetra_MultiVector& vx)
 {
-  int ncells_owned =
-    mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
+                                          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   double err_max, err_L1;
 
@@ -93,7 +93,7 @@ error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
   for (int c = 0; c < ncells_owned; c++) {
     err_max = std::max(err_max, std::abs(hh_ex[0][c] - hh[0][c]));
-    err_L1 += std::abs(hh_ex[0][c] - hh[0][c]) * mesh->cell_volume(c);
+    err_L1 += std::abs(hh_ex[0][c] - hh[0][c]) * mesh->getCellVolume(c);
   }
 
   std::cout << "err_max = " << err_max << std::endl;
@@ -206,16 +206,16 @@ TEST(SHALLOW_WATER_1D_CONVERGENCE)
     dam_break_1D_exact_field(mesh, hh_ex, vx_ex, t_out);
 
     io.InitializeCycle(t_out, iter);
-    io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
-    io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
-    io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
-    io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
-    io.WriteVector(*qx(0), "qx", AmanziMesh::CELL);
-    io.WriteVector(*qy(0), "qy", AmanziMesh::CELL);
-    io.WriteVector(*B(0), "B", AmanziMesh::CELL);
-    io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
-    io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
-    io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::CELL);
+    io.WriteVector(*hh(0), "depth", AmanziMesh::Entity_kind::CELL);
+    io.WriteVector(*ht(0), "total_depth", AmanziMesh::Entity_kind::CELL);
+    io.WriteVector(*vx(0), "vx", AmanziMesh::Entity_kind::CELL);
+    io.WriteVector(*vy(0), "vy", AmanziMesh::Entity_kind::CELL);
+    io.WriteVector(*qx(0), "qx", AmanziMesh::Entity_kind::CELL);
+    io.WriteVector(*qy(0), "qy", AmanziMesh::Entity_kind::CELL);
+    io.WriteVector(*B(0), "B", AmanziMesh::Entity_kind::CELL);
+    io.WriteVector(*pid(0), "pid", AmanziMesh::Entity_kind::CELL);
+    io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::Entity_kind::CELL);
+    io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::Entity_kind::CELL);
     io.FinalizeCycle();
 
     dt = SWPK.get_dt();
@@ -265,15 +265,15 @@ TEST(SHALLOW_WATER_1D_CONVERGENCE)
   error(mesh, hh_ex, vx_ex, hh, vx);
 
   io.InitializeCycle(t_out, iter);
-  io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
-  io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
-  io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
-  io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
-  io.WriteVector(*qx(0), "qx", AmanziMesh::CELL);
-  io.WriteVector(*qy(0), "qy", AmanziMesh::CELL);
-  io.WriteVector(*B(0), "B", AmanziMesh::CELL);
-  io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
-  io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
-  io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::CELL);
+  io.WriteVector(*hh(0), "depth", AmanziMesh::Entity_kind::CELL);
+  io.WriteVector(*ht(0), "total_depth", AmanziMesh::Entity_kind::CELL);
+  io.WriteVector(*vx(0), "vx", AmanziMesh::Entity_kind::CELL);
+  io.WriteVector(*vy(0), "vy", AmanziMesh::Entity_kind::CELL);
+  io.WriteVector(*qx(0), "qx", AmanziMesh::Entity_kind::CELL);
+  io.WriteVector(*qy(0), "qy", AmanziMesh::Entity_kind::CELL);
+  io.WriteVector(*B(0), "B", AmanziMesh::Entity_kind::CELL);
+  io.WriteVector(*pid(0), "pid", AmanziMesh::Entity_kind::CELL);
+  io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::Entity_kind::CELL);
+  io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::Entity_kind::CELL);
   io.FinalizeCycle();
 }

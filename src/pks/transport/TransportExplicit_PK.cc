@@ -80,7 +80,7 @@ TransportExplicit_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
   mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);
 
   // work memory
-  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+  const Epetra_Map& cmap_wghost = mesh_->getMap(AmanziMesh::Entity_kind::CELL, true);
   Epetra_Vector f_component(cmap_wghost);
 
   // distribute old vector of concentrations
@@ -147,7 +147,7 @@ TransportExplicit_PK::AdvanceSecondOrderUpwindRKn(double dt_cycle)
   S_->Get<CompositeVector>(tcc_key_).ScatterMasterToGhosted("cell");
 
   CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+  cvs.SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   CompositeVector component_prev(cvs), component_next(cvs);
 
   // define time integration method
@@ -263,7 +263,7 @@ TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       swap = 1 - swap;
     }
 
-    if (mesh_->space_dimension() == mesh_->manifold_dimension()) {
+    if (mesh_->getSpaceDimension() == mesh_->getManifoldDimension()) {
       if (spatial_disc_order == 1) {
         AdvanceDonorUpwind(dt_cycle);
       } else if (spatial_disc_order == 2 && temporal_disc_order == 2) {
@@ -348,7 +348,7 @@ TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
   int num_advect = num_aqueous;
 
   for (int c = 0; c < ncells_owned; c++) {
-    vol_wc = mesh_->cell_volume(c) * (*wc_start)[0][c];
+    vol_wc = mesh_->getCellVolume(c) * (*wc_start)[0][c];
 
     for (int i = 0; i < num_advect; i++) tcc_next[i][c] = tcc_prev[i][c] * vol_wc;
   }
@@ -422,7 +422,7 @@ TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
   }
 
   int flag_tmp(flag);
-  mesh_->get_comm()->MaxAll(&flag_tmp, &flag, 1);
+  mesh_->getComm()->MaxAll(&flag_tmp, &flag, 1);
   if (flag == 1) tcc_tmp->GatherGhostedToMaster();
 
   // process external sources
@@ -433,7 +433,7 @@ TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
 
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
-    vol_wc = mesh_->cell_volume(c) * (*wc_end)[0][c];
+    vol_wc = mesh_->getCellVolume(c) * (*wc_end)[0][c];
     if (vol_wc > 0.0) {
       for (int i = 0; i < num_advect; i++) tcc_next[i][c] /= vol_wc;
     }
@@ -469,7 +469,7 @@ TransportExplicit_PK::AdvanceDonorUpwindManifold(double dt_cycle)
   int num_advect = num_aqueous;
 
   for (int c = 0; c < ncells_owned; c++) {
-    vol_wc = mesh_->cell_volume(c) * (*wc_start)[0][c];
+    vol_wc = mesh_->getCellVolume(c) * (*wc_start)[0][c];
 
     for (int i = 0; i < num_advect; i++) tcc_next[i][c] = tcc_prev[i][c] * vol_wc;
   }
@@ -543,7 +543,7 @@ TransportExplicit_PK::AdvanceDonorUpwindManifold(double dt_cycle)
 
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
-    vol_wc = mesh_->cell_volume(c) * (*wc_end)[0][c];
+    vol_wc = mesh_->getCellVolume(c) * (*wc_end)[0][c];
     for (int i = 0; i < num_advect; i++) tcc_next[i][c] /= vol_wc;
   }
 
@@ -619,7 +619,7 @@ TransportExplicit_PK::DudtOld_(double t, const Epetra_Vector& component, Epetra_
     }
 
     u = fabs((*flowrate)[0][f]);
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
     if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       upwind_tcc = limiter_->getValue(c1, xf);
@@ -652,7 +652,7 @@ TransportExplicit_PK::DudtOld_(double t, const Epetra_Vector& component, Epetra_
   }
 
   for (int c = 0; c < ncells_owned; c++) { // calculate conservative quantatity
-    double vol_wc = mesh_->cell_volume(c) * (*wc_start)[0][c];
+    double vol_wc = mesh_->getCellVolume(c) * (*wc_start)[0][c];
     if (vol_wc != 0.0) f_component[c] /= vol_wc;
   }
 
@@ -673,7 +673,7 @@ TransportExplicit_PK::DudtOld_(double t, const Epetra_Vector& component, Epetra_
               c2 = downwind_cells_[f][0];
               if (c2 < 0) continue;
               u = fabs((*flowrate)[0][f]);
-              double vol_wc = mesh_->cell_volume(c2) * (*wc_start)[0][c2];
+              double vol_wc = mesh_->getCellVolume(c2) * (*wc_start)[0][c2];
               if (vol_wc != 0.0) {
                 tcc_flux = u * values[i];
                 f_component[c2] += tcc_flux / vol_wc;

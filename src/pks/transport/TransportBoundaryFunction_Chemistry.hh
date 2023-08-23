@@ -52,7 +52,7 @@ class TransportBoundaryFunction_Chemistry : public TransportDomainFunction {
 
     for (auto it = begin(); it != end(); ++it) {
       int f = it->first;
-      mesh->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
+      cells = mesh->getFaceCells(f, AmanziMesh::Parallel_type::OWNED);
       int c = cells[0];
 
       amanzi_pk_->CopyCellStateToBeakerState(c, tcc->ViewComponent("cell", true));

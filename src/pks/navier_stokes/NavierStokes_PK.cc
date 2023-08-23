@@ -89,7 +89,7 @@ NavierStokes_PK::Setup()
 {
   dt_ = 0.0;
   mesh_ = S_->GetMesh();
-  dim = mesh_->space_dimension();
+  dim = mesh_->getSpaceDimension();
 
   pressure_key_ = Keys::getKey(domain_, "pressure");
   velocity_key_ = Keys::getKey(domain_, "fluid_velocity");
@@ -100,7 +100,7 @@ NavierStokes_PK::Setup()
     S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     Teuchos::ParameterList elist(pressure_key_);
     elist.set<std::string>("evaluator name", pressure_key_);
@@ -110,7 +110,8 @@ NavierStokes_PK::Setup()
 
   // -- velocity
   std::vector<std::string> names = { "node", "face" };
-  std::vector<AmanziMesh::Entity_kind> locations = { AmanziMesh::NODE, AmanziMesh::FACE };
+  std::vector<AmanziMesh::Entity_kind> locations = { AmanziMesh::Entity_kind::NODE,
+                                                     AmanziMesh::Entity_kind::FACE };
   std::vector<int> ndofs = { dim, 1 };
 
   if (!S_->HasRecord(velocity_key_)) {
@@ -147,14 +148,20 @@ NavierStokes_PK::Initialize()
   dt_next_ = dt_;
 
   // -- mesh dimensions
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  ncells_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  ncells_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
 
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  nfaces_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  nfaces_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
 
-  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  nnodes_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+  nnodes_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
 
   // Create verbosity object to print out initialiation statistics.
   Teuchos::ParameterList vlist;
@@ -202,7 +209,7 @@ NavierStokes_PK::Initialize()
   op_matrix_grad_ = Teuchos::rcp(new Operators::PDE_Abstract(tmp3, mesh_));
 
   // -- create accumulation term (velocity block, only nodal unknowns)
-  Operators::Schema schema(AmanziMesh::NODE, 2); // FIXME
+  Operators::Schema schema(AmanziMesh::Entity_kind::NODE, 2); // FIXME
   op_matrix_acc_ =
     Teuchos::rcp(new Operators::PDE_Accumulation(schema, op_matrix_elas_->global_operator()));
   op_preconditioner_acc_ = Teuchos::rcp(
@@ -216,7 +223,7 @@ NavierStokes_PK::Initialize()
     Teuchos::rcp(new Operators::PDE_Abstract(tmp4, op_preconditioner_elas_->global_operator()));
 
   // -- create pressure block (for preconditioner)
-  op_mass_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
+  op_mass_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
 
   // -- matrix and preconditioner
   op_matrix_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(soln_->Map())));

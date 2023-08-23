@@ -25,7 +25,7 @@ EvaluatorCellVolume::EnsureCompatibility(State& S)
   S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_)
     .SetMesh(S.GetMesh(domain))
     ->SetGhosted()
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
+    ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 }
 
 
@@ -38,13 +38,15 @@ EvaluatorCellVolume::Update_(State& S)
   auto& vec = S.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
   for (const auto& comp : vec) {
     if (comp == "cell") {
-      int ncells = vec.Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+      int ncells =
+        vec.Mesh()->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
       auto& vec_c = *vec.ViewComponent("cell", false);
-      for (int c = 0; c != ncells; ++c) { vec_c[0][c] = vec.Mesh()->cell_volume(c); }
+      for (int c = 0; c != ncells; ++c) { vec_c[0][c] = vec.Mesh()->getCellVolume(c); }
     } else if (comp == "face") {
-      int nfaces = vec.Mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+      int nfaces =
+        vec.Mesh()->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
       auto& vec_f = *vec.ViewComponent("face", false);
-      for (int f = 0; f != nfaces; ++f) { vec_f[0][f] = vec.Mesh()->face_area(f); }
+      for (int f = 0; f != nfaces; ++f) { vec_f[0][f] = vec.Mesh()->getFaceArea(f); }
     } else {
       Errors::Message message;
       message << "EvaluatorCellVolume for \"" << my_key_ << "\" requires component \"" << comp

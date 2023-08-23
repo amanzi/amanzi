@@ -107,7 +107,8 @@ FlowEnergyMatrixFracture_PK::Setup()
     S_->Require<CV_t, CVS_t>(matrix_vol_flowrate_key_, Tags::DEFAULT)
       .SetMesh(mesh_domain_)
       ->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
+      ->SetComponent("face", AmanziMesh::Entity_kind::FACE, mmap, gmap, 1);
+    AddDefaultPrimaryEvaluator_(matrix_vol_flowrate_key_, Tags::DEFAULT);
   }
 
   if (!S_->HasRecord(matrix_vol_flowrate_key_)) {
@@ -138,7 +139,7 @@ FlowEnergyMatrixFracture_PK::Setup()
     S_->Require<CV_t, CVS_t>(diffusion_to_matrix_key_, Tags::DEFAULT)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
   if (!S_->HasRecord(heat_diffusion_to_matrix_key_)) {
@@ -290,6 +291,16 @@ FlowEnergyMatrixFracture_PK::Initialize()
   fia.InitMatrixCellToFractureCell();
 
   // -- operators (energy)
+  auto cvs_matrix = Teuchos::rcp(new CompositeVectorSpace());
+  cvs_matrix->SetMesh(mesh_matrix)
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+  auto cvs_fracture = Teuchos::rcp(new CompositeVectorSpace());
+  cvs_fracture->SetMesh(mesh_fracture)
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
   adv_coupling_matrix_ = AddCouplingFluxes_(fia.get_cvs_matrix(),
                                             fia.get_cvs_fracture(),
                                             fia.get_inds_matrix(),
@@ -533,6 +544,83 @@ FlowEnergyMatrixFracture_PK::AddCouplingFluxes_(
 
 
 /* *******************************************************************
+* Compute coupling fluxes
+******************************************************************* */
+void
+FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
+  const std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>>& adv_coupling)
+{
+  S_->Get<CV_t>("enthalpy").ScatterMasterToGhosted("cell");
+  S_->Get<CV_t>("molar_density_liquid").ScatterMasterToGhosted("cell");
+  S_->Get<CV_t>("temperature").ScatterMasterToGhosted("cell");
+  S_->Get<CV_t>(matrix_vol_flowrate_key_).ScatterMasterToGhosted("face");
+
+  // extract enthalpy fields
+  S_->GetEvaluator("enthalpy").Update(*S_, "enthalpy");
+  const auto& H_m = *S_->Get<CV_t>("enthalpy").ViewComponent("cell", true);
+  const auto& T_m = *S_->Get<CV_t>("temperature").ViewComponent("cell", true);
+  const auto& n_l_m = *S_->Get<CV_t>("molar_density_liquid").ViewComponent("cell", true);
+
+  S_->GetEvaluator("fracture-enthalpy").Update(*S_, "fracture-enthalpy");
+  const auto& H_f = *S_->Get<CV_t>("fracture-enthalpy").ViewComponent("cell", true);
+  const auto& T_f = *S_->Get<CV_t>("fracture-temperature").ViewComponent("cell", true);
+  const auto& n_l_f = *S_->Get<CV_t>("fracture-molar_density_liquid").ViewComponent("cell", true);
+
+  // update coupling terms for advection
+  int ncells_owned_f =
+    mesh_fracture_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  auto values1 = std::make_shared<std::vector<double>>(2 * ncells_owned_f, 0.0);
+  auto values2 = std::make_shared<std::vector<double>>(2 * ncells_owned_f, 0.0);
+
+  int np(0), dir, shift;
+  AmanziMesh::Entity_ID_List cells;
+  const auto& flux = *S_->Get<CV_t>(matrix_vol_flowrate_key_).ViewComponent("face", true);
+  const auto& mmap = flux.Map();
+  for (int c = 0; c < ncells_owned_f; ++c) {
+    int f = mesh_fracture_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
+    int first = mmap.FirstPointInElement(f);
+
+    cells = mesh_domain_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
+    int ncells = cells.size();
+    mesh_domain_->getFaceNormal(f, cells[0], &dir);
+    shift = Operators::UniqueIndexFaceToCells(*mesh_domain_, f, cells[0]);
+
+    for (int k = 0; k < ncells; ++k) {
+      double tmp = flux[0][first + shift] * dir;
+
+      // since we multiply by temperature, the model for the flux is
+      // q (\eta H / T) * T for both matrix and preconditioner
+      if (tmp > 0) {
+        int c1 = cells[k];
+        double factor = H_m[0][c1] * n_l_m[0][c1] / T_m[0][c1];
+        (*values1)[np] = tmp * factor;
+      } else {
+        double factor = H_f[0][c] * n_l_f[0][c] / T_f[0][c];
+        (*values2)[np] = -tmp * factor;
+      }
+
+      dir = -dir;
+      shift = 1 - shift;
+      np++;
+    }
+  }
+
+  // setup coupling operators with new data
+  adv_coupling[0]->Setup(values1, 1.0);
+  adv_coupling[0]->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  adv_coupling[1]->Setup(values2, -1.0);
+  adv_coupling[1]->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  adv_coupling[2]->Setup(values1, -1.0);
+  adv_coupling[2]->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  adv_coupling[3]->Setup(values2, 1.0);
+  adv_coupling[3]->UpdateMatrices(Teuchos::null, Teuchos::null);
+}
+
+
+/* *******************************************************************
 * Copy: Evaluator (BASE) -> Field (prev_BASE)
 ******************************************************************* */
 void
@@ -590,7 +678,7 @@ FlowEnergyMatrixFracture_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   double mean_energy, error_r(0.0), mass(0.0);
 
   for (int c = 0; c < ncells; ++c) {
-    mass += mol_fc[0][c] * mesh_f->cell_volume(c); // reference cell energy
+    mass += mol_fc[0][c] * mesh_f->getCellVolume(c); // reference cell energy
   }
   if (ncells > 0) {
     mean_energy = 76.0 * mass / ncells;

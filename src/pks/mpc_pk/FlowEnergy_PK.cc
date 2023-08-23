@@ -103,7 +103,7 @@ FlowEnergy_PK::Setup()
     S_->Require<CV_t, CVS_t>(particle_density_key_, Tags::DEFAULT, particle_density_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(particle_density_key_, Tags::DEFAULT);
   }
 
@@ -160,8 +160,8 @@ FlowEnergy_PK::Setup()
   S_->Require<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT, ie_liquid_key_)
     .SetMesh(mesh_)
     ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1)
-    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
   S_->RequireEvaluator(ie_liquid_key_, Tags::DEFAULT);
 
 
@@ -169,8 +169,8 @@ FlowEnergy_PK::Setup()
   S_->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
     .SetMesh(mesh_)
     ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1)
-    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
   S_->RequireEvaluator(mol_density_liquid_key_, Tags::DEFAULT);
 
   S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
@@ -188,8 +188,8 @@ FlowEnergy_PK::Setup()
   S_->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, viscosity_liquid_key_)
     .SetMesh(mesh_)
     ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1)
-    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
   S_->RequireEvaluator(viscosity_liquid_key_, Tags::DEFAULT);
 
   // inform other PKs about strong coupling

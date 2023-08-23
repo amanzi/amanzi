@@ -43,12 +43,12 @@ class ReconstructionCellLinear : public Reconstruction {
   ReconstructionCellLinear(){};
 
   ReconstructionCellLinear(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
-    : Reconstruction(mesh), dim(mesh->space_dimension()){};
+    : Reconstruction(mesh), dim(mesh->getSpaceDimension()){};
 
   ReconstructionCellLinear(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                            Teuchos::RCP<CompositeVector>& gradient)
     : Reconstruction(mesh),
-      dim(mesh->space_dimension()),
+      dim(mesh->getSpaceDimension()),
       gradient_(gradient),
       gradient_c_(gradient->ViewComponent("cell")){};
 
@@ -63,7 +63,8 @@ class ReconstructionCellLinear : public Reconstruction {
                        int component = 0,
                        const Teuchos::RCP<const BCs>& bc = Teuchos::null) override
   {
-    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    int ncells_wghost =
+      mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
     AmanziMesh::Entity_ID_List ids(ncells_wghost);
     for (int c = 0; c < ncells_wghost; ++c) ids[c] = c;
     Compute(ids, field, component, bc);

@@ -111,13 +111,15 @@ TEST(ENERGY_2D_MATRIX)
   EPK->UpdateConductivityData(S.ptr());
 
   // create boundary data
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  int nfaces_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  Teuchos::RCP<BCs> bc =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+    const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
         fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -140,7 +142,8 @@ TEST(ENERGY_2D_MATRIX)
   Teuchos::RCP<Operator> op = op1->global_operator();
 
   // add accumulation term
-  Teuchos::RCP<PDE_Accumulation> op2 = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::CELL, op));
+  Teuchos::RCP<PDE_Accumulation> op2 =
+    Teuchos::rcp(new PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op));
   double dT = 1.0;
   CompositeVector solution(op->DomainMap());
 
@@ -166,10 +169,10 @@ TEST(ENERGY_2D_MATRIX)
 
   AmanziGeometry::Point velocity(1e-4, 1e-4);
   for (int f = 0; f < nfaces_wghost; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     q_l[0][f] = velocity * normal;
 
-    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
     int ncells = cells.size();
     double tmp(0.0);
     for (int i = 0; i < ncells; i++) {

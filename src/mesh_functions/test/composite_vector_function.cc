@@ -34,7 +34,10 @@ int
 main(int argc, char* argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  return UnitTest::RunAllTests();
+  Kokkos::initialize();
+  auto result = UnitTest::RunAllTests();
+  Kokkos::finalize();
+  return result;
 }
 
 struct another_reference_mesh {
@@ -96,13 +99,13 @@ TEST_FIXTURE(another_reference_mesh, cv_function)
 
   std::vector<std::string> regions(1, "DOMAIN");
   Teuchos::RCP<MeshFunction::Domain> domainC =
-    Teuchos::rcp(new MeshFunction::Domain(regions, AmanziMesh::CELL));
+    Teuchos::rcp(new MeshFunction::Domain(regions, AmanziMesh::Entity_kind::CELL));
   Teuchos::RCP<MeshFunction::Spec> specC =
     Teuchos::rcp(new MeshFunction::Spec(domainC, vector_func));
 
   // This type of support will eventually be added, at least to MSTK.
   Teuchos::RCP<MeshFunction::Domain> domainF =
-    Teuchos::rcp(new MeshFunction::Domain(regions, AmanziMesh::FACE));
+    Teuchos::rcp(new MeshFunction::Domain(regions, AmanziMesh::Entity_kind::FACE));
   Teuchos::RCP<MeshFunction::Spec> specF =
     Teuchos::rcp(new MeshFunction::Spec(domainF, vector_func));
 
@@ -118,8 +121,8 @@ TEST_FIXTURE(another_reference_mesh, cv_function)
 
   // make the CV
   std::vector<AmanziMesh::Entity_kind> locations(2);
-  locations[0] = AmanziMesh::CELL;
-  locations[1] = AmanziMesh::FACE;
+  locations[0] = AmanziMesh::Entity_kind::CELL;
+  locations[1] = AmanziMesh::Entity_kind::FACE;
   std::vector<int> num_dofs(2, 1);
 
   Teuchos::RCP<CompositeVectorSpace> cv_sp = Teuchos::rcp(new CompositeVectorSpace());
@@ -131,9 +134,11 @@ TEST_FIXTURE(another_reference_mesh, cv_function)
   cvfunc.Compute(0.0, cv.ptr());
 
   // Check
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c != ncells; ++c) { CHECK_CLOSE(1.0, (*cv)("cell", 0, c), 0.0000001); }
 
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f != nfaces; ++f) { CHECK_CLOSE(1.0, (*cv)("face", 0, f), 0.0000001); }
 }

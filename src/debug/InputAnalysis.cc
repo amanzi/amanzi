@@ -57,31 +57,31 @@ InputAnalysis::RegionAnalysis()
       std::vector<double> vofs;
 
       try {
-        mesh_->get_set_entities_and_vofs(
-          regions[i], AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block, &vofs);
+        auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
+          regions[i], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
         nblock = block.size();
         nvofs = vofs.size();
 
         for (int n = 0; n < nblock; n++) {
           frac = (nvofs == 0) ? 1.0 : vofs[n];
-          volume += mesh_->cell_volume(block[n]) * frac;
+          volume += mesh_->getCellVolume(block[n]) * frac;
         }
       } catch (...) {
         nblock = -1;
       }
 
       // identify if we failed on some cores
-      mesh_->get_comm()->MinAll(&nblock, &nblock_tmp, 1);
+      mesh_->getComm()->MinAll(&nblock, &nblock_tmp, 1);
       if (nblock_tmp < 0) {
-        mesh_->get_set_entities_and_vofs(
-          regions[i], AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block, &vofs);
+        auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
+          regions[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
         nblock = block.size();
         nvofs = vofs.size();
 
         volume = 0.0;
         for (int n = 0; n < nblock; n++) {
           frac = (nvofs == 0) ? 1.0 : vofs[n];
-          volume += mesh_->face_area(block[n]) * frac;
+          volume += mesh_->getFaceArea(block[n]) * frac;
         }
       }
 
@@ -96,11 +96,11 @@ InputAnalysis::RegionAnalysis()
       int nvofs_tmp(nvofs);
       double volume_tmp(volume), vofs_min_tmp(vofs_min), vofs_max_tmp(vofs_max);
 
-      mesh_->get_comm()->SumAll(&nblock_tmp, &nblock, 1);
-      mesh_->get_comm()->SumAll(&nvofs_tmp, &nvofs, 1);
-      mesh_->get_comm()->SumAll(&volume_tmp, &volume, 1);
-      mesh_->get_comm()->MinAll(&vofs_min_tmp, &vofs_min, 1);
-      mesh_->get_comm()->MaxAll(&vofs_max_tmp, &vofs_max, 1);
+      mesh_->getComm()->SumAll(&nblock_tmp, &nblock, 1);
+      mesh_->getComm()->SumAll(&nvofs_tmp, &nvofs, 1);
+      mesh_->getComm()->SumAll(&volume_tmp, &volume, 1);
+      mesh_->getComm()->MinAll(&vofs_min_tmp, &vofs_min, 1);
+      mesh_->getComm()->MaxAll(&vofs_max_tmp, &vofs_max, 1);
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         std::string name(regions[i]);
@@ -124,17 +124,15 @@ InputAnalysis::RegionAnalysis()
     regions.erase(SelectUniqueEntries(regions.begin(), regions.end()), regions.end());
 
     for (int i = 0; i < regions.size(); i++) {
-      AmanziMesh::Entity_ID_List block;
-      std::vector<double> vofs;
-      mesh_->get_set_entities_and_vofs(
-        regions[i], AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block, &vofs);
+      auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
+        regions[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
       int nblock = block.size();
       int nvofs = vofs.size();
 
       double frac, area(0.0);
       for (int n = 0; n < nblock; n++) {
         frac = (nvofs == 0) ? 1.0 : vofs[n];
-        area += mesh_->face_area(block[n]) * frac;
+        area += mesh_->getFaceArea(block[n]) * frac;
       }
 
       double vofs_min(1.0), vofs_max(0.0);
@@ -148,7 +146,7 @@ InputAnalysis::RegionAnalysis()
       AmanziMesh::Entity_ID_List cells;
 
       for (int n = 0; n < nblock; ++n) {
-        mesh_->face_get_cells(block[n], AmanziMesh::Parallel_type::ALL, &cells);
+        cells = mesh_->getFaceCells(block[n], AmanziMesh::Parallel_type::ALL);
         if (cells.size() != 1) bc_flag = 0;
       }
 
@@ -156,12 +154,12 @@ InputAnalysis::RegionAnalysis()
       int nblock_tmp(nblock), nvofs_tmp(nvofs), bc_flag_tmp(bc_flag);
       double area_tmp(area), vofs_min_tmp(vofs_min), vofs_max_tmp(vofs_max);
 
-      mesh_->get_comm()->SumAll(&nblock_tmp, &nblock, 1);
-      mesh_->get_comm()->SumAll(&nvofs_tmp, &nvofs, 1);
-      mesh_->get_comm()->SumAll(&area_tmp, &area, 1);
-      mesh_->get_comm()->MinAll(&vofs_min_tmp, &vofs_min, 1);
-      mesh_->get_comm()->MaxAll(&vofs_max_tmp, &vofs_max, 1);
-      mesh_->get_comm()->MinAll(&bc_flag_tmp, &bc_flag, 1);
+      mesh_->getComm()->SumAll(&nblock_tmp, &nblock, 1);
+      mesh_->getComm()->SumAll(&nvofs_tmp, &nvofs, 1);
+      mesh_->getComm()->SumAll(&area_tmp, &area, 1);
+      mesh_->getComm()->MinAll(&vofs_min_tmp, &vofs_min, 1);
+      mesh_->getComm()->MaxAll(&vofs_max_tmp, &vofs_max, 1);
+      mesh_->getComm()->MinAll(&bc_flag_tmp, &bc_flag, 1);
 #endif
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         std::string name(regions[i]);
@@ -195,41 +193,41 @@ InputAnalysis::RegionAnalysis()
       std::vector<double> vofs;
 
       // observation region may use either cells of faces
-      if (!mesh_->valid_set_name(regions[i], AmanziMesh::CELL) &&
-          !mesh_->valid_set_name(regions[i], AmanziMesh::FACE)) {
+      if (!mesh_->isValidSetName(regions[i], AmanziMesh::Entity_kind::CELL) &&
+          !mesh_->isValidSetName(regions[i], AmanziMesh::Entity_kind::FACE)) {
         std::string name(regions[i]);
         name.resize(std::min(40, (int)name.size()));
         *vo_->os() << "Observation region: \"" << name << "\" has unknown type." << std::endl;
       }
 
       try {
-        mesh_->get_set_entities_and_vofs(
-          regions[i], AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block, &vofs);
+        auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
+          regions[i], AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
         nblock_tmp = nblock = block.size();
         type = "cells";
-        for (int n = 0; n < nblock; n++) volume += mesh_->cell_volume(block[n]);
+        for (int n = 0; n < nblock; n++) volume += mesh_->getCellVolume(block[n]);
 
         volume_tmp = volume;
-        mesh_->get_comm()->SumAll(&nblock_tmp, &nblock, 1);
-        mesh_->get_comm()->SumAll(&volume_tmp, &volume, 1);
+        mesh_->getComm()->SumAll(&nblock_tmp, &nblock, 1);
+        mesh_->getComm()->SumAll(&volume_tmp, &volume, 1);
       } catch (...) {
         nblock = -1;
       }
 
       // identify if we failed on some cores or region is empty
-      mesh_->get_comm()->MinAll(&nblock, &nblock_tmp, 1);
-      mesh_->get_comm()->MaxAll(&nblock, &nblock_max, 1);
+      mesh_->getComm()->MinAll(&nblock, &nblock_tmp, 1);
+      mesh_->getComm()->MaxAll(&nblock, &nblock_max, 1);
 
       if (nblock_tmp < 0 || nblock_max == 0) {
-        mesh_->get_set_entities_and_vofs(
-          regions[i], AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block, &vofs);
+        auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
+          regions[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
         nblock_tmp = nblock = block.size();
         type = "faces";
-        for (int n = 0; n < nblock; n++) volume += mesh_->face_area(block[n]);
+        for (int n = 0; n < nblock; n++) volume += mesh_->getFaceArea(block[n]);
 
         volume_tmp = volume;
-        mesh_->get_comm()->SumAll(&nblock_tmp, &nblock, 1);
-        mesh_->get_comm()->SumAll(&volume_tmp, &volume, 1);
+        mesh_->getComm()->SumAll(&nblock_tmp, &nblock, 1);
+        mesh_->getComm()->SumAll(&volume_tmp, &volume, 1);
       }
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {

@@ -260,7 +260,7 @@ DeformCheckpointMesh(State& S, Key domain)
     vc.ScatterMasterToGhosted("node");
     const Epetra_MultiVector& vc_n = *vc.ViewComponent("node", true);
 
-    int dim = write_access_mesh->space_dimension();
+    int dim = write_access_mesh->getSpaceDimension();
     Amanzi::AmanziMesh::Entity_ID_List nodeids;
     Amanzi::AmanziGeometry::Point new_coords(dim);
     AmanziGeometry::Point_List new_pos, final_pos;
@@ -276,9 +276,9 @@ DeformCheckpointMesh(State& S, Key domain)
 
     // deform the mesh
     if (Keys::starts_with(domain, "column"))
-      write_access_mesh->deform(nodeids, new_pos, false, &final_pos);
+      AmanziMesh::MeshAlgorithms::deform(*write_access_mesh, nodeids, new_pos);
     else
-      write_access_mesh->deform(nodeids, new_pos, true, &final_pos);
+      AmanziMesh::MeshAlgorithms::deform(*write_access_mesh, nodeids, new_pos);
   } else {
     Errors::Message msg;
     msg << "DeformCheckpointMesh: unable to deform mesh because field \"" << vc_key

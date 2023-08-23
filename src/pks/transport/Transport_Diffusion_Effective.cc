@@ -49,10 +49,10 @@ Transport_PK::CalculateDiffusionTensorEffective_(double mdl,
   for (int mb = 0; mb < mat_properties_.size(); mb++) {
     Teuchos::RCP<MaterialProperties> spec = mat_properties_[mb];
 
-    std::vector<AmanziMesh::Entity_ID> block;
     for (int r = 0; r < (spec->regions).size(); r++) {
       std::string region = (spec->regions)[r];
-      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
+      auto block = mesh_->getSetEntities(
+        region, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
       AmanziMesh::Entity_ID_List::iterator c;
       for (c = block.begin(); c != block.end(); c++) {
@@ -81,8 +81,8 @@ Transport_PK::DiffusionSolverEffective(Epetra_MultiVector& tcc_next, double t_ol
     tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
 
   // default boundary conditions (none inside domain and Neumann on its boundary)
-  auto bc_dummy =
-    Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc_dummy = Teuchos::rcp(
+    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
 
   std::vector<int>& bc_model = bc_dummy->bc_model();
   std::vector<double>& bc_value = bc_dummy->bc_value();
@@ -92,7 +92,7 @@ Transport_PK::DiffusionSolverEffective(Epetra_MultiVector& tcc_next, double t_ol
   Teuchos::RCP<Operators::PDE_Diffusion> op1 = opfactory.Create(op_list, mesh_, bc_dummy);
   op1->SetBCs(bc_dummy, bc_dummy);
   auto op = op1->global_operator();
-  auto op2 = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op));
+  auto op2 = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op));
 
   // Create the preconditioner and solver.
   auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(dispersion_preconditioner,

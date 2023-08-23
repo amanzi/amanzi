@@ -132,9 +132,9 @@ HeatConduction::Init(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::Paramet
   cvs_ = Teuchos::rcp(new CompositeVectorSpace());
   cvs_->SetMesh(mesh);
   cvs_->SetGhosted(true);
-  cvs_->SetComponent("cell", AmanziMesh::CELL, 1);
+  cvs_->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   cvs_->SetOwned(false);
-  cvs_->AddComponent("face", AmanziMesh::FACE, 1);
+  cvs_->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
   // solutions at T=T0 and T=T0+dT
   solution_ = Teuchos::rcp(new CompositeVector(*cvs_));
@@ -144,15 +144,18 @@ HeatConduction::Init(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::Paramet
   InitialGuess();
 
   // create BCs
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
 
-  bc_ = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  bc_ = Teuchos::rcp(
+    new Operators::BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc_->bc_model();
   std::vector<double>& bc_value = bc_->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+    const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
 
     if (fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -198,7 +201,7 @@ HeatConduction::Init(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::Paramet
   op_diff_->SetBCs(bc_, bc_);
 
   op_ = op_diff_->global_operator();
-  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_));
+  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op_));
   op_->Init();
 
   // set up the local matrices
@@ -227,20 +230,22 @@ HeatConduction::Init(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::Paramet
 void
 HeatConduction::InitialGuess()
 {
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
   Epetra_MultiVector& sol_c = *solution_->ViewComponent("cell", true);
 
   for (int c = 0; c < ncells_wghost; ++c) {
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     double a = TemperatureSource;
     sol_c[0][c] = a / 2 - a / M_PI * atan(20 * (xc[0] - 1.0));
   }
 
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
   Epetra_MultiVector& sol_f = *solution_->ViewComponent("face", true);
 
   for (int f = 0; f < nfaces_wghost; ++f) {
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
     double a = TemperatureSource;
     sol_f[0][f] = a / 2 - a / M_PI * atan(100 * (xf[0] - 1.0));
   }
@@ -324,7 +329,8 @@ HeatConduction::UpdateValues(const CompositeVector& u)
   Epetra_MultiVector& kc = *k->ViewComponent("cell", true);
   Epetra_MultiVector& dkdT_c = *dkdT->ViewComponent("cell", true);
 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
     double temp = uc[0][c];
     kc[0][c] = Conduction(c, temp);

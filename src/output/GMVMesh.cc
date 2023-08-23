@@ -15,19 +15,20 @@ namespace GMV {
 static inline void
 write_mesh_to_file_(const AmanziMesh::Mesh& mesh, std::string filename)
 {
-  int dim = mesh.space_dimension();
-  int dim_cell = mesh.manifold_dimension();
+  int dim = mesh.getSpaceDimension();
+  int dim_cell = mesh.getManifoldDimension();
   gmvwrite_openfile_ir_ascii((char*)filename.c_str(), 4, 8);
 
   // Write node info
-  unsigned int num_nodes = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  unsigned int num_nodes =
+    mesh.getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
   double* x = new double[num_nodes];
   double* y = new double[num_nodes];
   double* z = new double[num_nodes];
 
   AmanziGeometry::Point xc(dim);
   for (int i = 0; i < num_nodes; i++) {
-    mesh.node_get_coordinates(i, &xc);
+    xc = mesh.getNodeCoordinate(i);
     x[i] = xc[0];
     y[i] = xc[1];
     if (dim == 3)
@@ -42,20 +43,21 @@ write_mesh_to_file_(const AmanziMesh::Mesh& mesh, std::string filename)
   delete[] x;
 
   // Write cell info
-  unsigned int num_cells = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  unsigned int num_cells =
+    mesh.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   gmvwrite_cell_header(&num_cells);
 
-  int max_nodes = mesh.cell_get_max_nodes();
+  int max_nodes = mesh.getCellMaxNodes();
   unsigned int* xh = new unsigned int[max_nodes];
 
-  int max_faces = mesh.cell_get_max_faces();
+  int max_faces = mesh.getCellMaxFaces();
   int* nverts = new int[max_faces];
   unsigned int* yh = new unsigned int[72];
 
   for (int i = 0; i < num_cells; i++) {
     AmanziMesh::Entity_ID_List cnodes;
-    mesh.cell_get_nodes(i, &cnodes);
+    cnodes = mesh.getCellNodes(i);
 
     int nnodes = cnodes.size();
     for (int j = 0; j < nnodes; j++) xh[j] = cnodes[j] + 1;
@@ -64,14 +66,11 @@ write_mesh_to_file_(const AmanziMesh::Mesh& mesh, std::string filename)
       if (nnodes == 8) {
         gmvwrite_cell_type((char*)"phex8", 8, xh);
       } else {
-        AmanziMesh::Entity_ID_List cfaces, fnodes;
-        std::vector<int> fdirs;
-
-        mesh.cell_get_faces_and_dirs(i, &cfaces, &fdirs);
+        auto [cfaces, fdirs] = mesh.getCellFacesAndDirections(i);
         int nfaces = cfaces.size();
 
         for (int j = 0, n = 0; j < nfaces; j++) {
-          mesh.face_get_nodes(cfaces[j], &fnodes);
+          auto fnodes = mesh.getFaceNodes(cfaces[j]);
           nverts[j] = fnodes.size();
           for (int k = 0; k < nverts[j]; k++) yh[n++] = fnodes[k] + 1;
         }

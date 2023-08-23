@@ -52,7 +52,7 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
   AmanziMesh::Entity_ID_List cells;
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
     int ncells = cells.size();
 
     WhetStone::DenseMatrix Aface(ncells, ncells);
@@ -121,7 +121,7 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
   AmanziMesh::Entity_ID_List cells;
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL);
     int ncells = cells.size();
 
     WhetStone::DenseMatrix Aface(ncells, ncells);
@@ -238,7 +238,7 @@ PDE_AdvectionUpwindDFN::ApplyBCs(bool primary, bool eliminate, bool essential_eq
     // treat as essential inflow BC for pure advection
     else if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {
       if (c1 < 0) {
-        rhs_cell[0][c2] += mesh_->face_area(f) * bc_value[f];
+        rhs_cell[0][c2] += mesh_->getFaceArea(f) * bc_value[f];
         matrix[f] = 0.0;
       }
     }
@@ -282,8 +282,7 @@ PDE_AdvectionUpwindDFN::IdentifyUpwindCells_(const CompositeVector& u)
   const auto& map = u.Map().Map("face", true);
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const auto& faces = mesh_->cell_get_faces(c);
-    const auto& dirs = mesh_->cell_get_face_dirs(c);
+    const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];

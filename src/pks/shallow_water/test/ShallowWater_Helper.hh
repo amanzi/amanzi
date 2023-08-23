@@ -30,7 +30,7 @@ IO_Fields(double t_out,
   Epetra_MultiVector pid(hh);
   for (int c = 0; c < pid.MyLength(); c++) pid[0][c] = MyPID;
 
-  auto comp = Amanzi::AmanziMesh::CELL;
+  auto comp = Amanzi::AmanziMesh::Entity_kind::CELL;
   io.InitializeCycle(t_out, iter, "");
   io.WriteVector(*hh(0), "depth", comp);
   io.WriteVector(*ht(0), "total_depth", comp);

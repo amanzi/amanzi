@@ -1,5 +1,5 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -225,7 +225,7 @@ MeshLogicalFactory::Create() const
                                         face_cell_bisectors_,
                                         nullptr));
   }
-  mesh->set_geometric_model(gm_);
+  mesh->setGeometricModel(gm_);
   return mesh;
 }
 

@@ -106,7 +106,7 @@ PK_DomainFunctionSubgridReturn<FunctionBase>::Init(const Teuchos::ParameterList&
   }
 
   // Add this source specification to the domain function.
-  auto domain = Teuchos::rcp(new Domain(regions, AmanziMesh::CELL));
+  auto domain = Teuchos::rcp(new Domain(regions, AmanziMesh::Entity_kind::CELL));
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
 }
 
@@ -121,11 +121,11 @@ PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
   if (unique_specs_.size() == 0) return;
 
   // create the input tuple (time + space)
-  int dim = mesh_->space_dimension();
+  int dim = mesh_->getSpaceDimension();
   std::vector<double> args(1 + dim);
 
   // get the map to convert to subgrid GID
-  auto& map = mesh_->map(AmanziMesh::CELL, false);
+  auto& map = mesh_->getMap(AmanziMesh::Entity_kind::CELL, false);
 
   const auto& ws_ =
     *S_->Get<CompositeVector>(saturation_key_, saturation_copy_).ViewComponent("cell");
@@ -133,8 +133,8 @@ PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
   const auto& mol_dens_ =
     *S_->Get<CompositeVector>(molar_density_key_, molar_density_copy_).ViewComponent("cell");
 
-  for (auto uspec = unique_specs_.at(AmanziMesh::CELL)->begin();
-       uspec != unique_specs_.at(AmanziMesh::CELL)->end();
+  for (auto uspec = unique_specs_.at(AmanziMesh::Entity_kind::CELL)->begin();
+       uspec != unique_specs_.at(AmanziMesh::Entity_kind::CELL)->end();
        ++uspec) {
     args[0] = t1;
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
@@ -144,7 +144,7 @@ PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
 
     // loop over all entities in the spec
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
-      const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
+      const AmanziGeometry::Point& xc = mesh_->getCellCentroid(*c);
 
       // set the xyz coords
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
@@ -168,8 +168,8 @@ PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
       std::vector<double> val(nfun, 0.);
 
       // DO THE INTEGRAL: currently omega_i = 1/cv_sg?
-      int ncells_sg =
-        vec_out.Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+      int ncells_sg = vec_out.Mesh()->getNumEntities(AmanziMesh::Entity_kind::CELL,
+                                                     AmanziMesh::Parallel_type::ALL);
       for (int c_sg = 0; c_sg != ncells_sg; ++c_sg) {
         for (int k = 0; k != nfun; ++k) { val[k] += vec_c[k][c_sg] * alpha[k]; }
       }

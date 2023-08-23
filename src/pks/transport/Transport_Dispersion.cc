@@ -55,8 +55,7 @@ Transport_PK::CalculateDispersionTensor_(double t,
   WhetStone::Polynomial poly(dim, 1);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const auto& xc = mesh_->cell_centroid(c);
-    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
 
     std::vector<WhetStone::Polynomial> flux(nfaces);
@@ -91,10 +90,10 @@ Transport_PK::CalculateDiffusionTensor_(double md,
   for (int mb = 0; mb < mat_properties_.size(); mb++) {
     Teuchos::RCP<MaterialProperties> spec = mat_properties_[mb];
 
-    std::vector<AmanziMesh::Entity_ID> block;
     for (int r = 0; r < (spec->regions).size(); r++) {
       std::string region = (spec->regions)[r];
-      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
+      auto block = mesh_->getSetEntities(
+        region, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
       if (phase == TRANSPORT_PHASE_LIQUID) {
         for (auto c = block.begin(); c != block.end(); c++) {
@@ -183,8 +182,8 @@ Transport_PK::DispersionSolver(const Epetra_MultiVector& tcc_prev,
   int num_components = tcc_prev.NumVectors();
   double dt_MPC = t_new - t_old;
 
-  auto bc_dummy =
-    Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc_dummy = Teuchos::rcp(
+    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
 
   // create the Dispersion and Accumulation operators
   Teuchos::ParameterList& op_list =
@@ -194,7 +193,7 @@ Transport_PK::DispersionSolver(const Epetra_MultiVector& tcc_prev,
 
   op1->SetBCs(bc_dummy, bc_dummy);
   auto op = op1->global_operator();
-  auto op2 = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op));
+  auto op2 = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op));
 
   // Create the preconditioner and solver.
   //
