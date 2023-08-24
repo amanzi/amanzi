@@ -115,6 +115,8 @@ class MeshFramework {
   // nodes exist.
   virtual bool hasNodes() const { return true; }
 
+  virtual bool hasNodeFaces() const { return true; }
+
   // Some meshes may natively order in the ExodusII ordering
   virtual bool isOrdered() const { return false; }
 

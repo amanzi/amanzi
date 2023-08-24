@@ -37,7 +37,7 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-class Mesh_MOAB : public Mesh {
+class Mesh_MOAB : public MeshFramework {
  public:
   // the request_faces and request_edges arguments have to be at the
   // end and not in the middle because if we omit them and specify a
@@ -48,22 +48,21 @@ class Mesh_MOAB : public Mesh {
   // blocking the implicit conversion.
   Mesh_MOAB(const std::string& filename,
             const Comm_ptr_type& comm,
-            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-            const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
-            const bool request_faces = true,
-            const bool request_edges = false);
+            const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
   ~Mesh_MOAB();
 
   void update();
 
   // Get parallel type of entity
-  Parallel_kind entity_get_ptype(const Entity_kind kind, const Entity_ID entid) const;
+  Parallel_kind getEntityPtype(const Entity_kind kind, const Entity_ID entid) const override;
 
 
   // Get cell type
-  Cell_kind cell_get_type(const Entity_ID cellid) const;
+  Cell_kind getCellType(const Entity_ID cellid) const override;
 
+  bool hasNodeFaces() const { return false; }
 
   //
   // General mesh information
@@ -72,7 +71,7 @@ class Mesh_MOAB : public Mesh {
 
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, ALL)
-  unsigned int num_entities(const Entity_kind kind, const Parallel_kind ptype) const;
+  std::size_t getNumEntities(const Entity_kind kind, const Parallel_kind ptype) const override;
 
 
   // Global ID of any entity
@@ -95,14 +94,15 @@ class Mesh_MOAB : public Mesh {
   // arbitrary order
   // In 2D, the nodes of the polygon will be returned in ccw order
   // consistent with the face normal
-  void cell_get_nodes(const Entity_ID cellid, Entity_ID_View* nodeids) const;
+  void getCellNodes(const Entity_ID cellid,
+                    View_type<const Entity_ID, MemSpace_kind::HOST>& nodeids) const override;
 
 
   // Edges and edge directions of a face
-  void face_get_edges_and_dirs_internal_(const Entity_ID cellid,
-                                         Entity_ID_View* edgeids,
-                                         std::vector<int>* edgedirs,
-                                         bool ordered = true) const
+  void getFaceEdgesAndDirs(
+    const Entity_ID cellid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids,
+    View_type<const Direction_type, MemSpace_kind::HOST>* const dirs = nullptr) const override
   {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(mesg);
@@ -114,11 +114,13 @@ class Mesh_MOAB : public Mesh {
   // In 3D, the nodes of the face are returned in ccw order consistent
   // with the face normal
   // In 2D, nfnodes is 2
-  void face_get_nodes(const Entity_ID faceid, Entity_ID_View* nodeids) const;
+  void getFaceNodes(const Entity_ID faceid,
+                    View_type<const Entity_ID, MemSpace_kind::HOST>& nodeids) const override;
 
 
   // Get nodes of edge
-  void edge_get_nodes(const Entity_ID edgeid, Entity_ID* nodeid0, Entity_ID* nodeid1) const
+  void getEdgeNodes(const Entity_ID edgeid,
+                    View_type<const Entity_ID, MemSpace_kind::HOST>& nodes) const override
   {
     Errors::Message msg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(msg);
@@ -129,16 +131,19 @@ class Mesh_MOAB : public Mesh {
   //-------------------
 
   // Cells of type 'ptype' connected to a node
-  void
-  node_get_cells(const Entity_ID nodeid, const Parallel_kind ptype, Entity_ID_View* cellids) const;
+  void getNodeCells(const Entity_ID nodeid,
+                    const Parallel_kind ptype,
+                    View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const override;
 
   // Faces of type 'ptype' connected to a node
-  void
-  node_get_faces(const Entity_ID nodeid, const Parallel_kind ptype, Entity_ID_View* faceids) const;
+  void getNodeFaces(const Entity_ID nodeid,
+                    const Parallel_kind ptype,
+                    View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
 
   // Cells of type 'ptype' connected to an edge
-  void
-  edge_get_cells(const Entity_ID edgeid, const Parallel_kind ptype, Entity_ID_View* cellids) const
+  void getEdgeCells(const Entity_ID edgeid,
+                    const Parallel_kind ptype,
+                    View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const override
   {
     Errors::Message msg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(msg);
@@ -164,50 +169,28 @@ class Mesh_MOAB : public Mesh {
   //---------------------
 
   // Node coordinates - 3 in 3D and 2 in 2D
-  void node_get_coordinates(const Entity_ID nodeid, AmanziGeometry::Point* ncoord) const;
-
+  AmanziGeometry::Point getNodeCoordinate(const Entity_ID nodeid) const override;
 
   // Face coordinates - conventions same as face_to_nodes call
   // Number of nodes is the vector size divided by number of spatial dimensions
-  void face_get_coordinates(const Entity_ID faceid, Point_List* fcoords) const;
+  cPoint_View getFaceCoordinates(const Entity_ID faceid) const override;
 
   // Coordinates of cells in standard order (Exodus II convention)
   // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
   // For a general polyhedron this will return the node coordinates in
   // arbitrary order
   // Number of nodes is vector size divided by number of spatial dimensions
-  void cell_get_coordinates(const Entity_ID cellid, Point_List* ccoords) const;
+  cPoint_View getCellCoordinates(const Entity_ID cellid) const override;
 
   // Modify the coordinates of a node
-  void node_set_coordinates(const Entity_ID nodeid, const AmanziGeometry::Point coords);
+  void setNodeCoordinates(const Entity_ID nodeid, const AmanziGeometry::Point& coords);
 
-  void node_set_coordinates(const Entity_ID nodeid, const double* coords);
-
-
-  //
-  // Epetra maps
-  //------------
-
-  const Epetra_Map& cell_map(bool include_ghost) const;
-
-  const Epetra_Map& face_map(bool include_ghost) const;
-
-  const Epetra_Map& node_map(bool include_ghost) const;
-
-  const Epetra_Map& exterior_face_map(bool include_ghost) const;
-
-  const Epetra_Map& exterior_node_map(bool include_ghost) const;
-
-  // Epetra importer that will allow apps to import values from a
-  // Epetra vector defined on all owned faces into an Epetra vector
-  // defined only on exterior faces
-  const Epetra_Import& exterior_face_importer(void) const;
-
+  //void node_set_coordinates(const Entity_ID nodeid, const double* coords);
 
   //
   // Boundary Conditions or Sets
   //----------------------------
-  virtual bool valid_set_type(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const
+  virtual bool isValidSetType(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const
   {
     if (rtype == AmanziGeometry::RegionType::BOX || rtype == AmanziGeometry::RegionType::PLANE ||
         rtype == AmanziGeometry::RegionType::POINT ||
@@ -222,12 +205,10 @@ class Mesh_MOAB : public Mesh {
     }
   }
 
-  // Get list of entities of type 'category' in set
-  void get_set_entities_and_vofs(const std::string& setname,
-                                 const Entity_kind kind,
-                                 const Parallel_kind ptype,
-                                 Entity_ID_List* entids,
-                                 Double_List* vofs) const;
+  void getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
+                      const Entity_kind kind,
+		      const Parallel_kind ptype,
+		      View_type<const Entity_ID, MemSpace_kind::HOST>& setents) const override; 
 
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If
@@ -341,14 +322,7 @@ class Mesh_MOAB : public Mesh {
   void init_id_handle_maps();
   void init_global_ids();
 
-  void init_cell_map();
-  void init_face_map();
-  void init_node_map();
-
   void init_set_info();
-
-  moab::Tag
-  build_set(const Teuchos::RCP<const AmanziGeometry::Region>& rgn, Entity_kind kind) const;
 
   std::string internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>& r,
                                    const Entity_kind entity_kind) const;
@@ -368,18 +342,19 @@ class Mesh_MOAB : public Mesh {
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
-  void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
-                                         Entity_ID_View* faceids,
-                                         std::vector<int>* face_dirs,
-                                         const bool ordered = false) const;
+  void
+  getCellFacesAndDirs(const Entity_ID cellid,
+                      View_type<const Entity_ID, MemSpace_kind::HOST>& faceids,
+                      View_type<const Direction_type, MemSpace_kind::HOST>* const face_dirs) const;
 
   // Cells connected to a face
-  void face_get_cells_internal_(const Entity_ID faceid,
-                                const Parallel_kind ptype,
-                                Entity_ID_View* cellids) const;
+  void getFaceCells(const Entity_ID faceid,
+                    const Parallel_kind ptype,
+                    View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const;
 
   // Edges of a cell
-  void cell_get_edges_internal_(const Entity_ID cellid, Entity_ID_View* edgeids) const
+  void getCellEdges(const Entity_ID cellid,
+                    View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const override
   {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     Exceptions::amanzi_throw(mesg);

@@ -29,7 +29,8 @@ OutputSilo::OutputSilo(Teuchos::ParameterList& plist,
                        bool is_dynamic)
   : count_(0), mesh_(mesh), fid_(nullptr)
 {
-  if (mesh_->vis_mesh().space_dimension() != 3 || mesh_->vis_mesh().manifold_dimension() != 3) {
+  if (mesh_->getVisMesh().getSpaceDimension() != 3 ||
+      mesh_->getVisMesh().getManifoldDimension() != 3) {
     Errors::Message msg("OutputSilo is untested on non-3D meshes.");
     Exceptions::amanzi_throw(msg);
   }
@@ -51,8 +52,8 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag)
   // check not open
   AMANZI_ASSERT(fid_ == NULL);
   CloseFile_();
-  int comm_size = mesh_->get_comm()->NumProc();
-  int comm_rank = mesh_->get_comm()->MyPID();
+  int comm_size = mesh_->getComm()->NumProc();
+  int comm_rank = mesh_->getComm()->MyPID();
 
   // open file
   std::stringstream filename;
@@ -94,12 +95,12 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag)
       coordnames[2] = (char*)"z-coords";
 
       // -- nodal coordinates
-      int nnodes = mesh_->vis_mesh().num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::ALL);
+      int nnodes =
+        mesh_->getVisMesh().getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::ALL);
       AmanziMesh::Double_List x(nnodes), y(nnodes), z(nnodes);
 
-      AmanziGeometry::Point xyz;
       for (int i = 0; i != nnodes; ++i) {
-        mesh_->vis_mesh().node_get_coordinates(i, &xyz);
+        auto xyz = mesh_->getVisMesh().getNodeCoordinate(i);
         x[i] = xyz[0];
         y[i] = xyz[1];
         z[i] = xyz.dim() > 2 ? xyz[2] : 0.0;
@@ -111,10 +112,10 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag)
 
       // -- write the base mesh UCD object
       int ncells =
-        mesh_->vis_mesh().num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+        mesh_->getVisMesh().getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
       ierr |= DBPutUcdmesh(fid_,
                            "mesh",
-                           mesh_->vis_mesh().space_dimension(),
+                           mesh_->getVisMesh().getSpaceDimension(),
                            (char const* const*)coordnames,
                            coords,
                            nnodes,
@@ -128,41 +129,39 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag)
       // -- Construct the silo face-node info.
       // We rely on the mesh having the faces nodes arranged counter-clockwise
       // around the face.  This should be satisfied by AmanziMesh.
-      int nfaces = mesh_->vis_mesh().num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+      int nfaces =
+        mesh_->getVisMesh().getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
       std::vector<int> face_node_counts(nfaces);
       std::vector<char> ext_faces(nfaces, 0x0);
       std::vector<int> face_node_list;
 
-      // const auto& nmap = mesh_->vis_mesh().node_map(true);
+      // const auto& nmap = mesh_->getVisMesh().node_map(true);
       for (int f = 0; f != nfaces; ++f) {
-        AmanziMesh::Entity_ID_View fnodes;
-        mesh_->vis_mesh().face_get_nodes(f, &fnodes);
+        auto fnodes = mesh_->getVisMesh().getFaceNodes(f);
         //for (int i=0; i!=fnodes.size(); ++i) fnodes[i] = nmap.GID(fnodes[i]);
         face_node_counts[f] = fnodes.size();
         face_node_list.insert(face_node_list.end(), fnodes.begin(), fnodes.end());
 
-        AmanziMesh::Entity_ID_View fcells;
-        // mesh_->vis_mesh().face_get_cells(f, AmanziMesh::Parallel_kind::ALL, &fcells);
-        mesh_->vis_mesh().face_get_cells(f, AmanziMesh::Parallel_kind::OWNED, &fcells);
+        // mesh_->getVisMesh().face_get_cells(f, AmanziMesh::Parallel_kind::ALL, &fcells);
+        auto fcells = mesh_->getVisMesh().getFaceCells(f, AmanziMesh::Parallel_kind::OWNED);
         if (fcells.size() == 1) { ext_faces[f] = 0x1; }
       }
 
       // -- Construct the silo cell-face info
       std::vector<int> cell_face_counts(ncells);
       std::vector<int> cell_face_list;
-      // const auto& fmap = mesh_->vis_mesh().face_map(true);
+      // const auto& fmap = mesh_->getVisMesh().face_map(true);
 
       for (int c = 0; c != ncells; ++c) {
-        AmanziMesh::Entity_ID_View cfaces;
-        std::vector<int> dirs;
-        mesh_->vis_mesh().cell_get_faces_and_dirs(c, &cfaces, &dirs, false);
+        const auto& [cfaces, dirs] = mesh_->getVisMesh().getCellFacesAndDirections(c);
+        auto vcfaces = asVector(cfaces);
         for (int i = 0; i != cfaces.size(); ++i) {
-          if (dirs[i] < 0) cfaces[i] = ~cfaces[i];
+          if (dirs[i] < 0) vcfaces[i] = ~vcfaces[i];
           // cfaces[i] = fmap.GID(cfaces[i]);
         }
 
-        cell_face_counts[c] = cfaces.size();
-        cell_face_list.insert(cell_face_list.end(), cfaces.begin(), cfaces.end());
+        cell_face_counts[c] = vcfaces.size();
+        cell_face_list.insert(cell_face_list.end(), vcfaces.begin(), vcfaces.end());
       }
 
       ierr |= DBPutPHZonelist(fid_,
@@ -186,7 +185,7 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag)
       DBFreeOptlist(optlist);
       CloseFile_();
     }
-    mesh_->get_comm()->Barrier();
+    mesh_->getComm()->Barrier();
   }
 
   if (comm_rank == 0) {
@@ -222,8 +221,8 @@ OutputSilo::WriteVector(const Epetra_Vector& vec,
                         const std::string& name,
                         const AmanziMesh::Entity_kind& kind) const
 {
-  int comm_size = mesh_->get_comm()->NumProc();
-  int comm_rank = mesh_->get_comm()->MyPID();
+  int comm_size = mesh_->getComm()->NumProc();
+  int comm_rank = mesh_->getComm()->MyPID();
   auto varname = FixName_(name);
 
   // open file
@@ -271,7 +270,7 @@ OutputSilo::WriteVector(const Epetra_Vector& vec,
       }
       CloseFile_();
     }
-    mesh_->get_comm()->Barrier();
+    mesh_->getComm()->Barrier();
   }
 
   if (comm_rank == 0) {

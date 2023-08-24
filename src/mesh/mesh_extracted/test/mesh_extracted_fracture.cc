@@ -72,8 +72,7 @@ RunTest(const std::string regname, int* cells, int* edges)
 #ifdef HAVE_MESH_MOAB
       if (comm->NumProc() > 1) continue;
       std::cout << "\nMesh framework: MOAB\n";
-      mesh3D = Teuchos::rcp(
-        new Mesh_MOAB("test/mesh_extracted_fracture.exo", comm, gm, mesh_list, true, true));
+      mesh3D = Teuchos::rcp(new Mesh_MOAB("test/mesh_extracted_fracture.exo", comm, gm, mesh_list));
 #endif
     }
     if (mesh3D == Teuchos::null) continue;

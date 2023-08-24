@@ -391,6 +391,7 @@ struct MeshCache {
   bool isLogical() const { return is_logical_; }
   bool hasNodes() const { return has_nodes_; }
   bool hasEdges() const { return has_edges_; }
+  bool hasNodeFaces() const { return has_node_faces_; }
 
   void hasEdgesOrThrow() const
   {
@@ -877,7 +878,7 @@ struct MeshCache {
   int manifold_dim_;
   bool is_ordered_;
   bool is_logical_;
-  bool has_edges_, has_nodes_;
+  bool has_edges_, has_nodes_, has_node_faces_;
 
   // related meshes
   Teuchos::RCP<MeshFramework> framework_mesh_;

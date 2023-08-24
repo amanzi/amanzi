@@ -22,7 +22,8 @@ namespace AmanziMesh {
 struct SingleFaceMesh;
 
 template <MemSpace_kind MEM>
-MeshCache<MEM>::MeshCache() : is_ordered_(false), has_edges_(false), has_nodes_(true)
+MeshCache<MEM>::MeshCache() : is_ordered_(false), has_edges_(false), has_nodes_(true),
+			      has_node_faces_(true)
 {}
 
 
@@ -45,6 +46,7 @@ MeshCache<MEM>::setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_me
   // always save the algorithms, so we can throw away the data
   has_edges_ = framework_mesh->hasEdges();
   has_nodes_ = framework_mesh->hasNodes();
+  has_node_faces_ = framework_mesh->hasNodeFaces(); 
   comm_ = framework_mesh_->getComm();
   gm_ = framework_mesh_->getGeometricModel();
   space_dim_ = framework_mesh_->getSpaceDimension();
@@ -1733,7 +1735,8 @@ cacheAll(MeshCache<MEM>& mesh)
   mesh.cacheCellCoordinates();
   mesh.cacheFaceCoordinates();
   mesh.cacheNodeCells();
-  mesh.cacheNodeFaces();
+  if(mesh.hasNodeFaces())
+    mesh.cacheNodeFaces();
   if (mesh.hasEdges()) {
     mesh.cacheCellEdges();
     mesh.cacheEdgeCells();
