@@ -587,7 +587,6 @@
       <Parameter name="preconditioning method" type="string" value="ILU"/>
       <ParameterList name="ILU parameters">
         <Parameter name="ilu(k) fill level" type="int" value="5"/>
-        <!--<Parameter name="ILUT drop tolerance" type="double" value="0.000001"/>-->
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>

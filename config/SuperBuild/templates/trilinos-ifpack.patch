@@ -1,5 +1,5 @@
 diff --git a/packages/ifpack/src/Ifpack_Hypre.cpp b/packages/ifpack/src/Ifpack_Hypre.cpp
-index 373147a5338..ddf18d058f7 100644
+index 373147a5338..87b0e2e3224 100644
 --- a/packages/ifpack/src/Ifpack_Hypre.cpp
 +++ b/packages/ifpack/src/Ifpack_Hypre.cpp
 @@ -381,7 +381,7 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
@@ -11,7 +11,43 @@ index 373147a5338..ddf18d058f7 100644
    UsePreconditioner_(false),
    Dump_(false)
  {
-@@ -479,6 +479,7 @@ int Ifpack_Hypre::SetParameters(Teuchos::ParameterList& list){
+@@ -464,7 +464,26 @@ void Ifpack_Hypre::Destroy(){
+ //==============================================================================
+ int Ifpack_Hypre::Initialize(){
+   Time_.ResetStartTime();
+-  if(IsInitialized_) return 0;
++  // Create the Hypre matrix and copy values.  Note this uses values (which
++  // Initialize() shouldn't do) but it doesn't care what they are (for
++  // instance they can be uninitialized data even).  It should be possible to
++  // set the Hypre structure without copying values, but this is the easiest
++  // way to get the structure.
++  MPI_Comm comm = GetMpiComm();
++  int ilower = GloballyContiguousRowMap_->MinMyGID();
++  int iupper = GloballyContiguousRowMap_->MaxMyGID();
++  IFPACK_CHK_ERR(HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_));
++  IFPACK_CHK_ERR(HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR));
++  IFPACK_CHK_ERR(HYPRE_IJMatrixInitialize(HypreA_));
++  CopyEpetraToHypre();
++  IFPACK_CHK_ERR(SetSolverType(SolverType_));
++  IFPACK_CHK_ERR(SetPrecondType(PrecondType_));
++  CallFunctions();
++  if(UsePreconditioner_){
++    if(SolverPrecondPtr_ != NULL){
++      IFPACK_CHK_ERR(SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_));
++    }
++  }
+   // set flags
+   IsInitialized_=true;
+   NumInitialize_ = NumInitialize_ + 1;
+@@ -472,6 +491,7 @@ int Ifpack_Hypre::Initialize(){
+   return 0;
+ } //Initialize()
+ 
++
+ //==============================================================================
+ int Ifpack_Hypre::SetParameters(Teuchos::ParameterList& list){
+ 
+@@ -479,6 +499,7 @@ int Ifpack_Hypre::SetParameters(Teuchos::ParameterList& list){
    solverMap["BoomerAMG"] = BoomerAMG;
    solverMap["ParaSails"] = ParaSails;
    solverMap["Euclid"] = Euclid;
@@ -19,7 +55,7 @@ index 373147a5338..ddf18d058f7 100644
    solverMap["AMS"] = AMS;
    solverMap["Hybrid"] = Hybrid;
    solverMap["PCG"] = PCG;
-@@ -502,7 +503,7 @@ int Ifpack_Hypre::SetParameters(Teuchos::ParameterList& list){
+@@ -502,7 +523,7 @@ int Ifpack_Hypre::SetParameters(Teuchos::ParameterList& list){
    if (list.isType<std::string>("hypre: Preconditioner"))
      precType = solverMap[list.get<std::string>("hypre: Preconditioner")];
    else
@@ -28,15 +64,94 @@ index 373147a5338..ddf18d058f7 100644
    PrecondType_ = precType;
    Hypre_Chooser chooser;
    if (list.isType<std::string>("hypre: SolveOrPrecondition"))
-@@ -780,6 +781,7 @@ int Ifpack_Hypre::Compute(){
+@@ -780,41 +801,7 @@ int Ifpack_Hypre::Compute(){
      IFPACK_CHK_ERR(Initialize());
    }
    Time_.ResetStartTime();
-+  CopyEpetraToHypre();
+-
+-  // Create the Hypre matrix and copy values.  Note this uses values (which
+-  // Initialize() shouldn't do) but it doesn't care what they are (for
+-  // instance they can be uninitialized data even).  It should be possible to
+-  // set the Hypre structure without copying values, but this is the easiest
+-  // way to get the structure.
+-  MPI_Comm comm = GetMpiComm();
+-  int ilower = GloballyContiguousRowMap_->MinMyGID();
+-  int iupper = GloballyContiguousRowMap_->MaxMyGID();
+-  IFPACK_CHK_ERR(HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_));
+-  IFPACK_CHK_ERR(HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR));
+-  IFPACK_CHK_ERR(HYPRE_IJMatrixInitialize(HypreA_));
+   CopyEpetraToHypre();
+-  if(SolveOrPrec_ == Solver) {
+-    IFPACK_CHK_ERR(SetSolverType(SolverType_));
+-    if (SolverPrecondPtr_ != NULL && UsePreconditioner_) {
+-      // both method allows a PC (first condition) and the user wants a PC (second)
+-      IFPACK_CHK_ERR(SetPrecondType(PrecondType_));
+-      CallFunctions();
+-      IFPACK_CHK_ERR(SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_));
+-    } else {
+-      CallFunctions();
+-    }
+-  } else {
+-    IFPACK_CHK_ERR(SetPrecondType(PrecondType_));
+-    CallFunctions();
+-  }
+-
+-  if (!G_.is_null()) {
+-    SetDiscreteGradient(G_);
+-  }
+-
+-  if (!Coords_.is_null()) {
+-    SetCoordinates(Coords_);
+-  }
  
-   // Create the Hypre matrix and copy values.  Note this uses values (which
-   // Initialize() shouldn't do) but it doesn't care what they are (for
-@@ -1163,7 +1165,17 @@ int Ifpack_Hypre::SetPrecondType(Hypre_Solver Precond){
+   // Hypre Setup must be called after matrix has values
+   if(SolveOrPrec_ == Solver){
+@@ -823,44 +810,6 @@ int Ifpack_Hypre::Compute(){
+     IFPACK_CHK_ERR(PrecondSetupPtr_(Preconditioner_, ParMatrix_, ParX_, ParY_));
+   }
+ 
+-  // Dump Hierarchy here for BoomerAMG Preconditioner
+-  if(Dump_ && PrecondSolvePtr_ == &HYPRE_BoomerAMGSolve) {
+-    hypre_ParAMGData   *amg_data = (hypre_ParAMGData*) Preconditioner_;
+-    hypre_ParCSRMatrix    **A_array = hypre_ParAMGDataAArray(amg_data);
+-    hypre_ParCSRMatrix    **P_array = hypre_ParAMGDataPArray(amg_data);
+-#if 0
+-    HYPRE_Int     **CF_marker_array = hypre_ParAMGDataCFMarkerArray(amg_data);
+-#endif
+-    HYPRE_Int num_levels = hypre_ParAMGDataNumLevels(amg_data);
+-
+-    char ofs[80];
+-    for(int k=0; k<num_levels; k++) {
+-      // A 
+-      sprintf(ofs,"A_matrix.bmg.%d.dat",k);
+-      HYPRE_ParCSRMatrixPrint(A_array[k], ofs);
+-      if(k!=num_levels-1) {
+-        // P       
+-        sprintf(ofs,"P_matrix.bmg.%d.dat",k);
+-        HYPRE_ParCSRMatrixPrint(P_array[k], ofs);
+-
+-#if 0
+-        // CF
+-        // Note: Hypre outputs "-1" for F Points and "1" for C Points
+-        HYPRE_Int local_size = hypre_CSRMatrixNumRows(hypre_ParCSRMatrixDiag(A_array[k]));
+-        sprintf(ofs,"cf_marker.bmg.%d.dat.%d",k,Comm().MyPID());
+-        FILE * f = fopen(ofs,"w");
+-        fprintf(f,"%%%%MatrixMarket matrix array real general\n");
+-        fprintf(f,"%d 1\n",local_size);
+-        for(int i=0; i<local_size; i++)
+-          fprintf(f,"%d\n",(int)CF_marker_array[k][i]);
+-        fclose(f);
+-#endif
+-      }
+-
+-    }
+-  }//end dump for BoomerAMG
+-
+-
+   IsComputed_ = true;
+   NumCompute_ = NumCompute_ + 1;
+   ComputeTime_ = ComputeTime_ + Time_.ElapsedTime();
+@@ -1163,7 +1112,17 @@ int Ifpack_Hypre::SetPrecondType(Hypre_Solver Precond){
        PrecondSetupPtr_ = &HYPRE_EuclidSetup;
        PrecondSolvePtr_ = &HYPRE_EuclidSolve;
        break;
@@ -55,7 +170,7 @@ index 373147a5338..ddf18d058f7 100644
        if(IsPrecondCreated_){
          PrecondDestroyPtr_(Preconditioner_);
          IsPrecondCreated_ = false;
-@@ -1238,6 +1250,10 @@ int Ifpack_Hypre::Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver)
+@@ -1238,6 +1197,10 @@ int Ifpack_Hypre::Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver)
  int Ifpack_Hypre::Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver)
      { return HYPRE_EuclidCreate(comm, solver);}
  

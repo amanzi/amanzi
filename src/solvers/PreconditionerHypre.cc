@@ -217,9 +217,8 @@ PreconditionerHypre::InitILU_()
     IfpHypre_->SetParameter(
       (Hypre_Chooser)1, &HYPRE_ILUSetLevelOfFill, plist_.get<int>("ilu(k) fill level"));
 
-  if (plist_.isParameter("ilut drop tolerance"))
-    IfpHypre_->SetParameter(
-      (Hypre_Chooser)1, &HYPRE_ILUSetTol, plist_.get<double>("ilut drop tolerance"));
+  IfpHypre_->SetParameter(
+      (Hypre_Chooser)1, &HYPRE_ILUSetTol, 0.0);
 #else
   Errors::Message msg("Hypre (ILU) is not available in this installation of Amanzi.  To use "
                       "Hypre, please reconfigure.");
