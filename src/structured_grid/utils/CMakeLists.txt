@@ -21,7 +21,7 @@ include_directories(${CCSE_INCLUDE_DIRS})
 include_directories(${SAMR_SOURCE_DIR})
 
 # External (TPL) include directories
-include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Trilinos_INCLUDE_DIRS})
 include_directories(${PETSC_INCLUDE_DIRS})
 include_directories(${PMAMR_INCLUDE_DIRS})
 

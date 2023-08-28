@@ -21,7 +21,7 @@ include_directories(${PLATFORM_INTERFACE_SOURCE_DIR}) # havent yet visited these
 include_directories(${ATK_SOURCE_DIR})
 
 # External (TPL) include directories
-include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Trilinos_INCLUDE_DIRS})
 include_directories(${PETSc_INCLUDE_DIRS})
 
 set(CXX_header_files amanzi_structured_grid_simulation_driver.H)
