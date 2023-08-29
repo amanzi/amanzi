@@ -24,8 +24,7 @@ double
 brent(F f, double a, double b, double tol, int* itr)
 {
   int itr_max(*itr);
-  double xtol(tol);
-  double c, d, s, fa, fb, fc, fs;
+  double c, d, s, fa, fb, fc, fs, ftol;
   bool flag(true);
 
   fa = f(a);
@@ -34,6 +33,7 @@ brent(F f, double a, double b, double tol, int* itr)
     *itr = -1;
     return 0.0;
   }
+  ftol = (1.0 + std::fabs(fa) + std::fabs(fb)) * tol;
 
   if (std::fabs(fa) < std::fabs(fb)) {
     std::swap(a, b);
@@ -56,8 +56,8 @@ brent(F f, double a, double b, double tol, int* itr)
     if ((s - (3 * a + b) / 4) * (s - b) >= 0.0 ||
         (flag && std::fabs(s - b) >= std::fabs(b - c) / 2) ||
         (!flag && std::fabs(s - b) >= std::fabs(c - d) / 2) ||
-        (flag && std::fabs(b - c) < std::fabs(xtol)) ||
-        (!flag && std::fabs(c - d) < std::fabs(xtol))) {
+        (flag && std::fabs(b - c) < tol) ||
+        (!flag && std::fabs(c - d) < tol)) {
       s = (a + b) / 2;
       flag = true;
     } else {
@@ -81,9 +81,9 @@ brent(F f, double a, double b, double tol, int* itr)
       std::swap(a, b);
       std::swap(fa, fb);
     }
-    if (fb == 0.0) return b;
-    if (fs == 0.0) return s;
-    if (std::fabs(b - a) < xtol) return s;
+    if (std::fabs(fb) <= ftol) return b;
+    if (std::fabs(fs) <= ftol) return s;
+    if (std::fabs(b - a) < tol) return s;
   }
 
   return 0.0; // default value

@@ -193,7 +193,7 @@ InputConverterU::TranslateCycleDriverNew_()
     // collect active pks and coupling of pks
     int transient_model(0);
     pk_state.clear();
-    pk_master_.clear();
+    // pk_master_.clear();
     pk_domain_.clear();
     pk_region_.clear();
 
