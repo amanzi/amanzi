@@ -377,7 +377,6 @@ InputConverterU::TranslateILU_()
 
   out_list.sublist("ILU parameters")
     .set<int>("ilu(k) fill level", 5)
-    // .set<double>("ILUT drop tolerance", 0.000001)
     .set<int>("verbosity", 0);
 
   return out_list;
