@@ -32,10 +32,10 @@ MeshAudit_Base<Mesh_type>::MeshAudit_Base(const Teuchos::RCP<const Mesh_type>& m
                                           std::ostream& os)
   : mesh_(mesh),
     comm_(mesh_->getComm()),
-    os_(os),
     nnodes_all_(mesh_->getNumEntities(Entity_kind::NODE, Parallel_kind::ALL)),
     nfaces_all_(mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL)),
     ncells_all_(mesh_->getNumEntities(Entity_kind::CELL, Parallel_kind::ALL)),
+    os_(os),
     MAX_OUT(5)
 {}
 

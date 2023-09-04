@@ -36,6 +36,8 @@ using Mesh = MeshCache<MemSpace_kind::HOST>;
 // keeping the MeshFrameworkAlgorithms class around for use by the Cache.
 //
 struct MeshFrameworkAlgorithms {
+  virtual ~MeshFrameworkAlgorithms(){};
+
   // lumped things for more efficient calculation
   virtual std::pair<double, AmanziGeometry::Point>
   computeCellGeometry(const Mesh& mesh, const Entity_ID c) const;

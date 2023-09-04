@@ -34,6 +34,7 @@ class SingleFaceMesh : public AmanziMesh::Mesh {
                  const AmanziGeometry::SurfaceCoordinateSystem& coordsys)
   {
     cacheSFM(mesh, f, coordsys);
+    isSFM_ = true;
   }
 
   SingleFaceMesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int f)
@@ -41,11 +42,10 @@ class SingleFaceMesh : public AmanziMesh::Mesh {
     AmanziGeometry::SurfaceCoordinateSystem coordsys(mesh->getFaceCentroid(f),
                                                      mesh->getFaceNormal(f));
     cacheSFM(mesh, f, coordsys);
+    isSFM_ = true;
   }
 
   ~SingleFaceMesh(){};
-
-  bool isSFM() const { return true; }
 
   void cacheSFM(const Teuchos::RCP<const AmanziMesh::Mesh>& mc,
                 int f,
@@ -56,7 +56,6 @@ class SingleFaceMesh : public AmanziMesh::Mesh {
 
     space_dim_ = mc->getSpaceDimension() - 1;
     manifold_dim_ = space_dim_;
-    int d = space_dim_;
 
     ncells_owned = 1;
     ncells_all = 1;
@@ -198,7 +197,6 @@ class SingleFaceMesh : public AmanziMesh::Mesh {
   }
 
  private:
-  int nnodes_;
   AmanziMesh::Entity_ID_View cell_node_ids_;
   Point_List cell_coords_;
   std::vector<AmanziMesh::Entity_ID_View> face_node_ids_;

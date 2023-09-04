@@ -48,7 +48,7 @@ CHECK_CLOSE_SUMALL(T exp, T contrib, const Amanzi::Comm_type& comm, T tol = 0)
   CHECK_CLOSE(exp, global, tol);
   if (std::abs(exp - global) > tol) {
     // for debugging
-    double diff = std::abs(exp - global);
+    // double diff = std::abs(exp - global);
   }
 }
 

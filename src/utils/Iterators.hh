@@ -116,8 +116,8 @@ struct View_iter {
   }
 
  private:
-  int i_;
   View_type v_;
+  int i_;
 };
 
 } // namespace Impl

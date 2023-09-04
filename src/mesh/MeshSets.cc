@@ -201,7 +201,6 @@ resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
 {
   std::vector<Entity_ID> result;
 
-  auto space_dim = mesh.getSpaceDimension();
   auto rgnpnt = region.point();
 
   int nnode = mesh.getNumEntities(NODE, Parallel_kind::ALL);
@@ -286,6 +285,7 @@ resolveIDMeshSetFromParent(const AmanziGeometry::Region& region,
     AMANZI_ASSERT(region_ls);
     parent_kind = createEntityKind(region_ls->entity_str());
   } else {
+    parent_kind = CELL;
     AMANZI_ASSERT(false); // this should not be reachable
   }
 
@@ -761,8 +761,6 @@ filterParentEntities_SurfaceFaceToFace(
 
       // for each face in the set, are all of these nodes in the set of face
       // nodes?
-      bool done = false;
-
       for (Entity_ID f : parent_entities) {
         const auto fnodes = mesh.getParentMesh()->getFaceNodes(f);
         bool found0 = false;

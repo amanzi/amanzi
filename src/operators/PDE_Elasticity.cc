@@ -133,7 +133,7 @@ PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
 void
 PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  int v1, v2, d = mesh_->getSpaceDimension();
+  int d = mesh_->getSpaceDimension();
   auto& rhs_node = *global_op_->rhs()->ViewComponent("node", true);
 
   for (auto bc : bcs_trial_) {

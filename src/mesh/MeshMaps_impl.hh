@@ -78,7 +78,6 @@ MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
   // boundary faces
   // -- get a list of all owned face LIDs with 1 cell
   std::size_t nfaces_owned = mesh.getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
-  std::size_t nfaces_all = mesh.getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
   Entity_ID_View boundary_faces("boundary_faces", nfaces_owned);
   initView(boundary_faces, -1);
 

@@ -208,7 +208,6 @@ countCellsInColumn(const MeshCache<MemSpace_kind::HOST>& mesh, Entity_ID f)
   std::size_t count = 0;
   Entity_ID c = mesh.getFaceCells(f, Parallel_kind::ALL)[0]; // guaranteed size 1
   bool done = false;
-  int i = 0;
   while (!done) {
     count++;
     Entity_ID f_opp = Impl::findDownFace(mesh, c);

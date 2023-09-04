@@ -364,7 +364,7 @@ class Mesh_MSTK : public MeshFramework {
   bool contiguous_gids_;
   Partitioner_kind partitioner_;
   bool edges_requested_, faces_requested_;
-  mutable bool edges_initialized_, faces_initialized_, cells_initialized_;
+  mutable bool cells_initialized_, faces_initialized_, edges_initialized_;
 
   // Local handles to entity lists (Vertices, "Faces", "Cells")
   //

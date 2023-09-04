@@ -326,13 +326,13 @@ class MeshFramework {
 
  protected:
   Comm_ptr_type comm_;
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_;
   Teuchos::RCP<Teuchos::ParameterList> plist_;
   Teuchos::RCP<const VerboseObject> vo_;
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_;
-  Teuchos::RCP<const MeshFramework> vis_mesh_;
 
   std::size_t space_dim_;
   std::size_t manifold_dim_;
+  Teuchos::RCP<const MeshFramework> vis_mesh_;
 };
 
 

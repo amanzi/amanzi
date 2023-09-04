@@ -32,7 +32,7 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 template <MemSpace_kind>
-class MeshCache;
+struct MeshCache;
 
 //
 // This casts as needed to find the right implementation.  Note that some

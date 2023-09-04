@@ -353,7 +353,7 @@ struct MeshCache {
   // Baseline mesh functionality
   // =============================================
 
-  virtual bool isSFM() const { return false; }
+  bool isSFM() const { return isSFM_; }
 
   // ----------------------
   // Accessors and Mutators
@@ -891,6 +891,9 @@ struct MeshCache {
   MeshMaps maps_;
   mutable MeshSets sets_;
   mutable MeshSetVolumeFractions set_vol_fracs_;
+
+  // mesh type
+  mutable bool isSFM_ = false;
 };
 
 

@@ -18,14 +18,14 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 template <MemSpace_kind>
-class MeshCache;
+struct MeshCache;
 
 struct MeshColumns {
  public:
   //
   // standard constructor
   //
-  MeshColumns() : num_columns_all(-1), num_columns_owned(-1) {}
+  MeshColumns() : num_columns_owned(-1), num_columns_all(-1) {}
 
   //
   // Constructor that guesses how to infer columnar structure.

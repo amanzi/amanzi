@@ -106,7 +106,7 @@ struct MeshDualView : public Kokkos::ViewTraits<DataType, Arg1Type, Arg2Type, Ar
       h_view(create_mirror_view(d_view)) // without UVM, host View mirrors
   {}
   MeshDualView(const MeshDualView& src)
-    : d_view(src.d_view), h_view(src.h_view), modified_flags(src.modified_flags)
+    : modified_flags(src.modified_flags), d_view(src.d_view), h_view(src.h_view)
   {}
   template <class SS, class LS, class DS, class MS>
   MeshDualView(const MeshDualView<SS, LS, DS, MS>& src)

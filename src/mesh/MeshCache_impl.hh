@@ -19,7 +19,7 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-struct SingleFaceMesh;
+class SingleFaceMesh;
 
 template <MemSpace_kind MEM>
 MeshCache<MEM>::MeshCache() : is_ordered_(false), has_edges_(false), has_nodes_(true),

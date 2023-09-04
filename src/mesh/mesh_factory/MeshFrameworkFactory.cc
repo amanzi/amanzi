@@ -41,7 +41,7 @@ namespace AmanziMesh {
 MeshFrameworkFactory::MeshFrameworkFactory(const Comm_ptr_type& comm,
                                            const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm,
                                            const Teuchos::RCP<Teuchos::ParameterList>& plist)
-  : comm_(comm), gm_(gm), plist_(plist), preference_()
+  : comm_(comm), preference_(), plist_(plist), gm_(gm)
 {
   if (comm_ == Teuchos::null) { comm_ = Amanzi::getDefaultComm(); }
 
