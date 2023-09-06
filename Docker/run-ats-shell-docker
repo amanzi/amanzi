@@ -16,13 +16,15 @@
 #  There's not effort here to parse arguments.  Just assumes you are providing an xml file.
 #
 
+#  We recommend that the current pwd is the top-level of your desired workspace.
+#
 HOST_MNT=`pwd -P`
-echo $HOST_MNT
+
+#  On the container, we recommend your mount point is the short-course directory and that
+#  is also your PWD on startup.
+#
 CONT_MNT=/home/amanzi_user/work
 CONT_PWD=/home/amanzi_user/work
 
 docker run -it --mount type=bind,source=$HOST_MNT,target=$CONT_MNT -w $CONT_PWD metsi/ats:master-latest /bin/bash
 
-# docker run --mount type=bind,source=/Volumes/Data/amanzi/docker/host,target=/home/amanzi_usr/work -w $CONT_PWD metsi/amanzi-tpls:base /bin/bash
-
-# docker run  -it -w $CONT_PWD metsi/amanzi-tpls:base /bin/bash
