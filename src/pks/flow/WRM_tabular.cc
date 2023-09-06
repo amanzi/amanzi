@@ -16,8 +16,7 @@
 #include <cmath>
 #include <string>
 
-#include <boost/math/tools/roots.hpp>
-
+#include "Brent.hh"
 #include "errors.hh"
 #include "FlowDefs.hh"
 #include "WRM_tabular.hh"
@@ -29,15 +28,17 @@ namespace Flow {
 /* ******************************************************************
 * Constructors
 ****************************************************************** */
-WRM_tabular::WRM_tabular(Teuchos::ParameterList& plist)
+WRM_tabular::WRM_tabular(Teuchos::ParameterList& plist) : tol_(1.0e-11)
 {
   auto pc = plist.get<Teuchos::Array<double>>("cap pressure").toVector();
   auto kr = plist.get<Teuchos::Array<double>>("permeability").toVector();
   auto sat = plist.get<Teuchos::Array<double>>("saturation").toVector();
 
+  tol_ = plist.get<double>("tolerance", 1.0e-11);
+
   if (pc.size() != kr.size() || pc.size() != sat.size()) {
     Errors::Message msg;
-    msg << "tabular: tabulated ararsys have different size.";
+    msg << "tabular: tabulated arrays have different size.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -66,14 +67,10 @@ WRM_tabular::WRM_tabular(Teuchos::ParameterList& plist)
 double
 WRM_tabular::capillaryPressure(double s) const
 {
-  Tol tol(1e-11);
   F f(s, this);
 
   itrs_ = 100;
-  std::pair<double, double> result;
-  result = boost::math::tools::toms748_solve(f, 0.0, pc0_, 1.0 - s, sr_ - s, tol, itrs_);
-
-  return ((result.first + result.second) / 2);
+  return Utils::brent(f, 0.0, pc0_, tol_, &itrs_);
 }
 
 } // namespace Flow

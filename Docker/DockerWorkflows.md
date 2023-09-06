@@ -130,6 +130,14 @@ You could install xterm, or other python packages, or whatever system level tool
 docker commit ideas_ats_container moulton/amanzi:ats-xeyes-v2
 ```
 
+Now you have a new image with xeyes installed.  To test it you simply run a shell and from the shell run xeyes, e.g., 
+
+```
+docker run -it --rm moulton/amanzi:ats-xeyes-v2 /bin/bash
+```
+and then at the prompt type xeyes. 
+
+
 ## Contributing a bug fix or feature
 
 Run an ATS container with an interactive shell (i.e., bash), as we did in the first example,

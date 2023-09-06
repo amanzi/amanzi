@@ -16,6 +16,7 @@
 #ifndef AMANZI_FLOW_MODEL_PARTITION_HH_
 #define AMANZI_FLOW_MODEL_PARTITION_HH_
 
+#include "dbc.hh"
 #include "Mesh.hh"
 #include "MeshPartition.hh"
 
@@ -44,7 +45,13 @@ CreateModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, Teuchos::Parame
     if (plist.isSublist(name)) {
       Teuchos::ParameterList sublist = plist.sublist(name);
       region_list.push_back(sublist.get<Teuchos::Array<std::string>>("regions").toVector());
-      model_list.push_back(factory.Create(sublist));
+      auto model = factory.Create(sublist);
+      if (!model.get()) {
+        Errors::Message msg;
+        msg << "Unknown model name in sublist \"" << name  << "\"";
+        Exceptions::amanzi_throw(msg);
+      }
+      model_list.push_back(model);
     } else {
       AMANZI_ASSERT(0);
     }

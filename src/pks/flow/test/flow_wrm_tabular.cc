@@ -26,6 +26,7 @@ TEST(WRM_TABULAR)
   using namespace Amanzi::Flow;
 
   Teuchos::ParameterList plist;
+  plist.set<double>("tolerance", 1.0e-14);
   plist.set<Teuchos::Array<double>>("cap pressure",
                                     std::vector<double>({ 0.0, 100.0, 500.0, 1000.0, 10000.0 }));
   plist.set<Teuchos::Array<double>>("permeability",

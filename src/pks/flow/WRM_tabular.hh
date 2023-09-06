@@ -17,7 +17,6 @@
 
 #include <memory>
 
-#include <boost/math/tools/roots.hpp>
 #include "Teuchos_ParameterList.hpp"
 
 #include "Factory.hh"
@@ -29,12 +28,6 @@ namespace Amanzi {
 namespace Flow {
 
 class WRM_tabular : public WRM {
-  struct Tol {
-    Tol(double eps) : eps_(eps){};
-    bool operator()(double a, double b) const { return std::abs(a - b) <= eps_; }
-    double eps_;
-  };
-
   struct F {
     F(double s, const WRM_tabular* wrm) : s_(s), wrm_(wrm){};
     double operator()(double pc) const { return wrm_->saturation(pc) - s_; }
@@ -55,12 +48,14 @@ class WRM_tabular : public WRM {
   double dKdPc(double pc) const { return spline_kr_->Derivative(pc); }
 
   // access
-  boost::uintmax_t get_itrs() { return itrs_; }
+  int get_itrs() { return itrs_; }
 
  private:
   std::shared_ptr<Utils::SplinedCurve> spline_kr_, spline_sat_;
   double pc0_, sr_;
-  mutable boost::uintmax_t itrs_;
+
+  mutable int itrs_;
+  double tol_;
 
   static Utils::RegisteredFactory<WRM, WRM_tabular> reg_;
 };
