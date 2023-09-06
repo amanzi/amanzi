@@ -138,7 +138,6 @@ TEST(DISPERSION)
   double dt0;
   dt0 = TPK.StableTimeStep(-1);
 
-  int iter = 0;
   double t_old(0.0), t_new(0.0), dt, T1(1.0);
   while (t_new < T1) {
     dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
@@ -151,7 +150,6 @@ TEST(DISPERSION)
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
-    iter++;
 
     TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
   }
@@ -236,7 +234,6 @@ TEST(DIFFUSION)
   double dt0;
   dt0 = TPK.StableTimeStep(-1);
 
-  int iter = 0;
   double t_old(0.0), t_new(0.0), dt, T1(1.0);
   while (t_new < T1) {
     dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
@@ -249,7 +246,6 @@ TEST(DIFFUSION)
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
-    iter++;
 
     TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
   }
@@ -340,7 +336,6 @@ TEST(GAS_DIFFUSION)
   double dt0;
   dt0 = TPK.StableTimeStep(-1);
 
-  int iter = 0;
   double t_old(0.0), t_new(0.0), dt, T1(0.99);
   while (t_new < T1) {
     dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
@@ -351,7 +346,6 @@ TEST(GAS_DIFFUSION)
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
-    iter++;
 
     TPK.VV_CheckTracerBounds(tcc, 0, 0.0, 1.0, 1e-12);
     TPK.VV_CheckTracerBounds(tcc, 1, 0.0, 1.0, 1e-12);

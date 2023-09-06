@@ -467,7 +467,6 @@ void
 CompositeVector::ApplyVandelay_() const
 {
   if (vandelay_vector_ == Teuchos::null) { CreateVandelayVector_(); }
-  const auto& map = *ComponentMap("face", false);
   if (vandelay_import_ == Teuchos::null)
     vandelay_vector_->Import(
       *ViewComponent("face", false), Mesh()->getBoundaryFaceImporter(), Insert);

@@ -4043,9 +4043,6 @@ Mesh_MSTK::extract_mstk_mesh_(List_ptr src_entities,
     MAttrib_ptr rparentgid_att = MAttrib_New(mesh_, "rparent_gid", INT, MREGION);
 
     // Attach parent global ID info to entities used by other processors
-    int size = getComm()->NumProc();
-    int rank = getComm()->MyPID();
-
     idx = 0;
     MVertex_ptr mv = nullptr;
 

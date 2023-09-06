@@ -55,7 +55,6 @@ SUITE(MeshFramework)
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm, plist);
 
     bool flatten = true;
-    bool extrude = false;
 
     if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::MSTK)) {
       pref.clear();

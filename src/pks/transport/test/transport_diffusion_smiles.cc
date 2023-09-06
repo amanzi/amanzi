@@ -86,7 +86,6 @@ TEST(DIFFUSION_GAS_SMILES)
   WriteStateStatistics(*S);
 
   // advance the state
-  int iter = 0;
   double dt0(2 * 3.1558e+6), t_old(0.0), t_new(0.0), dt, T1(3.1558e+8);
   while (t_new < T1) {
     dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
@@ -97,7 +96,6 @@ TEST(DIFFUSION_GAS_SMILES)
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
-    iter++;
     printf("AAA: %g %16.10g %16.10g ... %16.10g   %16.10g\n",
            t_new,
            tcc[0][0],

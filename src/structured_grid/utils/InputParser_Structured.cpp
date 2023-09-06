@@ -4022,12 +4022,10 @@ namespace Amanzi {
           PLoptions sl_opt(src_label_pl,nullList,src_label_reqd_params,false,true);
           const Array<std::string>& regions = src_label_pl.get<Array<std::string> >(Assigned_Regions_str);
           struct_src_label_list.set("regions",underscore(regions));
-          bool function_set = false;
           const Array<std::string>& src_f_or_s_labels = sl_opt.OptLists(); // must be a known src func or "Solute SOURCE"
           for (int j=0; j<src_f_or_s_labels.size(); ++j) {
             const std::string& src_f_or_s_label = src_f_or_s_labels[j];
 
-            function_set = false;
             if (src_f_or_s_label == Solute_Source_str) {
               // Do solute sources
 
@@ -4094,7 +4092,6 @@ namespace Amanzi {
               const std::string& Amanzi_type = src_f_or_s_label;
               const ParameterList& src_func_pl = src_label_pl.sublist(Amanzi_type);
               convert_Sources(src_func_pl,Amanzi_type,struct_src_label_list);
-	      function_set = true;
             }
           }
           struct_src_list.set(underscore(src_label),struct_src_label_list);

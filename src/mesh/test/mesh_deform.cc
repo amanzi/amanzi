@@ -41,7 +41,6 @@ test2D(const Teuchos::RCP<Mesh_type>& mesh)
     newpos[j] = newcoord;
   }
 
-  int ncells_1 = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
   int ierr = MeshAlgorithms::deform(*mesh, nodeids, newpos);
   CHECK_EQUAL(ierr, 0);
 
