@@ -313,7 +313,6 @@ set(ENABLE_Trilinos_Patch ON)
 if (ENABLE_Trilinos_Patch)
   set(Trilinos_patch_file
     trilinos-duplicate-parameters.patch
-    trilinos-superludist.patch
     trilinos-ifpack.patch
     )
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
