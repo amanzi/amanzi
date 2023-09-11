@@ -37,4 +37,17 @@ echo "finished install"
 
 echo "make ecosim returned $rc"
 
+echo "copying data to install"
+
+cp -r @ECOSIM_source_dir@ @TPL_INSTALL_PREFIX@
+cd @TPL_INSTALL_PREFIX@
+
+mv ecosim--source/ ecosim/
+
+cd @TPL_INSTALL_PREFIX@/ecosim
+
+mkdir local/lib
+
+find . -name lib*.a -exec cp {} ./local/lib/ \;
+
 exit $rc
