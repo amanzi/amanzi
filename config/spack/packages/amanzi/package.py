@@ -63,7 +63,7 @@ class Amanzi(CMakePackage):
     ##### Build dependencies #####
 
     depends_on('git', type='build')
-    depends_on('cmake@3.17:',  type='build')
+    depends_on('cmake@3.23:',  type='build')
 
     ##### CORE DEPENDENCIES ##### 
 

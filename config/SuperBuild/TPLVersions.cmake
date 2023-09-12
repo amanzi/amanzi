@@ -176,7 +176,7 @@
 #                - update PFLOTRAN to 3.0.2 (compatible with PETSc and Alqumia)
 #                - update PETSc to 3.16.0
 #   0.98.6       - update Alquimia to version 1.0.9
-#   0.98.7       - Update Trilinis to fc55b9cd (Also 14.2.0)
+#   0.98.7       - Update Trilinos to fc55b9cd (Also 14.2.0)
 #                - Update Hypre to 8f6bdc6a (Also 2.29.0)
 
 include(CMakeParseArguments)
@@ -230,7 +230,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 6)
+set(AMANZI_TPLS_VERSION_PATCH 7)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
