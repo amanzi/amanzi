@@ -85,7 +85,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual void InitializeFields();
 
-  virtual void InitializeCellArrays();
+  virtual void ComputeCellArrays();
 
   virtual void ComputeExternalForcingOnCells(std::vector<double> &forcing); 
 
@@ -202,6 +202,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   std::vector<int> junction_cells_owned_;
   std::vector<int> model_cells_wghost_;
   std::vector<int> junction_cells_wghost_;
+  bool cellArraysInitDone_ = false;
 
  private:
   // boundary conditions

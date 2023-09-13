@@ -486,9 +486,7 @@ void PipeFlow_PK::InitializeFields(){
      auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
-     for (int c = 0; c < model_cells_owned_.size(); c++) {
-
-        int cell = model_cells_owned_[c]; 
+     for (int cell = 0; cell < ncells_owned; cell++) {
 
         double maxDepth = B_c[0][cell] + pipe_diameter_;
         if (ht_c[0][cell] >= maxDepth){ // cell is pressurized
@@ -514,16 +512,6 @@ void PipeFlow_PK::InitializeFields(){
            PrimaryVar_c[0][cell] = ComputeWettedArea(WettedAngle_c[0][cell]);
 
         }
-
-     }
-
-     for (int c = 0; c < junction_cells_owned_.size(); c++) {
-
-        int cell = junction_cells_owned_[c];
-        PrimaryVar_c[0][cell] = ht_c[0][cell] - B_c[0][cell];
-        WettedAngle_c[0][cell] = - 1.0;
-        WaterDepth_c[0][cell] = ht_c[0][cell] - B_c[0][cell];
-
 
      }
 
@@ -557,41 +545,69 @@ void PipeFlow_PK::InitializeFields(){
 //---------------------------------------------------------------
 // Initialize cell array of pipe cells (model cells) and junction
 //---------------------------------------------------------------
-void PipeFlow_PK::InitializeCellArrays(){
+void PipeFlow_PK::ComputeCellArrays(){
 
-    int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-    auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, direction_key_).ViewComponent("cell", true);
-    // initialize pipe direction if not
-    // specified from file
-    if(direction_key_.empty()){
-       for (int c = 0; c < ncells_wghost; c++) {
-          dir_c[0][c] = 1.0;
-          dir_c[1][c] = 0.0;
+    if(!cellArraysInitDone_){
+       int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+       int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+       auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, direction_key_).ViewComponent("cell", true);
+       auto& PrimaryVar_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+       auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+       auto& WaterDepth_c = *S_->GetW<CV_t>(water_depth_key_, Tags::DEFAULT, water_depth_key_).ViewComponent("cell");
+       auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+       auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+       // write pipe direction if not
+       // specified from file
+       // default is positive x-axis
+       if(direction_key_.empty()){
+          for (int c = 0; c < ncells_wghost; c++) {
+             dir_c[0][c] = 1.0;
+             dir_c[1][c] = 0.0;
+          }
        }
-    }
 
-    for (int c = 0; c < ncells_owned; c++) {
-       // both components of pipe direction zero
-       // is code for junction cell
-       if(IsJunction(c)){ 
-          junction_cells_owned_.push_back(c); 
+       junction_cells_owned_.resize(0);
+       model_cells_owned_.resize(0);
+       junction_cells_wghost_.resize(0);
+       model_cells_wghost_.resize(0);
+
+       for (int c = 0; c < ncells_owned; c++) {
+          // both components of pipe direction zero
+          // is code for junction cell
+          if(IsJunction(c)){ 
+             junction_cells_owned_.push_back(c); 
+          }
+          else {
+             model_cells_owned_.push_back(c);
+          }
        }
-       else {
-          model_cells_owned_.push_back(c);
-       }
-    }
     
-    for (int c = 0; c < ncells_wghost; c++) {
-       // both components of pipe direction zero
-       // is code for junction cell
-       if(IsJunction(c)){
-          junction_cells_wghost_.push_back(c);
+       for (int c = 0; c < ncells_wghost; c++) {
+          // both components of pipe direction zero
+          // is code for junction cell
+          if(IsJunction(c)){
+             junction_cells_wghost_.push_back(c);
+          }
+          else {
+             model_cells_wghost_.push_back(c);
+          }
        }
-       else {
-          model_cells_wghost_.push_back(c);
+
+       // here we are overwriting the initialization for 
+       // junction cells. This should have been done within
+       // InitializeFields() but at init we cannot read
+       // the dir_c field from file so we need to do it here
+
+       for (int c = 0; c < junction_cells_owned_.size(); c++) {
+           int cell = junction_cells_owned_[c];
+           PrimaryVar_c[0][cell] = ht_c[0][cell] - B_c[0][cell];
+           WettedAngle_c[0][cell] = - 1.0;
+           WaterDepth_c[0][cell] = ht_c[0][cell] - B_c[0][cell];
        }
-    }
+
+       cellArraysInitDone_ = true;
+
+    }   
 
 }
 

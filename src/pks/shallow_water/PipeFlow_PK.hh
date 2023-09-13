@@ -69,7 +69,7 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   void GetDx(const int & cell, double & dx);
 
-  virtual void InitializeCellArrays() override;
+  virtual void ComputeCellArrays() override;
 
   bool IsJunction(const int & cell);
 

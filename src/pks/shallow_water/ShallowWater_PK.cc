@@ -372,7 +372,6 @@ ShallowWater_PK::Initialize()
   // calculate cell area square (used as a tolerance)  
   cell_area2_max_ = cell_area_max * cell_area_max;
 
-  InitializeCellArrays();
   InitializeFields();
 
   InitializeCVField(S_, *vo_, velocity_key_, Tags::DEFAULT, passwd_, 0.0);
@@ -450,6 +449,8 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   iters_++;
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+  ComputeCellArrays();
 
   S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
 
@@ -1000,20 +1001,28 @@ std::vector<double> ShallowWater_PK::ComputeFieldsOnEdge(int c, int e, double ht
 //--------------------------------------------------------------
 // Initialize cell array of model cells (all cells)
 //--------------------------------------------------------------
-void ShallowWater_PK::InitializeCellArrays(){
+void ShallowWater_PK::ComputeCellArrays(){
 
-    int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    if(!cellArraysInitDone_){
 
-    junction_cells_owned_.resize(0);
-    junction_cells_wghost_.resize(0);
+       int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+       int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
-    for (int c = 0; c < ncells_owned; c++) {
-       model_cells_owned_.push_back(c);
-    }
+       junction_cells_owned_.resize(0);
+       model_cells_owned_.resize(0);
+       junction_cells_wghost_.resize(0);
+       model_cells_wghost_.resize(0);
 
-    for (int c = 0; c < ncells_wghost; c++) {
-       model_cells_wghost_.push_back(c);
+       for (int c = 0; c < ncells_owned; c++) {
+          model_cells_owned_.push_back(c);
+       }
+
+       for (int c = 0; c < ncells_wghost; c++) {
+         model_cells_wghost_.push_back(c);
+       }
+
+       cellArraysInitDone_ = true;
+
     }
 
 }
