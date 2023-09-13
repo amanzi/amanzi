@@ -53,7 +53,6 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
   sw_list_ = Teuchos::sublist(pk_list, pk_name, true);
-  Teuchos::RCP<Teuchos::ParameterList> eval_list = Teuchos::sublist(state_list, "evaluators", true);
 
   // domain name
   domain_ = sw_list_->template get<std::string>("domain name", "surface");
