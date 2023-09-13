@@ -25,8 +25,8 @@ RUN git remote prune origin
 RUN git pull
 RUN git branch --list
 # Checkout the branch and update it
-RUN git checkout $amanzi_branch
-RUN git pull
+RUN git checkout origin/$amanzi_branch
+# RUN git pull
 RUN git rev-parse --short HEAD
   
 RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
