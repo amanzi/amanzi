@@ -20,6 +20,7 @@ set(Alquimia_patch_file alquimia-cmake.patch
                         alquimia-FindPETSc.patch
                         alquimia-MPIlocation.patch
                         alquimia-undefined_ierr.patch
+                        alquimia-clang-void.patch
                       )
 set(Alquimia_sh_patch ${Alquimia_prefix_dir}/alquimia-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-patch-step.sh.in
