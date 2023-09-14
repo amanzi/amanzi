@@ -394,7 +394,7 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
 
 
 bool
-State::HasEvaluator(const Key& key, const Tag& tag)
+State::HasEvaluator(const Key& key, const Tag& tag) const
 {
   if (Keys::hasKey(evaluators_, key)) {
     return Keys::hasKey(evaluators_.at(key), tag);
@@ -913,7 +913,7 @@ State::GetEvaluatorList(const Key& key)
 
 
 bool
-State::HasEvaluatorList(const Key& key)
+State::HasEvaluatorList(const Key& key) const
 {
   if (FEList().isSublist(key)) return true;
   // check for domain set

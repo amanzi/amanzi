@@ -28,7 +28,7 @@ namespace Amanzi {
 
 // Visualization
 void
-WriteVis(Visualization& vis, const State& S);
+WriteVis(Visualization& vis, State& S);
 
 // Checkpointing
 void
