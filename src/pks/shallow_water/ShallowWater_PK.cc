@@ -955,8 +955,8 @@ void ShallowWater_PK::InitializeFields(){
         S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
      }
 
-      InitializeCVField(S_, *vo_, wetted_angle_key_, Tags::DEFAULT, passwd_, -1.0);
-      S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
+     InitializeCVField(S_, *vo_, wetted_angle_key_, Tags::DEFAULT, passwd_, -1.0);
+     S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
 
 }
 

@@ -515,26 +515,6 @@ void PipeFlow_PK::InitializeFields(){
 
      }
 
-     if (S_->GetRecord(discharge_key_).initialized()) {
-
-        auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
-        auto& u_c = *S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-
-        for (int c = 0; c < ncells_owned; c++) {
-            for (int i = 0; i < 2; ++i) {
-             if(std::fabs(PrimaryVar_c[0][c]) < 1.0e-12){
-                u_c[i][c] = 0.0;
-             }
-             else{
-                u_c[i][c] = q_c[i][c] / PrimaryVar_c[0][c];
-             }
-            }
-        }
-
-        S_->GetRecordW(velocity_key_, Tags::DEFAULT, passwd_).set_initialized();
-
-     }
-
      S_->GetRecordW(primary_variable_key_, Tags::DEFAULT, passwd_).set_initialized();
      S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
      S_->GetRecordW(water_depth_key_, Tags::DEFAULT, water_depth_key_).set_initialized();
