@@ -47,10 +47,6 @@
 namespace Amanzi {
 namespace ShallowWater {
 
-// inversion operation protected for small values
-double
-inverse_with_tolerance(double h, double tol);
-
 class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
  public:
   ShallowWater_PK(Teuchos::ParameterList& pk_tree,
@@ -143,6 +139,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   void PushBackBC(Teuchos::RCP<ShallowWaterBoundaryFunction> bc){bcs_.push_back(bc);};
 
+  double inverse_with_tolerance(double h, double tol);
+
   // access
   double get_total_source() const { return total_source_; }
 
@@ -194,6 +192,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   double pipe_diameter_;
 
   double celerity_;
+
+  double velocity_desingularization_eps_;
 
   double Pi = 3.14159265359;
   double TwoPi = 6.28318530718;

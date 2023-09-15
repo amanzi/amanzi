@@ -63,6 +63,7 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
   shallow_water_model_ = sw_list_->get<int>("use shallow water model", 1);
   pipe_diameter_ = sw_list_->get<double>("pipe diameter", 1.0);
   celerity_ = sw_list_->get<double>("celerity", 2); // m/s
+  velocity_desingularization_eps_ = sw_list_->get<double>("desingularization epsilon", 1.e-04); 
   source_key_ = sw_list_->get<std::string>("source key", "");
 
   Teuchos::ParameterList vlist;
@@ -1029,10 +1030,9 @@ void ShallowWater_PK::ComputeCellArrays(){
 //--------------------------------------------------------------
 // Inversion operation protected for small values
 //--------------------------------------------------------------
-double
-inverse_with_tolerance(double h, double tol)
+double ShallowWater_PK::inverse_with_tolerance(double h, double tol)
 {
-  double eps(1.e-4); // hard-coded tolerances
+  double eps(velocity_desingularization_eps_); 
 
   if (h > eps) return 1.0 / h;
 
