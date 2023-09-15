@@ -173,7 +173,7 @@ EnergyTwoPhase_PK::Initialize()
   // Call the base class initialize.
   Energy_PK::Initialize();
 
-  // Create pointers to the primary flow field pressure.
+  // Create pointers to the primary field
   solution = S_->GetPtrW<CV_t>(temperature_key_, Tags::DEFAULT, passwd_);
   soln_->SetData(solution);
 
@@ -316,7 +316,7 @@ EnergyTwoPhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   dt_ = t_new - t_old;
 
-  // save a copy of pressure
+  // save a copy of temperature
   CompositeVector temperature_copy(S_->Get<CV_t>(temperature_key_));
 
   // swap conserved field (i.e., energy) and save

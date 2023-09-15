@@ -76,7 +76,7 @@ EnergyMatrixFracture_PK::Setup()
 
   // primary and secondary fields for matrix affected by non-uniform
   // distribution of DOFs
-  // -- pressure
+  // -- temperature
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_matrix_, mesh_fracture_);
   if (!S_->HasRecord("temperature")) {
     *S_->Require<CV_t, CVS_t>("temperature", Tags::DEFAULT)

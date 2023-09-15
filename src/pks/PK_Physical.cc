@@ -63,6 +63,7 @@ AddDefaultIndependentEvaluator(const Teuchos::RCP<State>& S,
 {
   Teuchos::ParameterList elist(key);
   elist.set<std::string>("evaluator type", "independent variable")
+    .set<bool>("constant in time", true)
     .sublist("function")
     .sublist("ALL")
     .set<std::string>("region", "All")
