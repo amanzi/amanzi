@@ -212,7 +212,7 @@ EnergyMatrixFracture_PK::Initialize()
   op_coupling11->Setup(fi.get_values(), 1.0);
   op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  // -- operators for enthalpy. They must have own pointers to global operators 
+  // -- operators for enthalpy. They must have own pointers to global operators
   // to be used as building blocks later.
   FractureInsertion fia(mesh_matrix_, mesh_fracture_);
   fia.InitMatrixCellToFractureCell();

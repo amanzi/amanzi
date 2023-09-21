@@ -116,4 +116,3 @@ TEST(MPC_DRIVER_ENERGY_MATRIX_FRACTURE)
     quad.print(std::cout);
   }
 }
-

@@ -24,6 +24,7 @@
 
 #include "FlowEnergyMatrixFracture_PK.hh"
 #include "FractureInsertion.hh"
+#include "FractureInsertion_Helper.hh"
 #include "HeatDiffusionMatrixFracture.hh"
 #include "PK_MPCStrong.hh"
 #include "PK_Physical.hh"
@@ -396,7 +397,7 @@ FlowEnergyMatrixFracture_PK::FunctionalResidual(double t_old,
   // add contribution of coupling terms to the residual
   TreeVector g(*f);
 
-  UpdateCouplingFluxes_(adv_coupling_matrix_);
+  UpdateEnthalpyCouplingFluxes(S_, mesh_domain_, mesh_fracture_, adv_coupling_matrix_);
 
   op_tree_matrix_->Apply(*u_new, g);
   f->Update(1.0, g, 1.0);
@@ -417,7 +418,7 @@ FlowEnergyMatrixFracture_PK::UpdatePreconditioner(double t,
   // generate local matrices and apply boundary conditions
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
 
-  UpdateCouplingFluxes_(adv_coupling_pc_);
+  UpdateEnthalpyCouplingFluxes(S_, mesh_domain_, mesh_fracture_, adv_coupling_pc_);
 
   std::string pc_name = ti_list_->get<std::string>("preconditioner");
   Teuchos::ParameterList pc_list = preconditioner_list_->sublist(pc_name);
@@ -532,83 +533,6 @@ FlowEnergyMatrixFracture_PK::AddCouplingFluxes_(
   ops.push_back(op_coupling11);
 
   return ops;
-}
-
-
-/* *******************************************************************
-* Compute coupling fluxes
-******************************************************************* */
-void
-FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
-  const std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>>& adv_coupling)
-{
-  S_->Get<CV_t>("enthalpy").ScatterMasterToGhosted("cell");
-  S_->Get<CV_t>("molar_density_liquid").ScatterMasterToGhosted("cell");
-  S_->Get<CV_t>("temperature").ScatterMasterToGhosted("cell");
-  S_->Get<CV_t>(matrix_vol_flowrate_key_).ScatterMasterToGhosted("face");
-
-  // extract enthalpy fields
-  S_->GetEvaluator("enthalpy").Update(*S_, "enthalpy");
-  const auto& H_m = *S_->Get<CV_t>("enthalpy").ViewComponent("cell", true);
-  const auto& T_m = *S_->Get<CV_t>("temperature").ViewComponent("cell", true);
-  const auto& n_l_m = *S_->Get<CV_t>("molar_density_liquid").ViewComponent("cell", true);
-
-  S_->GetEvaluator("fracture-enthalpy").Update(*S_, "fracture-enthalpy");
-  const auto& H_f = *S_->Get<CV_t>("fracture-enthalpy").ViewComponent("cell", true);
-  const auto& T_f = *S_->Get<CV_t>("fracture-temperature").ViewComponent("cell", true);
-  const auto& n_l_f = *S_->Get<CV_t>("fracture-molar_density_liquid").ViewComponent("cell", true);
-
-  // update coupling terms for advection
-  int ncells_owned_f =
-    mesh_fracture_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  auto values1 = std::make_shared<std::vector<double>>(2 * ncells_owned_f, 0.0);
-  auto values2 = std::make_shared<std::vector<double>>(2 * ncells_owned_f, 0.0);
-
-  int np(0), dir, shift;
-  AmanziMesh::Entity_ID_List cells;
-  const auto& flux = *S_->Get<CV_t>(matrix_vol_flowrate_key_).ViewComponent("face", true);
-  const auto& mmap = flux.Map();
-  for (int c = 0; c < ncells_owned_f; ++c) {
-    int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);
-    int first = mmap.FirstPointInElement(f);
-
-    mesh_domain_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    int ncells = cells.size();
-    mesh_domain_->face_normal(f, false, cells[0], &dir);
-    shift = Operators::UniqueIndexFaceToCells(*mesh_domain_, f, cells[0]);
-
-    for (int k = 0; k < ncells; ++k) {
-      double tmp = flux[0][first + shift] * dir;
-
-      // since we multiply by temperature, the model for the flux is
-      // q (\eta H / T) * T for both matrix and preconditioner
-      if (tmp > 0) {
-        int c1 = cells[k];
-        double factor = H_m[0][c1] * n_l_m[0][c1] / T_m[0][c1];
-        (*values1)[np] = tmp * factor;
-      } else {
-        double factor = H_f[0][c] * n_l_f[0][c] / T_f[0][c];
-        (*values2)[np] = -tmp * factor;
-      }
-
-      dir = -dir;
-      shift = 1 - shift;
-      np++;
-    }
-  }
-
-  // setup coupling operators with new data
-  adv_coupling[0]->Setup(values1, 1.0);
-  adv_coupling[0]->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-  adv_coupling[1]->Setup(values2, -1.0);
-  adv_coupling[1]->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-  adv_coupling[2]->Setup(values1, -1.0);
-  adv_coupling[2]->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-  adv_coupling[3]->Setup(values2, 1.0);
-  adv_coupling[3]->UpdateMatrices(Teuchos::null, Teuchos::null);
 }
 
 

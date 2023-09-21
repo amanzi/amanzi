@@ -48,7 +48,7 @@ CreateModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, Teuchos::Parame
       auto model = factory.Create(sublist);
       if (!model.get()) {
         Errors::Message msg;
-        msg << "Unknown model name in sublist \"" << name  << "\"";
+        msg << "Unknown model name in sublist \"" << name << "\"";
         Exceptions::amanzi_throw(msg);
       }
       model_list.push_back(model);

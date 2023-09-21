@@ -19,7 +19,8 @@ namespace Amanzi {
 /* *******************************************************************
 * Populate advective coupling fluxes
 ******************************************************************* */
-void UpdateEnthalpyCouplingFluxes(
+void
+UpdateEnthalpyCouplingFluxes(
   const Teuchos::RCP<State>& S,
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_matrix,
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_fracture,
@@ -39,7 +40,8 @@ void UpdateEnthalpyCouplingFluxes(
   S->GetEvaluator("fracture-enthalpy").Update(*S, "fracture-enthalpy");
   const auto& H_f = *S->Get<CompositeVector>("fracture-enthalpy").ViewComponent("cell", true);
   const auto& T_f = *S->Get<CompositeVector>("fracture-temperature").ViewComponent("cell", true);
-  const auto& n_l_f = *S->Get<CompositeVector>("fracture-molar_density_liquid").ViewComponent("cell", true);
+  const auto& n_l_f =
+    *S->Get<CompositeVector>("fracture-molar_density_liquid").ViewComponent("cell", true);
 
   // update coupling terms for advection
   int ncells_owned_f =

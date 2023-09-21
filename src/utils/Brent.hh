@@ -55,8 +55,7 @@ brent(F f, double a, double b, double tol, int* itr)
 
     if ((s - (3 * a + b) / 4) * (s - b) >= 0.0 ||
         (flag && std::fabs(s - b) >= std::fabs(b - c) / 2) ||
-        (!flag && std::fabs(s - b) >= std::fabs(c - d) / 2) ||
-        (flag && std::fabs(b - c) < tol) ||
+        (!flag && std::fabs(s - b) >= std::fabs(c - d) / 2) || (flag && std::fabs(b - c) < tol) ||
         (!flag && std::fabs(c - d) < tol)) {
       s = (a + b) / 2;
       flag = true;

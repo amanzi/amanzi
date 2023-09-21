@@ -361,7 +361,8 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
     Teuchos::ParameterList sublist = GetEvaluatorList(key);
     sublist.setName(key);
     // -- Insert any model parameters.
-    if (sublist.isParameter("model parameters") && sublist.isType<std::string>("model parameters")) {
+    if (sublist.isParameter("model parameters") &&
+        sublist.isType<std::string>("model parameters")) {
       std::string modelname = sublist.get<std::string>("model parameters");
       Teuchos::ParameterList modellist = GetModelParameters(modelname);
       sublist.set(modelname, modellist);
