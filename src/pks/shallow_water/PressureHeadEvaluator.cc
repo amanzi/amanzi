@@ -55,8 +55,7 @@ void PressureHeadEvaluator::Evaluate_(
   const auto& WettedArea_c = *S.Get<CompositeVector>(wetted_area_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
-  const auto& gravity = S.Get<AmanziGeometry::Point>("gravity", Tags::DEFAULT);
-  double g = -gravity[1];
+  double g = norm(S.Get<AmanziGeometry::Point>("gravity"));
   double pipeCrossSection = Pi * 0.25 * pipe_diameter_ * pipe_diameter_;
 
   int ncells = result_c.MyLength();
@@ -81,8 +80,7 @@ void PressureHeadEvaluator::EvaluatePartialDerivative_(
   const auto& WettedAngle_c = *S.Get<CompositeVector>(wetted_angle_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
-  const auto& gravity = S.Get<AmanziGeometry::Point>("gravity", Tags::DEFAULT);
-  double g = -gravity[1];
+  double g = norm(S.Get<AmanziGeometry::Point>("gravity"));
   double pipeCrossSection = Pi * 0.25 * pipe_diameter_ * pipe_diameter_;
 
   int ncells = result_c.MyLength();

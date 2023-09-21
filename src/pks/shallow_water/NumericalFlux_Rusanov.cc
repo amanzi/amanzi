@@ -36,6 +36,8 @@ NumericalFlux_Rusanov::Compute(const std::vector<double>& UL, const std::vector<
   std::vector<double> FL, FR, F(3);
 
   double hL, uL, vL, hR, uR, vR, factor;
+  //TODO: here it is using a different tolerance
+  // than the one used in ShallowWater_TI.cc
   double eps = 1.e-6;
 
   // SW conservative variables: (h, hu, hv)
