@@ -277,7 +277,7 @@ if (Trilinos_FOUND)
   endforeach()
        
   # Now update the Trilinos_LIBRARIES and INCLUDE_DIRS
-  foreach( _inc "${Trilinos_TPL_INCLUDE_DIRS}")
+  foreach(_inc ${Trilinos_TPL_INCLUDE_DIRS})
     list(APPEND Trilinos_INCLUDE_DIRS "${_inc}")
     list(REMOVE_DUPLICATES Trilinos_INCLUDE_DIRS)
   endforeach()

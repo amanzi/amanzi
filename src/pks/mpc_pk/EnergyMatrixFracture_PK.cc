@@ -23,6 +23,7 @@
 
 #include "EnergyMatrixFracture_PK.hh"
 #include "FractureInsertion.hh"
+#include "FractureInsertion_Helper.hh"
 #include "HeatDiffusionMatrixFracture.hh"
 #include "PK_MPCStrong.hh"
 #include "PK_Utils.hh"
@@ -172,7 +173,8 @@ EnergyMatrixFracture_PK::Initialize()
   fi.InitMatrixFaceToFractureCell(Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap));
   fi.SetValues(kn, 1.0);
 
-  // -- operators
+  // -- operators. They must have own pointers to global operators to be used as
+  // building blocks later.
   Teuchos::ParameterList oplist;
   auto op_coupling00 = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
                                                                     fi.get_cvs_matrix(),
@@ -209,6 +211,54 @@ EnergyMatrixFracture_PK::Initialize()
   op1->OpPushBack(op_coupling11->local_op());
   op_coupling11->Setup(fi.get_values(), 1.0);
   op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  // -- operators for enthalpy. They must have own pointers to global operators 
+  // to be used as building blocks later.
+  FractureInsertion fia(mesh_matrix_, mesh_fracture_);
+  fia.InitMatrixCellToFractureCell();
+
+  auto op_enthalpy00 = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
+                                                                    fia.get_cvs_matrix(),
+                                                                    fia.get_cvs_matrix(),
+                                                                    fia.get_inds_matrix(),
+                                                                    fia.get_inds_matrix()));
+  op0->OpPushBack(op_enthalpy00->local_op());
+  op_coupling00->global_operator()->OpPushBack(op_enthalpy00->local_op());
+  op_enthalpy00->Setup(fia.get_values(), 1.0);
+  op_enthalpy00->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  auto op_enthalpy01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
+                                                                    fia.get_cvs_matrix(),
+                                                                    fia.get_cvs_fracture(),
+                                                                    fia.get_inds_matrix(),
+                                                                    fia.get_inds_fracture()));
+  op_coupling01->global_operator()->OpPushBack(op_enthalpy01->local_op());
+  op_enthalpy01->Setup(fia.get_values(), -1.0);
+  op_enthalpy01->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  auto op_enthalpy10 = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
+                                                                    fia.get_cvs_fracture(),
+                                                                    fia.get_cvs_matrix(),
+                                                                    fia.get_inds_fracture(),
+                                                                    fia.get_inds_matrix()));
+  op_coupling10->global_operator()->OpPushBack(op_enthalpy10->local_op());
+  op_enthalpy10->Setup(fia.get_values(), -1.0);
+  op_enthalpy10->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  auto op_enthalpy11 = Teuchos::rcp(new Operators::PDE_CouplingFlux(oplist,
+                                                                    fia.get_cvs_fracture(),
+                                                                    fia.get_cvs_fracture(),
+                                                                    fia.get_inds_fracture(),
+                                                                    fia.get_inds_fracture()));
+  op1->OpPushBack(op_enthalpy11->local_op());
+  op_coupling11->global_operator()->OpPushBack(op_enthalpy11->local_op());
+  op_enthalpy11->Setup(fia.get_values(), 1.0);
+  op_enthalpy11->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  adv_coupling_ops_.push_back(op_enthalpy00);
+  adv_coupling_ops_.push_back(op_enthalpy01);
+  adv_coupling_ops_.push_back(op_enthalpy10);
+  adv_coupling_ops_.push_back(op_enthalpy11);
 
   // create global matrix
   // -- tree matrix (for other MPCs)
@@ -302,6 +352,8 @@ EnergyMatrixFracture_PK::FunctionalResidual(double t_old,
                                             Teuchos::RCP<TreeVector> f)
 {
   PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
+
+  UpdateEnthalpyCouplingFluxes(S_, mesh_matrix_, mesh_fracture_, adv_coupling_ops_);
 
   int ierr = op_matrix_->Apply(*u_new, *f, 1.0);
   AMANZI_ASSERT(!ierr);

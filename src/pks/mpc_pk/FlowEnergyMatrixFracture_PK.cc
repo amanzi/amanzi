@@ -289,12 +289,6 @@ FlowEnergyMatrixFracture_PK::Initialize()
   fia.InitMatrixCellToFractureCell();
 
   // -- operators (energy)
-  auto cvs_matrix = Teuchos::rcp(new CompositeVectorSpace());
-  cvs_matrix->SetMesh(mesh_matrix)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  auto cvs_fracture = Teuchos::rcp(new CompositeVectorSpace());
-  cvs_fracture->SetMesh(mesh_fracture)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
-
   adv_coupling_matrix_ = AddCouplingFluxes_(fia.get_cvs_matrix(),
                                             fia.get_cvs_fracture(),
                                             fia.get_inds_matrix(),

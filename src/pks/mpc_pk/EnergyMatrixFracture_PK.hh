@@ -22,6 +22,7 @@ The process kernel that couples heat conduction in matrix and fracture network.
 #include "EvaluatorIndependentFunction.hh"
 #include "EvaluatorSecondary.hh"
 #include "Key.hh"
+#include "PDE_CouplingFlux.hh"
 #include "PK_BDF.hh"
 #include "PK_MPCStrong.hh"
 #include "PK_Factory.hh"
@@ -70,6 +71,8 @@ class EnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<Operators::TreeOperator> op_matrix_, op_preconditioner_;
 
   Key heat_diffusion_to_matrix_key_;
+
+  std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>> adv_coupling_ops_;
 
   // factory registration
   static RegisteredPKFactory<EnergyMatrixFracture_PK> reg_;

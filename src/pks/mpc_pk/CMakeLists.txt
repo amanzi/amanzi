@@ -79,6 +79,7 @@ if (ENABLE_AmanziPhysicsModule)
 
   set(mpc_tree_src_files 
       FractureInsertion.cc
+      FractureInsertion_Helper.cc
       PK_MPCWeak.cc 
       PK_MPCSequential.cc 
       PK_MPCSubcycled.cc 
