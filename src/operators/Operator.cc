@@ -429,7 +429,7 @@ Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar) con
 
 
 /* ******************************************************************
-* Matvec product Y = A * X using containers
+* Matvec product Y := s * Y + A * X
 ******************************************************************* */
 int
 Operator::ApplyUnassembled(const CompositeVector& X, CompositeVector& Y, double scalar) const

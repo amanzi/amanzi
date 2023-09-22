@@ -395,12 +395,8 @@ FlowEnergyMatrixFracture_PK::FunctionalResidual(double t_old,
   PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
 
   // add contribution of coupling terms to the residual
-  TreeVector g(*f);
-
   UpdateEnthalpyCouplingFluxes(S_, mesh_domain_, mesh_fracture_, adv_coupling_matrix_);
-
-  op_tree_matrix_->Apply(*u_new, g);
-  f->Update(1.0, g, 1.0);
+  op_tree_matrix_->Apply(*u_new, *f, 1.0);
 
   // convergence control
   f->NormInf(&residual_norm_);
