@@ -171,6 +171,17 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
 }
 
 
+/* ******************************************************************
+* A first-order upwind method used in Jacobian of the form div (f(u))
+****************************************************************** */
+void
+PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                                       double (*func)(double))
+{
+  UpdateMatrices(u);
+}
+
+
 /* *******************************************************************
 * Apply boundary condition to the local matrices
 *

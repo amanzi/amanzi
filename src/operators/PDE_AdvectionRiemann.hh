@@ -70,6 +70,9 @@ class PDE_AdvectionRiemann : public PDE_Advection {
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& p) final{};
 
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                              double (*)(double)) final{};
+
   // -- generate linearized operator: new interface
   void UpdateMatrices(const std::vector<WhetStone::Polynomial>& u);
   void UpdateMatrices(double t);

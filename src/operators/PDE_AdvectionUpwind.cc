@@ -160,6 +160,43 @@ PDE_AdvectionUpwind::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u
 }
 
 
+/* ******************************************************************
+* A first-order upwind method used in Jacobian of the form div (f(u))
+****************************************************************** */
+void
+PDE_AdvectionUpwind::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                                    double (*func)(double))
+{
+  std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
+
+  AmanziMesh::Entity_ID_List cells;
+  const Epetra_MultiVector& uf = *u->ViewComponent("face");
+
+  for (int f = 0; f < nfaces_owned; ++f) {
+    int c1 = (*upwind_cell_)[f];
+    int c2 = (*downwind_cell_)[f];
+
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+    WhetStone::DenseMatrix Aface(ncells, ncells);
+    Aface.PutScalar(0.0);
+
+    double umod = func(uf[0][f]);
+    if (c1 < 0) {
+      Aface(0, 0) = umod;
+    } else if (c2 < 0) {
+      Aface(0, 0) = umod;
+    } else {
+      int i = (cells[0] == c1) ? 0 : 1;
+      Aface(i, i) = umod;
+      Aface(1 - i, i) = -umod;
+    }
+
+    matrix[f] = Aface;
+  }
+}
+
+
 /* *******************************************************************
 * Apply boundary condition to the local matrices
 *

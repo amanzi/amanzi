@@ -170,6 +170,13 @@ class Multiphase_PK : public PK_PhysicalBDF {
   Teuchos::RCP<TreeVector> soln() { return soln_; }
   Teuchos::RCP<Operators::TreeOperator> op_tree_pc() { return op_preconditioner_; }
 
+  // debug tool
+  WhetStone::DenseMatrix FiniteDifferenceJacobian(double t_old,
+                                                  double t_new,
+                                                  Teuchos::RCP<const TreeVector> u_old,
+                                                  Teuchos::RCP<const TreeVector> u_new,
+                                                  double eps);
+
  protected:
   Teuchos::ParameterList MyRequire_(const Key& key, const std::string& owner);
 
@@ -180,13 +187,6 @@ class Multiphase_PK : public PK_PhysicalBDF {
   void PopulateSecondaryBCs_();
 
   Teuchos::RCP<CompositeVector> CreateCVforUpwind_();
-
-  // debug tool
-  WhetStone::DenseMatrix FiniteDifferenceJacobian_(double t_old,
-                                                   double t_new,
-                                                   Teuchos::RCP<const TreeVector> u_old,
-                                                   Teuchos::RCP<const TreeVector> u_new,
-                                                   double eps);
 
  protected:
   int ncells_owned_, ncells_wghost_;

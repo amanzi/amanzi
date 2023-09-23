@@ -261,16 +261,16 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
       kr_c.PutScalar(0.0);
       pde0->AddAccumulationTerm(*kr, "cell");
 
-      // initialize accumulated flux
-      flux_acc->PutScalar(0.0);
-
-      //
+      // --------------------------------------------------------------------
       // Richards-type operator for all phases, div [K f grad(g)]
       // The pair of evaluators or fields describing this equation is (f, g).
-      //
+      // --------------------------------------------------------------------
       for (int phase = 0; phase < 2; ++phase) {
         fname = eqns_[row].advection[phase].first;
         gname = eqns_[row].advection[phase].second;
+
+        // initialize accumulated flux
+        flux_acc->PutScalar(0.0);
 
         // -- diffusion operator div[ K f grad((dg/dv) dv) ]
         //    BCs are defined by the equation and must be imposed only once
@@ -314,7 +314,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
             const auto& flux = S_->Get<CompositeVector>(flux_names_[phase]);
             upwind_->Compute(flux, bcnone, *kr);
 
-            // --- calculate advective flux
+            // --- calculate advective flux from div(K kr grad g)
             S_->GetEvaluator(gname).Update(*S_, passwd_);
             auto var = S_->GetPtr<CompositeVector>(gname, Tags::DEFAULT);
 
@@ -328,12 +328,10 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
             flux_acc->Update(factor, *flux_tmp, 1.0);
           }
         }
-      }
 
-      //
-      // Molecular diffusion
-      //
-      for (int phase = 0; phase < 2; ++phase) {
+        // -------------------
+        // Molecular diffusion
+        // -------------------
         fname = eqns_[row].diffusion[phase].first;
         gname = eqns_[row].diffusion[phase].second;
 
@@ -390,14 +388,17 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
             flux_acc->Update(factor, *flux_tmp, 1.0);
           }
         }
-      }
 
-      // populate advection operator
-      auto pde1 = fac_adv_->Create(global_op);
-      pde1->Setup(*flux_acc);
-      pde1->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
-      pde1->UpdateMatrices(flux_acc.ptr());
-      pde1->ApplyBCs(false, false, false);
+        // populate advection operator. Note that upwind direction is based on
+        // the Darcy flux, but flux value is based on derivatives of coefficients
+        auto pde1 = fac_adv_->Create(global_op);
+        const auto& flux = S_->Get<CompositeVector>(flux_names_[phase]);
+        pde1->Setup(flux);
+
+        pde1->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
+        pde1->UpdateMatrices(flux_acc.ptr(), [](double x) { return x; });
+        pde1->ApplyBCs(false, false, false);
+      }
 
       // storage term
       if ((key = eqns_[row].storage) != "") {
@@ -470,7 +471,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
   }
   // op_preconditioner_->SymbolicAssembleMatrix();
   // op_preconditioner_->AssembleMatrix();
-  // auto J = FiniteDifferenceJacobian_(tp - dtp, tp, u, u, 1e-6);
+  // auto J = FiniteDifferenceJacobian(tp - dtp, tp, u, u, 1e-6);
   // std::cout << J << std::endl;
   // std::cout << *op_preconditioner_->A() << std::endl; exit(0);
 
@@ -566,17 +567,18 @@ Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const Tr
 * Debug tools
 ****************************************************************** */
 WhetStone::DenseMatrix
-Multiphase_PK::FiniteDifferenceJacobian_(double t_old,
-                                         double t_new,
-                                         Teuchos::RCP<const TreeVector> u_old,
-                                         Teuchos::RCP<const TreeVector> u_new,
-                                         double eps)
+Multiphase_PK::FiniteDifferenceJacobian(double t_old,
+                                        double t_new,
+                                        Teuchos::RCP<const TreeVector> u_old,
+                                        Teuchos::RCP<const TreeVector> u_new,
+                                        double eps)
 {
   auto f0 = Teuchos::rcp(new TreeVector(*u_old));
   auto f1 = Teuchos::rcp(new TreeVector(*u_old));
   auto u0 = Teuchos::rcp(new TreeVector(*u_old));
   auto u1 = Teuchos::rcp_const_cast<TreeVector>(u_new);
 
+  double umax;
   int nJ = 3 * ncells_owned_;
   WhetStone::DenseMatrix J(nJ, nJ);
 
@@ -591,21 +593,22 @@ Multiphase_PK::FiniteDifferenceJacobian_(double t_old,
     ChangedSolution();
 
     auto& u1_c = *u1->SubVector(n)->Data()->ViewComponent("cell");
-    double factor = eps * u1_c[0][c];
+    u1_c.NormInf(&umax);
+    double factor = eps * umax;
     if (n == 2) factor = -eps;
     if (factor == 0.0) continue;
 
     u1_c[0][c] += factor;
     FunctionalResidual(t_old, t_new, u0, u1, f1);
-    f1->Update(-1.0 / factor, *f0, 1.0 / factor);
     u1_c[0][c] -= factor;
 
     for (int nrow = 0; nrow < nJ; ++nrow) {
       int m = nrow / ncells_owned_;
       int i = nrow % ncells_owned_;
 
+      auto& f0_c = *f0->SubVector(m)->Data()->ViewComponent("cell");
       auto& f1_c = *f1->SubVector(m)->Data()->ViewComponent("cell");
-      J(nrow, ncol) = f1_c[0][i];
+      J(nrow, ncol) = (f1_c[0][i] - f0_c[0][i]) / factor;
     }
   }
 
