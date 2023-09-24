@@ -235,7 +235,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   std::vector<double> FNum_rot;        // fluxes
   std::vector<double> BedSlopeSource;  // bed slope source
   double FrictionSource = 0.0;         // friction source
-  std::vector<double> UL(4), UR(4), U; // local state vectors and wetted angle
+  std::vector<double> UL(4), UR(4);    // local state vectors and wetted angle
 
   // Simplest flux form
   // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
@@ -252,6 +252,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
     normal /= farea;
+    ProjectNormalOntoMeshDirection(c1, normal);
 
     // primary fields at the edge
     // V_rec[0]: primary variable
@@ -361,18 +362,11 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   }
 
   // sources (bathymetry, flux exchange, etc)
-  // the code should not fail after that
-  U.resize(4);
-
   for (int c = 0; c < model_cells_owned_.size(); ++c) {
     int cell = model_cells_owned_[c];  
-    U[0] = h_temp[0][cell];
-    U[1] = q_temp[0][cell];
-    U[2] = q_temp[1][cell];
-    U[3] = WettedAngle_c[0][cell];
 
     BedSlopeSource = NumericalSourceBedSlope(cell, ht_c[0][cell], B_c[0][cell], B_max[0][cell], B_n, bc_model_scalar, bc_value_h);
-    FrictionSource = NumericalSourceFriction(U[0], U[1], U[3]); 
+    FrictionSource = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], WettedAngle_c[0][cell]); 
 
     h = h_c_tmp[0][cell] + BedSlopeSource[0] + ext_S_cell[cell];
     qx = q_c_tmp[0][cell] + BedSlopeSource[1] + FrictionSource;
@@ -388,10 +382,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // so the term ext_S_cell is currently not computed at junctions cells
   for (int c = 0; c < junction_cells_owned_.size(); ++c) {
     int cell = junction_cells_owned_[c];
-    U[0] = h_temp[0][cell];
-    U[1] = q_temp[0][cell];
-    U[2] = q_temp[1][cell];
-    U[3] = WettedAngle_c[0][cell];
 
     BedSlopeSource = ShallowWater_PK::NumericalSourceBedSlope(cell, ht_c[0][cell], 
                                       B_c[0][cell], B_max[0][cell], B_n, bc_model_scalar, bc_value_h);

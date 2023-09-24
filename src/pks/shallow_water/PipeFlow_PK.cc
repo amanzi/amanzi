@@ -141,10 +141,10 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
      for (int n = 0; n < cfaces.size(); ++n) {
         int f = cfaces[n];
-        const auto& normal = mesh_->face_normal(f, false, c, &orientation);
-        // projection of normal to face on pipe direction
-        double projection = normal[0] * dir_c[0][c] + normal[1] * dir_c[1][c];
-        if (projection > 0.0){ //this identifies the j+1/2 face
+        AmanziGeometry::Point normal = mesh_->face_normal(f, false, c, &orientation);
+        ProjectNormalOntoMeshDirection(c, normal);
+
+        if (normal[0] > 1.e-08){ //this identifies the j+1/2 face
 
            AmanziMesh::Entity_ID_List cells;
            mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
@@ -153,7 +153,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
            if (c1 > ncells_owned && c2 == -1) continue;
            if (c2 > ncells_owned) std::swap(c1, c2);
 
-           BGrad = BathymetryEdgeValue(f, B_n); //B_(j+1/2)
+           BGrad += BathymetryEdgeValue(f, B_n); //B_(j+1/2)
 
            V_rec = ComputeFieldsOnEdge(c1, f, htc, Bc, Bmax, B_n);
 
@@ -165,7 +165,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
         }
 
-        else if (projection < 0.0) { //this identifies the j-1/2 face
+        else if (normal[0] < -1.e-08) { //this identifies the j-1/2 face
 
            BGrad -= BathymetryEdgeValue(f, B_n); //B_(j+1/2) - //B_(j-1/2)
 
@@ -622,12 +622,12 @@ void PipeFlow_PK::GetDx(const int &cell, double &dx)
   for (int n = 0; n < cell_faces.size(); ++n) {
      int f = cell_faces[n];
      int orient;
-     const auto& f_normal = mesh_->face_normal(f, false, cell, &orient);
-     double projection = f_normal[0] * dir_c[0][cell] + f_normal[1] * dir_c[1][cell];
-     if (projection > 0.0){
+     AmanziGeometry::Point f_normal = mesh_->face_normal(f, false, cell, &orient);
+     ProjectNormalOntoMeshDirection(cell, f_normal);
+     if (f_normal[0] > 1.e-08){
         x1 = mesh_->face_centroid(f);
      }
-     else if (projection < 0.0){
+     else if (f_normal[0] < -1.e-08){
         x2 = mesh_->face_centroid(f);
      }
   }
@@ -651,6 +651,34 @@ void PipeFlow_PK::ComputeExternalForcingOnCells(std::vector<double> &forcing){
              forcing[c] = it->second[0] / dx; // [m^2 / s] for pipe
          }
      }
+
+}
+
+//--------------------------------------------------------------
+// Project normal onto mesh direction
+//--------------------------------------------------------------
+void PipeFlow_PK::ProjectNormalOntoMeshDirection(int c, AmanziGeometry::Point &normal){
+
+   //the mesh direction is the pipe direction
+   auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, direction_key_).ViewComponent("cell", true);
+   // first find the angle between pipe direction and x-axis
+   double angle = acos(dir_c[0][c]/sqrt(dir_c[0][c]*dir_c[0][c]+dir_c[1][c]*dir_c[1][c]));
+   // then rotate the unit vectors of the reference frame according to this angle
+   std::vector<double> e1(2);
+   std::vector<double> e2(2);
+   double e1Tmp1 = 1;
+   double e1Tmp2 = 0;
+   double e2Tmp1 = 0;
+   double e2Tmp2 = 1;
+   e1[0] = e1Tmp1 * cos(angle) - e1Tmp2 * sin(angle);
+   e1[1] = e1Tmp1 * sin(angle) + e1Tmp2 * cos(angle);
+   e2[0] = e2Tmp1 * cos(angle) - e2Tmp2 * sin(angle);
+   e2[1] = e2Tmp1 * sin(angle) + e2Tmp2 * cos(angle);
+   // finally, project the normal on rotated frame
+   double nTmp1 = normal[0];
+   double nTmp2 = normal[1];
+   normal[0] = nTmp1 * e1[0] + nTmp2 * e1[1];
+   normal[1] = nTmp1 * e2[0] + nTmp2 * e2[1];
 
 }
 

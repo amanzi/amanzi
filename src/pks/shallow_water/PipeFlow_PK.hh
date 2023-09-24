@@ -71,6 +71,8 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual void ComputeCellArrays() override;
 
+  virtual void ProjectNormalOntoMeshDirection(int c, AmanziGeometry::Point &normal) override;
+
   bool IsJunction(const int & cell);
 
   virtual std::vector<double> ComputeFieldsOnEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n) override;

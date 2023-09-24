@@ -135,6 +135,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual void UpdateSecondaryFields();
 
+  virtual void ProjectNormalOntoMeshDirection(int c, AmanziGeometry::Point &normal) {};
+
   virtual double ComputeHydrostaticPressureForce (std::vector<double> SolArray){return g_ * 0.5 * SolArray[0] * SolArray[0];};
 
   void PushBackBC(Teuchos::RCP<ShallowWaterBoundaryFunction> bc){bcs_.push_back(bc);};

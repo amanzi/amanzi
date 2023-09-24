@@ -53,6 +53,8 @@ void WaterDepthEvaluator::Evaluate_(
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
+  //TODO this does not distinguish between 
+  // junction and not junction
   for (int c = 0; c != ncells; ++c) {
      if(WettedAngle_c[0][c] >= TwoPi) {
          result_c[0][c] =  pipe_diameter_;
