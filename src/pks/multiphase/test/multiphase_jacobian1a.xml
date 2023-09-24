@@ -61,10 +61,10 @@
       <ParameterList name="pressure eqn">
         <Parameter name="primary unknown" type="string" value="pressure_liquid"/>
         <Parameter name="advection liquid" type="Array(string)" value="{ advection_water, pressure_liquid }"/>
-        <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
+        <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 0.0 }"/>
 
         <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_vapor, mole_fraction_vapor }"/>
-        <Parameter name="diffusion factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
+        <Parameter name="diffusion factors" type="Array(double)" value="{ 1.0, 0.0 }"/>
 
         <Parameter name="accumulation" type="string" value="total_water_storage"/>
       </ParameterList>
@@ -256,14 +256,14 @@
           <Parameter name="discretization secondary" type="string" value="fv: default"/>
           <Parameter name="schema" type="Array(string)" value="{cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
-          <Parameter name="nonlinear coefficient" type="string" value="none"/>
+          <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
         </ParameterList>
         <ParameterList name="preconditioner">
           <Parameter name="discretization primary" type="string" value="fv: default"/>
           <Parameter name="discretization secondary" type="string" value="fv: default"/>
           <Parameter name="schema" type="Array(string)" value="{cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
-          <Parameter name="nonlinear coefficient" type="string" value="none"/>
+          <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -385,12 +385,12 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-07"/>
+                  <Parameter name="value" type="double" value="1.0e-7"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -413,7 +413,7 @@
               </ParameterList>
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>

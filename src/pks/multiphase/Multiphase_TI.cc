@@ -307,10 +307,11 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
         // -- advection operator div [ (K df/dv grad g) dv ]
         if (fname != "") {
           if (S_->HasDerivative(fname, keyc)) {
-            // --- upwind derivative
             S_->GetEvaluator(fname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
             kr_c = *S_->GetDerivative<CompositeVector>(fname, Tags::DEFAULT, keyc, Tags::DEFAULT)
                       .ViewComponent("cell");
+
+            // --- upwind derivative
             const auto& flux = S_->Get<CompositeVector>(flux_names_[phase]);
             upwind_->Compute(flux, bcnone, *kr);
 
@@ -366,7 +367,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
         }
 
         // -- advection operator div [ (df/dv grad g) dv ]
-        if (fname != "" && keyc == saturation_liquid_key_) {
+        if (fname != "") {
           if (S_->HasDerivative(fname, keyc)) {
             S_->GetEvaluator(fname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
             kr_c = *S_->GetDerivative<CompositeVector>(fname, Tags::DEFAULT, keyc, Tags::DEFAULT)
@@ -376,9 +377,10 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
             const auto& flux = S_->Get<CompositeVector>(flux_names_[phase]);
             upwind_->Compute(flux, bcnone, *kr);
 
-            // --- calculate advective flux
+            // --- calculate advective flux from div(K kr grad g)
             S_->GetEvaluator(gname).Update(*S_, passwd_);
             auto var = S_->GetPtr<CompositeVector>(gname, Tags::DEFAULT);
+
             pde_diff_D_->Setup(Teuchos::null, kr, Teuchos::null);
             pde_diff_D_->SetBCs(op_bcs_[gname], op_bcs_[gname]);
             pde_diff_D_->UpdateMatrices(Teuchos::null, Teuchos::null);

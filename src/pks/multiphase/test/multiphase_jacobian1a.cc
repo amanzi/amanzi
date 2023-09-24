@@ -121,7 +121,7 @@ TEST(MULTIPHASE_MODEL_I)
     field->SetData(S->GetPtrW<CompositeVector>(name, Tags::DEFAULT, passwd));
   }
 
-  double tol(2e-6);
+  double tol(2e-5);
   auto Jfd = MPK->FiniteDifferenceJacobian(0.0, dt, u1, u1, tol);
   int nJ = Jfd.NumRows();
 
@@ -151,7 +151,7 @@ TEST(MULTIPHASE_MODEL_I)
   }
 
   int ib, ie, jb, je;
-  WhetStone::DenseMatrix norm_fd(3, 3), norm_pk(3, 3), norm_diff(3, 3);
+  WhetStone::DenseMatrix norm_fd(3, 3), norm_pk(3, 3), norm_diff(3, 3), rel_diff(3, 3);
 
   auto diff = Jfd - Jpk;
   for (int i = 0; i < 3; ++i) {
@@ -165,8 +165,11 @@ TEST(MULTIPHASE_MODEL_I)
       norm_pk(i, j) = Jpk.SubMatrix(ib, ie, jb, je).Norm2();
       norm_diff(i, j) = diff.SubMatrix(ib, ie, jb, je).Norm2();
 
-      // if (i == 1 && j == 2) { std::cout << Jpk.SubMatrix(ib, ie, jb, je) << std::endl; exit(0); }
-      if (norm_pk(i, j) > 0.0 && j > 0) CHECK(norm_diff(i, j) / norm_pk(i, j) < 1e-2);
+      // if (i == 0 && j == 0) { std::cout << Jpk.SubMatrix(ib, ie, jb, je) << std::endl; exit(0); }
+      if (norm_pk(i, j) > 0.0) {
+        rel_diff(i, j) = norm_diff(i, j) / norm_pk(i, j);
+        CHECK(rel_diff(i, j) < 1e-2);
+      }
     }
   }
 
@@ -178,4 +181,7 @@ TEST(MULTIPHASE_MODEL_I)
 
   std::cout << "Difference of Jacobians:" << std::endl;
   PrintMatrix(norm_diff, "%12.5g");
+
+  std::cout << "Relative Difference:" << std::endl;
+  PrintMatrix(rel_diff, "%12.5g");
 }
