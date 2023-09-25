@@ -141,7 +141,6 @@
         <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
         <nonlinear_tolerance>1.0e-12</nonlinear_tolerance>
         <error_control_options>pressure</error_control_options>
-        <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
         <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
         <max_divergent_iterations>3</max_divergent_iterations>
         <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
@@ -153,7 +152,6 @@
         <max_iterations>15</max_iterations>
         <limit_iterations>20</limit_iterations>
         <nonlinear_tolerance>1.0e-12</nonlinear_tolerance>
-        <nonlinear_iteration_damping_factor>1.0</nonlinear_iteration_damping_factor>
         <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
         <max_divergent_iterations>3</max_divergent_iterations>
         <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>

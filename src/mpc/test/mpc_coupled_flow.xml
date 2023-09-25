@@ -462,7 +462,6 @@
             </ParameterList>                        
           </ParameterList>
 
-          <Parameter name="nonlinear iteration damping factor" type="double" value="1.0e+00"/>
           <Parameter name="freeze preconditioner" type="bool" value="true"/>
           <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>

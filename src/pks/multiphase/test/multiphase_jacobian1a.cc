@@ -63,7 +63,7 @@ TEST(MULTIPHASE_MODEL_I)
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, X1, 20.0, 20, 2);
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, X1, 20.0, 40, 4);
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -172,6 +172,7 @@ TEST(MULTIPHASE_MODEL_I)
       }
     }
   }
+  // std::cout << Jpk << std::endl; exit(0);
 
   std::cout << "Finite difference Jacobian, norms of blocks:" << std::endl;
   PrintMatrix(norm_fd, "%12.5g");

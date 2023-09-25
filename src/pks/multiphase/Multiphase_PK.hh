@@ -162,6 +162,9 @@ class Multiphase_PK : public PK_PhysicalBDF {
   // the value of the solution in state.
   virtual void ChangedSolution() override;
 
+  // -- returns the number of linear iterations.
+  virtual int ReportStatistics() override { return num_ls_itrs_; }
+
   // multiphase submodels
   void PopulateBCs(int icomp, bool flag);
   void CheckCompatibilityBCs(const Key& keyr, const Key& gname);
@@ -282,7 +285,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
   // time integration
-  int num_itrs_;
+  int num_ls_itrs_, num_ns_itrs_;
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae_;
 
   // miscaleneous

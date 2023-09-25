@@ -495,6 +495,7 @@ Multiphase_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RC
   Y->PutScalar(0.0);
   // return op_preconditioner_->ApplyInverse(*X, *Y);
   int ok = op_pc_solver_->ApplyInverse(*X, *Y);
+  num_ls_itrs_ += op_pc_solver_->num_itrs();
   return ok;
 }
 

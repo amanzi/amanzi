@@ -166,7 +166,6 @@
         </ParameterList>
         <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
         <Parameter name="extrapolate initial guess" type="bool" value="false"/>
-        <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
         <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
         <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
         <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>

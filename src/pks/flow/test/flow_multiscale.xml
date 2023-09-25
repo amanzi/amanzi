@@ -411,7 +411,6 @@
 	  <Parameter name="extrapolate initial guess" type="bool" value="true"/>
 	  <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
 	  <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
-	  <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
 	  <ParameterList name="verbose object">
 	    <Parameter name="verbosity level" type="string" value="high"/>
 	  </ParameterList>

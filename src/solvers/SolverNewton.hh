@@ -258,7 +258,6 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
 
     // Update the preconditioner.
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Updating preconditioner" << std::endl;
-    pc_calls_++;
     fn_->UpdatePreconditioner(u);
 
     // Apply the preconditioner to the nonlinear residual.

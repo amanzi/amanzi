@@ -237,8 +237,7 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   }
 
   {
-    std::vector<std::string> options({ "nonlinear_iteration_damping_factor",
-                                       "restart_tolerance_relaxation_factor",
+    std::vector<std::string> options({ "restart_tolerance_relaxation_factor",
                                        "restart_tolerance_relaxation_factor_damping" });
     for (auto opt : options) {
       node = GetUniqueElementByTagsString_(controls + ", " + opt, flag);

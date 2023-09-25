@@ -63,7 +63,7 @@ Multiphase_PK::Multiphase_PK(Teuchos::ParameterList& pk_tree,
                              const Teuchos::RCP<Teuchos::ParameterList>& glist,
                              const Teuchos::RCP<State>& S,
                              const Teuchos::RCP<TreeVector>& soln)
-  : passwd_(""), soln_(soln), num_phases_(2), op_pc_assembled_(false), glist_(glist), num_itrs_(0)
+  : passwd_(""), soln_(soln), num_phases_(2), op_pc_assembled_(false), glist_(glist)
 {
   S_ = S;
 
@@ -82,6 +82,10 @@ Multiphase_PK::Multiphase_PK(Teuchos::ParameterList& pk_tree,
 
   // computational domain
   domain_ = mp_list_->template get<std::string>("domain name", "domain");
+
+  // misc variables
+  num_ns_itrs_ = 0;
+  num_ls_itrs_ = 0;
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = mp_list_->sublist("verbose object");
@@ -885,11 +889,11 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   for (int i = 0; i < ncopy; ++i) { copies.push_back(S_->Get<CV_t>(copy_names[i])); }
 
   // initialization
-  if (num_itrs_ == 0) {
+  if (num_ns_itrs_ == 0) {
     auto udot = Teuchos::rcp(new TreeVector(*soln_));
     udot->PutScalar(0.0);
     bdf1_dae_->SetInitialState(t_old, soln_, udot);
-    num_itrs_++;
+    num_ns_itrs_++;
   }
 
   // update fields from previous time step
@@ -923,7 +927,7 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   ChangedSolution();
 
   dt_ = dt_next_;
-  num_itrs_++;
+  num_ns_itrs_++;
 
   return failed;
 }
