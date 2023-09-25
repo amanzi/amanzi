@@ -60,8 +60,8 @@ class PDE_AdvectionUpwind : public PDE_Advection {
 
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u) override;
 
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              double (*)(double)) override;
+  virtual void
+  UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u, double (*)(double)) override;
 
   // -- determine advected flux of potential u
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,

@@ -43,8 +43,8 @@ class PDE_AdvectionUpwindDFN : public PDE_AdvectionUpwind {
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& dhdT) override;
 
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              double (*)(double)) override;
+  virtual void
+  UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u, double (*)(double)) override;
 
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
                           const Teuchos::Ptr<const CompositeVector>& u,

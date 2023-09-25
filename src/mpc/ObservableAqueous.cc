@@ -261,14 +261,15 @@ ObservableAqueous::ComputeObservation(State& S,
     //   *value = od.begin()->(*value) * (*volume) - (*value);
     // }
   } else if (variable_ == "aqueous mass flow rate" || variable_ == "aqueous volumetric flow rate") {
-    Key vol_flowrate_key = Keys::getKey(domain_, "volumetric_flow_rate");
-    Teuchos::RCP<const Epetra_MultiVector> aperture_rcp;
-    const auto& flowrate = *S.Get<CompositeVector>(vol_flowrate_key).ViewComponent("face");
-    double rho = S.Get<double>("const_fluid_density");
+    std::string tmp =
+      (variable_ == "aqueous mass flow rate") ? "molar_flow_rate" : "volumetric_flow_rate";
+    Key key = Keys::getKey(domain_, tmp);
+    const auto& flowrate = *S.Get<CompositeVector>(key).ViewComponent("face");
 
+    Teuchos::RCP<const Epetra_MultiVector> aperture_rcp;
     if (domain_ == "fracture")
       aperture_rcp = S.Get<CompositeVector>("fracture-aperture").ViewComponent("cell");
-    const auto& fmap = *S.Get<CompositeVector>(vol_flowrate_key).Map().Map("face", true);
+    const auto& fmap = *S.Get<CompositeVector>(key).Map().Map("face", true);
     Amanzi::AmanziMesh::Entity_ID_List cells;
 
     if (obs_boundary_ == 1) { // observation is on a boundary set
@@ -282,12 +283,8 @@ ObservableAqueous::ComputeObservation(State& S,
         double scale = 1.0;
         if (domain_ == "fracture") scale = (*aperture_rcp)[0][c];
 
-        double tmp(1.0);
-        if (variable_ == "aqueous mass flow rate")
-          tmp = (rho_c.get()) ? (*rho_c)[0][c] / CommonDefs::MOLAR_MASS_H2O : rho;
-
         int g = fmap.FirstPointInElement(f);
-        *value += sign * flowrate[0][g] * tmp * scale;
+        *value += sign * flowrate[0][g];
         *volume += area * scale;
       }
     } else if (obs_planar_) { // observation is on an interior planar set
@@ -303,12 +300,8 @@ ObservableAqueous::ComputeObservation(State& S,
         double scale = 1.0;
         if (domain_ == "fracture") scale = (*aperture_rcp)[0][c];
 
-        double tmp(1.0);
-        if (variable_ == "aqueous mass flow rate")
-          tmp = (rho_c.get()) ? (*rho_c)[0][c] / CommonDefs::MOLAR_MASS_H2O : rho;
-
         int g = fmap.FirstPointInElement(f);
-        *value += sign * flowrate[0][g] * tmp * scale;
+        *value += sign * flowrate[0][g];
         *volume += area * scale;
       }
     } else {
