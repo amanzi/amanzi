@@ -31,7 +31,7 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual void Setup() override;
 
-  virtual double NumericalSourceFriction(double h, double qx, double WettedAngle) override;
+  virtual double NumericalSourceFriction(double h, double qx, double qy, double WettedAngle, int component) override;
 
   virtual std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc, 
                                                       double Bmax, const Epetra_MultiVector& B_n, 

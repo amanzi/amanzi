@@ -52,9 +52,11 @@ void WaterDepthEvaluator::Evaluate_(
   const auto& WettedAngle_c = *S.Get<CompositeVector>(wetted_angle_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
+  //TODO: this evaluator only makes sense for a pipe with no junction
+  // it is currently not implemented to consider the presence of a junction
+  // in such a case, it is better to look at the total depth
+
   int ncells = result_c.MyLength();
-  //TODO this does not distinguish between 
-  // junction and not junction
   for (int c = 0; c != ncells; ++c) {
      if(WettedAngle_c[0][c] >= TwoPi) {
          result_c[0][c] =  pipe_diameter_;

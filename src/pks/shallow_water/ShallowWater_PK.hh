@@ -119,7 +119,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
                                                       double Bmax, const Epetra_MultiVector& B_n,
                                                       std::vector<int> bc_model, std::vector<double> bc_value_h); 
 
-  virtual double NumericalSourceFriction(double h, double qx, double WettedAngle){return 0.0;};
+  virtual double NumericalSourceFriction(double h, double qx, double qy, double WettedAngle, int component){return 0.0;};
 
   virtual double ComputeWaterDepth(double WettedAngle){return 0.0;};
 

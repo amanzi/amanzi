@@ -96,15 +96,29 @@ void PipeFlow_PK::Setup()
 //--------------------------------------------------------------------
 // Discretization of the friction source term
 //--------------------------------------------------------------------
-double PipeFlow_PK::NumericalSourceFriction(double h, double qx, double WettedAngle)
+double PipeFlow_PK::NumericalSourceFriction(double h, double qx, double qy, double WettedAngle, int component)
 {
 
   double S1 = 0.0;
+  double num = 0.0;
+
   if (std::fabs(h) > 1.e-10) { //we have to raise this to the power of 7/3 below so the tolerance needs to be stricter
-     double WettedPerimeter = 0.5 * pipe_diameter_ * WettedAngle;
-     double num = - g_ * Manning_coeff_ * Manning_coeff_ * pow(WettedPerimeter, 4.0/3.0) * std::fabs(qx) * qx;
-     double denom = pow( h, 7.0/3.0);
-     S1 = num / denom;
+     if (WettedAngle >= 0.0){  
+        double WettedPerimeter = 0.5 * pipe_diameter_ * WettedAngle;
+        num = - g_ * Manning_coeff_ * Manning_coeff_ * pow(WettedPerimeter, 4.0/3.0) * std::fabs(qx) * qx;
+        double denom = pow( h, 7.0/3.0);
+        S1 = num / denom;
+     }
+     else{ //junction
+        if(component == 0){ 
+           num = - g_ * Manning_coeff_ * Manning_coeff_ * qx * sqrt(qx*qx + qy*qy);
+        }
+        else{
+           num = - g_ * Manning_coeff_ * Manning_coeff_ * qy * sqrt(qx*qx + qy*qy);
+        }
+        double denom = pow( h, 7.0/3.0);
+        S1 = num / denom;
+     }
   }
 
   return S1;

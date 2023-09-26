@@ -233,9 +233,12 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   AmanziMesh::Entity_ID_List cells;
 
   std::vector<double> FNum_rot;        // fluxes
+  std::vector<double> FNum_rotTmp;        // fluxes
   std::vector<double> BedSlopeSource;  // bed slope source
-  double FrictionSource = 0.0;         // friction source
+  double FrictionSourceX = 0.0;         // friction source
+  double FrictionSourceY = 0.0;         // friction source
   std::vector<double> UL(4), UR(4);    // local state vectors and wetted angle
+  std::vector<double> ULTmp(4), URTmp(4); // tmp arrays for junction coupling  
 
   // Simplest flux form
   // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
@@ -243,6 +246,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   for (int f = 0; f < nfaces_wghost; ++f) {
     double farea = mesh_->face_area(f);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    bool c1IsJunction = false;
+    bool c2IsJunction = false;
 
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     c1 = cells[0];
@@ -250,13 +255,36 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     if (c1 > ncells_owned && c2 == -1) continue;
     if (c2 > ncells_owned) std::swap(c1, c2);
 
+    // we need to check that shallow_water_model_== 0 because
+    // the wetted angle is initialized to -1 for the SW PK
+    // since the numerical flux implements the SW physical flux
+    // if the wetted angle is -1. Though in the SW model junctions
+    // do not exist so neither c1 nor c2 can be flagged as junctions
+    if(shallow_water_model_== 0 && c2 != -1 && WettedAngle_c[0][c1] < 0.0){
+       c1IsJunction = true;
+       // this also implies
+       // c2 is next to the junction
+    }
+
+    if(shallow_water_model_ == 0 && c2 != -1 && WettedAngle_c[0][c2] < 0.0){
+       c2IsJunction = true;
+       // this also implies
+       // c1 is next to the junction
+       // not that junctions are asumed to NOT be boundary cells at the moment
+    }
+
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
     normal /= farea;
-    ProjectNormalOntoMeshDirection(c1, normal);
+    // If we have a junction (wetted angle = -1), we do not need to rotate
+    // the normal vectors because both entries are 0, and also because
+    // I believe SW is a 2D model and so we do not need to worry about mesh direction
+    if(WettedAngle_c[0][c1] >= 0.0){
+       ProjectNormalOntoMeshDirection(c1, normal);
+    }
 
     // primary fields at the edge
     // V_rec[0]: primary variable
-    // V_rec[1]: wetted angle (for pipe)
+    // V_rec[1]: wetted angle 
     std::vector<double> V_rec(2,0.0);
 
     V_rec = ComputeFieldsOnEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
@@ -280,6 +308,60 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     UL[1] = V_rec[0] * vn;
     UL[2] = V_rec[0] * vt;
     UL[3] = V_rec[1]; 
+
+    // if c2 is a junction, c1 is next to a junction
+    if (c2IsJunction) {
+      //this is to fill ULTmp and use it for the junction cell c2
+      // we are taking the info from the pipe cell c1
+      // but will employ the numerical flux for SW
+      // so units are the same and lake at rest will be preserved
+
+      V_rec[1] = - 1.0;
+      V_rec[0] = std::max( (TotalDepthEdgeValue(c1, f, ht_c[0][c1],  B_c[0][c1],  B_max[0][c1], B_n) - BathymetryEdgeValue(f, B_n)), 0.0);
+
+      ierr = ErrorDiagnostics_(t, c1, V_rec[0]);
+      if (ierr < 0) break;
+
+      qx_rec = discharge_x_grad_->getValue(c1, xf);
+      qy_rec = discharge_y_grad_->getValue(c1, xf);
+
+      factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
+
+      vx_rec = factor * qx_rec;
+      vy_rec = factor * qy_rec;
+
+      vn = vx_rec * normal[0] + vy_rec * normal[1];
+      vt = -vx_rec * normal[1] + vy_rec * normal[0];
+
+      ULTmp[0] = V_rec[0];
+      ULTmp[1] = V_rec[0] * vn;
+      ULTmp[2] = V_rec[0] * vt;
+      ULTmp[3] = V_rec[1];
+    }
+    if (c1IsJunction) {
+        V_rec = ComputeFieldsOnEdge(c1, f, ht_c[0][c2], B_c[0][c1], B_max[0][c1], B_n);
+        V_rec[1] = ComputeWettedAngle(V_rec[0]);
+        V_rec[0] = ComputeWettedArea(V_rec[1]);
+
+        ierr = ErrorDiagnostics_(t, c1, V_rec[0]);
+        if (ierr < 0) break;
+
+        qx_rec = discharge_x_grad_->getValue(c1, xf);
+        qy_rec = discharge_y_grad_->getValue(c1, xf);
+
+        factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
+
+        vx_rec = factor * qx_rec;
+        vy_rec = factor * qy_rec;
+
+        vn = vx_rec * normal[0] + vy_rec * normal[1];
+        vt = -vx_rec * normal[1] + vy_rec * normal[0];
+
+        ULTmp[0] = V_rec[0];
+        ULTmp[1] = V_rec[0] * vn;
+        ULTmp[2] = V_rec[0] * vt;
+        ULTmp[3] = V_rec[1];
+    }
 
     if (c2 == -1) {
       if (bc_model_scalar[f] == Operators::OPERATOR_BC_DIRICHLET) {
@@ -324,9 +406,68 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       UR[1] = V_rec[0] * vn;
       UR[2] = V_rec[0] * vt;
       UR[3] = V_rec[1];
+
+      if (c2IsJunction) {
+        //this is to fill URTmp and use it for cell c1
+        // we are taking the info from the junction cell c2
+        // but will employ the numerical flux for the pipe
+        // so units are the same and lake at rest will be preserved
+        V_rec = ComputeFieldsOnEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
+        V_rec[1] = ComputeWettedAngle(V_rec[0]);
+        V_rec[0] = ComputeWettedArea(V_rec[1]);
+
+        ierr = ErrorDiagnostics_(t, c2, V_rec[0]);
+        if (ierr < 0) break;
+
+        qx_rec = discharge_x_grad_->getValue(c2, xf);
+        qy_rec = discharge_y_grad_->getValue(c2, xf);
+
+        factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
+
+        vx_rec = factor * qx_rec;
+        vy_rec = factor * qy_rec;
+
+        vn = vx_rec * normal[0] + vy_rec * normal[1];
+        vt = -vx_rec * normal[1] + vy_rec * normal[0];
+
+        URTmp[0] = V_rec[0];
+        URTmp[1] = V_rec[0] * vn;
+        URTmp[2] = V_rec[0] * vt;
+        URTmp[3] = V_rec[1];
+      }
+      if (c1IsJunction) {
+
+         V_rec[1] = - 1.0;
+         V_rec[0] = std::max( (TotalDepthEdgeValue(c2, f, ht_c[0][c2],  B_c[0][c2],  B_max[0][c2], B_n) - BathymetryEdgeValue(f, B_n)), 0.0);
+
+         ierr = ErrorDiagnostics_(t, c2, V_rec[0]);
+         if (ierr < 0) break;
+
+         qx_rec = discharge_x_grad_->getValue(c2, xf);
+         qy_rec = discharge_y_grad_->getValue(c2, xf);
+
+         factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
+
+         vx_rec = factor * qx_rec;
+         vy_rec = factor * qy_rec;
+
+         vn = vx_rec * normal[0] + vy_rec * normal[1];
+         vt = -vx_rec * normal[1] + vy_rec * normal[0];
+
+         URTmp[0] = V_rec[0];
+         URTmp[1] = V_rec[0] * vn;
+         URTmp[2] = V_rec[0] * vt;
+         URTmp[3] = V_rec[1];
+      }
+
     }
 
     FNum_rot = numerical_flux_->Compute(UL, UR);
+ 
+    if (c1IsJunction || c2IsJunction) {
+    FNum_rot = numerical_flux_->Compute(UL, URTmp);
+    FNum_rotTmp = numerical_flux_->Compute(ULTmp, UR);
+    }
 
     h = FNum_rot[0];
     qx = FNum_rot[1] * normal[0] - FNum_rot[2] * normal[1];
@@ -343,11 +484,27 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     q_c_tmp[1][c1] -= qy * factor;
 
     if (c2 != -1) {
-      vol = mesh_->cell_volume(c2);
-      factor = farea / vol;
-      h_c_tmp[0][c2] += h * factor;
-      q_c_tmp[0][c2] += qx * factor;
-      q_c_tmp[1][c2] += qy * factor;
+      if(!c1IsJunction && !c2IsJunction){  
+         vol = mesh_->cell_volume(c2);
+         factor = farea / vol;
+         h_c_tmp[0][c2] += h * factor;
+         q_c_tmp[0][c2] += qx * factor;
+         q_c_tmp[1][c2] += qy * factor;
+      }
+
+      else { 
+
+        h = FNum_rotTmp[0];
+        qx = FNum_rotTmp[1] * normal[0] - FNum_rotTmp[2] * normal[1];
+        qy = FNum_rotTmp[1] * normal[1] + FNum_rotTmp[2] * normal[0];
+        vol = mesh_->cell_volume(c2);
+        factor = farea / vol;
+        h_c_tmp[0][c2] += h * factor;
+        q_c_tmp[0][c2] += qx * factor;
+        q_c_tmp[1][c2] += qy * factor;
+
+      }
+
     }
   }
 
@@ -366,10 +523,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     int cell = model_cells_owned_[c];  
 
     BedSlopeSource = NumericalSourceBedSlope(cell, ht_c[0][cell], B_c[0][cell], B_max[0][cell], B_n, bc_model_scalar, bc_value_h);
-    FrictionSource = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], WettedAngle_c[0][cell]); 
+    FrictionSourceX = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 0); 
 
     h = h_c_tmp[0][cell] + BedSlopeSource[0] + ext_S_cell[cell];
-    qx = q_c_tmp[0][cell] + BedSlopeSource[1] + FrictionSource;
+    qx = q_c_tmp[0][cell] + BedSlopeSource[1] + FrictionSourceX;
     qy = q_c_tmp[1][cell] + BedSlopeSource[2];
 
     f_temp0[0][cell] = h;
@@ -386,13 +543,17 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     BedSlopeSource = ShallowWater_PK::NumericalSourceBedSlope(cell, ht_c[0][cell], 
                                       B_c[0][cell], B_max[0][cell], B_n, bc_model_scalar, bc_value_h);
 
+    FrictionSourceX = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 0);
+    FrictionSourceY = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 1);
+
     h = h_c_tmp[0][cell] + BedSlopeSource[0];
-    qx = q_c_tmp[0][cell] + BedSlopeSource[1];
-    qy = q_c_tmp[1][cell] + BedSlopeSource[2];
+    qx = q_c_tmp[0][cell] + BedSlopeSource[1] + FrictionSourceX;
+    qy = q_c_tmp[1][cell] + BedSlopeSource[2] + FrictionSourceY;
 
     f_temp0[0][cell] = h;
     f_temp1[0][cell] = qx;
     f_temp1[1][cell] = qy;
+
   }
 
 }
