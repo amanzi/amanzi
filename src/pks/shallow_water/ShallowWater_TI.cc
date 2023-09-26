@@ -274,12 +274,24 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     }
 
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
+    AmanziGeometry::Point normalNotRotated = mesh_->face_normal(f, false, c1, &dir);
+    AmanziGeometry::Point normalRotated = mesh_->face_normal(f, false, c1, &dir);
     normal /= farea;
+    normalNotRotated /= farea;
+    normalRotated /= farea;
     // If we have a junction (wetted angle = -1), we do not need to rotate
     // the normal vectors because both entries are 0, and also because
     // I believe SW is a 2D model and so we do not need to worry about mesh direction
     if(WettedAngle_c[0][c1] >= 0.0){
+       // this is if c1 is not a junction 
        ProjectNormalOntoMeshDirection(c1, normal);
+       ProjectNormalOntoMeshDirection(c1, normalRotated);
+    }
+    else {
+       // this is if c1 is a junction 
+       // we consider the mesh direction of c2 to be 
+       // the same as c1 is c1 is a junction
+       ProjectNormalOntoMeshDirection(c2, normalRotated);
     }
 
     // primary fields at the edge
@@ -311,7 +323,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     // if c2 is a junction, c1 is next to a junction
     if (c2IsJunction) {
-      //this is to fill ULTmp and use it for the junction cell c2
+      // this is to fill ULTmp and use it for the junction cell c2
       // we are taking the info from the pipe cell c1
       // but will employ the numerical flux for SW
       // so units are the same and lake at rest will be preserved
@@ -330,8 +342,11 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       vx_rec = factor * qx_rec;
       vy_rec = factor * qy_rec;
 
-      vn = vx_rec * normal[0] + vy_rec * normal[1];
-      vt = -vx_rec * normal[1] + vy_rec * normal[0];
+      // the normal "normal" has been rotated since c1 is not
+      // a junction (WettedAngle >=0) hence we need
+      // to use the one that has not been rotated "normalNotRotated"
+      vn = vx_rec * normalNotRotated[0] + vy_rec * normalNotRotated[1];
+      vt = -vx_rec * normalNotRotated[1] + vy_rec * normalNotRotated[0];
 
       ULTmp[0] = V_rec[0];
       ULTmp[1] = V_rec[0] * vn;
@@ -354,8 +369,11 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         vx_rec = factor * qx_rec;
         vy_rec = factor * qy_rec;
 
-        vn = vx_rec * normal[0] + vy_rec * normal[1];
-        vt = -vx_rec * normal[1] + vy_rec * normal[0];
+        // since c1 is a junction, the normal "normal"
+        // was not rotated but for the pipe, we need the rotated
+        // normal so we use "normalRotated"
+        vn = vx_rec * normalRotated[0] + vy_rec * normalRotated[1];
+        vt = -vx_rec * normalRotated[1] + vy_rec * normalRotated[0];
 
         ULTmp[0] = V_rec[0];
         ULTmp[1] = V_rec[0] * vn;
@@ -399,8 +417,20 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       vx_rec = factor * qx_rec;
       vy_rec = factor * qy_rec;
 
-      vn = vx_rec * normal[0] + vy_rec * normal[1];
-      vt = -vx_rec * normal[1] + vy_rec * normal[0];
+      if(c2IsJunction){
+         // we are using ULTmp and UR for c2
+         // so the normal below has to be not rotated
+         vn = vx_rec * normalNotRotated[0] + vy_rec * normalNotRotated[1];
+         vt = -vx_rec * normalNotRotated[1] + vy_rec * normalNotRotated[0];
+      }
+      else{
+         // this is for the case where c1 is a junction
+         // or no junction. Note that in the case of no
+         // junction "normal" and "normalRotated" are the same
+         vn = vx_rec * normalRotated[0] + vy_rec * normalRotated[1];
+         vt = -vx_rec * normalRotated[1] + vy_rec * normalRotated[0];
+
+      }
 
       UR[0] = V_rec[0];
       UR[1] = V_rec[0] * vn;
@@ -408,7 +438,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       UR[3] = V_rec[1];
 
       if (c2IsJunction) {
-        //this is to fill URTmp and use it for cell c1
+        // this is to fill URTmp and use it for cell c1
         // we are taking the info from the junction cell c2
         // but will employ the numerical flux for the pipe
         // so units are the same and lake at rest will be preserved
@@ -427,6 +457,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         vx_rec = factor * qx_rec;
         vy_rec = factor * qy_rec;
 
+        // since c1 is not a junction, normal has
+        // been rotated, so we can use "normal"
         vn = vx_rec * normal[0] + vy_rec * normal[1];
         vt = -vx_rec * normal[1] + vy_rec * normal[0];
 
@@ -451,6 +483,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
          vx_rec = factor * qx_rec;
          vy_rec = factor * qy_rec;
 
+         // since c1 is a junction, normal has not been
+         // rotated, so we can use "normal"
          vn = vx_rec * normal[0] + vy_rec * normal[1];
          vt = -vx_rec * normal[1] + vy_rec * normal[0];
 
@@ -484,6 +518,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     q_c_tmp[1][c1] -= qy * factor;
 
     if (c2 != -1) {
+
       if(!c1IsJunction && !c2IsJunction){  
          vol = mesh_->cell_volume(c2);
          factor = farea / vol;
@@ -491,18 +526,21 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
          q_c_tmp[0][c2] += qx * factor;
          q_c_tmp[1][c2] += qy * factor;
       }
-
       else { 
-
         h = FNum_rotTmp[0];
-        qx = FNum_rotTmp[1] * normal[0] - FNum_rotTmp[2] * normal[1];
-        qy = FNum_rotTmp[1] * normal[1] + FNum_rotTmp[2] * normal[0];
+        if(c2IsJunction){
+          qx = FNum_rotTmp[1] * normalNotRotated[0] - FNum_rotTmp[2] * normalNotRotated[1];
+          qy = FNum_rotTmp[1] * normalNotRotated[1] + FNum_rotTmp[2] * normalNotRotated[0];
+        }
+        else{ //here this else means c1 is a junction
+          qx = FNum_rotTmp[1] * normalRotated[0] - FNum_rotTmp[2] * normalRotated[1];
+          qy = FNum_rotTmp[1] * normalRotated[1] + FNum_rotTmp[2] * normalRotated[0];
+        }
         vol = mesh_->cell_volume(c2);
         factor = farea / vol;
         h_c_tmp[0][c2] += h * factor;
         q_c_tmp[0][c2] += qx * factor;
         q_c_tmp[1][c2] += qy * factor;
-
       }
 
     }
