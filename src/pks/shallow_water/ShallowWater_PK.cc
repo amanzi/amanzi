@@ -732,8 +732,6 @@ ShallowWater_PK::NumericalSourceBedSlope( int c, double htc, double Bc, double B
 
   for (int n = 0; n < cfaces.size(); ++n) {
     int f = cfaces[n];
-    // TODO: do we need to call ProjectNormalOntoMeshDirection here
-    // for when the SW cell is a junction cell?
     const auto& normal = mesh_->face_normal(f, false, c, &orientation);
 		
     double ht_rec = TotalDepthEdgeValue(c, f, htc, Bc, Bmax, B_n);
