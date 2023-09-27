@@ -28,26 +28,23 @@ make -j1 install ATS=1 SHARED=1
 
 rc=$?
 
-echo "tpl: ${TPL_INSTALL_PREFIX}"
-echo "cc: ${CC}"
-echo "cxx: ${CXX}"
-echo "f77: ${F77}"
-echo "fflags: ${FFLAGS}"
-echo "finished install"
+if [ $rc -eq 0 ]; then
+  echo "copying data to install"
+
+  cp -r /global/home/users/agraus/code/ats_dev_dir/amanzi_tpls-build-master-Debug/ecosim/ecosim--source /global/home/users/agraus/code/ats_dev_dir/amanzi_tpls-install-master-Debug
+  cd /global/home/users/agraus/code/ats_dev_dir/amanzi_tpls-install-master-Debug
+
+  mv ecosim--source/ ecosim/
+
+  cd /global/home/users/agraus/code/ats_dev_dir/amanzi_tpls-install-master-Debug/ecosim
+
+  mkdir local/lib
+
+  find . -name lib*.a -exec cp {} ./local/lib/ \;
+else
+  echo "Skipping copying data to install due to build failure."
+fi
 
 echo "make ecosim returned $rc"
-
-echo "copying data to install"
-
-cp -r @ECOSIM_source_dir@ @TPL_INSTALL_PREFIX@
-cd @TPL_INSTALL_PREFIX@
-
-mv ecosim--source/ ecosim/
-
-cd @TPL_INSTALL_PREFIX@/ecosim
-
-mkdir local/lib
-
-find . -name lib*.a -exec cp {} ./local/lib/ \;
 
 exit $rc
