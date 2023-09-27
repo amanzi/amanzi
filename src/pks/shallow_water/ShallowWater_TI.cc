@@ -354,7 +354,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       ULTmp[3] = V_rec[1];
     }
     if (c1IsJunction) {
-        V_rec = ComputeFieldsOnEdge(c1, f, ht_c[0][c2], B_c[0][c1], B_max[0][c1], B_n);
+        V_rec = ComputeFieldsOnEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
         V_rec[1] = ComputeWettedAngle(V_rec[0]);
         V_rec[0] = ComputeWettedArea(V_rec[1]);
 
