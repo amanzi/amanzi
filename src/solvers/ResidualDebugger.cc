@@ -36,8 +36,14 @@ void
 ResidualDebugger::StartIteration<TreeVectorSpace>(int attempt,
                                                   const TreeVectorSpace& space)
 {
-  int cycle = S_->Get<int>("cycle", tag_);
-  on_ = DumpRequested(cycle, S_->Get<double>("time", tag_));
+  int cycle = -1;
+  double time = 0;
+  if (S_.get()) {
+    if (S_->HasRecord("cycle", tag_))
+      cycle = S_->Get<int>("cycle", tag_);
+    time = S_->Get<double>("time", tag_);
+  }
+  on_ = DumpRequested(cycle, time);
   if (on_) {
     // iterate through the TreeVector finding leaf nodes and write them
     std::vector<Teuchos::RCP<const TreeVectorSpace>> leaves = collectTreeVectorLeaves_const(space);
