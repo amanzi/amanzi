@@ -56,6 +56,8 @@ class EvaluatorMultiplicativeReciprocal
                                           const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
+  virtual void EnsureCompatibility_Units_(State& S) override;
+
  private:
   bool enforce_positivity_;
   double coef_;

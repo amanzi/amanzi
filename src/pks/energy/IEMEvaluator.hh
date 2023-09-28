@@ -47,6 +47,8 @@ class IEMEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Composit
                                           const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
+  virtual void EnsureCompatibility_Units_(State& S) override;
+
   Teuchos::RCP<IEMPartition> iem_partition() { return iem_; }
 
   double EvaluateFieldSingle(int c, double T, double p);

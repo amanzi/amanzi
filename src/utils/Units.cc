@@ -14,6 +14,8 @@
 
 #include <string>
 
+#include "dbc.hh"
+
 #include "Units.hh"
 
 namespace Amanzi {
@@ -178,7 +180,7 @@ Units::ConvertUnitD(double val,
                     bool& flag)
 {
   // replace known complex/derived units
-  AtomicUnitForm auf = ComputeAtomicUnitForm_(in_unit, &flag);
+  AtomicUnitForm auf = StringToAtomicUnitForm_(in_unit, &flag);
 
   for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end();
        ++it) {
@@ -231,7 +233,7 @@ Units::ConvertUnitD(double val,
   if (out_unit == "SI") return tmp;
 
   // convert from default (SI) units
-  auf = ComputeAtomicUnitForm_(out_unit, &flag);
+  auf = StringToAtomicUnitForm_(out_unit, &flag);
   const UnitData& out_data = auf.data();
 
   for (it = out_data.begin(); it != out_data.end(); ++it) {
@@ -275,14 +277,17 @@ Units::ConvertUnitD(double val,
 
 
 /* ******************************************************************
-* Convert unit string
+* Convert unit string 
 ****************************************************************** */
 std::string
 Units::ConvertUnitS(const std::string& in_unit, const UnitsSystem& system)
 {
+  if (in_unit == "") return "";
+  if (in_unit == "-") return "-";
+
   // parse the input string
   bool flag;
-  AtomicUnitForm auf = ComputeAtomicUnitForm_(in_unit, &flag);
+  AtomicUnitForm auf = StringToAtomicUnitForm_(in_unit, &flag);
 
   for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end();
        ++it) {
@@ -307,6 +312,7 @@ Units::ConvertUnitS(const std::string& in_unit, const UnitsSystem& system)
       out_data[system.temperature] = it->second;
     }
   }
+  AMANZI_ASSERT(out_data.size() > 0);
 
   // create string
   std::string separator("");
@@ -324,10 +330,114 @@ Units::ConvertUnitS(const std::string& in_unit, const UnitsSystem& system)
 
 
 /* ******************************************************************
+* Multiply units
+****************************************************************** */
+std::string
+Units::MultiplyUnits(const std::string& unit1, const std::string& unit2)
+{
+  AMANZI_ASSERT(unit1 != "" && unit2 != "");
+
+  // string decoder assumes valid units, so we check for exceptions
+  if (unit1 == "-") return unit2;
+  if (unit2 == "-") return unit1;
+
+  bool flag1, flag2;
+  AtomicUnitForm auf1 = StringToAtomicUnitForm_(unit1, &flag1);
+  AtomicUnitForm auf2 = StringToAtomicUnitForm_(unit2, &flag2);
+
+  // decode complex units
+  for (auto it = derived_.begin(); it != derived_.end(); ++it) {
+    auf1.replace(it->first, it->second);
+    auf2.replace(it->first, it->second);
+  }
+
+  auto auf = MultiplyAtomicUnitForms_(auf1, auf2);
+  return AtomicUnitFormToString_(auf);
+}
+
+
+/* ******************************************************************
+* Divide units
+****************************************************************** */
+std::string
+Units::DivideUnits(const std::string& unit1, const std::string& unit2)
+{
+  AMANZI_ASSERT(unit1 != "" && unit2 != "");
+
+  // string decoder assumes valid units, so we check for exceptions
+  bool flag1, flag2;
+  if (unit2 == "-") return unit1;
+  AtomicUnitForm auf2 = StringToAtomicUnitForm_(unit2, &flag2);
+
+  if (unit1 == "-") {
+    AtomicUnitForm auf(auf2);
+    UnitData& data = auf.data();
+    for (auto it = data.begin(); it != data.end(); ++it) data[it->first] *= -1;
+    return AtomicUnitFormToString_(auf);
+  }
+  AtomicUnitForm auf1 = StringToAtomicUnitForm_(unit1, &flag1);
+
+  // decode complex units
+  for (auto it = derived_.begin(); it != derived_.end(); ++it) {
+    auf1.replace(it->first, it->second);
+    auf2.replace(it->first, it->second);
+  }
+
+  auto auf = DivideAtomicUnitForms_(auf1, auf2);
+  return AtomicUnitFormToString_(auf);
+}
+
+
+/* ******************************************************************
+* Do two unit strings desribe the same physical quantity?
+****************************************************************** */
+bool
+Units::CompareUnits(const std::string& unit1, const std::string& unit2)
+{
+  bool flag1, flag2;
+  AtomicUnitForm auf1 = StringToAtomicUnitForm_(unit1, &flag1);
+  AtomicUnitForm auf2 = StringToAtomicUnitForm_(unit2, &flag2);
+
+  for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end();
+       ++it) {
+    auf1.replace(it->first, it->second);
+    auf2.replace(it->first, it->second);
+  }
+
+  if (!flag1 || !flag2) return false;
+  return CompareAtomicUnitForms_(auf1, auf2);
+}
+
+
+/* ******************************************************************
+* Convert unit to string 
+****************************************************************** */
+std::string
+Units::AtomicUnitFormToString_(const AtomicUnitForm& auf)
+{
+  std::string separator("");
+  std::stringstream ss;
+
+  const UnitData& data = auf.data();
+  if (data.size() == 0) return "-";
+
+  for (auto it = data.begin(); it != data.end(); ++it) {
+    ss << separator << it->first;
+
+    int i = it->second;
+    if (i != 1) { ss << "^" << i; }
+    separator = "*";
+  }
+
+  return ss.str();
+}
+
+
+/* ******************************************************************
 * Parse unit
 ****************************************************************** */
 AtomicUnitForm
-Units::ComputeAtomicUnitForm_(const std::string& unit, bool* flag)
+Units::StringToAtomicUnitForm_(const std::string& unit, bool* flag)
 {
   *flag = true;
 
@@ -418,23 +528,37 @@ Units::CompareAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnitForm&
 
 
 /* ******************************************************************
-* Do two unit strings desribe the same physical quantity?
+* Multiple lower-level representations of units
 ****************************************************************** */
-bool
-Units::CompareUnits(const std::string& unit1, const std::string& unit2)
+AtomicUnitForm
+Units::MultiplyAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnitForm& auf2)
 {
-  bool flag1, flag2;
-  AtomicUnitForm auf1 = ComputeAtomicUnitForm_(unit1, &flag1);
-  AtomicUnitForm auf2 = ComputeAtomicUnitForm_(unit2, &flag2);
+  AtomicUnitForm auf(auf1);
+  UnitData& data = auf.data();
+  const UnitData& data2 = auf2.data();
 
-  for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end();
-       ++it) {
-    auf1.replace(it->first, it->second);
-    auf2.replace(it->first, it->second);
+  for (auto it = data2.begin(); it != data2.end(); ++it) { data[it->first] += it->second; }
+
+  return auf;
+}
+
+
+/* ******************************************************************
+* Divie lower-level representations of units
+****************************************************************** */
+AtomicUnitForm
+Units::DivideAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnitForm& auf2)
+{
+  AtomicUnitForm auf(auf1);
+  UnitData& data = auf.data();
+  const UnitData& data2 = auf2.data();
+
+  for (auto it = data2.begin(); it != data2.end(); ++it) {
+    data[it->first] -= it->second;
+    if (data[it->first] == 0) data.erase(it->first);
   }
 
-  if (!flag1 || !flag2) return false;
-  return CompareAtomicUnitForms_(auf1, auf2);
+  return auf;
 }
 
 

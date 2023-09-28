@@ -242,6 +242,11 @@ Flow_PK::Setup()
       }
     }
   }
+
+  // set units
+  S_->GetRecordSetW(vol_flowrate_key_).set_units("m^3/s");
+  S_->GetRecordSetW(permeability_key_).set_units("m^2");
+  if (flow_on_manifold_) { S_->GetRecordSetW(aperture_key_).set_units("m"); }
 }
 
 

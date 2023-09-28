@@ -516,6 +516,13 @@ Richards_PK::Setup()
     S_->GetEvaluatorPtr(pressure_key_, Tags::DEFAULT));
   vol_flowrate_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
     S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT));
+
+  // set unit
+  S_->GetRecordSetW(porosity_key_).set_units("-");
+  S_->GetRecordSetW(saturation_liquid_key_).set_units("-");
+  S_->GetRecordSetW(relperm_key_).set_units("-");
+  S_->GetRecordSetW(mol_density_liquid_key_).set_units("mol/m^3");
+  S_->GetRecordSetW(viscosity_liquid_key_).set_units("Pa*s");
 }
 
 

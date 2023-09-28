@@ -371,6 +371,11 @@ Transport_PK::Setup()
 #ifdef ALQUIMIA_ENABLED
   SetupAlquimia();
 #endif
+
+  // set units
+  S_->GetRecordSetW(porosity_key_).set_units("-");
+  S_->GetRecordSetW(saturation_liquid_key_).set_units("-");
+  if (transport_on_manifold_) { S_->GetRecordSetW(aperture_key_).set_units("m"); }
 }
 
 

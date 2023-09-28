@@ -135,6 +135,9 @@ class EvaluatorSecondaryMonotype : public EvaluatorSecondary {
                                            const std::vector<AmanziMesh::Entity_kind>& locations,
                                            const std::vector<int>& num_dofs)
   {}
+
+  // optional, anything for units
+  virtual void EnsureCompatibility_Units_(State& S){};
 };
 
 
@@ -264,6 +267,9 @@ EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility(State& S)
         << "\"";
     Exceptions::amanzi_throw(msg);
   }
+
+  // optional
+  EnsureCompatibility_Units_(S);
 }
 
 

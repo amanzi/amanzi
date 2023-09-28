@@ -121,5 +121,16 @@ TCMEvaluator_OnePhase::EvaluatePartialDerivative_(const State& S,
   }
 }
 
+
+/* ******************************************************************
+* Compatibility check is not needed at this level.
+****************************************************************** */
+void
+TCMEvaluator_OnePhase::EnsureCompatibility_Units_(State& S)
+{
+  S.GetRecordSetW(my_keys_[0].first).set_units("W/m/K");
+}
+
+
 } // namespace Energy
 } // namespace Amanzi

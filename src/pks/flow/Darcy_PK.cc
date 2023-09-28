@@ -279,6 +279,13 @@ Darcy_PK::Setup()
     S_->GetEvaluatorPtr(pressure_key_, Tags::DEFAULT));
   vol_flowrate_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
     S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT));
+
+  // set units
+  S_->GetRecordSetW(pressure_key_).set_units("Pa");
+  S_->GetRecordSetW(specific_storage_key_).set_units("m");
+  S_->GetRecordSetW(hydraulic_head_key_).set_units("m");
+  S_->GetRecordSetW(porosity_key_).set_units("-");
+  S_->GetRecordSetW(saturation_liquid_key_).set_units("-");
 }
 
 
