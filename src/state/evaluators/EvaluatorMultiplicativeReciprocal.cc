@@ -152,7 +152,7 @@ EvaluatorMultiplicativeReciprocal::EvaluatePartialDerivative_(
 
 
 /* ******************************************************************
-* Compativility
+* Units are calculated if field has none. Otherwise, units are compared.
 ****************************************************************** */
 void
 EvaluatorMultiplicativeReciprocal::EnsureCompatibility_Units_(State& S)
