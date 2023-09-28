@@ -63,7 +63,8 @@ class EvaluatorSecondary : public Evaluator {
   virtual bool IsDirectDependency(const Key& key, const Tag& tag) const;
   virtual bool IsDependency(const State& S, const Key& key, const Tag& tag) const override;
   virtual bool ProvidesKey(const Key& key, const Tag& tag) const override;
-  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override;
+  virtual bool
+  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override;
 
   virtual std::string WriteToString() const override;
 

@@ -33,14 +33,12 @@ namespace AmanziSolvers {
 // -----------------------------------------------------------------------------
 template <>
 void
-ResidualDebugger::StartIteration<TreeVectorSpace>(int attempt,
-                                                  const TreeVectorSpace& space)
+ResidualDebugger::StartIteration<TreeVectorSpace>(int attempt, const TreeVectorSpace& space)
 {
   int cycle = -1;
   double time = 0;
   if (S_.get()) {
-    if (S_->HasRecord("cycle", tag_))
-      cycle = S_->Get<int>("cycle", tag_);
+    if (S_->HasRecord("cycle", tag_)) cycle = S_->Get<int>("cycle", tag_);
     time = S_->Get<double>("time", tag_);
   }
   on_ = DumpRequested(cycle, time);
@@ -101,7 +99,8 @@ ResidualDebugger::WriteVector<TreeVector>(int iter,
           auto mesh = r_leaves[i]->Data()->Mesh();
           for (const std::string& additional_var : additional_vars_) {
             if (S_->GetMesh(Keys::getDomain(additional_var)) == mesh) {
-              const auto& vec = *S_->Get<CompositeVector>(additional_var, tag_).ViewComponent("cell", false);
+              const auto& vec =
+                *S_->Get<CompositeVector>(additional_var, tag_).ViewComponent("cell", false);
               for (int j = 0; j != vec.NumVectors(); ++j) {
                 std::stringstream my_name;
                 my_name << additional_var << ".cell." << j;

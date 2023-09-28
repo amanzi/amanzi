@@ -350,7 +350,9 @@ EvaluatorSecondary::ProvidesKey(const Key& key, const Tag& tag) const
 
 
 bool
-EvaluatorSecondary::IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const
+EvaluatorSecondary::IsDifferentiableWRT(const State& S,
+                                        const Key& wrt_key,
+                                        const Tag& wrt_tag) const
 {
   // note, provides key means the value is 1, and there may be times we have to use this value...
   if (ProvidesKey(wrt_key, wrt_tag)) return true;
@@ -362,7 +364,6 @@ EvaluatorSecondary::IsDifferentiableWRT(const State& S, const Key& wrt_key, cons
   }
   return false;
 }
-
 
 
 std::string

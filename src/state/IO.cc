@@ -69,9 +69,7 @@ WriteVis(Visualization& vis, State& S)
           // -- same time
           Tag tag;
           if (r->second->HasRecord(tag)) {
-            if (S.HasEvaluator(r->first, tag)) {
-              S.GetEvaluator(r->first, tag).Update(S, "vis");
-            }
+            if (S.HasEvaluator(r->first, tag)) { S.GetEvaluator(r->first, tag).Update(S, "vis"); }
             r->second->WriteVis(vis, &tag);
           } else {
             // try to find a record at the same time

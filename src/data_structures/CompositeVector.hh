@@ -189,7 +189,8 @@ class CompositeVector {
   }
 
   // Access the VectorSpace for each component.
-  Teuchos::RCP<const Epetra_BlockMap> ComponentMap(const std::string& name, bool ghosted = false) const
+  Teuchos::RCP<const Epetra_BlockMap>
+  ComponentMap(const std::string& name, bool ghosted = false) const
   {
     return ghosted ? ghostvec_->ComponentMap(name) : mastervec_->ComponentMap(name);
   }
@@ -205,7 +206,10 @@ class CompositeVector {
   // View entries in the vectors
   //
   // Return-by-value, this does not tag as changed.
-  double operator()(const std::string& name, int i, int j) const { return (*ghostvec_)(name, i, j); }
+  double operator()(const std::string& name, int i, int j) const
+  {
+    return (*ghostvec_)(name, i, j);
+  }
   double operator()(const std::string& name, int j) const { return (*ghostvec_)(name, 0, j); }
 
   // -- Set data. --
@@ -395,10 +399,7 @@ class CompositeVector {
   void InitData_(const CompositeVector& other, InitMode mode);
   void CreateData_();
 
-  int Index_(const std::string& name) const
-  {
-    return indexmap_.at(name);
-  }
+  int Index_(const std::string& name) const { return indexmap_.at(name); }
 
   // The Vandelay is an Importer/Exporter which allows face unknowns
   // to be spoofed as boundary face unknowns.

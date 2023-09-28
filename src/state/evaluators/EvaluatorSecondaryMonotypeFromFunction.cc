@@ -54,7 +54,8 @@ EvaluatorSecondaryMonotypeFromFunction::EvaluatorSecondaryMonotypeFromFunction(
 {
   if (dependencies_.size() == 0) {
     Errors::Message message;
-    message << "EvaluatorSecondaryMonotypeFromFunction: for " << my_keys_[0].first << " was provided no dependencies";
+    message << "EvaluatorSecondaryMonotypeFromFunction: for " << my_keys_[0].first
+            << " was provided no dependencies";
     throw(message);
   }
 
