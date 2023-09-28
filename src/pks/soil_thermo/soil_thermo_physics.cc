@@ -61,12 +61,15 @@ void Soil_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
 
   const Epetra_MultiVector& g_c = *g->ViewComponent("cell", false);
 
+  const Epetra_MultiVector& cv =
+        *S_inter_->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
+
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   //   Update the residual with the accumulation of energy over the
   //   timestep, on cells.
   for (int c = 0; c < ncells_owned; c++) {
-    g_c[0][c] += cp[0][c]*rho[0][c]/dt*(T1_c[0][c] - T0_c[0][c]);
+    g_c[0][c] += cp[0][c]*rho[0][c]/dt*(T1_c[0][c] - T0_c[0][c]) * cv[0][c];
     //      double rho0 = 1200.;
     //      double cp0 = 800./rho0;
     //      g_c[0][c] += cp0*rho0/dt*(T1_c[0][c] - T0_c[0][c]);
@@ -145,7 +148,16 @@ void Soil_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   const Epetra_MultiVector& uw_cond_c = *S_next_->GetFieldData(uw_conductivity_key_)->ViewComponent("face", false);
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
+  const Epetra_MultiVector& cv =
+      *S->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
+
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
+
+  for (int f = 0; f < nfaces_owned; f++) {
+
+    uw_cond_c[0][f] = uw_cond_c[0][f]; ///cv[0][0]; ///cv[0][0]; // ///(h_*h_) ;///cv[0][0];
+
+  }
 
   // update the stiffness matrix
   matrix_diff_->global_operator()->Init();

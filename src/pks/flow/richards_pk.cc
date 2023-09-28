@@ -86,6 +86,9 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
   sat_gas_key_ = Keys::readKey(*plist_, domain_, "saturation gas", "saturation_gas");
   sat_ice_key_ = Keys::readKey(*plist_, domain_, "saturation ice", "saturation_ice");
 
+  std::cout << "Richards, domain_ = " << domain_ << std::endl;
+  std::cout << "Richards, conserved_key_ = " << conserved_key_ << std::endl;
+
   // set up an additional primary variable evaluator for flux
   Teuchos::ParameterList& pv_sublist = S->GetEvaluatorList(flux_key_);
   pv_sublist.set("field evaluator type", "primary variable");
@@ -419,6 +422,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField(conserved_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(conserved_key_);
+  std::cout << "Richards water content eval conserved_key_ = " << conserved_key_ << std::endl;
 
   // -- Water retention evaluators
   // This deals with deprecated location for the WRM list (in the PK).  Move it
@@ -822,6 +826,22 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S)
     *vo_->os() << "  Updating permeability?";
 
   Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData(coef_key_);
+
+  const Epetra_MultiVector& rel_perm_c =
+      *S->GetFieldData(coef_key_)->ViewComponent("cell",false);
+
+  const Epetra_MultiVector& pre_c =
+      *S->GetFieldData(key_)->ViewComponent("cell",false);    
+
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+   for (int c = 0; c < ncells_owned; c++) {
+     std::cout << "rel_perm_c[0][" << c << "] = " << rel_perm_c[0][c] << std::endl;
+     std::cout << "pre_c[0][" << c << "] = " << pre_c[0][c] << std::endl;
+     pre_c[0][c] = 101325.;
+   }
+
+  std::cout << "coef_key_ = " << coef_key_ << std::endl;
   bool update_perm = S->GetFieldEvaluator(coef_key_)
       ->HasFieldChanged(S, name_);
 

@@ -114,8 +114,13 @@ void ThermalConductivityEvaluator::EvaluateField_(
     Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
     const Epetra_MultiVector& h = *depth->ViewComponent(*comp,false);
 
+    Key domain = Keys::getDomain(my_key_);
+
+    // Set up my dependencies.
+    std::string domain_name = Keys::getDomain(my_key_);
+
     const Epetra_MultiVector& cv =
-      *S->GetFieldData("cell_volume")->ViewComponent("cell",false);
+      *S->GetFieldData(Keys::getKey(domain_name,"cell_volume"))->ViewComponent("cell",false);
 
     int ncomp = result->size(*comp, false);
 

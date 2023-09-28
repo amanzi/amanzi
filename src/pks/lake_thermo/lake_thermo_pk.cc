@@ -1125,28 +1125,32 @@ void Lake_Thermo_PK::UpdateBoundaryConditions_(
     adv_values[n] = 0.0;
   }
 
-  // get snow temperature
-  const Epetra_MultiVector& snow_temp_v = *S->GetFieldData("snow-temperature")->ViewComponent("cell",false);
-  std::cout << "T_snow = " << snow_temp_v[0][0] << std::endl;
-  const Epetra_MultiVector& snow_depth_v = *S->GetFieldData("snow-depth")->ViewComponent("cell",false);
-  std::cout << "h_snow = " << snow_depth_v[0][0] << std::endl;
-  const Epetra_MultiVector& surf_temp_v = *S->GetFieldData("surface-temperature")->ViewComponent("cell",false);
-  std::cout << "T_surf = " << surf_temp_v[0][0] << std::endl;
-  const Epetra_MultiVector& surf_qE_cond_v = *S->GetFieldData("surface-qE_conducted")->ViewComponent("cell",false);
-  std::cout << "surf_qE_cond_v = " << surf_qE_cond_v[0][0] << std::endl; 
+  bool snow_exists = false;
 
-  if (snow_depth_v[0][0] > 2.e-2 && h_ice_ > 0.) { // snow exists 
-  // if (false) { 
+  if (coupled_to_snow_) {
+    // get snow temperature
+    const Epetra_MultiVector& snow_temp_v = *S->GetFieldData("snow-temperature")->ViewComponent("cell",false);
+    std::cout << "T_snow = " << snow_temp_v[0][0] << std::endl;
+    const Epetra_MultiVector& snow_depth_v = *S->GetFieldData("snow-depth")->ViewComponent("cell",false);
+    std::cout << "h_snow = " << snow_depth_v[0][0] << std::endl;
+    const Epetra_MultiVector& surf_temp_v = *S->GetFieldData("surface-temperature")->ViewComponent("cell",false);
+    std::cout << "T_surf = " << surf_temp_v[0][0] << std::endl;
+    const Epetra_MultiVector& surf_qE_cond_v = *S->GetFieldData("surface-qE_conducted")->ViewComponent("cell",false);
+    std::cout << "surf_qE_cond_v = " << surf_qE_cond_v[0][0] << std::endl; 
+    if (snow_depth_v[0][0] > 2.e-2 && h_ice_ > 0.) snow_exists = true;
+  }
 
-    // // get snow temperature
-    // const Epetra_MultiVector& snow_temp_v = *S->GetFieldData("snow-temperature")->ViewComponent("cell",false);
-    // std::cout << "T_snow = " << snow_temp_v[0][0] << std::endl;
-    // const Epetra_MultiVector& snow_depth_v = *S->GetFieldData("snow-depth")->ViewComponent("cell",false);
-    // std::cout << "h_snow = " << snow_depth_v[0][0] << std::endl;
-    // const Epetra_MultiVector& surf_temp_v = *S->GetFieldData("surface-temperature")->ViewComponent("cell",false);
-    // std::cout << "T_surf = " << surf_temp_v[0][0] << std::endl;
-    // const Epetra_MultiVector& surf_qE_cond_v = *S->GetFieldData("surface-qE_conducted")->ViewComponent("cell",false);
-    // std::cout << "surf_qE_cond_v = " << surf_qE_cond_v[0][0] << std::endl; 
+  if (snow_exists) { // snow exists 
+
+    // get snow temperature
+    const Epetra_MultiVector& snow_temp_v = *S->GetFieldData("snow-temperature")->ViewComponent("cell",false);
+    std::cout << "T_snow = " << snow_temp_v[0][0] << std::endl;
+    const Epetra_MultiVector& snow_depth_v = *S->GetFieldData("snow-depth")->ViewComponent("cell",false);
+    std::cout << "h_snow = " << snow_depth_v[0][0] << std::endl;
+    const Epetra_MultiVector& surf_temp_v = *S->GetFieldData("surface-temperature")->ViewComponent("cell",false);
+    std::cout << "T_surf = " << surf_temp_v[0][0] << std::endl;
+    const Epetra_MultiVector& surf_qE_cond_v = *S->GetFieldData("surface-qE_conducted")->ViewComponent("cell",false);
+    std::cout << "surf_qE_cond_v = " << surf_qE_cond_v[0][0] << std::endl; 
 
     std::cout << "case 1: snow exists" << std::endl;
 

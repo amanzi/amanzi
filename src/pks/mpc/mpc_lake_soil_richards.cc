@@ -116,11 +116,11 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
   auto op1 = soil_mpc_->my_tree_operator(Operators::OPERATOR_MATRIX)->Clone();
 //  auto op1_Operator = soil_mpc_->my_operator(Operators::OPERATOR_MATRIX); //->Clone();
 
-//  std::cout << "beginning op0->A()" << std::endl;
-//  std::cout << "op0 = " << op0 << std::endl;
-//  op0->SymbolicAssembleMatrix();
-//  op0->AssembleMatrix();
-//  std::cout << *op0->A() << std::endl;
+ std::cout << "beginning op0->A()" << std::endl;
+ std::cout << "op0 = " << op0 << std::endl;
+ op0->SymbolicAssembleMatrix();
+ op0->AssembleMatrix();
+ std::cout << *op0->A() << std::endl;
 
 //  auto tvs = Teuchos::rcp(new TreeVectorSpace(op0->get_row_map()));
 //
@@ -152,7 +152,7 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
 
   auto tvs_op1 = Teuchos::rcp(new TreeVectorSpace(op1->RangeMap()));
 
-  Teuchos::RCP<Operators::Operator> op0_null;
+  Teuchos::RCP<Operators::Operator> op0_null(op0->Clone());
   auto op1_null = Teuchos::rcp(new Operators::TreeOperator(tvs_op1));
 
   std::cout << "op0_null Structure with diagonal blocks:\n" << op0_null->PrintDiagnostics() << std::endl;
@@ -549,7 +549,7 @@ void
 MPCLakeSoilRichards::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                             Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
 
-//  std::cout << "FunctionalResidual START" << std::endl;
+ std::cout << "FunctionalResidual MPC START" << std::endl;
 
   // generate local matrices and apply sources and boundary conditions
   StrongMPC<PK_BDF_Default>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
@@ -660,7 +660,7 @@ MPCLakeSoilRichards::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
  *
  */
 
-//  std::cout << "FunctionalResidual DONE" << std::endl;
+ std::cout << "FunctionalResidual MPC DONE" << std::endl;
 }
 
 // -- Apply preconditioner to u and returns the result in Pu.

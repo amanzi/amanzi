@@ -91,7 +91,7 @@ void Soil_Thermo_PK::Setup(const Teuchos::Ptr<State>& S) {
   //  std::cout << "SetupSoilThermo_ DONE" << std::endl;
   SetupPhysicalEvaluators_(S);
 
-  //  std::cout << "setup soil_thermo DONE" << std::endl;
+   std::cout << "setup soil_thermo DONE" << std::endl;
 };
 
 
@@ -112,8 +112,8 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   cell_is_ice_key_ = Keys::readKey(*plist_, domain_, "ice", "ice");
   pressure_key_ = Keys::readKey(*plist_, domain_, "pressure", "pressure");
 
-  //  std::cout << "temperature_key_ soil = " << temperature_key_ << std::endl;
-  //  std::cout << "conductivity_key_ = " << conductivity_key_ << std::endl;
+   std::cout << "temperature_key_ soil = " << temperature_key_ << std::endl;
+   std::cout << "conductivity_key_ = " << conductivity_key_ << std::endl;
   //  std::cout << "uw_conductivity_key_ soil = " << uw_conductivity_key_ << std::endl;
 
   S->RequireField(temperature_key_)->SetMesh(mesh_)
@@ -347,6 +347,8 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp(new SoilThermo::SoilDensityEvaluator(den_plist));
   S->SetFieldEvaluator(density_key_, den);
 
+  std::cout << "soil density eval OK" << std::endl;
+
   // -- energy evaluator
   S->RequireField(energy_key_)->SetMesh(mesh_)
         ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -357,6 +359,8 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp(new SoilThermo::SoilEnergyEvaluator(enrg_plist));
   S->SetFieldEvaluator(energy_key_, enrg);
 
+  std::cout << "soil energy eval OK" << std::endl;
+
   // -- thermal conductivity evaluator
   S->RequireField(conductivity_key_)->SetMesh(mesh_)
         ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -366,6 +370,8 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<SoilThermo::SoilThermalConductivityEvaluator> tcm =
       Teuchos::rcp(new SoilThermo::SoilThermalConductivityEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
+
+  std::cout << "soil conductivity eval OK" << std::endl;
 
   // Require a field for soil water content -- for mpc_lake_1D
   if (!coupled_soil) {
@@ -473,6 +479,8 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
 
   // correction controls
   T_limit_ = plist_->get<double>("limit correction to temperature change [K]", -1.);
+
+  std::cout << "SetupPhysicalEvaluators soil DONE" << std::endl;
 
 };
 

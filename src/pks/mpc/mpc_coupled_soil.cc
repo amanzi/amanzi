@@ -75,7 +75,7 @@ MPCCoupledSoil::MPCCoupledSoil(Teuchos::ParameterList& pk_tree_list,
 void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
 {
 
-//  std::cout << "MPCCoupledSoil::Setup START" << std::endl;
+ std::cout << "MPCCoupledSoil::Setup START" << std::endl;
 
   // set up keys
   Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
@@ -436,7 +436,7 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
 
 //  exit(0);
 
-//  std::cout << "MPCCoupledSoil::Setup DONE" << std::endl;
+ std::cout << "MPCCoupledSoil::Setup DONE" << std::endl;
 }
 
 void MPCCoupledSoil::Initialize(const Teuchos::Ptr<State>& S)

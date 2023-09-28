@@ -32,7 +32,7 @@ MPCLake1D::Setup(const Teuchos::Ptr<State>& S) {
 //  pks_list_->sublist(names[1]).sublist("diffusion preconditioner").set("surface operator", true);
 //  pks_list_->sublist(names[1]).sublist("accumulation preconditioner").set("surface operator", true);
 
-  domain_lake_ = pks_list_->sublist(names[0]).get<std::string>("domain name","lake");
+  domain_lake_ = pks_list_->sublist(names[0]).get<std::string>("domain name","domain");
   domain_soil_ = pks_list_->sublist(names[1]).get<std::string>("domain name","soil");
 
   // grab the meshes
@@ -116,7 +116,7 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
 
   // off-diagonal blocks are coupled PDEs
   // -- minimum composite vector spaces containing the coupling term
-  auto mesh_lake = S_->GetMesh("lake");
+  auto mesh_lake = S_->GetMesh("domain");
   auto mesh_soil = S_->GetMesh("soil");
 
   auto& mmap = solution_->SubVector(1)->Data()->ViewComponent("cell", false)->Map();
@@ -141,8 +141,8 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
   S_->GetFieldEvaluator("soil-thermal_conductivity")->HasFieldChanged(S_.ptr(), "soil thermo");
   const auto& lambda_s = *S_->GetFieldData("soil-thermal_conductivity")->ViewComponent("cell");
 
-  S_->GetFieldEvaluator("lake-thermal_conductivity")->HasFieldChanged(S_.ptr(), "lake thermo");
-  const auto& lambda_l = *S_->GetFieldData("lake-thermal_conductivity")->ViewComponent("cell");
+  S_->GetFieldEvaluator("thermal_conductivity")->HasFieldChanged(S_.ptr(), "lake thermo");
+  const auto& lambda_l = *S_->GetFieldData("thermal_conductivity")->ViewComponent("cell");
 
 //<---
 

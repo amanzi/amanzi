@@ -85,7 +85,10 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
 
     int ncomp = result->size(*comp, false);
     for (int i=0; i!=ncomp; ++i) {
+      std::cout << "Water content evaluator in cell i = " << i << std::endl;
+      std::cout << phi_v[0][i] << " " << sl_v[0][i] << " " << nl_v[0][i] << " " << cv_v[0][i] << std::endl;
       result_v[0][i] = model_->WaterContent(phi_v[0][i], sl_v[0][i], nl_v[0][i], cv_v[0][i]);
+      std::cout << "WaterContent = " << result_v[0][i] << std::endl;
     }
   }
 }

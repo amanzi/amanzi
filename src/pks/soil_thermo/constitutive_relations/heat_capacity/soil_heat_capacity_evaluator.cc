@@ -116,7 +116,7 @@ void SoilHeatCapacityEvaluator::EvaluateFieldPartialDerivative_(
 
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = cw * 1.8e-5;
+        result_v[0][i] = cw; // * 1.8e-5;
       }
     }
   }
@@ -128,7 +128,7 @@ void SoilHeatCapacityEvaluator::EvaluateFieldPartialDerivative_(
 
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = ci * 1.8e-5;
+        result_v[0][i] = ci; // * 1.8e-5;
       }
     }
   }

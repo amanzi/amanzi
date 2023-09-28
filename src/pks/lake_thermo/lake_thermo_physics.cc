@@ -404,8 +404,12 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
       dhdt_c = (temp[0][ncells-1] < 273.15) ? 0. : dhdt;
       B_w_c = (temp[0][ncells-1] < 273.15) ? 0. : B_w;
 
-      const Epetra_MultiVector& snow_depth_v = *S->GetFieldData("snow-depth")->ViewComponent("cell",false);
-      if (snow_depth_v[0][0] > 2.e-2) {
+      double snow_depth = 0.;
+      if (coupled_to_snow_) {
+        const Epetra_MultiVector& snow_depth_v = *S->GetFieldData("snow-depth")->ViewComponent("cell",false);
+        snow_depth = snow_depth_v[0][0] ;
+      }
+      if (snow_depth > 2.e-2) {
         S0_ = 0.;
       }
 
