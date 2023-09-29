@@ -7,8 +7,9 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-//! FunctionStandardMath: provides access to many common mathematical functions.
+//! Provides access to many common mathematical functions.
 /*!
+
 These functions allow to set up non-trivial time-dependent boundary conditions
 which increases a set of analytic solutions that can be used in convergence
 analysis tests.

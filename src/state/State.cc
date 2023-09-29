@@ -57,6 +57,10 @@ State::State()
 State::State(Teuchos::ParameterList& state_plist) : state_plist_(state_plist)
 {
   vo_ = Teuchos::rcp(new VerboseObject("State", state_plist_));
+
+  // touch the "evaluators" list to make sure it exists, even in tests that
+  // don't use it, to make sure that const calls to FEList() can work.
+  state_plist_.sublist("evaluators");
 };
 
 
@@ -394,7 +398,7 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
 
 
 bool
-State::HasEvaluator(const Key& key, const Tag& tag)
+State::HasEvaluator(const Key& key, const Tag& tag) const
 {
   if (Keys::hasKey(evaluators_, key)) {
     return Keys::hasKey(evaluators_.at(key), tag);
@@ -913,7 +917,7 @@ State::GetEvaluatorList(const Key& key)
 
 
 bool
-State::HasEvaluatorList(const Key& key)
+State::HasEvaluatorList(const Key& key) const
 {
   if (FEList().isSublist(key)) return true;
   // check for domain set

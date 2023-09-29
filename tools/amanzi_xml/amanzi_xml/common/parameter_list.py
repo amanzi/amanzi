@@ -1,4 +1,6 @@
 import warnings
+import copy
+
 from . import base
 from . import parameter
 from amanzi_xml.utils import parser
@@ -200,6 +202,19 @@ class ParameterList(base.TeuchosBaseXML):
 
     def pop(self, name):
         return search.remove_element(self, name, False, True)
+
+    def __copy__(self):
+        cp = self.__class__(self.getName())
+        for child in self:
+            cp.append(child)
+        return cp
+
+    def __deepcopy__(self, memo):
+        cp = self.__class__(self.getName())
+        memo[id(self)] = cp
+        for child in self:
+            cp.append(copy.deepcopy(child, memo))
+        return cp
     
 # register
 parser.objects['ParameterList'] = ParameterList

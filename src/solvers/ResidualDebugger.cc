@@ -20,6 +20,7 @@
 #include "CompositeVector.hh"
 #include "TreeVector.hh"
 #include "TreeVector_Utils.hh"
+#include "State.hh"
 
 #include "ResidualDebugger.hh"
 
@@ -32,13 +33,15 @@ namespace AmanziSolvers {
 // -----------------------------------------------------------------------------
 template <>
 void
-ResidualDebugger::StartIteration<TreeVectorSpace>(double time,
-                                                  int cycle,
-                                                  int attempt,
-                                                  const TreeVectorSpace& space)
+ResidualDebugger::StartIteration<TreeVectorSpace>(int attempt, const TreeVectorSpace& space)
 {
+  int cycle = -1;
+  double time = 0;
+  if (S_.get()) {
+    if (S_->HasRecord("cycle", tag_)) cycle = S_->Get<int>("cycle", tag_);
+    time = S_->Get<double>("time", tag_);
+  }
   on_ = DumpRequested(cycle, time);
-  time_ = time;
   if (on_) {
     // iterate through the TreeVector finding leaf nodes and write them
     std::vector<Teuchos::RCP<const TreeVectorSpace>> leaves = collectTreeVectorLeaves_const(space);
@@ -47,8 +50,8 @@ ResidualDebugger::StartIteration<TreeVectorSpace>(double time,
     for (int i = 0; i != leaves.size(); ++i) {
       if (leaves[i]->Data()->HasComponent("cell")) {
         std::stringstream filename;
-        filename << filebasename_ << cycle << "_a" << attempt << "_v" << i;
-        vis_[i] = Teuchos::rcp(new HDF5_MPI(leaves[i]->Data()->Mesh()->get_comm()));
+        filename << filebasename_ << "_" << cycle << "_attempt" << attempt << "_vec" << i;
+        vis_[i] = Teuchos::rcp(new HDF5_MPI(leaves[i]->Data()->Mesh()->get_comm(), false));
         vis_[i]->setTrackXdmf(true);
         vis_[i]->createMeshFile(leaves[i]->Data()->Mesh(), filename.str() + "_mesh");
         vis_[i]->createDataFile(filename.str());
@@ -72,9 +75,11 @@ ResidualDebugger::WriteVector<TreeVector>(int iter,
     // open files
     for (std::vector<Teuchos::RCP<HDF5_MPI>>::iterator it = vis_.begin(); it != vis_.end(); ++it) {
       if (it->get()) {
-        (*it)->writeMesh(time_, iter);
-        (*it)->createTimestep(time_, iter, "");
+        (*it)->writeMesh(S_->Get<double>("time", tag_), iter);
+        (*it)->createTimestep(S_->Get<double>("time", tag_), iter, "");
         (*it)->open_h5file();
+        (*it)->writeAttrReal(S_->Get<double>("dt", tag_), "dt");
+        (*it)->writeAttrInt(S_->Get<int>("cycle", tag_), "dt");
       }
     }
 
@@ -87,6 +92,22 @@ ResidualDebugger::WriteVector<TreeVector>(int iter,
           std::stringstream my_name;
           my_name << "residual.cell." << j;
           vis_[i]->writeCellDataReal(*vec(j), my_name.str());
+        }
+
+        // write additional info
+        if (additional_vars_.size() > 0) {
+          auto mesh = r_leaves[i]->Data()->Mesh();
+          for (const std::string& additional_var : additional_vars_) {
+            if (S_->GetMesh(Keys::getDomain(additional_var)) == mesh) {
+              const auto& vec =
+                *S_->Get<CompositeVector>(additional_var, tag_).ViewComponent("cell", false);
+              for (int j = 0; j != vec.NumVectors(); ++j) {
+                std::stringstream my_name;
+                my_name << additional_var << ".cell." << j;
+                vis_[i]->writeCellDataReal(*vec(j), my_name.str());
+              }
+            }
+          }
         }
       }
     }

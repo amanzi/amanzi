@@ -7,22 +7,23 @@
   Authors:
 */
 
-//! Function: base class for all functions of space and time.
+//! A base class for all functions of space and time.
 /*!
+
 Analytic, algabraic functions of space and time are used for a variety of
 purposes, including boundary conditions, initial conditions, and independent
 variables.
 
 For initial conditions, functions are prescribed of space only, i.e.
 
-:math:`u = f(x,y,z)`
+.. math::
+   u = f(x,y,z)
 
 For boundary conditions and independent variables, functions are also a
 function of time:
 
-:math:`u = f(t,x,y,z)`
-
-Note, this does not follow the `"typed`" format for legacy reasons.
+.. math::
+   u = f(t,x,y,z)
 
 */
 

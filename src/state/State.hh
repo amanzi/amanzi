@@ -485,8 +485,9 @@ class State {
   //
   // -- allows PKs to add to this list to custom evaluators
   Teuchos::ParameterList& FEList() { return state_plist_.sublist("evaluators"); }
+  const Teuchos::ParameterList& FEList() const { return state_plist_.sublist("evaluators"); }
   Teuchos::ParameterList& GetEvaluatorList(const Key& key);
-  bool HasEvaluatorList(const Key& key);
+  bool HasEvaluatorList(const Key& key) const;
 
   // -- allows PKs to add to this list to initial conditions
   Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
@@ -504,7 +505,7 @@ class State {
   const Evaluator& GetEvaluator(const Key& key, const Tag& tag) const;
 #endif
 
-  bool HasEvaluator(const Key& key, const Tag& tag);
+  bool HasEvaluator(const Key& key, const Tag& tag) const;
   void SetEvaluator(const Key& key, const Tag& tag, const Teuchos::RCP<Evaluator>& evaluator);
   Teuchos::RCP<Evaluator> GetEvaluatorPtr(const Key& key, const Tag& tag);
 

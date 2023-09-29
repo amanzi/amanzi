@@ -190,7 +190,7 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
 
   // update the verbose options
   vo_ = Teuchos::rcp(new VerboseObject(initvector->Comm(), "TI::BDF1", plist_));
-  db_ = Teuchos::rcp(new AmanziSolvers::ResidualDebugger(plist_.sublist("residual debugger")));
+  db_ = Teuchos::rcp(new AmanziSolvers::ResidualDebugger(plist_.sublist("residual debugger"), S));
 
   // Create the state.
   state_ = Teuchos::rcp(new BDF1_State<Vector>());
@@ -328,7 +328,7 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
   }
 
   // Update the debugger
-  db_->StartIteration<VectorSpace>(tlast, state_->seq, state_->failed_current, u->Map());
+  db_->StartIteration<VectorSpace>(state_->failed_current, u->Map());
 
   // Overwrite preconditioner control
   if (state_->freeze_pc) solver_->set_pc_lag(1000000000);

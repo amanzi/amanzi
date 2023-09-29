@@ -319,8 +319,7 @@ EvaluatorSecondary::UpdateDerivative(State& S,
 bool
 EvaluatorSecondary::IsDependency(const State& S, const Key& key, const Tag& tag) const
 {
-  if (std::find(dependencies_.begin(), dependencies_.end(), std::make_pair(key, tag)) !=
-      dependencies_.end()) {
+  if (IsDirectDependency(key, tag)) {
     return true;
   } else {
     for (auto& dep : dependencies_) {
@@ -330,12 +329,40 @@ EvaluatorSecondary::IsDependency(const State& S, const Key& key, const Tag& tag)
   return false;
 }
 
+bool
+EvaluatorSecondary::IsDirectDependency(const Key& key, const Tag& tag) const
+{
+  if (std::find(dependencies_.begin(), dependencies_.end(), std::make_pair(key, tag)) !=
+      dependencies_.end()) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 
 bool
 EvaluatorSecondary::ProvidesKey(const Key& key, const Tag& tag) const
 {
   std::pair<Key, Tag> my_key = std::make_pair(key, tag);
   return std::find(my_keys_.begin(), my_keys_.end(), my_key) != my_keys_.end();
+}
+
+
+bool
+EvaluatorSecondary::IsDifferentiableWRT(const State& S,
+                                        const Key& wrt_key,
+                                        const Tag& wrt_tag) const
+{
+  // note, provides key means the value is 1, and there may be times we have to use this value...
+  if (ProvidesKey(wrt_key, wrt_tag)) return true;
+  if (IsDirectDependency(wrt_key, wrt_tag)) return true;
+  for (auto& dep : dependencies_) {
+    if (S.GetEvaluator(dep.first, dep.second).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 

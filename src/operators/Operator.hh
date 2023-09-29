@@ -54,7 +54,8 @@ The list includes reconstruction and limiting algorithms.
 
 
 Schema
-......
+------
+
 The operators use notion of schema to describe operator's abstract structure.
 Old operators use a simple schema which is simply the list of geometric objects where
 scalar degrees of freedom are defined.

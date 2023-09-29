@@ -41,7 +41,7 @@ namespace Amanzi {
 // Non-member function for visualization.
 // -----------------------------------------------------------------------------
 void
-WriteVis(Visualization& vis, const State& S)
+WriteVis(Visualization& vis, State& S)
 {
   if (!vis.is_disabled()) {
     // Create the new time step
@@ -69,6 +69,7 @@ WriteVis(Visualization& vis, const State& S)
           // -- same time
           Tag tag;
           if (r->second->HasRecord(tag)) {
+            if (S.HasEvaluator(r->first, tag)) { S.GetEvaluator(r->first, tag).Update(S, "vis"); }
             r->second->WriteVis(vis, &tag);
           } else {
             // try to find a record at the same time
@@ -76,6 +77,9 @@ WriteVis(Visualization& vis, const State& S)
             for (const auto& time_record : S.GetRecordSet("time")) {
               if (r->second->HasRecord(time_record.first) &&
                   S.get_time(time_record.first) == time) {
+                if (S.HasEvaluator(r->first, time_record.first)) {
+                  S.GetEvaluator(r->first, time_record.first).Update(S, "vis");
+                }
                 r->second->WriteVis(vis, &time_record.first);
                 break;
               }
