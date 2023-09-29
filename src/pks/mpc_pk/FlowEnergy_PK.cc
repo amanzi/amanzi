@@ -214,6 +214,9 @@ FlowEnergy_PK::Setup()
     S_->Require<CV_t, CVS_t>(prev_wc_key_, Tags::COPY, "flow");
     S_->GetRecordW(prev_wc_key_, Tags::COPY, "flow").set_initialized();
   }
+
+  // set units
+  S_->GetRecordSetW(viscosity_liquid_key_).set_units("Pa*s");
 }
 
 

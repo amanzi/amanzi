@@ -269,6 +269,10 @@ Energy_PK::Setup()
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
+
+  // set units
+  S_->GetRecordSetW(temperature_key_).set_units("K");
+  if (flow_on_manifold_) { S_->GetRecordSetW(aperture_key_).set_units("m"); }
 }
 
 

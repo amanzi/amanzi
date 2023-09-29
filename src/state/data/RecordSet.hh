@@ -51,13 +51,13 @@ class RecordSet {
   // access
   const Key& fieldname() const { return fieldname_; }
   const Key& vis_fieldname() const { return vis_fieldname_; }
-  Utils::Units units() const { return units_; }
+  std::string units() const { return units_; }
   std::vector<std::string> const* subfieldnames() const { return subfieldnames_.get(); }
 
   // mutate
   void set_fieldname(const Key& fieldname) { fieldname_ = fieldname; }
   void set_vis_fieldname(const Key& vis_fieldname) { vis_fieldname_ = vis_fieldname; }
-  void set_units(const Utils::Units& units) { units_ = units; }
+  void set_units(const std::string& units) { units_ = units; }
   void set_subfieldnames(const std::vector<std::string>& subfieldnames)
   {
     if (!subfieldnames_)
@@ -221,7 +221,7 @@ class RecordSet {
  private:
   Key fieldname_;
   Key vis_fieldname_;
-  Utils::Units units_;
+  std::string units_;
   std::unique_ptr<std::vector<std::string>> subfieldnames_;
 
   std::map<Tag, Tag> aliases_;

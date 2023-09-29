@@ -14,6 +14,22 @@
 using namespace Amanzi;
 using namespace Amanzi::Utils;
 
+TEST(UNITS_NONE)
+{
+  Units units("molar");
+  UnitsSystem system("h", "kg", "m", "molar", "mol", "K");
+
+  std::string in_unit("-"), out_unit;
+  out_unit = units.ConvertUnitS(in_unit, system);
+  std::cout << "Unitless:\n  [-] -> [" << out_unit << "]" << std::endl;
+  CHECK(out_unit == "-");
+
+  in_unit = "";
+  out_unit = units.ConvertUnitS(in_unit, system);
+  CHECK(out_unit == "");
+}
+
+
 TEST(UNITS_TIME)
 {
   Units units("molar");

@@ -40,6 +40,8 @@ class TCMEvaluator_OnePhase
                                           const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
+  virtual void EnsureCompatibility_Units_(State& S) override;
+
  protected:
   // We have one model so far; hence, no factory is needed.
   Teuchos::RCP<AmanziEOS::EOS_ThermalConductivity> tc_;

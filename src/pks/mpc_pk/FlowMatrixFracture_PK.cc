@@ -79,6 +79,7 @@ FlowMatrixFracture_PK::Setup()
     *S_->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT).SetMesh(mesh_matrix_)->SetGhosted(true) =
       *cvs;
     AddDefaultPrimaryEvaluator(S_, "pressure", Tags::DEFAULT);
+    S_->GetRecordSetW("pressure").set_units("Pa");
   }
 
   // -- darcy flux

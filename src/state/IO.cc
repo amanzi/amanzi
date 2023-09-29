@@ -447,6 +447,9 @@ WriteStateStatistics(const State& S, const VerboseObject& vo, const Teuchos::EVe
           r.second->Get<CompositeVector>().MaxValue(vmax);
           r.second->Get<CompositeVector>().MeanValue(vavg);
 
+          std::string units = S.GetRecordSet(name).units();
+          if (units.size() > 0) units = " [" + units + "]";
+
           for (auto c_it = vmin.begin(); c_it != vmin.end(); ++c_it) {
             std::string namedot(Keys::getKey(display_name, r.first)), name_comp(c_it->first);
             std::string name_abbr(name_comp);
@@ -454,7 +457,8 @@ WriteStateStatistics(const State& S, const VerboseObject& vo, const Teuchos::EVe
             if (vmin.size() != 1) namedot.append("." + name_abbr);
             namedot.resize(40, '.');
             *vo.os() << std::defaultfloat << namedot << " " << c_it->second << " / "
-                     << vmax[name_comp] << " / " << vavg[name_comp] << std::endl;
+                     << vmax[name_comp] << " / " << vavg[name_comp] << units << std::endl;
+            ;
           }
 
         } else if (r.second->ValidType<double>()) {

@@ -193,6 +193,8 @@ class Units {
   // -- strings
   std::string ConvertUnitS(const std::string& in_unit, const UnitsSystem& system);
   bool CompareUnits(const std::string& unit1, const std::string& unit2);
+  std::string MultiplyUnits(const std::string& unit1, const std::string& unit2);
+  std::string DivideUnits(const std::string& unit1, const std::string& unit2);
 
   // fancy output
   std::string OutputTime(double val);
@@ -261,8 +263,12 @@ class Units {
   UnitsSystem& system() { return system_; }
 
  private:
-  AtomicUnitForm ComputeAtomicUnitForm_(const std::string& unit, bool* flag);
+  AtomicUnitForm StringToAtomicUnitForm_(const std::string& unit, bool* flag);
+  std::string AtomicUnitFormToString_(const AtomicUnitForm& auf);
+
   bool CompareAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnitForm& auf2);
+  AtomicUnitForm MultiplyAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnitForm& auf2);
+  AtomicUnitForm DivideAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnitForm& auf2);
 
  private:
   double concentration_factor_;

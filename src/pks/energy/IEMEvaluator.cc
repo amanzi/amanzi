@@ -158,6 +158,16 @@ IEMEvaluator::EvaluatePartialDerivative_(const State& S,
 
 
 /* ******************************************************************
+* Compatibility check is not needed.
+****************************************************************** */
+void
+IEMEvaluator::EnsureCompatibility_Units_(State& S)
+{
+  S.GetRecordSetW(my_keys_[0].first).set_units("J/mol");
+}
+
+
+/* ******************************************************************
 * Create partition
 ****************************************************************** */
 void
