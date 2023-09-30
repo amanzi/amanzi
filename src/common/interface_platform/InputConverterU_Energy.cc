@@ -188,35 +188,14 @@ InputConverterU::TranslateEnergyBCs_(const std::string& domain)
     if (!flag) continue;
 
     // process a group of similar elements defined by the first element
-    std::string bctype;
-    std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
-
-    std::map<double, double> tp_values;
-    std::map<double, std::string> tp_forms, tp_formulas;
-
-    for (int j = 0; j < same_list.size(); ++j) {
-      DOMNode* jnode = same_list[j];
-      element = static_cast<DOMElement*>(jnode);
-      double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "y");
-
-      tp_forms[t0] = GetAttributeValueS_(element, "function");
-      tp_values[t0] =
-        GetAttributeValueD_(element, "value", TYPE_NUMERICAL, 0.0, 1000.0, "K", false, 0.0);
-      tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
-    }
-
     // create vectors of values and forms
-    std::vector<double> times, values;
+    std::string bctype, bcname;
+    std::vector<double> times, values, fluxes;
     std::vector<std::string> forms, formulas;
-    for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
-      times.push_back(it->first);
-      values.push_back(it->second);
-      forms.push_back(tp_forms[it->first]);
-      formulas.push_back(tp_formulas[it->first]);
-    }
+
+    bctype = TranslateBCsList_(node, 0.0, 1000.0, "K", times, values, fluxes, forms, formulas);
 
     // create names, modify data
-    std::string bcname;
     if (bctype == "uniform_temperature") {
       bctype = "temperature";
       bcname = "boundary temperature";

@@ -783,29 +783,7 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
         xheader = GetAttributeValueS_(element, "times", TYPE_NONE);
         yheader = GetAttributeValueS_(element, "values", TYPE_NONE);
       } else {
-        std::map<double, double> tp_values, tp_fluxes;
-        std::map<double, std::string> tp_forms, tp_formulas;
-
-        for (int j = 0; j < same_list.size(); ++j) {
-          element = static_cast<DOMElement*>(same_list[j]);
-          double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
-
-          tp_forms[t0] = GetAttributeValueS_(element, "function");
-          tp_values[t0] = GetAttributeValueD_(
-            element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
-          tp_fluxes[t0] = GetAttributeValueD_(
-            element, "inward_mass_flux", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
-          tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
-        }
-
-        // create vectors of values and forms
-        for (auto it = tp_values.begin(); it != tp_values.end(); ++it) {
-          times.push_back(it->first);
-          values.push_back(it->second);
-          fluxes.push_back(tp_fluxes[it->first]);
-          forms.push_back(tp_forms[it->first]);
-          formulas.push_back(tp_formulas[it->first]);
-        }
+        TranslateBCsList_(node, DVAL_MIN, DVAL_MAX, unit, times, values, fluxes, forms, formulas);
       }
     }
 
@@ -874,9 +852,18 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
       TranslateGenericMath_(times, values, forms, formulas, bcfn);
     }
 
-    // data distribution method
-    bc.set<std::string>("spatial distribution method", "none");
+    // data distribution method (only one distribution method at the moment - by volume)
     bc.set<bool>("use area fractions", WeightVolumeSubmodel_(regions));
+    bc.set<std::string>("spatial distribution method", "none");
+
+    if (forms.size() == 1 && forms[0] == "distribution") {
+      if (domain == "domain") {
+        bc.set<std::string>("spatial distribution method", "volume");
+      } else {
+        bc.set<std::string>("spatial distribution method", "weight by field")
+          .set<std::string>("field key", "fracture-aperture");
+      }
+    }
 
     // special cases and parameters without default values
     element = static_cast<DOMElement*>(same_list[0]);
@@ -1021,17 +1008,9 @@ InputConverterU::TranslateSources_(const std::string& domain, const std::string&
         .set<bool>("constant in time", true);
 
     } else {
-      std::map<double, double> tp_values;
-      std::map<double, std::string> tp_forms, tp_formulas;
-
-      for (int j = 0; j < same_list.size(); ++j) {
-        element = static_cast<DOMElement*>(same_list[j]);
-        double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
-        tp_forms[t0] = GetAttributeValueS_(element, "function");
-        tp_values[t0] =
-          GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
-        tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
-      }
+      std::vector<double> times, values, fluxes;
+      std::vector<std::string> forms, formulas;
+      TranslateBCsList_(phase, DVAL_MIN, DVAL_MAX, unit, times, values, fluxes, forms, formulas);
 
       // additional options for submodels
       double peaceman_r, peaceman_d;
@@ -1039,16 +1018,6 @@ InputConverterU::TranslateSources_(const std::string& domain, const std::string&
         element = static_cast<DOMElement*>(same_list[0]);
         peaceman_r = GetAttributeValueD_(element, "radius", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
         peaceman_d = GetAttributeValueD_(element, "depth", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "m");
-      }
-
-      // create vectors of values and forms
-      std::vector<double> times, values;
-      std::vector<std::string> forms, formulas;
-      for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
-        times.push_back(it->first);
-        values.push_back(it->second);
-        forms.push_back(tp_forms[it->first]);
-        formulas.push_back(tp_formulas[it->first]);
       }
 
       // save in the XML files
@@ -1151,6 +1120,54 @@ InputConverterU::TranslateFlowFractures_(const std::string& domain)
 
 
 /* ******************************************************************
+* Translate list of boundary conditions.
+****************************************************************** */
+std::string
+InputConverterU::TranslateBCsList_(DOMNode* node,
+                                   double vmin,
+                                   double vmax,
+                                   const std::string& unit,
+                                   std::vector<double>& times,
+                                   std::vector<double>& values,
+                                   std::vector<double>& fluxes,
+                                   std::vector<std::string>& forms,
+                                   std::vector<std::string>& formulas)
+{
+  bool flag;
+  std::string bctype;
+  DOMElement* element;
+
+  std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
+
+  std::map<double, double> tp_values, tp_fluxes;
+  std::map<double, std::string> tp_forms, tp_formulas;
+
+  for (int j = 0; j < same_list.size(); ++j) {
+    element = static_cast<DOMElement*>(same_list[j]);
+    double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
+
+    tp_forms[t0] = GetAttributeValueS_(element, "function");
+    tp_values[t0] =
+      GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
+    tp_fluxes[t0] = GetAttributeValueD_(
+      element, "inward_mass_flux", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
+    tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
+  }
+
+  // create vectors of values and forms
+  for (auto it = tp_values.begin(); it != tp_values.end(); ++it) {
+    times.push_back(it->first);
+    values.push_back(it->second);
+    fluxes.push_back(tp_fluxes[it->first]);
+    forms.push_back(tp_forms[it->first]);
+    formulas.push_back(tp_formulas[it->first]);
+  }
+
+  return bctype;
+}
+
+
+/* ******************************************************************
 * Translate function Gaussian.
 * Data format: d0 exp(-|x-d1|^2 / (2 d4^2)) where d1 is space vector.
 ****************************************************************** */
@@ -1203,15 +1220,15 @@ InputConverterU::TranslateGenericMath_(const std::vector<double>& times,
   bool flag(false);
 
   if (times.size() == 1) {
-    if (forms[0] == "constant" || forms[0] == "uniform") {
+    if (forms[0] == "constant" || forms[0] == "uniform" || forms[0] == "distribution") {
       bcfn.sublist("function-constant").set<double>("value", values[0]);
-    } else {
-      // assume that the only remaining option is a math formula
+      flag = true;
+    } else if (forms[0] == "general") {
       bcfn.sublist("function-exprtk")
         .set<int>("number of arguments", dim_ + 1)
         .set<std::string>("formula", formulas[0]);
+      flag = true;
     }
-    flag = true;
   } else {
     auto forms_copy = forms;
     forms_copy.pop_back();

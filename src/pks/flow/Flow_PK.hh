@@ -233,7 +233,6 @@ Global parameters
 #include <vector>
 
 // TPLs
-#include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Teuchos_RCP.hpp"
@@ -351,7 +350,7 @@ class Flow_PK : public PK_PhysicalBDF {
   double g_, rho_, molar_rho_, atm_pressure_;
   double flux_units_; // scaling for flux units from kg to moles.
 
-  Teuchos::RCP<Epetra_Vector> Kxy;
+  Teuchos::RCP<Epetra_MultiVector> Kxy;
   std::string coordinate_system_;
 
   // boundary conditions

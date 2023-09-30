@@ -20,16 +20,17 @@
 
 #include "Mesh.hh"
 #include "State.hh"
-#include "PK_DomainFunctionSimple.hh"
-#include "PK_DomainFunctionField.hh"
-#include "PK_DomainFunctionVolume.hh"
-#include "PK_DomainFunctionVolumeFraction.hh"
-#include "PK_DomainFunctionWeight.hh"
 #include "PK_DomainFunctionCoupling.hh"
+#include "PK_DomainFunctionField.hh"
 #include "PK_DomainFunctionFirstOrderExchange.hh"
+#include "PK_DomainFunctionSimple.hh"
+#include "PK_DomainFunctionSimpleWell.hh"
 #include "PK_DomainFunctionSubgrid.hh"
 #include "PK_DomainFunctionSubgridReturn.hh"
-#include "PK_DomainFunctionSimpleWell.hh"
+#include "PK_DomainFunctionVolume.hh"
+#include "PK_DomainFunctionVolumeFraction.hh"
+#include "PK_DomainFunctionWeightField.hh"
+#include "PK_DomainFunctionWeight.hh"
 
 namespace Amanzi {
 
@@ -43,13 +44,13 @@ class PK_DomainFunctionFactory : public FunctionBase {
 
   Teuchos::RCP<FunctionBase> Create(Teuchos::ParameterList& plist,
                                     AmanziMesh::Entity_kind kind,
-                                    Teuchos::RCP<const Epetra_Vector> weight,
+                                    Teuchos::RCP<const Epetra_MultiVector> weight,
                                     const Tag& tag = Tags::DEFAULT);
 
   Teuchos::RCP<FunctionBase> Create(Teuchos::ParameterList& plist,
                                     const std::string& keyword,
                                     AmanziMesh::Entity_kind kind,
-                                    Teuchos::RCP<const Epetra_Vector> weight,
+                                    Teuchos::RCP<const Epetra_MultiVector> weight,
                                     const Tag& tag = Tags::DEFAULT);
 
 
@@ -64,7 +65,7 @@ Teuchos::RCP<FunctionBase>
 PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
                                                const std::string& keyword,
                                                AmanziMesh::Entity_kind kind,
-                                               Teuchos::RCP<const Epetra_Vector> weight,
+                                               Teuchos::RCP<const Epetra_MultiVector> weight,
                                                const Tag& tag)
 {
   // verify completeness of the list
@@ -103,8 +104,13 @@ PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
     return func;
   } else if (model == "permeability") {
     Teuchos::RCP<PK_DomainFunctionWeight<FunctionBase>> func =
-      Teuchos::rcp(new PK_DomainFunctionWeight<FunctionBase>(mesh_));
+      Teuchos::rcp(new PK_DomainFunctionWeight<FunctionBase>(mesh_, kind));
     func->Init(plist, keyword, weight);
+    return func;
+  } else if (model == "weight by field") {
+    Teuchos::RCP<PK_DomainFunctionWeightField<FunctionBase>> func =
+      Teuchos::rcp(new PK_DomainFunctionWeightField<FunctionBase>(mesh_, S_, kind));
+    func->Init(plist, keyword);
     return func;
   } else if (model == "domain coupling") {
     plist.set<std::string>("external field copy key", tag.get());
@@ -159,7 +165,7 @@ template <class FunctionBase>
 Teuchos::RCP<FunctionBase>
 PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
                                                AmanziMesh::Entity_kind kind,
-                                               Teuchos::RCP<const Epetra_Vector> weight,
+                                               Teuchos::RCP<const Epetra_MultiVector> weight,
                                                const Tag& tag)
 {
   int n(0);

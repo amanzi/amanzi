@@ -260,6 +260,16 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList CreateRegionAll_();
 
   // -- complex functions
+  std::string TranslateBCsList_(DOMNode* node,
+                                double vmin,
+                                double vmax,
+                                const std::string& unit,
+                                std::vector<double>& times,
+                                std::vector<double>& values,
+                                std::vector<double>& fluxes,
+                                std::vector<std::string>& forms,
+                                std::vector<std::string>& formulas);
+
   void TranslateFunctionGaussian_(const std::vector<double>& data, Teuchos::ParameterList& bcfn);
 
   void FilterEmptySublists_(Teuchos::ParameterList& plist);

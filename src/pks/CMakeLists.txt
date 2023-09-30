@@ -68,6 +68,7 @@ set(pks_inc_files
   PK_DomainFunctionVolume.hh
   PK_DomainFunctionVolumeFraction.hh
   PK_DomainFunctionWeight.hh
+  PK_DomainFunctionWeightField.hh
   PK_DomainFunctionCoupling.hh
   PK_DomainFunctionSubgrid.hh
   PK_DomainFunctionSubgridReturn.hh

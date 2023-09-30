@@ -15,6 +15,7 @@
 #include <string>
 
 #include "dbc.hh"
+#include "errors.hh"
 
 #include "Units.hh"
 
@@ -312,7 +313,11 @@ Units::ConvertUnitS(const std::string& in_unit, const UnitsSystem& system)
       out_data[system.temperature] = it->second;
     }
   }
-  AMANZI_ASSERT(out_data.size() > 0);
+  if (out_data.size() == 0) {
+    Errors::Message msg;
+    msg << "Misformed unit [" << in_unit  << "].\n";
+    Exceptions::amanzi_throw(msg);
+  }
 
   // create string
   std::string separator("");

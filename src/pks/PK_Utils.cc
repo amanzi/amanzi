@@ -104,7 +104,7 @@ StateArchive::get(const std::string& name)
 ****************************************************************** */
 void
 PKUtils_CalculatePermeabilityFactorInWell(const Teuchos::Ptr<State>& S,
-                                          Teuchos::RCP<Epetra_Vector>& Kxy)
+                                          Teuchos::RCP<Epetra_MultiVector>& Kxy)
 {
   if (!S->HasRecord("permeability", Tags::DEFAULT)) return;
 
@@ -115,13 +115,13 @@ PKUtils_CalculatePermeabilityFactorInWell(const Teuchos::Ptr<State>& S,
   int ncells_wghost = S->GetMesh()->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int dim = perm.NumVectors();
 
-  Kxy = Teuchos::rcp(new Epetra_Vector(S->GetMesh()->cell_map(true)));
+  Kxy = Teuchos::rcp(new Epetra_MultiVector(S->GetMesh()->cell_map(true), 1));
 
   for (int c = 0; c < ncells_wghost; c++) {
-    (*Kxy)[c] = 0.0;
+    (*Kxy)[0][c] = 0.0;
     int idim = std::max(1, dim - 1);
-    for (int i = 0; i < idim; i++) (*Kxy)[c] += perm[i][c];
-    (*Kxy)[c] /= idim;
+    for (int i = 0; i < idim; i++) (*Kxy)[0][c] += perm[i][c];
+    (*Kxy)[0][c] /= idim;
   }
 }
 

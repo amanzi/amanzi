@@ -402,7 +402,7 @@ InputConverterU::TranslateState_()
       if (flag) {
         TranslateFieldEvaluator_(node,
                                  "fracture-compliance",
-                                 "m Pa^-1",
+                                 "m*Pa^-1",
                                  reg_str,
                                  regions,
                                  out_ic,
