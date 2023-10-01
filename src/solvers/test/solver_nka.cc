@@ -22,8 +22,6 @@
 #include "SolverNKA_LS.hh"
 #include "SolverNKA_BT_ATS.hh"
 #include "SolverNKA_LS_ATS.hh"
-#include "SolverNewton.hh"
-#include "SolverJFNK.hh"
 #include "SolverAA.hh"
 #include "SolverBT.hh"
 #include "SolverNox.hh"
@@ -50,9 +48,9 @@ SUITE(SOLVERS)
 
 
   /* ******************************************************************/
-  TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN)
+  TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN_MONITOR_UPDATE)
   {
-    std::cout << "NKA solver, exact Jacobian..." << std::endl;
+    std::cout << "NKA solver, exact Jacobian (monitor update)..." << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
@@ -81,13 +79,60 @@ SUITE(SOLVERS)
     nka->Solve(u);
     CHECK_CLOSE(0.0, (*u)[0], 1.0e-6);
     CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
+
+    // repeat solve with exact solution. 
+    std::cout << "\nNKA solver, repeat solver..." << std::endl;
+    nka->Solve(u);
+    CHECK(nka->num_itrs() == 1);
+  };
+
+
+  /* ******************************************************************/
+  TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN_MONITOR_RESIDUAL)
+  {
+    std::cout << "\nNKA solver, exact Jacobian (monitor residual)..." << std::endl;
+
+    // create the function class
+    Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
+
+    // create the SolverState
+    Teuchos::ParameterList plist;
+    plist.set("nonlinear tolerance", 1e-5);
+    plist.set("diverged tolerance", 1e10);
+    plist.set("limit iterations", 10);
+    plist.set("max du growth factor", 1e5);
+    plist.set("max divergent iterations", 3);
+    plist.set("max nka vectors", 1);
+    plist.set("monitor", "monitor residual");
+    plist.set("make one iteration", true);
+    plist.sublist("verbose object").set("verbosity level", "high");
+
+    // create the Solver
+    Teuchos::RCP<AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap>> nka =
+      Teuchos::rcp(new AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap>(plist));
+    nka->Init(fn, *map);
+
+    // initial guess
+    Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
+    (*u)[0] = -0.9;
+    (*u)[1] = 0.9;
+
+    // solve
+    nka->Solve(u);
+    CHECK_CLOSE(0.0, (*u)[0], 1.0e-5);
+    CHECK_CLOSE(0.0, (*u)[1], 1.0e-5);
+
+    // repeat solve with eaxt solution 
+    std::cout << "\nNKA solver, repeat solver..." << std::endl;
+    nka->Solve(u);
+    CHECK(nka->num_itrs() == 1);
   };
 
 
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN_GLOBALIZED)
   {
-    std::cout << "NKA solver, exact Jacobian..." << std::endl;
+    std::cout << "\nNKA solver, exact Jacobian..." << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem6> fn = Teuchos::rcp(new NonlinearProblem6(1.0, 1.0, true));
@@ -190,137 +235,6 @@ SUITE(SOLVERS)
 
 
   /* ******************************************************************/
-  TEST_FIXTURE(test_data, NEWTON_SOLVER)
-  {
-    std::cout << "\nNewton solver..." << std::endl;
-
-    // create the function class
-    Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
-
-    // create the SolverState
-    Teuchos::ParameterList plist;
-    plist.set("nonlinear tolerance", 1e-6);
-    plist.set("diverged tolerance", 1e10);
-    plist.set("limit iterations", 15);
-    plist.set("max du growth factor", 1e5);
-    plist.set("max divergent iterations", 3);
-    plist.sublist("verbose object").set("verbosity level", "high");
-
-    // create the Solver
-    Teuchos::RCP<AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap>> newton =
-      Teuchos::rcp(new AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap>(plist));
-    newton->Init(fn, *map);
-
-    // initial guess
-    Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
-    (*u)[0] = -0.9;
-    (*u)[1] = 0.9;
-
-    // solve
-    newton->Solve(u);
-    CHECK_CLOSE(0.0, (*u)[0], 1.0e-6);
-    CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
-  };
-
-
-  /* ******************************************************************/
-  TEST_FIXTURE(test_data, JFNK_SOLVER_LEFT_PC)
-  {
-    std::cout << "\nJFNK solver with LEFT precondiitoner..." << std::endl;
-
-    // create the function class
-    Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, false));
-
-    // create the SolverState
-    Teuchos::ParameterList plist;
-    plist.sublist("nonlinear solver").set("solver type", "Newton");
-    plist.sublist("nonlinear solver")
-      .sublist("Newton parameters")
-      .sublist("verbose object")
-      .set("verbosity level", "extreme");
-    plist.sublist("nonlinear solver")
-      .sublist("Newton parameters")
-      .set("nonlinear tolerance", 1e-6)
-      .set("diverged tolerance", 1e10)
-      .set("limit iterations", 15)
-      .set("max du growth factor", 1e5)
-      .set("max divergent iterations", 3);
-    plist.sublist("JF matrix parameters");
-    plist.sublist("linear operator").set("iterative method", "gmres");
-    plist.sublist("linear operator").sublist("gmres parameters").set("size of Krylov space", 2);
-    plist.sublist("linear operator").sublist("verbose object").set("verbosity level", "extreme");
-
-    // create the Solver
-    Teuchos::RCP<AmanziSolvers::SolverJFNK<Epetra_Vector, Epetra_BlockMap>> jfnk =
-      Teuchos::rcp(new AmanziSolvers::SolverJFNK<Epetra_Vector, Epetra_BlockMap>(plist));
-    jfnk->Init(fn, *map);
-
-    // initial guess
-    Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
-    (*u)[0] = -0.9;
-    (*u)[1] = 0.9;
-
-    // solve
-    jfnk->Solve(u);
-    CHECK_CLOSE(0.0, (*u)[0], 1.0e-6);
-    CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
-  };
-
-
-  /* ******************************************************************/
-  TEST_FIXTURE(test_data, JFNK_SOLVER_RIGHT_PC)
-  {
-    std::cout << "\nJFNK solver with RIGHT preconditioner..." << std::endl;
-
-    // create the function class
-    Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, false));
-
-    // create the SolverState
-    Teuchos::ParameterList plist;
-    Teuchos::Array<std::string> criteria;
-    criteria.push_back("relative rhs");
-    criteria.push_back("absolute residual");
-
-    plist.sublist("nonlinear solver").set("solver type", "Newton");
-    plist.sublist("nonlinear solver")
-      .sublist("Newton parameters")
-      .sublist("verbose object")
-      .set("verbosity level", "extreme");
-    plist.sublist("nonlinear solver")
-      .sublist("Newton parameters")
-      .set("nonlinear tolerance", 1e-6)
-      .set("diverged tolerance", 1e10)
-      .set("limit iterations", 15)
-      .set("max du growth factor", 1e5)
-      .set("max divergent iterations", 3);
-    plist.sublist("JF matrix parameters");
-    plist.sublist("linear operator").set("iterative method", "gmres");
-    plist.sublist("linear operator")
-      .sublist("gmres parameters")
-      .set("size of Krylov space", 2)
-      .set("preconditioning strategy", "right")
-      .set<double>("error tolerance", 1e-14)
-      .set<Teuchos::Array<std::string>>("convergence criteria", criteria);
-    plist.sublist("linear operator").sublist("verbose object").set("verbosity level", "extreme");
-
-    // create the Solver
-    Teuchos::RCP<AmanziSolvers::SolverJFNK<Epetra_Vector, Epetra_BlockMap>> jfnk =
-      Teuchos::rcp(new AmanziSolvers::SolverJFNK<Epetra_Vector, Epetra_BlockMap>(plist));
-    jfnk->Init(fn, *map);
-
-    // initial guess
-    Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
-    (*u)[0] = -0.9;
-    (*u)[1] = 0.9;
-
-    // solve
-    jfnk->Solve(u);
-    CHECK_CLOSE(0.0, (*u)[0], 1.0e-6);
-    CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
-  };
-
-
-  /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_LS_SOLVER)
   {
     std::cout << std::endl << "NKA with backtracking..." << std::endl;
@@ -352,6 +266,7 @@ SUITE(SOLVERS)
     CHECK_CLOSE(0.0, (*u)[0], 1.0e-6);
     CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
   };
+
 
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_LS_SOLVER_GLOBALIZATION)
@@ -571,6 +486,7 @@ SUITE(SOLVERS)
     CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
   };
 
+
   /* ******************************************************************/
   TEST_FIXTURE(test_data, BT_LS_SOLVER_GLOBALIZED)
   {
@@ -607,6 +523,8 @@ SUITE(SOLVERS)
     CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
   };
 
+
+  /* ******************************************************************/
   TEST_FIXTURE(test_data, AA_SOLVER)
   {
     std::cout << std::endl << "AA solver...." << std::endl;
@@ -644,6 +562,8 @@ SUITE(SOLVERS)
     CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
   };
 
+
+  /* ******************************************************************/
   TEST_FIXTURE(test_data, AA_SOLVER_GLOBALIZED)
   {
     std::cout << std::endl << "AA solver...." << std::endl;
@@ -674,7 +594,6 @@ SUITE(SOLVERS)
     (*u)[2] = -0.51;
     (*u)[3] = 0.35;
     (*u)[4] = -0.54;
-
 
     // solve
     aa->Solve(u);

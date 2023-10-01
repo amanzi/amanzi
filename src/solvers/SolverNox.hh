@@ -140,6 +140,7 @@ class SolverNox : public Solver<VectorClass, VectorSpace> {
   int returned_code() { return 0; }
   int pc_calls() { return 0; }
   int pc_updates() { return 0; }
+  std::vector<std::pair<double, double>>& history() { return history_; }
 
  private:
   Teuchos::RCP<AmanziGroup<VectorClass>> group_;
@@ -151,6 +152,8 @@ class SolverNox : public Solver<VectorClass, VectorSpace> {
   Teuchos::RCP<SolverFnBaseJF<VectorClass, VectorSpace>> jf_fnbase_;
   double tol_;
   int pc_lag_;
+
+  std::vector<std::pair<double, double>> history_;
 };
 
 } // namespace AmanziSolvers

@@ -127,6 +127,16 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/solver_nka.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
+    add_amanzi_test(solver_newton solver_newton
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_newton.cc
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+
+    add_amanzi_test(solver_jfnk solver_jfnk
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_jfnk.cc
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+
     add_amanzi_test(solver_continuation solver_continuation
                     KIND unit
                     SOURCE test/Main.cc test/solver_continuation.cc

@@ -62,6 +62,7 @@ class SolverNKA_BT : public Solver<Vector, VectorSpace> {
   int pc_calls() { return pc_calls_; }
   int pc_updates() { return pc_updates_; }
   int returned_code() { return returned_code_; }
+  std::vector<std::pair<double, double>>& history() { return history_; }
 
  private:
   void Init_();
@@ -94,6 +95,8 @@ class SolverNKA_BT : public Solver<Vector, VectorSpace> {
   double residual_; // defined by convergence criterion
   ConvergenceMonitor monitor_;
   int norm_type_;
+
+  std::vector<std::pair<double, double>> history_;
 };
 
 
@@ -352,6 +355,8 @@ SolverNKA_BT<Vector, VectorSpace>::NKA_ErrorControl_(double error,
                                                      double previous_error,
                                                      double l2_error)
 {
+  history_.push_back(std::make_pair(error, l2_error));
+
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << num_itrs_ << ": error=" << error << "  L2-error=" << l2_error << std::endl;
 

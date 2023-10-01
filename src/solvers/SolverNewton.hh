@@ -50,6 +50,10 @@ method is Newton.  If it applies an appoximation, it is inexact Newton.
       the solution increment grows on too many consecutive iterations, the
       solver is terminated.
 
+    * `"make one iteration`" ``[bool]`` **false** require at least one iteration
+      to be performed before declaring success. This options makes any effect 
+      only when `"monitor residual`" is choose.
+
     * `"modify correction`" ``[bool]`` **true** allows a PK to modify the
       solution increment. One example is a physics-based clipping of extreme
       solution values.
@@ -107,6 +111,7 @@ class SolverNewton : public Solver<Vector, VectorSpace> {
   int pc_calls() { return pc_calls_; }
   int pc_updates() { return pc_calls_; }
   int returned_code() { return returned_code_; }
+  std::vector<std::pair<double, double>>& history() { return history_; }
 
  private:
   void Init_();
@@ -138,6 +143,8 @@ class SolverNewton : public Solver<Vector, VectorSpace> {
   double residual_;
   ConvergenceMonitor monitor_;
   int norm_type_;
+
+  std::vector<std::pair<double, double>> history_;
 };
 
 
@@ -196,6 +203,7 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
   // initialize the iteration and pc counters
   num_itrs_ = 0;
   pc_calls_ = 0;
+  history_.clear();
 
   // create storage
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
@@ -325,6 +333,7 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
       previous_error = error;
       error = fn_->ErrorNorm(u, du);
       residual_ = error;
+
       du->Norm2(&l2_error);
 
       int ierr = Newton_ErrorControl_(error, previous_error, l2_error, previous_du_norm, du_norm);
@@ -346,6 +355,8 @@ SolverNewton<Vector, VectorSpace>::Newton_ErrorControl_(double error,
                                                         double previous_du_norm,
                                                         double du_norm)
 {
+  history_.push_back(std::make_pair(error, l2_error));
+
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << num_itrs_ << ": error=" << error << "  l2-error=" << l2_error
                << " contr. factor=" << du_norm / previous_du_norm << std::endl;

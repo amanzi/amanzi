@@ -72,6 +72,10 @@ especially with an approximate Jacobian.
       the solution increment grows on too many consecutive iterations, the
       solver is terminated.
 
+    * `"make one iteration`" ``[bool]`` **false** require at least one iteration
+      to be performed before declaring success. This options makes any effect 
+      only when `"monitor residual`" is choose.
+
     * `"modify correction`" ``[bool]`` **false** Allows a PK to modify the
       solution increment. One example is a physics-based clipping of extreme
       solution values.
@@ -138,6 +142,7 @@ class SolverNKA : public Solver<Vector, VectorSpace> {
   int pc_calls() { return pc_calls_; }
   int pc_updates() { return pc_updates_; }
   int returned_code() { return returned_code_; }
+  std::vector<std::pair<double, double>>& history() { return history_; }
 
  private:
   void Init_();
@@ -165,10 +170,13 @@ class SolverNKA : public Solver<Vector, VectorSpace> {
   double max_error_growth_factor_, max_du_growth_factor_;
   int max_divergence_count_;
 
+  int make_one_iteration_;
   bool modify_correction_;
   double residual_; // defined by convergence criterion
   ConvergenceMonitor monitor_;
   int norm_type_;
+
+  std::vector<std::pair<double, double>> history_;
 };
 
 
@@ -207,6 +215,7 @@ SolverNKA<Vector, VectorSpace>::Init_()
   max_divergence_count_ = plist_.get<int>("max divergent iterations", 3);
   nka_lag_iterations_ = plist_.get<int>("lag iterations", 0);
   modify_correction_ = plist_.get<bool>("modify correction", false);
+  make_one_iteration_ = (plist_.get<bool>("make one iteration", false)) ? 1 : 0;
 
   std::string monitor_name = plist_.get<std::string>("monitor", "monitor update");
   ParseConvergenceCriteria(monitor_name, &monitor_, &norm_type_);
@@ -244,6 +253,7 @@ SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u)
   num_itrs_ = 0;
   pc_calls_ = 0;
   pc_updates_ = 0;
+  history_.clear();
 
   // create storage
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
@@ -289,7 +299,6 @@ SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u)
     // If monitoring the residual, check for convergence.
     if (monitor_ == SOLVER_MONITOR_RESIDUAL) {
       previous_error = error;
-
       r->Norm2(&l2_error);
 
       if (norm_type_ == SOLVER_NORM_LINF)
@@ -310,8 +319,11 @@ SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u)
       }
 
       int ierr = NKA_ErrorControl_(error, previous_error, l2_error);
-      if (ierr == SOLVER_CONVERGED) return num_itrs_;
-      if (ierr != SOLVER_CONTINUE) return ierr;
+      if (ierr == SOLVER_CONVERGED) {
+        if (num_itrs_ >= make_one_iteration_) return num_itrs_;
+      } else if (ierr != SOLVER_CONTINUE) {
+        return ierr;
+      }
     }
 
     // Update the preconditioner if necessary.
@@ -429,7 +441,6 @@ SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u)
     // Monitor the PC'd residual.
     if (monitor_ == SOLVER_MONITOR_PCED_RESIDUAL) {
       previous_error = error;
-
       du_tmp->Norm2(&l2_error);
 
       if (norm_type_ == SOLVER_NORM_LINF)
@@ -467,6 +478,8 @@ SolverNKA<Vector, VectorSpace>::NKA_ErrorControl_(double error,
                                                   double previous_error,
                                                   double l2_error)
 {
+  history_.push_back(std::make_pair(error, l2_error));
+
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << num_itrs_ << ": error=" << error << "  l2-error=" << l2_error << std::endl;
 

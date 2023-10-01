@@ -43,6 +43,7 @@ interface about how to update the continuation parameter.
 #include "VerboseObject.hh"
 
 #include "Solver.hh"
+#include "SolverFactory.hh"
 #include "SolverFnBase.hh"
 #include "SolverDefs.hh"
 
@@ -85,6 +86,7 @@ class SolverContinuation : public Solver<Vector, VectorSpace> {
   int pc_calls() { return 0; }
   int pc_updates() { return 0; }
   int returned_code() { return returned_code_; }
+  std::vector<std::pair<double, double>>& history() { return solver_->history(); }
 
  private:
   void Init_();
@@ -104,13 +106,6 @@ class SolverContinuation : public Solver<Vector, VectorSpace> {
   int returned_code_;
 };
 
-} // namespace AmanziSolvers
-} // namespace Amanzi
-
-#include "SolverFactory.hh"
-
-namespace Amanzi {
-namespace AmanziSolvers {
 
 /* ******************************************************************
 * Public Init method.

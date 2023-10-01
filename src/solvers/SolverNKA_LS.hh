@@ -103,6 +103,7 @@ class SolverNKA_LS : public Solver<Vector, VectorSpace> {
   int pc_calls() { return pc_calls_; }
   int pc_updates() { return pc_updates_; }
   int returned_code() { return returned_code_; }
+  std::vector<std::pair<double, double>>& history() { return history_; }
 
  private:
   void Init_();
@@ -143,6 +144,7 @@ class SolverNKA_LS : public Solver<Vector, VectorSpace> {
   int fun_calls_, pc_calls_, solve_calls_;
   int pc_updates_;
 
+  std::vector<std::pair<double, double>> history_;
 
   // functor for minimization in boost
   struct Functor {

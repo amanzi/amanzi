@@ -114,6 +114,7 @@ class SolverBT : public Solver<Vector, VectorSpace> {
   int pc_calls() { return pc_calls_; }
   int pc_updates() { return pc_updates_; }
   int returned_code() { return returned_code_; }
+  std::vector<std::pair<double, double>>& history() { return history_; }
 
  private:
   void Init_();
@@ -172,6 +173,8 @@ class SolverBT : public Solver<Vector, VectorSpace> {
 
   bool modify_correction_;
   double residual_; // defined by convergence criterion
+
+  std::vector<std::pair<double, double>> history_;
 };
 
 
@@ -346,6 +349,8 @@ SolverBT<Vector, VectorSpace>::BT_ErrorControl_(double error,
                                                 double previous_error,
                                                 double l2_error)
 {
+  history_.push_back(std::make_pair(error, l2_error));
+
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << num_itrs_ << ": error=" << error << "  L2-error=" << l2_error << std::endl;
 

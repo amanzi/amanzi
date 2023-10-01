@@ -21,6 +21,8 @@ the selected solver.
 #ifndef AMANZI_SOLVER_BASE_
 #define AMANZI_SOLVER_BASE_
 
+#include <utility>
+
 #include "Teuchos_RCP.hpp"
 
 #include "ResidualDebugger.hh"
@@ -51,6 +53,7 @@ class Solver {
   virtual int returned_code() = 0;
   virtual int pc_calls() = 0;
   virtual int pc_updates() = 0;
+  virtual std::vector<std::pair<double, double>>& history() = 0;
 };
 
 

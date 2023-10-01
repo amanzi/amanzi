@@ -67,7 +67,6 @@ inverse, the estimate of the inverse.
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "VerboseObject.hh"
 #include "FnBaseDefs.hh"
 #include "SolverFnBase.hh"
 #include "SolverDefs.hh"
@@ -109,6 +108,7 @@ class SolverJFNK : public Solver<Vector, VectorSpace> {
   int returned_code() { return solver_->returned_code(); }
   int pc_calls() { return solver_->pc_calls(); }
   int pc_updates() { return solver_->pc_updates(); }
+  std::vector<std::pair<double, double>>& history() { return solver_->history(); }
 
  protected:
   Teuchos::ParameterList plist_;
