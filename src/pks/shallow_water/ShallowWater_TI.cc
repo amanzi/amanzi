@@ -329,11 +329,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       // so units are the same and lake at rest will be preserved
 
       V_rec[1] = - 1.0;
-      double WaterDepthEdge = TotalDepthEdgeValue(c1, f, ht_c[0][c1],  B_c[0][c1],  B_max[0][c1], B_n) - BathymetryEdgeValue(f, B_n);
-      double WettedAngleEdge =  ComputeWettedAngle(WaterDepthEdge);
-      // I am using ComputeWaterDepth instead of directly doing
-      // ht - B because, for c1, ht - B = h + pressureHead
-      V_rec[0] = ComputeWaterDepth(WettedAngleEdge);
+      V_rec[0] = std::max( (TotalDepthEdgeValue(c1, f, ht_c[0][c1],  B_c[0][c1],  B_max[0][c1], B_n) - BathymetryEdgeValue(f, B_n)), 0.0);
 
       ierr = ErrorDiagnostics_(t, c1, V_rec[0]);
       if (ierr < 0) break;
