@@ -280,8 +280,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     normalNotRotated /= farea;
     normalRotated /= farea;
     // If we have a junction (wetted angle = -1), we do not need to rotate
-    // the normal vectors because both entries are 0, and also because
-    // I believe SW is a 2D model and so we do not need to worry about mesh direction
+    // the normal vectors because both entries are 0, and also because the SW
+    // model is a 2D model
     if(WettedAngle_c[0][c1] >= 0.0){
        // this is if c1 is not a junction 
        ProjectNormalOntoMeshDirection(c1, normal);
@@ -290,7 +290,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     else {
        // this is if c1 is a junction 
        // we consider the mesh direction of c2 to be 
-       // the same as c1 is c1 is a junction
+       // the same as c1 if c1 is a junction
        ProjectNormalOntoMeshDirection(c2, normalRotated);
     }
 
@@ -329,13 +329,42 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       // so units are the same and lake at rest will be preserved
 
       V_rec[1] = - 1.0;
-      V_rec[0] = std::max( (TotalDepthEdgeValue(c1, f, ht_c[0][c1],  B_c[0][c1],  B_max[0][c1], B_n) - BathymetryEdgeValue(f, B_n)), 0.0);
+      double WaterDepthEdge = TotalDepthEdgeValue(c1, f, ht_c[0][c1],  B_c[0][c1],  B_max[0][c1], B_n) - BathymetryEdgeValue(f, B_n);
+      double WettedAngleEdge =  ComputeWettedAngle(WaterDepthEdge);
+      // I am using ComputeWaterDepth instead of directly doing
+      // ht - B because, for c1, ht - B = h + pressureHead
+      V_rec[0] = ComputeWaterDepth(WettedAngleEdge);
 
       ierr = ErrorDiagnostics_(t, c1, V_rec[0]);
       if (ierr < 0) break;
 
-      qx_rec = discharge_x_grad_->getValue(c1, xf);
-      qy_rec = discharge_y_grad_->getValue(c1, xf);
+      // for SW, the discharge value to reconstruct
+      // at the edge has to be q=uh not q=uA as it would 
+      // be using the getValue function without the extra argument
+      // BEGIN computation of discharge at edge
+      AmanziMesh::Entity_ID_List cellsAdj;
+      discharge_x_grad_->GetCellFaceAdjCellsManifold_(c1, AmanziMesh::Parallel_type::ALL, cellsAdj);
+      cellsAdj.push_back(c1);
+      std::vector<double>uAdj(cellsAdj.size(),0.0);
+      std::vector<double>vAdj(cellsAdj.size(),0.0);
+      std::vector<double>waterDepthAdj(cellsAdj.size(),0.0);
+      for(int adjCell=0; adjCell<cellsAdj.size()-1; adjCell++){
+        uAdj[adjCell] = vel_c[0][cells[adjCell]];
+        vAdj[adjCell] = vel_c[1][cells[adjCell]];
+        waterDepthAdj[adjCell] = ComputeWaterDepth(WettedAngle_c[0][cells[adjCell]]);
+      }
+      uAdj[cellsAdj.size()-1] = vel_c[0][c1];
+      vAdj[cellsAdj.size()-1] = vel_c[1][c1];
+      double c1WaterDepth = ComputeWaterDepth(WettedAngle_c[0][c1]);
+      waterDepthAdj[cellsAdj.size()-1] = c1WaterDepth;
+      std::vector<double>gradient(dim_);
+      discharge_x_grad_->ComputeGradientAtCell_(c1, uAdj, waterDepthAdj, gradient);
+      double qx_SW = vel_c[0][c1] * c1WaterDepth;
+      qx_rec = discharge_x_grad_->getValue(c1, qx_SW, gradient, xf);
+      discharge_y_grad_->ComputeGradientAtCell_(c1, vAdj, waterDepthAdj, gradient);
+      double qy_SW = vel_c[1][c1] * c1WaterDepth;
+      qy_rec = discharge_y_grad_->getValue(c1, qy_SW, gradient, xf);
+      // END computation of discharge at edge
 
       factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
 
@@ -361,8 +390,41 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         ierr = ErrorDiagnostics_(t, c1, V_rec[0]);
         if (ierr < 0) break;
 
-        qx_rec = discharge_x_grad_->getValue(c1, xf);
-        qy_rec = discharge_y_grad_->getValue(c1, xf);
+        // for the pipe, the discharge value to reconstruct
+        // at the edge has to be q=uA not q=uh as it would
+        // be using the getValue function without the extra argument
+        // BEGIN computation of discharge at edge
+        AmanziMesh::Entity_ID_List cellsAdj;
+        discharge_x_grad_->GetCellFaceAdjCellsManifold_(c1, AmanziMesh::Parallel_type::ALL, cellsAdj);
+        cellsAdj.push_back(c1);
+        std::vector<double>uAdj(cellsAdj.size(),0.0);
+        std::vector<double>vAdj(cellsAdj.size(),0.0);
+        std::vector<double>wettedAreaAdj(cellsAdj.size(),0.0);
+        for(int adjCell=0; adjCell<cellsAdj.size()-1; adjCell++){
+           uAdj[adjCell] = vel_c[0][cells[adjCell]];
+           vAdj[adjCell] = vel_c[1][cells[adjCell]];
+           if(cells[adjCell]==c1){
+              double angleAdj =  ComputeWettedAngle(h_temp[0][cells[adjCell]]);
+              wettedAreaAdj[adjCell] = ComputeWettedArea(angleAdj);
+           }
+           else{
+              // we don't have SW water depth outside c1 
+              wettedAreaAdj[adjCell] = h_temp[0][cells[adjCell]];
+           }
+        }
+        uAdj[cellsAdj.size()-1] = vel_c[0][c1];
+        vAdj[cellsAdj.size()-1] = vel_c[1][c1];
+        double c1WettedAngle = ComputeWettedAngle(h_temp[0][c1]);
+        double c1WettedArea = ComputeWettedArea(c1WettedAngle);
+        wettedAreaAdj[cellsAdj.size()-1] = c1WettedArea;
+        std::vector<double>gradient(dim_);
+        discharge_x_grad_->ComputeGradientAtCell_(c1, uAdj, wettedAreaAdj, gradient);
+        double qx_pipe = vel_c[0][c1] * c1WettedArea;
+        qx_rec = discharge_x_grad_->getValue(c1, qx_pipe, gradient, xf);
+        discharge_y_grad_->ComputeGradientAtCell_(c1, vAdj, wettedAreaAdj, gradient);
+        double qy_pipe = vel_c[1][c1] * c1WettedArea;
+        qy_rec = discharge_y_grad_->getValue(c1, qy_pipe, gradient, xf);
+        // END computation of discharge at edge
 
         factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
 
@@ -449,8 +511,38 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         ierr = ErrorDiagnostics_(t, c2, V_rec[0]);
         if (ierr < 0) break;
 
-        qx_rec = discharge_x_grad_->getValue(c2, xf);
-        qy_rec = discharge_y_grad_->getValue(c2, xf);
+        // BEGIN computation of discharge at edge
+        AmanziMesh::Entity_ID_List cellsAdj;
+        discharge_x_grad_->GetCellFaceAdjCellsManifold_(c2, AmanziMesh::Parallel_type::ALL, cellsAdj);
+        cellsAdj.push_back(c2);
+        std::vector<double>uAdj(cellsAdj.size(),0.0);
+        std::vector<double>vAdj(cellsAdj.size(),0.0);
+        std::vector<double>wettedAreaAdj(cellsAdj.size(),0.0);
+        for(int adjCell=0; adjCell<cellsAdj.size()-1; adjCell++){
+           uAdj[adjCell] = vel_c[0][cells[adjCell]];
+           vAdj[adjCell] = vel_c[1][cells[adjCell]];
+           if(cells[adjCell]==c2){
+              double angleAdj =  ComputeWettedAngle(h_temp[0][cells[adjCell]]);
+              wettedAreaAdj[adjCell] = ComputeWettedArea(angleAdj);
+           }
+           else{
+              // we don't have SW water depth outside c1
+              wettedAreaAdj[adjCell] = h_temp[0][cells[adjCell]];
+           }
+        }
+        uAdj[cellsAdj.size()-1] = vel_c[0][c2];
+        vAdj[cellsAdj.size()-1] = vel_c[1][c2];
+        double c2WettedAngle = ComputeWettedAngle(h_temp[0][c2]);
+        double c2WettedArea = ComputeWettedArea(c2WettedAngle);
+        wettedAreaAdj[cellsAdj.size()-1] = c2WettedArea;
+        std::vector<double>gradient(dim_);
+        discharge_x_grad_->ComputeGradientAtCell_(c2, uAdj, wettedAreaAdj, gradient);
+        double qx_pipe = vel_c[0][c2] * c2WettedArea;
+        qx_rec = discharge_x_grad_->getValue(c2, qx_pipe, gradient, xf);
+        discharge_y_grad_->ComputeGradientAtCell_(c2, vAdj, wettedAreaAdj, gradient);
+        double qy_pipe = vel_c[1][c2] * c2WettedArea;
+        qy_rec = discharge_y_grad_->getValue(c2, qy_pipe, gradient, xf);
+        // END computation of discharge at edge
 
         factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
 
@@ -475,8 +567,30 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
          ierr = ErrorDiagnostics_(t, c2, V_rec[0]);
          if (ierr < 0) break;
 
-         qx_rec = discharge_x_grad_->getValue(c2, xf);
-         qy_rec = discharge_y_grad_->getValue(c2, xf);
+         // BEGIN computation of discharge at edge
+         AmanziMesh::Entity_ID_List cellsAdj;
+         discharge_x_grad_->GetCellFaceAdjCellsManifold_(c2, AmanziMesh::Parallel_type::ALL, cellsAdj);
+         cellsAdj.push_back(c2);
+         std::vector<double>uAdj(cellsAdj.size(),0.0);
+         std::vector<double>vAdj(cellsAdj.size(),0.0);
+         std::vector<double>waterDepthAdj(cellsAdj.size(),0.0);
+         for(int adjCell=0; adjCell<cellsAdj.size()-1; adjCell++){
+            uAdj[adjCell] = vel_c[0][cells[adjCell]];
+            vAdj[adjCell] = vel_c[1][cells[adjCell]];
+            waterDepthAdj[adjCell] = ComputeWaterDepth(WettedAngle_c[0][cells[adjCell]]);
+         }
+         uAdj[cellsAdj.size()-1] = vel_c[0][c2];
+         vAdj[cellsAdj.size()-1] = vel_c[1][c2];
+         double c2WaterDepth = ComputeWaterDepth(WettedAngle_c[0][c2]);
+         waterDepthAdj[cellsAdj.size()-1] = c2WaterDepth;
+         std::vector<double>gradient(dim_);
+         discharge_x_grad_->ComputeGradientAtCell_(c2, uAdj, waterDepthAdj, gradient);
+         double qx_SW = vel_c[0][c2] * c2WaterDepth;
+         qx_rec = discharge_x_grad_->getValue(c2, qx_SW, gradient, xf);
+         discharge_y_grad_->ComputeGradientAtCell_(c2, vAdj, waterDepthAdj, gradient);
+         double qy_SW = vel_c[1][c2] * c2WaterDepth;
+         qy_rec = discharge_y_grad_->getValue(c2, qy_SW, gradient, xf);
+         // END computation of discharge at edge
 
          factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
 

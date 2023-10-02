@@ -69,6 +69,7 @@ class ReconstructionCellLinear : public Reconstruction {
 
   // -- calculate value, deviation from mean, and full polynomial
   virtual double getValue(int c, const AmanziGeometry::Point& p) override;
+  double getValue(int c, const double fieldAtCell, std::vector<double> Gradient, const AmanziGeometry::Point& p);
   virtual double getValueSlope(int c, const AmanziGeometry::Point& p) override;
   virtual WhetStone::Polynomial getPolynomial(int c) const override;
 
@@ -79,6 +80,14 @@ class ReconstructionCellLinear : public Reconstruction {
   void Compute(const AmanziMesh::Entity_ID_List& ids,
                const Teuchos::RCP<const Epetra_MultiVector>& field, int component,
                const Teuchos::RCP<const BCs>& bc = Teuchos::null);
+
+  AmanziMesh::Entity_ID_List GetCellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
+                                 AmanziMesh::Parallel_type ptype,
+                                 std::vector<AmanziMesh::Entity_ID>& cells);
+
+  void ComputeGradientAtCell_(int c, 
+                              std::vector<double> vel, std::vector<double> var,
+                              std::vector<double> gradient);
 
  private:
   void PopulateLeastSquareSystem_(AmanziGeometry::Point& centroid,
