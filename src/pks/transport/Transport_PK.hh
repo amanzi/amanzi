@@ -346,7 +346,8 @@ class Transport_PK : public PK_Physical {
 
   // physical models
   // -- dispersion and diffusion
-  void CalculateDispersionTensor_(const Epetra_MultiVector& porosity,
+  void CalculateDispersionTensor_(double t,
+                                  const Epetra_MultiVector& porosity,
                                   const Epetra_MultiVector& water_content);
 
   void CalculateDiffusionTensor_(double md,

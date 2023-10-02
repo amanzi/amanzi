@@ -18,6 +18,9 @@
 // Amanzi
 #include "exceptions.hh"
 #include "errors.hh"
+#include "Function.hh"
+#include "FunctionConstant.hh"
+#include "FunctionFactory.hh"
 #include "Point.hh"
 #include "Tensor.hh"
 
@@ -32,27 +35,27 @@ namespace Transport {
 MDM_Isotropic::MDM_Isotropic(Teuchos::ParameterList& plist)
 {
   int count = 0;
-  alpha_ = 0.;
   dispersivity_ = false;
 
   if (plist.isParameter("dispersivity [m]")) {
-    alpha_ = plist.get<double>("dispersivity [m]");
+    ParseAlpha_(plist, "dispersivity [m]");
     dispersivity_ = true;
     count++;
   }
   if (plist.isParameter("dispersion coefficient [m^2 s^-1]")) {
-    alpha_ = plist.get<double>("dispersion coefficient [m^2 s^-1]");
+    ParseAlpha_(plist, "dispersion coefficient [m^2 s^-1]");
     dispersivity_ = false;
     count++;
   }
 
   if (plist.isParameter("dispersion coefficient")) {
-    alpha_ = plist.get<double>("dispersion coefficient");
+    ParseAlpha_(plist, "dispersion coefficient");
     dispersivity_ = false;
     count++;
   }
+
   if (count == 0 || plist.isParameter("alpha")) {
-    alpha_ = plist.get<double>("alpha", 0.0);
+    ParseAlpha_(plist, "alpha");
     dispersivity_ = true;
     count++;
   }
@@ -71,12 +74,37 @@ MDM_Isotropic::MDM_Isotropic(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Isotropic tensor of rank 1.
 ****************************************************************** */
+void MDM_Isotropic::ParseAlpha_(Teuchos::ParameterList& plist, const std::string& keyword)
+{
+  if (plist.isSublist(keyword)) {
+    FunctionFactory factory;
+    alpha_func_ = factory.Create(plist.sublist(keyword));
+
+    std::vector<double> args(1 + dim_, 0.0);
+    alpha_ = (*alpha_func_)(args);
+  } else {
+    alpha_ = plist.get<double>(keyword, 0.0);
+    alpha_func_ = std::make_unique<FunctionConstant>(alpha_);
+  }
+}
+
+
+/* ******************************************************************
+* Isotropic tensor of rank 1.
+****************************************************************** */
 WhetStone::Tensor
-MDM_Isotropic::mech_dispersion(const AmanziGeometry::Point& u,
+MDM_Isotropic::mech_dispersion(double t,
+                               const AmanziGeometry::Point& xc,
+                               const AmanziGeometry::Point& u,
                                int axi_symmetric,
                                double s,
                                double phi) const
 {
+  std::vector<double> args(1 + dim_);
+  args[0] = t;
+  for (int i = 0; i < dim_; ++i) args[i + 1] = xc[i];
+  alpha_ = (*alpha_func_)(args);
+  
   WhetStone::Tensor D(dim_, 1);
   D(0, 0) = dispersivity_ ? alpha_ * s * phi * norm(u) : alpha_ * s * phi;
   return D;

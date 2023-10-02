@@ -189,7 +189,7 @@
         <porosity value="0.4082"/>
         <specific_storage model="constant" value="0.0002"/>
         <particle_density model="file" filename="particle_density.h5"/>
-        <dispersion_tensor type="uniform_isotropic" alpha_l="0.01 m" alpha_t="0.001 m"/>
+        <dispersion_tensor type="bear" alpha_l="0.01 m" alpha_t="0.001 m"/>
       </mechanical_properties>
       <permeability model="file" filename="mesh_data.exo" attribute="permx,permy"/>
       <cap_pressure model="van_genuchten">

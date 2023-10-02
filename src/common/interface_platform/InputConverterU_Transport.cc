@@ -206,8 +206,17 @@ InputConverterU::TranslateTransport_(const std::string& domain)
       if (flag) {
         double al, alh, alv, at, ath, atv;
         std::string model = GetAttributeValueS_(
-          node, "type", "uniform_isotropic,burnett_frind,lichtner_kelkar_robinson");
-        if (strcmp(model.c_str(), "uniform_isotropic") == 0) {
+          node, "type", "isotropic,bear,burnett_frind,lichtner_kelkar_robinson");
+        if (strcmp(model.c_str(), "scalar") == 0) {
+          tmp_list.set<std::string>("model", "scalar");
+
+          std::string formula = GetAttributeValueS_(node, "alpha", TYPE_NONE, false, "m");
+
+          tmp_list.sublist("parameters for scalar").sublist("alpha")
+                  .sublist("function-exprtk")
+                  .set<int>("number of arguments", dim_ + 1)
+                  .set<std::string>("formula", formula);
+        } else if (strcmp(model.c_str(), "bear") == 0) {
           tmp_list.set<std::string>("model", "Bear");
 
           al = GetAttributeValueD_(node, "alpha_l", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");

@@ -208,7 +208,7 @@ InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
     if (property_name == "dispersion_tensor") // Weirdo!
     {
       string type = GetAttributeValueS_(property, "type");
-      if (type == "uniform_isotropic") {
+      if (type == "bear") {
         string alpha_l = GetAttributeValueS_(property, "alpha_l");
         string alpha_t = GetAttributeValueS_(property, "alpha_t");
         AddToTable(table,

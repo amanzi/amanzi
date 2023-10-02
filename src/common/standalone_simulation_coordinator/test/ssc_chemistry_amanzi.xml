@@ -183,7 +183,7 @@
         <porosity value="0.25"/>
         <particle_density value="2.65"/>
         <specific_storage model="constant" value="0.001"/>
-        <dispersion_tensor alpha_l="0.0" alpha_t="0.0" type="uniform_isotropic"/>
+        <dispersion_tensor alpha_l="0.0" alpha_t="0.0" type="bear"/>
       </mechanical_properties>
       <minerals>
         <mineral name="Gibbsite" specific_surface_area="0.1e+2" volume_fraction="0.0"/>

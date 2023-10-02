@@ -50,7 +50,7 @@ TransportImplicit_PK::FunctionalResidual(double t_old,
   if (use_dispersion_) {
     int phase;
     double md;
-    CalculateDispersionTensor_(*transport_phi, *wc_c);
+    CalculateDispersionTensor_(t_old + dtp / 2, *transport_phi, *wc_c);
     FindDiffusionValue(component_names_[current_component_], &md, &phase);
     if (md != 0.0) CalculateDiffusionTensor_(md, phase, *transport_phi, sat_c, *wc_c);
 

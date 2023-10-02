@@ -36,7 +36,8 @@ namespace Transport {
 * assumed to be scaled by face area.
 ******************************************************************* */
 void
-Transport_PK::CalculateDispersionTensor_(const Epetra_MultiVector& porosity,
+Transport_PK::CalculateDispersionTensor_(double t,
+                                         const Epetra_MultiVector& porosity,
                                          const Epetra_MultiVector& water_content)
 {
   if (!flag_dispersion_) {
@@ -46,7 +47,7 @@ Transport_PK::CalculateDispersionTensor_(const Epetra_MultiVector& porosity,
 
   D_.resize(ncells_owned);
   for (int c = 0; c < ncells_owned; c++) D_[c].Init(dim, 1);
-
+ 
   const auto& flowrate = *S_->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
 
   AmanziGeometry::Point velocity(dim);
@@ -54,6 +55,7 @@ Transport_PK::CalculateDispersionTensor_(const Epetra_MultiVector& porosity,
   WhetStone::Polynomial poly(dim, 1);
 
   for (int c = 0; c < ncells_owned; ++c) {
+    const auto& xc = mesh_->cell_centroid(c);
     const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
@@ -66,7 +68,7 @@ Transport_PK::CalculateDispersionTensor_(const Epetra_MultiVector& porosity,
 
     for (int k = 0; k < dim; ++k) velocity[k] = poly(k + 1);
     D_[c] = mdm_->second[(*mdm_->first)[c]]->mech_dispersion(
-      velocity, axi_symmetry_[c], water_content[0][c], porosity[0][c]);
+      t, xc, velocity, axi_symmetry_[c], water_content[0][c], porosity[0][c]);
   }
 }
 
@@ -173,7 +175,8 @@ Transport_PK::DispersionSolver(const Epetra_MultiVector& tcc_prev,
   const auto& sat_c =
     *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
-  CalculateDispersionTensor_(*transport_phi, wc_c);
+  double t = (t_old + t_new) / 2;
+  CalculateDispersionTensor_(t, *transport_phi, wc_c);
 
   int i0 = (comp0 >= 0) ? comp0 : 0;
 

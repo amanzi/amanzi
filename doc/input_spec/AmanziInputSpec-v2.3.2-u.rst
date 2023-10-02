@@ -1112,8 +1112,9 @@ It has the following requirements.
       
 
     * ``dispersion_tensor`` is defined in-line using attributes.  The attribute ``type`` is used to specify either the model to utilize.
-      The available options are: ``uniform_isotropic``, ``burnett_frind``, or ``lichtner_kelkar_robinson``.
-      For ``uniform_isotropic`` values are specified using the attributes ``alpha_l`` [m] and ``alpha_t`` [m].
+      The available options are: ``isotropic``, ``bear``, ``burnett_frind``, or ``lichtner_kelkar_robinson``.
+      For ``isotropic`` values are specified using  attribute ``alpha`` [m].
+      For ``bear`` values are specified using the attributes ``alpha_l`` [m] and ``alpha_t`` [m].
       For ``burnett_frind`` values are specified using the attributes ``alpha_l`` [m], ``alpha_th`` [m], and ``alpha_tv`` [m].
       For ``lichtner_kelkar_robinson`` values are specified using the attributes ``alpha_l`h", ``alpha_lv``, ``alpha_th``, and ``alpha_tv``.
 
@@ -1130,7 +1131,7 @@ It has the following requirements.
       <particle_density value="double"/>
       <specific_storage value="double"/>
       <specific_yield value="double"/>
-      <dispersion_tensor type="uniform_isotropic" alpha_l="double" alpha_t="double"/>
+      <dispersion_tensor type="bear" alpha_l="double" alpha_t="double"/>
       <tortuosity value="double"/>
   </mechanical_properties>
 

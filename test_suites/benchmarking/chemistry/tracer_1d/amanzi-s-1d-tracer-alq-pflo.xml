@@ -86,7 +86,7 @@
 	<porosity value="0.25"/>
 	<particle_density value="2720.0"/>
 	<specific_storage value="1.0"/>
-	<dispersion_tensor alpha_l="0.0" alpha_t="0.0" type="uniform_isotropic"/>
+	<dispersion_tensor alpha_l="0.0" alpha_t="0.0" type="bear"/>
       </mechanical_properties>
       <permeability x="1.0E-12" y="1.0E-12" />
       <cap_pressure model="none"/>

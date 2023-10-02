@@ -849,7 +849,7 @@ For ``dispersion_tensor`` several models are available.  The model is specified 
 +--------------------------+-----------------+-------------------+
 | Dispersion Model         | Attribute Names | Attribute Values  |
 +==========================+=================+===================+
-| uniform_isotropic        | alpha_l         | Exponential value |
+| bear                     | alpha_l         | Exponential value |
 |                          | alpha_t         | Exponential value |
 +--------------------------+-----------------+-------------------+
 | burnett_frind            | alpha_l         | Exponential value |
@@ -869,7 +869,7 @@ For ``dispersion_tensor`` several models are available.  The model is specified 
      <particle_density value="Exponential"/>
      <specific_storage value="Exponential"/>
      <specific_yield value="Exponential"/>
-     <dispersion_tensor type="uniform_isotropic" alpha_l="Exponential" alpha_t="Exponential"/>
+     <dispersion_tensor type="bear" alpha_l="Exponential" alpha_t="Exponential"/>
      <tortuosity value="Exponential"/>
    </mechanical_properties>
 

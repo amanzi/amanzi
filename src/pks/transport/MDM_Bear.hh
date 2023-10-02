@@ -38,7 +38,12 @@ class MDM_Bear : public MDM {
   // Required methods from the base class
   // -- dispersion tensor of rank 2.
   WhetStone::Tensor
-  mech_dispersion(const AmanziGeometry::Point& u, int axi_symmetry, double wc, double phi) const;
+  mech_dispersion(double t,
+                  const AmanziGeometry::Point& xc,
+                  const AmanziGeometry::Point& u,
+                  int axi_symmetry,
+                  double wc,
+                  double phi) const;
 
   // -- the model is valid if at least one parameter is not zero.
   bool is_valid() const { return (alphaL_ + alphaT_ != 0.0); }

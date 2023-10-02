@@ -132,7 +132,7 @@
     <material name="Aquifers">
       <mechanical_properties>
         <porosity value="0.38"/>
-        <dispersion_tensor type="uniform_isotropic" alpha_l="0.0001" alpha_t="0.0001"/>
+        <dispersion_tensor type="bear" alpha_l="0.0001" alpha_t="0.0001"/>
         <tortuosity value="0.0"/>  
         <specific_storage value="0.0" model="constant"/>  
       </mechanical_properties>

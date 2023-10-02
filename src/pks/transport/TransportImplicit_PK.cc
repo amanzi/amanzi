@@ -258,7 +258,7 @@ TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_itrs)
     if (use_dispersion_) {
       int phase;
       double md;
-      CalculateDispersionTensor_(*transport_phi, wc_c);
+      CalculateDispersionTensor_(t_old + dt_ / 2, *transport_phi, wc_c);
       FindDiffusionValue(component_names_[i], &md, &phase);
       if (md != 0.0) CalculateDiffusionTensor_(md, phase, *transport_phi, sat_c, wc_c);
 
@@ -355,7 +355,7 @@ TransportImplicit_PK::UpdateLinearSystem(double t_old, double t_new, int compone
   if (use_dispersion_) {
     int phase;
     double md;
-    CalculateDispersionTensor_(*transport_phi, wc_c);
+    CalculateDispersionTensor_(t_old + dt / 2, *transport_phi, wc_c);
     FindDiffusionValue(component_names_[component], &md, &phase);
     if (md != 0.0) CalculateDiffusionTensor_(md, phase, *transport_phi, sat_c, wc_c);
 

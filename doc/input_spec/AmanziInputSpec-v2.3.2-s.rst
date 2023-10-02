@@ -753,7 +753,7 @@ Mechanical_properties
 
     * ``specific_yield`` is defined in-line using attributes.  Either it is specified as a value using ``value`` or it specified through a file using ``filename`` and ``type``.  NOTE - FILE OPTION NOT IMPLEMENTED YET.
 
-    * ``dispersion_tensor`` is defined in-line using attributes.  The attribute ``type`` is used to specify either the model to utilize of that a file is to be read.  The ``type`` options are: uniform_isotropic, burnett_frind, lichtner_kelkar_robinson, or file.  For ``uniform_isotropic`` values are specified using the attributes ``alpha_l`` and ``alpha_t``.  For ``burnett_frind`` values are specified using the attributes ``alpha_l``, ``alpha_th``, and ``alpha_tv``. For ``lichtner_kelkar_robinson`` values are specified using the attributes ``alpha_l`h", ``alpha_lv``, ``alpha_th``, and ``alpha_tv``.  For ``file`` the file name is specified using ``filename``.  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+    * ``dispersion_tensor`` is defined in-line using attributes.  The attribute ``type`` is used to specify either the model to utilize of that a file is to be read.  The ``type`` options are: bear, burnett_frind, lichtner_kelkar_robinson, or file.  For ``bear`` values are specified using the attributes ``alpha_l`` and ``alpha_t``.  For ``burnett_frind`` values are specified using the attributes ``alpha_l``, ``alpha_th``, and ``alpha_tv``. For ``lichtner_kelkar_robinson`` values are specified using the attributes ``alpha_l`h", ``alpha_lv``, ``alpha_th``, and ``alpha_tv``.  For ``file`` the file name is specified using ``filename``.  NOTE - FILE OPTION NOT IMPLEMENTED YET.
 
     * ``tortuosity`` is defined in-line using attributes.  Either it is specified as a value using ``value`` or it specified through a file using ``filename`` and ``type``.  NOTE - FILE OPTION NOT IMPLEMENTED YET.
 
@@ -765,7 +765,7 @@ Mechanical_properties
       <particle_density value="exponential"/>
       <specific_storage value="exponential"/>
       <specific_yield value="exponential"/>
-      <dispersion_tensor type="uniform_isotropic" alpha_l="exponential" alpha_t="exponential"/>
+      <dispersion_tensor type="bear" alpha_l="exponential" alpha_t="exponential"/>
       <tortuosity value="exponential"/>
   </mechanical_properties>
 

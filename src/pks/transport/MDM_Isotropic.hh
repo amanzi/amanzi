@@ -21,6 +21,7 @@
 
 // Amanzi
 #include "Factory.hh"
+#include "Function.hh"
 #include "Point.hh"
 #include "Tensor.hh"
 
@@ -38,13 +39,23 @@ class MDM_Isotropic : public MDM {
   // Required methods from the base class
   // -- scalar dispersion tensor.
   WhetStone::Tensor
-  mech_dispersion(const AmanziGeometry::Point& u, int axi_symmetric, double s, double phi) const;
+  mech_dispersion(double t,
+                  const AmanziGeometry::Point& xc,
+                  const AmanziGeometry::Point& u,
+                  int axi_symmetry,
+                  double wc,
+                  double phi) const;
+
 
   // -- the model is valid if at least one parameter is not zero.
   bool is_valid() const { return (alpha_ != 0.0); }
 
  private:
-  double alpha_;
+  void ParseAlpha_(Teuchos::ParameterList& plist, const std::string& keyword);
+
+ private:
+  mutable double alpha_;
+  std::unique_ptr<Function> alpha_func_;
   bool dispersivity_;
 
   static Utils::RegisteredFactory<MDM, MDM_Isotropic> reg_;

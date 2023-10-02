@@ -216,7 +216,7 @@
       <mechanical_properties>
         <porosity value="0.25"/>
         <specific_storage model="constant" value="0.001"/>
-        <dispersion_tensor alpha_l="0.0" alpha_t="0.0" type="uniform_isotropic"/>
+        <dispersion_tensor alpha_l="0.0" alpha_t="0.0" type="bear"/>
       </mechanical_properties>
       <minerals>
         <mineral name="Goethite" specific_surface_area="11076.30" volume_fraction="0.016"/>

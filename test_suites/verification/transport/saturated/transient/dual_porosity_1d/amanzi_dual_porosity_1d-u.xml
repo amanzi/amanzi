@@ -113,7 +113,7 @@
       <permeability x="6.65e-16" y="6.65e-16" />
       <mechanical_properties>
         <porosity value="0.0001"/>
-        <dispersion_tensor alpha_l="1.0" alpha_t="2.65e-12" type="uniform_isotropic" />
+        <dispersion_tensor alpha_l="1.0" alpha_t="2.65e-12" type="bear" />
       </mechanical_properties>
     </material>
   </materials>
