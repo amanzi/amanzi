@@ -20,7 +20,7 @@ export FFLAGS='@Amanzi_COMMON_FCFLAGS@'
 # NOTE: serial.
 cd @ECOSIM_source_dir@
 
-git checkout agraus/ats_driver
+git checkout agraus/ats_seb
 
 echo "running config"
 
