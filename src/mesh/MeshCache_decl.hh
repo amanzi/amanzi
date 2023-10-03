@@ -254,7 +254,6 @@ struct MeshCacheData {
   Entity_ID_DualView parent_faces;
   Entity_ID_DualView parent_cells;
 
-  inline static const int static_max_nnodes_ = 20;
 };
 
 
