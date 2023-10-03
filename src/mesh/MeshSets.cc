@@ -218,7 +218,7 @@ resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
     }
   }
 
-  auto cells = mesh.getNodeCells(minnode, ptype);
+  auto cells = mesh.getNodeCells(minnode);
 
   int ncells = cells.size();
   for (int ic = 0; ic < ncells; ic++) {

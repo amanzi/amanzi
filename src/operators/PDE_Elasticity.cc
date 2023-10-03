@@ -175,7 +175,7 @@ PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
             if (local_op_->matrices_shadow[c].NumRows() == 0) {
               local_op_->matrices_shadow[c] = Acell;
             }
-            auto cells = mesh_->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
+            auto cells = mesh_->getNodeCells(v);
             int ncells = cells.size();
 
             auto normal = WhetStone::getNodeUnitNormal(*mesh_, v);

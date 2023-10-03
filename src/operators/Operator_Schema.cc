@@ -336,7 +336,7 @@ Operator_Schema::SymbolicAssembleMatrixOp(const Op_Node_Schema& op,
       std::tie(kind, std::ignore, num) = *it;
 
       if (kind == AmanziMesh::Entity_kind::CELL) {
-        auto cells = mesh_->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getNodeCells(v);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) {
@@ -560,7 +560,7 @@ Operator_Schema::AssembleMatrixOp(const Op_Node_Schema& op,
       std::tie(kind, std::ignore, num) = *it;
 
       if (kind == AmanziMesh::Entity_kind::CELL) {
-        auto cells = mesh_->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getNodeCells(v);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) {

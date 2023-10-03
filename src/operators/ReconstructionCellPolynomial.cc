@@ -213,7 +213,7 @@ ReconstructionCellPolynomial::CellAllAdjCells_(AmanziMesh::Entity_ID c,
   auto nodes = mesh_->getCellNodes(c);
   for (int i = 0; i < nodes.size(); i++) {
     int v = nodes[i];
-    auto vcells = mesh_->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
+    auto vcells = mesh_->getNodeCells(v);
 
     for (int k = 0; k < vcells.size(); ++k) {
       int c1 = vcells[k];

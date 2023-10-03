@@ -765,13 +765,12 @@ struct MeshCache {
   // // edges on different processors
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION decltype(auto)
-  getEdgeCells(const Entity_ID e, const Parallel_kind ptype) const;
+  getEdgeCells(const Entity_ID e) const;
 
 
   // //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION void getEdgeCells(const Entity_ID e,
-                                           const Parallel_kind ptype,
                                            View_type<const Entity_ID, MEM>& cells) const;
 
   // // Faces of type 'ptype' connected to an edge
@@ -779,12 +778,11 @@ struct MeshCache {
   // // corresponding edges on different processors
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION decltype(auto)
-  getEdgeFaces(const Entity_ID e, const Parallel_kind ptype) const;
+  getEdgeFaces(const Entity_ID e) const;
 
   // //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION void getEdgeFaces(const Entity_ID edgeid,
-                                           const Parallel_kind ptype,
                                            View_type<const Entity_ID, MEM>& faces) const;
 
   // // Cells of type 'ptype' connected to a node
@@ -792,12 +790,11 @@ struct MeshCache {
   // // corresponding nodes on different processors
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION decltype(auto)
-  getNodeCells(const Entity_ID n, const Parallel_kind ptype) const;
+  getNodeCells(const Entity_ID n) const;
 
   //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION void getNodeCells(const Entity_ID n,
-                                           const Parallel_kind ptype,
                                            View_type<const Entity_ID, MEM>& cells) const;
 
   // // Faces of type parallel 'ptype' connected to a node
@@ -805,12 +802,11 @@ struct MeshCache {
   // // corresponding nodes on different processors
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION decltype(auto)
-  getNodeFaces(const Entity_ID n, const Parallel_kind ptype) const;
+  getNodeFaces(const Entity_ID n) const;
 
   // //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION void getNodeFaces(const Entity_ID n,
-                                           const Parallel_kind ptype,
                                            View_type<const Entity_ID, MEM>& faces) const;
 
   void PrintMeshStatistics() const;

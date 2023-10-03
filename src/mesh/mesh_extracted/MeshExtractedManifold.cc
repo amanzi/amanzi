@@ -234,7 +234,7 @@ MeshExtractedManifold::getEdgeCells(const Entity_ID e,
   cEntity_ID_View faces;
 
   int ep = entid_to_parent_[Entity_kind::FACE][e];
-  parent_mesh_->getEdgeFaces(ep, ptype, faces);
+  parent_mesh_->getEdgeFaces(ep, faces);
   int nfaces = faces.size();
 
   Entity_ID_View lcells("lcells", nfaces);
@@ -260,7 +260,7 @@ MeshExtractedManifold::getFaceCells(const Entity_ID f,
   cEntity_ID_View faces;
 
   int ep = entid_to_parent_[Entity_kind::FACE][f];
-  parent_mesh_->getEdgeFaces(ep, ptype, faces);
+  parent_mesh_->getEdgeFaces(ep, faces);
   int nfaces = faces.size();
 
   Entity_ID_View lcells("lcells", nfaces);
@@ -479,7 +479,7 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
 
     for (auto it = edgeset.begin(); it != edgeset.end(); ++it) {
       if (it->second == MASTER + GHOST) {
-        parent_mesh_->getEdgeFaces(it->first, Parallel_kind::ALL, faces);
+        parent_mesh_->getEdgeFaces(it->first, faces);
         int nfaces = faces.size();
 
         // compare maximum global ids for owned and all faces living on manifold
@@ -503,7 +503,7 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
 
     for (auto it = nodeset.begin(); it != nodeset.end(); ++it) {
       if (it->second == MASTER + GHOST) {
-        parent_mesh_->getNodeFaces(it->first, Parallel_kind::ALL, faces);
+        parent_mesh_->getNodeFaces(it->first, faces);
         int nfaces = faces.size();
 
         // compare maximum global ids for owned and all faces living on manifold

@@ -75,7 +75,7 @@ WalkaboutCheckpoint::CalculateDarcyVelocity(Teuchos::RCP<State>& S,
   WhetStone::DenseMatrix matrix(d, d);
 
   for (int v = 0; v < nnodes_owned; ++v) {
-    auto faces = mesh->getNodeFaces(v, AmanziMesh::Parallel_kind::ALL);
+    auto faces = mesh->getNodeFaces(v);
     int nfaces = faces.size();
 
     rhs.PutScalar(0.0);
@@ -254,7 +254,7 @@ WalkaboutCheckpoint::CalculateData(Teuchos::RCP<State>& S,
   int local_id;
   for (int v = 0; v < nnodes_owned; v++) {
     xv = mesh->getNodeCoordinate(v);
-    auto cells = mesh->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh->getNodeCells(v);
     int ncells = cells.size();
 
     local_id = -1;

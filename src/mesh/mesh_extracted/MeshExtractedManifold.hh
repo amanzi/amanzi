@@ -102,7 +102,7 @@ class MeshExtractedManifold : public MeshFramework {
     auto parent_nodes = entid_to_parent_.at(Entity_kind::NODE);
     auto parent_faces = entid_to_parent_.at(Entity_kind::FACE);
     auto my_parent_node = parent_nodes(n);
-    auto my_parent_faces = parent_mesh_->getNodeFaces(my_parent_node, ptype);
+    auto my_parent_faces = parent_mesh_->getNodeFaces(my_parent_node);
     Entity_ID_View faces("faces", my_parent_faces.size());
     int i = 0;
     for (auto f : my_parent_faces) {

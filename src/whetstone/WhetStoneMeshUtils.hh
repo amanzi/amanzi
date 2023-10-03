@@ -135,7 +135,7 @@ cell_get_entities(const AmanziMesh::Mesh& mesh,
 inline AmanziGeometry::Point
 getNodeUnitNormal(const AmanziMesh::Mesh& mesh, int v)
 {
-  auto faces = mesh.getNodeFaces(v, AmanziMesh::Parallel_kind::ALL);
+  auto faces = mesh.getNodeFaces(v);
   int nfaces = faces.size();
 
   int d = mesh.getSpaceDimension();

@@ -130,7 +130,7 @@ AssembleVectorNodeOp(int n,
     if (kind == AmanziMesh::Entity_kind::CELL) {
       Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
 
-      auto cells = mesh.getNodeCells(n, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh.getNodeCells(n);
       int ncells = cells.size();
 
       for (int i = 0; i != ncells; ++i) {
@@ -252,7 +252,7 @@ ExtractVectorNodeOp(int n,
     if (kind == AmanziMesh::Entity_kind::CELL) {
       const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
 
-      auto cells = mesh.getNodeCells(n, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh.getNodeCells(n);
       int ncells = cells.size();
 
       for (int i = 0; i != ncells; ++i) {

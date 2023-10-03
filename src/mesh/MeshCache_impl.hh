@@ -951,10 +951,10 @@ MeshCache<MEM>::getNodeCoordinate(const Entity_ID n) const
 template <MemSpace_kind MEM>
 template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION decltype(auto)
-MeshCache<MEM>::getNodeCells(const Entity_ID n, const Parallel_kind ptype) const
+MeshCache<MEM>::getNodeCells(const Entity_ID n) const
 {
   View_type<const Entity_ID, MEM> cells;
-  getNodeCells<AP>(n, ptype, cells);
+  getNodeCells<AP>(n, cells);
   return cells;
 }
 
@@ -962,7 +962,6 @@ template <MemSpace_kind MEM>
 template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION void
 MeshCache<MEM>::getNodeCells(const Entity_ID n,
-                             const Parallel_kind ptype,
                              View_type<const Entity_ID, MEM>& cells) const
 {
   cells = RaggedGetter<MEM, AP>::get(
@@ -971,7 +970,7 @@ MeshCache<MEM>::getNodeCells(const Entity_ID n,
     framework_mesh_,
     [&](const int i) {
       View_type<const Entity_ID, MEM> cells;
-      framework_mesh_->getNodeCells(i, ptype, cells);
+      framework_mesh_->getNodeCells(i, Parallel_kind::ALL, cells);
       return cells;
     },
     nullptr,
@@ -982,10 +981,10 @@ MeshCache<MEM>::getNodeCells(const Entity_ID n,
 template <MemSpace_kind MEM>
 template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION decltype(auto)
-MeshCache<MEM>::getNodeFaces(const Entity_ID n, const Parallel_kind ptype) const
+MeshCache<MEM>::getNodeFaces(const Entity_ID n) const
 {
   View_type<const Entity_ID, MEM> faces;
-  getNodeFaces<AP>(n, ptype, faces);
+  getNodeFaces<AP>(n, faces);
   return faces;
 }
 
@@ -993,7 +992,6 @@ template <MemSpace_kind MEM>
 template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION void
 MeshCache<MEM>::getNodeFaces(const Entity_ID n,
-                             const Parallel_kind ptype,
                              View_type<const Entity_ID, MEM>& faces) const
 {
   faces = RaggedGetter<MEM, AP>::get(
@@ -1002,7 +1000,7 @@ MeshCache<MEM>::getNodeFaces(const Entity_ID n,
     framework_mesh_,
     [&](const int i) {
       View_type<const Entity_ID, MEM> faces;
-      framework_mesh_->getNodeFaces(i, ptype, faces);
+      framework_mesh_->getNodeFaces(i, Parallel_kind::ALL, faces);
       return faces;
     },
     nullptr,
@@ -1145,18 +1143,17 @@ MeshCache<MEM>::getEdgeLength(const Entity_ID e) const
 template <MemSpace_kind MEM>
 template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION decltype(auto)
-MeshCache<MEM>::getEdgeCells(const Entity_ID e, const Parallel_kind ptype) const
+MeshCache<MEM>::getEdgeCells(const Entity_ID e) const
 {
   View_type<const Entity_ID, MEM> cells;
-  getEdgeCells<AP>(e, ptype, cells);
+  getEdgeCells<AP>(e, cells);
   return cells;
 }
 
 template <MemSpace_kind MEM>
 template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION void
-MeshCache<MEM>::getEdgeCells(const Entity_ID e,
-                             const Parallel_kind ptype,
+MeshCache<MEM>::getEdgeCells(const Entity_ID e, 
                              View_type<const Entity_ID, MEM>& cells) const
 {
   cells = RaggedGetter<MEM, AP>::get(
@@ -1165,7 +1162,7 @@ MeshCache<MEM>::getEdgeCells(const Entity_ID e,
     framework_mesh_,
     [&](const int i) {
       View_type<const Entity_ID, MEM> cells;
-      framework_mesh_->getEdgeCells(i, ptype, cells);
+      framework_mesh_->getEdgeCells(i, Parallel_kind::ALL, cells);
       return cells;
     },
     nullptr,
@@ -1176,10 +1173,10 @@ MeshCache<MEM>::getEdgeCells(const Entity_ID e,
 template <MemSpace_kind MEM>
 template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION decltype(auto)
-MeshCache<MEM>::getEdgeFaces(const Entity_ID e, const Parallel_kind ptype) const
+MeshCache<MEM>::getEdgeFaces(const Entity_ID e) const
 {
   View_type<const Entity_ID, MEM> faces;
-  getEdgeFaces<AP>(e, ptype, faces);
+  getEdgeFaces<AP>(e, faces);
   return faces;
 }
 
@@ -1187,7 +1184,6 @@ template <MemSpace_kind MEM>
 template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION void
 MeshCache<MEM>::getEdgeFaces(const Entity_ID e,
-                             const Parallel_kind ptype,
                              View_type<const Entity_ID, MEM>& faces) const
 {
   faces = RaggedGetter<MEM, AP>::get(
@@ -1196,7 +1192,7 @@ MeshCache<MEM>::getEdgeFaces(const Entity_ID e,
     framework_mesh_,
     [&](const int i) {
       View_type<const Entity_ID, MEM> faces;
-      framework_mesh_->getEdgeFaces(i, ptype, faces);
+      framework_mesh_->getEdgeFaces(i, Parallel_kind::ALL, faces);
       return faces;
     },
     nullptr,

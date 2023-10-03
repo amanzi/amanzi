@@ -848,7 +848,7 @@ LimiterCell::BoundsForCells(const Epetra_MultiVector& field,
       auto nodes = mesh_->getCellNodes(c);
       for (int i = 0; i < nodes.size(); i++) {
         int v = nodes[i];
-        auto cells = mesh_->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getNodeCells(v);
 
         for (int k = 0; k < cells.size(); ++k) {
           value = field[component_][cells[k]];
@@ -944,7 +944,7 @@ LimiterCell::BoundsForEdges(const Epetra_MultiVector& field,
   }
 
   for (int e = 0; e < nedges_wghost_; ++e) {
-    auto cells = mesh_->getEdgeCells(e, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getEdgeCells(e);
 
     for (int i = 0; i < cells.size(); ++i) {
       int c = cells[i];
@@ -989,7 +989,7 @@ LimiterCell::BoundsForNodes(const Epetra_MultiVector& field,
   }
 
   for (int v = 0; v < nnodes_wghost_; ++v) {
-    auto cells = mesh_->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getNodeCells(v);
 
     for (int i = 0; i < cells.size(); ++i) {
       int c = cells[i];

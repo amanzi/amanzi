@@ -259,9 +259,9 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(const BCs& bc,
               if (kind == AmanziMesh::Entity_kind::FACE) {
                 cells = mesh_->getFaceCells(x, AmanziMesh::Parallel_kind::ALL);
               } else if (kind == AmanziMesh::Entity_kind::NODE) {
-                cells = mesh_->getNodeCells(x, AmanziMesh::Parallel_kind::ALL);
+                cells = mesh_->getNodeCells(x);
               } else if (kind == AmanziMesh::Entity_kind::EDGE) {
-                cells = mesh_->getEdgeCells(x, AmanziMesh::Parallel_kind::ALL);
+                cells = mesh_->getEdgeCells(x);
               }
               Acell(noff, noff) = 1.0 / cells.size();
             }
@@ -368,7 +368,7 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Point_(const BCs& bc,
               }
 
               if (essential_eqn) {
-                auto cells = mesh_->getNodeCells(v, AmanziMesh::Parallel_kind::ALL);
+                auto cells = mesh_->getNodeCells(v);
                 rhs_loc(noff) = 0.0;
                 if (v < nnodes_owned) (*rhs_node)[k][v] = value[k];
                 Acell(noff, noff) = 1.0 / cells.size();
