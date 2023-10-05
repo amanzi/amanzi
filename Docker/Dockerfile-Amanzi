@@ -37,6 +37,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --enable-alquimia --enable-pflotran --enable-crunchtope \
    --with-mpi=/usr \
    --enable-shared \
+   --enable-reg_tests \
    && cd /home/amanzi_user/amanzi_builddir/amanzi \
    && make test
 

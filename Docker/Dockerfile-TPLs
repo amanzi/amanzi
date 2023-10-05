@@ -95,6 +95,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
   --enable-pf_clm \
   --with-mpi=/usr \
   --with-python=/usr/bin/python \
+  --enable-reg_tests \
   && git checkout master \
   && rm -r /home/amanzi_user/amanzi_builddir
 
