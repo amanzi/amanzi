@@ -36,7 +36,7 @@ namespace AmanziInput {
 XERCES_CPP_NAMESPACE_USE
 
 /* ******************************************************************
-* Translate list of boundary conditions.
+* Translate list of boundary conditions: global node is given.
 ****************************************************************** */
 BCs
 InputConverterU::ParseCondList_(DOMNode* node,
@@ -49,20 +49,37 @@ InputConverterU::ParseCondList_(DOMNode* node,
   std::string bctype;
 
   std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
-  return ParseCondList_(same_list, bctype, vmin, vmax, unit, is_bc);
+  return ParseCondList_(same_list, bctype, vmin, vmax, unit, is_bc, "");
 }
 
 
 /* ******************************************************************
-* Translate list of boundary conditions.
+* Translate list of boundary conditions: single child is given.
 ****************************************************************** */
 BCs
-InputConverterU::ParseCondList_(std::vector<DOMNode*> same_list,
+InputConverterU::ParseCondList_(DOMNode* node,
                                 const std::string& bctype,
                                 double vmin,
                                 double vmax,
                                 const std::string& unit,
                                 bool is_bc)
+{
+  std::vector<DOMNode*> same_list({ node });
+  return ParseCondList_(same_list, bctype, vmin, vmax, unit, is_bc, "");
+}
+
+
+/* ******************************************************************
+* Translate list of boundary conditions: list of children is given.
+****************************************************************** */
+BCs
+InputConverterU::ParseCondList_(std::vector<DOMNode*>& same_list,
+                                const std::string& bctype,
+                                double vmin,
+                                double vmax,
+                                const std::string& unit,
+                                bool is_bc,
+                                const std::string& filter_name)
 {
   int nlist = same_list.size();
   std::map<double, double> tp_values, tp_fluxes;
@@ -72,6 +89,10 @@ InputConverterU::ParseCondList_(std::vector<DOMNode*> same_list,
 
   for (int j = 0; j < nlist; ++j) {
     element = static_cast<DOMElement*>(same_list[j]);
+    if (HasAttribute_(element, "name") && filter_name != "") {
+      std::string name = GetAttributeValueS_(element, "name", TYPE_NONE, false, "");
+      if (name != filter_name) continue;
+    }
 
     // allowed attributes
     if (HasAttribute_(element, "filename") && nlist == 1) {
@@ -91,7 +112,13 @@ InputConverterU::ParseCondList_(std::vector<DOMNode*> same_list,
       } else if (HasAttribute_(element, "value")) {
         tp_values[t0] =
           GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false);
-        if (is_bc) 
+        // different implemnetation for solute transport
+        if (filter_name != "") {
+          std::string tmp(unit);
+          tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"), tmp, bcs.mol_mass);
+        }
+
+        if (is_bc)
           tp_forms[t0] = GetAttributeValueS_(same_list[j], "function", "constant, linear, uniform");
       } else if (HasAttribute_(element, "inward_mass_flux")) {
         tp_fluxes[t0] = GetAttributeValueD_(
@@ -100,6 +127,20 @@ InputConverterU::ParseCondList_(std::vector<DOMNode*> same_list,
         Errors::Message msg;
         msg << "Unknown or ill-formed boundary conditions.\"\n";
         Exceptions::amanzi_throw(msg);
+      }
+    }
+  }
+
+  // removing used items in the filtering mode
+  if (filter_name != "") {
+    for (auto it = same_list.begin(); it != same_list.end(); ++it) {
+      element = static_cast<DOMElement*>(*it);
+      if (HasAttribute_(element, "name")) {
+        std::string name = GetAttributeValueS_(element, "name", TYPE_NONE, false, "");
+        if (name == filter_name) {
+          same_list.erase(it);
+          --it;
+        }
       }
     }
   }
@@ -161,10 +202,11 @@ InputConverterU::TranslateFunctionGaussian_(const std::vector<double>& data,
 /* ******************************************************************
 * Translate linear function.
 ****************************************************************** */
-void InputConverterU::TranslateFunctionGradient_(double refv, 
-                                                 std::vector<double>& grad,
-                                                 std::vector<double>& refc,
-                                                 Teuchos::ParameterList& bcfn)
+void
+InputConverterU::TranslateFunctionGradient_(double refv,
+                                            std::vector<double>& grad,
+                                            std::vector<double>& refc,
+                                            Teuchos::ParameterList& bcfn)
 {
   grad.insert(grad.begin(), 0.0);
   refc.insert(refc.begin(), 0.0);
@@ -180,8 +222,7 @@ void InputConverterU::TranslateFunctionGradient_(double refv,
 * Generic output of math data.
 ****************************************************************** */
 bool
-InputConverterU::TranslateGenericMath_(const BCs& bcs,
-                                       Teuchos::ParameterList& bcfn)
+InputConverterU::TranslateGenericMath_(const BCs& bcs, Teuchos::ParameterList& bcfn)
 {
   bool flag(false);
 

@@ -315,7 +315,7 @@ Units::ConvertUnitS(const std::string& in_unit, const UnitsSystem& system)
   }
   if (out_data.size() == 0) {
     Errors::Message msg;
-    msg << "Misformed unit [" << in_unit  << "].\n";
+    msg << "Misformed unit [" << in_unit << "].\n";
     Exceptions::amanzi_throw(msg);
   }
 

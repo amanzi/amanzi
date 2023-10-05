@@ -588,7 +588,8 @@ InputConverter::GetSameChildNodes_(DOMNode* node, std::string& name, bool& flag,
 /* ******************************************************************
 * Verifies existance
 ****************************************************************** */
-bool InputConverter::HasAttribute_(DOMElement* elem, const char* attr_name)
+bool
+InputConverter::HasAttribute_(DOMElement* elem, const char* attr_name)
 {
   MemoryManager mm;
   return elem->hasAttribute(mm.transcode(attr_name));

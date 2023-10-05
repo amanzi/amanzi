@@ -47,11 +47,15 @@ typedef std::map<std::string, Phase> PhaseTree;
 
 struct BCs {
  public:
+  BCs() : mol_mass(-1.0){};
+  BCs(double value) : mol_mass(value){};
+
   std::string type;
   std::vector<double> times, values, fluxes;
   std::vector<std::string> forms, formulas;
 
   std::string filename, xheader, yheader, variable;
+  double mol_mass;
 };
 
 
@@ -127,12 +131,19 @@ class InputConverterU : public InputConverter {
                      double vmax,
                      const std::string& unit,
                      bool is_bc = true);
-  BCs ParseCondList_(std::vector<DOMNode*> same_list,
+  BCs ParseCondList_(DOMNode* node,
                      const std::string& bctype,
                      double vmin,
                      double vmax,
                      const std::string& unit,
                      bool is_bc = true);
+  BCs ParseCondList_(std::vector<DOMNode*>& same_list,
+                     const std::string& bctype,
+                     double vmin,
+                     double vmax,
+                     const std::string& unit,
+                     bool is_bc = true,
+                     const std::string& filter_name = "");
 
   Teuchos::ParameterList TranslateVerbosity_();
   Teuchos::ParameterList TranslateUnits_();
@@ -284,7 +295,7 @@ class InputConverterU : public InputConverter {
 
   // -- complex functions
   void TranslateFunctionGaussian_(const std::vector<double>& data, Teuchos::ParameterList& bcfn);
-  void TranslateFunctionGradient_(double refv, 
+  void TranslateFunctionGradient_(double refv,
                                   std::vector<double>& grad,
                                   std::vector<double>& refc,
                                   Teuchos::ParameterList& bcfn);

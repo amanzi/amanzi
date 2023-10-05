@@ -58,7 +58,8 @@ SUITE(SOLVERS)
     plist.sublist("verbose object").set("verbosity level", "high");
 
     // create the Solver
-    auto newton = Teuchos::rcp(new AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap>(plist));
+    auto newton =
+      Teuchos::rcp(new AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap>(plist));
     newton->Init(fn, *map);
 
     // initial guess
@@ -82,7 +83,7 @@ SUITE(SOLVERS)
       CHECK(r > 2.0);
     }
 
-    // repeat solve with exact solution. 
+    // repeat solve with exact solution.
     std::cout << "\nNetown solver, repeat solver..." << std::endl;
     newton->Solve(u);
     CHECK(newton->num_itrs() == 1);

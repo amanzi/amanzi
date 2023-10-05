@@ -47,7 +47,7 @@ Transport_PK::CalculateDispersionTensor_(double t,
 
   D_.resize(ncells_owned);
   for (int c = 0; c < ncells_owned; c++) D_[c].Init(dim, 1);
- 
+
   const auto& flowrate = *S_->Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
 
   AmanziGeometry::Point velocity(dim);

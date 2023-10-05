@@ -130,7 +130,7 @@ TEST(CONVERTER_BASE)
       Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_xml);
 
       std::stringstream ss;
-      ss << "test" << i << "_native_v9.xml";
+      ss << "test" << i << "_native.xml";
       std::ofstream xmlfile;
       xmlfile.open(ss.str().c_str());
       xmlfile << XMLobj;

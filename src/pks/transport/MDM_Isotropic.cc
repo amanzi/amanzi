@@ -74,7 +74,8 @@ MDM_Isotropic::MDM_Isotropic(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Isotropic tensor of rank 1.
 ****************************************************************** */
-void MDM_Isotropic::ParseAlpha_(Teuchos::ParameterList& plist, const std::string& keyword)
+void
+MDM_Isotropic::ParseAlpha_(Teuchos::ParameterList& plist, const std::string& keyword)
 {
   if (plist.isSublist(keyword)) {
     FunctionFactory factory;
@@ -104,7 +105,7 @@ MDM_Isotropic::mech_dispersion(double t,
   args[0] = t;
   for (int i = 0; i < dim_; ++i) args[i + 1] = xc[i];
   alpha_ = (*alpha_func_)(args);
-  
+
   WhetStone::Tensor D(dim_, 1);
   D(0, 0) = dispersivity_ ? alpha_ * s * phi * norm(u) : alpha_ * s * phi;
   return D;

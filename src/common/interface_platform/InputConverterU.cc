@@ -693,7 +693,7 @@ InputConverterU::SaveXMLFile(Teuchos::ParameterList& out_list, std::string& xmlf
 
   if (filename == "") {
     filename = xmlfilename;
-    std::string new_extension("_native_v9.xml");
+    std::string new_extension("_native.xml");
     size_t pos = filename.find(".xml");
     filename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
   }

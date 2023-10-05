@@ -108,10 +108,9 @@ class MDM {
                                             double phi) const = 0;
 
   // -- compatibility version (t, x) are not used
-  WhetStone::Tensor mech_dispersion(const AmanziGeometry::Point& u,
-                                    int axi_symmetry,
-                                    double wc,
-                                    double phi) {
+  WhetStone::Tensor
+  mech_dispersion(const AmanziGeometry::Point& u, int axi_symmetry, double wc, double phi)
+  {
     return mech_dispersion(0.0, u, u, axi_symmetry, wc, phi);
   }
 

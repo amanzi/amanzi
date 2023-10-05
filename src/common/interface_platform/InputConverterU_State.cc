@@ -474,14 +474,14 @@ InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(
         inode, "liquid_phase, liquid_component, uniform_pressure", flag);
       if (flag) {
-        auto ics = ParseCondList_({node}, "uniform_pressure", DVAL_MIN, DVAL_MAX, "Pa", false);
+        auto ics = ParseCondList_(node, "uniform_pressure", DVAL_MIN, DVAL_MAX, "Pa", false);
 
         Teuchos::ParameterList& icfn = out_ic.sublist("pressure")
-          .sublist("function")
-          .sublist(reg_str)
-          .set<Teuchos::Array<std::string>>("regions", regions)
-          .set<std::string>("component", "*")
-          .sublist("function");
+                                         .sublist("function")
+                                         .sublist(reg_str)
+                                         .set<Teuchos::Array<std::string>>("regions", regions)
+                                         .set<std::string>("component", "*")
+                                         .sublist("function");
 
         TranslateGenericMath_(ics, icfn);
       }
@@ -494,35 +494,30 @@ InputConverterU::TranslateState_()
         std::vector<double> grad = GetAttributeVectorD_(node, "gradient", dim_, "Pa/m");
         std::vector<double> refc = GetAttributeVectorD_(node, "reference_coord", dim_, "m");
 
-        grad.insert(grad.begin(), 0.0);
-        refc.insert(refc.begin(), 0.0);
+        Teuchos::ParameterList& icfn = out_ic.sublist("pressure")
+                                         .sublist("function")
+                                         .sublist(reg_str)
+                                         .set<Teuchos::Array<std::string>>("regions", regions)
+                                         .set<std::string>("component", "cell")
+                                         .sublist("function");
 
-        Teuchos::ParameterList& pressure_ic = out_ic.sublist("pressure");
-        pressure_ic.sublist("function")
-          .sublist(reg_str)
-          .set<Teuchos::Array<std::string>>("regions", regions)
-          .set<std::string>("component", "cell")
-          .sublist("function")
-          .sublist("function-linear")
-          .set<double>("y0", p)
-          .set<Teuchos::Array<double>>("x0", refc)
-          .set<Teuchos::Array<double>>("gradient", grad);
+        TranslateFunctionGradient_(p, grad, refc, icfn);
       }
 
       // -- uniform saturation
       node = GetUniqueElementByTagsString_(
         inode, "liquid_phase, liquid_component, uniform_saturation", flag);
       if (flag) {
-        double s = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0, "-");
+        auto ics = ParseCondList_(node, "uniform_saturation", 0.0, 1.0, "-", false);
 
-        Teuchos::ParameterList& saturation_ic = out_ic.sublist("saturation_liquid");
-        saturation_ic.sublist("function")
-          .sublist(reg_str)
-          .set<Teuchos::Array<std::string>>("regions", regions)
-          .set<std::string>("component", "cell")
-          .sublist("function")
-          .sublist("function-constant")
-          .set<double>("value", s);
+        Teuchos::ParameterList& icfn = out_ic.sublist("saturation_liquid")
+                                         .sublist("function")
+                                         .sublist(reg_str)
+                                         .set<Teuchos::Array<std::string>>("regions", regions)
+                                         .set<std::string>("component", "cell")
+                                         .sublist("function");
+
+        TranslateGenericMath_(ics, icfn);
       }
 
       // -- linear saturation
@@ -533,19 +528,14 @@ InputConverterU::TranslateState_()
         std::vector<double> grad = GetAttributeVectorD_(node, "gradient", dim_, "m^-1");
         std::vector<double> refc = GetAttributeVectorD_(node, "reference_coord", dim_, "m");
 
-        grad.insert(grad.begin(), 0.0);
-        refc.insert(refc.begin(), 0.0);
+        Teuchos::ParameterList& icfn = out_ic.sublist("saturation_liquid")
+                                         .sublist("function")
+                                         .sublist(reg_str)
+                                         .set<Teuchos::Array<std::string>>("regions", regions)
+                                         .set<std::string>("component", "cell")
+                                         .sublist("function");
 
-        Teuchos::ParameterList& saturation_ic = out_ic.sublist("saturation_liquid");
-        saturation_ic.sublist("function")
-          .sublist(reg_str)
-          .set<Teuchos::Array<std::string>>("regions", regions)
-          .set<std::string>("component", "cell")
-          .sublist("function")
-          .sublist("function-linear")
-          .set<double>("y0", s)
-          .set<Teuchos::Array<double>>("x0", refc)
-          .set<Teuchos::Array<double>>("gradient", grad);
+        TranslateFunctionGradient_(s, grad, refc, icfn);
       }
 
       // -- darcy_flux, more precisely volumetric flow rate
@@ -674,14 +664,14 @@ InputConverterU::TranslateState_()
       // -- uniform temperature
       node = GetUniqueElementByTagsString_(inode, "uniform_temperature", flag);
       if (flag) {
-        auto ics = ParseCondList_({node}, "uniform_temperature", 0.0, 1000.0, "K", false);
+        auto ics = ParseCondList_(node, "uniform_temperature", 0.0, 1000.0, "K", false);
 
         Teuchos::ParameterList& icfn = out_ic.sublist("temperature")
-          .sublist("function")
-          .sublist(reg_str)
-          .set<Teuchos::Array<std::string>>("regions", regions)
-          .set<std::string>("component", "*")
-          .sublist("function");
+                                         .sublist("function")
+                                         .sublist(reg_str)
+                                         .set<Teuchos::Array<std::string>>("regions", regions)
+                                         .set<std::string>("component", "*")
+                                         .sublist("function");
 
         TranslateGenericMath_(ics, icfn);
       }
@@ -767,19 +757,14 @@ InputConverterU::TranslateState_()
         std::vector<double> grad = GetAttributeVectorD_(node, "gradient", dim_, "Pa/m");
         std::vector<double> refc = GetAttributeVectorD_(node, "reference_coord", dim_, "m");
 
-        grad.insert(grad.begin(), 0.0);
-        refc.insert(refc.begin(), 0.0);
+        Teuchos::ParameterList& icfn = out_ic.sublist("fracture-pressure")
+                                         .sublist("function")
+                                         .sublist(reg_str)
+                                         .set<Teuchos::Array<std::string>>("regions", regions)
+                                         .set<std::string>("component", "*")
+                                         .sublist("function");
 
-        Teuchos::ParameterList& pressure_ic = out_ic.sublist("fracture-pressure");
-        pressure_ic.sublist("function")
-          .sublist(reg_str)
-          .set<Teuchos::Array<std::string>>("regions", regions)
-          .set<std::string>("component", "*")
-          .sublist("function")
-          .sublist("function-linear")
-          .set<double>("y0", p)
-          .set<Teuchos::Array<double>>("x0", refc)
-          .set<Teuchos::Array<double>>("gradient", grad);
+        TranslateFunctionGradient_(p, grad, refc, icfn);
       }
 
       // -- fracture volumetric flow rate

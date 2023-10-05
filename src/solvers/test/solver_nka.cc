@@ -80,7 +80,7 @@ SUITE(SOLVERS)
     CHECK_CLOSE(0.0, (*u)[0], 1.0e-6);
     CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
 
-    // repeat solve with exact solution. 
+    // repeat solve with exact solution.
     std::cout << "\nNKA solver, repeat solver..." << std::endl;
     nka->Solve(u);
     CHECK(nka->num_itrs() == 1);
@@ -122,7 +122,7 @@ SUITE(SOLVERS)
     CHECK_CLOSE(0.0, (*u)[0], 1.0e-5);
     CHECK_CLOSE(0.0, (*u)[1], 1.0e-5);
 
-    // repeat solve with eaxt solution 
+    // repeat solve with eaxt solution
     std::cout << "\nNKA solver, repeat solver..." << std::endl;
     nka->Solve(u);
     CHECK(nka->num_itrs() == 1);

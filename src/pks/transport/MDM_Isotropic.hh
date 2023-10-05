@@ -38,13 +38,12 @@ class MDM_Isotropic : public MDM {
 
   // Required methods from the base class
   // -- scalar dispersion tensor.
-  WhetStone::Tensor
-  mech_dispersion(double t,
-                  const AmanziGeometry::Point& xc,
-                  const AmanziGeometry::Point& u,
-                  int axi_symmetry,
-                  double wc,
-                  double phi) const;
+  WhetStone::Tensor mech_dispersion(double t,
+                                    const AmanziGeometry::Point& xc,
+                                    const AmanziGeometry::Point& u,
+                                    int axi_symmetry,
+                                    double wc,
+                                    double phi) const;
 
 
   // -- the model is valid if at least one parameter is not zero.

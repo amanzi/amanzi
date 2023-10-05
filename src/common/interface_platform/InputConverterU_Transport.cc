@@ -212,10 +212,11 @@ InputConverterU::TranslateTransport_(const std::string& domain)
 
           std::string formula = GetAttributeValueS_(node, "alpha", TYPE_NONE, false, "m");
 
-          tmp_list.sublist("parameters for scalar").sublist("alpha")
-                  .sublist("function-exprtk")
-                  .set<int>("number of arguments", dim_ + 1)
-                  .set<std::string>("formula", formula);
+          tmp_list.sublist("parameters for scalar")
+            .sublist("alpha")
+            .sublist("function-exprtk")
+            .set<int>("number of arguments", dim_ + 1)
+            .set<std::string>("formula", formula);
         } else if (strcmp(model.c_str(), "bear") == 0) {
           tmp_list.set<std::string>("model", "Bear");
 
@@ -636,9 +637,8 @@ InputConverterU::TranslateTransportBCsGroup_(std::string& bcname,
     DOMNode* knode = GetUniqueElementByTagsString_(same_list[0], "space", space_bc);
     DOMNode* lnode = GetUniqueElementByTagsString_(same_list[0], "time", time_bc);
 
-    std::string filename, xheader, yheader;
     std::vector<double> data, data_tmp;
-    BCs bcs;
+    BCs bcs(solute_molar_mass_[solute_name]);
 
     if (space_bc) {
       std::string tmp = GetAttributeValueS_(knode, "amplitude");
@@ -655,43 +655,7 @@ InputConverterU::TranslateTransportBCsGroup_(std::string& bcname,
 
       same_list.erase(same_list.begin());
     } else {
-      DOMElement* element = static_cast<DOMElement*>(same_list[0]);
-      filename = GetAttributeValueS_(element, "h5file", TYPE_NONE, false, "");
-      if (filename != "") {
-        xheader = GetAttributeValueS_(element, "times", TYPE_NONE);
-        yheader = GetAttributeValueS_(element, "values", TYPE_NONE);
-
-        same_list.erase(same_list.begin());
-      } else {
-        std::map<double, double> tp_values;
-        std::map<double, std::string> tp_forms, tp_formulas;
-
-        for (std::vector<DOMNode*>::iterator it = same_list.begin(); it != same_list.end(); ++it) {
-          tmp_name = GetAttributeValueS_(*it, "name");
-
-          if (tmp_name == solute_name) {
-            double t0 = GetAttributeValueD_(*it, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
-            tp_forms[t0] = GetAttributeValueS_(*it, "function");
-            GetAttributeValueD_(
-              *it, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "molar"); // just a check
-            tp_values[t0] = ConvertUnits_(
-              GetAttributeValueS_(*it, "value"), unit, solute_molar_mass_[solute_name]);
-            tp_formulas[t0] = GetAttributeValueS_(*it, "formula", TYPE_NONE, false, "");
-
-            same_list.erase(it);
-            it--;
-          }
-        }
-
-        // create vectors of values and forms
-        for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end();
-             ++it) {
-          bcs.times.push_back(it->first);
-          bcs.values.push_back(it->second);
-          bcs.forms.push_back(tp_forms[it->first]);
-          bcs.formulas.push_back(tp_formulas[it->first]);
-        }
-      }
+      bcs = ParseCondList_(same_list, bctype, DVAL_MIN, DVAL_MAX, "molar", true, solute_name);
     }
 
     // save in the XML files
@@ -702,11 +666,11 @@ InputConverterU::TranslateTransportBCsGroup_(std::string& bcname,
     Teuchos::ParameterList& bcfn = bc.sublist("boundary concentration");
     if (space_bc) {
       TranslateFunctionGaussian_(data, bcfn);
-    } else if (filename != "") {
+    } else if (bcs.filename != "") {
       bcfn.sublist("function-tabular")
-        .set<std::string>("file", filename)
-        .set<std::string>("x header", xheader)
-        .set<std::string>("y header", yheader);
+        .set<std::string>("file", bcs.filename)
+        .set<std::string>("x header", bcs.xheader)
+        .set<std::string>("y header", bcs.yheader);
     } else {
       TranslateGenericMath_(bcs, bcfn);
     }
