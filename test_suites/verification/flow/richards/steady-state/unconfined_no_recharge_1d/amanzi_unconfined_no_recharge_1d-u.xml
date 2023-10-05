@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.3.0">
+<amanzi_input type="unstructured" version="1.5-dev">
   <model_description name="unconfined_head_head_no_recharge_2d">
     <comments>Steady-State Richards: unconfined_head_head_no_recharge_2d</comments>
     <model_id>1SSUncFlow1/PORFLOW 4.2.1</model_id>

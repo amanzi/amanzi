@@ -1,4 +1,4 @@
-<amanzi_input type="structured" version="2.3.0">
+<amanzi_input type="structured" version="1.5-dev">
   <echo_translated_input format="native" file_name="non_grid_aligned-s-alq-pflo-native.xml"/>
   <model_description name="Flow and Transport w/ calcite dissolution">
     <units>

@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.5.dev">
+<amanzi_input type="unstructured" version="1.5-dev">
   <model_description name="1D Flow and Transport w/ calcite dissolution">
     <units>
       <length_unit>m</length_unit>

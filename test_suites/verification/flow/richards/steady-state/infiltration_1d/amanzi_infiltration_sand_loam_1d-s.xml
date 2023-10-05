@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<amanzi_input type="structured" version="2.3.0">
+<amanzi_input type="structured" version="1.5-dev">
   <model_description name="infiltration_sand_loam_1d-str-2D">
     <comments>infiltration_sand_loam_1d-str-2D	Tue Sep 22 13:54:12 PDT 2015</comments>
   </model_description>

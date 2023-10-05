@@ -1,4 +1,4 @@
-<amanzi_input version="2.3.0" type="structured">
+<amanzi_input version="1.5-dev" type="structured">
 
   <echo_translated_input format="native" file_name="amanzi-s-1d-isotherms-alq-pflo_native.xml"/>
   <model_description name="1D Flow and Transport w/Kd">

@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.3.0">
+<amanzi_input type="unstructured" version="1.5-dev">
     <model_description name="unconfined_seepaged_2d">
       <comments>Steady-State Richards: unconfined seepage_2d</comments>
       <model_id>??</model_id>

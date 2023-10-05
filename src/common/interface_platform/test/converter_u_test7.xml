@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.5.dev">
+<amanzi_input type="unstructured" version="1.5-dev">
   <model_description name="Fractured Rock 3D">
     <comments>Example input file</comments>
     <author>Konstantin Lipnikov</author>

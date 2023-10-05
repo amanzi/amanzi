@@ -163,26 +163,26 @@ InputConverter::ParseVersion_()
       getline(ss, ver, '.');
       major = std::stoi(ver);
 
-      getline(ss, ver, '.');
+      getline(ss, ver, '-');
       minor = std::stoi(ver);
 
       getline(ss, ver);
       // micro = std::stoi(ver);
     } catch (...) {
       Errors::Message msg("The version string in the input file '" + version +
-                          "' has the wrong format, use I.J.K.");
+                          "' has the wrong format, use I.J.K. or I.J-dev");
       Exceptions::amanzi_throw(msg);
     }
 
     if ((major != AMANZI_SPEC_VERSION_MAJOR) || (minor != AMANZI_SPEC_VERSION_MINOR) ||
         (ver != AMANZI_SPEC_VERSION_MICRO)) {
       std::stringstream ss1;
-      ss1 << AMANZI_SPEC_VERSION_MAJOR << "." << AMANZI_SPEC_VERSION_MINOR << "."
+      ss1 << AMANZI_SPEC_VERSION_MAJOR << "." << AMANZI_SPEC_VERSION_MINOR << "-"
           << AMANZI_SPEC_VERSION_MICRO;
 
       Errors::Message msg;
       msg << "The input version " << version << " is not supported. "
-          << "Supported versions is" << ss1.str() << ".\n";
+          << "Supported versions is " << ss1.str() << ".\n";
       Exceptions::amanzi_throw(msg);
     }
   } else {

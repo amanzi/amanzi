@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.5.dev">
+<amanzi_input type="unstructured" version="1.5-dev">
   <echo_translated_input format="unstructured_native" file_name="native.xml"/>
 
   <model_description name="Thermal Richards">
