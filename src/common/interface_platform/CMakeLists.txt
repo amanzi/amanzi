@@ -51,7 +51,8 @@ set(interface_src_files InputConverter.cc InputConverterU.cc
                         InputConverterU_ShallowWater.cc
                         InputConverterU_Multiphase.cc
                         InputConverterU_Solvers.cc InputConverterU_Mesh.cc
-                        InputConverterU_Output.cc)
+                        InputConverterU_Output.cc
+                        InputConverterU_Utils.cc)
 
 add_amanzi_library(interface 
                    SOURCE ${interface_src_files}

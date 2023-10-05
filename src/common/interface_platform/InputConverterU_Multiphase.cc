@@ -557,13 +557,8 @@ InputConverterU::TranslateMultiphaseBCs_()
         refv = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "Pa");
         grad = GetAttributeVectorD_(element, "gradient", dim_, "Pa/m");
         refc = GetAttributeVectorD_(element, "reference_coord", dim_, "m");
-        grad.insert(grad.begin(), 0.0);
-        refc.insert(refc.begin(), 0.0);
 
-        bcfn.sublist("function-linear")
-          .set<double>("y0", refv)
-          .set<Teuchos::Array<double>>("x0", refc)
-          .set<Teuchos::Array<double>>("gradient", grad);
+        TranslateFunctionGradient_(refv, grad, refc, bcfn);
       } else if (times.size() == 1) {
         bcfn.sublist("function-constant").set<double>("value", values[0]);
       } else {

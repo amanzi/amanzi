@@ -637,9 +637,8 @@ InputConverterU::TranslateTransportBCsGroup_(std::string& bcname,
     DOMNode* lnode = GetUniqueElementByTagsString_(same_list[0], "time", time_bc);
 
     std::string filename, xheader, yheader;
-    std::vector<double> times, values;
     std::vector<double> data, data_tmp;
-    std::vector<std::string> forms, formulas;
+    BCs bcs;
 
     if (space_bc) {
       std::string tmp = GetAttributeValueS_(knode, "amplitude");
@@ -687,10 +686,10 @@ InputConverterU::TranslateTransportBCsGroup_(std::string& bcname,
         // create vectors of values and forms
         for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end();
              ++it) {
-          times.push_back(it->first);
-          values.push_back(it->second);
-          forms.push_back(tp_forms[it->first]);
-          formulas.push_back(tp_formulas[it->first]);
+          bcs.times.push_back(it->first);
+          bcs.values.push_back(it->second);
+          bcs.forms.push_back(tp_forms[it->first]);
+          bcs.formulas.push_back(tp_formulas[it->first]);
         }
       }
     }
@@ -709,7 +708,7 @@ InputConverterU::TranslateTransportBCsGroup_(std::string& bcname,
         .set<std::string>("x header", xheader)
         .set<std::string>("y header", yheader);
     } else {
-      TranslateGenericMath_(times, values, forms, formulas, bcfn);
+      TranslateGenericMath_(bcs, bcfn);
     }
 
     // data distribution method

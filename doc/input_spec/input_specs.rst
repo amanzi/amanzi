@@ -10,6 +10,6 @@ users (Input Specs) and developers (Native Spec).
    :caption: Versions
 
    AmanziNativeSpec_dev
-   AmanziInputSpec-v2.3.2-u
-   AmanziInputSpec-v2.3.2-s
+   AmanziInputSpec-u
+   AmanziInputSpec-s
              

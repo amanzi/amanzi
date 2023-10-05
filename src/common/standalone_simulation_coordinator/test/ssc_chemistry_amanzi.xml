@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<amanzi_input type="unstructured" version="2.3.0">
+<amanzi_input type="unstructured" version="1.5.dev">
   <echo_translated_input format="unstructured_native"/>
   <model_description name="farea_1d">
   </model_description>

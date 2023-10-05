@@ -154,11 +154,9 @@ InputConverterU::TranslateShallowWaterBCs_()
     if (bctype != "ponded_depth") continue;
 
     // create vectors of values and forms
-    std::vector<double> times, values, fluxes;
-    std::vector<std::string> forms, formulas;
-    TranslateBCsList_(node, 0.0, 1000.0, "m", times, values, fluxes, forms, formulas);
+    auto bcs = ParseCondList_(node, 0.0, 1000.0, "m");
 
-    // create names, modify data
+    // .. modify data
     if (bctype == "ponded_depth") {
       bctype = "ponded depth";
       bcname = "ponded depth";
@@ -174,7 +172,7 @@ InputConverterU::TranslateShallowWaterBCs_()
         .set<std::string>("spatial distribution method", "none");
 
       Teuchos::ParameterList& bcfn = bc.sublist(bcname);
-      TranslateGenericMath_(times, values, forms, formulas, bcfn);
+      TranslateGenericMath_(bcs, bcfn);
     }
 
     // velocity FIXME

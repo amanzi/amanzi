@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.3.0">
+<amanzi_input type="unstructured" version="1.5.dev">
   <model_description name="DVZ 3layer 2D">
     <author>Konstantin Lipnikov</author>
     <!-- default SI units -->
@@ -227,14 +227,25 @@
   </materials>
 
   <initial_conditions>
-    <initial_condition name="All">
-      <assigned_regions>All</assigned_regions>
+    <initial_condition name="Top">
+      <assigned_regions>RegionTop</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <linear_pressure name="IC1" value="101325.0 Pa" reference_coord="0.0, 0.0" gradient="0,-9793.5192 Pa/m" />
+          <linear_pressure value="101325.0 Pa" reference_coord="0.0, 0.0" gradient="0,-9793.5192 Pa/m" />
         </liquid_component>
         <solute_component>
-          <uniform_conc function="uniform" name="Tc-99" start="0.0" value="0.0" />
+          <uniform_conc function="uniform" name="Tc-99" value="0.0" />
+        </solute_component>
+      </liquid_phase>
+    </initial_condition>
+    <initial_condition name="BottomMiddle">
+      <assigned_regions>RegionBottom, RegionMiddle</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure formula="101325 + 10*x" />
+        </liquid_component>
+        <solute_component>
+          <uniform_conc function="constant" name="Tc-99" value="0.0" />
         </solute_component>
       </liquid_phase>
     </initial_condition>
@@ -267,7 +278,7 @@
         <solute_component>
           <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>
           <aqueous_conc name="Tc-99" value="1.881389E-06 SI" function="constant" start="6.17266656e+10"/>
-          <aqueous_conc name="Tc-99 " value="0.0" function="constant" start="6.1729344E10"/>
+          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="6.1729344E10"/>
        </solute_component> 
       </liquid_phase>
     </boundary_condition>

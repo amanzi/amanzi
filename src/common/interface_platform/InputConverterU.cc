@@ -44,7 +44,7 @@ InputConverterU::Translate(int rank, int num_proc)
   // grab verbosity early
   verb_list_ = TranslateVerbosity_();
   Teuchos::ParameterList tmp_list(verb_list_);
-  vo_ = new VerboseObject("InputConverter2.3", tmp_list);
+  vo_ = new VerboseObject("InputConverter-u", tmp_list);
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // checks that input XML is structurally sound

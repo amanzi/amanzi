@@ -1,5 +1,5 @@
-<amanzi_input type="unstructured" version="2.3.0">
-  <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
+<amanzi_input type="unstructured" version="1.5.dev">
+  <echo_translated_input format="unstructured_native" file_name="native.xml"/>
 
   <model_description name="Thermal Richards">
     <comments>Example input file</comments>

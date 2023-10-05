@@ -189,28 +189,24 @@ InputConverterU::TranslateEnergyBCs_(const std::string& domain)
 
     // process a group of similar elements defined by the first element
     // create vectors of values and forms
-    std::string bctype, bcname;
-    std::vector<double> times, values, fluxes;
-    std::vector<std::string> forms, formulas;
+    auto bcs = ParseCondList_(node, 0.0, 1000.0, "K");
 
-    bctype = TranslateBCsList_(node, 0.0, 1000.0, "K", times, values, fluxes, forms, formulas);
-
-    // create names, modify data
-    if (bctype == "uniform_temperature") {
-      bctype = "temperature";
+    std::string bcname;
+    if (bcs.type == "uniform_temperature") {
+      bcs.type = "temperature";
       bcname = "boundary temperature";
     }
     std::stringstream ss;
     ss << "BC " << ibc++;
 
     // save in the XML files
-    Teuchos::ParameterList& tbc_list = out_list.sublist(bctype);
+    Teuchos::ParameterList& tbc_list = out_list.sublist(bcs.type);
     Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
     bc.set<Teuchos::Array<std::string>>("regions", regions)
       .set<std::string>("spatial distribution method", "none");
 
     Teuchos::ParameterList& bcfn = bc.sublist(bcname);
-    TranslateGenericMath_(times, values, forms, formulas, bcfn);
+    TranslateGenericMath_(bcs, bcfn);
   }
 
   return out_list;

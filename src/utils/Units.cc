@@ -542,7 +542,10 @@ Units::MultiplyAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnitForm
   UnitData& data = auf.data();
   const UnitData& data2 = auf2.data();
 
-  for (auto it = data2.begin(); it != data2.end(); ++it) { data[it->first] += it->second; }
+  for (auto it = data2.begin(); it != data2.end(); ++it) {
+    data[it->first] += it->second;
+    if (data[it->first] == 0) data.erase(it->first);
+  }
 
   return auf;
 }

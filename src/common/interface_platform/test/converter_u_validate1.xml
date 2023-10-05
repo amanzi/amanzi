@@ -310,8 +310,8 @@
       </ParameterList>
       <ParameterList name="pressure">
         <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <ParameterList name="RegionTop">
+            <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-linear">
@@ -321,12 +321,35 @@
               </ParameterList>
             </ParameterList>
           </ParameterList>
+          <ParameterList name="RegionBottomRegionMiddle">
+            <Parameter name="regions" type="Array(string)" value="{RegionBottom, RegionMiddle}"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="3"/>
+                <Parameter name="formula" type="string" value="101325 + 10*x"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
       <ParameterList name="total_component_concentration">
         <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <ParameterList name="RegionTop">
+            <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.0"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="RegionBottomRegionMiddle">
+            <Parameter name="regions" type="Array(string)" value="{RegionBottom, RegionMiddle}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <Parameter name="number of dofs" type="int" value="1"/>

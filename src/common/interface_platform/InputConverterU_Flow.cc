@@ -25,6 +25,7 @@
 #include "exceptions.hh"
 #include "dbc.hh"
 #include "StringExt.hh"
+#include "Units.hh"
 
 #include "InputConverterU.hh"
 #include "InputConverterU_Defs.hh"
@@ -747,6 +748,8 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
       unit = "m";
     } else if (bctype_in == "inward_mass_flux" || bctype_in == "seepage_face") {
       unit = "kg/s/m^2";
+    } else if (bctype_in == "inward_mass_flux_distributed") {
+      unit = "kg/s";
     } else { // not flow BCs
       inode = inode->getNextSibling();
       continue;
@@ -754,10 +757,8 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
 
     // -- process global and local BC separately
     double refv;
-    std::string filename, xheader, yheader;
     std::vector<double> grad, refc, data, data_tmp;
-    std::vector<double> times, values, fluxes;
-    std::vector<std::string> forms, formulas;
+    BCs bcs;
 
     if (space_bc) {
       data.push_back(
@@ -777,33 +778,26 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
       grad = GetAttributeVectorD_(element, "gradient", dim_, unit_grad);
       refc = GetAttributeVectorD_(element, "reference_coord", dim_, "m");
     } else {
-      element = static_cast<DOMElement*>(same_list[0]);
-      filename = GetAttributeValueS_(element, "h5file", TYPE_NONE, false, "");
-      if (filename != "") {
-        xheader = GetAttributeValueS_(element, "times", TYPE_NONE);
-        yheader = GetAttributeValueS_(element, "values", TYPE_NONE);
-      } else {
-        TranslateBCsList_(node, DVAL_MIN, DVAL_MAX, unit, times, values, fluxes, forms, formulas);
-      }
+      bcs = ParseCondList_(node, DVAL_MIN, DVAL_MAX, unit);
     }
 
     // -- create BC names, modify input data
     std::string bcname, bctype(bctype_in);
-    if (bctype_in == "inward_mass_flux") {
+    if (bctype_in == "inward_mass_flux" || bctype_in == "inward_mass_flux_distributed") {
       bctype = "mass flux";
       bcname = "outward mass flux";
-      for (int k = 0; k < values.size(); k++) values[k] *= -1;
+      for (int k = 0; k < bcs.values.size(); k++) bcs.values[k] *= -1;
     } else if (bctype_in == "outward_mass_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
     } else if (bctype_in == "outward_volumetric_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
-      for (int k = 0; k < values.size(); k++) values[k] *= rho_;
+      for (int k = 0; k < bcs.values.size(); k++) bcs.values[k] *= rho_;
     } else if (bctype_in == "inward_volumetric_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
-      for (int k = 0; k < values.size(); k++) values[k] *= -rho_;
+      for (int k = 0; k < bcs.values.size(); k++) bcs.values[k] *= -rho_;
     } else if (bctype_in == "uniform_pressure" || bctype_in == "linear_pressure") {
       bctype = "pressure";
       bcname = "boundary pressure";
@@ -813,8 +807,8 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
     } else if (bctype_in == "seepage_face") {
       bctype = "seepage face";
       bcname = "outward mass flux";
-      values = fluxes;
-      for (int k = 0; k < values.size(); k++) values[k] *= -1;
+      bcs.values = bcs.fluxes;
+      for (int k = 0; k < bcs.values.size(); k++) bcs.values[k] *= -1;
     } else {
       ThrowErrorIllformed_("boundary_conditions", "element", bctype_in);
     }
@@ -836,27 +830,21 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
     if (space_bc) { // only one use case so far
       TranslateFunctionGaussian_(data, bcfn);
     } else if (global_bc) {
-      grad.insert(grad.begin(), 0.0);
-      refc.insert(refc.begin(), 0.0);
-
-      bcfn.sublist("function-linear")
-        .set<double>("y0", refv)
-        .set<Teuchos::Array<double>>("x0", refc)
-        .set<Teuchos::Array<double>>("gradient", grad);
-    } else if (filename != "") {
+      TranslateFunctionGradient_(refv, grad, refc, bcfn);
+    } else if (bcs.filename != "") {
       bcfn.sublist("function-tabular")
-        .set<std::string>("file", filename)
-        .set<std::string>("x header", xheader)
-        .set<std::string>("y header", yheader);
+        .set<std::string>("file", bcs.filename)
+        .set<std::string>("x header", bcs.xheader)
+        .set<std::string>("y header", bcs.yheader);
     } else {
-      TranslateGenericMath_(times, values, forms, formulas, bcfn);
+      TranslateGenericMath_(bcs, bcfn);
     }
 
     // data distribution method (only one distribution method at the moment - by volume)
     bc.set<bool>("use area fractions", WeightVolumeSubmodel_(regions));
     bc.set<std::string>("spatial distribution method", "none");
 
-    if (forms.size() == 1 && forms[0] == "distribution") {
+    if (bcs.forms.size() == 1 && bcs.forms[0] == "volume") {
       if (domain == "domain") {
         bc.set<std::string>("spatial distribution method", "volume");
       } else {
@@ -982,36 +970,27 @@ InputConverterU::TranslateSources_(const std::string& domain, const std::string&
       ThrowErrorIllformed_("sources", "element", srctype);
     }
 
-    std::string type, filename, variable;
-    element = static_cast<DOMElement*>(same_list[0]);
-    type = GetAttributeValueS_(element, "type", TYPE_NONE, false, ""); // only one now
-    if (type == "h5file") {
-      filename = GetAttributeValueS_(element, "filename", TYPE_NONE);
-      variable = GetAttributeValueS_(element, "variable", TYPE_NONE);
+    auto bcs = ParseCondList_(phase, DVAL_MIN, DVAL_MAX, unit);
 
+    if (bcs.filename != "" && bcs.variable != "") {
       Teuchos::ParameterList& src = out_list.sublist("fields").sublist("SRC 0");
       src.set<Teuchos::Array<std::string>>("regions", regions)
         .set<std::string>("spatial distribution method", "field")
         .set<bool>("use volume fractions", false);
       src.sublist("field")
-        .set<std::string>("field key", variable)
+        .set<std::string>("field key", bcs.variable)
         .set<std::string>("component", "cell");
 
-      auto& field_ev = glist_->sublist("state").sublist("evaluators").sublist(variable);
+      auto& field_ev = glist_->sublist("state").sublist("evaluators").sublist(bcs.variable);
       field_ev.set<std::string>("evaluator type", "independent variable from file")
-        .set<std::string>("filename", filename)
+        .set<std::string>("filename", bcs.filename)
         .set<std::string>("domain name", (domain == "matrix") ? "domain" : domain)
         .set<std::string>("component name", "cell")
         .set<std::string>("mesh entity", "cell")
-        .set<std::string>("variable name", variable)
+        .set<std::string>("variable name", bcs.variable)
         .set<int>("number of dofs", 1)
         .set<bool>("constant in time", true);
-
     } else {
-      std::vector<double> times, values, fluxes;
-      std::vector<std::string> forms, formulas;
-      TranslateBCsList_(phase, DVAL_MIN, DVAL_MAX, unit, times, values, fluxes, forms, formulas);
-
       // additional options for submodels
       double peaceman_r, peaceman_d;
       if (srctype == "peaceman_well") {
@@ -1029,7 +1008,6 @@ InputConverterU::TranslateSources_(const std::string& domain, const std::string&
 
       Teuchos::ParameterList* srcfn = &src.sublist("well");
 
-      // additional output for submodels
       if (srctype == "peaceman_well") {
         srcfn->set<std::string>("submodel", "bhp");
         srcfn->set<double>("well radius", peaceman_r);
@@ -1037,7 +1015,7 @@ InputConverterU::TranslateSources_(const std::string& domain, const std::string&
         srcfn = &srcfn->sublist("bhp");
       }
 
-      TranslateGenericMath_(times, values, forms, formulas, *srcfn);
+      TranslateGenericMath_(bcs, *srcfn);
     }
   }
 
@@ -1116,142 +1094,6 @@ InputConverterU::TranslateFlowFractures_(const std::string& domain)
   }
 
   return out_list;
-}
-
-
-/* ******************************************************************
-* Translate list of boundary conditions.
-****************************************************************** */
-std::string
-InputConverterU::TranslateBCsList_(DOMNode* node,
-                                   double vmin,
-                                   double vmax,
-                                   const std::string& unit,
-                                   std::vector<double>& times,
-                                   std::vector<double>& values,
-                                   std::vector<double>& fluxes,
-                                   std::vector<std::string>& forms,
-                                   std::vector<std::string>& formulas)
-{
-  bool flag;
-  std::string bctype;
-  DOMElement* element;
-
-  std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
-
-  std::map<double, double> tp_values, tp_fluxes;
-  std::map<double, std::string> tp_forms, tp_formulas;
-
-  for (int j = 0; j < same_list.size(); ++j) {
-    element = static_cast<DOMElement*>(same_list[j]);
-    double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
-
-    tp_forms[t0] = GetAttributeValueS_(element, "function");
-    tp_values[t0] =
-      GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
-    tp_fluxes[t0] = GetAttributeValueD_(
-      element, "inward_mass_flux", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
-    tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
-  }
-
-  // create vectors of values and forms
-  for (auto it = tp_values.begin(); it != tp_values.end(); ++it) {
-    times.push_back(it->first);
-    values.push_back(it->second);
-    fluxes.push_back(tp_fluxes[it->first]);
-    forms.push_back(tp_forms[it->first]);
-    formulas.push_back(tp_formulas[it->first]);
-  }
-
-  return bctype;
-}
-
-
-/* ******************************************************************
-* Translate function Gaussian.
-* Data format: d0 exp(-|x-d1|^2 / (2 d4^2)) where d1 is space vector.
-****************************************************************** */
-void
-InputConverterU::TranslateFunctionGaussian_(const std::vector<double>& data,
-                                            Teuchos::ParameterList& bcfn)
-{
-  if (data.size() != dim_ + 2) {
-    Errors::Message msg;
-    msg << "Gaussian function requires " << dim_ + 2 << " parameters.\n";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  std::vector<double> data_tmp(data);
-
-  bcfn.sublist("function-composition")
-    .sublist("function1")
-    .sublist("function-standard-math")
-    .set<std::string>("operator", "exp")
-    .set<double>("amplitude", data_tmp[0]);
-
-  double sigma = data_tmp[dim_ + 1];
-  double factor = -0.5 / sigma / sigma;
-  data_tmp.pop_back();
-
-  Teuchos::ParameterList& bc_tmp =
-    bcfn.sublist("function-composition").sublist("function2").sublist("function-multiplicative");
-
-  std::vector<double> metric(data_tmp.size(), 1.0);
-  metric[0] = 0.0; // ignore time distance
-  data_tmp[0] = 0.0;
-  bc_tmp.sublist("function1")
-    .sublist("function-squaredistance")
-    .set<Teuchos::Array<double>>("x0", data_tmp)
-    .set<Teuchos::Array<double>>("metric", metric);
-  bc_tmp.sublist("function2").sublist("function-constant").set<double>("value", factor);
-}
-
-
-/* ******************************************************************
-* Generic output of math data.
-****************************************************************** */
-bool
-InputConverterU::TranslateGenericMath_(const std::vector<double>& times,
-                                       const std::vector<double>& values,
-                                       const std::vector<std::string>& forms,
-                                       const std::vector<std::string>& formulas,
-                                       Teuchos::ParameterList& bcfn)
-{
-  bool flag(false);
-
-  if (times.size() == 1) {
-    if (forms[0] == "constant" || forms[0] == "uniform" || forms[0] == "distribution") {
-      bcfn.sublist("function-constant").set<double>("value", values[0]);
-      flag = true;
-    } else if (forms[0] == "general") {
-      bcfn.sublist("function-exprtk")
-        .set<int>("number of arguments", dim_ + 1)
-        .set<std::string>("formula", formulas[0]);
-      flag = true;
-    }
-  } else {
-    auto forms_copy = forms;
-    forms_copy.pop_back();
-
-    for (int i = 0; i < forms_copy.size(); ++i) {
-      if (forms_copy[i] == "general") {
-        std::string user_fnc = "USER_FNC" + std::to_string(i);
-        bcfn.sublist("function-tabular")
-          .sublist(user_fnc)
-          .sublist("function-exprtk")
-          .set<int>("number of arguments", dim_ + 1)
-          .set<std::string>("formula", formulas[i]);
-        forms_copy[i] = user_fnc;
-      }
-    }
-    bcfn.sublist("function-tabular")
-      .set<Teuchos::Array<double>>("x values", times)
-      .set<Teuchos::Array<double>>("y values", values)
-      .set<Teuchos::Array<std::string>>("forms", forms_copy);
-    flag = true;
-  }
-
-  return flag;
 }
 
 } // namespace AmanziInput

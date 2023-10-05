@@ -474,16 +474,16 @@ InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(
         inode, "liquid_phase, liquid_component, uniform_pressure", flag);
       if (flag) {
-        double p = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX);
+        auto ics = ParseCondList_({node}, "uniform_pressure", DVAL_MIN, DVAL_MAX, "Pa", false);
 
-        Teuchos::ParameterList& pressure_ic = out_ic.sublist("pressure");
-        pressure_ic.sublist("function")
+        Teuchos::ParameterList& icfn = out_ic.sublist("pressure")
+          .sublist("function")
           .sublist(reg_str)
           .set<Teuchos::Array<std::string>>("regions", regions)
           .set<std::string>("component", "*")
-          .sublist("function")
-          .sublist("function-constant")
-          .set<double>("value", p);
+          .sublist("function");
+
+        TranslateGenericMath_(ics, icfn);
       }
 
       // -- linear pressure
@@ -674,23 +674,16 @@ InputConverterU::TranslateState_()
       // -- uniform temperature
       node = GetUniqueElementByTagsString_(inode, "uniform_temperature", flag);
       if (flag) {
-        double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1000.0, "K");
+        auto ics = ParseCondList_({node}, "uniform_temperature", 0.0, 1000.0, "K", false);
 
-        Teuchos::Array<std::string> components(1, "cell");
-        std::string disc_method("mfd");
-        node = GetUniqueElementByTagsString_(
-          "unstructured_controls, unstr_energy_controls, discretization_method", flag);
-        if (flag) disc_method = mm.transcode(node->getNodeName());
-        if (disc_method.compare(0, 3, "mfd") == 0) components.push_back("face");
-
-        Teuchos::ParameterList& temperature_ic = out_ic.sublist("temperature");
-        temperature_ic.sublist("function")
+        Teuchos::ParameterList& icfn = out_ic.sublist("temperature")
+          .sublist("function")
           .sublist(reg_str)
           .set<Teuchos::Array<std::string>>("regions", regions)
-          .set<Teuchos::Array<std::string>>("components", components)
-          .sublist("function")
-          .sublist("function-constant")
-          .set<double>("value", val);
+          .set<std::string>("component", "*")
+          .sublist("function");
+
+        TranslateGenericMath_(ics, icfn);
       }
 
       // -- temperature
@@ -878,18 +871,11 @@ InputConverterU::TranslateState_()
       if (flag) {
         double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1000.0, "K");
 
-        Teuchos::Array<std::string> components(1, "cell");
-        std::string disc_method("mfd");
-        node = GetUniqueElementByTagsString_(
-          "unstructured_controls, unstr_energy_controls, discretization_method", flag);
-        if (flag) disc_method = mm.transcode(node->getNodeName());
-        if (disc_method.compare(0, 3, "mfd") == 0) components.push_back("face");
-
         Teuchos::ParameterList& temperature_ic = out_ic.sublist("fracture-temperature");
         temperature_ic.sublist("function")
           .sublist(reg_str)
           .set<Teuchos::Array<std::string>>("regions", regions)
-          .set<Teuchos::Array<std::string>>("components", components)
+          .set<std::string>("component", "*")
           .sublist("function")
           .sublist("function-constant")
           .set<double>("value", val);

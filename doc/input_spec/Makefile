@@ -13,8 +13,8 @@ SOURCEDIR   = ./
 BUILDDIR    = build
 
 SRC = \
-	AmanziInputSpec-v2.3.2-u.rst \
-	AmanziInputSpec-v2.3.2-s.rst \
+	AmanziInputSpec-u.rst \
+	AmanziInputSpec-s.rst \
         AmanziNativeSpec_dev.rst.pre \
         AmanziNativeSpec_dev.rst
 

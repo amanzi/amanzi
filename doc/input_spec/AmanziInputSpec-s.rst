@@ -1,6 +1,6 @@
-=========================================================
-Structured Amanzi XML Input Specification (Version 2.3.2)
-=========================================================
+=============================================
+Structured Input Specification for Amanzi 1.4
+=============================================
 
 .. contents:: **Table of Contents**
 

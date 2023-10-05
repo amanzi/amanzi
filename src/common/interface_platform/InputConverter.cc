@@ -167,7 +167,7 @@ InputConverter::ParseVersion_()
       minor = std::stoi(ver);
 
       getline(ss, ver);
-      micro = std::stoi(ver);
+      // micro = std::stoi(ver);
     } catch (...) {
       Errors::Message msg("The version string in the input file '" + version +
                           "' has the wrong format, use I.J.K.");
@@ -175,14 +175,14 @@ InputConverter::ParseVersion_()
     }
 
     if ((major != AMANZI_SPEC_VERSION_MAJOR) || (minor != AMANZI_SPEC_VERSION_MINOR) ||
-        (micro < AMANZI_SPEC_VERSION_MICRO)) {
+        (ver != AMANZI_SPEC_VERSION_MICRO)) {
       std::stringstream ss1;
       ss1 << AMANZI_SPEC_VERSION_MAJOR << "." << AMANZI_SPEC_VERSION_MINOR << "."
           << AMANZI_SPEC_VERSION_MICRO;
 
       Errors::Message msg;
       msg << "The input version " << version << " is not supported. "
-          << "Supported versions: " << ss1.str() << " and higher.\n";
+          << "Supported versions is" << ss1.str() << ".\n";
       Exceptions::amanzi_throw(msg);
     }
   } else {
@@ -582,6 +582,16 @@ InputConverter::GetSameChildNodes_(DOMNode* node, std::string& name, bool& flag,
   }
 
   return same;
+}
+
+
+/* ******************************************************************
+* Verifies existance
+****************************************************************** */
+bool InputConverter::HasAttribute_(DOMElement* elem, const char* attr_name)
+{
+  MemoryManager mm;
+  return elem->hasAttribute(mm.transcode(attr_name));
 }
 
 

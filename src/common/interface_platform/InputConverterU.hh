@@ -44,6 +44,17 @@ struct Phase {
 };
 typedef std::map<std::string, Phase> PhaseTree;
 
+
+struct BCs {
+ public:
+  std::string type;
+  std::vector<double> times, values, fluxes;
+  std::vector<std::string> forms, formulas;
+
+  std::string filename, xheader, yheader, variable;
+};
+
+
 class InputConverterU : public InputConverter {
  public:
   explicit InputConverterU(const std::string& input_filename)
@@ -110,6 +121,18 @@ class InputConverterU : public InputConverter {
   void ParseFractureNetwork_();
   void ModifyDefaultPhysicalConstants_();
   void ParseGlobalNumericalControls_();
+
+  BCs ParseCondList_(DOMNode* node,
+                     double vmin,
+                     double vmax,
+                     const std::string& unit,
+                     bool is_bc = true);
+  BCs ParseCondList_(std::vector<DOMNode*> same_list,
+                     const std::string& bctype,
+                     double vmin,
+                     double vmax,
+                     const std::string& unit,
+                     bool is_bc = true);
 
   Teuchos::ParameterList TranslateVerbosity_();
   Teuchos::ParameterList TranslateUnits_();
@@ -260,26 +283,16 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList CreateRegionAll_();
 
   // -- complex functions
-  std::string TranslateBCsList_(DOMNode* node,
-                                double vmin,
-                                double vmax,
-                                const std::string& unit,
-                                std::vector<double>& times,
-                                std::vector<double>& values,
-                                std::vector<double>& fluxes,
-                                std::vector<std::string>& forms,
-                                std::vector<std::string>& formulas);
-
   void TranslateFunctionGaussian_(const std::vector<double>& data, Teuchos::ParameterList& bcfn);
+  void TranslateFunctionGradient_(double refv, 
+                                  std::vector<double>& grad,
+                                  std::vector<double>& refc,
+                                  Teuchos::ParameterList& bcfn);
 
   void FilterEmptySublists_(Teuchos::ParameterList& plist);
   void MergeInitialConditionsLists_(Teuchos::ParameterList& plist, const std::string& chemistry);
 
-  bool TranslateGenericMath_(const std::vector<double>& times,
-                             const std::vector<double>& values,
-                             const std::vector<std::string>& forms,
-                             const std::vector<std::string>& formulas,
-                             Teuchos::ParameterList& bcfn);
+  bool TranslateGenericMath_(const BCs& bcs, Teuchos::ParameterList& bcfn);
 
   // -- sort functions
   template <class Iterator>
