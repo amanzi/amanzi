@@ -67,7 +67,7 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual void ComputeExternalForcingOnCells(std::vector<double> &forcing) override;
 
-  void GetDx(const int & cell, double & dx);
+  virtual void GetDx(const int & cell, double & dx) override;
 
   virtual void ComputeCellArrays() override;
 

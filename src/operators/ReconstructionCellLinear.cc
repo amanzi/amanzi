@@ -104,55 +104,6 @@ void ReconstructionCellLinear::Compute(
   gradient_->ScatterMasterToGhosted("cell");
 }
 
-/* ******************************************************************
-* Gradient of linear reconstruction is based on stabilized
-* least-square fit. Compute only at one cell.
-****************************************************************** */
-void ReconstructionCellLinear::ComputeGradientAtCell_(
-                               int c, 
-                               std::vector<double> vel,
-                               std::vector<double> var,
-                               std::vector<double> gradient)
-{
-   AmanziGeometry::Point xcc(dim);
-   WhetStone::DenseMatrix matrix(dim, dim);
-   WhetStone::DenseVector rhs(dim);
-   matrix.PutScalar(0.0);
-   rhs.PutScalar(0.0);
-   AmanziMesh::Entity_ID_List cells;
-   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-
-   CellFaceAdjCellsManifold_(c, AmanziMesh::Parallel_type::ALL, cells);
-   int ncells = cells.size() - 1;
-
-   for (int n = 0; n < ncells; n++) {
-     const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(cells[n]);
-     xcc = xc2 - xc;
-
-     double value = ( vel[n] * var[n] ) - ( vel[ncells] * var[ncells] );
-     PopulateLeastSquareSystem_(xcc, value, matrix, rhs);
-   }
-
-   // improve robustness w.r.t degenerate matrices
-   double det = matrix.Det();
-   double norm = matrix.NormInf();
-
-   if (det < pow(norm, 1.0/dim)) {
-     norm *= OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION;  // relative
-     norm += OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION;  // absolute
-     for (int i = 0; i < dim; i++) matrix(i, i) += norm;
-   }
-
-   int info, nrhs = 1;
-   WhetStone::DPOSV_F77("U", &dim, &nrhs, matrix.Values(), &dim, rhs.Values(), &dim, &info);
-   if (info) {  // reduce reconstruction order
-     for (int i = 0; i < dim; i++) rhs(i) = 0.0;
-   }
-
-   // rhs[0] = rhs[1] = rhs[2] = 0.0;  // TESTING COMPATABILITY
-   for (int i = 0; i < dim; i++) gradient[i] = rhs(i);
-
-}
 
 /* ******************************************************************
 * Returns the neighbors living in the same manifold
@@ -248,21 +199,6 @@ double ReconstructionCellLinear::getValue(
   return value;
 }
 
-/* ******************************************************************
-* Calculates reconstructed value at point p.
-* The value of the field to reconstruct and its
-* gradient at the cell are provided as input.
-****************************************************************** */
-double ReconstructionCellLinear::getValue(
-    int c, const double fieldAtCell, 
-    std::vector<double> gradient, const AmanziGeometry::Point& p)
-{
-  const auto& xc = mesh_->cell_centroid(c);
-
-  double value = fieldAtCell;
-  for (int i = 0; i < dim; i++) value += gradient[i] * (p[i] - xc[i]);
-  return value;
-}
 
 /* ******************************************************************
 * Calculates deviation from a mean value at point p.
