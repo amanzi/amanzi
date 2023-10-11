@@ -254,6 +254,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     c2 = (cells.size() == 2) ? cells[1] : -1;
     if (c1 > ncells_owned && c2 == -1) continue;
     if (c2 > ncells_owned) std::swap(c1, c2);
+    AmanziMesh::Entity_ID_List cellsAdj;
+    discharge_x_grad_->GetCellFaceAdjCellsManifold_(c1, AmanziMesh::Parallel_type::ALL, cellsAdj);
 
     // we need to check that shallow_water_model_== 0 because
     // the wetted angle is initialized to -1 for the SW PK
@@ -315,8 +317,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        qy_grad_tmp->Init(sw_list_->sublist("reconstruction"));
        Teuchos::RCP<Epetra_MultiVector> qx_sw_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
        Teuchos::RCP<Epetra_MultiVector> qy_sw_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-       AmanziMesh::Entity_ID_List cellsAdj;
-       discharge_x_grad_->GetCellFaceAdjCellsManifold_(c1, AmanziMesh::Parallel_type::ALL, cellsAdj);
        for(int adjCell=0; adjCell<cellsAdj.size(); adjCell++){
          int iCell = cellsAdj[adjCell];  
          GetDx(iCell, dx);
@@ -334,8 +334,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
           limiter_->ApplyLimiter(qx_sw_tmp, 0, qx_grad_tmp, bc_model_vector, bc_value_qx);
           limiter_->ApplyLimiter(qy_sw_tmp, 0, qy_grad_tmp, bc_model_vector, bc_value_qy);
        }
-       qx_grad_tmp->data()->ScatterMasterToGhosted("cell");
-       qy_grad_tmp->data()->ScatterMasterToGhosted("cell");
 
        qx_rec = qx_grad_tmp->getValue(c1, xf);
        qy_rec = qy_grad_tmp->getValue(c1, xf);
@@ -350,8 +348,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        qy_grad_tmp->Init(sw_list_->sublist("reconstruction"));
        Teuchos::RCP<Epetra_MultiVector> qx_pipe_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
        Teuchos::RCP<Epetra_MultiVector> qy_pipe_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-       AmanziMesh::Entity_ID_List cellsAdj;
-       discharge_x_grad_->GetCellFaceAdjCellsManifold_(c1, AmanziMesh::Parallel_type::ALL, cellsAdj);
        for(int adjCell=0; adjCell<cellsAdj.size(); adjCell++){
          int iCell = cellsAdj[adjCell];
          if(iCell == c2){
@@ -374,8 +370,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
           limiter_->ApplyLimiter(qx_pipe_tmp, 0, qx_grad_tmp, bc_model_vector, bc_value_qx);
           limiter_->ApplyLimiter(qy_pipe_tmp, 0, qy_grad_tmp, bc_model_vector, bc_value_qy);
        }
-       qx_grad_tmp->data()->ScatterMasterToGhosted("cell");
-       qy_grad_tmp->data()->ScatterMasterToGhosted("cell");
 
        qx_rec = qx_grad_tmp->getValue(c1, xf);
        qy_rec = qy_grad_tmp->getValue(c1, xf);
@@ -421,8 +415,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        qy_grad_tmp->Init(sw_list_->sublist("reconstruction"));
        Teuchos::RCP<Epetra_MultiVector> qx_sw_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
        Teuchos::RCP<Epetra_MultiVector> qy_sw_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-       AmanziMesh::Entity_ID_List cellsAdj;
-       discharge_x_grad_->GetCellFaceAdjCellsManifold_(c1, AmanziMesh::Parallel_type::ALL, cellsAdj);
        for(int adjCell=0; adjCell<cellsAdj.size(); adjCell++){
          int iCell = cellsAdj[adjCell];
          if(iCell == c2){
@@ -450,8 +442,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
           limiter_->ApplyLimiter(qx_sw_tmp, 0, qx_grad_tmp, bc_model_vector, bc_value_qx);
           limiter_->ApplyLimiter(qy_sw_tmp, 0, qy_grad_tmp, bc_model_vector, bc_value_qy);
        }
-       qx_grad_tmp->data()->ScatterMasterToGhosted("cell");
-       qy_grad_tmp->data()->ScatterMasterToGhosted("cell");
 
        qx_rec = qx_grad_tmp->getValue(c1, xf);
        qy_rec = qy_grad_tmp->getValue(c1, xf);
@@ -492,8 +482,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         qy_grad_tmp->Init(sw_list_->sublist("reconstruction"));
         Teuchos::RCP<Epetra_MultiVector> qx_pipe_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
         Teuchos::RCP<Epetra_MultiVector> qy_pipe_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-        AmanziMesh::Entity_ID_List cellsAdj;
-        discharge_x_grad_->GetCellFaceAdjCellsManifold_(c1, AmanziMesh::Parallel_type::ALL, cellsAdj);
         for(int adjCell=0; adjCell<cellsAdj.size(); adjCell++){
            int iCell = cellsAdj[adjCell];
            (*qx_pipe_tmp)[0][iCell] = vel_c[0][iCell] * h_temp[0][iCell];
@@ -510,8 +498,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
            limiter_->ApplyLimiter(qx_pipe_tmp, 0, qx_grad_tmp, bc_model_vector, bc_value_qx);
            limiter_->ApplyLimiter(qy_pipe_tmp, 0, qy_grad_tmp, bc_model_vector, bc_value_qy);
         }
-        qx_grad_tmp->data()->ScatterMasterToGhosted("cell");
-        qy_grad_tmp->data()->ScatterMasterToGhosted("cell");
 
         qx_rec = qx_grad_tmp->getValue(c1, xf);
         qy_rec = qy_grad_tmp->getValue(c1, xf);
@@ -565,6 +551,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       qx_rec = discharge_x_grad_->getValue(c2, xf);
       qy_rec = discharge_y_grad_->getValue(c2, xf);
 
+      discharge_x_grad_->GetCellFaceAdjCellsManifold_(c2, AmanziMesh::Parallel_type::ALL, cellsAdj);
+
       if(c2IsJunction) {
 
          // BEGIN computation of discharge at edge
@@ -574,8 +562,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
          qy_grad_tmp->Init(sw_list_->sublist("reconstruction"));
          Teuchos::RCP<Epetra_MultiVector> qx_sw_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
          Teuchos::RCP<Epetra_MultiVector> qy_sw_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-         AmanziMesh::Entity_ID_List cellsAdj;
-         discharge_x_grad_->GetCellFaceAdjCellsManifold_(c2, AmanziMesh::Parallel_type::ALL, cellsAdj);
          for(int adjCell=0; adjCell<cellsAdj.size(); adjCell++){
             int iCell = cellsAdj[adjCell];
             GetDx(iCell, dx);
@@ -593,8 +579,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
              limiter_->ApplyLimiter(qx_sw_tmp, 0, qx_grad_tmp, bc_model_vector, bc_value_qx);
              limiter_->ApplyLimiter(qy_sw_tmp, 0, qy_grad_tmp, bc_model_vector, bc_value_qy);
           }
-          qx_grad_tmp->data()->ScatterMasterToGhosted("cell");
-          qy_grad_tmp->data()->ScatterMasterToGhosted("cell");
 
           qx_rec = qx_grad_tmp->getValue(c2, xf);
           qy_rec = qy_grad_tmp->getValue(c2, xf);
@@ -611,8 +595,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
          qy_grad_tmp->Init(sw_list_->sublist("reconstruction"));
          Teuchos::RCP<Epetra_MultiVector> qx_pipe_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
          Teuchos::RCP<Epetra_MultiVector> qy_pipe_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-         AmanziMesh::Entity_ID_List cellsAdj;
-         discharge_x_grad_->GetCellFaceAdjCellsManifold_(c2, AmanziMesh::Parallel_type::ALL, cellsAdj);
          for(int adjCell=0; adjCell<cellsAdj.size(); adjCell++){
              int iCell = cellsAdj[adjCell];
             if(iCell == c1){
@@ -635,8 +617,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
             limiter_->ApplyLimiter(qx_pipe_tmp, 0, qx_grad_tmp, bc_model_vector, bc_value_qx);
             limiter_->ApplyLimiter(qy_pipe_tmp, 0, qy_grad_tmp, bc_model_vector, bc_value_qy);
          }
-         qx_grad_tmp->data()->ScatterMasterToGhosted("cell");
-         qy_grad_tmp->data()->ScatterMasterToGhosted("cell");
 
          qx_rec = qx_grad_tmp->getValue(c2, xf);
          qy_rec = qy_grad_tmp->getValue(c2, xf);
@@ -688,8 +668,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
          qy_grad_tmp->Init(sw_list_->sublist("reconstruction"));
          Teuchos::RCP<Epetra_MultiVector> qx_pipe_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
          Teuchos::RCP<Epetra_MultiVector> qy_pipe_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-         AmanziMesh::Entity_ID_List cellsAdj;
-         discharge_x_grad_->GetCellFaceAdjCellsManifold_(c2, AmanziMesh::Parallel_type::ALL, cellsAdj);
          for(int adjCell=0; adjCell<cellsAdj.size(); adjCell++){
              int iCell = cellsAdj[adjCell];
              (*qx_pipe_tmp)[0][iCell] = vel_c[0][iCell] * h_temp[0][iCell];
@@ -706,8 +684,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
             limiter_->ApplyLimiter(qx_pipe_tmp, 0, qx_grad_tmp, bc_model_vector, bc_value_qx);
             limiter_->ApplyLimiter(qy_pipe_tmp, 0, qy_grad_tmp, bc_model_vector, bc_value_qy);
          }
-         qx_grad_tmp->data()->ScatterMasterToGhosted("cell");
-         qy_grad_tmp->data()->ScatterMasterToGhosted("cell");
 
          qx_rec = qx_grad_tmp->getValue(c2, xf);
          qy_rec = qy_grad_tmp->getValue(c2, xf);
@@ -743,8 +719,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
          qy_grad_tmp->Init(sw_list_->sublist("reconstruction"));
          Teuchos::RCP<Epetra_MultiVector> qx_sw_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
          Teuchos::RCP<Epetra_MultiVector> qy_sw_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-         AmanziMesh::Entity_ID_List cellsAdj;
-         discharge_x_grad_->GetCellFaceAdjCellsManifold_(c2, AmanziMesh::Parallel_type::ALL, cellsAdj);
          for(int adjCell=0; adjCell<cellsAdj.size(); adjCell++){
             int iCell = cellsAdj[adjCell];
             if(iCell == c1){
@@ -772,8 +746,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
              limiter_->ApplyLimiter(qx_sw_tmp, 0, qx_grad_tmp, bc_model_vector, bc_value_qx);
              limiter_->ApplyLimiter(qy_sw_tmp, 0, qy_grad_tmp, bc_model_vector, bc_value_qy);
           }
-          qx_grad_tmp->data()->ScatterMasterToGhosted("cell");
-          qy_grad_tmp->data()->ScatterMasterToGhosted("cell");
 
           qx_rec = qx_grad_tmp->getValue(c2, xf);
           qy_rec = qy_grad_tmp->getValue(c2, xf);
