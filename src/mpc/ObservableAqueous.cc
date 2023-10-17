@@ -269,7 +269,7 @@ ObservableAqueous::ComputeObservation(State& S,
     Teuchos::RCP<const Epetra_MultiVector> aperture_rcp;
     if (domain_ == "fracture")
       aperture_rcp = S.Get<CompositeVector>("fracture-aperture").ViewComponent("cell");
-    const auto& fmap = *S.Get<CompositeVector>(vol_flowrate_key).Map().Map("face", true);
+    const auto& fmap = *S.Get<CompositeVector>(key).Map().Map("face", true);
 
     if (obs_boundary_ == 1) { // observation is on a boundary set
       for (int i = 0; i != region_size_; ++i) {

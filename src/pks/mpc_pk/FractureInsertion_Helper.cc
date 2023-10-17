@@ -45,7 +45,7 @@ UpdateEnthalpyCouplingFluxes(
 
   // update coupling terms for advection
   int ncells_owned_f =
-    mesh_fracture->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    mesh_fracture->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   auto values1 = std::make_shared<std::vector<double>>(2 * ncells_owned_f, 0.0);
   auto values2 = std::make_shared<std::vector<double>>(2 * ncells_owned_f, 0.0);
 
@@ -54,12 +54,12 @@ UpdateEnthalpyCouplingFluxes(
   const auto& flux = *S->Get<CompositeVector>("volumetric_flow_rate").ViewComponent("face", true);
   const auto& mmap = flux.Map();
   for (int c = 0; c < ncells_owned_f; ++c) {
-    int f = mesh_fracture->entity_get_parent(AmanziMesh::CELL, c);
+    int f = mesh_fracture->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
     int first = mmap.FirstPointInElement(f);
 
-    mesh_matrix->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    const auto& cells = mesh_matrix->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
-    mesh_matrix->face_normal(f, false, cells[0], &dir);
+    mesh_matrix->getFaceNormal(f, cells[0], &dir);
     shift = Operators::UniqueIndexFaceToCells(*mesh_matrix, f, cells[0]);
 
     for (int k = 0; k < ncells; ++k) {
