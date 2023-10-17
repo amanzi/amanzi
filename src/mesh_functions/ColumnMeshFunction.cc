@@ -94,7 +94,7 @@ ReadColumnMeshFunction_ByDepth(const Function& func,
       z0 = x0[x0.dim() - 1];
 
       // Iterate down the column
-      auto cells = v.Mesh()->getFaceCells(f, AmanziMesh::Parallel_kind::OWNED);
+      auto cells = v.Mesh()->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       AMANZI_ASSERT(cells.size() == 1);
       AmanziMesh::Entity_ID c = cells[0];
 

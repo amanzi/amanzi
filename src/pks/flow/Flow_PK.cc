@@ -845,14 +845,22 @@ Flow_PK::DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells,
 
   int nfaces =
     mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   for (int f = 0; f < nfaces; f++) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::OWNED);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     double face_value = 0.0;
-    for (int n = 0; n < ncells; n++) face_value += ucells[0][cells[n]];
-    double pmean = face_value / ncells;
+    int count = 0;
+    for (int n = 0; n < ncells; n++) {
+      if (cells[n] < ncells_owned) {
+        count++;
+        face_value += ucells[0][cells[n]];
+      }
+    }
+    double pmean = face_value / count;
 
     int first = fmap.FirstPointInElement(f);
     int ndofs = fmap.ElementSize(f);

@@ -168,7 +168,7 @@ SUITE(SURFACE_SUBSURFACE)
     const Epetra_Map& cell_map = mesh_subsurf->getMap(AmanziMesh::Entity_kind::CELL, false);
     for (int sc = 0; sc != ncells_surf; ++sc) {
       int f = mesh_surf->getEntityParent(AmanziMesh::Entity_kind::CELL, sc);
-      auto cells = mesh_subsurf->getFaceCells(f, AmanziMesh::Parallel_kind::OWNED);
+      auto cells = mesh_subsurf->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       AMANZI_ASSERT(cells.size() == 1);
       parents[sc] = cell_map.GID(cells[0]);
     }
@@ -320,7 +320,7 @@ SUITE(SURFACE_SUBSURFACE)
     const Epetra_Map& cell_map = mesh_subsurf->getMap(AmanziMesh::Entity_kind::CELL, false);
     for (int sc = 0; sc != ncells_surf; ++sc) {
       int f = mesh_surf->getEntityParent(AmanziMesh::Entity_kind::CELL, sc);
-      auto cells = mesh_subsurf->getFaceCells(f, AmanziMesh::Parallel_kind::OWNED);
+      auto cells = mesh_subsurf->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       AMANZI_ASSERT(cells.size() == 1);
       parents[sc] = cell_map.GID(cells[0]);
     }

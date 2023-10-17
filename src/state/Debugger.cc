@@ -57,8 +57,10 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
       AmanziMesh::Entity_ID lf = face_map.LID(f);
       if (lf >= 0) {
         // debug the neighboring cells
-        auto fcells = mesh->getFaceCells(lf, AmanziMesh::Parallel_kind::OWNED);
-        for (const auto& c : fcells) vcells.emplace_back(cell_map.GID(c));
+        auto fcells = mesh->getFaceCells(lf, AmanziMesh::Parallel_kind::ALL);
+        for (const auto& c : fcells)
+          if (c < cell_map.NumMyElements())
+            vcells.emplace_back(cell_map.GID(c));
       }
     }
   }

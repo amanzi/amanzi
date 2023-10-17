@@ -355,7 +355,7 @@ PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
       int sc = it->second;
 
       // accept it all
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::OWNED);
+      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       AMANZI_ASSERT(cells.size() == 1);
 
       auto [faces, dirs] = mesh_->getCellFacesAndDirections(cells[0]);
