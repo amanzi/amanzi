@@ -91,7 +91,7 @@ MeshFactory::createColumn(const Teuchos::RCP<Mesh>& parent,
     Teuchos::rcp(new MeshFrameworkColumn(column_extracted_3D, plist_));
 
   // create and return the Mesh
-  auto mesh = Teuchos::rcp(new Mesh(column_1D, Teuchos::rcp(new MeshFrameworkAlgorithms()), plist));
+  auto mesh = Teuchos::rcp(new Mesh(column_1D, Teuchos::rcp(new MeshFrameworkColumnAlgorithms()), plist));
   mesh->setParentMesh(parent);
   return mesh;
 }
