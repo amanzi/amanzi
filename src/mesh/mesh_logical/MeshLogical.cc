@@ -112,7 +112,7 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
   : MeshFramework(comm, Teuchos::null, plist), face_cell_ids_(face_cell_ids)
 {
   setSpaceDimension(3);
-  setManifoldDimension(1);
+  setManifoldDimension(3);
 
   // Count number of cells referenced, and check that the number of cells
   // referenced is equal to the largest id referenced (+1 for 0)
