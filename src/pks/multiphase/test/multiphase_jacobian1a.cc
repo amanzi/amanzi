@@ -84,7 +84,8 @@ TEST(MULTIPHASE_MODEL_I)
   S->InitializeFields();
 
   // set up new primary variables
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   std::string passwd("");
   std::vector<std::string> names({ "pressure_liquid", "mole_fraction_gas", "saturation_liquid" });

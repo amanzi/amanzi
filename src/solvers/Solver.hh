@@ -10,9 +10,9 @@
 
 /*!
 
-Amanzi supports a few nonlinear solvers. 
+Amanzi supports a few nonlinear solvers.
 Typically, a process kernel uses a factory to select a nonlinear solver.
-This factory uses parameter *solver type* to find parameters for 
+This factory uses parameter *solver type* to find parameters for
 the selected solver.
 
 */

@@ -9,9 +9,9 @@
 
 /*!
 
-Relations like the Kozeny–Carman equation are used to estimate changes in permeability 
-due to changes in porosity, e.g. due to mineral precipitation or biofilm accumulation. 
-The change in permeability is calculated by relating the current permeability, :math:`K`, 
+Relations like the Kozeny–Carman equation are used to estimate changes in permeability
+due to changes in porosity, e.g. due to mineral precipitation or biofilm accumulation.
+The change in permeability is calculated by relating the current permeability, :math:`K`,
 based on the current porosity, :math:`\phi`, to the initial or reference permeability
 and porosity:
 

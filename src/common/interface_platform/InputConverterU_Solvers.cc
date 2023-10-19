@@ -375,9 +375,7 @@ InputConverterU::TranslateILU_()
   Teuchos::ParameterList out_list;
   out_list.set<std::string>("preconditioning method", "ILU");
 
-  out_list.sublist("ILU parameters")
-    .set<int>("ilu(k) fill level", 5)
-    .set<int>("verbosity", 0);
+  out_list.sublist("ILU parameters").set<int>("ilu(k) fill level", 5).set<int>("verbosity", 0);
 
   return out_list;
 }

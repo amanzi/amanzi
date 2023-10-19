@@ -56,7 +56,8 @@ TEST(MPC_DRIVER_ENERGY_MATRIX_FRACTURE)
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   // create mesh
-  auto mesh_list = Teuchos::sublist(plist, "mesh", true);;
+  auto mesh_list = Teuchos::sublist(plist, "mesh", true);
+  ;
   mesh_list->set<bool>("request edges", true);
   mesh_list->set<bool>("request faces", true);
   MeshFactory factory(comm, gm, mesh_list);
@@ -74,10 +75,11 @@ TEST(MPC_DRIVER_ENERGY_MATRIX_FRACTURE)
   std::vector<std::string> names;
   names.push_back("fracture");
   // auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
-  auto mesh_fracture_mf = Teuchos::rcp(new MeshExtractedManifold(
-    mesh, "fracture", AmanziMesh::FACE, comm, gm, mesh_list));
-  auto mesh_fracture = Teuchos::rcp(new Mesh(mesh_fracture_mf, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), mesh_list)); 
-  
+  auto mesh_fracture_mf = Teuchos::rcp(
+    new MeshExtractedManifold(mesh, "fracture", AmanziMesh::FACE, comm, gm, mesh_list));
+  auto mesh_fracture = Teuchos::rcp(
+    new Mesh(mesh_fracture_mf, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), mesh_list));
+
   S->RegisterMesh("fracture", mesh_fracture);
 
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
@@ -85,14 +87,16 @@ TEST(MPC_DRIVER_ENERGY_MATRIX_FRACTURE)
 
   // verification
   // -- baounds preservation
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   const auto& T_m = *S->Get<CompositeVector>("temperature").ViewComponent("cell");
   for (int c = 0; c < ncells; ++c) {
     double T = T_m[0][c];
     CHECK(T < 573.15 && T > 473.15);
   }
 
-  ncells = mesh_fracture->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  ncells =
+    mesh_fracture->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   const auto& T_f = *S->Get<CompositeVector>("fracture-temperature").ViewComponent("cell");
   for (int c = 0; c < ncells; ++c) {
     double T = T_f[0][c];

@@ -22,20 +22,20 @@ The conceptual PDE model of the stationary coupled matrix-fracture flow is
   \phi_m \frac{S_{s,m}}{g} \frac{\partial p_m}{\partial t}
   + \boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_m) = Q_m,
   \quad
-  \boldsymbol{q}_m = -\frac{\boldsymbol{K}_m}{\mu} 
+  \boldsymbol{q}_m = -\frac{\boldsymbol{K}_m}{\mu}
   (\boldsymbol{\nabla} p_m - \rho_l \boldsymbol{g}) \\
   %
   \phi_f \frac{S_{s,f}}{g} \frac{\partial p_f}{\partial t}
-  + \boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_f) = 
+  + \boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_f) =
     -\rho_l [[ \tilde{\boldsymbol{q}}_m \cdot \boldsymbol{n} ]],
   \quad
-  \boldsymbol{q}_f = -\frac{\boldsymbol{K}_f}{\mu} 
+  \boldsymbol{q}_f = -\frac{\boldsymbol{K}_f}{\mu}
   (\boldsymbol{\nabla} p_f - \rho_l \boldsymbol{g}) \\
   %
   \tilde{\boldsymbol{q}}_m \cdot \boldsymbol{n} = \frac{k}{g} (p_f - p_m)
   \end{array}
 
-subject to convential boundary conditions for both matrix and fracture domains expect for 
+subject to convential boundary conditions for both matrix and fracture domains expect for
 the matrix-fracture boundary where the boundary condition is
 
 .. math::
@@ -54,12 +54,12 @@ and
 :math:`\boldsymbol{g}` is gravity [:math:`m/s^2`].
 
 
-Main parameters and sublists 
+Main parameters and sublists
 ............................
 * `"PKs order`" [array(string)] defines user names for two flow PKs. The matrix PK should be
   defined *first*.
 
-* `"time integrator`" [list] defines a generic time integrator used by the cycle driver. 
+* `"time integrator`" [list] defines a generic time integrator used by the cycle driver.
 
 .. code-block:: xml
 

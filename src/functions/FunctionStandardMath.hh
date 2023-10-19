@@ -36,7 +36,7 @@ better yet a dimension could/should be added upon request).
        `"atan`"
      - hyperbolic trig operators: `"cosh`", `"sinh`", `"tanh`"
      - power/log operators: `"pow`", `"exp`", `"log`", `"log10`", `"sqrt`",
-     - integral operators: `"ceil`", `"floor`", `"mod`", 
+     - integral operators: `"ceil`", `"floor`", `"mod`",
      - `"abs`", `"fabs`", `"positive`" (0 for negative values), `"negative`" (0
        for positive values), `"heaviside`", `"sign`"
 

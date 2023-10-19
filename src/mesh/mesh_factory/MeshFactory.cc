@@ -1,5 +1,5 @@
 /*
-  Copyright 2010-201x held jointly by LANL, ORNL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -91,7 +91,8 @@ MeshFactory::createColumn(const Teuchos::RCP<Mesh>& parent,
     Teuchos::rcp(new MeshFrameworkColumn(column_extracted_3D, plist_));
 
   // create and return the Mesh
-  auto mesh = Teuchos::rcp(new Mesh(column_1D, Teuchos::rcp(new MeshFrameworkColumnAlgorithms()), plist));
+  auto mesh =
+    Teuchos::rcp(new Mesh(column_1D, Teuchos::rcp(new MeshFrameworkColumnAlgorithms()), plist));
   mesh->setParentMesh(parent);
   return mesh;
 }

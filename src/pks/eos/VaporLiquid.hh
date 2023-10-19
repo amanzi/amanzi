@@ -9,8 +9,8 @@
 
 /*
   Base class for vapor-liquid distribution coefficeint
-   
-   kD = xg / xl 
+
+   kD = xg / xl
 
   where xg and xl are gas and liquid more fractions in equilibrium.
 */

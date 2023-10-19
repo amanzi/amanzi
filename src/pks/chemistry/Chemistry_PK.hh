@@ -23,15 +23,15 @@ The chemistry header includes three parameters:
 
 Geochemical engines
 ...................
-Here we specify either the default or the third-party geochemical engine. 
+Here we specify either the default or the third-party geochemical engine.
 
 Common parameters
 `````````````````
 The following parameters are common for all supported engines.
 
-* `"time step control method`" [string] specifies time step control method for chemistry subcycling. 
+* `"time step control method`" [string] specifies time step control method for chemistry subcycling.
   Choose either "fixed" (default) or "simple".  For option "fixed", time step is fixed.
-  For option "simple", the time step is adjusted in response to stiffness of system of equations 
+  For option "simple", the time step is adjusted in response to stiffness of system of equations
   based on a simple scheme. This option require the following parameters: `"time step cut threshold`",
   `"time step cut factor`", `"time step increase threshold`", and `"time step increase factor`".
 
@@ -50,11 +50,11 @@ The following parameters are common for all supported engines.
 * `"time step increase factor`" [double] is the factor by which the time step is increased. Default is 1.2
 
 * `"free ion initial guess`" [double] provides an estimate of the free ion concentration for solutes.
-  It used to help convergence of the initial solution of the chemistry. If this parameter is absent, 
+  It used to help convergence of the initial solution of the chemistry. If this parameter is absent,
   a fraction (10%) of the total component concentration is used.
 
 * `"initial conditions time`" [double] specifies time for applying initial conditions. This parameter
-  is useful for simulation restart. Default value is the state time when chemistry PK is instantiated. 
+  is useful for simulation restart. Default value is the state time when chemistry PK is instantiated.
 
 */
 

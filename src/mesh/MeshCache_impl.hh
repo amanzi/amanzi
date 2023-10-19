@@ -1,5 +1,5 @@
 /*
-  Copyright 2010-201x held jointly by LANL, ORNL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -8,8 +8,8 @@
            Julien Loiseau (jloiseau@lanl.gov)
            Rao Garimella (rao@lanl.gov)
 */
-//! Caches mesh information for fast repeated access.
 
+//! Caches mesh information for fast repeated access.
 #pragma once
 
 #include "MeshUtils.hh"
@@ -22,8 +22,8 @@ namespace AmanziMesh {
 class SingleFaceMesh;
 
 template <MemSpace_kind MEM>
-MeshCache<MEM>::MeshCache() : is_ordered_(false), has_edges_(false), has_nodes_(true),
-			      has_node_faces_(true)
+MeshCache<MEM>::MeshCache()
+  : is_ordered_(false), has_edges_(false), has_nodes_(true), has_node_faces_(true)
 {}
 
 
@@ -46,7 +46,7 @@ MeshCache<MEM>::setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_me
   // always save the algorithms, so we can throw away the data
   has_edges_ = framework_mesh->hasEdges();
   has_nodes_ = framework_mesh->hasNodes();
-  has_node_faces_ = framework_mesh->hasNodeFaces(); 
+  has_node_faces_ = framework_mesh->hasNodeFaces();
   comm_ = framework_mesh_->getComm();
   gm_ = framework_mesh_->getGeometricModel();
   space_dim_ = framework_mesh_->getSpaceDimension();
@@ -820,34 +820,34 @@ MeshCache<MEM>::getCellNodes(const Entity_ID c, View_type<const Entity_ID, MEM>&
     nullptr,
     c);
 
-#if 0 
+#if 0
   if constexpr (MEM == MemSpace_kind::DEVICE){
-    assert(data_.cell_faces_cached); 
-    assert(data_.face_nodes_cached); 
+    assert(data_.cell_faces_cached);
+    assert(data_.face_nodes_cached);
     for(int i = 0 ; i < nodes.size(); ++i)
-      nodes[i] = -1; 
+      nodes[i] = -1;
 
     auto faces = getCellFaces(c);
-    int i = 0; 
-    for(int f = 0 ; f < faces.size() ; ++f){ 
-        auto fnodes = getFaceNodes(faces[f]); 
+    int i = 0;
+    for(int f = 0 ; f < faces.size() ; ++f){
+        auto fnodes = getFaceNodes(faces[f]);
         for(int n = 0; n < fnodes.size(); ++n){
           if(i >= nodes.size()){
             printf("Increase shared memory size\n");
-            assert(false);   
-          } 
+            assert(false);
+          }
           if(!is_present(fnodes[n],nodes)){
-            nodes[i++] = fnodes[n]; 
+            nodes[i++] = fnodes[n];
           }
         }
       }
-      nodes = nodes.subview(Kokkos::make_pair(0,i)); 
+      nodes = nodes.subview(Kokkos::make_pair(0,i));
   }else{
     if constexpr(std::is_same_v<ViewType,Span<typename ViewType::value_type>>){
-      auto v = MeshAlgorithms::computeCellNodes(*this,c); 
-      nodes = ViewType{v.data(),v.size()}; 
+      auto v = MeshAlgorithms::computeCellNodes(*this,c);
+      nodes = ViewType{v.data(),v.size()};
     } else {
-      nodes = MeshAlgorithms::computeCellNodes(*this,c); 
+      nodes = MeshAlgorithms::computeCellNodes(*this,c);
     }
   }
 #endif
@@ -961,8 +961,7 @@ MeshCache<MEM>::getNodeCells(const Entity_ID n) const
 template <MemSpace_kind MEM>
 template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION void
-MeshCache<MEM>::getNodeCells(const Entity_ID n,
-                             View_type<const Entity_ID, MEM>& cells) const
+MeshCache<MEM>::getNodeCells(const Entity_ID n, View_type<const Entity_ID, MEM>& cells) const
 {
   cells = RaggedGetter<MEM, AP>::get(
     data_.node_cells_cached,
@@ -991,8 +990,7 @@ MeshCache<MEM>::getNodeFaces(const Entity_ID n) const
 template <MemSpace_kind MEM>
 template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION void
-MeshCache<MEM>::getNodeFaces(const Entity_ID n,
-                             View_type<const Entity_ID, MEM>& faces) const
+MeshCache<MEM>::getNodeFaces(const Entity_ID n, View_type<const Entity_ID, MEM>& faces) const
 {
   faces = RaggedGetter<MEM, AP>::get(
     data_.node_faces_cached,
@@ -1153,8 +1151,7 @@ MeshCache<MEM>::getEdgeCells(const Entity_ID e) const
 template <MemSpace_kind MEM>
 template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION void
-MeshCache<MEM>::getEdgeCells(const Entity_ID e, 
-                             View_type<const Entity_ID, MEM>& cells) const
+MeshCache<MEM>::getEdgeCells(const Entity_ID e, View_type<const Entity_ID, MEM>& cells) const
 {
   cells = RaggedGetter<MEM, AP>::get(
     data_.edge_cells_cached,
@@ -1183,8 +1180,7 @@ MeshCache<MEM>::getEdgeFaces(const Entity_ID e) const
 template <MemSpace_kind MEM>
 template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION void
-MeshCache<MEM>::getEdgeFaces(const Entity_ID e,
-                             View_type<const Entity_ID, MEM>& faces) const
+MeshCache<MEM>::getEdgeFaces(const Entity_ID e, View_type<const Entity_ID, MEM>& faces) const
 {
   faces = RaggedGetter<MEM, AP>::get(
     data_.edge_faces_cached,
@@ -1731,8 +1727,7 @@ cacheAll(MeshCache<MEM>& mesh)
   mesh.cacheCellCoordinates();
   mesh.cacheFaceCoordinates();
   mesh.cacheNodeCells();
-  if(mesh.hasNodeFaces())
-    mesh.cacheNodeFaces();
+  if (mesh.hasNodeFaces()) mesh.cacheNodeFaces();
   if (mesh.hasEdges()) {
     mesh.cacheCellEdges();
     mesh.cacheEdgeCells();

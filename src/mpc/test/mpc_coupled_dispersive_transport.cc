@@ -5,14 +5,16 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
+*/
 
+/*
   Solution of PDE:
 
     d(a C)/dt + d(u C)/dx - Df d^2(C)/dx^2 \sum_i (phi * Dm_i) d(Cm_i)/dy = 0
- 
+
   where a is aperture, u is velocity [m2/s], phi is matrix porosity,
-  Dm is molecular diffusion, Df is dispersion/diffusion in fracture and Cm_i is 
-  matrix concentration on the i-th side of the fracture. 
+  Dm is molecular diffusion, Df is dispersion/diffusion in fracture and Cm_i is
+  matrix concentration on the i-th side of the fracture.
 
   Case 1: Dm=0 and u=0
   Case 2: Df=0 and constant BC on the fracture inlet

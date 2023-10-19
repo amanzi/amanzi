@@ -207,8 +207,8 @@ class Mesh_MOAB : public MeshFramework {
 
   void getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
                       const Entity_kind kind,
-		      const Parallel_kind ptype,
-		      View_type<const Entity_ID, MemSpace_kind::HOST>& setents) const override; 
+                      const Parallel_kind ptype,
+                      View_type<const Entity_ID, MemSpace_kind::HOST>& setents) const override;
 
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If

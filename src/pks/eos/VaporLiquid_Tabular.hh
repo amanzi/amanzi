@@ -10,10 +10,10 @@
 /*
   EOS
 
-  Tabulated vapor-Liquid distribution based on J. Phys. Chem. Ref. Data, 
+  Tabulated vapor-Liquid distribution based on J. Phys. Chem. Ref. Data,
   Vol.32, number 2, 2003
-   
-   kD(T) = xg / xl 
+
+   kD(T) = xg / xl
 
   where xg and xl are gas and liquid more fractions in equilibrium.
 */

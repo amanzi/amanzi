@@ -9,35 +9,35 @@
 
 /*!
 
-A user may request periodic dumps of Walkabout data. Output controls for Walkabout data are 
+A user may request periodic dumps of Walkabout data. Output controls for Walkabout data are
 limited to file name generation and writing frequency, by numerical cycle number or time.
 
-* `"walkabout data`" [list] can accept a file name base [string] and cycle data [list] 
-  used to generate the file base name or directory base name that is used in writing Walkabout data. 
+* `"walkabout data`" [list] can accept a file name base [string] and cycle data [list]
+  used to generate the file base name or directory base name that is used in writing Walkabout data.
 
-  * `"file name base`" [string] The file name can contain relative or absolute path to an *existing* 
+  * `"file name base`" [string] The file name can contain relative or absolute path to an *existing*
     directory only.  Default is `"walkabout`".
-  
-  * `"file name digits`" [int] specify the number of digits that should be appended to the file 
+
+  * `"file name digits`" [int] specify the number of digits that should be appended to the file
     name for the cycle number. Default is 5.
 
-  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, 
-    the second is the cycle period, and the third is the stop cycle or -1 in which case 
-    there is no stop cycle. A visualization dump shall be written at such cycles that 
+  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle,
+    the second is the cycle period, and the third is the stop cycle or -1 in which case
+    there is no stop cycle. A visualization dump shall be written at such cycles that
     satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
 
-  * `"cycles start period stop n`" [Array(int)] if multiple cycles start-period-stop parameters 
+  * `"cycles start period stop n`" [Array(int)] if multiple cycles start-period-stop parameters
     are needed, then use these parameters with n=0,1,2,..., and not the single
     `"cycles start period stop`" parameter.
 
-  * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
+  * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written.
 
-  * `"times start period stop`" [Array(double)] the first entry is the start time, 
-    the second is the time period, and the third is the stop time or -1 in which case 
-    there is no stop time. A visualization dump shall be written at such times that 
+  * `"times start period stop`" [Array(double)] the first entry is the start time,
+    the second is the time period, and the third is the stop time or -1 in which case
+    there is no stop time. A visualization dump shall be written at such times that
     satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
 
-  * `"times start period stop n`" [Array(double) if multiple start-period-stop parameters 
+  * `"times start period stop n`" [Array(double) if multiple start-period-stop parameters
     are needed, then use this these parameters with n=0,1,2,..., and not the single
     `"times start period stop`" parameter.
 
@@ -47,8 +47,8 @@ limited to file name generation and writing frequency, by numerical cycle number
     material names, and material ids to write into the output file.
 
     * `"region names`" [Array(string)] specifies names of regions.
-    * `"material names`" [Array(int)] specifies names of materials. 
-    * `"material ids`" [Array(int)] specifies material ids. 
+    * `"material names`" [Array(int)] specifies names of materials.
+    * `"material ids`" [Array(int)] specifies material ids.
 
 .. code-block:: xml
 
@@ -72,7 +72,7 @@ limited to file name generation and writing frequency, by numerical cycle number
   </ParameterList>
   </ParameterList>
 
-In this example, walkabout data files are written when the cycle number is 
+In this example, walkabout data files are written when the cycle number is
 a multiple of 100.
 
 */

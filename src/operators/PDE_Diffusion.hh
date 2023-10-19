@@ -37,15 +37,15 @@ Diffusion is the most frequently used operator. It employs the old schema.
     `"mfd: default`", `"mfd: support operator`", `"mfd: two-point flux approximation`",
     `"fv: default`", and `"nlfv: default`".
     The first option is recommended for general meshes.
-    The second option is recommended for orthogonal meshes and diagonal absolute 
-    permeability tensor. 
+    The second option is recommended for orthogonal meshes and diagonal absolute
+    permeability tensor.
 
   * `"discretization secondary`" [string] specifies the most robust discretization method
     that is used when the primary selection fails to satisfy all a priori conditions.
     Default value is equal to that for the primary discretization.
 
   * `"diffusion tensor`" [string] specifies additional properties of the diffusion tensor.
-    It allows us to solve problems with non-symmetric but positive definite tensors. 
+    It allows us to solve problems with non-symmetric but positive definite tensors.
     Available options are *symmetric* (default) and *nonsymmetric*.
 
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
@@ -57,36 +57,36 @@ Diffusion is the most frequently used operator. It employs the old schema.
     that must be provided by a physical PK.
     Default is `"none`".
 
-  * `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
-    geometric objects. It equals to `"{cell}`" for finite volume schemes. 
+  * `"schema`" [Array(string)] defines the operator stencil. It is a collection of
+    geometric objects. It equals to `"{cell}`" for finite volume schemes.
     It is typically `"{face, cell}`" for mimetic discretizations.
 
   * `"preconditioner schema`" [Array(string)] defines the preconditioner stencil.
-    It is needed only when the default assembling procedure is not desirable. 
-    If skipped, the `"schema`" is used instead. 
+    It is needed only when the default assembling procedure is not desirable.
+    If skipped, the `"schema`" is used instead.
 
   * `"gravity`" [bool] specifies if flow is driven also by the gravity.
 
-  * `"gravity term discretization`" [string] selects a model for discretizing the 
-    gravity term. Available options are `"hydraulic head`" [default] and `"finite volume`". 
+  * `"gravity term discretization`" [string] selects a model for discretizing the
+    gravity term. Available options are `"hydraulic head`" [default] and `"finite volume`".
     The first option starts with equation for the shifted solution, i.e. the hydraulic head,
     and derives gravity discretization by the reserve shifting.
     The second option is based on the divergence formula.
 
   * `"gravity magnitude`" [double] defined magnitude of the gravity vector.
 
-  * `"Newton correction`" [string] specifies a model for correction (non-physical) terms 
+  * `"Newton correction`" [string] specifies a model for correction (non-physical) terms
     that must be added to the preconditioner. These terms approximate some Jacobian terms.
     Available options are `"true Jacobian`" and `"approximate Jacobian`".
     The FV scheme accepts only the first options. The othre schemes accept only the second option.
 
   * `"scaled constraint equation`" [bool] rescales flux continuity equations on mesh faces.
-    These equations are divided by the nonlinear coefficient. This option allows us to 
-    treat the case of zero nonlinear coefficient. At moment this feature does not work 
+    These equations are divided by the nonlinear coefficient. This option allows us to
+    treat the case of zero nonlinear coefficient. At moment this feature does not work
     with non-zero gravity term. Default is *false*.
 
   * `"constraint equation scaling cutoff"`" [double] specifies the cutoff value for
-    applying rescaling strategy described above.  
+    applying rescaling strategy described above.
 
   * `"consistent faces`" [list] may contain a `"preconditioner`" and
     `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
@@ -127,7 +127,7 @@ Example:
   </ParameterList>
 
 This example creates a p-lambda system, i.e. the pressure is
-discretized in mesh cells and on mesh faces. 
+discretized in mesh cells and on mesh faces.
 The preconditioner is defined on faces only, i.e. cell-based unknowns
 are eliminated explicitly and the preconditioner is applied to the
 Schur complement.

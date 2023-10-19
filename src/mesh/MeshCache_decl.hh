@@ -1,5 +1,5 @@
 /*
-  Copyright 2010-201x held jointly by LANL, ORNL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -8,8 +8,8 @@
            Julien Loiseau (jloiseau@lanl.gov)
            Rao Garimella (rao@lanl.gov)
 */
-//! Caches mesh information for fast repeated access.
 
+//! Caches mesh information for fast repeated access.
 /*
 
 Design discussion:
@@ -253,7 +253,6 @@ struct MeshCacheData {
   Entity_ID_DualView parent_edges;
   Entity_ID_DualView parent_faces;
   Entity_ID_DualView parent_cells;
-
 };
 
 
@@ -764,50 +763,46 @@ struct MeshCache {
   // // The order of cells is not guaranteed to be the same for corresponding
   // // edges on different processors
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  KOKKOS_INLINE_FUNCTION decltype(auto)
-  getEdgeCells(const Entity_ID e) const;
+  KOKKOS_INLINE_FUNCTION decltype(auto) getEdgeCells(const Entity_ID e) const;
 
 
   // //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  KOKKOS_INLINE_FUNCTION void getEdgeCells(const Entity_ID e,
-                                           View_type<const Entity_ID, MEM>& cells) const;
+  KOKKOS_INLINE_FUNCTION void
+  getEdgeCells(const Entity_ID e, View_type<const Entity_ID, MEM>& cells) const;
 
   // // Faces of type 'ptype' connected to an edge
   // // NOTE: The order of faces is not guaranteed to be the same for
   // // corresponding edges on different processors
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  KOKKOS_INLINE_FUNCTION decltype(auto)
-  getEdgeFaces(const Entity_ID e) const;
+  KOKKOS_INLINE_FUNCTION decltype(auto) getEdgeFaces(const Entity_ID e) const;
 
   // //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  KOKKOS_INLINE_FUNCTION void getEdgeFaces(const Entity_ID edgeid,
-                                           View_type<const Entity_ID, MEM>& faces) const;
+  KOKKOS_INLINE_FUNCTION void
+  getEdgeFaces(const Entity_ID edgeid, View_type<const Entity_ID, MEM>& faces) const;
 
   // // Cells of type 'ptype' connected to a node
   // // NOTE: The order of cells is not guaranteed to be the same for
   // // corresponding nodes on different processors
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  KOKKOS_INLINE_FUNCTION decltype(auto)
-  getNodeCells(const Entity_ID n) const;
+  KOKKOS_INLINE_FUNCTION decltype(auto) getNodeCells(const Entity_ID n) const;
 
   //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  KOKKOS_INLINE_FUNCTION void getNodeCells(const Entity_ID n,
-                                           View_type<const Entity_ID, MEM>& cells) const;
+  KOKKOS_INLINE_FUNCTION void
+  getNodeCells(const Entity_ID n, View_type<const Entity_ID, MEM>& cells) const;
 
   // // Faces of type parallel 'ptype' connected to a node
   // // NOTE: The order of faces is not guarnateed to be the same for
   // // corresponding nodes on different processors
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  KOKKOS_INLINE_FUNCTION decltype(auto)
-  getNodeFaces(const Entity_ID n) const;
+  KOKKOS_INLINE_FUNCTION decltype(auto) getNodeFaces(const Entity_ID n) const;
 
   // //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  KOKKOS_INLINE_FUNCTION void getNodeFaces(const Entity_ID n,
-                                           View_type<const Entity_ID, MEM>& faces) const;
+  KOKKOS_INLINE_FUNCTION void
+  getNodeFaces(const Entity_ID n, View_type<const Entity_ID, MEM>& faces) const;
 
   void PrintMeshStatistics() const;
 

@@ -278,7 +278,7 @@ Units::ConvertUnitD(double val,
 
 
 /* ******************************************************************
-* Convert unit string 
+* Convert unit string
 ****************************************************************** */
 std::string
 Units::ConvertUnitS(const std::string& in_unit, const UnitsSystem& system)
@@ -415,7 +415,7 @@ Units::CompareUnits(const std::string& unit1, const std::string& unit2)
 
 
 /* ******************************************************************
-* Convert unit to string 
+* Convert unit to string
 ****************************************************************** */
 std::string
 Units::AtomicUnitFormToString_(const AtomicUnitForm& auf)

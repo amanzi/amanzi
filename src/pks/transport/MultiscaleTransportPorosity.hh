@@ -9,7 +9,7 @@
 
 /*!
 
-The list of multiscale models is the place for various subscale models that coul 
+The list of multiscale models is the place for various subscale models that coul
 be mixed and matched.
 Its ordered by materials and includes parameters for the assigned multiscale model
 This list is optional.

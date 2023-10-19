@@ -9,16 +9,16 @@
 
 /*!
 
-The `"isotherms`" section is the list of sorption processes that relate the sorbed concentration at 
-the solid surface to the aqueous concentration in contact with the solid at constant temperature. 
-It is a function of the free ion primary species concentrations, not total conentrations. 
-A sorption isotherm may represent equilibrium or kinetic processes depending on the data used to 
+The `"isotherms`" section is the list of sorption processes that relate the sorbed concentration at
+the solid surface to the aqueous concentration in contact with the solid at constant temperature.
+It is a function of the free ion primary species concentrations, not total conentrations.
+A sorption isotherm may represent equilibrium or kinetic processes depending on the data used to
 fit the isotherm.
 Each sublist has two parameters:
 
 * `"model`" [string] specifies the model name. The available options are `"linear", `"langmuir`", and `"freundlich`".
 
-* `"parameters`" [Array(double)] is the list of model parameters. The distribution coefficient 
+* `"parameters`" [Array(double)] is the list of model parameters. The distribution coefficient
   *K* is in the first position.
 
 .. code-block:: xml
@@ -39,8 +39,8 @@ Each sublist has two parameters:
   </ParameterList>
 
 A few examples are given below.
-Each line has three fields: primary species name, adsorption isotherm model, and parameters. 
-The number of  parameters and their meaning depends on the model; although the first one 
+Each line has three fields: primary species name, adsorption isotherm model, and parameters.
+The number of  parameters and their meaning depends on the model; although the first one
 is always the distribution coefficient.
 
 .. code-block:: txt

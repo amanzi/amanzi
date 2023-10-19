@@ -35,7 +35,8 @@ void
 PDE_DiffusionFracturedMatrix::Init(Teuchos::ParameterList& plist)
 {
   // extract mesh in fractures
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(*mesh_->getGeometricModel().get()));
+  auto gm =
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(*mesh_->getGeometricModel().get()));
   AmanziMesh::MeshFactory meshfactory(mesh_->getComm(), gm);
   meshfactory.set_preference(AmanziMesh::Preference({ AmanziMesh::Framework::MSTK }));
 

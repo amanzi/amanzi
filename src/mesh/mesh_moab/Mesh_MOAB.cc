@@ -1043,13 +1043,13 @@ Mesh_MOAB::getFaceCoordinates(Entity_ID faceid) const
 void
 Mesh_MOAB::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
                           const Entity_kind kind,
-			  const Parallel_kind ptype,
-			  View_type<const Entity_ID, MemSpace_kind::HOST>& setents) const
+                          const Parallel_kind ptype,
+                          View_type<const Entity_ID, MemSpace_kind::HOST>& setents) const
 {
   int lid, one = 1;
   int space_dim = getSpaceDimension();
-  Entity_ID_View lsetents; 
-  
+  Entity_ID_View lsetents;
+
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = getGeometricModel();
 
   // Is there an appropriate region by this name?
@@ -1198,7 +1198,7 @@ Mesh_MOAB::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
     Exceptions::amanzi_throw(mesg);
   }
 #endif
-  setents = lsetents; 
+  setents = lsetents;
 }
 
 

@@ -63,7 +63,7 @@ This evaluator is used by providing the option:
     <Parameter name="mesh entity" type="string" value="cell"/>
     <Parameter name="number of dofs" type="int" value="1"/>
 
-    <ParameterList name="time function">  
+    <ParameterList name="time function">
       <Parameter name="times" type="Array(double)" value="{1.0, 2.0, 3.0}"/>
     </ParameterList>
   </ParameterList>

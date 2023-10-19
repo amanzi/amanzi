@@ -12,7 +12,7 @@
 
 A high-order advection operator may have different domain and range and therefore requires two schemas.
 The structure of the new schema is described in the previous section.
-A high-order advection operator has two terms in a weak formulation, corresponding to 
+A high-order advection operator has two terms in a weak formulation, corresponding to
 volume and surface integrals. These two terms are discretixed using two operators with
 matrix of types *advection* and *flux*, respectively.
 
@@ -21,14 +21,14 @@ matrix of types *advection* and *flux*, respectively.
 
   * `"method`" [string] defines a discretization method. The available option is `"dg modal`".
 
-  * `"method order`" [int] defines method order. For example, the classical low-order finite 
+  * `"method order`" [int] defines method order. For example, the classical low-order finite
     volume scheme is equivalent to DG of order 0.
 
   * `"matrix type`" [string] defines matrix type. The supported options are `"advection`"
     and `"flux`".
 
-  * `"dg basis`" [string] defines bases for DG schemes. The available options are 
-    `"regularized`" (recommended), `"normalized`", `"orthonormalized`", and `"natural`" 
+  * `"dg basis`" [string] defines bases for DG schemes. The available options are
+    `"regularized`" (recommended), `"normalized`", `"orthonormalized`", and `"natural`"
     (not recommended).
 
   * `"gradient operator on test function`" [bool] defines place of the gradient operator.
@@ -39,12 +39,12 @@ matrix of types *advection* and *flux*, respectively.
     For integration by parts schemes, the jump operator is applied to a test function.
     This option is needed for discretizing surface fluxes.
 
-  * `"flux formula`" [string] defines type of the flux. The available options 
+  * `"flux formula`" [string] defines type of the flux. The available options
     are `"Rusanov`" (default), `"upwind`", `"downwind`", and `"NavierStokes`".
 
   * `"schema domain`" [list] defines a discretization schema for the operator domain.
 
-  * `"schema range`" [list] defines a discretization schema for the operator range. 
+  * `"schema range`" [list] defines a discretization schema for the operator range.
 
 .. code-block:: xml
 
@@ -72,7 +72,7 @@ matrix of types *advection* and *flux*, respectively.
 In this example, we construct an operator for volumetric integrals in a weak formulation
 of advection problem.
 
-The only low-order advection operator in Amanzi is the upwind operator. 
+The only low-order advection operator in Amanzi is the upwind operator.
 It employes the old schema.
 
 .. code-block:: xml

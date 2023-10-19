@@ -15,16 +15,16 @@ The conceptual PDE model of the coupled flow and energy equations is
 
 .. math::
   \begin{array}{l}
-  \frac{\partial \theta}{\partial t} 
+  \frac{\partial \theta}{\partial t}
   =
   - \boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l)
   - \boldsymbol{\nabla} \cdot (\phi s_g \tau_g D_g \boldsymbol{\nabla} X_g) + Q_1,
   \quad
-  \boldsymbol{q}_l 
-  = -\frac{\boldsymbol{K} k_r}{\mu} 
+  \boldsymbol{q}_l
+  = -\frac{\boldsymbol{K} k_r}{\mu}
   (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g}) \\
   %
-  \frac{\partial \varepsilon}{\partial t} 
+  \frac{\partial \varepsilon}{\partial t}
   =
   \boldsymbol{\nabla} \cdot (\kappa \nabla T) -
   \boldsymbol{\nabla} \cdot (\eta_l H_l \boldsymbol{q}_l) + Q_2
@@ -43,7 +43,7 @@ In the first equation,
 :math:`\tau_g` is tortuosity of gas [-],
 :math:`D_g` is diffusion coefficient,
 and :math:`X_g` is molar fraction of water in the gas phase [-].
-We define 
+We define
 
 .. math::
    \theta = \phi (s_g \eta_g X_g + s_l \eta_l)
@@ -58,10 +58,10 @@ In the second equation,
 :math:`\kappa` is thermal conductivity [W/m/K],
 :math:`H_l` is molar enthalphy of liquid [J/mol],
 and :math:`T` is temperature [K].
-We define 
+We define
 
 .. math::
-   \varepsilon = \phi (\eta_l s_l U_l + \eta_g s_g U_g) + 
+   \varepsilon = \phi (\eta_l s_l U_l + \eta_g s_g U_g) +
    (1 - \phi) \rho_r c_r T
 
 where

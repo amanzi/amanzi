@@ -9,25 +9,25 @@
 
 /*!
 
-The conceptual PDE model for the energy equation is 
+The conceptual PDE model for the energy equation is
 
 .. math::
-  \frac{\partial \varepsilon}{\partial t} 
+  \frac{\partial \varepsilon}{\partial t}
   =
   \boldsymbol{\nabla} \cdot (\kappa \nabla T) -
   \boldsymbol{\nabla} \cdot (\eta_l H_l \boldsymbol{q}_l) + Q
 
-where 
+where
 :math:`\varepsilon` is the energy density [:math:`J/m^3`],
 :math:`\eta_l` is molar density of liquid [:math:`mol/m^3`],
 :math:`Q` is heat source term,
 :math:`\boldsymbol{q}_l` is the Darcy velocity [m/s],
 :math:`\kappa` is thermal conductivity,
 and :math:`H_l` is molar enthalpy of liquid [J/mol].
-We define 
+We define
 
 .. math::
-   \varepsilon = \phi (\eta_l s_l U_l + \eta_g s_g U_g) + 
+   \varepsilon = \phi (\eta_l s_l U_l + \eta_g s_g U_g) +
    (1 - \phi) \rho_r c_r T
 
 where
@@ -57,7 +57,7 @@ This list is often generated on a fly by a high-level MPC PK.
 .. code-block:: xml
 
   <ParameterList>  <!-- parent list -->
-  <ParameterList name="_ENERGY"> 
+  <ParameterList name="_ENERGY">
     <ParameterList name="physical models and assumptions">
       <Parameter name="vapor diffusion" type="bool" value="false"/>
       <Parameter name="eos lookup table" type="string" value="h2o.eos"/>

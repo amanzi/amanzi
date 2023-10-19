@@ -25,8 +25,8 @@ The list of parameters for each reaction includes
 * `"modifiers`" [string] is the list of pairs: species name and value of modyfying exponent,
   so that the string has always even number of words.
 
-* `"gram molecular weight`" [double] is amount of a molecular substance whose weight, 
-  in grams, is numerically equal to the molecular weight of that substance. 
+* `"gram molecular weight`" [double] is amount of a molecular substance whose weight,
+  in grams, is numerically equal to the molecular weight of that substance.
 
 * `"reaction`" [string] is the mineral reaction equation.
 
@@ -34,12 +34,12 @@ The list of parameters for each reaction includes
 
 * `"specific surface area`" [double] is the specific mineral surface area.
 
-The reaction rate is the dissolution rate for the mineral, so it is positive 
+The reaction rate is the dissolution rate for the mineral, so it is positive
 for dissolution and negative for precipitation.
 We assume that the sublist name is the mineral name.
 We also assume that the mineral reaction includes only primary species and that
 the modifying species are only primary species.
- 
+
 .. code-block:: xml
 
   <ParameterList name="mineral kinetics">
@@ -56,7 +56,7 @@ the modifying species are only primary species.
   </ParameterList>
 
 A few examples of mineral reactions is beflow.
-Each line in has five columns: mineral reaction, logarithm of equilibrium constant, 
+Each line in has five columns: mineral reaction, logarithm of equilibrium constant,
 gram molecular weight [g/mol], molar volume [cm^3/mol],
 and specific surface area [cm^2 mineral / cm^3 bulk].
 

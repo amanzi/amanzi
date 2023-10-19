@@ -45,9 +45,9 @@ TEST(MASS_MATRIX_2D)
 #  else
   auto comm = Amanzi::getCommSelf();
 #  endif
-  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList()); 
-  factory_plist->set<bool>("request edges", true); 
-  factory_plist->set<bool>("request faces", true); 
+  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  factory_plist->set<bool>("request edges", true);
+  factory_plist->set<bool>("request faces", true);
   MeshFactory meshfactory(comm,Teuchos::null,factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
@@ -220,7 +220,7 @@ TEST(MASS_MATRIX_3D_CUBE)
   MassMatrix3D("", 12);
 }
 
-#if 0 
+#if 0
 
 TEST(MASS_MATRIX_3D_HEX)
 {
@@ -256,9 +256,9 @@ TEST(STIFFNESS_MATRIX_2D)
   auto comm = Amanzi::getCommSelf();
 #  endif
 
-  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList()); 
-  factory_plist->set<bool>("request edges", true); 
-  factory_plist->set<bool>("request faces", true); 
+  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  factory_plist->set<bool>("request edges", true);
+  factory_plist->set<bool>("request faces", true);
   MeshFactory meshfactory(comm,Teuchos::null,factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
@@ -343,9 +343,9 @@ StiffnessMatrix3D(std::string mesh_file, int max_row)
   auto comm = Amanzi::getCommSelf();
 #  endif
 
-  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList()); 
-  factory_plist->set<bool>("request edges", true); 
-  factory_plist->set<bool>("request faces", true); 
+  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  factory_plist->set<bool>("request edges", true);
+  factory_plist->set<bool>("request faces", true);
   MeshFactory meshfactory(comm,Teuchos::null,factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 

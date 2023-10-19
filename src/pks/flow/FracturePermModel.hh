@@ -10,7 +10,7 @@
 /*!
 
 A list of permeability models in a fracture network contains similar sublists
-that must cover all network. 
+that must cover all network.
 Each sublist has two paremeters.
 
 * `"region`" [string] defines region where model applies.
