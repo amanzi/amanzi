@@ -67,7 +67,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   min_vol_frac_key_ =
     Keys::readKey(*plist_, domain_, "mineral volume fractions", "mineral_volume_fractions");
   min_ssa_key_ = Keys::readKey(
-    *plist_, domain_, "mineral specific surface area", "mineral_specific_surgetFaceArea");
+    *plist_, domain_, "mineral specific surface area", "mineral_specific_surface_area");
   sorp_sites_key_ = Keys::readKey(*plist_, domain_, "sorption sites", "sorption_sites");
   surf_cfsc_key_ = Keys::readKey(
     *plist_, domain_, "surface complex free site conc", "surface_complex_free_site_conc");
