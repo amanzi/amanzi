@@ -90,7 +90,7 @@ MatrixFE::SumIntoMyValues(const int* row_indices,
                           const Epetra_SerialDenseMatrix& vals)
 {
   int ierr(0);
-  AmanziMesh::Double_List row_vals(vals.N());
+  std::vector<double> row_vals(vals.N());
   for (int i = 0; i != vals.M(); ++i) {
     for (int j = 0; j != vals.N(); ++j) row_vals[j] = vals(i, j);
     ierr |= SumIntoMyValues(row_indices[i], vals.N(), &row_vals[0], col_indices);
@@ -117,7 +117,7 @@ MatrixFE::SumIntoMyValues(const int* row_indices,
                           const Teuchos::SerialDenseMatrix<int, double>& vals)
 {
   int ierr(0);
-  AmanziMesh::Double_List row_vals(vals.numCols());
+  std::vector<double> row_vals(vals.numCols());
   for (int i = 0; i != vals.numRows(); ++i) {
     for (int j = 0; j != vals.numCols(); ++j) row_vals[j] = vals(i, j);
     ierr |= SumIntoMyValues(row_indices[i], vals.numRows(), &row_vals[0], col_indices);
@@ -145,7 +145,7 @@ MatrixFE::SumIntoMyValues(const int* row_indices,
                           const WhetStone::DenseMatrix& vals)
 {
   int ierr(0);
-  AmanziMesh::Double_List row_vals(vals.NumCols());
+  std::vector<double> row_vals(vals.NumCols());
   for (int i = 0; i != vals.NumRows(); ++i) {
     for (int j = 0; j != vals.NumCols(); ++j) row_vals[j] = vals(i, j);
     ierr |= SumIntoMyValues(row_indices[i], vals.NumCols(), &row_vals[0], col_indices);

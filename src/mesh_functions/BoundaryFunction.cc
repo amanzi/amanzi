@@ -52,7 +52,7 @@ BoundaryFunction::Compute(double time)
 
   // create the input tuple
   int dim = mesh_->getSpaceDimension();
-  AmanziMesh::Double_List args(1 + dim);
+  std::vector<double> args(1 + dim);
   args[0] = time;
 
   // Loop over all FACE specs and evaluate the function at all IDs in the

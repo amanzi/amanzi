@@ -97,7 +97,7 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag)
       // -- nodal coordinates
       int nnodes =
         mesh_->getVisMesh().getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::ALL);
-      AmanziMesh::Double_List x(nnodes), y(nnodes), z(nnodes);
+      std::vector<double> x(nnodes), y(nnodes), z(nnodes);
 
       for (int i = 0; i != nnodes; ++i) {
         auto xyz = mesh_->getVisMesh().getNodeCoordinate(i);

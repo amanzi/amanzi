@@ -491,7 +491,7 @@ CompositeVector::Dot(const CompositeVector& other, double* result) const
   double tmp_result = 0.0;
   for (name_iterator lcv = begin(); lcv != end(); ++lcv) {
     if (other.HasComponent(*lcv)) {
-      AmanziMesh::Double_List intermediate_result(ViewComponent(*lcv, false)->NumVectors(), 0.0);
+      std::vector<double> intermediate_result(ViewComponent(*lcv, false)->NumVectors(), 0.0);
       int ierr =
         ViewComponent(*lcv, false)->Dot(*other.ViewComponent(*lcv, false), &intermediate_result[0]);
       if (ierr) return ierr;

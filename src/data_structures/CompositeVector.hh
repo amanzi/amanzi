@@ -225,7 +225,7 @@ class CompositeVector {
   // Using these is VERY STRONGLY DISCOURAGED.  Instead, call ViewComponent()
   // and set entries in the MultiVector.  THESE ARE VERY VERY SLOW (But they
   // can be handy in debugging.)  Tags changed.
-  double& operator()(std::string name, int i, int j)
+  double& operator()(const std::string& name, int i, int j)
   {
     ChangedValue(name);
     return (*ghostvec_)(name, i, j);
@@ -236,7 +236,7 @@ class CompositeVector {
   // Using these is VERY STRONGLY DISCOURAGED.  Instead, call ViewComponent()
   // and set entries in the MultiVector.  THESE ARE VERY VERY SLOW (But they
   // can be handy in debugging.)  Tags changed.
-  double& operator()(std::string name, int j)
+  double& operator()(const std::string& name, int j)
   {
     ChangedValue(name);
     return (*ghostvec_)(name, 0, j);
@@ -329,7 +329,7 @@ class CompositeVector {
   int PutScalar(const std::string& name, double scalar);
 
   // v(name,i,:) = scalar[i]
-  int PutScalar(std::string name, AmanziMesh::Double_List scalar);
+  int PutScalar(const std::string& name, const std::vector<double>& scalar);
 
   // this <- scalar*this
   int Scale(double scalar);
@@ -484,7 +484,7 @@ CompositeVector::PutScalar(const std::string& name, double scalar)
 }
 
 inline int
-CompositeVector::PutScalar(std::string name, AmanziMesh::Double_List scalar)
+CompositeVector::PutScalar(const std::string& name, const std::vector<double>& scalar)
 {
   ChangedValue(name);
   return mastervec_->PutScalar(name, scalar);

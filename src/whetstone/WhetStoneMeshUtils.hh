@@ -38,7 +38,7 @@ inline void
 PolygonCentroidWeights(const AmanziMesh::Mesh& mesh,
                        const AmanziMesh::cEntity_ID_View& nodes,
                        double area,
-                       AmanziMesh::Double_List& weights)
+                       std::vector<double>& weights)
 {
   int d = mesh.getSpaceDimension();
   int nnodes = nodes.size();

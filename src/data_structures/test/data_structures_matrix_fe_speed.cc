@@ -121,7 +121,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs)
         }
       }
 
-      AmanziMesh::Double_List vals(neighbor_cells.size(), 1);
+      std::vector<double> vals(neighbor_cells.size(), 1);
       std::vector<int> neighbor_cell_gids(neighbor_cells.size());
       for (int n = 0; n != neighbor_cells.size(); ++n) {
         neighbor_cell_gids[n] = cell_map_ghosted->GID(neighbor_cells[n]);
@@ -233,7 +233,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal)
         AMANZI_ASSERT(neighbor_cell_gids[n] >= 0);
       }
 
-      AmanziMesh::Double_List vals(neighbor_cells.size(), 1);
+      std::vector<double> vals(neighbor_cells.size(), 1);
       AMANZI_ASSERT(cell_map_ghosted->GID(c) >= 0);
       ierr |= control.SumIntoGlobalValues(
         cell_map_ghosted->GID(c), neighbor_cells.size(), &vals[0], &neighbor_cell_gids[0]);
@@ -327,7 +327,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE)
         }
       }
 
-      AmanziMesh::Double_List vals(neighbor_cells.size(), 1);
+      std::vector<double> vals(neighbor_cells.size(), 1);
       ierr |= matrix.SumIntoMyValues(c, neighbor_cells.size(), &vals[0], &neighbor_cells[0]);
       AMANZI_ASSERT(!ierr);
     }
@@ -337,251 +337,6 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE)
   CHECK(!ierr);
 }
 
-
-/* *****************************************************************
- * this test is a real test with FE-like assembly of face-face system
-* **************************************************************** */
-// TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix) {
-//   using namespace Amanzi;
-//   using namespace Amanzi::AmanziMesh;
-//   using namespace Amanzi::AmanziGeometry;
-//   using namespace Amanzi::Operators;
-
-//   auto comm = getDefaultComm();
-//   int MyPID = comm->MyPID();
-
-//   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
-
-//   // read parameter list
-//   std::string xmlFileName = "test/operator_convergence.xml";
-//   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-//   Teuchos::ParameterList plist = xmlreader.getParameters();
-//   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("FF FECrsMatrix");
-
-//   Amanzi::VerboseObject::global_hide_line_prefix = true;
-
-//   // create a mesh
-//   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-//   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
-
-//   Preference pref;
-//   pref.clear();
-//   pref.push_back(Framework::MSTK);
-
-//   MeshFactory meshfactory(comm,gm);
-//   meshfactory.set_preference(pref);
-//   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
-//   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
-
-//   // grab the maps
-//   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-//   Teuchos::RCP<Epetra_Map> face_map = Teuchos::rcp(new Epetra_Map(mesh->face_map(false)));
-//   Teuchos::RCP<Epetra_Map> face_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->face_map(true)));
-
-//   // create the graph
-//   int ierr(0);
-//   Teuchos::RCP<GraphFE> graph =
-//       Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 5));
-
-//   Entity_ID_View faces;
-//   Entity_ID_View face_cells;
-//   for (int c=0; c!=ncells; ++c) {
-//     mesh->cell_get_faces(c, &faces);
-
-//     for (int n=0; n!=faces.size(); ++n) {
-//       ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces[0]);
-//       CHECK(!ierr);
-//     }
-//   }
-
-//   ierr |= graph->FillComplete(face_map, face_map);
-//   CHECK(!ierr);
-
-//   // and the control matrix
-//   Epetra_FECrsMatrix control(Copy, graph->Graph());
-
-//   {
-//     Teuchos::TimeMonitor monitor(*timer);
-//   for (int c=0; c!=ncells; ++c) {
-//     mesh->cell_get_faces(c, &faces);
-//     std::vector<int> face_gids(faces.size());
-//     for (int n=0; n!=faces.size(); ++n) {
-//       face_gids[n] = face_map_ghosted->GID(faces[n]);
-//     }
-
-//     for (int n=0; n!=faces.size(); ++n) {
-//       AmanziMesh::Double_List vals(faces.size(), -1.);
-//       vals[n] = faces.size()-1;
-
-//       ierr |= control.SumIntoGlobalValues(face_gids[n], face_gids.size(), &vals[0], &face_gids[0]);
-//     }
-//   }
-//   ierr |= control.GlobalAssemble();
-//   }
-//   CHECK(!ierr);
-// }
-
-// TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc) {
-//   using namespace Amanzi;
-//   using namespace Amanzi::AmanziMesh;
-//   using namespace Amanzi::AmanziGeometry;
-//   using namespace Amanzi::Operators;
-
-//   auto comm = getDefaultComm();
-//   int MyPID = comm->MyPID();
-
-//   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
-
-//   // read parameter list
-//   std::string xmlFileName = "test/operator_convergence.xml";
-//   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-//   Teuchos::ParameterList plist = xmlreader.getParameters();
-//   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("FF FECrsMatrix offproc");
-
-//   Amanzi::VerboseObject::global_hide_line_prefix = true;
-
-//   // create a mesh
-//   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-//   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
-
-//   Preference pref;
-//   pref.clear();
-//   pref.push_back(Framework::MSTK);
-
-//   MeshFactory meshfactory(comm,gm);
-//   meshfactory.set_preference(pref);
-//   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
-//   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
-
-//   // grab the maps
-//   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-//   Teuchos::RCP<Epetra_Map> face_map = Teuchos::rcp(new Epetra_Map(mesh->face_map(false)));
-//   Teuchos::RCP<Epetra_Map> face_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->face_map(true)));
-
-//   // create the graph
-//   int ierr(0);
-//   Teuchos::RCP<Epetra_FECrsGraph> graph =
-//       Teuchos::rcp(new Epetra_FECrsGraph(Copy, *face_map, *face_map_ghosted, 8, false, true));
-
-//   Entity_ID_View faces;
-//   for (int c=0; c!=ncells; ++c) {
-//     mesh->cell_get_faces(c, &faces);
-
-//     std::vector<int> face_gids(faces.size());
-//     for (int n=0; n!=faces.size(); ++n)
-//       face_gids[n] = face_map_ghosted->GID(faces[n]);
-//     for (int n=0; n!=faces.size(); ++n) {
-//       ierr |= graph->InsertGlobalIndices(face_gids[n], face_gids.size(), &face_gids[0]);
-//       AMANZI_ASSERT(!ierr);
-//     }
-//   }
-
-//   ierr |= graph->GlobalAssemble();
-//   CHECK(!ierr);
-
-//   // and the control matrix
-//   Epetra_FECrsMatrix control(Copy, *graph);
-
-//   {
-//     Teuchos::TimeMonitor monitor(*timer);
-//   for (int c=0; c!=ncells; ++c) {
-//     mesh->cell_get_faces(c, &faces);
-//     std::vector<int> face_gids(faces.size());
-//     for (int n=0; n!=faces.size(); ++n) {
-//       face_gids[n] = face_map_ghosted->GID(faces[n]);
-//     }
-
-//     for (int n=0; n!=faces.size(); ++n) {
-//       AmanziMesh::Double_List vals(faces.size(), -1.);
-//       vals[n] = faces.size()-1;
-
-//       ierr |= control.SumIntoGlobalValues(face_gids[n], face_gids.size(), &vals[0], &face_gids[0]);
-//     }
-//   }
-
-//   ierr |= control.GlobalAssemble();
-//   }
-//   CHECK(!ierr);
-//   Teuchos::TimeMonitor::summarize(std::cout);
-// }
-
-// TEST(FE_MATRIX_FACE_FACE_MatrixFE) {
-//   using namespace Amanzi;
-//   using namespace Amanzi::AmanziMesh;
-//   using namespace Amanzi::AmanziGeometry;
-//   using namespace Amanzi::Operators;
-
-//   auto comm = getDefaultComm();
-//   int MyPID = comm->MyPID();
-
-//   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
-
-//   // read parameter list
-//   std::string xmlFileName = "test/operator_convergence.xml";
-//   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-//   Teuchos::ParameterList plist = xmlreader.getParameters();
-//   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("FF MatrixFE");
-
-//   Amanzi::VerboseObject::global_hide_line_prefix = true;
-
-//   // create a mesh
-//   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-//   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
-
-//   Preference pref;
-//   pref.clear();
-//   pref.push_back(Framework::MSTK);
-
-//   MeshFactory meshfactory(comm,gm);
-//   meshfactory.set_preference(pref);
-//   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
-//   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
-
-//   // grab the maps
-//   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-//   Teuchos::RCP<Epetra_Map> face_map = Teuchos::rcp(new Epetra_Map(mesh->face_map(false)));
-//   Teuchos::RCP<Epetra_Map> face_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->face_map(true)));
-
-//   // create the graph
-//   int ierr(0);
-//   Teuchos::RCP<GraphFE> graph =
-//       Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 5));
-
-//   Entity_ID_View faces;
-//   Entity_ID_View face_cells;
-//   for (int c=0; c!=ncells; ++c) {
-//     mesh->cell_get_faces(c, &faces);
-
-//     for (int n=0; n!=faces.size(); ++n) {
-//       ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces[0]);
-//       CHECK(!ierr);
-//     }
-//   }
-
-//   ierr |= graph->FillComplete(face_map, face_map);
-//   CHECK(!ierr);
-
-//   // create the test matrix
-//   MatrixFE matrix(graph);
-
-//   {
-//     Teuchos::TimeMonitor monitor(*timer);
-
-//   for (int c=0; c!=ncells; ++c) {
-//     mesh->cell_get_faces(c, &faces);
-
-//     for (int n=0; n!=faces.size(); ++n) {
-//       AmanziMesh::Double_List vals(faces.size(), -1.);
-//       vals[n] = faces.size()-1;
-
-//       ierr |= matrix.SumIntoMyValues(faces[n], faces.size(), &vals[0], &faces[0]);
-//     }
-//   }
-
-//   ierr |= matrix.FillComplete();
-//   }
-//   CHECK(!ierr);
-// }
 
 TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2)
 {

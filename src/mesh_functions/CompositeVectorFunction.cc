@@ -50,7 +50,7 @@ CompositeVectorFunction::Compute(double time,
 
   // create the input tuple
   int dim = mesh->getSpaceDimension();
-  AmanziMesh::Double_List args(1 + dim, 0.);
+  std::vector<double> args(1 + dim, 0.);
   args[0] = time;
 
   // loop over the name/spec pair

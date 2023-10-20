@@ -35,7 +35,7 @@ class DenseVector {
   explicit DenseVector(int mrow);
   DenseVector(int mrow, double* data);
   DenseVector(const DenseVector& B);
-  DenseVector(const AmanziMesh::Double_List& B);
+  DenseVector(const std::vector<double>& B);
 
   ~DenseVector()
   {

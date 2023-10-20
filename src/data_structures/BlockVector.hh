@@ -34,9 +34,9 @@ class BlockVector {
  public:
   // Constructor
   BlockVector(const Comm_ptr_type& comm,
-              std::vector<std::string>& names,
-              std::vector<Teuchos::RCP<const Epetra_BlockMap>>& maps,
-              std::vector<int> num_dofs);
+              const std::vector<std::string>& names,
+              const std::vector<Teuchos::RCP<const Epetra_BlockMap>>& maps,
+              const std::vector<int>& num_dofs);
 
   // copy constructor
   BlockVector(const BlockVector& other);
@@ -52,15 +52,15 @@ class BlockVector {
   // Accessors to meta-data
   // Iteration over names of the vector
   typedef std::vector<std::string>::const_iterator name_iterator;
-  name_iterator begin() { return names_.begin(); }
-  name_iterator end() { return names_.end(); }
+  name_iterator begin() const { return names_.begin(); }
+  name_iterator end() const { return names_.end(); }
   unsigned int size() const { return names_.size(); }
 
   int GlobalLength() const;
   long int GetLocalElementCount() const;
   int NumComponents() const { return num_components_; }
-  int NumVectors(std::string name) const { return num_dofs_[Index_(name)]; }
-  unsigned int size(std::string name) const { return sizes_[Index_(name)]; }
+  int NumVectors(const std::string& name) const { return num_dofs_[Index_(name)]; }
+  unsigned int size(const std::string& name) const { return sizes_[Index_(name)]; }
 
   Teuchos::RCP<const Epetra_BlockMap> ComponentMap(const std::string& name) const
   {
@@ -68,7 +68,7 @@ class BlockVector {
   }
 
   // Accessors to data.
-  bool HasComponent(std::string name) const { return indexmap_.find(name) != indexmap_.end(); }
+  bool HasComponent(const std::string& name) const { return indexmap_.find(name) != indexmap_.end(); }
 
   // -- Access a view of a single component's data.
   Teuchos::RCP<const Epetra_MultiVector> ViewComponent(const std::string& name) const;
@@ -76,8 +76,8 @@ class BlockVector {
   Teuchos::RCP<Epetra_MultiVector> ViewComponent(const std::string& name);
 
   // -- View entries in the vectors.
-  double operator()(std::string name, int i, int j) const { return (*data_[Index_(name)])[i][j]; }
-  double operator()(std::string name, int j) const { return (*data_[Index_(name)])[0][j]; }
+  double operator()(const std::string& name, int i, int j) const { return (*data_[Index_(name)])[i][j]; }
+  double operator()(const std::string& name, int j) const { return (*data_[Index_(name)])[0][j]; }
 
   // Mutators of data
   // -- Set entries in the vectors.
@@ -95,13 +95,13 @@ class BlockVector {
   int PutScalar(double scalar);
 
   // Insert values into data, by DOF, not by component!
-  int PutScalar(std::vector<double> scalar);
+  int PutScalar(const std::vector<double>& scalar);
 
   // Insert value into component [name].
-  int PutScalar(std::string name, double scalar);
+  int PutScalar(const std::string& name, double scalar);
 
   // Insert values into component [name].
-  int PutScalar(std::string name, std::vector<double> scalar);
+  int PutScalar(const std::string& name, const std::vector<double>& scalar);
 
   // this <- abs(this)
   int Abs(const BlockVector& other);
@@ -110,13 +110,13 @@ class BlockVector {
   int Scale(double value);
 
   // Scale() applied to component name.
-  int Scale(std::string name, double scalarThis);
+  int Scale(const std::string& name, double scalarThis);
 
   // this <- this + scalarA
   int Shift(double scalarA);
 
   // Shift() applied to component name.
-  int Shift(std::string name, double scalarA);
+  int Shift(const std::string& name, double scalarA);
 
   // this <- element wise reciprocal(this)
   int Reciprocal(const BlockVector& other);

@@ -82,7 +82,7 @@ ReadColumnMeshFunction_ByDepth(const Function& func,
   Epetra_MultiVector& vec = *v.ViewComponent("cell");
 
   double z0;
-  AmanziMesh::Double_List z(1);
+  std::vector<double> z(1);
 
   for (auto setname : sidesets) {
     auto surf_faces = v.Mesh()->getSetEntities(

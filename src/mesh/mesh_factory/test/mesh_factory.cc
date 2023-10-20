@@ -14,8 +14,8 @@
 
 #include "dbc.hh"
 #include "GeometricModel.hh"
-#include "../MeshFrameworkFactory.hh"
-#include "../MeshException.hh"
+#include "MeshFrameworkFactory.hh"
+#include "MeshException.hh"
 
 // Check to see if we have some files to read
 #define BOGUS_TEST_FILE "test/bogus.exo"

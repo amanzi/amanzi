@@ -81,6 +81,7 @@ add_amanzi_library(mesh_factory
 
 
 if (BUILD_TESTS)
+    include_directories(${MESH_FACTORY_SOURCE_DIR})
 
     # Need to copy files for the tests 
     if (NOT (${MESH_FACTORY_SOURCE_DIR} EQUAL ${MESH_FACTORY_BINARY_DIR}))

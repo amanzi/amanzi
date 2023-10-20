@@ -151,11 +151,11 @@ TEST_FIXTURE(reference_mesh, values1)
 TEST_FIXTURE(reference_mesh, values2)
 {
   // Create the function f(t,x,y,z) = t * (x + 2y + 3z)
-  AmanziMesh::Double_List c(1, 1.0);
+  std::vector<double> c(1, 1.0);
   std::vector<int> ip(1, 1);
   std::unique_ptr<Function> f1(new FunctionPolynomial(c, ip));
   double g[3] = { 1.0, 2.0, 3.0 };
-  AmanziMesh::Double_List grad(g, g + 3);
+  std::vector<double> grad(g, g + 3);
   std::unique_ptr<Function> f2(new FunctionLinear(0.0, grad));
 
   // Create the boundary function

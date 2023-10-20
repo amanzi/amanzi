@@ -255,7 +255,7 @@ MFD3D_BernardiRaugel::AdvectionMatrix(int c, const AmanziMesh::Point_List& u, De
   int nnodes = nodes.size();
 
   // calculate corner normals and weigths
-  AmanziMesh::Double_List w(nnodes, 0.0);
+  std::vector<double> w(nnodes, 0.0);
   AmanziGeometry::Point xv(d_);
   AmanziMesh::Point_List N(nnodes, xv);
 

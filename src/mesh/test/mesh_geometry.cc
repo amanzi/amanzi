@@ -157,7 +157,7 @@ TEST(MESH_GEOMETRY_3CUBE_EXO)
 
 //   for (const auto& frm : frameworks) {
 //     std::cout << std::endl
-//               << "Testing 3D Box 3x3x3 Exo with " << AmanziMesh::to_string(frm) << std::endl
+//               << "Testing 3D Box 3x3x3 Par file with " << AmanziMesh::to_string(frm) << std::endl
 //               << "------------------------------------------------" << std::endl;
 //     auto mesh = createUnstructured(Preference{frm}, "test/hex_3x3x3.par");
 //     testMeshAudit<MeshAudit, Mesh>(mesh);

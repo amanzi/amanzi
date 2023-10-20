@@ -385,7 +385,7 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
     int n = RGM.NumCols();
 
     if (order_ == 1) {
-      AmanziMesh::Double_List weights;
+      std::vector<double> weights;
       PolygonCentroidWeights(*mesh_, ids, area, weights);
 
       for (int i = 0; i < m; ++i)

@@ -83,7 +83,7 @@ SUITE(COMPOSITE_VECTOR)
     CHECK_CLOSE((*x)("cell", 1, 0), 2.0, 0.00001);
     CHECK_CLOSE((*x)("face", 0, 0), 2.0, 0.00001);
 
-    AmanziMesh::Double_List vals(2);
+    std::vector<double> vals(2);
     vals[0] = 4.0;
     vals[1] = 5.0;
     x->PutScalar("cell", vals);

@@ -30,9 +30,9 @@ namespace Amanzi {
 
 // Constructor
 BlockVector::BlockVector(const Comm_ptr_type& comm,
-                         std::vector<std::string>& names,
-                         std::vector<Teuchos::RCP<const Epetra_BlockMap>>& maps,
-                         std::vector<int> num_dofs)
+                         const std::vector<std::string>& names,
+                         const std::vector<Teuchos::RCP<const Epetra_BlockMap>>& maps,
+                         const std::vector<int>& num_dofs)
   : comm_(comm), names_(names), num_dofs_(num_dofs), maps_(maps)
 {
   num_components_ = maps_.size();
@@ -184,7 +184,7 @@ BlockVector::PutScalar(double scalar)
 
 // -- Insert values into data, by DOF, not by component!
 int
-BlockVector::PutScalar(std::vector<double> scalar)
+BlockVector::PutScalar(const std::vector<double>& scalar)
 {
   for (int i = 0; i != num_components_; ++i) {
     AMANZI_ASSERT(scalar.size() == num_dofs_[i]);
@@ -199,7 +199,7 @@ BlockVector::PutScalar(std::vector<double> scalar)
 
 // -- Insert value into component [name].
 int
-BlockVector::PutScalar(std::string name, double scalar)
+BlockVector::PutScalar(const std::string& name, double scalar)
 {
   return data_[Index_(name)]->PutScalar(scalar);
 };
@@ -207,7 +207,7 @@ BlockVector::PutScalar(std::string name, double scalar)
 
 // -- Insert values into data of component [name].
 int
-BlockVector::PutScalar(std::string name, std::vector<double> scalar)
+BlockVector::PutScalar(const std::string& name, const std::vector<double>& scalar)
 {
   int i = Index_(name);
   AMANZI_ASSERT(scalar.size() == num_dofs_[i]);
@@ -246,7 +246,7 @@ BlockVector::Scale(double value)
 
 // Scale() applied to component name.
 int
-BlockVector::Scale(std::string name, double value)
+BlockVector::Scale(const std::string& name, double value)
 {
   return data_[Index_(name)]->Scale(value);
 };
@@ -268,7 +268,7 @@ BlockVector::Shift(double scalarA)
 
 // Shift() applied to component name.
 int
-BlockVector::Shift(std::string name, double scalarA)
+BlockVector::Shift(const std::string& name, double scalarA)
 {
   int i = Index_(name);
   Epetra_MultiVector& v = *data_[i];

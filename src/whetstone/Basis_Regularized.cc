@@ -58,7 +58,7 @@ void
 Basis_Regularized::BilinearFormNaturalToMy(DenseMatrix& A) const
 {
   int nrows = A.NumRows();
-  AmanziMesh::Double_List a(nrows);
+  std::vector<double> a(nrows);
 
   PolynomialIterator it(d_);
   for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
@@ -99,7 +99,7 @@ Basis_Regularized::BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
 {
   int nrows = A.NumRows();
   int m(nrows / 2);
-  AmanziMesh::Double_List a1(m), a2(m);
+  std::vector<double> a1(m), a2(m);
 
   auto bll = std::dynamic_pointer_cast<Basis_Regularized>(bl);
   auto brr = std::dynamic_pointer_cast<Basis_Regularized>(br);

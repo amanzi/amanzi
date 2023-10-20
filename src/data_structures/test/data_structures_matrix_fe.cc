@@ -155,8 +155,8 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
   // check matrix equality
   for (int c = 0; c != ncells; ++c) {
     int nentries(0);
-    AmanziMesh::Double_List mat_vals(5);
-    AmanziMesh::Double_List ctrl_vals(5);
+    std::vector<double> mat_vals(5);
+    std::vector<double> ctrl_vals(5);
     std::vector<int> mat_inds(5);
     std::vector<int> ctrl_inds(5);
 
@@ -274,8 +274,8 @@ TEST(FE_MATRIX_FACE_FACE)
     mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f != nfaces; ++f) {
     int nentries(0);
-    AmanziMesh::Double_List mat_vals(7);
-    AmanziMesh::Double_List ctrl_vals(7);
+    std::vector<double> mat_vals(7);
+    std::vector<double> ctrl_vals(7);
     std::vector<int> mat_inds(7);
     std::vector<int> ctrl_inds(7);
 
@@ -293,11 +293,11 @@ TEST(FE_MATRIX_FACE_FACE)
     CHECK(mat_vals == ctrl_vals);
     if (!(mat_vals == ctrl_vals)) {
       std::cout << "Bad mat: ";
-      for (AmanziMesh::Double_List::const_iterator it = mat_vals.begin(); it != mat_vals.end();
+      for (std::vector<double>::const_iterator it = mat_vals.begin(); it != mat_vals.end();
            ++it)
         std::cout << " " << *it;
       std::cout << std::endl << "   ctrl: ";
-      for (AmanziMesh::Double_List::const_iterator it = ctrl_vals.begin(); it != ctrl_vals.end();
+      for (std::vector<double>::const_iterator it = ctrl_vals.begin(); it != ctrl_vals.end();
            ++it)
         std::cout << " " << *it;
       std::cout << std::endl;

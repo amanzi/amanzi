@@ -45,7 +45,7 @@ TEST(FACE_CENTROIDS)
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
   AmanziGeometry::Point p(2), xc(2);
-  AmanziMesh::Double_List weights;
+  std::vector<double> weights;
 
   double area = mesh->getCellVolume(0);
   auto nodes = mesh->getCellNodes(0);

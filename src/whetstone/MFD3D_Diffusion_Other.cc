@@ -125,7 +125,7 @@ MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
 
   // collect all corner matrices
   std::vector<Tensor> Mv;
-  AmanziMesh::Double_List cwgt;
+  std::vector<double> cwgt;
 
   Tensor N(d_, 2), NK(d_, 2);
 
