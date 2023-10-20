@@ -64,13 +64,15 @@ TEST(DARCY_TWO_FRACTURES)
   setnames.push_back("fracture 1");
   setnames.push_back("fracture 2");
 
-  RCP<Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
+  RCP<Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::Entity_kind::FACE);
 
   int ncells_owned = 0;
   int ncells_wghost = 0;
   if (mesh.get()) {
-    ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    ncells_owned =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    ncells_wghost =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   }
 
   std::cout << "pid=" << MyPID << " cells: " << ncells_owned << " " << ncells_wghost << std::endl;
@@ -92,7 +94,7 @@ TEST(DARCY_TWO_FRACTURES)
   auto& p = *S->GetW<CompositeVector>("pressure", Tags::DEFAULT, passwd).ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     p[0][c] = xc[0] * (xc[1] + 2.0);
   }
   S->GetRecordW("pressure", passwd).set_initialized();

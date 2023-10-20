@@ -89,7 +89,7 @@ PK_DomainFunctionWeight<FunctionBase>::Init(const Teuchos::ParameterList& plist,
   }
 
   // Add this source specification to the domain function.
-  Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, kind_));
+  Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::Entity_kind::CELL));
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
 }
 
@@ -105,25 +105,28 @@ PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
   if (dt > 0.0) dt = 1.0 / dt;
 
   // create the input tuple (time + space)
-  int dim = mesh_->space_dimension();
+  int dim = mesh_->getSpaceDimension();
   std::vector<double> args(1 + dim);
 
-  int nowned = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-  for (auto uspec = unique_specs_[kind_]->begin(); uspec != unique_specs_[kind_]->end(); ++uspec) {
+  for (UniqueSpecList::const_iterator uspec = unique_specs_[AmanziMesh::Entity_kind::CELL]->begin();
+       uspec != unique_specs_[AmanziMesh::Entity_kind::CELL]->end();
+       ++uspec) {
     domain_volume_ = 0.0;
     double vol, weight_volume = 0.0;
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
 
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
-      if (*c < nowned) {
-        vol = (kind_ == AmanziMesh::CELL) ? mesh_->cell_volume(*c) : mesh_->face_area(*c);
+      if (*c < ncells_owned) {
+        vol = mesh_->getCellVolume(*c);
         domain_volume_ += vol;
         weight_volume += vol * (*weight_)[0][*c];
       }
     }
     double result[2], tmp[2] = { domain_volume_, weight_volume };
-    mesh_->get_comm()->SumAll(tmp, result, 2);
+    mesh_->getComm()->SumAll(tmp, result, 2);
     domain_volume_ = result[0];
     weight_volume = result[1];
     int nfun = (*uspec)->first->second->size();
@@ -131,7 +134,7 @@ PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
 
     args[0] = t1;
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
-      auto xc = PKUtils_EntityCoordinates(*c, kind_, *mesh_);
+      const AmanziGeometry::Point& xc = mesh_->getCellCentroid(*c);
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
       for (int i = 0; i < nfun; ++i) {
         val_vec[i] = (*(*uspec)->first->second)(args)[i] * (*weight_)[0][*c] / weight_volume;
@@ -142,7 +145,7 @@ PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
     if (submodel_ == "integrated source") {
       args[0] = t0;
       for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
-        auto xc = PKUtils_EntityCoordinates(*c, kind_, *mesh_);
+        const AmanziGeometry::Point& xc = mesh_->getCellCentroid(*c);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
         for (int i = 0; i < nfun; ++i) {
           value_[*c][i] -= (*(*uspec)->first->second)(args)[i] * (*weight_)[0][*c] / weight_volume;

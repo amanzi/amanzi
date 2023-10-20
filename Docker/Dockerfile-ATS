@@ -1,44 +1,64 @@
+# builds ATS, failing if tests do not pass
+#
+# Note this should not be
+# used in CI -- it is more for creating containers for short courses,
+# etc, where the container is manually pushed, as opposed to CI which
+# first pushes the container and then runs tests.
+#
+# Note, the branch arguments are:
+# - if a branch name is passed, it will be checked out and forced to the
+#   tip of that branch on origin
+# - if the branch name is empty, the default submodule hash will be used
+#
+# The former is preferred in development, but the latter should be
+# done to confirm that the submodule will work for users
+
 ARG amanzi_tpls_ver=latest
 ARG mpi_flavor=mpich
+ARG amanzi_branch=master
+ARG ats_branch=
+ARG ats_tests_branch=
+ARG https_proxy=
+ARG http_proxy=
+
 FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_flavor}
 LABEL Description="ATS CI: Build ATS in a Docker image."
 
-# Switch to amanzi_user
+# Switch to amanzi_user and set up env
 USER amanzi_user
+ENV https_proxy=$https_proxy \
+    http_proxy=$http_proxy
 
 RUN echo "${AMANZI_PREFIX}"
 RUN echo "${AMANZI_TPLS_DIR}"
 
-# Arguments
-ARG amanzi_branch=master
-ARG ats_branch=master
-ARG ats_tests_branch=master
-
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
 
-# ENV https_proxy=proxyout.lanl.gov:8080 \
-#     http_proxy=proxyout.lanl.gov:8080
-
 # Make sure we have updated branch information
 RUN echo "Amanzi branch = $amanzi_branch"
-RUN git pull
-RUN git branch --list
+RUN git remote prune origin
+RUN git fetch
 
-# Checkout the branch and update it
+# Checkout the local branch and forcibly move it to the origin's
+# version of that branch.  Do not git pull because that can author
+# commits (and therefore fail) if a merge is required to do the pull
+# (if the local branch already exists and diverges from the remote
+# branch)
 RUN git checkout $amanzi_branch
-RUN git pull
+RUN git reset --hard origin/$amanzi_branch
 RUN git rev-parse --short HEAD
 
-# Checkout/update the submodules
-RUN git submodule update --init --recursive
+# Checkout ATS at the right branch
+RUN git submodule update --init
 WORKDIR /home/amanzi_user/amanzi/src/physics/ats
-RUN git checkout $ats_branch
-RUN git pull
+RUN if [[ -n "$ats_branch" ]] ; then git fetch; git checkout $ats_branch; git reset --hard origin/$ats_branch; fi
 RUN git rev-parse --short HEAD
+
+# Checkout ats-regression-tests at the right branch
+RUN git submodule update --init 
 WORKDIR /home/amanzi_user/amanzi/src/physics/ats/testing/ats-regression-tests
-RUN git checkout master
-RUN git pull
+RUN if [[ -n "$ats_tests_branch" ]] ; then git fetch; git checkout $ats_tests_branch; git reset --hard origin/$ats_tests_branch; fi
 RUN git rev-parse --short HEAD
 WORKDIR /home/amanzi_user/amanzi
 
@@ -48,9 +68,6 @@ ENV AMANZI_SRC_DIR=/home/amanzi_user/amanzi \
 RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/ats \
    --tpl-config-file=${AMANZI_TPLS_DIR}/share/cmake/amanzi-tpl-config.cmake \
-   --branch=$amanzi_branch \
-   --branch_ats=$ats_branch \
-   --branch_ats_tests=$ats_tests_branch \
    --parallel=4 \
    --opt \
    --with-mpi=/usr \
@@ -60,11 +77,9 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --enable-geochemistry \
    --disable-amanzi_physics \
    --enable-ats_physics \
+   --ats_dev \
    --enable-reg_tests \
-   && cd /home/amanzi_user/amanzi_builddir/ats \
-   && make test
-   
-#   && rm -r /home/amanzi_user/amanzi_builddir/
+   --enable-test_suite
 
 # Set path to make it easier to run amanzi
 ENV PATH=/home/amanzi_user/install/bin:${PATH}
@@ -74,5 +89,5 @@ RUN echo $PATH
 RUN mkdir /home/amanzi_user/work
 
 # Unset proxy
-# ENV https_proxy= \
-#     http_proxy= 
+ENV https_proxy= \
+    http_proxy=

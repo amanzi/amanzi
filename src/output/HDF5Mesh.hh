@@ -124,7 +124,7 @@ class HDF5 {
 
   // Mesh information
   int conn_;
-  AmanziMesh::Cell_type ctype_;
+  AmanziMesh::Cell_kind ctype_;
   std::string cname_;
 
   static std::string xdmfHeader_;

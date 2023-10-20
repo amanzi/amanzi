@@ -18,7 +18,7 @@
 #include <iterator>
 #include <vector>
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -34,20 +34,19 @@ namespace WhetStone {
 int
 MFD3D_Diffusion_CurvedFace::L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   N.Reshape(nfaces, d_);
   Mc.Reshape(nfaces, nfaces);
 
   AmanziGeometry::Point v1(d_), v2(d_);
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  const AmanziGeometry::Point& cm = mesh_->getCellCentroid(c);
+  double volume = mesh_->getCellVolume(c);
 
   // populate areas
   DenseVector area(nfaces);
-  for (int i = 0; i < nfaces; ++i) area(i) = norm(mesh_->face_normal(faces[i]));
+  for (int i = 0; i < nfaces; ++i) area(i) = norm(mesh_->getFaceNormal(faces[i]));
 
   Tensor Kinv(K);
   Kinv.Inverse();
@@ -65,7 +64,7 @@ MFD3D_Diffusion_CurvedFace::L2consistency(int c, const Tensor& K, DenseMatrix& N
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
     for (int k = 0; k < d_; k++) N(i, k) = normal[k] * dirs[i] / area(i);
   }
   return 0;
@@ -112,12 +111,12 @@ MFD3D_Diffusion_CurvedFace::StiffnessMatrix(int c, const Tensor& K, DenseMatrix&
   DenseMatrix M;
   MassMatrixInverse(c, K, M);
 
-  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
   // populate areas
   DenseVector area(nfaces);
-  for (int i = 0; i < nfaces; ++i) area(i) = norm(mesh_->face_normal(faces[i]));
+  for (int i = 0; i < nfaces; ++i) area(i) = norm(mesh_->getFaceNormal(faces[i]));
 
   // populate stiffness matrix
   A.Reshape(nfaces + 1, nfaces + 1);
@@ -149,16 +148,14 @@ MFD3D_Diffusion_CurvedFace::L2Cell(int c,
                                    const Polynomial* moments,
                                    Polynomial& vc)
 {
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
-
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const AmanziGeometry::Point& cm = mesh_->getCellCentroid(c);
+  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   vc.Reshape(d_, 1, true);
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
 
     for (int k = 0; k < d_; k++) {
       double Rik = fm[k] - cm[k];
@@ -166,7 +163,7 @@ MFD3D_Diffusion_CurvedFace::L2Cell(int c,
     }
   }
 
-  vc *= -1.0 / mesh_->cell_volume(c);
+  vc *= -1.0 / mesh_->getCellVolume(c);
 }
 
 } // namespace WhetStone

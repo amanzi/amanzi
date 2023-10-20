@@ -12,15 +12,15 @@
 The `"primary species`" section is a list of primary species, one sublist for a species.
 Each sublist is named after the species and contains the following parameters:
 
-* `"ion size parameter`" [double] is an empirical parameter that provides agreement 
+* `"ion size parameter`" [double] is an empirical parameter that provides agreement
   between measured activity coefficients and ionic strength. In theory, it is the diameter
   of the hydrated ion.
 
 * `"charge`" [int] is the ion charge. The net charge of an ion is non-zero since the
   total number of electrons is unequal to the total number of protons.
 
-* `"gram molecular weight`" [double] is amount of a molecular substance whose weight, 
-  in grams, is numerically equal to the molecular weight of that substance. 
+* `"gram molecular weight`" [double] is amount of a molecular substance whose weight,
+  in grams, is numerically equal to the molecular weight of that substance.
 
 .. code-block:: xml
 

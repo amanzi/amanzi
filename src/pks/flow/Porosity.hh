@@ -9,13 +9,13 @@
 
 /*!
 
-User defines porosity models in sublist *porosity models*. 
-It contains as many sublists, e.g. _SOIL1 and _SOIL2, as there are different soils. 
-The porosity models are associated with non-overlapping regions. Each of the sublists (e.g. _SOIL1) 
+User defines porosity models in sublist *porosity models*.
+It contains as many sublists, e.g. _SOIL1 and _SOIL2, as there are different soils.
+The porosity models are associated with non-overlapping regions. Each of the sublists (e.g. _SOIL1)
 includes a few mandatory parameters: *regions names*, *model name*, and parameters for the selected model.
 
 * `"porosity model`" [string] specifies a model for the soil.
-  The available models are `"compressible`" and `"constant`". 
+  The available models are `"compressible`" and `"constant`".
 
   * The model `"compressible`" requires `"underformed soil porosity"`" [double],
     `"reference pressure`" [double], and `"pore compressibility`" [string] [Pa^-1].

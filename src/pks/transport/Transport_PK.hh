@@ -20,27 +20,27 @@ Single-phase transport
 The conceptual PDE model for the transport in partially saturated media is
 
 .. math::
-  \frac{\partial (\phi s_l C_l)}{\partial t} 
+  \frac{\partial (\phi s_l C_l)}{\partial t}
   =
-  - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_l) 
+  - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_l)
   + \boldsymbol{\nabla} \cdot (\phi_e s_l\, (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_l) + Q,
 
-where 
+where
 :math:`\phi` is total porosity [-],
 :math:`\phi_e` is effective transport porosity [-],
-:math:`s_l` is liquid saturation [-], 
+:math:`s_l` is liquid saturation [-],
 :math:`Q` is source or sink term,
 :math:`\boldsymbol{q}_l` is the Darcy velocity [m/s],
 :math:`\boldsymbol{D}_l` is dispersion tensor,
 :math:`\boldsymbol{M}_l` is diffusion coefficient,
 and :math:`\tau` is tortuosity [-].
-For an isotropic medium with no preferred axis of symmetry the dispersion 
+For an isotropic medium with no preferred axis of symmetry the dispersion
 tensor has the following form:
 
 .. math::
-  \boldsymbol{D}_l 
-  = \alpha_t \|\boldsymbol{v}\| \boldsymbol{I} 
-  + \left(\alpha_l-\alpha_t \right) 
+  \boldsymbol{D}_l
+  = \alpha_t \|\boldsymbol{v}\| \boldsymbol{I}
+  + \left(\alpha_l-\alpha_t \right)
     \frac{\boldsymbol{v} \boldsymbol{v}}{\|\boldsymbol{v}\|}, \qquad
   \boldsymbol{v} = \frac{\boldsymbol{q}}{\phi_e}
 
@@ -54,27 +54,27 @@ Amanzi supports two additional models for dispersivity with 3 and 4 parameters.
 Single-phase transport with dual porosity model
 ```````````````````````````````````````````````
 The dual porosity formulation of the solute transport consists of two equations
-for the fracture and matrix regions. 
+for the fracture and matrix regions.
 In the fracture region, we have \citep{simunek-vangenuchten_2008}
 
 .. math::
-  \frac{\partial (\phi_f\, s_{lf}\, C_{lf})}{\partial t} 
+  \frac{\partial (\phi_f\, s_{lf}\, C_{lf})}{\partial t}
   =
-  - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_{lf}) 
-  + \boldsymbol{\nabla} \cdot (\phi_f\, s_{lf}\, (\boldsymbol{D}_l + \tau_f M) \boldsymbol{\nabla} C_{lf}) 
+  - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_{lf})
+  + \boldsymbol{\nabla} \cdot (\phi_f\, s_{lf}\, (\boldsymbol{D}_l + \tau_f M) \boldsymbol{\nabla} C_{lf})
   - \frac{\phi_m\,\tau_m}{L_m}\, M \nabla C_m - \Sigma_w C^* + Q_f,
 
-where 
+where
 :math:`\phi_f` is fracture porosity [-],
 :math:`\phi_m` is matrix porosity [-],
-:math:`s_{lf}` is liquid saturation in fracture [-], 
+:math:`s_{lf}` is liquid saturation in fracture [-],
 :math:`\boldsymbol{q}_l` is the Darcy velocity [m/s],
 :math:`\boldsymbol{D}_l` is dispersion tensor,
 :math:`\tau_f` is fracture tortuosity [-],
 :math:`\tau_m` is matrix tortuosity [-],
 :math:`M` is molecular diffusion coefficient [:math:`m^2/s`], and
 :math:`L_m` is the characteristic matrix depth defined typically as the ratio of a matrix block [m],
-:math:`\Sigma_w` is transfer rate due to flow from the matrix to the fracture, 
+:math:`\Sigma_w` is transfer rate due to flow from the matrix to the fracture,
 :math:`C^*` is equal to :math:`C_{lf}` if :math:`\Sigma_w > 0` and :math:`C_{lm}` is :math:`\Sigma_w < 0`,
 and :math:`Q_f` is source or sink term.
 In the matrix region, we have
@@ -83,17 +83,17 @@ In the matrix region, we have
   \frac{\partial (\phi_m\, s_{lm}\, C_{lm})}{\partial t}
   = \nabla\cdot (\phi_m\, \tau_m\, M_m \nabla C_{lm}) + \Sigma_w C^* + Q_m,
 
-where 
+where
 :math:`\phi_m` is matrix porosity [-],
-:math:`s_{lm}` is liquid saturation in matrix [-], 
+:math:`s_{lm}` is liquid saturation in matrix [-],
 :math:`Q_m` is source or sink term.
-The simplified one-node dual porosity model uses a finite difference approximation of the 
+The simplified one-node dual porosity model uses a finite difference approximation of the
 solute gradient:
 
 .. math::
   \nabla C_{lm} \approx WR \, \frac{C_{lf} - C_{lm}}{L_m},
 
-where 
+where
 :math:`WR` is the Warren-Root coefficient that estimates the poro-space geometry, [-]
 
 
@@ -113,7 +113,7 @@ This list is often generated or extended by a high-level MPC PK.
   Available options are `"single porosity`" (default) and `"dual porosity`".
 
 * `"effective transport porosity`" [bool] If *true*, effective transport porosity
-  will be used by dispersive-diffusive fluxes instead of total porosity. 
+  will be used by dispersive-diffusive fluxes instead of total porosity.
   Default is *false*.
 
 * `"eos lookup table`" [string] provides the name for optional EOS lookup table.
@@ -139,8 +139,8 @@ Global parameters
 .................
 This list is used to summarize physical models and assumptions, such as
 The transport component of Amanzi performs advection of aqueous and gaseous
-components and their dispersion and diffusion. 
-The main parameters control temporal stability, spatial 
+components and their dispersion and diffusion.
+The main parameters control temporal stability, spatial
 and temporal accuracy, and verbosity:
 
 
@@ -148,12 +148,12 @@ and temporal accuracy, and verbosity:
   Default is `"domain`".
 
 * `"cfl`" [double] Time step limiter, a number less than 1. Default value is 1.
-   
+
 * `"method`" [string] defines flux method. Available options are `"muscl`" (default) and `"fct`".
-   
+
 * `"spatial discretization order`" [int] defines accuracy of spatial discretization.
-  It permits values 1 or 2. Default value is 1. 
-  
+  It permits values 1 or 2. Default value is 1.
+
 * `"temporal discretization order`" [int] defines accuracy of temporal discretization.
   It permits values 1 or 2 and values 3 or 4. Note that RK3 is not monotone.
   Default value is 1.
@@ -165,10 +165,10 @@ and temporal accuracy, and verbosity:
 
 * `"preconditioner`" [string] specifies preconditioner for dispersion solver.
 
-* `"number of aqueous components`" [int] The total number of aqueous components. 
+* `"number of aqueous components`" [int] The total number of aqueous components.
   Default value is the total number of components.
 
-* `"number of gaseous components`" [int] The total number of gaseous components. 
+* `"number of gaseous components`" [int] The total number of gaseous components.
   Default value is 0.
 
 .. code-block:: xml
@@ -192,8 +192,8 @@ and temporal accuracy, and verbosity:
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
-  </ParameterList>  
-  </ParameterList>  
+  </ParameterList>
+  </ParameterList>
 
 */
 

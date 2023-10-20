@@ -11,7 +11,7 @@
 
 Process kernel for coupling of Transport_PK and Chemistry_PK.
 Reactive transport can be setup using a steady-state flow.
-The two PKs are executed consequitively. 
+The two PKs are executed consequitively.
 The input spec requires new keyword *reactive transport*.
 
 .. code-block:: xml

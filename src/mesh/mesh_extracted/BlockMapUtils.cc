@@ -37,7 +37,7 @@ namespace AmanziMesh {
 *  subset maps
 ****************************************************************** */
 std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map>>
-CreateContinuousMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+createContiguousMaps(Teuchos::RCP<const AmanziMesh::MeshFramework> mesh,
                      const std::pair<Teuchos::RCP<const Epetra_BlockMap>,
                                      Teuchos::RCP<const Epetra_BlockMap>>& parent_maps,
                      const std::pair<Teuchos::RCP<const Epetra_BlockMap>,
@@ -53,13 +53,13 @@ CreateContinuousMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   int m_ghost = std::max(n_ghost, 1);
   std::vector<int> gl_id(m_ghost), pr_id(m_ghost), lc_id(m_ghost);
 
-  int total_proc = mesh->get_comm()->NumProc();
-  int my_pid = mesh->get_comm()->MyPID();
+  int total_proc = mesh->getComm()->NumProc();
+  int my_pid = mesh->getComm()->MyPID();
   std::vector<int> min_global_id(total_proc, 0), tmp(total_proc, 0);
 
   tmp[my_pid] = continuous_map->GID(0);
 
-  mesh->get_comm()->SumAll(tmp.data(), min_global_id.data(), total_proc);
+  mesh->getComm()->SumAll(tmp.data(), min_global_id.data(), total_proc);
 
   for (int n = n_owned; n < subset_maps.second->NumMyElements(); n++) {
     int f = parent_maps.second->LID(subset_maps.second->GID(n));

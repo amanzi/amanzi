@@ -9,13 +9,13 @@
 
 /*!
 
-The material properties include dispersivity model and diffusion parameters 
+The material properties include dispersivity model and diffusion parameters
 for aqueous and gaseous phases.
-The dispersivity is defined as a soil property. 
+The dispersivity is defined as a soil property.
 The diffusivity is defined independently for each solute.
 
 * _SOIL [list] Defines material properties.
-  
+
   * `"region`" [Array(string)] Defines geometric regions for material SOIL.
   * `"model`" [string] Defines dispersivity model, choose exactly one of the following: `"scalar`", `"Bear`",
     `"Burnett-Frind`", or `"Lichtner-Kelkar-Robinson`".
@@ -29,7 +29,7 @@ The diffusivity is defined independently for each solute.
 
       * `"alpha_l`" [double] defines dispersion in the direction of Darcy velocity, [m].
       * `"alpha_t`" [double] defines dispersion in the orthogonal direction, [m].
-    
+
     For model `"Burnett-Frind`", the following options must be specified:
 
       * `"alphaL`" [double] defines the longitudinal dispersion in the direction of Darcy velocity, [m].
@@ -51,7 +51,7 @@ The diffusivity is defined independently for each solute.
 
   * `"aqueous tortuosity`" [double] Defines tortuosity for calculating diffusivity of liquid solutes, [-].
   * `"gaseous tortuosity`" [double] Defines tortuosity for calculating diffusivity of gas solutes, [-].
- 
+
 Three examples are below:
 
 .. code-block:: xml
@@ -66,9 +66,9 @@ Three examples are below:
         <Parameter name="alpha_t" type="double" value="1e-5"/>
       <ParameterList>
       <Parameter name="aqueous tortuosity" type="double" value="1.0"/>
-      <Parameter name="gaseous tortuosity" type="double" value="1.0"/>       
-    </ParameterList>  
-     
+      <Parameter name="gaseous tortuosity" type="double" value="1.0"/>
+    </ParameterList>
+
     <ParameterList name="_GREY SOIL">
       <Parameter name="regions" type="Array(string)" value="{_MIDDLE_REGION}"/>
       <Parameter name="model" type="string" value="Burnett-Frind"/>
@@ -78,10 +78,10 @@ Three examples are below:
         <Parameter name="alpha_tv" type="double" value="2e-3"/>
       <ParameterList>
       <Parameter name="aqueous tortuosity" type="double" value="0.5"/>
-      <Parameter name="gaseous tortuosity" type="double" value="1.0"/>       
-    </ParameterList>  
-  </ParameterList>  
-  </ParameterList>  
+      <Parameter name="gaseous tortuosity" type="double" value="1.0"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 */
 

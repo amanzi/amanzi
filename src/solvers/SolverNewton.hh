@@ -51,7 +51,7 @@ method is Newton.  If it applies an appoximation, it is inexact Newton.
       solver is terminated.
 
     * `"make one iteration`" ``[bool]`` **false** require at least one iteration
-      to be performed before declaring success. This options makes any effect 
+      to be performed before declaring success. This options makes any effect
       only when `"monitor residual`" is choose.
 
     * `"modify correction`" ``[bool]`` **true** allows a PK to modify the

@@ -9,8 +9,8 @@
 
 /*
   Constant vapor-liquid distribution coefficient
-   
-   kD = xg / xl 
+
+   kD = xg / xl
 
   where xg and xl are gas and liquid more fractions in equilibrium.
 */

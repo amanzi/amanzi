@@ -22,10 +22,10 @@ pressure_msp = pressure in the matrix continuum.
 .. code-block:: xml
 
   <ParameterList name="flow">  <!-- parent list -->
-  <ParameterList name="multiscale models"> 
+  <ParameterList name="multiscale models">
     <ParameterList name="_SOIL1">
       <Parameter name="regions" type="Array(string)" value="{_TOP HALF}"/>
-      <Parameter name="multiscale model" type="string" value="dual porosity"/> 
+      <Parameter name="multiscale model" type="string" value="dual porosity"/>
       <ParameterList name="dual porosity parameters">
         <Paramater name="mass transfer coefficient" type="double" value="4.0e-5"/>
         <Paramater name="tolerance" type="double" value="1e-8"/>

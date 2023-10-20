@@ -9,11 +9,11 @@
 
 /*!
 
-Evaluator for thermal conductivity allows us to select a proper model. 
+Evaluator for thermal conductivity allows us to select a proper model.
 The variety of available models allows to run the energy PK by itself or in
-coupling with flow PK. 
+coupling with flow PK.
 The structure of the thermal conductivity list resembles that of a field
-evaluator list in state. 
+evaluator list in state.
 The two-phase model accepts the following parameters.
 
 * `"thermal conductivity parameters`" [list] defines a model and its parameters.
@@ -50,13 +50,13 @@ The two-phase model accepts the following parameters.
   </ParameterList>
   </ParameterList>
 
-The single-phase model accepts some of the parameters defined above (see the example) 
+The single-phase model accepts some of the parameters defined above (see the example)
 and a few additional parameters.
 
 * `"reference temperature`" [double] defines temperature at which reference conductivity
   of liquid is calculated. Default value is 298.15 [K].
 
-* `"polynomial expansion`" [Array(double)] collect coefficients in the quadratic representation of the 
+* `"polynomial expansion`" [Array(double)] collect coefficients in the quadratic representation of the
   thermal conductivity of liquid with respect to the dimensionless parameter T/Tref.
 
 .. code-block:: xml

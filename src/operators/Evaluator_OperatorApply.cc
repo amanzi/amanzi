@@ -126,7 +126,7 @@ Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList& plist)
   //
   // All of x, residual, and rhs must have this entity.
   primary_entity_ = plist_.get<std::string>("primary entity", "cell");
-  primary_entity_kind_ = AmanziMesh::entity_kind(primary_entity_);
+  primary_entity_kind_ = AmanziMesh::createEntityKind(primary_entity_);
 }
 
 void
@@ -365,7 +365,7 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key, const T
           // std::cout << "Adding source op to operator";
           // drhs.Print(std::cout);
           for (const auto& comp : drhs) {
-            if (AmanziMesh::entity_kind(comp) == AmanziMesh::CELL) {
+            if (AmanziMesh::createEntityKind(comp) == AmanziMesh::Entity_kind::CELL) {
               auto op_cell = Teuchos::rcp(new Operators::Op_Cell_Cell(rhs_key, drhs.Mesh()));
               // clobber the diag
               *op_cell->diag = *drhs.ViewComponent(comp, false);

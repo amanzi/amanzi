@@ -76,7 +76,7 @@ EvaluatorDeformingCellVolume::Update_(State& S)
   // initialize from mesh
   int ncells = cv.MyLength();
   for (int c = 0; c != ncells; ++c) {
-    cv[0][c] = mesh->cell_volume(c);
+    cv[0][c] = mesh->getCellVolume(c);
     if (cv[0][c] < 0.0)
       std::cout << "NEGATIVE CELL VOLUME cell " << c << ": " << cv[0][c] << std::endl;
   }

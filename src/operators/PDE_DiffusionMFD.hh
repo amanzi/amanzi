@@ -70,7 +70,7 @@ Additional options available only for the MFD family of discretizations include:
   (default) and *nonsymmetric*.
 
 * `"use manifold flux`"  ``[bool]`` **false** Computes the flux using algorithms
-  and data structures for manifolds or fracture networks. 
+  and data structures for manifolds or fracture networks.
 
 */
 

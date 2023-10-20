@@ -155,7 +155,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateTrilinosML_();
   Teuchos::ParameterList TranslateHypreAMG_();
   Teuchos::ParameterList TranslateBILU_();
-  Teuchos::ParameterList TranslateEuclid_();
+  Teuchos::ParameterList TranslateILU_();
   Teuchos::ParameterList
   TranslateLinearSolvers_(std::string tags, std::string method_default, std::string method_enforce);
   Teuchos::ParameterList TranslateSolvers_();

@@ -109,7 +109,7 @@ if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
     include_directories(${Boost_INCLUDE_DIRS})
 
     set(amanzi_libs transport pks state operators mesh_functions data_structures functions 
-                    whetstone mesh_factory mesh_audit mesh geometry)
+                    whetstone mesh_factory mesh geometry)
 
     # Test: miscaleneous transport routines
     add_amanzi_test(transport_mics transport_mics

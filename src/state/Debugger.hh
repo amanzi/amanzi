@@ -55,9 +55,9 @@ class Debugger {
            Teuchos::ParameterList& plist,
            Teuchos::EVerbosityLevel verb_level = Teuchos::VERB_HIGH);
 
-  const AmanziMesh::Entity_ID_List& get_cells() const;
-  void set_cells(const AmanziMesh::Entity_ID_List& dc);
-  void add_cells(const AmanziMesh::Entity_ID_List& dc);
+  const AmanziMesh::Entity_ID_View& get_cells() const;
+  void set_cells(const AmanziMesh::Entity_ID_View& dc);
+  void add_cells(const AmanziMesh::Entity_ID_View& dc);
 
   // Write cell + face info
   void WriteCellInfo(bool include_faces = false);
@@ -99,7 +99,7 @@ class Debugger {
   Teuchos::RCP<VerboseObject> vo_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   std::vector<AmanziMesh::Entity_ID> dc_;
-  std::vector<AmanziMesh::Entity_ID> dc_gid_;
+  AmanziMesh::Entity_ID_View dc_gid_;
   std::vector<Teuchos::RCP<VerboseObject>> dcvo_;
 
   int width_;

@@ -52,9 +52,13 @@ TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE_RICHARDS)
 
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
-  MeshFactory factory(comm, gm, mesh_list);
+  auto mesh_list2 = Teuchos::sublist(mesh_list, "unstructured", true);
+  auto mesh_list3 = Teuchos::sublist(mesh_list2, "expert", true);
+  mesh_list3->set<bool>("request edges", true);
+  mesh_list3->set<bool>("request faces", true);
+  MeshFactory factory(comm, gm, mesh_list3);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 9, 2, 20, true, true);
+  auto mesh = factory.create(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 9, 2, 20);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;
@@ -66,9 +70,13 @@ TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE_RICHARDS)
   //create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
-  // auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
-  auto mesh_fracture = Teuchos::rcp(new MeshExtractedManifold(
-    mesh, "fracture", AmanziMesh::FACE, comm, gm, mesh_list, true, false));
+  // auto mesh_fracture = factory.create(mesh, names, AmanziMesh::Entity_kind::FACE);
+  auto mesh_fracture_framework = Teuchos::rcp(new MeshExtractedManifold(
+    mesh, "fracture", AmanziMesh::Entity_kind::FACE, comm, gm, mesh_list));
+  auto mesh_fracture =
+    Teuchos::rcp(new Mesh(mesh_fracture_framework,
+                          Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()),
+                          mesh_list));
 
   S->RegisterMesh("fracture", mesh_fracture);
 
@@ -106,11 +114,11 @@ TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE_RICHARDS)
   const auto& fmap = *S->Get<CompositeVector>("volumetric_flow_rate").ComponentMap("face");
 
   bool flag(true);
-  int nfaces =
-    mesh->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,
+                                    Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   for (int f = 0; f < nfaces; ++f) {
-    const auto& normal = mesh->face_normal(f);
+    const auto& normal = mesh->getFaceNormal(f);
 
     int g = fmap.FirstPointInElement(f);
     double flux = (uf_exact * normal) / rho;

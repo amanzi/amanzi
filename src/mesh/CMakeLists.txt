@@ -1,9 +1,6 @@
 # -*- mode: cmake -*-
-
 #
-#  Amanzi
-#    Mesh 
-#
+#  Amanzi Mesh
 #
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
@@ -28,28 +25,47 @@ include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 
 #
+# Set files
+#
+set(mesh_inc_files
+  MeshDefs.hh
+  CellTopology.hh
+  GenerationSpec.hh
+  MeshFramework.hh
+  Mesh_Helpers_decl.hh
+  Mesh_Helpers_impl.hh
+  Mesh_Helpers.hh
+  MeshAudit_decl.hh
+  MeshAudit_impl.hh
+  MeshFrameworkAudit.hh
+  MeshAudit.hh
+  MeshMaps_decl.hh
+  MeshMaps_impl.hh
+  MeshMaps.hh
+  MeshCache.hh
+  MeshSets.hh
+  MeshColumns.hh
+  Mesh.hh
+  Mesh_Algorithms.hh
+  DomainSet.hh
+  SingleFaceMesh.hh
+)
+
+set(mesh_src_files
+  GenerationSpec.cc
+  MeshFramework.cc
+  MeshSets.cc
+  MeshColumns.cc
+  Mesh_Algorithms.cc
+  DomainSet.cc
+)
+
+#
 # Library: mesh
 #
-add_amanzi_library(mesh SOURCE GenerationSpec.cc
-                               MeshLight.cc
-                               Mesh.cc
-                               Mesh_Sets.cc
-                               DomainSet.cc
-                               Mesh_Algorithms.cc
+add_amanzi_library(mesh SOURCE ${mesh_src_files}
+                        HEADERS ${mesh_inc_files}
                         LINK_LIBS geometry atk ${Epetra_LIBRARIES})
-
-#
-# Library: mesh_audit
-#
-add_amanzi_library(mesh_audit SOURCE MeshAudit.cc 
-	                      LINK_LIBS mesh error_handling ${Epetra_LIBRARIES})
-
-#
-# Install Header files
-#
-file(GLOB mesh_inc_files "*.hh")
-add_install_include_file(${mesh_inc_files})
-
 
 # Mesh Frameworks
 add_subdirectory(mesh_simple)
@@ -69,7 +85,6 @@ add_subdirectory(mesh_logical)
 
 # Factory class
 add_subdirectory(mesh_factory)
-
 
 if (BUILD_TESTS)
     # include mesh frameworks
@@ -97,12 +112,17 @@ if (BUILD_TESTS)
     
     # Need to copy files for the tests 
     if (NOT (${MESH_SOURCE_DIR} EQUAL ${MESH_BINARY_DIR}))
-      file(GLOB DataFiles "${MESH_SOURCE_DIR}/test/*.exo" "${MESH_SOURCE_DIR}/test/*.par.*"  "${MESH_SOURCE_DIR}/test/*.xml" "${MESH_SOURCE_DIR}/test/*.txt" )
+      file(GLOB DataFiles "${MESH_SOURCE_DIR}/test/*.exo"
+        "${MESH_SOURCE_DIR}/test/*.par.*"
+        "${MESH_SOURCE_DIR}/test/*.xml"
+        "${MESH_SOURCE_DIR}/test/*.txt" )
+
       file(COPY ${DataFiles} DESTINATION ${MESH_BINARY_DIR}/test/)
     endif()
 
     # Test link libraries
-    set(mesh_test_link_libs geometry mesh mesh_audit mesh_simple mesh_factory ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    set(mesh_test_link_libs geometry mesh mesh_simple mesh_extracted mesh_factory
+      ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # MOAB Mesh framework
     if (ENABLE_MESH_MOAB)
@@ -114,10 +134,7 @@ if (BUILD_TESTS)
       list(APPEND mesh_test_link_libs mesh_mstk)
     endif()    
 
-    # Test: mesh geometry
-    #   Tests geometry of multiple constructed and exodus meshes
-    #   using all available frameworks.  Checks MeshAudit, known
-    #   geometry, and mesh maps.
+    # Test: tests MeshCache geometry without a cache on a variety of meshes
     add_amanzi_test(mesh_geometry mesh_geometry
                     KIND unit
                     SOURCE test/Main.cc test/mesh_geometry.cc
@@ -125,6 +142,14 @@ if (BUILD_TESTS)
     add_amanzi_test(mesh_geometry_np2 mesh_geometry NPROCS 2 KIND unit)
     add_amanzi_test(mesh_geometry_np4 mesh_geometry NPROCS 4 KIND unit)
 
+    # Test: tests MeshCace geometry with a cache and no framework on a variety of meshes
+    add_amanzi_test(mesh_cache_geometry mesh_cache_geometry
+                    KIND unit
+                    SOURCE test/Main.cc test/mesh_cache_geometry.cc
+                    LINK_LIBS ${mesh_test_link_libs})
+    add_amanzi_test(mesh_cache_geometry_np2 mesh_cache_geometry NPROCS 2 KIND unit)
+    add_amanzi_test(mesh_cache_geometry_np4 mesh_cache_geometry NPROCS 4 KIND unit)
+    
     # Test: mesh sets
     #   Tests the use of mesh sets on the above meshes and frameworks.
     add_amanzi_test(mesh_sets mesh_sets
@@ -133,7 +158,7 @@ if (BUILD_TESTS)
                     LINK_LIBS ${mesh_test_link_libs})
     add_amanzi_test(mesh_sets_np2 mesh_sets NPROCS 2 KIND unit)
     add_amanzi_test(mesh_sets_np4 mesh_sets NPROCS 4 KIND unit)
-
+    
     # Test: mesh deformation
     #   A basic test of deforming volumetric and surface meshes and
     #   making sure geometric quantities get updated correctly.
@@ -142,22 +167,21 @@ if (BUILD_TESTS)
         	    SOURCE test/Main.cc test/mesh_deform.cc
         	    LINK_LIBS ${mesh_test_link_libs})
 
-
-    if (ENABLE_MESH_MSTK)
-      # Test: mesh columns
-      #   Tests the buidl_columns() capability for semi-structured meshes.              
-      add_amanzi_test(mesh_build_columns mesh_build_columns
-                      KIND unit
-                SOURCE test/Main.cc test/mesh_build_columns.cc
-                LINK_LIBS ${mesh_test_link_libs})
-      add_amanzi_test(mesh_build_columns_np2 mesh_build_columns NPROCS 2 KIND unit)
-    endif()
+    # Test: mesh columns
+    #   Tests the buildColumns() capability for semi-structured meshes.              
+    add_amanzi_test(mesh_build_columns mesh_build_columns
+                    KIND unit
+        	    SOURCE test/Main.cc test/mesh_build_columns.cc
+        	    LINK_LIBS ${mesh_test_link_libs})
+    add_amanzi_test(mesh_build_columns_np2 mesh_build_columns NPROCS 2 KIND unit)
 
     # Test: surface extracted mesh
     #   Tests a surface mesh generated using the mesh framework
     #   extraction constructor on FACEs with the flatten parameter,
     #   currently only supported by MSTK.  This extracts a surface
     #   mesh and checks MeshAudit, geometry, sets, and maps.
+    #
+    # NOTE: Currently, the MeshExtractedManifold tests in here are commented out!
     add_amanzi_test(mesh_surface_extraction mesh_surface_extraction
                     KIND unit
                     SOURCE test/Main.cc test/mesh_surface_extraction.cc
@@ -174,7 +198,17 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/mesh_volume_extraction.cc
                     LINK_LIBS ${mesh_test_link_libs})
-    
+
+    # Test: column and surface cell extracted meshes
+    #   These are 1-off, simplified meshes that make 1D and 0D
+    #   conceptual meshes for use in subgrid models.  This extracts
+    #   the column, creates a column mesh, and creates a surface cell
+    #   mesh, all using the factory, and then checks sets on these.
+    add_amanzi_test(mesh_subgrid_extractions mesh_subgrid_extractions
+                    KIND unit
+                    SOURCE test/Main.cc test/mesh_subgrid_extractions.cc
+                    LINK_LIBS ${mesh_test_link_libs})
+                  
     # Test: fracture extracted mesh
     #   Tests a fracture mesh generated using the mesh framework
     #   extraction constructor on FACES but not flattened, currently
@@ -186,7 +220,7 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/mesh_fracture_extraction.cc
                     LINK_LIBS ${mesh_test_link_libs})
 
-    # Test: mesh KD search
+    # # Test: mesh KD search
     add_amanzi_test(mesh_nanoflann mesh_nanoflann
                     KIND unit
         	    SOURCE test/Main.cc test/mesh_nanoflann.cc

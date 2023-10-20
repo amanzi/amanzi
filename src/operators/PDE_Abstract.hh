@@ -9,16 +9,16 @@
 
 /*!
 
-An abstract operator is designed for testing new discretization methods. 
+An abstract operator is designed for testing new discretization methods.
 It uses the factory of discretization methods and a few control parameters
 required by this factory and/or particular method in it.
 
 * `"method`" [string] defines a discretization method. The available
   options are `"diffusion`", `"diffusion generalized`", `"BernardiRaugel`",
-  `"CrouzeixRaviart`", `"CrouzeixRaviart serendipity`", `"Lagrange`", 
+  `"CrouzeixRaviart`", `"CrouzeixRaviart serendipity`", `"Lagrange`",
   `"Lagrange serendipity`", and `"dg modal`".
 
-* `"method order`" [int] defines disretization order. It is used by 
+* `"method order`" [int] defines disretization order. It is used by
   high-order discretization methods such as the discontinuous Galerkin.
 
 * `"matrix type`" [string] defines type of local matrix. Available options are

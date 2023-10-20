@@ -9,7 +9,7 @@
 
 /*!
 
-Elasticity operator is used for describing soil deformation or fluid flow (Stokes 
+Elasticity operator is used for describing soil deformation or fluid flow (Stokes
 and Navier-Stokes).
 
 * `"method`" [string] defines a discretization method. The available
@@ -19,7 +19,7 @@ and Navier-Stokes).
 
   * `"location`" [Array(string)] defines geometric location of degrees of freedom.
 
-  * `"type`" [Array(string)] defines type of degrees of freedom. The available options 
+  * `"type`" [Array(string)] defines type of degrees of freedom. The available options
     are `"scalar`" and `"normal component`".
 
   * `"number`" [Array(int)] indicates how many time this degree of freedom is repeated.

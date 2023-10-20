@@ -96,7 +96,7 @@ SUITE(DIFFUSION)
 
     fix.ana = Teuchos::rcp(new Analytic00(fix.mesh, 1));
 
-    fix.Discretize("fv", AmanziMesh::FACE);
+    fix.Discretize("fv", AmanziMesh::Entity_kind::FACE);
     fix.SetBCsDirichlet();
     fix.Setup("diagonal", true);
 
@@ -106,11 +106,11 @@ SUITE(DIFFUSION)
     CompositeVector& rhs = *fix.global_op->rhs();
     {
       int ncells =
-        fix.mesh->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        fix.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       auto& rhs_c = *rhs.ViewComponent("cell", false);
       for (int c = 0; c != ncells; ++c) {
-        const auto& xc = fix.mesh->cell_centroid(c);
-        rhs_c[0][c] += fix.ana->source_exact(xc, 0.0) * fix.mesh->cell_volume(c);
+        const auto& xc = fix.mesh->getCellCentroid(c);
+        rhs_c[0][c] += fix.ana->source_exact(xc, 0.0) * fix.mesh->getCellVolume(c);
       }
     }
 
@@ -118,10 +118,10 @@ SUITE(DIFFUSION)
 
     {
       int ncells =
-        fix.mesh->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        fix.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       auto& soln_c = *fix.solution->ViewComponent("cell", false);
       for (int c = 0; c != ncells; ++c) {
-        const auto& xc = fix.mesh->cell_centroid(c);
+        const auto& xc = fix.mesh->getCellCentroid(c);
         soln_c[0][c] = fix.ana->pressure_exact(xc, 0.0);
       }
     }
@@ -155,7 +155,7 @@ SUITE(DIFFUSION)
               << std::endl;
 
     fix.ana = Teuchos::rcp(new Analytic00(fix.mesh, 1));
-    fix.Discretize("mixed upwind", AmanziMesh::FACE);
+    fix.Discretize("mixed upwind", AmanziMesh::Entity_kind::FACE);
     fix.SetBCsDirichlet();
     fix.Setup("diagonal", true);
 
@@ -165,11 +165,11 @@ SUITE(DIFFUSION)
     CompositeVector& rhs = *fix.global_op->rhs();
     {
       int ncells =
-        fix.mesh->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        fix.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       auto& rhs_c = *rhs.ViewComponent("cell", false);
       for (int c = 0; c != ncells; ++c) {
-        const auto& xc = fix.mesh->cell_centroid(c);
-        rhs_c[0][c] += fix.ana->source_exact(xc, 0.0) * fix.mesh->cell_volume(c);
+        const auto& xc = fix.mesh->getCellCentroid(c);
+        rhs_c[0][c] += fix.ana->source_exact(xc, 0.0) * fix.mesh->getCellVolume(c);
       }
     }
 
@@ -177,20 +177,20 @@ SUITE(DIFFUSION)
 
     {
       int ncells =
-        fix.mesh->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        fix.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       auto& soln_c = *fix.solution->ViewComponent("cell");
       for (int c = 0; c != ncells; ++c) {
-        const auto& xc = fix.mesh->cell_centroid(c);
+        const auto& xc = fix.mesh->getCellCentroid(c);
         soln_c[0][c] = fix.ana->pressure_exact(xc, 0.0);
       }
     }
 
     {
       int nfaces =
-        fix.mesh->num_entities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+        fix.mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
       auto& soln_f = *fix.solution->ViewComponent("face", false);
       for (int f = 0; f != nfaces; ++f) {
-        const auto& xf = fix.mesh->face_centroid(f);
+        const auto& xf = fix.mesh->getFaceCentroid(f);
         soln_f[0][f] = fix.ana->pressure_exact(xf, 0.0);
       }
     }

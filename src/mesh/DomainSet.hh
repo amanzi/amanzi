@@ -62,12 +62,12 @@ class DomainSet {
   const_iterator end() const { return meshes_.end(); }
   std::size_t size() const { return meshes_.size(); }
 
-  const std::string& get_name() const { return name_; }
-  Teuchos::RCP<const Mesh> get_indexing_parent() const { return indexing_parent_; }
-  Teuchos::RCP<const Mesh> get_referencing_parent() const { return referencing_parent_; }
+  const std::string& getName() const { return name_; }
+  Teuchos::RCP<const Mesh> getIndexingParent() const { return indexing_parent_; }
+  Teuchos::RCP<const Mesh> getReferencingParent() const { return referencing_parent_; }
 
   // exporters and maps to/from the parent
-  const std::vector<int>& get_subdomain_map(const std::string& subdomain) const
+  const std::vector<int>& getSubdomainMap(const std::string& subdomain) const
   {
     if (maps_.size() == 0) {
       Errors::Message msg("DomainSet: subdomain map was requested, but no reference maps were "
@@ -81,31 +81,28 @@ class DomainSet {
     return *maps_.at(subdomain);
   }
   void
-  set_subdomain_map(const std::string& subdomain, const Teuchos::RCP<const std::vector<int>>& map)
+  setSubdomainMap(const std::string& subdomain, const Teuchos::RCP<const std::vector<int>>& map)
   {
     maps_[subdomain] = map;
   }
-  const std::map<std::string, Teuchos::RCP<const std::vector<int>>>& get_subdomain_maps() const
+  const std::map<std::string, Teuchos::RCP<const std::vector<int>>>& getSubdomainMaps() const
   {
     return maps_;
   }
 
   // import from subdomain to parent domain
-  void DoImport(const std::string& subdomain,
-                const Epetra_MultiVector& src,
-                Epetra_MultiVector& target) const;
+  void
+  doImport(const std::vector<const Epetra_MultiVector*>& src, Epetra_MultiVector& target) const;
 
-  // import from subdomains to parent domain
-  void DoImport(const std::vector<const Epetra_MultiVector*>& subdomains,
+  // import from subdomain to parent domain
+  void doImport(const std::string& subdomain,
+                const Epetra_MultiVector& src,
                 Epetra_MultiVector& target) const;
 
   // import from parent domain to subdomain
-  void DoExport(const std::string& subdomain,
+  void doExport(const std::string& subdomain,
                 const Epetra_MultiVector& src,
                 Epetra_MultiVector& target) const;
-  // import from parent domain to subdomains
-  void
-  DoExport(const Epetra_MultiVector& src, const std::vector<Epetra_MultiVector*>& targets) const;
 
  protected:
   std::string name_;

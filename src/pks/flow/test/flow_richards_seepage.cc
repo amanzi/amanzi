@@ -55,23 +55,25 @@ Flow2D_SeepageTest(std::string filename, bool deform)
   auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 100.0, 50.0, 50, 25);
 
   // create an optional slop
   if (deform) {
     AmanziGeometry::Point xv(2);
-    AmanziMesh::Entity_ID_List nodeids;
-    AmanziGeometry::Point_List new_positions, final_positions;
 
-    int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+    int nnodes =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
+    AmanziMesh::Entity_ID_View nodeids("nodeids", nnodes);
+    AmanziMesh::Point_View new_positions("new_positions", nnodes);
+
     for (int v = 0; v < nnodes; ++v) {
-      mesh->node_get_coordinates(v, &xv);
-      nodeids.push_back(v);
+      xv = mesh->getNodeCoordinate(v);
+      nodeids[v] = v;
       xv[1] *= (xv[0] * 0.4 + (100.0 - xv[0])) / 100.0;
-      new_positions.push_back(xv);
+      new_positions[v] = xv;
     }
-    mesh->deform(nodeids, new_positions, false, &final_positions);
+    AmanziMesh::MeshAlgorithms::deform(*mesh, nodeids, new_positions);
   }
 
   // create a simple state and populate it
@@ -99,7 +101,7 @@ Flow2D_SeepageTest(std::string filename, bool deform)
 
   double patm(101325.0), z0(30.0);
   for (int c = 0; c < p.MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     p[0][c] = patm + rho * g * (xc[1] - z0);
   }
 
@@ -128,8 +130,8 @@ Flow2D_SeepageTest(std::string filename, bool deform)
   iolist.get<std::string>("file name base", "plot");
   OutputXDMF io(iolist, mesh, true, false);
   io.InitializeCycle(ti_specs.T1, 1, "");
-  io.WriteVector(*p(0), "pressure", AmanziMesh::CELL);
-  io.WriteVector(*ws(0), "saturation", AmanziMesh::CELL);
+  io.WriteVector(*p(0), "pressure", AmanziMesh::Entity_kind::CELL);
+  io.WriteVector(*ws(0), "saturation", AmanziMesh::Entity_kind::CELL);
   io.FinalizeCycle();
 
   /*

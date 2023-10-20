@@ -35,7 +35,7 @@ namespace WhetStone {
 * Constructor.
 ****************************************************************** */
 DG_Modal::DG_Modal(const Teuchos::ParameterList& plist,
-                   const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
+                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   : BilinearForm(mesh), numi_(mesh)
 {
   order_ = plist.get<int>("method order");
@@ -44,13 +44,14 @@ DG_Modal::DG_Modal(const Teuchos::ParameterList& plist,
   numi_order_ = order_;
   if (plist.isParameter("quadrature order")) numi_order_ = plist.get<int>("quadrature order");
 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   basis_.resize(ncells_wghost);
   monomial_integrals_.resize(ncells_wghost);
 
   for (int c = 0; c < ncells_wghost; ++c) {
     monomial_integrals_[c].Reshape(d_, 0);
-    monomial_integrals_[c](0) = mesh_->cell_volume(c);
+    monomial_integrals_[c](0) = mesh_->getCellVolume(c);
   }
 
   BasisFactory factory;
@@ -70,7 +71,7 @@ DG_Modal::schema() const
   int nk = PolynomialSpaceDimension(d_, order_);
   std::vector<SchemaItem> items;
 
-  items.push_back(std::make_tuple(AmanziMesh::CELL, DOF_Type::MOMENT, nk));
+  items.push_back(std::make_tuple(AmanziMesh::Entity_kind::CELL, DOF_Type::MOMENT, nk));
   return items;
 }
 
@@ -161,7 +162,7 @@ DG_Modal::MassMatrix(int c, const Polynomial& K, DenseMatrix& M)
 {
   // rebase the polynomial
   Polynomial Kcopy(K);
-  Kcopy.ChangeOrigin(mesh_->cell_centroid(c));
+  Kcopy.ChangeOrigin(mesh_->getCellCentroid(c));
 
   // extend (optionally) the list of integrals of non-normalized monomials
   int uk(Kcopy.order());
@@ -356,7 +357,7 @@ DG_Modal::StiffnessMatrix(int c, const WhetStoneFunction* K, DenseMatrix& A)
           multi_index[i] -= 2;
 
           Monomial p0(d_, multi_index, 1.0);
-          p0.set_origin(mesh_->cell_centroid(c));
+          p0.set_origin(mesh_->getCellCentroid(c));
           funcs[1] = &p0;
 
           tmp = numi_.IntegrateFunctionsTriangulatedCell(c, funcs, numi_order_);
@@ -383,7 +384,7 @@ int
 DG_Modal::AdvectionMatrix(int c, const VectorPolynomial& u, DenseMatrix& A, bool grad_on_test)
 {
   // rebase the polynomial
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
   VectorPolynomial ucopy(u);
   ucopy.ChangeOrigin(xc);
@@ -456,8 +457,7 @@ DG_Modal::FluxMatrix(int f,
                      bool jump_on_test,
                      double* flux)
 {
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+  auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
   int ncells = cells.size();
 
   int size = PolynomialSpaceDimension(d_, order_);
@@ -471,8 +471,8 @@ DG_Modal::FluxMatrix(int f,
 
   // identify index of upwind/downwind cell (id)
   int dir, id(0);
-  mesh_->face_normal(f, false, cells[0], &dir);
-  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+  mesh_->getFaceNormal(f, cells[0], &dir);
+  const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
   *flux = un.Value(xf) * dir;
   if (ncells > 1) {
@@ -500,11 +500,11 @@ DG_Modal::FluxMatrix(int f,
   }
 
   // create integrator on a surface (used for 3D only)
-  const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
+  const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+  auto coordsys = std::make_shared<AmanziGeometry::SurfaceCoordinateSystem>(xf, normal);
 
-  Teuchos::RCP<const SingleFaceMesh> surf_mesh =
-    Teuchos::rcp(new SingleFaceMesh(mesh_, f, *coordsys));
+  Teuchos::RCP<AmanziMesh::SingleFaceMesh> surf_mesh =
+    Teuchos::rcp(new AmanziMesh::SingleFaceMesh(mesh_, f, *coordsys));
   NumericalIntegration numi_f(surf_mesh);
 
   // integrate traces of polynomials on face f
@@ -522,10 +522,10 @@ DG_Modal::FluxMatrix(int f,
 
     // add monomials to the product list
     Monomial p0(d_, idx0, 1.0);
-    p0.set_origin(mesh_->cell_centroid(c1));
+    p0.set_origin(mesh_->getCellCentroid(c1));
 
     Monomial p1(d_, idx0, 1.0);
-    p1.set_origin(mesh_->cell_centroid(c2));
+    p1.set_origin(mesh_->getCellCentroid(c2));
 
     if (d_ == 3) {
       polys_tmp[0] = &p0;
@@ -544,7 +544,7 @@ DG_Modal::FluxMatrix(int f,
       int l = PolynomialPosition(d_, idx1);
 
       Monomial q(d_, idx1, 1.0);
-      q.set_origin(mesh_->cell_centroid(c1));
+      q.set_origin(mesh_->getCellCentroid(c1));
 
       // add monomial to the product list
       if (d_ == 3) {
@@ -564,7 +564,7 @@ DG_Modal::FluxMatrix(int f,
       } else {
         vel1 = numi_f.IntegratePolynomialsCell(0, polys0);
       }
-      vel1 /= mesh_->face_area(f);
+      vel1 /= mesh_->getFaceArea(f);
       vel1 *= dir;
 
       // upwind-downwind integral
@@ -574,7 +574,7 @@ DG_Modal::FluxMatrix(int f,
       } else {
         vel0 = numi_f.IntegratePolynomialsCell(0, polys1);
       }
-      vel0 /= mesh_->face_area(f);
+      vel0 /= mesh_->getFaceArea(f);
       vel0 *= dir;
 
       if (ncells == 1) {
@@ -618,8 +618,7 @@ DG_Modal::FluxMatrixGaussPoints(int f,
                                 bool upwind,
                                 bool jump_on_test)
 {
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+  auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
   int ncells = cells.size();
 
   Polynomial poly(d_, order_);
@@ -632,8 +631,8 @@ DG_Modal::FluxMatrixGaussPoints(int f,
 
   // identify index of upwind/downwind cell (id)
   int dir;
-  double area = mesh_->face_area(f);
-  mesh_->face_normal(f, false, cells[0], &dir);
+  double area = mesh_->getFaceArea(f);
+  mesh_->getFaceNormal(f, cells[0], &dir);
 
   // Calculate integrals needed for scaling
   int c1, c2, pos0, pos1;
@@ -661,10 +660,10 @@ DG_Modal::FluxMatrixGaussPoints(int f,
     int k = PolynomialPosition(d_, idx0);
 
     Monomial p0(d_, idx0, 1.0);
-    p0.set_origin(mesh_->cell_centroid(c1));
+    p0.set_origin(mesh_->getCellCentroid(c1));
 
     Monomial p1(d_, idx0, 1.0);
-    p1.set_origin(mesh_->cell_centroid(c2));
+    p1.set_origin(mesh_->getCellCentroid(c2));
 
     FunctionUpwindPlus unplus(&un);
     FunctionUpwindMinus unminus(&un);
@@ -674,10 +673,10 @@ DG_Modal::FluxMatrixGaussPoints(int f,
       int l = PolynomialPosition(d_, idx1);
 
       Monomial q0(d_, idx1, 1.0);
-      q0.set_origin(mesh_->cell_centroid(c1));
+      q0.set_origin(mesh_->getCellCentroid(c1));
 
       Monomial q1(d_, idx1, 1.0);
-      q1.set_origin(mesh_->cell_centroid(c2));
+      q1.set_origin(mesh_->getCellCentroid(c2));
 
       double v00, v00p, v10m, v01p, v11m;
       if (ncells == 1) {
@@ -740,8 +739,8 @@ DG_Modal::FluxMatrixRusanov(int f,
                             const Polynomial& uf,
                             DenseMatrix& A)
 {
-  AmanziMesh::Entity_ID_List cells, nodes;
-  mesh_->face_get_cells(f, Parallel_type::ALL, &cells);
+  AmanziMesh::Entity_ID_View nodes;
+  auto cells = mesh_->getFaceCells(f, Parallel_kind::ALL);
   int ncells = cells.size();
 
   Polynomial poly(d_, order_);
@@ -754,7 +753,7 @@ DG_Modal::FluxMatrixRusanov(int f,
 
   // identify index of downwind cell (id)
   int dir;
-  AmanziGeometry::Point normal = mesh_->face_normal(f, false, cells[0], &dir);
+  AmanziGeometry::Point normal = mesh_->getFaceNormal(f, cells[0], &dir);
 
   // Calculate integrals needed for scaling
   int c1 = cells[0];
@@ -780,23 +779,23 @@ DG_Modal::FluxMatrixRusanov(int f,
     int k = PolynomialPosition(d_, idx0);
 
     Polynomial p0(d_, idx0, 1.0);
-    p0.set_origin(mesh_->cell_centroid(c1));
+    p0.set_origin(mesh_->getCellCentroid(c1));
 
     Polynomial p1(d_, idx0, 1.0);
-    p1.set_origin(mesh_->cell_centroid(c2));
+    p1.set_origin(mesh_->getCellCentroid(c2));
 
     for (auto jt = poly.begin(); jt < poly.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = PolynomialPosition(d_, idx1);
 
       Polynomial q0(d_, idx1, 1.0);
-      q0.set_origin(mesh_->cell_centroid(c1));
+      q0.set_origin(mesh_->getCellCentroid(c1));
 
       Polynomial q1(d_, idx1, 1.0);
-      q1.set_origin(mesh_->cell_centroid(c2));
+      q1.set_origin(mesh_->getCellCentroid(c2));
 
       double coef00, coef01, coef10, coef11;
-      double scale = 2 * mesh_->face_area(f);
+      double scale = 2 * mesh_->getFaceArea(f);
 
       // upwind-upwind integral
       polys[0] = &uf1;
@@ -840,8 +839,7 @@ DG_Modal::FaceMatrixJump(int f,
                          const WhetStoneFunction* K2,
                          DenseMatrix& A)
 {
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, Parallel_type::ALL, &cells);
+  auto cells = mesh_->getFaceCells(f, Parallel_kind::ALL);
   int ncells = cells.size();
 
   Polynomial poly(d_, order_);
@@ -856,8 +854,8 @@ DG_Modal::FaceMatrixJump(int f,
 
   // Calculate co-normals
   int dir;
-  AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
-  double area = mesh_->face_area(f);
+  AmanziGeometry::Point normal = mesh_->getFaceNormal(f, c1, &dir);
+  double area = mesh_->getFaceArea(f);
   normal /= area;
 
   // integrate traces of polynomials on face f
@@ -870,7 +868,7 @@ DG_Modal::FaceMatrixJump(int f,
     int k = PolynomialPosition(d_, idx0);
 
     Polynomial p0(d_, idx0, 1.0);
-    p0.set_origin(mesh_->cell_centroid(c1));
+    p0.set_origin(mesh_->getCellCentroid(c1));
 
     pgrad = Gradient(p0);
     p0 = pgrad * normal;
@@ -880,7 +878,7 @@ DG_Modal::FaceMatrixJump(int f,
       int l = PolynomialPosition(d_, idx1);
 
       Polynomial q0(d_, idx1, 1.0);
-      q0.set_origin(mesh_->cell_centroid(c1));
+      q0.set_origin(mesh_->getCellCentroid(c1));
 
       funcs[0] = &p0;
       funcs[1] = &q0;
@@ -891,13 +889,13 @@ DG_Modal::FaceMatrixJump(int f,
 
       if (c2 >= 0) {
         Polynomial p1(d_, idx0, 1.0);
-        p1.set_origin(mesh_->cell_centroid(c2));
+        p1.set_origin(mesh_->getCellCentroid(c2));
 
         pgrad = Gradient(p1);
         p1 = pgrad * normal;
 
         Polynomial q1(d_, idx1, 1.0);
-        q1.set_origin(mesh_->cell_centroid(c2));
+        q1.set_origin(mesh_->getCellCentroid(c2));
 
         funcs[1] = &q1;
         coef01 = numi_.IntegrateFunctionsTriangulatedFace(f, funcs, numi_order_);
@@ -935,8 +933,7 @@ DG_Modal::FaceMatrixJump(int f,
 int
 DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
 {
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, Parallel_type::ALL, &cells);
+  auto cells = mesh_->getFaceCells(f, Parallel_kind::ALL);
   int ncells = cells.size();
 
   Polynomial poly(d_, order_);
@@ -958,14 +955,14 @@ DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
     int k = PolynomialPosition(d_, idx0);
 
     Polynomial p0(d_, idx0, 1.0);
-    p0.set_origin(mesh_->cell_centroid(c1));
+    p0.set_origin(mesh_->getCellCentroid(c1));
 
     for (auto jt = poly.begin(); jt < poly.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = PolynomialPosition(d_, idx1);
 
       Polynomial q0(d_, idx1, 1.0);
-      q0.set_origin(mesh_->cell_centroid(c1));
+      q0.set_origin(mesh_->getCellCentroid(c1));
 
       polys[0] = &p0;
       polys[1] = &q0;
@@ -975,10 +972,10 @@ DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
 
       if (c2 >= 0) {
         Polynomial p1(d_, idx0, 1.0);
-        p1.set_origin(mesh_->cell_centroid(c2));
+        p1.set_origin(mesh_->getCellCentroid(c2));
 
         Polynomial q1(d_, idx1, 1.0);
-        q1.set_origin(mesh_->cell_centroid(c2));
+        q1.set_origin(mesh_->getCellCentroid(c2));
 
         polys[1] = &q1;
         coef01 = numi_.IntegratePolynomialsFace(f, polys);

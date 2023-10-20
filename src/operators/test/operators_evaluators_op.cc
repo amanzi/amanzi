@@ -56,7 +56,7 @@ class BIndependent : public EvaluatorIndependent<CompositeVector, CompositeVecto
  protected:
   virtual void Update_(State& s) override
   {
-    double cv = s.GetMesh()->cell_volume(0);
+    double cv = s.GetMesh()->getCellVolume(0);
     s.GetW<CompositeVector>(my_key_, my_tag_, my_key_).PutScalar(-4. * cv);
   }
 };
@@ -76,7 +76,7 @@ class XIndependent : public EvaluatorIndependent<CompositeVector, CompositeVecto
     auto& x = s.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
     auto& x_c = *x.ViewComponent("cell", false);
     for (int c = 0; c != x_c.MyLength(); ++c) {
-      AmanziGeometry::Point cc = x.Mesh()->cell_centroid(c);
+      AmanziGeometry::Point cc = x.Mesh()->getCellCentroid(c);
       x_c[0][c] = cc[0] * cc[0] + cc[1] * cc[1]; // x^2 + y^2
     }
   }
@@ -141,13 +141,13 @@ class BCsIndependent : public EvaluatorIndependent<Operators::BCs, Operators::BC
     for (auto& val : value) val = 0.;
 
     // set all exterior faces to dirichlet 0
-    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-    AmanziMesh::Entity_ID_List cells;
+    int nfaces_owned =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     for (int f = 0; f != nfaces_owned; ++f) {
-      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       if (cells.size() == 1) {
         model[f] = Operators::OPERATOR_BC_DIRICHLET;
-        auto fc = mesh->face_centroid(f);
+        auto fc = mesh->getFaceCentroid(f);
         value[f] = fc[0] * fc[0] + fc[1] * fc[1]; // x^2 + y^2
       }
     }
@@ -330,7 +330,7 @@ SUITE(EVALUATOR_ON_OP)
     S.Require<CompositeVector, CompositeVectorSpace>("x", Tags::DEFAULT, "x")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     Teuchos::ParameterList xe_list;
     xe_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     xe_list.setName("x");
@@ -342,7 +342,7 @@ SUITE(EVALUATOR_ON_OP)
     S.Require<CompositeVector, CompositeVectorSpace>("b", Tags::DEFAULT)
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     Teuchos::ParameterList be_list;
     be_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
@@ -354,7 +354,7 @@ SUITE(EVALUATOR_ON_OP)
     S.Require<CompositeVector, CompositeVectorSpace>("Diag", Tags::DEFAULT)
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     Teuchos::ParameterList de_list;
     de_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     de_list.setName("Diag");
@@ -380,7 +380,7 @@ SUITE(EVALUATOR_ON_OP)
     S.Require<CompositeVector, CompositeVectorSpace>("residual", Tags::DEFAULT)
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     Teuchos::ParameterList re_list;
     re_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     re_list.set("diagonal local operators keys", Teuchos::Array<std::string>(1, "A_local"));
@@ -423,7 +423,7 @@ SUITE(EVALUATOR_ON_OP)
     S.Require<CompositeVector, CompositeVectorSpace>("x", Tags::DEFAULT)
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     Teuchos::ParameterList xe_list;
     xe_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     xe_list.setName("x");
@@ -434,7 +434,7 @@ SUITE(EVALUATOR_ON_OP)
     auto& b_space = *S.Require<CompositeVector, CompositeVectorSpace>("b", Tags::DEFAULT)
                        .SetMesh(mesh)
                        ->SetGhosted(true)
-                       ->SetComponent("cell", AmanziMesh::CELL, 1);
+                       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     Teuchos::ParameterList be_list;
     be_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     be_list.setName("b");
@@ -455,7 +455,7 @@ SUITE(EVALUATOR_ON_OP)
     S.Require<CompositeVector, CompositeVectorSpace>("k_relative", Tags::DEFAULT)
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
+      ->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     Teuchos::ParameterList kre_list;
     kre_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     kre_list.setName("k_relative");
@@ -465,7 +465,7 @@ SUITE(EVALUATOR_ON_OP)
     // require boundary conditions
     auto& bc_fac = S.Require<Operators::BCs, Operators::BCs_Factory>("bcs", Tags::DEFAULT);
     bc_fac.set_mesh(mesh);
-    bc_fac.set_kind(AmanziMesh::FACE);
+    bc_fac.set_kind(AmanziMesh::Entity_kind::FACE);
     bc_fac.set_type(WhetStone::DOF_Type::SCALAR);
     Teuchos::ParameterList bce_list;
     bce_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
@@ -483,7 +483,7 @@ SUITE(EVALUATOR_ON_OP)
     S.Require<CompositeVector, CompositeVectorSpace>("A_rhs", Tags::DEFAULT)
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     Teuchos::ParameterList Ae_list;
     Ae_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
@@ -503,7 +503,7 @@ SUITE(EVALUATOR_ON_OP)
     S.Require<CompositeVector, CompositeVectorSpace>("residual", Tags::DEFAULT)
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     Teuchos::ParameterList re_list;
     re_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     //    re_list.set("additional rhss keys", Teuchos::Array<std::string>(1,"b"));

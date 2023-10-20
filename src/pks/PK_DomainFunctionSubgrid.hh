@@ -91,9 +91,8 @@ PK_DomainFunctionSubgrid<FunctionBase>::Init(const Teuchos::ParameterList& plist
     Exceptions::amanzi_throw(m);
   }
   std::string region = regions[0];
-  if (mesh_->valid_set_name(region, region_kind)) {
-    AmanziMesh::Entity_ID_List id_list;
-    mesh_->get_set_entities(region, region_kind, AmanziMesh::Parallel_type::ALL, &id_list);
+  if (mesh_->isValidSetName(region, region_kind)) {
+    auto id_list = mesh_->getSetEntities(region, region_kind, AmanziMesh::Parallel_kind::ALL);
 
     if (id_list.size() != 1) {
       Errors::Message m;
@@ -126,7 +125,8 @@ PK_DomainFunctionSubgrid<FunctionBase>::Compute(double t0, double t1)
   int num_vec = field_out.NumVectors();
   std::vector<double> val(num_vec);
 
-  AmanziMesh::Entity_ID entity_lid_out = vec_out.Mesh()->cell_map("false").LID(entity_gid_out_);
+  AmanziMesh::Entity_ID entity_lid_out =
+    vec_out.Mesh()->getMap(AmanziMesh::Entity_kind::CELL, "false").LID(entity_gid_out_);
   AMANZI_ASSERT(entity_lid_out >= 0);
   for (int k = 0; k < num_vec; ++k) val[k] = field_out[k][entity_lid_out];
   value_[entity_lid_] = val;

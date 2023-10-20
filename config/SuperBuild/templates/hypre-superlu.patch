@@ -1,8 +1,8 @@
 diff --git a/src/parcsr_ls/dsuperlu.c b/src/parcsr_ls/dsuperlu.c
-index 535fe33..b1818da 100644
+index 31bd21825..7e1387cb8 100644
 --- a/src/parcsr_ls/dsuperlu.c
 +++ b/src/parcsr_ls/dsuperlu.c
-@@ -113,9 +113,9 @@ HYPRE_Int hypre_SLUDistSetup( HYPRE_Solver *solver, hypre_ParCSRMatrix *A, HYPRE
+@@ -116,9 +116,9 @@ HYPRE_Int hypre_SLUDistSetup( HYPRE_Solver *solver, hypre_ParCSRMatrix *A, HYPRE
     dslu_data->dslu_options.DiagPivotThresh = 1.0;
     dslu_data->dslu_options.ReplaceTinyPivot = NO; */
  
@@ -14,7 +14,7 @@ index 535fe33..b1818da 100644
  
     PStatInit(&(dslu_data->dslu_data_stat));
  
-@@ -158,9 +158,9 @@ HYPRE_Int hypre_SLUDistDestroy( void* solver)
+@@ -161,9 +161,9 @@ HYPRE_Int hypre_SLUDistDestroy( void* solver)
  
     PStatFree(&(dslu_data->dslu_data_stat));
     Destroy_CompRowLoc_Matrix_dist(&(dslu_data->A_dslu));
@@ -25,10 +25,10 @@ index 535fe33..b1818da 100644
 +   Destroy_LU(dslu_data->global_num_rows, &(dslu_data->dslu_data_grid), &(dslu_data->dslu_data_LU));
 +   LUstructFree(&(dslu_data->dslu_data_LU));
     if (dslu_data->dslu_options.SolveInitialized)
+    {
        dSolveFinalize(&(dslu_data->dslu_options), &(dslu_data->dslu_solve));
-    superlu_gridexit(&(dslu_data->dslu_data_grid));
 diff --git a/src/parcsr_ls/dsuperlu.h b/src/parcsr_ls/dsuperlu.h
-index 4f2e40c..4d4929a 100644
+index add1d2e09..a0fef214f 100644
 --- a/src/parcsr_ls/dsuperlu.h
 +++ b/src/parcsr_ls/dsuperlu.h
 @@ -17,12 +17,12 @@ typedef struct
@@ -46,20 +46,4 @@ index 4f2e40c..4d4929a 100644
 +   SOLVEstruct_t dslu_solve;
  }
  hypre_DSLUData;
- 
-diff --git a/src/parcsr_ls/par_mgr.c b/src/parcsr_ls/par_mgr.c
-index b7af5bf..d3a3e19 100644
---- a/src/parcsr_ls/par_mgr.c
-+++ b/src/parcsr_ls/par_mgr.c
-@@ -5401,9 +5401,9 @@ hypre_MGRDirectSolverSetup( void                *solver,
-    dslu_data->dslu_options.DiagPivotThresh = 1.0;
-    dslu_data->dslu_options.ReplaceTinyPivot = NO; */
- 
--   dScalePermstructInit(global_num_rows, global_num_rows, &(dslu_data->dslu_ScalePermstruct));
-+   ScalePermstructInit(global_num_rows, global_num_rows, &(dslu_data->dslu_ScalePermstruct));
- 
--   dLUstructInit(global_num_rows, &(dslu_data->dslu_data_LU));
-+   LUstructInit(global_num_rows, &(dslu_data->dslu_data_LU));
- 
-    PStatInit(&(dslu_data->dslu_data_stat));
  

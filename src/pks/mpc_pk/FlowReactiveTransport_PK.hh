@@ -11,7 +11,7 @@
 
 PK for coupling of Flow PK with Transport_PK and Chemistry_PK
 Amanzi uses operator splitting approach for coupled physical kernels.
-The coupling of PKs is described as a tree where flow and reactive 
+The coupling of PKs is described as a tree where flow and reactive
 transport are executed consequitively.
 The input spec requires new keyword *flow reactive transport*.
 
@@ -36,8 +36,8 @@ The input spec requires new keyword *flow reactive transport*.
   </ParameterList>
 
 This example describe four PKs identified by keywords *darcy*, *reactive transport*,
-*transport*, and *chemistry amanzi*. 
-The flow is fully saturated. 
+*transport*, and *chemistry amanzi*.
+The flow is fully saturated.
 The transport of reactive chemicals is based on the native chemistry package *chemistry amanzi*.
 
 Details of PKs are organized as a plain list of ParameterLists.

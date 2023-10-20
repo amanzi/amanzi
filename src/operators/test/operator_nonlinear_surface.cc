@@ -46,12 +46,12 @@ class HeatConduction {
   HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh)
   {
     CompositeVectorSpace cvs;
-    auto cmap = Amanzi::getMaps(*mesh_, AmanziMesh::CELL);
-    auto fmap = Amanzi::getMaps(*mesh_, AmanziMesh::FACE);
+    auto cmap = Amanzi::getMaps(*mesh_, AmanziMesh::Entity_kind::CELL);
+    auto fmap = Amanzi::getMaps(*mesh_, AmanziMesh::Entity_kind::FACE);
     cvs.SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, cmap.first, cmap.second, 1)
-      ->AddComponent("face", AmanziMesh::FACE, fmap.first, fmap.second, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, cmap.first, cmap.second, 1)
+      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, fmap.first, fmap.second, 1);
 
     values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
     derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
@@ -64,12 +64,14 @@ class HeatConduction {
     const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
     Epetra_MultiVector& values_c = *values_->ViewComponent("cell", true);
 
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    int ncells =
+      mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
     for (int c = 0; c < ncells; c++) { values_c[0][c] = 0.3 + uc[0][c]; }
 
     const Epetra_MultiVector& uf = *u.ViewComponent("face", true);
     Epetra_MultiVector& values_f = *values_->ViewComponent("face", true);
-    int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+    int nfaces =
+      mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
     for (int f = 0; f < nfaces; f++) { values_f[0][f] = 0.3 + uf[0][f]; }
 
     derivatives_->PutScalar(1.0);
@@ -125,12 +127,13 @@ RunTest(std::string op_list_name)
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top surface"));
 
-  RCP<Mesh> surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::FACE);
+  RCP<Mesh> surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::Entity_kind::FACE);
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -140,7 +143,7 @@ RunTest(std::string op_list_name)
 
   // create boundary data (no mixed bc)
   Teuchos::RCP<BCs> bc =
-    Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+    Teuchos::rcp(new BCs(surfmesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   bc->bc_model(); // allocate
   bc->bc_value(); // memory
 
@@ -148,9 +151,9 @@ RunTest(std::string op_list_name)
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(surfmesh);
   cvs->SetGhosted(true);
-  cvs->SetComponent("cell", AmanziMesh::CELL, 1);
+  cvs->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   cvs->SetOwned(false);
-  cvs->AddComponent("face", AmanziMesh::FACE, 1);
+  cvs->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
   // create and initialize state variables.
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(*cvs));
@@ -193,7 +196,7 @@ RunTest(std::string op_list_name)
     op.UpdateMatrices(flux.ptr(), Teuchos::null);
 
     // add accumulation terms
-    PDE_Accumulation op_acc(AmanziMesh::CELL, global_op);
+    PDE_Accumulation op_acc(AmanziMesh::Entity_kind::CELL, global_op);
     op_acc.AddAccumulationDelta(*solution, phi, phi, dT, "cell");
 
     // apply BCs and assemble

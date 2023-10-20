@@ -19,6 +19,7 @@
 #include "AmanziComm.hh"
 #include "RegionFactory.hh"
 #include "Mesh.hh"
+#include "MeshFramework.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 
@@ -43,8 +44,7 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing Fracture Extraction with " << AmanziMesh::framework_names.at(frm)
-              << std::endl
+              << "Testing Fracture Extraction with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto parent_mesh = createFrameworkStructuredUnitHex(Preference{ frm }, 10, 10, 10, comm, gm);
 
@@ -52,7 +52,10 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED)
     std::vector<std::string> setnames{ "fracture 1", "fracture 2" };
     MeshFactory fac(comm, gm);
     fac.set_preference({ frm });
-    auto mesh = fac.create(parent_mesh, setnames, AmanziMesh::Entity_kind::FACE, false);
+    // Make cache of current mesh
+    auto parent_mesh_cache = Teuchos::rcp(new Mesh(
+      parent_mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+    auto mesh = fac.create(parent_mesh_cache, setnames, AmanziMesh::Entity_kind::FACE, false);
 
     // test the surface mesh as a fracture mesh
     // -- mesh audit
@@ -60,17 +63,19 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED)
 
     // check we found the right number of things
     int ncells =
-      mesh->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(10 * 10 * 2, ncells, *comm);
     int nnodes =
-      mesh->num_entities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(11 * 11 * 2 - 11, nnodes, *comm);
     int nfaces =
-      mesh->num_entities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(10 * 11 * 4 - 10, nfaces, *comm);
+    auto ents = mesh->getSetEntities(
+      "fracture 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    CHECK_EQUAL(100, ents.size());
   }
 }
-
 
 TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
 {
@@ -90,16 +95,19 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
   //
   // extract two inner surfaces as fractures
   std::vector<Framework> frameworks;
-  if (comm->NumProc() == 1) { frameworks.push_back(Framework::SIMPLE); }
+  //if (comm->NumProc() == 1) {
+  //  frameworks.push_back(Framework::SIMPLE);
+  //}
   if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing Fracture Extraction with " << AmanziMesh::framework_names.at(frm)
-              << std::endl
+              << "Testing Fracture Extraction with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto parent_mesh = createFrameworkStructuredUnitHex(
-      Preference{ frm }, 10, 10, 10, comm, gm, Teuchos::null, true);
+    auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+    fac_list->set("request edges", true);
+    auto parent_mesh =
+      createFrameworkStructuredUnitHex(Preference{ frm }, 10, 10, 10, comm, gm, fac_list);
 
     // extract the fractures
     auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
@@ -112,7 +120,10 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
       .set<std::string>("extraction method", "manifold mesh");
     MeshFactory fac(comm, gm, fac_plist);
     fac.set_preference({ frm });
-    auto mesh = fac.create(parent_mesh, setnames, AmanziMesh::Entity_kind::FACE, false);
+    // Make cache of current mesh
+    auto parent_mesh_cache = Teuchos::rcp(new Mesh(
+      parent_mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+    auto mesh = fac.create(parent_mesh_cache, setnames, AmanziMesh::Entity_kind::FACE, false);
 
     // test the surface mesh as a fracture mesh
     // -- mesh audit
@@ -120,17 +131,19 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
 
     // check we found the right number of things
     int ncells =
-      mesh->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(10 * 10 * 2, ncells, *comm);
     int nnodes =
-      mesh->num_entities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(11 * 11 * 2 - 11, nnodes, *comm);
     int nfaces =
-      mesh->num_entities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(10 * 11 * 4 - 10, nfaces, *comm);
+    auto ents = mesh->getSetEntities(
+      "fractures", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    CHECK_EQUAL(200, ents.size());
   }
 }
-
 
 TEST(MESH_FRACTURE_EXTRACTION_EXO)
 {
@@ -150,8 +163,7 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing Fracture Extraction with " << AmanziMesh::framework_names.at(frm)
-              << std::endl
+              << "Testing Fracture Extraction with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto parent_mesh =
       createFrameworkUnstructured(Preference{ frm }, "test/mesh_extracted_fracture.exo", comm, gm);
@@ -159,7 +171,10 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO)
     // extract the fractures
     MeshFactory fac(comm, gm);
     fac.set_preference({ frm });
-    auto mesh = fac.create(parent_mesh, { "fractures-two" }, AmanziMesh::Entity_kind::FACE, false);
+    auto parent_mesh_cache = Teuchos::rcp(new Mesh(
+      parent_mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+    auto mesh =
+      fac.create(parent_mesh_cache, { "fractures-two" }, AmanziMesh::Entity_kind::FACE, false);
 
     // test the surface mesh as a fracture mesh
     // -- mesh audit
@@ -167,17 +182,19 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO)
 
     // check we found the right number of things
     int ncells =
-      mesh->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(108, ncells, *comm);
     int nnodes =
-      mesh->num_entities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(91, nnodes, *comm);
     int nfaces =
-      mesh->num_entities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(198, nfaces, *comm);
+    auto ents = mesh->getSetEntities(
+      "fractures-two", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    CHECK_EQUAL(108, ents.size());
   }
 }
-
 
 TEST(MESH_FRACTURE_EXTRACTION_EXO_MANIFOLD)
 {
@@ -206,11 +223,13 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO_MANIFOLD)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing Fracture Extraction with " << AmanziMesh::framework_names.at(frm)
-              << std::endl
+              << "Testing Fracture Extraction with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
+    auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+    fac_list->set("request edges", true);
+    fac_list->set("request faces", true);
     auto parent_mesh = createFrameworkUnstructured(
-      Preference{ frm }, "test/mesh_extracted_fracture.exo", comm, gm, Teuchos::null, true);
+      Preference{ frm }, "test/mesh_extracted_fracture.exo", comm, gm, fac_list);
 
     // extract the fractures
     auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
@@ -220,7 +239,9 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO_MANIFOLD)
       .set<std::string>("extraction method", "manifold mesh");
     MeshFactory fac(comm, gm, fac_plist);
     fac.set_preference({ frm });
-    auto mesh = fac.create(parent_mesh, setnames, AmanziMesh::Entity_kind::FACE, false);
+    auto parent_mesh_cache = Teuchos::rcp(new Mesh(
+      parent_mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+    auto mesh = fac.create(parent_mesh_cache, setnames, AmanziMesh::Entity_kind::FACE, false);
 
     // test the surface mesh as a fracture mesh
     // -- mesh audit
@@ -228,13 +249,16 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO_MANIFOLD)
 
     // check we found the right number of things
     int ncells =
-      mesh->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(108, ncells, *comm);
     int nnodes =
-      mesh->num_entities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(91, nnodes, *comm);
     int nfaces =
-      mesh->num_entities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_CLOSE_SUMALL(198, nfaces, *comm);
+    auto ents = mesh->getSetEntities(
+      "fractures", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    CHECK_EQUAL(108, ents.size());
   }
 }

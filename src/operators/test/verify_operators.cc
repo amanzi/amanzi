@@ -38,7 +38,7 @@ main(int argc, char* argv[])
       << "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme  tol  "
          "nloops  linsolver  test_id\n\n"
          "  (req) with_pc   = identity|diagonal|ifpack: ILUT\n"
-         "                    Hypre: AMG|Hypre: Euclid\n"
+         "                    Hypre: AMG|Hypre: ILU\n"
          "                    Trilinos: ML|Trilinos: MueLu\n"
          "  (req) direct    = Amesos1: KLU|Amesos2: Basker|Amesos2: SuperLUDist\n\n"
          "  (req) mesh_type = structured2d|structured3d|unstructured2d|unstructured3d\n"
@@ -61,8 +61,10 @@ main(int argc, char* argv[])
   strcpy(argv[0], "--teuchos-suppress-startup-banner");
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   MyPID = mpiSession.getRank();
-
-  return UnitTest::RunAllTests();
+  Kokkos::initialize();
+  auto result = UnitTest::RunAllTests();
+  Kokkos::finalize();
+  return result;
 }
 
 
@@ -211,11 +213,10 @@ TEST(Verify_Mesh_and_Operators)
 
   // -- Hypre
   plist->sublist("preconditioners")
-    .sublist("Hypre: Euclid")
-    .set<std::string>("preconditioning method", "euclid")
-    .sublist("euclid parameters")
+    .sublist("Hypre: ILU")
+    .set<std::string>("preconditioning method", "ILU")
+    .sublist("ILU parameters")
     .set<int>("ilu(k) fill level", 10)
-    .set<bool>("rescale rows", false)
     .set<double>("ilut drop tolerance", 1e-6);
 
   plist->sublist("preconditioners")

@@ -80,13 +80,13 @@ UpwindArithmeticAverage::Compute(const CompositeVector& flux,
   Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
   Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);
 
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  AmanziMesh::Entity_ID_List cells;
+  int nfaces_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   int c1, c2;
   double kc1, kc2;
   for (int f = 0; f < nfaces_wghost; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     c1 = cells[0];
@@ -96,8 +96,8 @@ UpwindArithmeticAverage::Compute(const CompositeVector& flux,
       c2 = cells[1];
       kc2 = fld_cell[0][c2];
 
-      double v1 = mesh_->cell_volume(c1);
-      double v2 = mesh_->cell_volume(c2);
+      double v1 = mesh_->getCellVolume(c1);
+      double v2 = mesh_->getCellVolume(c2);
 
       double tmp = v2 / (v1 + v2);
       upw_face[0][f] = kc1 * tmp + kc2 * (1.0 - tmp);

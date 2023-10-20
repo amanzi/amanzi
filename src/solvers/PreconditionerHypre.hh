@@ -76,24 +76,17 @@ Example:
   </ParameterList>
 
 
-Euclid is a Parallel Incomplete LU, provided as part of the HYPRE project
+ILU is a Parallel Incomplete LU, provided as part of the HYPRE project
 through the Ifpack interface.
-The algorithm was presented at SC99 and published in expanded 
-form in the SIAM Journal on Scientific Computing. 
-Scalability means that the factorization (setup) and application (triangular solve) timings remain
-nearly constant when the global problem size is scaled in proportion to the number of processors.
-As with all ILU preconditioning methods, the number of iterations is expected to increase with
-global problem size.
 
-This is provided when using the `"preconditioning method`"=`"euclid`" or
-=`"hypre: euclid`" in the `Preconditioner`_ spec.
+This is provided when using the `"preconditioning method`"=`"ILU`" or
+=`"hypre: ILU`" in the `Preconditioner`_ spec.
 
-.. _preconditioner-euclid-spec:
-.. admonition:: preconditioner-euclid-spec:
+.. _preconditioner-ILU-spec:
+.. admonition:: preconditioner-ILU-spec:
 
     * `"ilu(k) fill level`" ``[int]`` **1** The factorization level.
     * `"ilut drop tolerance`" ``[double]`` **0** Defines a drop tolerance relative to the largest absolute value of any entry in the row being factored.
-    * `"rescale row`" ``[bool]`` **false** If true, values are scaled prior to factorization so that largest value in any row is +1 or -1. Note that this can destroy matrix symmetry.
     * `"verbosity`" ``[int]`` **0** Prints a summary of runtime settings and timing information to stdout.
 
 
@@ -138,7 +131,7 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
 
  private:
   void InitBoomer_();
-  void InitEuclid_();
+  void InitILU_();
   void InitAMS_();
 
   Teuchos::ParameterList plist_;

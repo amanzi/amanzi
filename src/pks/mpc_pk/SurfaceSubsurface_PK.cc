@@ -55,8 +55,10 @@ SurfaceSubsurface_PK::get_dt()
 void
 SurfaceSubsurface_PK::Initialize()
 {
-  int nsurf_nodes = mesh_surface_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-  int nsurf_cells = mesh_surface_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nsurf_nodes =
+    mesh_surface_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  int nsurf_cells =
+    mesh_surface_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   std::string passwd("");
   auto& B_n = *S_->GetW<CompositeVector>("surface-bathymetry", passwd).ViewComponent("node");
@@ -66,18 +68,18 @@ SurfaceSubsurface_PK::Initialize()
   AmanziGeometry::Point node_crd;
 
   for (int n = 0; n < nsurf_nodes; ++n) {
-    int v = mesh_surface_->entity_get_parent(AmanziMesh::Entity_kind::NODE, n);
+    int v = mesh_surface_->getEntityParent(AmanziMesh::Entity_kind::NODE, n);
 
-    mesh_domain_->node_get_coordinates(v, &node_crd); // coordinate of surface node in 3D mesh
+    node_crd = mesh_domain_->getNodeCoordinate(v); // coordinate of surface node in 3D mesh
 
     B_n[0][n] = node_crd[2]; // z value of the surface
   }
 
   // Bathymetry cell values (compute from face centroids of the parent mesh)
   for (int c = 0; c < nsurf_cells; ++c) {
-    int f = mesh_surface_->entity_get_parent(AmanziMesh::Entity_kind::CELL, c);
+    int f = mesh_surface_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
 
-    const AmanziGeometry::Point& xf = mesh_domain_->face_centroid(f);
+    const AmanziGeometry::Point& xf = mesh_domain_->getFaceCentroid(f);
 
     B_c[0][c] = xf[2]; // z value of the surface
   }

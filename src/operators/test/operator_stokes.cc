@@ -64,13 +64,17 @@ SUITE(OPERATOR_STOKES)
 
     // create a simple rectangular mesh
     MeshFactory meshfactory(comm);
-    meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+    meshfactory.set_preference(Preference({ Framework::MSTK }));
     Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 12, 14);
 
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-    int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+    int ncells =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    int nnodes =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+    int nfaces_wghost =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+    int nnodes_wghost =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
     // populate diffusion coefficient using an analytic solution
     AnalyticElasticity02 ana(mesh);
@@ -78,7 +82,7 @@ SUITE(OPERATOR_STOKES)
     Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
       Teuchos::rcp(new std::vector<WhetStone::Tensor>());
     for (int c = 0; c < ncells; c++) {
-      const Point& xc = mesh->cell_centroid(c);
+      const Point& xc = mesh->getCellCentroid(c);
       const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
       K->push_back(Kc);
     }
@@ -86,16 +90,16 @@ SUITE(OPERATOR_STOKES)
     // populate boundary data for Bernardi-Raugel-type element
     // -- Dirichlet condition on faces for the normal velocity component
     Teuchos::RCP<BCs> bcf =
-      Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+      Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
     std::vector<int>& bcf_model = bcf->bc_model();
     std::vector<double>& bcf_value = bcf->bc_value();
 
     for (int f = 0; f < nfaces_wghost; f++) {
-      const Point& xf = mesh->face_centroid(f);
+      const Point& xf = mesh->getFaceCentroid(f);
       if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
           fabs(xf[1] - 1.0) < 1e-6) {
-        const Point& normal = mesh->face_normal(f);
-        double area = mesh->face_area(f);
+        const Point& normal = mesh->getFaceNormal(f);
+        double area = mesh->getFaceArea(f);
 
         bcf_model[f] = OPERATOR_BC_DIRICHLET;
         bcf_value[f] = (ana.velocity_exact(xf, 0.0) * normal) / area;
@@ -105,12 +109,12 @@ SUITE(OPERATOR_STOKES)
     // -- Dirichlet condition at nodes for the normal velocity component
     Point xv(2);
     Teuchos::RCP<BCs> bcv =
-      Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::POINT));
+      Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::POINT));
     std::vector<int>& bcv_model = bcv->bc_model();
     std::vector<Point>& bcv_value = bcv->bc_value_point();
 
     for (int v = 0; v < nnodes_wghost; ++v) {
-      mesh->node_get_coordinates(v, &xv);
+      xv = mesh->getNodeCoordinate(v);
 
       if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1]) < 1e-6 ||
           fabs(xv[1] - 1.0) < 1e-6) {
@@ -166,7 +170,7 @@ SUITE(OPERATOR_STOKES)
     Epetra_MultiVector& src = *source.ViewComponent("node");
 
     for (int v = 0; v < nnodes; v++) {
-      mesh->node_get_coordinates(v, &xv);
+      xv = mesh->getNodeCoordinate(v);
       Point tmp(ana.source_exact(xv, 0.0));
       for (int k = 0; k < 2; ++k) src[k][v] = tmp[k];
     }
@@ -248,13 +252,17 @@ SUITE(OPERATOR_STOKES)
 
     // create a simple rectangular mesh
     MeshFactory meshfactory(comm);
-    meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+    meshfactory.set_preference(Preference({ Framework::MSTK }));
     Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 16, 20);
 
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-    int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+    int ncells =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    int nnodes =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+    int nfaces_wghost =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+    int nnodes_wghost =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
     // populate diffusion coefficient using an analytic solution
     AnalyticElasticity02 ana(mesh);
@@ -262,7 +270,7 @@ SUITE(OPERATOR_STOKES)
     Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
       Teuchos::rcp(new std::vector<WhetStone::Tensor>());
     for (int c = 0; c < ncells; c++) {
-      const Point& xc = mesh->cell_centroid(c);
+      const Point& xc = mesh->getCellCentroid(c);
       const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
       K->push_back(Kc);
     }
@@ -270,14 +278,14 @@ SUITE(OPERATOR_STOKES)
     // populate boundary data for Bernardi-Raugel-type element
     // -- Dirichlet condition on faces for the normal velocity component
     Teuchos::RCP<BCs> bcf =
-      Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+      Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
     std::vector<int>& bcf_model = bcf->bc_model();
     std::vector<double>& bcf_value = bcf->bc_value();
 
     for (int f = 0; f < nfaces_wghost; f++) {
-      const Point& xf = mesh->face_centroid(f);
-      const Point& normal = mesh->face_normal(f);
-      double area = mesh->face_area(f);
+      const Point& xf = mesh->getFaceCentroid(f);
+      const Point& normal = mesh->getFaceNormal(f);
+      double area = mesh->getFaceArea(f);
 
       if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
           fabs(xf[1] - 1.0) < 1e-6) {
@@ -289,12 +297,12 @@ SUITE(OPERATOR_STOKES)
     // -- Dirichlet condition at nodes for the normal velocity component
     Point xv(2);
     Teuchos::RCP<BCs> bcv =
-      Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::POINT));
+      Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::POINT));
     std::vector<int>& bcv_model = bcv->bc_model();
     std::vector<Point>& bcv_value = bcv->bc_value_point();
 
     for (int v = 0; v < nnodes_wghost; ++v) {
-      mesh->node_get_coordinates(v, &xv);
+      xv = mesh->getNodeCoordinate(v);
 
       if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1]) < 1e-6 ||
           fabs(xv[1] - 1.0) < 1e-6) {
@@ -329,7 +337,7 @@ SUITE(OPERATOR_STOKES)
 
     // create identity type operator: pressure block for preconditioner
     Teuchos::RCP<PDE_Accumulation> pc11 =
-      Teuchos::rcp(new PDE_Accumulation(AmanziMesh::CELL, mesh));
+      Teuchos::rcp(new PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh));
     Teuchos::RCP<Operator> global11 = pc11->global_operator();
 
     // create a tree operator for the discrete Stokes PDE. It is a 2x2 block operator
@@ -359,7 +367,7 @@ SUITE(OPERATOR_STOKES)
     Epetra_MultiVector& src = *source.ViewComponent("node");
 
     for (int v = 0; v < nnodes; v++) {
-      mesh->node_get_coordinates(v, &xv);
+      xv = mesh->getNodeCoordinate(v);
       Point tmp(ana.source_exact(xv, 0.0));
       for (int k = 0; k < 2; ++k) src[k][v] = tmp[k];
     }

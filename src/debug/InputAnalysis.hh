@@ -9,9 +9,9 @@
 
 /*!
 
-This list contains data collected by the input parser of a higher-level spec. 
+This list contains data collected by the input parser of a higher-level spec.
 
-* `"used boundary condition regions`" [Array(string)] provides list of boundary regions 
+* `"used boundary condition regions`" [Array(string)] provides list of boundary regions
   for analysis. The simulator will print number of faces and total area of these regions
   if verbosity level is equal to or above *high*.
 
@@ -20,7 +20,7 @@ This list contains data collected by the input parser of a higher-level spec.
   if verbosity level is equal to or above *high*.
 
 * `"used observation regions`" [Array(string)] provides list of observation regions
-  for analysis. The simulator will print number of faces(or cells) and the total area 
+  for analysis. The simulator will print number of faces(or cells) and the total area
   (or volume) of these regions if verbosity level is equal to or above *high*.
 
 .. code-block:: xml

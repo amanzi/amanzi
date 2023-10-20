@@ -17,7 +17,7 @@
 #include <tuple>
 #include <vector>
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -34,8 +34,8 @@ std::vector<SchemaItem>
 MFD3D_BernardiRaugel::schema() const
 {
   std::vector<SchemaItem> items;
-  items.push_back(std::make_tuple(AmanziMesh::NODE, DOF_Type::POINT, d_));
-  items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::NORMAL_COMPONENT, 1));
+  items.push_back(std::make_tuple(AmanziMesh::Entity_kind::NODE, DOF_Type::POINT, d_));
+  items.push_back(std::make_tuple(AmanziMesh::Entity_kind::FACE, DOF_Type::NORMAL_COMPONENT, 1));
   return items;
 }
 
@@ -47,14 +47,12 @@ MFD3D_BernardiRaugel::schema() const
 int
 MFD3D_BernardiRaugel::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes;
   AmanziGeometry::Point xv(d_), tau(d_), v1(d_);
 
-  mesh_->cell_get_nodes(c, &nodes);
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   int nrows = d_ * nnodes + nfaces;
@@ -62,8 +60,8 @@ MFD3D_BernardiRaugel::H1consistency(int c, const Tensor& K, DenseMatrix& N, Dens
   N.Reshape(nrows, nd);
   Ac.Reshape(nrows, nrows);
 
-  const AmanziGeometry::Point& xm = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  const AmanziGeometry::Point& xm = mesh_->getCellCentroid(c);
+  double volume = mesh_->getCellVolume(c);
 
   // convolute tensors for non-zero modes
   std::vector<Tensor> vT, vKT;
@@ -98,8 +96,8 @@ MFD3D_BernardiRaugel::H1consistency(int c, const Tensor& K, DenseMatrix& N, Dens
     for (int n = 0; n < nnodes; n++) {
       int m = (n + 1) % nnodes;
 
-      mesh_->node_get_coordinates(nodes[n], &xv);
-      mesh_->node_get_coordinates(nodes[m], &v1);
+      xv = mesh_->getNodeCoordinate(nodes[n]);
+      v1 = mesh_->getNodeCoordinate(nodes[m]);
 
       tau = v1 - xv;
       double length = norm(tau);
@@ -124,8 +122,8 @@ MFD3D_BernardiRaugel::H1consistency(int c, const Tensor& K, DenseMatrix& N, Dens
 
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    double area = mesh_->face_area(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+    double area = mesh_->getFaceArea(f);
 
     for (int i = 0; i < modes; i++) {
       v1 = vKT[i] * normal;
@@ -158,7 +156,7 @@ MFD3D_BernardiRaugel::H1consistency(int c, const Tensor& K, DenseMatrix& N, Dens
 
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
-    mesh_->node_get_coordinates(v, &xv);
+    xv = mesh_->getNodeCoordinate(v);
     xv -= xm;
 
     // null modes
@@ -189,10 +187,10 @@ MFD3D_BernardiRaugel::H1consistency(int c, const Tensor& K, DenseMatrix& N, Dens
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
-    double area = mesh_->face_area(f);
-    AmanziGeometry::Point normal(mesh_->face_normal(f));
+    double area = mesh_->getFaceArea(f);
+    AmanziGeometry::Point normal(mesh_->getFaceNormal(f));
     normal /= area;
 
     v1 = xf - xm;
@@ -246,37 +244,33 @@ MFD3D_BernardiRaugel::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 * Advection matrix depends on velocity u.
 ****************************************************************** */
 int
-MFD3D_BernardiRaugel::AdvectionMatrix(int c,
-                                      const std::vector<AmanziGeometry::Point>& u,
-                                      DenseMatrix& A)
+MFD3D_BernardiRaugel::AdvectionMatrix(int c, const AmanziMesh::Point_List& u, DenseMatrix& A)
 {
   AMANZI_ASSERT(d_ == 2);
 
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
-  Entity_ID_List nodes;
-  mesh_->cell_get_nodes(c, &nodes);
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   // calculate corner normals and weigths
   std::vector<double> w(nnodes, 0.0);
   AmanziGeometry::Point xv(d_);
-  std::vector<AmanziGeometry::Point> N(nnodes, xv);
+  AmanziMesh::Point_List N(nnodes, xv);
 
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
     int j = (i + nfaces + 1) % nfaces;
     N[i] += normal * dirs[i] / 2.0;
     N[j] += normal * dirs[i] / 2.0;
 
     int v = nodes[i];
-    mesh_->node_get_coordinates(v, &xv);
+    xv = mesh_->getNodeCoordinate(v);
     double tmp = ((xv - xc) * normal) * dirs[i] / 6.0;
     w[i] += tmp;
     w[j] += tmp;
@@ -309,11 +303,9 @@ MFD3D_BernardiRaugel::AdvectionMatrix(int c,
 int
 MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
 {
-  Entity_ID_List nodes;
-  mesh_->cell_get_nodes(c, &nodes);
+  auto nodes = mesh_->getCellNodes(c);
 
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   int n1 = d_ * nodes.size();
@@ -322,7 +314,7 @@ MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
   for (int n = 0; n < n1; ++n) A(0, n) = 0.0;
 
   for (int n = 0; n < nfaces; ++n) {
-    double area = mesh_->face_area(faces[n]);
+    double area = mesh_->getFaceArea(faces[n]);
     A(0, n1 + n) = area * dirs[n];
   }
 

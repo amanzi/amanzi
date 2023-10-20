@@ -124,9 +124,9 @@ TEST(NAVIER_STOKES_2D)
   io.InitializeCycle(T, 1, "");
   const auto& u = *S->Get<CompositeVector>("fluid_velocity").ViewComponent("node");
   const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
-  io.WriteVector(*u(0), "velocity_x", AmanziMesh::NODE);
-  io.WriteVector(*u(1), "velocity_y", AmanziMesh::NODE);
-  io.WriteVector(*p(0), "pressure", AmanziMesh::CELL);
+  io.WriteVector(*u(0), "velocity_x", AmanziMesh::Entity_kind::NODE);
+  io.WriteVector(*u(1), "velocity_y", AmanziMesh::Entity_kind::NODE);
+  io.WriteVector(*p(0), "pressure", AmanziMesh::Entity_kind::CELL);
   io.FinalizeCycle();
 
   // summary

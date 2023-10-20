@@ -1,12 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
 
   Tests for the diffusion solver on a fracture network.
 */
@@ -63,17 +65,22 @@ RunTest(int icase, double gravity)
   ParameterList region_list = plist->sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm, gm);
+  auto flist = Teuchos::rcp(new Teuchos::ParameterList());
+  flist->set<bool>("request faces", true);
+  flist->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, gm, flist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, true, true);
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
   std::string setname("fractures");
-  RCP<const Mesh> surfmesh = Teuchos::rcp(
-    new MeshExtractedManifold(mesh, setname, AmanziMesh::FACE, comm, gm, plist, true, false));
+  auto surfmesh_fw =
+    Teuchos::rcp(new MeshExtractedManifold(mesh, setname, AmanziMesh::FACE, comm, gm, plist));
+  Teuchos::RCP<Mesh> surfmesh = Teuchos::rcp(
+    new Mesh(surfmesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
 
   // modify diffusion coefficient
-  int nfaces_owned = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_owned = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
 
   double rho(1.0);
   AmanziGeometry::Point v(3);
@@ -86,7 +93,7 @@ RunTest(int icase, double gravity)
   std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& xf = surfmesh->face_centroid(f);
+    const Point& xf = surfmesh->getFaceCentroid(f);
     if (fabs(xf[2] - 0.5) < 1e-6 && (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
                                      fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6)) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
@@ -171,7 +178,7 @@ RunTest(int icase, double gravity)
   // collapse flux on fracture interface
   double unorm, ul2_err, uinf_err;
   Epetra_MultiVector& flx_long = *flux->ViewComponent("face", true);
-  Epetra_MultiVector flx_short(surfmesh->face_map(false), 1);
+  Epetra_MultiVector flx_short(surfmesh->getMap(AmanziMesh::FACE, false), 1);
 
   const auto& fmap = *flux->Map().Map("face", true);
   for (int f = 0; f < nfaces_owned; ++f) {

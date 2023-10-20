@@ -58,21 +58,19 @@ Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
     bool flag(false);
 
     for (int k = 0; k < nregions; k++) {
-      if (mesh_->valid_set_name(runtime_regions_[k], AmanziMesh::FACE)) {
+      if (mesh_->isValidSetName(runtime_regions_[k], AmanziMesh::FACE)) {
         flag = true;
-        AmanziMesh::Entity_ID_List block;
-        mesh_->get_set_entities(
-          runtime_regions_[k], AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block);
+        auto block = mesh_->getSetEntities(
+          runtime_regions_[k], AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
         int nblock = block.size();
 
         for (int m = 0; m < nblock; m++) {
           int f = block[m];
 
-          Amanzi::AmanziMesh::Entity_ID_List cells;
-          mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
+          auto cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
           int dir, c = cells[0];
 
-          mesh_->face_normal(f, false, c, &dir);
+          mesh_->getFaceNormal(f, c, &dir);
           double u = flowrate[0][f] * dir;
           if (u > 0) solute_flux += u * tcc_next[i][c];
         }
@@ -81,7 +79,7 @@ Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
     solute_flux *= units_.concentration_factor();
 
     double tmp = solute_flux;
-    mesh_->get_comm()->SumAll(&tmp, &solute_flux, 1);
+    mesh_->getComm()->SumAll(&tmp, &solute_flux, 1);
 
     *vo_->os() << runtime_solutes_[n] << mesh_id << ": min=" << units_.OutputConcentration(tccmin)
                << " max=" << units_.OutputConcentration(tccmax);
@@ -91,14 +89,14 @@ Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
     mass_solutes_exact_[i] += VV_SoluteVolumeChangePerSecond(i) * dT_MPC;
     double mass_solute(0.0);
     for (int c = 0; c < ncells_owned; c++) {
-      double vol = mesh_->cell_volume(c);
+      double vol = mesh_->getCellVolume(c);
       mass_solute += wc[0][c] * tcc_next[i][c] * vol;
     }
     mass_solute *= units_.concentration_factor();
 
     double tmp1 = mass_solute, tmp2 = mass_solutes_exact_[i], mass_exact;
-    mesh_->get_comm()->SumAll(&tmp1, &mass_solute, 1);
-    mesh_->get_comm()->SumAll(&tmp2, &mass_exact, 1);
+    mesh_->getComm()->SumAll(&tmp1, &mass_solute, 1);
+    mesh_->getComm()->SumAll(&tmp2, &mass_exact, 1);
 
     *vo_->os() << ", total=" << mass_solute << " mol" << std::endl;
   }
@@ -235,7 +233,7 @@ Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
       std::cout << "    component = " << component << std::endl;
       std::cout << "    simulation time = " << t_physics_ << std::endl;
       std::cout << "      cell = " << c << std::endl;
-      std::cout << "      center = " << mesh_->cell_centroid(c) << std::endl;
+      std::cout << "      center = " << mesh_->getCellCentroid(c) << std::endl;
       std::cout << "      value (old) = " << tcc_prev[component][c] << std::endl;
       std::cout << "      value (new) = " << value << std::endl;
 
@@ -296,20 +294,20 @@ Transport_PK::CalculateLpErrors(AnalyticFunction f,
                                 double* L1,
                                 double* L2)
 {
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh_->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   *L1 = *L2 = 0.0;
   for (int c = 0; c < ncells; c++) {
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     double d = (*sol)[c] - f(xc, t);
 
-    double volume = mesh_->cell_volume(c);
+    double volume = mesh_->getCellVolume(c);
     *L1 += fabs(d) * volume;
     *L2 += d * d * volume;
   }
 
   double tmp_out[2], tmp_in[2] = { *L1, *L2 };
-  mesh_->get_comm()->SumAll(tmp_in, tmp_out, 2);
+  mesh_->getComm()->SumAll(tmp_in, tmp_out, 2);
   *L1 = tmp_out[0];
   *L2 = sqrt(tmp_out[1]);
 }

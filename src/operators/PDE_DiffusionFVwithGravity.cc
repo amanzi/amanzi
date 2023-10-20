@@ -79,8 +79,7 @@ PDE_DiffusionFVwithGravity::UpdateMatrices(const Teuchos::Ptr<const CompositeVec
     }
 
     for (int c = 0; c != ncells_owned; ++c) {
-      const auto& faces = mesh_->cell_get_faces(c);
-      const auto& dirs = mesh_->cell_get_face_dirs(c);
+      const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
       int nfaces = faces.size();
 
       for (int n = 0; n != nfaces; ++n) {
@@ -212,7 +211,7 @@ PDE_DiffusionFVwithGravity::ComputeTransmissibility_(Teuchos::RCP<CompositeVecto
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_);
   cvs.SetGhosted(true);
-  cvs.SetComponent("face", AmanziMesh::FACE, 1);
+  cvs.SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
   CompositeVector beta(cvs, true);
   Epetra_MultiVector& beta_face = *beta.ViewComponent("face", true);
@@ -222,23 +221,22 @@ PDE_DiffusionFVwithGravity::ComputeTransmissibility_(Teuchos::RCP<CompositeVecto
   Epetra_MultiVector& h_face = *h.ViewComponent("face", true);
   h.PutScalar(0.0);
 
-  AmanziMesh::Entity_ID_List cells;
   AmanziGeometry::Point a_dist, a;
-  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+  WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
   Kc(0, 0) = 1.0;
 
   for (int c = 0; c < ncells_owned; ++c) {
     if (K_.get()) Kc = (*K_)[c];
-    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-      double area = mesh_->face_area(f);
+      const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+      const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+      double area = mesh_->getFaceArea(f);
 
-      a = xf - mesh_->cell_centroid(c);
+      a = xf - mesh_->getCellCentroid(c);
       double h_tmp = norm(a);
       double s = area / h_tmp;
       double perm = ((Kc * a) * normal) * s;
@@ -262,20 +260,20 @@ PDE_DiffusionFVwithGravity::ComputeTransmissibility_(Teuchos::RCP<CompositeVecto
   }
 
   for (int f = 0; f < nfaces_owned; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     if (ncells == 2) {
-      a_dist = mesh_->cell_centroid(cells[1]) - mesh_->cell_centroid(cells[0]);
+      a_dist = mesh_->getCellCentroid(cells[1]) - mesh_->getCellCentroid(cells[0]);
     } else if (ncells == 1) {
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-      a_dist = xf - mesh_->cell_centroid(cells[0]);
+      const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+      a_dist = xf - mesh_->getCellCentroid(cells[0]);
     }
     a_dist *= 1.0 / norm(a_dist);
 
     trans_face[0][f] = 1.0 / beta_face[0][f];
 
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
     double dir = copysign(1.0, normal * a_dist);
 
     double rho = is_scalar_ ? rho_ :

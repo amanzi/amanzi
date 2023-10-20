@@ -41,10 +41,10 @@ class Polynomial;
 class MeshMaps {
  public:
   MeshMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : mesh0_(mesh), mesh1_(mesh), d_(mesh1_->space_dimension()){};
+    : mesh0_(mesh), mesh1_(mesh), d_(mesh1_->getSpaceDimension()){};
 
   MeshMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh0, Teuchos::RCP<const AmanziMesh::Mesh> mesh1)
-    : mesh0_(mesh0), mesh1_(mesh1), d_(mesh1_->space_dimension()){};
+    : mesh0_(mesh0), mesh1_(mesh1), d_(mesh1_->getSpaceDimension()){};
 
   virtual ~MeshMaps(){};
 
@@ -79,8 +79,8 @@ class MeshMaps {
 
   // -- polynomial approximation of map x2 = F(x1)
   int LeastSquareFit(int order,
-                     const std::vector<AmanziGeometry::Point>& x1,
-                     const std::vector<AmanziGeometry::Point>& x2,
+                     const AmanziMesh::Point_List& x1,
+                     const AmanziMesh::Point_List& x2,
                      VectorPolynomial& u) const;
 
  protected:

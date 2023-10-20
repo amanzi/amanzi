@@ -16,8 +16,8 @@ written is the order consistent with all output fields.
 * `"filename`"[string] - name of the HDF5 file where coordinates of the centroids are dumped.
 
 .. code-block:: xml
-                  
-  <ParameterList>  <!-- parent list -->                
+
+  <ParameterList>  <!-- parent list -->
   <ParameterList name="mesh info">
     <Parameter name="filename" type="string" value="centroids"/>
   </ParameterList>

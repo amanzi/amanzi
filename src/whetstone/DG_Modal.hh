@@ -23,7 +23,7 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 // WhetStone
@@ -48,8 +48,7 @@ class Polynomial;
 
 class DG_Modal : public BilinearForm {
  public:
-  DG_Modal(const Teuchos::ParameterList& plist,
-           const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
+  DG_Modal(const Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   // basic member functions
   // -- schema
@@ -124,8 +123,7 @@ template <typename Coef, typename std::enable_if<!std::is_pointer<Coef>::value>:
 int
 DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A)
 {
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, Parallel_type::ALL, &cells);
+  auto cells = mesh_->getFaceCells(f, Parallel_kind::ALL);
   int ncells = cells.size();
 
   Polynomial poly(d_, order_);
@@ -139,8 +137,7 @@ DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A)
   int c2 = (ncells > 1) ? cells[1] : -1;
 
   // Calculate co-normals
-  int dir;
-  AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
+  auto normal = mesh_->getFaceNormal(f, c1);
 
   normal /= norm(normal);
   auto conormal1 = K1 * normal;
@@ -156,7 +153,7 @@ DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A)
     int k = PolynomialPosition(d_, idx0);
 
     Polynomial p0(d_, idx0, 1.0);
-    p0.set_origin(mesh_->cell_centroid(c1));
+    p0.set_origin(mesh_->getCellCentroid(c1));
 
     pgrad = Gradient(p0);
     p0 = pgrad * conormal1;
@@ -166,7 +163,7 @@ DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A)
       int l = PolynomialPosition(d_, idx1);
 
       Polynomial q0(d_, idx1, 1.0);
-      q0.set_origin(mesh_->cell_centroid(c1));
+      q0.set_origin(mesh_->getCellCentroid(c1));
 
       polys[0] = &p0;
       polys[1] = &q0;
@@ -176,13 +173,13 @@ DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A)
 
       if (c2 >= 0) {
         Polynomial p1(d_, idx0, 1.0);
-        p1.set_origin(mesh_->cell_centroid(c2));
+        p1.set_origin(mesh_->getCellCentroid(c2));
 
         pgrad = Gradient(p1);
         p1 = pgrad * conormal2;
 
         Polynomial q1(d_, idx1, 1.0);
-        q1.set_origin(mesh_->cell_centroid(c2));
+        q1.set_origin(mesh_->getCellCentroid(c2));
 
         polys[1] = &q1;
         coef01 = numi_.IntegratePolynomialsFace(f, polys);

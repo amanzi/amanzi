@@ -59,7 +59,6 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
@@ -88,20 +87,24 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
   Key passwd("");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
-  AmanziMesh::Entity_ID_List block;
-
-  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.1;
-    K[1][c] = 2.0;
+  {
+    auto block = mesh->getSetEntities(
+      "Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K[0][c] = 0.1;
+      K[1][c] = 2.0;
+    }
   }
 
-  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.5;
-    K[1][c] = 0.5;
+  {
+    auto block = mesh->getSetEntities(
+      "Material 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K[0][c] = 0.5;
+      K[1][c] = 0.5;
+    }
   }
   S->GetRecordW("permeability", "permeability").set_initialized();
 
@@ -116,7 +119,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY)
   auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     p[0][c] = xc[1] * (xc[1] + 2.0);
   }
   S->GetRecordW("pressure", passwd).set_initialized();
@@ -194,21 +197,26 @@ TEST(FLOW_3D_TRANSIENT_DARCY)
   std::string passwd("");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
-  AmanziMesh::Entity_ID_List block;
-  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.1;
-    K[1][c] = 0.1;
-    K[2][c] = 2.0;
+  {
+    auto block = mesh->getSetEntities(
+      "Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K[0][c] = 0.1;
+      K[1][c] = 0.1;
+      K[2][c] = 2.0;
+    }
   }
 
-  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.5;
-    K[1][c] = 0.5;
-    K[2][c] = 0.5;
+  {
+    auto block = mesh->getSetEntities(
+      "Material 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K[0][c] = 0.5;
+      K[1][c] = 0.5;
+      K[2][c] = 0.5;
+    }
   }
 
   S->GetW<double>("const_fluid_density", "state") = 1.0;
@@ -220,7 +228,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY)
   auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     p[0][c] = xc[2] * (xc[2] + 2.0) * (xc[1] + 1.0) * (xc[0] - 1.0);
   }
 

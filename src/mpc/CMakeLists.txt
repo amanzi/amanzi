@@ -114,8 +114,8 @@ if (BUILD_TESTS)
       file(COPY ${DataFiles} DESTINATION ${MPC_BINARY_DIR}/test/)
     endif()
 
-    set(amanzi_libs mpc pks mpc_tree flow transport chemistry_pk energy shallow_water multiphase
-                    dummy pks eos state operators mesh_extracted mesh_factory mesh_audit 
+    set(amanzi_libs mpc pks mpc_tree flow transport chemistry_pk energy shallow_water 
+                    dummy pks eos state operators mesh_extracted mesh_factory 
                     geometry whetstone mesh_functions functions)
 
     # Test: mpc driver for flow

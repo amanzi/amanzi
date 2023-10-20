@@ -17,7 +17,7 @@
 #include <cmath>
 #include <vector>
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -34,23 +34,22 @@ namespace WhetStone {
 int
 MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
   W.Reshape(nfaces, nfaces);
   W.PutScalar(0.0);
 
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
   AmanziGeometry::Point a(d_);
 
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f, c);
 
     a = xf - xc;
-    double s = mesh_->face_area(f) * dirs[n] / norm(a);
+    double s = mesh_->getFaceArea(f) / norm(a);
     double Knn = ((K * a) * normal) * s;
     double dxn = a * normal;
     W(n, n) = Knn / fabs(dxn);
@@ -68,14 +67,14 @@ double
 MFD3D_Diffusion::Transmissibility(int f, int c, const Tensor& K)
 {
   int dir;
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
   AmanziGeometry::Point a(d_);
 
-  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-  const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+  const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+  const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f, c, &dir);
 
   a = xf - xc;
-  double s = mesh_->face_area(f) * dir / norm(a);
+  double s = mesh_->getFaceArea(f) * dir / norm(a);
   double Knn = ((K * a) * normal) * s;
   double dxn = a * normal;
   double W = Knn / fabs(dxn);
@@ -91,9 +90,9 @@ MFD3D_Diffusion::Transmissibility(int f, int c, const Tensor& K)
 int
 MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatrix& W)
 {
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->getCellVolume(c);
 
-  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
   W.Reshape(nfaces, nfaces);
@@ -101,7 +100,7 @@ MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatrix& 
 
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
-    double area = mesh_->face_area(f);
+    double area = mesh_->getFaceArea(f);
     W(n, n) = nfaces * K(0, 0) * area * area / (d_ * volume);
   }
   return 0;
@@ -114,12 +113,11 @@ MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatrix& 
 int
 MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& fdirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces, fdirs] = mesh_->getCellFacesAndDirections(c);
   int num_faces = faces.size();
 
-  Entity_ID_List nodes, corner_faces;
-  mesh_->cell_get_nodes(c, &nodes);
+  AmanziMesh::Entity_ID_View corner_faces;
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   Tensor Kinv(K);
@@ -133,7 +131,7 @@ MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
 
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
-    node_get_cell_faces(*mesh_, v, c, Parallel_type::ALL, &corner_faces);
+    node_get_cell_faces(*mesh_, v, c, Parallel_kind::ALL, &corner_faces);
     int nfaces = corner_faces.size();
     if (nfaces < d_) {
       Errors::Message msg;
@@ -143,7 +141,7 @@ MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
 
     for (int i = 0; i < d_; i++) {
       int f = corner_faces[i];
-      N.SetColumn(i, mesh_->face_normal(f));
+      N.SetColumn(i, mesh_->getFaceNormal(f));
     }
     double cwgt_tmp = fabs(N.Det());
 
@@ -156,7 +154,7 @@ MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
 
     for (int i = 0; i < d_; i++) {
       int f = corner_faces[i];
-      cwgt_tmp /= mesh_->face_area(f);
+      cwgt_tmp /= mesh_->getFaceArea(f);
     }
     cwgt.push_back(cwgt_tmp);
   }
@@ -164,7 +162,7 @@ MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   // rescale corner weights
   double factor = 0.0;
   for (int n = 0; n < nnodes; n++) factor += cwgt[n];
-  factor = mesh_->cell_volume(c) / factor;
+  factor = mesh_->getCellVolume(c) / factor;
 
   for (int n = 0; n < nnodes; n++) cwgt[n] *= factor;
 
@@ -173,7 +171,7 @@ MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   W.PutScalar(0.0);
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
-    node_get_cell_faces(*mesh_, v, c, Parallel_type::ALL, &corner_faces);
+    node_get_cell_faces(*mesh_, v, c, Parallel_kind::ALL, &corner_faces);
 
     Tensor& Mv_tmp = Mv[n];
     for (int i = 0; i < d_; i++) {

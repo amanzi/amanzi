@@ -46,13 +46,13 @@ class TransportBoundaryFunction_Chemistry : public TransportDomainFunction {
   virtual void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                Teuchos::RCP<CompositeVector> tcc)
   {
-    AmanziMesh::Entity_ID_List cells;
     auto beaker_state = amanzi_pk_->beaker_state();
     const auto& beaker_parameters = amanzi_pk_->beaker_parameters();
 
     for (auto it = begin(); it != end(); ++it) {
       int f = it->first;
-      mesh->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
+      auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      AMANZI_ASSERT(cells.size() == 1);
       int c = cells[0];
 
       amanzi_pk_->CopyCellStateToBeakerState(c, tcc->ViewComponent("cell", true));

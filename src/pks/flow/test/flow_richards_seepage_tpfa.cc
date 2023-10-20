@@ -58,7 +58,6 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA)
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
@@ -104,7 +103,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA)
 
   double p0(101325.0), z0(30.0);
   for (int c = 0; c < p.MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     p[0][c] = p0 + rho * g * (xc[1] - z0);
   }
 

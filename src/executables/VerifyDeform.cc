@@ -147,10 +147,11 @@ main(int argc, char* argv[])
 
   deffile.open(def_filename.c_str());
   if (deffile.is_open()) {
-    int spdim = mesh->space_dimension();
+    int spdim = mesh->getSpaceDimension();
 
     int nnodes, nnodes_in;
-    nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    nnodes = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
+                                  Amanzi::AmanziMesh::Parallel_type::OWNED);
 
     Amanzi::AmanziMesh::Entity_ID nodeid;
 
@@ -188,7 +189,7 @@ main(int argc, char* argv[])
         Amanzi::AmanziGeometry::Point oldcoord(spdim), newcoord(spdim);
         Amanzi::AmanziGeometry::Point defvec(spdim);
 
-        mesh->node_get_coordinates(j, &oldcoord);
+        oldcoord = mesh->getNodeCoordinate(j);
 
         defvec.set(defarr[j]);
         newcoord = oldcoord + defvec;

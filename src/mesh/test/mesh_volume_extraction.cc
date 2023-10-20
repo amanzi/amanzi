@@ -22,8 +22,8 @@
 #include "Teuchos_Array.hpp"
 
 #include "RegionFactory.hh"
-#include "Mesh.hh"
-#include "MeshFactory.hh"
+#include "MeshFramework.hh"
+#include "MeshFrameworkFactory.hh"
 
 #include "framework_meshes.hh"
 #include "geometry_harnesses.hh"
@@ -44,8 +44,8 @@ TEST(MESH_VOLUME_EXTRACTION_GENERATED)
   // add a region to extract from that is 3D
   Teuchos::ParameterList spec;
   auto& box_reg_spec = spec.sublist("region: box");
-  std::vector<double> low{ 0.0, 0.0, 0.0 };
-  std::vector<double> high{ 1.0, 1.0, 1.0 };
+  Double_List low{ 0.0, 0.0, 0.0 };
+  Double_List high{ 1.0, 1.0, 1.0 };
   box_reg_spec.set<Teuchos::Array<double>>("low coordinate", low);
   box_reg_spec.set<Teuchos::Array<double>>("high coordinate", high);
   gm->AddRegion(AmanziGeometry::createRegion("Unit Hex", gm->size(), spec, *comm));
@@ -56,15 +56,24 @@ TEST(MESH_VOLUME_EXTRACTION_GENERATED)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing 3D Box 3x3x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing 3D Box 3x3x3 with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto parent_mesh = createFrameworkStructuredUnitHex(
-      Preference{ frm }, 6, 6, 3, comm, gm, Teuchos::null, false, 2, 2, 1);
+    auto parent_mesh =
+      createStructuredUnitHex(Preference{ frm }, 6, 6, 3, comm, gm, Teuchos::null, 2, 2, 1);
 
     // extract the volume
-    MeshFactory fac(comm, gm);
+    MeshFrameworkFactory fac(comm, gm);
     fac.set_preference({ frm });
-    auto mesh = fac.create(parent_mesh, { "Unit Hex" }, AmanziMesh::Entity_kind::CELL);
+
+    auto unit_hex_cells = parent_mesh->getSetEntities(
+      "Unit Hex", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    auto vol_framework_mesh =
+      fac.create(parent_mesh, unit_hex_cells, AmanziMesh::Entity_kind::CELL);
+
+    // make a MeshCache
+    auto mesh = Teuchos::rcp(new Mesh(
+      vol_framework_mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+    mesh->setParentMesh(parent_mesh);
 
     // test the surface mesh as a 3x3 quad mesh
     // -- mesh audit
@@ -77,11 +86,12 @@ TEST(MESH_VOLUME_EXTRACTION_GENERATED)
     testHexMeshSets3x3x3(mesh, false, frm);
 
     // Check that their parents are as expected
-    int ncells = mesh->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    int ncells =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
     for (int i = 0; i < ncells; ++i) {
-      int parent_cell = mesh->entity_get_parent(AmanziMesh::CELL, i);
-      auto cc = mesh->cell_centroid(i);
-      auto pcc = parent_mesh->cell_centroid(parent_cell);
+      int parent_cell = mesh->getEntityParent(AmanziMesh::Entity_kind::CELL, i);
+      auto cc = mesh->getCellCentroid(i);
+      auto pcc = parent_mesh->getCellCentroid(parent_cell);
       CHECK_CLOSE(cc[0], pcc[0], 1.e-10);
       CHECK_CLOSE(cc[1], pcc[1], 1.e-10);
       CHECK_CLOSE(cc[2], pcc[2], 1.e-10);
@@ -137,65 +147,67 @@ TEST(MESH_VOLUME_EXTRACTION_EXO)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing 3D Box 3x3x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing 3D Box 3x3x3 with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto parent_mesh =
-      createFrameworkUnstructured(Preference{ frm }, filename, comm, gm, Teuchos::null);
+    auto parent_mesh = createUnstructured(Preference{ frm }, filename, comm, gm, Teuchos::null);
 
     // make sure we can get sets on the mesh
-    AmanziMesh::Entity_ID_List set_ids;
-    parent_mesh->get_set_entities(
-      "Region 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL, &set_ids);
+    AmanziMesh::Entity_ID_View set_ids = parent_mesh->getSetEntities(
+      "Region 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
     CHECK_EQUAL(9, set_ids.size());
-    parent_mesh->build_columns();
+    parent_mesh->buildColumns();
 
     int ncells = 3;
-    AmanziMesh::Entity_ID_List const& cell_list = parent_mesh->cells_of_column(0);
+    AmanziMesh::Entity_ID_View const& cell_list =
+      parent_mesh->columns.cells_.getRowUnmanaged<MemSpace_kind::HOST>(0);
     CHECK_EQUAL(ncells, cell_list.size());
 
-    AmanziMesh::Entity_ID_List const& face_list = parent_mesh->faces_of_column(0);
+    AmanziMesh::Entity_ID_View const& face_list =
+      parent_mesh->columns.faces_.getRowUnmanaged<MemSpace_kind::HOST>(0);
     CHECK_EQUAL(ncells + 1, face_list.size());
 
     // construct a column mesh by extracting from mesh
     // extract the surface
-    MeshFactory fac(comm, gm);
+    MeshFrameworkFactory fac(comm, gm);
     fac.set_preference({ frm });
-    auto column_mesh = fac.create(parent_mesh, cell_list, AmanziMesh::Entity_kind::CELL, false);
+    auto column_mesh_fw = fac.create(parent_mesh, cell_list, AmanziMesh::Entity_kind::CELL);
+    auto column_mesh = Teuchos::rcp(new Mesh(
+      column_mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
 
     // Number of cells in column mesh
-    int ncells_col = column_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    int ncells_col =
+      column_mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     CHECK_EQUAL(ncells, ncells_col);
 
     // Number of faces in the column mesh
-    int nfaces_col = column_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    int nfaces_col =
+      column_mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     CHECK_EQUAL(5 * ncells + 1, nfaces_col);
 
     // Check that their parents are as expected
     for (int i = 0; i < ncells_col; ++i) {
-      int parent_cell = column_mesh->entity_get_parent(AmanziMesh::CELL, i);
+      int parent_cell = column_mesh->getEntityParent(AmanziMesh::Entity_kind::CELL, i);
       CHECK_EQUAL(cell_list[i], parent_cell);
     }
 
     // check we can still get sets
-    AmanziMesh::Entity_ID_List set_ids2;
-    bool is_valid = column_mesh->valid_set_name("Region 1", AmanziMesh::CELL);
+    AmanziMesh::Entity_ID_View set_ids2;
+    bool is_valid = column_mesh->isValidSetName("Region 1", AmanziMesh::Entity_kind::CELL);
     CHECK(is_valid);
-    column_mesh->get_set_entities(
-      "Region 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL, &set_ids2);
+    set_ids2 = column_mesh->getSetEntities(
+      "Region 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
     CHECK_EQUAL(1, set_ids2.size());
 
-    set_ids2.clear();
-    is_valid = column_mesh->valid_set_name("Top Surface", AmanziMesh::FACE);
+    is_valid = column_mesh->isValidSetName("Top Surface", AmanziMesh::Entity_kind::FACE);
     CHECK(is_valid);
-    column_mesh->get_set_entities(
-      "Top Surface", AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL, &set_ids2);
+    set_ids2 = column_mesh->getSetEntities(
+      "Top Surface", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
     CHECK_EQUAL(1, set_ids2.size());
 
-    set_ids2.clear();
-    is_valid = column_mesh->valid_set_name("Side Surface", AmanziMesh::FACE);
+    is_valid = column_mesh->isValidSetName("Side Surface", AmanziMesh::Entity_kind::FACE);
     CHECK(is_valid);
-    column_mesh->get_set_entities(
-      "Side Surface", AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL, &set_ids2);
+    set_ids2 = column_mesh->getSetEntities(
+      "Side Surface", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
     CHECK_EQUAL(3, set_ids2.size());
   }
 }

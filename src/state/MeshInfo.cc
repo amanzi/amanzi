@@ -33,14 +33,15 @@ MeshInfo::WriteMeshCentroids(std::string domain, const AmanziMesh::Mesh& mesh)
   output->createDataFile(filename);
   output->open_h5file();
 
-  int ncells_owned = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int n_glob;
-  mesh.get_comm()->SumAll(&ncells_owned, &n_glob, 1);
+  mesh.getComm()->SumAll(&ncells_owned, &n_glob, 1);
 
-  Epetra_BlockMap map(n_glob, ncells_owned, 1, 0, *mesh.get_comm());
+  Epetra_BlockMap map(n_glob, ncells_owned, 1, 0, *mesh.getComm());
 
   // create an auxiliary vector that will hold the centroid and velocity
-  int dim = mesh.space_dimension();
+  int dim = mesh.getSpaceDimension();
   Teuchos::RCP<Epetra_MultiVector> aux = Teuchos::rcp(new Epetra_MultiVector(map, dim));
 
   std::vector<std::string> name;
@@ -51,7 +52,7 @@ MeshInfo::WriteMeshCentroids(std::string domain, const AmanziMesh::Mesh& mesh)
 
 
   for (int n = 0; n < ncells_owned; n++) {
-    const AmanziGeometry::Point& xc = mesh.cell_centroid(n);
+    const AmanziGeometry::Point& xc = mesh.getCellCentroid(n);
     for (int i = 0; i < dim; i++) { (*(*aux)(i))[n] = xc[i]; }
   }
 

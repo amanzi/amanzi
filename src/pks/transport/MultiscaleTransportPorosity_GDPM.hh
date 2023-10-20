@@ -31,8 +31,8 @@ tcc_matrix = total component concentration in the matrix continuum.
         <Paramater name="Warren Root parameter" type="double" value="4.0e-5"/>
         <Paramater name="matrix tortuosity" type="double" value="0.95"/>
         <Paramater name="matrix volume fraction" type="double" value="0.9999"/>
-      </ParameterList>  
-    </ParameterList>  
+      </ParameterList>
+    </ParameterList>
 
     <ParameterList name="_GREY SOIL">
       <Parameter name="multiscale model" type="string" value="generalized dual porosity"/>
@@ -41,10 +41,10 @@ tcc_matrix = total component concentration in the matrix continuum.
         <Paramater name="number of matrix nodes" type="int" value="2"/>
         <Paramater name="matrix depth" type="double" value="0.01"/>
         <Paramater name="matrix tortuosity" type="double" value="1.0"/>
-      </ParameterList>  
-    </ParameterList>  
-  </ParameterList>  
-  </ParameterList>  
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 */
 

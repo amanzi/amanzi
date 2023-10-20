@@ -14,7 +14,7 @@
   Derham complex: mimetic inner products for nodal DOFs.
 */
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 
 #include "DeRham_Node.hh"
 #include "WhetStoneDefs.hh"
@@ -29,27 +29,25 @@ namespace WhetStone {
 int
 DeRham_Node::L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
-  Entity_ID_List nodes, face_nodes;
-
-  mesh_->cell_get_nodes(c, &nodes);
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   N.Reshape(nnodes, 1);
   Mc.Reshape(nnodes, nnodes);
 
-  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
-  double volume = mesh_->cell_volume(c);
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  double volume = mesh_->getCellVolume(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
   // to calculate matrix R, we use temporary matrix N
   N.PutScalar(0.0);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
     double tmp = (xf - xc) * normal;
 

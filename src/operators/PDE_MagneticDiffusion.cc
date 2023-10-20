@@ -40,7 +40,7 @@ PDE_MagneticDiffusion::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>&
   WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
   WhetStone::DenseMatrix Mcell, Ccell, Acell;
 
-  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+  WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
   Kc(0, 0) = 1.0;
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -69,8 +69,6 @@ PDE_MagneticDiffusion::ModifyMatrices(CompositeVector& E, CompositeVector& B, do
   Teuchos::ParameterList plist;
   WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
 
-  AmanziMesh::Entity_ID_List edges;
-
   for (int c = 0; c < ncells_owned; ++c) {
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
     Acell.Scale(dt / 2);
@@ -78,9 +76,8 @@ PDE_MagneticDiffusion::ModifyMatrices(CompositeVector& E, CompositeVector& B, do
     const WhetStone::DenseMatrix& Mcell = mass_op_[c];
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
-    const auto& faces = mesh_->cell_get_faces(c);
-    const auto& dirs = mesh_->cell_get_face_dirs(c);
-    mesh_->cell_get_edges(c, &edges);
+    const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
+    auto edges = mesh_->getCellEdges(c);
 
     int nfaces = faces.size();
     int nedges = edges.size();
@@ -93,7 +90,7 @@ PDE_MagneticDiffusion::ModifyMatrices(CompositeVector& E, CompositeVector& B, do
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
-      v1(n) = Bf[0][f] * dirs[n] * mesh_->face_area(f);
+      v1(n) = Bf[0][f] * dirs[n] * mesh_->getFaceArea(f);
     }
 
     Mcell.Multiply(v1, v2, false);
@@ -120,16 +117,13 @@ PDE_MagneticDiffusion::ModifyFields(CompositeVector& E, CompositeVector& B, doub
   Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
   Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
 
-  AmanziMesh::Entity_ID_List edges;
-
   std::vector<bool> fflag(nedges_wghost, false);
 
   for (int c = 0; c < ncells_owned; ++c) {
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
-    const auto& faces = mesh_->cell_get_faces(c);
-    const auto& dirs = mesh_->cell_get_face_dirs(c);
-    mesh_->cell_get_edges(c, &edges);
+    const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
+    auto edges = mesh_->getCellEdges(c);
 
     int nfaces = faces.size();
     int nedges = edges.size();
@@ -146,7 +140,7 @@ PDE_MagneticDiffusion::ModifyFields(CompositeVector& E, CompositeVector& B, doub
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
       if (!fflag[f]) {
-        Bf[0][f] -= dt * v2(n) * dirs[n] / mesh_->face_area(f);
+        Bf[0][f] -= dt * v2(n) * dirs[n] / mesh_->getFaceArea(f);
         fflag[f] = true;
       }
     }
@@ -163,13 +157,12 @@ PDE_MagneticDiffusion::CalculateOhmicHeating(const CompositeVector& E)
   const Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
   E.ScatterMasterToGhosted("edge");
 
-  AmanziMesh::Entity_ID_List edges;
   Teuchos::ParameterList plist;
   WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
 
   double energy(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_edges(c, &edges);
+    auto edges = mesh_->getCellEdges(c);
     int nedges = edges.size();
 
     WhetStone::DenseMatrix Mcell;
@@ -188,7 +181,7 @@ PDE_MagneticDiffusion::CalculateOhmicHeating(const CompositeVector& E)
 
   // parallel collective operation
   double tmp(energy);
-  mesh_->get_comm()->SumAll(&tmp, &energy, 1);
+  mesh_->getComm()->SumAll(&tmp, &energy, 1);
 
   return energy;
 }
@@ -205,8 +198,7 @@ PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
 
   double energy(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    const auto& faces = mesh_->cell_get_faces(c);
-    const auto& dirs = mesh_->cell_get_face_dirs(c);
+    const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
     int nfaces = faces.size();
 
     const WhetStone::DenseMatrix& Mcell = mass_op_[c];
@@ -215,7 +207,7 @@ PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
-      v1(n) = Bf[0][f] * dirs[n] * mesh_->face_area(f);
+      v1(n) = Bf[0][f] * dirs[n] * mesh_->getFaceArea(f);
     }
 
     Mcell.Multiply(v1, v2, false);
@@ -224,7 +216,7 @@ PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
 
   // parallel collective operation
   double tmp(energy);
-  mesh_->get_comm()->SumAll(&tmp, &energy, 1);
+  mesh_->getComm()->SumAll(&tmp, &energy, 1);
 
   return energy / 2;
 }
@@ -238,16 +230,15 @@ PDE_MagneticDiffusion::CalculateDivergence(int c, const CompositeVector& B)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
 
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   double div(0.0);
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    div += Bf[0][f] * dirs[n] * mesh_->face_area(f);
+    div += Bf[0][f] * dirs[n] * mesh_->getFaceArea(f);
   }
-  div /= mesh_->cell_volume(c);
+  div /= mesh_->getCellVolume(c);
 
   return div;
 }

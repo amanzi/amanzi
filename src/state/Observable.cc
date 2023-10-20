@@ -168,7 +168,7 @@ Observable::Setup(const Teuchos::Ptr<State>& S)
 
     // on the domain set's reference mesh
     auto ds = S->GetDomainSet(std::get<0>(ds_names));
-    mesh = ds->get_referencing_parent();
+    mesh = ds->getReferencingParent();
     AMANZI_ASSERT(mesh != Teuchos::null);
 
     if (!S->HasEvaluatorList(variable_)) {
@@ -223,7 +223,7 @@ Observable::Setup(const Teuchos::Ptr<State>& S)
     }
 
     // require the component on location_ with num_vectors_
-    cvs.AddComponent(location_, AmanziMesh::entity_kind(location_), num_vectors_);
+    cvs.AddComponent(location_, AmanziMesh::createEntityKind(location_), num_vectors_);
   }
 
   // communicate so that all ranks know number of vectors
@@ -313,16 +313,15 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
     AMANZI_ASSERT(vec.HasComponent(location_));
 
     // get the region
-    AmanziMesh::Entity_kind entity = AmanziMesh::entity_kind(location_);
-    AmanziMesh::Entity_ID_List ids;
+    AmanziMesh::Entity_kind entity = AmanziMesh::createEntityKind(location_);
 
     // get the vector component
-    vec.Mesh()->get_set_entities(region_, entity, AmanziMesh::Parallel_type::OWNED, &ids);
+    auto ids = vec.Mesh()->getSetEntities(region_, entity, AmanziMesh::Parallel_kind::OWNED);
     const Epetra_MultiVector& subvec = *vec.ViewComponent(location_, false);
 
-    if (entity == AmanziMesh::CELL) {
+    if (entity == AmanziMesh::Entity_kind::CELL) {
       for (auto id : ids) {
-        double vol = vec.Mesh()->cell_volume(id);
+        double vol = vec.Mesh()->getCellVolume(id);
 
         if (dof_ < 0) {
           for (int i = 0; i != get_num_vectors(); ++i) {
@@ -337,29 +336,26 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
         }
         value[get_num_vectors()] += vol;
       }
-    } else if (entity == AmanziMesh::FACE) {
+    } else if (entity == AmanziMesh::Entity_kind::FACE) {
       for (auto id : ids) {
-        double vol = vec.Mesh()->face_area(id);
+        double vol = vec.Mesh()->getFaceArea(id);
 
         // hack to orient flux to outward-normal along a boundary only
         double sign = 1;
         if (flux_normalize_) {
           if (direction_.get()) {
             // normalize to the provided vector
-            AmanziGeometry::Point normal = vec.Mesh()->face_normal(id);
+            AmanziGeometry::Point normal = vec.Mesh()->getFaceNormal(id);
             sign = (normal * (*direction_)) / AmanziGeometry::norm(normal);
 
           } else if (!flux_normalize_region_.empty()) {
             // normalize to outward normal relative to a volumetric region
-            AmanziMesh::Entity_ID_List vol_cells;
-            vec.Mesh()->get_set_entities(flux_normalize_region_,
-                                         AmanziMesh::Entity_kind::CELL,
-                                         AmanziMesh::Parallel_type::ALL,
-                                         &vol_cells);
+            auto vol_cells = vec.Mesh()->getSetEntities(flux_normalize_region_,
+                                                        AmanziMesh::Entity_kind::CELL,
+                                                        AmanziMesh::Parallel_kind::ALL);
 
             // which cell of the face is "inside" the volume
-            AmanziMesh::Entity_ID_List cells;
-            vec.Mesh()->face_get_cells(id, AmanziMesh::Parallel_type::ALL, &cells);
+            auto cells = vec.Mesh()->getFaceCells(id, AmanziMesh::Parallel_kind::ALL);
             AmanziMesh::Entity_ID c = -1;
             for (const auto& cc : cells) {
               if (std::find(vol_cells.begin(), vol_cells.end(), cc) != vol_cells.end()) {
@@ -371,27 +367,22 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
               Errors::Message msg;
               msg << "Observeable on face region \"" << region_
                   << "\" flux normalized relative to volumetric region \"" << flux_normalize_region_
-                  << "\" but face " << vec.Mesh()->face_map(true).GID(id)
+                  << "\" but face "
+                  << vec.Mesh()->getMap(AmanziMesh::Entity_kind::FACE, true).GID(id)
                   << " does not border the volume region.";
               Exceptions::amanzi_throw(msg);
             }
 
             // normalize with respect to that cell's direction
-            AmanziMesh::Entity_ID_List faces;
-            std::vector<int> dirs;
-
-            vec.Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+            auto [faces, dirs] = vec.Mesh()->getCellFacesAndDirections(c);
             int i = std::find(faces.begin(), faces.end(), id) - faces.begin();
 
             sign = dirs[i];
 
           } else {
             // normalize to outward normal
-            AmanziMesh::Entity_ID_List cells;
-            vec.Mesh()->face_get_cells(id, AmanziMesh::Parallel_type::ALL, &cells);
-            AmanziMesh::Entity_ID_List faces;
-            std::vector<int> dirs;
-            vec.Mesh()->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
+            auto cells = vec.Mesh()->getFaceCells(id, AmanziMesh::Parallel_kind::ALL);
+            auto [faces, dirs] = vec.Mesh()->getCellFacesAndDirections(cells[0]);
             int i = std::find(faces.begin(), faces.end(), id) - faces.begin();
             sign = dirs[i];
           }
@@ -410,7 +401,7 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
         }
         value[get_num_vectors()] += std::abs(vol);
       }
-    } else if (entity == AmanziMesh::NODE) {
+    } else if (entity == AmanziMesh::Entity_kind::NODE) {
       for (auto id : ids) {
         double vol = 1.0;
 

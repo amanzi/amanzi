@@ -23,12 +23,12 @@ The next time step is given by the following rule:
 * if :math:`N_k < N^{min}` then :math:`\Delta t_{k+1} = f_{increase} \Delta t_{k}`
 * otherwise :math:`\Delta t_{k+1} = \Delta t_{k}`
 
-where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of nonlinear 
+where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of nonlinear
 iterations required to solve step :math:`k`.
 
-The time step controller *smart* is based on *standard*, but also tries to be a bit 
-smarter to avoid repeated increase/decrease loops where the step size decreases, 
-converges in few iterations, increases, but then fails again.  It also tries to grow 
+The time step controller *smart* is based on *standard*, but also tries to be a bit
+smarter to avoid repeated increase/decrease loops where the step size decreases,
+converges in few iterations, increases, but then fails again.  It also tries to grow
 the time step geometrically to more quickly recover from tricky nonlinearities.
 
 The time step controller *from file* loads a timestep history from a file, then

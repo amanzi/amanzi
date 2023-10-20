@@ -15,7 +15,7 @@ The `"general kinetics`" section describes kinetic (slow) reactions in the form
 
   3 A(aq) + 2 B(aq) <-> C(aq) + 3 D(aq) + 4 E(aq)
 
-where a number (stoichiometic coefficient) is followed by a species name. 
+where a number (stoichiometic coefficient) is followed by a species name.
 The list of parameters for each reaction includes
 
 * `"reactants`" [string] is the left-hand side of the above equation.
@@ -26,8 +26,8 @@ The list of parameters for each reaction includes
 
 * `"backward rate`" [double] is the reverse reaction rate.
 
-* `"reaction orders (reactants/products)`" [Array(double)] is the list of 
-  reaction orders with respect to activies of dissolved species. The list 
+* `"reaction orders (reactants/products)`" [Array(double)] is the list of
+  reaction orders with respect to activies of dissolved species. The list
   includes orders for reactants (first) and products (second).
 
 .. code-block:: xml

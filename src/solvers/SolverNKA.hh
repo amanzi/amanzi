@@ -73,7 +73,7 @@ especially with an approximate Jacobian.
       solver is terminated.
 
     * `"make one iteration`" ``[bool]`` **false** require at least one iteration
-      to be performed before declaring success. This options makes any effect 
+      to be performed before declaring success. This options makes any effect
       only when `"monitor residual`" is choose.
 
     * `"modify correction`" ``[bool]`` **false** Allows a PK to modify the

@@ -17,8 +17,7 @@
  *
  */
 
-#ifndef __H_GenerationSpec
-#define __H_GenerationSpec
+#pragma once
 
 #include "Region.hh"
 #include "RegionBox.hh"
@@ -68,7 +67,7 @@ class GenerationSpec {
   /// Get access to the list of blocks or zones
   AmanziGeometry::RegionVector::const_iterator block_end(void) const { return blocks_.end(); }
 
-  Partitioner_type partitioner() const { return partitioner_; }
+  Partitioner_kind partitioner() const { return partitioner_; }
 
  protected:
   /// overall mesh domain  FIXME: We already have a domain
@@ -81,7 +80,7 @@ class GenerationSpec {
 
   AmanziGeometry::RegionVector blocks_; /**< list of mesh subdomains */
 
-  Partitioner_type partitioner_ = PARTITIONER_DEFAULT; /**< partitioner type */
+  Partitioner_kind partitioner_;
 
   /// fill attributes from specified list
   void parse_(const Teuchos::ParameterList& parameter_list);
@@ -95,5 +94,3 @@ class GenerationSpec {
 
 } // end namespace AmanziMesh
 } // end namespace Amanzi
-
-#endif

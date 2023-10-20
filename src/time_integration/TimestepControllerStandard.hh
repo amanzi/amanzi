@@ -48,7 +48,7 @@ nonlinear iterations required to solve step :math:`k`:.
   </ParameterList>
 
 In this example, the time step is increased by factor 1.2 when the nonlinear
-solver converges in 10 or less iterations. 
+solver converges in 10 or less iterations.
 The time step is not changed when the number of nonlinear iterations is
 between 11 and 15.
 The time step will be cut twice if the number of nonlinear iterations exceeds 15.

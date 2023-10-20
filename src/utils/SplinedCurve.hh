@@ -7,8 +7,7 @@
   Authors: Ethan Coon (coonet@ornl.gov)
 */
 
-//!  Spline
-
+//! Spline
 /*!
 
 Spline fit of a curve, given points, values, and derivatives (optional) of those

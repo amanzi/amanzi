@@ -10,42 +10,188 @@
 //
 // Mesh
 //
-// Helper functions for Mesh operations and algorithms
+// Algorithms for commonly used Mesh operations -- for the Mesh user.
 //
 
 #include "Mesh_Algorithms.hh"
+#include "MeshCache_impl.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
+
+std::pair<double, AmanziGeometry::Point>
+MeshFrameworkAlgorithms::computeCellGeometry(const Mesh& mesh, const Entity_ID c) const
+{
+  return MeshAlgorithms::computeCellGeometry(mesh, c);
+}
+
+std::tuple<double, AmanziGeometry::Point, cPoint_View>
+MeshFrameworkAlgorithms::computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const
+{
+  return MeshAlgorithms::computeFaceGeometry(mesh, f);
+}
+
+std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
+MeshFrameworkAlgorithms::computeEdgeGeometry(const Mesh& mesh, const Entity_ID c) const
+{
+  return MeshAlgorithms::computeEdgeGeometry(mesh, c);
+}
+
+
+double
+MeshFrameworkAlgorithms::getCellVolume(const Mesh& mesh, const Entity_ID c) const
+{
+  return MeshAlgorithms::computeCellGeometry(mesh, c).first;
+}
+
+AmanziGeometry::Point
+MeshFrameworkAlgorithms::getCellCentroid(const Mesh& mesh, const Entity_ID c) const
+{
+  return MeshAlgorithms::computeCellGeometry(mesh, c).second;
+}
+
+double
+MeshFrameworkAlgorithms::getFaceArea(const Mesh& mesh, const Entity_ID f) const
+{
+  return std::get<0>(MeshAlgorithms::computeFaceGeometry(mesh, f));
+}
+
+AmanziGeometry::Point
+MeshFrameworkAlgorithms::getFaceCentroid(const Mesh& mesh, const Entity_ID f) const
+{
+  return std::get<1>(MeshAlgorithms::computeFaceGeometry(mesh, f));
+}
+
+AmanziGeometry::Point
+MeshFrameworkAlgorithms::getFaceNormal(const Mesh& mesh,
+                                       const Entity_ID f,
+                                       const Entity_ID c,
+                                       int* const orientation) const
+{
+  auto geom = MeshAlgorithms::computeFaceGeometry(mesh, f);
+
+  cEntity_ID_View fcells;
+  mesh.getFaceCells(f, Parallel_kind::ALL, fcells);
+  if (orientation) *orientation = 0;
+
+  Entity_ID cc;
+  std::size_t i;
+  if (c < 0) {
+    cc = fcells[0];
+    i = 0;
+  } else {
+    cc = c;
+    auto ncells = fcells.size();
+    for (i = 0; i != ncells; ++i)
+      if (fcells[i] == cc) break;
+  }
+
+  AmanziGeometry::Point normal = std::get<2>(geom)[i];
+
+  if (mesh.getSpaceDimension() == mesh.getManifoldDimension()) {
+    if (c < 0) {
+      assert(orientation == nullptr);
+      normal *= MeshAlgorithms::getFaceDirectionInCell(mesh, f, cc);
+    } else if (orientation) {
+      *orientation = MeshAlgorithms::getFaceDirectionInCell(mesh, f, cc);
+    }
+  } else {
+    // manifold case
+    if (c < 0) {
+      assert(orientation == nullptr);
+
+      if (fcells.size() != 2) {
+        normal *= MeshAlgorithms::getFaceDirectionInCell(mesh, f, cc);
+      } else {
+        // average normals oriented from lower to higher GIDs
+        int pos_i = mesh.getEntityGID(Entity_kind::CELL, fcells[0]) >
+                        mesh.getEntityGID(Entity_kind::CELL, fcells[1]) ?
+                      0 :
+                      1;
+        normal = (std::get<2>(geom)[1 - pos_i] - std::get<2>(geom)[pos_i]) / 2;
+      }
+    } else if (orientation) {
+      *orientation = MeshAlgorithms::getFaceDirectionInCell(mesh, f, cc);
+    }
+  }
+
+  if (orientation) assert(*orientation != 0);
+  return normal;
+}
+
+double
+MeshFrameworkAlgorithms::getEdgeLength(const Mesh& mesh, const Entity_ID e) const
+{
+  return AmanziGeometry::norm(MeshAlgorithms::computeEdgeGeometry(mesh, e).first);
+}
+
+AmanziGeometry::Point
+MeshFrameworkAlgorithms::getEdgeVector(const Mesh& mesh,
+                                       const Entity_ID e,
+                                       const Entity_ID n,
+                                       int* const orientation) const
+{
+  auto geom = MeshAlgorithms::computeEdgeGeometry(mesh, e);
+  if (n >= 0) {
+    cEntity_ID_View nodes;
+    mesh.getEdgeNodes(e, nodes);
+    if (n == nodes[0]) {
+      if (orientation) *orientation = 1;
+      return geom.first;
+    } else if (n == nodes[1]) {
+      if (orientation) *orientation = -1;
+      return -geom.first;
+    } else {
+      AMANZI_ASSERT(0);
+    }
+  }
+  return geom.first;
+}
+
+AmanziGeometry::Point
+MeshFrameworkAlgorithms::getEdgeCentroid(const Mesh& mesh, const Entity_ID e) const
+{
+  return MeshAlgorithms::computeEdgeGeometry(mesh, e).second;
+}
+
+void
+MeshFrameworkAlgorithms::getCellFacesAndBisectors(const Mesh& mesh,
+                                                  const Entity_ID cellid,
+                                                  cEntity_ID_View& faceids,
+                                                  cPoint_View* const bisectors) const
+{
+  mesh.getCellFaces(cellid, faceids);
+  if (bisectors) *bisectors = MeshAlgorithms::computeBisectors(mesh, cellid, faceids);
+}
 
 
 // -----------------------------------------------------------------------------
 // Given a boundary face ID, get the corresponding face ID
 // -----------------------------------------------------------------------------
-AmanziMesh::Entity_ID
-getBoundaryFaceFace(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID bf)
+Entity_ID
+getBoundaryFaceFace(const Mesh& mesh, Entity_ID bf)
 {
-  const auto& fmap = mesh.face_map(true);
-  const auto& bfmap = mesh.exterior_face_map(true);
+  const auto& fmap = mesh.getMap(AmanziMesh::Entity_kind::FACE, true);
+  const auto& bfmap = mesh.getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
   return fmap.LID(bfmap.GID(bf));
 }
 
 // -----------------------------------------------------------------------------
 // Given a face ID, get the corresponding boundary face ID (assuming it is a bf)
 // -----------------------------------------------------------------------------
-AmanziMesh::Entity_ID
-getFaceOnBoundaryBoundaryFace(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID f)
+Entity_ID
+getFaceOnBoundaryBoundaryFace(const Mesh& mesh, Entity_ID f)
 {
-  const auto& fmap = mesh.face_map(true);
-  const auto& bfmap = mesh.exterior_face_map(true);
+  const auto& fmap = mesh.getMap(AmanziMesh::Entity_kind::FACE, true);
+  const auto& bfmap = mesh.getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
   return bfmap.LID(fmap.GID(f));
 }
 
 // -----------------------------------------------------------------------------
 // Given a boundary face ID, get the cell internal to that face.
 // -----------------------------------------------------------------------------
-AmanziMesh::Entity_ID
-getBoundaryFaceInternalCell(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID bf)
+Entity_ID
+getBoundaryFaceInternalCell(const Mesh& mesh, Entity_ID bf)
 {
   return getFaceOnBoundaryInternalCell(mesh, getBoundaryFaceFace(mesh, bf));
 }
@@ -54,16 +200,16 @@ getBoundaryFaceInternalCell(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID 
 // -----------------------------------------------------------------------------
 // Given a face ID, and assuming it is a boundary face, get the cell internal.
 // -----------------------------------------------------------------------------
-AmanziMesh::Entity_ID
-getFaceOnBoundaryInternalCell(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID f)
+Entity_ID
+getFaceOnBoundaryInternalCell(const Mesh& mesh, Entity_ID f)
 {
-  AmanziMesh::Entity_ID_List cells;
-  mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+  cEntity_ID_View cells;
+  mesh.getFaceCells(f, Parallel_kind::ALL, cells);
   if (cells.size() != 1) {
-    AmanziGeometry::Point fc = mesh.face_centroid(f);
+    AmanziGeometry::Point fc = mesh.getFaceCentroid(f);
     std::stringstream msgs;
     msgs << "getFaceOnBoundaryInternalCell called with non-internal face GID "
-         << mesh.face_map(true).GID(f) << " at " << fc;
+         << mesh.getMap(AmanziMesh::Entity_kind::FACE, true).GID(f) << " at " << fc;
     Errors::Message msg(msgs.str());
     Exceptions::amanzi_throw(msg);
   }
@@ -74,11 +220,11 @@ getFaceOnBoundaryInternalCell(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_I
 // Given a vector on faces, import to vector on boundary faces
 // -----------------------------------------------------------------------------
 void
-copyFacesToBoundaryFaces(const AmanziMesh::Mesh& mesh,
+copyFacesToBoundaryFaces(const Mesh& mesh,
                          const Epetra_MultiVector& faces,
                          Epetra_MultiVector& boundary_faces)
 {
-  int ierr = boundary_faces.Import(faces, mesh.exterior_face_importer(), Insert);
+  int ierr = boundary_faces.Import(faces, mesh.getBoundaryFaceImporter(), Insert);
   AMANZI_ASSERT(!ierr);
 }
 
@@ -86,11 +232,11 @@ copyFacesToBoundaryFaces(const AmanziMesh::Mesh& mesh,
 // Given a vector on faces, import to vector on boundary faces
 // -----------------------------------------------------------------------------
 void
-copyBoundaryFacesToFaces(const AmanziMesh::Mesh& mesh,
+copyBoundaryFacesToFaces(const Mesh& mesh,
                          const Epetra_MultiVector& boundary_faces,
                          Epetra_MultiVector& faces)
 {
-  int ierr = faces.Export(boundary_faces, mesh.exterior_face_importer(), Insert);
+  int ierr = faces.Export(boundary_faces, mesh.getBoundaryFaceImporter(), Insert);
   AMANZI_ASSERT(!ierr);
 }
 
@@ -98,46 +244,29 @@ copyBoundaryFacesToFaces(const AmanziMesh::Mesh& mesh,
 // Given a vector on cells, set the boundary_face entries by their internal cell
 // -----------------------------------------------------------------------------
 void
-copyCellsToBoundaryFaces(const AmanziMesh::Mesh& mesh,
+copyCellsToBoundaryFaces(const Mesh& mesh,
                          const Epetra_MultiVector& cells,
                          Epetra_MultiVector& boundary_faces)
 {
   AMANZI_ASSERT(cells.NumVectors() == boundary_faces.NumVectors());
-  for (AmanziMesh::Entity_ID bf = 0; bf != boundary_faces.MyLength(); ++bf) {
-    AmanziMesh::Entity_ID c = getBoundaryFaceInternalCell(mesh, bf);
+  for (Entity_ID bf = 0; bf != boundary_faces.MyLength(); ++bf) {
+    Entity_ID c = getBoundaryFaceInternalCell(mesh, bf);
     for (int i = 0; i != boundary_faces.NumVectors(); ++i) { boundary_faces[i][bf] = cells[i][c]; }
   }
 }
-
 
 // -----------------------------------------------------------------------------
 // Exterior boundary normal: dir = 0 for internal face
 // -----------------------------------------------------------------------------
 AmanziGeometry::Point
-getFaceNormalExterior(const AmanziMesh::Mesh& mesh, int f, int* dir)
+getFaceNormalExterior(const Mesh& mesh, int f, int* dir)
 {
-  Entity_ID_List cells;
-  mesh.face_get_cells(f, Parallel_type::ALL, &cells);
+  auto cells = mesh.getFaceCells(f, Parallel_kind::ALL);
 
-  auto normal = mesh.face_normal(f, false, cells[0], dir);
+  auto normal = mesh.getFaceNormal(f, cells[0], dir);
   if (cells.size() > 1) *dir = 0;
 
   return normal;
-}
-
-
-// -----------------------------------------------------------------------------
-// Given a cell c and face f, returns the neighbooring cell
-// -----------------------------------------------------------------------------
-int
-cell_get_face_adj_cell(const AmanziMesh::Mesh& mesh, int c, int f)
-{
-  Entity_ID_List cells;
-  mesh.face_get_cells(f, Parallel_type::ALL, &cells);
-
-  if (cells.size() == 2) return cells[0] + cells[1] - c;
-
-  return -1;
 }
 
 

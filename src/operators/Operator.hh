@@ -1,5 +1,5 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -9,14 +9,13 @@
 */
 
 //! Operator represents a linear map, and typically encapsulates a discretization.
-
 /*!
 
 Operators are discrete forms of linearized PDEs operators.
 They form a layer between physical process kernels and solvers
-and include accumulation, diffusion, advection, elasticity, reaction, 
+and include accumulation, diffusion, advection, elasticity, reaction,
 and source operators.
-The residual associated with an operator :math:`L_h` helps to 
+The residual associated with an operator :math:`L_h` helps to
 understand the employed sign convention:
 
 .. math::
@@ -49,8 +48,8 @@ a single operator that combines two operators representing diffusion and advecti
 Collection of operators must be used for implicit solvers and for building preconditioners.
 In such a case, the collections acts as a single operator.
 
-Operators use a few tools that are generic in nature and can be used independently by PKs. 
-The list includes reconstruction and limiting algorithms. 
+Operators use a few tools that are generic in nature and can be used independently by PKs.
+The list includes reconstruction and limiting algorithms.
 
 
 Schema
@@ -61,7 +60,7 @@ Old operators use a simple schema which is simply the list of geometric objects 
 scalar degrees of freedom are defined.
 New operators use a list to define location, type, and number of degrees of freedom.
 In addition, the base of local stencil is either *face* or *cell*.
-A rectangular operator needs two schemas do describe its domain (called `"schema domain`") 
+A rectangular operator needs two schemas do describe its domain (called `"schema domain`")
 and its range (called `"schema range`").
 A square operator may use either two identical schema lists or a single list called `"schema`".
 
@@ -83,11 +82,11 @@ A square operator may use either two identical schema lists or a single list cal
   </ParameterList>
 
 This example describes a square operator with two degrees of freedom per mesh node and one
-degree of freedom per mesh face. 
-The face-based degree of freedom is the normal component of a vector field. 
-Such set of degrees of freedom is used in the Bernardi-Raugel element for discretizing 
+degree of freedom per mesh face.
+The face-based degree of freedom is the normal component of a vector field.
+Such set of degrees of freedom is used in the Bernardi-Raugel element for discretizing
 Stokes equations.
-Parameter `"base`" indicates that local matrices are associated with mesh cells. 
+Parameter `"base`" indicates that local matrices are associated with mesh cells.
 
 */
 

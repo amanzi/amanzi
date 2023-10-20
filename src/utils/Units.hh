@@ -11,12 +11,12 @@
 
 Amanzi's internal default units are SI units except for the concentration.
 
-Curently format of units is very rigid, we need to use multiplication and 
-division operators, e.g. Pa*s and kg/s. However, thos allows to mix and match, 
+Curently format of units is very rigid, we need to use multiplication and
+division operators, e.g. Pa*s and kg/s. However, thos allows to mix and match,
 e.g. m/s^2 or ms^-2 or s^-2*m.
 
 * `"concentration`" [string] defines units for concentration. Available options
-  are `"molar`" (default) which is `"mol/L`" and `"SI`" which is `"mol/m^3`". 
+  are `"molar`" (default) which is `"mol/L`" and `"SI`" which is `"mol/m^3`".
 
 .. code-block:: xml
 

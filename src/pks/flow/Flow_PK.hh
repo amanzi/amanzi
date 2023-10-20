@@ -20,22 +20,22 @@ Fully saturated flow
 The conceptual PDE model for the fully saturated flow is
 
 .. math::
-  \left(\frac{S_s}{g} + \frac{S_y}{Lg}\right)\frac{\partial p_l}{\partial t} 
+  \left(\frac{S_s}{g} + \frac{S_y}{Lg}\right)\frac{\partial p_l}{\partial t}
   =
   -\boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_l) + Q,
   \quad
-  \boldsymbol{q}_l 
-  = -\frac{\boldsymbol{K}}{\mu} 
+  \boldsymbol{q}_l
+  = -\frac{\boldsymbol{K}}{\mu}
   (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g}),
 
-where 
+where
 :math:`S_s` and :math:`S_y` are specific storage [1/m] and specific yield [-], respectively,
 :math:`L` is characteristic length [m],
 :math:`\rho_l` is fluid density [:math:`kg / m^3`],
 :math:`Q` is source or sink term [:math:`kg / m^3 / s`],
 :math:`\boldsymbol{q}_l` is the Darcy velocity [:math:`m/s`],
 and :math:`\boldsymbol{g}` is gravity [:math:`m/s^2`].
-The specific storgae can be defined using 
+The specific storgae can be defined using
 
 .. math::
   S_s = \left(\phi\, \beta_f + \beta_m\right)\rho_l\,g
@@ -45,20 +45,20 @@ where :math:`\beta_f` [1/Pa] and :math:`\beta_m` [1/Pa] are fluid and matrix com
 
 Partially saturated flow with water vapor
 `````````````````````````````````````````
-The conceptual PDE model for the partially saturated flow with water vapor 
+The conceptual PDE model for the partially saturated flow with water vapor
 includes liquid phase (liquid water) and gas phase (water vapor):
 
 .. math::
-  \frac{\partial \theta}{\partial t} 
+  \frac{\partial \theta}{\partial t}
   =
   - \boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l)
   - \boldsymbol{\nabla} \cdot (\boldsymbol{K}_g \boldsymbol{\nabla} \big(\frac{p_v}{p_g}\big)) + Q,
   \quad
-  \boldsymbol{q}_l 
-  = -\frac{\boldsymbol{K} k_r}{\mu} 
+  \boldsymbol{q}_l
+  = -\frac{\boldsymbol{K} k_r}{\mu}
   (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g})
 
-where 
+where
 :math:`\theta` is total water storage [:math:`mol/m^3`],
 :math:`\eta_l` is molar density of liquid (water) [:math:`mol/m^3`],
 :math:`\rho_l` is fluid density [:math:`kg/m^3`],
@@ -69,7 +69,7 @@ where
 :math:`p_v` is the vapor pressure [Pa],
 :math:`p_g` is the gas pressure [Pa],
 and :math:`\boldsymbol{K}_g` is the effective diffusion coefficient of the water vapor.
-We define 
+We define
 
 .. math::
   \theta = \phi \eta_l s_l + \phi \eta_g (1 - s_l) X_g
@@ -106,14 +106,14 @@ The diffusion coefficient is based of TOUGHT2 model
 where
 :math:`D_0 = 2.14 \cdot 10^{-5}`,
 :math:`P_{ref}` is atmospheric pressure,
-and :math:`a = 1.8`. 
+and :math:`a = 1.8`.
 finally we need a model for the gas tortuosity. We use the Millington and Quirk model:
 
 .. math::
    \tau_g = \phi^\beta s_g^\gamma
 
 where
-:math:`\beta = 1/3` and 
+:math:`\beta = 1/3` and
 :math:`\gamma = 7/3`.
 
 
@@ -127,17 +127,17 @@ This leads to dual-porosity type flow and transport models that partition the li
 phase into mobile and immobile regions.
 The Richards equation in the mobile region is augmented by the water exchange
 term :math:`\Sigma_w`:
- 
+
 .. math::
-  \frac{\partial \theta_{lf}}{\partial t} 
-  = -\boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l) 
+  \frac{\partial \theta_{lf}}{\partial t}
+  = -\boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l)
     -\frac{K_m\,k_{rm}\,\eta_l}{\mu\,L_m}\, \nabla p_m + Q_f,
   \qquad
-  \boldsymbol{q}_l 
-  = -\frac{\boldsymbol{K}_f\, k_{rf}}{\mu} 
+  \boldsymbol{q}_l
+  = -\frac{\boldsymbol{K}_f\, k_{rf}}{\mu}
   (\boldsymbol{\nabla} p_f - \rho_l \boldsymbol{g})
 
-where 
+where
 :math:`p_f` is fracture pressure [Pa],
 :math:`p_m` is matrix pressure [Pa],
 :math:`L_m` is the characteristic matrix depth defined typically as the ratio of a matrix block [m],
@@ -145,11 +145,11 @@ and :math:`Q_f` is source or sink term [:math:`kg \cdot m^{-3} \cdot s^{-1}`].
 The equation for water balance in the matrix is
 
 .. math::
-  \frac{\partial \theta_{lm}}{\partial t} 
+  \frac{\partial \theta_{lm}}{\partial t}
   = Q_m
     +\nabla\cdot \left(\frac{K_m\, k_{rm}\,\eta_l}{\mu}\, \nabla p_{m}\right),
 
-where 
+where
 :math:`Q_m` is source or sink term [:math:`kg / m^3 / s`].
 The water storages are defined as
 
@@ -157,28 +157,28 @@ The water storages are defined as
   \theta_f = \phi_f\, \eta_l\, s_{lf},\quad
   \theta_m = \phi_m\, \eta_l\, s_{lm},
 
-where saturations :math:`s_{lf}` and :math:`s_{lm}` may use different capillary 
+where saturations :math:`s_{lf}` and :math:`s_{lm}` may use different capillary
 pressure - saturation models.
-In the simplified model, the rate of water exchange between the fracture and matrix regions 
+In the simplified model, the rate of water exchange between the fracture and matrix regions
 is proportional to the difference in hydraulic heads:
 
 .. math::
-  \frac{K_m\,k_{rm}\,\eta_l}{\mu\,L_m}\, \nabla p_m 
+  \frac{K_m\,k_{rm}\,\eta_l}{\mu\,L_m}\, \nabla p_m
   \approx
   \alpha_w (h_f - h_m),
 
 where :math:`\alpha_w` is the mass transfer coefficient.
 Since hydraulic heads are needed for both regions, this equation requires
 retention curves for both regions and therefore is nonlinear.
- 
+
 
 Physical models and assumptions
 ...............................
 This list is used to summarize physical models and assumptions, such as
 coupling with other PKs.
 This list is often generated or extended by a high-level MPC PK.
-In the code development, this list plays a two-fold role. 
-First, it provides necessary information for coupling different PKs such 
+In the code development, this list plays a two-fold role.
+First, it provides necessary information for coupling different PKs such
 as flags for adding a vapor diffusion to Richards' equation.
 Second, the developers may use it instead of a factory of evaluators such as
 creation of primary and secondary evaluators for rock porosity models.
@@ -187,7 +187,7 @@ Combination of both approaches may lead to a more efficient code.
 * `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
   e.g. by EnergyFlow PK. The default value is `"false`".
 
-* `"flow and transport in fractures`" [bool] indicates that Darcy flow is calculated in fractures. 
+* `"flow and transport in fractures`" [bool] indicates that Darcy flow is calculated in fractures.
   This option is ignored is mesh dimentionaly equals to manifold dimensionality.
 
 * `"multiscale model`" [string] specifies a multiscale model.
@@ -200,7 +200,7 @@ Combination of both approaches may lead to a more efficient code.
   Available options are `"compressible: storativity coefficient`",
   `"compressible: pressure function`", and `"constant porosity`" (default).
 
-* `"coupled matrix fracture flow`" [string] specifies PK's role in the strong 
+* `"coupled matrix fracture flow`" [string] specifies PK's role in the strong
   coupling of two flow PKs. The value is either `"matrix`" or `"fracture`".
 
 * `"eos lookup table`" [string] provides the name for optional EOS lookup table.

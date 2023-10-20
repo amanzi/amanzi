@@ -12,28 +12,28 @@
 The conceptual PDE model for the incompressible Navier Stokes equations are
 
 .. math::
-  \frac{\partial (\rho \boldsymbol{u})}{\partial t} 
+  \frac{\partial (\rho \boldsymbol{u})}{\partial t}
   + \boldsymbol{\nabla} \cdot (\rho \boldsymbol{u} \otimes \boldsymbol{u})
   =
-  - \boldsymbol{\nabla} p 
-  + \boldsymbol{\nabla} \cdot \boldsymbol{\sigma} 
+  - \boldsymbol{\nabla} p
+  + \boldsymbol{\nabla} \cdot \boldsymbol{\sigma}
   + \rho \boldsymbol{g}
 
-where 
+where
 :math:`\rho` is the fluid density [kg/m^3],
 :math:`p` is the pressure [Pa],
 :math:`\boldsymbol{\sigma}` is the deviatoric stress tensor,
-:math:`\boldsymbol{g}` is the gravity vector [:math:`m/s^2`], 
+:math:`\boldsymbol{g}` is the gravity vector [:math:`m/s^2`],
 and :math:`u \otimes v = u \times v^T`.
 The Stokes stress contitutive law for incompressible viscous fluid is
 
 .. math::
-  \boldsymbol{\sigma} = 
-  \mu \left(\boldsymbol{\nabla} \boldsymbol{u} + 
+  \boldsymbol{\sigma} =
+  \mu \left(\boldsymbol{\nabla} \boldsymbol{u} +
             \boldsymbol{\nabla} \boldsymbol{u}^{T}\right),
 
-where 
-:math:`\mu` is the dynamic viscosity [:math:`Pa \cdot s`]. It can depend on density and pressure. 
+where
+:math:`\mu` is the dynamic viscosity [:math:`Pa \cdot s`]. It can depend on density and pressure.
 
 
 Physical models and assumptions

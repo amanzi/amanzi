@@ -16,8 +16,8 @@ List `"amesos parameters`" contains parameters that understood by this library.
 These parameters may violate the camel-case convention employed by this spec.
 Additional parameters are:
 
-* `"solver name`" [string] declares name of one of the supported direct solvers. 
-  Available options are `"klu`", `"superludist`", `"basker`", etc, see Amesos and 
+* `"solver name`" [string] declares name of one of the supported direct solvers.
+  Available options are `"klu`", `"superludist`", `"basker`", etc, see Amesos and
   Amesos2 manuals for details. The default value is serial solver `"klu`".
 
 * `"amesos version`" [int] specifies version of Amesos. Available options are 1 and 2.

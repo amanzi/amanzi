@@ -10,8 +10,8 @@
 /*!
 
 A reconstruction of discrete fields is used to increase accuracy of discrete models.
-The reconstruction can be either unconstrained or limited. 
-Amanzi supports a variety of state-of-the-art reconstruction and limiting algorithms 
+The reconstruction can be either unconstrained or limited.
+Amanzi supports a variety of state-of-the-art reconstruction and limiting algorithms
 and their extensions for various PKs.
 
 * `"reconstruction`" [list] describes parameters used by reconstruction algorithms.
@@ -19,24 +19,24 @@ and their extensions for various PKs.
  * `"method`" [string] specifies a reconstruction method. Available option is
    `"cell-based`" (default).
 
- * `"polynomial order`" [int] defines the polynomial order of the reconstructed function. 
+ * `"polynomial order`" [int] defines the polynomial order of the reconstructed function.
    Default is 1.
 
  * `"weight`" [string] defines weight for reconstruction. Available options are
    `"constant`" (default) and `"inverse distance`".
 
- * `"limiter`" [string] specifies limiting method. Available options are 
-   `"Barth-Jespersen`" (default), `"Michalak-Gooch`", `"tensorial`", and `"Kuzmin`". 
+ * `"limiter`" [string] specifies limiting method. Available options are
+   `"Barth-Jespersen`" (default), `"Michalak-Gooch`", `"tensorial`", and `"Kuzmin`".
 
- * `"limiter stencil`" [string] specifies stencil for calculating local bounds. Available 
+ * `"limiter stencil`" [string] specifies stencil for calculating local bounds. Available
    options are `"face to cells`", `"cell to closets cells`", `"cell to all cells`",
    and `"node to cells`".
    For a square mesh, the above options define stencils of size 2, 5, 9, and 4,
    respectively.
-   Option `"face to cells`" is default for `"Barth-Jespersen`", `"Michalak-Gooch`", 
+   Option `"face to cells`" is default for `"Barth-Jespersen`", `"Michalak-Gooch`",
    and `"tensorial`".  Option `"node to cells`" is default for `"Kuzmin`".
 
- * `"limiter points`" [int] specifies the number of integration points (Gauss points in 2D) 
+ * `"limiter points`" [int] specifies the number of integration points (Gauss points in 2D)
    on face where limiting occurs. Default is 1. Limited to 2D.
 
  * `"limiter location`" [string] defines geometry entity where the *limiter points*
@@ -47,10 +47,10 @@ and their extensions for various PKs.
  * `"limiter cfl`" [double] is a safety factor (less than 1) applied to the limiter.
    Default value is 1.
 
- * `"use external bounds`" [bool] specifies if bounds for limiters are provided by 
+ * `"use external bounds`" [bool] specifies if bounds for limiters are provided by
    the hosting application. Default is `"false`".`
 
- * `"limiter extension for transport`" [bool] adds additional corrections to 
+ * `"limiter extension for transport`" [bool] adds additional corrections to
    limiters required by the transport PK. Default value is *false*.
 
 .. code-block:: xml

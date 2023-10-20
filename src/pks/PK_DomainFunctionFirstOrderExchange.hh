@@ -123,7 +123,7 @@ PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, double t1)
   if (unique_specs_.size() == 0) return;
 
   // create the input tuple (time + space)
-  int dim = mesh_->space_dimension();
+  int dim = mesh_->getSpaceDimension();
   std::vector<double> args(1 + dim);
 
   // get the tcc vector

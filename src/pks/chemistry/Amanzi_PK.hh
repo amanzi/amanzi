@@ -11,27 +11,27 @@
 
 The Amanzi chemistry process kernel uses the following parameters.
 
-* `"thermodynamic database`" [list] 
+* `"thermodynamic database`" [list]
 
   * `"file`" [string] is the name of the chemistry database file, relative to the execution directory.
 
-  * `"format`" [string] is the format of the database file. Actual database format is not XML and 
-    is the same as described for the 2010 demo with additions for the new chemical processes. 
+  * `"format`" [string] is the format of the database file. Actual database format is not XML and
+    is the same as described for the 2010 demo with additions for the new chemical processes.
     Valid values: "simple".
 
 * `"minerals`" [Array(string)] is the list of mineral names.
 
 * `"sorption sites`" [Array(string)] is the list of sorption sites.
 
-* `"activity model`" [string] is the type of model used for activity corrections. 
+* `"activity model`" [string] is the type of model used for activity corrections.
   Valid options are `"unit`", `"debye-huckel`", and `"pitzer-hwm`",
 
 * `"tolerance`" [double] defines tolerance in Newton solves inside the chemistry library.
 
-* `"maximum Newton iterations`" [int] is the maximum number of iteration the chemistry 
+* `"maximum Newton iterations`" [int] is the maximum number of iteration the chemistry
   library can take.
 
-* `"auxiliary data`" [Array(string)] defines additional chemistry related data that the user 
+* `"auxiliary data`" [Array(string)] defines additional chemistry related data that the user
   can request be saved to vis files. Currently `"pH`" is the only variable supported.
 
 .. code-block:: xml

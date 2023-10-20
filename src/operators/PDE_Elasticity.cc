@@ -65,7 +65,7 @@ PDE_Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
 {
   WhetStone::DenseMatrix Acell;
 
-  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+  WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
   Kc(0, 0) = K_default_;
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -133,8 +133,7 @@ PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
 void
 PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  int v1, v2, d = mesh_->space_dimension();
-  AmanziMesh::Entity_ID_List nodes, faces, cells;
+  int d = mesh_->getSpaceDimension();
   auto& rhs_node = *global_op_->rhs()->ViewComponent("node", true);
 
   for (auto bc : bcs_trial_) {
@@ -147,7 +146,7 @@ PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
       int ncols = Acell.NumCols();
 
       if (kind == AmanziMesh::FACE && d == 2) {
-        mesh_->cell_get_faces(c, &faces);
+        auto faces = mesh_->getCellFaces(c);
         int nfaces = faces.size();
 
         for (int n = 0; n != nfaces; ++n) {
@@ -155,17 +154,17 @@ PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
           if (bc_model[f] == OPERATOR_BC_SHEAR_STRESS) {
             double value = bc_value[f];
-            const auto& tau = mesh_->edge_vector(f);
-            mesh_->edge_get_nodes(f, &v1, &v2);
+            const auto& tau = mesh_->getEdgeVector(f);
+            auto lnodes = mesh_->getEdgeNodes(f);
 
             for (int k = 0; k < d; ++k) {
-              rhs_node[k][v1] += value * tau[k] / 2;
-              rhs_node[k][v2] += value * tau[k] / 2;
+              rhs_node[k][lnodes[0]] += value * tau[k] / 2;
+              rhs_node[k][lnodes[1]] += value * tau[k] / 2;
             }
           }
         }
       } else if (kind == AmanziMesh::NODE) {
-        mesh_->cell_get_nodes(c, &nodes);
+        auto nodes = mesh_->getCellNodes(c);
         int nnodes = nodes.size();
 
         for (int n = 0; n != nnodes; ++n) {
@@ -176,7 +175,7 @@ PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
             if (local_op_->matrices_shadow[c].NumRows() == 0) {
               local_op_->matrices_shadow[c] = Acell;
             }
-            mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
+            auto cells = mesh_->getNodeCells(v);
             int ncells = cells.size();
 
             auto normal = WhetStone::getNodeUnitNormal(*mesh_, v);

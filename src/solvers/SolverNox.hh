@@ -8,7 +8,6 @@
 */
 
 //! Calls Nox nonlinear solvers/JFNK.
-
 /*!
 
 The interface to Trilinos NOX solver is as follows:

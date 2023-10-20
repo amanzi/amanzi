@@ -60,7 +60,6 @@ add_amanzi_library(whetstone
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
                           SplinePolynomial.cc
-                          SurfaceCoordinateSystem.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            Basis.hh BasisFactory.hh
@@ -90,8 +89,6 @@ add_amanzi_library(whetstone
                            Monomial.hh Polynomial.hh PolynomialIterator.hh PolynomialBase.hh
                            SpaceTimePolynomial.hh
                            SplinePolynomial.hh
-                           SurfaceCoordinateSystem.hh
-                           SingleFaceMesh.hh
                            VectorObjects.hh MatrixObjects.hh PolynomialOnMesh.hh
                            Tensor.hh
                            WhetStoneDefs.hh
@@ -111,7 +108,7 @@ if (BUILD_TESTS)
         file(COPY ${DataFiles} DESTINATION ${WHETSTONE_BINARY_DIR}/test/)
     endif()
 
-    set(amanzi_libs geometry mesh mesh_audit mesh_factory whetstone)
+    set(amanzi_libs geometry mesh mesh_factory whetstone)
 
     # Test: matrices for diffusion
     add_amanzi_test(whetstone_diffusion whetstone_diffusion
@@ -159,7 +156,6 @@ if (BUILD_TESTS)
                                         test/whetstone_polynomials.cc
                                         test/whetstone_dg.cc
                                         test/whetstone_numi.cc
-                                        test/whetstone_high_order.cc
                                         test/whetstone_maps.cc
                                         test/whetstone_projectors.cc
                                         test/whetstone_high_order.cc

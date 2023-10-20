@@ -76,30 +76,33 @@ RunTest(int n, int d)
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<const Mesh> mesh = (d == 2) ?
                                     meshfactory.create(0.0, 0.0, 1.0, 1.0, n, n) :
                                     meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
 
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // initialize data
   // -- field
-  auto field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
+  auto field =
+    Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL, true), 1));
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     (*field)[0][c] = fun_field(xc);
   }
 
   // -- flux
   int dir;
-  AmanziMesh::Entity_ID_List cells;
 
   CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
+  cvs.SetMesh(mesh)->SetGhosted(true)->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
   auto velocity = Teuchos::rcp(new CompositeVector(cvs));
   auto& velocity_f = *velocity->ViewComponent("face");
@@ -116,12 +119,13 @@ RunTest(int n, int d)
 
   double dt(0.03 / n);
   for (int f = 0; f < nfaces_owned; f++) {
-    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
     if (cells.size() == 2) {
-      const auto& xf = mesh->face_centroid(f);
-      const auto& normal = mesh->face_normal(f, false, cells[0], &dir);
-      const auto& xc = (dir == 1) ? mesh->cell_centroid(cells[0]) : mesh->cell_centroid(cells[1]);
+      const auto& xf = mesh->getFaceCentroid(f);
+      const auto& normal = mesh->getFaceNormal(f, cells[0], &dir);
+      const auto& xc =
+        (dir == 1) ? mesh->getCellCentroid(cells[0]) : mesh->getCellCentroid(cells[1]);
 
       // low-order and high-order fluxes are from 1st to 2nd cell
       double tmp = (fun_velocity(xf) * normal) * dt;
@@ -135,12 +139,13 @@ RunTest(int n, int d)
   }
 
   // -- boundary conditions
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   auto& bc_model = bc->bc_model();
   auto& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+    const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(1.0 - xf[0]) < 1e-6 || fabs(xf[1]) < 1e-6 ||
         fabs(1.0 - xf[1]) < 1e-6 || fabs(xf[d]) < 1e-6 || fabs(1.0 - xf[d]) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;

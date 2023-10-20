@@ -14,7 +14,7 @@ The class for ion exchange complexation reaction
   NaX <===> Na+ + X-
 
 The `"ion exchange complexes`" is the list of ion exchange complexation reactions.
-We assume that the reactions are always written as one complex equals one primary 
+We assume that the reactions are always written as one complex equals one primary
 species plus one exchange site.
 Each complex is defined by the following parameters:
 

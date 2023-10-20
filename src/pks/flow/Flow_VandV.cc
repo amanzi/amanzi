@@ -45,33 +45,32 @@ Flow_PK::VV_FractureConservationLaw() const
 
   std::vector<int> dirs;
   double err(0.0), flux_max(0.0);
-  AmanziMesh::Entity_ID_List faces, cells;
 
   for (int c = 0; c < ncells_owned; c++) {
     double flux_sum(0.0);
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    auto [faces, fdirs] = mesh_->getCellFacesAndDirections(c);
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
       int g = fracture_map->FirstPointInElement(f);
       int ndofs = fracture_map->ElementSize(f);
       if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
-      flux_sum += fracture_flux[0][g] * dirs[i];
+      flux_sum += fracture_flux[0][g] * fdirs[i];
       flux_max = std::max<double>(flux_max, std::fabs(fracture_flux[0][g]));
     }
 
     // sum into fluxes from matrix
-    auto f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
-    mesh_matrix->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto f = mesh_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
+    auto cells = mesh_matrix->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int pos = Operators::UniqueIndexFaceToCells(*mesh_matrix, f, cells[0]);
 
     for (int j = 0; j != cells.size(); ++j) {
-      mesh_matrix->cell_get_faces_and_dirs(cells[j], &faces, &dirs);
+      auto [faces, fdirs] = mesh_matrix->getCellFacesAndDirections(cells[j]);
 
       for (int i = 0; i < faces.size(); i++) {
         if (f == faces[i]) {
           int g = matrix_map->FirstPointInElement(f);
-          double fln = matrix_flux[0][g + (pos + j) % 2] * dirs[i];
+          double fln = matrix_flux[0][g + (pos + j) % 2] * fdirs[i];
           flux_sum -= fln;
           flux_max = std::max<double>(flux_max, std::fabs(fln));
           break;
@@ -127,7 +126,7 @@ Flow_PK::VV_ValidateBCs() const
                         head_faces.end(),
                         std::inserter(overlap, overlap.end()));
   local_overlap = overlap.size();
-  mesh_->get_comm()->SumAll(&local_overlap, &global_overlap, 1); // this will over count ghost faces
+  mesh_->getComm()->SumAll(&local_overlap, &global_overlap, 1); // this will over count ghost faces
 
   if (global_overlap != 0) {
     Errors::Message msg;
@@ -145,7 +144,7 @@ Flow_PK::VV_ValidateBCs() const
                         flux_faces.end(),
                         std::inserter(overlap, overlap.end()));
   local_overlap = overlap.size();
-  mesh_->get_comm()->SumAll(&local_overlap, &global_overlap, 1); // this will over count ghost faces
+  mesh_->getComm()->SumAll(&local_overlap, &global_overlap, 1); // this will over count ghost faces
 
   if (global_overlap != 0) {
     Errors::Message msg;
@@ -163,7 +162,7 @@ Flow_PK::VV_ValidateBCs() const
                         flux_faces.end(),
                         std::inserter(overlap, overlap.end()));
   local_overlap = overlap.size();
-  mesh_->get_comm()->SumAll(&local_overlap, &global_overlap, 1); // this will over count ghost faces
+  mesh_->getComm()->SumAll(&local_overlap, &global_overlap, 1); // this will over count ghost faces
 
   if (global_overlap != 0) {
     Errors::Message msg;
@@ -190,12 +189,12 @@ Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
 
   double mass_amanzi = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
-    mass_amanzi += ws[0][c] * rho_ * phi[0][c] * mesh_->cell_volume(c);
+    mass_amanzi += ws[0][c] * rho_ * phi[0][c] * mesh_->getCellVolume(c);
   }
 
   double mass_amanzi_tmp = mass_amanzi, mass_bc_tmp = mass_bc_dT;
-  mesh_->get_comm()->SumAll(&mass_amanzi_tmp, &mass_amanzi, 1);
-  mesh_->get_comm()->SumAll(&mass_bc_tmp, &mass_bc_dT, 1);
+  mesh_->getComm()->SumAll(&mass_amanzi_tmp, &mass_amanzi, 1);
+  mesh_->getComm()->SumAll(&mass_bc_tmp, &mass_bc_dT, 1);
 
   mass_bc += mass_bc_dT;
 
@@ -229,7 +228,7 @@ Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) const
         f = it->first;
         if (f < nfaces_owned) {
           c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
-          mesh_->face_normal(f, false, c, &dir);
+          mesh_->getFaceNormal(f, c, &dir);
           tmp = flowrate[0][f] * dir;
           if (tmp > 0.0) outflow += tmp;
         }
@@ -238,7 +237,7 @@ Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) const
   }
 
   tmp = outflow;
-  mesh_->get_comm()->SumAll(&tmp, &outflow, 1);
+  mesh_->getComm()->SumAll(&tmp, &outflow, 1);
 
   outflow *= rho_;
   seepage_mass_ += outflow * dT;
@@ -266,7 +265,7 @@ Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
 
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      double z = mesh_->face_centroid(f)[dim - 1];
+      double z = mesh_->getFaceCentroid(f)[dim - 1];
       double h = z + (bc_value[f] - atm_pressure_) / rho_g;
       hmax = std::max(hmax, h);
       hmin = std::min(hmin, h);
@@ -274,16 +273,16 @@ Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
     }
   }
   int flag_tmp(flag);
-  mesh_->get_comm()->MinAll(&flag_tmp, &flag, 1);
+  mesh_->getComm()->MinAll(&flag_tmp, &flag, 1);
 
   double tmp;
   Teuchos::OSTab tab = vo_->getOSTab();
 
   if (flag == 1) {
     tmp = hmin; // global extrema
-    mesh_->get_comm()->MinAll(&tmp, &hmin, 1);
+    mesh_->getComm()->MinAll(&tmp, &hmin, 1);
     tmp = hmax;
-    mesh_->get_comm()->MaxAll(&tmp, &hmax, 1);
+    mesh_->getComm()->MaxAll(&tmp, &hmax, 1);
 
     *vo_->os() << "boundary head (BCs): min=" << units_.OutputLength(hmin)
                << ", max=" << units_.OutputLength(hmax) << std::endl;
@@ -293,15 +292,15 @@ Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
   const Epetra_MultiVector& pcells = *pressure.ViewComponent("cell");
   double vmin(1.4e+9), vmax(-1.4e+9);
   for (int c = 0; c < ncells_owned; c++) {
-    double z = mesh_->cell_centroid(c)[dim - 1];
+    double z = mesh_->getCellCentroid(c)[dim - 1];
     double h = z + (pcells[0][c] - atm_pressure_) / rho_g;
     vmax = std::max(vmax, h);
     vmin = std::min(vmin, h);
   }
   tmp = vmin; // global extrema
-  mesh_->get_comm()->MinAll(&tmp, &vmin, 1);
+  mesh_->getComm()->MinAll(&tmp, &vmin, 1);
   tmp = vmax;
-  mesh_->get_comm()->MaxAll(&tmp, &vmax, 1);
+  mesh_->getComm()->MaxAll(&tmp, &vmax, 1);
   *vo_->os() << "domain head (cells): min=" << units_.OutputLength(vmin)
              << ", max=" << units_.OutputLength(vmax) << std::endl;
 
@@ -311,16 +310,16 @@ Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
     const auto& fmap = *pressure.Map().Map("face", false);
 
     for (int f = 0; f < nfaces_owned; f++) {
-      double z = mesh_->face_centroid(f)[dim - 1];
+      double z = mesh_->getFaceCentroid(f)[dim - 1];
       int g = fmap.FirstPointInElement(f);
       double h = z + (pface[0][g] - atm_pressure_) / rho_g;
       vmax = std::max(vmax, h);
       vmin = std::min(vmin, h);
     }
     tmp = vmin; // global extrema
-    mesh_->get_comm()->MinAll(&tmp, &vmin, 1);
+    mesh_->getComm()->MinAll(&tmp, &vmin, 1);
     tmp = vmax;
-    mesh_->get_comm()->MaxAll(&tmp, &vmax, 1);
+    mesh_->getComm()->MaxAll(&tmp, &vmax, 1);
     *vo_->os() << "domain head (cells + faces): min=" << units_.OutputLength(vmin)
                << ", max=" << units_.OutputLength(vmax) << std::endl;
   }
@@ -351,7 +350,7 @@ Flow_PK::VV_PrintSourceExtrema() const
           smin = std::min(smin, tmp);
           smax = std::max(smax, tmp);
 
-          double vol = mesh_->cell_volume(c);
+          double vol = mesh_->getCellVolume(c);
 
           if (flow_on_manifold_) {
             areas[i] += vol;
@@ -367,13 +366,13 @@ Flow_PK::VV_PrintSourceExtrema() const
 
     double tmp1(smin), tmp2(smax);
     std::vector<double> aux1(rates), aux2(volumes);
-    mesh_->get_comm()->MinAll(&tmp1, &smin, 1);
-    mesh_->get_comm()->MaxAll(&tmp2, &smax, 1);
-    mesh_->get_comm()->SumAll(aux1.data(), rates.data(), nsrcs);
-    mesh_->get_comm()->SumAll(aux2.data(), volumes.data(), nsrcs);
+    mesh_->getComm()->MinAll(&tmp1, &smin, 1);
+    mesh_->getComm()->MaxAll(&tmp2, &smax, 1);
+    mesh_->getComm()->SumAll(aux1.data(), rates.data(), nsrcs);
+    mesh_->getComm()->SumAll(aux2.data(), volumes.data(), nsrcs);
     if (flow_on_manifold_) {
       std::vector<double> aux3(areas);
-      mesh_->get_comm()->SumAll(aux3.data(), areas.data(), nsrcs);
+      mesh_->getComm()->SumAll(aux3.data(), areas.data(), nsrcs);
     }
 
     Teuchos::OSTab tab = vo_->getOSTab();

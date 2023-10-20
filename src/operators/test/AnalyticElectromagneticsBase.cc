@@ -31,12 +31,12 @@ AnalyticElectromagneticsBase::ComputeFaceError(Epetra_MultiVector& u,
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int nfaces =
-    mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,
+                                     Amanzi::AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    double area = mesh_->face_area(f);
-    const Amanzi::AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    const Amanzi::AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    double area = mesh_->getFaceArea(f);
+    const Amanzi::AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+    const Amanzi::AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
     const Amanzi::AmanziGeometry::Point& B = magnetic_exact(xf, t);
     double tmp = (normal * B) / area;
 
@@ -47,11 +47,11 @@ AnalyticElectromagneticsBase::ComputeFaceError(Epetra_MultiVector& u,
   }
 #ifdef HAVE_MPI
   double tmp = unorm;
-  mesh_->get_comm()->SumAll(&tmp, &unorm, 1);
+  mesh_->getComm()->SumAll(&tmp, &unorm, 1);
   tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
+  mesh_->getComm()->SumAll(&tmp, &l2_err, 1);
   tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+  mesh_->getComm()->MaxAll(&tmp, &inf_err, 1);
 #endif
   unorm = sqrt(unorm);
   l2_err = sqrt(l2_err);
@@ -72,12 +72,12 @@ AnalyticElectromagneticsBase::ComputeEdgeError(Epetra_MultiVector& u,
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int nedges =
-    mesh_->num_entities(Amanzi::AmanziMesh::EDGE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int nedges = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::EDGE,
+                                     Amanzi::AmanziMesh::Parallel_kind::OWNED);
   for (int e = 0; e < nedges; e++) {
-    double len = mesh_->edge_length(e);
-    const Amanzi::AmanziGeometry::Point& tau = mesh_->edge_vector(e);
-    const Amanzi::AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
+    double len = mesh_->getEdgeLength(e);
+    const Amanzi::AmanziGeometry::Point& tau = mesh_->getEdgeVector(e);
+    const Amanzi::AmanziGeometry::Point& xe = mesh_->getEdgeCentroid(e);
 
     const Amanzi::AmanziGeometry::Point& E = electric_exact(xe, t);
     double tmp = (E * tau) / len;
@@ -111,22 +111,22 @@ AnalyticElectromagneticsBase::ComputeNodeError(Epetra_MultiVector& u,
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int d = mesh_->space_dimension();
+  int d = mesh_->getSpaceDimension();
   Amanzi::AmanziGeometry::Point xv(d);
 
-  Amanzi::AmanziMesh::Entity_ID_List nodes;
-  int ncells =
-    mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  Amanzi::AmanziMesh::Entity_ID_View nodes;
+  int ncells = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
+                                     Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells; c++) {
-    double volume = mesh_->cell_volume(c);
+    double volume = mesh_->getCellVolume(c);
 
-    mesh_->cell_get_nodes(c, &nodes);
+    nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
 
     for (int k = 0; k < nnodes; k++) {
       int v = nodes[k];
-      mesh_->node_get_coordinates(v, &xv);
+      xv = mesh_->getNodeCoordinate(v);
       double tmp = (electric_exact(xv, t))[2];
 
       // std::cout << v << " at " << xv << " error: " << tmp << " " << u[0][v] << std::endl;
@@ -155,9 +155,9 @@ AnalyticElectromagneticsBase::GlobalOp(std::string op, double* val, int n)
   for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
 
   if (op == "sum")
-    mesh_->get_comm()->SumAll(val_tmp, val, n);
+    mesh_->getComm()->SumAll(val_tmp, val, n);
   else if (op == "max")
-    mesh_->get_comm()->MaxAll(val_tmp, val, n);
+    mesh_->getComm()->MaxAll(val_tmp, val, n);
 
   delete[] val_tmp;
 }

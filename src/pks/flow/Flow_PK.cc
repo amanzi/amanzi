@@ -72,7 +72,7 @@ Flow_PK::Setup()
 
   // type of the flow (in matrix or on manifold)
   flow_on_manifold_ = physical_models->get<bool>("flow and transport in fractures", false);
-  flow_on_manifold_ &= (mesh_->manifold_dimension() != mesh_->space_dimension());
+  flow_on_manifold_ &= (mesh_->getManifoldDimension() != mesh_->getSpaceDimension());
 
   // coupling with other PKs
   coupled_to_matrix_ =
@@ -115,7 +115,7 @@ Flow_PK::Setup()
       S_->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
       auto fpm_list = Teuchos::sublist(fp_list_, "fracture permeability models", true);
       Teuchos::RCP<FracturePermModelPartition> fpm =
@@ -133,19 +133,19 @@ Flow_PK::Setup()
     S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
 
     S_->Require<CV_t, CVS_t>(prev_aperture_key_, Tags::DEFAULT)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     {
       S_->Require<CV_t, CVS_t>(permeability_eff_key_, Tags::DEFAULT, permeability_eff_key_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
       Teuchos::ParameterList elist(permeability_eff_key_);
       std::vector<std::string> listm(
@@ -163,7 +163,7 @@ Flow_PK::Setup()
       S_->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, dim);
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, dim);
     }
   }
 
@@ -177,7 +177,7 @@ Flow_PK::Setup()
       S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
-        ->SetComponent("face", AmanziMesh::FACE, 1);
+        ->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     }
   }
 
@@ -190,7 +190,7 @@ Flow_PK::Setup()
     S_->Require<CV_t, CVS_t>(wc_key_, Tags::DEFAULT, wc_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     std::vector<std::string> listm(
       { Keys::getVarName(porosity_key_), Keys::getVarName(saturation_liquid_key_) });
@@ -216,7 +216,7 @@ Flow_PK::Setup()
             S_->Require<CV_t, CVS_t>("well_index", Tags::DEFAULT, passwd_)
               .SetMesh(mesh_)
               ->SetGhosted(true)
-              ->SetComponent("cell", AmanziMesh::CELL, 1);
+              ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
             peaceman_model_ = true;
             break;
           }
@@ -258,11 +258,15 @@ Flow_PK::Initialize()
 {
   dt_ = 0.0;
 
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  ncells_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  ncells_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  nfaces_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  nfaces_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   nseepage_prev = 0;
   ti_phase_counter = 0;
@@ -282,7 +286,7 @@ Flow_PK::Initialize()
   // parallel execution data
   MyPID = 0;
 #ifdef HAVE_MPI
-  MyPID = mesh_->cell_map(false).Comm().MyPID();
+  MyPID = mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).Comm().MyPID();
 #endif
 }
 
@@ -368,7 +372,7 @@ Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
   double g = fabs(gravity_[dim - 1]);
 
   for (int c = 0; c != ncells_owned; ++c) {
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     double z = xc[dim - 1];
     hydraulic_head[0][c] = z + (pressure[0][c] - atm_pressure_) / (g * rho);
   }
@@ -399,7 +403,8 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 
   // Create BC objects
   // -- memory
-  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  op_bc_ = Teuchos::rcp(
+    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
 
   Teuchos::RCP<FlowBoundaryFunction> bc;
   auto& bc_list = plist.sublist("boundary conditions");
@@ -415,7 +420,8 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        bc = bc_factory.Create(spec, "boundary pressure", AmanziMesh::FACE, Teuchos::null);
+        bc = bc_factory.Create(
+          spec, "boundary pressure", AmanziMesh::Entity_kind::FACE, Teuchos::null);
         bc->set_bc_name("pressure");
         bcs_.push_back(bc);
       }
@@ -431,7 +437,7 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        bc = bc_factory.Create(spec, "static head", AmanziMesh::FACE, Teuchos::null);
+        bc = bc_factory.Create(spec, "static head", AmanziMesh::Entity_kind::FACE, Teuchos::null);
         bc->set_bc_name("head");
         bcs_.push_back(bc);
       }
@@ -446,7 +452,8 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       if (it->second.isList()) {
         Teuchos::ParameterList spec = Teuchos::getValue<Teuchos::ParameterList>(it->second);
-        bc = bc_factory.Create(spec, "outward mass flux", AmanziMesh::FACE, Teuchos::null);
+        bc = bc_factory.Create(
+          spec, "outward mass flux", AmanziMesh::Entity_kind::FACE, Teuchos::null);
         bc->set_bc_name("flux");
         bcs_.push_back(bc);
       }
@@ -462,7 +469,8 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        bc = bc_factory.Create(spec, "outward mass flux", AmanziMesh::FACE, Teuchos::null);
+        bc = bc_factory.Create(
+          spec, "outward mass flux", AmanziMesh::Entity_kind::FACE, Teuchos::null);
         bc->set_bc_name("seepage");
         bcs_.push_back(bc);
       }
@@ -502,7 +510,7 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        srcs.push_back(factory.Create(spec, "well", AmanziMesh::CELL, Kxy));
+        srcs.push_back(factory.Create(spec, "well", AmanziMesh::Entity_kind::CELL, Kxy));
       }
     }
   }
@@ -529,29 +537,29 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 void
 Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
 {
-  AmanziMesh::Entity_ID_List cells;
   auto& wi = *S_->GetW<CompositeVector>("well_index", Tags::DEFAULT, passwd_).ViewComponent("cell");
   const auto& perm = *S_->Get<CompositeVector>(permeability_key_).ViewComponent("cell");
 
   double kx, ky, dx, dy, h, r0, rw;
   double xmin, xmax, ymin, ymax, zmin, zmax;
-  int d = mesh_->space_dimension();
+  int d = mesh_->getSpaceDimension();
 
   std::vector<std::string> regions = spec.get<Teuchos::Array<std::string>>("regions").toVector();
   Teuchos::ParameterList well_list = spec.sublist("well");
   rw = well_list.get<double>("well radius");
 
   for (auto it = regions.begin(); it != regions.end(); ++it) {
-    mesh_->get_set_entities(*it, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &cells);
+    auto cells =
+      mesh_->getSetEntities(*it, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
     for (int k = 0; k < cells.size(); k++) {
       int c = cells[k];
-      const auto& faces = mesh_->cell_get_faces(c);
+      const auto& faces = mesh_->getCellFaces(c);
       xmin = ymin = zmin = 1e+23;
       xmax = ymax = zmax = 1e-23;
       for (int j = 0; j < faces.size(); j++) {
         int f = faces[j];
-        const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+        const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
         xmax = std::max(xmax, xf[0]);
         xmin = std::min(xmin, xf[0]);
         ymax = std::max(ymax, xf[1]);
@@ -687,12 +695,10 @@ Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
   area_seepage += area_add;
 
   // mark missing boundary conditions as zero flux conditions
-  AmanziMesh::Entity_ID_List cells;
   missed_bc_faces_ = 0;
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] == Operators::OPERATOR_BC_NONE) {
-      cells.clear();
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       int ncells = cells.size();
 
       if (ncells == 1) {
@@ -712,8 +718,8 @@ Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
 #ifdef HAVE_MPI
     int nseepage_tmp = nseepage;
     double area_tmp = area_seepage;
-    mesh_->get_comm()->SumAll(&area_tmp, &area_seepage, 1);
-    mesh_->get_comm()->SumAll(&nseepage_tmp, &nseepage, 1);
+    mesh_->getComm()->SumAll(&area_tmp, &area_seepage, 1);
+    mesh_->getComm()->SumAll(&nseepage_tmp, &nseepage, 1);
 #endif
     if (MyPID == 0 && nseepage > 0 && nseepage != nseepage_prev) {
       Teuchos::OSTab tab = vo_->getOSTab();
@@ -819,7 +825,7 @@ Flow_PK::AddSourceTerms(CompositeVector& rhs, double dt)
   for (int i = 0; i < srcs.size(); ++i) {
     for (auto it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
       int c = it->first;
-      rhs_cell[0][c] += mesh_->cell_volume(c) * it->second[0];
+      rhs_cell[0][c] += mesh_->getCellVolume(c) * it->second[0];
     }
   }
 }
@@ -835,18 +841,26 @@ void
 Flow_PK::DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells,
                                         Epetra_MultiVector& ufaces)
 {
-  AmanziMesh::Entity_ID_List cells;
   auto& fmap = ufaces.Map();
 
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   for (int f = 0; f < nfaces; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
+    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     double face_value = 0.0;
-    for (int n = 0; n < ncells; n++) face_value += ucells[0][cells[n]];
-    double pmean = face_value / ncells;
+    int count = 0;
+    for (int n = 0; n < ncells; n++) {
+      if (cells[n] < ncells_owned) {
+        count++;
+        face_value += ucells[0][cells[n]];
+      }
+    }
+    double pmean = face_value / count;
 
     int first = fmap.FirstPointInElement(f);
     int ndofs = fmap.ElementSize(f);
@@ -866,8 +880,7 @@ Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
 
   double volume = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
-    const auto& faces = mesh_->cell_get_faces(c);
-    const auto& fdirs = mesh_->cell_get_face_dirs(c);
+    const auto& [faces, fdirs] = mesh_->getCellFacesAndDirections(c);
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
@@ -912,16 +925,15 @@ Flow_PK::BoundaryFaceValue(int f, const CompositeVector& u)
 void
 Flow_PK::VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::Point& n2)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   int i1, i2;
   double amax(-1e+50), amin(1e+50), a;
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    double area = mesh_->face_area(f);
-    const AmanziGeometry::Point normal = mesh_->face_normal(f);
+    double area = mesh_->getFaceArea(f);
+    const AmanziGeometry::Point normal = mesh_->getFaceNormal(f);
 
     a = normal[dim - 1] * dirs[i] / area;
     if (a > amax) {
@@ -934,8 +946,8 @@ Flow_PK::VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::Point
     }
   }
 
-  n1 = mesh_->face_normal(faces[i1]) * dirs[i1];
-  n2 = mesh_->face_normal(faces[i2]) * dirs[i2];
+  n1 = mesh_->getFaceNormal(faces[i1]) * dirs[i1];
+  n2 = mesh_->getFaceNormal(faces[i2]) * dirs[i2];
 }
 
 } // namespace Flow

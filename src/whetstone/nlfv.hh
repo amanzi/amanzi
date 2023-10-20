@@ -19,7 +19,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "WhetStoneDefs.hh"
@@ -31,7 +31,7 @@ namespace WhetStone {
 class NLFV {
  public:
   NLFV() : mesh_(Teuchos::null){};
-  NLFV(Teuchos::RCP<const AmanziMesh::MeshLight> mesh) : mesh_(mesh){};
+  NLFV(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh){};
   ~NLFV(){};
 
   void HarmonicAveragingPoint(int f,
@@ -43,13 +43,13 @@ class NLFV {
                               double& weight);
 
   int PositiveDecomposition(int id1,
-                            const std::vector<AmanziGeometry::Point>& tau,
+                            const AmanziMesh::Point_List& tau,
                             const AmanziGeometry::Point& conormal,
                             double* ws,
                             int* ids);
 
  private:
-  Teuchos::RCP<const AmanziMesh::MeshLight> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
 } // namespace WhetStone

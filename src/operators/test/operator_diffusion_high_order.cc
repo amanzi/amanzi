@@ -63,13 +63,17 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART)
 
   // create a mesh framework
   Teuchos::RCP<GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_list->set<bool>("request edges", true);
+  fac_list->set<bool>("request faces", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4, true, true);
-  RCP<const Mesh> mesh = meshfactory.create("test/median7x8_filtered.exo", true, true);
+  RCP<const Mesh> mesh = meshfactory.create("test/median7x8_filtered.exo");
   // RCP<const Mesh> mesh = meshfactory.create("test/median15x16.exo", true, true);
 
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // create boundary data (no mixed bc)
   ParameterList op_list =
@@ -79,21 +83,21 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART)
   Analytic00 ana(mesh, order);
 
   Point xv(2), x0(2), x1(2);
-  AmanziMesh::Entity_ID_List nodes;
 
-  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::VECTOR));
+  Teuchos::RCP<BCs> bc_f =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, DOF_Type::VECTOR));
   std::vector<int>& bc_model_f = bc_f->bc_model();
   std::vector<std::vector<double>>& bc_value_f = bc_f->bc_value_vector(order);
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& xf = mesh->face_centroid(f);
+    const Point& xf = mesh->getFaceCentroid(f);
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
         fabs(xf[1] - 1.0) < 1e-6) {
-      mesh->face_get_nodes(f, &nodes);
+      auto nodes = mesh->getFaceNodes(f);
 
-      mesh->node_get_coordinates(nodes[0], &x0);
-      mesh->node_get_coordinates(nodes[1], &x1);
+      x0 = mesh->getNodeCoordinate(nodes[0]);
+      x1 = mesh->getNodeCoordinate(nodes[1]);
 
       bc_model_f[f] = OPERATOR_BC_DIRICHLET;
       double s0(0.0), s1(0.0), s2(0.0);
@@ -174,17 +178,22 @@ RunHighOrderLagrange2D(std::string vem_name, bool polygonal_mesh)
 
   // create a mesh framework
   Teuchos::RCP<GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_list->set<bool>("request edges", true);
+  fac_list->set<bool>("request faces", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh;
   if (polygonal_mesh) {
-    mesh = meshfactory.create("test/median7x8_filtered.exo", true, true);
+    mesh = meshfactory.create("test/median7x8_filtered.exo");
   } else {
-    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4, true, true);
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4);
   }
 
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nnodes_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   // create boundary data (no mixed bc)
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator " + vem_name);
@@ -193,14 +202,14 @@ RunHighOrderLagrange2D(std::string vem_name, bool polygonal_mesh)
   Analytic00 ana(mesh, order);
 
   Point xv(2), x0(2), x1(2);
-  AmanziMesh::Entity_ID_List nodes;
 
-  Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc_v =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, DOF_Type::SCALAR));
   std::vector<int>& bc_model_v = bc_v->bc_model();
   std::vector<double>& bc_value_v = bc_v->bc_value();
 
   for (int v = 0; v < nnodes_wghost; v++) {
-    mesh->node_get_coordinates(v, &xv);
+    xv = mesh->getNodeCoordinate(v);
     if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1]) < 1e-6 ||
         fabs(xv[1] - 1.0) < 1e-6) {
       bc_model_v[v] = OPERATOR_BC_DIRICHLET;
@@ -208,19 +217,20 @@ RunHighOrderLagrange2D(std::string vem_name, bool polygonal_mesh)
     }
   }
 
-  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::VECTOR));
+  Teuchos::RCP<BCs> bc_f =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, DOF_Type::VECTOR));
   std::vector<int>& bc_model_f = bc_f->bc_model();
   std::vector<std::vector<double>>& bc_value_f = bc_f->bc_value_vector(order - 1);
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& xf = mesh->face_centroid(f);
+    const Point& xf = mesh->getFaceCentroid(f);
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
         fabs(xf[1] - 1.0) < 1e-6) {
-      mesh->face_get_nodes(f, &nodes);
+      auto nodes = mesh->getFaceNodes(f);
 
-      mesh->node_get_coordinates(nodes[0], &x0);
-      mesh->node_get_coordinates(nodes[1], &x1);
+      x0 = mesh->getNodeCoordinate(nodes[0]);
+      x1 = mesh->getNodeCoordinate(nodes[1]);
 
       bc_model_f[f] = OPERATOR_BC_DIRICHLET;
       double s0(0.0), s1(0.0);
@@ -323,15 +333,20 @@ RunHighOrderLagrange3D(const std::string& vem_name)
 
   // create a mesh framework
   Teuchos::RCP<GeometricModel> gm;
-  MeshFactory meshfactory(comm, gm);
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_list->set<bool>("request edges", true);
+  fac_list->set<bool>("request faces", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  RCP<const Mesh> mesh;
-  mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 3, 4, true, true);
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 3, 4);
   // mesh = meshfactory.create("test/hexes.exo", true, true);
 
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nedges_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::ALL);
+  int nnodes_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   // numerical integration
   WhetStone::NumericalIntegration numi(mesh);
@@ -343,15 +358,15 @@ RunHighOrderLagrange3D(const std::string& vem_name)
   Analytic00b ana(mesh, 1.0, 2.0, 3.0, order);
 
   Point xv(3), x0(3), x1(3);
-  AmanziMesh::Entity_ID_List nodes;
 
   // -- nodes
-  Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc_v =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, DOF_Type::SCALAR));
   std::vector<int>& bc_model_v = bc_v->bc_model();
   std::vector<double>& bc_value_v = bc_v->bc_value();
 
   for (int v = 0; v < nnodes_wghost; v++) {
-    mesh->node_get_coordinates(v, &xv);
+    xv = mesh->getNodeCoordinate(v);
     if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1]) < 1e-6 ||
         fabs(xv[1] - 1.0) < 1e-6 || fabs(xv[2]) < 1e-6 || fabs(xv[2] - 1.0) < 1e-6) {
       bc_model_v[v] = OPERATOR_BC_DIRICHLET;
@@ -361,7 +376,8 @@ RunHighOrderLagrange3D(const std::string& vem_name)
 
   // -- edges
   int nke = PolynomialSpaceDimension(1, order - 2);
-  Teuchos::RCP<BCs> bc_e = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, DOF_Type::VECTOR));
+  Teuchos::RCP<BCs> bc_e =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::EDGE, DOF_Type::VECTOR));
   std::vector<int>& bc_model_e = bc_e->bc_model();
   std::vector<std::vector<double>>& bc_value_e = bc_e->bc_value_vector(nke);
 
@@ -369,9 +385,9 @@ RunHighOrderLagrange3D(const std::string& vem_name)
   funcs[0] = &ana;
 
   for (int e = 0; e < nedges_wghost; ++e) {
-    const Point& xe = mesh->edge_centroid(e);
-    double length = mesh->edge_length(e);
-    std::vector<AmanziGeometry::Point> tau(1, mesh->edge_vector(e));
+    const Point& xe = mesh->getEdgeCentroid(e);
+    double length = mesh->getEdgeLength(e);
+    std::vector<AmanziGeometry::Point> tau(1, mesh->getEdgeVector(e));
 
     WhetStone::Polynomial pe(1, order - 2);
 
@@ -392,21 +408,22 @@ RunHighOrderLagrange3D(const std::string& vem_name)
 
   // -- faces
   int nkf = PolynomialSpaceDimension(2, order - 2);
-  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::VECTOR));
+  Teuchos::RCP<BCs> bc_f =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, DOF_Type::VECTOR));
   std::vector<int>& bc_model_f = bc_f->bc_model();
   std::vector<std::vector<double>>& bc_value_f = bc_f->bc_value_vector(nkf);
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& xf = mesh->face_centroid(f);
-    const Point& normal = mesh->face_normal(f);
-    double area = mesh->face_area(f);
+    const Point& xf = mesh->getFaceCentroid(f);
+    const Point& normal = mesh->getFaceNormal(f);
+    double area = mesh->getFaceArea(f);
 
     WhetStone::Polynomial pf(2, order - 2);
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
         fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
       // local coordinate system with origin at face centroid
-      SurfaceCoordinateSystem coordsys(xf, normal);
+      AmanziGeometry::SurfaceCoordinateSystem coordsys(xf, normal);
 
       for (auto it = pf.begin(); it < pf.end(); ++it) {
         int m = it.MonomialSetOrder();

@@ -72,7 +72,7 @@ to disk by the UnstructuredObservation_ object.
     * `"modifier`" ``[function-typedinline-spec]`` **optional** If provided, defines a
       function used to modify the `"variable`" prior to applying the
       `"reduction`".
-        
+
     * `"direction normalized flux`" ``[bool]`` **false** For flux observations,
       dots the face-normal flux with a vector to ensure fluxes are integrated
       pointing the same direction.

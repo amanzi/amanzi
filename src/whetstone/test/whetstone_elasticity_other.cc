@@ -49,15 +49,12 @@ TEST(DIFFUSION_STOKES_2D)
   Teuchos::ParameterList plist;
   MFD3D_BernardiRaugel mfd(plist, mesh);
 
-  AmanziMesh::Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
-
   // extract single cell
   int cell(0);
-  mesh->cell_get_nodes(cell, &nodes);
+  auto nodes = mesh->getCellNodes(cell);
   int nnodes = nodes.size();
 
-  mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
   int nfaces = faces.size();
 
   // calcualte stiffness matrix
@@ -79,7 +76,7 @@ TEST(DIFFUSION_STOKES_2D)
   for (int i = 0; i < nrows; i++) CHECK(A(i, i) > 0.0);
 
   // verify exact integration property
-  int d = mesh->space_dimension();
+  int d = mesh->getSpaceDimension();
   Point p(d);
 
   DenseVector ax(nrows), ay(nrows);
@@ -87,22 +84,22 @@ TEST(DIFFUSION_STOKES_2D)
   ay.PutScalar(0.0);
   for (int i = 0; i < nnodes; i++) {
     int v = nodes[i];
-    mesh->node_get_coordinates(v, &p);
+    p = mesh->getNodeCoordinate(v);
     ax(2 * i) = p[0];
     ay(2 * i + 1) = p[1];
   }
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
-    double area = mesh->face_area(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
+    const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
+    double area = mesh->getFaceArea(f);
 
     ax(2 * nnodes + i) = xf[0] * normal[0] / area;
     ay(2 * nnodes + i) = xf[1] * normal[1] / area;
   }
 
   double vxx(0.0), vxy(0.0);
-  double volume = mesh->cell_volume(cell);
+  double volume = mesh->getCellVolume(cell);
 
   for (int i = 0; i < nrows; i++) {
     for (int j = 0; j < nrows; j++) {
@@ -139,16 +136,14 @@ TEST(ADVECTION_NAVIER_STOKES_2D)
 
   // extract single cell
   int cell(0);
-  std::vector<int> dirs;
-  AmanziMesh::Entity_ID_List nodes, faces;
 
-  mesh->cell_get_nodes(cell, &nodes);
+  auto nodes = mesh->getCellNodes(cell);
   int nnodes = nodes.size();
 
-  mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  auto [faces, dirs] = mesh->getCellFacesAndDirections(cell);
 
   // setup velocity
-  std::vector<AmanziGeometry::Point> u(nnodes);
+  AmanziMesh::Point_List u(nnodes);
   for (int i = 0; i < nnodes; ++i) { u[i] = AmanziGeometry::Point(1.0, 2.0); }
 
   // calculate advection matrix

@@ -20,7 +20,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "Basis_Regularized.hh"
@@ -40,7 +40,7 @@ namespace WhetStone {
 class MFD3D_CrouzeixRaviartAnyOrder : public MFD3D {
  public:
   MFD3D_CrouzeixRaviartAnyOrder(const Teuchos::ParameterList& plist,
-                                const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
+                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   // required methods
   // -- schema
@@ -86,7 +86,7 @@ class MFD3D_CrouzeixRaviartAnyOrder : public MFD3D {
 
  private:
   // generic code for multiple projectors
-  void ProjectorCell_(const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh,
+  void ProjectorCell_(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
                       int c,
                       const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,

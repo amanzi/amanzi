@@ -8,13 +8,13 @@
 */
 
 /*!
-  
+
 Heat conduction coefficient between fracture and matrix:
 
   D_fm = D_m / d_mf
 
-where D_m is matrix heat thermal conductivity, and d_mf is distance 
-between fracture and matrix cell centroids. This is a FV approximation 
+where D_m is matrix heat thermal conductivity, and d_mf is distance
+between fracture and matrix cell centroids. This is a FV approximation
 of the heat flux.
 */
 

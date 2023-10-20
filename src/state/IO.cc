@@ -259,26 +259,27 @@ DeformCheckpointMesh(State& S, Key domain)
     const CompositeVector& vc = S.Get<CompositeVector>(vc_key, Tags::DEFAULT);
     vc.ScatterMasterToGhosted("node");
     const Epetra_MultiVector& vc_n = *vc.ViewComponent("node", true);
-
-    int dim = write_access_mesh->space_dimension();
-    Amanzi::AmanziMesh::Entity_ID_List nodeids;
-    Amanzi::AmanziGeometry::Point new_coords(dim);
-    AmanziGeometry::Point_List new_pos, final_pos;
-
     int nV = vc_n.MyLength();
+
+    int dim = write_access_mesh->getSpaceDimension();
+    Amanzi::AmanziMesh::Entity_ID_View nodeids("nodeids", nV);
+    Amanzi::AmanziGeometry::Point new_coords(dim);
+    Amanzi::AmanziMesh::Point_View new_pos("new_pos", nV), final_pos;
+
+
     for (int n = 0; n != nV; ++n) {
       for (int k = 0; k != dim; ++k) new_coords[k] = vc_n[k][n];
 
       // push back for deform method
-      nodeids.push_back(n);
-      new_pos.push_back(new_coords);
+      nodeids[n] = n;
+      new_pos[n] = new_coords;
     }
 
     // deform the mesh
     if (Keys::starts_with(domain, "column"))
-      write_access_mesh->deform(nodeids, new_pos, false, &final_pos);
+      AmanziMesh::MeshAlgorithms::deform(*write_access_mesh, nodeids, new_pos);
     else
-      write_access_mesh->deform(nodeids, new_pos, true, &final_pos);
+      AmanziMesh::MeshAlgorithms::deform(*write_access_mesh, nodeids, new_pos);
   } else {
     Errors::Message msg;
     msg << "DeformCheckpointMesh: unable to deform mesh because field \"" << vc_key

@@ -34,17 +34,15 @@ MeshMaps_FEM::VelocityCell(int c,
                            const std::vector<VectorPolynomial>& vf,
                            VectorPolynomial& vc) const
 {
-  Entity_ID_List nodes;
-
-  mesh1_->cell_get_nodes(c, &nodes);
+  auto nodes = mesh1_->getCellNodes(c);
   int nnodes = nodes.size();
   AMANZI_ASSERT(nnodes == 4);
 
   AmanziGeometry::Point p1(d_), p2(d_), p3(d_), p4(d_);
-  mesh1_->node_get_coordinates(nodes[0], &p1);
-  mesh1_->node_get_coordinates(nodes[1], &p2);
-  mesh1_->node_get_coordinates(nodes[2], &p3);
-  mesh1_->node_get_coordinates(nodes[3], &p4);
+  p1 = mesh1_->getNodeCoordinate(nodes[0]);
+  p2 = mesh1_->getNodeCoordinate(nodes[1]);
+  p3 = mesh1_->getNodeCoordinate(nodes[2]);
+  p4 = mesh1_->getNodeCoordinate(nodes[3]);
 
   AmanziGeometry::Point p21(p2 - p1), p41(p4 - p1), p32(p3 - p2);
   AmanziGeometry::Point pp(p32 - p41);
@@ -65,7 +63,7 @@ MeshMaps_FEM::VelocityCell(int c,
   }
 
   // rebase polynomial to global coordinate system
-  mesh0_->node_get_coordinates(nodes[0], &p1);
+  p1 = mesh0_->getNodeCoordinate(nodes[0]);
   AmanziGeometry::Point zero(0.0, 0.0);
   for (int i = 0; i < d_; ++i) {
     vc[i].set_origin(p1);
@@ -85,17 +83,15 @@ MeshMaps_FEM::JacobianValueInternal_(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                                      int c,
                                      const AmanziGeometry::Point& xref) const
 {
-  Entity_ID_List nodes;
-
-  mesh->cell_get_nodes(c, &nodes);
+  auto nodes = mesh->getCellNodes(c);
   int nnodes = nodes.size();
   AMANZI_ASSERT(nnodes == 4);
 
   AmanziGeometry::Point p1(d_), p2(d_), p3(d_), p4(d_), j0(d_), j1(d_);
-  mesh->node_get_coordinates(nodes[0], &p1);
-  mesh->node_get_coordinates(nodes[1], &p2);
-  mesh->node_get_coordinates(nodes[2], &p3);
-  mesh->node_get_coordinates(nodes[3], &p4);
+  p1 = mesh->getNodeCoordinate(nodes[0]);
+  p2 = mesh->getNodeCoordinate(nodes[1]);
+  p3 = mesh->getNodeCoordinate(nodes[2]);
+  p4 = mesh->getNodeCoordinate(nodes[3]);
 
   j0 = (1.0 - xref[1]) * (p2 - p1) + xref[1] * (p3 - p4);
   j1 = (1.0 - xref[0]) * (p4 - p1) + xref[0] * (p3 - p2);

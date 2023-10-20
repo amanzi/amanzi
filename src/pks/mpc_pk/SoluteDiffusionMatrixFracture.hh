@@ -8,7 +8,7 @@
 */
 
 /*!
-  
+
 Molecular diffusion coefficeint between fracture and matrix.
 
   D_fm = s_m tau_m phi_m * D_m / d_mf

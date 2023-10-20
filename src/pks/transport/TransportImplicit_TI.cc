@@ -65,7 +65,7 @@ TransportImplicit_PK::FunctionalResidual(double t_old,
 
   // storage term
   for (int c = 0; c < ncells_owned; ++c) {
-    double factor = mesh_->cell_volume(c) / dtp;
+    double factor = mesh_->getCellVolume(c) / dtp;
     f_c[0][c] += ((*wc_c)[0][c] * unew_c[0][c] - (*wcprev_c)[0][c] * uold_c[0][c]) * factor;
   }
 }

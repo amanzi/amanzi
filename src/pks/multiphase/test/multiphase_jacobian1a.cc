@@ -84,7 +84,8 @@ TEST(MULTIPHASE_MODEL_I)
   S->InitializeFields();
 
   // set up new primary variables
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   std::string passwd("");
   std::vector<std::string> names({ "pressure_liquid", "mole_fraction_gas", "saturation_liquid" });
@@ -93,7 +94,7 @@ TEST(MULTIPHASE_MODEL_I)
   auto& sl = *S->GetW<CompositeVector>(names[2], passwd).ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const auto& xc = mesh->cell_centroid(c);
+    const auto& xc = mesh->getCellCentroid(c);
     pl[0][c] += 1e+6 * std::pow(1.0 - xc[0] / X1, 2);
     sl[0][c] -= 0.5 * std::pow(1.0 - xc[0] / X1, 3);
     xg[0][c] += 0.99 * std::pow(1.0 - xc[0] / X1, 4);

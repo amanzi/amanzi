@@ -10,16 +10,16 @@
 
 /*!
 
-User defines water retention models in sublist *water retention models*. 
-It contains as many sublists, e.g. *SOIL_1*, *SOIL_2*, etc, as there are different soils. 
+User defines water retention models in sublist *water retention models*.
+It contains as many sublists, e.g. *SOIL_1*, *SOIL_2*, etc, as there are different soils.
 This list is required for the Richards problem only.
- 
-The water retention models are associated with non-overlapping regions. Each of the sublists (e.g. *Soil 1*) 
+
+The water retention models are associated with non-overlapping regions. Each of the sublists (e.g. *Soil 1*)
 includes a few mandatory parameters: region name, model name, and parameters for the selected model.
 
 * `"water retention model`" [string] specifies a model for the soil.
-  The available models are `"van Genuchten`", `"Brooks Corey`", and `"fake`". 
-  The later is used only to set up a simple analytic solution for convergence study. 
+  The available models are `"van Genuchten`", `"Brooks Corey`", and `"fake`".
+  The later is used only to set up a simple analytic solution for convergence study.
 
   * The model `"van Genuchten`" requires `"van Genuchten alpha`" [double],
     `"van Genuchten m`" [double], `"van Genuchten l`" [double], `"residual saturation liquid`" [double],
@@ -34,21 +34,21 @@ includes a few mandatory parameters: region name, model name, and parameters for
 
   * The model `"linear`" requires `"alpha`" [double] and `"residual saturation liquid`" [double].
 
-* `"relative permeability model`" [string] The available options are `"Mualem`" (default) 
+* `"relative permeability model`" [string] The available options are `"Mualem`" (default)
   and `"Burdine`".
 
 * `"regularization interval`" [double] removes the kink in the water retention curve at the
   saturation point using a cubic spline. The parameter specifies the regularization region [Pa].
   Default value is 0.
 
-Amanzi performs rudimentary checks of validity of the provided parameters. 
-The relative permeability curves can be calculated and saved in an ASCI file 
+Amanzi performs rudimentary checks of validity of the provided parameters.
+The relative permeability curves can be calculated and saved in an ASCI file
 if the list *output* is provided. This list has two mandatory parameters:
 
-* `"file`" [string] is the user defined file name. It should be different for 
-  each soil. 
+* `"file`" [string] is the user defined file name. It should be different for
+  each soil.
 
-* `"number of points`" [int] is the number of data points. 
+* `"number of points`" [int] is the number of data points.
   Each file will contain a table with three columns: saturation, relative permeability, and
   capillary pressure. The data points are equidistributed between the residual saturation
   and 1.

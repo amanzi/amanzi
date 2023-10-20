@@ -1,12 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
+
 */
 
 #include <cstdlib>
@@ -65,24 +68,29 @@ TEST(UPWIND_FLUX_MANIFOLDS)
   Teuchos::ParameterList region_list = plist->sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  auto flist = Teuchos::rcp(new Teuchos::ParameterList());
+  flist->set<bool>("request faces", true);
+  flist->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, gm, flist);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   for (int n = 4; n < 17; n *= 2) {
     std::string setname("fractures");
-    auto mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n, true, true);
-    Teuchos::RCP<const Mesh> mesh = Teuchos::rcp(
-      new MeshExtractedManifold(mesh3D, setname, AmanziMesh::FACE, comm, gm, plist, true, false));
+    auto mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
+    auto mesh_fw =
+      Teuchos::rcp(new MeshExtractedManifold(mesh3D, setname, AmanziMesh::FACE, comm, gm, plist));
+    auto mesh =
+      Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new MeshFrameworkAlgorithms()), Teuchos::null));
 
-    int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+    int ncells_wghost = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
+    int nfaces_owned = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
+    int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
 
     // create boundary data
     std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
     std::vector<double> bc_value(nfaces_wghost);
     for (int f = 0; f < nfaces_wghost; f++) {
-      const Point& xf = mesh->face_centroid(f);
+      const Point& xf = mesh->getFaceCentroid(f);
       if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
           fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6)
         bc_model[f] = OPERATOR_BC_DIRICHLET;
@@ -98,7 +106,7 @@ TEST(UPWIND_FLUX_MANIFOLDS)
     auto& field_f = *field.ViewComponent("face", true);
 
     for (int c = 0; c < ncells_wghost; c++) {
-      const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+      const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
       field_c[0][c] = Value(xc);
     }
 
@@ -114,7 +122,6 @@ TEST(UPWIND_FLUX_MANIFOLDS)
     }
 
     // create and initialize face-based flux field
-    AmanziMesh::Entity_ID_List cells;
 
     CompositeVector flux(*cvs), solution(*cvs);
     auto& flux_f = *flux.ViewComponent("face", true);
@@ -125,11 +132,11 @@ TEST(UPWIND_FLUX_MANIFOLDS)
       int g = fmap.FirstPointInElement(f);
       int ndofs = fmap.ElementSize(f);
 
-      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       AMANZI_ASSERT(cells.size() == ndofs);
 
       for (int i = 0; i < ndofs; ++i) {
-        const Point& normal = mesh->face_normal(f, false, cells[i], &dir);
+        const Point& normal = mesh->getFaceNormal(f, cells[i], &dir);
         flux_f[0][g + i] = vel * normal;
       }
     }
@@ -144,9 +151,9 @@ TEST(UPWIND_FLUX_MANIFOLDS)
     // calculate errors
     double error(0.0);
     for (int f = 0; f < nfaces_owned; f++) {
-      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
 
-      const Point& xf = mesh->face_centroid(f);
+      const Point& xf = mesh->getFaceCentroid(f);
       double exact = Value(xf);
 
       int g = fmap.FirstPointInElement(f);
@@ -158,11 +165,11 @@ TEST(UPWIND_FLUX_MANIFOLDS)
     }
 #ifdef HAVE_MPI
     double tmp = error;
-    mesh->get_comm()->SumAll(&tmp, &error, 1);
+    mesh->getComm()->SumAll(&tmp, &error, 1);
     int itmp = ndir;
-    mesh->get_comm()->SumAll(&itmp, &ndir, 1);
+    mesh->getComm()->SumAll(&itmp, &ndir, 1);
     itmp = nfaces_owned;
-    mesh->get_comm()->SumAll(&itmp, &nfaces_owned, 1);
+    mesh->getComm()->SumAll(&itmp, &nfaces_owned, 1);
 #endif
     error /= nfaces_owned;
 

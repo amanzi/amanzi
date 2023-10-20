@@ -46,7 +46,7 @@ InputConverterU::TranslatePreconditioners_()
   out_list.sublist("Trilinos ML") = TranslateTrilinosML_();
   out_list.sublist("Hypre AMG") = TranslateHypreAMG_();
   out_list.sublist("Block ILU") = TranslateBILU_();
-  if (multiphase_) { out_list.sublist("Euclid") = TranslateEuclid_(); }
+  if (multiphase_) { out_list.sublist("ILU") = TranslateILU_(); }
 
   return out_list;
 }
@@ -367,19 +367,15 @@ InputConverterU::TranslateHypreAMG_()
 
 
 /* ******************************************************************
-* Euclid sublist
+* ILU sublist
 ****************************************************************** */
 Teuchos::ParameterList
-InputConverterU::TranslateEuclid_()
+InputConverterU::TranslateILU_()
 {
   Teuchos::ParameterList out_list;
-  out_list.set<std::string>("preconditioning method", "euclid");
+  out_list.set<std::string>("preconditioning method", "ILU");
 
-  out_list.sublist("euclid parameters")
-    .set<int>("ilu(k) fill level", 5)
-    // .set<double>("ILUT drop tolerance", 0.000001)
-    .set<bool>("rescale rows", true)
-    .set<int>("verbosity", 0);
+  out_list.sublist("ILU parameters").set<int>("ilu(k) fill level", 5).set<int>("verbosity", 0);
 
   return out_list;
 }

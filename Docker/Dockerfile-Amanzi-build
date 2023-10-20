@@ -22,11 +22,14 @@ ENV https_proxy=$https_proxy \
 # Make sure we have updated branch information
 RUN echo "Amanzi branch = $amanzi_branch"
 RUN git remote prune origin
-RUN git pull
+RUN git fetch
 RUN git branch --list
-# Checkout the branch and update it
+
+# Checkout the branch and update it forcibly, not through pull because
+# pull can do merges this branch already exists and is out of sync
+# with the remote
 RUN git checkout $amanzi_branch
-RUN git pull
+RUN git reset --hard origin/$amanzi_branch
 RUN git rev-parse --short HEAD
   
 RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \

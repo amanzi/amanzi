@@ -35,8 +35,11 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_EXTRACTED_SOURCE_DIR})
 
 # include mesh frameworks
+include_directories(${MESH_LOGICAL_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_SIMPLE_SOURCE_DIR})
+list(APPEND mesh_factory_frameworks mesh_simple)
+
 if (ENABLE_MESH_MOAB)
   include_directories(${MOAB_INCLUDE_DIR})
   include_directories(${MESH_MOAB_SOURCE_DIR})
@@ -57,17 +60,28 @@ endif()
 #
 set(mesh_factory_files 
     FileFormat.cc
-    MeshFramework.cc
-    MeshFactory.cc) 
-file(GLOB mesh_factory_inc_files "*.hh")
+    MeshFrameworkTraits.cc
+    MeshFrameworkFactory.cc
+    MeshFactory.cc
+    ) 
 
-list(APPEND mesh_factory_frameworks mesh_simple)
+set(mesh_factory_inc_files
+    MeshException.hh
+    FileFormat.hh
+    MeshFrameworkTraits.hh
+    MeshFrameworkFactory.hh
+    MeshFactory.hh
+    )
+
 
 add_amanzi_library(mesh_factory
                    SOURCE ${mesh_factory_files} HEADERS ${mesh_factory_inc_files}
-                   LINK_LIBS ${mesh_factory_frameworks} mesh_extracted ${Boost_LIBRARIES})
+                   LINK_LIBS ${mesh_factory_frameworks} ${Boost_LIBRARIES}
+                   LINK_LIBS ${mesh_factory_frameworks} mesh_extracted mesh_logical ${Boost_LIBRARIES})
+
 
 if (BUILD_TESTS)
+    include_directories(${MESH_FACTORY_SOURCE_DIR})
 
     # Need to copy files for the tests 
     if (NOT (${MESH_FACTORY_SOURCE_DIR} EQUAL ${MESH_FACTORY_BINARY_DIR}))
@@ -103,7 +117,7 @@ if (BUILD_TESTS)
    # Test: test_mesh_factory
    add_amanzi_test(mesh_factory_extract_comms_np5 mesh_factory_extract_comms
                    KIND unit
-		   SOURCE test/Main.cc test/mesh_factory_extract_comms.cc
+        	   SOURCE test/Main.cc test/mesh_factory_extract_comms.cc
                    LINK_LIBS mesh_factory ${UnitTest_LIBRARIES} ${Boost_LIBRARIES} ${Epetra_LIBRARIES} ${HDF5_LIBRARIES}
                    NPROCS 5) # need sufficient cores to force one proc to have no surface faces
    

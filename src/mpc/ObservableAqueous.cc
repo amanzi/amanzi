@@ -47,7 +47,7 @@ ObservableAqueous::ComputeRegionSize()
   // check if observation is planar
   obs_planar_ = false;
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_->geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_->getGeometricModel();
   Teuchos::RCP<const AmanziGeometry::Region> reg_ptr = gm_ptr->FindRegion(region_);
 
   if (reg_ptr->get_type() == AmanziGeometry::RegionType::POLYGON) {
@@ -64,16 +64,15 @@ ObservableAqueous::ComputeRegionSize()
 
   if (variable_ == "aqueous mass flow rate" || variable_ == "aqueous volumetric flow rate" ||
       variable_ == "fractures aqueous volumetric flow rate") { // flux needs faces
-    region_size_ = mesh_->get_set_size(
-      region_, Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
-    entity_ids_.resize(region_size_);
-    mesh_->get_set_entities_and_vofs(
-      region_, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &entity_ids_, &vofs_);
+    region_size_ = mesh_->getSetSize(
+      region_, Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
+    Kokkos::resize(entity_ids_, region_size_);
+    std::tie(entity_ids_, vofs_) = mesh_->getSetEntitiesAndVolumeFractions(
+      region_, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     obs_boundary_ = 1;
     for (int i = 0; i != region_size_; ++i) {
       int f = entity_ids_[i];
-      Amanzi::AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       if (cells.size() == 2) {
         obs_boundary_ = 0;
         break;
@@ -81,19 +80,20 @@ ObservableAqueous::ComputeRegionSize()
     }
     // to enforce common data on all processors
     int dummy(obs_boundary_);
-    mesh_->get_comm()->MinAll(&dummy, &obs_boundary_, 1);
+    mesh_->getComm()->MinAll(&dummy, &obs_boundary_, 1);
 
   } else { // all others need cells
-    region_size_ = mesh_->get_set_size(region_, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    entity_ids_.resize(region_size_);
-    mesh_->get_set_entities_and_vofs(
-      region_, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &entity_ids_, &vofs_);
+    region_size_ =
+      mesh_->getSetSize(region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    Kokkos::resize(entity_ids_, region_size_);
+    std::tie(entity_ids_, vofs_) = mesh_->getSetEntitiesAndVolumeFractions(
+      region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   }
 
   // find global mesh block size
   int dummy(region_size_);
   int global_mesh_block_size(0);
-  mesh_->get_comm()->SumAll(&dummy, &global_mesh_block_size, 1);
+  mesh_->getComm()->SumAll(&dummy, &global_mesh_block_size, 1);
 
   return global_mesh_block_size;
 }
@@ -112,7 +112,7 @@ ObservableAqueous::ComputeObservation(State& S,
 {
   Errors::Message msg;
 
-  int dim = mesh_->space_dimension();
+  int dim = mesh_->getSpaceDimension();
 
   // separate cases for density
   Key mol_density_key = Keys::getKey(domain_, "molar_density_liquid");
@@ -137,7 +137,7 @@ ObservableAqueous::ComputeObservation(State& S,
 
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
-      double vol = mesh_->cell_volume(c);
+      double vol = mesh_->getCellVolume(c);
       *volume += vol;
       *value += wc[0][c] * vol;
     }
@@ -159,7 +159,7 @@ ObservableAqueous::ComputeObservation(State& S,
       int c = entity_ids_[i];
       double tmp = (rho_c.get()) ? (*rho_c)[0][c] / CommonDefs::MOLAR_MASS_H2O : rho;
 
-      double vol = mesh_->cell_volume(c);
+      double vol = mesh_->getCellVolume(c);
       *volume += vol;
       *value += wc[0][c] * tmp / (pd[0][c] * (1.0 - porosity[0][c])) * vol;
     }
@@ -168,7 +168,7 @@ ObservableAqueous::ComputeObservation(State& S,
 
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
-      double vol = mesh_->cell_volume(c);
+      double vol = mesh_->getCellVolume(c);
       *volume += vol;
       *value += pressure[0][c] * vol;
     }
@@ -182,7 +182,7 @@ ObservableAqueous::ComputeObservation(State& S,
 
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
-      double vol = mesh_->cell_volume(c);
+      double vol = mesh_->getCellVolume(c);
       *volume += vol;
       *value += ws[0][c] * vol;
     }
@@ -192,7 +192,7 @@ ObservableAqueous::ComputeObservation(State& S,
 
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
-      double vol = mesh_->cell_volume(c);
+      double vol = mesh_->getCellVolume(c);
       *volume += vol;
       *value += depth[0][c] * vol;
     }
@@ -202,7 +202,7 @@ ObservableAqueous::ComputeObservation(State& S,
 
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
-      double vol = mesh_->cell_volume(c);
+      double vol = mesh_->getCellVolume(c);
       *volume += vol;
       *value += vel[0][c] * vol;
     }
@@ -211,7 +211,7 @@ ObservableAqueous::ComputeObservation(State& S,
 
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
-      double vol = mesh_->cell_volume(c);
+      double vol = mesh_->getCellVolume(c);
       *volume += vol;
       *value += hydraulic_head[0][c] * vol;
     }
@@ -222,7 +222,7 @@ ObservableAqueous::ComputeObservation(State& S,
 
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
-      double vol = mesh_->cell_volume(c);
+      double vol = mesh_->getCellVolume(c);
       double kxy = (dim == 2) ? perm[1][c] : std::pow(perm[1][c] * perm[2][c], 0.5);
       *volume += vol * kxy;
       *value += hydraulic_head[0][c] * vol * kxy;
@@ -233,7 +233,7 @@ ObservableAqueous::ComputeObservation(State& S,
 
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
-      double vol = mesh_->cell_volume(c);
+      double vol = mesh_->getCellVolume(c);
       *volume += vol;
       *value += hydraulic_head[0][c] * vol;
     }
@@ -249,7 +249,7 @@ ObservableAqueous::ComputeObservation(State& S,
 
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
-      double vol = mesh_->cell_volume(c);
+      double vol = mesh_->getCellVolume(c);
       double kxy = (dim == 2) ? perm[1][c] : std::pow(perm[1][c] * perm[2][c], 0.5);
       *volume += vol * kxy;
       *value += hydraulic_head[0][c] * vol * kxy;
@@ -270,16 +270,15 @@ ObservableAqueous::ComputeObservation(State& S,
     if (domain_ == "fracture")
       aperture_rcp = S.Get<CompositeVector>("fracture-aperture").ViewComponent("cell");
     const auto& fmap = *S.Get<CompositeVector>(key).Map().Map("face", true);
-    Amanzi::AmanziMesh::Entity_ID_List cells;
 
     if (obs_boundary_ == 1) { // observation is on a boundary set
       for (int i = 0; i != region_size_; ++i) {
         int f = entity_ids_[i];
-        mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
+        auto cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
 
         int sign, c = cells[0];
-        mesh_->face_normal(f, false, c, &sign);
-        double area = mesh_->face_area(f);
+        mesh_->getFaceNormal(f, c, &sign);
+        double area = mesh_->getFaceArea(f);
         double scale = 1.0;
         if (domain_ == "fracture") scale = (*aperture_rcp)[0][c];
 
@@ -290,11 +289,11 @@ ObservableAqueous::ComputeObservation(State& S,
     } else if (obs_planar_) { // observation is on an interior planar set
       for (int i = 0; i != region_size_; ++i) {
         int f = entity_ids_[i];
-        const AmanziGeometry::Point& face_normal = mesh_->face_normal(f);
-        double area = mesh_->face_area(f);
+        const AmanziGeometry::Point& face_normal = mesh_->getFaceNormal(f);
+        double area = mesh_->getFaceArea(f);
         double sign = (reg_normal_ * face_normal) / area;
 
-        mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
+        auto cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
         int c = cells[0];
 
         double scale = 1.0;
@@ -318,7 +317,7 @@ ObservableAqueous::ComputeObservation(State& S,
 
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
-      double vol = mesh_->cell_volume(c);
+      double vol = mesh_->getCellVolume(c);
       *volume += vol;
       *value += pH[0][c] * vol;
     }
@@ -327,7 +326,7 @@ ObservableAqueous::ComputeObservation(State& S,
 
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
-      double vol = mesh_->cell_volume(c);
+      double vol = mesh_->getCellVolume(c);
       *volume += vol;
       *value += temperature[0][c] * vol;
     }
@@ -336,8 +335,8 @@ ObservableAqueous::ComputeObservation(State& S,
   } else if (variable_ == "centroid x") {
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
-      const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-      double vol = mesh_->cell_volume(c);
+      const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+      double vol = mesh_->getCellVolume(c);
       *volume += vol;
       *value += xc[0] * vol;
     }
@@ -352,7 +351,7 @@ ObservableAqueous::ComputeObservation(State& S,
  * Auxiliary routine: calculate maximum water table in a region.
  ****************************************************************** */
 double
-ObservableAqueous::CalculateWaterTable_(State& S, AmanziMesh::Entity_ID_List& ids)
+ObservableAqueous::CalculateWaterTable_(State& S, AmanziMesh::Entity_ID_View& ids)
 {
   auto pressure = S.Get<CompositeVector>("pressure").ViewComponent("cell", true);
   double patm = S.Get<double>("atmospheric_pressure");
@@ -365,23 +364,20 @@ ObservableAqueous::CalculateWaterTable_(State& S, AmanziMesh::Entity_ID_List& id
   lifting.Compute(ids, pressure, 0);
 
   // set up extreme values for water table
-  int dim = mesh_->space_dimension();
+  int dim = mesh_->getSpaceDimension();
   double zmin(1e+99), zmax(-1e+99), pref(-1e+99), value(-1e+99);
 
-  // estimate water table
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
 
   int found(0);
   for (int i = 0; i < ids.size(); i++) {
     int c = ids[i];
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     double pc = (*pressure)[0][c];
     pref = pc;
 
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    auto [faces, dirs] = mesh_->getCellFacesAndDirections(c);
     for (int n = 0; n < faces.size(); ++n) {
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(faces[n]);
+      const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(faces[n]);
       zmin = std::min(zmin, xf[dim - 1]);
       zmax = std::max(zmax, xf[dim - 1]);
 
@@ -402,16 +398,16 @@ ObservableAqueous::CalculateWaterTable_(State& S, AmanziMesh::Entity_ID_List& id
   // parallel update
   double tmp_loc[3] = { value, pref, zmax };
   double tmp_glb[3];
-  mesh_->get_comm()->MaxAll(tmp_loc, tmp_glb, 3);
+  mesh_->getComm()->MaxAll(tmp_loc, tmp_glb, 3);
   value = tmp_glb[0];
   pref = tmp_glb[1];
   zmax = tmp_glb[2];
 
   double zmin_tmp(zmin);
-  mesh_->get_comm()->MinAll(&zmin_tmp, &zmin, 1);
+  mesh_->getComm()->MinAll(&zmin_tmp, &zmin, 1);
 
   int found_tmp = found;
-  mesh_->get_comm()->MaxAll(&found_tmp, &found, 1);
+  mesh_->getComm()->MaxAll(&found_tmp, &found, 1);
 
   // process fully saturated and dry cases
   if (found == 0) {

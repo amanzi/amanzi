@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "lapack.hh"
+#include "MeshDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {

@@ -60,8 +60,8 @@ MyRemapDGBase<AnalyticDG>::StabilityCondition()
   double dt(1e+99), alpha(0.2), tmp;
 
   for (int f = 0; f < nfaces_wghost_; ++f) {
-    double area = mesh0_->face_area(f);
-    const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
+    double area = mesh0_->getFaceArea(f);
+    const AmanziGeometry::Point& xf = mesh0_->getFaceCentroid(f);
     velf_vec_[f].Value(xf).Norm2(&tmp);
     dt = std::min(dt, area / tmp);
   }
@@ -91,7 +91,7 @@ MyRemapDGBase<AnalyticDG>::InitialMass(const CompositeVector& p1, int order)
     mass += numi.IntegratePolynomialCell(c, poly);
   }
 
-  mesh0_->get_comm()->SumAll(&mass, &mass0, 1);
+  mesh0_->getComm()->SumAll(&mass, &mass0, 1);
   return mass0;
 }
 
@@ -126,7 +126,7 @@ MyRemapDGBase<AnalyticDG>::CollectStatistics(double t, const CompositeVector& u)
       lim.MeanValue(&lavg);
     }
 
-    if (mesh0_->get_comm()->MyPID() == 0) {
+    if (mesh0_->getComm()->MyPID() == 0) {
       printf("t=%8.5f  L2=%9.5g  nfnc=%5d  sharp=%5.1f%%  limiter: %6.3f %6.3f %6.3f  umax/umin: "
              "%9.5g %9.5g\n",
              tglob,

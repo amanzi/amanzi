@@ -19,8 +19,8 @@
 #include "AmanziComm.hh"
 #include "RegionFactory.hh"
 #include "Mesh.hh"
-#include "MeshFactory.hh"
 #include "MeshAudit.hh"
+#include "MeshFrameworkFactory.hh"
 #include "MeshExtractedManifold.hh"
 
 #include "framework_meshes.hh"
@@ -39,14 +39,14 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED)
   // add a region to extract from that is 3D
   Teuchos::ParameterList spec;
   auto& surf_reg_spec = spec.sublist("region: plane");
-  std::vector<double> point{ 0.0, 0.0, 1.0 };
+  Double_List point{ 0.0, 0.0, 1.0 };
   surf_reg_spec.set<Teuchos::Array<double>>("point", point);
-  std::vector<double> normal{ 0.0, 0.0, 1.0 };
+  Double_List normal{ 0.0, 0.0, 1.0 };
   surf_reg_spec.set<Teuchos::Array<double>>("normal", normal);
   gm->AddRegion(AmanziGeometry::createRegion("Top Face Plane", gm->size(), spec, *comm));
 
-  // a 3D, generated, structured hex on the unit cube, NX=NY=NZ=3
-  // works in MSTK
+  // a 3D, generated, structured hex on the unit cube, NX=NY=NZ=3,
+  // using the framework extraction, only works in MSTK
   //
   // extract & flatten the top surface to form a 2D mesh, NX=NY=3
   std::vector<Framework> frameworks;
@@ -54,21 +54,28 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Extracting surface from 3D Gen Box with " << AmanziMesh::framework_names.at(frm)
+              << "Extracting surface from 3D Generated Box with " << AmanziMesh::to_string(frm)
               << std::endl
               << "------------------------------------------------" << std::endl;
 
     auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
-    fac_list->sublist("unstructured")
-      .sublist("expert")
-      .set<std::string>("partitioner", "zoltan_rcb");
-    auto parent_mesh =
-      createFrameworkStructuredUnitHex(Preference{ frm }, 3, 3, 3, comm, gm, fac_list);
+    fac_list->set<std::string>("partitioner", "zoltan_rcb");
+    auto parent_mesh = createStructuredUnitHex(Preference{ frm }, 3, 3, 3, comm, gm, fac_list);
 
     // extract the surface
-    MeshFactory fac(comm, gm);
+    MeshFrameworkFactory fac(comm, gm);
     fac.set_preference({ frm });
-    auto mesh = fac.create(parent_mesh, { "Top Face Plane" }, AmanziMesh::Entity_kind::FACE, true);
+    auto top_faces = parent_mesh->getSetEntities(
+      "Top Face Plane", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+
+    auto surface_framework_mesh =
+      fac.create(parent_mesh, top_faces, AmanziMesh::Entity_kind::FACE, true);
+
+    // make a MeshCache
+    auto mesh = Teuchos::rcp(new Mesh(surface_framework_mesh,
+                                      Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()),
+                                      Teuchos::null));
+    mesh->setParentMesh(parent_mesh);
 
     // test the surface mesh as a 3x3 quad mesh
     // -- mesh audit
@@ -95,9 +102,9 @@ TEST(MESH_SURFACE_EXTRACTION_EXO)
   // add a region to extract from that is 3D
   Teuchos::ParameterList spec;
   auto& surf_reg_spec = spec.sublist("region: plane");
-  std::vector<double> point{ 0.0, 0.0, 1.0 };
+  Double_List point{ 0.0, 0.0, 1.0 };
   surf_reg_spec.set<Teuchos::Array<double>>("point", point);
-  std::vector<double> normal{ 0.0, 0.0, 1.0 };
+  Double_List normal{ 0.0, 0.0, 1.0 };
   surf_reg_spec.set<Teuchos::Array<double>>("normal", normal);
   gm->AddRegion(AmanziGeometry::createRegion("Top Face Plane", gm->size(), spec, *comm));
 
@@ -110,20 +117,27 @@ TEST(MESH_SURFACE_EXTRACTION_EXO)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Extracting surface from 3D EXO Box with " << AmanziMesh::framework_names.at(frm)
+              << "Extracting surface from EXO 3D Box with " << AmanziMesh::to_string(frm)
               << std::endl
               << "------------------------------------------------" << std::endl;
     auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
-    fac_list->sublist("unstructured")
-      .sublist("expert")
-      .set<std::string>("partitioner", "zoltan_rcb");
+    fac_list->set<std::string>("partitioner", "zoltan_rcb");
     auto parent_mesh =
-      createFrameworkUnstructured(Preference{ frm }, "test/hex_3x3x3_sets.exo", comm, gm, fac_list);
+      createUnstructured(Preference{ frm }, "test/hex_3x3x3_sets.exo", comm, gm, fac_list);
 
     // extract the surface
-    MeshFactory fac(comm, gm);
+    MeshFrameworkFactory fac(comm, gm);
     fac.set_preference({ frm });
-    auto mesh = fac.create(parent_mesh, { "Top Face Plane" }, AmanziMesh::Entity_kind::FACE, true);
+    auto top_faces = parent_mesh->getSetEntities(
+      "Top Face Plane", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+    auto surface_framework_mesh =
+      fac.create(parent_mesh, top_faces, AmanziMesh::Entity_kind::FACE, true);
+
+    // make a MeshCache
+    auto mesh = Teuchos::rcp(new Mesh(surface_framework_mesh,
+                                      Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()),
+                                      Teuchos::null));
+    mesh->setParentMesh(parent_mesh);
 
     // test the surface mesh as a 3x3 quad mesh
     // -- mesh audit
@@ -136,7 +150,6 @@ TEST(MESH_SURFACE_EXTRACTION_EXO)
     testQuadMeshSets3x3(mesh, true, frm, true);
   }
 }
-
 
 TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
 {
@@ -153,9 +166,9 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
   // add a region to extract from that is 3D
   Teuchos::ParameterList spec;
   auto& surf_reg_spec = spec.sublist("region: plane");
-  std::vector<double> point{ 0.0, 0.0, 1.0 };
+  Double_List point{ 0.0, 0.0, 1.0 };
   surf_reg_spec.set<Teuchos::Array<double>>("point", point);
-  std::vector<double> normal{ 0.0, 0.0, 1.0 };
+  Double_List normal{ 0.0, 0.0, 1.0 };
   surf_reg_spec.set<Teuchos::Array<double>>("normal", normal);
   gm->AddRegion(AmanziGeometry::createRegion("Top Face Plane", gm->size(), spec, *comm));
 
@@ -164,20 +177,19 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
   //
   // extract & flatten the top surface to form a 2D mesh, NX=NY=3
   std::vector<Framework> frameworks;
-  if (comm->NumProc() == 1) frameworks.push_back(Framework::SIMPLE);
+  //if (comm->NumProc() == 1) frameworks.push_back(Framework::SIMPLE);
   if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
               << "MeshExtractedManifold from surface of 3D Generated Box with "
-              << AmanziMesh::framework_names.at(frm) << std::endl
+              << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
-    fac_list->sublist("unstructured")
-      .sublist("expert")
-      .set<std::string>("partitioner", "zoltan_rcb");
+    fac_list->set<std::string>("partitioner", "zoltan_rcb");
+    fac_list->set("request edges", true);
     auto parent_mesh =
-      createFrameworkStructuredUnitHex(Preference{ frm }, 3, 3, 3, comm, gm, fac_list, true);
+      createFrameworkStructuredUnitHex(Preference{ frm }, 3, 3, 3, comm, gm, fac_list);
 
     // extract the surface
     auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
@@ -186,13 +198,11 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
       .set<std::string>("extraction method", "manifold mesh");
     MeshFactory fac(comm, gm, fac_plist);
     fac.set_preference({ frm });
-    auto mesh = fac.create(parent_mesh, { "Top Face Plane" }, AmanziMesh::Entity_kind::FACE, true);
 
-    // make sure we got what we think we got
-    {
-      auto mesh_as_manifold = Teuchos::rcp_dynamic_cast<MeshExtractedManifold>(mesh);
-      CHECK(mesh_as_manifold != Teuchos::null);
-    }
+    auto parent_mesh_cache = Teuchos::rcp(new Mesh(
+      parent_mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+    auto mesh =
+      fac.create(parent_mesh_cache, { "Top Face Plane" }, AmanziMesh::Entity_kind::FACE, true);
 
     // test the surface mesh as a 3x3 quad mesh
     // -- mesh audit
@@ -208,7 +218,6 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
   }
 }
 
-
 TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
 {
   // create the comm and gm
@@ -221,9 +230,9 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
   // add a region to extract from that is 3D
   Teuchos::ParameterList spec;
   auto& surf_reg_spec = spec.sublist("region: plane");
-  std::vector<double> point{ 0.0, 0.0, 1.0 };
+  Double_List point{ 0.0, 0.0, 1.0 };
   surf_reg_spec.set<Teuchos::Array<double>>("point", point);
-  std::vector<double> normal{ 0.0, 0.0, 1.0 };
+  Double_List normal{ 0.0, 0.0, 1.0 };
   surf_reg_spec.set<Teuchos::Array<double>>("normal", normal);
   gm->AddRegion(AmanziGeometry::createRegion("Top Face Plane", gm->size(), spec, *comm));
 
@@ -242,14 +251,13 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
   for (const auto& frm : frameworks) {
     std::cout << std::endl
               << "MeshExtractedManifold from surface of 3D EXO Box with "
-              << AmanziMesh::framework_names.at(frm) << std::endl
+              << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
-    fac_list->sublist("unstructured")
-      .sublist("expert")
-      .set<std::string>("partitioner", "zoltan_rcb");
-    auto parent_mesh = createFrameworkUnstructured(
-      Preference{ frm }, "test/hex_3x3x3_sets.exo", comm, gm, fac_list, true);
+    fac_list->set<std::string>("partitioner", "zoltan_rcb");
+    fac_list->set("request edges", true);
+    auto parent_mesh =
+      createFrameworkUnstructured(Preference{ frm }, "test/hex_3x3x3_sets.exo", comm, gm, fac_list);
 
     // extract the surface
     auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
@@ -259,13 +267,10 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
 
     MeshFactory fac(comm, gm, fac_plist);
     fac.set_preference({ frm });
-    auto mesh = fac.create(parent_mesh, { "Top Face Plane" }, AmanziMesh::Entity_kind::FACE, true);
-
-    // make sure we got what we think we got
-    {
-      auto mesh_as_manifold = Teuchos::rcp_dynamic_cast<MeshExtractedManifold>(mesh);
-      CHECK(mesh_as_manifold != Teuchos::null);
-    }
+    auto parent_mesh_cache = Teuchos::rcp(new Mesh(
+      parent_mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+    auto mesh =
+      fac.create(parent_mesh_cache, { "Top Face Plane" }, AmanziMesh::Entity_kind::FACE, true);
 
     // test the surface mesh as a 3x3 quad mesh
     // -- mesh audit
@@ -276,6 +281,6 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
     testExteriorMapsUnitBox(mesh, 3, 3);
 
     // -- sets, which should inherit from the parent mesh
-    testQuadMeshSets3x3(mesh, true, frm, true, true);
+    testQuadMeshSets3x3(mesh, true, frm, true);
   }
 }

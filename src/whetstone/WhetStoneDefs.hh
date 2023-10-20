@@ -38,26 +38,26 @@ enum class DOF_Type { SCALAR = 1, VECTOR, POINT, NORMAL_COMPONENT, MOMENT };
 
 #ifdef AMANZI_CODE
 typedef AmanziGeometry::Entity_ID Entity_ID;
-typedef std::vector<Entity_ID> Entity_ID_List;
-typedef AmanziMesh::Parallel_type Parallel_type;
+typedef AmanziMesh::Entity_ID_View Entity_ID_View;
+typedef AmanziMesh::Parallel_kind Parallel_kind;
 typedef AmanziMesh::Entity_kind Entity_kind;
 typedef std::tuple<AmanziMesh::Entity_kind, DOF_Type, int> SchemaItem;
 
-const int NODE = AmanziMesh::NODE;
-const int EDGE = AmanziMesh::EDGE;
-const int FACE = AmanziMesh::FACE;
-const int CELL = AmanziMesh::CELL;
-const int BOUNDARY_FACE = AmanziMesh::BOUNDARY_FACE;
+const int NODE = AmanziMesh::Entity_kind::NODE;
+const int EDGE = AmanziMesh::Entity_kind::EDGE;
+const int FACE = AmanziMesh::Entity_kind::FACE;
+const int CELL = AmanziMesh::Entity_kind::CELL;
+const int BOUNDARY_FACE = AmanziMesh::Entity_kind::BOUNDARY_FACE;
 
 #else
 typedef long long int Entity_ID;
-typedef std::vector<Entity_ID> Entity_ID_List;
+typedef Entity_ID_List Entity_ID_View;
 
 enum Entity_kind { NODE = 0, EDGE, FACE, CELL, BOUNDARY_FACE };
 
 typedef std::tuple<Entity_kind, DOF_Type, int> SchemaItem;
 
-enum class Parallel_type {
+enum class Parallel_kind {
   OWNED = 1; // Owned by this processor
   GHOST = 2; // Owned by another processor
   ALL = 3;   // OWNED + GHOST

@@ -10,7 +10,7 @@
 
 /*!
 
-CycleDriver is a class to hold the cycle driver, which runs the overall, top level timestep 
+CycleDriver is a class to hold the cycle driver, which runs the overall, top level timestep
 loop. It instantiates states, ensures they are initialized, and runs the timestep loop
 including Vis and restart/checkpoint dumps.  It contains one and only one PK
 -- most likely this PK is an MPC of some type -- to do the actual work.
@@ -21,12 +21,12 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
 * `"component names`" [Array(string)] provides the list of species names.
   It is required for reactive transport.
 
-* `"component molar masses`" [Array(string)] provides the list of 
-  molar masses of species. It is required for proper conversion to and from 
-  dimensionless units. Default is 1. 
+* `"component molar masses`" [Array(string)] provides the list of
+  molar masses of species. It is required for proper conversion to and from
+  dimensionless units. Default is 1.
 
-* `"number of liquid components`" [int] is the number of liquid components. 
-   
+* `"number of liquid components`" [int] is the number of liquid components.
+
 * `"time periods`" [list] contains the list of time periods involved in the simulation.
   The number of time periods is not limited.
 
@@ -41,16 +41,16 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
         should exist in the list of PKs (see below).
 
       * `"PK type`" [string] specifies the type of PK supported by Amanzi. At the moment
-        available options are (`"darcy`", `"richards`", `"transport`", `"one-phase energy`", 
-        `"two-phase energy`", `"reactive transport`", `"flow reactive transport`", 
+        available options are (`"darcy`", `"richards`", `"transport`", `"one-phase energy`",
+        `"two-phase energy`", `"reactive transport`", `"flow reactive transport`",
         `"thermal richards`", `"chemistry`", `"transport implicit`", `"transport matrix fracture`",
         `"transport matrix fracture implicit`", `"flow`", and `"darcy matrix fracture`").
- 
+
       * `"start period time`" [double] is the start time of the current time period.
 
       * `"end period time`" [double] is the end time of the current time period.
 
-      * `"maximum cycle number`" [int] is the maximum allowed number of cycles in 
+      * `"maximum cycle number`" [int] is the maximum allowed number of cycles in
         the current time period. Special value -1 means unlimited number of cycles.
 
       * `"initial time step`" is the initial time step for the current time period.
@@ -88,7 +88,7 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
       </ParameterList>
 
       <ParameterList name="TP 1">
-      ... 
+      ...
       </ParameterList>
     </ParameterList>
   </ParameterList>

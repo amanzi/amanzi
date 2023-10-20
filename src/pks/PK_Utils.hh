@@ -27,8 +27,8 @@
 
 namespace Amanzi {
 
-/* 
-  Keeps copies of fields which could be restored. e.g. when a time integration step 
+/*
+  Keeps copies of fields which could be restored. e.g. when a time integration step
   fails. The list is populated by
 
     - input fields which are primary evaluators

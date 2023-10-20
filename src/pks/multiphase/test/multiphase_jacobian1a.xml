@@ -690,8 +690,8 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Euclid">
-      <Parameter name="preconditioning method" type="string" value="euclid"/>
-      <ParameterList name="euclid parameters">
+      <Parameter name="preconditioning method" type="string" value="ILU"/>
+      <ParameterList name="ILU parameters">
         <Parameter name="ilu(k) fill level" type="int" value="5"/>
         <!--Parameter name="ilut drop tolerance" type="double" value="0.01"/-->
         <Parameter name="rescale rows" type="bool" value="true"/>

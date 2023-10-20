@@ -97,7 +97,7 @@ PDE_DiffusionFactory::Create(const Teuchos::RCP<Operator>& global_op)
 
   if (gravity_ && norm(g_) == 0.0) {
     double tmp = oplist_.get<double>("gravity magnitude");
-    g_[mesh_->space_dimension() - 1] = tmp;
+    g_[mesh_->getSpaceDimension() - 1] = tmp;
   }
 
   Teuchos::RCP<PDE_Diffusion> op;
@@ -141,7 +141,7 @@ PDE_DiffusionFactory::Create(const Teuchos::RCP<Operator>& global_op)
   } else {
     // FV methods
     if (name == "fv: default" && manifolds_) {
-      op = Teuchos::rcp(new PDE_DiffusionFVonManifolds(oplist_, global_op));
+      op = Teuchos::rcp(new PDE_DiffusionFVonManifolds(oplist_, global_op, true));
     } else if (name == "fv: default" && !gravity_) {
       op = Teuchos::rcp(new PDE_DiffusionFV(oplist_, global_op));
     } else if (name == "fv: default" && gravity_) {
@@ -339,7 +339,7 @@ PDE_DiffusionFactory::Create(Teuchos::ParameterList& oplist,
 
     // MFD methods with non-uniform DOFs
   } else if (fractured_matrix) {
-    AmanziGeometry::Point g(mesh->space_dimension()); // gravity should be turned-off in PList
+    AmanziGeometry::Point g(mesh->getSpaceDimension()); // gravity should be turned-off in PList
     auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(oplist, mesh, 0.0, g));
     op->Init(oplist);
     op->SetBCs(bc, bc);
@@ -379,7 +379,7 @@ PDE_DiffusionFactory::Create(Teuchos::ParameterList& oplist,
 
     // MFD methods with non-uniform DOFs
   } else if (fractured_matrix) {
-    AmanziGeometry::Point g(mesh->space_dimension());
+    AmanziGeometry::Point g(mesh->getSpaceDimension());
     auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(oplist, mesh, 0.0, g));
     op->Init(oplist);
     return op;

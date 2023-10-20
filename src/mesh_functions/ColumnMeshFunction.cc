@@ -84,27 +84,26 @@ ReadColumnMeshFunction_ByDepth(const Function& func,
   double z0;
   std::vector<double> z(1);
 
-  AmanziMesh::Entity_ID_List surf_faces;
   for (auto setname : sidesets) {
-    v.Mesh()->get_set_entities(
-      setname, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &surf_faces);
+    auto surf_faces = v.Mesh()->getSetEntities(
+      setname, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
     for (auto f : surf_faces) {
       // Collect the reference coordinate z0
-      AmanziGeometry::Point x0 = v.Mesh()->face_centroid(f);
+      AmanziGeometry::Point x0 = v.Mesh()->getFaceCentroid(f);
       z0 = x0[x0.dim() - 1];
 
       // Iterate down the column
-      AmanziMesh::Entity_ID_List cells;
-      v.Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
+      auto cells = v.Mesh()->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       AMANZI_ASSERT(cells.size() == 1);
       AmanziMesh::Entity_ID c = cells[0];
 
       while (c >= 0) {
-        AmanziGeometry::Point x1 = v.Mesh()->cell_centroid(c);
+        AmanziGeometry::Point x1 = v.Mesh()->getCellCentroid(c);
         z[0] = z0 - x1[x1.dim() - 1];
         vec[0][c] = func(z);
-        c = v.Mesh()->cell_get_cell_below(c);
+        assert(false);
+        //c = v.Mesh()->cell_get_cell_below(c);
       }
     }
   }

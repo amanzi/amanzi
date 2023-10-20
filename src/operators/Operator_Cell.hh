@@ -37,7 +37,7 @@ class Operator_Cell : public Operator {
     : Operator(cvs, plist, schema)
   {
     set_schema_string("CELL");
-    cell_max_faces = mesh_->cell_get_max_faces();
+    cell_max_faces = mesh_->getCellMaxFaces();
   }
 
   virtual Teuchos::RCP<Operator> Clone() const;

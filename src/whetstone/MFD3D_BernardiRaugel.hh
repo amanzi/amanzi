@@ -20,7 +20,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
@@ -34,7 +34,7 @@ namespace WhetStone {
 class MFD3D_BernardiRaugel : public MFD3D {
  public:
   MFD3D_BernardiRaugel(const Teuchos::ParameterList& plist,
-                       const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
+                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh){};
 
   // required methods
@@ -47,8 +47,7 @@ class MFD3D_BernardiRaugel : public MFD3D {
 
   // -- other matrices
   virtual int DivergenceMatrix(int c, DenseMatrix& A) override;
-  virtual int
-  AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A) override;
+  virtual int AdvectionMatrix(int c, const AmanziMesh::Point_List& u, DenseMatrix& A) override;
 
  private:
   static RegisteredFactory<MFD3D_BernardiRaugel> reg_;

@@ -4,38 +4,20 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors:
+  Authors: William A. Perkins
 */
 
-// Emacs Mode Line: -*- Mode:c++; c-default-style: "google"; indent-tabs-mode: nil -*-
-// -------------------------------------------------------------
-/**
- * @file   verify_hex.cc
- * @author William A. Perkins
- * @date Tue Aug  2 13:27:55 2011
- *
- * @brief  A simple test of hex-mesh generation -- serial or parallel
- *
- *
- */
-
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created May 24, 2011 by William A. Perkins
-// Last Change: Tue Aug  2 13:27:55 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
-
 #include <iostream>
-#include <boost/format.hpp>
+#include "boost/format.hpp"
 #define BOOST_FILESYSTEM_NO_DEPRECATED
-#include <boost/filesystem/path.hpp>
+#include "boost/filesystem/path.hpp"
 namespace bf = boost::filesystem;
-#include <boost/program_options.hpp>
+#include "boost/program_options.hpp"
 namespace po = boost::program_options;
 
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Epetra_Vector.h>
-#include <AmanziComm.hh>
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Epetra_Vector.h"
+#include "AmanziComm.hh"
 
 #include "Teuchos_ParameterXMLFileReader.hpp"
 // DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -85,12 +67,12 @@ grab_filename(const bf::path& some_path)
 void
 dump_output(const int& me, Amanzi::AmanziMesh::Mesh& mesh, const std::string& filenameout)
 {
-  Amanzi::HDF5_MPI* viz_output = new Amanzi::HDF5_MPI(mesh.get_comm());
+  Amanzi::HDF5_MPI* viz_output = new Amanzi::HDF5_MPI(mesh.getComm());
   viz_output->setTrackXdmf(true);
   viz_output->createMeshFile(Teuchos::rcp(&mesh), filenameout);
   viz_output->createDataFile(filenameout);
 
-  const Epetra_Map& cmap(mesh.cell_map(false));
+  const Epetra_Map& cmap(mesh.getMap(Amanzi::AmanziMesh::Entity_kind::CELL, false));
   Epetra_Vector part(cmap);
   int nmycell(cmap.NumMyElements());
   std::vector<int> myidx(nmycell, 0);
@@ -105,24 +87,8 @@ dump_output(const int& me, Amanzi::AmanziMesh::Mesh& mesh, const std::string& fi
 
   std::fill(mypart.begin(), mypart.end(), -1);
 
-  // Amanzi::AmanziMesh::Set_ID_List setids;
-  // mesh.get_set_ids(Amanzi::AmanziMesh::CELL, &setids);
-  // for (Amanzi::AmanziMesh::Set_ID_List::const_iterator i = setids.begin();
-  //      i != setids.end(); ++i) {
-  //   Amanzi::AmanziMesh::Entity_ID_List gids;
-  //   mesh.get_set_entities(*i, Amanzi::AmanziMesh::CELL,
-  //                          Amanzi::AmanziMesh::Parallel_type::OWNED, &gids);
-  //   for (Amanzi::AmanziMesh::Entity_ID_List::const_iterator g = gids.begin();
-  //        g != gids.end(); ++g) {
-  //     int lidx(*g);
-  //     mypart[lidx] = *i;
-  //     // std::cerr << me << ": set " << *i << ", cell " << *g << " (" << lidx << ")" << std::endl;
-  //   }
-  // }
-
   part.ReplaceMyValues(nmycell, &mypart[0], &myidx[0]);
   viz_output->writeCellDataReal(part, "Block");
-
 
   viz_output->endTimestep();
 
@@ -142,12 +108,12 @@ do_the_audit(const int& me, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh, const s
 
   std::ofstream ofs(ofile.c_str());
   if (me == 0) std::cout << "Writing results to " << ofile.c_str() << ", etc." << std::endl;
-  Amanzi::MeshAudit audit(mesh, ofs);
+  Amanzi::AmanziMesh::MeshAudit audit(mesh, ofs);
   lresult = audit.Verify();
 
   int gresult;
 
-  mesh->get_comm()->MaxAll(&lresult, &gresult, 1);
+  mesh->getComm()->MaxAll(&lresult, &gresult, 1);
 
   return gresult;
 }
@@ -278,14 +244,9 @@ main(int argc, char** argv)
   }
 
   // generate a mesh
-
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
   Amanzi::AmanziMesh::Preference pref;
-  if (dosimple) {
-    pref.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
-  } else {
-    pref.push_back(Amanzi::AmanziMesh::Framework::STK);
-  }
+  if (dosimple) { pref.push_back(Amanzi::AmanziMesh::Framework::SIMPLE); }
   meshfactory.set_preference(pref);
 
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -299,36 +260,9 @@ main(int argc, char** argv)
                               xcells,
                               ycells,
                               zcells);
-    // } else {
-    //   Teuchos::ParameterList parameter_list;
-
-    //   int ierr(0), aerr(0);
-
-    //   try {
-    //     Teuchos::ParameterXMLFileReader xmlreader(inname);
-    //     Teuchos::ParameterList all_parameter_list(xmlreader.getParameters());
-    //     Teuchos::ParameterList mesh_parameter_list = all_parameter_list.sublist("mesh");
-    //     parameter_list = mesh_parameter_list.sublist("Generate");
-    //   } catch (const std::runtime_error& e) {
-    //     std::cerr << me << ": error parsing xml-file: " << e.what() << std::endl;
-    //     ierr++;
-    //   }
-
-    //   comm->SumAll(&ierr, &aerr, 1);
-    //   if (aerr > 0) {
-    //     return 1;
-    //   }
-
-    //   mesh = meshfactory(parameter_list);
   }
 
-  //  std::cout << "Generated mesh has "
-  //            << mesh->num_sets(Amanzi::AmanziMesh::CELL)
-  //            << " cell sets"
-  //            << std::endl;
-
   // make sure it's OK
-
   if (doaudit) {
     int notok(do_the_audit(me, mesh, outname));
     if (me == 0) {
@@ -337,7 +271,6 @@ main(int argc, char** argv)
   }
 
   // dump it out
-
   dump_output(me, *mesh, outfilename);
 
   return 0;

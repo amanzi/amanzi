@@ -41,7 +41,7 @@ CreateMDMPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
       regions.push_back(sublist.get<Teuchos::Array<std::string>>("regions").toVector());
 
       mdm = factory.Create(sublist);
-      mdm->set_dim(mesh->space_dimension());
+      mdm->set_dim(mesh->getSpaceDimension());
       flag |= mdm->is_valid();
       mdm_list.push_back(mdm);
     } else {
@@ -50,7 +50,7 @@ CreateMDMPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   }
 
   auto partition = Teuchos::rcp(new Functions::MeshPartition());
-  partition->Initialize(mesh, AmanziMesh::CELL, regions, -1);
+  partition->Initialize(mesh, AmanziMesh::Entity_kind::CELL, regions, -1);
   partition->Verify();
 
   return Teuchos::rcp(new MDMPartition(partition, mdm_list));

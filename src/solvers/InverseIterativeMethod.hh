@@ -20,9 +20,9 @@ specify it here.
 
 * `"direct method`" [string] defines a direct method. The available option is `"amesos`".
 
-* `"xxx parameters`" [list] provides parameters for the iterative method specified 
+* `"xxx parameters`" [list] provides parameters for the iterative method specified
   by variable `"iterative method`".
- 
+
 .. code-block:: xml
 
   <ParameterList>  <!-- parent list -->

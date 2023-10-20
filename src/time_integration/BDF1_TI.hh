@@ -87,7 +87,7 @@ Note this also accepts an object that provides the `BDF1 Solver Interface`_.
 
       <Parameter name="solver type" type="string" value="nka"/>
       <ParameterList name="nka parameters">
-        ... 
+        ...
       </ParameterList>
     </ParameterList>
   </ParameterList>

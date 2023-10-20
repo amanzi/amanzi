@@ -19,7 +19,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 
 #include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
@@ -32,7 +32,7 @@ namespace WhetStone {
 class MFD3D_GeneralizedDiffusion : public MFD3D {
  public:
   MFD3D_GeneralizedDiffusion(const Teuchos::ParameterList& plist,
-                             const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
+                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh){};
 
   // required member functions
@@ -54,10 +54,7 @@ class MFD3D_GeneralizedDiffusion : public MFD3D {
   virtual int DivergenceMatrix(int c, DenseMatrix& A) override;
 
  private:
-  void CurvedFaceGeometry_(int f,
-                           int dirs,
-                           std::vector<AmanziGeometry::Point>& vv,
-                           std::vector<AmanziGeometry::Point>& xm);
+  void CurvedFaceGeometry_(int f, int dirs, AmanziMesh::Point_List& vv, AmanziMesh::Point_List& xm);
 
  private:
   static RegisteredFactory<MFD3D_GeneralizedDiffusion> reg_;

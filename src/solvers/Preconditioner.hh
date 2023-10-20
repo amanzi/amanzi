@@ -8,19 +8,18 @@
 */
 
 //! A base class for assembled preconditioners.
-
 /*!
 
 This sublist contains entries for various
 preconditioners required by a simulation. At the moment, we support Trilinos multilevel
-preconditioner, Hypre BoomerAMG preconditioner, ILU preconditioner, Hypre's Euclid ILU
-preconditioner, and identity preconditioner. 
+preconditioner, Hypre BoomerAMG preconditioner, ILU preconditioner, Hypre's ILU
+preconditioner, and identity preconditioner.
 
 * `"preconditioning method`" [string] defines preconditioner algorithm.
 
-* `"xxx parameters`" [list] provides parameters for the preconditioner specified 
+* `"xxx parameters`" [list] provides parameters for the preconditioner specified
   by parameter `"preconditioning method`".
- 
+
 .. code-block:: xml
 
   <ParameterList>  <!-- parent list -->
@@ -28,7 +27,7 @@ preconditioner, and identity preconditioner.
     <ParameterList name="_TRILINOS ML">
       <Parameter name="preconditioning method" type="string" value="ml"/>
       <ParameterList name="ml parameters">
-        ... 
+        ...
       </ParameterList>
     </ParameterList>
 

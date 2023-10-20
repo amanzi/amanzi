@@ -71,7 +71,7 @@ EnergyOnePhase_PK::FunctionalResidual(double t_old,
   Epetra_MultiVector& g_c = *g->Data()->ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
-    double factor = mesh_->cell_volume(c) / dt;
+    double factor = mesh_->getCellVolume(c) / dt;
     g_c[0][c] += factor * (e1[0][c] - e0[0][c]);
   }
 

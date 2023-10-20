@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <iostream>
 #include "stdlib.h"
 #include "math.h"
@@ -38,9 +47,11 @@ TEST(MPC_DRIVER_MULTIPHASE_FRACTURES)
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
 
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
+  mesh_list->set<bool>("request edges", true);
+  mesh_list->set<bool>("request faces", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh3D = factory.create(0.0, 0.0, 0.0, 200.0, 12.0, 12.0, 50, 12, 12, true, true);
+  auto mesh3D = factory.create(0.0, 0.0, 0.0, 200.0, 12.0, 12.0, 50, 12, 12);
   // auto mesh3D = factory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, true, true);
 
   std::vector<std::string> names;

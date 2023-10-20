@@ -38,7 +38,7 @@ namespace Operators {
 class UpwindGravity : public Upwind {
  public:
   UpwindGravity(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : Upwind(mesh), g_(mesh->space_dimension()){};
+    : Upwind(mesh), g_(mesh->getSpaceDimension()){};
   ~UpwindGravity(){};
 
   // main methods

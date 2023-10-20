@@ -55,7 +55,9 @@ TEST(MPC_DRIVER_FLOW_RACTIVE_TRANSPORT_MATRIX_FRACTURE)
 
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
-  MeshFactory factory(comm, gm, mesh_list);
+  auto mesh_list2 = Teuchos::sublist(mesh_list, "unstructured", true);
+  auto mesh_list3 = Teuchos::sublist(mesh_list2, "expert", true);
+  MeshFactory factory(comm, gm, mesh_list3);
   factory.set_preference(Preference({ Framework::MSTK }));
   auto mesh = factory.create("test/single_fracture_tet.exo");
 
@@ -69,7 +71,7 @@ TEST(MPC_DRIVER_FLOW_RACTIVE_TRANSPORT_MATRIX_FRACTURE)
   // create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
-  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
+  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::Entity_kind::FACE);
 
   S->RegisterMesh("fracture", mesh_fracture);
 

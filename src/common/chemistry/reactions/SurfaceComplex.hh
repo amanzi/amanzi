@@ -12,7 +12,7 @@
 The `"surface complexes`" is the list of surface complexation reactions.
 Each reaction is defined by the following parameters:
 
-* `"reaction`" [string] is a surface complexation reaction involing the complex site 
+* `"reaction`" [string] is a surface complexation reaction involing the complex site
   and primary species.
 
 * `"charge`" [int] is the charge of the complex.

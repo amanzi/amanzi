@@ -69,15 +69,22 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
   // create the MSTK mesh framework
   // -- geometric model is not created. Instead, we specify boundary conditions
   // -- using centroids of mesh faces.
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4, true, true);
+  auto mesh_list = Teuchos::rcp(new Teuchos::ParameterList());
+  mesh_list->set<bool>("request edges", true);
+  mesh_list->set<bool>("request faces", true);
+  MeshFactory meshfactory(comm, Teuchos::null, mesh_list);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 5);
 
   // -- general information about mesh
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int ncells =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nnodes =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nnodes_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   // select an analytic solution for error calculations and setup of
   // boundary conditions
@@ -86,7 +93,7 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
     K->push_back(Kc);
   }
@@ -100,14 +107,15 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
   // -- normal component of velocity on boundary faces (a scalar)
   int ndir(0), nshear(0), nkinematic(0);
   if (icase == 1) {
-    auto bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+    Teuchos::RCP<BCs> bcf =
+      Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
     std::vector<int>& bcf_model = bcf->bc_model();
     std::vector<double>& bcf_value = bcf->bc_value();
 
     for (int f = 0; f < nfaces_wghost; f++) {
-      const Point& xf = mesh->face_centroid(f);
-      const Point& normal = mesh->face_normal(f);
-      double area = mesh->face_area(f);
+      const Point& xf = mesh->getFaceCentroid(f);
+      const Point& normal = mesh->getFaceNormal(f);
+      double area = mesh->getFaceArea(f);
 
       if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
           fabs(xf[1] - 1.0) < 1e-6) {
@@ -120,14 +128,14 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
   }
 
   // -- full velocity at boundary nodes (a vector)
-  Point xv(2);
   if (icase == 1 || icase == 2) {
-    auto bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::POINT));
+    Teuchos::RCP<BCs> bcv =
+      Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::POINT));
     std::vector<int>& bcv_model = bcv->bc_model();
     std::vector<Point>& bcv_value = bcv->bc_value_point();
 
     for (int v = 0; v < nnodes_wghost; ++v) {
-      mesh->node_get_coordinates(v, &xv);
+      auto xv = mesh->getNodeCoordinate(v);
 
       if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1]) < 1e-6 ||
           fabs(xv[1] - 1.0) < 1e-6) {
@@ -142,15 +150,16 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
   // -- full velocity at boundary nodes (a vector)
   if (icase == 3) {
     double tol(1e-4);
-    auto bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+    auto bcf =
+      Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
     std::vector<int>& bcf_model = bcf->bc_model();
     std::vector<double>& bcf_value = bcf->bc_value();
 
     for (int f = 0; f < nfaces_wghost; f++) {
-      const Point& xf = mesh->face_centroid(f);
-      const Point& normal = mesh->face_normal(f);
-      const Point& tau = mesh->edge_vector(f);
-      double area = mesh->face_area(f);
+      const Point& xf = mesh->getFaceCentroid(f);
+      const Point& normal = mesh->getFaceNormal(f);
+      const Point& tau = mesh->getEdgeVector(f);
+      double area = mesh->getFaceArea(f);
 
       if ((fabs(xf[1]) < 1e-6 && xf[0] > tol && xf[0] < 1.0 - tol) ||
           (fabs(xf[1] - 1.0) < 1e-6 && xf[0] > tol && xf[0] < 1.0 - tol)) {
@@ -161,12 +170,13 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
     }
     op->AddBCs(bcf, bcf);
 
-    auto bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::SCALAR));
+    auto bcv =
+      Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::SCALAR));
     std::vector<int>& bcv_model = bcv->bc_model();
     std::vector<double>& bcv_value = bcv->bc_value();
 
     for (int v = 0; v < nnodes_wghost; ++v) {
-      mesh->node_get_coordinates(v, &xv);
+      auto xv = mesh->getNodeCoordinate(v);
 
       if ((fabs(xv[1]) < 1e-6 && xv[0] > tol && xv[0] < 1.0 - tol) ||
           (fabs(xv[1] - 1.0) < 1e-6 && xv[0] > tol && xv[0] < 1.0 - tol)) {
@@ -178,13 +188,13 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
     }
     op->AddBCs(bcv, bcv);
 
-    auto bcp = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::POINT));
+    auto bcp =
+      Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::POINT));
     std::vector<int>& bcp_model = bcp->bc_model();
     std::vector<Point>& bcp_value = bcp->bc_value_point();
 
     for (int v = 0; v < nnodes_wghost; ++v) {
-      mesh->node_get_coordinates(v, &xv);
-
+      auto xv = mesh->getNodeCoordinate(v);
       if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6) {
         bcp_model[v] = OPERATOR_BC_DIRICHLET;
         bcp_value[v] = ana.velocity_exact(xv, 0.0);
@@ -204,7 +214,7 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
   Epetra_MultiVector& src = *source.ViewComponent("node");
 
   for (int v = 0; v < nnodes; v++) {
-    mesh->node_get_coordinates(v, &xv);
+    auto xv = mesh->getNodeCoordinate(v);
     Point tmp(ana.source_exact(xv, 0.0));
     for (int k = 0; k < 2; ++k) src[k][v] = tmp[k];
   }
@@ -237,7 +247,7 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
   if (icase == 1 || icase == 2) { ver.CheckResidual(solution, 1.0e-13); }
 
   if (MyPID == 0) {
-    std::cout << ana.Tensor(mesh->cell_centroid(0), 0.0) << std::endl;
+    std::cout << ana.Tensor(mesh->getCellCentroid(0), 0.0) << std::endl;
     std::cout << "elasticity solver (" << solver << "): ||r||=" << global_op->residual()
               << " itr=" << global_op->num_itrs() << " code=" << global_op->returned_code()
               << std::endl

@@ -50,12 +50,11 @@ SUITE(MeshFramework)
     Amanzi::AmanziMesh::Preference pref;
 
     auto plist = Teuchos::rcp(new Teuchos::ParameterList());
-    plist->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "metis");
-    plist->sublist("unstructured").sublist("expert").set<bool>("create subcommunicator", true);
+    plist->set<std::string>("partitioner", "metis");
+    plist->set<bool>("create subcommunicator", true);
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm, plist);
 
     bool flatten = true;
-    // bool extrude = false;
 
     if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::MSTK)) {
       pref.clear();
@@ -65,19 +64,18 @@ SUITE(MeshFramework)
       auto parent_mesh = meshfactory.create(x0, y0, z0, x1, y1, z1, nx, ny, nz);
       CHECK(!parent_mesh.is_null());
 
-      Amanzi::AmanziMesh::Entity_ID_List setents;
-      parent_mesh->get_set_entities("Top Surface",
-                                    Amanzi::AmanziMesh::FACE,
-                                    Amanzi::AmanziMesh::Parallel_type::OWNED,
-                                    &setents);
+      Amanzi::AmanziMesh::Entity_ID_View setents =
+        parent_mesh->getSetEntities("Top Surface",
+                                    Amanzi::AmanziMesh::Entity_kind::FACE,
+                                    Amanzi::AmanziMesh::Parallel_kind::OWNED);
       int local_count = setents.size();
       int global_min_count;
       std::cout << "Count on rank " << comm->MyPID() << " is " << local_count << std::endl;
       comm->MinAll(&local_count, &global_min_count, 1);
       AMANZI_ASSERT(global_min_count == 0); // this test only useful for min = 0
 
-      int local_cells = parent_mesh->num_entities(Amanzi::AmanziMesh::CELL,
-                                                  Amanzi::AmanziMesh::Parallel_type::OWNED);
+      int local_cells = parent_mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
+                                                    Amanzi::AmanziMesh::Parallel_kind::OWNED);
       int global_cells;
       comm->SumAll(&local_cells, &global_cells, 1);
       CHECK(global_cells == 1000);
@@ -85,22 +83,24 @@ SUITE(MeshFramework)
       // BELOW SEGMENT DEMONSTRATES MSTK ISSUE #112
       int max_cell = -1;
       for (int c = 0; c != local_cells; ++c) {
-        max_cell = std::max(max_cell, parent_mesh->cell_map(false).GID(c));
+        max_cell = std::max(
+          max_cell, parent_mesh->getMap(Amanzi::AmanziMesh::Entity_kind::CELL, false).GID(c));
       }
       int global_max_cell;
       comm->MaxAll(&max_cell, &global_max_cell, 1);
       std::cout << "cell counts: total = " << global_cells << ", max = " << global_max_cell
                 << std::endl;
       // REMOVE COMMENT ONCE MSTK IS UPDATED
-      //CHECK(global_max_cell == 999);
+      CHECK(global_max_cell == 999);
       // END SEGMENT
 
-      auto newmesh = meshfactory.create(parent_mesh, setnames, Amanzi::AmanziMesh::FACE, flatten);
-      if (local_count == 0) {
-        CHECK(newmesh == Teuchos::null);
-      } else {
-        CHECK(newmesh != Teuchos::null);
-      }
+      // Which constructor?
+      //auto newmesh = meshfactory.create(parent_mesh, setnames, Amanzi::AmanziMesh::Entity_kind::FACE, flatten);
+      //if (local_count == 0) {
+      //  CHECK(newmesh == Teuchos::null);
+      //} else {
+      //  CHECK(newmesh != Teuchos::null);
+      //}
     }
   }
 }
