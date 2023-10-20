@@ -8,7 +8,7 @@
 */
 
 /*
-  Heat diffusion coefficeint between fracture and matrix.
+  Heat diffusion coefficient between fracture and matrix.
 */
 
 

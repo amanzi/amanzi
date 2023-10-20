@@ -271,11 +271,11 @@ if (ENABLE_TESTS)
 
         add_amanzi_test(operators_dfn_4pe operators_dfn NPROCS 4 KIND unit)
                     
-        #add_amanzi_test(operators_diffusion_dfn_fv operators_diffusion_dfn_fv
-        #                KIND unit
-        #                NPROCS 2
-        #                SOURCE test/Main.cc test/operator_diffusion_dfn_fv.cc
-        #                LINK_LIBS mesh_extracted ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+        add_amanzi_test(operators_diffusion_dfn_fv operators_diffusion_dfn_fv
+                        KIND unit
+                        NPROCS 2
+                        SOURCE test/Main.cc test/operator_diffusion_dfn_fv.cc
+                        LINK_LIBS mesh_extracted ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
         add_amanzi_test(operators_coupled_diffusion operators_coupled_diffusion
                         KIND unit

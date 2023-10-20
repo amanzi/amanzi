@@ -141,7 +141,7 @@ PDE_DiffusionFactory::Create(const Teuchos::RCP<Operator>& global_op)
   } else {
     // FV methods
     if (name == "fv: default" && manifolds_) {
-      op = Teuchos::rcp(new PDE_DiffusionFVonManifolds(oplist_, global_op));
+      op = Teuchos::rcp(new PDE_DiffusionFVonManifolds(oplist_, global_op, true));
     } else if (name == "fv: default" && !gravity_) {
       op = Teuchos::rcp(new PDE_DiffusionFV(oplist_, global_op));
     } else if (name == "fv: default" && gravity_) {

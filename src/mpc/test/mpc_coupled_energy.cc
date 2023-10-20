@@ -81,6 +81,7 @@ TEST(MPC_DRIVER_ENERGY_MATRIX_FRACTURE)
     new Mesh(mesh_fracture_mf, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), mesh_list));
 
   S->RegisterMesh("fracture", mesh_fracture);
+  mesh_fracture->setParentMesh(mesh);
 
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   S = cycle_driver.Go();
