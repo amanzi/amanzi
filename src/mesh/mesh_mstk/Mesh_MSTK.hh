@@ -20,7 +20,6 @@
 
 #include "MeshFramework.hh"
 #include "Point.hh"
-#include "GenerationSpec.hh"
 #include "dbc.hh"
 #include "errors.hh"
 

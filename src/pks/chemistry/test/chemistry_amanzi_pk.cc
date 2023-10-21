@@ -30,7 +30,6 @@
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
-#include "GenerationSpec.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
 
@@ -86,8 +85,6 @@ SUITE(GeochemistryTestsChemistryPK)
     comm_ = Amanzi::getCommSelf();
     Teuchos::ParameterList mesh_parameter_list =
       glist_->sublist("mesh").sublist("unstructured").sublist("generate mesh");
-
-    am::GenerationSpec g(mesh_parameter_list);
 
     Teuchos::ParameterList region_parameter_list = glist_->sublist("regions");
     gm_ = Teuchos::rcp(new ag::GeometricModel(3, region_parameter_list, *comm_));

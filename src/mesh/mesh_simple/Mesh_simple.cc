@@ -18,7 +18,6 @@
 
 #include "dbc.hh"
 #include "errors.hh"
-#include "GenerationSpec.hh"
 #include "RegionLogical.hh"
 
 #include "Mesh_simple.hh"

@@ -30,7 +30,6 @@ include_directories(${Boost_INCLUDE_DIRS})
 set(mesh_inc_files
   MeshDefs.hh
   CellTopology.hh
-  GenerationSpec.hh
   MeshFramework.hh
   Mesh_Helpers_decl.hh
   Mesh_Helpers_impl.hh
@@ -52,7 +51,6 @@ set(mesh_inc_files
 )
 
 set(mesh_src_files
-  GenerationSpec.cc
   MeshFramework.cc
   MeshSets.cc
   MeshColumns.cc
