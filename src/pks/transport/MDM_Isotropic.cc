@@ -81,7 +81,7 @@ MDM_Isotropic::ParseAlpha_(Teuchos::ParameterList& plist, const std::string& key
     FunctionFactory factory;
     alpha_func_ = factory.Create(plist.sublist(keyword));
 
-    std::vector<double> args(1 + dim_, 0.0);
+    std::vector<double> args(4, 0.0);
     alpha_ = (*alpha_func_)(args);
   } else {
     alpha_ = plist.get<double>(keyword, 0.0);
