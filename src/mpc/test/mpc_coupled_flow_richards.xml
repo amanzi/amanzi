@@ -10,15 +10,14 @@
   </ParameterList>
 
   <ParameterList name="mesh">
+    <Parameter name="framework" type="string" value="MSTK"/>
+    <Parameter name="partitioner" type="string" value="zoltan_rcb"/>
+
     <ParameterList name="unstructured">
       <ParameterList name="generate mesh">
         <Parameter name="number of cells" type="Array(int)" value="{9, 2, 20}"/>
         <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
         <Parameter name="domain high coordinate" type="Array(double)" value="{216.0, 10.0, 120.0}"/>
-      </ParameterList>
-      <ParameterList name="expert">
-        <Parameter name="framework" type="string" value="MSTK"/>
-        <Parameter name="partitioner" type="string" value="zoltan_rcb"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

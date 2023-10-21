@@ -52,11 +52,9 @@ TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE_RICHARDS)
 
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
-  auto mesh_list2 = Teuchos::sublist(mesh_list, "unstructured", true);
-  auto mesh_list3 = Teuchos::sublist(mesh_list2, "expert", true);
-  mesh_list3->set<bool>("request edges", true);
-  mesh_list3->set<bool>("request faces", true);
-  MeshFactory factory(comm, gm, mesh_list3);
+  mesh_list->set<bool>("request edges", true);
+  mesh_list->set<bool>("request faces", true);
+  MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({ Framework::MSTK }));
   auto mesh = factory.create(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 9, 2, 20);
 

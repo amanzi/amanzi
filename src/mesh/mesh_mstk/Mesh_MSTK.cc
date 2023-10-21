@@ -2007,7 +2007,7 @@ Mesh_MSTK::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
                           View_type<const Entity_ID, MemSpace_kind::HOST>& entids) const
 {
   Entity_ID_View lentids;
-  if (kind != createEntityKind(region.entity_str())) {
+  if (kind > createEntityKind(region.entity_str())) {
     Errors::Message msg;
     msg << "Inconsistent request of labeled set for region \"" << region.get_name()
         << "\" of kind \"" << region.entity_str() << "\" requested as type \"" << to_string(kind)

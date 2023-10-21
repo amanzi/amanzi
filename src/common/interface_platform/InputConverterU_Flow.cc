@@ -783,10 +783,15 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
 
     // -- create BC names, modify input data
     std::string bcname, bctype(bctype_in);
-    if (bctype_in == "inward_mass_flux" || bctype_in == "inward_mass_flux_distributed") {
+    if (bctype_in == "inward_mass_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
       for (int k = 0; k < bcs.values.size(); k++) bcs.values[k] *= -1;
+    } else if (bctype_in == "inward_mass_flux_distributed") {
+      bctype = "mass flux";
+      bcname = "outward mass flux";
+      for (int k = 0; k < bcs.values.size(); k++) bcs.values[k] *= -1;
+      for (int k = 0; k < bcs.forms.size(); k++) bcs.forms[k] = "volume";
     } else if (bctype_in == "outward_mass_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";

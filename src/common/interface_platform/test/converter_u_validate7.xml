@@ -8,12 +8,11 @@
     <Parameter name="amount" type="string" value="mol"/>
     <Parameter isUsed="true" name="temperature" type="string" value="K"/>
   </ParameterList>
+
   <ParameterList name="mesh">
+    <Parameter name="framework" type="string" value="MSTK"/>
+    <Parameter name="partitioner" type="string" value="metis"/>
     <ParameterList name="unstructured">
-      <ParameterList name="expert">
-        <Parameter name="framework" type="string" value="MSTK"/>
-        <Parameter name="partitioner" type="string" value="NOT_SPECIFIED"/>
-      </ParameterList>
       <ParameterList name="generate mesh">
         <Parameter name="number of cells" type="Array(int)" value="{54, 60}"/>
         <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0}"/>

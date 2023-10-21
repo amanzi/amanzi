@@ -118,7 +118,6 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
     Exceptions::amanzi_throw(msg);
   }
   Teuchos::ParameterList unstr_mesh_params = mesh_params->sublist("unstructured");
-  bool expert_params_specified = unstr_mesh_params.isSublist("expert");
 
   // Create a mesh factory for this geometric model
   auto mesh_vo = Teuchos::rcp(new Amanzi::VerboseObject("Mesh", *mesh_params));
@@ -130,35 +129,26 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
     try {
       Amanzi::AmanziMesh::Preference prefs(Amanzi::AmanziMesh::default_preference());
 
-      if (expert_params_specified) {
-        Teuchos::ParameterList expert_mesh_params = unstr_mesh_params.sublist("expert");
+      // If caller has specified a particular framework to use, make that
+      // the primary framework. Otherwise, use default framework preferences
 
-        bool framework_specified = expert_mesh_params.isParameter("framework");
+      if (mesh_params->isParameter("framework")) {
+        std::string fw = mesh_params->get<std::string>("framework");
 
-        // If caller has specified a particular framework to use, make
-        // that the primary framework. Otherwise, use default framework
-        // preferences
-
-        if (framework_specified) {
-          std::string framework = expert_mesh_params.get<std::string>("framework");
-
-          if (framework == Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::SIMPLE)) {
-            prefs.clear();
-            prefs.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
-          } else if (framework ==
-                     Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::MSTK)) {
-            prefs.clear();
-            prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
-          } else if (framework ==
-                     Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::MOAB)) {
-            prefs.clear();
-            prefs.push_back(Amanzi::AmanziMesh::Framework::MOAB);
-            // } else if (framework == "") {
-          } else {
-            std::string s(framework);
-            s += ": specified mesh framework preference not understood";
-            amanzi_throw(Errors::Message(s));
-          }
+        if (fw == Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::SIMPLE)) {
+          prefs.clear();
+          prefs.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
+        } else if (fw == Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::MSTK)) {
+          prefs.clear();
+          prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+        } else if (fw == Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::MOAB)) {
+          prefs.clear();
+          prefs.push_back(Amanzi::AmanziMesh::Framework::MOAB);
+        // } else if (framework == "") {
+        } else {
+          std::string s(fw);
+          s += ": specified mesh framework preference not understood";
+          amanzi_throw(Errors::Message(s));
         }
       }
 
@@ -253,10 +243,10 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
     amanzi_throw(Errors::Message("Geometric model and mesh have different dimensions."));
   }
 
-  if (expert_params_specified) {
+  if (unstr_mesh_params.isSublist("expert")) {
     const auto& expert_mesh_params = unstr_mesh_params.sublist("expert");
-    bool verify_mesh_param = expert_mesh_params.isParameter("verify mesh");
-    if (verify_mesh_param) {
+
+    if (expert_mesh_params.isParameter("verify mesh")) {
       bool verify = expert_mesh_params.get<bool>("verify mesh");
       if (verify) {
         if (rank == 0) std::cerr << "Verifying mesh with Mesh Audit..." << std::endl;
@@ -291,7 +281,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
           }
         }
       } // if verify
-    }   // if verify_mesh_param
+    }
   }
 
 

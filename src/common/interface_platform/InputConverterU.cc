@@ -180,10 +180,7 @@ InputConverterU::Translate(int rank, int num_proc)
 
   // -- walkabout enforces non-contiguous maps
   if (io_walkabout_) {
-    out_list.sublist("mesh")
-      .sublist("unstructured")
-      .sublist("expert")
-      .set<bool>("contiguous global ids", false);
+    out_list.sublist("mesh").set<bool>("contiguous global ids", false);
   }
 
   // -- single region for fracture network

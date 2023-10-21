@@ -111,17 +111,16 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="mesh">
+    <Parameter name="framework" type="string" value="MSTK"/>
+    <Parameter name="partitioner" type="string" value="metis"/>
+    <Parameter name="contiguous global ids" type="bool" value="false"/>
     <ParameterList name="unstructured">
       <ParameterList name="generate mesh">
         <Parameter name="number of cells" type="Array(int)" value="{54, 60}"/>
         <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
         <Parameter name="domain high coordinate" type="Array(double)" value="{2.160e+02, 1.2e+02}"/>
-      </ParameterList>
-      <ParameterList name="expert">
-        <Parameter name="framework" type="string" value="MSTK"/>
-        <Parameter name="partitioner" type="string" value="NOT_SPECIFIED"/>
-        <Parameter name="contiguous global ids" type="bool" value="false"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">

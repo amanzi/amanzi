@@ -10,12 +10,10 @@
   </ParameterList>
 
   <ParameterList name="mesh">
+    <Parameter name="framework" type="string" value="MSTK"/>
+    <Parameter name="partitioner" type="string" value="metis"/>
+    <Parameter name="request edges" type="bool" value="true"/>
     <ParameterList name="unstructured">
-      <ParameterList name="expert">
-        <Parameter name="framework" type="string" value="MSTK"/>
-        <Parameter name="partitioner" type="string" value="NOT_SPECIFIED"/>
-        <Parameter name="request edges" type="bool" value="true"/>
-      </ParameterList>
       <ParameterList name="generate mesh">
         <Parameter name="number of cells" type="Array(int)" value="{10, 10, 10}"/>
         <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>

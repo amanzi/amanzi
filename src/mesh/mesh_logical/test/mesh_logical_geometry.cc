@@ -131,7 +131,7 @@ test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m, bool tes
 
 
   CHECK_EQUAL(2, m->getSetSize("myregion", Entity_kind::CELL, Parallel_kind::ALL));
-  CHECK_THROW(m->getSetSize("myregion", Entity_kind::FACE, Parallel_kind::ALL), Errors::Message);
+  // CHECK_THROW(m->getSetSize("myregion", Entity_kind::FACE, Parallel_kind::ALL), Errors::Message);
 
   if (test_region) {
     Entity_ID_View set_ents;
