@@ -8,15 +8,13 @@
            Daniil Svyatskiy
 */
 
+#include <filesystem>
 #include <ios>
 #include <iostream>
 #include <unistd.h>
 #include <sys/resource.h>
 
 // TPLs
-#define BOOST_FILESYSTEM_NO_DEPRECATED
-#include "boost/filesystem/operations.hpp"
-
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -427,8 +425,8 @@ CycleDriver::ReadParameterList_()
     restart_filename_ = restart_list.get<std::string>("file name");
 
     // make sure that the restart file actually exists, if not throw an error
-    boost::filesystem::path restart_from_filename_path(restart_filename_);
-    if (!boost::filesystem::exists(restart_from_filename_path)) {
+    std::filesystem::path restart_from_filename_path(restart_filename_);
+    if (!std::filesystem::exists(restart_from_filename_path)) {
       Errors::Message msg;
       msg << "CycleDriver: restart file \"" << restart_filename_
           << "\" does not exist or is not a regular file.";

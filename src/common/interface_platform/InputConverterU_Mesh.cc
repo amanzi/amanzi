@@ -13,6 +13,7 @@
 
 */
 
+#include <filesystem>
 #include <sstream>
 #include <fstream>
 #include <string>
@@ -21,8 +22,6 @@
 
 // TPLs
 #define BOOST_FILESYTEM_NO_DEPRECATED
-#include "boost/filesystem/operations.hpp"
-#include "boost/filesystem/path.hpp"
 #include "boost/format.hpp"
 
 #include <xercesc/dom/DOM.hpp>
@@ -160,9 +159,9 @@ InputConverterU::TranslateMesh_()
               int ndigits = (int)floor(log10(num_proc_)) + 1;
               std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
               std::string tmp = boost::str(boost::format(fmt) % par_filename % num_proc_ % rank_);
-              boost::filesystem::path p(tmp);
+              std::filesystem::path p(tmp);
 
-              if (boost::filesystem::exists(p)) filename = par_filename;
+              if (std::filesystem::exists(p)) filename = par_filename;
             }
             mesh_list.set<std::string>("file", filename);
           }

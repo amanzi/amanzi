@@ -47,8 +47,7 @@
 #include "tpl_versions.h"
 
 #include <iostream>
-#include <boost/filesystem.hpp>
-using namespace boost::filesystem;
+#include <filesystem>
 
 
 int
@@ -255,7 +254,7 @@ main(int argc, char* argv[])
     }
 
     // check if the input file actually exists
-    if (!exists(xmlInFileName)) {
+    if (!std::filesystem::exists(xmlInFileName)) {
       if (rank == 0) {
         std::cout << "ERROR: The xml input file \"" << xmlInFileName
                   << "\" specified with the command line option --xml_file does not exist."

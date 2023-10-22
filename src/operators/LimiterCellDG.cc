@@ -166,7 +166,7 @@ LimiterCellDG::LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
 
   int nk = field_->NumVectors();
   WhetStone::DenseVector data(nk);
-  AmanziGeometry::Point x1(dim), x2(dim), xm(dim);
+  AmanziGeometry::Point xm(dim);
   int order = WhetStone::PolynomialSpaceOrder(dim, nk);
 
   // calculate bounds
@@ -212,8 +212,8 @@ LimiterCellDG::LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
       int f = faces[i];
       auto nodes = mesh_->getFaceNodes(f);
 
-      x1 = mesh_->getNodeCoordinate(nodes[0]);
-      x2 = mesh_->getNodeCoordinate(nodes[1]);
+      const auto& x1 = mesh_->getNodeCoordinate(nodes[0]);
+      const auto& x2 = mesh_->getNodeCoordinate(nodes[1]);
 
       // limit mean values
       bounds_ = bounds[0];
