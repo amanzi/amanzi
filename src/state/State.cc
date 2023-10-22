@@ -22,9 +22,6 @@
 #include <ostream>
 #include <regex>
 
-#include "boost/algorithm/string/predicate.hpp"
-#include "boost/filesystem.hpp"
-
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_Vector.h"
 

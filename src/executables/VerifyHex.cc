@@ -7,11 +7,11 @@
   Authors: William A. Perkins
 */
 
+#include <filesystem>
 #include <iostream>
 #include "boost/format.hpp"
 #define BOOST_FILESYSTEM_NO_DEPRECATED
-#include "boost/filesystem/path.hpp"
-namespace bf = boost::filesystem;
+namespace bf = std::filesystem;
 #include "boost/program_options.hpp"
 namespace po = boost::program_options;
 
@@ -28,30 +28,6 @@ namespace po = boost::program_options;
 #include "VerboseObject_objs.hh"
 
 #include "HDF5_MPI.hh"
-
-// -------------------------------------------------------------
-// grab_filename
-// -------------------------------------------------------------
-/**
-  * Simple routine to parse the filename from a path
-  * boost::filesystem object that handles the differences between
-  * version 2 (path.leaf()) and 3 (path.filename())
-  *
-  * @param some_path a boost::filesystem path
-  *
-  * Return string that defines the filename
-  */
-std::string
-grab_filename(const bf::path& some_path)
-{
-#if BOOST_FILESYSTEM_VERSION == 2
-  return some_path.leaf();
-#elif BOOST_FILESYSTEM_VERSION == 3
-  return some_path.filename().generic_string();
-#else
-#  error Invalid Boost Filesystem library version
-#endif
-}
 
 // -------------------------------------------------------------
 // dump_output
@@ -125,7 +101,7 @@ int
 main(int argc, char** argv)
 {
   bf::path progpath(argv[0]);
-  std::string progname = grab_filename(progpath);
+  std::string progname = progpath.filename();
 
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

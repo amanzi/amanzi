@@ -28,18 +28,6 @@
 #include "VerboseObject_objs.hh"
 #include "AmanziComm.hh"
 
-// include fenv if it exists
-#include "boost/version.hpp"
-#if (BOOST_VERSION / 100 % 1000 >= 46)
-#  include "boost/config.hpp"
-#  ifndef BOOST_NO_FENV_H
-#    ifdef _GNU_SOURCE
-#      define AMANZI_USE_FENV
-#      include "boost/detail/fenv.hpp"
-#    endif
-#  endif
-#endif
-
 #ifdef ENABLE_Unstructured
 #  include "state_evaluators_registration.hh"
 #endif
