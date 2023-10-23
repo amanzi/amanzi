@@ -64,8 +64,8 @@ Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u, bool wells_on)
   }
 
   // catastrophic failure.
-  if (ierr < 0) {
-    Errors::Message msg("Transport_PK solver failed with message: \"");
+  if (ierr != 0) {
+    Errors::Message msg("Flow solver failed with message: \"");
     msg << op_->returned_code_string() << "\"";
     Exceptions::amanzi_throw(msg);
   }

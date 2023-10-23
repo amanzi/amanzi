@@ -100,7 +100,7 @@ TEST(NAVIER_STOKES_2D)
     // reset primary fields
     auto fluid_velocity_eval =
       Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
-        S->GetEvaluatorPtr("pressure", Tags::DEFAULT));
+        S->GetEvaluatorPtr("fluid_velocity", Tags::DEFAULT));
     S->GetW<CompositeVector>("fluid_velocity", Tags::DEFAULT, "navier stokes") =
       *soln->SubVector(0)->Data();
     fluid_velocity_eval->SetChanged();

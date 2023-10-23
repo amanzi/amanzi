@@ -146,8 +146,8 @@ Transport_PK::DiffusionSolverEffective(Epetra_MultiVector& tcc_next, double t_ol
     CompositeVector& rhs = *op->rhs();
     int ierr = op->ApplyInverse(rhs, sol);
 
-    if (ierr < 0) {
-      Errors::Message msg("TransportExplicit_PK solver failed with message: \"");
+    if (ierr != 0) {
+      Errors::Message msg("Transport solver failed with message: \"");
       msg << op->returned_code_string() << "\"";
       Exceptions::amanzi_throw(msg);
     }

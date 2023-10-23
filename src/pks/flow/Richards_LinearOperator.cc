@@ -80,8 +80,8 @@ Richards_PK::SolveFullySaturatedProblem(double t_old,
     *vo_->os() << "true l2 residual: ||r||=" << residual << std::endl;
   }
 
-  // catastrophic failure
-  if (ierr < 0) {
+  // catastrophic failure. We may have recovery options in the future.
+  if (ierr != 0) {
     Errors::Message msg;
     msg << "Richards_LinearOperator error: " << solver->returned_code_string();
     Exceptions::amanzi_throw(msg);
@@ -165,7 +165,7 @@ Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u)
   }
 
   // catastrophic failure
-  if (ierr < 0) {
+  if (ierr != 0) {
     Errors::Message msg;
     msg << "Richards::EnforceConstraints error: " << solver->returned_code_string();
     Exceptions::amanzi_throw(msg);
