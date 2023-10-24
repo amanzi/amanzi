@@ -21,9 +21,6 @@
 #include <climits>
 
 // TPLs
-#define BOOST_FILESYTEM_NO_DEPRECATED
-#include "boost/format.hpp"
-
 #include <xercesc/dom/DOM.hpp>
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/parsers/DOMLSParserImpl.hpp>
@@ -157,9 +154,10 @@ InputConverterU::TranslateMesh_()
               // attach the right extensions as required by Nemesis file naming conventions
               // in which files are named as mymesh.par.N.r where N = numproc and r is rank
               int ndigits = (int)floor(log10(num_proc_)) + 1;
-              std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
-              std::string tmp = boost::str(boost::format(fmt) % par_filename % num_proc_ % rank_);
-              std::filesystem::path p(tmp);
+              std::stringstream ss;
+              ss << par_filename << "." << std::to_string(num_proc_) << "." << std::setw(ndigits)
+                 << std::setfill('0') << rank_;
+              std::filesystem::path p(ss.str());
 
               if (std::filesystem::exists(p)) filename = par_filename;
             }
@@ -186,7 +184,9 @@ InputConverterU::TranslateMesh_()
       Exceptions::amanzi_throw(msg);
     }
     if (strcmp(verify.c_str(), "true") == 0) {
-      out_list.sublist("unstructured").sublist("expert").set<bool>("verify mesh", (strcmp(verify.c_str(), "true") == 0));
+      out_list.sublist("unstructured")
+        .sublist("expert")
+        .set<bool>("verify mesh", (strcmp(verify.c_str(), "true") == 0));
     }
     if (partitioner != "") out_list.set<std::string>("partitioner", partitioner);
   }

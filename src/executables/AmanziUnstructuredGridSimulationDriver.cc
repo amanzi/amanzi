@@ -144,7 +144,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
         } else if (fw == Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::MOAB)) {
           prefs.clear();
           prefs.push_back(Amanzi::AmanziMesh::Framework::MOAB);
-        // } else if (framework == "") {
+          // } else if (framework == "") {
         } else {
           std::string s(fw);
           s += ": specified mesh framework preference not understood";

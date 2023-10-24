@@ -41,7 +41,7 @@ class PK_DomainFunctionWeightField : public PK_DomainFunctionWeight<FunctionBase
   PK_DomainFunctionWeightField(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                const Teuchos::RCP<State>& S,
                                AmanziMesh::Entity_kind kind)
-    : PK_DomainFunctionWeight<FunctionBase>(mesh, kind), mesh_(mesh), S_(S), kind_(kind) {};
+    : PK_DomainFunctionWeight<FunctionBase>(mesh, kind), mesh_(mesh), S_(S), kind_(kind){};
   ~PK_DomainFunctionWeightField(){};
 
   // member functions
@@ -77,22 +77,23 @@ PK_DomainFunctionWeightField<FunctionBase>::Init(const Teuchos::ParameterList& p
   field_key_ = plist.get<std::string>("field key");
   tag_ = Tags::DEFAULT;
 
-  std::string name = to_string(kind_); 
+  std::string name = to_string(kind_);
   if (S_->Get<CompositeVector>(field_key_, tag_).HasComponent(name)) {
     auto weight = S_->Get<CompositeVector>(field_key_, tag_).ViewComponent(name, true);
     PK_DomainFunctionWeight<FunctionBase>::Init(plist, keyword, weight);
   } else if (kind_ == AmanziMesh::Entity_kind::FACE &&
              S_->Get<CompositeVector>(field_key_, tag_).HasComponent("cell")) {
-
-    auto weight = Teuchos::rcp(new Epetra_MultiVector(mesh_->getMap(AmanziMesh::Entity_kind::FACE, true), 1));
+    auto weight =
+      Teuchos::rcp(new Epetra_MultiVector(mesh_->getMap(AmanziMesh::Entity_kind::FACE, true), 1));
     const auto& field_c = *S_->Get<CompositeVector>(field_key_, tag_).ViewComponent("cell", true);
 
-    int nbf_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE, AmanziMesh::Parallel_kind::ALL);
+    int nbf_wghost =
+      mesh_->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE, AmanziMesh::Parallel_kind::ALL);
     for (int bf = 0; bf < nbf_wghost; ++bf) {
       int f = getBoundaryFaceFace(*mesh_, bf);
       int c = getFaceOnBoundaryInternalCell(*mesh_, f);
       (*weight)[0][f] = field_c[0][c];
-    }  
+    }
     PK_DomainFunctionWeight<FunctionBase>::Init(plist, keyword, weight);
   }
 }

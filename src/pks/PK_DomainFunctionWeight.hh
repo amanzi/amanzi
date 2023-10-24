@@ -117,7 +117,8 @@ PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
 
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
       if (*c < nowned) {
-        vol = (kind_ == AmanziMesh::Entity_kind::CELL) ? mesh_->getCellVolume(*c) : mesh_->getFaceArea(*c);
+        vol = (kind_ == AmanziMesh::Entity_kind::CELL) ? mesh_->getCellVolume(*c) :
+                                                         mesh_->getFaceArea(*c);
         domain_volume_ += vol;
         weight_volume += vol * (*weight_)[0][*c];
       }

@@ -38,7 +38,9 @@ class BCs;
 
 class PDE_DiffusionFVonManifolds : public virtual PDE_Diffusion, public PDE_DiffusionWithGravity {
  public:
-  PDE_DiffusionFVonManifolds(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op, bool flag)
+  PDE_DiffusionFVonManifolds(Teuchos::ParameterList& plist,
+                             const Teuchos::RCP<Operator>& global_op,
+                             bool flag)
     : PDE_Diffusion(global_op), PDE_DiffusionWithGravity(global_op), beta_initialized_(false)
   {
     pde_type_ = PDE_DIFFUSION_FV_MANIFOLDS;

@@ -14,8 +14,6 @@
 //   #include <xmmintrin.h>
 // #endif
 
-#include "boost/detail/fenv.hpp"
-
 #include <cstdlib>
 #include <cctype>
 #include <iostream>

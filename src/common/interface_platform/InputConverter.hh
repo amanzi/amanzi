@@ -19,9 +19,6 @@
 #include <climits>
 #include <list>
 
-#define BOOST_FILESYTEM_NO_DEPRECATED
-#include "boost/format.hpp"
-
 // Xerces
 #include "xercesc/dom/DOM.hpp"
 #include "xercesc/parsers/XercesDOMParser.hpp"

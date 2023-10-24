@@ -23,14 +23,6 @@
 #include <sys/stat.h>
 
 // TPLs
-#include <boost/filesystem/operations.hpp>
-
-#include "errors.hh"
-#include "exceptions.hh"
-#include "dbc.hh"
-
-#define BOOST_FILESYTEM_NO_DEPRECATED
-
 #include "xercesc/dom/DOM.hpp"
 #include "xercesc/util/XMLString.hpp"
 #include "xercesc/util/PlatformUtils.hpp"
@@ -40,9 +32,12 @@
 #include "xercesc/util/OutOfMemoryException.hpp"
 
 // Amanzi's
+#include "dbc.hh"
 #include "ErrorHandler.hpp"
-#include "StringExt.hh"
+#include "errors.hh"
+#include "exceptions.hh"
 #include "InputConverter.hh"
+#include "StringExt.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
@@ -1406,7 +1401,7 @@ InputConverter::CreateINFile_(std::string& filename, int rank)
   else
     path.erase(path.begin() + pos0, path.end());
 
-  controls << "  DATABASE " << boost::filesystem::relative(datfilename, path).string().c_str()
+  controls << "  DATABASE " << std::filesystem::relative(datfilename, path).string().c_str()
            << "\n";
 
   base = GetUniqueElementByTagsString_(

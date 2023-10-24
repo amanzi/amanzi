@@ -68,7 +68,10 @@ class BlockVector {
   }
 
   // Accessors to data.
-  bool HasComponent(const std::string& name) const { return indexmap_.find(name) != indexmap_.end(); }
+  bool HasComponent(const std::string& name) const
+  {
+    return indexmap_.find(name) != indexmap_.end();
+  }
 
   // -- Access a view of a single component's data.
   Teuchos::RCP<const Epetra_MultiVector> ViewComponent(const std::string& name) const;
@@ -76,7 +79,10 @@ class BlockVector {
   Teuchos::RCP<Epetra_MultiVector> ViewComponent(const std::string& name);
 
   // -- View entries in the vectors.
-  double operator()(const std::string& name, int i, int j) const { return (*data_[Index_(name)])[i][j]; }
+  double operator()(const std::string& name, int i, int j) const
+  {
+    return (*data_[Index_(name)])[i][j];
+  }
   double operator()(const std::string& name, int j) const { return (*data_[Index_(name)])[0][j]; }
 
   // Mutators of data

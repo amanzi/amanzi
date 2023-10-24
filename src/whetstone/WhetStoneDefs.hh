@@ -94,7 +94,7 @@ const int DIFFUSION_SUPPORT_OPERATOR = 7;
 const int DIFFUSION_TPFA = 5;
 
 // various DG schemes
-const int TAYLOR_BASIS_GLOBAL = 0;  // unique expansion point, typically, the origin
+const int TAYLOR_BASIS_GLOBAL = 0; // unique expansion point, typically, the origin
 const int TAYLOR_BASIS_NATURAL = 1;
 const int TAYLOR_BASIS_NORMALIZED = 2;
 const int TAYLOR_BASIS_NORMALIZED_ORTHO = 3; // recommended

@@ -293,12 +293,10 @@ TEST(FE_MATRIX_FACE_FACE)
     CHECK(mat_vals == ctrl_vals);
     if (!(mat_vals == ctrl_vals)) {
       std::cout << "Bad mat: ";
-      for (std::vector<double>::const_iterator it = mat_vals.begin(); it != mat_vals.end();
-           ++it)
+      for (std::vector<double>::const_iterator it = mat_vals.begin(); it != mat_vals.end(); ++it)
         std::cout << " " << *it;
       std::cout << std::endl << "   ctrl: ";
-      for (std::vector<double>::const_iterator it = ctrl_vals.begin(); it != ctrl_vals.end();
-           ++it)
+      for (std::vector<double>::const_iterator it = ctrl_vals.begin(); it != ctrl_vals.end(); ++it)
         std::cout << " " << *it;
       std::cout << std::endl;
     }

@@ -190,7 +190,8 @@ class Mesh_MOAB : public MeshFramework {
   //
   // Boundary Conditions or Sets
   //----------------------------
-  virtual bool isValidSetType(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const override
+  virtual bool
+  isValidSetType(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const override
   {
     if (rtype == AmanziGeometry::RegionType::BOX || rtype == AmanziGeometry::RegionType::PLANE ||
         rtype == AmanziGeometry::RegionType::POINT ||
@@ -342,10 +343,10 @@ class Mesh_MOAB : public MeshFramework {
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
-  void
-  getCellFacesAndDirs(const Entity_ID cellid,
-                      View_type<const Entity_ID, MemSpace_kind::HOST>& faceids,
-                      View_type<const Direction_type, MemSpace_kind::HOST>* const face_dirs) const override;
+  void getCellFacesAndDirs(
+    const Entity_ID cellid,
+    View_type<const Entity_ID, MemSpace_kind::HOST>& faceids,
+    View_type<const Direction_type, MemSpace_kind::HOST>* const face_dirs) const override;
 
   // Cells connected to a face
   void getFaceCells(const Entity_ID faceid,
