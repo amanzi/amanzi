@@ -347,7 +347,8 @@ ReconstructionCellPolynomial::ComputeReconstructionMap(int c,
                                                        AmanziMesh::Entity_ID_List& ids_f,
                                                        int basis)
 {
-  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+  AmanziGeometry::Point xc(d_);
+  if (basis != WhetStone::TAYLOR_BASIS_GLOBAL) xc = mesh_->getCellCentroid(c);
 
   int ncells, nfaces(0);
   std::set<AmanziMesh::Entity_ID> cells, faces;
