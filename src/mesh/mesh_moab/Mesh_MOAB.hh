@@ -62,7 +62,7 @@ class Mesh_MOAB : public MeshFramework {
   // Get cell type
   Cell_kind getCellType(const Entity_ID cellid) const override;
 
-  bool hasNodeFaces() const { return false; }
+  bool hasNodeFaces() const override { return false; }
 
   //
   // General mesh information
@@ -190,7 +190,7 @@ class Mesh_MOAB : public MeshFramework {
   //
   // Boundary Conditions or Sets
   //----------------------------
-  virtual bool isValidSetType(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const
+  virtual bool isValidSetType(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const override
   {
     if (rtype == AmanziGeometry::RegionType::BOX || rtype == AmanziGeometry::RegionType::PLANE ||
         rtype == AmanziGeometry::RegionType::POINT ||
@@ -345,12 +345,12 @@ class Mesh_MOAB : public MeshFramework {
   void
   getCellFacesAndDirs(const Entity_ID cellid,
                       View_type<const Entity_ID, MemSpace_kind::HOST>& faceids,
-                      View_type<const Direction_type, MemSpace_kind::HOST>* const face_dirs) const;
+                      View_type<const Direction_type, MemSpace_kind::HOST>* const face_dirs) const override;
 
   // Cells connected to a face
   void getFaceCells(const Entity_ID faceid,
                     const Parallel_kind ptype,
-                    View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const;
+                    View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const override;
 
   // Edges of a cell
   void getCellEdges(const Entity_ID cellid,

@@ -342,7 +342,7 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
   for (auto p : preference_) {
 #ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
-      std::cout << "Pref = MSTK" << std::endl;
+      if (parent_comm->MyPID() == 0) std::cout << "Pref = MSTK" << std::endl;
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
         *vo_->os() << "Creating extracted mesh using format \"MSTK\" with " << setids.size()
                    << " local entities." << std::endl;

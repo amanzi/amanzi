@@ -27,6 +27,7 @@ computational domain.
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
+#include "Mesh_Algorithms.hh"
 #include "State.hh"
 #include "Tag.hh"
 
@@ -40,7 +41,7 @@ class PK_DomainFunctionWeightField : public PK_DomainFunctionWeight<FunctionBase
   PK_DomainFunctionWeightField(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                const Teuchos::RCP<State>& S,
                                AmanziMesh::Entity_kind kind)
-    : PK_DomainFunctionWeight<FunctionBase>(mesh, kind), S_(S){};
+    : PK_DomainFunctionWeight<FunctionBase>(mesh, kind), mesh_(mesh), S_(S), kind_(kind) {};
   ~PK_DomainFunctionWeightField(){};
 
   // member functions
@@ -59,6 +60,9 @@ class PK_DomainFunctionWeightField : public PK_DomainFunctionWeight<FunctionBase
   Teuchos::RCP<State> S_;
   Key field_key_;
   Tag tag_;
+
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  AmanziMesh::Entity_kind kind_;
 };
 
 
@@ -73,8 +77,24 @@ PK_DomainFunctionWeightField<FunctionBase>::Init(const Teuchos::ParameterList& p
   field_key_ = plist.get<std::string>("field key");
   tag_ = Tags::DEFAULT;
 
-  auto weight = S_->Get<CompositeVector>(field_key_, tag_).ViewComponent("cell", true);
-  PK_DomainFunctionWeight<FunctionBase>::Init(plist, keyword, weight);
+  std::string name = to_string(kind_); 
+  if (S_->Get<CompositeVector>(field_key_, tag_).HasComponent(name)) {
+    auto weight = S_->Get<CompositeVector>(field_key_, tag_).ViewComponent(name, true);
+    PK_DomainFunctionWeight<FunctionBase>::Init(plist, keyword, weight);
+  } else if (kind_ == AmanziMesh::Entity_kind::FACE &&
+             S_->Get<CompositeVector>(field_key_, tag_).HasComponent("cell")) {
+
+    auto weight = Teuchos::rcp(new Epetra_MultiVector(mesh_->getMap(AmanziMesh::Entity_kind::FACE, true), 1));
+    const auto& field_c = *S_->Get<CompositeVector>(field_key_, tag_).ViewComponent("cell", true);
+
+    int nbf_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE, AmanziMesh::Parallel_kind::ALL);
+    for (int bf = 0; bf < nbf_wghost; ++bf) {
+      int f = getBoundaryFaceFace(*mesh_, bf);
+      int c = getFaceOnBoundaryInternalCell(*mesh_, f);
+      (*weight)[0][f] = field_c[0][c];
+    }  
+    PK_DomainFunctionWeight<FunctionBase>::Init(plist, keyword, weight);
+  }
 }
 
 
