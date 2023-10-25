@@ -15,10 +15,10 @@ License:
 
 Checkpointing for state.
 ------------------------------------------------------------------------- */
+#include <filesystem>
 #include <iostream>
 #include <iomanip>
 
-#include "boost/filesystem.hpp"
 #include "Epetra_MpiComm.h"
 #include "mpi.h"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
@@ -93,9 +93,9 @@ Checkpoint::Checkpoint(Teuchos::ParameterList& plist, const State& S)
 Checkpoint::Checkpoint(const std::string& file_or_dirname, const State& S) : IOEvent()
 {
   // if provided a directory, use new style
-  if (boost::filesystem::is_directory(file_or_dirname)) {
+  if (std::filesystem::is_directory(file_or_dirname)) {
     single_file_ = false;
-  } else if (boost::filesystem::is_regular_file(file_or_dirname)) {
+  } else if (std::filesystem::is_regular_file(file_or_dirname)) {
     single_file_ = true;
   } else {
     Errors::Message message;
@@ -114,8 +114,8 @@ Checkpoint::Checkpoint(const std::string& file_or_dirname, const State& S) : IOE
       const auto& mesh = S.GetMesh(domain->first);
 
       Key domain_name = Keys::replace_all(domain->first, ":", "-");
-      boost::filesystem::path chkp_file =
-        boost::filesystem::path(file_or_dirname) / (domain_name + ".h5");
+      std::filesystem::path chkp_file =
+        std::filesystem::path(file_or_dirname) / (domain_name + ".h5");
       output_[domain->first] = Teuchos::rcp(new HDF5_MPI(mesh->getComm(), chkp_file.string()));
       output_[domain->first]->open_h5file(true);
     }
@@ -130,14 +130,14 @@ Checkpoint::Checkpoint(const std::string& filename,
   : IOEvent()
 {
   // if provided a directory, use new style
-  if (boost::filesystem::is_directory(filename)) {
+  if (std::filesystem::is_directory(filename)) {
     Key domain_name = Keys::replace_all(domain, ":", "-");
-    boost::filesystem::path chkp_file = boost::filesystem::path(filename) / (domain_name + ".h5");
+    std::filesystem::path chkp_file = std::filesystem::path(filename) / (domain_name + ".h5");
     single_file_ = false;
     output_[domain] = Teuchos::rcp(new HDF5_MPI(comm, chkp_file.string()));
     output_[domain]->open_h5file(true);
 
-  } else if (boost::filesystem::is_regular_file(filename)) {
+  } else if (std::filesystem::is_regular_file(filename)) {
     single_file_ = true;
     output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, filename));
     output_["domain"]->open_h5file(true);
@@ -177,10 +177,10 @@ Checkpoint::CreateFile(const int cycle)
     output_["domain"]->open_h5file();
 
   } else {
-    boost::filesystem::create_directory(oss.str());
+    std::filesystem::create_directory(oss.str());
     for (const auto& file_out : output_) {
       Key filename = Keys::replace_all(file_out.first, ":", "-");
-      boost::filesystem::path chkp_file = boost::filesystem::path(oss.str()) / filename;
+      std::filesystem::path chkp_file = std::filesystem::path(oss.str()) / filename;
       file_out.second->createDataFile(chkp_file.string());
       file_out.second->open_h5file();
     }
@@ -201,15 +201,13 @@ Checkpoint::CreateFinalFile(const int cycle)
   if (single_file_) {
     std::string ch_file = oss.str() + ".h5";
     std::string ch_final = filebasename_ + "_final.h5";
-    if (boost::filesystem::is_regular_file(ch_final.data()))
-      boost::filesystem::remove(ch_final.data());
-    boost::filesystem::create_hard_link(ch_file.data(), ch_final.data());
+    if (std::filesystem::is_regular_file(ch_final.data())) std::filesystem::remove(ch_final.data());
+    std::filesystem::create_hard_link(ch_file.data(), ch_final.data());
   } else {
     std::string ch_dir = oss.str();
     std::string ch_final = filebasename_ + "_final";
-    if (boost::filesystem::is_directory(ch_final.data()))
-      boost::filesystem::remove(ch_final.data());
-    boost::filesystem::create_symlink(ch_dir.data(), ch_final.data());
+    if (std::filesystem::is_directory(ch_final.data())) std::filesystem::remove(ch_final.data());
+    std::filesystem::create_symlink(ch_dir.data(), ch_final.data());
   }
 }
 

@@ -55,7 +55,7 @@ set(flow_src_files Flow_PK.cc
                    MultiscaleFlowPorosity_GDPM.cc
                    FracturePermModelPartition.cc FracturePermModelEvaluator.cc
                    )
-set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
+set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${SEACAS_LIBRARIES})
 if (Ifpack_ENABLE_HYPRE)
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARY})
 endif()

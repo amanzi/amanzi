@@ -9,7 +9,6 @@
 
 #include <iostream>
 
-#include <boost/math/tools/roots.hpp>
 #include "UnitTest++.h"
 
 #include "Brent.hh"
@@ -46,12 +45,19 @@ struct F {
 
 TEST(VAN_GENUCHTEN_BRENT_AND_TOMS748)
 {
-  int itr, nitr(0), nitr2(0);
+  int itr, nitr(0), nitr2(0), n(0);
   double x0, tol(1e-15);
 
-  boost::uintmax_t itr2;
-  Tol tol2(1e-15);
-  std::pair<double, double> xx;
+  // original Boost results
+  std::vector<int> itr2({ 12, 13, 13, 16, 16, 16, 16, 16, 18, 19,
+                          16, 15, 17, 19, 19, 19, 19, 19, 19, 21,
+                          19, 19, 19, 19, 20, 18, 18, 18, 18, 18,
+                          18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
+                          18, 18, 18, 18, 18, 18, 18, 16, 16, 16,
+                          16, 16, 17, 16, 16, 15, 15, 14, 14, 14,
+                          14, 14, 14, 14, 14, 14, 14, 14, 12, 12,
+                          12, 11, 12, 11, 11, 12, 12, 11, 11, 11, 
+                          11, 14, 11, 11, 11 });
 
   std::cout << "saturation   cap_pressure     Brent   TOMS748\n\n";
 
@@ -63,10 +69,9 @@ TEST(VAN_GENUCHTEN_BRENT_AND_TOMS748)
     x0 = Utils::brent(f, 0.0, 1.0e+6, tol, &itr);
     nitr += itr;
 
-    itr2 = 100;
-    xx = boost::math::tools::toms748_solve(f, 0.0, 1.0e+6, tol2, itr2);
-    nitr2 += itr2;
-    printf("%10.3f %14.5f %9i %9i\n", s, x0, itr, (int)itr2);
+    // boost::math::tools::toms748_solve(f, 0.0, 1.0e+6, tol2, itr2);
+    nitr2 += itr2[n];
+    printf("%10.3f %14.5f %9i %9i\n", s, x0, itr, itr2[n++]);
   }
 
   printf("\n Total:  %26i %9i\n", nitr, nitr2);
