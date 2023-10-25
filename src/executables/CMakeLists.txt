@@ -106,7 +106,6 @@ add_amanzi_executable(verify_mesh
 
 #
 # Binary: verify_hex
-# verify_hex uses deprecated boost::filesystem
 # methods needs to pass version information to the
 # prepoccessor
 add_amanzi_executable(verify_hex

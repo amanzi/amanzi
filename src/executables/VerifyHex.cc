@@ -197,23 +197,21 @@ main(int argc, char** argv)
 
   } catch (po::error& e) {
     if (me == 0) {
-      std::cerr << boost::str(boost::format("%s: command line error: %s") % progname % e.what())
-                << std::endl;
-      std::cerr << boost::str(boost::format("Usage: %s [options]") % progname) << std::endl;
+      std::cerr << progname << ": command line error: " << e.what() << std::endl;
+      std::cerr << "Usage: " << progname << " [options]" << std::endl;
       std::cerr << desc << std::endl;
     }
     return 3;
   } catch (boost::bad_any_cast& e) {
     if (me == 0) {
-      std::cerr << boost::str(boost::format("%s: command line error: %s") % progname % e.what())
-                << std::endl;
-      std::cerr << boost::str(boost::format("Usage: %s [options]") % progname) << std::endl;
+      std::cerr << progname << ": command line error: " << e.what() << std::endl;
+      std::cerr << "Usage: " << progname << " [options]" << std::endl;
       std::cerr << desc << std::endl;
     }
     return 3;
   } catch (...) {
     if (me == 0) {
-      std::cerr << boost::str(boost::format("Usage: %s [options]") % progname) << std::endl;
+      std::cerr << "Usage: " << progname << " [options]" << std::endl;
       std::cerr << desc << std::endl;
     }
     return 3;

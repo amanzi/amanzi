@@ -7,6 +7,7 @@
   Authors:
 */
 
+#include <cmath>
 #include <iostream>
 
 #include "UnitTest++.h"

@@ -11,6 +11,7 @@
 #define UTILS_BRENT_HH_
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 
 namespace Amanzi {
