@@ -8,8 +8,8 @@ LABEL Description="This image contains all of the third-party libraries needed b
 
 # MPI flavor (mpich|openmpi)
 ARG build_mpi=True
-ARG mpi_flavor=mpich 
-ARG mpi_version=3.3.2
+ARG mpi_flavor=mpich
+ARG mpi_version=4.0.3
 
 # Set timezone:
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
@@ -38,6 +38,7 @@ RUN apt-get -q update -y && apt-get install -y tzdata && apt-get -q install -y \
   python-is-python3 \
   rsync \
   wget \
+  vim \
   zlib1g-dev \
   && apt-get clean
 
@@ -45,14 +46,14 @@ RUN apt-get -q update -y && apt-get install -y tzdata && apt-get -q install -y \
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir install h5py
 
-# install MPI - if mpich, custom compile; if openmpi, install precompiled binary 
+# install MPI - if mpich, custom compile; if openmpi, install precompiled binary
 RUN if [ "$build_mpi" = "True" ]; then \
       if [ "$mpi_flavor" = "mpich" ]; then cd / \
         && wget https://www.mpich.org/static/downloads/${mpi_version}/mpich-${mpi_version}.tar.gz \
         && tar xvf mpich-${mpi_version}.tar.gz \
         && cd mpich-${mpi_version} \
-        && ./configure --enable-shared --with-device=ch3:sock --enable-fast=all,Os --prefix=/usr \ 
-        && make \ 
+        && ./configure --enable-shared --with-device=ch3:sock --enable-fast=all,Os --prefix=/usr \
+        && make \
         && make install \
         && cd ../ \
         && rm -r mpich-${mpi_version}/ \
@@ -62,8 +63,8 @@ RUN if [ "$build_mpi" = "True" ]; then \
         && wget https://download.open-mpi.org/release/open-mpi/v${mpi_version_major}/openmpi-${mpi_version}.tar.gz \
         && tar xvf openmpi-${mpi_version}.tar.gz \
         && cd openmpi-${mpi_version} \
-        && ./configure --enable-shared --prefix=/usr \ 
-        && make \ 
+        && ./configure --enable-shared --prefix=/usr \
+        && make \
         && make install \
         && cd ../ \
         && rm -r openmpi-${mpi_version}/ \
@@ -85,7 +86,7 @@ ENV AMANZI_PREFIX=/home/amanzi_user/install \
     AMANZI_TPLS_DIR=/home/amanzi_user/install/tpls
 
 # TPL versions needed for LD_LIBRARY_PATH
-ENV AMANZI_PETSC_LIBS=$AMANZI_TPLS_DIR/petsc-${petsc_ver}/lib \ 
+ENV AMANZI_PETSC_LIBS=$AMANZI_TPLS_DIR/petsc-${petsc_ver}/lib \
     AMANZI_TRILINOS_LIBS=$AMANZI_TPLS_DIR/trilinos-${trilinos_ver}/lib \
     AMANZI_SEACAS_LIBS=$AMANZI_TPLS_DIR/SEACAS/lib
 
@@ -111,7 +112,7 @@ RUN if [ "$amanzi_branch" != "master" ]; then \
        git checkout $amanzi_branch; \
     fi; \
     echo "Amanzi branch = $amanzi_branch"; \
-    git branch --list 
+    git branch --list
 
 # Build and install the TPLs using bootstrap.sh, and remove
 # the source, objects, etc. after installation to save space.
@@ -140,6 +141,6 @@ RUN echo $PATH
 
 # Unset proxy
 # ENV https_proxy= \
-#    http_proxy= 
+#    http_proxy=
 
 
