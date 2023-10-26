@@ -18,6 +18,8 @@
 #include <memory>
 #include <vector>
 
+#include "nanoflann.hpp"
+
 #include "MeshDefs.hh"
 
 namespace Amanzi {

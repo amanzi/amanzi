@@ -28,8 +28,10 @@ include_directories(${Boost_INCLUDE_DIRS})
 # Set files
 #
 set(mesh_inc_files
-  MeshDefs.hh
   CellTopology.hh
+  DomainSet.hh
+  KDTree.hh
+  MeshDefs.hh
   MeshFramework.hh
   Mesh_Helpers_decl.hh
   Mesh_Helpers_impl.hh
@@ -42,11 +44,13 @@ set(mesh_inc_files
   MeshMaps_impl.hh
   MeshMaps.hh
   MeshCache.hh
+  MeshCache_decl.hh
+  MeshCache_impl.hh
   MeshSets.hh
   MeshColumns.hh
+  MeshUtils.hh
   Mesh.hh
   Mesh_Algorithms.hh
-  DomainSet.hh
   SingleFaceMesh.hh
 )
 
