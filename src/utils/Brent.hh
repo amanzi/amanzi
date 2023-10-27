@@ -13,16 +13,19 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include "dbc.hh"
 
 namespace Amanzi {
 namespace Utils {
 
 /* ******************************************************************
-* Brent's method
+* Brent's method of root finding
+*
+* Note that a and b must bracket the root, i.e. f(a) * f(b) < 0
 ****************************************************************** */
 template <class F>
 double
-brent(F f, double a, double b, double tol, int* itr)
+computeRootBrent(const F& f, double a, double b, double tol, int* itr)
 {
   int itr_max(*itr);
   double c, d, s, fa, fb, fc, fs, ftol;
@@ -87,6 +90,48 @@ brent(F f, double a, double b, double tol, int* itr)
   }
 
   return 0.0; // default value
+}
+
+
+/* ******************************************************************
+* Bracket a root for use in findRootBrent()
+*
+* Return <a,b> where f(a) * f(b) is negative, given a starting point
+****************************************************************** */
+template <class F>
+std::pair<double,double> bracketRoot(const F& f, double start, double delta, int* itrs)
+{
+  AMANZI_ASSERT(delta > 0.);
+  AMANZI_ASSERT(itrs != nullptr);
+  AMANZI_ASSERT(*itrs >= 0);
+  double a = start;
+  double b = start + delta;
+
+  double fa = f(a);
+  double fb = f(b);
+
+  int max_itrs(*itrs);
+  *itrs = 0;
+  while (*itrs < max_itrs) {
+    if (fa == 0.) return std::make_pair(a,a);
+    else if (fb == 0.) return std::make_pair(b,b);
+    else if (fa * fb < 0.) return std::make_pair(a,b);
+    else if (std::fabs(fa) > std::fabs(fb)) {
+      // root to the right of b
+      std::swap(a,b);
+      std::swap(fa, fb);
+      b = a + delta;
+      fb = f(b);
+    } else {
+      // root to the left of a
+      std::swap(a,b);
+      std::swap(fa,fb);
+      a = b - delta;
+      fa = f(a);
+    }
+    ++(*itrs);
+  }
+  return std::make_pair(a,b);
 }
 
 } // namespace Utils
