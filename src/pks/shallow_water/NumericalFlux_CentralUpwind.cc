@@ -37,7 +37,7 @@ NumericalFlux_CentralUpwind::Compute(const std::vector<double>& UL, const std::v
 {
   std::vector<double> FL, FR, F(3), U_star(3), dU(3);
 
-  double hL, uL, vL, hR, uR, vR, qxL, qyL, qxR, qyR;
+  double hL, uL, hR, uR, qxL, qyL, qxR, qyR;
   double apx, amx, factor, ghL, ghR;
   double eps0 = 1.0e-12, eps1 = 1.0e-14;
 
@@ -48,14 +48,12 @@ NumericalFlux_CentralUpwind::Compute(const std::vector<double>& UL, const std::v
   qyL = UL[2];
   factor = 2 * hL / (hL * hL + std::fmax(hL * hL, eps0));
   uL = qxL * factor;
-  vL = qyL * factor;
 
   hR = UR[0];
   qxR = UR[1];
   qyR = UR[2];
   factor = 2 * hR / (hR * hR + std::fmax(hR * hR, eps0));
   uR = qxR * factor;
-  vR = qyR * factor;
 
   ghL = std::sqrt(g_ * hL);
   ghR = std::sqrt(g_ * hR);

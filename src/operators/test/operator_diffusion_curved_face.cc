@@ -70,7 +70,6 @@ RunTestDiffusionCurved(const std::string& filename, int icase)
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic00 ana(mesh, 1);
   // Analytic02 ana(mesh);
@@ -94,7 +93,6 @@ RunTestDiffusionCurved(const std::string& filename, int icase)
   const auto fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
   const auto bfmap = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
 
-  // for (int f = 0; f < nfaces_wghost; ++f) {
   for (int n = 0; n < bfmap.NumMyElements(); ++n) {
     int f = fmap.LID(bfmap.GID(n));
     const Point& xf = mesh->getFaceCentroid(f);

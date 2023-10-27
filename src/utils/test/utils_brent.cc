@@ -29,10 +29,8 @@ TEST(BRENT_AND_TOMS748)
   double x0, tol(1e-15);
 
   // original Boost iteration numbers
-  std::vector<int> itr2({ 3, 9, 11, 9, 20, 22 });
-
   Tol tol2(1e-15);
-  std::pair<double, double> xx;
+  std::vector<int> itr2({ 3, 9, 11, 9, 20, 22 });
 
   std::cout << " #        Root     Brent   TOMS748\n\n";
 

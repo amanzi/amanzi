@@ -41,7 +41,7 @@ class PK_DomainFunctionWeightField : public PK_DomainFunctionWeight<FunctionBase
   PK_DomainFunctionWeightField(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                const Teuchos::RCP<State>& S,
                                AmanziMesh::Entity_kind kind)
-    : PK_DomainFunctionWeight<FunctionBase>(mesh, kind), mesh_(mesh), S_(S), kind_(kind){};
+    : PK_DomainFunctionWeight<FunctionBase>(mesh, kind), S_(S), mesh_(mesh), kind_(kind){};
   ~PK_DomainFunctionWeightField(){};
 
   // member functions

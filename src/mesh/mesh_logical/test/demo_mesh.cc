@@ -331,7 +331,7 @@ RegularMeshCellFromCoordFunctor::RegularMeshCellFromCoordFunctor(
   int nx,
   int ny,
   int nz)
-  : X0_(X0), X1_(X1), nx_(nx), ny_(ny), nz_(nz), dX_(3)
+  : X0_(X0), X1_(X1), dX_(3), nx_(nx), ny_(ny), nz_(nz)
 {
   dX_[0] = (X1_[0] - X0_[0]) / nx_;
   dX_[1] = (X1_[1] - X0_[1]) / ny_;

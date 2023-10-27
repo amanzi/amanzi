@@ -159,7 +159,6 @@ InputConverterU::TranslateEnergyBCs_(const std::string& domain)
   char* text;
   DOMNodeList* children;
   DOMNode* node;
-  DOMElement* element;
 
   // correct list of boundary conditions for given domain
   bool flag;

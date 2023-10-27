@@ -116,10 +116,8 @@ class PDE_Advection : public PDE_HelperDiscretization {
   virtual void Setup(const CompositeVector& u) = 0;
 
   // -- extended interface for building Jacobians
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u, double (*)(double))
-  {
-    exit(0);
-  }
+  using PDE_HelperDiscretization::UpdateMatrices;
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u, double (*)(double)) = 0;
 
   // -- standard interface for flux calculation
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,

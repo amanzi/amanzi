@@ -334,7 +334,7 @@ SUITE(MeshFramework)
     Amanzi::AmanziMesh::MeshFrameworkFactory meshfactory(comm, gm);
 
     bool flatten = true;
-    bool extrude = false;
+    // bool extrude = false;
 
     // Simple mesh CANNOT extract a mesh from another mesh
 
