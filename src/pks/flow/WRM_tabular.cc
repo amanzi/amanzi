@@ -70,7 +70,7 @@ WRM_tabular::capillaryPressure(double s) const
   F f(s, this);
 
   itrs_ = 100;
-  return Utils::computeRootBrent(f, 0.0, pc0_, tol_, &itrs_);
+  return Utils::findRootBrent(f, 0.0, pc0_, tol_, &itrs_);
 }
 
 } // namespace Flow

@@ -62,7 +62,7 @@ TEST(VAN_GENUCHTEN_BRENT_AND_TOMS748)
 
     // Test 1
     itr = 100;
-    x0 = Utils::computeRootBrent(f, 0.0, 1.0e+6, tol, &itr);
+    x0 = Utils::findRootBrent(f, 0.0, 1.0e+6, tol, &itr);
     nitr += itr;
 
     // boost::math::tools::toms748_solve(f, 0.0, 1.0e+6, tol2, itr2);

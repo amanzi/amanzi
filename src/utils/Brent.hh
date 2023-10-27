@@ -25,7 +25,7 @@ namespace Utils {
 ****************************************************************** */
 template <class F>
 double
-computeRootBrent(const F& f, double a, double b, double tol, int* itr)
+findRootBrent(const F& f, double a, double b, double tol, int* itr)
 {
   int itr_max(*itr);
   double c, d, s, fa, fb, fc, fs, ftol;
