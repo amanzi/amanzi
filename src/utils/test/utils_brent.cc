@@ -67,6 +67,6 @@ TEST(BRENT_AND_TOMS748)
 
   // Test 6
   itr = 100;
-  x0 = brent([](double x) { return std::pow(x, 12) - 0.2; }, 0.0, 5.0, tol, &itr);
+  x0 = computeRootBrent([](double x) { return std::pow(x, 12) - 0.2; }, 0.0, 5.0, tol, &itr);
   printf(" 6 %11.5f %9i %9i\n", x0, itr, itr2[5]);
 }
