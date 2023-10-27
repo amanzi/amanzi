@@ -47,11 +47,12 @@ TEST(BRENT_AND_TOMS748)
 
   // Test 3
   itr = 100;
-  x0 = computeRootBrent([](double x) { return 2 * (x * std::exp(-20.0) - std::exp(-20 * x)) + 1.0; },
-             0.0,
-             0.9,
-             tol,
-             &itr);
+  x0 =
+    computeRootBrent([](double x) { return 2 * (x * std::exp(-20.0) - std::exp(-20 * x)) + 1.0; },
+                     0.0,
+                     0.9,
+                     tol,
+                     &itr);
   printf(" 3 %11.5f %9i %9i\n", x0, itr, itr2[2]);
 
   // Test 4

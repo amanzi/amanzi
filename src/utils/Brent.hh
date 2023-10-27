@@ -99,7 +99,8 @@ computeRootBrent(const F& f, double a, double b, double tol, int* itr)
 * Return <a,b> where f(a) * f(b) is negative, given a starting point
 ****************************************************************** */
 template <class F>
-std::pair<double,double> bracketRoot(const F& f, double start, double delta, int* itrs)
+std::pair<double, double>
+bracketRoot(const F& f, double start, double delta, int* itrs)
 {
   AMANZI_ASSERT(delta > 0.);
   AMANZI_ASSERT(itrs != nullptr);
@@ -113,25 +114,28 @@ std::pair<double,double> bracketRoot(const F& f, double start, double delta, int
   int max_itrs(*itrs);
   *itrs = 0;
   while (*itrs < max_itrs) {
-    if (fa == 0.) return std::make_pair(a,a);
-    else if (fb == 0.) return std::make_pair(b,b);
-    else if (fa * fb < 0.) return std::make_pair(a,b);
+    if (fa == 0.)
+      return std::make_pair(a, a);
+    else if (fb == 0.)
+      return std::make_pair(b, b);
+    else if (fa * fb < 0.)
+      return std::make_pair(a, b);
     else if (std::fabs(fa) > std::fabs(fb)) {
       // root to the right of b
-      std::swap(a,b);
+      std::swap(a, b);
       std::swap(fa, fb);
       b = a + delta;
       fb = f(b);
     } else {
       // root to the left of a
-      std::swap(a,b);
-      std::swap(fa,fb);
+      std::swap(a, b);
+      std::swap(fa, fb);
       a = b - delta;
       fa = f(a);
     }
     ++(*itrs);
   }
-  return std::make_pair(a,b);
+  return std::make_pair(a, b);
 }
 
 } // namespace Utils
