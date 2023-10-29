@@ -207,8 +207,8 @@ TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON)
   T(1, 2) = T(2, 1) = -0.03448275862069;
 
   // consistency condition
-  mfd.L2consistency(cell, T, N, M, true);
-  mfd.L2consistencyInverse(cell, T, R, M, true);
+  mfd.L2consistency(cell, T, N, M);
+  mfd.L2consistencyInverse(cell, T, R, M);
 
   B.Multiply(N, R, true);
   for (int i = 0; i < 3; ++i) {

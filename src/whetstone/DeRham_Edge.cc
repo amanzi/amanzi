@@ -27,7 +27,7 @@ namespace WhetStone {
 * Non-symmetric tensor is not yet used.
 ****************************************************************** */
 int
-DeRham_Edge::L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
+DeRham_Edge::L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc)
 {
   int ok;
   if (d_ == 2) {
@@ -197,7 +197,7 @@ DeRham_Edge::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
 {
   DenseMatrix N;
 
-  int ok = L2consistency(c, T, N, M, true);
+  int ok = L2consistency(c, T, N, M);
   if (ok) return ok;
 
   StabilityScalar_(N, M);
@@ -212,8 +212,7 @@ int
 DeRham_Edge::L2consistencyInverse(int c,
                                   const Tensor& T,
                                   DenseMatrix& R,
-                                  DenseMatrix& Wc,
-                                  bool symmetry)
+                                  DenseMatrix& Wc)
 {
   int ok;
   if (d_ == 2) {
@@ -373,7 +372,7 @@ DeRham_Edge::MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W)
 {
   DenseMatrix R;
 
-  int ok = L2consistencyInverse(c, T, R, W, true);
+  int ok = L2consistencyInverse(c, T, R, W);
   if (ok) return ok;
 
   StabilityScalar_(R, W);

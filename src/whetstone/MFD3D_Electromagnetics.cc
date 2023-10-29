@@ -179,7 +179,7 @@ MFD3D_Electromagnetics::MassMatrixOptimized(int c, const Tensor& T, DenseMatrix&
 {
   DenseMatrix N;
 
-  int ok = L2consistency(c, T, N, M, true);
+  int ok = L2consistency(c, T, N, M);
   if (ok) return ok;
 
   ok = StabilityOptimized_(T, N, M);
@@ -196,7 +196,7 @@ MFD3D_Electromagnetics::MassMatrixInverseOptimized(int c, const Tensor& T, Dense
 {
   DenseMatrix R;
 
-  int ok = L2consistencyInverse(c, T, R, W, true);
+  int ok = L2consistencyInverse(c, T, R, W);
   if (ok) return ok;
 
   ok = StabilityOptimized_(T, R, W);

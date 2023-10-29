@@ -27,7 +27,7 @@ namespace WhetStone {
 * Non-symmetric tensor is not yet used.
 ****************************************************************** */
 int
-DeRham_Node::L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
+DeRham_Node::L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc)
 {
   auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
@@ -79,7 +79,7 @@ DeRham_Node::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
 {
   DenseMatrix N;
 
-  int ok = L2consistency(c, T, N, M, true);
+  int ok = L2consistency(c, T, N, M);
   if (ok) return ok;
 
   // StabilityScalar_(N, M);

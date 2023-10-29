@@ -47,9 +47,6 @@ class MFD3D_Elasticity : public MFD3D {
       1, std::make_tuple(AmanziMesh::Entity_kind::NODE, DOF_Type::SCALAR, d_));
   }
 
-  // -- mass matrices
-  int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-
   // -- stiffness matrix
   int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;

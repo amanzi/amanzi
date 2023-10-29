@@ -30,44 +30,6 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Consistency condition for mass matrix in mechanics.
-* Only the upper triangular part of Ac is calculated.
-* Requires mesh_get_edges to complete the implementation.
-****************************************************************** */
-int
-MFD3D_Elasticity::L2consistency(int c,
-                                const Tensor& T,
-                                DenseMatrix& N,
-                                DenseMatrix& Mc,
-                                bool symmetry)
-{
-  const auto& faces = mesh_->getCellFaces(c);
-  int nfaces = faces.size();
-
-  N.Reshape(nfaces, d_);
-  Mc.Reshape(nfaces, nfaces);
-
-  AmanziGeometry::Point v1(d_), v2(d_);
-  const AmanziGeometry::Point& cm = mesh_->getCellCentroid(c);
-
-  Tensor Tinv(T);
-  Tinv.Inverse();
-
-  for (int i = 0; i < nfaces; i++) {
-    int f = faces[i];
-    const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
-    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
-
-    v1 = fm - cm;
-    double a = normal * v1;
-    for (int k = 0; k < d_; k++) v1[k] = a - normal[k] * v1[k];
-  }
-
-  return 0;
-}
-
-
-/* ******************************************************************
 * Consistency condition for stiffness matrix in mechanics.
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */

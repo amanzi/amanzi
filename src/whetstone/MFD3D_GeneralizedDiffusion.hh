@@ -40,11 +40,11 @@ class MFD3D_GeneralizedDiffusion : public MFD3D {
   virtual std::vector<SchemaItem> schema() const override;
 
   // -- mass matrices
-  int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
+  int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override;
   int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& M);
 
-  int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
+  int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
   virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) override;
 
   // -- stiffness matrices
