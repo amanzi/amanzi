@@ -232,13 +232,11 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   double h, qx, qy, factor, dx;
   AmanziMesh::Entity_ID_List cells;
 
-  std::vector<double> FNum_rot;        // fluxes
-  std::vector<double> FNum_rotTmp;        // fluxes
+  std::vector<double> FNum_rot(3,0.0);        // fluxes
+  std::vector<double> FNum_rotTmp(3,0.0);        // fluxes
   std::vector<double> BedSlopeSource;  // bed slope source
-  double FrictionSourceX = 0.0;         // friction source
-  double FrictionSourceY = 0.0;         // friction source
+  std::vector<double> FrictionSource(2, 0.0);   // friction source
   std::vector<double> UL(4), UR(4);    // local state vectors and wetted angle
-  std::vector<double> ULTmp(4), URTmp(4); // tmp arrays for junction coupling  
 
   // Simplest flux form
   // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
@@ -308,74 +306,11 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double qx_rec = discharge_x_grad_->getValue(c1, xf);
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
 
-    if(c1IsJunction) {
-
-       // BEGIN computation of discharge at edge
-       Teuchos::RCP<Operators::ReconstructionCellLinear> qx_grad_tmp = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-       Teuchos::RCP<Operators::ReconstructionCellLinear> qy_grad_tmp = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-       qx_grad_tmp->Init(sw_list_->sublist("reconstruction"));
-       qy_grad_tmp->Init(sw_list_->sublist("reconstruction"));
-       Teuchos::RCP<Epetra_MultiVector> qx_sw_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-       Teuchos::RCP<Epetra_MultiVector> qy_sw_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-       for(int adjCell=0; adjCell<cellsAdj.size(); adjCell++){
-         int iCell = cellsAdj[adjCell];  
-         GetDx(iCell, dx);
-         // for mass conservation
-         //double waterDepthAdj = h_temp[0][iCell] * dx / mesh_->cell_volume(iCell);
-         double waterDepthAdj = ComputeWaterDepth(WettedAngle_c[0][iCell]);
-         (*qx_sw_tmp)[0][iCell] = vel_c[0][iCell] * waterDepthAdj;
-         (*qy_sw_tmp)[0][iCell] = vel_c[1][iCell] * waterDepthAdj;
-       }
-       (*qx_sw_tmp)[0][c1] = vel_c[0][c1] * h_temp[0][c1];
-       (*qy_sw_tmp)[0][c1] = vel_c[1][c1] * h_temp[0][c1];
-       qx_grad_tmp->Compute(qx_sw_tmp, 0);
-       qy_grad_tmp->Compute(qy_sw_tmp, 0);
-       if (use_limiter_){
-          limiter_->ApplyLimiter(qx_sw_tmp, 0, qx_grad_tmp, bc_model_vector, bc_value_qx);
-          limiter_->ApplyLimiter(qy_sw_tmp, 0, qy_grad_tmp, bc_model_vector, bc_value_qy);
-       }
-
-       qx_rec = qx_grad_tmp->getValue(c1, xf);
-       qy_rec = qy_grad_tmp->getValue(c1, xf);
-       // END computation of discharge at edge
-    }
-
     if(c2IsJunction){
-       // BEGIN computation of discharge at edge
-       Teuchos::RCP<Operators::ReconstructionCellLinear> qx_grad_tmp = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-       Teuchos::RCP<Operators::ReconstructionCellLinear> qy_grad_tmp = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-       qx_grad_tmp->Init(sw_list_->sublist("reconstruction"));
-       qy_grad_tmp->Init(sw_list_->sublist("reconstruction"));
-       Teuchos::RCP<Epetra_MultiVector> qx_pipe_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-       Teuchos::RCP<Epetra_MultiVector> qy_pipe_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-       for(int adjCell=0; adjCell<cellsAdj.size(); adjCell++){
-         int iCell = cellsAdj[adjCell];
-         if(iCell == c2){
-            GetDx(c1,dx);
-            //double wettedAreaAdj = h_temp[0][iCell] * mesh_->cell_volume(iCell) / dx;
-            double wettedAreaAdj = ComputeWettedArea(ComputeWettedAngle(h_temp[0][iCell]));
-            (*qx_pipe_tmp)[0][iCell] = vel_c[0][iCell] * wettedAreaAdj;
-            (*qy_pipe_tmp)[0][iCell] = vel_c[1][iCell] * wettedAreaAdj;
-         }
-         else{
-           (*qx_pipe_tmp)[0][iCell] = vel_c[0][iCell] * h_temp[0][iCell];
-           (*qy_pipe_tmp)[0][iCell] = vel_c[1][iCell] * h_temp[0][iCell];
-         }
-       }
-       (*qx_pipe_tmp)[0][c1] = vel_c[0][c1] * h_temp[0][c1];
-       (*qy_pipe_tmp)[0][c1] = vel_c[1][c1] * h_temp[0][c1];
-       qx_grad_tmp->Compute(qx_pipe_tmp, 0);
-       qy_grad_tmp->Compute(qy_pipe_tmp, 0);
-       if (use_limiter_){
-          limiter_->ApplyLimiter(qx_pipe_tmp, 0, qx_grad_tmp, bc_model_vector, bc_value_qx);
-          limiter_->ApplyLimiter(qy_pipe_tmp, 0, qy_grad_tmp, bc_model_vector, bc_value_qy);
-       }
-
-       qx_rec = qx_grad_tmp->getValue(c1, xf);
-       qy_rec = qy_grad_tmp->getValue(c1, xf);
-       // END computation of discharge at edge
+       qx_rec = q_temp[0][c1];
+       qy_rec = q_temp[1][c1];
     }
-   
+
     factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
   
     double vx_rec = factor * qx_rec;
@@ -389,271 +324,99 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     UL[0] = V_rec[0];
     UL[1] = V_rec[0] * vn;
     UL[2] = V_rec[0] * vt;
-    UL[3] = V_rec[1]; 
+    UL[3] = V_rec[1];
 
-    // if c2 is a junction, c1 is next to a junction
-    if (c2IsJunction) {
-      // this is to fill ULTmp and use it for the junction cell c2
-      // we are taking the info from the pipe cell c1
-      // but will employ the numerical flux for SW
-      // so units are the same and lake at rest will be preserved
-
-      V_rec[0] = std::max( (TotalDepthEdgeValue(c1, f, ht_c[0][c1],  B_c[0][c1],  B_max[0][c1], B_n) - BathymetryEdgeValue(f, B_n)), 0.0);
-      V_rec[1] = - 1.0;
-
-      ierr = ErrorDiagnostics_(t, c1, V_rec[0]);
-      if (ierr < 0) break;
-
-      // for SW, the discharge value to reconstruct
-      // at the edge has to be q=uh not q=uA as it would 
-      // be using the getValue function without the extra argument
-
-       // BEGIN computation of discharge at edge
-       Teuchos::RCP<Operators::ReconstructionCellLinear> qx_grad_tmp = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-       Teuchos::RCP<Operators::ReconstructionCellLinear> qy_grad_tmp = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-       qx_grad_tmp->Init(sw_list_->sublist("reconstruction"));
-       qy_grad_tmp->Init(sw_list_->sublist("reconstruction"));
-       Teuchos::RCP<Epetra_MultiVector> qx_sw_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-       Teuchos::RCP<Epetra_MultiVector> qy_sw_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-       for(int adjCell=0; adjCell<cellsAdj.size(); adjCell++){
-         int iCell = cellsAdj[adjCell];
-         if(iCell == c2){
-            (*qx_sw_tmp)[0][iCell] = vel_c[0][iCell] * h_temp[0][iCell];
-            (*qy_sw_tmp)[0][iCell] = vel_c[1][iCell] * h_temp[0][iCell];
-         }
-         else{
-           GetDx(iCell, dx);
-           // for mass conservation
-           //double waterDepthAdj = h_temp[0][iCell] * dx / mesh_->cell_volume(iCell);
-           double waterDepthAdj = ComputeWaterDepth(WettedAngle_c[0][iCell]);
-           (*qx_sw_tmp)[0][iCell] = vel_c[0][iCell] * waterDepthAdj;
-           (*qy_sw_tmp)[0][iCell] = vel_c[1][iCell] * waterDepthAdj;
-         }
-       }
-       GetDx(c1, dx);
-       // for mass conservation
-       //double c1WaterDepth = h_temp[0][c1] * dx / mesh_->cell_volume(c1);
-       double c1WaterDepth = ComputeWaterDepth(WettedAngle_c[0][c1]);
-       (*qx_sw_tmp)[0][c1] = vel_c[0][c1] * c1WaterDepth;
-       (*qy_sw_tmp)[0][c1] = vel_c[1][c1] * c1WaterDepth;
-       qx_grad_tmp->Compute(qx_sw_tmp, 0);
-       qy_grad_tmp->Compute(qy_sw_tmp, 0);
-       if (use_limiter_){
-          limiter_->ApplyLimiter(qx_sw_tmp, 0, qx_grad_tmp, bc_model_vector, bc_value_qx);
-          limiter_->ApplyLimiter(qy_sw_tmp, 0, qy_grad_tmp, bc_model_vector, bc_value_qy);
-       }
-
-       qx_rec = qx_grad_tmp->getValue(c1, xf);
-       qy_rec = qy_grad_tmp->getValue(c1, xf);
-       // END computation of discharge at edge
-
-      factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
-
-      vx_rec = factor * qx_rec;
-      vy_rec = factor * qy_rec;
-
-      // the normal "normal" has been rotated since c1 is not
-      // a junction (WettedAngle >=0) hence we need
-      // to use the one that has not been rotated "normalNotRotated"
-      vn = vx_rec * normalNotRotated[0] + vy_rec * normalNotRotated[1];
-      vt = -vx_rec * normalNotRotated[1] + vy_rec * normalNotRotated[0];
-
-      ULTmp[0] = V_rec[0];
-      ULTmp[1] = V_rec[0] * vn;
-      ULTmp[2] = V_rec[0] * vt;
-      ULTmp[3] = V_rec[1];
-    }
     if (c1IsJunction) {
-        V_rec = ComputeFieldsOnEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
-        V_rec[1] = ComputeWettedAngle(V_rec[0]);
-        V_rec[0] = ComputeWettedArea(V_rec[1]);
+       V_rec = ComputeFieldsOnEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
+       V_rec[1] = ComputeWettedAngle(V_rec[0]);
+       V_rec[0] = ComputeWettedArea(V_rec[1]);
 
-        ierr = ErrorDiagnostics_(t, c1, V_rec[0]);
-        if (ierr < 0) break;
+       ierr = ErrorDiagnostics_(t, c1, V_rec[0]);
+       if (ierr < 0) break;
 
-        // for the pipe, the discharge value to reconstruct
-        // at the edge has to be q=uA not q=uh as it would
-        // be using the getValue function without the extra argument
+       qx_rec = vel_c[0][c1] * V_rec[0];
+       qy_rec = vel_c[1][c1] * V_rec[0];
 
-        // BEGIN computation of discharge at edge
-        Teuchos::RCP<Operators::ReconstructionCellLinear> qx_grad_tmp = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-        Teuchos::RCP<Operators::ReconstructionCellLinear> qy_grad_tmp = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-        qx_grad_tmp->Init(sw_list_->sublist("reconstruction"));
-        qy_grad_tmp->Init(sw_list_->sublist("reconstruction"));
-        Teuchos::RCP<Epetra_MultiVector> qx_pipe_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-        Teuchos::RCP<Epetra_MultiVector> qy_pipe_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-        for(int adjCell=0; adjCell<cellsAdj.size(); adjCell++){
-           int iCell = cellsAdj[adjCell];
-           (*qx_pipe_tmp)[0][iCell] = vel_c[0][iCell] * h_temp[0][iCell];
-           (*qy_pipe_tmp)[0][iCell] = vel_c[1][iCell] * h_temp[0][iCell];
-        }
-        GetDx(c2,dx);
-        //double wettedAreaAdj = h_temp[0][c1] * mesh_->cell_volume(c1) / dx;
-        double wettedAreaAdj = ComputeWettedArea(ComputeWettedAngle(h_temp[0][c1]));
-        (*qx_pipe_tmp)[0][c1] = vel_c[0][c1] * wettedAreaAdj;
-        (*qy_pipe_tmp)[0][c1] = vel_c[1][c1] * wettedAreaAdj;
-        qx_grad_tmp->Compute(qx_pipe_tmp, 0);
-        qy_grad_tmp->Compute(qy_pipe_tmp, 0);
-        if (use_limiter_){
-           limiter_->ApplyLimiter(qx_pipe_tmp, 0, qx_grad_tmp, bc_model_vector, bc_value_qx);
-           limiter_->ApplyLimiter(qy_pipe_tmp, 0, qy_grad_tmp, bc_model_vector, bc_value_qy);
-        }
+       factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
 
-        qx_rec = qx_grad_tmp->getValue(c1, xf);
-        qy_rec = qy_grad_tmp->getValue(c1, xf);
-        // END computation of discharge at edge
+       vx_rec = factor * qx_rec;
+       vy_rec = factor * qy_rec;
+
+       vn = vx_rec * normalRotated[0] + vy_rec * normalRotated[1];
+       vt = -vx_rec * normalRotated[1] + vy_rec * normalRotated[0];
+
+       UL[0] = V_rec[0];
+       UL[1] = V_rec[0] * vn;
+       UL[2] = V_rec[0] * vt;
+       UL[3] = V_rec[1];
+
+  }
+
+  if (c2 == -1) {
+     if (bc_model_scalar[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        UR[0] = bc_value_h[f];
+        UR[3] = ComputeWettedAngleNewton(bc_value_h[f]);
+        UL[0] = UR[0];
+        UL[3] = UR[3];
+     }
+     else {
+       UR[0] = UL[0];
+       UR[3] = ComputeWettedAngleNewton(UL[0]); 
+     }
+     if (bc_model_vector[f] == Operators::OPERATOR_BC_DIRICHLET) {
+       UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
+       UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
+       UL[1] = UR[1];
+       UL[2] = UR[2];
+    } 
+    else {
+       // default outflow BC
+       UR[1] = UL[1];
+       UR[2] = UL[2];
+    }
+  } 
+  else {
+
+     V_rec = ComputeFieldsOnEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
+     ierr = ErrorDiagnostics_(t, c2, V_rec[0]);
+     if (ierr < 0) break;
+
+     if(!c2IsJunction && !c1IsJunction){
+
+        qx_rec = discharge_x_grad_->getValue(c2, xf);
+        qy_rec = discharge_y_grad_->getValue(c2, xf);
 
         factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
 
         vx_rec = factor * qx_rec;
         vy_rec = factor * qy_rec;
 
-        // since c1 is a junction, the normal "normal"
-        // was not rotated but for the pipe, we need the rotated
-        // normal so we use "normalRotated"
+        vn = vx_rec * normal[0] + vy_rec * normal[1];
+        vt = -vx_rec * normal[1] + vy_rec * normal[0];
+
+     }
+
+     if (c1IsJunction){
+
+        qx_rec = q_temp[0][c2];
+        qy_rec = q_temp[1][c2];
+
+        factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
+
+        vx_rec = factor * qx_rec;
+        vy_rec = factor * qy_rec;
+
         vn = vx_rec * normalRotated[0] + vy_rec * normalRotated[1];
         vt = -vx_rec * normalRotated[1] + vy_rec * normalRotated[0];
+     }
 
-        ULTmp[0] = V_rec[0];
-        ULTmp[1] = V_rec[0] * vn;
-        ULTmp[2] = V_rec[0] * vt;
-        ULTmp[3] = V_rec[1];
-    }
+     UR[0] = V_rec[0];
+     UR[1] = V_rec[0] * vn;
+     UR[2] = V_rec[0] * vt;
+     UR[3] = V_rec[1];
 
-    if (c2 == -1) {
-      if (bc_model_scalar[f] == Operators::OPERATOR_BC_DIRICHLET) {
-        UR[0] = bc_value_h[f];
-        UR[3] = ComputeWettedAngleNewton(bc_value_h[f]);
-        UL[0] = UR[0];
-        UL[3] = UR[3];
-      }
-      else {
-        UR[0] = UL[0];
-        UR[3] = ComputeWettedAngleNewton(UL[0]); 
-      }
-      if (bc_model_vector[f] == Operators::OPERATOR_BC_DIRICHLET) {
-        UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
-        UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
-        UL[1] = UR[1];
-        UL[2] = UR[2];
-      } else {
-        // default outflow BC
-        UR[1] = UL[1];
-        UR[2] = UL[2];
-      }
-    } 
-    else {
+     if (c2IsJunction) {
 
-      V_rec = ComputeFieldsOnEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
-      ierr = ErrorDiagnostics_(t, c2, V_rec[0]);
-      if (ierr < 0) break;
-
-      qx_rec = discharge_x_grad_->getValue(c2, xf);
-      qy_rec = discharge_y_grad_->getValue(c2, xf);
-
-      discharge_x_grad_->GetCellFaceAdjCellsManifold_(c2, AmanziMesh::Parallel_type::ALL, cellsAdj);
-
-      if(c2IsJunction) {
-
-         // BEGIN computation of discharge at edge
-         Teuchos::RCP<Operators::ReconstructionCellLinear> qx_grad_tmp = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-         Teuchos::RCP<Operators::ReconstructionCellLinear> qy_grad_tmp = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-         qx_grad_tmp->Init(sw_list_->sublist("reconstruction"));
-         qy_grad_tmp->Init(sw_list_->sublist("reconstruction"));
-         Teuchos::RCP<Epetra_MultiVector> qx_sw_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-         Teuchos::RCP<Epetra_MultiVector> qy_sw_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-         for(int adjCell=0; adjCell<cellsAdj.size(); adjCell++){
-            int iCell = cellsAdj[adjCell];
-            GetDx(iCell, dx);
-            // for mass conservation
-            //double waterDepthAdj = h_temp[0][iCell] * dx / mesh_->cell_volume(iCell);
-            double waterDepthAdj = ComputeWaterDepth(WettedAngle_c[0][iCell]);
-            (*qx_sw_tmp)[0][iCell] = vel_c[0][iCell] * waterDepthAdj;
-            (*qy_sw_tmp)[0][iCell] = vel_c[1][iCell] * waterDepthAdj;
-          }
-          (*qx_sw_tmp)[0][c2] = vel_c[0][c2] * h_temp[0][c2];
-          (*qy_sw_tmp)[0][c2] = vel_c[1][c2] * h_temp[0][c2];
-          qx_grad_tmp->Compute(qx_sw_tmp, 0);
-          qy_grad_tmp->Compute(qy_sw_tmp, 0);
-          if (use_limiter_){
-             limiter_->ApplyLimiter(qx_sw_tmp, 0, qx_grad_tmp, bc_model_vector, bc_value_qx);
-             limiter_->ApplyLimiter(qy_sw_tmp, 0, qy_grad_tmp, bc_model_vector, bc_value_qy);
-          }
-
-          qx_rec = qx_grad_tmp->getValue(c2, xf);
-          qy_rec = qy_grad_tmp->getValue(c2, xf);
-          // END computation of discharge at edge
-
-      }
-
-      if(c1IsJunction){
-
-         // BEGIN computation of discharge at edge
-         Teuchos::RCP<Operators::ReconstructionCellLinear> qx_grad_tmp = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-         Teuchos::RCP<Operators::ReconstructionCellLinear> qy_grad_tmp = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-         qx_grad_tmp->Init(sw_list_->sublist("reconstruction"));
-         qy_grad_tmp->Init(sw_list_->sublist("reconstruction"));
-         Teuchos::RCP<Epetra_MultiVector> qx_pipe_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-         Teuchos::RCP<Epetra_MultiVector> qy_pipe_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-         for(int adjCell=0; adjCell<cellsAdj.size(); adjCell++){
-             int iCell = cellsAdj[adjCell];
-            if(iCell == c1){
-               GetDx(c2,dx);
-               //double wettedAreaAdj = h_temp[0][iCell] * mesh_->cell_volume(iCell) / dx;
-               double wettedAreaAdj = ComputeWettedArea(ComputeWettedAngle(h_temp[0][iCell]));
-               (*qx_pipe_tmp)[0][iCell] = vel_c[0][iCell] * wettedAreaAdj;
-               (*qy_pipe_tmp)[0][iCell] = vel_c[1][iCell] * wettedAreaAdj;
-            }
-             else{
-              (*qx_pipe_tmp)[0][iCell] = vel_c[0][iCell] * h_temp[0][iCell];
-              (*qy_pipe_tmp)[0][iCell] = vel_c[1][iCell] * h_temp[0][iCell];
-            }
-         }
-         (*qx_pipe_tmp)[0][c2] = vel_c[0][c2] * h_temp[0][c2];
-         (*qy_pipe_tmp)[0][c2] = vel_c[1][c2] * h_temp[0][c2];
-         qx_grad_tmp->Compute(qx_pipe_tmp, 0);
-         qy_grad_tmp->Compute(qy_pipe_tmp, 0);
-         if (use_limiter_){
-            limiter_->ApplyLimiter(qx_pipe_tmp, 0, qx_grad_tmp, bc_model_vector, bc_value_qx);
-            limiter_->ApplyLimiter(qy_pipe_tmp, 0, qy_grad_tmp, bc_model_vector, bc_value_qy);
-         }
-
-         qx_rec = qx_grad_tmp->getValue(c2, xf);
-         qy_rec = qy_grad_tmp->getValue(c2, xf);
-         // END computation of discharge at edge
-
-      }
-      
-      factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
-
-      vx_rec = factor * qx_rec;
-      vy_rec = factor * qy_rec;
-
-      if(c2IsJunction){
-         // we are using ULTmp and UR for c2
-         // so the normal below has to be not rotated
-         vn = vx_rec * normalNotRotated[0] + vy_rec * normalNotRotated[1];
-         vt = -vx_rec * normalNotRotated[1] + vy_rec * normalNotRotated[0];
-      }
-      else{
-         // this is for the case where c1 is a junction
-         // or no junction. Note that in the case of no
-         // junction "normal" and "normalRotated" are the same
-         vn = vx_rec * normalRotated[0] + vy_rec * normalRotated[1];
-         vt = -vx_rec * normalRotated[1] + vy_rec * normalRotated[0];
-
-      }
-
-      UR[0] = V_rec[0];
-      UR[1] = V_rec[0] * vn;
-      UR[2] = V_rec[0] * vt;
-      UR[3] = V_rec[1];
-
-      if (c2IsJunction) {
-        // this is to fill URTmp and use it for cell c1
-        // we are taking the info from the junction cell c2
-        // but will employ the numerical flux for the pipe
-        // so units are the same and lake at rest will be preserved
         V_rec = ComputeFieldsOnEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
         V_rec[1] = ComputeWettedAngle(V_rec[0]);
         V_rec[0] = ComputeWettedArea(V_rec[1]);
@@ -661,33 +424,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         ierr = ErrorDiagnostics_(t, c2, V_rec[0]);
         if (ierr < 0) break;
 
-         // BEGIN computation of discharge at edge
-         Teuchos::RCP<Operators::ReconstructionCellLinear> qx_grad_tmp = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-         Teuchos::RCP<Operators::ReconstructionCellLinear> qy_grad_tmp = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-         qx_grad_tmp->Init(sw_list_->sublist("reconstruction"));
-         qy_grad_tmp->Init(sw_list_->sublist("reconstruction"));
-         Teuchos::RCP<Epetra_MultiVector> qx_pipe_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-         Teuchos::RCP<Epetra_MultiVector> qy_pipe_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-         for(int adjCell=0; adjCell<cellsAdj.size(); adjCell++){
-             int iCell = cellsAdj[adjCell];
-             (*qx_pipe_tmp)[0][iCell] = vel_c[0][iCell] * h_temp[0][iCell];
-             (*qy_pipe_tmp)[0][iCell] = vel_c[1][iCell] * h_temp[0][iCell];
-         }
-         GetDx(c1, dx);
-         //double wettedAreaAdj = h_temp[0][c2] * mesh_->cell_volume(c2) / dx;
-         double wettedAreaAdj = ComputeWettedArea(ComputeWettedAngle(h_temp[0][c2]));
-         (*qx_pipe_tmp)[0][c2] = vel_c[0][c2] * wettedAreaAdj;
-         (*qy_pipe_tmp)[0][c2] = vel_c[1][c2] * wettedAreaAdj;
-         qx_grad_tmp->Compute(qx_pipe_tmp, 0);
-         qy_grad_tmp->Compute(qy_pipe_tmp, 0);
-         if (use_limiter_){
-            limiter_->ApplyLimiter(qx_pipe_tmp, 0, qx_grad_tmp, bc_model_vector, bc_value_qx);
-            limiter_->ApplyLimiter(qy_pipe_tmp, 0, qy_grad_tmp, bc_model_vector, bc_value_qy);
-         }
-
-         qx_rec = qx_grad_tmp->getValue(c2, xf);
-         qy_rec = qy_grad_tmp->getValue(c2, xf);
-         // END computation of discharge at edge
+        qx_rec = vel_c[0][c2] * V_rec[0];
+        qy_rec = vel_c[1][c2] * V_rec[0];
 
         factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
 
@@ -699,125 +437,73 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         vn = vx_rec * normal[0] + vy_rec * normal[1];
         vt = -vx_rec * normal[1] + vy_rec * normal[0];
 
-        URTmp[0] = V_rec[0];
-        URTmp[1] = V_rec[0] * vn;
-        URTmp[2] = V_rec[0] * vt;
-        URTmp[3] = V_rec[1];
-      }
-      if (c1IsJunction) {
-
-         V_rec[0] = std::max( (TotalDepthEdgeValue(c2, f, ht_c[0][c2],  B_c[0][c2],  B_max[0][c2], B_n) - BathymetryEdgeValue(f, B_n)), 0.0);
-         V_rec[1] = - 1.0;
-
-         ierr = ErrorDiagnostics_(t, c2, V_rec[0]);
-         if (ierr < 0) break;
-
-         // BEGIN computation of discharge at edge
-         Teuchos::RCP<Operators::ReconstructionCellLinear> qx_grad_tmp = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-         Teuchos::RCP<Operators::ReconstructionCellLinear> qy_grad_tmp = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-         qx_grad_tmp->Init(sw_list_->sublist("reconstruction"));
-         qy_grad_tmp->Init(sw_list_->sublist("reconstruction"));
-         Teuchos::RCP<Epetra_MultiVector> qx_sw_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-         Teuchos::RCP<Epetra_MultiVector> qy_sw_tmp = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(true), 1));
-         for(int adjCell=0; adjCell<cellsAdj.size(); adjCell++){
-            int iCell = cellsAdj[adjCell];
-            if(iCell == c1){
-               (*qx_sw_tmp)[0][iCell] = vel_c[0][iCell] * h_temp[0][iCell];
-               (*qy_sw_tmp)[0][iCell] = vel_c[1][iCell] * h_temp[0][iCell];
-            }
-            else{
-              GetDx(iCell, dx);
-              // for mass conservation
-              //double waterDepthAdj = h_temp[0][iCell] * dx / mesh_->cell_volume(iCell);
-              double waterDepthAdj = ComputeWaterDepth(WettedAngle_c[0][iCell]);
-              (*qx_sw_tmp)[0][iCell] = vel_c[0][iCell] * waterDepthAdj;
-              (*qy_sw_tmp)[0][iCell] = vel_c[1][iCell] * waterDepthAdj;
-            }
-          }
-          GetDx(c2, dx);
-          // for mass conservation
-          //double waterDepthAdj = h_temp[0][c2] * dx / mesh_->cell_volume(c2);
-          double waterDepthAdj = ComputeWaterDepth(WettedAngle_c[0][c2]);
-          (*qx_sw_tmp)[0][c2] = vel_c[0][c2] * waterDepthAdj;
-          (*qy_sw_tmp)[0][c2] = vel_c[1][c2] * waterDepthAdj;
-          qx_grad_tmp->Compute(qx_sw_tmp, 0);
-          qy_grad_tmp->Compute(qy_sw_tmp, 0);
-          if (use_limiter_){
-             limiter_->ApplyLimiter(qx_sw_tmp, 0, qx_grad_tmp, bc_model_vector, bc_value_qx);
-             limiter_->ApplyLimiter(qy_sw_tmp, 0, qy_grad_tmp, bc_model_vector, bc_value_qy);
-          }
-
-          qx_rec = qx_grad_tmp->getValue(c2, xf);
-          qy_rec = qy_grad_tmp->getValue(c2, xf);
-          // END computation of discharge at edge
-
-         factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
-
-         vx_rec = factor * qx_rec;
-         vy_rec = factor * qy_rec;
-
-         // since c1 is a junction, normal has not been
-         // rotated, so we can use "normal"
-         vn = vx_rec * normal[0] + vy_rec * normal[1];
-         vt = -vx_rec * normal[1] + vy_rec * normal[0];
-
-         URTmp[0] = V_rec[0];
-         URTmp[1] = V_rec[0] * vn;
-         URTmp[2] = V_rec[0] * vt;
-         URTmp[3] = V_rec[1];
-      }
+        UR[0] = V_rec[0];
+        UR[1] = V_rec[0] * vn;
+        UR[2] = V_rec[0] * vt;
+        UR[3] = V_rec[1];
 
     }
 
-    FNum_rot = numerical_flux_->Compute(UL, UR);
- 
-    if (c1IsJunction || c2IsJunction) {
-    FNum_rot = numerical_flux_->Compute(UL, URTmp);
-    FNum_rotTmp = numerical_flux_->Compute(ULTmp, UR);
-    }
+ }
 
-    h = FNum_rot[0];
-    qx = FNum_rot[1] * normal[0] - FNum_rot[2] * normal[1];
-    qy = FNum_rot[1] * normal[1] + FNum_rot[2] * normal[0];
+ if (!c1IsJunction && !c2IsJunction){
+     FNum_rot = numerical_flux_->Compute(UL, UR);
+ }
+ if(c1IsJunction){
+     FNum_rotTmp = numerical_flux_->Compute(UL, UR);
+     FNum_rot[0] = FNum_rotTmp[0] / farea;
+     FNum_rot[1] = FNum_rotTmp[1] / farea;
+     FNum_rot[2] = FNum_rotTmp[2] / farea;
+ }
+ if(c2IsJunction){
+     FNum_rot = numerical_flux_->Compute(UL, UR);
+     FNum_rotTmp[0] = FNum_rot[0] / farea;
+     FNum_rotTmp[1] = FNum_rot[1] / farea;
+     FNum_rotTmp[2] = FNum_rot[2] / farea;
+ }
 
-    // save riemann mass flux
-    riemann_f[0][f] = FNum_rot[0] * farea * dir;
+ h = FNum_rot[0];
+ qx = FNum_rot[1] * normal[0] - FNum_rot[2] * normal[1];
+ qy = FNum_rot[1] * normal[1] + FNum_rot[2] * normal[0];
 
-    // add fluxes to temporary fields 
-    double vol = mesh_->cell_volume(c1);
-    factor = farea / vol;
-    h_c_tmp[0][c1] -= h * factor;
-    q_c_tmp[0][c1] -= qx * factor;
-    q_c_tmp[1][c1] -= qy * factor;
+ // save riemann mass flux
+ riemann_f[0][f] = FNum_rot[0] * farea * dir;
 
-    if (c2 != -1) {
+ // add fluxes to temporary fields 
+ double vol = mesh_->cell_volume(c1);
+ factor = farea / vol;
+ h_c_tmp[0][c1] -= h * factor;
+ q_c_tmp[0][c1] -= qx * factor;
+ q_c_tmp[1][c1] -= qy * factor;
 
-      if(!c1IsJunction && !c2IsJunction){  
-         vol = mesh_->cell_volume(c2);
-         factor = farea / vol;
-         h_c_tmp[0][c2] += h * factor;
-         q_c_tmp[0][c2] += qx * factor;
-         q_c_tmp[1][c2] += qy * factor;
-      }
-      else { 
-        h = FNum_rotTmp[0];
-        if(c2IsJunction){
-          qx = FNum_rotTmp[1] * normalNotRotated[0] - FNum_rotTmp[2] * normalNotRotated[1];
-          qy = FNum_rotTmp[1] * normalNotRotated[1] + FNum_rotTmp[2] * normalNotRotated[0];
-        }
-        else{ //here this else means c1 is a junction
-          qx = FNum_rotTmp[1] * normalRotated[0] - FNum_rotTmp[2] * normalRotated[1];
-          qy = FNum_rotTmp[1] * normalRotated[1] + FNum_rotTmp[2] * normalRotated[0];
-        }
-        vol = mesh_->cell_volume(c2);
-        factor = farea / vol;
-        h_c_tmp[0][c2] += h * factor;
-        q_c_tmp[0][c2] += qx * factor;
-        q_c_tmp[1][c2] += qy * factor;
-      }
+ if (c2 != -1) {
 
-    }
-  }
+   if(!c1IsJunction && !c2IsJunction){  
+      vol = mesh_->cell_volume(c2);
+      factor = farea / vol;
+      h_c_tmp[0][c2] += h * factor;
+      q_c_tmp[0][c2] += qx * factor;
+      q_c_tmp[1][c2] += qy * factor;
+   }
+   else { 
+     h = FNum_rotTmp[0];
+     if(c2IsJunction){
+       qx = FNum_rotTmp[1] * normalNotRotated[0] - FNum_rotTmp[2] * normalNotRotated[1];
+       qy = FNum_rotTmp[1] * normalNotRotated[1] + FNum_rotTmp[2] * normalNotRotated[0];
+     }
+     if(c1IsJunction){ 
+       qx = FNum_rotTmp[1] * normalRotated[0] - FNum_rotTmp[2] * normalRotated[1];
+       qy = FNum_rotTmp[1] * normalRotated[1] + FNum_rotTmp[2] * normalRotated[0];
+     }
+     vol = mesh_->cell_volume(c2);
+     factor = farea / vol;
+     h_c_tmp[0][c2] += h * factor;
+     q_c_tmp[0][c2] += qx * factor;
+     q_c_tmp[1][c2] += qy * factor;
+   }
+
+ }
+}
 
   // sync errors across processors, otherwise any MPI call
   // will lead to an error.
@@ -834,10 +520,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     int cell = model_cells_owned_[c];  
 
     BedSlopeSource = NumericalSourceBedSlope(cell, ht_c[0][cell], B_c[0][cell], B_max[0][cell], B_n, bc_model_scalar, bc_value_h);
-    FrictionSourceX = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 0); 
+    FrictionSource[0] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 0); 
 
     h = h_c_tmp[0][cell] + BedSlopeSource[0] + ext_S_cell[cell];
-    qx = q_c_tmp[0][cell] + BedSlopeSource[1] + FrictionSourceX;
+    qx = q_c_tmp[0][cell] + BedSlopeSource[1] + FrictionSource[0];
     qy = q_c_tmp[1][cell] + BedSlopeSource[2];
 
     f_temp0[0][cell] = h;
@@ -851,15 +537,14 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   for (int c = 0; c < junction_cells_owned_.size(); ++c) {
     int cell = junction_cells_owned_[c];
 
-    BedSlopeSource = ShallowWater_PK::NumericalSourceBedSlope(cell, ht_c[0][cell], 
-                                      B_c[0][cell], B_max[0][cell], B_n, bc_model_scalar, bc_value_h);
+    BedSlopeSource = ShallowWater_PK::NumericalSourceBedSlope(cell, h_temp[0][cell]); 
 
-    FrictionSourceX = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 0);
-    FrictionSourceY = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 1);
+    FrictionSource[0] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 0);
+    FrictionSource[1] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 1);
 
     h = h_c_tmp[0][cell] + BedSlopeSource[0];
-    qx = q_c_tmp[0][cell] + BedSlopeSource[1] + FrictionSourceX;
-    qy = q_c_tmp[1][cell] + BedSlopeSource[2] + FrictionSourceY;
+    qx = q_c_tmp[0][cell] + BedSlopeSource[1] + FrictionSource[0];
+    qy = q_c_tmp[1][cell] + BedSlopeSource[2] + FrictionSource[1];
 
     f_temp0[0][cell] = h;
     f_temp1[0][cell] = qx;

@@ -139,8 +139,6 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual double ComputeHydrostaticPressureForce (std::vector<double> SolArray){return g_ * 0.5 * SolArray[0] * SolArray[0];};
 
-  virtual void GetDx(const int & cell, double & dx) {};
-
   void PushBackBC(Teuchos::RCP<ShallowWaterBoundaryFunction> bc){bcs_.push_back(bc);};
 
   double inverse_with_tolerance(double h, double tol);

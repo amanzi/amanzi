@@ -769,11 +769,12 @@ ShallowWater_PK::NumericalSourceBedSlope(int c, double hc)
   std::vector<double> S(3, 0.0);
 
   auto& b_grad = *bathymetry_grad_->data()->ViewComponent("cell", true);
-  double BGrad = b_grad[0][c];
 
+  //TODO: entries of the grad are non zero when the bathymetry
+  // depends only on one entry
   S[0] = 0.0;
-  S[1] = -g_ * hc * BGrad;
-  S[2] = 0.0;
+  S[1] = -g_ * hc * b_grad[0][c];
+  S[2] = -g_ * hc * b_grad[1][c];
 
   return S;
 
