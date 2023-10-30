@@ -153,5 +153,11 @@ if (BUILD_TESTS)
                   SOURCE    test/Main.cc test/multiphase_smiles.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+  # Misc.  
+  add_amanzi_test(multiphase_test multiphase_test
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_test.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+  
 endif()
 
