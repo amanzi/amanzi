@@ -468,7 +468,7 @@ operator*(const Tensor& T1, const Tensor& T2)
       T3(1, 0) = tmp2[2];
       T3(0, 1) = tmp2[3];
     } else if (d == 3) {
-      T3(2, 3) = tmp2[2];
+      T3(2, 2) = tmp2[2];
       T3(1, 0) = tmp2[3];
       T3(0, 1) = tmp2[4];
       T3(2, 1) = tmp2[5];
