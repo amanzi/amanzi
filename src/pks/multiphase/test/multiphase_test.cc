@@ -9,8 +9,13 @@
 */
 
 /*
-  Custom multiphase flow testing
+  MultiPhase PK
 
+  Custom test
+
+  Gas phase appearense in a two-component system (water + hydrogen) after
+  liquid hydrogen injection on the left side of the domain. The primary
+  variables are pressure liquid, mole gas fraction, and saturation liquid.
 */
 
 #include <cstdlib>
@@ -28,9 +33,8 @@
 
 // Amanzi
 #include "IO.hh"
-#include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "MeshExtractedManifold.hh"
+#include "Mesh.hh"
 #include "State.hh"
 #include "OperatorDefs.hh"
 #include "OutputXDMF.hh"
@@ -40,8 +44,7 @@
 
 
 /* **************************************************************** */
-void
-run_test(const std::string& domain, const std::string& filename)
+TEST(MULTIPHASE_MODEL_I)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -51,34 +54,20 @@ run_test(const std::string& domain, const std::string& filename)
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: multiphase pk, model custom, domain=" << domain << std::endl;
 
-  int d = (domain == "2D") ? 2 : 3;
+  if (MyPID == 0) std::cout << "Test: multiphase pk, model Pl-Sl-Xg" << std::endl;
 
   // read parameter list
-  auto plist = Teuchos::getParametersFromXmlFile(filename);
+  std::string xmlFileName = "test/multiphase_test.xml";
+  auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a MSTK mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(d, region_list, *comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  RCP<const Mesh> mesh;
-  if (d == 2) {
-    // mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 10);
-    mesh = meshfactory.create(0.0, 0.0, 200.0, 12.0, 50, 4);
-  } else if (domain == "fractures") {
-    auto edgelist = Teuchos::rcp<Teuchos::ParameterList>(new Teuchos::ParameterList());
-    edgelist->set<bool>("request edges", true);
-    edgelist->set<bool>("request faces", true);
-    MeshFactory meshfactory(comm, gm, edgelist);
-    meshfactory.set_preference(Preference({ Framework::MSTK }));
-    auto mesh3D = meshfactory.create(0.0, 0.0, 0.0, 200.0, 12.0, 12.0, 50, 3, 6);
-    std::vector<std::string> names;
-    names.push_back("fracture");
-    mesh = meshfactory.create(mesh3D, names, AmanziMesh::Entity_kind::FACE);
-  }
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 60.0, 20.0, 30, 10);
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -93,13 +82,6 @@ run_test(const std::string& domain, const std::string& filename)
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   auto MPK = Teuchos::rcp(new Multiphase_PK(pk_tree, plist, S, soln));
 
-  // work-around
-  Key key("mass_density_gas");
-  S->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
-    .SetMesh(mesh)
-    ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1);
-
   MPK->Setup();
   S->Setup();
   S->InitializeFields();
@@ -108,7 +90,6 @@ run_test(const std::string& domain, const std::string& filename)
   // initialize the multiphase process kernel
   MPK->Initialize();
   S->CheckAllFieldsInitialized();
-  // S->WriteDependencyGraph();
   WriteStateStatistics(*S, *vo);
 
   // initialize io
@@ -118,9 +99,9 @@ run_test(const std::string& domain, const std::string& filename)
 
   // loop
   int iloop(0);
-  double t(0.0), tend(3.14e+12), dt(1.5768e+7), dt_max(3e+10); // 100,000 years
+  double t(0.0), tend(1.57e+11), dt(1.5768e+7), dt_max(3e+10);
   while (t < tend) {
-    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 10; }
+    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 4; }
 
     MPK->CommitStep(t, t + dt, Tags::DEFAULT);
     S->advance_cycle();
@@ -135,13 +116,11 @@ run_test(const std::string& domain, const std::string& filename)
       io->InitializeCycle(t, iloop, "");
       const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
-      const auto& u2 = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
-      const auto& u3 = *S->Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
+      const auto& u2 = *S->Get<CompositeVector>("mole_fraction_gas").ViewComponent("cell");
 
       io->WriteVector(*u0(0), "pressure", AmanziMesh::Entity_kind::CELL);
-      io->WriteVector(*u1(0), "saturation_liquid", AmanziMesh::Entity_kind::CELL);
-      io->WriteVector(*u2(0), "liquid hydrogen", AmanziMesh::Entity_kind::CELL);
-      io->WriteVector(*u3(0), "gas hydrogen", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u1(0), "saturation", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u2(0), "mole fraction gas", AmanziMesh::Entity_kind::CELL);
       io->FinalizeCycle();
 
       WriteStateStatistics(*S, *vo);
@@ -155,18 +134,13 @@ run_test(const std::string& domain, const std::string& filename)
   const auto& sl = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
   sl.MinValue(&dmin);
   sl.MaxValue(&dmax);
-  CHECK(dmin >= 0.0 && dmax <= 1.0 && dmin < 0.999);
+  CHECK(dmin >= 0.0 && dmax <= 1.0);
 
   S->Get<CompositeVector>("ncp_fg").NormInf(&dmax);
-  CHECK(dmax <= 1.0e-9);
+  CHECK(dmax <= 1.0e-14);
 
-  const auto& xg = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
+  const auto& xg = *S->Get<CompositeVector>("mole_fraction_gas").ViewComponent("cell");
   xg.MinValue(&dmin);
-  CHECK(dmin >= 0.0);
-}
-
-
-TEST(MULTIPHASE_CUSTOM)
-{
-  run_test("2D", "test/multiphase_test.xml");
+  xg.MaxValue(&dmax);
+  CHECK(dmin >= 0.0 && dmax <= 1.0);
 }
