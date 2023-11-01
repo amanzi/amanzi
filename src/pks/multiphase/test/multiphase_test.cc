@@ -100,7 +100,7 @@ TEST(MULTIPHASE_MODEL_I)
   // loop
   int iloop(0);
   double t(0.0), tend(1.57e+11), dt(1.5768e+7), dt_max(3e+10);
-  while (t < tend) {
+  while (t < tend && iloop < 200) {
     while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 4; }
 
     MPK->CommitStep(t, t + dt, Tags::DEFAULT);
@@ -117,10 +117,15 @@ TEST(MULTIPHASE_MODEL_I)
       const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
       const auto& u2 = *S->Get<CompositeVector>("mole_fraction_gas").ViewComponent("cell");
+      const auto& u3 = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
+      const auto& u4 = *S->Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
+
 
       io->WriteVector(*u0(0), "pressure", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u1(0), "saturation", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u2(0), "mole fraction gas", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u3(0), "liquid hydrogen (?)", AmanziMesh::Entity_kind::CELL); // is it liquid hydrogen? CHECK
+      io->WriteVector(*u4(0), "gas hydrogen (?)", AmanziMesh::Entity_kind::CELL);
       io->FinalizeCycle();
 
       WriteStateStatistics(*S, *vo);
