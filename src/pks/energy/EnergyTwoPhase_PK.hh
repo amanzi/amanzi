@@ -48,7 +48,7 @@ class EnergyTwoPhase_PK : public Energy_PK {
   double get_dt() final { return dt_; }
   void set_dt(double dt) final { dt_ = dt; }
 
-  virtual std::string name() { return "two-phase energy"; }
+  virtual std::string name() final { return Keys::getKey(domain_, "twophase energy"); }
 
   // methods required for time integration interface
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.

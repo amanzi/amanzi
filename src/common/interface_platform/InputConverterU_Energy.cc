@@ -113,7 +113,7 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
   if (model == "constant") { thermal.set<double>("thermal conductivity", cv_f + cv_r); }
 
   // insert time integrator
-  std::string err_options("energy"), unstr_controls("unstructured_controls, unstr_energy_controls");
+  std::string err_options("energy"), unstr_controls("unstructured_controls, unstr_transient_controls");
 
   if (pk_master_.find("energy") != pk_master_.end()) {
     out_list.sublist("time integrator") = TranslateTimeIntegrator_(err_options,

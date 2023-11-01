@@ -63,7 +63,7 @@ class Darcy_PK : public Flow_PK {
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
   virtual void CalculateDiagnostics(const Tag& tag) override;
 
-  virtual std::string name() override { return "darcy"; }
+  virtual std::string name() override { return Keys::getKey(domain_, "darcy"); }
 
   // methods required for time integration interface. It is not used by simple Darcy flow,
   // however, coupled method may need the residual evaluation routine.

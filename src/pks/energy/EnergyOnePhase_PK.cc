@@ -118,6 +118,9 @@ EnergyOnePhase_PK::Setup()
     auto tcm = Teuchos::rcp(new TCMEvaluator_OnePhase(elist));
     S_->SetEvaluator(conductivity_key_, Tags::DEFAULT, tcm);
   }
+
+  // set units
+  S_->GetRecordSetW(energy_key_).set_units("J");
 }
 
 
