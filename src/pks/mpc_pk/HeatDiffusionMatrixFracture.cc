@@ -65,9 +65,12 @@ HeatDiffusionMatrixFracture::Update_(State& S)
 
     double dist = aperture_c[0][c] / 2;
     for (int k = 0; k < ndofs; ++k) {
-      int pos = Operators::UniqueIndexFaceToCells(*mesh_parent, f, cells[k]);
-      int c1 = cells[pos];
-      result_c[k][c] = conductivity_c[0][c1] / dist;
+      // using matrix conductivity is seems wrong approach
+      // int pos = Operators::UniqueIndexFaceToCells(*mesh_parent, f, cells[k]);
+      // int c1 = cells[pos];
+      // const AmanziGeometry::Point& xc = mesh_parent->getCellCentroid(c1);
+      // double dist = norm(xc - xf);
+      result_c[k][c] = conductivity_c[0][c] / dist;
     }
   }
 }
