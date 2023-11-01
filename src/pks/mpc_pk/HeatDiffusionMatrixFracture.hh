@@ -51,7 +51,7 @@ class HeatDiffusionMatrixFracture : public EvaluatorSecondary {
 
  private:
   Key domain_;
-  Key conductivity_key_;
+  Key conductivity_key_, aperture_key_;
 
   static Utils::RegisteredFactory<Evaluator, HeatDiffusionMatrixFracture> reg_;
 };

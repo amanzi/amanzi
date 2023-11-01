@@ -393,7 +393,8 @@ InputConverterU::TranslateState_()
         }
         if (model == "standard") {
           field_ev.set<std::string>("evaluator type", "heat diffusion to matrix")
-            .set<std::string>("thermal conductivity key", "thermal_conductivity");
+            .set<std::string>("thermal conductivity key", "thermal_conductivity")
+            .set<std::string>("aperture key", "fracture-aperture");
         }
       }
 

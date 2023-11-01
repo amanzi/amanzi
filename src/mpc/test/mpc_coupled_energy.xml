@@ -327,6 +327,7 @@
       <ParameterList name="fracture-heat_diffusion_to_matrix">
         <Parameter name="evaluator type" type="string" value="heat diffusion to matrix"/>
         <Parameter name="thermal conductivity key" type="string" value="thermal_conductivity"/>
+        <Parameter name="aperture key" type="string" value="fracture-aperture"/>
       </ParameterList>
       <ParameterList name="fracture-compliance">
         <ParameterList name="function">
