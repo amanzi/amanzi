@@ -159,5 +159,10 @@ if (BUILD_TESTS)
                   SOURCE    test/Main.cc test/multiphase_test.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
   
+  add_amanzi_test(multiphase_verification_1D multiphase_verification_1D 
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_verification_1D.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})  
+  
 endif()
 
