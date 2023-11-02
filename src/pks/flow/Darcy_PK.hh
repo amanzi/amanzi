@@ -84,7 +84,7 @@ class Darcy_PK : public Flow_PK {
 
   // -- check the admissibility of a solution
   //    override with the actual admissibility check
-  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> u) override { return false; }
+  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> u) override { return true; }
 
   // -- possibly modifies the predictor that is going to be used as a
   //    starting value for the nonlinear solve in the time integrator,

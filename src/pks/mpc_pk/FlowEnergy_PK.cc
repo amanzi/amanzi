@@ -107,45 +107,9 @@ FlowEnergy_PK::Setup()
     S_->RequireEvaluator(particle_density_key_, Tags::DEFAULT);
   }
 
-  if (!S_->HasRecord(ie_rock_key_) && !elist.isSublist(ie_rock_key_)) {
-    Teuchos::Array<std::string> regions({ "All" });
-    elist.sublist(ie_rock_key_)
-      .set<std::string>("evaluator type", "iem")
-      .set<std::string>("internal energy key", ie_rock_key_);
-    elist.sublist(ie_rock_key_)
-      .sublist("IEM parameters")
-      .sublist("Material 1")
-      .set<Teuchos::Array<std::string>>("regions", regions)
-      .sublist("IEM parameters")
-      .set<std::string>("iem type", "linear")
-      .set<double>("heat capacity", 620.0);
-  }
-
   // Fields for gas
-  // -- internal energy
-  if (!S_->HasRecord(ie_gas_key_) && !elist.isSublist(ie_gas_key_)) {
-    elist.sublist(ie_gas_key_)
-      .set<std::string>("evaluator type", "iem water vapor")
-      .set<std::string>("internal energy key", ie_gas_key_);
-  }
-
-  // -- molar density
-  if (!S_->HasRecord(mol_density_gas_key_) && !elist.isSublist(mol_density_gas_key_)) {
-    elist.sublist(mol_density_gas_key_)
-      .set<std::string>("evaluator type", "eos")
-      .set<std::string>("eos basis", "molar")
-      .set<std::string>("molar density key", mol_density_gas_key_);
-    elist.sublist(mol_density_gas_key_)
-      .sublist("EOS parameters")
-      .set<std::string>("eos type", "vapor in gas");
-    elist.sublist(mol_density_gas_key_)
-      .sublist("EOS parameters")
-      .sublist("gas EOS parameters")
-      .set<std::string>("eos type", "ideal gas")
-      .set<double>("molar mass of gas", 28.9647e-03); // dry air
-  }
-
   // -- molar fraction FIXME (it is not used by all models)
+/*
   if (!S_->HasRecord("molar_fraction_gas") && !elist.isSublist("molar_fraction_gas")) {
     elist.sublist("molar_fraction_gas")
       .set<std::string>("evaluator type", "molar fraction gas")
@@ -154,6 +118,7 @@ FlowEnergy_PK::Setup()
       .sublist("vapor pressure model parameters")
       .set<std::string>("eos type", "water vapor over water/ice");
   }
+*/
 
   // Fields for liquid
   // -- internal energy
