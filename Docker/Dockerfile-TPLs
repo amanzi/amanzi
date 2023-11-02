@@ -7,7 +7,8 @@ FROM ubuntu:focal
 LABEL Description="This image contains all of the third-party libraries needed by Amanzi (based on the specified branch, default branch is master)."
 
 # MPI flavor (mpich|openmpi)
-ARG mpi_flavor=mpich
+ARG mpi_flavor=mpich 
+ARG mpi_version=4.1.2
 
 # Set timezone:
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
@@ -25,7 +26,7 @@ RUN apt-get -q update -y && apt-get install -y tzdata && apt-get -q install -y \
   libblas-dev \
   liblapacke-dev \
   liblapack-dev \
-  lib${mpi_flavor}-dev \
+#  lib${mpi_flavor}-dev \
   libssl-dev \
   m4 \
   make \
@@ -42,6 +43,19 @@ RUN apt-get -q update -y && apt-get install -y tzdata && apt-get -q install -y \
 # Note this installs numpy as well
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir install h5py
+
+# install mpich:
+RUN if [ "$mpi_flavor" = "mpich" ]; then cd / \
+  && wget https://www.mpich.org/static/downloads/${mpi_version}/mpich-${mpi_version}.tar.gz \
+  && tar xvf mpich-${mpi_version}.tar.gz \
+  && cd mpich-${mpi_version} \
+  && ./configure --enable-shared --with-device=ch3:sock --prefix=/usr \ 
+  && make \ 
+  && make install \
+  && cd ../ \
+  && rm -r mpich-${mpi_version}/ \
+  && rm mpich-${mpi_version}.tar.gz ; \
+  else apt-get install -y lib${mpi_flavor}-dev ; fi
 
 # Versions change and we cannot set environment variables from command output.
 ARG petsc_ver
@@ -71,16 +85,16 @@ WORKDIR /home/amanzi_user
 #     http_proxy=proxyout.lanl.gov:8080
 
 # Clone the amanzi git repo.
-RUN git clone https://github.com/amanzi/amanzi.git
+RUN git clone --branch $amanzi_branch --depth 1 --no-single-branch https://github.com/amanzi/amanzi.git
 
 # Set the current working directory to the git repo
 # and switch branches if requested.
 WORKDIR /home/amanzi_user/amanzi
-RUN if [ "$amanzi_branch" != "master" ]; then \
-       git checkout $amanzi_branch; \
-    fi; \
-    echo "Amanzi branch = $amanzi_branch"; \
-    git branch --list 
+#RUN if [ "$amanzi_branch" != "master" ]; then \
+#       git checkout $amanzi_branch; \
+#    fi; \
+#    echo "Amanzi branch = $amanzi_branch"; \
+#    git branch --list 
 
 # Build and install the TPLs using bootstrap.sh, and remove
 # the source, objects, etc. after installation to save space.
@@ -96,7 +110,8 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
   --with-mpi=/usr \
   --with-python=/usr/bin/python \
   && git checkout master \
-  && rm -r /home/amanzi_user/amanzi_builddir
+  && rm -r /home/amanzi_user/amanzi_builddir \
+  && rm -r /home/amanzi_user/amanzi/build/tools/
 
 # Set the LD_LIBRARY_PATH for Amanzi builds in the next stage
 ENV LD_LIBRARY_PATH=${AMANZI_TPLS_DIR}/lib:${AMANZI_PETSC_LIBS}:${AMANZI_TRILINOS_LIBS}:${AMANZI_SEACAS_LIBS}
