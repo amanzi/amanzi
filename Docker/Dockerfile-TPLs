@@ -15,7 +15,7 @@ RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONT
 
 RUN apt-get -q update -y && apt-get install -y tzdata && apt-get -q install -y \
   apt-utils \
-  cmake \
+#  cmake \
   curl \
   libcurl4-openssl-dev \
   emacs \
@@ -85,16 +85,16 @@ WORKDIR /home/amanzi_user
 #     http_proxy=proxyout.lanl.gov:8080
 
 # Clone the amanzi git repo.
-RUN git clone --branch $amanzi_branch --depth 1 --no-single-branch https://github.com/amanzi/amanzi.git
+RUN git clone https://github.com/amanzi/amanzi.git
 
 # Set the current working directory to the git repo
 # and switch branches if requested.
 WORKDIR /home/amanzi_user/amanzi
-#RUN if [ "$amanzi_branch" != "master" ]; then \
-#       git checkout $amanzi_branch; \
-#    fi; \
-#    echo "Amanzi branch = $amanzi_branch"; \
-#    git branch --list 
+RUN if [ "$amanzi_branch" != "master" ]; then \
+       git checkout $amanzi_branch; \
+    fi; \
+    echo "Amanzi branch = $amanzi_branch"; \
+    git branch --list 
 
 # Build and install the TPLs using bootstrap.sh, and remove
 # the source, objects, etc. after installation to save space.
