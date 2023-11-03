@@ -119,7 +119,7 @@
         <Parameter name="van Genuchten n" type="double" value="1.49"/>
         <Parameter name="van Genuchten l" type="double" value="0.5"/>
         <Parameter name="van Genuchten alpha" type="double" value="5.0e-7"/>
-        <Parameter name="residual saturation liquid" type="double" value="0.3"/>
+        <Parameter name="residual saturation liquid" type="double" value="0.4"/>
         <Parameter name="residual saturation gas" type="double" value="0.0"/>
         <Parameter name="relative permeability model" type="string" value="Mualem"/>
         <Parameter name="regularization interval kr" type="double" value="0.005"/>
@@ -204,7 +204,7 @@
           <Parameter name="phase" type="string" value="liquid"/>
           <ParameterList name="outward mass flux">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="-2.785e-03"/>
+              <Parameter name="value" type="double" value="-8.830e-11"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -216,6 +216,18 @@
           <ParameterList name="boundary saturation">
             <ParameterList name="function-constant">
               <Parameter name="value" type="double" value="1.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="concentration">
+        <ParameterList name="BC 5">
+          <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <Parameter name="name" type="string" value="SH4"/>
+          <ParameterList name="boundary concentration">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.0"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
