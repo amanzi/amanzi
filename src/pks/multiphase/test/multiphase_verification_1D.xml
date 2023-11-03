@@ -96,12 +96,12 @@
     <ParameterList name="molecular diffusion">
       <Parameter name="aqueous names" type="Array(string)" value="{SH4}"/>
       <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9}"/>
-      <Parameter name="gaseous values" type="Array(double)" value="{3.0e-5}"/>
+      <Parameter name="gaseous values" type="Array(double)" value="{0.0}"/>
       <Parameter name="molar masses" type="Array(double)" value="{2.0e-3}"/>
-      <Parameter name="Henry dimensionless constants" type="Array(double)" value="{1.39e-10}"/>
+      <Parameter name="Henry dimensionless constants" type="Array(double)" value="{7.65e-06}"/>
     </ParameterList>
 
-    <Parameter name="molar mass of water" type="double" value="18.0e-3"/>
+    <Parameter name="molar mass of water" type="double" value="1.0e-2"/>
 
     <Parameter name="NCP function" type="string" value="min"/>
     <Parameter name="CPR enhancement" type="bool" value="false"/>
@@ -142,21 +142,21 @@
 
         <Parameter name="solver type" type="string" value="Newton"/>
         <ParameterList name="Newton parameters">
-          <Parameter name="nonlinear tolerance" type="double" value="1.0e-6"/>
+          <Parameter name="nonlinear tolerance" type="double" value="1.0e-5"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
           <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
           <Parameter name="max error growth factor" type="double" value="1.0e+10"/>
-          <Parameter name="max divergent iterations" type="int" value="3"/>
+          <Parameter name="max divergent iterations" type="int" value="10"/>
           <Parameter name="limit iterations" type="int" value="20"/>
           <Parameter name="modify correction" type="bool" value="true"/>
           <Parameter name="monitor" type="string" value="monitor update"/>
           <Parameter name="make one iteration" type="bool" value="true"/>
         </ParameterList>
         <ParameterList name="nka parameters">
-          <Parameter name="nonlinear tolerance" type="double" value="1.0e-5"/>
+          <Parameter name="nonlinear tolerance" type="double" value="1.0e-6"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
           <Parameter name="limit iterations" type="int" value="20"/>
-          <Parameter name="max du growth factor" type="double" value="1000.0"/>
+          <Parameter name="max du growth factor" type="double" value="1.0e+10"/>
           <Parameter name="max divergent iterations" type="int" value="3"/>
           <Parameter name="max nka vectors" type="int" value="40"/>
           <Parameter name="modify correction" type="bool" value="true"/>
@@ -290,7 +290,7 @@
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0}"/>
       </ParameterList>
       <ParameterList name="const_fluid_density">
-        <Parameter name="value" type="double" value="998.2"/>
+        <Parameter name="value" type="double" value="1000.0"/>
       </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.0e-3"/>
@@ -371,6 +371,20 @@
         </ParameterList>
       </ParameterList>
 
+      <ParameterList name="molar_density_liquid">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
           <ParameterList name="domain">
@@ -378,7 +392,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="998.2"/>
+                <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -561,7 +575,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="55408.51988"/>
+                <Parameter name="value" type="double" value="1.0e+05"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -602,7 +616,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="3.0e-5"/>
+                <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
