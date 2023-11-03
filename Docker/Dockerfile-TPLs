@@ -44,7 +44,7 @@ RUN apt-get -q update -y && apt-get install -y tzdata && apt-get -q install -y \
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir install h5py
 
-# install mpich:
+# install MPI - if mpich, custom compile; if openmpi, install precompiled binary 
 RUN if [ "$mpi_flavor" = "mpich" ]; then cd / \
   && wget https://www.mpich.org/static/downloads/${mpi_version}/mpich-${mpi_version}.tar.gz \
   && tar xvf mpich-${mpi_version}.tar.gz \
