@@ -98,13 +98,19 @@ TEST(MULTIPHASE_MODEL_I)
   // loop
   int iloop(0);
   double t(0.0), tend(1.57e+13), dt(1.57e+11), dt_max(3e+12); // dt = 5000 years, tend = 500,000 years (100 time steps)
+  std::vector<int> newton_iterations_per_step;
+  std::vector<double> time_step_size;
+
   while (t < tend && iloop < 100) {
     while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 4; }
 
     MPK->CommitStep(t, t + dt, Tags::DEFAULT);
-    double iter = MPK->bdf1_dae()->number_nonlinear_steps(); 
-    double ns_iter = MPK->bdf1_dae()->number_solver_iterations();
-    std::cout<<"Number of nonlinear steps: "<<ns_iter<<std::endl;
+    // store number of Newton iterations taken (only successful iterations after possible time step reduction) 
+    double iter = MPK->bdf1_dae()->number_solver_iterations();
+    newton_iterations_per_step.push_back(iter);
+    // store time step size
+    time_step_size.push_back(dt);
+    
     S->advance_cycle();
 
     S->advance_time(dt);
@@ -130,6 +136,13 @@ TEST(MULTIPHASE_MODEL_I)
 
   WriteStateStatistics(*S, *vo);
 
+  // write iteration output to text file
+  std::ofstream outFile("iterations_per_time_step.txt");
+  for (int i = 0; i < newton_iterations_per_step.size(); ++i) { 
+    outFile << newton_iterations_per_step[i] << "," << time_step_size[i] << std::endl;
+  }
+  outFile.close(); 
+  
   // verification
   double dmin, dmax;
   const auto& sl = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
