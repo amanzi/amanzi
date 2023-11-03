@@ -102,6 +102,9 @@ TEST(MULTIPHASE_MODEL_I)
     while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 4; }
 
     MPK->CommitStep(t, t + dt, Tags::DEFAULT);
+    double iter = MPK->bdf1_dae()->number_nonlinear_steps(); 
+    double ns_iter = MPK->bdf1_dae()->number_solver_iterations();
+    std::cout<<"Number of nonlinear steps: "<<ns_iter<<std::endl;
     S->advance_cycle();
 
     S->advance_time(dt);
@@ -110,7 +113,7 @@ TEST(MULTIPHASE_MODEL_I)
     iloop++;
 
     // output solution
-    if (iloop % 5 == 0) {
+    if (iloop % 1 == 0) {
       io->InitializeCycle(t, iloop, "");
       const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
