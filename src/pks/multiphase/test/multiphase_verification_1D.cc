@@ -65,7 +65,7 @@ TEST(MULTIPHASE_MODEL_I)
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 100, 1);
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 100, 4);
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -124,10 +124,12 @@ TEST(MULTIPHASE_MODEL_I)
       const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
       const auto& u2 = *S->Get<CompositeVector>("mole_fraction_gas").ViewComponent("cell");
+      const auto& u3 = *S->Get<CompositeVector>("mole_fraction_liquid").ViewComponent("cell");
 
-      io->WriteVector(*u0(0), "pressure", AmanziMesh::Entity_kind::CELL);
-      io->WriteVector(*u1(0), "saturation", AmanziMesh::Entity_kind::CELL);
-      io->WriteVector(*u2(0), "mole fraction gas", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u0(0), "pressure liquid", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u1(0), "saturation liquid", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u2(0), "mole fraction hydrogen in gas", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u3(0), "mole fraction hydrogen in liquid", AmanziMesh::Entity_kind::CELL);
       io->FinalizeCycle();
 
       WriteStateStatistics(*S, *vo);
