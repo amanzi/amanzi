@@ -367,7 +367,7 @@ InputConverterU::TranslateInitialization_(const std::string& unstr_controls)
 *   disc_methods     = {primary, secondary}
 *   pc_method        = "linerized_operator" | "diffusion_operator"
 *   nonlinear_solver = "" | "Newton"
-*   nonlinear_coef   = "upwind-amanzi_new" | any_other
+*   nonlinear_coef   = "upwind-darcy_velocity" | etc
 *   extentions       = "" | "vapor matrix"
 ****************************************************************** */
 Teuchos::ParameterList
@@ -376,6 +376,7 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
                                              const std::string& nonlinear_solver,
                                              const std::string& nonlinear_coef,
                                              const std::string& extensions,
+                                             const std::string& domain,
                                              bool gravity,
                                              const std::string& pk)
 {
@@ -397,6 +398,19 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
   tmp_list.set<std::string>("discretization secondary", methods[1]);
   if (gravity_on_) tmp_list.set<bool>("gravity", gravity);
 
+  // process nonlinear coefficient for PDE operators
+  std::string nonlinear_coef_out(nonlinear_coef);
+
+  Amanzi::replace_all(nonlinear_coef_out, "-", ": ");
+  std::replace(nonlinear_coef_out.begin(), nonlinear_coef_out.end(), '_', ' ');
+
+  if (nonlinear_coef == "upwind-darcy_velocity")
+    nonlinear_coef_out = "upwind: face";
+  else if (nonlinear_coef == "upwind-amanzi" || nonlinear_coef == "upwind-amanzi_new")
+    nonlinear_coef_out = "divk: cell-face";
+
+  if (nonlinear_coef_out != "") tmp_list.set("nonlinear coefficient", nonlinear_coef_out);
+
   if (methods[0] != "fv: default" && methods[0] != "nlfv: default") {
     Teuchos::Array<std::string> stensil(2);
     stensil[0] = "face";
@@ -411,10 +425,11 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
     Teuchos::Array<std::string> stensil(1);
     stensil[0] = "cell";
     tmp_list.set<Teuchos::Array<std::string>>("schema", stensil);
-
-    if (nonlinear_coef != "") tmp_list.set("nonlinear coefficient", nonlinear_coef);
     tmp_list.set<Teuchos::Array<std::string>>("preconditioner schema", stensil);
   }
+
+  if (fracture_network_ && domain != "fracture")
+    tmp_list.set<Teuchos::Array<std::string>>("fracture", fracture_regions_);
 
   // create two operators for matrix and preconditioner
   // Note that PK may use only one of them.
@@ -430,6 +445,8 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
     vapor.set<bool>("scaled constraint equation", false);
     if (gravity_on_) vapor.set<bool>("gravity", "false");
     vapor.set<std::string>("Newton correction", "none");
+    if (fracture_network_ && domain != "fracture")
+      vapor.set<Teuchos::Array<std::string>>("fracture", fracture_regions_);
   }
 
   // fixing miscalleneous scenarious

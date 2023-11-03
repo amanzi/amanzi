@@ -278,7 +278,8 @@ FlexibleObservations::FlushObservations()
       out.setf(std::ios::scientific);
 
       out << "Observation Name, Region, Functional, Variable, Time [" << system.time << "], Value ["
-          << system.mass << " " << system.length << " " << system.concentration << " " << system.temperature << "]\n";
+          << system.mass << " " << system.length << " " << system.concentration << " "
+          << system.temperature << "]\n";
       out << "============================================================================\n";
 
       for (auto it = obs_list_->begin(); it != obs_list_->end(); ++it) {

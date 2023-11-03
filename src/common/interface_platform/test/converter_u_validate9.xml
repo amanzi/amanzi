@@ -285,6 +285,7 @@
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
           </ParameterList>
           <ParameterList name="preconditioner">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -293,6 +294,7 @@
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="true"/>
             <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+            <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
           </ParameterList>
           <ParameterList name="vapor matrix">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -456,6 +458,7 @@
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
           </ParameterList>
           <ParameterList name="preconditioner">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -464,6 +467,7 @@
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="true"/>
             <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+            <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
           </ParameterList>
           <ParameterList name="vapor matrix">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>

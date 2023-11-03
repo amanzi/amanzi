@@ -47,8 +47,7 @@ TEST(BRENT_AND_TOMS748)
 
   // Test 3
   itr = 100;
-  x0 =
-    findRootBrent([](double x) { return 2 * (x * std::exp(-20.0) - std::exp(-20 * x)) + 1.0; },
+  x0 = findRootBrent([](double x) { return 2 * (x * std::exp(-20.0) - std::exp(-20 * x)) + 1.0; },
                      0.0,
                      0.9,
                      tol,

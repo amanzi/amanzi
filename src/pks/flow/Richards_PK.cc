@@ -622,10 +622,11 @@ Richards_PK::Initialize()
   } else if (name == "other: arithmetic average") {
     nonlinear_coef = "upwind: face";
   }
+
   if (!oplist_matrix.isParameter("nonlinear coefficient")) {
     oplist_matrix.set<std::string>("nonlinear coefficient", nonlinear_coef);
     oplist_pc.set<std::string>("nonlinear coefficient", nonlinear_coef);
-  }
+  } 
   if (coupled_to_matrix_ || flow_on_manifold_) {
     if (!oplist_matrix.isParameter("use manifold flux"))
       oplist_matrix.set<bool>("use manifold flux", true);

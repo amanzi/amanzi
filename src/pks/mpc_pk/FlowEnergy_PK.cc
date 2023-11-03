@@ -56,8 +56,6 @@ FlowEnergy_PK::Setup()
 {
   mesh_ = S_->GetMesh(domain_);
 
-  Teuchos::ParameterList& elist = S_->FEList();
-
   // Our decision can be affected by the list of models
   auto physical_models = Teuchos::sublist(my_list_, "physical models and assumptions");
   bool vapor_diff = physical_models->get<bool>("vapor diffusion");
@@ -106,19 +104,6 @@ FlowEnergy_PK::Setup()
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(particle_density_key_, Tags::DEFAULT);
   }
-
-  // Fields for gas
-  // -- molar fraction FIXME (it is not used by all models)
-/*
-  if (!S_->HasRecord("molar_fraction_gas") && !elist.isSublist("molar_fraction_gas")) {
-    elist.sublist("molar_fraction_gas")
-      .set<std::string>("evaluator type", "molar fraction gas")
-      .set<std::string>("molar fraction key", "molar_fraction_gas");
-    elist.sublist("molar_fraction_gas")
-      .sublist("vapor pressure model parameters")
-      .set<std::string>("eos type", "water vapor over water/ice");
-  }
-*/
 
   // Fields for liquid
   // -- internal energy

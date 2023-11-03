@@ -180,8 +180,10 @@ InputConverterU::TranslateFlow_(const std::string& mode,
       .set<std::string>("upwind frequency", "every nonlinear iteration");
   }
 
+  std::string nonlinear_coef;
+  if (pk_model == "richards") nonlinear_coef = rel_perm;
   flow_list->sublist("operators") = TranslateDiffusionOperator_(
-    disc_method, pc_method, nonlinear_solver, rel_perm, "vapor matrix", true);
+    disc_method, pc_method, nonlinear_solver, nonlinear_coef, "vapor matrix", domain, true);
 
   // insert time integrator
   std::string err_options, unstr_controls;

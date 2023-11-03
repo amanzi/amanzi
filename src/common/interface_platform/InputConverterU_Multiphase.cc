@@ -98,7 +98,7 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
   // operators
   std::string disc_method("fv-default, fv-default");
   out_list.sublist("operators") =
-    TranslateDiffusionOperator_(disc_method, "", "", "upwind: face", "vapor matrix", true);
+    TranslateDiffusionOperator_(disc_method, "", "", "upwind-face", "vapor matrix", domain, true);
 
   auto& tmp1 = out_list.sublist("operators").sublist("diffusion operator");
   auto& tmp2 = out_list.sublist("operators").sublist("molecular diffusion operator");

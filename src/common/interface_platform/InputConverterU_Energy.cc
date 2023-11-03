@@ -74,8 +74,12 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
   node = GetUniqueElementByTagsString_(
     "unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
 
-  out_list.sublist("operators") =
-    TranslateDiffusionOperator_(disc_method, pc_method, nonlinear_solver, "", "", false, "energy");
+  out_list.sublist("operators") = TranslateDiffusionOperator_(
+    disc_method, pc_method, nonlinear_solver, "standard-cell", "", domain, false, "energy");
+
+  auto& adv_list = out_list.sublist("operators").sublist("advection operator");
+  if (fracture_network_ && domain != "fracture")
+    adv_list.set<Teuchos::Array<std::string>>("fracture", fracture_regions_);
 
   // insert thermal conductivity evaluator with the default values (no 2.2 support yet)
   Teuchos::ParameterList& thermal =
@@ -113,7 +117,8 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
   if (model == "constant") { thermal.set<double>("thermal conductivity", cv_f + cv_r); }
 
   // insert time integrator
-  std::string err_options("energy"), unstr_controls("unstructured_controls, unstr_transient_controls");
+  std::string err_options("energy"),
+    unstr_controls("unstructured_controls, unstr_transient_controls");
 
   if (pk_master_.find("energy") != pk_master_.end()) {
     out_list.sublist("time integrator") = TranslateTimeIntegrator_(err_options,
