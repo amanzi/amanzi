@@ -23,6 +23,7 @@
 #include "MFD3D_GeneralizedDiffusion.hh"
 #include "MFD3D_Electromagnetics.hh"
 #include "MFD3D_Elasticity.hh"
+#include "MFD3D_ElasticityWeakSymmetry.hh"
 #include "MFD3D_Lagrange.hh"
 #include "MFD3D_LagrangeAnyOrder.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
@@ -44,6 +45,8 @@ RegisteredFactory<MFD3D_Diffusion_CurvedFace>
   MFD3D_Diffusion_CurvedFace::reg_("diffusion curved face");
 
 RegisteredFactory<MFD3D_Elasticity> MFD3D_Elasticity::reg_("elasticity");
+RegisteredFactory<MFD3D_ElasticityWeakSymmetry>
+  MFD3D_ElasticityWeakSymmetry::reg_("elasticity weak symmetry");
 RegisteredFactory<MFD3D_Electromagnetics> MFD3D_Electromagnetics::reg_("electromagnetics");
 RegisteredFactory<MFD3D_Lagrange> MFD3D_Lagrange::reg_("Lagrange");
 RegisteredFactory<MFD3D_LagrangeAnyOrder> MFD3D_LagrangeAnyOrder::reg_("Lagrange high order");
