@@ -409,8 +409,13 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
   else if (nonlinear_coef == "upwind-amanzi" || nonlinear_coef == "upwind-amanzi_new")
     nonlinear_coef_out = "divk: cell-face";
 
+  // -- limitations
+  if (fracture_network_ && domain == "fracture" && pk != "multiphase")
+    nonlinear_coef_out = "standard: cell";
+
   if (nonlinear_coef_out != "") tmp_list.set("nonlinear coefficient", nonlinear_coef_out);
 
+  // process schema
   if (methods[0] != "fv: default" && methods[0] != "nlfv: default") {
     Teuchos::Array<std::string> stensil(2);
     stensil[0] = "face";
@@ -428,6 +433,7 @@ InputConverterU::TranslateDiffusionOperator_(const std::string& disc_methods,
     tmp_list.set<Teuchos::Array<std::string>>("preconditioner schema", stensil);
   }
 
+  // fractured matrix
   if (fracture_network_ && domain != "fracture")
     tmp_list.set<Teuchos::Array<std::string>>("fracture", fracture_regions_);
 
