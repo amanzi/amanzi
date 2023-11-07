@@ -92,12 +92,12 @@
     <ParameterList name="molecular diffusion">
       <Parameter name="aqueous names" type="Array(string)" value="{SH4}"/>
       <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9}"/>
-      <Parameter name="gaseous values" type="Array(double)" value="{0.0e-9}"/>
+      <Parameter name="gaseous values" type="Array(double)" value="{0.0}"/>
       <Parameter name="molar masses" type="Array(double)" value="{2.0e-3}"/>
       <Parameter name="Henry dimensionless constants" type="Array(double)" value="{7.65e-6}"/>
     </ParameterList>
 
-    <Parameter name="molar mass of water" type="double" value="18.0e-3"/>
+    <Parameter name="molar mass of water" type="double" value="1.0e-2"/>
 
     <Parameter name="CPR enhancement" type="bool" value="false"/>
     <ParameterList name="CPR parameters">
@@ -197,8 +197,9 @@
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <Parameter name="name" type="string" value="SH4"/>
           <ParameterList name="outward mass flux">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="-8.831177067478435e-11"/>
+            <ParameterList name="function-exprtk">
+              <Parameter name="number of arguments" type="int" value="4"/>
+              <Parameter name="formula" type="string" value="((1.0 - sgn(t - 1.57e+13) )/2.0)*(-8.830e-11)"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -210,6 +211,19 @@
           <ParameterList name="boundary saturation">
             <ParameterList name="function-constant">
               <Parameter name="value" type="double" value="1.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="concentration">
+        <ParameterList name="BC 5">
+          <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <Parameter name="name" type="string" value="SH4"/>
+          <ParameterList name="boundary concentration">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.0"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -385,7 +399,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="302.9998973209611"/>
+                <Parameter name="value" type="double" value="303"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -462,7 +476,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.15"/>
+                <Parameter name="value" type="double" value="0.30"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -507,7 +521,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="55408.51988"/>
+                <Parameter name="value" type="double" value="100000"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
