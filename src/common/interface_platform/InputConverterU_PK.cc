@@ -69,10 +69,12 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   // out_list.set<std::string>("preconditioner enhancement", "none");
 
   // pressure-lambda constraints
-  Teuchos::ParameterList& plamb = out_list.sublist("pressure-lambda constraints");
-  plamb.set<std::string>("method", "projection");
-  plamb.set<bool>("inflow krel correction", true);
-  plamb.set<std::string>("linear solver", TI_PLAMBDA_SOLVER);
+  if (!fracture_network_) {
+    Teuchos::ParameterList& plamb = out_list.sublist("pressure-lambda constraints");
+    plamb.set<std::string>("method", "projection");
+    plamb.set<bool>("inflow krel correction", true);
+    plamb.set<std::string>("linear solver", TI_PLAMBDA_SOLVER);
+  }
 
   // time stepping method for high-level PK only
   out_list.set<std::string>("time integration method", "BDF1");

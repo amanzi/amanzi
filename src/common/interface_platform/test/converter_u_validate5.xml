@@ -626,12 +626,6 @@
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
-        <ParameterList name="pressure-lambda constraints">
-          <Parameter name="method" type="string" value="projection"/>
-          <Parameter name="inflow krel correction" type="bool" value="true"/>
-          <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
-        </ParameterList>
-
         <Parameter name="time integration method" type="string" value="BDF1"/>
         <ParameterList name="BDF1">
           <Parameter name="timestep controller type" type="string" value="standard"/>
@@ -758,12 +752,6 @@
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
 	<Parameter name="time integration method" type="string" value="none"/>
-
-	<ParameterList name="pressure-lambda constraints">
-	  <Parameter name="method" type="string" value="projection"/>
-	  <Parameter name="inflow krel correction" type="bool" value="true"/>
-	  <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
-        </ParameterList>
       </ParameterList>
     </ParameterList>
 
@@ -827,12 +815,6 @@
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
         <Parameter name="time integration method" type="string" value="none"/>
-
-        <ParameterList name="pressure-lambda constraints">
-          <Parameter name="method" type="string" value="projection"/>
-          <Parameter name="inflow krel correction" type="bool" value="true"/>
-          <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
-        </ParameterList>
       </ParameterList>
     </ParameterList>
 

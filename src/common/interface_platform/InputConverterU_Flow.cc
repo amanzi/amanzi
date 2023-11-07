@@ -631,7 +631,7 @@ InputConverterU::TranslatePPM_()
     node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
-    // get optional complessibility
+    // get optional compressibility
     node = GetUniqueElementByTagsString_(inode, "permeability", flag);
     std::string model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
 
