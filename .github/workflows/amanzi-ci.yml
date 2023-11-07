@@ -10,7 +10,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Build and test with Docker
+    name: Build Docker container
     steps:
     - name: Check out the Amanzi repo
       uses: actions/checkout@v4
