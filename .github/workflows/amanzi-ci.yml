@@ -57,9 +57,10 @@ jobs:
     - name: Run tests
       id: tests
       working-directory: Docker
-      run:
-        # set environment variables again:
+      run: |
+        # set environment variables again as they are not available to new runner:
         echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
+        # run tests:
         docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L SERIAL"
   parallel-tests:
     runs-on: ubuntu-latest
@@ -71,8 +72,9 @@ jobs:
     - name: Run tests
       id: tests
       working-directory: Docker
-      run:
-        # set environment variables again:
+      run: |
+        # set environment variables again as they are not available to new runner:
         echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
+        # run tests:
         docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L PARALLEL"
   
