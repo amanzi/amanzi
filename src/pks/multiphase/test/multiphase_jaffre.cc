@@ -8,8 +8,7 @@
 */
 
 /*
-  MultiPhase
-
+2 component Hydrogen (H) and water (W) with assumptions/model as in [Gharbia, Jaffre' 14]. Primary variables are pressure liquid, saturation liquid, and molar density of hydrogen in liquid phase.
 */
 
 #include <cstdlib>
@@ -117,7 +116,7 @@ run_test(const std::string& domain, const std::string& filename)
 
   // loop
   int iloop(0);
-  double t(0.0), tend(3.14e+13), dt(1.57e+11), dt_max(1.57e+11); // Tend = 500,000 years, dt = 5000 years
+  double t(0.0), tend(3.14e+13), dt(1.57e+11), dt_max(1.57e+11); // Tend = 1000,000 years, dt = 5000 years
   while (t < tend && iloop < 100000) {
     while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2.0; }
 
