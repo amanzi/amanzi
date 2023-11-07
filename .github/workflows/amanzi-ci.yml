@@ -47,9 +47,9 @@ jobs:
       working-directory: Docker
       run:
         docker push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest
-  sw_tests:
+  serial-tests:
     runs-on: ubuntu-latest
-    name: shallow_water_* tests 
+    name: serial tests 
     needs: build
     steps:
     - name: Check out the Amanzi repo
@@ -66,10 +66,10 @@ jobs:
       id: tests
       working-directory: Docker
       run:
-        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -R ^shallow_water"
-  trans_tests:
+        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L SERIAL"
+  parallel-tests:
     runs-on: ubuntu-latest
-    name: transport_* tests 
+    name: parallel tests 
     needs: build
     steps:
     - name: Check out the Amanzi repo
@@ -86,24 +86,5 @@ jobs:
       id: tests
       working-directory: Docker
       run:
-        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -R ^transport"
-  non_sw_tests:
-    runs-on: ubuntu-latest
-    name: Tests other than shallow_water_* or transport_*
-    needs: build
-    steps:
-    - name: Check out the Amanzi repo
-      uses: actions/checkout@v4
-    - name: Extract the branch name
-      id: branch
-      run:
-        echo "AMANZI_BRANCH=$GITHUB_REF_NAME" >> $GITHUB_ENV
-    - name: Filter the branch name to generate a tag for Docker
-      id: tag
-      run:
-        echo "AMANZI_BRANCH_TAG=$(echo ${{env.AMANZI_BRANCH}} | sed -e 's/\//--/g')" >> $GITHUB_ENV
-    - name: Run tests
-      id: tests
-      working-directory: Docker
-      run:
-        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -E '^shallow_water|^transport'"
+        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L PARALLEL"
+  
