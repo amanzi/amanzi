@@ -41,6 +41,10 @@ Multiphase_PK::FunctionalResidual(double t_old,
                                   Teuchos::RCP<TreeVector> f)
 {
   double dtp = t_new - t_old;
+  // update to handle time dependent BCs
+  for(int i = 0; i < bcs_.size(); ++i) {
+    bcs_[i]->Compute(t_new, t_new);
+  }  
 
   // extract pointers to subvectors
   std::vector<Teuchos::RCP<CompositeVector>> up, fp;
