@@ -147,6 +147,8 @@
           <Parameter name="monitor" type="string" value="monitor update"/>
           <Parameter name="make one iteration" type="bool" value="true"/>
         </ParameterList>
+       
+        <!-- 
         <ParameterList name="nka parameters">
           <Parameter name="nonlinear tolerance" type="double" value="1.0e-6"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
@@ -157,12 +159,15 @@
           <Parameter name="modify correction" type="bool" value="true"/>
           <Parameter name="monitor" type="string" value="monitor update"/>
         </ParameterList>
+        -->
+
+        <!--
         <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
         <Parameter name="extrapolate initial guess" type="bool" value="false"/>
         <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
         <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
         <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
-    
+        -->
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
@@ -586,6 +591,7 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
+   <!--
     <ParameterList name="AMESOS">
       <Parameter name="direct method" type="string" value="amesos"/>
       <ParameterList name="amesos parameters">
@@ -593,10 +599,14 @@
         <Parameter name="amesos version" type="int" value="2"/>
       </ParameterList>
     </ParameterList>
+    -->
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
+ 
   <ParameterList name="preconditioners">
+  
+     
     <ParameterList name="ILU">
       <Parameter name="preconditioning method" type="string" value="ILU"/>
       <ParameterList name="ILU parameters">
@@ -604,6 +614,8 @@
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
+  
+    <!--   
     <ParameterList name="SysTG">
       <Parameter name="preconditioning method" type="string" value="systg"/>
       <ParameterList name="systg parameters">
@@ -621,7 +633,10 @@
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Hypre AMG">  <!-- parent list -->
+   -->
+    
+    <!--
+    <ParameterList name="Hypre AMG">
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.0"/>
@@ -634,9 +649,11 @@
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
+    -->
+  
   </ParameterList>
 
   <ParameterList name="verbose object">
-    <Parameter name="verbosity level" type="string" value="high"/>
+    <Parameter name="verbosity level" type="string" value="extreme"/>
   </ParameterList>
 </ParameterList>
