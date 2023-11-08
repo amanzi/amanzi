@@ -199,7 +199,7 @@
           <ParameterList name="outward mass flux">
             <ParameterList name="function-exprtk">
               <Parameter name="number of arguments" type="int" value="4"/>
-              <Parameter name="formula" type="string" value="((1.0 - sgn(t - 1.57e+13) )/2.0)*(-8.830e-11)"/>
+              <Parameter name="formula" type="string" value="((1 - sgn(t - 1.57e+13))/2)*(-8.8300e-11)"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
