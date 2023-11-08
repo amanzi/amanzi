@@ -9,6 +9,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <vector>
 
 #include "UnitTest++.h"
 

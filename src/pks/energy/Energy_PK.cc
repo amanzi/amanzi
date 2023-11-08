@@ -277,6 +277,7 @@ Energy_PK::Setup()
 
   // set units
   S_->GetRecordSetW(temperature_key_).set_units("K");
+  S_->GetRecordSetW(mol_flowrate_key_).set_units("mol/s");
   if (flow_on_manifold_) { S_->GetRecordSetW(aperture_key_).set_units("m"); }
 }
 

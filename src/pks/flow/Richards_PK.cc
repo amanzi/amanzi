@@ -518,11 +518,15 @@ Richards_PK::Setup()
     S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT));
 
   // set unit
+  S_->GetRecordSetW(pressure_key_).set_units("Pa");
   S_->GetRecordSetW(porosity_key_).set_units("-");
   S_->GetRecordSetW(saturation_liquid_key_).set_units("-");
   S_->GetRecordSetW(relperm_key_).set_units("-");
   S_->GetRecordSetW(mol_density_liquid_key_).set_units("mol/m^3");
+  S_->GetRecordSetW(mass_density_liquid_key_).set_units("kg/m^3");
   S_->GetRecordSetW(viscosity_liquid_key_).set_units("Pa*s");
+  S_->GetRecordSetW(water_storage_key_).set_units("mol/m^3");
+  S_->GetRecordSetW(hydraulic_head_key_).set_units("m");
 }
 
 

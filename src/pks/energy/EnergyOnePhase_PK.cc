@@ -121,6 +121,7 @@ EnergyOnePhase_PK::Setup()
 
   // set units
   S_->GetRecordSetW(energy_key_).set_units("J");
+  S_->GetRecordSetW(enthalpy_key_).set_units("J/mol");
 }
 
 
