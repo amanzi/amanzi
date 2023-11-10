@@ -2042,14 +2042,14 @@ Mesh_MSTK::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
       if ((region.entity_str() == "CELL" && entdim != MREGION) ||
           (region.entity_str() == "FACE" && entdim != MFACE) ||
           (region.entity_str() == "NODE" && entdim != MVERTEX)) {
-        Errors::Message mesg("Mismatch of entity type in labeled set region and mesh set");
+        Errors::Message mesg("Mismatch of entity type in labeled set region and mesh set (3D)");
         Exceptions::amanzi_throw(mesg);
       }
     } else if (getManifoldDimension() == 2) {
       if ((region.entity_str() == "CELL" && entdim != MFACE) ||
           (region.entity_str() == "FACE" && entdim != MEDGE) ||
           (region.entity_str() == "NODE" && entdim != MVERTEX)) {
-        Errors::Message msg("Mismatch of entity type in labeled set region and mesh set");
+        Errors::Message msg("Mismatch of entity type in labeled set region and mesh set (2D)");
         Exceptions::amanzi_throw(msg);
       }
     }
