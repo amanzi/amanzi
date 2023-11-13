@@ -169,5 +169,9 @@ if (BUILD_TESTS)
                   SOURCE    test/Main.cc test/multiphase_jaffre_xg.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+  add_amanzi_test(multiphase_2D_analytical multiphase_2D_analytical
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_2D_analytical.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 
