@@ -123,7 +123,7 @@ InputConverterU::TranslateFlow_(const std::string& mode,
       flow_list->sublist("physical models and assumptions")
         .set<std::string>("multiscale model", msm);
     }
-    out_list.sublist("permeability porosity models") = TranslatePPM_();
+    out_list.sublist("permeability porosity models") = TranslatePPM_(domain);
     if (out_list.sublist("permeability porosity models").numParams() > 0) {
       flow_list->sublist("physical models and assumptions")
         .set<bool>("permeability porosity model", true);
@@ -607,7 +607,7 @@ InputConverterU::TranslateFlowMSM_()
 * Create list of permeability porosity models.
 ****************************************************************** */
 Teuchos::ParameterList
-InputConverterU::TranslatePPM_()
+InputConverterU::TranslatePPM_(const std::string& domain)
 {
   Teuchos::ParameterList out_list;
 
@@ -616,14 +616,15 @@ InputConverterU::TranslatePPM_()
     *vo_->os() << "Translating permeability-porosity models" << std::endl;
 
   MemoryManager mm;
-  DOMNodeList *node_list, *children;
+  DOMNodeList *children;
   DOMNode* node;
   DOMElement* element;
 
-  bool found(false);
+  bool flag, found(false);
 
-  node_list = doc_->getElementsByTagName(mm.transcode("materials"));
-  element = static_cast<DOMElement*>(node_list->item(0));
+  node = (domain == "fracture") ? GetUniqueElementByTagsString_("fracture_network, materials", flag)
+                                : GetUniqueElementByTagsString_("materials", flag);
+  element = static_cast<DOMElement*>(node);
   children = element->getElementsByTagName(mm.transcode("material"));
 
   for (int i = 0; i < children->getLength(); ++i) {

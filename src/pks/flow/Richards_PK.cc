@@ -275,7 +275,7 @@ Richards_PK::Setup()
     S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     if (pom_name == "compressible: pressure function") {
       Teuchos::RCP<Teuchos::ParameterList> pom_list =
@@ -527,6 +527,7 @@ Richards_PK::Setup()
   S_->GetRecordSetW(viscosity_liquid_key_).set_units("Pa*s");
   S_->GetRecordSetW(water_storage_key_).set_units("mol/m^3");
   S_->GetRecordSetW(hydraulic_head_key_).set_units("m");
+  if (use_ppm) S_->GetRecordSetW(ppfactor_key_).set_units("-");
 }
 
 
