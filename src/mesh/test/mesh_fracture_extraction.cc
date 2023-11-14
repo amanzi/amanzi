@@ -173,8 +173,9 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO)
     fac.set_preference({ frm });
     auto parent_mesh_cache = Teuchos::rcp(new Mesh(
       parent_mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
-    auto mesh =
-      fac.create(parent_mesh_cache, { "fractures-two" }, AmanziMesh::Entity_kind::FACE, false);
+
+    std::vector<std::string> setnames({ "fractures-two" });
+    auto mesh = fac.create(parent_mesh_cache, setnames, AmanziMesh::Entity_kind::FACE, false);
 
     // test the surface mesh as a fracture mesh
     // -- mesh audit

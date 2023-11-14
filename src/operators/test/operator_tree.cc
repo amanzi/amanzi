@@ -50,8 +50,9 @@ SUITE(SURFACE_SUBSURFACE)
     auto mesh_subsurf = meshfactory.create(-10, -10, -10, 10, 10, 0, 4, 4, 2);
     int ncells_subsurf =
       mesh_subsurf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-    auto mesh_surf =
-      meshfactory.create(mesh_subsurf, { "surface" }, AmanziMesh::Entity_kind::FACE, true);
+
+    std::vector<std::string> setnames({ "surface" });
+    auto mesh_surf = meshfactory.create(mesh_subsurf, setnames, AmanziMesh::Entity_kind::FACE, true);
     int ncells_surf =
       mesh_surf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
@@ -116,8 +117,9 @@ SUITE(SURFACE_SUBSURFACE)
     auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, regions, *comm));
     AmanziMesh::MeshFactory meshfactory(comm, gm);
     auto mesh_subsurf = meshfactory.create(-10, -10, -10, 10, 10, 0, 3, 3, 3);
-    auto mesh_surf =
-      meshfactory.create(mesh_subsurf, { "surface" }, Amanzi::AmanziMesh::Entity_kind::FACE, true);
+
+    std::vector<std::string> setnames({ "surface" });
+    auto mesh_surf = meshfactory.create(mesh_subsurf, setnames, AmanziMesh::Entity_kind::FACE, true);
     int ncells_surf =
       mesh_surf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
@@ -248,8 +250,9 @@ SUITE(SURFACE_SUBSURFACE)
     auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, regions, *comm));
     AmanziMesh::MeshFactory meshfactory(comm, gm);
     auto mesh_subsurf = meshfactory.create(-10, -10, -10, 10, 10, 0, 1, 1, 2);
-    auto mesh_surf =
-      meshfactory.create(mesh_subsurf, { "surface" }, Amanzi::AmanziMesh::Entity_kind::FACE, true);
+
+    std::vector<std::string> setnames({ "surface" });
+    auto mesh_surf = meshfactory.create(mesh_subsurf, setnames, AmanziMesh::Entity_kind::FACE, true);
     int ncells_surf =
       mesh_surf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 

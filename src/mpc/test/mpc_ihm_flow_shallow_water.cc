@@ -87,8 +87,8 @@ TEST(MPC_DRIVER_IHM_FLOW_SHALLOW_WATER_DAM_BREAK)
   std::vector<std::string> names;
   names.push_back("surface");
 
-  auto mesh_surface = factory.create(mesh, { "TopSurface" }, AmanziMesh::Entity_kind::FACE, true);
-
+  std::vector<std::string> setnames({ "TopSurface" });
+  auto mesh_surface = factory.create(mesh, setnames, AmanziMesh::Entity_kind::FACE, true);
   S->RegisterMesh("surface", mesh_surface);
 
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);

@@ -68,7 +68,8 @@ RunTest(int ntest)
     mesh = meshfactory.create(0.0, 0.0, 100.0, 100.0, 20, 20);
   } else {
     RCP<Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 100.0, 100.0, 10.0, 20, 20, 4);
-    mesh = meshfactory.create(mesh3D, { "TopSurface" }, AmanziMesh::Entity_kind::FACE);
+    std::vector<std::string> setnames({ "TopSurface" });
+    mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::Entity_kind::FACE);
   }
 
   // create a state
