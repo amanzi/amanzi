@@ -26,7 +26,7 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/nanoflann-patch-step.cmake.in
                ${Nanoflann_cmake_patch}
                @ONLY)
 # --- Set the patch command
-set(Nanoflann_PATCH_COMMAND ${CMAKE_COMMAND} -P ${Nanoflann_cmake_patch}
+set(Nanoflann_PATCH_COMMAND ${CMAKE_COMMAND} -P ${Nanoflann_cmake_patch})
 
 # --- Define the install directory
 set(nanoflann_install_dir ${TPL_INSTALL_PREFIX})
