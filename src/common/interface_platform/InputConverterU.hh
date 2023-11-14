@@ -231,7 +231,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList
   TranslateFlow_(const std::string& mode, const std::string& domain, const std::string& pk_model);
   Teuchos::ParameterList TranslateWRM_(const std::string& pk_name);
-  Teuchos::ParameterList TranslatePOM_();
+  Teuchos::ParameterList TranslatePOM_(const std::string& domain);
   Teuchos::ParameterList TranslatePPM_();
   Teuchos::ParameterList TranslateFlowMSM_();
   Teuchos::ParameterList TranslateFlowBCs_(const std::string& domain);

@@ -112,7 +112,7 @@ InputConverterU::TranslateFlow_(const std::string& mode,
     flow_list = &out_list;
 
     out_list.sublist("water retention models") = TranslateWRM_("flow");
-    out_list.sublist("porosity models") = TranslatePOM_();
+    out_list.sublist("porosity models") = TranslatePOM_(domain);
     if (out_list.sublist("porosity models").numParams() > 0) {
       flow_list->sublist("physical models and assumptions")
         .set<std::string>("porosity model", "compressible: pressure function");
@@ -386,7 +386,7 @@ InputConverterU::TranslateWRM_(const std::string& pk_name)
 * Create list of porosity models.
 ****************************************************************** */
 Teuchos::ParameterList
-InputConverterU::TranslatePOM_()
+InputConverterU::TranslatePOM_(const std::string& domain)
 {
   Teuchos::ParameterList out_list;
 
@@ -395,14 +395,17 @@ InputConverterU::TranslatePOM_()
     *vo_->os() << "Translating porosity models" << std::endl;
 
   MemoryManager mm;
-  DOMNodeList *node_list, *children;
+  DOMNodeList *children;
   DOMNode* node;
   DOMElement* element;
 
+  bool flag;
+
   compressibility_ = false;
 
-  node_list = doc_->getElementsByTagName(mm.transcode("materials"));
-  element = static_cast<DOMElement*>(node_list->item(0));
+  node = (domain == "fracture") ? GetUniqueElementByTagsString_("fracture_network, materials", flag)
+                                : GetUniqueElementByTagsString_("materials", flag);
+  element = static_cast<DOMElement*>(node);
   children = element->getElementsByTagName(mm.transcode("material"));
 
   for (int i = 0; i < children->getLength(); ++i) {
