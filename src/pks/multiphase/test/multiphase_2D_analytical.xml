@@ -1,7 +1,7 @@
 <ParameterList>
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="phase-transition-1d"/>
-    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 1.5768e11, -1.0}"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 1.0, -1.0}"/>
   </ParameterList>
 
   <!--  REGIONS  -->
@@ -14,18 +14,6 @@
     </ParameterList>
     <ParameterList name="Boundary">
       <ParameterList name="region: boundary">
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Inflow">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{0.0, 20.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Outflow">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{200.0, 0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{200.0, 20.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -181,7 +169,7 @@
     <ParameterList name="boundary conditions">
       <ParameterList name="pressure liquid">
         <ParameterList name="BC 1">
-          <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
+          <Parameter name="regions" type="Array(string)" value="{Boundary}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <ParameterList name="boundary pressure">
             <ParameterList name="function-constant">
@@ -192,7 +180,7 @@
       </ParameterList>
       <ParameterList name="mass flux total">
         <ParameterList name="BC 2">
-          <Parameter name="regions" type="Array(string)" value="{Inflow}"/>
+          <Parameter name="regions" type="Array(string)" value="{}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <Parameter name="name" type="string" value="water"/>
           <ParameterList name="outward mass flux">
@@ -202,7 +190,7 @@
           </ParameterList>
         </ParameterList>
         <ParameterList name="BC 3">
-          <Parameter name="regions" type="Array(string)" value="{Inflow}"/>
+          <Parameter name="regions" type="Array(string)" value="{}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <Parameter name="name" type="string" value="SH4"/>
           <ParameterList name="outward mass flux">
@@ -215,7 +203,7 @@
       </ParameterList>
       <ParameterList name="saturation">
         <ParameterList name="BC 4">
-          <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
+          <Parameter name="regions" type="Array(string)" value="{Boundary}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <ParameterList name="boundary saturation">
             <ParameterList name="function-constant">
@@ -227,7 +215,7 @@
 
       <ParameterList name="concentration">
         <ParameterList name="BC 5">
-          <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
+          <Parameter name="regions" type="Array(string)" value="{}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <Parameter name="name" type="string" value="SH4"/>
           <ParameterList name="boundary concentration">
@@ -239,18 +227,23 @@
       </ParameterList>
     </ParameterList>
 
+    <!--
     <ParameterList name="source terms">
-      <ParameterList name="SRC 1">
-        <Parameter name="regions" type="Array(string)" value="{All}"/>
-        <Parameter name="spatial distribution method" type="string" value="none"/>
-        <Parameter name="submodel" type="string" value="intergrand"/>
-        <ParameterList name="sink">
-          <ParameterList name="function-constant">
-            <Parameter name="value" type="double" value="0.0"/>
+      <ParameterList name="mass rate">
+        <ParameterList name="SRC 0">
+          <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <Parameter name="name" type="string" value="SH4"/>
+          <ParameterList name="injector">
+            <ParameterList name="function-exprtk">
+              <Parameter name="number of arguments" type="int" value="4"/>
+              <Parameter name="formula" type="string" value="x + y"/>
+            </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
+    -->
 
     <ParameterList name="operators">
       <ParameterList name="advection operator">

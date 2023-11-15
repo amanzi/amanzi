@@ -45,7 +45,10 @@ Multiphase_PK::FunctionalResidual(double t_old,
   for(int i = 0; i < bcs_.size(); ++i) {
     bcs_[i]->Compute(t_new, t_new);
   }  
-
+  // update source terms
+  for (int i = 0; i < srcs_.size(); ++i) { 
+    srcs_[i]->Compute(t_new, t_new);
+  }
   // extract pointers to subvectors
   std::vector<Teuchos::RCP<CompositeVector>> up, fp;
   for (int i = 0; i < soln_names_.size(); ++i) {
@@ -175,6 +178,20 @@ Multiphase_PK::FunctionalResidual(double t_old,
         fone_c[0][c] += (total_c[0][c] - total_prev_c[0][c]) * factor;
       }
     }
+    
+    // add source term    
+    if (eqns_[n].has_component == true) {
+    for (int i = 0; i < srcs_.size(); ++i) { 
+      int comp_id = srcs_[i]->component_id();
+      if (comp_id == eqns_[n].component_id) {
+        for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) { 
+          int c = it->first;
+          fone_c[0][c] -= it->second[0];
+        }
+      }   
+    }    
+    }
+
 
     // copy temporary vector to residual
     auto& fc = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");

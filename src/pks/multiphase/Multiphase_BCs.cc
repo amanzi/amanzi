@@ -102,6 +102,7 @@ Multiphase_PK::PopulateBCs(int icomp, bool flag)
           int f = it->first;
           bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
           bc_value[f] = it->second[0] * factor;
+//          std::cout<<"bc = "<<bc_value[f]<<std::endl;
         }
       }
     }
