@@ -62,7 +62,7 @@ run_test(const std::string& domain, const std::string& filename)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh;
     
-  mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25);
+  mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 32, 32);
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -125,7 +125,7 @@ run_test(const std::string& domain, const std::string& filename)
     iloop++;
 
     // output solution
-    if (iloop % 2 == 0) {
+    if (iloop % 1 == 0) {
       io->InitializeCycle(t, iloop, "");
       const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");

@@ -26,6 +26,7 @@
 #include "EquationStructure.hh"
 #include "Multiphase_PK.hh"
 #include "TotalComponentStorage.hh"
+#include "math.h"
 
 namespace Amanzi {
 namespace Multiphase {
@@ -40,6 +41,8 @@ Multiphase_PK::FunctionalResidual(double t_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f)
 {
+  double pi = M_PI;
+
   double dtp = t_new - t_old;
   // update to handle time dependent BCs
   for(int i = 0; i < bcs_.size(); ++i) {
@@ -180,18 +183,29 @@ Multiphase_PK::FunctionalResidual(double t_old,
     }
     
     // add source term    
-    if (eqns_[n].has_component == true) {
-    for (int i = 0; i < srcs_.size(); ++i) { 
-      int comp_id = srcs_[i]->component_id();
-      if (comp_id == eqns_[n].component_id) {
-        for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) { 
-          int c = it->first;
-          fone_c[0][c] -= it->second[0];
-        }
+    
+    if (n >= 1) {
+      for (auto it = srcs_[n-1]->begin(); it != srcs_[n-1]->end(); ++it) { 
+        int c = it->first;
+        double factor = mesh_->getCellVolume(c);
+        std::cout<<"srcs = "<<it->second[0]<<std::endl;
+        fone_c[0][c] -= it->second[0] * factor;
       }   
     }    
-    }
 
+    // source term HARD CODED
+    /*
+    if (n == 1) {
+     for(int c = 0; c < ncells_owned_; ++c) { 
+        const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+        double x = xc[0], y = xc[1];
+        double factor = mesh_->getCellVolume(c);
+        fone_c[0][c] += (0.5)*(0.5 + (1.0/(8.0*pi*pi)))*std::sin(pi*x)*std::sin(pi*y)*std::exp(-t_new) * factor;
+        fone_c[0][c] += (0.5+(1.0/(8.0*pi*pi)))*(0.5 + (1.0/(4.0*pi*pi) ))*pi*pi*std::exp(-2.0*t_new)*(std::cos(2*pi*x)*std::pow(std::sin(pi*y),2 ) + std::pow(std::sin(pi*x),2)*std::cos(2*pi*y) ) * factor;
+        fone_c[0][c] -= (0.5 + (1.0/(4.0*pi*pi)))*pi*pi*std::sin(pi*x)*std::sin(pi*y)*std::exp(-t_new) * factor; 
+      }
+    } 
+    */
 
     // copy temporary vector to residual
     auto& fc = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");

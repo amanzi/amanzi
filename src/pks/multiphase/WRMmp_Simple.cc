@@ -50,10 +50,19 @@ double
 WRMmp_Simple::k_relative(double Sw, int phase)
 {
   double Swe = (Sw - S_rw_) / (1.0 - S_rw_ - S_rn_);
+  /*
   if (phase == MULTIPHASE_PHASE_LIQUID) {
     return pow(Swe, 2.0);
   } else if (phase == MULTIPHASE_PHASE_GAS) {
     return pow(1.0 - Swe, 2.0);
+  }
+  */
+
+  
+  if (phase == MULTIPHASE_PHASE_LIQUID) {
+    return 1.0;
+  } else if (phase == MULTIPHASE_PHASE_GAS) {
+    return 1.0;
   }
 
   return 0.0;
@@ -68,11 +77,14 @@ WRMmp_Simple::dKdS(double Sw, int phase)
 {
   double factor = 1.0 / (1.0 - S_rw_ - S_rn_);
   double Swe = (Sw - S_rw_) / (1.0 - S_rw_ - S_rn_);
+  /*
   if (phase == MULTIPHASE_PHASE_LIQUID) {
     return 2.0 * Swe * factor;
   } else if (phase == MULTIPHASE_PHASE_GAS) {
     return -2.0 * (1.0 - Swe) * factor;
   }
+  */
+  
   return 0.0;
 }
 
@@ -84,7 +96,8 @@ double
 WRMmp_Simple::capillaryPressure(double Sw)
 {
   // use simple linear capillary pressure for now
-  return coef_ * pow(1.0 - Sw, exponent_);
+  // return coef_ * pow(1.0 - Sw, exponent_);
+  return Sw;
 }
 
 
@@ -95,7 +108,8 @@ WRMmp_Simple::capillaryPressure(double Sw)
 double
 WRMmp_Simple::dPc_dS(double Sw)
 {
-  return -exponent_ * coef_ * pow(1.0 - Sw, exponent_ - 1.0);
+  //return -exponent_ * coef_ * pow(1.0 - Sw, exponent_ - 1.0);
+  return 1.0;
 }
 
 } // namespace Multiphase
