@@ -274,6 +274,9 @@ class Multiphase_PK : public PK_PhysicalBDF {
   Utils::Units units_;
   Teuchos::RCP<Teuchos::ParameterList> mp_list_;
 
+  // source terms
+  std::vector<Teuchos::RCP<MultiphaseBoundaryFunction>> srcs_;
+
  private:
   int missed_bc_faces_;
   double smooth_mu_; // smoothing parameter

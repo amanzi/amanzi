@@ -169,7 +169,7 @@ run_test(const std::string& domain, const std::string& filename)
 }
 
 
-TEST(MULTIPHASE_JAFFRE_2P2C)
+TEST(MULTIPHASE_2D_ANALYTICAL)
 {
   run_test("2D", "test/multiphase_2D_analytical.xml");
 }

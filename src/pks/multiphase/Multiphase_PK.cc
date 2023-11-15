@@ -746,7 +746,30 @@ Multiphase_PK::Initialize()
       }
     }
   }
+  
+  // source term
+  if (mp_list_->isSublist("source terms")) {
+    PK_DomainFunctionFactory<MultiphaseBoundaryFunction> src_factory(mesh_, S_);
 
+    Teuchos::ParameterList& mr_list = mp_list_->sublist("source terms");
+    for (auto it = mr_list.begin(); it != mr_list.end(); ++it ) {       
+      std::string name = it->first;
+      if (mr_list.isSublist(name)) {
+        Teuchos::ParameterList& src_list = mr_list.sublist(name);
+        for (auto it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
+          std::string specname = it1->first;
+          Teuchos::ParameterList& spec = src_list.sublist(specname);
+          Teuchos::RCP<MultiphaseBoundaryFunction> src = src_factory.Create(spec,"injector", AmanziMesh::Entity_kind::CELL, Teuchos::null);
+          src->SetComponentId(component_names_); 
+          srcs_.push_back(src);
+          
+          AMANZI_ASSERT(src->component_id() >= 0);
+        }
+      }
+    }
+  }  
+
+ 
   // allocate metadata and populate boundary conditions
   op_bcs_.clear();
 

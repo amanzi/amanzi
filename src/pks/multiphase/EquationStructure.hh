@@ -43,6 +43,9 @@ struct EquationStructure {
 
   Key storage;
   EquationTerm constraint;
+  
+  bool has_component = false;
+  int component_id;
 };
 
 } // namespace Multiphase
