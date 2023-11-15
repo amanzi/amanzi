@@ -97,7 +97,8 @@ WRMmp_Simple::capillaryPressure(double Sw)
 {
   // use simple linear capillary pressure for now
   // return coef_ * pow(1.0 - Sw, exponent_);
-  return Sw;
+  
+  return Sw/(2.0 * 3.141592653589793 * 3.141592653589793);
 }
 
 
@@ -109,7 +110,7 @@ double
 WRMmp_Simple::dPc_dS(double Sw)
 {
   //return -exponent_ * coef_ * pow(1.0 - Sw, exponent_ - 1.0);
-  return 1.0;
+  return 1.0/(2.0 * 3.141592653589793 * 3.141592653589793);
 }
 
 } // namespace Multiphase
