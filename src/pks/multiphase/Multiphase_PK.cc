@@ -645,7 +645,7 @@ Multiphase_PK::Initialize()
   g_ = fabs(gravity_[dim_ - 1]);
 
   rho_l_ = S_->Get<double>("const_fluid_density");
-  eta_l_ = rho_l_ / CommonDefs::MOLAR_MASS_H2O;
+  eta_l_ = rho_l_ / mol_mass_H2O_;
   mu_l_ = S_->Get<double>("const_fluid_viscosity");
   mu_g_ = S_->Get<double>("const_gas_viscosity");
 

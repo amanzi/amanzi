@@ -48,7 +48,8 @@ IdealGas_Density::DMolarDensityDp(double T, double p)
 void
 IdealGas_Density::InitializeFromPlist_()
 {
-  R_ = 8.31446261815324;
+  //R_ = 8.31446261815324;
+  R_ = eos_plist_.get<double>("ideal gas constant", 8.31446261815324);
   M_ = eos_plist_.get<double>("molar mass of gas");
 };
 

@@ -101,16 +101,10 @@
     <ParameterList name="water retention models">
       <ParameterList name="WRM for All">
         <Parameter name="regions" type="Array(string)" value="{All}"/>
-        <Parameter name="water retention model" type="string" value="van Genuchten"/>
-        <Parameter name="van Genuchten m" type="double" value="0.32886"/>
-        <Parameter name="van Genuchten n" type="double" value="1.49"/>
-        <Parameter name="van Genuchten l" type="double" value="0.5"/>
-        <Parameter name="van Genuchten alpha" type="double" value="5.0e-7"/>
-        <Parameter name="residual saturation liquid" type="double" value="0.4"/>
+        <Parameter name="water retention model" type="string" value="Simple"/>
+        <Parameter name="residual saturation liquid" type="double" value="0.0"/>
         <Parameter name="residual saturation gas" type="double" value="0.0"/>
-        <Parameter name="relative permeability model" type="string" value="Mualem"/>
-        <Parameter name="regularization interval kr" type="double" value="0.005"/>
-        <Parameter name="regularization interval pc" type="double" value="0.001"/>
+        <Parameter name="coefficient" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
 
@@ -173,7 +167,7 @@
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <ParameterList name="boundary pressure">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="0.0"/>
+              <Parameter name="value" type="double" value="0.25"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -196,7 +190,7 @@
           <ParameterList name="outward mass flux">
             <ParameterList name="function-exprtk">
               <Parameter name="number of arguments" type="int" value="4"/>
-              <Parameter name="formula" type="string" value="((1 - sgn(t - 1.57e+13))/2)*(-8.8300e-11)"/>
+              <Parameter name="formula" type="string" value="0.0"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -207,7 +201,7 @@
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <ParameterList name="boundary saturation">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="1.0"/>
+              <Parameter name="value" type="double" value="0.25"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -220,7 +214,7 @@
           <Parameter name="name" type="string" value="SH4"/>
           <ParameterList name="boundary concentration">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="0.0"/>
+              <Parameter name="value" type="double" value="0.50"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -301,16 +295,16 @@
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0}"/>
       </ParameterList>
       <ParameterList name="const_fluid_density">
-        <Parameter name="value" type="double" value="1000.0"/>
+        <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="const_fluid_viscosity">
-        <Parameter name="value" type="double" value="1.0e-3"/>
+        <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="const_gas_viscosity">
-        <Parameter name="value" type="double" value="9.0e-6"/>
+        <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="atmospheric_pressure">
-        <Parameter name="value" type="double" value="101325.0"/>
+        <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
 
       <ParameterList name="pressure_liquid">
@@ -319,8 +313,9 @@
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0e+6"/>
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="4"/>
+                <Parameter name="formula" type="string" value="0.25 + (1/(8*3.141592653589793*3.141592653589793)) * sin(3.141592653589793 * x) * sin(3.141592653589793 * y)"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -333,8 +328,9 @@
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="4"/>
+                <Parameter name="formula" type="string" value="0.25 + 0.5*sin(3.141592653589793*x) * sin(3.141592653589793*y)"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -347,14 +343,31 @@
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="4"/>
+                <Parameter name="formula" type="string" value="0.5 + (0.25 + (1/(8*3.141592653589793*3.141592653589793)))*sin(3.141592653589793*x) * sin(3.141592653589793*y)"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="mass_density_liquid">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="4"/>
+                <Parameter name="formula" type="string" value="0.5 + (0.25 + (1/(8*3.141592653589793*3.141592653589793)))*sin(3.141592653589793*x) * sin(3.141592653589793*y)"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="mass_density_gas">
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
@@ -378,12 +391,12 @@
                 <Parameter name="function type" type="string" value="composite function"/>
                 <ParameterList name="dof 1 function">
                   <ParameterList name="function-constant">
-                    <Parameter name="value" type="double" value="5.0e-20"/>
+                    <Parameter name="value" type="double" value="1.0"/>
                   </ParameterList>
                 </ParameterList>
                 <ParameterList name="dof 2 function">
                   <ParameterList name="function-constant">
-                    <Parameter name="value" type="double" value="5.0e-20"/>
+                    <Parameter name="value" type="double" value="1.0"/>
                   </ParameterList>
                 </ParameterList>
               </ParameterList>
@@ -401,7 +414,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="303"/>
+                <Parameter name="value" type="double" value="1"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -478,7 +491,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.30"/>
+                <Parameter name="value" type="double" value="0.50"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -493,7 +506,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0e-3"/>
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -508,7 +521,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="9.0e-6"/>
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -523,12 +536,13 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="100000"/>
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+     
       <ParameterList name="molar_density_gas">
         <Parameter name="evaluator type" type="string" value="eos"/>
         <Parameter name="eos basis" type="string" value="both"/>
@@ -537,11 +551,9 @@
         <Parameter name="pressure key" type="string" value="pressure_gas"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="ideal gas"/>
-          <Parameter name="molar mass of gas" type="double" value="2.0e-3"/>
+          <Parameter name="molar mass of gas" type="double" value="1.0"/>
+          <Parameter name="ideal gas constant" type="double" value="1.0"/>
         </ParameterList>
-        <!--ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="extreme"/>
-        </ParameterList-->
       </ParameterList>
 
       <ParameterList name="molecular_diff_liquid">
@@ -552,7 +564,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="3.0e-9"/>
+                <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
