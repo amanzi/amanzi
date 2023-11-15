@@ -8,7 +8,7 @@ LABEL Description="This image contains all of the third-party libraries needed b
 
 # MPI flavor (mpich|openmpi)
 ARG mpi_flavor=mpich 
-ARG mpi_version=4.1.2
+ARG mpi_version=3.3.2
 
 # Set timezone:
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
@@ -49,7 +49,7 @@ RUN if [ "$mpi_flavor" = "mpich" ]; then cd / \
   && wget https://www.mpich.org/static/downloads/${mpi_version}/mpich-${mpi_version}.tar.gz \
   && tar xvf mpich-${mpi_version}.tar.gz \
   && cd mpich-${mpi_version} \
-  && ./configure --enable-shared --with-device=ch3:sock --prefix=/usr \ 
+  && ./configure --enable-shared --with-device=ch3:sock --enable-fast=all,O3 --prefix=/usr \ 
   && make \ 
   && make install \
   && cd ../ \
