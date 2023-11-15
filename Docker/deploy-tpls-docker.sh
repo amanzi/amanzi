@@ -4,12 +4,12 @@
 # Options: openmpi, mpich
 MPI_DISTRO=mpich
 
-PETSC_VER=3.13
-TRILINOS_VER=13-0-afc4e525
+PETSC_VER=3.16
+TRILINOS_VER=14-2-fc55b9cd
 
 AMANZI_BRANCH=master
 AMANZI_SOURCE_DIR=/ascem/amanzi/repos/amanzi-master
-AMANZI_TPLS_VER=0.98.4
+AMANZI_TPLS_VER=0.98.7
 
 LANL_PROXY="--build-arg http_proxy=proxyout.lanl.gov:8080 --build-arg https_proxy=proxyout.lanl.gov:8080"
 
