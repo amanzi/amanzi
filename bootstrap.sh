@@ -335,7 +335,7 @@ Configuration:
                           option is selected, '"$0"' will NOT build the TPLs.
 
   --opt                   build optimized TPLs and Amanzi binaries. This the default
-                          configuration.
+                          configuration. Produces no debug info.
 
   --relwithdebinfo        build optimized TPLs and Amanzi binaries with debug info
                           (for profiling)
@@ -1530,7 +1530,7 @@ function check_tools
     ( version_compare "$ver_string" "$cmake_version" )
     result=$?
     if [ ${result} -eq 2 ]; then
-      status_message "CMake version is less than required version. Will build CMake version 3.11.4"
+      status_message "CMake version is less than required version. Will build CMake version ≥ ${cmake_version}"
       build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir} 
     fi
   fi
