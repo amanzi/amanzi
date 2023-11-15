@@ -760,6 +760,9 @@ Multiphase_PK::Initialize()
           Teuchos::RCP<MultiphaseBoundaryFunction> src = src_factory.Create(spec,"injector", AmanziMesh::Entity_kind::CELL, Teuchos::null);
           src->SetComponentId(component_names_); 
           srcs_.push_back(src);
+          std::cout<<"name = "<<name<<std::endl;
+          std::cout<<"specname = "<<specname<<std::endl;
+          std::cout<<"src component id = "<<src->component_id()<<std::endl;
           
           AMANZI_ASSERT(src->component_id() >= 0);
         }
@@ -1087,6 +1090,9 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
     eqns_flattened_[n][0] = soln_names_.size() - 1;
     eqns_flattened_[n][1] = i;
     eqns_flattened_[n][2] = (eqn_num > 1) ? n : -1; // dEval_dSoln=0 for all eqns except this
+
+    // attach component id to equation (used for external source term which is defined for each component)
+    eqns_[n].component_id = n;
 
     // advection evaluators
     if (slist.isParameter("advection factors"))

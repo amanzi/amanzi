@@ -65,11 +65,11 @@ MultiphaseBoundaryFunction::SetComponentId(const std::vector<std::string>& names
 {
   auto it = std::find(names.begin(), names.end(), component_name_);
   component_id_ = (it == names.end()) ? -1 : std::distance(names.begin(), it);
-  for (int i = 0; i < names.size(); ++i) { 
-    std::cout<<"names = "<<names[i]<<std::endl;
-  }
-  std::cout<<"component_id = "<<component_id_<<std::endl;
+  
+  auto pt = names.begin(); 
+  std::cout<<"names.begin() = "<<*pt<<std::endl;
 }
+
 
 } // namespace Multiphase
 } // namespace Amanzi
