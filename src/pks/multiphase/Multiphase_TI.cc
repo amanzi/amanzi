@@ -183,14 +183,15 @@ Multiphase_PK::FunctionalResidual(double t_old,
     }
     
     // add source term    
-    
-    if (n >= 1) {
-      for (auto it = srcs_[n-1]->begin(); it != srcs_[n-1]->end(); ++it) { 
-        int c = it->first;
-        double factor = mesh_->getCellVolume(c);
-        std::cout<<"srcs = "<<it->second[0]<<std::endl;
-        fone_c[0][c] -= it->second[0] * factor;
-      }   
+    if (srcs_.size() > 0) { 
+      if (n >= 1) {
+        for (auto it = srcs_[n-1]->begin(); it != srcs_[n-1]->end(); ++it) { 
+          int c = it->first;
+          double factor = mesh_->getCellVolume(c);
+          //std::cout<<"srcs = "<<it->second[0]<<std::endl;
+          fone_c[0][c] -= it->second[0] * factor;
+        }   
+      }
     }    
 
     // source term HARD CODED
