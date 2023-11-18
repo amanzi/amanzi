@@ -49,23 +49,7 @@ WRMmp_Simple::Init_(double S_rw, double S_rn, double coef)
 double
 WRMmp_Simple::k_relative(double Sw, int phase)
 {
-  double Swe = (Sw - S_rw_) / (1.0 - S_rw_ - S_rn_);
-  /*
-  if (phase == MULTIPHASE_PHASE_LIQUID) {
-    return pow(Swe, 2.0);
-  } else if (phase == MULTIPHASE_PHASE_GAS) {
-    return pow(1.0 - Swe, 2.0);
-  }
-  */
-
-  
-  if (phase == MULTIPHASE_PHASE_LIQUID) {
-    return 1.0;
-  } else if (phase == MULTIPHASE_PHASE_GAS) {
-    return 1.0;
-  }
-
-  return 0.0;
+  return Sw;
 }
 
 
@@ -75,19 +59,8 @@ WRMmp_Simple::k_relative(double Sw, int phase)
 double
 WRMmp_Simple::dKdS(double Sw, int phase)
 {
-  double factor = 1.0 / (1.0 - S_rw_ - S_rn_);
-  double Swe = (Sw - S_rw_) / (1.0 - S_rw_ - S_rn_);
-  /*
-  if (phase == MULTIPHASE_PHASE_LIQUID) {
-    return 2.0 * Swe * factor;
-  } else if (phase == MULTIPHASE_PHASE_GAS) {
-    return -2.0 * (1.0 - Swe) * factor;
-  }
-  */
-  
-  return 0.0;
+  return 1.0;
 }
-
 
 /* ******************************************************************
 * Capillary pressure formula.
