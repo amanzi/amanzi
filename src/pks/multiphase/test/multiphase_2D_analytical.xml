@@ -123,7 +123,7 @@
 
         <Parameter name="solver type" type="string" value="Newton"/>
         <ParameterList name="Newton parameters">
-          <Parameter name="nonlinear tolerance" type="double" value="1.0e-5"/>
+          <Parameter name="nonlinear tolerance" type="double" value="1.0e-8"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
           <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
           <Parameter name="max error growth factor" type="double" value="1.0e+10"/>
@@ -155,7 +155,7 @@
         <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
         -->
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -167,6 +167,9 @@
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <ParameterList name="boundary pressure">
             <ParameterList name="function-constant">
+              <!--
+              <Parameter name="value" type="double" value="-1.0/(16*3.141592653589793*3.141592653589793)"/>
+              -->
               <Parameter name="value" type="double" value="0.0"/>
             </ParameterList>
           </ParameterList>
@@ -214,7 +217,7 @@
           <Parameter name="name" type="string" value="SH4"/>
           <ParameterList name="boundary concentration">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="0.0"/>
+              <Parameter name="value" type="double" value="1.0/(16*3.141592653589793*3.141592653589793)"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -231,7 +234,10 @@
           <ParameterList name="injector">
             <ParameterList name="function-exprtk">
               <Parameter name="number of arguments" type="int" value="4"/>
+              <!--
               <Parameter name="formula" type="string" value="(1.0/(64*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * sin(3.141592653589793*y) * exp(t)"/>
+              -->
+              <Parameter name="formula" type="string" value="0.0"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -284,7 +290,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">
-      <Parameter name="verbosity level" type="string" value="high"/>
+      <Parameter name="verbosity level" type="string" value="extreme"/>
     </ParameterList>
   </ParameterList> 
   </ParameterList>  <!-- PKs, no shift -->
@@ -304,7 +310,7 @@
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="atmospheric_pressure">
-        <Parameter name="value" type="double" value="1.0"/>
+        <Parameter name="value" type="double" value="0.0"/>
       </ParameterList>
 
       <ParameterList name="pressure_liquid">
@@ -315,6 +321,8 @@
             <ParameterList name="function">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
+                  <!--
+                  <Parameter name="formula" type="string" value="(-1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * sin(3.141592653589793*y) - 1.0/(16*3.141592653589793*3.141592653589793)"/> -->
                   <Parameter name="formula" type="string" value="(-1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * sin(3.141592653589793*y)"/>
               </ParameterList>
             </ParameterList>
@@ -345,6 +353,8 @@
             <ParameterList name="function">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
+                <!--
+                <Parameter name="formula" type="string" value="(1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * sin(3.141592653589793*y) + 1.0/(16*3.141592653589793*3.141592653589793)"/> -->
                 <Parameter name="formula" type="string" value="(1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * sin(3.141592653589793*y)"/>
               </ParameterList>
             </ParameterList>
@@ -361,6 +371,8 @@
             <ParameterList name="function">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
+                <!--
+                <Parameter name="formula" type="string" value="(1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * sin(3.41592653589793*y) + 1.0/(16*3.141592653589793*3.141592653589793)"/> -->
                 <Parameter name="formula" type="string" value="(1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * sin(3.41592653589793*y)"/>
               </ParameterList>
             </ParameterList>
@@ -376,7 +388,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -416,7 +428,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1"/>
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -592,7 +604,7 @@
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="2e-7"/>
         <Parameter name="use flexible gmres" type="bool" value="true"/>
-        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <Parameter name="maximum number of iterations" type="int" value="400"/>
         <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
         <Parameter name="size of Krylov space" type="int" value="400"/>
         <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>

@@ -36,6 +36,9 @@
 // Multiphase
 #include "Multiphase_PK.hh"
 
+// Misc
+#include "math.h"
+
 
 /* **************************************************************** */
 void
@@ -102,27 +105,17 @@ run_test(const std::string& domain, const std::string& filename)
 
   // loop
   int iloop(0);
-  double t(0.0), tend(1.0), dt(1.0e-2), dt_max(1.0e-2);
+  double t(0.0), tend(0.001), dt(5.0e-6), dt_max(5.0e-6);
   // store Newton iterations and time step size (after successful iteration)
   std::vector<int> newton_iterations_per_step;
   std::vector<double> time_step_size;
-  
-  while (t < tend && iloop < 100000) {
-    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2.0; }
+  // error initialize
+  double perr_linf_inf = 0.0, perr_linf_l1 = 0.0, perr_linf_l2 = 0.0;  
 
-    MPK->CommitStep(t, t + dt, Tags::DEFAULT);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  double pi = M_PI;
 
-    // store number of Newton iterations taken (only successful iterations after possible time step reduction) 
-    double iter = MPK->bdf1_dae()->number_solver_iterations();
-    newton_iterations_per_step.push_back(iter);
-    // store time step size
-    time_step_size.push_back(dt);
-    
-    S->advance_cycle();
-    S->advance_time(dt);
-    t += dt;
-    dt = std::min(dt_max, dt * 2.0);
-    iloop++;
+  while (t < tend) {
 
     // output solution
     if (iloop % 1 == 0) {
@@ -142,6 +135,39 @@ run_test(const std::string& domain, const std::string& filename)
 
       WriteStateStatistics(*S, *vo);
     }
+
+    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2.0; }
+
+    MPK->CommitStep(t, t + dt, Tags::DEFAULT);
+
+    // store number of Newton iterations taken (only successful iterations after possible time step reduction) 
+    double iter = MPK->bdf1_dae()->number_solver_iterations();
+    newton_iterations_per_step.push_back(iter);
+    // store time step size
+    time_step_size.push_back(dt);
+    
+    S->advance_cycle();
+    S->advance_time(dt);
+      
+    // calculate error
+    auto pl = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
+    double perr_linf_l1_tmp = 0.0, perr_linf_l2_tmp = 0.0;
+    for (int c = 0; c < ncells_owned; ++c) { 
+      const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
+      double x = xc[0], y = xc[1];
+      double err = std::abs( pl[0][c] + (1.0/(32*pi*pi))*std::sin(pi*x)*std::sin(pi*y)*std::exp(-t) );
+      if (perr_linf_inf < err) { perr_linf_inf = err; }
+      perr_linf_l1_tmp += err * mesh->getCellVolume(c);
+      perr_linf_l2_tmp += err * err * mesh->getCellVolume(c);  
+    }
+    perr_linf_l2_tmp = std::sqrt(perr_linf_l2_tmp);  
+    if (perr_linf_l1 < perr_linf_l1_tmp) { perr_linf_l1 = perr_linf_l1_tmp; }
+    if (perr_linf_l2 < perr_linf_l2_tmp) { perr_linf_l2 = perr_linf_l2_tmp; }
+    // update time
+    t += dt;
+    dt = std::min(dt_max, dt * 2.0);
+    iloop++;
+
   }
 
   WriteStateStatistics(*S, *vo);
@@ -166,6 +192,10 @@ run_test(const std::string& domain, const std::string& filename)
   const auto& xg = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
   xg.MinValue(&dmin);
   CHECK(dmin >= 0.0);
+
+  std::cout<<"pl error Linf(Linf) = "<<perr_linf_inf<<std::endl;
+  std::cout<<"pl error Linf(L1) = "<<perr_linf_l1<<std::endl;
+  std::cout<<"pl error Linf(L2) = "<<perr_linf_l2<<std::endl;
 }
 
 

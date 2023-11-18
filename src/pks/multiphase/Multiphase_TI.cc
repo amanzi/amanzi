@@ -183,6 +183,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
     }
     
     // add source term    
+    /*
     if (srcs_.size() > 0) { 
       int id = eqns_[n].component_id;
       for (int j = 0; j < srcs_.size(); ++j) { 
@@ -196,19 +197,36 @@ Multiphase_PK::FunctionalResidual(double t_old,
         }
       }    
     }
+    */
+
     // source term HARD CODED
-    /*
+    
+    if (n == 0) {
+     for(int c = 0; c < ncells_owned_; ++c) { 
+        const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+        double x = xc[0], y = xc[1];
+        double factor = mesh_->getCellVolume(c);
+        
+        fone_c[0][c] += (1.0/16) * std::sin(pi*x) * std::sin(pi*y) * std::exp(-t_new) * factor;
+        fone_c[0][c] -= (1.0/256)* (std::cos(2*pi*x)*std::pow(std::sin(pi*y),2 ) + std::pow(std::sin(pi*x),2)*std::cos(2*pi*y) ) * std::exp(-2*t_new)* factor;
+        //fone_c[0][c] += (1.0/64) * std::sin(pi*x) * std::sin(pi*y) * std::exp(-t_new) * factor;
+      }
+    }
+ 
     if (n == 1) {
      for(int c = 0; c < ncells_owned_; ++c) { 
         const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
         double x = xc[0], y = xc[1];
         double factor = mesh_->getCellVolume(c);
+        /*
         fone_c[0][c] += (0.5)*(0.5 + (1.0/(8.0*pi*pi)))*std::sin(pi*x)*std::sin(pi*y)*std::exp(-t_new) * factor;
         fone_c[0][c] += (0.5+(1.0/(8.0*pi*pi)))*(0.5 + (1.0/(4.0*pi*pi) ))*pi*pi*std::exp(-2.0*t_new)*(std::cos(2*pi*x)*std::pow(std::sin(pi*y),2 ) + std::pow(std::sin(pi*x),2)*std::cos(2*pi*y) ) * factor;
         fone_c[0][c] -= (0.5 + (1.0/(4.0*pi*pi)))*pi*pi*std::sin(pi*x)*std::sin(pi*y)*std::exp(-t_new) * factor; 
+        */
+        fone_c[0][c] += (1.0/(64*pi*pi)) * std::sin(pi*x) * std::sin(pi*y) * std::exp(-t_new) * factor;
       }
     } 
-    */
+    
 
     // copy temporary vector to residual
     auto& fc = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");
