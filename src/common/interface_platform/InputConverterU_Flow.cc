@@ -395,7 +395,7 @@ InputConverterU::TranslatePOM_(const std::string& domain)
     *vo_->os() << "Translating porosity models" << std::endl;
 
   MemoryManager mm;
-  DOMNodeList *children;
+  DOMNodeList* children;
   DOMNode* node;
   DOMElement* element;
 
@@ -403,8 +403,9 @@ InputConverterU::TranslatePOM_(const std::string& domain)
 
   compressibility_ = false;
 
-  node = (domain == "fracture") ? GetUniqueElementByTagsString_("fracture_network, materials", flag)
-                                : GetUniqueElementByTagsString_("materials", flag);
+  node = (domain == "fracture") ?
+           GetUniqueElementByTagsString_("fracture_network, materials", flag) :
+           GetUniqueElementByTagsString_("materials", flag);
   element = static_cast<DOMElement*>(node);
   children = element->getElementsByTagName(mm.transcode("material"));
 
@@ -616,14 +617,15 @@ InputConverterU::TranslatePPM_(const std::string& domain)
     *vo_->os() << "Translating permeability-porosity models" << std::endl;
 
   MemoryManager mm;
-  DOMNodeList *children;
+  DOMNodeList* children;
   DOMNode* node;
   DOMElement* element;
 
   bool flag, found(false);
 
-  node = (domain == "fracture") ? GetUniqueElementByTagsString_("fracture_network, materials", flag)
-                                : GetUniqueElementByTagsString_("materials", flag);
+  node = (domain == "fracture") ?
+           GetUniqueElementByTagsString_("fracture_network, materials", flag) :
+           GetUniqueElementByTagsString_("materials", flag);
   element = static_cast<DOMElement*>(node);
   children = element->getElementsByTagName(mm.transcode("material"));
 

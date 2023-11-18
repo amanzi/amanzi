@@ -631,7 +631,7 @@ Richards_PK::Initialize()
   if (!oplist_matrix.isParameter("nonlinear coefficient")) {
     oplist_matrix.set<std::string>("nonlinear coefficient", nonlinear_coef);
     oplist_pc.set<std::string>("nonlinear coefficient", nonlinear_coef);
-  } 
+  }
   if (coupled_to_matrix_ || flow_on_manifold_) {
     if (!oplist_matrix.isParameter("use manifold flux"))
       oplist_matrix.set<bool>("use manifold flux", true);

@@ -39,8 +39,9 @@ EnergyOnePhase_PK::EnergyOnePhase_PK(Teuchos::ParameterList& pk_tree,
                                      const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                      const Teuchos::RCP<State>& S,
                                      const Teuchos::RCP<TreeVector>& soln)
-  : PK(pk_tree, glist, S, soln), Energy_PK(pk_tree, glist, S, soln),
-    soln_(soln), 
+  : PK(pk_tree, glist, S, soln),
+    Energy_PK(pk_tree, glist, S, soln),
+    soln_(soln),
     num_itrs_(0),
     dt_(0.0)
 {

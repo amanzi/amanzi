@@ -297,9 +297,7 @@ TEST(ELASTICITY_WEAK_SYMMETRY_2D)
 
     double axx(0.0);
     for (int i = 0; i < mrows; i++) {
-      for (int j = 0; j < mrows; j++) {
-        axx += A(i, j) * vx[i] * vx[j];
-      }
+      for (int j = 0; j < mrows; j++) { axx += A(i, j) * vx[i] * vx[j]; }
     }
     CHECK_CLOSE(0.0, axx, 1e-10);
   }
@@ -307,7 +305,8 @@ TEST(ELASTICITY_WEAK_SYMMETRY_2D)
 
 
 /* **************************************************************** */
-void RunWeakSymmetry3D(const std::string& filename)
+void
+RunWeakSymmetry3D(const std::string& filename)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -315,8 +314,8 @@ void RunWeakSymmetry3D(const std::string& filename)
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: 3D mass matrix for elasticity with weak symmetry: " 
-            << filename << std::endl;
+  std::cout << "\nTest: 3D mass matrix for elasticity with weak symmetry: " << filename
+            << std::endl;
 #ifdef HAVE_MPI
   auto comm = Amanzi::getDefaultComm();
 #else
@@ -416,14 +415,17 @@ void RunWeakSymmetry3D(const std::string& filename)
   }
 }
 
-TEST(ELASTICITY_WEAK_SYMMETRY_3D_UNIT_CUBE) {
+TEST(ELASTICITY_WEAK_SYMMETRY_3D_UNIT_CUBE)
+{
   RunWeakSymmetry3D("test/cube_unit.exo");
 }
 
-TEST(ELASTICITY_WEAK_SYMMETRY_3D_UNIT_CUBE_ROTATED) {
+TEST(ELASTICITY_WEAK_SYMMETRY_3D_UNIT_CUBE_ROTATED)
+{
   RunWeakSymmetry3D("test/cube_unit_rotated.exo");
 }
 
-TEST(ELASTICITY_WEAK_SYMMETRY_3D_PARALLEPIPED_ROTATED) {
+TEST(ELASTICITY_WEAK_SYMMETRY_3D_PARALLEPIPED_ROTATED)
+{
   RunWeakSymmetry3D("test/parallepiped_rotated.exo");
 }

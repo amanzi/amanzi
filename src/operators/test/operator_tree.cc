@@ -52,7 +52,8 @@ SUITE(SURFACE_SUBSURFACE)
       mesh_subsurf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
     std::vector<std::string> setnames({ "surface" });
-    auto mesh_surf = meshfactory.create(mesh_subsurf, setnames, AmanziMesh::Entity_kind::FACE, true);
+    auto mesh_surf =
+      meshfactory.create(mesh_subsurf, setnames, AmanziMesh::Entity_kind::FACE, true);
     int ncells_surf =
       mesh_surf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
@@ -119,7 +120,8 @@ SUITE(SURFACE_SUBSURFACE)
     auto mesh_subsurf = meshfactory.create(-10, -10, -10, 10, 10, 0, 3, 3, 3);
 
     std::vector<std::string> setnames({ "surface" });
-    auto mesh_surf = meshfactory.create(mesh_subsurf, setnames, AmanziMesh::Entity_kind::FACE, true);
+    auto mesh_surf =
+      meshfactory.create(mesh_subsurf, setnames, AmanziMesh::Entity_kind::FACE, true);
     int ncells_surf =
       mesh_surf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
@@ -252,7 +254,8 @@ SUITE(SURFACE_SUBSURFACE)
     auto mesh_subsurf = meshfactory.create(-10, -10, -10, 10, 10, 0, 1, 1, 2);
 
     std::vector<std::string> setnames({ "surface" });
-    auto mesh_surf = meshfactory.create(mesh_subsurf, setnames, AmanziMesh::Entity_kind::FACE, true);
+    auto mesh_surf =
+      meshfactory.create(mesh_subsurf, setnames, AmanziMesh::Entity_kind::FACE, true);
     int ncells_surf =
       mesh_surf->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 

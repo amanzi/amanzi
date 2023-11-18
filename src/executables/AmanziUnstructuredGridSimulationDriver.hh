@@ -15,6 +15,10 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_VerboseObject.hpp"
+
+#include "GeometricModel.hh"
+#include "Mesh.hh"
+#include "MeshFactory.hh"
 #include "ObservationData.hh"
 #include "Simulator.hh"
 
@@ -34,8 +38,15 @@ struct AmanziUnstructuredGridSimulationDriver
   Amanzi::Simulator::ReturnType
   Run(const Amanzi::Comm_ptr_type& comm, Amanzi::ObservationData& observations_data) override;
 
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> InitGeometricModel();
+  int InitMesh(Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel>& gm,
+               Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& mesh,
+               std::string& domain,
+               Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& submesh);
+
  private:
   // Read our parameter list.
   void ReadParameterList();
   Teuchos::RCP<Teuchos::ParameterList> plist_;
+  Amanzi::Comm_ptr_type comm_;
 };

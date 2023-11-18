@@ -119,7 +119,9 @@ main(int argc, char* argv[])
     try {
       if (me == 0) {
         std::cerr << "Attempting to read \"" << filename << "\" with ";
-        for (auto p : frameworks) { std::cerr << "\"" << Amanzi::AmanziMesh::to_string(p) << "\","; }
+        for (auto p : frameworks) {
+          std::cerr << "\"" << Amanzi::AmanziMesh::to_string(p) << "\",";
+        }
         std::cerr << std::endl;
       }
       meshfactory.set_preference(prefs);

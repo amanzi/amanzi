@@ -26,13 +26,9 @@
 #include "AmanziComm.hh"
 #include "AmanziUnstructuredGridSimulationDriver.hh"
 #include "CycleDriver.hh"
-#include "GeometricModel.hh"
 #include "InputAnalysis.hh"
 #include "InputConverterU.hh"
 #include "MeshAudit.hh"
-#include "MeshFactory.hh"
-#include "MeshInfo.hh"
-#include "Mesh_MSTK.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
 #include "State.hh"
@@ -87,136 +83,178 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
   Teuchos::TimeMonitor sim_tm(*sim_timer);
 
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  int ierr = 0;
-  int aerr = 0;
-  int rank = comm->MyPID();
-  int size = comm->NumProc();
+  comm_ = comm;
 
   //------------ GEOMETRIC MODEL ----------------------------
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model;
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;
   auto geom_timer = Teuchos::TimeMonitor::getNewCounter("Geometric Model Creation");
 
   { // context for timer
     Teuchos::TimeMonitor geom_tm(*geom_timer);
-
-    Teuchos::ParameterList domain_params = plist_->sublist("domain");
-    unsigned int spdim = domain_params.get<int>("spatial dimension");
-
-    // For now create one geometric model from all the regions in the spec
-    Teuchos::ParameterList& reg_params = plist_->sublist("regions");
-    geom_model = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, *comm));
+    gm = InitGeometricModel();
   }
 
   // ---------------- MESH -----------------------------------------------
-  // Prepare to read/create the mesh specification
+  std::string domain;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-
-  auto mesh_params = Teuchos::sublist(plist_, "mesh", true);
-  bool unstructured_option = mesh_params->isSublist("unstructured");
-  if (!unstructured_option) {
-    Errors::Message msg("Unstructured simulator invoked for structured mesh request");
-    Exceptions::amanzi_throw(msg);
-  }
-  Teuchos::ParameterList unstr_mesh_params = mesh_params->sublist("unstructured");
-
-  // Create a mesh factory for this geometric model
-  auto mesh_vo = Teuchos::rcp(new Amanzi::VerboseObject("Mesh", *mesh_params));
-  Amanzi::AmanziMesh::MeshFactory meshfactory(comm, geom_model, mesh_params);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> submesh;
 
   auto mesh_timer = Teuchos::TimeMonitor::getNewCounter("Mesh Creation");
   { // context for timer
     Teuchos::TimeMonitor mesh_tm(*mesh_timer);
-    try {
-      Amanzi::AmanziMesh::Preference prefs(Amanzi::AmanziMesh::default_preference());
+    if (InitMesh(gm, mesh, domain, submesh) != 0) return Amanzi::Simulator::FAIL;
+  }
 
-      // If caller has specified a particular framework to use, make that
-      // the primary framework. Otherwise, use default framework preferences
+  // -------------- ANALYSIS --------------------------------------------
+  {
+    Amanzi::InputAnalysis analysis(mesh, "domain");
+    analysis.Init(*plist_);
+    analysis.RegionAnalysis();
+    analysis.OutputBCs();
+  }
 
-      if (mesh_params->isParameter("framework")) {
-        std::string fw = mesh_params->get<std::string>("framework");
+  // -------------- STATE -----------------------------------------------
+  Teuchos::RCP<Amanzi::State> S;
+  if (plist_->isSublist("state")) {
+    Teuchos::ParameterList state_plist = plist_->sublist("state");
+    S = Teuchos::rcp(new Amanzi::State(state_plist));
+  } else {
+    Errors::Message message(
+      "AmanziUnstructuredSimuluation: xml_file does not contain 'state' sublist\n");
+    Exceptions::amanzi_throw(message);
+  }
 
-        if (fw == Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::SIMPLE)) {
-          prefs.clear();
-          prefs.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
-        } else if (fw == Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::MSTK)) {
-          prefs.clear();
-          prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
-        } else if (fw == Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::MOAB)) {
-          prefs.clear();
-          prefs.push_back(Amanzi::AmanziMesh::Framework::MOAB);
-          // } else if (framework == "") {
-        } else {
-          std::string s(fw);
-          s += ": specified mesh framework preference not understood";
-          amanzi_throw(Errors::Message(s));
-        }
+  // register meshes
+  S->RegisterMesh("domain", mesh);
+
+  if (submesh.get()) {
+    S->RegisterMesh(domain, submesh);
+
+    Amanzi::InputAnalysis analysis(submesh, domain);
+    analysis.Init(*plist_);
+    analysis.RegionAnalysis();
+  }
+
+  // -------------- EXECUTION -------------------------------------------
+  Amanzi::CycleDriver cycle_driver(plist_, S, comm, observations_data);
+  cycle_driver.Go();
+
+  // Clean up
+  mesh.reset();
+  return Amanzi::Simulator::SUCCESS;
+}
+
+
+/* ******************************************************************
+* Create a geometric model from all the regions in the PList
+****************************************************************** */
+Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel>
+AmanziUnstructuredGridSimulationDriver::InitGeometricModel()
+{
+  Teuchos::ParameterList domain_params = plist_->sublist("domain");
+  unsigned int dim = domain_params.get<int>("spatial dimension");
+
+  Teuchos::ParameterList& reg_params = plist_->sublist("regions");
+  return Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(dim, reg_params, *comm_));
+}
+
+
+/* ******************************************************************
+* Create a mesh
+****************************************************************** */
+int
+AmanziUnstructuredGridSimulationDriver::InitMesh(
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel>& gm,
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& mesh,
+  std::string& domain,
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& submesh)
+{
+  int ierr = 0;
+  int aerr = 0;
+  int rank = comm_->MyPID();
+  int size = comm_->NumProc();
+
+  // Prepare to read/create the mesh specification
+  auto mesh_params = Teuchos::sublist(plist_, "mesh", true);
+  if (!mesh_params->isSublist("unstructured")) {
+    Errors::Message msg("Unstructured simulator invoked for structured mesh request");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  // Create a mesh factory for this geometric model
+  auto mesh_vo = Teuchos::rcp(new Amanzi::VerboseObject("Mesh", *mesh_params));
+  auto meshfactory = Teuchos::rcp(new Amanzi::AmanziMesh::MeshFactory(comm_, gm, mesh_params));
+
+  try {
+    Amanzi::AmanziMesh::Preference prefs(Amanzi::AmanziMesh::default_preference());
+    prefs.clear();
+
+    // If caller has specified a particular framework to use, make that
+    // the primary framework. Otherwise, use default framework preferences
+    if (mesh_params->isParameter("framework")) {
+      std::string fw = mesh_params->get<std::string>("framework");
+
+      if (fw == Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::SIMPLE)) {
+        prefs.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
+      } else if (fw == Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::MSTK)) {
+        prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+      } else if (fw == Amanzi::AmanziMesh::to_string(Amanzi::AmanziMesh::Framework::MOAB)) {
+        prefs.push_back(Amanzi::AmanziMesh::Framework::MOAB);
+      } else {
+        std::string s(fw);
+        s += ": specified mesh framework preference not understood";
+        amanzi_throw(Errors::Message(s));
       }
-
-      // Create a mesh meshfactory with default or user preferences for a
-      // mesh framework
-      meshfactory.set_preference(prefs);
-
-    } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
-      // do nothing, this means that the "framework" parameter was
-      // not in the input
-
-    } catch (const std::exception& e) {
-      std::cerr << rank << ": error: " << e.what() << std::endl;
-      ierr++;
     }
 
-    comm->SumAll(&ierr, &aerr, 1);
-    if (aerr > 0) { return Amanzi::Simulator::FAIL; }
+    // Create a mesh meshfactory with default or user preferences for a
+    // mesh framework
+    meshfactory->set_preference(prefs);
 
-    // Read or generate the mesh
-    std::string file(""), format("");
+  } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
+    // do nothing, this means that the "framework" parameter was
+    // not in the input
 
-    if (unstr_mesh_params.isSublist("read mesh file")) {
-      Teuchos::ParameterList read_params = unstr_mesh_params.sublist("read mesh file");
+  } catch (const std::exception& e) {
+    std::cerr << rank << ": error: " << e.what() << std::endl;
+    ierr++;
+  }
 
-      if (read_params.isParameter("file")) {
-        file = read_params.get<std::string>("file");
-      } else {
-        std::cerr << "Must specify File parameter for Read option under mesh" << std::endl;
+  comm_->SumAll(&ierr, &aerr, 1);
+  if (aerr > 0) return 1;
+
+  // Read or generate the mesh
+  std::string file(""), format("");
+  auto unstr_mesh_params = mesh_params->sublist("unstructured");
+
+  if (unstr_mesh_params.isSublist("read mesh file")) {
+    Teuchos::ParameterList read_params = unstr_mesh_params.sublist("read mesh file");
+
+    if (read_params.isParameter("file")) {
+      file = read_params.get<std::string>("file");
+    } else {
+      std::cerr << "Must specify File parameter for Read option under mesh" << std::endl;
+      throw std::exception();
+    }
+
+    if (read_params.isParameter("format")) {
+      // Is the format one that we can read?
+      format = read_params.get<std::string>("format");
+
+      if (format != "Exodus II" && format != "H5M") {
+        std::cerr << "Can only read files in Exodus II or H5M format" << std::endl;
         throw std::exception();
       }
+    } else {
+      std::cerr << "Must specify 'format' parameter for Read option under mesh" << std::endl;
+      throw std::exception();
+    }
 
-      if (read_params.isParameter("format")) {
-        // Is the format one that we can read?
-        format = read_params.get<std::string>("format");
-
-        if (format != "Exodus II" && format != "H5M") {
-          std::cerr << "Can only read files in Exodus II or H5M format" << std::endl;
-          throw std::exception();
-        }
-      } else {
-        std::cerr << "Must specify 'format' parameter for Read option under mesh" << std::endl;
-        throw std::exception();
-      }
-
-      if (!file.empty()) {
-        ierr = 0;
-        try {
-          // create the mesh from the file
-          mesh = meshfactory.create(file);
-          mesh->PrintMeshStatistics();
-
-        } catch (const std::exception& e) {
-          std::cerr << rank << ": error: " << e.what() << std::endl;
-          ierr++;
-        }
-
-        comm->SumAll(&ierr, &aerr, 1);
-        if (aerr > 0) { return Amanzi::Simulator::FAIL; }
-      }
-
-    } else if (unstr_mesh_params.isSublist("generate mesh")) { // If Read parameters are specified
-      Teuchos::ParameterList gen_params = unstr_mesh_params.sublist("generate mesh");
+    if (!file.empty()) {
       ierr = 0;
-
       try {
-        // create the mesh by internal generation
-        mesh = meshfactory.create(gen_params);
+        // create the mesh from the file
+        mesh = meshfactory->create(file);
         mesh->PrintMeshStatistics();
 
       } catch (const std::exception& e) {
@@ -224,22 +262,38 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
         ierr++;
       }
 
-      comm->SumAll(&ierr, &aerr, 1);
-      if (aerr > 0) { return Amanzi::Simulator::FAIL; }
-
-    } else { // If Generate parameters are specified
-      std::cerr << rank << ": error: "
-                << "Neither Read nor Generate options specified for mesh" << std::endl;
-      throw std::exception();
+      comm_->SumAll(&ierr, &aerr, 1);
+      if (aerr > 0) return 1;
     }
 
-    Teuchos::OSTab tab = mesh_vo->getOSTab();
-    *mesh_vo->os() << "CPU time stamp: " << mesh_vo->clock() << std::endl;
+  } else if (unstr_mesh_params.isSublist("generate mesh")) {
+    Teuchos::ParameterList gen_params = unstr_mesh_params.sublist("generate mesh");
+    ierr = 0;
+
+    try {
+      mesh = meshfactory->create(gen_params);
+      mesh->PrintMeshStatistics();
+
+    } catch (const std::exception& e) {
+      std::cerr << rank << ": error: " << e.what() << std::endl;
+      ierr++;
+    }
+
+    comm_->SumAll(&ierr, &aerr, 1);
+    if (aerr > 0) { return Amanzi::Simulator::FAIL; }
+
+  } else { // generate parameters are specified
+    std::cerr << rank << ": error: "
+              << "Neither Read nor Generate options specified for mesh" << std::endl;
+    throw std::exception();
   }
+
+  Teuchos::OSTab tab = mesh_vo->getOSTab();
+  *mesh_vo->os() << "CPU time stamp: " << mesh_vo->clock() << std::endl;
   AMANZI_ASSERT(!mesh.is_null());
 
   // Verify mesh and geometric model compatibility
-  if (geom_model->dimension() != mesh->getSpaceDimension()) {
+  if (gm->dimension() != mesh->getSpaceDimension()) {
     amanzi_throw(Errors::Message("Geometric model and mesh have different dimensions."));
   }
 
@@ -257,7 +311,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
             if (rank == 0) std::cerr << "Mesh Audit confirms that mesh is ok" << std::endl;
           } else {
             std::cerr << "Mesh Audit could not verify correctness of mesh" << std::endl;
-            return Amanzi::Simulator::FAIL;
+            return 1;
           }
         } else {
           std::ostringstream ofile;
@@ -271,72 +325,34 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
           int status = mesh_auditor.Verify(); // check the mesh
           if (status != 0) ierr++;
 
-          comm->SumAll(&ierr, &aerr, 1);
+          comm_->SumAll(&ierr, &aerr, 1);
           if (aerr == 0) {
             std::cerr << "Mesh Audit confirms that mesh is ok" << std::endl;
           } else {
             if (rank == 0)
               std::cerr << "Mesh Audit could not verify correctness of mesh" << std::endl;
-            return Amanzi::Simulator::FAIL;
+            return 1;
           }
         }
       } // if verify
     }
   }
 
-
-  // -------------- ANALYSIS --------------------------------------------
-  {
-    Amanzi::InputAnalysis analysis(mesh, "domain");
-    analysis.Init(*plist_);
-    analysis.RegionAnalysis();
-    analysis.OutputBCs();
-  }
-
-
-  // -------------- STATE -----------------------------------------------
-  Teuchos::RCP<Amanzi::State> S;
-  if (plist_->isSublist("state")) {
-    Teuchos::ParameterList state_plist = plist_->sublist("state");
-    S = Teuchos::rcp(new Amanzi::State(state_plist));
-  } else {
-    Errors::Message message(
-      "AmanziUnstructuredSimuluation: xml_file does not contain 'state' sublist\n");
-    Exceptions::amanzi_throw(message);
-  }
-
-  // Create meshes. This should be moved to a factory of meshes.
-  S->RegisterMesh("domain", mesh);
-
   if (unstr_mesh_params.isSublist("submesh")) {
-    if (meshfactory.get_preference()[0] != Amanzi::AmanziMesh::Framework::MSTK) {
+    if (meshfactory->get_preference()[0] != Amanzi::AmanziMesh::Framework::MSTK) {
       std::cerr << "Cannot extract a mesh using a non-MSTK framework" << std::endl;
       return Amanzi::Simulator::FAIL;
     }
     const auto& extract_plist = unstr_mesh_params.sublist("submesh");
-    std::string domain = extract_plist.get<std::string>("domain name");
+    domain = extract_plist.get<std::string>("domain name");
     AMANZI_ASSERT(domain == "fracture" || domain == "surface");
 
     std::vector<std::string> names =
       extract_plist.get<Teuchos::Array<std::string>>("regions").toVector();
 
-    auto submesh = meshfactory.create(mesh, names, Amanzi::AmanziMesh::Entity_kind::FACE);
+    submesh = meshfactory->create(mesh, names, Amanzi::AmanziMesh::Entity_kind::FACE);
     submesh->PrintMeshStatistics();
-    S->RegisterMesh(domain, submesh);
-
-    {
-      Amanzi::InputAnalysis analysis(submesh, domain);
-      analysis.Init(*plist_);
-      analysis.RegionAnalysis();
-    }
   }
 
-
-  // -------------- EXECUTION -------------------------------------------
-  Amanzi::CycleDriver cycle_driver(plist_, S, comm, observations_data);
-  cycle_driver.Go();
-
-  // Clean up
-  mesh.reset();
-  return Amanzi::Simulator::SUCCESS;
+  return 0;
 }

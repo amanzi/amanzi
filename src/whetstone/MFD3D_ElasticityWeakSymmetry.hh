@@ -70,20 +70,23 @@ class MFD3D_ElasticityWeakSymmetry : public MFD3D {
   void TripleMatrixProduct_(const DenseVector& ML,
                             const DenseMatrix& Minv,
                             const DenseVector& MR,
-                            DenseMatrix& A, 
-                            int i0, int j0);
+                            DenseMatrix& A,
+                            int i0,
+                            int j0);
 
   void TripleMatrixProduct_(const DenseVector& ML,
                             const DenseMatrix& Minv,
                             const DenseMatrix& MR,
-                            DenseMatrix& A, 
-                            int i0, int j0);
+                            DenseMatrix& A,
+                            int i0,
+                            int j0);
 
   void TripleMatrixProduct_(const DenseMatrix& ML,
                             const DenseMatrix& Minv,
                             const DenseMatrix& MR,
-                            DenseMatrix& A, 
-                            int i0, int j0);
+                            DenseMatrix& A,
+                            int i0,
+                            int j0);
 
   static RegisteredFactory<MFD3D_ElasticityWeakSymmetry> reg_;
 };

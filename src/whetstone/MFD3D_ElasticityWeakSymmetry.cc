@@ -38,10 +38,7 @@ namespace WhetStone {
 * Consistency condition for the mass matrix is block diagonal.
 ****************************************************************** */
 int
-MFD3D_ElasticityWeakSymmetry::L2consistency(int c,
-                                            const Tensor& T,
-                                            DenseMatrix& N,
-                                            DenseMatrix& Mc)
+MFD3D_ElasticityWeakSymmetry::L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc)
 {
   const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
@@ -84,8 +81,8 @@ MFD3D_ElasticityWeakSymmetry::L2consistency(int c,
   }
   coefM.Inverse();
 
-  // compute matrix R, we reuse memory for N 
-  int index[3] = {0, 0, 0};
+  // compute matrix R, we reuse memory for N
+  int index[3] = { 0, 0, 0 };
   NumericalIntegration numi(mesh_);
   std::vector<const PolynomialBase*> polys(2);
 
@@ -96,7 +93,7 @@ MFD3D_ElasticityWeakSymmetry::L2consistency(int c,
     double area = mesh_->getFaceArea(f);
     const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
     AmanziGeometry::Point normal = mesh_->getFaceNormal(f);
-   
+
     normal *= dirs[n];
     auto coordsys = std::make_shared<AmanziGeometry::SurfaceCoordinateSystem>(xf, normal);
 
@@ -148,9 +145,7 @@ MFD3D_ElasticityWeakSymmetry::L2consistency(int c,
     double area = mesh_->getFaceArea(f);
     for (int m = 0; m < modes; ++m) {
       v2 = vTE[m] * normal;
-      for (int k = 0; k < d_; ++k) {
-        N(row + k, m) = v2[k] * dirs[i] / area;
-      }
+      for (int k = 0; k < d_; ++k) { N(row + k, m) = v2[k] * dirs[i] / area; }
     }
     row += d_;
   }
@@ -213,7 +208,7 @@ MFD3D_ElasticityWeakSymmetry::RotationMatrix(int c, DenseMatrix& G)
   G.Reshape(d_ * d_ * nfaces, nd);
   G.PutScalar(0.0);
 
-  int index[3] = {0, 0, 0};
+  int index[3] = { 0, 0, 0 };
   NumericalIntegration numi(mesh_);
   std::vector<const PolynomialBase*> polys(2);
 
@@ -223,7 +218,7 @@ MFD3D_ElasticityWeakSymmetry::RotationMatrix(int c, DenseMatrix& G)
     double area = mesh_->getFaceArea(f);
     const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
     AmanziGeometry::Point normal = mesh_->getFaceNormal(f);
-   
+
     normal *= dirs[n];
     auto coordsys = std::make_shared<AmanziGeometry::SurfaceCoordinateSystem>(xf, normal);
 
@@ -326,7 +321,8 @@ MFD3D_ElasticityWeakSymmetry::StiffnessMatrix(int c, const Tensor& T, DenseMatri
 /* ******************************************************************
 * Helper function: seting index space for monomial
 ****************************************************************** */
-void MFD3D_ElasticityWeakSymmetry::set_index_(int d, int k, int* index)
+void
+MFD3D_ElasticityWeakSymmetry::set_index_(int d, int k, int* index)
 {
   for (int i = 0; i < d; ++i) index[i] = 0;
   index[k] = 1;
@@ -336,29 +332,29 @@ void MFD3D_ElasticityWeakSymmetry::set_index_(int d, int k, int* index)
 /* ******************************************************************
 * Helper function: triple product of matrices, including diagonals
 ****************************************************************** */
-void 
+void
 MFD3D_ElasticityWeakSymmetry::TripleMatrixProduct_(const DenseVector& ML,
                                                    const DenseMatrix& Minv,
                                                    const DenseVector& MR,
-                                                   DenseMatrix& A, 
-                                                   int i0, int j0)
+                                                   DenseMatrix& A,
+                                                   int i0,
+                                                   int j0)
 {
   int nm = Minv.NumCols();
 
   for (int i = 0; i < nm; ++i) {
-    for (int j = 0; j < nm; ++j) {
-      A(i + i0, j + j0) = Minv(i, j) * ML(i) * MR(j);
-    }
+    for (int j = 0; j < nm; ++j) { A(i + i0, j + j0) = Minv(i, j) * ML(i) * MR(j); }
   }
 }
 
 
-void 
+void
 MFD3D_ElasticityWeakSymmetry::TripleMatrixProduct_(const DenseVector& ML,
                                                    const DenseMatrix& Minv,
                                                    const DenseMatrix& MR,
-                                                   DenseMatrix& A, 
-                                                   int i0, int j0)
+                                                   DenseMatrix& A,
+                                                   int i0,
+                                                   int j0)
 {
   int nm = Minv.NumCols();
   int nr = MR.NumCols();
@@ -366,21 +362,20 @@ MFD3D_ElasticityWeakSymmetry::TripleMatrixProduct_(const DenseVector& ML,
   for (int i = 0; i < nm; ++i) {
     for (int j = 0; j < nr; ++j) {
       double sum(0.0);
-      for (int k = 0; k < nm; ++k) {
-        sum += Minv(i, k) * ML(i) * MR(k, j);
-      }
+      for (int k = 0; k < nm; ++k) { sum += Minv(i, k) * ML(i) * MR(k, j); }
       A(i + i0, j + j0) = sum;
     }
   }
 }
 
 
-void 
+void
 MFD3D_ElasticityWeakSymmetry::TripleMatrixProduct_(const DenseMatrix& ML,
                                                    const DenseMatrix& Minv,
                                                    const DenseMatrix& MR,
-                                                   DenseMatrix& A, 
-                                                   int i0, int j0)
+                                                   DenseMatrix& A,
+                                                   int i0,
+                                                   int j0)
 {
   int nm = Minv.NumCols();
   int nl = ML.NumCols();
@@ -390,9 +385,7 @@ MFD3D_ElasticityWeakSymmetry::TripleMatrixProduct_(const DenseMatrix& ML,
     for (int j = 0; j < nr; ++j) {
       double sum(0.0);
       for (int k = 0; k < nm; ++k) {
-        for (int l = 0; l < nm; ++l) {
-          sum += Minv(k, l) * ML(k, i) * MR(l, j);
-        }
+        for (int l = 0; l < nm; ++l) { sum += Minv(k, l) * ML(k, i) * MR(l, j); }
       }
       A(i + i0, j + j0) = sum;
     }
