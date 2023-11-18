@@ -206,10 +206,14 @@ Multiphase_PK::FunctionalResidual(double t_old,
         const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
         double x = xc[0], y = xc[1];
         double factor = mesh_->getCellVolume(c);
-        
-        fone_c[0][c] += (1.0/16) * std::sin(pi*x) * std::sin(pi*y) * std::exp(-t_new) * factor;
-        fone_c[0][c] -= (1.0/256)* (std::cos(2*pi*x)*std::pow(std::sin(pi*y),2 ) + std::pow(std::sin(pi*x),2)*std::cos(2*pi*y) ) * std::exp(-2*t_new)* factor;
+        // 2D        
+        //fone_c[0][c] += (1.0/16) * std::sin(pi*x) * std::sin(pi*y) * std::exp(-t_new) * factor;
+        //fone_c[0][c] -= (1.0/256)* (std::cos(2*pi*x)*std::pow(std::sin(pi*y),2 ) + std::pow(std::sin(pi*x),2)*std::cos(2*pi*y) ) * std::exp(-2*t_new)* factor;
         //fone_c[0][c] += (1.0/64) * std::sin(pi*x) * std::sin(pi*y) * std::exp(-t_new) * factor;
+
+        // 1D
+        fone_c[0][c] += (1.0/16) * std::sin(pi*x) * std::exp(-t_new) * factor;
+        fone_c[0][c] -= (1.0/256)* std::cos(2*pi*x) * std::exp(-2*t_new)* factor;
       }
     }
  
@@ -223,7 +227,11 @@ Multiphase_PK::FunctionalResidual(double t_old,
         fone_c[0][c] += (0.5+(1.0/(8.0*pi*pi)))*(0.5 + (1.0/(4.0*pi*pi) ))*pi*pi*std::exp(-2.0*t_new)*(std::cos(2*pi*x)*std::pow(std::sin(pi*y),2 ) + std::pow(std::sin(pi*x),2)*std::cos(2*pi*y) ) * factor;
         fone_c[0][c] -= (0.5 + (1.0/(4.0*pi*pi)))*pi*pi*std::sin(pi*x)*std::sin(pi*y)*std::exp(-t_new) * factor; 
         */
-        fone_c[0][c] += (1.0/(64*pi*pi)) * std::sin(pi*x) * std::sin(pi*y) * std::exp(-t_new) * factor;
+        // 2D
+        // fone_c[0][c] += (1.0/(64*pi*pi)) * std::sin(pi*x) * std::sin(pi*y) * std::exp(-t_new) * factor;
+        // 1D
+        fone_c[0][c] += (1.0/(64*pi*pi)) * std::sin(pi*x) * std::exp(-t_new) * factor;
+
       }
     } 
     
