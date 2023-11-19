@@ -211,9 +211,12 @@ Multiphase_PK::FunctionalResidual(double t_old,
         //fone_c[0][c] -= (1.0/256)* (std::cos(2*pi*x)*std::pow(std::sin(pi*y),2 ) + std::pow(std::sin(pi*x),2)*std::cos(2*pi*y) ) * std::exp(-2*t_new)* factor;
         //fone_c[0][c] += (1.0/64) * std::sin(pi*x) * std::sin(pi*y) * std::exp(-t_new) * factor;
 
-        // 1D
-        fone_c[0][c] += (1.0/16) * std::sin(pi*x) * std::exp(-t_new) * factor;
-        fone_c[0][c] -= (1.0/256)* std::cos(2*pi*x) * std::exp(-2*t_new)* factor;
+        // 1D (a)
+         fone_c[0][c] += (1000.0/16) * std::sin(pi*x) * std::exp(-1000 * t_new) * factor;
+         fone_c[0][c] -= (1.0/256)* std::cos(2*pi*x) * std::exp(-2000 * t_new)* factor;
+        
+        // 1D (b)
+        //fone_c[0][c] += 0.5*pi*std::sin(pi*x)*std::cos(pi*t_new) * factor - (0.5*pi*pi)*std::cos(2*pi*x)*std::sin(pi*t_new)*std::sin(pi*t_new) * factor;
       }
     }
  
@@ -229,8 +232,12 @@ Multiphase_PK::FunctionalResidual(double t_old,
         */
         // 2D
         // fone_c[0][c] += (1.0/(64*pi*pi)) * std::sin(pi*x) * std::sin(pi*y) * std::exp(-t_new) * factor;
-        // 1D
-        fone_c[0][c] += (1.0/(64*pi*pi)) * std::sin(pi*x) * std::exp(-t_new) * factor;
+        
+        // 1D (a)
+        fone_c[0][c] += (1000.0/(64*pi*pi)) * std::sin(pi*x) * std::exp(-1000 * t_new) * factor;
+
+        // 1D (b)
+        //fone_c[0][c] += (0.25)*pi*std::sin(pi*x)*std::sin(pi*t_new) * factor;
 
       }
     } 

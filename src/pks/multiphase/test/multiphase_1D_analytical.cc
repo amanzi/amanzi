@@ -42,6 +42,28 @@
 
 /* **************************************************************** */
 void
+exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+                      Epetra_MultiVector& pl_ex,
+                      Epetra_MultiVector& sl_ex,
+                      double t)
+{
+double pi = M_PI;
+
+int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
+
+for (int c = 0; c < ncells_owned; c++) {
+    
+    const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
+
+    double x = xc[0], y = xc[1];
+
+    pl_ex[0][c] = -(1/(32.0*pi*pi)) * std::sin(pi*x) * std::exp(-1000.0*t);
+    sl_ex[0][c] = (1/8.0) * std::sin(pi*x) * std::exp(-1000.0*t);
+  }
+
+}
+
+void
 run_test(const std::string& domain, const std::string& filename)
 {
   using namespace Teuchos;
@@ -65,7 +87,7 @@ run_test(const std::string& domain, const std::string& filename)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh;
     
-  mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 16, 1);
+  mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 64, 1);
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -105,32 +127,42 @@ run_test(const std::string& domain, const std::string& filename)
 
   // loop
   int iloop(0);
-  double t(0.0), tend(1.0), dt(1.0e-3), dt_max(1.0e-3);
+  double t(0.0), tend(1.0e-2), dt(1.0e-6), dt_max(1.0e-6);
   // store Newton iterations and time step size (after successful iteration)
   std::vector<int> newton_iterations_per_step;
   std::vector<double> time_step_size;
   // error initialize
-  double perr_linf_inf = 0.0, perr_linf_l1 = 0.0, perr_linf_l2 = 0.0;  
-
+  double perr_linf_inf = 0.0, perr_linf_l1 = 0.0, perr_linf_l2 = 0.0, perr_l2_l2 = 0.0;
+  double slerr_linf_inf = 0.0, slerr_linf_l1 = 0.0, slerr_linf_l2 = 0.0, slerr_l2_l2 = 0.0;
+  
   int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   double pi = M_PI;
 
   while (t < tend) {
 
     // output solution
-    if (iloop % 1 == 0) {
+    if (iloop % 100 == 0) {
       io->InitializeCycle(t, iloop, "");
       const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
       const auto& u2 = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
       const auto& u3 = *S->Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
       const auto& u4 = *S->Get<CompositeVector>("pressure_gas").ViewComponent("cell");
+      
+      Epetra_MultiVector pl_ex(u0);
+      Epetra_MultiVector sl_ex(u1);
 
       io->WriteVector(*u0(0), "liquid pressure", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u1(0), "saturation_liquid", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u2(0), "liquid hydrogen", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u3(0), "gas hydrogen", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u4(0), "gas pressure", AmanziMesh::Entity_kind::CELL);
+     
+      exact_field(mesh, pl_ex, sl_ex, t);
+
+      io->WriteVector(*pl_ex(0), "exact liquid pressure", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*sl_ex(0), "exact saturation_liquid", AmanziMesh::Entity_kind::CELL);
+
       io->FinalizeCycle();
 
       WriteStateStatistics(*S, *vo);
@@ -151,24 +183,46 @@ run_test(const std::string& domain, const std::string& filename)
       
     // calculate error
     auto pl = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
-    double perr_linf_l1_tmp = 0.0, perr_linf_l2_tmp = 0.0;
+    auto sl = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
+
+    double perr_linf_l1_tmp = 0.0, perr_linf_l2_tmp = 0.0, perr_l2_l2_tmp = 0.0;
+    double slerr_linf_l1_tmp = 0.0, slerr_linf_l2_tmp = 0.0, slerr_l2_l2_tmp = 0.0;
+
     for (int c = 0; c < ncells_owned; ++c) { 
       const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
       double x = xc[0], y = xc[1];
-      double err = std::abs( pl[0][c] + (1.0/(32*pi*pi))*std::sin(pi*x)*std::exp(-t) );
+      double err = std::abs( pl[0][c] + (1/(32.0*pi*pi))*std::sin(pi*x)*std::exp(-1000*t) );
+      double err_sl = std::abs( sl[0][c] - (1/8.0)*std::sin(pi*x)*std::exp(-1000*t) );
       if (perr_linf_inf < err) { perr_linf_inf = err; }
       perr_linf_l1_tmp += err * mesh->getCellVolume(c);
       perr_linf_l2_tmp += err * err * mesh->getCellVolume(c);  
+      perr_l2_l2_tmp += err * err * mesh->getCellVolume(c);
+  
+      if (slerr_linf_inf < err_sl) { slerr_linf_inf = err_sl; }
+      slerr_linf_l1_tmp += err_sl * mesh->getCellVolume(c);
+      slerr_linf_l2_tmp += err_sl * err_sl * mesh->getCellVolume(c);  
+      slerr_l2_l2_tmp += err_sl * err_sl * mesh->getCellVolume(c);
+
     }
     perr_linf_l2_tmp = std::sqrt(perr_linf_l2_tmp);  
+    perr_l2_l2 += perr_l2_l2_tmp * dt;
     if (perr_linf_l1 < perr_linf_l1_tmp) { perr_linf_l1 = perr_linf_l1_tmp; }
     if (perr_linf_l2 < perr_linf_l2_tmp) { perr_linf_l2 = perr_linf_l2_tmp; }
+
+
+    slerr_linf_l2_tmp = std::sqrt(slerr_linf_l2_tmp);  
+    slerr_l2_l2 += slerr_l2_l2_tmp * dt;
+    if (slerr_linf_l1 < slerr_linf_l1_tmp) { slerr_linf_l1 = slerr_linf_l1_tmp; }
+    if (slerr_linf_l2 < slerr_linf_l2_tmp) { slerr_linf_l2 = slerr_linf_l2_tmp; }
+
     // update time
     t += dt;
     dt = std::min(dt_max, dt * 2.0);
     iloop++;
 
   }
+  perr_l2_l2 = std::sqrt(perr_l2_l2);
+  slerr_l2_l2 = std::sqrt(slerr_l2_l2);
 
   WriteStateStatistics(*S, *vo);
 
@@ -196,6 +250,13 @@ run_test(const std::string& domain, const std::string& filename)
   std::cout<<"pl error Linf(Linf) = "<<perr_linf_inf<<std::endl;
   std::cout<<"pl error Linf(L1) = "<<perr_linf_l1<<std::endl;
   std::cout<<"pl error Linf(L2) = "<<perr_linf_l2<<std::endl;
+  std::cout<<"pl error L2(L2) = "<<perr_l2_l2<<std::endl;
+  std::cout<<" ---------------- "<<std::endl;
+  std::cout<<"sl error Linf(Linf) = "<<slerr_linf_inf<<std::endl;
+  std::cout<<"sl error Linf(L1) = "<<slerr_linf_l1<<std::endl;
+  std::cout<<"sl error Linf(L2) = "<<slerr_linf_l2<<std::endl;
+  std::cout<<"sl error L2(L2) = "<<slerr_l2_l2<<std::endl;
+
 }
 
 
