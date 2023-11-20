@@ -57,7 +57,7 @@ set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          TotalComponentStorage.cc TotalComponentStorage_Tcc.cc
                          TotalComponentStorage_Jaffre.cc
                          VaporPressureEvaluator.cc
-                         WRMmp_Simple.cc WRMmp_vanGenuchten.cc WRMmp_BrooksCorey.cc WRMmp_Corey.cc
+                         WRMmp_Simple.cc WRMmp_vanGenuchten.cc WRMmp_BrooksCorey.cc WRMmp_Corey.cc WRMmp_Custom.cc
                          MoleFractionLiquid.cc TccLiquid.cc TccGas.cc PressureGasEvaluator.cc
                          RelPermEvaluator.cc ProductEvaluator.cc
                          MassDensityGas.cc
@@ -91,7 +91,8 @@ set(multiphase_inc_files
   WRMmp_Corey.hh
   WRMmp_Simple.hh
   WRMmp_vanGenuchten.hh
-  WRMmp_BrooksCorey.hh)
+  WRMmp_BrooksCorey.hh
+  WRMmp_Custom.hh)
 
 add_install_include_file(${multiphase_inc_files})
 

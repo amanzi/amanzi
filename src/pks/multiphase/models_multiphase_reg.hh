@@ -17,6 +17,7 @@
 #include "WRMmp_Corey.hh"
 #include "WRMmp_Simple.hh"
 #include "WRMmp_vanGenuchten.hh"
+#include "WRMmp_Custom.hh"
 
 namespace Amanzi {
 namespace Utils {
@@ -36,6 +37,7 @@ Utils::RegisteredFactory<WRMmp, WRMmp_BrooksCorey> WRMmp_BrooksCorey::reg_("Broo
 Utils::RegisteredFactory<WRMmp, WRMmp_Corey> WRMmp_Corey::reg_("Corey");
 Utils::RegisteredFactory<WRMmp, WRMmp_vanGenuchten> WRMmp_vanGenuchten::reg_("van Genuchten");
 Utils::RegisteredFactory<WRMmp, WRMmp_Simple> WRMmp_Simple::reg_("Simple");
+Utils::RegisteredFactory<WRMmp, WRMmp_Custom> WRMmp_Custom::reg_("Custom");
 
 } // namespace Multiphase
 } // namespace Amanzi
