@@ -6,15 +6,13 @@
 
   Authors: Quan Bui (mquanbui@math.umd.edu)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+           Naren Vohra (vohra@lanl.gov)
 */
 
 /*
   MultiPhase PK
 
-  Multiphase multi-component flow. We assume that one component (water)
-  is always in liquid form, i,e does not evaporate. This allows us to
-  compare results with other codes. Later, this PK will be split into
-  a base and derived PKs depending on physical models.
+  Multiphase multi-component flow. 
 */
 
 

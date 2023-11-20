@@ -116,7 +116,7 @@
     <ParameterList name="water retention models">
       <ParameterList name="WRM for All">
         <Parameter name="regions" type="Array(string)" value="{All}"/>
-        <Parameter name="water retention model" type="string" value="Simple"/>
+        <Parameter name="water retention model" type="string" value="Custom"/>
         <Parameter name="residual saturation liquid" type="double" value="0.0"/>
         <Parameter name="residual saturation gas" type="double" value="0.0"/>
         <Parameter name="coefficient" type="double" value="1.0"/>
