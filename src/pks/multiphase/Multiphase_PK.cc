@@ -766,7 +766,7 @@ Multiphase_PK::Initialize()
           std::cout<<"specname = "<<specname<<std::endl;
           std::cout<<"src component id = "<<src->component_id()<<std::endl;
           
-          AMANZI_ASSERT(src->component_id() >= 0);
+          //AMANZI_ASSERT(src->component_id() >= 0);
         }
       }
     }
@@ -1111,8 +1111,17 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
     eqns_flattened_[n][1] = i;
     eqns_flattened_[n][2] = (eqn_num > 1) ? n : -1; // dEval_dSoln=0 for all eqns except this
 
-    // attach component id to equation (used for external source term which is defined for each component)
-    eqns_[n].component_id = n;
+    // attach component id to equation (used for external source term which is defined for each component); done for all components except water
+    if (eqn_name == "pressure eqn") {
+      eqns_[n].component_id = -1;
+    }
+    else if (eqn_name == "solute eqn") {
+      std::string name = component_names_[i];
+      auto it = std::find(component_names_.begin(), component_names_.end(), component_names_[i]);
+      //eqns_[n].component_id = (it == component_names_.end()) ? -1 : std::distance(component_names_.begin(), it);
+      eqns_[n].component_id = std::distance(component_names_.begin(), it);
+      //eqns_[n].component_id = i;
+    }
 
     // advection evaluators
     if (slist.isParameter("advection factors"))

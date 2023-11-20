@@ -9,6 +9,9 @@
 
 /*
 2 component (Hydrogen, Water), 2 phase with assumptions as in [Gharbia, Jaffre' 14]. 1D analytical solution not related to any physical scenario.
+Manufactured sol:
+pl = (-1/(32*\pi*\pi)) \sin{(pi x)} e^{-1000t}
+sl = (1/8) \sin{(pi x)} e^{-1000t}
 */
 
 #include <cstdlib>
@@ -32,6 +35,7 @@
 #include "State.hh"
 #include "OperatorDefs.hh"
 #include "OutputXDMF.hh"
+#include "LeastSquare.hh"
 
 // Multiphase
 #include "Multiphase_PK.hh"
@@ -63,8 +67,8 @@ for (int c = 0; c < ncells_owned; c++) {
 
 }
 
-void
-run_test(const std::string& domain, const std::string& filename)
+std::tuple<double, double> 
+run_test(int M, double dt0,  const std::string& filename)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -87,7 +91,7 @@ run_test(const std::string& domain, const std::string& filename)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh;
     
-  mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 64, 1);
+  mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, M, 1);
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -127,11 +131,13 @@ run_test(const std::string& domain, const std::string& filename)
 
   // loop
   int iloop(0);
-  double t(0.0), tend(1.0e-2), dt(1.0e-6), dt_max(1.0e-6);
+  double t(0.0), tend(1.0e-3), dt(dt0), dt_max(dt0);
+
   // store Newton iterations and time step size (after successful iteration)
   std::vector<int> newton_iterations_per_step;
   std::vector<double> time_step_size;
-  // error initialize
+
+  // initialize liquid pressure, saturation errors
   double perr_linf_inf = 0.0, perr_linf_l1 = 0.0, perr_linf_l2 = 0.0, perr_l2_l2 = 0.0;
   double slerr_linf_inf = 0.0, slerr_linf_l1 = 0.0, slerr_linf_l2 = 0.0, slerr_l2_l2 = 0.0;
   
@@ -181,6 +187,12 @@ run_test(const std::string& domain, const std::string& filename)
     S->advance_cycle();
     S->advance_time(dt);
       
+    // update time
+    t += dt;
+    // reset time step if reduced
+    dt = dt0;
+    iloop++;
+
     // calculate error
     auto pl = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
     auto sl = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
@@ -215,10 +227,6 @@ run_test(const std::string& domain, const std::string& filename)
     if (slerr_linf_l1 < slerr_linf_l1_tmp) { slerr_linf_l1 = slerr_linf_l1_tmp; }
     if (slerr_linf_l2 < slerr_linf_l2_tmp) { slerr_linf_l2 = slerr_linf_l2_tmp; }
 
-    // update time
-    t += dt;
-    dt = std::min(dt_max, dt * 2.0);
-    iloop++;
 
   }
   perr_l2_l2 = std::sqrt(perr_l2_l2);
@@ -233,34 +241,46 @@ run_test(const std::string& domain, const std::string& filename)
   }
   outFile.close(); 
 
-  // verification
-  double dmin, dmax;
-  const auto& sl = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
-  sl.MinValue(&dmin);
-  sl.MaxValue(&dmax);
-  CHECK(dmin >= 0.0 && dmax <= 1.0 && dmin <= 1.0);
-
-  S->Get<CompositeVector>("ncp_fg").NormInf(&dmax);
-  CHECK(dmax <= 1.0e-9);
-
-  const auto& xg = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
-  xg.MinValue(&dmin);
-  CHECK(dmin >= 0.0);
-
-  std::cout<<"pl error Linf(Linf) = "<<perr_linf_inf<<std::endl;
-  std::cout<<"pl error Linf(L1) = "<<perr_linf_l1<<std::endl;
-  std::cout<<"pl error Linf(L2) = "<<perr_linf_l2<<std::endl;
-  std::cout<<"pl error L2(L2) = "<<perr_l2_l2<<std::endl;
+  // output errors
+  std::cout<<"Pressure liquid error: "<<std::endl;
+  std::cout<<"Linf(Linf) = "<<perr_linf_inf<<std::endl;
+  std::cout<<"Linf(L1) = "<<perr_linf_l1<<std::endl;
+  std::cout<<"Linf(L2) = "<<perr_linf_l2<<std::endl;
+  std::cout<<"L2(L2) = "<<perr_l2_l2<<std::endl;
   std::cout<<" ---------------- "<<std::endl;
-  std::cout<<"sl error Linf(Linf) = "<<slerr_linf_inf<<std::endl;
-  std::cout<<"sl error Linf(L1) = "<<slerr_linf_l1<<std::endl;
-  std::cout<<"sl error Linf(L2) = "<<slerr_linf_l2<<std::endl;
-  std::cout<<"sl error L2(L2) = "<<slerr_l2_l2<<std::endl;
-
+  std::cout<<"Saturation liquid error: "<<std::endl;
+  std::cout<<"Linf(Linf) = "<<slerr_linf_inf<<std::endl;
+  std::cout<<"Linf(L1) = "<<slerr_linf_l1<<std::endl;
+  std::cout<<"Linf(L2) = "<<slerr_linf_l2<<std::endl;
+  std::cout<<"L2(L2) = "<<slerr_l2_l2<<std::endl;
+ 
+  // return L2(L2) error 
+  return std::make_tuple(perr_l2_l2, slerr_l2_l2);
 }
 
 
 TEST(MULTIPHASE_1D_ANALYTICAL)
 {
-  run_test("2D", "test/multiphase_1D_analytical.xml");
+  std::vector<double> h(3), errs_pl(3), errs_sl(3);
+
+  double dt0 = 1.0e-6;
+  int i = 0;
+  for (int M = 32; M <= 128; M *= 2) {
+    h[i] = 1.0/M;
+    auto errs = run_test(M, dt0, "test/multiphase_1D_analytical.xml");   
+    errs_pl[i] = std::get<0>(errs);
+    errs_sl[i] = std::get<1>(errs);
+    dt0 /= 2.0;
+    i += 1;
+  }
+  
+  // calculate convergence rates for L2(L2) norm
+  double rate1 = Amanzi::Utils::bestLSfit(h, errs_pl);
+  double rate2 = Amanzi::Utils::bestLSfit(h, errs_sl);
+  
+  std::cout<<"Pressure: L2(L2) rate = "<<rate1<<std::endl;
+  std::cout<<"Saturation: L2(L2) rate = "<<rate2<<std::endl;
+  
+  // verification
+  CHECK(rate1 > 0.9 && rate2 > 0.9);  
 }

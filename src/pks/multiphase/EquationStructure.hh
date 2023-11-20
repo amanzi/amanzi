@@ -45,7 +45,7 @@ struct EquationStructure {
   EquationTerm constraint;
   
   bool has_component = false;
-  int component_id;
+  int component_id; // Water has component_id = -1; other solutes have component_id \in \{0, 1, \dots}, sorted in the order as in "molecular diffusion"
 };
 
 } // namespace Multiphase
