@@ -170,7 +170,7 @@
         <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
         -->
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="extreme"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -249,13 +249,23 @@
           <ParameterList name="injector">
             <ParameterList name="function-exprtk">
               <Parameter name="number of arguments" type="int" value="4"/>
-              <!--
-              <Parameter name="formula" type="string" value="(1.0/(64*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * sin(3.141592653589793*y) * exp(t)"/>
-              -->
-              <Parameter name="formula" type="string" value="0.0"/>
+              <Parameter name="formula" type="string" value="(-1000.0/(64*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * exp(-1000.0*t)"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
+
+        <ParameterList name="SRC 1">
+          <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <Parameter name="name" type="string" value="water"/>
+          <ParameterList name="injector">
+            <ParameterList name="function-exprtk">
+              <Parameter name="number of arguments" type="int" value="4"/>
+              <Parameter name="formula" type="string" value=" (-1000.0/16) * sin(3.141592653589793*x) * exp(-1000.0*t) + (1.0/256) * cos(2*3.141592653589793*x) * exp(-2000.0*t)"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+
       </ParameterList>
     </ParameterList>
    
@@ -305,7 +315,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">
-      <Parameter name="verbosity level" type="string" value="extreme"/>
+      <Parameter name="verbosity level" type="string" value="low"/>
     </ParameterList>
   </ParameterList> 
   </ParameterList>  <!-- PKs, no shift -->
@@ -338,7 +348,7 @@
                 <Parameter name="number of arguments" type="int" value="4"/>
                   <!--
                   <Parameter name="formula" type="string" value="(-1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * sin(3.141592653589793*y) - 1.0/(16*3.141592653589793*3.141592653589793)"/> -->
-                  <Parameter name="formula" type="string" value="(-1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x)"/>
+                  <Parameter name="formula" type="string" value="(-1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * 1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -353,7 +363,7 @@
             <ParameterList name="function">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
-                <Parameter name="formula" type="string" value="(1/8.0)*sin(3.141592653589793*x)"/>
+                <Parameter name="formula" type="string" value="(1/8.0)*sin(3.141592653589793*x) * 1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -370,7 +380,7 @@
                 <Parameter name="number of arguments" type="int" value="4"/>
                 <!--
                 <Parameter name="formula" type="string" value="(1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * sin(3.141592653589793*y) + 1.0/(16*3.141592653589793*3.141592653589793)"/> -->
-                <Parameter name="formula" type="string" value="(1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x)"/>
+                <Parameter name="formula" type="string" value="(1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * 1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -388,7 +398,7 @@
                 <Parameter name="number of arguments" type="int" value="4"/>
                 <!--
                 <Parameter name="formula" type="string" value="(1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * sin(3.41592653589793*y) + 1.0/(16*3.141592653589793*3.141592653589793)"/> -->
-                <Parameter name="formula" type="string" value="(1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x)"/>
+                <Parameter name="formula" type="string" value="(1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * 1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -608,7 +618,7 @@
     </ParameterList>
 
     <ParameterList name="verbose object">
-      <Parameter name="verbosity level" type="string" value="extreme"/>
+      <Parameter name="verbosity level" type="string" value="low"/>
     </ParameterList>
   </ParameterList>
 
@@ -625,7 +635,7 @@
         <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
         <Parameter name="preconditioning strategy" type="string" value="right"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="medium"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -692,6 +702,6 @@
   </ParameterList>
 
   <ParameterList name="verbose object">
-    <Parameter name="verbosity level" type="string" value="extreme"/>
+    <Parameter name="verbosity level" type="string" value="low"/>
   </ParameterList>
 </ParameterList>
