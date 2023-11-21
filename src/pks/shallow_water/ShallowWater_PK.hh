@@ -117,7 +117,10 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
                                                       double Bmax, const Epetra_MultiVector& B_n,
-                                                      std::vector<int> bc_model, std::vector<double> bc_value_h); 
+                                                      std::vector<int> bc_model, std::vector<double> bc_value_h);
+
+  virtual std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
+                                                      double Bmax, const Epetra_MultiVector& B_n);
 
   virtual double NumericalSourceFriction(double h, double qx, double qy, double WettedAngle, int component){return 0.0;};
 

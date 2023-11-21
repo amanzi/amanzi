@@ -328,8 +328,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     if (c1IsJunction) {
        V_rec = ComputeFieldsOnEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
-       V_rec[1] = ComputeWettedAngle(V_rec[0]);
-       V_rec[0] = ComputeWettedArea(V_rec[1]);
 
        ierr = ErrorDiagnostics_(t, c1, V_rec[0]);
        if (ierr < 0) break;
@@ -418,8 +416,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
      if (c2IsJunction) {
 
         V_rec = ComputeFieldsOnEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
-        V_rec[1] = ComputeWettedAngle(V_rec[0]);
-        V_rec[0] = ComputeWettedArea(V_rec[1]);
 
         ierr = ErrorDiagnostics_(t, c2, V_rec[0]);
         if (ierr < 0) break;
@@ -537,7 +533,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   for (int c = 0; c < junction_cells_owned_.size(); ++c) {
     int cell = junction_cells_owned_[c];
 
-    BedSlopeSource = ShallowWater_PK::NumericalSourceBedSlope(cell, h_temp[0][cell]); 
+    BedSlopeSource = NumericalSourceBedSlope(cell, ht_c[0][cell], B_c[0][cell], B_max[0][cell], B_n);
 
     FrictionSource[0] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 0);
     FrictionSource[1] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 1);

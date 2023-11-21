@@ -137,7 +137,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
   std::vector<double> UL(2), UR(2);
 
   if (std::fabs(htc - Bc) >= 1.e-15) { //cell is not dry
-  
+
      int orientation;
      AmanziMesh::Entity_ID_List cfaces;
      mesh_->cell_get_faces(c, &cfaces);
@@ -230,7 +230,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
       double denom = denomL - denomR;
       S[1] = std::fabs(BGrad)<1.e-14 ? 0.0 : - (FaceAreaL * OtherTermLeft - FaceAreaR * OtherTermRight) * BGrad / denom;
 
- } // closes cell is not dry 
+ } // closes cell is not dry
 
   return S;
 }
@@ -242,6 +242,189 @@ double PipeFlow_PK::ComputePressureHead (double WettedArea){
 
    return (celerity_ * celerity_ * (WettedArea - pipe_cross_section_)) / (g_ * pipe_cross_section_);
 
+}
+
+//--------------------------------------------------------------------
+// Discretization of the bed slope source term for junction
+//--------------------------------------------------------------------
+std::vector<double>
+PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n) 
+{
+
+  std::vector<double> S(3, 0.0);
+  std::vector<double> V_rec(2, 0.0);
+  std::vector<double> UL(2), UR(2);
+
+  if (std::fabs(htc - Bc) >= 1.e-15) { //cell is not dry
+
+     AmanziMesh::Entity_ID_List cfaces;
+     mesh_->cell_get_faces(c, &cfaces);
+     double vol = mesh_->cell_volume(c);
+     int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+     std::vector<int> xMaxFace(cfaces.size(),0);
+     std::vector<int> xMinFace(cfaces.size(),0);
+     std::vector<int> yMaxFace(cfaces.size(),0);
+     std::vector<int> yMinFace(cfaces.size(),0);
+
+     double tmp = -1.0e+10;
+     int indexToSave = 0;
+     for (int n = 0; n < cfaces.size(); ++n) {
+        const auto& xf = mesh_->face_centroid(cfaces[n]);
+        if(xf[0] >= tmp) {
+            tmp=xf[0];
+            indexToSave=n;
+        }
+     }
+     xMaxFace[indexToSave]=1;
+
+     tmp = 1.e+10;
+     indexToSave = 0;
+     for (int n = 0; n < cfaces.size(); ++n) {
+        const auto& xf = mesh_->face_centroid(cfaces[n]);
+        if(xf[0] <= tmp) {
+            tmp=xf[0];
+            indexToSave=n;
+        }
+     }
+     xMinFace[indexToSave]=1;
+
+     tmp = -1.0e+10;
+     indexToSave = 0;
+     for (int n = 0; n < cfaces.size(); ++n) {
+        const auto& xf = mesh_->face_centroid(cfaces[n]);
+        if(xf[1] >= tmp) {
+            tmp=xf[1];
+            indexToSave=n;
+        }
+     }
+     yMaxFace[indexToSave]=1;
+
+     tmp = 1.e+10;
+     indexToSave = 0;
+     for (int n = 0; n < cfaces.size(); ++n) {
+        const auto& xf = mesh_->face_centroid(cfaces[n]);
+        if(xf[1] <= tmp) {
+            tmp=xf[1];
+            indexToSave=n;
+        }
+     }
+     yMinFace[indexToSave]=1;
+
+     double BGrad = 0.0;
+     double OtherTermLeft = 0.0;
+     double OtherTermRight = 0.0;
+     double FaceAreaL = 0.0;
+     double FaceAreaR = 0.0;
+     double denomL = 0.0;
+     double denomR = 0.0;
+     int c1, c2;
+     for (int n = 0; n < cfaces.size(); ++n) {
+        int f = cfaces[n];
+        const auto& xf = mesh_->face_centroid(f);
+        AmanziMesh::Entity_ID_List cells;
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        c1 = cells[0];
+        c2 = (cells.size() == 2) ? cells[1] : -1;
+        if (c1 > ncells_owned && c2 == -1) continue;
+        if (c2 > ncells_owned) std::swap(c1, c2);
+
+        if (xMaxFace[n] == 1 && c2 != -1){ //this identifies the j+1/2 face
+
+           c1 = cells[0];
+           c2 = (cells.size() == 2) ? cells[1] : -1;
+           if (c1 > ncells_owned && c2 == -1) continue;
+           if (c2 > ncells_owned) std::swap(c1, c2);
+
+           BGrad += BathymetryEdgeValue(f, B_n); //B_(j+1/2)
+
+           V_rec = ComputeFieldsOnEdge(c1, f, htc, Bc, Bmax, B_n);
+
+           UL[0] = V_rec[0]; //wetted area
+           UL[1] = V_rec[1]; //wetted angle
+
+           denomL = TotalDepthEdgeValue(c1, f, htc, Bc, Bmax, B_n) - BathymetryEdgeValue(f, B_n);
+
+        }
+
+        else if (xMinFace[n] == 1 && c2 != -1) { //this identifies the j-1/2 face
+
+           BGrad -= BathymetryEdgeValue(f, B_n); //B_(j+1/2) - //B_(j-1/2)
+
+           V_rec = ComputeFieldsOnEdge(c2, f, htc, Bc, Bmax, B_n);
+
+           UR[0] = V_rec[0];
+           UR[1] = V_rec[1];
+
+           denomR = TotalDepthEdgeValue(c2, f, htc, Bc, Bmax, B_n) - BathymetryEdgeValue(f, B_n);
+
+        }
+
+    }
+
+     OtherTermLeft = ComputeHydrostaticPressureForce(UL);
+     OtherTermRight = ComputeHydrostaticPressureForce(UR);
+
+     BGrad /= vol; //(B_(j+1/2) - B_(j-1/2)) / cellVol
+
+     double denom = denomL - denomR;
+     S[1] = std::fabs(BGrad)<1.e-14 ? 0.0 : - (OtherTermLeft - OtherTermRight) * BGrad / denom;
+
+     BGrad = 0.0;
+     OtherTermLeft = 0.0;
+     OtherTermRight = 0.0;
+     denomL = 0.0;
+     denomR = 0.0;
+
+     for (int n = 0; n < cfaces.size(); ++n) {
+        int f = cfaces[n];
+        const auto& xf = mesh_->face_centroid(f);
+        AmanziMesh::Entity_ID_List cells;
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        c1 = cells[0];
+        c2 = (cells.size() == 2) ? cells[1] : -1;
+        if (c1 > ncells_owned && c2 == -1) continue;
+        if (c2 > ncells_owned) std::swap(c1, c2);
+
+        if (yMaxFace[n] == 1 && c2 != -1){ //this identifies the j+1/2 face
+
+           BGrad += BathymetryEdgeValue(f, B_n); //B_(j+1/2)
+
+           V_rec = ComputeFieldsOnEdge(c1, f, htc, Bc, Bmax, B_n);
+
+           UL[0] = V_rec[0]; //wetted area
+           UL[1] = V_rec[1]; //wetted angle
+
+           denomL = TotalDepthEdgeValue(c1, f, htc, Bc, Bmax, B_n) - BathymetryEdgeValue(f, B_n);
+
+        }
+
+        else if (yMinFace[n] == 1 && c2 !=-1) { //this identifies the j-1/2 face
+
+           BGrad -= BathymetryEdgeValue(f, B_n); //B_(j+1/2) - //B_(j-1/2)
+
+           V_rec = ComputeFieldsOnEdge(c2, f, htc, Bc, Bmax, B_n);
+
+           UR[0] = V_rec[0];
+           UR[1] = V_rec[1];
+
+           denomR = TotalDepthEdgeValue(c2, f, htc, Bc, Bmax, B_n) - BathymetryEdgeValue(f, B_n);
+
+        }
+
+      }
+
+      OtherTermLeft = ComputeHydrostaticPressureForce(UL);
+      OtherTermRight = ComputeHydrostaticPressureForce(UR);
+
+      BGrad /= vol; //(B_(j+1/2) - B_(j-1/2)) / cellVol
+
+      denom = denomL - denomR;
+      S[2] = std::fabs(BGrad)<1.e-14 ? 0.0 : - (OtherTermLeft - OtherTermRight) * BGrad / denom;
+
+ } // closes cell is not dry
+
+  return S;
 }
 
 //--------------------------------------------------------------------
@@ -337,19 +520,8 @@ std::vector<double> PipeFlow_PK::ComputeFieldsOnEdge(int c, int e, double htc, d
   double B_edge = BathymetryEdgeValue(e, B_n);
   double h_edge = std::max( (ht_edge - B_edge), 0.0);
 
-  if(IsJunction(c)){
-
-     V_rec[1] = - 1.0;
-     V_rec[0] = h_edge;
-
-  }
-
-  else {
-
-     V_rec[1] = ComputeWettedAngle(h_edge);
-     V_rec[0] = ComputeWettedArea(V_rec[1]);
-
-  }
+  V_rec[1] = ComputeWettedAngle(h_edge);
+  V_rec[0] = ComputeWettedArea(V_rec[1]);
 
   return V_rec;
 
@@ -606,7 +778,7 @@ void PipeFlow_PK::ComputeCellArrays(){
 }
 
 //--------------------------------------------------------------
-// Checks if a pipe cell is a junction 
+// Checks if a pipe cell is a junction
 //--------------------------------------------------------------
 bool PipeFlow_PK::IsJunction(const int &cell)
 {

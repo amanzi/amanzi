@@ -780,6 +780,13 @@ ShallowWater_PK::NumericalSourceBedSlope(int c, double hc)
 
 }
 
+std::vector<double>
+ShallowWater_PK::NumericalSourceBedSlope(int c, double htc, double Bc,
+                                                      double Bmax, const Epetra_MultiVector& B_n){
+  std::vector<double> S(3, 0.0);
+  return S;
+}
+
 //--------------------------------------------------------------
 // Calculation of time step limited by the CFL condition
 //--------------------------------------------------------------
