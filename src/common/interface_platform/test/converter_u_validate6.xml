@@ -93,6 +93,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="molar_density_liquid">
         <ParameterList name="function">
@@ -107,6 +108,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="viscosity_liquid">
         <ParameterList name="function">
@@ -121,6 +123,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
@@ -135,6 +138,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture-mass_density_liquid">
         <ParameterList name="function">
@@ -149,6 +153,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture-molar_density_liquid">
         <ParameterList name="function">
@@ -163,6 +168,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture-porosity">
         <ParameterList name="function">
@@ -177,6 +183,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture-solute_diffusion_to_matrix">
         <Parameter name="evaluator type" type="string" value="solute diffusion to matrix"/>
@@ -226,6 +233,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture-aperture">
         <Parameter name="evaluator type" type="string" value="independent variable from file"/>
@@ -251,6 +259,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture-temperature">
         <ParameterList name="function">
@@ -265,6 +274,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
     </ParameterList>
 

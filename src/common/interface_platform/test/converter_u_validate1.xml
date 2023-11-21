@@ -207,6 +207,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="viscosity_liquid">
         <ParameterList name="function">
@@ -221,6 +222,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
@@ -253,6 +255,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
@@ -267,6 +270,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="temperature">
         <ParameterList name="function">
@@ -281,6 +285,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
     </ParameterList>
 

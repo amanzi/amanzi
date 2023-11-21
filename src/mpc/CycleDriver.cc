@@ -74,6 +74,8 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
                          Amanzi::ObservationData& observations_data)
   : S_(S),
     glist_(glist),
+    initialized_(false),
+    time_period_id_(0),
     comm_(comm),
     observations_data_(observations_data),
     restart_requested_(false)
@@ -915,6 +917,91 @@ CycleDriver::Go()
   WriteStateStatistics(*S_, *vo_);
   ReportMemory();
   // Finalize();
+
+  return S_;
+}
+
+
+/* ******************************************************************
+* simplified timestep loop
+****************************************************************** */
+Teuchos::RCP<State>
+CycleDriver::Go(double t_old, double t_new, double* dt0)
+{
+  double dt;
+
+  if (!initialized_) {
+    initialized_ = true;
+
+    Init_PK(time_period_id_);
+    Setup();
+
+    S_->set_time(tp_start_[time_period_id_]);
+    S_->set_cycle(cycle0_);
+    S_->set_position(TIME_PERIOD_START);
+
+    Initialize();
+
+    S_->InitializeEvaluators();
+    S_->CheckAllFieldsInitialized();
+    S_->InitializeIOFlags();
+  }
+
+  tsm_->RegisterTimeEvent(t_new);
+
+  dt = (*dt0 < 0.0) ? std::min(t_new - t_old, tp_dt_[time_period_id_]) : *dt0;
+  max_dt_ = tp_max_dt_[time_period_id_];
+  dt = tsm_->TimeStep(S_->get_time(), dt);
+  pk_->set_dt(dt);
+
+  // enfoce consistent physics after initialization
+  // this is optional but helps with statistics
+  S_->GetW<double>("dt", Tags::NEXT, "dt") = dt;
+  S_->GetRecordW("dt", Tags::NEXT, "dt").set_initialized();
+
+  pk_->CalculateDiagnostics(Tags::DEFAULT);
+  Visualize();
+  Observations();
+  WriteCheckpoint(dt);
+  WriteStateStatistics(*S_, *vo_);
+
+  // iterate process kernels
+  int start_cycle_num = S_->get_cycle();
+
+  while ((S_->get_time() < std::min(t_new, tp_end_[time_period_id_])) &&
+         ((tp_max_cycle_[time_period_id_] == -1) ||
+          (S_->get_cycle() - start_cycle_num < tp_max_cycle_[time_period_id_]))) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      if (S_->get_cycle() % 100 == 0 && S_->get_cycle() > 0) {
+        WriteStateStatistics(*S_, *vo_);
+      }
+      Utils::Units units("molar");
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "\nCycle " << S_->get_cycle()
+                 << ": time = " << units.OutputTime(S_->get_time())
+                 << ", dt = " << units.OutputTime(dt) << "\n";
+    }
+    S_->GetW<double>("dt", Tags::DEFAULT, "dt") = dt;
+    S_->set_initial_time(S_->get_time());
+    S_->set_final_time(S_->get_time() + dt);
+    S_->set_intermediate_time(S_->get_time());
+    S_->set_position(TIME_PERIOD_INSIDE);
+
+    dt = Advance(dt);
+  }
+
+  if (t_new == tp_end_[time_period_id_]) {
+    time_period_id_++;
+    if (time_period_id_ < num_time_periods_) {
+      WriteStateStatistics(*S_, *vo_);
+      ResetDriver(time_period_id_);
+      dt = get_dt(false);
+    }
+  }
+
+  // finalizing simulation
+  WriteStateStatistics(*S_, *vo_);
+  *dt0 = dt;
 
   return S_;
 }

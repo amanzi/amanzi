@@ -83,7 +83,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
   Teuchos::TimeMonitor sim_tm(*sim_timer);
 
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  comm_ = comm;
+  set_comm(comm);
 
   //------------ GEOMETRIC MODEL ----------------------------
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm;

@@ -88,8 +88,6 @@ static int VG_KR_SMOOTHING_MAX_PC = 6;
 static int BC_LAMBDA              = 1;
 static int BC_ALPHA               = 2;
 static int BC_SR                  = 3;
-static int BC_ELL                 = 4;
-static int BC_KR_MODEL_ID         = 5;
 static int BC_KR_SMOOTHING_MAX_PC = 6;
 
 void

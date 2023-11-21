@@ -44,6 +44,10 @@ struct AmanziUnstructuredGridSimulationDriver
                std::string& domain,
                Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& submesh);
 
+  // access
+  void set_comm(Amanzi::Comm_ptr_type comm) { comm_ = comm; }
+  Teuchos::RCP<Teuchos::ParameterList> get_plist() { return plist_; }
+
  private:
   // Read our parameter list.
   void ReadParameterList();

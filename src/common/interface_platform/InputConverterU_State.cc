@@ -1119,7 +1119,8 @@ InputConverterU::TranslateFieldEvaluator_(DOMNode* node,
         .sublist("function")
         .sublist("function-constant")
         .set<double>("value", val);
-      field_ev.set<std::string>("evaluator type", "independent variable");
+      field_ev.set<std::string>("evaluator type", "independent variable")
+        .set<bool>("constant in time", true);
     }
   }
 }
@@ -1312,7 +1313,8 @@ InputConverterU::AddIndependentFieldEvaluator_(Teuchos::ParameterList& out_ev,
     .sublist("function-constant")
     .set<double>("value", val);
 
-  out_ev.sublist(field).set<std::string>("evaluator type", "independent variable");
+  out_ev.sublist(field).set<std::string>("evaluator type", "independent variable")
+    .set<bool>("constant in time", true);
 }
 
 
