@@ -8,12 +8,6 @@
 */
 
 //! EvaluatorSecondaryMonotype is algebraic in data from the same time tag.
-/*
-  State
-
-*/
-
-
 /*!
 
 Algebraic evaluators are secondary evaluators that read only dependencies of
