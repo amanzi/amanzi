@@ -8,7 +8,7 @@ LABEL Description="This image contains all of the third-party libraries needed b
 
 # MPI flavor (mpich|openmpi)
 ARG mpi_flavor=mpich 
-ARG mpi_version=3.3.2
+ARG mpi_version=4.0.3
 
 # Set timezone:
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
@@ -112,6 +112,12 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
   && git checkout master \
   && rm -r /home/amanzi_user/amanzi_builddir \
   && rm -r /home/amanzi_user/amanzi/build/tools/
+
+USER root
+RUN echo $AMANZI_TPLS_DIR >> /etc/ld.so.conf \
+  && echo $AMANZI_INSTALL_DIR >> /etc/ld.so.conf \
+  && /sbin/ldconfig
+USER amanzi_user
 
 # Set the LD_LIBRARY_PATH for Amanzi builds in the next stage
 ENV LD_LIBRARY_PATH=${AMANZI_TPLS_DIR}/lib:${AMANZI_PETSC_LIBS}:${AMANZI_TRILINOS_LIBS}:${AMANZI_SEACAS_LIBS}
