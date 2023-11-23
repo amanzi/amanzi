@@ -66,8 +66,10 @@ RunTest(const std::string& xmlInFileName)
   auto gm = simulator.InitGeometricModel();
   simulator.InitMesh(gm, mesh, domain, submesh);
 
+  Key key("fracture-aperture");
   auto plist = simulator.get_plist();
-  plist->sublist("state").sublist("evaluators").sublist("fracture-aperture")
+
+  plist->sublist("state").sublist("evaluators").sublist(key)
     .set<std::string>("evaluator type", "aperture")
     .set<std::string>("pressure key", "fracture-pressure");
 
@@ -78,9 +80,6 @@ RunTest(const std::string& xmlInFileName)
 
   Amanzi::ObservationData obs_data;
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
-
-  std::string key("fracture-aperture");
-  std::string prev_key("fracture-prev_aperture");
 
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(submesh)->SetGhosted(true);
@@ -96,6 +95,17 @@ RunTest(const std::string& xmlInFileName)
 
     cycle_driver.Go(t0, t1, &dt0);
     dtg *= 1.5;
+
+    // resetting aperture to mimic coupling
+    Teuchos::ParameterList elist(key);
+    elist.set<std::string>("my key", key)
+      .set<std::string>("evaluator type", "aperture")
+      .set<std::string>("pressure key", "fracture-pressure")
+      .set<double>("normal stiffness", 1.0e+11)
+      .set<std::string>("tag", "");
+
+    auto eval = Teuchos::rcp(new EvaluatorAperture(elist));
+    S->SetEvaluator(key, Tags::DEFAULT, eval);
   }
 
   // test aperture opening (5% error)

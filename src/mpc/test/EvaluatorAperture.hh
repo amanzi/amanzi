@@ -57,6 +57,9 @@ EvaluatorAperture::EvaluatorAperture(Teuchos::ParameterList& plist)
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("aperture key"), Tags::DEFAULT));
   }
+  if (plist.isParameter("normal stiffness"))
+    K_ = plist.get<double>("normal stiffness");
+
   pressure_key_ = plist_.get<std::string>("pressure key");
   dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
 }

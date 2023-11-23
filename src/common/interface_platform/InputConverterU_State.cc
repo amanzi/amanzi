@@ -1092,7 +1092,7 @@ InputConverterU::TranslateFieldEvaluator_(DOMNode* node,
       .set<std::string>("variable name", field)
       .set<int>("number of dofs", 1)
       .set<bool>("constant in time", temporal);
-  } else {
+  } else if (model == "") {
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
 
     if (static_cast<DOMElement*>(node)->hasAttribute(mm.transcode("formula"))) {

@@ -186,16 +186,6 @@
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
-      <ParameterList name="fracture-aperture">
-        <Parameter name="evaluator type" type="string" value="independent variable from file"/>
-        <Parameter name="filename" type="string" value="aperture.h5"/>
-        <Parameter name="domain name" type="string" value="fracture"/>
-        <Parameter name="component name" type="string" value="cell"/>
-        <Parameter name="mesh entity" type="string" value="cell"/>
-        <Parameter name="variable name" type="string" value="fracture-aperture"/>
-        <Parameter name="number of dofs" type="int" value="1"/>
-        <Parameter name="constant in time" type="bool" value="true"/>
-      </ParameterList>
       <ParameterList name="fracture-molar_density_liquid">
         <Parameter name="evaluator type" type="string" value="eos"/>
         <Parameter name="molar density key" type="string" value="fracture-molar_density_liquid"/>
@@ -241,7 +231,39 @@
           <Parameter name="field name" type="string" value="viscosity"/>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="temperature">
+        <ParameterList name="function">
+          <ParameterList name="EntireDomain">
+            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="298.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="fracture-temperature">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="298.15"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
+      </ParameterList>
     </ParameterList>
+
     <ParameterList name="initial conditions">
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.80664999999999942}"/>
@@ -338,32 +360,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="temperature">
-        <ParameterList name="function">
-          <ParameterList name="EntireDomain">
-            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-            <Parameter name="component" type="string" value="*"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.98e+02"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="fracture-temperature">
-        <ParameterList name="function">
-          <ParameterList name="EntireDomain">
-            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-            <Parameter name="component" type="string" value="*"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="298.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
       <ParameterList name="fracture-pressure">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -401,6 +397,32 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="temperature">
+        <ParameterList name="function">
+          <ParameterList name="EntireDomain">
+            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="298.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-temperature">
+        <ParameterList name="function">
+          <ParameterList name="EntireDomain">
+            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="298.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -449,7 +471,7 @@
             <ParameterList name="transient:flow and energy">
               <Parameter name="PK type" type="string" value="thermal flow"/>
               <ParameterList name="transient:flow">
-                <Parameter name="PK type" type="string" value="darcy"/>
+                <Parameter name="PK type" type="string" value="richards"/>
               </ParameterList>
               <ParameterList name="transient:energy">
                 <Parameter name="PK type" type="string" value="one-phase energy"/>
@@ -458,7 +480,7 @@
             <ParameterList name="transient:flow and energy fracture">
               <Parameter name="PK type" type="string" value="thermal flow"/>
               <ParameterList name="transient:flow fracture">
-                <Parameter name="PK type" type="string" value="darcy"/>
+                <Parameter name="PK type" type="string" value="richards"/>
               </ParameterList>
               <ParameterList name="transient:energy fracture">
                 <Parameter name="PK type" type="string" value="one-phase energy"/>
@@ -770,6 +792,46 @@
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
+      <ParameterList name="relative permeability">
+        <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
+        <Parameter name="upwind frequency" type="string" value="every timestep"/>
+        <ParameterList name="upwind parameters">
+          <Parameter name="tolerance" type="double" value="1.0e-12"/>
+          <Parameter name="method" type="string" value="cell-based"/>
+          <Parameter name="polynomial order" type="int" value="1"/>
+          <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="water retention models">
+        <ParameterList name="WRM_0">
+          <Parameter name="water retention model" type="string" value="Brooks Corey"/>
+          <Parameter name="regions" type="Array(string)" value="{TopRegion}"/>
+          <Parameter name="Brooks Corey lambda" type="double" value="2.136e-01"/>
+          <Parameter name="Brooks Corey alpha" type="double" value="2.026e-03"/>
+          <Parameter name="Brooks Corey l" type="double" value="0.5"/>
+          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
+          <Parameter name="regularization interval" type="double" value="0.0"/>
+          <Parameter name="relative permeability model" type="string" value="Mualem"/>
+          <ParameterList name="output">
+            <Parameter name="file" type="string" value="WRM_0.txt"/>
+            <Parameter name="number of points" type="int" value="1000"/>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="WRM_1">
+          <Parameter name="water retention model" type="string" value="Brooks Corey"/>
+          <Parameter name="regions" type="Array(string)" value="{BottomRegion}"/>
+          <Parameter name="Brooks Corey lambda" type="double" value="2.136e-01"/>
+          <Parameter name="Brooks Corey alpha" type="double" value="2.026e-03"/>
+          <Parameter name="Brooks Corey l" type="double" value="0.5"/>
+          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
+          <Parameter name="regularization interval" type="double" value="0.0"/>
+          <Parameter name="relative permeability model" type="string" value="Mualem"/>
+          <ParameterList name="output">
+            <Parameter name="file" type="string" value="WRM_1.txt"/>
+            <Parameter name="number of points" type="int" value="1000"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
@@ -969,6 +1031,56 @@
       <ParameterList name="physical models and assumptions">
         <Parameter name="flow and transport in fractures" type="bool" value="true"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
+      </ParameterList>
+      <ParameterList name="relative permeability">
+        <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
+        <Parameter name="upwind frequency" type="string" value="every timestep"/>
+        <ParameterList name="upwind parameters">
+          <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
+          <Parameter name="method" type="string" value="cell-based"/>
+          <Parameter name="polynomial order" type="int" value="1"/>
+          <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="water retention models">
+        <ParameterList name="WRM_0">
+          <Parameter name="water retention model" type="string" value="Brooks Corey"/>
+          <Parameter name="regions" type="Array(string)" value="{TopRegion}"/>
+          <Parameter name="Brooks Corey lambda" type="double" value="2.136e-01"/>
+          <Parameter name="Brooks Corey alpha" type="double" value="2.026e-03"/>
+          <Parameter name="Brooks Corey l" type="double" value="0.5"/>
+          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
+          <Parameter name="regularization interval" type="double" value="0.0"/>
+          <Parameter name="relative permeability model" type="string" value="Mualem"/>
+          <ParameterList name="output">
+            <Parameter name="file" type="string" value="WRM_0.txt"/>
+            <Parameter name="number of points" type="int" value="1000"/>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="WRM_1">
+          <Parameter name="water retention model" type="string" value="Brooks Corey"/>
+          <Parameter name="regions" type="Array(string)" value="{BottomRegion}"/>
+          <Parameter name="Brooks Corey lambda" type="double" value="2.136e-01"/>
+          <Parameter name="Brooks Corey alpha" type="double" value="2.026e-03"/>
+          <Parameter name="Brooks Corey l" type="double" value="0.5"/>
+          <Parameter name="residual saturation liquid" type="double" value="0.0"/>
+          <Parameter name="regularization interval" type="double" value="0.0"/>
+          <Parameter name="relative permeability model" type="string" value="Mualem"/>
+          <ParameterList name="output">
+            <Parameter name="file" type="string" value="WRM_1.txt"/>
+            <Parameter name="number of points" type="int" value="1000"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture aperture models">
+        <ParameterList name="FAM 0">
+          <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+          <Parameter name="fracture aperture model" type="string" value="Barton-Bandis"/>
+          <Parameter name="undeformed aperture" type="double" value="1.0e-05"/>
+          <Parameter name="overburgen pressure" type="double" value="1.0e+07"/>
+          <Parameter name="BartonBandis A" type="double" value="9.99999999999999939e-12"/>
+          <Parameter name="BartonBandis B" type="double" value="0.0e+00"/>
+        </ParameterList>
       </ParameterList>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>

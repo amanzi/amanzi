@@ -45,13 +45,16 @@ using namespace Amanzi::AmanziGeometry;
 Utils::RegisteredFactory<Evaluator, EvaluatorAperture> EvaluatorAperture::reg_("aperture");
 
 void
-RunTest(const std::string xmlInFileName)
+RunTest(const std::string xmlInFileName, const std::string aperture_model = "")
 {
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
   // setup a piecewice linear solution with a jump
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
+
+  if (aperture_model == "")
+    plist->sublist("PKs").sublist("transient:flow fracture").remove("fracture aperture models", false);
 
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -115,4 +118,9 @@ TEST(MPC_DRIVER_COUPLED_FLOW_APERTURE_DARCY)
 TEST(MPC_DRIVER_COUPLED_FLOW_APERTURE_RICHARDS)
 {
   RunTest("test/mpc_coupled_flow_aperture.xml");
+}
+
+TEST(MPC_DRIVER_COUPLED_FLOW_APERTURE_RICHARDS_BARTON_BANDIS)
+{
+  RunTest("test/mpc_coupled_flow_aperture.xml", "Barton-Bandis");
 }

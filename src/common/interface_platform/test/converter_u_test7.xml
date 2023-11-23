@@ -1,7 +1,7 @@
 <amanzi_input type="unstructured" version="1.5-dev">
   <model_description name="Fractured Rock 3D">
     <comments>Example input file</comments>
-    <author>Konstantin Lipnikov</author>
+    <author>Konstantin Lipnikov (TEST 7)</author>
     <units>
       <length_unit>m</length_unit>
       <time_unit>s</time_unit>
@@ -37,7 +37,7 @@
       <flow model="saturated" state="on" />
     </pk>
     <pk mode="transient">
-      <flow model="saturated" state="on" />
+      <flow model="richards" state="on" />
       <energy model="one-phase energy" state="on" />
     </pk>
   </process_kernels>
@@ -139,6 +139,10 @@
       <mechanical_properties>
         <porosity value="0.2206"/>
       </mechanical_properties>
+      <cap_pressure model="brooks_corey">
+        <parameters alpha="2.0260E-03 Pa^-1" lambda="0.2136" sr="0.0"/>
+      </cap_pressure>
+      <rel_perm model="mualem"/>
       <permeability x="6.9365E-11 m^2" z="6.9365E-12 m^2" />
       <thermal_properties model="constant">
         <liquid_heat_capacity cv="76.1" model="linear"/>
@@ -151,6 +155,10 @@
         <porosity value="0.3"/>
       </mechanical_properties>
       <permeability x="6.9E-13 m^2" z="6.9E-32 m^2" />
+      <cap_pressure model="brooks_corey">
+        <parameters alpha="2.0260E-03 Pa^-1" lambda="0.2136" sr="0.0"/>
+      </cap_pressure>
+      <rel_perm model="mualem"/>
       <thermal_properties model="constant">
         <liquid_heat_capacity cv="76.2" model="linear"/>
         <rock_heat_capacity cv="620.2 J/K/kg" model="linear"/>
@@ -209,7 +217,8 @@
         </mechanical_properties>
 
         <permeability model="cubic law"/>
-        <aperture model="h5file" filename="aperture.h5"/>
+        <aperture model="Barton-Bandis" undeformed_aperture="1.0e-5" A="1e-11"
+                                        overburden_pressure="10e+6"  B="0.0"/>
         <flow_diffusion_to_matrix model="constant" value="20.0"/>
 
         <assigned_regions>fracture</assigned_regions>

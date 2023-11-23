@@ -186,7 +186,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.98000000000000000e+02"/>
+                <Parameter name="value" type="double" value="298.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

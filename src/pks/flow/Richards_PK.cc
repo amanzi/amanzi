@@ -38,6 +38,7 @@
 #include "XMLParameterListWriter.hh"
 
 // Amanzi::Flow
+#include "ApertureModelEvaluator.hh"
 #include "DarcyVelocityEvaluator.hh"
 #include "PermeabilityEvaluator.hh"
 #include "PorosityEvaluator.hh"
@@ -460,6 +461,20 @@ Richards_PK::Setup()
 
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
     S_->SetEvaluator(alpha_key_, Tags::DEFAULT, eval);
+  }
+
+  // -- aperture evalutor
+  if (flow_on_manifold_ && fp_list_->isSublist("fracture aperture models")) {
+    auto fam_list = Teuchos::sublist(fp_list_, "fracture aperture models", true);
+    auto fam = CreateApertureModelPartition(mesh_, fam_list);
+
+    Teuchos::ParameterList elist(aperture_key_);
+    elist.set<std::string>("aperture key", aperture_key_)
+      .set<std::string>("pressure key", pressure_key_)
+      .set<std::string>("tag", "");
+
+    auto eval = Teuchos::rcp(new ApertureModelEvaluator(elist, fam));
+    S_->SetEvaluator(aperture_key_, Tags::DEFAULT, eval);
   }
 
   // Local fields and evaluators.

@@ -128,6 +128,7 @@ InputConverterU::TranslateFlow_(const std::string& mode,
       flow_list->sublist("physical models and assumptions")
         .set<bool>("permeability porosity model", true);
     }
+    out_list.sublist("fracture aperture models") = TranslateFAM_(domain);
 
   } else {
     Errors::Message msg;
@@ -665,6 +666,83 @@ InputConverterU::TranslatePPM_(const std::string& domain)
   }
 
   if (!found) {
+    Teuchos::ParameterList empty;
+    out_list = empty;
+  }
+  return out_list;
+}
+
+
+/* ******************************************************************
+* Create list of fracture aperture models.
+****************************************************************** */
+Teuchos::ParameterList
+InputConverterU::TranslateFAM_(const std::string& domain)
+{
+  Teuchos::ParameterList out_list;
+  if (domain != "fracture") return out_list;
+
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os() << "Translating aperture-stress models" << std::endl;
+
+  MemoryManager mm;
+  DOMNodeList* children;
+  DOMNode* node;
+  DOMElement* element;
+
+  bool flag, found(false), other(false);
+
+  node = GetUniqueElementByTagsString_("fracture_network, materials", flag);
+  element = static_cast<DOMElement*>(node);
+  children = element->getElementsByTagName(mm.transcode("material"));
+
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i);
+
+    // get assigned regions
+    bool flag;
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
+    std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+
+    // get optional compressibility
+    node = GetUniqueElementByTagsString_(inode, "aperture", flag);
+    std::string model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
+
+    std::stringstream ss;
+    ss << "FAM " << i;
+
+    Teuchos::ParameterList& fam_list = out_list.sublist(ss.str());
+    fam_list.set<Teuchos::Array<std::string>>("regions", regions);
+
+    if (model == "exponential law") {
+      found = true;
+      double c = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, 0.0, 1.0, "Pa^-1");
+      double a0 = GetAttributeValueD_(node, "undeformed_aperture", TYPE_NUMERICAL, 0.0, 1.0, "m");
+      double p0 = GetAttributeValueD_(node, "overburden_pressure", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
+
+      fam_list.set<std::string>("fracture aperture model", model)
+        .set<double>("undeformed aperture", a0)
+        .set<double>("overburgen pressure", p0)
+        .set<double>("compressibility", c);
+    } else if (model == "Barton-Bandis") {
+      found = true;
+      double A = GetAttributeValueD_(node, "A", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m*Pa^-1");
+      double B = GetAttributeValueD_(node, "B", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa^-1");
+      double a0 = GetAttributeValueD_(node, "undeformed_aperture", TYPE_NUMERICAL, 0.0, 1.0, "m");
+      double p0 = GetAttributeValueD_(node, "overburden_pressure", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
+
+      fam_list.set<std::string>("fracture aperture model", model)
+        .set<double>("undeformed aperture", a0)
+        .set<double>("overburgen pressure", p0)
+        .set<double>("BartonBandis A", A)
+        .set<double>("BartonBandis B", B);
+    } else {
+      other = true;
+    }
+  }
+
+  if (!found || other) {
     Teuchos::ParameterList empty;
     out_list = empty;
   }

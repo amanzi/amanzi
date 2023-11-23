@@ -474,6 +474,16 @@
           <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="fracture aperture models">
+        <ParameterList name="FAM_0">
+          <Parameter name="fracture aperture model" type="string" value="Barton-Bandis"/>
+          <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+          <Parameter name="undeformed aperture" type="double" value="1e-5"/>
+          <Parameter name="overburden pressure" type="double" value="11e+6"/>
+          <Parameter name="BartonBandis A" type="double" value="1e-11"/>
+          <Parameter name="BartonBandis B" type="double" value="0.0"/>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
