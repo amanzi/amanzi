@@ -268,6 +268,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       // c2 is next to the junction
     }
     if(shallow_water_model_ == 0 && c2 != -1 && WettedAngle_c[0][c2] < 0.0){
+
       std::swap(c1, c2);
       c1IsJunction = true;
       // this also implies
@@ -281,6 +282,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     if (c2IsJunction &&  (ht_c[0][c2] - 0.02) > 1e-6){
       std::cout<<"c1 "<<c1<<" c2 "<<c2<<" "<<c1IsJunction<<" "<<c2IsJunction<<" "<<ht_c[0][c1]<<" "<<ht_c[0][c2]<<"\n";
+      c2IsJunction = true;
+      // this also implies
+      // c1 is next to the junction
+      // not that junctions are asumed to NOT be boundary cells at the moment
     }
 
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
@@ -493,7 +498,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       std::cout<<"Test"<<"\n";
     }
     
-
     if (c2 != -1) {
 
       if(!c1IsJunction && !c2IsJunction){  
@@ -505,7 +509,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       }
       else { 
         h = FNum_rotTmp[0];
-        
+
         if(c2IsJunction){
           qx = FNum_rotTmp[1] * normalNotRotated[0] - FNum_rotTmp[2] * normalNotRotated[1];
           qy = FNum_rotTmp[1] * normalNotRotated[1] + FNum_rotTmp[2] * normalNotRotated[0];
@@ -515,13 +519,14 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
           qx = FNum_rotTmp[1] * normalRotated[0] - FNum_rotTmp[2] * normalRotated[1];
           qy = FNum_rotTmp[1] * normalRotated[1] + FNum_rotTmp[2] * normalRotated[0];
         }
-        
+
         vol = mesh_->cell_volume(c2);
         factor = farea / vol;
         h_c_tmp[0][c2] += h * factor;
         q_c_tmp[0][c2] += qx * factor;
         q_c_tmp[1][c2] += qy * factor;
       }
+
 
       if (c1==34 || c1==64 || c2==64) {
         std::cout<<"c1 "<<c1<<" c2 "<<c2<<"\n";
@@ -534,10 +539,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         std::cout<<"Test"<<"\n";
       }
 
-    }
+    }    
 
-
-    
   }
 
 
