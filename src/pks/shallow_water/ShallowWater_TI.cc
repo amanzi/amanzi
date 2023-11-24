@@ -267,19 +267,19 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       // this also implies
       // c2 is next to the junction
     }
-
     if(shallow_water_model_ == 0 && c2 != -1 && WettedAngle_c[0][c2] < 0.0){
-      c2IsJunction = true;
+      std::swap(c1, c2);
+      c1IsJunction = true;
       // this also implies
       // c1 is next to the junction
       // not that junctions are asumed to NOT be boundary cells at the moment
     }
 
-    if (c1IsJunction &&  (ht_c[0][c1] - 0.02) > 1e-8){
+    if (c1IsJunction){ // &&  (ht_c[0][c1] - 0.02) > 1e-6){
       std::cout<<"c1 "<<c1<<" c2 "<<c2<<" "<<c1IsJunction<<" "<<c2IsJunction<<" "<<ht_c[0][c1]<<" "<<ht_c[0][c2]<<"\n";
     }
 
-    if (c2IsJunction &&  (ht_c[0][c2] - 0.02) > 1e-8){
+    if (c2IsJunction &&  (ht_c[0][c2] - 0.02) > 1e-6){
       std::cout<<"c1 "<<c1<<" c2 "<<c2<<" "<<c1IsJunction<<" "<<c2IsJunction<<" "<<ht_c[0][c1]<<" "<<ht_c[0][c2]<<"\n";
     }
 
@@ -482,6 +482,18 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     q_c_tmp[0][c1] -= qx * factor;
     q_c_tmp[1][c1] -= qy * factor;
 
+
+    if (c1==34 || c2==34) {
+      std::cout<<"c1 "<<c1<<" c2 "<<c2<<"\n";      
+      std::cout<<"UL: "<<UL[0]<<" "<<UL[1]<<" "<<UL[2]<<" "<<UL[3]<<"\n";
+      std::cout<<"UR: "<<UR[0]<<" "<<UR[1]<<" "<<UR[2]<<" "<<UR[3]<<"\n";
+      std::cout<<"FNum_rot "<<FNum_rot[0]<<" "<<FNum_rot[1]<<" "<<FNum_rot[2]<<"\n";
+      std::cout<<"FNum_rotTmp "<<FNum_rotTmp[0]<<" "<<FNum_rotTmp[1]<<" "<<FNum_rotTmp[2]<<"\n";      
+      std::cout<<"transfer for c1 "<< h * factor<<" "<<qx * factor<<" "<<qy * factor<<"\n";
+      std::cout<<"Test"<<"\n";
+    }
+    
+
     if (c2 != -1) {
 
       if(!c1IsJunction && !c2IsJunction){  
@@ -493,14 +505,17 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       }
       else { 
         h = FNum_rotTmp[0];
+        
         if(c2IsJunction){
           qx = FNum_rotTmp[1] * normalNotRotated[0] - FNum_rotTmp[2] * normalNotRotated[1];
           qy = FNum_rotTmp[1] * normalNotRotated[1] + FNum_rotTmp[2] * normalNotRotated[0];
         }
+        
         if(c1IsJunction){ 
           qx = FNum_rotTmp[1] * normalRotated[0] - FNum_rotTmp[2] * normalRotated[1];
           qy = FNum_rotTmp[1] * normalRotated[1] + FNum_rotTmp[2] * normalRotated[0];
         }
+        
         vol = mesh_->cell_volume(c2);
         factor = farea / vol;
         h_c_tmp[0][c2] += h * factor;
@@ -508,16 +523,20 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         q_c_tmp[1][c2] += qy * factor;
       }
 
+      if (c1==34 || c1==64 || c2==64) {
+        std::cout<<"c1 "<<c1<<" c2 "<<c2<<"\n";
+        std::cout<<"UL: "<<UL[0]<<" "<<UL[1]<<" "<<UL[2]<<" "<<UL[3]<<"\n";
+        std::cout<<"UR: "<<UR[0]<<" "<<UR[1]<<" "<<UR[2]<<" "<<UR[3]<<"\n";       
+        std::cout<<"FNum_rot "<<FNum_rot[0]<<" "<<FNum_rot[1]<<" "<<FNum_rot[2]<<"\n";
+        std::cout<<"FNum_rotTmp "<<FNum_rotTmp[0]<<" "<<FNum_rotTmp[1]<<" "<<FNum_rotTmp[2]<<"\n";              
+        std::cout<<"transfer c2 "<< h * factor<<" "<<qx * factor<<" "<<qy * factor<<"\n";
+        std::cout<<"update mom c2 " <<  q_c_tmp[0][c2]<<" "<<q_c_tmp[1][c2]<<"\n";
+        std::cout<<"Test"<<"\n";
+      }
+
     }
 
-    if (c1==34 || c2==34) {
-      std::cout<<"c1 "<<c1<<" c2 "<<c2<<"\n";
-      std::cout<<"UL: "<<UL[0]<<" "<<UL[1]<<" "<<UL[2]<<" "<<UL[3]<<"\n";
-      std::cout<<"UR: "<<UR[0]<<" "<<UR[1]<<" "<<UR[2]<<" "<<UR[3]<<"\n";
 
-      std::cout<<"transfer "<< h * factor<<" "<<qx * factor<<" "<<qy * factor<<"\n";
-      std::cout<<"Test"<<"\n";
-    }
     
   }
 
@@ -547,6 +566,11 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     f_temp0[0][cell] = h;
     f_temp1[0][cell] = qx;
     f_temp1[1][cell] = qy;
+
+    if (cell==13 || cell==64) {
+      std::cout<<cell<<" update "<< h<<" "<<qx<<" "<<qy<<"\n";
+    }
+                                
   }
 
   // NOTE: we are currently assuming that the manholes cannot be
