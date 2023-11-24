@@ -14,7 +14,9 @@
 */
 
 #include "Energy_PK.hh"
+#include "OperatorDefs.hh"
 #include "Flow_PK.hh"
+
 #include "FlowEnergy_PK.hh"
 #include "PK_MPCStrong.hh"
 
@@ -269,6 +271,36 @@ FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   return fail;
+}
+
+
+/* *******************************************************************
+* Performs one time step.
+******************************************************************* */
+void
+FlowEnergy_PK::FunctionalResidual(double t_old,
+                                  double t_new,
+                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<TreeVector> u_new,
+                                  Teuchos::RCP<TreeVector> f)
+{
+  // flow
+  auto u_old0 = u_old->SubVector(0);
+  auto u_new0 = u_new->SubVector(0);
+  auto f0 = f->SubVector(0);
+  sub_pks_[0]->FunctionalResidual(t_old, t_new, u_old0, u_new0, f0);
+
+  // update molar flux
+  Key key = Keys::getKey(domain_, "molar_flow_rate");
+  auto mol_flowrate = S_->GetPtrW<CV_t>(key, Tags::DEFAULT, "");
+  auto op0 = sub_pks_[0]->my_pde(Operators::PDEType::PDE_DIFFUSION);
+  op0->UpdateFlux(u_new0->Data().ptr(), mol_flowrate.ptr());
+
+  // energy
+  auto u_old1 = u_old->SubVector(1);
+  auto u_new1 = u_new->SubVector(1);
+  auto f1 = f->SubVector(1);
+  sub_pks_[1]->FunctionalResidual(t_old, t_new, u_old1, u_new1, f1);
 }
 
 } // namespace Amanzi

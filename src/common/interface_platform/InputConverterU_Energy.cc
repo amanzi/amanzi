@@ -137,6 +137,7 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
   // insert internal evaluators
   out_list.sublist("energy evaluator").sublist("verbose object") =
     verb_list_.sublist("verbose object");
+  out_list.sublist("enthalpy evaluator").set<bool>("include work term", true);
   out_list.sublist("enthalpy evaluator").sublist("verbose object") =
     verb_list_.sublist("verbose object");
 

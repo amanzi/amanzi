@@ -134,7 +134,6 @@ Flow_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-    S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
 
     S_->Require<CV_t, CVS_t>(prev_aperture_key_, Tags::DEFAULT)
       .SetMesh(mesh_)

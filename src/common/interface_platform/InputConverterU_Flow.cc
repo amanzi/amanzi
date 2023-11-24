@@ -723,7 +723,7 @@ InputConverterU::TranslateFAM_(const std::string& domain)
 
       fam_list.set<std::string>("fracture aperture model", model)
         .set<double>("undeformed aperture", a0)
-        .set<double>("overburgen pressure", p0)
+        .set<double>("overburden pressure", p0)
         .set<double>("compressibility", c);
     } else if (model == "Barton-Bandis") {
       found = true;
@@ -734,7 +734,7 @@ InputConverterU::TranslateFAM_(const std::string& domain)
 
       fam_list.set<std::string>("fracture aperture model", model)
         .set<double>("undeformed aperture", a0)
-        .set<double>("overburgen pressure", p0)
+        .set<double>("overburden pressure", p0)
         .set<double>("BartonBandis A", A)
         .set<double>("BartonBandis B", B);
     } else {

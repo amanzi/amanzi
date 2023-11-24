@@ -215,6 +215,8 @@ Darcy_PK::Setup()
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(compliance_key_, Tags::DEFAULT);
+
+    S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
   } else if (use_bulk_modulus_) {
     S_->Require<CV_t, CVS_t>(bulk_modulus_key_, Tags::DEFAULT)
       .SetMesh(mesh_)

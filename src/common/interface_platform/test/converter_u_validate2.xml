@@ -918,6 +918,7 @@
 	</ParameterList>
       </ParameterList>
       <ParameterList name="enthalpy evaluator">
+        <Parameter name="include work term" type="bool" value="true"/>
 	<ParameterList name="verbose object">
 	  <Parameter name="verbosity level" type="string" value="high"/>
 	</ParameterList>

@@ -990,6 +990,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="enthalpy evaluator">
+        <Parameter name="include work term" type="bool" value="true"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
@@ -1077,7 +1078,7 @@
           <Parameter name="regions" type="Array(string)" value="{fracture}"/>
           <Parameter name="fracture aperture model" type="string" value="Barton-Bandis"/>
           <Parameter name="undeformed aperture" type="double" value="1.0e-05"/>
-          <Parameter name="overburgen pressure" type="double" value="1.0e+07"/>
+          <Parameter name="overburden pressure" type="double" value="1.0e+07"/>
           <Parameter name="BartonBandis A" type="double" value="9.99999999999999939e-12"/>
           <Parameter name="BartonBandis B" type="double" value="0.0e+00"/>
         </ParameterList>
@@ -1187,6 +1188,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="enthalpy evaluator">
+        <Parameter name="include work term" type="bool" value="true"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
