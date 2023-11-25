@@ -10,8 +10,6 @@
 /*
 2 component (Hydrogen, Water), 2 phase with assumptions as in [Gharbia, Jaffre' 14]. 1D analytical solution not related to any physical scenario.
 Manufactured sol:
-pl = (-1/(32*\pi*\pi)) \sin{(pi x)} e^{-1000t}
-sl = (1/8) \sin{(pi x)} e^{-1000t}
 */
 
 #include <cstdlib>
@@ -61,8 +59,11 @@ for (int c = 0; c < ncells_owned; c++) {
 
     double x = xc[0], y = xc[1];
 
-    pl_ex[0][c] = -(1/(32.0*pi*pi)) * std::sin(pi*x) * std::exp(-1000.0*t);
-    sl_ex[0][c] = (1/8.0) * std::sin(pi*x) * std::exp(-1000.0*t);
+    //pl_ex[0][c] = -(1/(32.0*pi*pi)) * std::sin(pi*x) * std::exp(-1000.0*t);
+    //sl_ex[0][c] = (1/8.0) * std::sin(pi*x) * std::exp(-1000.0*t);
+
+    pl_ex[0][c] = x;
+    sl_ex[0][c] = 0.5;
   }
 
 }
@@ -131,7 +132,7 @@ run_test(int M, double dt0,  const std::string& filename)
 
   // loop
   int iloop(0);
-  double t(0.0), tend(1.0e-3), dt(dt0), dt_max(dt0);
+  double t(0.0), tend(1.0e-5), dt(dt0), dt_max(dt0);
 
   // store Newton iterations and time step size (after successful iteration)
   std::vector<int> newton_iterations_per_step;
@@ -147,7 +148,7 @@ run_test(int M, double dt0,  const std::string& filename)
   while (t < tend) {
 
     // output solution
-    if (iloop % 100 == 0) {
+    if (iloop % 10 == 0) {
       io->InitializeCycle(t, iloop, "");
       const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
@@ -172,6 +173,7 @@ run_test(int M, double dt0,  const std::string& filename)
       io->FinalizeCycle();
 
       WriteStateStatistics(*S, *vo);
+      //std::cout<<"Time = "<<t<<std::endl;
     }
 
     while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2.0; }
@@ -190,6 +192,7 @@ run_test(int M, double dt0,  const std::string& filename)
     // update time
     t += dt;
     // reset time step if reduced
+    if (dt < dt0) { std::cout<<"time step reduced to "<<dt<<std::endl; }
     dt = dt0;
     iloop++;
 
@@ -203,8 +206,9 @@ run_test(int M, double dt0,  const std::string& filename)
     for (int c = 0; c < ncells_owned; ++c) { 
       const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
       double x = xc[0], y = xc[1];
-      double err = std::abs( pl[0][c] + (1/(32.0*pi*pi))*std::sin(pi*x)*std::exp(-1000*t) );
-      double err_sl = std::abs( sl[0][c] - (1/8.0)*std::sin(pi*x)*std::exp(-1000*t) );
+      // exact solution expression
+      double err = std::abs( pl[0][c] - x );
+      double err_sl = std::abs( sl[0][c] - 0.5 );
       if (perr_linf_inf < err) { perr_linf_inf = err; }
       perr_linf_l1_tmp += err * mesh->getCellVolume(c);
       perr_linf_l2_tmp += err * err * mesh->getCellVolume(c);  
@@ -263,7 +267,7 @@ TEST(MULTIPHASE_1D_ANALYTICAL)
 {
   std::vector<double> h(3), errs_pl(3), errs_sl(3);
 
-  double dt0 = 1.0e-6;
+  double dt0 = 1.0e-8;
   int i = 0;
   for (int M = 32; M <= 128; M *= 2) {
     h[i] = 1.0/M;

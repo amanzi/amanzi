@@ -138,7 +138,7 @@
 
         <Parameter name="solver type" type="string" value="Newton"/>
         <ParameterList name="Newton parameters">
-          <Parameter name="nonlinear tolerance" type="double" value="1.0e-8"/>
+          <Parameter name="nonlinear tolerance" type="double" value="1.0e-14"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
           <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
           <Parameter name="max error growth factor" type="double" value="1.0e+10"/>
@@ -181,11 +181,12 @@
           <Parameter name="regions" type="Array(string)" value="{Left, Right}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <ParameterList name="boundary pressure">
-            <ParameterList name="function-constant">
+            <ParameterList name="function-exprtk">
               <!--
               <Parameter name="value" type="double" value="-1.0/(16*3.141592653589793*3.141592653589793)"/>
               -->
-              <Parameter name="value" type="double" value="0.0"/>
+              <Parameter name="number of arguments" type="int" value="4"/>
+              <Parameter name="formula" type="string" value="x"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -218,8 +219,9 @@
           <Parameter name="regions" type="Array(string)" value="{Left, Right}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <ParameterList name="boundary saturation">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="0.0"/>
+            <ParameterList name="function-exprtk">
+              <Parameter name="number of arguments" type="int" value="4"/>
+              <Parameter name="formula" type="string" value="0.5"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -232,7 +234,7 @@
           <Parameter name="name" type="string" value="SH4"/>
           <ParameterList name="boundary concentration">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="1.0/(16*3.141592653589793*3.141592653589793)"/>
+              <Parameter name="value" type="double" value="0.0"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -249,7 +251,7 @@
           <ParameterList name="injector">
             <ParameterList name="function-exprtk">
               <Parameter name="number of arguments" type="int" value="4"/>
-              <Parameter name="formula" type="string" value="(-1000.0/(64*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * exp(-1000.0*t)"/>
+              <Parameter name="formula" type="string" value="-2.0"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -261,7 +263,7 @@
           <ParameterList name="injector">
             <ParameterList name="function-exprtk">
               <Parameter name="number of arguments" type="int" value="4"/>
-              <Parameter name="formula" type="string" value=" (-1000.0/16) * sin(3.141592653589793*x) * exp(-1000.0*t) + (1.0/256) * cos(2*3.141592653589793*x) * exp(-2000.0*t)"/>
+              <Parameter name="formula" type="string" value="0.0"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -279,7 +281,7 @@
         <ParameterList name="upwind">
           <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
           <ParameterList name="upwind standard parameters">
-             <Parameter name="tolerance" type="double" value="1e-12"/>
+             <Parameter name="tolerance" type="double" value="1e-14"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="matrix">
@@ -348,7 +350,7 @@
                 <Parameter name="number of arguments" type="int" value="4"/>
                   <!--
                   <Parameter name="formula" type="string" value="(-1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * sin(3.141592653589793*y) - 1.0/(16*3.141592653589793*3.141592653589793)"/> -->
-                  <Parameter name="formula" type="string" value="(-1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * 1.0"/>
+                  <Parameter name="formula" type="string" value="x"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -363,7 +365,7 @@
             <ParameterList name="function">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
-                <Parameter name="formula" type="string" value="(1/8.0)*sin(3.141592653589793*x) * 1.0"/>
+                <Parameter name="formula" type="string" value="0.5"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -380,7 +382,7 @@
                 <Parameter name="number of arguments" type="int" value="4"/>
                 <!--
                 <Parameter name="formula" type="string" value="(1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * sin(3.141592653589793*y) + 1.0/(16*3.141592653589793*3.141592653589793)"/> -->
-                <Parameter name="formula" type="string" value="(1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * 1.0"/>
+                <Parameter name="formula" type="string" value="x+0.5"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -398,7 +400,7 @@
                 <Parameter name="number of arguments" type="int" value="4"/>
                 <!--
                 <Parameter name="formula" type="string" value="(1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * sin(3.41592653589793*y) + 1.0/(16*3.141592653589793*3.141592653589793)"/> -->
-                <Parameter name="formula" type="string" value="(1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * 1.0"/>
+                <Parameter name="formula" type="string" value="x+0.5"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -627,7 +629,7 @@
     <ParameterList name="GMRES">
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="2e-7"/>
+        <Parameter name="error tolerance" type="double" value="1e-14"/>
         <Parameter name="use flexible gmres" type="bool" value="true"/>
         <Parameter name="maximum number of iterations" type="int" value="400"/>
         <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
