@@ -269,45 +269,42 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     }
     if(shallow_water_model_ == 0 && c2 != -1 && WettedAngle_c[0][c2] < 0.0){
 
-      std::swap(c1, c2);
-      c1IsJunction = true;
-      // this also implies
-      // c1 is next to the junction
-      // not that junctions are asumed to NOT be boundary cells at the moment
-    }
-
-    if (c1IsJunction){ // &&  (ht_c[0][c1] - 0.02) > 1e-6){
-      std::cout<<"c1 "<<c1<<" c2 "<<c2<<" "<<c1IsJunction<<" "<<c2IsJunction<<" "<<ht_c[0][c1]<<" "<<ht_c[0][c2]<<"\n";
-    }
-
-    if (c2IsJunction &&  (ht_c[0][c2] - 0.02) > 1e-6){
-      std::cout<<"c1 "<<c1<<" c2 "<<c2<<" "<<c1IsJunction<<" "<<c2IsJunction<<" "<<ht_c[0][c1]<<" "<<ht_c[0][c2]<<"\n";
+      //      std::swap(c1, c2);
       c2IsJunction = true;
       // this also implies
       // c1 is next to the junction
       // not that junctions are asumed to NOT be boundary cells at the moment
     }
 
+    // if (c1IsJunction &&  (ht_c[0][c1] - 0.02) > 1e-5){
+    //   std::cout<<"c1 "<<c1<<" c2 "<<c2<<" "<<c1IsJunction<<" "<<c2IsJunction<<" "<<ht_c[0][c1]<<" "<<ht_c[0][c2]<<"\n";
+    // }
+
+    // if (c2IsJunction &&  (ht_c[0][c2] - 0.02) > 1e-5){
+    //   std::cout<<"c1 "<<c1<<" c2 "<<c2<<" "<<c1IsJunction<<" "<<c2IsJunction<<" "<<ht_c[0][c1]<<" "<<ht_c[0][c2]<<"\n";
+    // }
+
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
     AmanziGeometry::Point normalNotRotated = mesh_->face_normal(f, false, c1, &dir);
     AmanziGeometry::Point normalRotated = mesh_->face_normal(f, false, c1, &dir);
-    normal /= farea;
-    normalNotRotated /= farea;
-    normalRotated /= farea;
+    normal /= farea;                   //  unit face normal
+    normalNotRotated /= farea;         //  unit face normal    
+    normalRotated /= farea;            //  unit face normal
     // If we have a junction (wetted angle = -1), we do not need to rotate
     // the normal vectors because both entries are 0, and also because the SW
     // model is a 2D model
-    if(WettedAngle_c[0][c1] >= 0.0){
-      // this is if c1 is not a junction 
-      ProjectNormalOntoMeshDirection(c1, normal);
-      ProjectNormalOntoMeshDirection(c1, normalRotated);
-    }
-    else {
-      // this is if c1 is a junction 
-      // we consider the mesh direction of c2 to be 
-      // the same as c1 if c1 is a junction
-      ProjectNormalOntoMeshDirection(c2, normalRotated);
-    }
+    // if(WettedAngle_c[0][c1] >= 0.0){
+    //   // this is if c1 is not a junction 
+    //   //ProjectNormalOntoMeshDirection(c1, normal);
+    //   ProjectNormalOntoMeshDirection(c1, normalRotated);
+    // }
+    // else {
+    //   // this is if c1 is a junction 
+    //   // we consider the mesh direction of c2 to be 
+    //   // the same as c1 if c1 is a junction
+    //   //ProjectNormalOntoMeshDirection(c2, normal);
+    //   ProjectNormalOntoMeshDirection(c2, normalRotated);
+    // }
 
     // primary fields at the edge
     // V_rec[0]: primary variable
@@ -355,8 +352,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       vx_rec = factor * qx_rec;
       vy_rec = factor * qy_rec;
 
-      vn = vx_rec * normalRotated[0] + vy_rec * normalRotated[1];
-      vt = -vx_rec * normalRotated[1] + vy_rec * normalRotated[0];
+      vn = vx_rec * normal[0] + vy_rec * normal[1];
+      vt = -vx_rec * normal[1] + vy_rec * normal[0];
 
       UL[0] = V_rec[0];
       UL[1] = V_rec[0] * vn;
@@ -419,8 +416,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         vx_rec = factor * qx_rec;
         vy_rec = factor * qy_rec;
 
-        vn = vx_rec * normalRotated[0] + vy_rec * normalRotated[1];
-        vt = -vx_rec * normalRotated[1] + vy_rec * normalRotated[0];
+        vn = vx_rec * normal[0] + vy_rec * normal[1];
+        vt = -vx_rec * normal[1] + vy_rec * normal[0];
       }
 
       UR[0] = V_rec[0];
@@ -488,15 +485,15 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     q_c_tmp[1][c1] -= qy * factor;
 
 
-    if (c1==34 || c2==34) {
-      std::cout<<"c1 "<<c1<<" c2 "<<c2<<"\n";      
-      std::cout<<"UL: "<<UL[0]<<" "<<UL[1]<<" "<<UL[2]<<" "<<UL[3]<<"\n";
-      std::cout<<"UR: "<<UR[0]<<" "<<UR[1]<<" "<<UR[2]<<" "<<UR[3]<<"\n";
-      std::cout<<"FNum_rot "<<FNum_rot[0]<<" "<<FNum_rot[1]<<" "<<FNum_rot[2]<<"\n";
-      std::cout<<"FNum_rotTmp "<<FNum_rotTmp[0]<<" "<<FNum_rotTmp[1]<<" "<<FNum_rotTmp[2]<<"\n";      
-      std::cout<<"transfer for c1 "<< h * factor<<" "<<qx * factor<<" "<<qy * factor<<"\n";
-      std::cout<<"Test"<<"\n";
-    }
+    // if (c1==54 || c2==54) {
+    //   std::cout<<"c1 "<<c1<<" c2 "<<c2<<"\n";      
+    //   std::cout<<"UL: "<<UL[0]<<" "<<UL[1]<<" "<<UL[2]<<" "<<UL[3]<<"\n";
+    //   std::cout<<"UR: "<<UR[0]<<" "<<UR[1]<<" "<<UR[2]<<" "<<UR[3]<<"\n";
+    //   std::cout<<"FNum_rot "<<FNum_rot[0]<<" "<<FNum_rot[1]<<" "<<FNum_rot[2]<<"\n";
+    //   std::cout<<"FNum_rotTmp "<<FNum_rotTmp[0]<<" "<<FNum_rotTmp[1]<<" "<<FNum_rotTmp[2]<<"\n";      
+    //   std::cout<<"transfer for c1 "<< h * factor<<" "<<qx * factor<<" "<<qy * factor<<"\n";
+    //   std::cout<<"Test"<<"\n";
+    // }
     
     if (c2 != -1) {
 
@@ -528,16 +525,16 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       }
 
 
-      if (c1==34 || c1==64 || c2==64) {
-        std::cout<<"c1 "<<c1<<" c2 "<<c2<<"\n";
-        std::cout<<"UL: "<<UL[0]<<" "<<UL[1]<<" "<<UL[2]<<" "<<UL[3]<<"\n";
-        std::cout<<"UR: "<<UR[0]<<" "<<UR[1]<<" "<<UR[2]<<" "<<UR[3]<<"\n";       
-        std::cout<<"FNum_rot "<<FNum_rot[0]<<" "<<FNum_rot[1]<<" "<<FNum_rot[2]<<"\n";
-        std::cout<<"FNum_rotTmp "<<FNum_rotTmp[0]<<" "<<FNum_rotTmp[1]<<" "<<FNum_rotTmp[2]<<"\n";              
-        std::cout<<"transfer c2 "<< h * factor<<" "<<qx * factor<<" "<<qy * factor<<"\n";
-        std::cout<<"update mom c2 " <<  q_c_tmp[0][c2]<<" "<<q_c_tmp[1][c2]<<"\n";
-        std::cout<<"Test"<<"\n";
-      }
+      // if (c1==54 || c1==114 || c2==114) {
+      //   std::cout<<"c1 "<<c1<<" c2 "<<c2<<"\n";
+      //   std::cout<<"UL: "<<UL[0]<<" "<<UL[1]<<" "<<UL[2]<<" "<<UL[3]<<"\n";
+      //   std::cout<<"UR: "<<UR[0]<<" "<<UR[1]<<" "<<UR[2]<<" "<<UR[3]<<"\n";       
+      //   std::cout<<"FNum_rot "<<FNum_rot[0]<<" "<<FNum_rot[1]<<" "<<FNum_rot[2]<<"\n";
+      //   std::cout<<"FNum_rotTmp "<<FNum_rotTmp[0]<<" "<<FNum_rotTmp[1]<<" "<<FNum_rotTmp[2]<<"\n";              
+      //   std::cout<<"transfer c2 "<< h * factor<<" "<<qx * factor<<" "<<qy * factor<<"\n";
+      //   std::cout<<"update mom c2 " <<  q_c_tmp[0][c2]<<" "<<q_c_tmp[1][c2]<<"\n";
+      //   std::cout<<"Test"<<"\n";
+      // }
 
     }    
 
@@ -570,9 +567,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     f_temp1[0][cell] = qx;
     f_temp1[1][cell] = qy;
 
-    if (cell==13 || cell==64) {
-      std::cout<<cell<<" update "<< h<<" "<<qx<<" "<<qy<<"\n";
-    }
+    // if (cell==13 || cell==114) {
+    //   std::cout<<cell<<" update "<< h<<" "<<qx<<" "<<qy<<"\n";
+    // }
                                 
   }
 
