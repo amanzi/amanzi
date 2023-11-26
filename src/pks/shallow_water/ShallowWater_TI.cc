@@ -287,9 +287,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
     AmanziGeometry::Point normalNotRotated = mesh_->face_normal(f, false, c1, &dir);
     AmanziGeometry::Point normalRotated = mesh_->face_normal(f, false, c1, &dir);
-    normal /= farea;                   //  unit face normal
-    normalNotRotated /= farea;         //  unit face normal    
-    normalRotated /= farea;            //  unit face normal
+    normal /= farea;              
+    normalNotRotated /= farea;    
+    normalRotated /= farea;       
     // If we have a junction (wetted angle = -1), we do not need to rotate
     // the normal vectors because both entries are 0, and also because the SW
     // model is a 2D model
@@ -491,7 +491,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     //   std::cout<<"UR: "<<UR[0]<<" "<<UR[1]<<" "<<UR[2]<<" "<<UR[3]<<"\n";
     //   std::cout<<"FNum_rot "<<FNum_rot[0]<<" "<<FNum_rot[1]<<" "<<FNum_rot[2]<<"\n";
     //   std::cout<<"FNum_rotTmp "<<FNum_rotTmp[0]<<" "<<FNum_rotTmp[1]<<" "<<FNum_rotTmp[2]<<"\n";      
-    //   std::cout<<"transfer for c1 "<< h * factor<<" "<<qx * factor<<" "<<qy * factor<<"\n";
+    //   std::cout<<"transfer for c1 "<<qx * factor<<" "<<qy * factor<<"\n";
     //   std::cout<<"Test"<<"\n";
     // }
     
@@ -551,24 +551,30 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     msg << "Negative primary variable.\n";
     Exceptions::amanzi_throw(msg);
   }
- 
+
+  AmanziGeometry::Point q;
   // sources (bathymetry, flux exchange, etc)
   for (int c = 0; c < model_cells_owned_.size(); ++c) {
     int cell = model_cells_owned_[c];  
 
+    q[0] = q_temp[0][cell];
+    q[1] = q_temp[1][cell];
+      
+    
     BedSlopeSource = NumericalSourceBedSlope(cell, ht_c[0][cell], B_c[0][cell], B_max[0][cell], B_n, bc_model_scalar, bc_value_h);
-    FrictionSource[0] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 0); 
+    FrictionSource[0] = NumericalSourceFriction(h_temp[0][cell], q, WettedAngle_c[0][cell], 0);
+    FrictionSource[1] = NumericalSourceFriction(h_temp[0][cell], q, WettedAngle_c[0][cell], 1); 
 
     h  = h_c_tmp[0][cell] + BedSlopeSource[0] + ext_S_cell[cell];
-    qx = q_c_tmp[0][cell] + BedSlopeSource[1]; //+ FrictionSource[0];
-    qy = q_c_tmp[1][cell] + BedSlopeSource[2];
+    qx = q_c_tmp[0][cell] + BedSlopeSource[1] + FrictionSource[0];
+    qy = q_c_tmp[1][cell] + BedSlopeSource[2] + FrictionSource[1];
 
     f_temp0[0][cell] = h;
     f_temp1[0][cell] = qx;
     f_temp1[1][cell] = qy;
 
     // if (cell==13 || cell==114) {
-    //   std::cout<<cell<<" update "<< h<<" "<<qx<<" "<<qy<<"\n";
+    //   std::cout<<cell<<" update "<<q_c_tmp[0][cell]<<" "<<q_c_tmp[1][cell] <<" "<<FrictionSource[0]<<" "<<FrictionSource[1]<<"\n";
     // }
                                 
   }
@@ -581,8 +587,11 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     BedSlopeSource = NumericalSourceBedSlope(cell, ht_c[0][cell], B_c[0][cell], B_max[0][cell], B_n);
 
-    FrictionSource[0] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 0);
-    FrictionSource[1] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 1);
+    q[0] = q_temp[0][cell];
+    q[1] = q_temp[1][cell];
+    
+    FrictionSource[0] = NumericalSourceFriction(h_temp[0][cell], q, WettedAngle_c[0][cell], 0);
+    FrictionSource[1] = NumericalSourceFriction(h_temp[0][cell], q, WettedAngle_c[0][cell], 1);
 
     h = h_c_tmp[0][cell] + BedSlopeSource[0];
     qx = q_c_tmp[0][cell] + BedSlopeSource[1] + FrictionSource[0];
