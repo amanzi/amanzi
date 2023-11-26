@@ -59,6 +59,9 @@ ExternalProject_Add(${ASCEMIO_BUILD_TARGET}
                                 -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}   # Ensure uniform build
                                 -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                                 -DHDF5_USE_STATIC_LIBRARIES:BOOL=${HDF5_USE_STATIC_LIBRARIES}
+                                -DCMAKE_SKIP_RPATH:BOOL=${CMAKE_SKIP_RPATH}
+                                -DCMAKE_SKIP_INSTALL_RPATH:BOOL=ON
+                                -DCMAKE_SKIP_BUILD_RPATH:BOOL=ON
                     # -- Build
                     BINARY_DIR       ${ASCEMIO_build_dir}         # Build directory 
                     BUILD_COMMAND    ${MAKE}

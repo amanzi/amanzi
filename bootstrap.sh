@@ -179,7 +179,6 @@ arch_tpl_opts=
 arch_amanzi_opts=
 skip_cmake_rpath=${FALSE}
 
-
 # ---------------------------------------------------------------------------- #
 # Functions: basic messages and exit functions
 # ---------------------------------------------------------------------------- #
@@ -565,11 +564,13 @@ Build configuration:
     trilinos_build_type = '"${trilinos_build_type}"'
     tpls_build_type     = '"${tpls_build_type}"'
     tpl_config_file     = '"${tpl_config_file}"'
-    blas_dir        = '"${blas_dir}"'
-    lapack_dir      = '"${lapack_dir}"'
-    blas_vendor     = '"${blas_vendor}"'
+    blas_dir            = '"${blas_dir}"'
+    lapack_dir          = '"${lapack_dir}"'
+    blas_vendor         = '"${blas_vendor}"'
     debug_find_blas     = '"${debug_find_blas}"'
     amanzi_arch         = '"${amanzi_arch}"'
+    skip_cmake_rpath    = '"${skip_cmake_rpath}"'
+
 
 Amanzi Components:
     structured     = '"${structured}"'
@@ -654,7 +655,7 @@ List of INPUT parameters
                  ;;
 
       --skip_rpath=*)
-                 skip_cmake_rpath=TRUE
+                 skip_cmake_rpath=`parse_option_with_equal "${opt}" 'skip_rpath'`
                  ;;
 
       --parallel=[0-9]*)
@@ -1635,8 +1636,8 @@ function define_nersc_options
                    -DMPI_EXEC:STRING=srun \
                    -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
                    -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
-                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}"
-#                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
+                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}"  
+    #                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
 
     arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
                       -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
@@ -1897,6 +1898,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DBUILD_SPACK:BOOL=${build_Spack} \
       -DENABLE_XSDK:BOOL=${xsdk} \
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
+      -DBUILD_SKIP_CMAKE_RPATH:BOOL==${skip_cmake_rpath} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
       -DDISABLE_EXTERNAL_DOWNLOAD=${disable_external_downloads} \
       -DPYTHON_EXECUTABLE:STRING=${python_exec} \
