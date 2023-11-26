@@ -69,7 +69,9 @@ RunTest(const std::string& xmlInFileName)
   Key key("fracture-aperture");
   auto plist = simulator.get_plist();
 
-  plist->sublist("state").sublist("evaluators").sublist(key)
+  plist->sublist("state")
+    .sublist("evaluators")
+    .sublist(key)
     .set<std::string>("evaluator type", "aperture")
     .set<std::string>("pressure key", "fracture-pressure");
 
@@ -89,8 +91,8 @@ RunTest(const std::string& xmlInFileName)
   while (t1 < 1000) {
     t0 = t1;
     t1 = t0 + dtg;
-    std::cout << "========================================\n" 
-              << "New loop from " << t0 << " to " << t1 
+    std::cout << "========================================\n"
+              << "New loop from " << t0 << " to " << t1
               << "\n========================================\n";
 
     cycle_driver.Go(t0, t1, &dt0);

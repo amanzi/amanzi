@@ -29,15 +29,15 @@ TEST(vanGenuchten)
 
   Teuchos::ParameterList plist;
   plist.set<double>("undeformed aperture", 1e-5)
-       .set<double>("overburden pressure", 11e+6)
-       .set<double>("BartonBandis A", 1e-11)
-       .set<double>("BartonBandis B", 0.0)
-       .set<double>("compressibility", 2e-7);
+    .set<double>("overburden pressure", 11e+6)
+    .set<double>("BartonBandis A", 1e-11)
+    .set<double>("BartonBandis B", 0.0)
+    .set<double>("compressibility", 2e-7);
 
   ApertureModel_BartonBandis abb(plist);
   ApertureModel_ExponentialLaw ael(plist);
 
-  for (double p = 10e+6; p < 30e+6; p += 1e+6) { 
+  for (double p = 10e+6; p < 30e+6; p += 1e+6) {
     double a1 = abb.Aperture(p);
     double a2 = ael.Aperture(p);
     CHECK(a1 > 0.0 && a2 > 0.0);

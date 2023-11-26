@@ -476,7 +476,7 @@ Richards_PK::Setup()
 
       auto eval = Teuchos::rcp(new ApertureModelEvaluator(elist, fam));
       S_->SetEvaluator(aperture_key_, Tags::DEFAULT, eval);
-    } else { 
+    } else {
       S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
     }
   }

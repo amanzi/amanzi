@@ -719,7 +719,8 @@ InputConverterU::TranslateFAM_(const std::string& domain)
       found = true;
       double c = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, 0.0, 1.0, "Pa^-1");
       double a0 = GetAttributeValueD_(node, "undeformed_aperture", TYPE_NUMERICAL, 0.0, 1.0, "m");
-      double p0 = GetAttributeValueD_(node, "overburden_pressure", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
+      double p0 =
+        GetAttributeValueD_(node, "overburden_pressure", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
 
       fam_list.set<std::string>("fracture aperture model", model)
         .set<double>("undeformed aperture", a0)
@@ -730,7 +731,8 @@ InputConverterU::TranslateFAM_(const std::string& domain)
       double A = GetAttributeValueD_(node, "A", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m*Pa^-1");
       double B = GetAttributeValueD_(node, "B", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa^-1");
       double a0 = GetAttributeValueD_(node, "undeformed_aperture", TYPE_NUMERICAL, 0.0, 1.0, "m");
-      double p0 = GetAttributeValueD_(node, "overburden_pressure", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
+      double p0 =
+        GetAttributeValueD_(node, "overburden_pressure", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
 
       fam_list.set<std::string>("fracture aperture model", model)
         .set<double>("undeformed aperture", a0)

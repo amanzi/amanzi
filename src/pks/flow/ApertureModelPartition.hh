@@ -24,8 +24,7 @@ namespace Amanzi {
 namespace Flow {
 
 typedef std::vector<Teuchos::RCP<ApertureModel>> ApertureModelList;
-typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, ApertureModelList>
-  ApertureModelPartition;
+typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, ApertureModelList> ApertureModelPartition;
 
 // Non-member factory
 Teuchos::RCP<ApertureModelPartition>

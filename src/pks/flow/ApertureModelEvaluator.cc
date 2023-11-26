@@ -32,8 +32,7 @@ ApertureModelEvaluator::ApertureModelEvaluator(Teuchos::ParameterList& plist,
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), apm_(apm)
 {
   if (my_keys_.size() == 0) {
-    my_keys_.push_back(
-      std::make_pair(plist_.get<std::string>("aperture key"), Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("aperture key"), Tags::DEFAULT));
   }
 
   // my dependency is pressure.

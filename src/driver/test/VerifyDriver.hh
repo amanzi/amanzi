@@ -13,7 +13,8 @@
 #include "CompositeVector.hh"
 #include "State.hh"
 
-void VerifyDriverAperture(const Amanzi::State& S, double tol)
+void
+VerifyDriverAperture(const Amanzi::State& S, double tol)
 {
   double t = 1000.0;
   const auto& a_c = *S.Get<Amanzi::CompositeVector>("fracture-aperture").ViewComponent("cell");
@@ -33,4 +34,3 @@ void VerifyDriverAperture(const Amanzi::State& S, double tol)
 }
 
 #endif
-

@@ -972,13 +972,10 @@ CycleDriver::Go(double t_old, double t_new, double* dt0)
          ((tp_max_cycle_[time_period_id_] == -1) ||
           (S_->get_cycle() - start_cycle_num < tp_max_cycle_[time_period_id_]))) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      if (S_->get_cycle() % 100 == 0 && S_->get_cycle() > 0) {
-        WriteStateStatistics(*S_, *vo_);
-      }
+      if (S_->get_cycle() % 100 == 0 && S_->get_cycle() > 0) { WriteStateStatistics(*S_, *vo_); }
       Utils::Units units("molar");
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "\nCycle " << S_->get_cycle()
-                 << ": time = " << units.OutputTime(S_->get_time())
+      *vo_->os() << "\nCycle " << S_->get_cycle() << ": time = " << units.OutputTime(S_->get_time())
                  << ", dt = " << units.OutputTime(dt) << "\n";
     }
     S_->GetW<double>("dt", Tags::DEFAULT, "dt") = dt;

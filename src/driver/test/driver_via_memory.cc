@@ -66,7 +66,9 @@ RunTest(const std::string& xmlInFileName)
   simulator.InitMesh(gm, mesh, domain, submesh);
 
   auto plist = simulator.get_plist();
-  plist->sublist("state").sublist("evaluators").sublist("fracture-aperture")
+  plist->sublist("state")
+    .sublist("evaluators")
+    .sublist("fracture-aperture")
     .set<std::string>("evaluator type", "aperture")
     .set<std::string>("pressure key", "fracture-pressure");
 

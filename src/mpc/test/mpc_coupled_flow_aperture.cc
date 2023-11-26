@@ -54,7 +54,9 @@ RunTest(const std::string xmlInFileName, const std::string aperture_model = "")
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
 
   if (aperture_model == "")
-    plist->sublist("PKs").sublist("transient:flow fracture").remove("fracture aperture models", false);
+    plist->sublist("PKs")
+      .sublist("transient:flow fracture")
+      .remove("fracture aperture models", false);
 
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
