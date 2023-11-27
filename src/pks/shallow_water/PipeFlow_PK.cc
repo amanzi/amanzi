@@ -474,6 +474,9 @@ void PipeFlow_PK::UpdateSecondaryFields(){
                                                    B_c[0][cell], WettedAngle_c[0][cell]);
    }
 
+   Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+       S_->GetEvaluatorPtr(wetted_angle_key_, Tags::DEFAULT))->SetChanged();
+
 }
 
 
@@ -626,9 +629,6 @@ void PipeFlow_PK::ScatterMasterToGhostedExtraEvaluators(){
 // Update Extra Evaluators
 //--------------------------------------------------------------
 void PipeFlow_PK::UpdateExtraEvaluators(){
-
-     Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-       S_->GetEvaluatorPtr(wetted_angle_key_, Tags::DEFAULT))->SetChanged();
 
      S_->GetEvaluator(water_depth_key_).Update(*S_, passwd_);
      S_->GetEvaluator(pressure_head_key_).Update(*S_, passwd_);
