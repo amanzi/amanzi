@@ -343,8 +343,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        vx_rec = factor * qx_rec;
        vy_rec = factor * qy_rec;
 
-       vn = vx_rec * normalNotRotated[0] + vy_rec * normalNotRotated[1];
-       vt = -vx_rec * normalNotRotated[1] + vy_rec * normalNotRotated[0];
+       vn = vx_rec * normal[0] + vy_rec * normal[1];
+       vt = -vx_rec * normal[1] + vy_rec * normal[0];
 
        UL[0] = V_rec[0];
        UL[1] = V_rec[0] * vn;
@@ -407,8 +407,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         vx_rec = factor * qx_rec;
         vy_rec = factor * qy_rec;
 
-        // if c1 is a junction, c2 is a pipe cell so the normal
-        // must not be rotated
+        // if c1 is a junction the normal has not been rotated,
+        // c2 is a pipe cell so the normal should be rotated
         vn = vx_rec * normalRotated[0] + vy_rec * normalRotated[1];
         vt = -vx_rec * normalRotated[1] + vy_rec * normalRotated[0];
      }
@@ -433,6 +433,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         vx_rec = factor * qx_rec;
         vy_rec = factor * qy_rec;
 
+        // if c2 is a junction, it means c1 is not, hence both normal
+        // and normal rotated have been rotated. Hence we need to
+        // normalNotRotated
         vn = vx_rec * normalNotRotated[0] + vy_rec * normalNotRotated[1];
         vt = -vx_rec * normalNotRotated[1] + vy_rec * normalNotRotated[0];
 
@@ -490,7 +493,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        qx = FNum_rotTmp[1] * normalNotRotated[0] - FNum_rotTmp[2] * normalNotRotated[1];
        qy = FNum_rotTmp[1] * normalNotRotated[1] + FNum_rotTmp[2] * normalNotRotated[0];
      }
-     if(c1IsJunction){ 
+     if(c1IsJunction){
+       // if c1 is a junction, c2 is not and so we need to use the rotated normal  
        qx = FNum_rotTmp[1] * normalRotated[0] - FNum_rotTmp[2] * normalRotated[1];
        qy = FNum_rotTmp[1] * normalRotated[1] + FNum_rotTmp[2] * normalRotated[0];
      }
