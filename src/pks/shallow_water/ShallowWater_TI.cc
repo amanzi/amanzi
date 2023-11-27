@@ -279,18 +279,19 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     normal /= farea;
     normalNotRotated /= farea;
     normalRotated /= farea;
-    // If we have a junction (wetted angle = -1), we do not need to rotate
-    // the normal vectors because both entries are 0, and also because the SW
-    // model is a 2D model
+    // If we have a junction or SW model (wetted angle = -1), we do not 
+    // need to rotate the normal vector because for a junction both entries 
+    // of the pipe direction are 0, and the SW model is a 2D model
     if(WettedAngle_c[0][c1] >= 0.0){
-       // this is if c1 is not a junction 
+       // c1 is NOT a junction: 
        ProjectNormalOntoMeshDirection(c1, normal);
        ProjectNormalOntoMeshDirection(c1, normalRotated);
     }
     else {
-       // this is if c1 is a junction 
-       // we consider the mesh direction of c2 to be 
-       // the same as c1 if c1 is a junction
+       // c1 is a junction:
+       // in this case we consider the pipe direction of c2 to be 
+       // the same as c1 which makes sense since the pipe and 
+       // junction cells are contiguous
        ProjectNormalOntoMeshDirection(c2, normalRotated);
     }
 
@@ -307,6 +308,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
 
     if(c2IsJunction){
+       // we do not do any gradient 
+       // reconstruction in this case
        qx_rec = q_temp[0][c1];
        qy_rec = q_temp[1][c1];
     }
@@ -340,8 +343,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        vx_rec = factor * qx_rec;
        vy_rec = factor * qy_rec;
 
-       vn = vx_rec * normalRotated[0] + vy_rec * normalRotated[1];
-       vt = -vx_rec * normalRotated[1] + vy_rec * normalRotated[0];
+       vn = vx_rec * normalNotRotated[0] + vy_rec * normalNotRotated[1];
+       vt = -vx_rec * normalNotRotated[1] + vy_rec * normalNotRotated[0];
 
        UL[0] = V_rec[0];
        UL[1] = V_rec[0] * vn;
@@ -404,6 +407,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         vx_rec = factor * qx_rec;
         vy_rec = factor * qy_rec;
 
+        // if c1 is a junction, c2 is a pipe cell so the normal
+        // must not be rotated
         vn = vx_rec * normalRotated[0] + vy_rec * normalRotated[1];
         vt = -vx_rec * normalRotated[1] + vy_rec * normalRotated[0];
      }
@@ -428,10 +433,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         vx_rec = factor * qx_rec;
         vy_rec = factor * qy_rec;
 
-        // since c1 is not a junction, normal has
-        // been rotated, so we can use "normal"
-        vn = vx_rec * normal[0] + vy_rec * normal[1];
-        vt = -vx_rec * normal[1] + vy_rec * normal[0];
+        vn = vx_rec * normalNotRotated[0] + vy_rec * normalNotRotated[1];
+        vt = -vx_rec * normalNotRotated[1] + vy_rec * normalNotRotated[0];
 
         UR[0] = V_rec[0];
         UR[1] = V_rec[0] * vn;
