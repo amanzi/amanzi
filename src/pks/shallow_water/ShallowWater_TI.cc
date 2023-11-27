@@ -307,11 +307,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double qx_rec = discharge_x_grad_->getValue(c1, xf);
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
 
-    if(c2IsJunction){
-       // we do not do any gradient 
-       // reconstruction in this case
-       qx_rec = q_temp[0][c1];
-       qy_rec = q_temp[1][c1];
+    if(c1IsJunction || c2IsJunction){
+       qx_rec = vel_c[0][c1] * V_rec[0];
+       qy_rec = vel_c[1][c1] * V_rec[0];
     }
 
     factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
@@ -328,30 +326,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     UL[1] = V_rec[0] * vn;
     UL[2] = V_rec[0] * vt;
     UL[3] = V_rec[1];
-
-    if (c1IsJunction) {
-       V_rec = ComputeFieldsOnEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
-
-       ierr = ErrorDiagnostics_(t, c1, V_rec[0]);
-       if (ierr < 0) break;
-
-       qx_rec = vel_c[0][c1] * V_rec[0];
-       qy_rec = vel_c[1][c1] * V_rec[0];
-
-       factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
-
-       vx_rec = factor * qx_rec;
-       vy_rec = factor * qy_rec;
-
-       vn = vx_rec * normal[0] + vy_rec * normal[1];
-       vt = -vx_rec * normal[1] + vy_rec * normal[0];
-
-       UL[0] = V_rec[0];
-       UL[1] = V_rec[0] * vn;
-       UL[2] = V_rec[0] * vt;
-       UL[3] = V_rec[1];
-
-  }
 
   if (c2 == -1) {
      if (bc_model_scalar[f] == Operators::OPERATOR_BC_DIRICHLET) {
@@ -434,8 +408,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         vy_rec = factor * qy_rec;
 
         // if c2 is a junction, it means c1 is not, hence both normal
-        // and normal rotated have been rotated. Hence we need to
-        // normalNotRotated
+        // and normalRotated have been rotated. Hence we need to
+        // use normalNotRotated
         vn = vx_rec * normalNotRotated[0] + vy_rec * normalNotRotated[1];
         vt = -vx_rec * normalNotRotated[1] + vy_rec * normalNotRotated[0];
 
