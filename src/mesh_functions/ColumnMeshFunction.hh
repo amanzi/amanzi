@@ -30,18 +30,6 @@ Function values u:
    * `"z header`" ``[string]`` name of the z-coordinate data: `z` above.  Depth
      coordinates (positive downward from the surface), [m]
    * `"f header`" ``[string]`` name of the function data: `f` above.
-
-   ONE OF
-
-   * `"surface sideset`" ``[string]`` Region on the surface domain from which
-     to start to determine columns.
-
-   OR
-
-   * `"surface sidesets`" ``[Array(string)]`` Regions on the surface domain
-     from which to start to determine columns.
-
-   END
 */
 
 
@@ -66,7 +54,6 @@ ReadColumnMeshFunction(Teuchos::ParameterList& plist, CompositeVector& v);
 
 void
 ReadColumnMeshFunction_ByDepth(const Function& func,
-                               const Teuchos::Array<std::string> sidesets,
                                CompositeVector& v);
 
 } // namespace Functions
