@@ -338,7 +338,7 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist,
   // ------ Set values using a function -----
   if (plist.isSublist("function")) {
     double t_ini = plist.get<double>("time", 0.0);
-    Teuchos::ParameterList func_plist = plist.sublist("function");
+    Teuchos::ParameterList& func_plist = plist.sublist("function");
 
     std::vector<std::string> complist;
 

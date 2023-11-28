@@ -58,53 +58,30 @@ ReadColumnMeshFunction(Teuchos::ParameterList& plist, CompositeVector& v)
   FunctionFactory fac;
   auto func = fac.Create(func_list);
 
-  // starting surface
-  Teuchos::Array<std::string> sidesets;
-  if (plist.isParameter("surface sideset")) {
-    sidesets.push_back(plist.get<std::string>("surface sideset"));
-  } else if (plist.isParameter("surface sidesets")) {
-    sidesets = plist.get<Teuchos::Array<std::string>>("surface sidesets");
-  } else {
-    Errors::Message message(
-      "Missing InitializeFromColumn parameter \"surface sideset\" or \"surface sidesets\"");
-    Exceptions::amanzi_throw(message);
-  }
-
-  ReadColumnMeshFunction_ByDepth(*func, sidesets, v);
+  ReadColumnMeshFunction_ByDepth(*func, v);
 }
 
 
 void
 ReadColumnMeshFunction_ByDepth(const Function& func,
-                               const Teuchos::Array<std::string> sidesets,
                                CompositeVector& v)
 {
   Epetra_MultiVector& vec = *v.ViewComponent("cell");
+  const AmanziMesh::Mesh& mesh = *v.Mesh();
+  int d = mesh.getSpaceDimension() - 1;
 
-  double z0;
-  std::vector<double> z(1);
+  int num_columns = mesh.columns.num_columns_owned;
+  for (int col=0; col!=num_columns; ++col) {
+    std::vector<double> z(1, 0.0);
 
-  for (auto setname : sidesets) {
-    auto surf_faces = v.Mesh()->getSetEntities(
-      setname, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-
-    for (auto f : surf_faces) {
-      // Collect the reference coordinate z0
-      AmanziGeometry::Point x0 = v.Mesh()->getFaceCentroid(f);
-      z0 = x0[x0.dim() - 1];
-
-      // Iterate down the column
-      auto cells = v.Mesh()->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
-      AMANZI_ASSERT(cells.size() == 1);
-      AmanziMesh::Entity_ID c = cells[0];
-
-      while (c >= 0) {
-        AmanziGeometry::Point x1 = v.Mesh()->getCellCentroid(c);
-        z[0] = z0 - x1[x1.dim() - 1];
-        vec[0][c] = func(z);
-        assert(false);
-        //c = v.Mesh()->cell_get_cell_below(c);
-      }
+    const auto& col_faces = mesh.columns.getFaces(col);
+    const auto& col_cells = mesh.columns.getCells(col);
+    double top_z = mesh.getFaceCentroid(col_faces[0])[d];
+    for (int i = 0; i != col_cells.size(); ++i) {
+      double cell_z =
+        (mesh.getFaceCentroid(col_faces[i])[d] + mesh.getFaceCentroid(col_faces[i + 1])[d]) / 2;
+      z[0] = top_z - cell_z;
+      vec[0][col_cells[i]] = func(z);
     }
   }
 }
