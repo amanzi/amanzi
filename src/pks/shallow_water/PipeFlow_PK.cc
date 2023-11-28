@@ -795,6 +795,28 @@ bool PipeFlow_PK::IsJunction(const int &cell)
 }
 
 //--------------------------------------------------------------
+// Check if a face needs to be skipped in the flux computation
+// (it is skipped if parallel to the flow direction)
+//--------------------------------------------------------------
+void PipeFlow_PK::SkipFace(AmanziGeometry::Point normal, bool &skipFace)
+{
+
+   if (std::fabs(normal[0]) < 1.e-10) skipFace = true;
+
+}
+
+//--------------------------------------------------------------
+// The pipe is a 1D model so no fluxes along the second component
+// should exist
+//--------------------------------------------------------------
+void PipeFlow_PK::KillSecondComponent(double &killer)
+{
+
+   killer = 0.0;
+
+}
+
+//--------------------------------------------------------------
 // Compute dx
 //--------------------------------------------------------------
 void PipeFlow_PK::GetDx(const int &cell, double &dx)

@@ -246,6 +246,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     bool c1IsJunction = false;
     bool c2IsJunction = false;
+    bool skipFace = false;
 
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     c1 = cells[0];
@@ -286,6 +287,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        // c1 is NOT a junction: 
        ProjectNormalOntoMeshDirection(c1, normal);
        ProjectNormalOntoMeshDirection(c1, normalRotated);
+       SkipFace(normalRotated, skipFace);
     }
     else {
        // c1 is a junction:
@@ -293,7 +295,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        // the same as c1 which makes sense since the pipe and 
        // junction cells are contiguous
        ProjectNormalOntoMeshDirection(c2, normalRotated);
+       SkipFace(normalRotated, skipFace);
     }
+
+    if(!skipFace){
 
     // primary fields at the edge
     // V_rec[0]: primary variable
@@ -480,6 +485,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
    }
 
  }
+
+}//if !skipFace
+
 }
 
   // sync errors across processors, otherwise any MPI call
@@ -495,13 +503,15 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // sources (bathymetry, flux exchange, etc)
   for (int c = 0; c < model_cells_owned_.size(); ++c) {
     int cell = model_cells_owned_[c];  
+    double killer = 1.0;
+    KillSecondComponent(killer);
 
     BedSlopeSource = NumericalSourceBedSlope(cell, ht_c[0][cell], B_c[0][cell], B_max[0][cell], B_n, bc_model_scalar, bc_value_h);
     FrictionSource[0] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 0); 
 
     h = h_c_tmp[0][cell] + BedSlopeSource[0] + ext_S_cell[cell];
     qx = q_c_tmp[0][cell] + BedSlopeSource[1] + FrictionSource[0];
-    qy = q_c_tmp[1][cell] + BedSlopeSource[2];
+    qy = killer * (q_c_tmp[1][cell] + BedSlopeSource[2]);
 
     f_temp0[0][cell] = h;
     f_temp1[0][cell] = qx;
