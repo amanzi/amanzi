@@ -985,12 +985,14 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="energy evaluator">
+        <Parameter name="include potential term" type="bool" value="false"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="enthalpy evaluator">
         <Parameter name="include work term" type="bool" value="true"/>
+        <Parameter name="include potential term" type="bool" value="false"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
@@ -1183,12 +1185,14 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="energy evaluator">
+        <Parameter name="include potential term" type="bool" value="false"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="enthalpy evaluator">
         <Parameter name="include work term" type="bool" value="true"/>
+        <Parameter name="include potential term" type="bool" value="false"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>

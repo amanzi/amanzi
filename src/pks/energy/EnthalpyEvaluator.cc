@@ -10,8 +10,13 @@
 /*
   Energy
 
-  Field evaluator for enthalpy, H = U + p / eta.
+  Field evaluator for specific menthalpy, h = u + p / eta + g z.
 */
+
+#include "CommonDefs.hh"
+#include "Key.hh"
+#include "Mesh.hh"
+#include "Mesh_Algorithms.hh"
 
 #include "EnthalpyEvaluator.hh"
 #include "IEMEvaluator.hh"
@@ -31,6 +36,9 @@ EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist)
   }
   auto domain = Keys::getDomain(my_keys_[0].first); // include dash
 
+  include_work_ = plist_.get<bool>("include work term", true);
+  include_potential_ = plist_.get<bool>("include potential term", false);
+
   // Set up my dependencies.
   // -- internal energy
   ie_key_ =
@@ -38,8 +46,6 @@ EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist)
   dependencies_.insert(std::make_pair(ie_key_, Tags::DEFAULT));
 
   // -- pressure work
-  include_work_ = plist_.get<bool>("include work term", true);
-
   if (include_work_) {
     pressure_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
     dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
@@ -91,6 +97,34 @@ EnthalpyEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>
 
       int ncomp = results[0]->size(*comp);
       for (int i = 0; i != ncomp; ++i) { result_v[0][i] += pres_v[0][i] / nl_v[0][i]; }
+    }
+  }
+
+  if (include_potential_) {
+    Key domain = Keys::getDomain(ie_key_);
+    auto mesh = S.GetMesh(domain);
+
+    int d = mesh->getSpaceDimension();
+    double g = std::fabs(std::fabs((S.Get<AmanziGeometry::Point>("gravity", tag_))[d - 1]));
+    g *= CommonDefs::MOLAR_MASS_H2O;
+
+    for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
+      Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
+      int ncomp = results[0]->size(*comp);
+
+      auto kind = AmanziMesh::createEntityKind(*comp);
+      if (kind == AmanziMesh::Entity_kind::CELL) {
+        for (int i = 0; i != ncomp; ++i) {
+          const auto& xc = mesh->getCellCentroid(i);
+          result_v[0][i] += g * xc[d - 1];
+        }
+      } else if (kind == AmanziMesh::Entity_kind::BOUNDARY_FACE) {
+        for (int i = 0; i != ncomp; ++i) {
+          int f = AmanziMesh::getBoundaryFaceFace(*mesh, i);
+          const auto& xf = mesh->getFaceCentroid(f);
+          result_v[0][i] += g * xf[d - 1];
+        }
+      }
     }
   }
 }
