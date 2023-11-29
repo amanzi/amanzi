@@ -42,6 +42,7 @@ protected:
 
  private:
   std::string wetted_angle_key_;
+  std::string primary_variable_key_;
 
 
 };

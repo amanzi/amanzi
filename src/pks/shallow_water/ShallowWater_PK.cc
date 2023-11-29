@@ -584,8 +584,6 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   }
   UpdateSecondaryFields();
 
-  UpdateExtraEvaluators();
-
   if(!source_key_.empty()){
      S_->GetEvaluator(source_key_).Update(*S_, passwd_); // in this evaluator when running pipe flow
   }
@@ -597,6 +595,8 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
     S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))->SetChanged();
 
   S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
+
+  UpdateExtraEvaluators();
 
     // min-max values
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {

@@ -83,6 +83,10 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual void ComputeCellArrays();
 
+  virtual void SkipFace(AmanziGeometry::Point normal, bool &skipFace) {};
+
+  virtual void KillSecondComponent(double &killSecondComponent) {};
+
   virtual void ComputeExternalForcingOnCells(std::vector<double> &forcing); 
 
   // Commit any secondary (dependent) variables.

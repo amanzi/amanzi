@@ -70,6 +70,10 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual void ComputeExternalForcingOnCells(std::vector<double> &forcing) override;
 
+  virtual void SkipFace(AmanziGeometry::Point normal, bool &skipFace) override;
+
+  virtual void KillSecondComponent(double &killer) override;
+
   void GetDx(const int & cell, double & dx);
 
   virtual void ComputeCellArrays() override;
