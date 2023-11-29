@@ -297,6 +297,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        ProjectNormalOntoMeshDirection(c2, normalRotated);
        SkipFace(normalRotated, skipFace);
     }
+    if(!skipFace){
 
     if(!skipFace){
 
