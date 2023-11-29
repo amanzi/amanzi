@@ -34,11 +34,11 @@ ${AMANZI_SRC_DIR}/bootstrap.sh \
    --enable-mesh_mstk --disable-mesh_moab \
    --enable-hypre \
    --enable-silo \
-   --disable-petsc \
+   --enable-petsc \
    --disable-amanzi_physics \
    --enable-ats_physics \
-   --disable-ats_dev \
-   --disable-geochemistry \
+   --enable-ats_dev \
+   --enable-geochemistry \
    --amanzi-install-prefix=${AMANZI_DIR} \
    --amanzi-build-dir=${AMANZI_BUILD_DIR} \
    --tpl-install-prefix=${AMANZI_TPLS_DIR} \

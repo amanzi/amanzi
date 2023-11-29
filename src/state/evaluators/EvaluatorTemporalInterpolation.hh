@@ -36,12 +36,12 @@ water content at an intermediate time (here called transport_current).
 
 #pragma once
 
+#include "Factory.hh"
 #include "EvaluatorSecondaryMonotype.hh"
 
 namespace Amanzi {
 
 class EvaluatorTemporalInterpolation : public EvaluatorSecondaryMonotypeCV {
-
 
  public:
   explicit EvaluatorTemporalInterpolation(Teuchos::ParameterList& plist);

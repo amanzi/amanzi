@@ -11,6 +11,9 @@
 
 namespace Amanzi {
 
+// ---------------------------------------------------------------------------
+// Constructor
+// ---------------------------------------------------------------------------
 EvaluatorTemporalInterpolation::EvaluatorTemporalInterpolation(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotypeCV(plist)
 {
@@ -21,13 +24,15 @@ EvaluatorTemporalInterpolation::EvaluatorTemporalInterpolation(Teuchos::Paramete
   dependencies_.insert(current_);
 
   Tag next_tag(plist.get<std::string>("next tag"));
-  next_ = KeyTag{ my_key, next_tag }
+  next_ = KeyTag{ my_key, next_tag };
   dependencies_.insert(next_);
 }
 
-
+// ---------------------------------------------------------------------------
+// Copy constructor
+// ---------------------------------------------------------------------------
 Teuchos::RCP<Evaluator>
-EvaluatorTemporalInterpolation::Clone() const override
+EvaluatorTemporalInterpolation::Clone() const //override
 {
   return Teuchos::rcp(new EvaluatorTemporalInterpolation(*this));
 }
@@ -51,7 +56,8 @@ EvaluatorTemporalInterpolation::Evaluate_(const State& S, const std::vector<Comp
 }
 
 void
-EvaluatorTemporalInterpolation::EvaluatePartialDerivative_(const State& S,
+EvaluatorTemporalInterpolation::EvaluatePartialDerivative_(
+        const State& S,
         const Key& wrt_key,
         const Tag& wrt_tag,
         const std::vector<CompositeVector*>& result)

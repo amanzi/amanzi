@@ -20,6 +20,7 @@
 #include "EvaluatorIndependentConstant.hh"
 #include "EvaluatorMultiplicativeReciprocal.hh"
 #include "EvaluatorSecondaryMonotypeFromFunction.hh"
+#include "EvaluatorTemporalInterpolation.hh"
 
 namespace Amanzi {
 

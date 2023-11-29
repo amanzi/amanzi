@@ -24,6 +24,7 @@
 
 #include "EvaluatorIndependentFunction.hh"
 #include "EvaluatorSecondaryMonotypeFromFunction.hh"
+#include "EvaluatorTemporalInterpolation.hh"
 #include "State.hh"
 
 using namespace Amanzi;
