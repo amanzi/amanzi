@@ -83,6 +83,10 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual void ComputeCellArrays();
 
+  virtual void SkipFace(AmanziGeometry::Point normal, bool &skipFace) {};
+
+  virtual void KillSecondComponent(double &killSecondComponent) {};
+
   virtual void ComputeExternalForcingOnCells(std::vector<double> &forcing); 
 
   // Commit any secondary (dependent) variables.
@@ -122,7 +126,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   virtual std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
                                                       double Bmax, const Epetra_MultiVector& B_n);
 
-  virtual double NumericalSourceFriction(double h, AmanziGeometry::Point& q, double WettedAngle, int component){return 0.0;};
+  virtual double NumericalSourceFriction(double h, double qx, double qy, double WettedAngle, int component){return 0.0;};
 
   virtual double ComputeWaterDepth(double WettedAngle){return 0.0;};
 
@@ -209,7 +213,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   std::vector<int> junction_cells_wghost_;
   bool cellArraysInitDone_ = false;
 
- private:
+ protected:
   // boundary conditions
   std::vector<Teuchos::RCP<ShallowWaterBoundaryFunction>> bcs_;
   std::vector<Teuchos::RCP<Operators::BCs>> op_bcs_;

@@ -93,33 +93,39 @@ void PipeFlow_PK::Setup()
 
 }
 
+void PipeFlow_PK::Initialize()
+{    
+  
+  ShallowWater_PK::Initialize();
+
+}
+  
 //--------------------------------------------------------------------
 // Discretization of the friction source term
 //--------------------------------------------------------------------
-  double PipeFlow_PK::NumericalSourceFriction(double h, AmanziGeometry::Point& q, double WettedAngle, int component)
+double PipeFlow_PK::NumericalSourceFriction(double h, double qx, double qy, double WettedAngle, int component)
 {
 
   double S1 = 0.0;
   double num = 0.0;
 
-  double qnorm;
-
-  qnorm = sqrt(q[0]*q[0] + q[1]*q[1]);
- 
   if (std::fabs(h) > 1.e-10) { //we have to raise this to the power of 7/3 below so the tolerance needs to be stricter
-    if (WettedAngle >= 0.0){  
-      double WettedPerimeter = 0.5 * pipe_diameter_ * WettedAngle;
-      num = - g_ * Manning_coeff_ * Manning_coeff_ * pow(WettedPerimeter, 4.0/3.0) * std::fabs(q[component]) * q[component];        
-
-      double denom = pow( h, 7.0/3.0);
-      S1 = num / denom;
-    }
-    else{ //junction
-      num = - g_ * Manning_coeff_ * Manning_coeff_ * q[component] * qnorm;
-
-      double denom = pow( h, 7.0/3.0);
-      S1 = num / denom;
-    }
+     if (WettedAngle >= 0.0){  
+        double WettedPerimeter = 0.5 * pipe_diameter_ * WettedAngle;
+        num = - g_ * Manning_coeff_ * Manning_coeff_ * pow(WettedPerimeter, 4.0/3.0) * std::fabs(qx) * qx;
+        double denom = pow( h, 7.0/3.0);
+        S1 = num / denom;
+     }
+     else{ //junction
+        if(component == 0){ 
+           num = - g_ * Manning_coeff_ * Manning_coeff_ * qx * sqrt(qx*qx + qy*qy);
+        }
+        else{
+           num = - g_ * Manning_coeff_ * Manning_coeff_ * qy * sqrt(qx*qx + qy*qy);
+        }
+        double denom = pow( h, 7.0/3.0);
+        S1 = num / denom;
+     }
   }
 
   return S1;
@@ -475,6 +481,9 @@ void PipeFlow_PK::UpdateSecondaryFields(){
                                                    B_c[0][cell], WettedAngle_c[0][cell]);
    }
 
+   Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+       S_->GetEvaluatorPtr(wetted_angle_key_, Tags::DEFAULT))->SetChanged();
+
 }
 
 
@@ -628,9 +637,6 @@ void PipeFlow_PK::ScatterMasterToGhostedExtraEvaluators(){
 //--------------------------------------------------------------
 void PipeFlow_PK::UpdateExtraEvaluators(){
 
-     Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-       S_->GetEvaluatorPtr(wetted_angle_key_, Tags::DEFAULT))->SetChanged();
-
      S_->GetEvaluator(water_depth_key_).Update(*S_, passwd_);
      S_->GetEvaluator(pressure_head_key_).Update(*S_, passwd_);
 }
@@ -666,12 +672,97 @@ void PipeFlow_PK::SetPrimaryVariableBC(Teuchos::RCP<Teuchos::ParameterList> &bc_
 void PipeFlow_PK::InitializeFields(){
 
      int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+     ComputeCellArrays();     
+     
      auto& PrimaryVar_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& WaterDepth_c = *S_->GetW<CV_t>(water_depth_key_, Tags::DEFAULT, water_depth_key_).ViewComponent("cell");
      auto& PressureHead_c = *S_->GetW<CV_t>(pressure_head_key_, Tags::DEFAULT, pressure_head_key_).ViewComponent("cell");
      auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+     auto& B_n = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("node");
+     auto& B_max = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cmax");
+
+     for (int c = 0; c < junction_cells_owned_.size(); ++c) {
+       int cell = junction_cells_owned_[c];
+       //AmanziGeometry::Point xc = mesh_->cell_centroid(cell);
+       AmanziMesh::Entity_ID_List nodes;
+       mesh_->cell_get_nodes(cell, &nodes);
+       int nnodes = nodes.size();
+       for (int n = 0; n < nnodes; ++n) {
+         int v = nodes[n];
+         B_n[0][v] = B_c[0][cell];
+       }
+     }
+     
+     const auto& dir_c = *S_->Get<CV_t>(direction_key_, Tags::DEFAULT).ViewComponent("cell", true);
+
+     double eps = 1e-2;
+     for (int c = 0; c < model_cells_owned_.size(); ++c) {
+       int cell = model_cells_owned_[c];
+       std::vector<int> dirs;
+       AmanziMesh::Entity_ID_List faces;
+       mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
+       int nfaces = faces.size();
+       for (int n = 0; n < nfaces; ++n) {
+         int f = faces[n];
+         AmanziGeometry::Point normal = mesh_->face_normal(f);
+         double cosa = normal[0]*dir_c[0][cell] + normal[1]*dir_c[1][cell];
+         if (1 - abs(cosa) > eps) continue;
+
+         AmanziMesh::Entity_ID_List face_nodes;
+         mesh_->face_get_nodes(f, &face_nodes);
+         int n0 = face_nodes[0];
+         int n1 = face_nodes[1];
+
+         double Bavr = 0.5*(B_n[0][n1] + B_n[0][n0]);
+         B_n[0][n1] = Bavr;
+         B_n[0][n0] = Bavr;         
+       }
+     }              
+
+     S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("node");
+
+     double cell_area_max = 0.0;
+     for (int c = 0; c < ncells_owned; ++c) {
+       const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+
+       cell_area_max = std::max(cell_area_max, mesh_->cell_volume(c));
+       Amanzi::AmanziMesh::Entity_ID_List cfaces;
+       mesh_->cell_get_faces(c, &cfaces);
+       int nfaces_cell = cfaces.size();
+
+       // compute cell averaged bathymery (Bc)
+       Amanzi::AmanziGeometry::Point x0, x1;
+       AmanziMesh::Entity_ID_List face_nodes;
+
+       double tmp(0.0);
+       for (int f = 0; f < nfaces_cell; ++f) {
+         int edge = cfaces[f];
+
+         mesh_->face_get_nodes(edge, &face_nodes);
+         int n0 = face_nodes[0];
+         int n1 = face_nodes[1];
+
+         mesh_->node_get_coordinates(n0, &x0);
+         mesh_->node_get_coordinates(n1, &x1);
+
+         AmanziGeometry::Point area = (xc - x0) ^ (xc - x1);
+         tmp += norm(area) * (B_n[0][n0] + B_n[0][n1]) / 4;
+
+         B_max[0][c] = std::max(B_max[0][c], B_n[0][n0]); 
+         B_max[0][c] = std::max(B_max[0][c], B_n[0][n1]); 
+       }
+       B_c[0][c] = tmp / mesh_->cell_volume(c);
+     }
+     // redistribute the result
+     S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("cell");
+     S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("cmax");
+
+     // calculate cell area square (used as a tolerance)  
+     cell_area2_max_ = cell_area_max * cell_area_max;
+     
 
      for (int cell = 0; cell < ncells_owned; cell++) {
 
@@ -706,7 +797,7 @@ void PipeFlow_PK::InitializeFields(){
      S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
      S_->GetRecordW(water_depth_key_, Tags::DEFAULT, water_depth_key_).set_initialized();
      S_->GetRecordW(pressure_head_key_, Tags::DEFAULT, pressure_head_key_).set_initialized();
-
+     
 }
 
 //---------------------------------------------------------------
@@ -717,7 +808,10 @@ void PipeFlow_PK::ComputeCellArrays(){
     if(!cellArraysInitDone_){
        int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
        int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+
+       S_->GetEvaluator(direction_key_, Tags::DEFAULT).Update(*S_, direction_key_);       
        auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, direction_key_).ViewComponent("cell", true);
+       
        auto& PrimaryVar_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
        auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
        auto& WaterDepth_c = *S_->GetW<CV_t>(water_depth_key_, Tags::DEFAULT, water_depth_key_).ViewComponent("cell");
@@ -792,6 +886,28 @@ bool PipeFlow_PK::IsJunction(const int &cell)
     }
 
     return isJunction;
+
+}
+
+//--------------------------------------------------------------
+// Check if a face needs to be skipped in the flux computation
+// (it is skipped if parallel to the flow direction)
+//--------------------------------------------------------------
+void PipeFlow_PK::SkipFace(AmanziGeometry::Point normal, bool &skipFace)
+{
+
+   if (std::fabs(normal[0]) < 1.e-10) skipFace = true;
+
+}
+
+//--------------------------------------------------------------
+// The pipe is a 1D model so no fluxes along the second component
+// should exist
+//--------------------------------------------------------------
+void PipeFlow_PK::KillSecondComponent(double &killer)
+{
+
+   killer = 0.0;
 
 }
 

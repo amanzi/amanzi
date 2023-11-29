@@ -31,7 +31,9 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual void Setup() override;
 
-  virtual double NumericalSourceFriction(double h, AmanziGeometry::Point& q, double WettedAngle, int component) override;
+  virtual void Initialize() override;
+
+  virtual double NumericalSourceFriction(double h, double qx, double qy, double WettedAngle, int component) override;
 
   virtual std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
                                                       double Bmax, const Epetra_MultiVector& B_n,
@@ -69,6 +71,10 @@ class PipeFlow_PK : public ShallowWater_PK {
   virtual void InitializeFields() override;
 
   virtual void ComputeExternalForcingOnCells(std::vector<double> &forcing) override;
+
+  virtual void SkipFace(AmanziGeometry::Point normal, bool &skipFace) override;
+
+  virtual void KillSecondComponent(double &killer) override;
 
   void GetDx(const int & cell, double & dx);
 

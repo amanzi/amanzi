@@ -213,6 +213,9 @@ ShallowWater_PK::Setup()
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->GetRecordW(prev_primary_variable_key_, passwd_).set_io_vis(false);
   }
+
+  S_->RequireEvaluator(Keys::getKey(domain_, "cell_volume"), Tags::DEFAULT);
+  
 }
 
 
@@ -321,56 +324,17 @@ ShallowWater_PK::Initialize()
 
   // default
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-
+  
+  
   if (!S_->GetRecord(bathymetry_key_).initialized()) {
     InitializeCVField(S_, *vo_, bathymetry_key_, Tags::DEFAULT, passwd_, 0.0);
-  }
-
-  const auto& B_n = *S_->Get<CV_t>(bathymetry_key_).ViewComponent("node");
-  auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-  auto& B_max = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cmax");
-
-  // compute B_c from B_n for well balanced scheme (Beljadid et. al. 2016)
-  S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("node");
-
-  double cell_area_max = 0.0;
-  for (int c = 0; c < ncells_owned; ++c) {
-    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-
-    cell_area_max = std::max(cell_area_max, mesh_->cell_volume(c));
-    Amanzi::AmanziMesh::Entity_ID_List cfaces;
-    mesh_->cell_get_faces(c, &cfaces);
-    int nfaces_cell = cfaces.size();
-
-    // compute cell averaged bathymery (Bc)
-    Amanzi::AmanziGeometry::Point x0, x1;
-    AmanziMesh::Entity_ID_List face_nodes;
-
-    double tmp(0.0);
-    for (int f = 0; f < nfaces_cell; ++f) {
-      int edge = cfaces[f];
-
-      mesh_->face_get_nodes(edge, &face_nodes);
-      int n0 = face_nodes[0];
-      int n1 = face_nodes[1];
-
-      mesh_->node_get_coordinates(n0, &x0);
-      mesh_->node_get_coordinates(n1, &x1);
-
-      AmanziGeometry::Point area = (xc - x0) ^ (xc - x1);
-      tmp += norm(area) * (B_n[0][n0] + B_n[0][n1]) / 4;
-
-      B_max[0][c] = std::max(B_max[0][c], B_n[0][n0]); 
-      B_max[0][c] = std::max(B_max[0][c], B_n[0][n1]); 
+  }else{
+    if (!shallow_water_model_) {
+      //postprocessing of node bathemtry
+      auto& B_wn = *S_->Get<CV_t>(bathymetry_key_).ViewComponent("node");
     }
-    B_c[0][c] = tmp / mesh_->cell_volume(c);
   }
-  // redistribute the result
-  S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("cell");
-  S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("cmax");
-
-  // calculate cell area square (used as a tolerance)  
-  cell_area2_max_ = cell_area_max * cell_area_max;
+      
 
   InitializeFields();
 
@@ -399,6 +363,8 @@ ShallowWater_PK::Initialize()
   // temporal discretization order
   temporal_disc_order_ = sw_list_->get<int>("temporal discretization order", 1);
 
+  const auto& B_c = *S_->Get<CV_t>(bathymetry_key_, Tags::DEFAULT).ViewComponent("cell");
+  
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -448,10 +414,8 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   double dt = t_new - t_old;
   iters_++;
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-
-  ComputeCellArrays();
-
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);  
+ 
   S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
 
   // distribute data to ghost cells
@@ -584,8 +548,6 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   }
   UpdateSecondaryFields();
 
-  UpdateExtraEvaluators();
-
   if(!source_key_.empty()){
      S_->GetEvaluator(source_key_).Update(*S_, passwd_); // in this evaluator when running pipe flow
   }
@@ -597,6 +559,8 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
     S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))->SetChanged();
 
   S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
+
+  UpdateExtraEvaluators();
 
     // min-max values
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -943,29 +907,74 @@ void ShallowWater_PK::UpdateSecondaryFields(){
 //--------------------------------------------------------------
 void ShallowWater_PK::InitializeFields(){
 
-     int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-     auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+  ComputeCellArrays();
+  
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  const auto& B_n = *S_->Get<CV_t>(bathymetry_key_).ViewComponent("node");
+  auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+  auto& B_max = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cmax");
+  // compute B_c from B_n for well balanced scheme (Beljadid et. al. 2016)
+  S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("node");
 
-     if (!S_->GetRecord(primary_variable_key_, Tags::DEFAULT).initialized()) {
-        auto& h_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-        auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+  double cell_area_max = 0.0;
+  for (int c = 0; c < ncells_owned; ++c) {
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-        for (int c = 0; c < ncells_owned; c++) { h_c[0][c] = ht_c[0][c] - B_c[0][c]; }
+    cell_area_max = std::max(cell_area_max, mesh_->cell_volume(c));
+    Amanzi::AmanziMesh::Entity_ID_List cfaces;
+    mesh_->cell_get_faces(c, &cfaces);
+    int nfaces_cell = cfaces.size();
 
-        S_->GetRecordW(primary_variable_key_, Tags::DEFAULT, passwd_).set_initialized();
-     }
+    // compute cell averaged bathymery (Bc)
+    Amanzi::AmanziGeometry::Point x0, x1;
+    AmanziMesh::Entity_ID_List face_nodes;
 
-     if (!S_->GetRecord(total_depth_key_).initialized()) {
-        const auto& h_c = *S_->Get<CV_t>(primary_variable_key_).ViewComponent("cell");
-        auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+    double tmp(0.0);
+    for (int f = 0; f < nfaces_cell; ++f) {
+      int edge = cfaces[f];
 
-        for (int c = 0; c < ncells_owned; c++) { ht_c[0][c] = ComputeTotalDepth(h_c[0][c], B_c[0][c], 0); }
+      mesh_->face_get_nodes(edge, &face_nodes);
+      int n0 = face_nodes[0];
+      int n1 = face_nodes[1];
 
-        S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
-     }
+      mesh_->node_get_coordinates(n0, &x0);
+      mesh_->node_get_coordinates(n1, &x1);
 
-     InitializeCVField(S_, *vo_, wetted_angle_key_, Tags::DEFAULT, passwd_, -1.0);
-     S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
+      AmanziGeometry::Point area = (xc - x0) ^ (xc - x1);
+      tmp += norm(area) * (B_n[0][n0] + B_n[0][n1]) / 4;
+
+      B_max[0][c] = std::max(B_max[0][c], B_n[0][n0]); 
+      B_max[0][c] = std::max(B_max[0][c], B_n[0][n1]); 
+    }
+    B_c[0][c] = tmp / mesh_->cell_volume(c);
+  }
+  // redistribute the result
+  S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("cell");
+  S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("cmax");
+
+  // calculate cell area square (used as a tolerance)  
+  cell_area2_max_ = cell_area_max * cell_area_max;
+  
+  if (!S_->GetRecord(primary_variable_key_, Tags::DEFAULT).initialized()) {
+    auto& h_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+    auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+
+    for (int c = 0; c < ncells_owned; c++) { h_c[0][c] = ht_c[0][c] - B_c[0][c]; }
+
+    S_->GetRecordW(primary_variable_key_, Tags::DEFAULT, passwd_).set_initialized();
+  }
+
+  if (!S_->GetRecord(total_depth_key_).initialized()) {
+    const auto& h_c = *S_->Get<CV_t>(primary_variable_key_).ViewComponent("cell");
+    auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+
+    for (int c = 0; c < ncells_owned; c++) { ht_c[0][c] = ComputeTotalDepth(h_c[0][c], B_c[0][c], 0); }
+
+    S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
+  }
+
+  InitializeCVField(S_, *vo_, wetted_angle_key_, Tags::DEFAULT, passwd_, -1.0);
+  S_->GetRecordW(wetted_angle_key_, Tags::DEFAULT, passwd_).set_initialized();
 
 }
 

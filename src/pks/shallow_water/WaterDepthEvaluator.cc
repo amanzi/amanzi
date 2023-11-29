@@ -29,9 +29,12 @@ WaterDepthEvaluator::WaterDepthEvaluator(Teuchos::ParameterList& plist)
 
   wetted_angle_key_ = plist_.get<std::string>("wetted angle key", Keys::getKey(domain, "wetted_angle"));
 
+  primary_variable_key_ = plist_.get<std::string>("wetted area key", Keys::getKey(domain, "wetted_area"));
+
   pipe_diameter_ = plist_.get<double>("pipe diameter", 1.0);
 
   dependencies_.insert(std::make_pair(wetted_angle_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(primary_variable_key_, Tags::DEFAULT));
 }
 
 
@@ -50,19 +53,22 @@ void WaterDepthEvaluator::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& WettedAngle_c = *S.Get<CompositeVector>(wetted_angle_key_).ViewComponent("cell");
+  const auto& WettedArea_c = *S.Get<CompositeVector>(primary_variable_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
-
-  //TODO: this evaluator only makes sense for a pipe with no junction
-  // it is currently not implemented to consider the presence of a junction
-  // in such a case, it is better to look at the total depth
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
      if(WettedAngle_c[0][c] >= TwoPi) {
+         // this means the pipe flow is pressurized
          result_c[0][c] =  pipe_diameter_;
      }
-     else{
+     else if (WettedAngle_c[0][c] < TwoPi && WettedAngle_c[0][c] >= 0.0){
+         // this means the pipe flow is ventilated
          result_c[0][c] = pipe_diameter_ * 0.5 * (1.0 - cos(WettedAngle_c[0][c] * 0.5));
+     }
+     else {
+         // this means the cell is a SW model cell
+         result_c[0][c] = WettedArea_c[0][c];
      }
   }
 }
@@ -81,7 +87,7 @@ void WaterDepthEvaluator::EvaluatePartialDerivative_(
   int ncells = result_c.MyLength();
   if (wrt_key == wetted_angle_key_) {
     for (int c = 0; c != ncells; ++c) {
-     if(WettedAngle_c[0][c] >= TwoPi) {
+     if(WettedAngle_c[0][c] >= TwoPi || WettedAngle_c[0][c] < 0.0) {
          result_c[0][c] =  0.0;
      }
      else{

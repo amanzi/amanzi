@@ -111,49 +111,49 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // extract primary variable BC at nodes to ensure well-balancedness
   for (int i = 0; i < bcs_.size(); ++i) {
     if (bcs_[i]->get_bc_name() == "velocity") {
-      if (!primary_variable_Dirichlet){
-        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-          Teuchos::OSTab tab = vo_->getOSTab();
-          *vo_->os() << "Dirichlet BCs not set for primary variable" << std::endl;
-          *vo_->os() << "Supply Dirichlet BCs for primary variable or" << std::endl;
-          *vo_->os() << "alternatively set Dirichlet BCs for discharge only" << std::endl; 
-        }
-        abort();
-      } 
-      else {
-        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-          int f = it->first;
-          bc_model_vector[f] = Operators::OPERATOR_BC_DIRICHLET; 
-          AmanziMesh::Entity_ID_List nodes;
-          mesh_->face_get_nodes(f, &nodes);
-          int n0 = nodes[0], n1 = nodes[1];
-          bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
-          bc_value_qx[f] = bc_value_h[f] * it->second[0];
-          bc_value_qy[f] = bc_value_h[f] * it->second[1];
-          bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
-          bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
-          double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
-          bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], bc_value_b[f], WettedAngle_f);
-        }
-      } 
+       if (!primary_variable_Dirichlet){
+          if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+             Teuchos::OSTab tab = vo_->getOSTab();
+             *vo_->os() << "Dirichlet BCs not set for primary variable" << std::endl;
+             *vo_->os() << "Supply Dirichlet BCs for primary variable or" << std::endl;
+             *vo_->os() << "alternatively set Dirichlet BCs for discharge only" << std::endl; 
+          }
+          abort();
+       } 
+       else {
+          for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+             int f = it->first;
+             bc_model_vector[f] = Operators::OPERATOR_BC_DIRICHLET; 
+             AmanziMesh::Entity_ID_List nodes;
+             mesh_->face_get_nodes(f, &nodes);
+             int n0 = nodes[0], n1 = nodes[1];
+             bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
+             bc_value_qx[f] = bc_value_h[f] * it->second[0];
+             bc_value_qy[f] = bc_value_h[f] * it->second[1];
+             bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
+             bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
+             double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
+             bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], bc_value_b[f], WettedAngle_f);
+          }
+       } 
     }
     if (bcs_[i]->get_bc_name() == "discharge") {
-      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-        int f = it->first;
-        bc_model_vector[f] = Operators::OPERATOR_BC_DIRICHLET; 
-        bc_value_qx[f] = it->second[0];
-        bc_value_qy[f] = it->second[1];
-        if (primary_variable_Dirichlet){
-          AmanziMesh::Entity_ID_List nodes;
-          mesh_->face_get_nodes(f, &nodes);
-          int n0 = nodes[0], n1 = nodes[1];
-          bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
-          bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
-          bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
-          double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
-          bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], bc_value_b[f], WettedAngle_f);
-        }
-      }
+       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+          int f = it->first;
+          bc_model_vector[f] = Operators::OPERATOR_BC_DIRICHLET; 
+          bc_value_qx[f] = it->second[0];
+          bc_value_qy[f] = it->second[1];
+          if (primary_variable_Dirichlet){
+             AmanziMesh::Entity_ID_List nodes;
+             mesh_->face_get_nodes(f, &nodes);
+             int n0 = nodes[0], n1 = nodes[1];
+             bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
+             bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
+             bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
+             double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
+             bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], bc_value_b[f], WettedAngle_f);
+          }
+       }
     }
   }
 
@@ -169,8 +169,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
 
   for (int c = 0; c < ncells_wghost; ++c ) {
-    Amanzi::AmanziMesh::Entity_ID_List cnodes, cfaces;
-    mesh_->cell_get_nodes(c, &cnodes);
+     Amanzi::AmanziMesh::Entity_ID_List cnodes, cfaces;
+     mesh_->cell_get_nodes(c, &cnodes);
     
     // calculate maximum bathymetry value on cell nodes
     double Bmax = 0.0;
@@ -246,9 +246,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     bool c1IsJunction = false;
     bool c2IsJunction = false;
+    bool skipFace = false;
 
-
-    
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     c1 = cells[0];
     c2 = (cells.size() == 2) ? cells[1] : -1;
@@ -263,48 +262,43 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     // if the wetted angle is -1. Though in the SW model junctions
     // do not exist so neither c1 nor c2 can be flagged as junctions
     if(shallow_water_model_== 0 && c2 != -1 && WettedAngle_c[0][c1] < 0.0){
-      c1IsJunction = true;
-      // this also implies
-      // c2 is next to the junction
+       c1IsJunction = true;
+       // this also implies
+       // c2 is next to the junction
     }
+
     if(shallow_water_model_ == 0 && c2 != -1 && WettedAngle_c[0][c2] < 0.0){
-
-      //      std::swap(c1, c2);
-      c2IsJunction = true;
-      // this also implies
-      // c1 is next to the junction
-      // not that junctions are asumed to NOT be boundary cells at the moment
+       c2IsJunction = true;
+       // this also implies
+       // c1 is next to the junction
+       // not that junctions are asumed to NOT be boundary cells at the moment
     }
-
-    // if (c1IsJunction &&  (ht_c[0][c1] - 0.02) > 1e-5){
-    //   std::cout<<"c1 "<<c1<<" c2 "<<c2<<" "<<c1IsJunction<<" "<<c2IsJunction<<" "<<ht_c[0][c1]<<" "<<ht_c[0][c2]<<"\n";
-    // }
-
-    // if (c2IsJunction &&  (ht_c[0][c2] - 0.02) > 1e-5){
-    //   std::cout<<"c1 "<<c1<<" c2 "<<c2<<" "<<c1IsJunction<<" "<<c2IsJunction<<" "<<ht_c[0][c1]<<" "<<ht_c[0][c2]<<"\n";
-    // }
 
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
     AmanziGeometry::Point normalNotRotated = mesh_->face_normal(f, false, c1, &dir);
     AmanziGeometry::Point normalRotated = mesh_->face_normal(f, false, c1, &dir);
-    normal /= farea;              
-    normalNotRotated /= farea;    
-    normalRotated /= farea;       
-    // If we have a junction (wetted angle = -1), we do not need to rotate
-    // the normal vectors because both entries are 0, and also because the SW
-    // model is a 2D model
-    // if(WettedAngle_c[0][c1] >= 0.0){
-    //   // this is if c1 is not a junction 
-    //   //ProjectNormalOntoMeshDirection(c1, normal);
-    //   ProjectNormalOntoMeshDirection(c1, normalRotated);
-    // }
-    // else {
-    //   // this is if c1 is a junction 
-    //   // we consider the mesh direction of c2 to be 
-    //   // the same as c1 if c1 is a junction
-    //   //ProjectNormalOntoMeshDirection(c2, normal);
-    //   ProjectNormalOntoMeshDirection(c2, normalRotated);
-    // }
+    normal /= farea;
+    normalNotRotated /= farea;
+    normalRotated /= farea;
+    // If we have a junction or SW model (wetted angle = -1), we do not 
+    // need to rotate the normal vector because for a junction both entries 
+    // of the pipe direction are 0, and the SW model is a 2D model
+    if(WettedAngle_c[0][c1] >= 0.0){
+       // c1 is NOT a junction: 
+       ProjectNormalOntoMeshDirection(c1, normal);
+       ProjectNormalOntoMeshDirection(c1, normalRotated);
+       SkipFace(normalRotated, skipFace);
+    }
+    else {
+       // c1 is a junction:
+       // in this case we consider the pipe direction of c2 to be 
+       // the same as c1 which makes sense since the pipe and 
+       // junction cells are contiguous
+       ProjectNormalOntoMeshDirection(c2, normalRotated);
+       SkipFace(normalRotated, skipFace);
+    }
+
+    if(!skipFace){
 
     // primary fields at the edge
     // V_rec[0]: primary variable
@@ -318,9 +312,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double qx_rec = discharge_x_grad_->getValue(c1, xf);
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
 
-    if(c2IsJunction){
-      qx_rec = q_temp[0][c1];
-      qy_rec = q_temp[1][c1];
+    if(c1IsJunction || c2IsJunction){
+       qx_rec = vel_c[0][c1] * V_rec[0];
+       qy_rec = vel_c[1][c1] * V_rec[0];
     }
 
     factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
@@ -338,60 +332,36 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     UL[2] = V_rec[0] * vt;
     UL[3] = V_rec[1];
 
-    if (c1IsJunction) {
-      V_rec = ComputeFieldsOnEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
-
-      ierr = ErrorDiagnostics_(t, c1, V_rec[0]);
-      if (ierr < 0) break;
-
-      qx_rec = vel_c[0][c1] * V_rec[0];
-      qy_rec = vel_c[1][c1] * V_rec[0];
-
-      factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
-
-      vx_rec = factor * qx_rec;
-      vy_rec = factor * qy_rec;
-
-      vn = vx_rec * normal[0] + vy_rec * normal[1];
-      vt = -vx_rec * normal[1] + vy_rec * normal[0];
-
-      UL[0] = V_rec[0];
-      UL[1] = V_rec[0] * vn;
-      UL[2] = V_rec[0] * vt;
-      UL[3] = V_rec[1];
-
-    }
-
-    if (c2 == -1) {
-      if (bc_model_scalar[f] == Operators::OPERATOR_BC_DIRICHLET) {
+  if (c2 == -1) {
+     if (bc_model_scalar[f] == Operators::OPERATOR_BC_DIRICHLET) {
         UR[0] = bc_value_h[f];
         UR[3] = ComputeWettedAngleNewton(bc_value_h[f]);
         UL[0] = UR[0];
         UL[3] = UR[3];
-      }
-      else {
-        UR[0] = UL[0];
-        UR[3] = ComputeWettedAngleNewton(UL[0]); 
-      }
-      if (bc_model_vector[f] == Operators::OPERATOR_BC_DIRICHLET) {
-        UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
-        UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
-        UL[1] = UR[1];
-        UL[2] = UR[2];
-      } 
-      else {
-        // default outflow BC
-        UR[1] = UL[1];
-        UR[2] = UL[2];
-      }
+     }
+     else {
+       UR[0] = UL[0];
+       UR[3] = ComputeWettedAngleNewton(UL[0]); 
+     }
+     if (bc_model_vector[f] == Operators::OPERATOR_BC_DIRICHLET) {
+       UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
+       UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
+       UL[1] = UR[1];
+       UL[2] = UR[2];
     } 
     else {
+       // default outflow BC
+       UR[1] = UL[1];
+       UR[2] = UL[2];
+    }
+  } 
+  else {
 
-      V_rec = ComputeFieldsOnEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
-      ierr = ErrorDiagnostics_(t, c2, V_rec[0]);
-      if (ierr < 0) break;
+     V_rec = ComputeFieldsOnEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
+     ierr = ErrorDiagnostics_(t, c2, V_rec[0]);
+     if (ierr < 0) break;
 
-      if(!c2IsJunction && !c1IsJunction){
+     if(!c2IsJunction && !c1IsJunction){
 
         qx_rec = discharge_x_grad_->getValue(c2, xf);
         qy_rec = discharge_y_grad_->getValue(c2, xf);
@@ -404,9 +374,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         vn = vx_rec * normal[0] + vy_rec * normal[1];
         vt = -vx_rec * normal[1] + vy_rec * normal[0];
 
-      }
+     }
 
-      if (c1IsJunction){
+     if (c1IsJunction){
 
         qx_rec = q_temp[0][c2];
         qy_rec = q_temp[1][c2];
@@ -416,16 +386,18 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         vx_rec = factor * qx_rec;
         vy_rec = factor * qy_rec;
 
-        vn = vx_rec * normal[0] + vy_rec * normal[1];
-        vt = -vx_rec * normal[1] + vy_rec * normal[0];
-      }
+        // if c1 is a junction the normal has not been rotated,
+        // c2 is a pipe cell so the normal should be rotated
+        vn = vx_rec * normalRotated[0] + vy_rec * normalRotated[1];
+        vt = -vx_rec * normalRotated[1] + vy_rec * normalRotated[0];
+     }
 
-      UR[0] = V_rec[0];
-      UR[1] = V_rec[0] * vn;
-      UR[2] = V_rec[0] * vt;
-      UR[3] = V_rec[1];
+     UR[0] = V_rec[0];
+     UR[1] = V_rec[0] * vn;
+     UR[2] = V_rec[0] * vt;
+     UR[3] = V_rec[1];
 
-      if (c2IsJunction) {
+     if (c2IsJunction) {
 
         V_rec = ComputeFieldsOnEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
 
@@ -440,108 +412,84 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         vx_rec = factor * qx_rec;
         vy_rec = factor * qy_rec;
 
-        // since c1 is not a junction, normal has
-        // been rotated, so we can use "normal"
-        vn = vx_rec * normal[0] + vy_rec * normal[1];
-        vt = -vx_rec * normal[1] + vy_rec * normal[0];
+        // if c2 is a junction, it means c1 is not, hence both normal
+        // and normalRotated have been rotated. Hence we need to
+        // use normalNotRotated
+        vn = vx_rec * normalNotRotated[0] + vy_rec * normalNotRotated[1];
+        vt = -vx_rec * normalNotRotated[1] + vy_rec * normalNotRotated[0];
 
         UR[0] = V_rec[0];
         UR[1] = V_rec[0] * vn;
         UR[2] = V_rec[0] * vt;
         UR[3] = V_rec[1];
 
-      }
-
-    }
-     
-    if (!c1IsJunction && !c2IsJunction){
-      FNum_rot = numerical_flux_->Compute(UL, UR);
-    }
-    if(c1IsJunction){
-      FNum_rotTmp = numerical_flux_->Compute(UL, UR);
-      FNum_rot[0] = FNum_rotTmp[0] / farea;
-      FNum_rot[1] = FNum_rotTmp[1] / farea;
-      FNum_rot[2] = FNum_rotTmp[2] / farea;
-    }
-    if(c2IsJunction){
-      FNum_rot = numerical_flux_->Compute(UL, UR);
-      FNum_rotTmp[0] = FNum_rot[0] / farea;
-      FNum_rotTmp[1] = FNum_rot[1] / farea;
-      FNum_rotTmp[2] = FNum_rot[2] / farea;
     }
 
-    h = FNum_rot[0];
-    qx = FNum_rot[1] * normal[0] - FNum_rot[2] * normal[1];
-    qy = FNum_rot[1] * normal[1] + FNum_rot[2] * normal[0];
+ }
 
-    // save riemann mass flux
-    riemann_f[0][f] = FNum_rot[0] * farea * dir;
+ if (!c1IsJunction && !c2IsJunction){
+     FNum_rot = numerical_flux_->Compute(UL, UR);
+ }
+ if(c1IsJunction){
+     FNum_rotTmp = numerical_flux_->Compute(UL, UR);
+     FNum_rot[0] = FNum_rotTmp[0] / farea;
+     FNum_rot[1] = FNum_rotTmp[1] / farea;
+     FNum_rot[2] = FNum_rotTmp[2] / farea;
+ }
+ if(c2IsJunction){
+     FNum_rot = numerical_flux_->Compute(UL, UR);
+     FNum_rotTmp[0] = FNum_rot[0] / farea;
+     FNum_rotTmp[1] = FNum_rot[1] / farea;
+     FNum_rotTmp[2] = FNum_rot[2] / farea;
+ }
 
-    // add fluxes to temporary fields 
-    double vol = mesh_->cell_volume(c1);
-    factor = farea / vol;
-    h_c_tmp[0][c1] -= h * factor;
-    q_c_tmp[0][c1] -= qx * factor;
-    q_c_tmp[1][c1] -= qy * factor;
+ h = FNum_rot[0];
+ qx = FNum_rot[1] * normal[0] - FNum_rot[2] * normal[1];
+ qy = FNum_rot[1] * normal[1] + FNum_rot[2] * normal[0];
 
+ // save riemann mass flux
+ riemann_f[0][f] = FNum_rot[0] * farea * dir;
 
-    // if (c1==54 || c2==54) {
-    //   std::cout<<"c1 "<<c1<<" c2 "<<c2<<"\n";      
-    //   std::cout<<"UL: "<<UL[0]<<" "<<UL[1]<<" "<<UL[2]<<" "<<UL[3]<<"\n";
-    //   std::cout<<"UR: "<<UR[0]<<" "<<UR[1]<<" "<<UR[2]<<" "<<UR[3]<<"\n";
-    //   std::cout<<"FNum_rot "<<FNum_rot[0]<<" "<<FNum_rot[1]<<" "<<FNum_rot[2]<<"\n";
-    //   std::cout<<"FNum_rotTmp "<<FNum_rotTmp[0]<<" "<<FNum_rotTmp[1]<<" "<<FNum_rotTmp[2]<<"\n";      
-    //   std::cout<<"transfer for c1 "<<qx * factor<<" "<<qy * factor<<"\n";
-    //   std::cout<<"Test"<<"\n";
-    // }
-    
-    if (c2 != -1) {
+ // add fluxes to temporary fields 
+ double vol = mesh_->cell_volume(c1);
+ factor = farea / vol;
+ h_c_tmp[0][c1] -= h * factor;
+ q_c_tmp[0][c1] -= qx * factor;
+ q_c_tmp[1][c1] -= qy * factor;
 
-      if(!c1IsJunction && !c2IsJunction){  
-        vol = mesh_->cell_volume(c2);
-        factor = farea / vol;
-        h_c_tmp[0][c2] += h * factor;
-        q_c_tmp[0][c2] += qx * factor;
-        q_c_tmp[1][c2] += qy * factor;
-      }
-      else { 
-        h = FNum_rotTmp[0];
+ if (c2 != -1) {
 
-        if(c2IsJunction){
-          qx = FNum_rotTmp[1] * normalNotRotated[0] - FNum_rotTmp[2] * normalNotRotated[1];
-          qy = FNum_rotTmp[1] * normalNotRotated[1] + FNum_rotTmp[2] * normalNotRotated[0];
-        }
-        
-        if(c1IsJunction){ 
-          qx = FNum_rotTmp[1] * normalRotated[0] - FNum_rotTmp[2] * normalRotated[1];
-          qy = FNum_rotTmp[1] * normalRotated[1] + FNum_rotTmp[2] * normalRotated[0];
-        }
+   if(!c1IsJunction && !c2IsJunction){  
+      vol = mesh_->cell_volume(c2);
+      factor = farea / vol;
+      h_c_tmp[0][c2] += h * factor;
+      q_c_tmp[0][c2] += qx * factor;
+      q_c_tmp[1][c2] += qy * factor;
+   }
+   else { 
+     h = FNum_rotTmp[0];
+     if(c2IsJunction){
+       qx = FNum_rotTmp[1] * normalNotRotated[0] - FNum_rotTmp[2] * normalNotRotated[1];
+       qy = FNum_rotTmp[1] * normalNotRotated[1] + FNum_rotTmp[2] * normalNotRotated[0];
+     }
+     if(c1IsJunction){
+       // if c1 is a junction, c2 is not and so we need to use the rotated normal  
+       qx = FNum_rotTmp[1] * normalRotated[0] - FNum_rotTmp[2] * normalRotated[1];
+       qy = FNum_rotTmp[1] * normalRotated[1] + FNum_rotTmp[2] * normalRotated[0];
+     }
+     vol = mesh_->cell_volume(c2);
+     factor = farea / vol;
+     h_c_tmp[0][c2] += h * factor;
+     q_c_tmp[0][c2] += qx * factor;
+     q_c_tmp[1][c2] += qy * factor;
+   }
 
-        vol = mesh_->cell_volume(c2);
-        factor = farea / vol;
-        h_c_tmp[0][c2] += h * factor;
-        q_c_tmp[0][c2] += qx * factor;
-        q_c_tmp[1][c2] += qy * factor;
-      }
+ }
 
+}//if !skipFace
 
-      // if (c1==54 || c1==114 || c2==114) {
-      //   std::cout<<"c1 "<<c1<<" c2 "<<c2<<"\n";
-      //   std::cout<<"UL: "<<UL[0]<<" "<<UL[1]<<" "<<UL[2]<<" "<<UL[3]<<"\n";
-      //   std::cout<<"UR: "<<UR[0]<<" "<<UR[1]<<" "<<UR[2]<<" "<<UR[3]<<"\n";       
-      //   std::cout<<"FNum_rot "<<FNum_rot[0]<<" "<<FNum_rot[1]<<" "<<FNum_rot[2]<<"\n";
-      //   std::cout<<"FNum_rotTmp "<<FNum_rotTmp[0]<<" "<<FNum_rotTmp[1]<<" "<<FNum_rotTmp[2]<<"\n";              
-      //   std::cout<<"transfer c2 "<< h * factor<<" "<<qx * factor<<" "<<qy * factor<<"\n";
-      //   std::cout<<"update mom c2 " <<  q_c_tmp[0][c2]<<" "<<q_c_tmp[1][c2]<<"\n";
-      //   std::cout<<"Test"<<"\n";
-      // }
+}
 
-    }    
-
-  }
-
-
-  
   // sync errors across processors, otherwise any MPI call
   // will lead to an error.
   int ierr_tmp(ierr);
@@ -552,31 +500,22 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     Exceptions::amanzi_throw(msg);
   }
 
-  AmanziGeometry::Point q;
   // sources (bathymetry, flux exchange, etc)
   for (int c = 0; c < model_cells_owned_.size(); ++c) {
     int cell = model_cells_owned_[c];  
+    double killer = 1.0;
+    KillSecondComponent(killer);
 
-    q[0] = q_temp[0][cell];
-    q[1] = q_temp[1][cell];
-      
-    
     BedSlopeSource = NumericalSourceBedSlope(cell, ht_c[0][cell], B_c[0][cell], B_max[0][cell], B_n, bc_model_scalar, bc_value_h);
-    FrictionSource[0] = NumericalSourceFriction(h_temp[0][cell], q, WettedAngle_c[0][cell], 0);
-    FrictionSource[1] = NumericalSourceFriction(h_temp[0][cell], q, WettedAngle_c[0][cell], 1); 
+    FrictionSource[0] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 0); 
 
-    h  = h_c_tmp[0][cell] + BedSlopeSource[0] + ext_S_cell[cell];
+    h = h_c_tmp[0][cell] + BedSlopeSource[0] + ext_S_cell[cell];
     qx = q_c_tmp[0][cell] + BedSlopeSource[1] + FrictionSource[0];
-    qy = q_c_tmp[1][cell] + BedSlopeSource[2] + FrictionSource[1];
+    qy = killer * (q_c_tmp[1][cell] + BedSlopeSource[2]);
 
     f_temp0[0][cell] = h;
     f_temp1[0][cell] = qx;
     f_temp1[1][cell] = qy;
-
-    // if (cell==13 || cell==114) {
-    //   std::cout<<cell<<" update "<<q_c_tmp[0][cell]<<" "<<q_c_tmp[1][cell] <<" "<<FrictionSource[0]<<" "<<FrictionSource[1]<<"\n";
-    // }
-                                
   }
 
   // NOTE: we are currently assuming that the manholes cannot be
@@ -587,11 +526,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     BedSlopeSource = NumericalSourceBedSlope(cell, ht_c[0][cell], B_c[0][cell], B_max[0][cell], B_n);
 
-    q[0] = q_temp[0][cell];
-    q[1] = q_temp[1][cell];
-    
-    FrictionSource[0] = NumericalSourceFriction(h_temp[0][cell], q, WettedAngle_c[0][cell], 0);
-    FrictionSource[1] = NumericalSourceFriction(h_temp[0][cell], q, WettedAngle_c[0][cell], 1);
+    FrictionSource[0] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 0);
+    FrictionSource[1] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 1);
 
     h = h_c_tmp[0][cell] + BedSlopeSource[0];
     qx = q_c_tmp[0][cell] + BedSlopeSource[1] + FrictionSource[0];
