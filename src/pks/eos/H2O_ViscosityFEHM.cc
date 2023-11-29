@@ -80,9 +80,18 @@ H2O_ViscosityFEHM::DViscosityDT(double T, double p)
 double
 H2O_ViscosityFEHM::DViscosityDp(double T, double p)
 {
-  Errors::Message message("FEHM viscosity of water: dVis/dP is not implemented");
-  Exceptions::amanzi_throw(message);
-  return -1.0;
+  double p1(p / 1e+6), t1(T - T0_);
+  double p2(p1 * p1), t2(t1 * t1);
+  double p3(p2 * p1), t3(t2 * t1);
+
+  double dydp = y1_ + 2 * y2_ * p1 + 3 * y3_ * p2 + y7_ * t1 + 2 * y8_ * p1 * t1 + y9_ * t2;
+  double dzdp = z1_ + 2 * z2_ * p1 + 3 * z3_ * p2 + z7_ * t1 + 2 * z8_ * p1 * t1 + z9_ * t2;
+
+  double y = y0_ + y1_ * p1 + y2_ * p2 + y3_ * p3 + y4_ * t1 + y5_ * t2 + y6_ * t3 + y7_ * p1 * t1 +
+             y8_ * p2 * t1 + y9_ * p1 * t2;
+  double z = z0_ + z1_ * p1 + z2_ * p2 + z3_ * p3 + z4_ * t1 + z5_ * t2 + z6_ * t3 + z7_ * p1 * t1 +
+             z8_ * p2 * t1 + z9_ * p1 * t2;
+  return (dydp * z - dzdp * y) / (z * z) / 1e+6;
 };
 
 } // namespace AmanziEOS
