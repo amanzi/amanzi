@@ -354,25 +354,27 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
   }
 
   // Create the evaluator from State's plist
-  // -- Get the Field Evaluator plist
-  Teuchos::ParameterList& fm_plist = state_plist_.sublist("evaluators");
+  if (HasEvaluatorList(Keys::getKey(key, tag)) || HasEvaluatorList(key)) {
+    // -- Get the Field Evaluator plist that is specific to this tag, or if
+    // -- there isn't one specific to the tag, get one that is generic across
+    // -- all tags for this key
+    Teuchos::ParameterList fe_sublist = HasEvaluatorList(Keys::getKey(key, tag)) ?
+      GetEvaluatorList(Keys::getKey(key, tag)) :
+      GetEvaluatorList(key);
 
-  if (HasEvaluatorList(key)) {
-    // -- Get this evaluator's plist.
-    Teuchos::ParameterList sublist = GetEvaluatorList(key);
-    sublist.setName(key);
+    fe_sublist.setName(key);
     // -- Insert any model parameters.
-    if (sublist.isParameter("model parameters") &&
-        sublist.isType<std::string>("model parameters")) {
-      std::string modelname = sublist.get<std::string>("model parameters");
+    if (fe_sublist.isParameter("model parameters") &&
+        fe_sublist.isType<std::string>("model parameters")) {
+      std::string modelname = fe_sublist.get<std::string>("model parameters");
       Teuchos::ParameterList modellist = GetModelParameters(modelname);
-      sublist.set(modelname, modellist);
+      fe_sublist.set(modelname, modellist);
     }
 
     // -- Create and set the evaluator.
     Evaluator_Factory evaluator_factory;
-    sublist.set("tag", tag.get());
-    auto evaluator = evaluator_factory.createEvaluator(sublist);
+    fe_sublist.set("tag", tag.get());
+    auto evaluator = evaluator_factory.createEvaluator(fe_sublist);
     SetEvaluator(key, tag, evaluator);
     return *evaluator;
   }
@@ -390,7 +392,9 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
   message << "Evaluator \"" << key << "@" << tag.get() << "\" cannot be created in State. "
           << "Verify (1) SetEvaluator is called or (2) name exists in state->evaluators.";
   Exceptions::amanzi_throw(message);
-  return *Evaluator_Factory().createEvaluator(fm_plist); // silences warning
+
+  Teuchos::ParameterList dummy;
+  return *Evaluator_Factory().createEvaluator(dummy); // silences warning
 }
 
 
