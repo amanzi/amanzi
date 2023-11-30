@@ -261,7 +261,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     // since the numerical flux implements the SW physical flux
     // if the wetted angle is -1. Though in the SW model junctions
     // do not exist so neither c1 nor c2 can be flagged as junctions
-    if(shallow_water_model_== 0 && c2 != -1 && WettedAngle_c[0][c1] < 0.0){
+    if(shallow_water_model_== 0 && WettedAngle_c[0][c1] < 0.0){
        c1IsJunction = true;
        // this also implies
        // c2 is next to the junction
@@ -294,8 +294,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        // in this case we consider the pipe direction of c2 to be 
        // the same as c1 which makes sense since the pipe and 
        // junction cells are contiguous
-       ProjectNormalOntoMeshDirection(c2, normalRotated);
-       SkipFace(normalRotated, skipFace);
+       if(c2 != -1){
+          ProjectNormalOntoMeshDirection(c2, normalRotated);
+          SkipFace(normalRotated, skipFace);
+       }
     }
 
     if(!skipFace){
