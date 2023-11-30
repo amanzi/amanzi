@@ -7,6 +7,7 @@ FROM ubuntu:focal
 LABEL Description="This image contains all of the third-party libraries needed by Amanzi (based on the specified branch, default branch is master)."
 
 # MPI flavor (mpich|openmpi)
+ARG build_mpi=True
 ARG mpi_flavor=mpich 
 ARG mpi_version=3.3.2
 
@@ -45,17 +46,33 @@ RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir install h5py
 
 # install MPI - if mpich, custom compile; if openmpi, install precompiled binary 
-RUN if [ "$mpi_flavor" = "mpich" ]; then cd / \
-  && wget https://www.mpich.org/static/downloads/${mpi_version}/mpich-${mpi_version}.tar.gz \
-  && tar xvf mpich-${mpi_version}.tar.gz \
-  && cd mpich-${mpi_version} \
-  && ./configure --enable-shared --with-device=ch3:sock --enable-fast=all,O3 --prefix=/usr \ 
-  && make \ 
-  && make install \
-  && cd ../ \
-  && rm -r mpich-${mpi_version}/ \
-  && rm mpich-${mpi_version}.tar.gz ; \
-  else apt-get install -y lib${mpi_flavor}-dev ; fi
+RUN if [ "$build_mpi" = "True" ]; then \
+      if [ "$mpi_flavor" = "mpich" ]; then cd / \
+        && wget https://www.mpich.org/static/downloads/${mpi_version}/mpich-${mpi_version}.tar.gz \
+        && tar xvf mpich-${mpi_version}.tar.gz \
+        && cd mpich-${mpi_version} \
+        && ./configure --enable-shared --with-device=ch3:sock --enable-fast=all,Os --prefix=/usr \ 
+        && make \ 
+        && make install \
+        && cd ../ \
+        && rm -r mpich-${mpi_version}/ \
+        && rm mpich-${mpi_version}.tar.gz ; \
+      elif [ "$mpi_flavor" = "openmpi" ]; then cd / \
+        && export mpi_version_major=`echo ${mpi_version} | cut -c1-3` && echo $mpi_version_major \
+        && wget https://download.open-mpi.org/release/open-mpi/v${mpi_version_major}/openmpi-${mpi_version}.tar.gz \
+        && tar xvf openmpi-${mpi_version}.tar.gz \
+        && cd openmpi-${mpi_version} \
+        && ./configure --enable-shared --prefix=/usr \ 
+        && make \ 
+        && make install \
+        && cd ../ \
+        && rm -r openmpi-${mpi_version}/ \
+        && rm openmpi-${mpi_version}.tar.gz ; \
+      else \
+        echo "Unknown mpi_flavor - exiting." \
+        && exit 1 ; \
+      fi \
+    else apt-get install -y lib${mpi_flavor}-dev ; fi
 
 # Versions change and we cannot set environment variables from command output.
 ARG petsc_ver
