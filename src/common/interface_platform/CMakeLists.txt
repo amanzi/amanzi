@@ -83,6 +83,7 @@ if (BUILD_TESTS)
     if (NOT (${PLATFORM_INTERFACE_SOURCE_DIR} EQUAL ${PLATFORM_INTERFACE_BINARY_DIR}) )
       file(GLOB DataFiles "${PLATFORM_INTERFACE_SOURCE_DIR}/test/*.xml"
                           "${PLATFORM_INTERFACE_SOURCE_DIR}/test/*.dat"
+                          "${PLATFORM_INTERFACE_SOURCE_DIR}/test/*.h5"
                           "${PLATFORM_INTERFACE_SOURCE_DIR}/test/*.dump")
       file(COPY ${DataFiles} DESTINATION ${PLATFORM_INTERFACE_BINARY_DIR}/test/)
     endif()

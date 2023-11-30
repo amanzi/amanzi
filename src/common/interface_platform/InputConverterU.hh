@@ -322,6 +322,8 @@ class InputConverterU : public InputConverter {
   void PrintStatistics_();
   bool HasSubmodel_(const std::string& model, const std::string& submodel);
 
+  bool CheckVariableName_(const std::string& filename, const std::string& varname);
+
  private:
   int dim_;
   int rank_, num_proc_;

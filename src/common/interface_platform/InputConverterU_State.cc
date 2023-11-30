@@ -1080,8 +1080,7 @@ InputConverterU::TranslateFieldEvaluator_(DOMNode* node,
     field_ev.set<std::string>("evaluator type", "constant variable");
   } else if (model == "h5file") { // regular h5 file
     std::string filename = GetAttributeValueS_(node, "filename");
-    bool temporal =
-      GetAttributeValueS_(node, "constant_in_time", TYPE_NUMERICAL, false, "true") == "true";
+    bool temporal = !(CheckVariableName_(filename, "time"));
 
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
     field_ev.set<std::string>("evaluator type", "independent variable from file")

@@ -22,6 +22,7 @@
 // Amanzi
 #include "amanzi_version.hh"
 #include "errors.hh"
+#include "HDF5Reader.hh"
 
 #include "InputConverterU.hh"
 
@@ -742,6 +743,17 @@ InputConverterU::PrintStatistics_()
     }
     *vo_->os() << std::endl;
   }
+}
+
+
+/* ******************************************************************
+* Verify that file and variable exist.
+****************************************************************** */
+bool
+InputConverterU::CheckVariableName_(const std::string& filename, const std::string& varname)
+{
+  HDF5Reader reader(filename);
+  return reader.CheckVariableName(varname);
 }
 
 } // namespace AmanziInput
