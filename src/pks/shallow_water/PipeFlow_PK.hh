@@ -31,7 +31,7 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual void Setup() override;
 
-  virtual void Initialize() override;
+  //  virtual void Initialize() override;
 
   virtual double NumericalSourceFriction(double h, double qx, double qy, double WettedAngle, int component) override;
 

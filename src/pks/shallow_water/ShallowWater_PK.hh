@@ -81,6 +81,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual void InitializeFields();
 
+  virtual void InitializeBathymetry();
+
   virtual void ComputeCellArrays();
 
   virtual void SkipFace(AmanziGeometry::Point normal, bool &skipFace) {};
