@@ -838,7 +838,7 @@ Alquimia_PK::AdvanceSingleCell(double dt,
   int num_iterations = 0;
   if (alq_mat_props_.saturation > saturation_tolerance_) {
     bool success = chem_engine_->Advance(
-      dt, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_, num_iterations);
+      dt, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_, num_iterations, mesh_->cell_map(false).GID(cell));
     if (not success) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
         Teuchos::OSTab tab = vo_->getOSTab();
