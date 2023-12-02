@@ -71,12 +71,12 @@ ExternalProject_Add(${SuperLUDist_BUILD_TARGET}
                                     -DMPI_Fortran_COMPILER:FILEPATH=${MPI_Fortran_COMPILER}
                                     -DOpenMP_C_FLAGS:STRING=                        # Workaround to avoid OpenMP
                                     -DOpenMP_Fortran_FLAGS:STRING=
-		   # -- CMake Cache
-	           CMAKE_CACHE_ARGS -DCMAKE_MODULE_PATH:STRING=${superlu_module_opt}
-		                    -DTPL_PARMETIS_INCLUDE_DIRS:STRING=${TPL_INSTALL_PREFIX}/include
-                                    -DTPL_PARMETIS_LIBRARIES:STRING=${ParMetis_LIBRARIES}
-                                    -DTPL_BLAS_LIBRARIES:STRING=${BLAS_LIBRARIES_TMP}
-                                    -DTPL_LAPACK_LIBRARIES:STRING=${LAPACK_LIBRARIES_TMP}
+                    # -- CMake Cache
+                    CMAKE_CACHE_ARGS -DCMAKE_MODULE_PATH:STRING=${superlu_module_opt}
+                                     -DTPL_PARMETIS_INCLUDE_DIRS:STRING=${TPL_INSTALL_PREFIX}/include
+                                     -DTPL_PARMETIS_LIBRARIES:STRING=${ParMetis_LIBRARIES}
+                                     -DTPL_BLAS_LIBRARIES:STRING=${BLAS_LIBRARIES}
+                                     -DTPL_LAPACK_LIBRARIES:STRING=${LAPACK_LIBRARIES}
                     # -- Build
                     BINARY_DIR      ${SuperLUDist_build_dir}   # Build directory 
                     BUILD_COMMAND   $(MAKE)

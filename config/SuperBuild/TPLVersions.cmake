@@ -179,7 +179,11 @@
 #   0.98.7       - update Trilinos to fc55b9cd (Also 14.2.0)
 #                - update Hypre to 8f6bdc6a (Also 2.29.0)
 #   0.98.8a      - update ExprTk to 0.0.2
-
+#   0.98.8b      - update PETSc to 3.20.0
+#                - update Sowing to 1.1.26-p8
+#                - update Alquimia 1.1.0
+#                - update PFLOTRAN 5.0.0
+#                - update superlu_dist v6.4.0 (minimum required by PETSc is 6.3.0, but maybe we should go newer).
 
 include(CMakeParseArguments)
 
@@ -232,7 +236,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 8a)
+set(AMANZI_TPLS_VERSION_PATCH 8b)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -460,38 +464,38 @@ set(SuperLU_MD5_SUM        1e93259572bd2412674ed809a1446bd3)
 # TPL: SuperLU_Dist
 #
 set(SuperLUDist_VERSION_MAJOR  6)
-set(SuperLUDist_VERSION_MINOR  2)
+set(SuperLUDist_VERSION_MINOR  4)
 set(SuperLUDist_VERSION_PATCH  0)
 set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR}.${SuperLUDist_VERSION_PATCH})
 set(SuperLUDist_URL_STRING     "https://github.com/xiaoyeli/superlu_dist/archive")
 set(SuperLUDist_ARCHIVE_FILE   v${SuperLUDist_VERSION}.tar.gz)
 set(SuperLUDist_SAVEAS_FILE    superlu_dist_${SuperLUDist_VERSION}.tar.gz)
-set(SuperLUDist_MD5_SUM        7b9fa7c047fd1988b61f9c6f744c829b)
+set(SuperLUDist_MD5_SUM        4001999cda77d6176077f160f1a4659a)
 
 #
 # TPL: Sowing (Built by PETSc!)
 #
 set(Sowing_VERSION_MAJOR  1)
 set(Sowing_VERSION_MINOR  1)
-set(Sowing_VERSION_PATCH  26-p2)
+set(Sowing_VERSION_PATCH  26-p8)
 set(Sowing_VERSION  ${Sowing_VERSION_MAJOR}.${Sowing_VERSION_MINOR}.${Sowing_VERSION_PATCH})
 set(Sowing_URL_STRING     "https://bitbucket.org/petsc/pkg-sowing/get")
 set(Sowing_ARCHIVE_FILE   v${Sowing_VERSION}.tar.gz)
 set(Sowing_SAVEAS_FILE    sowing-${Sowing_VERSION}.tar.gz)
-set(Sowing_MD5_SUM        3a25a300eba1616e0560bfeed4673d7d)
+set(Sowing_MD5_SUM        da689d94e2565dada261a17f3c07448d)
 
 #
 # TPL: PETSc
 #
 set(PETSc_VERSION_MAJOR  3)
-set(PETSc_VERSION_MINOR  16)
+set(PETSc_VERSION_MINOR  20)
 set(PETSc_VERSION_PATCH  0)
 set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR})
 set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_URL_STRING     "https://gitlab.com/petsc/petsc/-/archive/v${PETSc_ARCHIVE_VERSION}")
 set(PETSc_ARCHIVE_FILE   petsc-v${PETSc_VERSION}.tar.gz)
 set(PETSc_SAVEAS_FILE    petsc-${PETSc_VERSION}.tar.gz)
-set(PETSc_MD5_SUM        b231f5dcb7ecbb11c6ccf4caa2472fee)
+set(PETSc_MD5_SUM        1f17155e2077cb027f0838a27d02ef3c)
 
 #
 # TPL: Trilinos
@@ -521,28 +525,28 @@ set(SEACAS_MD5_SUM        40452d7badecb05a0e859eeeb010003d)
 #
 # TPL: PFLOTRAN
 #
-set(PFLOTRAN_VERSION_MAJOR 3)
+set(PFLOTRAN_VERSION_MAJOR 5)
 set(PFLOTRAN_VERSION_MINOR 0)
-set(PFLOTRAN_VERSION_PATCH 2)
+set(PFLOTRAN_VERSION_PATCH 0)
 set(PFLOTRAN_VERSION ${PFLOTRAN_VERSION_MAJOR}.${PFLOTRAN_VERSION_MINOR}.${PFLOTRAN_VERSION_PATCH})
-set(PFLOTRAN_URL_STRING     "https://gitlab.com/pflotran/pflotran")
-set(PFLOTRAN_ARCHIVE_FILE   pflotran-9e07f41-28Sep2021.tar.gz)
-set(PFLOTRAN_SAVEAS_FILE    pflotran-9e07f41-28Sep2021.tar.gz)
-set(PFLOTRAN_MD5_SUM        486b0981a90aa662644b907f0a42e7fe)
-set(PFLOTRAN_GIT_REPOSITORY "https://gitlab.com/pflotran/pflotran.git")
-set(PFLOTRAN_GIT_TAG        "9e07f41")
+set(PFLOTRAN_URL_STRING     "https://gitlab.com/pflotran/pflotran/-/archive/v${PFLOTRAN_VERSION}")
+set(PFLOTRAN_ARCHIVE_FILE   pflotran-v${PFLOTRAN_VERSION}.tar.gz)
+set(PFLOTRAN_SAVEAS_FILE    pflotran-${PFLOTRAN_VERSION}.tar.gz)
+set(PFLOTRAN_MD5_SUM        4fa35ad356eab7e6a3fd19f8cde9dd13)
+#set(PFLOTRAN_GIT_REPOSITORY "https://gitlab.com/pflotran/pflotran.git")
+#set(PFLOTRAN_GIT_TAG        "9e07f41")
 
 #
 # TPL: Alquimia
 #
 set(Alquimia_VERSION_MAJOR 1)
-set(Alquimia_VERSION_MINOR 0)
-set(Alquimia_VERSION_PATCH 9)
+set(Alquimia_VERSION_MINOR 1)
+set(Alquimia_VERSION_PATCH 0)
 set(Alquimia_VERSION ${Alquimia_VERSION_MAJOR}.${Alquimia_VERSION_MINOR}.${Alquimia_VERSION_PATCH})
-set(Alquimia_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive/refs/tags/)
-set(Alquimia_ARCHIVE_FILE   v.${Alquimia_VERSION}.tar.gz)
+set(Alquimia_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive/refs/tags)
+set(Alquimia_ARCHIVE_FILE   v${Alquimia_VERSION}.tar.gz)
 set(Alquimia_SAVEAS_FILE    alquimia-dev-${Alquimia_VERSION}.tar.gz)
-set(Alquimia_MD5_SUM        e336e980d17a15cf3d5b6f7892f04b87)
+set(Alquimia_MD5_SUM        adfa32fe2bcd690a847ec59390f82a0a)
 
 #
 # TPL: Silo
