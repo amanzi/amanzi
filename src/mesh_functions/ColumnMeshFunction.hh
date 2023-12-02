@@ -53,8 +53,7 @@ void
 ReadColumnMeshFunction(Teuchos::ParameterList& plist, CompositeVector& v);
 
 void
-ReadColumnMeshFunction_ByDepth(const Function& func,
-                               CompositeVector& v);
+ReadColumnMeshFunction_ByDepth(const Function& func, CompositeVector& v);
 
 } // namespace Functions
 } // namespace Amanzi

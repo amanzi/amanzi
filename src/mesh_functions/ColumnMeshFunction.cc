@@ -63,15 +63,14 @@ ReadColumnMeshFunction(Teuchos::ParameterList& plist, CompositeVector& v)
 
 
 void
-ReadColumnMeshFunction_ByDepth(const Function& func,
-                               CompositeVector& v)
+ReadColumnMeshFunction_ByDepth(const Function& func, CompositeVector& v)
 {
   Epetra_MultiVector& vec = *v.ViewComponent("cell");
   const AmanziMesh::Mesh& mesh = *v.Mesh();
   int d = mesh.getSpaceDimension() - 1;
 
   int num_columns = mesh.columns.num_columns_owned;
-  for (int col=0; col!=num_columns; ++col) {
+  for (int col = 0; col != num_columns; ++col) {
     std::vector<double> z(1, 0.0);
 
     const auto& col_faces = mesh.columns.getFaces(col);
