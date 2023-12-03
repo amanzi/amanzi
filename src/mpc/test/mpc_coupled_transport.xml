@@ -82,8 +82,8 @@
     
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{0.0}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{1.0}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{10.0}"/>
+      <Parameter name="initial time step" type="Array(double)" value="{1.0e+4}"/>
+      <Parameter name="maximum time step" type="Array(double)" value="{5.0e+5}"/>
     </ParameterList>
 
     <ParameterList name="verbose object">
