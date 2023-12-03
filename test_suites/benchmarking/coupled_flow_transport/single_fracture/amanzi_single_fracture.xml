@@ -194,7 +194,7 @@
           <specific_storage value="0.0" model="constant"/>
         </mechanical_properties>
         <permeability value="KFT" model="constant"/>
-        <aperture model="constant" value="0.01"/>
+        <aperture value="0.01"/>
         <!--permeability model="cubic law"/>
         <aperture model="constant" value="KFT"/-->
         <flow_diffusion_to_matrix model="constant" value="KFN"/>
