@@ -44,9 +44,6 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
     exit()
   endif()
 
-  # too noisy command...
-  # message(STATUS ">>>> JDM: AMANZI_GIT_STATUS:      ${AMANZI_GIT_STATUS}")
-
   # Put the status in a list
   STRING(REPLACE "\n" ";" AMANZI_GIT_STATUS_LIST ${AMANZI_GIT_STATUS})
   # Extract the first entry - reuse the AMANZI_GIT_STATUS variable
@@ -78,7 +75,7 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
     exit()
   endif()
 
-  message(STATUS ">>>> JDM: AMANZI_GIT_GLOBAL_HASH: ${AMANZI_GIT_GLOBAL_HASH}")
+  message(STATUS ">>>> JDM: AMANZI_GIT_GLOBAL_HASH = ${AMANZI_GIT_GLOBAL_HASH}")
     
   # Ensure repository has the latest tags
   set(GIT_ARGS fetch --no-recurse-submodules --tags)
@@ -105,16 +102,50 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
                   OUTPUT_STRIP_TRAILING_WHITESPACE
                   ERROR_STRIP_TRAILING_WHITESPACE)
 
+  # Get the parent branch
+  # - the nearest commit that resides on a branch other than the current branch, and which branch is that?                
+  set(GIT_ARGS show-branch)
+  execute_process(COMMAND  ${GIT_EXECUTABLE} ${GIT_ARGS}
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                  RESULT_VARIABLE err_occurred 
+                  OUTPUT_VARIABLE AMANZI_GIT_BRANCH_INFO
+                  ERROR_VARIABLE err
+                  OUTPUT_STRIP_TRAILING_WHITESPACE
+                  ERROR_STRIP_TRAILING_WHITESPACE)
+
+  string(REPLACE "\n" ";" AMANZI_GIT_BRANCH_INFO_SPLIT ${AMANZI_GIT_BRANCH_INFO})
+  FOREACH(commit_msg ${AMANZI_GIT_BRANCH_INFO_SPLIT})
+    IF ( ${commit_msg} MATCHES "\\*\\+ \\[")
+      set ( AMANZI_GIT_PARENT_BRANCH_MSG ${commit_msg} )
+    ENDIF()
+  ENDFOREACH()
+
+  string(REGEX MATCH "\\[(.*)\\]" _ ${AMANZI_GIT_PARENT_BRANCH_MSG})
+  set(AMANZI_GIT_PARENT_BRANCH ${CMAKE_MATCH_1})
+
+  message(STATUS ">>>> JDM: AMANZI_GIT_PARENT_BRANCH = ${AMANZI_GIT_PARENT_BRANCH}")
+  
   # Put the tags in a list
   STRING(REPLACE "\n" ";" AMANZI_GIT_LATEST_TAG_LIST ${AMANZI_GIT_LATEST_TAG})
-  # Extract the lastest tag of the form amanzi-*
-  IF ( ${AMANZI_GIT_BRANCH} MATCHES "master" ) 
+  # Extract the lastest tag of the form amanzi-
+  IF ( ${AMANZI_GIT_BRANCH} MATCHES "master" )
+    # - these are assumed to be release branches or the master branch
+    FOREACH(atag ${AMANZI_GIT_LATEST_TAG_LIST})
+      IF ( ${atag} MATCHES "^amanzi-.*-dev" )
+        set ( AMANZI_GIT_LATEST_TAG ${atag} )
+      ENDIF()
+    ENDFOREACH()
+  ELSEIF ( NOT ( ${AMANZI_GIT_BRANCH} MATCHES "^amanzi-[0-9]\\.[0-9][0-9]?\\.[0-9]" )
+      AND ( ${AMANZI_GIT_PARENT_BRANCH} MATCHES "master" ) )
+    # - these are to be feature branches cut from the master branch
+    # - for now we'll use the dev tag from master to build the version, but probably should use the branch name
     FOREACH(atag ${AMANZI_GIT_LATEST_TAG_LIST})
       IF ( ${atag} MATCHES "^amanzi-.*-dev" )
         set ( AMANZI_GIT_LATEST_TAG ${atag} )
       ENDIF()
     ENDFOREACH()
   ELSE()
+    # - this assumed to be the latest release branch
     FOREACH(atag ${AMANZI_GIT_LATEST_TAG_LIST})
       IF ( ${atag} MATCHES "^amanzi-[0-9]\\.[0-9][0-9]?\\.[0-9]" )
         set ( AMANZI_GIT_LATEST_TAG ${atag} )
