@@ -571,7 +571,7 @@ set(CrunchTope_VERSION  ${CrunchTope_VERSION_MAJOR}.${CrunchTope_VERSION_MINOR}.
 set(CrunchTope_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
 set(CrunchTope_ARCHIVE_FILE  CrunchTope_${CrunchTope_VERSION}.tgz)
 set(CrunchTope_SAVEAS_FILE   ${CrunchTope_ARCHIVE_FILE})
-set(CrunchTope_MD5_SUM       78276848bf48781a21120585c633c449)
+set(CrunchTope_MD5_SUM       689c4cafc34985af03562977dbdb19ce)
 
 #
 # TPL: Nanoflann
