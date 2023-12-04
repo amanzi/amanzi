@@ -184,6 +184,7 @@
 #                - update Alquimia 1.1.0
 #                - update PFLOTRAN 5.0.0
 #                - update superlu_dist v6.4.0 (minimum required by PETSc is 6.3.0, but maybe we should go newer).
+#   0.98.8c      - update CrunchTope to latest fix on master 
 
 include(CMakeParseArguments)
 
@@ -236,7 +237,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 8b)
+set(AMANZI_TPLS_VERSION_PATCH 8c)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -563,14 +564,14 @@ set(Silo_MD5_SUM       b09f1236d3614d97e4df11f6e890f16b)
 #
 # TPL: CrunchTope
 #
-set(CrunchTope_VERSION_MAJOR 020420)
-set(CrunchTope_VERSION_MINOR 906e164)
+set(CrunchTope_VERSION_MAJOR 101221)
+set(CrunchTope_VERSION_MINOR cf938c8)
 set(CrunchTope_VERSION_PATCH 0)
 set(CrunchTope_VERSION  ${CrunchTope_VERSION_MAJOR}.${CrunchTope_VERSION_MINOR}.${CrunchTope_VERSION_PATCH})
 set(CrunchTope_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
-set(CrunchTope_ARCHIVE_FILE  CrunchTope_020420-906e164.0.tgz)
+set(CrunchTope_ARCHIVE_FILE  CrunchTope_${CrunchTope_VERSION}.tgz)
 set(CrunchTope_SAVEAS_FILE   ${CrunchTope_ARCHIVE_FILE})
-set(CrunchTope_MD5_SUM       059766e149e2a47c754ecf9815641d71)
+set(CrunchTope_MD5_SUM       78276848bf48781a21120585c633c449)
 
 #
 # TPL: Nanoflann
