@@ -63,7 +63,7 @@ get_tpl_version()
    local SBFile=${AMANZI_SOURCE_DIR}/config/SuperBuild/TPLVersions.cmake
    tpl_version_major=`grep AMANZI_TPLS_VERSION_MAJOR ${SBFile} | tr -cd '[[:digit:]]'`
    tpl_version_minor=`grep AMANZI_TPLS_VERSION_MINOR ${SBFile} | tr -cd '[[:digit:]]'`
-   tpl_version_patch=`grep AMANZI_TPLS_VERSION_PATCH ${SBFile} | tr -cd '[[:digit:]]'`
+   tpl_version_patch=`grep AMANZI_TPLS_VERSION_PATCH ${SBFile} | head -n 1 | sed -e 's/.*\([0-9]\)\([a-z]\))/\1\2/'`
    echo "${tpl_version_major}.${tpl_version_minor}.${tpl_version_patch}"
 }
 
