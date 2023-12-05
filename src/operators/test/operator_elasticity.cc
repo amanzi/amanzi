@@ -225,7 +225,7 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
 
   // get and assemble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  global_op->UpdateRHS(source, true); // FIXME
+  global_op->UpdateRHS(source, true); // FIXME volume is missing but RHS is zero
   op->ApplyBCs(true, true, true);
 
   // create preconditoner using the base operator class
