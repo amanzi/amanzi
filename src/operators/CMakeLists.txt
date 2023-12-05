@@ -429,6 +429,7 @@ if (ENABLE_TESTS)
     # Test: elasticity methods
     add_amanzi_test(operators_elasticity operators_elasticity
                     KIND unit
+                    NPROCS 2
                     SOURCE test/Main.cc test/operator_elasticity.cc
                     LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 

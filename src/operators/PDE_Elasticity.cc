@@ -141,6 +141,8 @@ PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
     const auto& bc_value = bc->bc_value();
     AmanziMesh::Entity_kind kind = bc->kind();
 
+    global_op_->rhs()->PutScalarGhosted(0.0);
+
     for (int c = 0; c != ncells_owned; ++c) {
       WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
       int ncols = Acell.NumCols();
@@ -200,6 +202,7 @@ PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
         }
       }
     }
+    global_op_->rhs()->GatherGhostedToMaster(Add);
 
     // impose essential BCs via the default implementation
     if (bc->type() == WhetStone::DOF_Type::POINT) {
@@ -209,8 +212,6 @@ PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
       ApplyBCs_Cell_Scalar_(*bc, local_op_, primary, eliminate, essential_eqn);
     }
   }
-
-  global_op_->rhs()->GatherGhostedToMaster(Add);
 }
 
 } // namespace Operators
