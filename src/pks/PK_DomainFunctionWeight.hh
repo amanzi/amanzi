@@ -37,7 +37,7 @@ class PK_DomainFunctionWeight : public FunctionBase, public Functions::UniqueMes
  public:
   PK_DomainFunctionWeight(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           AmanziMesh::Entity_kind kind)
-    : UniqueMeshFunction(mesh), kind_(kind){};
+    : UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED), kind_(kind){};
   ~PK_DomainFunctionWeight(){};
 
   // member functions

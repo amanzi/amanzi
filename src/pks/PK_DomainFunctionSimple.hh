@@ -36,12 +36,15 @@ class PK_DomainFunctionSimple : public FunctionBase, public Functions::UniqueMes
  public:
   PK_DomainFunctionSimple(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           AmanziMesh::Entity_kind kind)
-    : UniqueMeshFunction(mesh), kind_(kind){};
+    : UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED),
+      kind_(kind) {};
 
   PK_DomainFunctionSimple(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           const Teuchos::ParameterList& plist,
                           AmanziMesh::Entity_kind kind)
-    : FunctionBase(plist), UniqueMeshFunction(mesh), kind_(kind){};
+    : FunctionBase(plist),
+      UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED),
+      kind_(kind) {};
 
   ~PK_DomainFunctionSimple(){};
 

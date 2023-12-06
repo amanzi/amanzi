@@ -31,11 +31,11 @@ template <class FunctionBase>
 class PK_DomainFunctionSimpleWell : public FunctionBase, public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunctionSimpleWell(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : UniqueMeshFunction(mesh){};
+    : UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED){};
 
   PK_DomainFunctionSimpleWell(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                               const Teuchos::ParameterList& plist)
-    : UniqueMeshFunction(mesh){};
+    : UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED){};
 
   ~PK_DomainFunctionSimpleWell(){};
 
