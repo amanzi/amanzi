@@ -94,8 +94,8 @@ fileFormatFromFilename(const Comm_type& comm, std::string fname)
     int ndigits = (int)floor(log10(np)) + 1;
 
     std::stringstream ss;
-    ss << fname << "." << std::to_string(np) << "." << std::setw(ndigits)
-       << std::setfill('0') << me;
+    ss << fname << "." << std::to_string(np) << "." << std::setw(ndigits) << std::setfill('0')
+       << me;
     fname = ss.str();
   }
 

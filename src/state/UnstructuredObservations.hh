@@ -91,8 +91,10 @@ class UnstructuredObservations : public IOEvent {
 
 
 // non-member functions
-bool portable_name(const std::string& name);
-bool portable_filename(const std::string& filename);
+bool
+portable_name(const std::string& name);
+bool
+portable_filename(const std::string& filename);
 
 
 } // namespace Amanzi

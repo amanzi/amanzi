@@ -263,17 +263,19 @@ UnstructuredObservations::Flush()
 }
 
 
-bool portable_name(const std::string& name) {
+bool
+portable_name(const std::string& name)
+{
   return !(name.empty() && (name == "." || name == ".."));
 }
 
 
-bool portable_filename(const std::string& filename) {
+bool
+portable_filename(const std::string& filename)
+{
   std::string::size_type pos;
-  return portable_name(filename) && 
-         filename != "." && 
-         filename != ".." && 
-         ((pos = filename.find('.')) == std::string::npos || 
+  return portable_name(filename) && filename != "." && filename != ".." &&
+         ((pos = filename.find('.')) == std::string::npos ||
           (filename.find('.', pos + 1) == std::string::npos && (pos + 5) > filename.size()));
 }
 
