@@ -31,6 +31,20 @@
       </ParameterList>
     </ParameterList>
 
+    <ParameterList name="Top">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,1.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Bottom">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+
   </ParameterList>
 
   <ParameterList name="mesh">
@@ -138,12 +152,12 @@
 
         <Parameter name="solver type" type="string" value="Newton"/>
         <ParameterList name="Newton parameters">
-          <Parameter name="nonlinear tolerance" type="double" value="1.0e-14"/>
+          <Parameter name="nonlinear tolerance" type="double" value="1.0e-12"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
           <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
           <Parameter name="max error growth factor" type="double" value="1.0e+10"/>
           <Parameter name="max divergent iterations" type="int" value="10"/>
-          <Parameter name="limit iterations" type="int" value="20"/>
+          <Parameter name="limit iterations" type="int" value="30"/>
           <Parameter name="modify correction" type="bool" value="true"/>
           <Parameter name="monitor" type="string" value="monitor update"/>
           <Parameter name="make one iteration" type="bool" value="true"/>
@@ -170,7 +184,7 @@
         <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
         -->
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="low"/>
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -203,7 +217,7 @@
           </ParameterList>
         </ParameterList>
         <ParameterList name="BC 3">
-          <Parameter name="regions" type="Array(string)" value="{}"/>
+          <Parameter name="regions" type="Array(string)" value="{Top, Bottom}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <Parameter name="name" type="string" value="SH4"/>
           <ParameterList name="outward mass flux">
@@ -221,7 +235,7 @@
           <ParameterList name="boundary saturation">
             <ParameterList name="function-exprtk">
               <Parameter name="number of arguments" type="int" value="4"/>
-              <Parameter name="formula" type="string" value="0.5"/>
+              <Parameter name="formula" type="string" value="0.0"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -229,12 +243,13 @@
 
       <ParameterList name="concentration">
         <ParameterList name="BC 5">
-          <Parameter name="regions" type="Array(string)" value="{}"/>
+          <Parameter name="regions" type="Array(string)" value="{Left, Right}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <Parameter name="name" type="string" value="SH4"/>
           <ParameterList name="boundary concentration">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="0.0"/>
+            <ParameterList name="function-exprtk">
+              <Parameter name="number of arguments" type="int" value="4"/>
+              <Parameter name="formula" type="string" value="x"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -317,7 +332,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">
-      <Parameter name="verbosity level" type="string" value="low"/>
+      <Parameter name="verbosity level" type="string" value="extreme"/>
     </ParameterList>
   </ParameterList> 
   </ParameterList>  <!-- PKs, no shift -->
@@ -365,7 +380,7 @@
             <ParameterList name="function">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
-                <Parameter name="formula" type="string" value="0.5"/>
+                <Parameter name="formula" type="string" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -382,7 +397,7 @@
                 <Parameter name="number of arguments" type="int" value="4"/>
                 <!--
                 <Parameter name="formula" type="string" value="(1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * sin(3.141592653589793*y) + 1.0/(16*3.141592653589793*3.141592653589793)"/> -->
-                <Parameter name="formula" type="string" value="x+0.5"/>
+                <Parameter name="formula" type="string" value="x"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -400,7 +415,7 @@
                 <Parameter name="number of arguments" type="int" value="4"/>
                 <!--
                 <Parameter name="formula" type="string" value="(1.0/(32*3.141592653589793*3.141592653589793)) * sin(3.141592653589793*x) * sin(3.41592653589793*y) + 1.0/(16*3.141592653589793*3.141592653589793)"/> -->
-                <Parameter name="formula" type="string" value="x+0.5"/>
+                <Parameter name="formula" type="string" value="x"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -411,11 +426,11 @@
       <ParameterList name="mass_density_gas">
         <ParameterList name="function">
           <ParameterList name="All">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="regions" type="Array(string)" value="{}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
+                <Parameter name="value" type="double" value="x"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -620,7 +635,7 @@
     </ParameterList>
 
     <ParameterList name="verbose object">
-      <Parameter name="verbosity level" type="string" value="low"/>
+      <Parameter name="verbosity level" type="string" value="extreme"/>
     </ParameterList>
   </ParameterList>
 
@@ -704,6 +719,6 @@
   </ParameterList>
 
   <ParameterList name="verbose object">
-    <Parameter name="verbosity level" type="string" value="low"/>
+    <Parameter name="verbosity level" type="string" value="extreme"/>
   </ParameterList>
 </ParameterList>

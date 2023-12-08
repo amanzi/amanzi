@@ -63,7 +63,7 @@ for (int c = 0; c < ncells_owned; c++) {
     //sl_ex[0][c] = (1/8.0) * std::sin(pi*x) * std::exp(-1000.0*t);
 
     pl_ex[0][c] = x;
-    sl_ex[0][c] = 0.5;
+    sl_ex[0][c] = 0.0;
   }
 
 }
@@ -93,6 +93,7 @@ run_test(int M, double dt0,  const std::string& filename)
   RCP<const Mesh> mesh;
     
   mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, M, 1);
+  //mesh = meshfactory.create("test/struct.exo");
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -132,7 +133,7 @@ run_test(int M, double dt0,  const std::string& filename)
 
   // loop
   int iloop(0);
-  double t(0.0), tend(1.0e-5), dt(dt0), dt_max(dt0);
+  double t(0.0), tend(1.0), dt(dt0), dt_max(dt0);
 
   // store Newton iterations and time step size (after successful iteration)
   std::vector<int> newton_iterations_per_step;
@@ -143,18 +144,21 @@ run_test(int M, double dt0,  const std::string& filename)
   double slerr_linf_inf = 0.0, slerr_linf_l1 = 0.0, slerr_linf_l2 = 0.0, slerr_l2_l2 = 0.0;
   
   int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+
   double pi = M_PI;
 
   while (t < tend) {
 
     // output solution
-    if (iloop % 10 == 0) {
+    if (iloop % 1 == 0) {
       io->InitializeCycle(t, iloop, "");
       const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
       const auto& u2 = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
       const auto& u3 = *S->Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
       const auto& u4 = *S->Get<CompositeVector>("pressure_gas").ViewComponent("cell");
+      const auto& u5 = *S->Get<CompositeVector>("volumetric_flow_rate_liquid").ViewComponent("face");
       
       Epetra_MultiVector pl_ex(u0);
       Epetra_MultiVector sl_ex(u1);
@@ -164,7 +168,8 @@ run_test(int M, double dt0,  const std::string& filename)
       io->WriteVector(*u2(0), "liquid hydrogen", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u3(0), "gas hydrogen", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u4(0), "gas pressure", AmanziMesh::Entity_kind::CELL);
-     
+      io->WriteVector(*u5(0), "volumetric flow rate liquid", AmanziMesh::Entity_kind::FACE);     
+
       exact_field(mesh, pl_ex, sl_ex, t);
 
       io->WriteVector(*pl_ex(0), "exact liquid pressure", AmanziMesh::Entity_kind::CELL);
@@ -177,8 +182,20 @@ run_test(int M, double dt0,  const std::string& filename)
     }
 
     while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2.0; }
+    
+    /*
+    auto& pl_c = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
+    for (int c = 0; c < ncells_owned; ++c) {
+      const Amanzi::AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
+      double x = xc[0];
+      pl_c[0][c] = x;
+    }
+    */
 
     MPK->CommitStep(t, t + dt, Tags::DEFAULT);
+
+    auto& flux_l = *S->Get<CompositeVector>("volumetric_flow_rate_liquid").ViewComponent("face");
+    auto& flux_g = *S->Get<CompositeVector>("volumetric_flow_rate_gas").ViewComponent("face");
 
     // store number of Newton iterations taken (only successful iterations after possible time step reduction) 
     double iter = MPK->bdf1_dae()->number_solver_iterations();
@@ -208,7 +225,7 @@ run_test(int M, double dt0,  const std::string& filename)
       double x = xc[0], y = xc[1];
       // exact solution expression
       double err = std::abs( pl[0][c] - x );
-      double err_sl = std::abs( sl[0][c] - 0.5 );
+      double err_sl = std::abs( sl[0][c] - 0.0 );
       if (perr_linf_inf < err) { perr_linf_inf = err; }
       perr_linf_l1_tmp += err * mesh->getCellVolume(c);
       perr_linf_l2_tmp += err * err * mesh->getCellVolume(c);  
@@ -267,9 +284,9 @@ TEST(MULTIPHASE_1D_ANALYTICAL)
 {
   std::vector<double> h(3), errs_pl(3), errs_sl(3);
 
-  double dt0 = 1.0e-8;
+  double dt0 = 1.0e-3;
   int i = 0;
-  for (int M = 32; M <= 128; M *= 2) {
+  for (int M = 50; M <= 50; M *= 2) {
     h[i] = 1.0/M;
     auto errs = run_test(M, dt0, "test/multiphase_1D_analytical.xml");   
     errs_pl[i] = std::get<0>(errs);

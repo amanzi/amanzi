@@ -760,10 +760,11 @@ Multiphase_PK::Initialize()
           Teuchos::RCP<MultiphaseBoundaryFunction> src = src_factory.Create(spec,"injector", AmanziMesh::Entity_kind::CELL, Teuchos::null);
           src->SetComponentId(component_names_); 
           srcs_.push_back(src);
+          /*
           std::cout<<"name = "<<name<<std::endl;
           std::cout<<"specname = "<<specname<<std::endl;
           std::cout<<"src component id = "<<src->component_id()<<std::endl;
-          
+          */
           //AMANZI_ASSERT(src->component_id() >= 0);
         }
       }
@@ -783,6 +784,13 @@ Multiphase_PK::Initialize()
     auto op_bc = Teuchos::rcp(
       new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
     op_bcs_[name] = op_bc;
+  }
+
+  {
+    auto op_bc = Teuchos::rcp(
+      new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+    op_bcs_[advection_liquid_key_] = op_bc;
+    op_bcs_[advection_gas_key_] = op_bc;
   }
 
   double t_ini = S_->get_time();
@@ -810,10 +818,40 @@ Multiphase_PK::Initialize()
   auto mass_l = S_->GetPtr<CV_t>(mass_density_liquid_key_, Tags::DEFAULT);
   fac_diffK_->SetVariableGravitationalTerm(gravity_, mass_l);
 
+  auto kr = CreateCVforUpwind_();
+  auto& kr_c = *kr->ViewComponent("cell");
+  // for debugging
+  for (int c = 0; c < ncells_owned_; ++c) {
+    kr_c[0][c] = 1.0;
+  }
+
   pde_diff_K_.resize(2);
   pde_diff_K_[0] = fac_diffK_->Create();
+  pde_diff_K_[0]->Setup(Kptr, kr, Teuchos::null);
   pde_diff_K_[0]->SetBCs(op_bcs_[pressure_liquid_key_], op_bcs_[pressure_liquid_key_]);
+  pde_diff_K_[0]->global_operator()->Init();
   pde_diff_K_[0]->UpdateMatrices(Teuchos::null, Teuchos::null);
+  pde_diff_K_[0]->ApplyBCs(true, false, false);
+
+
+  // debugging
+  auto flux_tmpl = S_->GetPtrW<CV_t>(vol_flowrate_liquid_key_, Tags::DEFAULT, passwd_);
+  auto varl = S_->GetPtr<CompositeVector>(pressure_liquid_key_, Tags::DEFAULT);
+  std::cout<<"Calling UpdateFlux in Initialize()"<<std::endl;
+  pde_diff_K_[0]->UpdateFlux(varl.ptr(), flux_tmpl.ptr());
+  std::cout<<"Done calling UpdateFlux in Initialize()"<<std::endl;
+
+  //auto& flux_l = *S_->Get<CompositeVector>(vol_flowrate_liquid_key_).ViewComponent("face");
+  Epetra_MultiVector flux_l = *S_->Get<CompositeVector>(vol_flowrate_liquid_key_).ViewComponent("face");  
+  std::cout<<flux_l<<std::endl;
+
+  int nfaces_owned_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  for (int f = 0; f < nfaces_owned_; ++f) { 
+    //std::cout<<"flux on face "<<f<<" = "<<flux_l[0][f]<<std::endl;
+    //std::cout<<"setting to -1..."<<std::endl;
+    flux_l[0][f] = -1.0;
+  }
+
 
   auto mass_g = S_->GetPtr<CV_t>(mass_density_gas_key_, Tags::DEFAULT);
   fac_diffK_->SetVariableGravitationalTerm(gravity_, mass_g);
@@ -821,6 +859,11 @@ Multiphase_PK::Initialize()
   pde_diff_K_[1] = fac_diffK_->Create();
   pde_diff_K_[1]->SetBCs(op_bcs_[pressure_gas_key_], op_bcs_[pressure_gas_key_]);
   pde_diff_K_[1]->UpdateMatrices(Teuchos::null, Teuchos::null);
+  pde_diff_K_[1]->ApplyBCs(true, false, false);
+
+  auto flux_tmpg = S_->GetPtrW<CV_t>(vol_flowrate_gas_key_, Tags::DEFAULT, passwd_);
+  auto varg = S_->GetPtr<CompositeVector>(pressure_gas_key_, Tags::DEFAULT);
+  pde_diff_K_[1]->UpdateFlux(varg.ptr(), flux_tmpg.ptr());
 
   auto& mdf_list =
     mp_list_->sublist("operators").sublist("molecular diffusion operator").sublist("matrix");
@@ -1032,6 +1075,17 @@ Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   if (S_->HasEvaluator(ncp_fg_key_, Tags::DEFAULT)) {
     S_->GetEvaluator(ncp_fg_key_).Update(*S_, passwd_);
   }
+
+
+  // output flux (debugging)
+  /*
+  auto& flux_l = *S_->Get<CompositeVector>("volumetric_flow_rate_liquid").ViewComponent("face");
+  
+  int nfaces_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  for (int f = 0; f < nfaces_owned; ++f) { 
+    std::cout<<"flux on face "<<f<<" = "<<flux_l[0][f]<<std::endl;
+  }
+  */
 }
 
 

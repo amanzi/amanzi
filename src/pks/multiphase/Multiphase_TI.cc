@@ -87,6 +87,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
   CompositeVector fone(*aux), fadd(*aux), comp(*aux);
   auto& fone_c = *fone.ViewComponent("cell");
   auto& comp_c = *comp.ViewComponent("cell");
+  auto& fadd_c = *fadd.ViewComponent("cell");
 
   // start loop over physical equations
   int neqns = eqns_.size();
@@ -105,6 +106,9 @@ Multiphase_PK::FunctionalResidual(double t_old,
     for (int phase = 0; phase < 2; ++phase) {
       fname = eqns_[n].advection[phase].first;
       gname = eqns_[n].advection[phase].second;
+      
+      // debugging
+      std::cout<<"ADVECTION: n = "<<n<<", phase = "<<phase<<", fname = "<<fname<<", gname = "<<gname<<std::endl;
 
       if (fname != "") {
         CheckCompatibilityBCs(keyr, gname);
@@ -113,7 +117,40 @@ Multiphase_PK::FunctionalResidual(double t_old,
         // -- upwind cell-centered coefficient
         auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
         kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
-        upwind_->Compute(flux, bcnone, *kr);
+        
+        // debugging
+        //std::cout<<"Good till here? 1"<<std::endl; 
+        auto& flux_f = *flux.ViewComponent("face");
+
+        int nfaces_owned_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+        for (int f = 0; f < nfaces_owned_; ++f) { 
+          flux_f[0][f] = -1.0;
+        }
+        //std::cout<<"Good till here? 2"<<std::endl;
+        
+        // debugging  
+
+        if (n == 1 && fname == "advection_liquid") {
+          std::cout<<"Entered advection_liquid"<<std::endl;
+          const auto& bc_model1 = op_bcs_[fname]->bc_model();
+          Operators::CellToBoundaryFaces(bc_model1, *kr);
+          upwind_->Compute(flux, bc_model1, *kr);
+        } else if (n == 1 && fname == "advection_gas") {
+          std::cout<<"Entered advection_gas"<<std::endl;
+          const auto& bc_model1 = op_bcs_[advection_gas_key_]->bc_model();
+          Operators::CellToBoundaryFaces(bc_model1, *kr);
+          upwind_->Compute(flux, bc_model1, *kr);
+        }
+        else {
+          upwind_->Compute(flux, bcnone, *kr);
+        }
+        // print rel permeability on faces
+        /*
+        auto& kr_f = *kr->ViewComponent("face");
+        for (int f = 0; f < nfaces_owned_; ++f) {
+          std::cout<<"kr_f "<<f<<" = "<<kr_f[0][f]<<std::endl;
+        }
+        */
 
         // -- form diffusion operator for variable g
         //    Neuman BCs: separate fluxes for each phase OR the total flux but only once
@@ -140,6 +177,8 @@ Multiphase_PK::FunctionalResidual(double t_old,
       fname = eqns_[n].diffusion[phase].first;
       gname = eqns_[n].diffusion[phase].second;
 
+      std::cout<<"DIFFUSION: n = "<<n<<", phase = "<<phase<<", fname = "<<fname<<", gname = "<<gname<<std::endl;
+
       if (fname != "") {
         S_->GetEvaluator(fname).Update(*S_, passwd_);
         auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
@@ -162,6 +201,14 @@ Multiphase_PK::FunctionalResidual(double t_old,
         int m = std::min(eqns_flattened_[n][1], tmp.NumVectors() - 1);
         for (int c = 0; c < ncells_owned_; ++c) { comp_c[0][c] = tmp[m][c]; }
         pde->global_operator()->ComputeNegativeResidual(comp, fadd);
+        
+        // debugging
+        /*
+        std::cout<<"DIFFUSION: -------"<<std::endl;
+        for (int c = 0; c < ncells_owned_; ++c) { 
+          std::cout<<"c = "<<c<<"; fadd = "<<fadd_c[0][c]<<std::endl;
+        }
+        */
 
         double factor = eqns_[n].diff_factors[phase];
         fone.Update(factor, fadd, 1.0);
@@ -243,6 +290,18 @@ Multiphase_PK::FunctionalResidual(double t_old,
     } 
     */
     
+    // debugging
+    /*
+    if (n == 0) {
+      std::cout<<"Water eqn --------------------- "<<std::endl; 
+    } else if (n == 1) {
+      std::cout<<"H eqn     --------------------- "<<std::endl;
+    }
+    for (int c = 0; c < ncells_owned_; ++c) {
+      std::cout<<"c = "<<c<<"; val = "<<fone_c[0][c]<<std::endl;
+    }
+    */
+      
     // copy temporary vector to residual
     auto& fc = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");
     for (int c = 0; c < ncells_owned_; ++c) fc[eqns_flattened_[n][1]][c] = fone_c[0][c];
@@ -255,9 +314,16 @@ Multiphase_PK::FunctionalResidual(double t_old,
     S_->GetEvaluator(key).Update(*S_, passwd_);
     const auto& ncp_fc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
 
+    //debugging
+    std::cout<<"ncp key 1 = "<<key<<std::endl;
+
     key = eqns_[n].constraint.second;
     S_->GetEvaluator(key).Update(*S_, passwd_);
     const auto& ncp_gc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
+    
+    // debugging
+    std::cout<<"ncp key 2 = "<<key<<std::endl;
+
 
     auto& fci = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");
     if (ncp_ == "min") {
