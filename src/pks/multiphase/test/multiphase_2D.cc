@@ -105,7 +105,7 @@ run_test(const std::string& domain, const std::string& filename)
 
   // loop
   int iloop(0);
-  double t(0.0), tend(3.154e+08), dt(8.64e+05), dt_max(17.28e+05); // 10 year time period; 10 day time step
+  double t(0.0), tend(3.154e+08), dt(8.64e+06), dt_max(17.28e+05); // 10 year time period; 10 day time step
   // store Newton iterations and time step size (after successful iteration)
   std::vector<int> newton_iterations_per_step;
   std::vector<double> time_step_size;
