@@ -631,7 +631,9 @@ Multiphase_PK::Initialize()
   smooth_mu_ = mp_list_->get<double>("smoothing parameter mu", 0.0);
 
   // some defaults
+  pressure_names_ = { pressure_liquid_key_, pressure_gas_key_ };
   flux_names_ = { vol_flowrate_liquid_key_, vol_flowrate_gas_key_ };
+  adv_names_ = { advection_liquid_key_, advection_gas_key_ };
 
   auto aux_list = mp_list_->sublist("molecular diffusion");
   mol_diff_l_ = aux_list.get<Teuchos::Array<double>>("aqueous values").toVector();
@@ -839,6 +841,28 @@ Multiphase_PK::Initialize()
 
   InitializeFields_();
 
+  // update volumetric fluxes
+  auto kr = CreateCVforUpwind_();
+  auto& kr_c = *kr->ViewComponent("cell");
+
+  std::vector<int> bcnone(nfaces_wghost_, Operators::OPERATOR_BC_NONE);
+
+  for (int phase = 0; phase < 2; ++phase) {
+    S_->GetEvaluator(adv_names_[phase]).Update(*S_, passwd_);
+    kr_c = *S_->Get<CV_t>(adv_names_[phase]).ViewComponent("cell");
+
+    auto flux = S_->GetPtrW<CV_t>(flux_names_[phase], Tags::DEFAULT, passwd_);
+    upwind_->Compute(*flux, bcnone, *kr);
+
+    auto pdeK = pde_diff_K_[phase];
+    pdeK->Setup(Kptr, kr, Teuchos::null);
+    pdeK->global_operator()->Init();
+    pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+    auto var = S_->GetPtr<CV_t>(pressure_names_[phase], Tags::DEFAULT);
+    pdeK->UpdateFlux(var.ptr(), flux.ptr());
+  }
+
   // io
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -962,25 +986,21 @@ Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 
   // Using form div [K k grad(p)] to compute u = -K k grad(p)
   // NOTE: k is upwinded using flux from last iteration
-  std::vector<std::string> adv_name{ advection_liquid_key_, advection_gas_key_ };
-  std::vector<std::string> varp_name{ pressure_liquid_key_, pressure_gas_key_ };
-  std::vector<std::string> flux_name{ vol_flowrate_liquid_key_, vol_flowrate_gas_key_ };
-
   for (int phase = 0; phase < 2; ++phase) {
-    S_->GetEvaluator(adv_name[phase]).Update(*S_, passwd_);
+    S_->GetEvaluator(adv_names_[phase]).Update(*S_, passwd_);
 
-    kr_c = *S_->Get<CV_t>(adv_name[phase]).ViewComponent("cell");
-    auto flux = S_->GetPtrW<CV_t>(flux_name[phase], Tags::DEFAULT, passwd_);
+    kr_c = *S_->Get<CV_t>(adv_names_[phase]).ViewComponent("cell");
+    auto flux = S_->GetPtrW<CV_t>(flux_names_[phase], Tags::DEFAULT, passwd_);
 
     upwind_->Compute(*flux, bcnone, *kr);
 
     auto pdeK = pde_diff_K_[phase];
     pdeK->Setup(Kptr, kr, Teuchos::null);
-    pdeK->SetBCs(op_bcs_[varp_name[phase]], op_bcs_[varp_name[phase]]);
+    pdeK->SetBCs(op_bcs_[pressure_names_[phase]], op_bcs_[pressure_names_[phase]]);
     pdeK->global_operator()->Init();
     pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-    auto var = S_->GetPtr<CV_t>(varp_name[phase], Tags::DEFAULT);
+    auto var = S_->GetPtr<CV_t>(pressure_names_[phase], Tags::DEFAULT);
     pdeK->UpdateFlux(var.ptr(), flux.ptr());
   }
 
