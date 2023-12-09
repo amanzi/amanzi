@@ -62,7 +62,7 @@ double
 WRMmp_Custom::capillaryPressure(double Sw)
 {
   //return Sw/(2.0 * 3.141592653589793 * 3.141592653589793);
-  return 0.0;
+  return 1.0;
 }
 
 

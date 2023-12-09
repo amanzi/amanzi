@@ -760,12 +760,6 @@ Multiphase_PK::Initialize()
           Teuchos::RCP<MultiphaseBoundaryFunction> src = src_factory.Create(spec,"injector", AmanziMesh::Entity_kind::CELL, Teuchos::null);
           src->SetComponentId(component_names_); 
           srcs_.push_back(src);
-          /*
-          std::cout<<"name = "<<name<<std::endl;
-          std::cout<<"specname = "<<specname<<std::endl;
-          std::cout<<"src component id = "<<src->component_id()<<std::endl;
-          */
-          //AMANZI_ASSERT(src->component_id() >= 0);
         }
       }
     }
@@ -818,23 +812,23 @@ Multiphase_PK::Initialize()
   auto mass_l = S_->GetPtr<CV_t>(mass_density_liquid_key_, Tags::DEFAULT);
   fac_diffK_->SetVariableGravitationalTerm(gravity_, mass_l);
 
+  // debugging
+  /*
   auto kr = CreateCVforUpwind_();
   auto& kr_c = *kr->ViewComponent("cell");
   // for debugging
   for (int c = 0; c < ncells_owned_; ++c) {
     kr_c[0][c] = 1.0;
   }
+  */
 
   pde_diff_K_.resize(2);
   pde_diff_K_[0] = fac_diffK_->Create();
-  pde_diff_K_[0]->Setup(Kptr, kr, Teuchos::null);
   pde_diff_K_[0]->SetBCs(op_bcs_[pressure_liquid_key_], op_bcs_[pressure_liquid_key_]);
-  pde_diff_K_[0]->global_operator()->Init();
   pde_diff_K_[0]->UpdateMatrices(Teuchos::null, Teuchos::null);
-  pde_diff_K_[0]->ApplyBCs(true, false, false);
-
 
   // debugging
+  /*
   auto flux_tmpl = S_->GetPtrW<CV_t>(vol_flowrate_liquid_key_, Tags::DEFAULT, passwd_);
   auto varl = S_->GetPtr<CompositeVector>(pressure_liquid_key_, Tags::DEFAULT);
   std::cout<<"Calling UpdateFlux in Initialize()"<<std::endl;
@@ -851,7 +845,7 @@ Multiphase_PK::Initialize()
     //std::cout<<"setting to -1..."<<std::endl;
     //flux_l[0][f] = -1.0;
   }
-
+  */
 
   auto mass_g = S_->GetPtr<CV_t>(mass_density_gas_key_, Tags::DEFAULT);
   fac_diffK_->SetVariableGravitationalTerm(gravity_, mass_g);
@@ -859,11 +853,6 @@ Multiphase_PK::Initialize()
   pde_diff_K_[1] = fac_diffK_->Create();
   pde_diff_K_[1]->SetBCs(op_bcs_[pressure_gas_key_], op_bcs_[pressure_gas_key_]);
   pde_diff_K_[1]->UpdateMatrices(Teuchos::null, Teuchos::null);
-  pde_diff_K_[1]->ApplyBCs(true, false, false);
-
-  auto flux_tmpg = S_->GetPtrW<CV_t>(vol_flowrate_gas_key_, Tags::DEFAULT, passwd_);
-  auto varg = S_->GetPtr<CompositeVector>(pressure_gas_key_, Tags::DEFAULT);
-  pde_diff_K_[1]->UpdateFlux(varg.ptr(), flux_tmpg.ptr());
 
   auto& mdf_list =
     mp_list_->sublist("operators").sublist("molecular diffusion operator").sublist("matrix");
@@ -1170,9 +1159,7 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
     else if (eqn_name == "solute eqn") {
       std::string name = component_names_[i];
       auto it = std::find(component_names_.begin(), component_names_.end(), component_names_[i]);
-      //eqns_[n].component_id = (it == component_names_.end()) ? -1 : std::distance(component_names_.begin(), it);
       eqns_[n].component_id = std::distance(component_names_.begin(), it);
-      //eqns_[n].component_id = i;
     }
 
     // advection evaluators
