@@ -262,7 +262,7 @@ FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (fail) {
     // recover conserved quantaties at the beginning of time step
     S_->GetW<CV_t>(prev_sat_liquid_key_, passwd) = sat_prev_copy;
-    S_->GetW<CV_t>(prev_energy_key_, "thermal") = e_prev_copy;
+    S_->GetW<CV_t>(prev_energy_key_, passwd) = e_prev_copy;
     if (S_->HasRecord(wc_key_)) { S_->Assign(prev_wc_key_, Tags::DEFAULT, Tags::COPY); }
 
     Teuchos::OSTab tab = vo_->getOSTab();

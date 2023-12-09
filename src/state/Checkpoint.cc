@@ -146,6 +146,17 @@ Checkpoint::Checkpoint(const std::string& filename,
     message << "Checkpoint::Read: location \"" << filename << "\" does not exist.";
     Exceptions::amanzi_throw(message);
   }
+
+  // check the comm_size for consistency
+  int num_procs(-1);
+  Read("mpi_num_procs", num_procs);
+  if (comm->NumProc() != num_procs) {
+    Errors::Message msg;
+    msg << "Requested checkpoint file " << filename << " was created on " << num_procs
+        << " processes, making it incompatible with this run on " << comm->NumProc()
+        << " processes.";
+    Exceptions::amanzi_throw(msg);
+  }
 }
 
 

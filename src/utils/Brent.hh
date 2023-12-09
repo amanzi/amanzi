@@ -23,18 +23,24 @@ namespace Utils {
 *
 * Note that a and b must bracket the root, i.e. f(a) * f(b) < 0
 *
+* Two temination criteria are used. First, the bracket size is less 
+* than tol. Second, function values at bracket ends are ess then ftol.
+* When ftol is missing or negative, it is approximated inside as 
+*
+*   ftol = (1 + |f(a)| + |f(b)|) * tol.
+*
 * Upon return:
-* *itr == -1 indicates that [a,b] did not bracket a root
-* *itr == *itr + 1 indicates that the method did not converge.
-* otherwise, *itr is the number of iterations to convergence.
+*   *itr == -1 indicates that [a,b] did not bracket a root
+*   *itr == *itr + 1 indicates that the method did not converge.
+*   otherwise, *itr is the number of iterations to convergence.
 ****************************************************************** */
 template <class F>
 double
-findRootBrent(const F& f, double a, double b, double tol, int* itr)
+findRootBrent(const F& f, double a, double b, double tol, int* itr, double ftol = -1.0)
 {
   AMANZI_ASSERT(*itr > 0);
   int itr_max(*itr);
-  double c, d, s, fa, fb, fc, fs, ftol;
+  double c, d, s, fa, fb, fc, fs;
   bool flag(true);
 
   fa = f(a);
@@ -43,7 +49,7 @@ findRootBrent(const F& f, double a, double b, double tol, int* itr)
     *itr = -1;
     return 0.0;
   }
-  ftol = (1.0 + std::fabs(fa) + std::fabs(fb)) * tol;
+  if (ftol < 0.0) ftol = (1.0 + std::fabs(fa) + std::fabs(fb)) * tol;
 
   if (std::fabs(fa) < std::fabs(fb)) {
     std::swap(a, b);

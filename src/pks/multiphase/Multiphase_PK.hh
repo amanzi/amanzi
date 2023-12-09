@@ -268,7 +268,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::Upwind> upwind_, upwind_new_;
 
   // time integration
-  std::vector<std::string> flux_names_;
+  std::vector<std::string> flux_names_, adv_names_, pressure_names_;
 
   // io
   Utils::Units units_;

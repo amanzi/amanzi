@@ -54,15 +54,19 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
   // create flow header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
 
-  // insert operator sublist
+  // expert parameters
+  bool include_work(true), include_potential(false);
+  std::string pc_method("linearized_operator");
+  std::string root("unstructured_controls, unstr_energy_controls");
+
+  node = GetUniqueElementByTagsString_(root + ", formulation", flag);
+  if (flag) include_potential = (GetTextContentS_(node, "methalpy, enthalpy") == "methalpy");
+
   std::string disc_method("mfd-optimized_for_sparsity");
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_energy_controls, discretization_method", flag);
+  node = GetUniqueElementByTagsString_(root + ", discretization_method", flag);
   if (flag) disc_method = mm.transcode(node->getNodeName());
 
-  std::string pc_method("linearized_operator");
-  node = GetUniqueElementByTagsString_(
-    "unstructured_controls, unstr_energy_controls, preconditioning_strategy", flag);
+  node = GetUniqueElementByTagsString_(root + ", preconditioning_strategy", flag);
   if (flag) pc_method = mm.transcode(node->getNodeName());
 
   std::string nonlinear_solver("nka");
@@ -74,6 +78,7 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
   node = GetUniqueElementByTagsString_(
     "unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
 
+  // insert operator sublist
   out_list.sublist("operators") = TranslateDiffusionOperator_(
     disc_method, pc_method, nonlinear_solver, "standard-cell", "", domain, false, "energy");
 
@@ -135,9 +140,13 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
   out_list.sublist("source terms") = TranslateSources_(domain, "energy");
 
   // insert internal evaluators
+  out_list.sublist("energy evaluator").set<bool>("include potential term", include_potential);
   out_list.sublist("energy evaluator").sublist("verbose object") =
     verb_list_.sublist("verbose object");
-  out_list.sublist("enthalpy evaluator").set<bool>("include work term", true);
+
+  out_list.sublist("enthalpy evaluator")
+    .set<bool>("include work term", true)
+    .set<bool>("include potential term", include_potential);
   out_list.sublist("enthalpy evaluator").sublist("verbose object") =
     verb_list_.sublist("verbose object");
 

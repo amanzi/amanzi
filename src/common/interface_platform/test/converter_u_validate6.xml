@@ -237,7 +237,7 @@
       </ParameterList>
       <ParameterList name="fracture-aperture">
         <Parameter name="evaluator type" type="string" value="independent variable from file"/>
-        <Parameter name="filename" type="string" value="aperture.h5"/>
+        <Parameter name="filename" type="string" value="test/static_field.h5"/>
         <Parameter name="domain name" type="string" value="fracture"/>
         <Parameter name="component name" type="string" value="cell"/>
         <Parameter name="variable name" type="string" value="fracture-aperture"/>

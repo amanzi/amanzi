@@ -1721,7 +1721,6 @@ template <MemSpace_kind MEM>
 void
 cacheAll(MeshCache<MEM>& mesh)
 {
-  std::cout << "############# CacheAll" << std::endl;
   // caches everything, likely just for testing
   cacheDefault(mesh);
 
@@ -1743,10 +1742,6 @@ template <MemSpace_kind MEM>
 void
 cacheDefault(MeshCache<MEM>& mesh)
 {
-  if (mesh.getComm()->MyPID() == 0) {
-    std::cout << "############# CacheDefault ";
-    std::cout << " hasNodes: " << mesh.hasNodes() << " hasEdges: " << mesh.hasEdges() << std::endl;
-  }
   // caches what the developers currently think is best
   if (mesh.hasNodes()) { mesh.cacheNodeCoordinates(); }
   mesh.cacheCellFaces();

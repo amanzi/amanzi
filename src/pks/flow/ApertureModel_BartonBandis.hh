@@ -9,7 +9,7 @@
 
 /*!
 
-The Barton-Bandis aperture-stress relationship is defibed by initial aperture
+The Barton-Bandis aperture-stress relationship is defined by initial aperture
 :math:`a_0`, overbuden pressure/normal stress :math:`p_{ov}`, fluid pressure 
 :math:`p_f`, and two fitting parameters A and B:
 

@@ -398,7 +398,6 @@ CycleDriver::ReadParameterList_()
   Teuchos::ParameterList time_periods_list = coordinator_list_->sublist("time periods");
 
   num_time_periods_ = time_periods_list.numParams();
-  Teuchos::ParameterList::ConstIterator item;
   tp_start_.resize(num_time_periods_);
   tp_end_.resize(num_time_periods_);
   tp_dt_.resize(num_time_periods_);
@@ -406,7 +405,7 @@ CycleDriver::ReadParameterList_()
   tp_max_dt_.resize(num_time_periods_);
 
   int i = 0;
-  for (item = time_periods_list.begin(); item != time_periods_list.end(); ++item) {
+  for (auto item = time_periods_list.begin(); item != time_periods_list.end(); ++item) {
     const std::string& tp_name = time_periods_list.name(item);
     tp_start_[i] = time_periods_list.sublist(tp_name).get<double>("start period time");
     tp_end_[i] = time_periods_list.sublist(tp_name).get<double>("end period time");
@@ -771,6 +770,7 @@ CycleDriver::Go()
     max_dt_ = tp_max_dt_[time_period_id_];
     dt = tsm_->TimeStep(S_->get_time(), dt);
     pk_->set_dt(dt);
+    dt = get_dt(); // pk may reset the time step
 
   } else {
     // Read restart file

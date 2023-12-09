@@ -9,8 +9,6 @@
 
 #include <filesystem>
 #include <iostream>
-#include "boost/format.hpp"
-#define BOOST_FILESYSTEM_NO_DEPRECATED
 namespace bf = std::filesystem;
 #include "boost/program_options.hpp"
 namespace po = boost::program_options;
@@ -84,7 +82,10 @@ do_the_audit(const int& me, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh, const s
 {
   int lresult(0);
 
-  std::string ofile = boost::str(boost::format("%s%04d.txt") % name % me);
+  std::stringstream ss;
+  ss << name << std::setw(4) << std::setfill('0') << me << ".txt";
+  std::string ofile = ss.str();
+
 
   std::ofstream ofs(ofile.c_str());
   if (me == 0) std::cout << "Writing results to " << ofile.c_str() << ", etc." << std::endl;

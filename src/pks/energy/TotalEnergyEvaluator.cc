@@ -17,6 +17,8 @@
        + (1 - phi) * rho_rock * u_rock
 */
 
+#include "CommonDefs.hh"
+
 #include "TotalEnergyEvaluator.hh"
 
 namespace Amanzi {
@@ -33,7 +35,6 @@ TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist)
   }
   auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
 
-  vapor_diffusion_ = plist_.get<bool>("vapor diffusion");
   ie_rock_key_ = plist_.get<std::string>("internal energy rock key");
   ie_liquid_key_ = prefix + "internal_energy_liquid";
   ie_gas_key_ = prefix + "internal_energy_gas";
@@ -44,6 +45,9 @@ TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist)
   particle_density_key_ = plist_.get<std::string>("particle density key");
   porosity_key_ = prefix + "porosity";
   sat_liquid_key_ = prefix + "saturation_liquid";
+
+  vapor_diffusion_ = plist_.get<bool>("vapor diffusion");
+  include_potential_ = plist_.get<bool>("include potential term", false);
 
   dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(sat_liquid_key_, Tags::DEFAULT));
@@ -120,6 +124,20 @@ TotalEnergyEvaluator::Evaluate_(const State& S, const std::vector<CompositeVecto
     if (vapor_diffusion_) {
       double s_g = 1.0 - s_l[0][c];
       result_v[0][c] += phi[0][c] * s_g * (*n_g)[0][c] * (*u_g)[0][c];
+    }
+  }
+
+  if (include_potential_) {
+    Key domain = Keys::getDomain(ie_rock_key_);
+    const auto mesh = S.GetMesh(domain);
+
+    int d = mesh->getSpaceDimension();
+    double g = std::fabs(std::fabs((S.Get<AmanziGeometry::Point>("gravity"))[d - 1]));
+    g *= CommonDefs::MOLAR_MASS_H2O;
+
+    for (int c = 0; c != ncells; ++c) {
+      const auto& xc = mesh->getCellCentroid(c);
+      result_v[0][c] += g * phi[0][c] * xc[d - 1];
     }
   }
 

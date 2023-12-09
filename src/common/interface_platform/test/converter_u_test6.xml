@@ -164,7 +164,7 @@
         </mechanical_properties>
 
         <permeability model="cubic law"/>
-        <aperture model="h5file" filename="aperture.h5"/>
+        <aperture model="h5file" filename="test/static_field.h5"/>
 
         <flow_diffusion_to_matrix model="constant" value="20.0"/>
         <solute_diffusion_to_matrix model="standard"/>

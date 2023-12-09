@@ -16,7 +16,6 @@
 
 #include <map>
 #include <memory>
-#include "boost/filesystem/operations.hpp"
 
 #include "UnstructuredObservations.hh"
 
@@ -183,7 +182,7 @@ UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
 void
 UnstructuredObservations::InitFile_(const Teuchos::Ptr<const State>& S)
 {
-  if (boost::filesystem::portable_file_name(filename_)) {
+  if (portable_filename(filename_)) {
     fid_ = std::make_unique<std::ofstream>(filename_.c_str());
 
     *fid_ << "# Observation File: " << filename_ << " column names:" << std::endl
@@ -261,6 +260,23 @@ void
 UnstructuredObservations::Flush()
 {
   if (fid_.get()) fid_->flush();
+}
+
+
+bool
+portable_name(const std::string& name)
+{
+  return !(name.empty() && (name == "." || name == ".."));
+}
+
+
+bool
+portable_filename(const std::string& filename)
+{
+  std::string::size_type pos;
+  return portable_name(filename) && filename != "." && filename != ".." &&
+         ((pos = filename.find('.')) == std::string::npos ||
+          (filename.find('.', pos + 1) == std::string::npos && (pos + 5) > filename.size()));
 }
 
 } // namespace Amanzi

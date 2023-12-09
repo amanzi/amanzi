@@ -68,11 +68,9 @@
       <unstr_flow_controls>
         <preconditioning_strategy>linearized_operator</preconditioning_strategy>
       </unstr_flow_controls>
-      <unstr_transport_controls>
-        <algorithm>explicit first-order</algorithm>
-        <sub_cycling>on</sub_cycling>
-        <cfl>1</cfl>
-      </unstr_transport_controls>
+      <unstr_energy_controls>
+        <formulation>methalpy</formulation>
+      </unstr_energy_controls>
 
       <unstr_steady-state_controls>
         <min_iterations>10</min_iterations>

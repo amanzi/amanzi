@@ -58,7 +58,7 @@ class EnthalpyEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Com
  protected:
   Key pressure_key_, mol_density_key_, ie_key_;
   Tag tag_;
-  bool include_work_;
+  bool include_work_, include_potential_;
 
  private:
   static Utils::RegisteredFactory<Evaluator, EnthalpyEvaluator> reg_;

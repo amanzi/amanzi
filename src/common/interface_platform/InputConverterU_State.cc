@@ -1080,8 +1080,7 @@ InputConverterU::TranslateFieldEvaluator_(DOMNode* node,
     field_ev.set<std::string>("evaluator type", "constant variable");
   } else if (model == "h5file") { // regular h5 file
     std::string filename = GetAttributeValueS_(node, "filename");
-    bool temporal =
-      GetAttributeValueS_(node, "constant_in_time", TYPE_NUMERICAL, false, "true") == "true";
+    bool temporal = !(CheckVariableName_(filename, "time"));
 
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
     field_ev.set<std::string>("evaluator type", "independent variable from file")
@@ -1092,6 +1091,20 @@ InputConverterU::TranslateFieldEvaluator_(DOMNode* node,
       .set<std::string>("variable name", field)
       .set<int>("number of dofs", 1)
       .set<bool>("constant in time", temporal);
+  } else if (model == "constant") { // FIXME: some overlap between "constant" and ""
+    double val =
+      GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
+
+    Teuchos::ParameterList& field_ev = out_ev.sublist(field);
+    field_ev.sublist("function")
+      .sublist(reg_str)
+      .set<Teuchos::Array<std::string>>("regions", regions)
+      .set<std::string>("component", "cell")
+      .sublist("function")
+      .sublist("function-constant")
+      .set<double>("value", val);
+    field_ev.set<std::string>("evaluator type", "independent variable")
+      .set<bool>("constant in time", true);
   } else if (model == "") {
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
 
