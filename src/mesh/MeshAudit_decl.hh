@@ -10,10 +10,6 @@
 #pragma once
 
 #include "Teuchos_RCP.hpp"
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/visitors.hpp>
-#include <boost/graph/breadth_first_search.hpp>
-#include <boost/graph/topological_sort.hpp>
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -164,60 +160,99 @@ class MeshAudit_Sets : public MeshAudit_Maps<Mesh_type> {
 
 
 template <typename MeshAudit_type>
-struct AuditGraph {
-  // the tests are stored in a graph, ensuring that if a test fails, tests that
-  // depend upon the capability in that test are not run.
+class AuditDirectedGraph {
+ public:
+  enum Status_kind : int {
+    NONE = 0,
+    GOOD = 1,
+    FAIL = 2,
+    SKIP = 3
+  };
 
   // method pointer
   typedef bool (MeshAudit_type::*Test)() const;
 
   // The vertex type for the test dependency graph.
   struct Vertex {
-    Vertex() : run(true) {}
+    Vertex() : status(Status_kind::NONE) {}
+    mutable int status;
     std::string name;
-    mutable bool run;
     Test test;
   };
 
-  // The graph
-  using Graph = boost::adjacency_list<boost::listS, boost::vecS, boost::directedS, Vertex>;
-  Graph g;
+  // the tests are stored in a graph, ensuring that if a test fails, tests that
+  // depend upon the capability in that test are not run.
 
-  // things to do on the graph
-  struct mark_do_not_run : public boost::bfs_visitor<> {
-    template <class Vertex, class Graph>
-    void discover_vertex(Vertex v, Graph& gr)
-    {
-      gr[v].run = false;
-    }
-  };
-
-  // find a vertex by name
-  typename Graph::vertex_iterator findVertex(const std::string& name)
+  // vertex operations
+  int findVertex(const std::string& name) const
   {
-    typename Graph::vertex_iterator vi, vi_end;
-    for (std::tie(vi, vi_end) = boost::vertices(g); vi != vi_end; ++vi) {
-      if (g[*vi].name == name) { return vi; }
+    for (int i = 0; i < vertices_.size(); ++i) {
+      if (vertices_[i].name == name) return i;
     }
-    return vi_end;
+    return -1;
   }
 
-  // add vertex
-  typename Graph::vertex_descriptor addVertex() { return boost::add_vertex(g); }
+  int AddVertex(const std::string& name, const Test& test)
+  { 
+    Vertex v;
+    v.name = name;
+    v.test = test;
+    vertices_.push_back(v);
+    return vertices_.size() - 1;
+  }
 
-  Vertex& getVertex(const typename Graph::vertex_descriptor& desc) { return g[desc]; }
-
-  // add edge
-  void addEdge(const std::string& vert_name_out, typename Graph::vertex_descriptor& vert_in)
+  // edge operations
+  void AddEdge(const std::string& name_out, int vert_in)
   {
-    auto vert_out = findVertex(vert_name_out);
-    boost::add_edge(*vert_out, vert_in, g);
+    int vert_out = findVertex(name_out);
+    edges_.push_back(std::make_pair(vert_out, vert_in));
   }
 
   void
-  addEdge(typename Graph::vertex_descriptor& vert_out, typename Graph::vertex_descriptor& vert_in)
+  AddEdge(int vert_out, int vert_in)
   {
-    boost::add_edge(vert_out, vert_in, g);
+    edges_.push_back(std::make_pair(vert_out, vert_in));
+  }
+
+  // graph operations
+  int FindAnyRoot() const
+  {
+    int nv = vertices_.size();
+    std::vector<int> flag(nv);
+
+    for (int i = 0; i < nv; ++i) {
+      if (vertices_[i].status == Status_kind::NONE) flag[i] = 1;
+    }
+
+    for (auto it = edges_.begin(); it != edges_.end(); ++it) {
+      auto& v1 = vertices_[it->first];
+      if (v1.status == Status_kind::NONE) flag[it->second] = 0;
+    }
+
+    for (int i = 0; i < nv; ++i) if (flag[i] == 1) return i;
+    return -1;
+  }
+
+  void SkipBranches(int v, std::ostream& os) const
+  {
+    bool found(true);
+
+    while (found) {
+      found = false;
+      for (auto it = edges_.begin(); it != edges_.end(); ++it) {
+        auto& v1 = vertices_[it->first];
+        auto& v2 = vertices_[it->second];
+        if (v1.status == Status_kind::FAIL && v2.status == Status_kind::NONE) {
+           v2.status = Status_kind::SKIP;
+           os << "Skipping " << v2.name << " check because of previous failures." << std::endl;
+          found = true;
+        } else if (v1.status == Status_kind::SKIP && v2.status == Status_kind::NONE) {
+          v2.status = Status_kind::SKIP;
+           os << "Skipping " << v2.name << " check because of previous failures." << std::endl;
+          found = true;
+        }
+      }
+    }
   }
 
   // Verify runs all the tests in an order that respects the dependencies
@@ -225,28 +260,28 @@ struct AuditGraph {
   // as a pre-requisite are skipped.  It is important that each test return
   // a collective fail/pass result in parallel, so that all processes proceed
   // through the tests in lockstep.
-  int verify(MeshAudit_type& audit, std::ostream& os) const
+  int Verify(MeshAudit_type& audit, std::ostream& os) const
   {
-    int status = 0;
-    typedef typename Graph::vertex_descriptor GraphVertex;
-    std::list<GraphVertex> run_order;
-    boost::topological_sort(g, std::front_inserter(run_order));
+    int ok(0), v;
 
-    mark_do_not_run vis;
-    for (auto itr = run_order.begin(); itr != run_order.end(); ++itr) {
-      if (g[*itr].run) {
-        os << "Checking " << g[*itr].name << " ..." << std::endl;
-        if ((audit.*(g[*itr].test))()) {
-          status = 1;
-          os << "  Test failed!" << std::endl;
-          boost::breadth_first_search(g, *itr, visitor(vis));
-        }
+    while ((v = FindAnyRoot()) != -1) {
+      os << "Checking " << vertices_[v].name << " ..." << std::endl;
+      if (!(audit.*(vertices_[v].test))()) {
+        vertices_[v].status = Status_kind::GOOD;
       } else {
-        os << "Skipping " << g[*itr].name << " check because of previous failures." << std::endl;
+        os << "  Test failed!" << std::endl;
+        vertices_[v].status = Status_kind::FAIL;
+        SkipBranches(v, os);
+        ok = 1;
       }
     }
-    return status;
+    return ok;
   }
+
+ private:
+  // adjacency structure
+  std::vector<Vertex> vertices_;
+  std::vector<std::pair<int, int>> edges_;
 };
 
 
@@ -259,46 +294,46 @@ struct AuditGraph {
 //
 template <class MeshAudit_type>
 void
-createTestDependencies_Base(MeshAudit_type& audit, AuditGraph<MeshAudit_type>& graph);
+createTestDependencies_Base(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph);
 
 template <class MeshAudit_type>
 void
-createTestDependencies_Geometry(MeshAudit_type& audit, AuditGraph<MeshAudit_type>& graph);
+createTestDependencies_Geometry(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph);
 
 template <class MeshAudit_type>
 void
-createTestDependencies_Maps(MeshAudit_type& audit, AuditGraph<MeshAudit_type>& graph);
+createTestDependencies_Maps(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph);
 
 template <class MeshAudit_type>
 void
-createTestDependencies_Sets(MeshAudit_type& audit, AuditGraph<MeshAudit_type>& graph);
+createTestDependencies_Sets(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph);
 
 // Call these instead
 template <class Mesh_type>
 void
 createTestDependencies(MeshAudit_Base<Mesh_type>& audit,
-                       AuditGraph<MeshAudit_Base<Mesh_type>>& graph)
+                       AuditDirectedGraph<MeshAudit_Base<Mesh_type>>& graph)
 {
   createTestDependencies_Base(audit, graph);
 }
 template <class Mesh_type>
 void
 createTestDependencies(MeshAudit_Geometry<Mesh_type>& audit,
-                       AuditGraph<MeshAudit_Geometry<Mesh_type>>& graph)
+                       AuditDirectedGraph<MeshAudit_Geometry<Mesh_type>>& graph)
 {
   createTestDependencies_Geometry(audit, graph);
 }
 template <class Mesh_type>
 void
 createTestDependencies(MeshAudit_Maps<Mesh_type>& audit,
-                       AuditGraph<MeshAudit_Maps<Mesh_type>>& graph)
+                       AuditDirectedGraph<MeshAudit_Maps<Mesh_type>>& graph)
 {
   createTestDependencies_Maps(audit, graph);
 }
 template <class Mesh_type>
 void
 createTestDependencies(MeshAudit_Sets<Mesh_type>& audit,
-                       AuditGraph<MeshAudit_Sets<Mesh_type>>& graph)
+                       AuditDirectedGraph<MeshAudit_Sets<Mesh_type>>& graph)
 {
   createTestDependencies_Sets(audit, graph);
 }
@@ -315,12 +350,12 @@ class MeshAudit_ {
     Impl::createTestDependencies(audit_, graph_);
   }
 
-  int Verify() { return graph_.verify(audit_, os_); }
+  int Verify() { return graph_.Verify(audit_, os_); }
 
  private:
   std::ostream& os_;
   MeshAudit_type<Mesh_type> audit_;
-  Impl::AuditGraph<MeshAudit_type<Mesh_type>> graph_;
+  Impl::AuditDirectedGraph<MeshAudit_type<Mesh_type>> graph_;
 };
 
 

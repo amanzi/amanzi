@@ -44,7 +44,7 @@ MeshAudit_Base<Mesh_type>::MeshAudit_Base(const Teuchos::RCP<const Mesh_type>& m
 
 template <class MeshAudit_type>
 void
-createTestDependencies_Base(MeshAudit_type& audit, AuditGraph<MeshAudit_type>& graph)
+createTestDependencies_Base(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph)
 {}
 
 
@@ -60,227 +60,152 @@ createTestDependencies_Base(MeshAudit_type& audit, AuditGraph<MeshAudit_type>& g
 // my_test_handle.  There may be multiple pre-requisites or none.
 template <class MeshAudit_type>
 void
-createTestDependencies_Geometry(MeshAudit_type& audit, AuditGraph<MeshAudit_type>& graph)
+createTestDependencies_Geometry(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph)
 {
   createTestDependencies_Base(audit, graph);
 
   // Cell_to_nodes tests
-  auto test02 = graph.addVertex();
-  graph.getVertex(test02).name = "cell_to_nodes";
-  graph.getVertex(test02).test = &MeshAudit_type::check_cell_to_nodes;
-
-  auto test03 = graph.addVertex();
-  graph.getVertex(test03).name = "node references by cells";
-  graph.getVertex(test03).test = &MeshAudit_type::check_node_refs_by_cells;
-  graph.addEdge(test02, test03);
+  auto test02 = graph.AddVertex("cell_to_nodes", &MeshAudit_type::check_cell_to_nodes);
+  auto test03 = graph.AddVertex("node references by cells", &MeshAudit_type::check_node_refs_by_cells);
+  graph.AddEdge(test02, test03);
 
   // Cell_to_faces tests
-  auto test04 = graph.addVertex();
-  graph.getVertex(test04).name = "cell_to_faces";
-  graph.getVertex(test04).test = &MeshAudit_type::check_cell_to_faces;
-
-  auto test05 = graph.addVertex();
-  graph.getVertex(test05).name = "face references by cells";
-  graph.getVertex(test05).test = &MeshAudit_type::check_face_refs_by_cells;
-  graph.addEdge(test04, test05);
+  auto test04 = graph.AddVertex("cell_to_faces", &MeshAudit_type::check_cell_to_faces);
+  auto test05 = graph.AddVertex("face references by cells",  &MeshAudit_type::check_face_refs_by_cells);
+  graph.AddEdge(test04, test05);
 
   // face_to_nodes tests
-  auto test06 = graph.addVertex();
-  graph.getVertex(test06).name = "face_to_nodes";
-  graph.getVertex(test06).test = &MeshAudit_type::check_face_to_nodes;
-
-  auto test08 = graph.addVertex();
-  graph.getVertex(test08).name = "node references by faces";
-  graph.getVertex(test08).test = &MeshAudit_type::check_node_refs_by_faces;
-  graph.addEdge(test06, test08);
+  auto test06 = graph.AddVertex("face_to_nodes", &MeshAudit_type::check_face_to_nodes);
+  auto test08 = graph.AddVertex("node references by faces", &MeshAudit_type::check_node_refs_by_faces);
+  graph.AddEdge(test06, test08);
 
   // cell_to_face_dirs tests
-  auto test09 = graph.addVertex();
-  graph.getVertex(test09).name = "cell_to_face_dirs";
-  graph.getVertex(test09).test = &MeshAudit_type::check_cell_to_face_dirs;
+  auto test09 = graph.AddVertex("cell_to_face_dirs", &MeshAudit_type::check_cell_to_face_dirs);
 
   // cell degeneracy test
-  auto test10 = graph.addVertex();
-  graph.getVertex(test10).name = "topological non-degeneracy of cells";
-  graph.getVertex(test10).test = &MeshAudit_type::check_cell_degeneracy;
-  graph.addEdge(test02, test10);
+  auto test10 = graph.AddVertex("topological non-degeneracy of cells", &MeshAudit_type::check_cell_degeneracy);
+  graph.AddEdge(test02, test10);
 
   // Consistency between the various mesh connectivity data.
-  auto test11 = graph.addVertex();
-  graph.getVertex(test11).name = "consistency of mesh connectivity data";
-  graph.getVertex(test11).test = &MeshAudit_type::check_cell_to_faces_to_nodes;
-  graph.addEdge(test02, test11);
-  graph.addEdge(test04, test11);
-  graph.addEdge(test06, test11);
-  graph.addEdge(test09, test11);
-  graph.addEdge(test10, test11);
+  auto test11 = graph.AddVertex("consistency of mesh connectivity data", &MeshAudit_type::check_cell_to_faces_to_nodes);
+  graph.AddEdge(test02, test11);
+  graph.AddEdge(test04, test11);
+  graph.AddEdge(test06, test11);
+  graph.AddEdge(test09, test11);
+  graph.AddEdge(test10, test11);
 
   // node_to_coordinates tests
-  auto test12 = graph.addVertex();
-  graph.getVertex(test12).name = "node_to_coordinates";
-  graph.getVertex(test12).test = &MeshAudit_type::check_node_to_coordinates;
+  auto test12 = graph.AddVertex("node_to_coordinates", &MeshAudit_type::check_node_to_coordinates);
 
   // cell_to_coordinates tests
-  auto test13 = graph.addVertex();
-  graph.getVertex(test13).name = "cell_to_coordinates";
-  graph.getVertex(test13).test = &MeshAudit_type::check_cell_to_coordinates;
-  graph.addEdge(test02, test13);
-  graph.addEdge(test12, test13);
+  auto test13 = graph.AddVertex("cell_to_coordinates", &MeshAudit_type::check_cell_to_coordinates);
+  graph.AddEdge(test02, test13);
+  graph.AddEdge(test12, test13);
 
   // face_to_coordinates tests
-  auto test14 = graph.addVertex();
-  graph.getVertex(test14).name = "face_to_coordinates";
-  graph.getVertex(test14).test = &MeshAudit_type::check_face_to_coordinates;
-  graph.addEdge(test06, test14);
-  graph.addEdge(test12, test14);
+  auto test14 = graph.AddVertex("face_to_coordinates", &MeshAudit_type::check_face_to_coordinates);
+  graph.AddEdge(test06, test14);
+  graph.AddEdge(test12, test14);
 
   // cell topology/geometry test
-  auto test15 = graph.addVertex();
-  graph.getVertex(test15).name = "cell geometry";
-  graph.getVertex(test15).test = &MeshAudit_type::check_cell_geometry;
-  graph.addEdge(test10, test15);
-  graph.addEdge(test13, test15);
+  auto test15 = graph.AddVertex("cell geometry", &MeshAudit_type::check_cell_geometry);
+  graph.AddEdge(test10, test15);
+  graph.AddEdge(test13, test15);
 
   // cell-to-face adjacencies and orientations
-  auto test16 = graph.addVertex();
-  graph.getVertex(test16).name = "consistency of face-cell adjacencies";
-  graph.getVertex(test16).test = &MeshAudit_type::check_face_cell_adjacency_consistency;
-  graph.addEdge(test04, test16);
-  graph.addEdge(test09, test16);
+  auto test16 = graph.AddVertex("consistency of face-cell adjacencies", &MeshAudit_type::check_face_cell_adjacency_consistency);
+  graph.AddEdge(test04, test16);
+  graph.AddEdge(test09, test16);
 
   // face normals relto cell
-  auto test17 = graph.addVertex();
-  graph.getVertex(test17).name = "face normals are outward";
-  graph.getVertex(test17).test = &MeshAudit_type::check_face_normal_relto_cell;
-  graph.addEdge(test16, test17);
+  auto test17 = graph.AddVertex("face normals are outward", &MeshAudit_type::check_face_normal_relto_cell);
+  graph.AddEdge(test16, test17);
 
   // face normals
-  auto test18 = graph.addVertex();
-  graph.getVertex(test18).name = "face normals are oriented";
-  graph.getVertex(test18).test = &MeshAudit_type::check_face_normal_orientation;
-  graph.addEdge(test16, test18);
+  auto test18 = graph.AddVertex("face normals are oriented", &MeshAudit_type::check_face_normal_orientation);
+  graph.AddEdge(test16, test18);
 }
 
 
 template <class MeshAudit_type>
 void
-createTestDependencies_Maps(MeshAudit_type& audit, AuditGraph<MeshAudit_type>& graph)
+createTestDependencies_Maps(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph)
 {
   createTestDependencies_Geometry(audit, graph);
 
   // Entity_counts tests
-  auto test01 = graph.addVertex();
-  graph.getVertex(test01).name = "entity_counts";
-  graph.getVertex(test01).test = &MeshAudit_type::check_entity_counts;
+  graph.AddVertex("entity_counts", &MeshAudit_type::check_entity_counts); // test01
 
   // map tests
-  auto test16 = graph.addVertex();
-  graph.getVertex(test16).name = "owned and overlap node maps";
-  graph.getVertex(test16).test = &MeshAudit_type::check_node_maps;
-
-  auto test17 = graph.addVertex();
-  graph.getVertex(test17).name = "owned and overlap face maps";
-  graph.getVertex(test17).test = &MeshAudit_type::check_face_maps;
-
-  auto test18 = graph.addVertex();
-  graph.getVertex(test18).name = "owned and overlap cell maps";
-  graph.getVertex(test18).test = &MeshAudit_type::check_cell_maps;
+  graph.AddVertex("owned and overlap node maps", &MeshAudit_type::check_node_maps); // test16
+  graph.AddVertex("owned and overlap face maps", &MeshAudit_type::check_face_maps); // test17
+  auto test18 = graph.AddVertex("owned and overlap cell maps", &MeshAudit_type::check_cell_maps);
 
   // ghost data tests
-  auto test19 = graph.addVertex();
-  graph.getVertex(test19).name = "node_to_coordinates ghost data";
-  graph.getVertex(test19).test = &MeshAudit_type::check_node_to_coordinates_ghost_data;
-  graph.addEdge("node_to_coordinates", test19);
-  graph.addEdge("owned and overlap node maps", test19);
+  auto test19 = graph.AddVertex("node_to_coordinates ghost data", &MeshAudit_type::check_node_to_coordinates_ghost_data);
+  graph.AddEdge("node_to_coordinates", test19);
+  graph.AddEdge("owned and overlap node maps", test19);
 
-  auto test20 = graph.addVertex();
-  graph.getVertex(test20).name = "face_to_nodes ghost data";
-  graph.getVertex(test20).test = &MeshAudit_type::check_face_to_nodes_ghost_data;
-  graph.addEdge("face_to_nodes", test20);
-  graph.addEdge("owned and overlap node maps", test20);
-  graph.addEdge("owned and overlap face maps", test20);
+  auto test20 = graph.AddVertex("face_to_nodes ghost data", &MeshAudit_type::check_face_to_nodes_ghost_data);
+  graph.AddEdge("face_to_nodes", test20);
+  graph.AddEdge("owned and overlap node maps", test20);
+  graph.AddEdge("owned and overlap face maps", test20);
 
-  auto test21 = graph.addVertex();
-  graph.getVertex(test21).name = "cell_to_nodes ghost data";
-  graph.getVertex(test21).test = &MeshAudit_type::check_cell_to_nodes_ghost_data;
-  graph.addEdge("cell_to_nodes", test21);
-  graph.addEdge("owned and overlap cell maps", test21);
-  graph.addEdge("owned and overlap node maps", test21);
+  auto test21 = graph.AddVertex("cell_to_nodes ghost data", &MeshAudit_type::check_cell_to_nodes_ghost_data);
+  graph.AddEdge("cell_to_nodes", test21);
+  graph.AddEdge("owned and overlap cell maps", test21);
+  graph.AddEdge("owned and overlap node maps", test21);
 
-  auto test22 = graph.addVertex();
-  graph.getVertex(test22).name = "cell_to_faces ghost data";
-  graph.getVertex(test22).test = &MeshAudit_type::check_cell_to_faces_ghost_data;
-  graph.addEdge("cell_to_faces", test22);
-  graph.addEdge("owned and overlap cell maps", test22);
-  graph.addEdge("owned and overlap face maps", test22);
+  auto test22 = graph.AddVertex("cell_to_faces ghost data", &MeshAudit_type::check_cell_to_faces_ghost_data);
+  graph.AddEdge("cell_to_faces", test22);
+  graph.AddEdge("owned and overlap cell maps", test22);
+  graph.AddEdge("owned and overlap face maps", test22);
 
   // partition tests
-  auto test32 = graph.addVertex();
-  graph.getVertex(test32).name = "face partition";
-  graph.getVertex(test32).test = &MeshAudit_type::check_face_partition;
-  graph.addEdge("owned and overlap face maps", test32);
-  graph.addEdge("owned and overlap cell maps", test32);
-  graph.addEdge(test18, test32);
+  auto test32 = graph.AddVertex("face partition", &MeshAudit_type::check_face_partition);
+  graph.AddEdge("owned and overlap face maps", test32);
+  graph.AddEdge("owned and overlap cell maps", test32);
+  graph.AddEdge(test18, test32);
 
-  auto test33 = graph.addVertex();
-  graph.getVertex(test33).name = "node partition";
-  graph.getVertex(test33).test = &MeshAudit_type::check_node_partition;
-  graph.addEdge("owned and overlap node maps", test33);
-  graph.addEdge("owned and overlap cell maps", test33);
+  auto test33 = graph.AddVertex("node partition", &MeshAudit_type::check_node_partition);
+  graph.AddEdge("owned and overlap node maps", test33);
+  graph.AddEdge("owned and overlap cell maps", test33);
 };
 
 template <class MeshAudit_type>
 void
-createTestDependencies_Sets(MeshAudit_type& audit, AuditGraph<MeshAudit_type>& graph)
+createTestDependencies_Sets(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph)
 {
   createTestDependencies_Maps(audit, graph);
 
   // node set data tests
-  auto test23 = graph.addVertex();
-  graph.getVertex(test23).name = "node set IDs";
-  graph.getVertex(test23).test = &MeshAudit_type::check_node_set_ids;
+  graph.AddVertex("node set IDs", &MeshAudit_type::check_node_set_ids); // test23
 
-  auto test24 = graph.addVertex();
-  graph.getVertex(test24).name = "node sets";
-  graph.getVertex(test24).test = &MeshAudit_type::check_node_sets;
-  graph.addEdge("owned and overlap node maps", test24);
+  auto test24 = graph.AddVertex("node sets", &MeshAudit_type::check_node_sets);
+  graph.AddEdge("owned and overlap node maps", test24);
 
-  auto test25 = graph.addVertex();
-  graph.getVertex(test25).name = "valid node set IDs";
-  graph.getVertex(test25).test = &MeshAudit_type::check_valid_node_set_id;
-  graph.addEdge("node set IDs", test25);
+  auto test25 = graph.AddVertex("valid node set IDs", &MeshAudit_type::check_valid_node_set_id);
+  graph.AddEdge("node set IDs", test25);
 
   // face set data tests
-  auto test26 = graph.addVertex();
-  graph.getVertex(test26).name = "face set IDs";
-  graph.getVertex(test26).test = &MeshAudit_type::check_face_set_ids;
+  graph.AddVertex("face set IDs", &MeshAudit_type::check_face_set_ids); // test26
 
-  auto test27 = graph.addVertex();
-  graph.getVertex(test27).name = "face sets";
-  graph.getVertex(test27).test = &MeshAudit_type::check_face_sets;
-  graph.addEdge("owned and overlap face maps", test27);
-  graph.addEdge("face set IDs", test27);
+  auto test27 = graph.AddVertex("face sets", &MeshAudit_type::check_face_sets);
+  graph.AddEdge("owned and overlap face maps", test27);
+  graph.AddEdge("face set IDs", test27);
 
-  auto test28 = graph.addVertex();
-  graph.getVertex(test28).name = "valid face set IDs";
-  graph.getVertex(test28).test = &MeshAudit_type::check_valid_face_set_id;
-  graph.addEdge("face set IDs", test28);
+  auto test28 = graph.AddVertex("valid face set IDs", &MeshAudit_type::check_valid_face_set_id);
+  graph.AddEdge("face set IDs", test28);
 
   // cell set data tests
-  auto test29 = graph.addVertex();
-  graph.getVertex(test29).name = "cell set IDs";
-  graph.getVertex(test29).test = &MeshAudit_type::check_cell_set_ids;
+  graph.AddVertex("cell set IDs", &MeshAudit_type::check_cell_set_ids); // test29
 
-  auto test30 = graph.addVertex();
-  graph.getVertex(test30).name = "cell sets";
-  graph.getVertex(test30).test = &MeshAudit_type::check_cell_sets;
-  graph.addEdge("owned and overlap cell maps", test30);
-  graph.addEdge("cell set IDs", test30);
+  auto test30 = graph.AddVertex("cell sets", &MeshAudit_type::check_cell_sets);
+  graph.AddEdge("owned and overlap cell maps", test30);
+  graph.AddEdge("cell set IDs", test30);
 
-  auto test31 = graph.addVertex();
-  graph.getVertex(test31).name = "valid cell set IDs";
-  graph.getVertex(test31).test = &MeshAudit_type::check_valid_cell_set_id;
-  graph.addEdge("cell set IDs", test31);
+  auto test31 = graph.AddVertex("valid cell set IDs",  &MeshAudit_type::check_valid_cell_set_id);
+  graph.AddEdge("cell set IDs", test31);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
