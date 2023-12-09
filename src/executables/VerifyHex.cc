@@ -9,16 +9,13 @@
 
 #include <filesystem>
 #include <iostream>
-namespace bf = std::filesystem;
-#include "boost/program_options.hpp"
-namespace po = boost::program_options;
 
+#include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Epetra_Vector.h"
 #include "AmanziComm.hh"
 
 #include "Teuchos_ParameterXMLFileReader.hpp"
-// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
@@ -105,7 +102,7 @@ do_the_audit(const int& me, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh, const s
 int
 main(int argc, char** argv)
 {
-  bf::path progpath(argv[0]);
+  std::filesystem::path progpath(argv[0]);
   std::string progname = progpath.filename();
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
@@ -115,7 +112,7 @@ main(int argc, char** argv)
     auto comm = Amanzi::getDefaultComm();
     const int me(comm->MyPID());
 
-    unsigned int xcells(4), ycells(4), zcells(4);
+    int xcells(4), ycells(4), zcells(4);
     double xdelta(1.0), ydelta(1.0), zdelta(1.0);
     double xorigin(0.0), yorigin(0.0), zorigin(0.0);
     std::string inname;
@@ -125,106 +122,52 @@ main(int argc, char** argv)
     bool dosimple(false);
     bool doaudit(true);
 
-    po::options_description desc("Available options");
+    Teuchos::CommandLineProcessor CLP;
+    CLP.setDocString("The framework test for hex meshes.\n");
 
     try {
-      desc.add_options()("help", "produce this help message")
+      CLP.setOption("audit", "noaudit", &doaudit, "do not audit the generated mesh");
 
-        ("noaudit", "do not audit the generated mesh")
+      std::string framework("SIMPLE");
+      CLP.setOption("framework", &framework, "mesh framework");
+      dosimple = (framework == "SIMPLE");
 
-          ("simple", "use the Mesh_Simple framework instead of stk::mesh")
+      CLP.setOption("xcells", &xcells, "number of cells in the x-direction");
+      CLP.setOption("ycells", &ycells, "number of cells in the y-direction");
+      CLP.setOption("zcells", &zcells, "number of cells in the z-direction");
 
-            ("xcells",
-             po::value<unsigned int>()->default_value(xcells),
-             "number of cells in the x-direction")("ycells",
-                                                   po::value<unsigned int>()->default_value(ycells),
-                                                   "number of cells in the y-direction")(
-              "zcells",
-              po::value<unsigned int>()->default_value(zcells),
-              "number of "
-              "cells in "
-              "the "
-              "z-"
-              "direction")
+      CLP.setOption("xdelta", &xdelta, "cell size in the x-direction");
+      CLP.setOption("ydelta", &ydelta, "cell size in the y-direction");
+      CLP.setOption("zdelta", &zdelta, "cell size in the z-direction");
 
-              ("xdelta",
-               po::value<double>()->default_value(xdelta),
-               "cell size in the x-direction")("ydelta",
-                                               po::value<double>()->default_value(ydelta),
-                                               "cell size in the y-direction")(
-                "zdelta",
-                po::value<double>()->default_value(zdelta),
-                "cell size in the "
-                "z-direction")
+      CLP.setOption("xorigin", &xorigin, "x origin");
+      CLP.setOption("yorigin", &yorigin, "y origin");
+      CLP.setOption("zorigin", &zorigin, "z origin");
 
-                ("xorigin", po::value<double>()->default_value(xorigin), "x origin")(
-                  "yorigin", po::value<double>()->default_value(yorigin), "y origin")(
-                  "zorigin", po::value<double>()->default_value(zorigin), "z origin")
-
-                  ("xml-file", po::value<std::string>(), "XML file from which to parameters")
-
-                    ("output",
-                     po::value<std::string>()->default_value(outname),
-                     "output file base name");
-
-      po::positional_options_description p;
-      p.add("output", 1);
-
-      po::variables_map vm;
-      po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
-      po::notify(vm);
-
-      if (vm.count("help")) {
-        std::cerr << "Usage: " << progname << " [options]" << std::endl;
-        std::cerr << desc << std::endl;
-        return 3;
-      }
-
-      if (vm.count("noaudit")) doaudit = false;
-
-      if (vm.count("xml-file") > 0) {
-        inname = vm["xml-file"].as<std::string>();
-      } else {
-        inname.clear();
-
-        xcells = vm["xcells"].as<unsigned int>();
-        ycells = vm["ycells"].as<unsigned int>();
-        zcells = vm["zcells"].as<unsigned int>();
-
-        xdelta = vm["xdelta"].as<double>();
-        ydelta = vm["ydelta"].as<double>();
-        zdelta = vm["zdelta"].as<double>();
-
-        xorigin = vm["xorigin"].as<double>();
-        yorigin = vm["yorigin"].as<double>();
-        zorigin = vm["zorigin"].as<double>();
-      }
-
-      dosimple = (vm.count("simple") > 0);
-
-      outname = vm["output"].as<std::string>();
+      // CLP.setOption("xml-file", &zorigin, "XML file from which to parameters");
+      CLP.setOption("output", &outname, "output file base name");
       outfilename = outname;
 
-    } catch (po::error& e) {
-      if (me == 0) {
-        std::cerr << progname << ": command line error: " << e.what() << std::endl;
-        std::cerr << "Usage: " << progname << " [options]" << std::endl;
-        std::cerr << desc << std::endl;
-      }
-      return 3;
-    } catch (boost::bad_any_cast& e) {
-      if (me == 0) {
-        std::cerr << progname << ": command line error: " << e.what() << std::endl;
-        std::cerr << "Usage: " << progname << " [options]" << std::endl;
-        std::cerr << desc << std::endl;
-      }
-      return 3;
+      CLP.throwExceptions(false);
+      CLP.recogniseAllOptions(true);
+
+      Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn = CLP.parse(argc, argv);
+
+      if (parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED)
+        throw std::string("Program not run");
+
+      if (parseReturn == Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION)
+        throw std::string("Program not run");
+
+      if (parseReturn == Teuchos::CommandLineProcessor::PARSE_ERROR)
+        throw std::string("Program not run");
+
     } catch (...) {
       if (me == 0) {
-        std::cerr << "Usage: " << progname << " [options]" << std::endl;
-        std::cerr << desc << std::endl;
+        std::cerr << progname << ": command line error." << std::endl;
+        std::cerr << "Usage: " << progname << " --help" << std::endl;
       }
-      return 3;
+      return 1;
     }
 
     // generate a mesh
@@ -235,6 +178,9 @@ main(int argc, char** argv)
 
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
     if (inname.empty()) {
+      if (me == 0) {
+        std::cout << "Mesh: " << xcells << " x " << ycells << " x " << zcells << std::endl;
+      }
       mesh = meshfactory.create(xorigin,
                                 yorigin,
                                 zorigin,

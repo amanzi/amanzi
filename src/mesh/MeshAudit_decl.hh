@@ -162,12 +162,7 @@ class MeshAudit_Sets : public MeshAudit_Maps<Mesh_type> {
 template <typename MeshAudit_type>
 class AuditDirectedGraph {
  public:
-  enum Status_kind : int {
-    NONE = 0,
-    GOOD = 1,
-    FAIL = 2,
-    SKIP = 3
-  };
+  enum Status_kind : int { NONE = 0, GOOD = 1, FAIL = 2, SKIP = 3 };
 
   // method pointer
   typedef bool (MeshAudit_type::*Test)() const;
@@ -193,7 +188,7 @@ class AuditDirectedGraph {
   }
 
   int AddVertex(const std::string& name, const Test& test)
-  { 
+  {
     Vertex v;
     v.name = name;
     v.test = test;
@@ -208,11 +203,7 @@ class AuditDirectedGraph {
     edges_.push_back(std::make_pair(vert_out, vert_in));
   }
 
-  void
-  AddEdge(int vert_out, int vert_in)
-  {
-    edges_.push_back(std::make_pair(vert_out, vert_in));
-  }
+  void AddEdge(int vert_out, int vert_in) { edges_.push_back(std::make_pair(vert_out, vert_in)); }
 
   // graph operations
   int FindAnyRoot() const
@@ -229,7 +220,8 @@ class AuditDirectedGraph {
       if (v1.status == Status_kind::NONE) flag[it->second] = 0;
     }
 
-    for (int i = 0; i < nv; ++i) if (flag[i] == 1) return i;
+    for (int i = 0; i < nv; ++i)
+      if (flag[i] == 1) return i;
     return -1;
   }
 
@@ -243,12 +235,12 @@ class AuditDirectedGraph {
         auto& v1 = vertices_[it->first];
         auto& v2 = vertices_[it->second];
         if (v1.status == Status_kind::FAIL && v2.status == Status_kind::NONE) {
-           v2.status = Status_kind::SKIP;
-           os << "Skipping " << v2.name << " check because of previous failures." << std::endl;
+          v2.status = Status_kind::SKIP;
+          os << "Skipping " << v2.name << " check because of previous failures." << std::endl;
           found = true;
         } else if (v1.status == Status_kind::SKIP && v2.status == Status_kind::NONE) {
           v2.status = Status_kind::SKIP;
-           os << "Skipping " << v2.name << " check because of previous failures." << std::endl;
+          os << "Skipping " << v2.name << " check because of previous failures." << std::endl;
           found = true;
         }
       }

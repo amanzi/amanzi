@@ -66,28 +66,33 @@ createTestDependencies_Geometry(MeshAudit_type& audit, AuditDirectedGraph<MeshAu
 
   // Cell_to_nodes tests
   auto test02 = graph.AddVertex("cell_to_nodes", &MeshAudit_type::check_cell_to_nodes);
-  auto test03 = graph.AddVertex("node references by cells", &MeshAudit_type::check_node_refs_by_cells);
+  auto test03 =
+    graph.AddVertex("node references by cells", &MeshAudit_type::check_node_refs_by_cells);
   graph.AddEdge(test02, test03);
 
   // Cell_to_faces tests
   auto test04 = graph.AddVertex("cell_to_faces", &MeshAudit_type::check_cell_to_faces);
-  auto test05 = graph.AddVertex("face references by cells",  &MeshAudit_type::check_face_refs_by_cells);
+  auto test05 =
+    graph.AddVertex("face references by cells", &MeshAudit_type::check_face_refs_by_cells);
   graph.AddEdge(test04, test05);
 
   // face_to_nodes tests
   auto test06 = graph.AddVertex("face_to_nodes", &MeshAudit_type::check_face_to_nodes);
-  auto test08 = graph.AddVertex("node references by faces", &MeshAudit_type::check_node_refs_by_faces);
+  auto test08 =
+    graph.AddVertex("node references by faces", &MeshAudit_type::check_node_refs_by_faces);
   graph.AddEdge(test06, test08);
 
   // cell_to_face_dirs tests
   auto test09 = graph.AddVertex("cell_to_face_dirs", &MeshAudit_type::check_cell_to_face_dirs);
 
   // cell degeneracy test
-  auto test10 = graph.AddVertex("topological non-degeneracy of cells", &MeshAudit_type::check_cell_degeneracy);
+  auto test10 =
+    graph.AddVertex("topological non-degeneracy of cells", &MeshAudit_type::check_cell_degeneracy);
   graph.AddEdge(test02, test10);
 
   // Consistency between the various mesh connectivity data.
-  auto test11 = graph.AddVertex("consistency of mesh connectivity data", &MeshAudit_type::check_cell_to_faces_to_nodes);
+  auto test11 = graph.AddVertex("consistency of mesh connectivity data",
+                                &MeshAudit_type::check_cell_to_faces_to_nodes);
   graph.AddEdge(test02, test11);
   graph.AddEdge(test04, test11);
   graph.AddEdge(test06, test11);
@@ -113,16 +118,19 @@ createTestDependencies_Geometry(MeshAudit_type& audit, AuditDirectedGraph<MeshAu
   graph.AddEdge(test13, test15);
 
   // cell-to-face adjacencies and orientations
-  auto test16 = graph.AddVertex("consistency of face-cell adjacencies", &MeshAudit_type::check_face_cell_adjacency_consistency);
+  auto test16 = graph.AddVertex("consistency of face-cell adjacencies",
+                                &MeshAudit_type::check_face_cell_adjacency_consistency);
   graph.AddEdge(test04, test16);
   graph.AddEdge(test09, test16);
 
   // face normals relto cell
-  auto test17 = graph.AddVertex("face normals are outward", &MeshAudit_type::check_face_normal_relto_cell);
+  auto test17 =
+    graph.AddVertex("face normals are outward", &MeshAudit_type::check_face_normal_relto_cell);
   graph.AddEdge(test16, test17);
 
   // face normals
-  auto test18 = graph.AddVertex("face normals are oriented", &MeshAudit_type::check_face_normal_orientation);
+  auto test18 =
+    graph.AddVertex("face normals are oriented", &MeshAudit_type::check_face_normal_orientation);
   graph.AddEdge(test16, test18);
 }
 
@@ -142,21 +150,25 @@ createTestDependencies_Maps(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_
   auto test18 = graph.AddVertex("owned and overlap cell maps", &MeshAudit_type::check_cell_maps);
 
   // ghost data tests
-  auto test19 = graph.AddVertex("node_to_coordinates ghost data", &MeshAudit_type::check_node_to_coordinates_ghost_data);
+  auto test19 = graph.AddVertex("node_to_coordinates ghost data",
+                                &MeshAudit_type::check_node_to_coordinates_ghost_data);
   graph.AddEdge("node_to_coordinates", test19);
   graph.AddEdge("owned and overlap node maps", test19);
 
-  auto test20 = graph.AddVertex("face_to_nodes ghost data", &MeshAudit_type::check_face_to_nodes_ghost_data);
+  auto test20 =
+    graph.AddVertex("face_to_nodes ghost data", &MeshAudit_type::check_face_to_nodes_ghost_data);
   graph.AddEdge("face_to_nodes", test20);
   graph.AddEdge("owned and overlap node maps", test20);
   graph.AddEdge("owned and overlap face maps", test20);
 
-  auto test21 = graph.AddVertex("cell_to_nodes ghost data", &MeshAudit_type::check_cell_to_nodes_ghost_data);
+  auto test21 =
+    graph.AddVertex("cell_to_nodes ghost data", &MeshAudit_type::check_cell_to_nodes_ghost_data);
   graph.AddEdge("cell_to_nodes", test21);
   graph.AddEdge("owned and overlap cell maps", test21);
   graph.AddEdge("owned and overlap node maps", test21);
 
-  auto test22 = graph.AddVertex("cell_to_faces ghost data", &MeshAudit_type::check_cell_to_faces_ghost_data);
+  auto test22 =
+    graph.AddVertex("cell_to_faces ghost data", &MeshAudit_type::check_cell_to_faces_ghost_data);
   graph.AddEdge("cell_to_faces", test22);
   graph.AddEdge("owned and overlap cell maps", test22);
   graph.AddEdge("owned and overlap face maps", test22);
@@ -204,7 +216,7 @@ createTestDependencies_Sets(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_
   graph.AddEdge("owned and overlap cell maps", test30);
   graph.AddEdge("cell set IDs", test30);
 
-  auto test31 = graph.AddVertex("valid cell set IDs",  &MeshAudit_type::check_valid_cell_set_id);
+  auto test31 = graph.AddVertex("valid cell set IDs", &MeshAudit_type::check_valid_cell_set_id);
   graph.AddEdge("cell set IDs", test31);
 }
 
