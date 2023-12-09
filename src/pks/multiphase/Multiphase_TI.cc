@@ -124,7 +124,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
 
         int nfaces_owned_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
         for (int f = 0; f < nfaces_owned_; ++f) { 
-          flux_f[0][f] = -1.0;
+          //flux_f[0][f] = -1.0;
         }
         //std::cout<<"Good till here? 2"<<std::endl;
         

@@ -235,7 +235,7 @@
           <ParameterList name="boundary saturation">
             <ParameterList name="function-exprtk">
               <Parameter name="number of arguments" type="int" value="4"/>
-              <Parameter name="formula" type="string" value="0.0"/>
+              <Parameter name="formula" type="string" value="1.0"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -380,7 +380,7 @@
             <ParameterList name="function">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="4"/>
-                <Parameter name="formula" type="string" value="0.0"/>
+                <Parameter name="formula" type="string" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

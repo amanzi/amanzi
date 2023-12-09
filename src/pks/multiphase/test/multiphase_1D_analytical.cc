@@ -63,7 +63,7 @@ for (int c = 0; c < ncells_owned; c++) {
     //sl_ex[0][c] = (1/8.0) * std::sin(pi*x) * std::exp(-1000.0*t);
 
     pl_ex[0][c] = x;
-    sl_ex[0][c] = 0.0;
+    sl_ex[0][c] = 1.0;
   }
 
 }
@@ -225,7 +225,7 @@ run_test(int M, double dt0,  const std::string& filename)
       double x = xc[0], y = xc[1];
       // exact solution expression
       double err = std::abs( pl[0][c] - x );
-      double err_sl = std::abs( sl[0][c] - 0.0 );
+      double err_sl = std::abs( sl[0][c] - 1.0 );
       if (perr_linf_inf < err) { perr_linf_inf = err; }
       perr_linf_l1_tmp += err * mesh->getCellVolume(c);
       perr_linf_l2_tmp += err * err * mesh->getCellVolume(c);  
@@ -286,7 +286,7 @@ TEST(MULTIPHASE_1D_ANALYTICAL)
 
   double dt0 = 1.0e-3;
   int i = 0;
-  for (int M = 50; M <= 50; M *= 2) {
+  for (int M = 25; M <= 100; M *= 2) {
     h[i] = 1.0/M;
     auto errs = run_test(M, dt0, "test/multiphase_1D_analytical.xml");   
     errs_pl[i] = std::get<0>(errs);
