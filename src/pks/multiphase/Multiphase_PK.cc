@@ -849,7 +849,7 @@ Multiphase_PK::Initialize()
   for (int f = 0; f < nfaces_owned_; ++f) { 
     //std::cout<<"flux on face "<<f<<" = "<<flux_l[0][f]<<std::endl;
     //std::cout<<"setting to -1..."<<std::endl;
-    flux_l[0][f] = -1.0;
+    //flux_l[0][f] = -1.0;
   }
 
 
