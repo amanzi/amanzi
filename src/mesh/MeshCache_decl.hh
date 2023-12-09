@@ -350,9 +350,6 @@ struct MeshCache {
   //
   // Baseline mesh functionality
   // =============================================
-
-  bool isSFM() const { return isSFM_; }
-
   // ----------------------
   // Accessors and Mutators
   // ----------------------
@@ -387,6 +384,8 @@ struct MeshCache {
   // mesh properties
   bool isOrdered() const { return is_ordered_; }
   bool isLogical() const { return is_logical_; }
+  bool isSFM() const { return isSFM_; } // single face mesh -- special case
+
   bool hasNodes() const { return has_nodes_; }
   bool hasEdges() const { return has_edges_; }
   bool hasNodeFaces() const { return has_node_faces_; }

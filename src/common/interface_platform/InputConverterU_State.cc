@@ -393,7 +393,8 @@ InputConverterU::TranslateState_()
         }
         if (model == "standard") {
           field_ev.set<std::string>("evaluator type", "heat diffusion to matrix")
-            .set<std::string>("thermal conductivity key", "thermal_conductivity");
+            .set<std::string>("thermal conductivity key", "fracture-thermal_conductivity")
+            .set<std::string>("aperture key", "fracture-aperture");
         }
       }
 
@@ -1091,7 +1092,7 @@ InputConverterU::TranslateFieldEvaluator_(DOMNode* node,
       .set<std::string>("variable name", field)
       .set<int>("number of dofs", 1)
       .set<bool>("constant in time", temporal);
-  } else {
+  } else if (model == "") {
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
 
     if (static_cast<DOMElement*>(node)->hasAttribute(mm.transcode("formula"))) {
@@ -1118,7 +1119,8 @@ InputConverterU::TranslateFieldEvaluator_(DOMNode* node,
         .sublist("function")
         .sublist("function-constant")
         .set<double>("value", val);
-      field_ev.set<std::string>("evaluator type", "independent variable");
+      field_ev.set<std::string>("evaluator type", "independent variable")
+        .set<bool>("constant in time", true);
     }
   }
 }
@@ -1311,7 +1313,9 @@ InputConverterU::AddIndependentFieldEvaluator_(Teuchos::ParameterList& out_ev,
     .sublist("function-constant")
     .set<double>("value", val);
 
-  out_ev.sublist(field).set<std::string>("evaluator type", "independent variable");
+  out_ev.sublist(field)
+    .set<std::string>("evaluator type", "independent variable")
+    .set<bool>("constant in time", true);
 }
 
 

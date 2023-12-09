@@ -39,10 +39,7 @@ MFD3D_GeneralizedDiffusion::schema() const
 * Consistency condition for inner product on a generized polyhedron.
 ****************************************************************** */
 int
-MFD3D_GeneralizedDiffusion::L2consistency(int c,
-                                          const Tensor& K,
-                                          DenseMatrix& N,
-                                          DenseMatrix& Mc)
+MFD3D_GeneralizedDiffusion::L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc)
 {
   const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();

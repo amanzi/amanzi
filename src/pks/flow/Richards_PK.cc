@@ -38,6 +38,7 @@
 #include "XMLParameterListWriter.hh"
 
 // Amanzi::Flow
+#include "ApertureModelEvaluator.hh"
 #include "DarcyVelocityEvaluator.hh"
 #include "PermeabilityEvaluator.hh"
 #include "PorosityEvaluator.hh"
@@ -275,7 +276,7 @@ Richards_PK::Setup()
     S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     if (pom_name == "compressible: pressure function") {
       Teuchos::RCP<Teuchos::ParameterList> pom_list =
@@ -462,6 +463,24 @@ Richards_PK::Setup()
     S_->SetEvaluator(alpha_key_, Tags::DEFAULT, eval);
   }
 
+  // -- aperture evalutor
+  if (flow_on_manifold_) {
+    if (fp_list_->isSublist("fracture aperture models")) {
+      auto fam_list = Teuchos::sublist(fp_list_, "fracture aperture models", true);
+      auto fam = CreateApertureModelPartition(mesh_, fam_list);
+
+      Teuchos::ParameterList elist(aperture_key_);
+      elist.set<std::string>("aperture key", aperture_key_)
+        .set<std::string>("pressure key", pressure_key_)
+        .set<std::string>("tag", "");
+
+      auto eval = Teuchos::rcp(new ApertureModelEvaluator(elist, fam));
+      S_->SetEvaluator(aperture_key_, Tags::DEFAULT, eval);
+    } else {
+      S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+    }
+  }
+
   // Local fields and evaluators.
   // -- hydraulic head
   if (!S_->HasRecord(hydraulic_head_key_)) {
@@ -518,11 +537,16 @@ Richards_PK::Setup()
     S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT));
 
   // set unit
+  S_->GetRecordSetW(pressure_key_).set_units("Pa");
   S_->GetRecordSetW(porosity_key_).set_units("-");
   S_->GetRecordSetW(saturation_liquid_key_).set_units("-");
   S_->GetRecordSetW(relperm_key_).set_units("-");
   S_->GetRecordSetW(mol_density_liquid_key_).set_units("mol/m^3");
+  S_->GetRecordSetW(mass_density_liquid_key_).set_units("kg/m^3");
   S_->GetRecordSetW(viscosity_liquid_key_).set_units("Pa*s");
+  S_->GetRecordSetW(water_storage_key_).set_units("mol/m^3");
+  S_->GetRecordSetW(hydraulic_head_key_).set_units("m");
+  if (use_ppm) S_->GetRecordSetW(ppfactor_key_).set_units("-");
 }
 
 
@@ -622,6 +646,7 @@ Richards_PK::Initialize()
   } else if (name == "other: arithmetic average") {
     nonlinear_coef = "upwind: face";
   }
+
   if (!oplist_matrix.isParameter("nonlinear coefficient")) {
     oplist_matrix.set<std::string>("nonlinear coefficient", nonlinear_coef);
     oplist_pc.set<std::string>("nonlinear coefficient", nonlinear_coef);

@@ -200,6 +200,43 @@
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="internal_energy_rock">
+        <Parameter name="evaluator type" type="string" value="iem"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
+        <ParameterList name="IEM parameters">
+          <ParameterList name="Material 1">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="heat capacity" type="double" value="620.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="internal_energy_gas">
+        <Parameter name="evaluator type" type="string" value="iem water vapor"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_gas"/>
+      </ParameterList>
+
+      <ParameterList name="molar_density_gas">
+        <Parameter name="evaluator type" type="string" value="eos"/>
+        <Parameter name="eos basis" type="string" value="molar"/>
+        <Parameter name="molar density key" type="string" value="molar_density_gas"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="vapor in gas"/>
+          <ParameterList name="gas EOS parameters">
+            <Parameter name="eos type" type="string" value="ideal gas"/>
+            <Parameter name="molar mass of gas" type="double" value="28.9647e-03"/>  <!-- dry air -->
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="molar_fraction_gas">
+        <Parameter name="evaluator type" type="string" value="molar fraction gas"/>
+        <Parameter name="molar fraction key" type="string" value="molar_fraction_gas"/>
+        <ParameterList name="vapor pressure model parameters">
+          <Parameter name="eos type" type="string" value="water vapor over water/ice"/>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">

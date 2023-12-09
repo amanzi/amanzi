@@ -163,7 +163,7 @@ MeshCache<MEM>::getSetEntities(const std::string& region_name,
     int lsize = view<MEM>(sets_.at(key)).size();
     int gsize = 0;
     getComm()->SumAll(&lsize, &gsize, 1);
-    if (gsize == 0) {
+    if (gsize == 0 && getComm()->MyPID() == 0) {
       Errors::Message msg;
       msg << "AmanziMesh::getSetEntities: Region \"" << region->get_name() << "\" of type \""
           << to_string(region->get_type()) << "\" and kind \"" << to_string(kind)

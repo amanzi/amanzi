@@ -77,7 +77,8 @@ MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
   // boundary faces
   // -- get a list of all owned face LIDs with 1 cell
   std::size_t nfaces_owned = mesh.getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
-  Entity_ID_View boundary_faces("boundary_faces", nfaces_owned);
+  std::size_t nfaces_all = mesh.getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
+  Entity_ID_View boundary_faces("boundary_faces", nfaces_all);
   initView(boundary_faces, -1);
 
   std::size_t nbf_owned = 0;
@@ -85,7 +86,7 @@ MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
   // This used to loop over nfaces_all but logically that allows internal ghosted faces
   // that have one cell on this rank but that more than one cell on the other rank.
   // As a result nbf_owned = nbf_all
-  for (Entity_ID f = 0; f != nfaces_owned; ++f) {
+  for (Entity_ID f = 0; f != nfaces_all; ++f) {
     cEntity_ID_View fcells;
     mesh.getFaceCells(f, Parallel_kind::ALL, fcells);
     if (fcells.size() == 1) {

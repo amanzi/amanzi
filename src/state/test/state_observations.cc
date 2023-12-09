@@ -175,7 +175,9 @@ struct obs_domain_set_test : public obs_test {
     plist->set<std::string>("partitioner", "zoltan_rcb");
     auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(*parent->getGeometricModel()));
     AmanziMesh::MeshFactory fac(parent->getComm(), gm, plist);
-    auto surface_mesh = fac.create(parent, { "top face" }, AmanziMesh::Entity_kind::FACE, true);
+
+    std::vector<std::string> setnames({ "top face" });
+    auto surface_mesh = fac.create(parent, setnames, AmanziMesh::Entity_kind::FACE, true);
     S->RegisterMesh("surface", surface_mesh);
 
     // create domain set

@@ -39,7 +39,11 @@ EnergyOnePhase_PK::EnergyOnePhase_PK(Teuchos::ParameterList& pk_tree,
                                      const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                      const Teuchos::RCP<State>& S,
                                      const Teuchos::RCP<TreeVector>& soln)
-  : PK(pk_tree, glist, S, soln), Energy_PK(pk_tree, glist, S, soln), soln_(soln), dt_(0.0)
+  : PK(pk_tree, glist, S, soln),
+    Energy_PK(pk_tree, glist, S, soln),
+    soln_(soln),
+    num_itrs_(0),
+    dt_(0.0)
 {
   // verbose object
   Teuchos::ParameterList vlist;
@@ -118,6 +122,10 @@ EnergyOnePhase_PK::Setup()
     auto tcm = Teuchos::rcp(new TCMEvaluator_OnePhase(elist));
     S_->SetEvaluator(conductivity_key_, Tags::DEFAULT, tcm);
   }
+
+  // set units
+  S_->GetRecordSetW(energy_key_).set_units("J");
+  S_->GetRecordSetW(enthalpy_key_).set_units("J/mol");
 }
 
 

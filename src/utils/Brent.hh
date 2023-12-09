@@ -22,11 +22,17 @@ namespace Utils {
 * Brent's method of root finding
 *
 * Note that a and b must bracket the root, i.e. f(a) * f(b) < 0
+*
+* Upon return:
+* *itr == -1 indicates that [a,b] did not bracket a root
+* *itr == *itr + 1 indicates that the method did not converge.
+* otherwise, *itr is the number of iterations to convergence.
 ****************************************************************** */
 template <class F>
 double
 findRootBrent(const F& f, double a, double b, double tol, int* itr)
 {
+  AMANZI_ASSERT(*itr > 0);
   int itr_max(*itr);
   double c, d, s, fa, fb, fc, fs, ftol;
   bool flag(true);
@@ -89,7 +95,8 @@ findRootBrent(const F& f, double a, double b, double tol, int* itr)
     if (std::fabs(b - a) < tol) return s;
   }
 
-  return 0.0; // default value
+  (*itr)++; // indicate nonconvergence
+  return s;
 }
 
 

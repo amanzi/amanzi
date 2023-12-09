@@ -282,6 +282,9 @@ class MeshFramework {
   // Cells of type 'ptype' connected to a node
   // NOTE: The order of cells is not guaranteed to be the same for
   // corresponding nodes on different processors
+  //
+  // This upward adjacency has a default algorithmic implementation based on
+  // getNodeFaces and getFaceCells.
   virtual void getNodeCells(const Entity_ID nodeid,
                             const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const;
@@ -289,6 +292,8 @@ class MeshFramework {
   // Faces of type parallel 'ptype' connected to a node
   // NOTE: The order of faces is not guarnateed to be the same for
   // corresponding nodes on different processors
+  //
+  // This upward adjacency is required to be provided by the Framework.
   virtual void getNodeFaces(const Entity_ID nodeid,
                             const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const = 0;
@@ -297,6 +302,10 @@ class MeshFramework {
   //
   // The order of edges is not guaranteed to be the same for corresponding
   // node on different processors
+  //
+  // This upward adjacency must be provided by the framework IF the framework
+  // supports edges.  If it does not, then this default implementation simply
+  // throws an error.
   virtual void getNodeEdges(const Entity_ID nodeid,
                             const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const;

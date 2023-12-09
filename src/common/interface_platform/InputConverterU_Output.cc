@@ -316,6 +316,10 @@ InputConverterU::TranslateOutput_()
         unit = GetAttributeValueS_(inode, "length", TYPE_NONE, false, units_.system().length);
         obsPL.set<std::string>("length unit", unit);
 
+        unit =
+          GetAttributeValueS_(inode, "temperature", TYPE_NONE, false, units_.system().temperature);
+        obsPL.set<std::string>("temperature unit", unit);
+
         unit = GetAttributeValueS_(
           inode, "concentration", TYPE_NONE, false, units_.system().concentration);
         obsPL.set<std::string>("concentration unit", unit);

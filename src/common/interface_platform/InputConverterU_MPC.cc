@@ -1130,7 +1130,7 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
           }
         }
 
-        if (pk == "flow" || pk == "flow fracture") {
+        if (!fracture_network_ && (pk == "flow" || pk == "flow fracture")) {
           tmp.sublist("pressure-lambda constraints").set<std::string>("method", "projection");
         }
 

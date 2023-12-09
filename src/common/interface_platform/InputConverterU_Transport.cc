@@ -298,7 +298,7 @@ InputConverterU::TranslateTransport_(const std::string& domain)
   disc_methods.append(", mfd-two_point_flux_approximation");
 
   out_list.sublist("operators") =
-    TranslateDiffusionOperator_(disc_methods, "diffusion_operator", "", "", "", false);
+    TranslateDiffusionOperator_(disc_methods, "diffusion_operator", "", "", "", domain, false);
 
   // multiscale models sublist
   out_list.sublist("multiscale models") = TranslateTransportMSM_();

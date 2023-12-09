@@ -209,10 +209,7 @@ DeRham_Edge::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
 * Efficient implementation is possible in 2D. Hence, we fork the code.
 ****************************************************************** */
 int
-DeRham_Edge::L2consistencyInverse(int c,
-                                  const Tensor& T,
-                                  DenseMatrix& R,
-                                  DenseMatrix& Wc)
+DeRham_Edge::L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
   int ok;
   if (d_ == 2) {

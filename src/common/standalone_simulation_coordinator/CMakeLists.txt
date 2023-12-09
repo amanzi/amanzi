@@ -18,6 +18,7 @@ include(BinaryManager)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
+include_directories(${UDRIVER_SOURCE_DIR})
 
 include_directories(${AMANZI_BINARY_DIR}) # required to pick up amanzi_version.hh
 
@@ -93,7 +94,7 @@ endif()
 # Binary: amanzi-demo-driver
 #
 if (ENABLE_Unstructured)
-  set(ssc_unstructured_grid_libs udriv mpc state transport flow energy pks eos operators whetstone chemistry_pk)
+  set(ssc_unstructured_grid_libs udriver mpc state transport flow energy pks eos operators whetstone chemistry_pk)
 else()
   set(ssc_unstructured_grid_libs)
 endif()

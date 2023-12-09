@@ -147,8 +147,12 @@ class CycleDriver {
   double get_dt(bool after_failuer = false);
   void set_dt(double dt);
   void ResetDriver(int time_period_id);
+
   // one stop shopping
   Teuchos::RCP<State> Go();
+
+  // incremental step
+  Teuchos::RCP<State> Go(double t_old, double t_new, double* dt0);
 
   // access (for unit tests only)
   Teuchos::RCP<const Amanzi::WalkaboutCheckpoint> walkabout() const { return walkabout_; }
@@ -171,6 +175,7 @@ class CycleDriver {
   // misc setup information
   Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> coordinator_list_;
+  bool initialized_;
 
   std::vector<double> t_, tp_start_, tp_end_, tp_dt_, tp_max_cycle_, tp_max_dt_;
   double max_dt_, min_dt_;
@@ -190,15 +195,11 @@ class CycleDriver {
   std::vector<Teuchos::RCP<Visualization>> failed_visualization_;
   Teuchos::RCP<Checkpoint> checkpoint_;
   bool restart_requested_;
-  //  bool output_registered_;
   std::string restart_filename_;
 
   // time period control
   std::vector<std::pair<double, double>> reset_info_;
   std::vector<std::pair<double, double>> reset_max_;
-
-  // //  checkpoint/restart
-  // Teuchos::RCP<Amanzi::Checkpoint> restart_;
 
   // walkabout
   Teuchos::RCP<Amanzi::WalkaboutCheckpoint> walkabout_;

@@ -433,8 +433,8 @@ InputConverterU::ParseFractureNetwork_()
   bool flag;
   MemoryManager mm;
 
-  node = GetUniqueElementByTagsString_("fracture_network, materials", flag);
-  if (flag) {
+  node = GetUniqueElementByTagsString_("fracture_network, materials", fracture_network_);
+  if (fracture_network_) {
     children = node->getChildNodes();
 
     for (int i = 0; i < children->getLength(); i++) {

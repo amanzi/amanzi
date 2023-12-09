@@ -93,6 +93,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="molar_density_liquid">
         <ParameterList name="function">
@@ -107,6 +108,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="viscosity_liquid">
         <ParameterList name="function">
@@ -121,6 +123,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
@@ -135,6 +138,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture-mass_density_liquid">
         <ParameterList name="function">
@@ -149,6 +153,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture-molar_density_liquid">
         <ParameterList name="function">
@@ -163,6 +168,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture-porosity">
         <ParameterList name="function">
@@ -177,6 +183,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture-solute_diffusion_to_matrix">
         <Parameter name="evaluator type" type="string" value="solute diffusion to matrix"/>
@@ -226,6 +233,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture-aperture">
         <Parameter name="evaluator type" type="string" value="independent variable from file"/>
@@ -251,6 +259,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture-temperature">
         <ParameterList name="function">
@@ -265,6 +274,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
     </ParameterList>
 
@@ -494,11 +504,6 @@
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
-          <Parameter name="method" type="string" value="projection"/>
-          <Parameter name="inflow krel correction" type="bool" value="true"/>
-          <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
-        </ParameterList>
 
         <Parameter name="time integration method" type="string" value="BDF1"/>
         <ParameterList name="BDF1">
@@ -579,6 +584,7 @@
 	    <Parameter name="exclude primary terms" type="bool" value="false"/>
 	    <Parameter name="scaled constraint equation" type="bool" value="false"/>
 	    <Parameter name="Newton correction" type="string" value="none"/>
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
 	  </ParameterList>
 	</ParameterList>
       </ParameterList>
@@ -587,11 +593,6 @@
 	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 	<Parameter name="linear solver" type="string" value="AztecOO"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<ParameterList name="pressure-lambda constraints">
-	  <Parameter name="method" type="string" value="projection"/>
-	  <Parameter name="inflow krel correction" type="bool" value="true"/>
-	  <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
-	</ParameterList>
 	<Parameter name="time integration method" type="string" value="none"/>
       </ParameterList>
       <ParameterList name="boundary conditions">
@@ -646,6 +647,7 @@
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
 	  </ParameterList>
 	  <ParameterList name="preconditioner">
 	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -654,6 +656,7 @@
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="gravity" type="bool" value="true"/>
 	    <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
 	  </ParameterList>
 	  <ParameterList name="vapor matrix">
 	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -673,11 +676,6 @@
 	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 	<Parameter name="linear solver" type="string" value="AztecOO"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<ParameterList name="pressure-lambda constraints">
-	  <Parameter name="method" type="string" value="projection"/>
-	  <Parameter name="inflow krel correction" type="bool" value="true"/>
-	  <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
-	</ParameterList>
 	<Parameter name="time integration method" type="string" value="none"/>
       </ParameterList>
       <ParameterList name="verbose object">
@@ -863,6 +861,7 @@
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
           </ParameterList>
           <ParameterList name="preconditioner">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
@@ -870,6 +869,7 @@
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>

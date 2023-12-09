@@ -115,6 +115,7 @@ set(operators_inc_files
     PDE_DiffusionNLFVwithGravity.hh
     PDE_DiffusionDG.hh
     PDE_DiffusionFracturedMatrix.hh
+    PDE_DiffusionCurvedFace.hh
     PDE_Elasticity.hh
     PDE_Electromagnetics.hh
     PDE_MagneticDiffusion.hh

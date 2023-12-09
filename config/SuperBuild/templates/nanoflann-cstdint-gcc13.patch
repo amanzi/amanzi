@@ -1,0 +1,11 @@
+diff -Naur nanoflann-1.4.2-old/include/nanoflann.hpp nanoflann-1.4.2-new/include/nanoflann.hpp
+--- nanoflann-1.4.2-old/include/nanoflann.hpp	2022-01-11 02:29:01.000000000 -0700
++++ nanoflann-1.4.2-new/include/nanoflann.hpp	2023-11-13 23:45:17.935460000 -0700
+@@ -50,6 +50,7 @@
+ #include <cmath>  // for abs()
+ #include <cstdlib>  // for abs()
+ #include <functional>
++#include <cstdint> // for uint32_t
+ #include <istream>
+ #include <limits>  // std::reference_wrapper
+ #include <ostream>

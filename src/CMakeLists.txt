@@ -67,6 +67,7 @@ if (ENABLE_Unstructured)
      add_subdirectory(mpc)
 
      # unstructured grid simulation driver, and Amanzi binaries
+     add_subdirectory(driver)
      add_subdirectory(executables)
    endif()
 

@@ -128,6 +128,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
@@ -160,6 +161,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="molar_density_liquid">
         <Parameter name="evaluator type" type="string" value="eos"/>
@@ -184,12 +186,13 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.98000000000000000e+02"/>
+                <Parameter name="value" type="double" value="298.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
         <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
     </ParameterList>
 
@@ -427,6 +430,7 @@
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
 	  </ParameterList>
 	  <ParameterList name="preconditioner">
 	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -435,6 +439,7 @@
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="gravity" type="bool" value="true"/>
 	    <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+            <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
 	  </ParameterList>
 	  <ParameterList name="vapor matrix">
 	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -682,6 +687,7 @@
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
           </ParameterList>
           <ParameterList name="preconditioner">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -690,6 +696,7 @@
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="true"/>
             <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+            <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
           </ParameterList>
           <ParameterList name="vapor matrix">
             <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -826,6 +833,7 @@
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="gravity" type="bool" value="false"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
 	  </ParameterList>
 	  <ParameterList name="preconditioner">
 	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -833,6 +841,7 @@
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="gravity" type="bool" value="false"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
 	  </ParameterList>
 	</ParameterList>
       </ParameterList>
@@ -909,6 +918,7 @@
 	</ParameterList>
       </ParameterList>
       <ParameterList name="enthalpy evaluator">
+        <Parameter name="include work term" type="bool" value="true"/>
 	<ParameterList name="verbose object">
 	  <Parameter name="verbosity level" type="string" value="high"/>
 	</ParameterList>

@@ -268,6 +268,7 @@ FlexibleObservations::FlushObservations()
     system.mass = obs_list_->get<std::string>("mass unit", system.mass);
     system.length = obs_list_->get<std::string>("length unit", system.length);
     system.concentration = obs_list_->get<std::string>("concentration unit", system.concentration);
+    system.temperature = obs_list_->get<std::string>("temperature unit", system.temperature);
 
     if (rank_ == 0) {
       std::ofstream out;
@@ -277,7 +278,8 @@ FlexibleObservations::FlushObservations()
       out.setf(std::ios::scientific);
 
       out << "Observation Name, Region, Functional, Variable, Time [" << system.time << "], Value ["
-          << system.mass << " " << system.length << " " << system.concentration << "]\n";
+          << system.mass << " " << system.length << " " << system.concentration << " "
+          << system.temperature << "]\n";
       out << "============================================================================\n";
 
       for (auto it = obs_list_->begin(); it != obs_list_->end(); ++it) {

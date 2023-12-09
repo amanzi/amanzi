@@ -14,7 +14,9 @@
 */
 
 #include "Energy_PK.hh"
+#include "OperatorDefs.hh"
 #include "Flow_PK.hh"
+
 #include "FlowEnergy_PK.hh"
 #include "PK_MPCStrong.hh"
 
@@ -55,8 +57,6 @@ void
 FlowEnergy_PK::Setup()
 {
   mesh_ = S_->GetMesh(domain_);
-
-  Teuchos::ParameterList& elist = S_->FEList();
 
   // Our decision can be affected by the list of models
   auto physical_models = Teuchos::sublist(my_list_, "physical models and assumptions");
@@ -105,54 +105,6 @@ FlowEnergy_PK::Setup()
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(particle_density_key_, Tags::DEFAULT);
-  }
-
-  if (!S_->HasRecord(ie_rock_key_) && !elist.isSublist(ie_rock_key_)) {
-    Teuchos::Array<std::string> regions({ "All" });
-    elist.sublist(ie_rock_key_)
-      .set<std::string>("evaluator type", "iem")
-      .set<std::string>("internal energy key", ie_rock_key_);
-    elist.sublist(ie_rock_key_)
-      .sublist("IEM parameters")
-      .sublist("Material 1")
-      .set<Teuchos::Array<std::string>>("regions", regions)
-      .sublist("IEM parameters")
-      .set<std::string>("iem type", "linear")
-      .set<double>("heat capacity", 620.0);
-  }
-
-  // Fields for gas
-  // -- internal energy
-  if (!S_->HasRecord(ie_gas_key_) && !elist.isSublist(ie_gas_key_)) {
-    elist.sublist(ie_gas_key_)
-      .set<std::string>("evaluator type", "iem water vapor")
-      .set<std::string>("internal energy key", ie_gas_key_);
-  }
-
-  // -- molar density
-  if (!S_->HasRecord(mol_density_gas_key_) && !elist.isSublist(mol_density_gas_key_)) {
-    elist.sublist(mol_density_gas_key_)
-      .set<std::string>("evaluator type", "eos")
-      .set<std::string>("eos basis", "molar")
-      .set<std::string>("molar density key", mol_density_gas_key_);
-    elist.sublist(mol_density_gas_key_)
-      .sublist("EOS parameters")
-      .set<std::string>("eos type", "vapor in gas");
-    elist.sublist(mol_density_gas_key_)
-      .sublist("EOS parameters")
-      .sublist("gas EOS parameters")
-      .set<std::string>("eos type", "ideal gas")
-      .set<double>("molar mass of gas", 28.9647e-03); // dry air
-  }
-
-  // -- molar fraction FIXME (it is not used by all models)
-  if (!S_->HasRecord("molar_fraction_gas") && !elist.isSublist("molar_fraction_gas")) {
-    elist.sublist("molar_fraction_gas")
-      .set<std::string>("evaluator type", "molar fraction gas")
-      .set<std::string>("molar fraction key", "molar_fraction_gas");
-    elist.sublist("molar_fraction_gas")
-      .sublist("vapor pressure model parameters")
-      .set<std::string>("eos type", "water vapor over water/ice");
   }
 
   // Fields for liquid
@@ -319,6 +271,36 @@ FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   return fail;
+}
+
+
+/* *******************************************************************
+* Performs one time step.
+******************************************************************* */
+void
+FlowEnergy_PK::FunctionalResidual(double t_old,
+                                  double t_new,
+                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<TreeVector> u_new,
+                                  Teuchos::RCP<TreeVector> f)
+{
+  // flow
+  auto u_old0 = u_old->SubVector(0);
+  auto u_new0 = u_new->SubVector(0);
+  auto f0 = f->SubVector(0);
+  sub_pks_[0]->FunctionalResidual(t_old, t_new, u_old0, u_new0, f0);
+
+  // update molar flux
+  Key key = Keys::getKey(domain_, "molar_flow_rate");
+  auto mol_flowrate = S_->GetPtrW<CV_t>(key, Tags::DEFAULT, "");
+  auto op0 = sub_pks_[0]->my_pde(Operators::PDEType::PDE_DIFFUSION);
+  op0->UpdateFlux(u_new0->Data().ptr(), mol_flowrate.ptr());
+
+  // energy
+  auto u_old1 = u_old->SubVector(1);
+  auto u_new1 = u_new->SubVector(1);
+  auto f1 = f->SubVector(1);
+  sub_pks_[1]->FunctionalResidual(t_old, t_new, u_old1, u_new1, f1);
 }
 
 } // namespace Amanzi

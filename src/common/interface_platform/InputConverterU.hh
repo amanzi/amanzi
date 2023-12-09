@@ -68,6 +68,7 @@ class InputConverterU : public InputConverter {
       gravity_on_(true),
       const_gravity_(GRAVITY_MAGNITUDE),
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
+      fracture_network_(false),
       flow_single_phase_(false),
       compressibility_(false),
       beta_(0.0),
@@ -93,6 +94,7 @@ class InputConverterU : public InputConverter {
       gravity_on_(true),
       const_gravity_(GRAVITY_MAGNITUDE),
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
+      fracture_network_(false),
       flow_single_phase_(false),
       compressibility_(false),
       beta_(0.0),
@@ -170,6 +172,7 @@ class InputConverterU : public InputConverter {
                                                      const std::string& nonlinear_solver,
                                                      const std::string& nonlinear_coef,
                                                      const std::string& extensions,
+                                                     const std::string& domain,
                                                      bool gravity,
                                                      const std::string& pk = "flow");
   Teuchos::ParameterList TranslateTimeIntegrator_(const std::string& err_options,
@@ -228,8 +231,9 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList
   TranslateFlow_(const std::string& mode, const std::string& domain, const std::string& pk_model);
   Teuchos::ParameterList TranslateWRM_(const std::string& pk_name);
-  Teuchos::ParameterList TranslatePOM_();
-  Teuchos::ParameterList TranslatePPM_();
+  Teuchos::ParameterList TranslatePOM_(const std::string& domain);
+  Teuchos::ParameterList TranslatePPM_(const std::string& domain);
+  Teuchos::ParameterList TranslateFAM_(const std::string& domain);
   Teuchos::ParameterList TranslateFlowMSM_();
   Teuchos::ParameterList TranslateFlowBCs_(const std::string& domain);
   Teuchos::ParameterList TranslateFlowFractures_(const std::string& domain);
@@ -341,6 +345,9 @@ class InputConverterU : public InputConverter {
   bool gravity_on_;
   double const_gravity_;
   double const_atm_pressure_;
+
+  // global physics
+  bool fracture_network_;
 
   // global flow constants
   std::string flow_model_; // global value

@@ -40,7 +40,7 @@
 * Exactness test for diffusion solver on meshes with curved faces.
 ***************************************************************** */
 void
-RunTestDiffusionCurved(const std::string& filename, int icase)
+RunTestDiffusionCurved(int d, const std::string& filename, int icase)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -59,7 +59,7 @@ RunTestDiffusionCurved(const std::string& filename, int icase)
 
   // create a randomized mesh
   ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(d, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
@@ -176,9 +176,16 @@ RunTestDiffusionCurved(const std::string& filename, int icase)
 }
 
 
-TEST(OPERATOR_DIFFUSION_CURVED)
+TEST(OPERATOR_DIFFUSION_CURVED_2D)
 {
-  RunTestDiffusionCurved("test/random3D_05.exo", 1);
-  RunTestDiffusionCurved("test/hexes.exo", 1);
-  RunTestDiffusionCurved("test/sphere.exo", 0);
+  RunTestDiffusionCurved(2, "test/median15x16.exo", 0);
+  RunTestDiffusionCurved(2, "test/random10.exo", 0);
+}
+
+
+TEST(OPERATOR_DIFFUSION_CURVED_3D)
+{
+  RunTestDiffusionCurved(3, "test/random3D_05.exo", 1);
+  RunTestDiffusionCurved(3, "test/hexes.exo", 1);
+  RunTestDiffusionCurved(3, "test/sphere.exo", 0);
 }

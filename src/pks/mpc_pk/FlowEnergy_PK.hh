@@ -103,6 +103,14 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   // -- advance each sub pk from t_old to t_new.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
 
+  // -- computes non-linear functional f = f(t,u)
+  virtual void FunctionalResidual(double t_old,
+                                  double t_new,
+                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<TreeVector> u_new,
+                                  Teuchos::RCP<TreeVector> f) override;
+
+  // -- enorm for the coupled system
   std::string name() override { return "thermal flow"; }
 
  private:

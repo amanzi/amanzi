@@ -124,7 +124,7 @@ Schema::ComputeOffset(int c,
   offset.clear();
   offset.push_back(0);
 
-  int ndofs;
+  int ndofs, sum(0);
   for (auto it = items_.begin(); it != items_.end(); ++it) {
     int num;
     AmanziMesh::Entity_kind kind;
@@ -142,7 +142,8 @@ Schema::ComputeOffset(int c,
       ndofs = 1;
     }
 
-    offset.push_back(ndofs * num);
+    sum += ndofs * num;
+    offset.push_back(sum);
   }
 }
 
