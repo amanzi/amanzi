@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "UnitTest++.h"
+#include "boost/math/tools/minima.hpp"
 
 #include "Brent.hh"
 
@@ -70,4 +71,40 @@ TEST(BRENT_AND_TOMS748)
   itr = 100;
   x0 = findRootBrent([](double x) { return std::pow(x, 12) - 0.2; }, 0.0, 5.0, tol, &itr);
   printf(" 6 %11.5f %9i %9i\n", x0, itr, itr2[5]);
+}
+
+
+TEST(BRENT_AND_BOOST)
+{
+  int itr, bits(26); // Boost policy limits to 26 ???
+  double x0, tol(ldexp(1.0, 1 - bits));
+
+  // original Boost iteration numbers
+  std::vector<int> itr2({ 7, 22, 67, 20 });
+
+  std::cout << "\n\n #     Minimum     Brent     Boost\n\n";
+
+  // Test 1
+  itr = 100;
+  x0 = findMinimumBrent([](double x) { return x * x * x / 3 - x * x / 2 - x - 1.0; }, 1.0, 2.0, tol, &itr);
+  printf(" 1 %11.5f %9i %9i\n", x0, itr, itr2[0]);
+  CHECK_CLOSE(1.61803399, x0, 3 * tol);
+
+  // Test 2
+  itr = 100;
+  x0 = findMinimumBrent([](double x) { return std::pow(x - 1.0, 4.0); }, 0.0, 3.0, tol, &itr);
+  printf(" 2 %11.5f %9i %9i\n", x0, itr, itr2[1]);
+  CHECK_CLOSE(1.0, x0, 3 * tol);
+
+  // Test 3
+  itr = 100;
+  x0 = findMinimumBrent([](double x) { return std::pow(x - 1.0, 4.0); }, 1.0, 3.0, tol, &itr);
+  printf(" 3 %11.5f %9i %9i\n", x0, itr, itr2[2]);
+  CHECK_CLOSE(1.0, x0, 3 * tol);
+
+  // Test 4
+  itr = 100;
+  x0 = findMinimumBrent([](double x) { return std::pow(x - 1.0, 4.0); }, 0.0, 1.0, tol, &itr);
+  printf(" 3 %11.5f %9i %9i\n", x0, itr, itr2[3]);
+  CHECK_CLOSE(1.0, x0, 3 * tol);
 }

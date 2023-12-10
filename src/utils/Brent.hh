@@ -151,6 +151,112 @@ bracketRoot(const F& f, double start, double delta, int* itrs)
   return std::make_pair(a, b);
 }
 
+
+/* ******************************************************************
+* A local minimum of a function f(x) in an interval [a, b].
+* Follows closely to https://www.youtube.com/watch?v=BQm7uTYC0sg
+****************************************************************** */
+template <class F>
+double
+findMinimumBrent(const F& f, double a, double b, double tol, int* itr)
+{
+  int itr_max(*itr);
+  double ratio(0.381966011250105); // golden ratio
+  double x, w, v, u, e(0.0), c, xtol, xtol2, d, r, q, p;
+  double fx, fw, fv, fu;
+
+  v = w = x = b; // a + ratio * (b - a);
+  fv = fw = fx = f(x);
+
+  *itr = 0;
+  while (*itr < itr_max) {
+    xtol = tol * std::fabs(x) + tol;
+    xtol2 = 2 * xtol;
+
+    c = (a + b) / 2;  // called m in the video
+    if (std::fabs(x - c) <= xtol2 - (b - a) / 2) return c;
+
+    (*itr)++;
+
+    // parabolic fit to f(x), f(v), f(w) 
+    // SPI behavior is poor if any of the three conditions holds 
+    //   q = 0
+    //   u is ourside of [a, b]
+    //   current p/q > 1/2 or previous p/q 
+    p = q = r = 0.0;
+
+    if (std::fabs(e) > xtol) {
+      r = (x - w) * (fx - fv);
+      q = (x - v) * (fx - fw);
+      p = (x - v) * q - (x - w) * r;
+      q = 2.0 * (q - r);
+      if (q > 0.0) p = -p;
+      q = std::fabs(q);
+      r = e;
+      e = d;
+    }
+
+    // parabolic interpolation
+    if (std::fabs(p) < std::fabs(0.5 * q * r) && q * (a - x) < p && p < q * (b - x)) {
+      d = p / q;
+      u = x + d;
+
+      // minimum estimate is too close to the end points
+      if ((u - a) < xtol2 || (b - u) < xtol2) 
+        d = (x < c) ? xtol : -xtol;
+
+    // golden-section interpolation
+    } else {
+      e = (x < c) ? b - x : a - x;
+      d = ratio * e;
+    }
+
+    // minumum estimate is too close to end points
+    if (xtol <= std::fabs(d)) {
+      u = x + d;
+    } else if (d > 0.0) {
+      u = x + xtol;
+    } else {
+      u = x - xtol;
+    }
+
+    fu = f(u);
+
+    // update variables
+    if (fu <= fx) {
+      if (u < x)
+        b = x;
+      else
+        a = x;
+
+      v = w;
+      w = x;
+      x = u;
+      fv = fw;
+      fw = fx;
+      fx = fu;
+    } else {
+      if (u < x)
+        a = u;
+      else
+        b = u;
+
+      if (fu <= fw || w == x) {
+        v = w;
+        w = u;
+        fv = fw;
+        fw = fu;
+      } else if (fu <= fv || v == x || v == w) {
+        v = u;
+        fv = fu;
+      }
+    }
+  }
+
+  (*itr)++; // indicate nonconvergence
+  return x;
+}
+
 } // namespace Utils
 } // namespace Amanzi
 
