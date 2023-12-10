@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "UnitTest++.h"
-#include "boost/math/tools/minima.hpp"
 
 #include "Brent.hh"
 
@@ -80,7 +79,7 @@ TEST(BRENT_AND_BOOST)
   double x0, tol(ldexp(1.0, 1 - bits));
 
   // original Boost iteration numbers
-  std::vector<int> itr2({ 7, 22, 67, 20 });
+  std::vector<int> itr2({ 7, 22, 67, 20, 19 });
 
   std::cout << "\n\n #     Minimum     Brent     Boost\n\n";
 
@@ -105,6 +104,11 @@ TEST(BRENT_AND_BOOST)
   // Test 4
   itr = 100;
   x0 = findMinimumBrent([](double x) { return std::pow(x - 1.0, 4.0); }, 0.0, 1.0, tol, &itr);
-  printf(" 3 %11.5f %9i %9i\n", x0, itr, itr2[3]);
+  printf(" 4 %11.5f %9i %9i\n", x0, itr, itr2[3]);
   CHECK_CLOSE(1.0, x0, 3 * tol);
+
+  // Test 5
+  itr = 100;
+  x0 = findMinimumBrent([](double x) { return std::pow(x * x - 1.0 , 2.0) + 1.0; }, -2.0, 0.5, tol, &itr);
+  printf(" 5 %11.5f %9i %9i\n", x0, itr, itr2[4]);
 }
