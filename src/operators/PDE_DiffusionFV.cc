@@ -268,9 +268,6 @@ PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
         if (bc_model[f] == OPERATOR_BC_DIRICHLET && primary) {
           rhs_cell[0][c] += bc_value[f] * trans_face[0][f] * (k_face.get() ? (*k_face)[0][f] : 1.0);
-        std::cout<<"primary = "<<primary<<std::endl;
-        std::cout<<"face f = "<<f<<"; Dirichlet val = "<<bc_value[f]<<std::endl;
-
         } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
           local_op_->matrices_shadow[f] = local_op_->matrices[f];
           local_op_->matrices[f](0, 0) = 0.0;
@@ -316,19 +313,6 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
   const Epetra_MultiVector& p = *solution->ViewComponent("cell", true);
   Epetra_MultiVector& flux = *darcy_mass_flux->ViewComponent("face", false);
 
-  // debugging
-  /* 
-  for (int f = 0; f < nfaces_owned; ++f) { 
-    //std::cout<<"transmissiblity = "<<f<<"; "<<trans_face[0][f]<<std::endl;
-    const AmanziGeometry::Point &xf = mesh_->getFaceCentroid(f);
-    if (std::abs(xf[0] - 1.0) < 1e-6) { 
-      trans_face[0][f] = trans_face[0][f] * 0.5;
-    }
-  }
-  */
-  
-  
-
   std::vector<int> flag(nfaces_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -336,19 +320,11 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; n++) {
-      //std::cout<<"dirs = "<<n<<"; "<<dirs[n]<<std::endl;
       int f = faces[n];
 
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         double value = bc_value[f];
         flux[0][f] = dirs[n] * trans_face[0][f] * (p[0][c] - value);
-
-        // debugging
-        /*  
-        std::cout<<"Dirichlet bc value = "<<f<<"; "<<value<<std::endl;
-        std::cout<<"Transmissibility = "<<trans_face[0][f]<<std::endl;
-        */       
-
         if (Krel_face.get()) flux[0][f] *= (*Krel_face)[0][f];
 
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
@@ -356,14 +332,8 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
         double area = mesh_->getFaceArea(f);
         flux[0][f] = dirs[n] * value * area;
 
-        // debugging
-        /*
-        std::cout<<"Neumann bc value = "<<f<<"; "<<value<<std::endl;
-        */
-
       } else {
         if (f < nfaces_owned && !flag[f]) {
-
           auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
           if (cells.size() <= 1) {
             Errors::Message msg("Flow PK: These boundary conditions are not supported by FV.");
@@ -376,12 +346,6 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
           } else {
             flux[0][f] = dirs[n] * trans_face[0][f] * (p[0][c2] - p[0][c1]);
           }
-        
-          // debugging
-          /*
-          std::cout<<"In UpdateFlux(); f = "<<f<<"; trans_face = "<<trans_face[0][f]<<"; flux = "<<flux[0][f]<<std::endl;
-          */
-
           if (Krel_face.get()) flux[0][f] *= (*Krel_face)[0][f];
           flag[f] = 1;
         }

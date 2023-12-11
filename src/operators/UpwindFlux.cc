@@ -69,15 +69,6 @@ UpwindFlux::Compute(const CompositeVector& flux,
   // multiple DOFs on faces require usage of block map
   const auto& fmap = *flux.ComponentMap("face", true);
 
-  // debugging
-  /*  
-  for (int f = 0; f < nfaces_wghost; ++f) {
-    //std::cout<<"face f = "<<f<<"; flux = "<<flux_f[0][f]<<std::endl;
-    flux_f[0][f] = -1.0;
-  }
-  */
-  
-
   int c1, c2, dir;
   double kc1, kc2;
   for (int f = 0; f < nfaces_wghost; ++f) {
@@ -99,18 +90,12 @@ UpwindFlux::Compute(const CompositeVector& flux,
       kc2 = field_c[0][c2];
 
       if (fabs(flux_f[0][g]) <= tol) {
-        std::cout<<"True ? "<<g<<" val = "<<flux_f[0][g]<<"< tol = "<<tol<<std::endl;
         double v1 = mesh_->getCellVolume(c1);
         double v2 = mesh_->getCellVolume(c2);
 
         double tmp = v2 / (v1 + v2);
         field_f[0][g] = kc1 * tmp + kc2 * (1.0 - tmp);
       } else {
-        // debugging
-        /*
-        std::cout<<"Here in Upwind::Compute()? 1 flag = "<<flag<<"; face g = "<<g<<"; face f = "<<f<<std::endl;
-        */
-
         field_f[0][g] = (flag) ? kc2 : kc1;
       }
 
@@ -126,34 +111,12 @@ UpwindFlux::Compute(const CompositeVector& flux,
       // upwind only on inflow dirichlet faces
     } else {
       field_f[0][g] = kc1;
-
-      // debugging
-      /*
-      std::cout<<"Here in Upwind::Compute()? 2 flag = "<<flag<<"; face g = "<<g<<"; face f = "<<f<<std::endl;
-      */      
-
       if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
         int bf = getFaceOnBoundaryBoundaryFace(*mesh_, f);
         field_f[0][g] = field_bf[0][bf];
-
-        // debugging
-        /*
-        std::cout<<"Upwind::Compute(): OPERATOR_BC_DIRICHLET bf = "<<bf<<"; g = "<<g<<"; f = "<<f<<"; val = "<<field_bf[0][bf]<<std::endl;
-        if (std::abs(f - 11) < 1e-6) {  // JUGAAD
-          field_f[0][g] = 1.50;
-        }
-        */
       }
     }
   }
-
-  // debugging
-  /*
-  for (int f = 0; f < nfaces_wghost; ++f) {
-    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
-    std::cout<<"face f = "<<f<<";"<<xf[0]<<","<<xf[1]<<"; flux = "<<flux_f[0][f]<<"; upwind val = "<<field_f[0][f]<<std::endl;
-  }
-  */
 }
 
 } // namespace Operators
