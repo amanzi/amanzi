@@ -1,7 +1,7 @@
 <ParameterList>
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="phase-transition-1d"/>
-    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 1.5768e11, -1.0}"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 3.1536e13, -1.0}"/>
   </ParameterList>
 
   <!--  REGIONS  -->
@@ -59,8 +59,6 @@
         <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
 
         <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_liquid, molar_density_liquid }"/>
-        <!--<Parameter name="diffusion factors" type="Array(double)" value="{ -0.1111111111111111,  -0.1111111111111111 }"/>-->
-
         <Parameter name="diffusion factors" type="Array(double)" value="{ -0.2, -0.2 }"/>
 
         <Parameter name="accumulation" type="string" value="total_water_storage"/>
@@ -238,15 +236,32 @@
     </ParameterList>
 
     <ParameterList name="source terms">
-      <ParameterList name="SRC 1">
-        <Parameter name="regions" type="Array(string)" value="{All}"/>
-        <Parameter name="spatial distribution method" type="string" value="none"/>
-        <Parameter name="submodel" type="string" value="intergrand"/>
-        <ParameterList name="sink">
-          <ParameterList name="function-constant">
-            <Parameter name="value" type="double" value="0.0"/>
+      <ParameterList name="mass rate">
+
+        <ParameterList name="SRC 0">
+          <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <Parameter name="name" type="string" value="SH4"/>
+          <ParameterList name="injector">
+            <ParameterList name="function-exprtk">
+              <Parameter name="number of arguments" type="int" value="4"/>
+              <Parameter name="formula" type="string" value="0.0"/>
+            </ParameterList>
           </ParameterList>
         </ParameterList>
+
+        <ParameterList name="SRC 1">
+          <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <Parameter name="name" type="string" value="water"/>
+          <ParameterList name="injector">
+            <ParameterList name="function-exprtk">
+              <Parameter name="number of arguments" type="int" value="4"/>
+              <Parameter name="formula" type="string" value="0.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+
       </ParameterList>
     </ParameterList>
 

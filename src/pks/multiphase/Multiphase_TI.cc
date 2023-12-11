@@ -107,9 +107,6 @@ Multiphase_PK::FunctionalResidual(double t_old,
       fname = eqns_[n].advection[phase].first;
       gname = eqns_[n].advection[phase].second;
       
-      // debugging
-      std::cout<<"ADVECTION: n = "<<n<<", phase = "<<phase<<", fname = "<<fname<<", gname = "<<gname<<std::endl;
-
       if (fname != "") {
         CheckCompatibilityBCs(keyr, gname);
         S_->GetEvaluator(fname).Update(*S_, passwd_);
@@ -117,40 +114,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
         // -- upwind cell-centered coefficient
         auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
         kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
-        
-        // debugging
-        //std::cout<<"Good till here? 1"<<std::endl; 
-        auto& flux_f = *flux.ViewComponent("face");
-
-        int nfaces_owned_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-        for (int f = 0; f < nfaces_owned_; ++f) { 
-          //flux_f[0][f] = -1.0;
-        }
-        //std::cout<<"Good till here? 2"<<std::endl;
-        
-        // debugging  
-
-        if (n == 1 && fname == "advection_liquid") {
-          std::cout<<"Entered advection_liquid"<<std::endl;
-          const auto& bc_model1 = op_bcs_[fname]->bc_model();
-          Operators::CellToBoundaryFaces(bc_model1, *kr);
-          upwind_->Compute(flux, bc_model1, *kr);
-        } else if (n == 1 && fname == "advection_gas") {
-          std::cout<<"Entered advection_gas"<<std::endl;
-          const auto& bc_model1 = op_bcs_[advection_gas_key_]->bc_model();
-          Operators::CellToBoundaryFaces(bc_model1, *kr);
-          upwind_->Compute(flux, bc_model1, *kr);
-        }
-        else {
-          upwind_->Compute(flux, bcnone, *kr);
-        }
-        // print rel permeability on faces
-        /*
-        auto& kr_f = *kr->ViewComponent("face");
-        for (int f = 0; f < nfaces_owned_; ++f) {
-          std::cout<<"kr_f "<<f<<" = "<<kr_f[0][f]<<std::endl;
-        }
-        */
+        upwind_->Compute(flux, bcnone, *kr);
 
         // -- form diffusion operator for variable g
         //    Neuman BCs: separate fluxes for each phase OR the total flux but only once
@@ -177,8 +141,6 @@ Multiphase_PK::FunctionalResidual(double t_old,
       fname = eqns_[n].diffusion[phase].first;
       gname = eqns_[n].diffusion[phase].second;
 
-      std::cout<<"DIFFUSION: n = "<<n<<", phase = "<<phase<<", fname = "<<fname<<", gname = "<<gname<<std::endl;
-
       if (fname != "") {
         S_->GetEvaluator(fname).Update(*S_, passwd_);
         auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
@@ -202,14 +164,6 @@ Multiphase_PK::FunctionalResidual(double t_old,
         for (int c = 0; c < ncells_owned_; ++c) { comp_c[0][c] = tmp[m][c]; }
         pde->global_operator()->ComputeNegativeResidual(comp, fadd);
         
-        // debugging
-        /*
-        std::cout<<"DIFFUSION: -------"<<std::endl;
-        for (int c = 0; c < ncells_owned_; ++c) { 
-          std::cout<<"c = "<<c<<"; fadd = "<<fadd_c[0][c]<<std::endl;
-        }
-        */
-
         double factor = eqns_[n].diff_factors[phase];
         fone.Update(factor, fadd, 1.0);
       }
@@ -245,63 +199,6 @@ Multiphase_PK::FunctionalResidual(double t_old,
       }    
     }
     
-
-    // source term HARD CODED
-    /*
-    if (n == 0) {
-     for(int c = 0; c < ncells_owned_; ++c) { 
-        const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
-        double x = xc[0], y = xc[1];
-        double factor = mesh_->getCellVolume(c);
-        // 2D        
-        //fone_c[0][c] += (1.0/16) * std::sin(pi*x) * std::sin(pi*y) * std::exp(-t_new) * factor;
-        //fone_c[0][c] -= (1.0/256)* (std::cos(2*pi*x)*std::pow(std::sin(pi*y),2 ) + std::pow(std::sin(pi*x),2)*std::cos(2*pi*y) ) * std::exp(-2*t_new)* factor;
-        //fone_c[0][c] += (1.0/64) * std::sin(pi*x) * std::sin(pi*y) * std::exp(-t_new) * factor;
-
-        // 1D (a)
-         fone_c[0][c] += (1000.0/16) * std::sin(pi*x) * std::exp(-1000 * t_new) * factor;
-         fone_c[0][c] -= (1.0/256)* std::cos(2*pi*x) * std::exp(-2000 * t_new)* factor;
-        
-        // 1D (b)
-        //fone_c[0][c] += 0.5*pi*std::sin(pi*x)*std::cos(pi*t_new) * factor - (0.5*pi*pi)*std::cos(2*pi*x)*std::sin(pi*t_new)*std::sin(pi*t_new) * factor;
-      }
-    }
- 
-    if (n == 1) {
-     for(int c = 0; c < ncells_owned_; ++c) { 
-        const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
-        double x = xc[0], y = xc[1];
-        double factor = mesh_->getCellVolume(c);
-        
-        //fone_c[0][c] += (0.5)*(0.5 + (1.0/(8.0*pi*pi)))*std::sin(pi*x)*std::sin(pi*y)*std::exp(-t_new) * factor;
-        //fone_c[0][c] += (0.5+(1.0/(8.0*pi*pi)))*(0.5 + (1.0/(4.0*pi*pi) ))*pi*pi*std::exp(-2.0*t_new)*(std::cos(2*pi*x)*std::pow(std::sin(pi*y),2 ) + std::pow(std::sin(pi*x),2)*std::cos(2*pi*y) ) * factor;
-        fone_c[0][c] -= (0.5 + (1.0/(4.0*pi*pi)))*pi*pi*std::sin(pi*x)*std::sin(pi*y)*std::exp(-t_new) * factor; 
-        
-        // 2D
-        // fone_c[0][c] += (1.0/(64*pi*pi)) * std::sin(pi*x) * std::sin(pi*y) * std::exp(-t_new) * factor;
-        
-        // 1D (a)
-        fone_c[0][c] += (1000.0/(64*pi*pi)) * std::sin(pi*x) * std::exp(-1000 * t_new) * factor;
-
-        // 1D (b)
-        //fone_c[0][c] += (0.25)*pi*std::sin(pi*x)*std::sin(pi*t_new) * factor;
-
-      }
-    } 
-    */
-    
-    // debugging
-    /*
-    if (n == 0) {
-      std::cout<<"Water eqn --------------------- "<<std::endl; 
-    } else if (n == 1) {
-      std::cout<<"H eqn     --------------------- "<<std::endl;
-    }
-    for (int c = 0; c < ncells_owned_; ++c) {
-      std::cout<<"c = "<<c<<"; val = "<<fone_c[0][c]<<std::endl;
-    }
-    */
-      
     // copy temporary vector to residual
     auto& fc = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");
     for (int c = 0; c < ncells_owned_; ++c) fc[eqns_flattened_[n][1]][c] = fone_c[0][c];
@@ -314,17 +211,10 @@ Multiphase_PK::FunctionalResidual(double t_old,
     S_->GetEvaluator(key).Update(*S_, passwd_);
     const auto& ncp_fc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
 
-    //debugging
-    std::cout<<"ncp key 1 = "<<key<<std::endl;
-
     key = eqns_[n].constraint.second;
     S_->GetEvaluator(key).Update(*S_, passwd_);
     const auto& ncp_gc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
     
-    // debugging
-    std::cout<<"ncp key 2 = "<<key<<std::endl;
-
-
     auto& fci = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");
     if (ncp_ == "min") {
       for (int c = 0; c < ncells_owned_; ++c) { fci[0][c] = std::min(ncp_fc[0][c], ncp_gc[0][c]); }

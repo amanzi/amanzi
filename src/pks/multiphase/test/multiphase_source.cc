@@ -4,12 +4,11 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-           Naren Vohra (vohra@lanl.gov)
+  Authors: Naren Vohra (vohra@lanl.gov)
 */
 
 /*
-MoMas benchmark example: 2 component Hydrogen (H) and water (W) to show gas phase appearance/disappearance with assumptions/model as in [Gharbia, Jaffre' 14]. Primary variables are pressure liquid, saturation liquid, and molar density of hydrogen in liquid phase. 
+2 component (Hydrogen, Water), 2 phase with assumptions as in [Gharbia, Jaffre' 14]. 2D physical scenario with external source terms.
 */
 
 #include <cstdlib>
@@ -37,6 +36,9 @@ MoMas benchmark example: 2 component Hydrogen (H) and water (W) to show gas phas
 // Multiphase
 #include "Multiphase_PK.hh"
 
+// Misc
+#include "math.h"
+
 
 /* **************************************************************** */
 void
@@ -50,21 +52,20 @@ run_test(const std::string& domain, const std::string& filename)
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: multiphase pk, model Jaffre, domain=" << domain << std::endl;
-
-  int d = (domain == "2D") ? 2 : 3;
+  if (MyPID == 0) std::cout << "Test: multiphase pk, 2D physical scenario with source term"<<std::endl;
 
   // read parameter list
   auto plist = Teuchos::getParametersFromXmlFile(filename);
 
   // create a MSTK mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(d, region_list, *comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh;
-  mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 100, 1);
+    
+  mesh = meshfactory.create(0.0, 0.0, 20.0, 20.0, 25, 25);
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -104,30 +105,20 @@ run_test(const std::string& domain, const std::string& filename)
 
   // loop
   int iloop(0);
-  double t(0.0), tend(3.14e+13), dt(1.57e+11), dt_max(1.57e+11); // Tend = 1000,000 years, dt = 5000 years
+  double t(0.0), tend(1.577e+07), dt(8.64e+06), dt_max(17.28e+06); // 5 year time period; 100 day time step
   // store Newton iterations and time step size (after successful iteration)
   std::vector<int> newton_iterations_per_step;
   std::vector<double> time_step_size;
-  
-  while (t < tend && iloop < 100000) {
-    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2.0; }
+  // error initialize
+  double perr_linf_inf = 0.0, perr_linf_l1 = 0.0, perr_linf_l2 = 0.0;  
 
-    MPK->CommitStep(t, t + dt, Tags::DEFAULT);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  double pi = M_PI;
 
-    // store number of Newton iterations taken (only successful iterations after possible time step reduction) 
-    double iter = MPK->bdf1_dae()->number_solver_iterations();
-    newton_iterations_per_step.push_back(iter);
-    // store time step size
-    time_step_size.push_back(dt);
-    
-    S->advance_cycle();
-    S->advance_time(dt);
-    t += dt;
-    dt = std::min(dt_max, dt * 1.6);
-    iloop++;
+  while (t < tend) {
 
     // output solution
-    if (iloop % 2 == 0) {
+    if (iloop % 1 == 0) {
       io->InitializeCycle(t, iloop, "");
       const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
@@ -144,6 +135,24 @@ run_test(const std::string& domain, const std::string& filename)
 
       WriteStateStatistics(*S, *vo);
     }
+
+    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2.0; }
+
+    MPK->CommitStep(t, t + dt, Tags::DEFAULT);
+
+    // store number of Newton iterations taken (only successful iterations after possible time step reduction) 
+    double iter = MPK->bdf1_dae()->number_solver_iterations();
+    newton_iterations_per_step.push_back(iter);
+    // store time step size
+    time_step_size.push_back(dt);
+    
+    S->advance_cycle();
+    S->advance_time(dt);
+      
+    t += dt;
+    dt = std::min(dt_max, dt * 2.0);
+    iloop++;
+
   }
 
   WriteStateStatistics(*S, *vo);
@@ -168,10 +177,11 @@ run_test(const std::string& domain, const std::string& filename)
   const auto& xg = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
   xg.MinValue(&dmin);
   CHECK(dmin >= 0.0);
+
 }
 
 
-TEST(MULTIPHASE_JAFFRE)
+TEST(MULTIPHASE_SOURCE)
 {
-  run_test("2D", "test/multiphase_jaffre.xml");
+  run_test("2D", "test/multiphase_source.xml");
 }

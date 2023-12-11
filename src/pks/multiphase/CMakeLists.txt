@@ -121,6 +121,12 @@ if (BUILD_TESTS)
                   SOURCE    test/Main.cc test/multiphase_jaffre.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+  # Jaffre model with fractures
+  add_amanzi_test(multiphase_jaffre_fractures multiphase_jaffre_fractures
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_jaffre_fractures.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
   # Unit tests: Pl-Sl-Xg
   add_amanzi_test(multiphase_model1a multiphase_model1a
                   KIND      int
@@ -154,31 +160,12 @@ if (BUILD_TESTS)
                   SOURCE    test/Main.cc test/multiphase_smiles.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-  # Misc.  
-  add_amanzi_test(multiphase_test multiphase_test
+  # Misc. (external source term implementation)  
+  add_amanzi_test(multiphase_source multiphase_source
                   KIND      int
-                  SOURCE    test/Main.cc test/multiphase_test.cc
-                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-  
-  add_amanzi_test(multiphase_verification_1D multiphase_verification_1D 
-                  KIND      int
-                  SOURCE    test/Main.cc test/multiphase_verification_1D.cc
+                  SOURCE    test/Main.cc test/multiphase_source.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})  
   
-  add_amanzi_test(multiphase_jaffre_xg multiphase_jaffre_xg
-                  KIND      int
-                  SOURCE    test/Main.cc test/multiphase_jaffre_xg.cc
-                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-  add_amanzi_test(multiphase_2D multiphase_2D
-                  KIND      int
-                  SOURCE    test/Main.cc test/multiphase_2D.cc
-                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-  add_amanzi_test(multiphase_1D_analytical multiphase_1D_analytical
-                  KIND      int
-                  SOURCE    test/Main.cc test/multiphase_1D_analytical.cc
-                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
 endif()
 
