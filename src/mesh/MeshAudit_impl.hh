@@ -894,12 +894,12 @@ MeshAudit_Geometry<Mesh_type>::check_face_cell_adjacency_consistency() const
 
   bool error = false;
   if (!bad_faces1.empty()) {
-    os_ << "ERROR: , inconsistent adjacencies:";
+    os_ << "ERROR: inconsistent adjacencies:";
     writeList_(bad_faces1);
     error = true;
   }
   if (!bad_faces2.empty()) {
-    os_ << "ERROR: , inconsistent orientations:";
+    os_ << "ERROR: inconsistent orientations for faces:";
     writeList_(bad_faces2);
     error = true;
   }

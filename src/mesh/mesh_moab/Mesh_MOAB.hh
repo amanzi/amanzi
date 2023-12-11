@@ -104,7 +104,7 @@ class Mesh_MOAB : public MeshFramework {
     View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids,
     View_type<const Direction_type, MemSpace_kind::HOST>* const dirs = nullptr) const override
   {
-    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
+    Errors::Message mesg("Edges not implemented in this framework (1). Use MSTK");
     amanzi_throw(mesg);
   }
 
@@ -122,7 +122,7 @@ class Mesh_MOAB : public MeshFramework {
   void getEdgeNodes(const Entity_ID edgeid,
                     View_type<const Entity_ID, MemSpace_kind::HOST>& nodes) const override
   {
-    Errors::Message msg("Edges not implemented in this framework. Use MSTK");
+    Errors::Message msg("Edges not implemented in this framework (2). Use MSTK");
     amanzi_throw(msg);
   }
 
@@ -145,7 +145,7 @@ class Mesh_MOAB : public MeshFramework {
                     const Parallel_kind ptype,
                     View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const override
   {
-    Errors::Message msg("Edges not implemented in this framework. Use MSTK");
+    Errors::Message msg("Edges not implemented in this framework (3). Use MSTK");
     amanzi_throw(msg);
   }
 
