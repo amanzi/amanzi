@@ -919,6 +919,11 @@ Multiphase_PK::Initialize()
     pdeK->UpdateFlux(var.ptr(), flux.ptr());
   }
 
+
+  //auto& flux_l = *S_->Get<CompositeVector>(vol_flowrate_liquid_key_).ViewComponent("face");
+  Epetra_MultiVector flux_l = *S_->Get<CompositeVector>(vol_flowrate_liquid_key_).ViewComponent("face");  
+  std::cout<<flux_l<<std::endl;
+
   // io
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();

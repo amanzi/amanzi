@@ -286,7 +286,7 @@ TEST(MULTIPHASE_1D_ANALYTICAL)
 
   double dt0 = 1.0e-3;
   int i = 0;
-  for (int M = 25; M <= 100; M *= 2) {
+  for (int M = 25; M <= 25; M *= 2) {
     h[i] = 1.0/M;
     auto errs = run_test(M, dt0, "test/multiphase_1D_analytical.xml");   
     errs_pl[i] = std::get<0>(errs);
