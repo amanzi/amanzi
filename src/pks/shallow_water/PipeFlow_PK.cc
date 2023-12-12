@@ -731,6 +731,11 @@ void PipeFlow_PK::ComputeCellArrays(){
              dir_c[1][c] = 0.0;
           }
        }
+       else {
+          for (int c = 0; c < ncells_wghost; c++) {
+             dir_c[0][c] = std::fabs(dir_c[0][c]);
+          }
+       }
 
        junction_cells_owned_.resize(0);
        model_cells_owned_.resize(0);
