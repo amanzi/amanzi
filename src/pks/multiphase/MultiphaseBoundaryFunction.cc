@@ -65,9 +65,6 @@ MultiphaseBoundaryFunction::SetComponentId(const std::vector<std::string>& names
 {
   auto it = std::find(names.begin(), names.end(), component_name_);
   component_id_ = (it == names.end()) ? -1 : std::distance(names.begin(), it);
-  
-  auto pt = names.begin(); 
-  std::cout<<"names.begin() = "<<*pt<<std::endl;
 }
 
 

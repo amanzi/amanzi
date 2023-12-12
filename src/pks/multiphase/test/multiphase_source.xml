@@ -36,8 +36,8 @@
     </ParameterList>
     <ParameterList name="Middle domain">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{10.0,5.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{15.0,15.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{8.0,4.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{12.0,12.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -125,10 +125,16 @@
     <ParameterList name="water retention models">
       <ParameterList name="WRM for All">
         <Parameter name="regions" type="Array(string)" value="{All}"/>
-        <Parameter name="water retention model" type="string" value="Simple"/>
-        <Parameter name="residual saturation liquid" type="double" value="0.0"/>
+        <Parameter name="water retention model" type="string" value="van Genuchten"/>
+        <Parameter name="van Genuchten m" type="double" value="0.32886"/>
+        <Parameter name="van Genuchten n" type="double" value="1.49"/>
+        <Parameter name="van Genuchten l" type="double" value="0.5"/>
+        <Parameter name="van Genuchten alpha" type="double" value="5.0e-7"/>
+        <Parameter name="residual saturation liquid" type="double" value="0.4"/>
         <Parameter name="residual saturation gas" type="double" value="0.0"/>
-        <Parameter name="coefficient" type="double" value="1.0"/>
+        <Parameter name="relative permeability model" type="string" value="Mualem"/>
+        <Parameter name="regularization interval kr" type="double" value="0.005"/>
+        <Parameter name="regularization interval pc" type="double" value="0.001"/>
       </ParameterList>
     </ParameterList>
 
@@ -187,76 +193,22 @@
     <ParameterList name="boundary conditions">
       <ParameterList name="pressure liquid">
         <ParameterList name="BC 1">
-          <Parameter name="regions" type="Array(string)" value="{Right}"/>
+          <Parameter name="regions" type="Array(string)" value="{Boundary}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <ParameterList name="boundary pressure">
             <ParameterList name="function-constant">
               <Parameter name="value" type="double" value="1.0e+06"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="BC 2">
-          <Parameter name="regions" type="Array(string)" value="{Lower left}"/>
-          <Parameter name="spatial distribution method" type="string" value="none"/>
-          <ParameterList name="boundary pressure">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="1.0e+06"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="mass flux total">
-        <ParameterList name="BC 3">
-          <Parameter name="regions" type="Array(string)" value="{}"/>
-          <Parameter name="spatial distribution method" type="string" value="none"/>
-          <Parameter name="name" type="string" value="water"/>
-          <ParameterList name="outward mass flux">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="0.0"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="BC 4">
-          <Parameter name="regions" type="Array(string)" value="{}"/>
-          <Parameter name="spatial distribution method" type="string" value="none"/>
-          <Parameter name="name" type="string" value="SH4"/>
-          <ParameterList name="outward mass flux">
-            <ParameterList name="function-exprtk">
-              <Parameter name="number of arguments" type="int" value="4"/>
-              <Parameter name="formula" type="string" value="8.83e-8"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
       <ParameterList name="saturation">
-        <ParameterList name="BC 5">
-          <Parameter name="regions" type="Array(string)" value="{Right}"/>
+        <ParameterList name="BC 2">
+          <Parameter name="regions" type="Array(string)" value="{Boundary}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <ParameterList name="boundary saturation">
             <ParameterList name="function-constant">
               <Parameter name="value" type="double" value="1.0"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="BC 6">
-          <Parameter name="regions" type="Array(string)" value="{Lower left}"/>
-          <Parameter name="spatial distribution method" type="string" value="none"/>
-          <ParameterList name="boundary saturation">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="1.0"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="concentration">
-        <ParameterList name="BC 5">
-          <Parameter name="regions" type="Array(string)" value="{}"/>
-          <Parameter name="spatial distribution method" type="string" value="none"/>
-          <Parameter name="name" type="string" value="SH4"/>
-          <ParameterList name="boundary concentration">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="1e+03"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -273,7 +225,7 @@
           <ParameterList name="injector">
             <ParameterList name="function-exprtk">
               <Parameter name="number of arguments" type="int" value="4"/>
-              <Parameter name="formula" type="string" value="1.0e-5"/>
+              <Parameter name="formula" type="string" value="1.0e-6"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>

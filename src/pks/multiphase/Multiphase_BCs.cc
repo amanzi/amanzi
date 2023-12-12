@@ -191,9 +191,6 @@ Multiphase_PK::PopulateSecondaryBCs_()
   auto& bc_model_pl = op_bcs_[pressure_liquid_key_]->bc_model();
   auto& bc_value_pl = op_bcs_[pressure_liquid_key_]->bc_value();
 
-  auto& bc_model_sl = op_bcs_[saturation_liquid_key_]->bc_model();
-  auto& bc_value_sl = op_bcs_[saturation_liquid_key_]->bc_value();
-
   bc_model_pg = bc_model_pl;
 
   const auto& sl_c =
@@ -201,11 +198,10 @@ Multiphase_PK::PopulateSecondaryBCs_()
 
   for (int f = 0; f != nfaces_wghost_; ++f) {
     if (bc_model_pl[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      
       int c = getFaceOnBoundaryInternalCell(*mesh_, f);
 
       bc_value_pg[f] =
-        bc_value_pl[f] + wrm_->second[(*wrm_->first)[c]]->capillaryPressure(bc_value_sl[f]);
+        bc_value_pl[f] + wrm_->second[(*wrm_->first)[c]]->capillaryPressure(sl_c[0][c]);
     } else if (bc_model_pl[f] == Operators::OPERATOR_BC_NEUMANN) {
       bc_value_pg[f] = 0.0;
     }

@@ -61,7 +61,6 @@ WRMmp_Custom::dKdS(double Sw, int phase)
 double
 WRMmp_Custom::capillaryPressure(double Sw)
 {
-  //return Sw/(2.0 * 3.141592653589793 * 3.141592653589793);
   return 0.0;
 }
 
@@ -73,7 +72,6 @@ double
 WRMmp_Custom::dPc_dS(double Sw)
 {
  return 0.0;
- //return 1.0/(2.0 * 3.141592653589793 * 3.141592653589793);
 }
 
 } // namespace Multiphase
