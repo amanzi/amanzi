@@ -52,7 +52,8 @@ run_test(const std::string& domain, const std::string& filename)
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: multiphase pk, 2D physical scenario with source term"<<std::endl;
+  if (MyPID == 0)
+    std::cout << "Test: multiphase pk, 2D physical scenario with source term" << std::endl;
 
   // read parameter list
   auto plist = Teuchos::getParametersFromXmlFile(filename);
@@ -64,7 +65,7 @@ run_test(const std::string& domain, const std::string& filename)
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh;
-    
+
   mesh = meshfactory.create(0.0, 0.0, 20.0, 20.0, 25, 25);
 
   // create screen io
@@ -105,18 +106,19 @@ run_test(const std::string& domain, const std::string& filename)
 
   // loop
   int iloop(0);
-  double t(0.0), tend(1.577e+07), dt(8.64e+05), dt_max(17.28e+05); // 0.5 year time period; 10 day time step
+  double t(0.0), tend(1.577e+07), dt(8.64e+05),
+    dt_max(17.28e+05); // 0.5 year time period; 10 day time step
   // store Newton iterations and time step size (after successful iteration)
   std::vector<int> newton_iterations_per_step;
   std::vector<double> time_step_size;
   // error initialize
-  double perr_linf_inf = 0.0, perr_linf_l1 = 0.0, perr_linf_l2 = 0.0;  
+  double perr_linf_inf = 0.0, perr_linf_l1 = 0.0, perr_linf_l2 = 0.0;
 
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   double pi = M_PI;
 
   while (t < tend) {
-
     // output solution
     if (iloop % 1 == 0) {
       io->InitializeCycle(t, iloop, "");
@@ -140,29 +142,28 @@ run_test(const std::string& domain, const std::string& filename)
 
     MPK->CommitStep(t, t + dt, Tags::DEFAULT);
 
-    // store number of Newton iterations taken (only successful iterations after possible time step reduction) 
+    // store number of Newton iterations taken (only successful iterations after possible time step reduction)
     double iter = MPK->bdf1_dae()->number_solver_iterations();
     newton_iterations_per_step.push_back(iter);
     // store time step size
     time_step_size.push_back(dt);
-    
+
     S->advance_cycle();
     S->advance_time(dt);
-      
+
     t += dt;
     dt = std::min(dt_max, dt * 2.0);
     iloop++;
-
   }
 
   WriteStateStatistics(*S, *vo);
 
   // write iteration output to text file
   std::ofstream outFile("iterations_per_time_step.txt");
-  for (int i = 0; i < newton_iterations_per_step.size(); ++i) { 
+  for (int i = 0; i < newton_iterations_per_step.size(); ++i) {
     outFile << newton_iterations_per_step[i] << "," << time_step_size[i] << std::endl;
   }
-  outFile.close(); 
+  outFile.close();
 
   // verification
   double dmin, dmax;
@@ -177,7 +178,6 @@ run_test(const std::string& domain, const std::string& filename)
   const auto& xg = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
   xg.MinValue(&dmin);
   CHECK(dmin >= 0.0);
-
 }
 
 

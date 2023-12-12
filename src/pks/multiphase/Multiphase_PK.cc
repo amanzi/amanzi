@@ -744,28 +744,29 @@ Multiphase_PK::Initialize()
       }
     }
   }
-  
+
   // source term
   if (mp_list_->isSublist("source terms")) {
     PK_DomainFunctionFactory<MultiphaseBoundaryFunction> src_factory(mesh_, S_);
 
     Teuchos::ParameterList& mr_list = mp_list_->sublist("source terms");
-    for (auto it = mr_list.begin(); it != mr_list.end(); ++it ) {       
+    for (auto it = mr_list.begin(); it != mr_list.end(); ++it) {
       std::string name = it->first;
       if (mr_list.isSublist(name)) {
         Teuchos::ParameterList& src_list = mr_list.sublist(name);
         for (auto it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
           std::string specname = it1->first;
           Teuchos::ParameterList& spec = src_list.sublist(specname);
-          Teuchos::RCP<MultiphaseBoundaryFunction> src = src_factory.Create(spec,"injector", AmanziMesh::Entity_kind::CELL, Teuchos::null);
-          src->SetComponentId(component_names_); 
+          Teuchos::RCP<MultiphaseBoundaryFunction> src =
+            src_factory.Create(spec, "injector", AmanziMesh::Entity_kind::CELL, Teuchos::null);
+          src->SetComponentId(component_names_);
           srcs_.push_back(src);
         }
       }
     }
-  }  
+  }
 
- 
+
   // allocate metadata and populate boundary conditions
   op_bcs_.clear();
 
@@ -1107,8 +1108,7 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
     // attach component id to equation (used for external source term which is defined for each component)
     if (eqn_name == "pressure eqn") {
       eqns_[n].component_id = -1;
-    }
-    else if (eqn_name == "solute eqn") {
+    } else if (eqn_name == "solute eqn") {
       std::string name = component_names_[i];
       auto it = std::find(component_names_.begin(), component_names_.end(), component_names_[i]);
       eqns_[n].component_id = std::distance(component_names_.begin(), it);

@@ -23,7 +23,10 @@ namespace Multiphase {
 
 class WRMmp_Custom : public WRMmp {
  public:
-  WRMmp_Custom(Teuchos::ParameterList& plist) { double coef = plist.get<double>("coefficient", MULTIPHASE_WRM_EXCEPTION); }
+  WRMmp_Custom(Teuchos::ParameterList& plist)
+  {
+    double coef = plist.get<double>("coefficient", MULTIPHASE_WRM_EXCEPTION);
+  }
   ~WRMmp_Custom(){};
 
   // required methods from the base class

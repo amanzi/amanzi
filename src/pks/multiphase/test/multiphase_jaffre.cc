@@ -104,22 +104,23 @@ run_test(const std::string& domain, const std::string& filename)
 
   // loop
   int iloop(0);
-  double t(0.0), tend(3.14e+13), dt(1.57e+11), dt_max(1.57e+11); // Tend = 1000,000 years, dt = 5000 years
+  double t(0.0), tend(3.14e+13), dt(1.57e+11),
+    dt_max(1.57e+11); // Tend = 1000,000 years, dt = 5000 years
   // store Newton iterations and time step size (after successful iteration)
   std::vector<int> newton_iterations_per_step;
   std::vector<double> time_step_size;
-  
+
   while (t < tend && iloop < 100000) {
     while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2.0; }
 
     MPK->CommitStep(t, t + dt, Tags::DEFAULT);
 
-    // store number of Newton iterations taken (only successful iterations after possible time step reduction) 
+    // store number of Newton iterations taken (only successful iterations after possible time step reduction)
     double iter = MPK->bdf1_dae()->number_solver_iterations();
     newton_iterations_per_step.push_back(iter);
     // store time step size
     time_step_size.push_back(dt);
-    
+
     S->advance_cycle();
     S->advance_time(dt);
     t += dt;
@@ -150,10 +151,10 @@ run_test(const std::string& domain, const std::string& filename)
 
   // write iteration output to text file
   std::ofstream outFile("iterations_per_time_step.txt");
-  for (int i = 0; i < newton_iterations_per_step.size(); ++i) { 
+  for (int i = 0; i < newton_iterations_per_step.size(); ++i) {
     outFile << newton_iterations_per_step[i] << "," << time_step_size[i] << std::endl;
   }
-  outFile.close(); 
+  outFile.close();
 
   // verification
   double dmin, dmax;

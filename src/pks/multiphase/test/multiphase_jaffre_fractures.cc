@@ -62,7 +62,7 @@ run_test(const std::string& domain, const std::string& filename)
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(d, region_list, *comm));
 
   RCP<const Mesh> mesh;
-  
+
   auto edgelist = Teuchos::rcp<Teuchos::ParameterList>(new Teuchos::ParameterList());
   edgelist->set<bool>("request edges", true);
   edgelist->set<bool>("request faces", true);

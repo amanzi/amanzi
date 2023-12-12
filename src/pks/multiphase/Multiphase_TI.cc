@@ -42,13 +42,9 @@ Multiphase_PK::FunctionalResidual(double t_old,
 {
   double dtp = t_new - t_old;
   // update to handle time dependent BCs
-  for(int i = 0; i < bcs_.size(); ++i) {
-    bcs_[i]->Compute(t_new, t_new);
-  }  
+  for (int i = 0; i < bcs_.size(); ++i) { bcs_[i]->Compute(t_new, t_new); }
   // update source terms
-  for (int i = 0; i < srcs_.size(); ++i) { 
-    srcs_[i]->Compute(t_new, t_new);
-  }
+  for (int i = 0; i < srcs_.size(); ++i) { srcs_[i]->Compute(t_new, t_new); }
   // extract pointers to subvectors
   std::vector<Teuchos::RCP<CompositeVector>> up, fp;
   for (int i = 0; i < soln_names_.size(); ++i) {
@@ -103,7 +99,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
     for (int phase = 0; phase < 2; ++phase) {
       fname = eqns_[n].advection[phase].first;
       gname = eqns_[n].advection[phase].second;
-      
+
       if (fname != "") {
         CheckCompatibilityBCs(keyr, gname);
         S_->GetEvaluator(fname).Update(*S_, passwd_);
@@ -160,7 +156,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
         int m = std::min(eqns_flattened_[n][1], tmp.NumVectors() - 1);
         for (int c = 0; c < ncells_owned_; ++c) { comp_c[0][c] = tmp[m][c]; }
         pde->global_operator()->ComputeNegativeResidual(comp, fadd);
-        
+
         double factor = eqns_[n].diff_factors[phase];
         fone.Update(factor, fadd, 1.0);
       }
@@ -179,23 +175,22 @@ Multiphase_PK::FunctionalResidual(double t_old,
         fone_c[0][c] += (total_c[0][c] - total_prev_c[0][c]) * factor;
       }
     }
-    
-    // add source term    
-    
-    if (srcs_.size() > 0) { 
+
+    // add source term
+
+    if (srcs_.size() > 0) {
       int id = eqns_[n].component_id;
-      for (int j = 0; j < srcs_.size(); ++j) { 
+      for (int j = 0; j < srcs_.size(); ++j) {
         if (srcs_[j]->component_id() == id) {
-      
-        for (auto it = srcs_[j]->begin(); it != srcs_[j]->end(); ++it) { 
-          int c = it->first;
-          double factor = mesh_->getCellVolume(c);
-          fone_c[0][c] -= it->second[0] * factor;
+          for (auto it = srcs_[j]->begin(); it != srcs_[j]->end(); ++it) {
+            int c = it->first;
+            double factor = mesh_->getCellVolume(c);
+            fone_c[0][c] -= it->second[0] * factor;
           }
         }
-      }    
+      }
     }
-    
+
     // copy temporary vector to residual
     auto& fc = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");
     for (int c = 0; c < ncells_owned_; ++c) fc[eqns_flattened_[n][1]][c] = fone_c[0][c];
@@ -211,7 +206,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
     key = eqns_[n].constraint.second;
     S_->GetEvaluator(key).Update(*S_, passwd_);
     const auto& ncp_gc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
-    
+
     auto& fci = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");
     if (ncp_ == "min") {
       for (int c = 0; c < ncells_owned_; ++c) { fci[0][c] = std::min(ncp_fc[0][c], ncp_gc[0][c]); }
