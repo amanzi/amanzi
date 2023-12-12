@@ -20,6 +20,17 @@
 
 #include "VerboseObject_objs.hh"
 
+// a custom model for testing
+#include "WRMmp_Custom.hh"
+
+namespace Amanzi {
+namespace Multiphase {
+
+Utils::RegisteredFactory<WRMmp, WRMmp_Custom> WRMmp_Custom::reg_("Custom");
+
+} // namespace Multiphase
+} // namespace Amanzi
+
 int
 main(int argc, char* argv[])
 {
