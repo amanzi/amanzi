@@ -26,7 +26,6 @@
 #include "EquationStructure.hh"
 #include "Multiphase_PK.hh"
 #include "TotalComponentStorage.hh"
-#include "math.h"
 
 namespace Amanzi {
 namespace Multiphase {
@@ -41,8 +40,6 @@ Multiphase_PK::FunctionalResidual(double t_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f)
 {
-  double pi = M_PI;
-
   double dtp = t_new - t_old;
   // update to handle time dependent BCs
   for(int i = 0; i < bcs_.size(); ++i) {
