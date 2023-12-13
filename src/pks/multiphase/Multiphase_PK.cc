@@ -6,15 +6,13 @@
 
   Authors: Quan Bui (mquanbui@math.umd.edu)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+           Naren Vohra (vohra@lanl.gov)
 */
 
 /*
   MultiPhase PK
 
-  Multiphase multi-component flow. We assume that one component (water)
-  is always in liquid form, i,e does not evaporate. This allows us to
-  compare results with other codes. Later, this PK will be split into
-  a base and derived PKs depending on physical models.
+  Multiphase multi-component flow. 
 */
 
 
@@ -647,7 +645,7 @@ Multiphase_PK::Initialize()
   g_ = fabs(gravity_[dim_ - 1]);
 
   rho_l_ = S_->Get<double>("const_fluid_density");
-  eta_l_ = rho_l_ / CommonDefs::MOLAR_MASS_H2O;
+  eta_l_ = rho_l_ / mol_mass_H2O_;
   mu_l_ = S_->Get<double>("const_fluid_viscosity");
   mu_g_ = S_->Get<double>("const_gas_viscosity");
 
@@ -746,6 +744,28 @@ Multiphase_PK::Initialize()
       }
     }
   }
+
+  // source term
+  if (mp_list_->isSublist("source terms")) {
+    PK_DomainFunctionFactory<MultiphaseBoundaryFunction> src_factory(mesh_, S_);
+
+    Teuchos::ParameterList& mr_list = mp_list_->sublist("source terms");
+    for (auto it = mr_list.begin(); it != mr_list.end(); ++it) {
+      std::string name = it->first;
+      if (mr_list.isSublist(name)) {
+        Teuchos::ParameterList& src_list = mr_list.sublist(name);
+        for (auto it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
+          std::string specname = it1->first;
+          Teuchos::ParameterList& spec = src_list.sublist(specname);
+          Teuchos::RCP<MultiphaseBoundaryFunction> src =
+            src_factory.Create(spec, "injector", AmanziMesh::Entity_kind::CELL, Teuchos::null);
+          src->SetComponentId(component_names_);
+          srcs_.push_back(src);
+        }
+      }
+    }
+  }
+
 
   // allocate metadata and populate boundary conditions
   op_bcs_.clear();
@@ -1084,6 +1104,15 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
     eqns_flattened_[n][0] = soln_names_.size() - 1;
     eqns_flattened_[n][1] = i;
     eqns_flattened_[n][2] = (eqn_num > 1) ? n : -1; // dEval_dSoln=0 for all eqns except this
+
+    // attach component id to equation (used for external source term which is defined for each component)
+    if (eqn_name == "pressure eqn") {
+      eqns_[n].component_id = -1;
+    } else if (eqn_name == "solute eqn") {
+      std::string name = component_names_[i];
+      auto it = std::find(component_names_.begin(), component_names_.end(), component_names_[i]);
+      eqns_[n].component_id = std::distance(component_names_.begin(), it);
+    }
 
     // advection evaluators
     if (slist.isParameter("advection factors"))

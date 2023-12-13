@@ -156,6 +156,7 @@ class BDF1_TI {
   // Report statistics
   int number_nonlinear_steps() { return state_->solve_itrs; }
   void ReportStatistics_();
+  int number_solver_iterations() { return solver_->num_itrs(); }
 
  protected:
   Teuchos::RCP<TimestepController> ts_control_; // timestep controller

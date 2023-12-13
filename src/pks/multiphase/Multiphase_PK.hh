@@ -180,6 +180,9 @@ class Multiphase_PK : public PK_PhysicalBDF {
                                                   Teuchos::RCP<const TreeVector> u_new,
                                                   double eps);
 
+  // access methods for unit test
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae() { return bdf1_dae_; }
+
  protected:
   Teuchos::ParameterList MyRequire_(const Key& key, const std::string& owner);
 
@@ -270,6 +273,9 @@ class Multiphase_PK : public PK_PhysicalBDF {
   // io
   Utils::Units units_;
   Teuchos::RCP<Teuchos::ParameterList> mp_list_;
+
+  // source terms
+  std::vector<Teuchos::RCP<MultiphaseBoundaryFunction>> srcs_;
 
  private:
   int missed_bc_faces_;

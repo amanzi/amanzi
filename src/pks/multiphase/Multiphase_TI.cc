@@ -41,7 +41,10 @@ Multiphase_PK::FunctionalResidual(double t_old,
                                   Teuchos::RCP<TreeVector> f)
 {
   double dtp = t_new - t_old;
-
+  // update to handle time dependent BCs
+  for (int i = 0; i < bcs_.size(); ++i) { bcs_[i]->Compute(t_new, t_new); }
+  // update source terms
+  for (int i = 0; i < srcs_.size(); ++i) { srcs_[i]->Compute(t_new, t_new); }
   // extract pointers to subvectors
   std::vector<Teuchos::RCP<CompositeVector>> up, fp;
   for (int i = 0; i < soln_names_.size(); ++i) {
@@ -77,6 +80,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
   CompositeVector fone(*aux), fadd(*aux), comp(*aux);
   auto& fone_c = *fone.ViewComponent("cell");
   auto& comp_c = *comp.ViewComponent("cell");
+  auto& fadd_c = *fadd.ViewComponent("cell");
 
   // start loop over physical equations
   int neqns = eqns_.size();
@@ -169,6 +173,21 @@ Multiphase_PK::FunctionalResidual(double t_old,
       for (int c = 0; c < ncells_owned_; ++c) {
         double factor = mesh_->getCellVolume(c) / dtp;
         fone_c[0][c] += (total_c[0][c] - total_prev_c[0][c]) * factor;
+      }
+    }
+
+    // add source term
+
+    if (srcs_.size() > 0) {
+      int id = eqns_[n].component_id;
+      for (int j = 0; j < srcs_.size(); ++j) {
+        if (srcs_[j]->component_id() == id) {
+          for (auto it = srcs_[j]->begin(); it != srcs_[j]->end(); ++it) {
+            int c = it->first;
+            double factor = mesh_->getCellVolume(c);
+            fone_c[0][c] -= it->second[0] * factor;
+          }
+        }
       }
     }
 

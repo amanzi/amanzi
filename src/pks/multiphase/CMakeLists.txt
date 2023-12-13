@@ -120,6 +120,12 @@ if (BUILD_TESTS)
                   SOURCE    test/Main.cc test/multiphase_jaffre.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+  # Jaffre model with fractures
+  add_amanzi_test(multiphase_jaffre_fractures multiphase_jaffre_fractures
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_jaffre_fractures.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
   # Unit tests: Pl-Sl-Xg
   add_amanzi_test(multiphase_model1a multiphase_model1a
                   KIND      int
@@ -152,6 +158,13 @@ if (BUILD_TESTS)
                   KIND      int
                   SOURCE    test/Main.cc test/multiphase_smiles.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+  # Misc. (external source term implementation)  
+  add_amanzi_test(multiphase_source multiphase_source
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_source.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})  
+  
 
 endif()
 
