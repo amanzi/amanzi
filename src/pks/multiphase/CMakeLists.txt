@@ -164,7 +164,12 @@ if (BUILD_TESTS)
                   KIND      int
                   SOURCE    test/Main.cc test/multiphase_source.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})  
-  
+
+  # 1D analytical manufactured solution test 
+  add_amanzi_test(multiphase_1D_analytical multiphase_1D_analytical
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_1D_analytical.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})  
 
 endif()
 

@@ -6,6 +6,7 @@
 
   Authors: Quan Bui (mquanbui@math.umd.edu)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+           Naren Vohra (vohra@lanl.gov)
 */
 
 /*
@@ -108,6 +109,25 @@ Multiphase_PK::FunctionalResidual(double t_old,
         auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
         kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
         upwind_->Compute(flux, bcnone, *kr);
+
+        // debugging  
+        /*
+        if (n == 1 && fname == "advection_liquid") {
+          std::cout<<"Entered advection_liquid"<<std::endl;
+          const auto& bc_model1 = op_bcs_[fname]->bc_model();
+          Operators::CellToBoundaryFaces(bc_model1, *kr);
+          upwind_->Compute(flux, bc_model1, *kr);
+        } else if (n == 1 && fname == "advection_gas") {
+          std::cout<<"Entered advection_gas"<<std::endl;
+          const auto& bc_model1 = op_bcs_[fname]->bc_model();
+          Operators::CellToBoundaryFaces(bc_model1, *kr);
+          upwind_->Compute(flux, bc_model1, *kr);
+        }
+        else {
+          upwind_->Compute(flux, bcnone, *kr);
+        }
+        */
+
 
         // -- form diffusion operator for variable g
         //    Neuman BCs: separate fluxes for each phase OR the total flux but only once

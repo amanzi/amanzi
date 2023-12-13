@@ -781,6 +781,14 @@ Multiphase_PK::Initialize()
     op_bcs_[name] = op_bc;
   }
 
+  // FIX ME (move advection_liquid_key_/gas_key_ to secondary names)
+  {
+    auto op_bc = Teuchos::rcp(
+      new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+    op_bcs_[advection_liquid_key_] = op_bc;
+    op_bcs_[advection_gas_key_] = op_bc;
+  }
+
   double t_ini = S_->get_time();
   for (int i = 0; i < bcs_.size(); i++) {
     bcs_[i]->Compute(t_ini, t_ini);
@@ -872,7 +880,12 @@ Multiphase_PK::Initialize()
     kr_c = *S_->Get<CV_t>(adv_names_[phase]).ViewComponent("cell");
 
     auto flux = S_->GetPtrW<CV_t>(flux_names_[phase], Tags::DEFAULT, passwd_);
-    upwind_->Compute(*flux, bcnone, *kr);
+    //upwind_->Compute(*flux, bcnone, *kr);
+
+    // debugging
+    const auto& bc_model1 = op_bcs_[advection_liquid_key_]->bc_model();
+    Operators::CellToBoundaryFaces(bc_model1, *kr);
+    upwind_->Compute(*flux, bc_model1, *kr);
 
     auto pdeK = pde_diff_K_[phase];
     pdeK->Setup(Kptr, kr, Teuchos::null);

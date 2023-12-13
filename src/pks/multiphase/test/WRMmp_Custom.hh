@@ -31,7 +31,7 @@ class WRMmp_Custom : public WRMmp {
 
   // required methods from the base class
   virtual double k_relative(double Sw, int phase) { return 1.0; }
-  virtual double capillaryPressure(double saturation) { return 1.0; }
+  virtual double capillaryPressure(double saturation) { return 0.0; }
   virtual double dPc_dS(double saturation) { return 0.0; }
   virtual double dKdS(double Sw, int phase) { return 0.0; }
 
