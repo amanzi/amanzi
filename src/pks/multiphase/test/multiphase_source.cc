@@ -111,12 +111,6 @@ run_test(const std::string& domain, const std::string& filename)
   // store Newton iterations and time step size (after successful iteration)
   std::vector<int> newton_iterations_per_step;
   std::vector<double> time_step_size;
-  // error initialize
-  double perr_linf_inf = 0.0, perr_linf_l1 = 0.0, perr_linf_l2 = 0.0;
-
-  int ncells_owned =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-  double pi = M_PI;
 
   while (t < tend) {
     // output solution

@@ -185,7 +185,7 @@
         <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
         -->
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="extreme"/>
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

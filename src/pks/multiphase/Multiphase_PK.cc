@@ -136,8 +136,8 @@ Multiphase_PK::Setup()
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
   mass_density_gas_key_ = Keys::getKey(domain_, "mass_density_gas");
 
-  vol_flowrate_liquid_key_ = Keys::getKey(domain_, "volumetric_flow_rate_liquid");
-  vol_flowrate_gas_key_ = Keys::getKey(domain_, "volumetric_flow_rate_gas");
+  mol_flowrate_liquid_key_ = Keys::getKey(domain_, "molar_flow_rate_liquid");
+  mol_flowrate_gas_key_ = Keys::getKey(domain_, "molar_flow_rate_gas");
 
   tws_key_ = Keys::getKey(domain_, "total_water_storage");
   tcs_key_ = Keys::getKey(domain_, "total_component_storage");
@@ -284,29 +284,29 @@ Multiphase_PK::Setup()
   }
 
   // Darcy volume fluxes
-  if (!S_->HasRecord(vol_flowrate_liquid_key_)) {
+  if (!S_->HasRecord(mol_flowrate_liquid_key_)) {
     if (!flow_on_manifold_) {
-      S_->Require<CV_t, CVS_t>(vol_flowrate_liquid_key_, Tags::DEFAULT, passwd_)
+      S_->Require<CV_t, CVS_t>(mol_flowrate_liquid_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
         ->SetComponent("face", AmanziMesh::FACE, 1);
     } else {
       auto cvs = Operators::CreateManifoldCVS(mesh_);
-      *S_->Require<CV_t, CVS_t>(vol_flowrate_liquid_key_, Tags::DEFAULT, passwd_)
+      *S_->Require<CV_t, CVS_t>(mol_flowrate_liquid_key_, Tags::DEFAULT, passwd_)
          .SetMesh(mesh_)
          ->SetGhosted(true) = *cvs;
     }
   }
 
-  if (!S_->HasRecord(vol_flowrate_gas_key_)) {
+  if (!S_->HasRecord(mol_flowrate_gas_key_)) {
     if (!flow_on_manifold_) {
-      S_->Require<CV_t, CVS_t>(vol_flowrate_gas_key_, Tags::DEFAULT, passwd_)
+      S_->Require<CV_t, CVS_t>(mol_flowrate_gas_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
         ->SetComponent("face", AmanziMesh::FACE, 1);
     } else {
       auto cvs = Operators::CreateManifoldCVS(mesh_);
-      *S_->Require<CV_t, CVS_t>(vol_flowrate_gas_key_, Tags::DEFAULT, passwd_)
+      *S_->Require<CV_t, CVS_t>(mol_flowrate_gas_key_, Tags::DEFAULT, passwd_)
          .SetMesh(mesh_)
          ->SetGhosted(true) = *cvs;
     }
@@ -630,7 +630,7 @@ Multiphase_PK::Initialize()
 
   // some defaults
   pressure_names_ = { pressure_liquid_key_, pressure_gas_key_ };
-  flux_names_ = { vol_flowrate_liquid_key_, vol_flowrate_gas_key_ };
+  flux_names_ = { mol_flowrate_liquid_key_, mol_flowrate_gas_key_ };
   adv_names_ = { advection_liquid_key_, advection_gas_key_ };
 
   auto aux_list = mp_list_->sublist("molecular diffusion");
@@ -916,8 +916,8 @@ Multiphase_PK::InitializeFields_()
   if (system_["energy eqn"])
     InitializeCVFieldFromCVField(S_, *vo_, prev_energy_key_, energy_key_, passwd_);
 
-  InitializeCVField(S_, *vo_, vol_flowrate_liquid_key_, Tags::DEFAULT, passwd_, 0.0);
-  InitializeCVField(S_, *vo_, vol_flowrate_gas_key_, Tags::DEFAULT, passwd_, 0.0);
+  InitializeCVField(S_, *vo_, mol_flowrate_liquid_key_, Tags::DEFAULT, passwd_, 0.0);
+  InitializeCVField(S_, *vo_, mol_flowrate_gas_key_, Tags::DEFAULT, passwd_, 0.0);
 }
 
 
@@ -933,8 +933,8 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   auto copy_names = soln_names_;
   copy_names.push_back(prev_tws_key_);
   copy_names.push_back(prev_tcs_key_);
-  copy_names.push_back(vol_flowrate_liquid_key_);
-  copy_names.push_back(vol_flowrate_gas_key_);
+  copy_names.push_back(mol_flowrate_liquid_key_);
+  copy_names.push_back(mol_flowrate_gas_key_);
   if (system_["energy eqn"]) copy_names.push_back(prev_energy_key_);
 
   int ncopy = copy_names.size();
@@ -1256,7 +1256,7 @@ Multiphase_PK::ModifyEvaluators(int neqn)
 Teuchos::RCP<CompositeVector>
 Multiphase_PK::CreateCVforUpwind_()
 {
-  auto cvs = S_->Get<CV_t>(vol_flowrate_liquid_key_, Tags::DEFAULT).Map();
+  auto cvs = S_->Get<CV_t>(mol_flowrate_liquid_key_, Tags::DEFAULT).Map();
   cvs.SetOwned(false);
   cvs.AddComponent("cell", AmanziMesh::CELL, 1);
   return Teuchos::rcp(new CompositeVector(cvs));

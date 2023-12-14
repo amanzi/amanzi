@@ -361,10 +361,11 @@ Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, d
   UpdateSourceBoundaryData(t_old, tp, *u->Data());
 
   // -- Darcy flux
+  //    We need only direction of the flux copy
   if (upwind_frequency_ == FLOW_UPWIND_UPDATE_ITERATION) {
     op_matrix_diff_->UpdateFlux(solution.ptr(), vol_flowrate_copy.ptr());
     auto& flowrate = *vol_flowrate_copy->ViewComponent("face");
-    flowrate.Scale(1.0 / molar_rho_); // FIXME
+    flowrate.Scale(1.0 / molar_rho_);
   }
   vol_flowrate_copy->ScatterMasterToGhosted("face");
 

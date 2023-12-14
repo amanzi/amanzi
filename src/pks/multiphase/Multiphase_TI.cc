@@ -80,7 +80,6 @@ Multiphase_PK::FunctionalResidual(double t_old,
   CompositeVector fone(*aux), fadd(*aux), comp(*aux);
   auto& fone_c = *fone.ViewComponent("cell");
   auto& comp_c = *comp.ViewComponent("cell");
-  auto& fadd_c = *fadd.ViewComponent("cell");
 
   // start loop over physical equations
   int neqns = eqns_.size();
@@ -245,7 +244,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
 
   // work memory for miscalleneous operator
   auto flux_tmp =
-    Teuchos::rcp(new CompositeVector(S_->Get<CompositeVector>(vol_flowrate_liquid_key_)));
+    Teuchos::rcp(new CompositeVector(S_->Get<CompositeVector>(mol_flowrate_liquid_key_)));
   auto flux_acc = Teuchos::rcp(new CompositeVector(*flux_tmp));
 
   auto kr = CreateCVforUpwind_();
