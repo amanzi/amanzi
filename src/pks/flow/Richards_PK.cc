@@ -849,6 +849,7 @@ Richards_PK::Initialize()
   pressure_eval_->SetChanged();
 
   // Derive volumetric flow rate (state may not have it at time 0)
+  // We need simply direction rather than accurate value of the flux copy.
   double tmp;
   vol_flowrate_copy->Norm2(&tmp);
   if (tmp == 0.0) {
@@ -1150,7 +1151,7 @@ Richards_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 
 
 /* ******************************************************************
-* Conversion between fluxes.
+* Conversion between fluxes using previous flux for upwinding.
 ****************************************************************** */
 void
 Richards_PK::MolarFlowRateToVolumetricFlowRate_()

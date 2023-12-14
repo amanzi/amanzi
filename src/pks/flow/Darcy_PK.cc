@@ -621,6 +621,7 @@ Darcy_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   if (S_->HasRecord(mol_flowrate_key_, Tags::DEFAULT)) {
     auto mol_flowrate = S_->GetPtrW<CV_t>(mol_flowrate_key_, Tags::DEFAULT, passwd_);
     *mol_flowrate = *flowrate;
+    // this PK uses mass flux, so we need to re-scale it
     mol_flowrate->Scale(1.0 / CommonDefs::MOLAR_MASS_H2O);
   }
 

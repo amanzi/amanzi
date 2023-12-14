@@ -25,7 +25,7 @@ class WRMmp_Custom : public WRMmp {
  public:
   WRMmp_Custom(Teuchos::ParameterList& plist)
   {
-    double coef = plist.get<double>("coefficient", MULTIPHASE_WRM_EXCEPTION);
+    coef_ = plist.get<double>("coefficient", 1.0);
   }
   ~WRMmp_Custom(){};
 
@@ -36,10 +36,7 @@ class WRMmp_Custom : public WRMmp {
   virtual double dKdS(double Sw, int phase) { return 0.0; }
 
  private:
-  void Init_(double coef) { coef = 1.0; }
-
- private:
-  double S_rw_, S_rn_, coef_, exponent_;
+  double coef_;
 
   static Utils::RegisteredFactory<WRMmp, WRMmp_Custom> reg_;
 };
