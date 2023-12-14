@@ -74,7 +74,7 @@ class ReconstructionCellPolynomial : public Reconstruction {
                const Teuchos::RCP<const BCs>& bc = Teuchos::null);
 
   // A map (a rectangular matrix) from data, cell and boundary, to polynomial
-  // coefficients. NOTE: polynomial basis is natural
+  // coefficients.
   void ComputeReconstructionMap(int c,
                                 const Teuchos::RCP<const BCs>& bc,
                                 WhetStone::DenseMatrix& R,

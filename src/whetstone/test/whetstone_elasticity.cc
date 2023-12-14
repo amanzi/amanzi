@@ -257,16 +257,16 @@ TEST(ELASTICITY_WEAK_SYMMETRY_2D)
       double area = mesh->getFaceArea(f);
 
       const auto p1 = T1 * normal;
-      xx[2 * i] = p1[0] / area;
-      xx[2 * i + 1] = p1[1] / area;
+      xx[4 * i] = p1[0] / area;
+      xx[4 * i + 1] = p1[1] / area;
 
       const auto p2 = T2 * normal;
-      yy[2 * i] = p2[0] / area;
-      yy[2 * i + 1] = p2[1] / area;
+      yy[4 * i] = p2[0] / area;
+      yy[4 * i + 1] = p2[1] / area;
 
       const auto p3 = Ty * normal;
-      rr[2 * i] = p3[0] / area;
-      rr[2 * i + 1] = p3[1] / area;
+      rr[4 * i] = p3[0] / area;
+      rr[4 * i + 1] = p3[1] / area;
     }
 
     double vxx(0.0), vxy(0.0), rot(0.0);
@@ -287,8 +287,8 @@ TEST(ELASTICITY_WEAK_SYMMETRY_2D)
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
       const auto& xf = mesh->getFaceCentroid(f);
-      vx[2 * i] = 1.0;
-      vx[2 * i + 1] = 1.0;
+      vx[4 * i] = 1.0;
+      vx[4 * i + 1] = 1.0;
     }
 
     const auto& xc = mesh->getCellCentroid(0);
@@ -385,16 +385,16 @@ RunWeakSymmetry3D(const std::string& filename)
       double area = mesh->getFaceArea(f);
 
       auto p = T1 * normal;
-      for (int k = 0; k < 3; ++k) xx[3 * i + k] = p[k] / area;
+      for (int k = 0; k < 3; ++k) xx[9 * i + k] = p[k] / area;
 
       p = T2 * normal;
-      for (int k = 0; k < 3; ++k) yy[3 * i + k] = p[k] / area;
+      for (int k = 0; k < 3; ++k) yy[9 * i + k] = p[k] / area;
 
       p = T3 * normal;
-      for (int k = 0; k < 3; ++k) zz[3 * i + k] = p[k] / area;
+      for (int k = 0; k < 3; ++k) zz[9 * i + k] = p[k] / area;
 
       p = Ty * normal;
-      for (int k = 0; k < 3; ++k) rr[3 * i + k] = p[k] / area;
+      for (int k = 0; k < 3; ++k) rr[9 * i + k] = p[k] / area;
     }
 
     double vxx(0.0), vxy(0.0), vzz(0.0), rot(0.0);

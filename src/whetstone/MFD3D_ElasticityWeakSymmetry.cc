@@ -87,14 +87,13 @@ MFD3D_ElasticityWeakSymmetry::L2consistency(int c, const Tensor& T, DenseMatrix&
   std::vector<const PolynomialBase*> polys(2);
 
   N.PutScalar(0.0);
-  int row0(0), row1(d_ * nfaces), offset(d_ * nfaces);
+  int row0(0);
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
     double area = mesh_->getFaceArea(f);
     const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
     AmanziGeometry::Point normal = mesh_->getFaceNormal(f);
-
-    normal *= dirs[n];
+    // normal *= dirs[n];
     auto coordsys = std::make_shared<AmanziGeometry::SurfaceCoordinateSystem>(xf, normal);
 
     for (int m = 0; m < modes; ++m) {
@@ -115,11 +114,10 @@ MFD3D_ElasticityWeakSymmetry::L2consistency(int c, const Tensor& T, DenseMatrix&
         fmono.InverseChangeCoordinates(xf, *coordsys->tau());
         polys[1] = &fmono;
 
-        N(l * offset + row1 + k0, m) = numi.IntegratePolynomialsFace(f, polys);
+        N((l + 1) * d_ + k0, m) = numi.IntegratePolynomialsFace(f, polys);
       }
     }
-    row0 += d_;
-    row1 += d_;
+    row0 += d_ * d_;
   }
 
   // compute Mc
@@ -147,7 +145,7 @@ MFD3D_ElasticityWeakSymmetry::L2consistency(int c, const Tensor& T, DenseMatrix&
       v2 = vTE[m] * normal;
       for (int k = 0; k < d_; ++k) { N(row + k, m) = v2[k] * dirs[i] / area; }
     }
-    row += d_;
+    row += d_ * d_;
   }
 
   return 0;
@@ -187,6 +185,7 @@ MFD3D_ElasticityWeakSymmetry::DivergenceMatrix(int c, DenseMatrix& B)
     int f = faces[i];
     double area = mesh_->getFaceArea(f);
     for (int k = 0; k < d_; ++k) B(row++, k) = area;
+    row += d_ * (d_ - 1);
   }
 
   return 0;
@@ -212,14 +211,13 @@ MFD3D_ElasticityWeakSymmetry::RotationMatrix(int c, DenseMatrix& G)
   NumericalIntegration numi(mesh_);
   std::vector<const PolynomialBase*> polys(2);
 
-  int row0(0), row1(d_ * nfaces), offset(d_ * nfaces);
+  int row0(0);
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
     double area = mesh_->getFaceArea(f);
     const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
     AmanziGeometry::Point normal = mesh_->getFaceNormal(f);
-
-    normal *= dirs[n];
+    // normal *= dirs[n];
     auto coordsys = std::make_shared<AmanziGeometry::SurfaceCoordinateSystem>(xf, normal);
 
     for (int i0 = 0; i0 < nd; ++i0) {
@@ -241,18 +239,17 @@ MFD3D_ElasticityWeakSymmetry::RotationMatrix(int c, DenseMatrix& G)
         cmono1.set_origin(xc);
         polys[0] = &cmono1;
 
-        G(l * offset + row1 + i0, i0) = numi.IntegratePolynomialsFace(f, polys);
+        G((l + 1) * d_ + i0, i0) = numi.IntegratePolynomialsFace(f, polys);
 
         set_index_(d_, i1, index);
         Polynomial cmono2(d_, index, -1.0);
         cmono2.set_origin(xc);
         polys[0] = &cmono2;
 
-        G(l * offset + row1 + i1, i0) = numi.IntegratePolynomialsFace(f, polys);
+        G((l + 1) * d_ + i1, i0) = numi.IntegratePolynomialsFace(f, polys);
       }
     }
-    row0 += d_;
-    row1 += d_;
+    row0 += d_ * d_;
   }
 }
 
@@ -283,14 +280,11 @@ MFD3D_ElasticityWeakSymmetry::StiffnessMatrix(int c, const Tensor& T, DenseMatri
   int row(0);
   for (int n = 0; n < nfaces; ++n) {
     for (int k = 0; k < d_; ++k) {
-      D(row) = -B(row, k);
-      row++;
+      int i0 = row + k;
+      D(i0) = -B(i0, k);
+      for (int l = 0; l < d_ - 1; ++l) D(i0 + (l + 1) * d_) = D(i0);
     }
-  }
-
-  int offset(d_ * nfaces);
-  for (int n = 0; n < offset; ++n) {
-    for (int k = 1; k < d_; ++k) D(k * offset + n) = D(n);
+    row += d_ * d_;
   }
 
   // elliminate stresses

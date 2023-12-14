@@ -382,7 +382,7 @@ NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     S_->GetW<CV_t>(pressure_key_, Tags::DEFAULT, passwd_) = pressure_copy;
     pressure_eval_->SetChanged();
 
-    S_->GetW<CV_t>("fluid_velocity", Tags::DEFAULT, passwd_) = fluid_velocity_copy;
+    S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_) = fluid_velocity_copy;
     fluid_velocity_eval_->SetChanged();
 
     Teuchos::OSTab tab = vo_->getOSTab();

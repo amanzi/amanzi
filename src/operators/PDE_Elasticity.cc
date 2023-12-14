@@ -134,7 +134,10 @@ void
 PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   int d = mesh_->getSpaceDimension();
-  auto& rhs_node = *global_op_->rhs()->ViewComponent("node", true);
+  auto rhs = global_op_->rhs();
+
+  Teuchos::RCP<Epetra_MultiVector> rhs_node;
+  if (rhs()->HasComponent("node")) rhs_node = rhs->ViewComponent("node", true);
 
   for (auto bc : bcs_trial_) {
     const auto& bc_model = bc->bc_model();
@@ -160,8 +163,8 @@ PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
             auto lnodes = mesh_->getEdgeNodes(f);
 
             for (int k = 0; k < d; ++k) {
-              rhs_node[k][lnodes[0]] += value * tau[k] / 2;
-              rhs_node[k][lnodes[1]] += value * tau[k] / 2;
+              (*rhs_node)[k][lnodes[0]] += value * tau[k] / 2;
+              (*rhs_node)[k][lnodes[1]] += value * tau[k] / 2;
             }
           }
         }
@@ -193,7 +196,7 @@ PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
             int noff(d * n);
             for (int m = 0; m < ncols; m++) Acell(noff + k, m) = 0.0;
             for (int i = 0; i < d; ++i) Acell(noff + k, noff + i) = normal[i] / ncells;
-            if (v < nnodes_owned) rhs_node[k][v] = value;
+            if (v < nnodes_owned) (*rhs_node)[k][v] = value;
 
             if (eliminate) {
               // AMANZI_ASSERT(false);
