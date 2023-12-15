@@ -121,7 +121,7 @@ Visualization::WriteVector(const Epetra_MultiVector& vec,
                            const std::vector<std::string>& names,
                            AmanziMesh::Entity_kind kind) const
 {
-  visualization_output_->WriteMultiVector(vec, names, AmanziMesh::Entity_kind::CELL);
+  visualization_output_->WriteMultiVector(vec, names, kind);
 }
 
 
