@@ -97,8 +97,9 @@ class Visualization : public IOEvent {
   template <typename T>
   void Write(const std::string& name, const T& t) const;
 
-  virtual void
-  WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const;
+  virtual void WriteVector(const Epetra_MultiVector& vec,
+                           const std::vector<std::string>& names,
+                           AmanziMesh::Entity_kind kind) const;
   virtual void WriteVector(const Epetra_Vector& vec, const std::string& name) const;
   virtual void WriteRegions();
   virtual void WritePartition();

@@ -85,7 +85,8 @@ TEST(BRENT_AND_BOOST)
 
   // Test 1
   itr = 100;
-  x0 = findMinimumBrent([](double x) { return x * x * x / 3 - x * x / 2 - x - 1.0; }, 1.0, 2.0, tol, &itr);
+  x0 = findMinimumBrent(
+    [](double x) { return x * x * x / 3 - x * x / 2 - x - 1.0; }, 1.0, 2.0, tol, &itr);
   printf(" 1 %11.5f %9i %9i\n", x0, itr, itr2[0]);
   CHECK_CLOSE(1.61803399, x0, 3 * tol);
 
@@ -109,6 +110,7 @@ TEST(BRENT_AND_BOOST)
 
   // Test 5
   itr = 100;
-  x0 = findMinimumBrent([](double x) { return std::pow(x * x - 1.0 , 2.0) + 1.0; }, -2.0, 0.5, tol, &itr);
+  x0 = findMinimumBrent(
+    [](double x) { return std::pow(x * x - 1.0, 2.0) + 1.0; }, -2.0, 0.5, tol, &itr);
   printf(" 5 %11.5f %9i %9i\n", x0, itr, itr2[4]);
 }

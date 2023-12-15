@@ -90,10 +90,8 @@ RunTest(const std::string regname, int* cells, int* edges, const std::vector<int
       comm->SumAll(&ncells_tmp, &ncells, 1);
       comm->SumAll(&nfaces_tmp, &nfaces, 1);
       comm->SumAll(&nedges_tmp, &nedges, 1);
-      std::cout << "PARENT mesh: " << i 
-                << "\n  pid=" << comm->MyPID() << " cells: " << ncells 
-                                               << " faces: " << nfaces
-                                               << " edges: " << nedges << std::endl;
+      std::cout << "PARENT mesh: " << i << "\n  pid=" << comm->MyPID() << " cells: " << ncells
+                << " faces: " << nfaces << " edges: " << nedges << std::endl;
     }
 
     // extract fractures mesh
@@ -117,9 +115,9 @@ RunTest(const std::string regname, int* cells, int* edges, const std::vector<int
       comm->SumAll(&nfaces_tmp, &nfaces, 1);
       comm->SumAll(&mfaces_tmp, &mfaces, 1);
 
-      std::cout << "EXTRACTED mesh: " << i
-                << "\n  pid=" << comm->MyPID() << " cells: " << ncells << " faces: " << nfaces
-                << " bnd faces: " << mfaces << std::endl << std::endl;
+      std::cout << "EXTRACTED mesh: " << i << "\n  pid=" << comm->MyPID() << " cells: " << ncells
+                << " faces: " << nfaces << " bnd faces: " << mfaces << std::endl
+                << std::endl;
       CHECK(cells[i] == ncells);
       CHECK(edges[i] == mfaces);
 
@@ -146,19 +144,19 @@ TEST(MESH_EXTRACTED_FRACTURE_NETWORK2)
 {
   int cells[3] = { 108, 200, 0 };
   int edges[3] = { 48, 80, 0 };
-  RunTest("fractures-two", cells, edges, {0, 1, 2});
+  RunTest("fractures-two", cells, edges, { 0, 1, 2 });
 }
 
 TEST(MESH_EXTRACTED_SURFACE)
 {
   int cells[3] = { 9, 25, 0 };
   int edges[3] = { 12, 20, 0 };
-  RunTest("Left side", cells, edges, {0, 1, 2});
+  RunTest("Left side", cells, edges, { 0, 1, 2 });
 }
 
 TEST(MESH_EXTRACTED_FRACTURE_NETWORK3)
 {
   int cells[3] = { 108, 200, 0 };
   int edges[3] = { 72, 0, 0 };
-  RunTest("fractures-three", cells, edges, {0, 2});
+  RunTest("fractures-three", cells, edges, { 0, 2 });
 }

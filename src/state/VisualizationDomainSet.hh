@@ -67,8 +67,9 @@ class VisualizationDomainSet : public Visualization {
   void set_domain_set(const Teuchos::RCP<const AmanziMesh::DomainSet>& ds) { ds_ = ds; }
 
   // public interface for data clients
-  virtual void
-  WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const override;
+  virtual void WriteVector(const Epetra_MultiVector& vec,
+                           const std::vector<std::string>& names,
+                           AmanziMesh::Entity_kind kind) const override;
   virtual void WriteVector(const Epetra_Vector& vec, const std::string& name) const override;
 
   virtual void FinalizeTimestep() const override;

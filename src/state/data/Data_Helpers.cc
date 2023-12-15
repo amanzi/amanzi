@@ -164,34 +164,41 @@ WriteVis<CompositeVector>(const Visualization& vis,
                           const std::vector<std::string>* subfieldnames,
                           const CompositeVector& vec)
 {
-  if (vec.HasComponent("cell")) {
-    const auto& vec_c = *vec.ViewComponent("cell");
-    if (subfieldnames && subfieldnames->size() > 0) {
-      if (vec_c.NumVectors() != subfieldnames->size()) {
-        Errors::Message msg;
-        msg << "While Visualizing \"" << fieldname << "\" a vector of lenth " << vec_c.NumVectors()
-            << ", subfieldnames of length " << (int)subfieldnames->size() << " were provided.";
-        throw(msg);
-      }
+  std::vector<AmanziMesh::Entity_kind> kinds(
+    { AmanziMesh::Entity_kind::CELL, AmanziMesh::Entity_kind::NODE });
 
-      std::vector<Key> full_names;
-      for (int i = 0; i != vec_c.NumVectors(); ++i) {
-        Key full_name = fieldname + "." + (*subfieldnames)[i];
-        full_names.emplace_back(full_name);
-      }
-      vis.WriteVector(vec_c, full_names);
+  for (auto kind : kinds) {
+    std::string comp = to_string(kind);
+    if (vec.HasComponent(comp)) {
+      const auto& vec_c = *vec.ViewComponent(comp);
+      if (subfieldnames && subfieldnames->size() > 0) {
+        if (vec_c.NumVectors() != subfieldnames->size()) {
+          Errors::Message msg;
+          msg << "While Visualizing \"" << fieldname << "\" a vector of lenth "
+              << vec_c.NumVectors() << ", subfieldnames of length " << (int)subfieldnames->size()
+              << " were provided.";
+          throw(msg);
+        }
 
-    } else {
-      std::vector<Key> full_names;
-      if (vec_c.NumVectors() > 1) {
+        std::vector<Key> full_names;
         for (int i = 0; i != vec_c.NumVectors(); ++i) {
-          Key full_name = fieldname + "." + std::to_string(i);
+          Key full_name = fieldname + "." + (*subfieldnames)[i];
           full_names.emplace_back(full_name);
         }
+        vis.WriteVector(vec_c, full_names, kind);
+
       } else {
-        full_names.emplace_back(fieldname);
+        std::vector<Key> full_names;
+        if (vec_c.NumVectors() > 1) {
+          for (int i = 0; i != vec_c.NumVectors(); ++i) {
+            Key full_name = fieldname + "." + std::to_string(i);
+            full_names.emplace_back(full_name);
+          }
+        } else {
+          full_names.emplace_back(fieldname);
+        }
+        vis.WriteVector(vec_c, full_names, kind);
       }
-      vis.WriteVector(vec_c, full_names);
     }
   }
 }

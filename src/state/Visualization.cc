@@ -118,7 +118,8 @@ Visualization::ReadParameters_()
 // -----------------------------------------------------------------------------
 void
 Visualization::WriteVector(const Epetra_MultiVector& vec,
-                           const std::vector<std::string>& names) const
+                           const std::vector<std::string>& names,
+                           AmanziMesh::Entity_kind kind) const
 {
   visualization_output_->WriteMultiVector(vec, names, AmanziMesh::Entity_kind::CELL);
 }
@@ -163,7 +164,7 @@ Visualization::WriteRegions()
       }
       std::vector<std::string> name;
       name.push_back(it->first);
-      WriteVector(reg, name);
+      WriteVector(reg, name, AmanziMesh::Entity_kind::CELL);
     }
   }
 }
@@ -184,7 +185,7 @@ Visualization::WritePartition()
 
     std::vector<std::string> name;
     name.push_back("partition");
-    WriteVector(reg, name);
+    WriteVector(reg, name, AmanziMesh::Entity_kind::CELL);
   }
 }
 

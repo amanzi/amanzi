@@ -19,7 +19,8 @@ namespace Amanzi {
 
 void
 VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec,
-                                    const std::vector<std::string>& names) const
+                                    const std::vector<std::string>& names,
+                                    AmanziMesh::Entity_kind kind) const
 {
   // replace names[0] domain index with a *
   KeyTriple dset_triple;
@@ -97,7 +98,7 @@ VisualizationDomainSet::FinalizeTimestep() const
     if (vecs.first->NumVectors() == 1) {
       Visualization::WriteVector(*(*vecs.first)(0), vecs.second[0]);
     } else {
-      Visualization::WriteVector(*vecs.first, vecs.second);
+      Visualization::WriteVector(*vecs.first, vecs.second, AmanziMesh::Entity_kind::CELL);
     }
   }
 

@@ -173,16 +173,16 @@ findMinimumBrent(const F& f, double a, double b, double tol, int* itr)
     xtol = tol * std::fabs(x) + tol;
     xtol2 = 2 * xtol;
 
-    c = (a + b) / 2;  // called m in the video
+    c = (a + b) / 2; // called m in the video
     if (std::fabs(x - c) <= xtol2 - (b - a) / 2) return c;
 
     (*itr)++;
 
-    // parabolic fit to f(x), f(v), f(w) 
-    // SPI behavior is poor if any of the three conditions holds 
+    // parabolic fit to f(x), f(v), f(w)
+    // SPI behavior is poor if any of the three conditions holds
     //   q = 0
     //   u is ourside of [a, b]
-    //   current p/q > 1/2 or previous p/q 
+    //   current p/q > 1/2 or previous p/q
     p = q = r = 0.0;
 
     if (std::fabs(e) > xtol) {
@@ -202,10 +202,9 @@ findMinimumBrent(const F& f, double a, double b, double tol, int* itr)
       u = x + d;
 
       // minimum estimate is too close to the end points
-      if ((u - a) < xtol2 || (b - u) < xtol2) 
-        d = (x < c) ? xtol : -xtol;
+      if ((u - a) < xtol2 || (b - u) < xtol2) d = (x < c) ? xtol : -xtol;
 
-    // golden-section interpolation
+      // golden-section interpolation
     } else {
       e = (x < c) ? b - x : a - x;
       d = ratio * e;
