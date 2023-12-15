@@ -870,6 +870,7 @@ Richards_PK::Initialize()
       // update mass flux
       op_matrix_->Init();
       op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
+      op_matrix_diff_->ApplyBCs(true, true, true);
       op_matrix_diff_->UpdateFlux(solution.ptr(), vol_flowrate_copy.ptr());
       vol_flowrate_copy->ScaleMasterAndGhosted(1.0 / molar_rho_);
     }

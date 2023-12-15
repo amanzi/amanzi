@@ -229,8 +229,6 @@ FlowMatrixFracture_PK::Initialize()
   op_tree_pc_->set_operator_block(1, 0, op_coupling10->global_operator());
 
   // -- configure preconditioner
-  sub_pks_[0]->my_pde(Operators::PDE_DIFFUSION)->ApplyBCs(true, true, true);
-
   std::string name = ti_list_->get<std::string>("preconditioner");
   std::string ls_name = ti_list_->get<std::string>("preconditioner enhancement", "none");
   auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
