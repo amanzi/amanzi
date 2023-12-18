@@ -200,6 +200,19 @@ Multiphase_PK::PopulateSecondaryBCs_()
   auto& bc_model_advg = op_bcs_[advection_gas_key_]->bc_model();
   auto& bc_value_advg = op_bcs_[advection_gas_key_]->bc_value();
 
+  auto& bc_model_etal = bc_model_pl;
+  auto& bc_value_etal = bc_value_pl;
+
+  for (int i = 0; i < bcs_.size(); ++i) {
+     if (bcs_[i]->get_bc_name() == "concentration" && bcs_[i]->component_id() == 0) { // FIX ME; icomp == 0 assumption; i.e., one additional component only apart from water
+       Key x_key_base = splitPhase(soln_names_[1]).first;
+       Key x_key = mergePhase(x_key_base, bcs_[i]->component_phase());
+
+       bc_model_etal = op_bcs_[x_key]->bc_model();
+       bc_value_etal = op_bcs_[x_key]->bc_value();
+    }
+  }
+
   bc_model_pg = bc_model_pl;
   bc_model_advl = bc_model_pl;
   bc_model_advg = bc_model_pg;
@@ -222,12 +235,25 @@ Multiphase_PK::PopulateSecondaryBCs_()
 
       bc_value_pg[f] = bc_value_pl[f] + wrm_->second[(*wrm_->first)[c]]->capillaryPressure(bc_value_sl[f]);
 
-      // FIX ME
-      bc_value_advl[f] = bc_value_pg[f];
-      bc_value_advl[f] = bc_value_pg[f];
+      // FIX ME: NEEDS TRANSMISSIBILITY (and below as well)
+      bc_value_advl[f] =  wrm_->second[(*wrm_->first)[c]]->k_relative(bc_value_sl[f], MULTIPHASE_PHASE_LIQUID);
+      bc_value_advl[f] *= bc_value_etal[f] * (1.0 / mu_l_) * 5e-20;
+
+      //if (bc_value_sl[f] < 1.0 - 1.e-12) { // i.e., if gas phase is present
+        double bc_sg = 1.0 - bc_value_sl[f];
+
+        //const auto& T = *S_->Get<CompositeVector)(temperature_key_, Tags::DEFAULT).ViewComponent("cell");
+        //double R = eos_plist_.get<double>("ideal gas constant", 8.31446261815324);
+        double bc_etag = bc_value_pg[f] / (303.0 * 8.31446261815324); // FIX ME temperature T, gas constant R needs to be extracted from xml file
+
+        bc_value_advg[f] =  wrm_->second[(*wrm_->first)[c]]->k_relative(bc_sg, MULTIPHASE_PHASE_GAS);
+        bc_value_advg[f] *= bc_etag * (1.0 / mu_g_) * 5e-20;
+    //}
 
     } else if (bc_model_pl[f] == Operators::OPERATOR_BC_NEUMANN) {
       bc_value_pg[f] = 0.0;
+      bc_value_advl[f] = 0.0;
+      bc_value_advg[f] = 0.0;
     }
   }
 }

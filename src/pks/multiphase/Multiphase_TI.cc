@@ -107,10 +107,17 @@ Multiphase_PK::FunctionalResidual(double t_old,
         // -- upwind cell-centered coefficient
         auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
         kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
-        upwind_->Compute(flux, bcnone, *kr);
+        //upwind_->Compute(flux, bcnone, *kr);
+
+        // debugging
+        /*
+        const auto& bc_model1 = op_bcs_[fname]->bc_model();
+        Operators::CellToBoundaryFaces(bc_model1, *kr);
+        upwind_->Compute(flux, bc_model1, *kr);
+        */
 
         // debugging  
-        /*
+        
         if (n == 1 && fname == "advection_liquid") {
           std::cout<<"Entered advection_liquid"<<std::endl;
           const auto& bc_model1 = op_bcs_[fname]->bc_model();
@@ -125,7 +132,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
         else {
           upwind_->Compute(flux, bcnone, *kr);
         }
-        */
+        
 
 
         // -- form diffusion operator for variable g
@@ -246,6 +253,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
 void
 Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
+
   // extract pointers to subvectors
   std::vector<Teuchos::RCP<const CompositeVector>> up;
   for (int i = 0; i < soln_names_.size(); ++i) { up.push_back(u->SubVector(i)->Data()); }
@@ -282,6 +290,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
   int nncps = (system_["constraint eqn"]) ? 1 : 0;
 
   Key fname, gname, key;
+
   for (int row = 0; row < neqns - nncps; ++row) {
     ModifyEvaluators(row);
     Key keyr = soln_names_[eqns_flattened_[row][0]];
@@ -322,7 +331,15 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
             kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
 
             auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
-            upwind_->Compute(flux, bcnone, *kr);
+
+            // debugging
+            if (row == 1) {
+              const auto& bc_model1 = op_bcs_[fname]->bc_model();
+              Operators::CellToBoundaryFaces(bc_model1, *kr);
+              upwind_->Compute(flux, bc_model1, *kr);
+            } else {
+              upwind_->Compute(flux, bcnone, *kr);
+            }
 
             pde->Setup(Kptr, kr, Teuchos::null);
             pde->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);

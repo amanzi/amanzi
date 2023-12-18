@@ -883,7 +883,7 @@ Multiphase_PK::Initialize()
     //upwind_->Compute(*flux, bcnone, *kr);
 
     // debugging
-    const auto& bc_model1 = op_bcs_[advection_liquid_key_]->bc_model();
+    const auto& bc_model1 = op_bcs_[adv_names_[phase]]->bc_model();
     Operators::CellToBoundaryFaces(bc_model1, *kr);
     upwind_->Compute(*flux, bc_model1, *kr);
 
@@ -1025,7 +1025,11 @@ Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
     kr_c = *S_->Get<CV_t>(adv_names_[phase]).ViewComponent("cell");
     auto flux = S_->GetPtrW<CV_t>(flux_names_[phase], Tags::DEFAULT, passwd_);
 
-    upwind_->Compute(*flux, bcnone, *kr);
+    // debugging
+    const auto& bc_model1 = op_bcs_[adv_names_[phase]]->bc_model();
+    Operators::CellToBoundaryFaces(bc_model1, *kr);
+
+    upwind_->Compute(*flux, bc_model1, *kr);
 
     auto pdeK = pde_diff_K_[phase];
     pdeK->Setup(Kptr, kr, Teuchos::null);
