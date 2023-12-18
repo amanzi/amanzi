@@ -200,18 +200,8 @@ Multiphase_PK::PopulateSecondaryBCs_()
   auto& bc_model_advg = op_bcs_[advection_gas_key_]->bc_model();
   auto& bc_value_advg = op_bcs_[advection_gas_key_]->bc_value();
 
-  auto& bc_model_etal = bc_model_pl;
-  auto& bc_value_etal = bc_value_pl;
-
-  for (int i = 0; i < bcs_.size(); ++i) {
-     if (bcs_[i]->get_bc_name() == "concentration" && bcs_[i]->component_id() == 0) { // FIX ME; icomp == 0 assumption; i.e., one additional component only apart from water
-       Key x_key_base = splitPhase(soln_names_[1]).first;
-       Key x_key = mergePhase(x_key_base, bcs_[i]->component_phase());
-
-       bc_model_etal = op_bcs_[x_key]->bc_model();
-       bc_value_etal = op_bcs_[x_key]->bc_value();
-    }
-  }
+  auto& bc_model_etal = op_bcs_[mol_density_liquid_key_]->bc_model();
+  auto& bc_value_etal = op_bcs_[mol_density_liquid_key_]->bc_value();
 
   bc_model_pg = bc_model_pl;
   bc_model_advl = bc_model_pl;
