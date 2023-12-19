@@ -473,6 +473,7 @@ Richards_PK::Setup()
       elist.set<std::string>("aperture key", aperture_key_)
         .set<std::string>("pressure key", pressure_key_)
         .set<std::string>("tag", "");
+      elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
       auto eval = Teuchos::rcp(new ApertureModelEvaluator(elist, fam));
       S_->SetEvaluator(aperture_key_, Tags::DEFAULT, eval);

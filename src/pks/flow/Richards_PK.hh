@@ -113,7 +113,11 @@ class Richards_PK : public Flow_PK {
 
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
-  virtual void ChangedSolution() override { pressure_eval_->SetChanged(); }
+  virtual void ChangedSolution() override
+  {
+    pressure_eval_->SetChanged();
+    if (multiscale_porosity_) { pressure_msp_eval_->SetChanged(); }
+  }
 
   // -- returns the number of linear iterations.
   virtual int ReportStatistics() override { return op_preconditioner_->apply_calls(); }

@@ -48,8 +48,6 @@ Richards_PK::FunctionalResidual(double t_old,
   // verify that u_new = solution@default
   Solution_to_State(*u_new, Tags::DEFAULT);
 
-  std::vector<int>& bc_model = op_bc_->bc_model();
-
   if (S_->HasEvaluator(viscosity_liquid_key_, Tags::DEFAULT)) {
     S_->GetEvaluator(viscosity_liquid_key_).Update(*S_, "flow");
   }
@@ -60,11 +58,12 @@ Richards_PK::FunctionalResidual(double t_old,
   // upwind diffusion coefficient and its derivative
   vol_flowrate_copy->ScatterMasterToGhosted("face");
 
-  pressure_eval_->SetChanged();
   auto& alpha = S_->GetW<CV_t>(alpha_key_, Tags::DEFAULT, alpha_key_);
   S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
 
   if (!flow_on_manifold_) {
+    std::vector<int>& bc_model = op_bc_->bc_model();
+
     *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
     upwind_->Compute(*vol_flowrate_copy, bc_model, *alpha_upwind_);
@@ -94,7 +93,6 @@ Richards_PK::FunctionalResidual(double t_old,
   // add accumulation term
   Epetra_MultiVector& f_cell = *f->Data()->ViewComponent("cell");
 
-  pressure_eval_->SetChanged();
   S_->GetEvaluator(porosity_key_).Update(*S_, "flow");
   const auto& phi_c = *S_->Get<CV_t>(porosity_key_).ViewComponent("cell");
 
@@ -114,10 +112,7 @@ Richards_PK::FunctionalResidual(double t_old,
   if (vapor_diffusion_) { Functional_AddVaporDiffusion_(f->Data()); }
 
   // add water storage in matrix
-  if (multiscale_porosity_) {
-    pressure_msp_eval_->SetChanged();
-    Functional_AddMassTransferMatrix_(dt_, f->Data());
-  }
+  if (multiscale_porosity_) { Functional_AddMassTransferMatrix_(dt_, f->Data()); }
 
   // calculate normalized residual
   functional_max_norm = 0.0;
@@ -349,10 +344,10 @@ Richards_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<
 void
 Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
+  double t_old = tp - dtp;
+
   // verify that u = solution@default
   Solution_to_State(*u, Tags::DEFAULT);
-
-  double t_old = tp - dtp;
 
   std::vector<int>& bc_model = op_bc_->bc_model();
   // std::vector<double>& bc_value = op_bc_->bc_value();
@@ -370,7 +365,6 @@ Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, d
   vol_flowrate_copy->ScatterMasterToGhosted("face");
 
   // diffusion coefficient and its derivative
-  pressure_eval_->SetChanged();
   auto& alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
   S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
 
