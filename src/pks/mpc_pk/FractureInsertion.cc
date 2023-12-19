@@ -102,13 +102,13 @@ FractureInsertion::InitMatrixCellToFractureCell()
   inds_fracture_ = std::make_shared<std::vector<std::vector<int>>>(2 * ncells_owned_f);
   values_ = std::make_shared<std::vector<double>>(2 * ncells_owned_f, 0.0);
 
-  int np(0);
+  int np(0), ierr(0);
 
   for (int c = 0; c < ncells_owned_f; ++c) {
     int f = mesh_fracture_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
     auto cells = mesh_matrix_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
-    AMANZI_ASSERT(ncells == 2);
+    if (ncells != 2) ierr = 1;
 
     for (int k = 0; k < ncells; ++k) {
       (*inds_matrix_)[np].resize(1);
@@ -117,6 +117,14 @@ FractureInsertion::InitMatrixCellToFractureCell()
       (*inds_fracture_)[np][0] = c;
       np++;
     }
+  }
+
+  // if at least one process errors, all must terminate
+  int recv = 0;
+  mesh_matrix_->getComm()->MaxAll(&ierr, &recv, 1);
+  if (recv != 0) {
+    Errors::Message msg("A fracture face has only one attached cell, insteaf of two.");
+    Exceptions::amanzi_throw(msg);
   }
 }
 

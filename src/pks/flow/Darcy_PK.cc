@@ -403,7 +403,7 @@ Darcy_PK::Initialize()
   op_diff_->SetBCs(op_bc_, op_bc_);
   op_ = op_diff_->global_operator();
 
-  // -- accumulation operator 
+  // -- accumulation operator
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op_));
   op_->CreateCheckPoint();
 
