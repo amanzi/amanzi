@@ -503,7 +503,7 @@ InputConverterU::TranslateState_()
                                          .sublist("function")
                                          .sublist(reg_str)
                                          .set<Teuchos::Array<std::string>>("regions", regions)
-                                         .set<std::string>("component", "cell")
+                                         .set<std::string>("component", "*")
                                          .sublist("function");
 
         TranslateFunctionGradient_(p, grad, refc, icfn);
