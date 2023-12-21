@@ -563,18 +563,10 @@
       </ParameterList>
 
       <ParameterList name="viscosity_liquid">
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-        <Parameter name="constant in time" type="bool" value="true"/>
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0e-03"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
+        <Parameter name="evaluator type" type="string" value="viscosity"/>
+        <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water FEHM"/>
         </ParameterList>
       </ParameterList>
 

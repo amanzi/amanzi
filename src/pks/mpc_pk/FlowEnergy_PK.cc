@@ -109,40 +109,27 @@ FlowEnergy_PK::Setup()
 
   // Fields for liquid
   // -- internal energy
-  S_->Require<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT, ie_liquid_key_)
-    .SetMesh(mesh_)
-    ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
-    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(ie_liquid_key_, Tags::DEFAULT);
+  if (!S_->HasRecord(ie_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT, ie_liquid_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
+    S_->RequireEvaluator(ie_liquid_key_, Tags::DEFAULT);
+  }
 
 
   // -- molar and mass density
-  S_->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
-    .SetMesh(mesh_)
-    ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
-    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(mol_density_liquid_key_, Tags::DEFAULT);
-
-  S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
-  if (S_->GetEvaluator(mass_density_liquid_key_)
-        .IsDifferentiableWRT(*S_, pressure_key_, Tags::DEFAULT)) {
-    S_->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_,
-                                       Tags::DEFAULT,
-                                       pressure_key_,
-                                       Tags::DEFAULT,
-                                       mass_density_liquid_key_)
-      .SetGhosted();
+  if (!S_->HasRecord(mol_density_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
+    S_->RequireEvaluator(mol_density_liquid_key_, Tags::DEFAULT);
   }
 
-  // -- viscosity
-  S_->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, viscosity_liquid_key_)
-    .SetMesh(mesh_)
-    ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
-    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(viscosity_liquid_key_, Tags::DEFAULT);
+  S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
 
   // inform other PKs about strong coupling
   // -- flow
@@ -166,9 +153,6 @@ FlowEnergy_PK::Setup()
     S_->Require<CV_t, CVS_t>(prev_wc_key_, Tags::COPY, "flow");
     S_->GetRecordW(prev_wc_key_, Tags::COPY, "flow").set_initialized();
   }
-
-  // set units
-  S_->GetRecordSetW(viscosity_liquid_key_).set_units("Pa*s");
 }
 
 

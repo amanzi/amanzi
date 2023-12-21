@@ -187,8 +187,10 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
   fev.sublist(mol_density_liquid_key).set<std::string>("pressure key", pressure_liquid_key);
 
   // -- viscosity
-  double viscosity = fic.sublist("const_fluid_viscosity").template get<double>("value");
-  AddIndependentFieldEvaluator_(fev, viscosity_liquid_key, "All", "cell", viscosity);
+  if (!fev.isParameter(viscosity_liquid_key)) {
+    double viscosity = fic.sublist("const_fluid_viscosity").template get<double>("value");
+    AddIndependentFieldEvaluator_(fev, viscosity_liquid_key, "All", "cell", viscosity);
+  }
 
   // -- diffusion
   auto diff_l = out_list.sublist("molecular diffusion")

@@ -276,6 +276,25 @@ Darcy_PK::Setup()
     }
   }
 
+  // to force other PKs to use density, we define it here
+  Key mol_density_key = Keys::getKey(domain_, "molar_density_liquid");
+  Key mass_density_key = Keys::getKey(domain_, "mass_density_liquid");
+
+  double rho = S_->ICList().sublist("const_fluid_density").get<double>("value");
+  double molar_rho = rho / CommonDefs::MOLAR_MASS_H2O;
+  if (S_->HasEvaluator(mol_density_key, Tags::DEFAULT))
+    AddDefaultIndependentEvaluator(S_, mol_density_key, Tags::DEFAULT, molar_rho);
+
+  if (!S_->HasRecord(mass_density_key)) {
+    S_->Require<CV_t, CVS_t>(mass_density_key, Tags::DEFAULT, mass_density_key)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
+
+    AddDefaultIndependentEvaluator(S_, mass_density_key, Tags::DEFAULT, rho);
+  }
+
   // save frequently used evaluators
   pressure_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
     S_->GetEvaluatorPtr(pressure_key_, Tags::DEFAULT));

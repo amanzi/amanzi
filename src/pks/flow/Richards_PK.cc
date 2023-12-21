@@ -302,30 +302,11 @@ Richards_PK::Setup()
 
   // -- viscosity: if not requested by any PK, we request its constant value.
   if (!S_->HasRecord(viscosity_liquid_key_)) {
-    if (!S_->HasRecord("const_fluid_viscosity")) {
-      S_->Require<double>("const_fluid_viscosity", Tags::DEFAULT, "state");
-    }
     S_->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, viscosity_liquid_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
-
-    double mu = glist_->sublist("state")
-                  .sublist("initial conditions")
-                  .sublist("const_fluid_viscosity")
-                  .get<double>("value");
-
-    std::vector<std::string> components({ "cell", "boundary_face" });
-    Teuchos::ParameterList& eval = S_->FEList().sublist(viscosity_liquid_key_);
-    eval.sublist("function")
-      .sublist("DOMAIN")
-      .set<std::string>("region", "All")
-      .set<Teuchos::Array<std::string>>("components", components)
-      .sublist("function")
-      .sublist("function-constant")
-      .set<double>("value", mu);
-    eval.set<std::string>("evaluator type", "independent variable");
 
     S_->RequireEvaluator(viscosity_liquid_key_, Tags::DEFAULT);
   }
@@ -349,6 +330,16 @@ Richards_PK::Setup()
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
     S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
+
+    if (S_->GetEvaluator(mass_density_liquid_key_)
+          .IsDifferentiableWRT(*S_, pressure_key_, Tags::DEFAULT)) {
+      S_->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_,
+                                         Tags::DEFAULT,
+                                         pressure_key_,
+                                         Tags::DEFAULT,
+                                         mass_density_liquid_key_)
+        .SetGhosted();
+    }
   }
 
   // -- saturation
@@ -389,10 +380,6 @@ Richards_PK::Setup()
 
     Teuchos::ParameterList elist(relperm_key_);
     elist.set<std::string>("relative permeability key", relperm_key_).set<std::string>("tag", "");
-
-    S_->RequireDerivative<CV_t, CVS_t>(
-        relperm_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, relperm_key_)
-      .SetGhosted();
 
     auto eval = Teuchos::rcp(new Flow::RelPermEvaluator(elist, S_.ptr(), wrm_));
     S_->SetEvaluator(relperm_key_, Tags::DEFAULT, eval);

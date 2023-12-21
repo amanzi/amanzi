@@ -263,6 +263,11 @@ InputConverterU::TranslateState_()
                                   "molar density key",
                                   "eos",
                                   "density");
+      AddSecondaryFieldEvaluator_(out_ev,
+                                  Keys::getKey("domain", "viscosity_liquid"),
+                                  "viscosity key",
+                                  "viscosity",
+                                  "viscosity");
     }
     if (phases_[GAS].active && phases_[GAS].dissolved.size() > 0) {
       AddSecondaryFieldEvaluator_(
@@ -450,6 +455,11 @@ InputConverterU::TranslateState_()
                                   "molar density key",
                                   "eos",
                                   "density");
+      AddSecondaryFieldEvaluator_(out_ev,
+                                  Keys::getKey("fracture", "viscosity_liquid"),
+                                  "viscosity key",
+                                  "viscosity",
+                                  "viscosity");
     }
   }
 

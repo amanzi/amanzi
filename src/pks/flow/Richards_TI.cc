@@ -256,7 +256,7 @@ Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& kvapo
 void
 Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<CompositeVector> f)
 {
-  double mu = S_->Get<double>("const_fluid_viscosity");
+  const auto& mu = *S_->Get<CV_t>(viscosity_liquid_key_).ViewComponent("cell");
 
   const auto& prf = *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
   auto& prm = *S_->GetW<CV_t>(pressure_msp_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
@@ -286,7 +286,7 @@ Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Composite
 
     int num_itrs(100);
     wcm1 = msp_->second[(*msp_->first)[c]]->WaterContentMatrix(
-      prf0, prm0, wcm0, dt, phi0, molar_rho_, mu, num_itrs);
+      prf0, prm0, wcm0, dt, phi0, molar_rho_, mu[0][c], num_itrs);
 
     fc[0][c] += (wcm1(0) - wcm0(0)) / dt;
 
