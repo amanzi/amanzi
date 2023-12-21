@@ -5,6 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+           Naren Vohra (vohra@lanl.gov)
 */
 
 /*
@@ -185,6 +186,7 @@ Multiphase_PK::CheckCompatibilityBCs(const Key& keyr, const Key& gname)
 void
 Multiphase_PK::PopulateSecondaryBCs_()
 {
+  
   auto& bc_model_pg = op_bcs_[pressure_gas_key_]->bc_model();
   auto& bc_value_pg = op_bcs_[pressure_gas_key_]->bc_value();
 
@@ -210,6 +212,18 @@ Multiphase_PK::PopulateSecondaryBCs_()
   const auto& sl_c =
     *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
+  // ideal gas law parameters and variables
+  auto T = *S_->GetPtr<CompositeVector>(temperature_key_, Tags::DEFAULT);
+  const Epetra_MultiVector& T_c = *T.ViewComponent("cell", true);
+
+  auto eos_parameter_list = glist_->sublist("state").sublist("evaluators").sublist("molar_density_gas").sublist("EOS parameters");
+  double R;
+  if(eos_parameter_list.isParameter("ideal gas constant")) {
+    R = eos_parameter_list.get<double>("ideal gas constant");
+  } else {
+    R = 8.31446261815324;
+  }
+
   for (int f = 0; f != nfaces_wghost_; ++f) {
     if (bc_model_pl[f] == Operators::OPERATOR_BC_DIRICHLET) {
       int c = getFaceOnBoundaryInternalCell(*mesh_, f);
@@ -224,21 +238,17 @@ Multiphase_PK::PopulateSecondaryBCs_()
       */
 
       bc_value_pg[f] = bc_value_pl[f] + wrm_->second[(*wrm_->first)[c]]->capillaryPressure(bc_value_sl[f]);
-
-      // FIX ME: NEEDS TRANSMISSIBILITY (and below as well)
+      
       bc_value_advl[f] =  wrm_->second[(*wrm_->first)[c]]->k_relative(bc_value_sl[f], MULTIPHASE_PHASE_LIQUID);
-      bc_value_advl[f] *= bc_value_etal[f] * (1.0 / mu_l_) * 5e-20;
+      bc_value_advl[f] *= bc_value_etal[f] * (1.0 / mu_l_);
 
-      //if (bc_value_sl[f] < 1.0 - 1.e-12) { // i.e., if gas phase is present
-        double bc_sg = 1.0 - bc_value_sl[f];
+      double bc_sg = 1.0 - bc_value_sl[f]; // need an IF statement here for the presence of gas phase
 
-        //const auto& T = *S_->Get<CompositeVector)(temperature_key_, Tags::DEFAULT).ViewComponent("cell");
-        //double R = eos_plist_.get<double>("ideal gas constant", 8.31446261815324);
-        double bc_etag = bc_value_pg[f] / (303.0 * 8.31446261815324); // FIX ME temperature T, gas constant R needs to be extracted from xml file
 
-        bc_value_advg[f] =  wrm_->second[(*wrm_->first)[c]]->k_relative(bc_sg, MULTIPHASE_PHASE_GAS);
-        bc_value_advg[f] *= bc_etag * (1.0 / mu_g_) * 5e-20;
-    //}
+      double bc_etag = bc_value_pg[f] / (T_c[0][c] * R); 
+
+      bc_value_advg[f] =  wrm_->second[(*wrm_->first)[c]]->k_relative(bc_sg, MULTIPHASE_PHASE_GAS);
+      bc_value_advg[f] *= bc_etag * (1.0 / mu_g_);
 
     } else if (bc_model_pl[f] == Operators::OPERATOR_BC_NEUMANN) {
       bc_value_pg[f] = 0.0;
