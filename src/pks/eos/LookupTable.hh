@@ -50,7 +50,6 @@ class LookupTable {
   std::vector<std::vector<double>> F_;
 };
 
-
 } // namespace AmanziEOS
 } // namespace Amanzi
 

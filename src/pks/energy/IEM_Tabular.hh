@@ -20,9 +20,10 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "IEM.hh"
 #include "Factory.hh"
-#include "LookupTable.hh"
+#include "LookupTableFactory.hh"
+
+#include "IEM.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -30,10 +31,7 @@ namespace Energy {
 // Equation of State model
 class IEM_Tabular : public IEM {
  public:
-  IEM_Tabular(Teuchos::ParameterList& plist)
-  {
-    table_ = Teuchos::rcp(new AmanziEOS::LookupTable(plist));
-  }
+  IEM_Tabular(Teuchos::ParameterList& plist) { table_ = AmanziEOS::CreateLookupTable(plist); }
 
   virtual double InternalEnergy(double T, double p) override
   {

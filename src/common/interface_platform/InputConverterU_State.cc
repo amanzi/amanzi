@@ -1048,9 +1048,10 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
             .sublist(reg_str)
             .set<Teuchos::Array<std::string>>("regions", regions)
             .sublist("IEM parameters")
-            .set<std::string>("iem type", "tabular")
+            .set<std::string>("iem type", "lookup table")
             .set<std::string>("table name", eos_lookup_table_)
-            .set<std::string>("field name", "internal_energy");
+            .set<std::string>("field name", "internal_energy")
+            .set<std::string>("format", "Amanzi");
         }
       }
     }
@@ -1357,9 +1358,9 @@ InputConverterU::AddSecondaryFieldEvaluator_(Teuchos::ParameterList& out_ev,
     out_ev.sublist(field)
       .sublist("EOS parameters")
       .set<std::string>("eos type", "lookup table")
-      .set<std::string>("format", "Amanzi")
       .set<std::string>("table name", eos_lookup_table_)
-      .set<std::string>("field name", eos_table_name);
+      .set<std::string>("field name", eos_table_name)
+      .set<std::string>("format", "Amanzi");
   }
 
   // extensions

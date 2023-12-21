@@ -134,19 +134,21 @@
           <ParameterList name="TopRegion">
             <Parameter name="regions" type="Array(string)" value="{TopRegion}"/>
             <ParameterList name="IEM parameters">
-              <Parameter name="iem type" type="string" value="tabular"/>
+              <Parameter name="iem type" type="string" value="lookup table"/>
               <Parameter name="heat capacity" type="double" value="7.60999999999999943e+01"/>
               <Parameter name="table name" type="string" value="h2o.eos"/>
               <Parameter name="field name" type="string" value="internal_energy"/>
+              <Parameter name="format" type="string" value="Amanzi"/>
             </ParameterList>
           </ParameterList>
           <ParameterList name="BottomRegion">
             <Parameter name="regions" type="Array(string)" value="{BottomRegion}"/>
             <ParameterList name="IEM parameters">
-              <Parameter name="iem type" type="string" value="tabular"/>
+              <Parameter name="iem type" type="string" value="lookup table"/>
               <Parameter name="heat capacity" type="double" value="7.62e+01"/>
               <Parameter name="table name" type="string" value="h2o.eos"/>
               <Parameter name="field name" type="string" value="internal_energy"/>
+              <Parameter name="format" type="string" value="Amanzi"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -332,7 +334,7 @@
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
             <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-linear">
                 <Parameter name="y0" type="double" value="1.01325e+05"/>
