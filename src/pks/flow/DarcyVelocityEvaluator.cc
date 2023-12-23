@@ -85,9 +85,9 @@ DarcyVelocityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVec
       int g = fmap.FirstPointInElement(f);
 
       // the case of two DOFs on the face:
-      if (fmap.ElementSize(f) == 2) {
+      if (fmap.ElementSize(f) > 1) {
         auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
-        if (cells.size() == 2) { g += Operators::UniqueIndexFaceToCells(*mesh, f, c); }
+        if (cells.size() > 1) { g += Operators::UniqueIndexFaceToCells(*mesh, f, c); }
       }
       solution[n].Reshape(dim, 0);
       solution[n](0) = flux[0][g];
