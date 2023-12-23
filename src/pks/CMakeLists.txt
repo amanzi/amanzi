@@ -93,6 +93,7 @@ if (ENABLE_AmanziPhysicsModule)
   add_subdirectory(energy)
   add_subdirectory(multiphase)
   add_subdirectory(navier_stokes)
+  add_subdirectory(mechanics)
 endif()
 
   # chemistry should be processed before transport

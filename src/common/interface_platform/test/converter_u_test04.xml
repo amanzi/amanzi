@@ -20,7 +20,7 @@
   <process_kernels>
     <flow model="saturated" state="on"/>
     <transport state="on"/>
-    <chemistry database="test/converter_u_test4.dat" engine="pflotran" state="on"/>
+    <chemistry database="test/converter_u_test04.dat" engine="pflotran" state="on"/>
   </process_kernels>
 
   <phases>

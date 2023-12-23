@@ -258,6 +258,10 @@ class InputConverterU : public InputConverter {
                                        std::vector<std::string>& regions,
                                        Teuchos::ParameterList& out_list);
 
+  // -- mechanics
+  Teuchos::ParameterList TranslateMechanics_(const std::string& domain);
+  Teuchos::ParameterList TranslateMechanicsBCs_(const std::string& domain);
+
   // -- backward compatibility
   void TranslateTransportBCsAmanziGeochemistry_(Teuchos::ParameterList& out_list);
   void TranslateStateICsAmanziGeochemistry_(Teuchos::ParameterList& out_list,

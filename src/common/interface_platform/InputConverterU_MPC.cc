@@ -248,6 +248,13 @@ InputConverterU::TranslateCycleDriverNew_()
         pk_model_["multiphase"].push_back("multiphase");
         pk_master_["multiphase"] = true;
         transient_model += 32;
+
+      } else if (strcmp(tagname, "mechanics") == 0) {
+        model = GetAttributeValueS_(jnode, "model");
+        pk_model_["mechanics"].push_back(model);
+        pk_master_["mechanics"] = true;
+        GetAttributeValueS_(jnode, "state", "on");
+        transient_model += 64;
       }
     }
 
@@ -334,6 +341,11 @@ InputConverterU::TranslateCycleDriverNew_()
       tmp += "multiphase";
       PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
       break;
+    case 64:
+      pk_master_["mechanics"] = true;
+      tmp += "mechanics";
+      PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
+      break;
     default:
       msg << "The model with id=" << transient_model << " is not supported by the MPC.\n";
       Exceptions::amanzi_throw(msg);
@@ -397,6 +409,8 @@ InputConverterU::PopulatePKTree_(Teuchos::ParameterList& pk_tree, const std::str
     tmp.set<std::string>("PK type", "shallow water");
   } else if (basename == "multiphase") {
     tmp.set<std::string>("PK type", *pk_model_["multiphase"].rbegin());
+  } else if (basename == "mechanics") {
+    tmp.set<std::string>("PK type", *pk_model_["mechanics"].rbegin());
     // coupled model
   } else if (basename == "coupled flow") {
     tmp.set<std::string>("PK type", "darcy matrix fracture");
