@@ -154,7 +154,7 @@ TEST(FLOW_BOUNDARY_SOLVER)
   int nfaces =
     mesh1->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    auto cells = mesh1->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh1->getFaceCells(f);
     int dir;
     const Point& norm = mesh1->getFaceNormal(f, cells[0], &dir);
     if ((cells.size() == 1) && (norm[2] * dir > 0)) {
@@ -167,7 +167,7 @@ TEST(FLOW_BOUNDARY_SOLVER)
 
   nfaces = mesh2->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    auto cells = mesh2->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh2->getFaceCells(f);
     int dir;
     const Point& norm = mesh2->getFaceNormal(f, cells[0], &dir);
     if ((cells.size() == 1) && (norm[2] * dir > 0)) {

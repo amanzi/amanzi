@@ -78,7 +78,7 @@ TEST(MPC_DRIVER_ENERGY_MATRIX_FRACTURE)
   auto mesh_fracture_mf = Teuchos::rcp(
     new MeshExtractedManifold(mesh, "fracture", AmanziMesh::FACE, comm, gm, mesh_list));
   auto mesh_fracture = Teuchos::rcp(
-    new Mesh(mesh_fracture_mf, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), mesh_list));
+    new Mesh(mesh_fracture_mf, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), mesh_list));
 
   S->RegisterMesh("fracture", mesh_fracture);
   mesh_fracture->setParentMesh(mesh);

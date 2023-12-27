@@ -21,9 +21,9 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 std::pair<double, AmanziGeometry::Point>
-MeshFrameworkColumnAlgorithms::computeCellGeometry(const Mesh& mesh, const Entity_ID c) const
+MeshColumnAlgorithms::computeCellGeometry(const MeshHost& mesh, const Entity_ID c) const
 {
-  return MeshAlgorithms::computeMeshColumnCellGeometry(mesh, c);
+  return Impl::computeMeshColumnCellGeometry(mesh, c);
 }
 
 // -----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ MeshFrameworkColumn::computeSpecialNodeCoordinates_()
 
   // Create a cached object, so that we can use columns.
   MeshCache<MemSpace_kind::HOST> col3D_mesh(
-    col3D_mesh_, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null);
+    col3D_mesh_, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null);
   col3D_mesh.buildColumns();
 
   // Get the ordered face indexes of the column

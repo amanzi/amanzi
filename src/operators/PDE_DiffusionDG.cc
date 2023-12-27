@@ -124,7 +124,7 @@ PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
 
   // stability terms
   for (int f = 0; f != nfaces_owned; ++f) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int c1 = cells[0];
     int c2 = (cells.size() > 1) ? cells[1] : c1;
 
@@ -161,7 +161,7 @@ PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET || bc_model[f] == OPERATOR_BC_NEUMANN) {
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f);
       int c = cells[0];
 
       const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);

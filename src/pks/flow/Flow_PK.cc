@@ -20,7 +20,7 @@
 
 #include "EvaluatorMultiplicativeReciprocal.hh"
 #include "Mesh.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
@@ -697,7 +697,7 @@ Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
   missed_bc_faces_ = 0;
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] == Operators::OPERATOR_BC_NONE) {
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f);
       int ncells = cells.size();
 
       if (ncells == 1) {
@@ -842,13 +842,8 @@ Flow_PK::DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells,
 {
   auto& fmap = ufaces.Map();
 
-  int nfaces =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int ncells_owned =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-
-  for (int f = 0; f < nfaces; f++) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+  for (int f = 0; f < nfaces_owned; f++) {
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     double face_value = 0.0;

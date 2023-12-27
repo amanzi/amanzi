@@ -50,6 +50,8 @@ class MeshSurfaceCell : public MeshFramework {
       return parent_face_;
     } else if (kind == Entity_kind::NODE) {
       return node_parents_[entid];
+    } else if (kind == Entity_kind::FACE) {
+      return -1; // this is wrong, but should not ever be used.
     } else {
       Errors::Message msg;
       msg << "MeshSurfaceCell: Cannot getEntityParent() for Entity kind " << to_string(kind);
@@ -85,16 +87,12 @@ class MeshSurfaceCell : public MeshFramework {
   // Cells of type 'ptype' connected to a node - The order of cells is
   // not guaranteed to be the same for corresponding nodes on
   // different processors
-  virtual void getNodeCells(const Entity_ID nodeid,
-                            const Parallel_kind ptype,
-                            cEntity_ID_View& cellids) const override;
+  virtual void getNodeCells(const Entity_ID nodeid, cEntity_ID_View& cellids) const override;
 
   // Faces of type 'ptype' connected to a node - The order of faces is
   // not guarnateed to be the same for corresponding nodes on
   // different processors
-  virtual void getNodeFaces(const Entity_ID nodeid,
-                            const Parallel_kind ptype,
-                            cEntity_ID_View& faceids) const override;
+  virtual void getNodeFaces(const Entity_ID nodeid, cEntity_ID_View& faceids) const override;
 
   // Node coordinates - 3 in 3D and 2 in 2D
   virtual AmanziGeometry::Point getNodeCoordinate(const Entity_ID nodeid) const override
@@ -120,13 +118,11 @@ class MeshSurfaceCell : public MeshFramework {
   // cell_get_faces_and_dirs method of this class
   virtual void getCellFacesAndDirs(const Entity_ID cellid,
                                    cEntity_ID_View& faceids,
-                                   cEntity_Direction_View* const dirs) const override;
+                                   cDirection_View* const dirs) const override;
 
   // Cells connected to a face - this function is implemented in each
   // mesh framework. The results are cached in the base class
-  virtual void getFaceCells(const Entity_ID faceid,
-                            const Parallel_kind ptype,
-                            cEntity_ID_View& cellids) const override;
+  virtual void getFaceCells(const Entity_ID faceid, cEntity_ID_View& cellids) const override;
 
  protected:
   Teuchos::RCP<const MeshFramework> parent_;

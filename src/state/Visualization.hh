@@ -85,9 +85,6 @@ class Visualization : public IOEvent {
   void AddDomain(const std::string& name);
   bool WritesDomain(const std::string& name) const;
 
-  Tag get_tag() const { return tag_; }
-  void set_tag(const Tag& tag) { tag_ = tag; }
-
   // public interface for coordinator clients
   void CreateFiles(bool include_io_set = true);
   void CreateTimestep(double time, int cycle, const std::string& tag);
@@ -112,7 +109,6 @@ class Visualization : public IOEvent {
   std::vector<std::string> domains_;
   std::string my_units_;
   std::string name_;
-  Tag tag_;
   bool time_unit_written_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

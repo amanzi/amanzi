@@ -43,7 +43,7 @@ WriteVis(Visualization& vis, State& S)
 {
   if (!vis.is_disabled()) {
     // Create the new time step
-    const auto& tag = vis.get_tag();
+    Tag tag;
     vis.CreateTimestep(S.get_time(), S.get_cycle(), tag.get());
 
     for (auto r = S.data_begin(); r != S.data_end(); ++r) {
@@ -65,7 +65,6 @@ WriteVis(Visualization& vis, State& S)
 
           // -- write default tag if it exists, else write another tag with the
           // -- same time
-          Tag tag;
           if (r->second->HasRecord(tag)) {
             if (S.HasEvaluator(r->first, tag)) { S.GetEvaluator(r->first, tag).Update(S, "vis"); }
             r->second->WriteVis(vis, &tag);
@@ -275,9 +274,9 @@ DeformCheckpointMesh(State& S, Key domain)
 
     // deform the mesh
     if (Keys::starts_with(domain, "column"))
-      AmanziMesh::MeshAlgorithms::deform(*write_access_mesh, nodeids, new_pos);
+      AmanziMesh::deform(*write_access_mesh, nodeids, new_pos);
     else
-      AmanziMesh::MeshAlgorithms::deform(*write_access_mesh, nodeids, new_pos);
+      AmanziMesh::deform(*write_access_mesh, nodeids, new_pos);
   } else {
     Errors::Message msg;
     msg << "DeformCheckpointMesh: unable to deform mesh because field \"" << vc_key

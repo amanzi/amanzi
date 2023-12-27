@@ -27,7 +27,7 @@
 #include "GMVMesh.hh"
 #include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "VerboseObject.hh"
 
 // Operators
@@ -79,8 +79,7 @@ TEST(UPWIND_FLUX_MANIFOLDS)
     auto mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
     auto mesh_fw =
       Teuchos::rcp(new MeshExtractedManifold(mesh3D, setname, AmanziMesh::FACE, comm, gm, plist));
-    auto mesh =
-      Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new MeshFrameworkAlgorithms()), Teuchos::null));
+    auto mesh = Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
 
     int ncells_wghost = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
     int nfaces_owned = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
@@ -132,7 +131,7 @@ TEST(UPWIND_FLUX_MANIFOLDS)
       int g = fmap.FirstPointInElement(f);
       int ndofs = fmap.ElementSize(f);
 
-      auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh->getFaceCells(f);
       AMANZI_ASSERT(cells.size() == ndofs);
 
       for (int i = 0; i < ndofs; ++i) {
@@ -151,7 +150,7 @@ TEST(UPWIND_FLUX_MANIFOLDS)
     // calculate errors
     double error(0.0);
     for (int f = 0; f < nfaces_owned; f++) {
-      auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh->getFaceCells(f);
 
       const Point& xf = mesh->getFaceCentroid(f);
       double exact = Value(xf);

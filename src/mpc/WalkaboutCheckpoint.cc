@@ -28,7 +28,7 @@
 #include "errors.hh"
 #include "Darcy_PK.hh"
 #include "Mesh.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
 #include "ParallelCommunication.hh"
 #include "ReconstructionCellLinear.hh"

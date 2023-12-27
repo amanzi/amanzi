@@ -303,7 +303,7 @@ bool
 MeshAudit_Geometry<Mesh_type>::check_cell_to_nodes() const
 {
   Entity_ID_List bad_cells, bad_cells1;
-  Entity_ID_View free_nodes;
+  typename Mesh_type::Entity_ID_View free_nodes;
   View_type<const Entity_ID, MemSpace_kind::HOST> cnode;
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
@@ -606,11 +606,6 @@ template <class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_cell_to_faces_to_nodes() const
 {
-  View_type<const Entity_ID, MemSpace_kind::HOST> cnode;
-  View_type<const Entity_ID, MemSpace_kind::HOST> cface;
-  Entity_ID_View fnode_ref;
-  View_type<const Entity_ID, MemSpace_kind::HOST> fnode;
-  View_type<const Direction_type, MemSpace_kind::HOST> fdirs;
   Entity_ID_List bad_cells0;
   Entity_ID_List bad_cells1;
 
@@ -648,7 +643,7 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_faces_to_nodes() const
           break;
         }
 
-        Entity_ID_View fnode_ref("fnode_red", nfn);
+        typename Mesh_type::Entity_ID_View fnode_ref("fnode_red", nfn);
         for (int i = 0; i < nfn; ++i) {
           int nodenum = Topology::fnodes_std[ctype][k][i];
           fnode_ref[i] = cnode[nodenum];
@@ -850,7 +845,7 @@ MeshAudit_Geometry<Mesh_type>::check_face_cell_adjacency_consistency() const
       bool bad_data = false;
 
       View_type<const Entity_ID, MemSpace_kind::HOST> fcells;
-      mesh_->getFaceCells(f, Parallel_kind::ALL, fcells);
+      mesh_->getFaceCells(f, fcells);
       for (const auto& c : fcells) {
         View_type<const Entity_ID, MemSpace_kind::HOST> cfaces;
         View_type<const Direction_type, MemSpace_kind::HOST> cfdirs;
@@ -926,7 +921,7 @@ MeshAudit_Geometry<Mesh_type>::check_face_normal_relto_cell() const
       auto fc = mesh_->getFaceCentroid(j);
 
       View_type<const Entity_ID, MemSpace_kind::HOST> fcells;
-      mesh_->getFaceCells(j, Parallel_kind::ALL, fcells);
+      mesh_->getFaceCells(j, fcells);
       for (int k = 0; k < fcells.size(); ++k) {
         AmanziGeometry::Point cc = mesh_->getCellCentroid(fcells[k]);
         AmanziGeometry::Point fnormal = mesh_->getFaceNormal(j, fcells[k]);
@@ -971,7 +966,7 @@ MeshAudit_Geometry<Mesh_type>::check_face_normal_orientation() const
       AmanziGeometry::Point fnormal = mesh_->getFaceNormal(j);
 
       View_type<const Entity_ID, MemSpace_kind::HOST> fcells;
-      mesh_->getFaceCells(j, Parallel_kind::ALL, fcells);
+      mesh_->getFaceCells(j, fcells);
       for (int k = 0; k < fcells.size(); ++k) {
         int orientation = 0;
         AmanziGeometry::Point fnormalc = mesh_->getFaceNormal(j, fcells[k], &orientation);
@@ -1265,10 +1260,10 @@ MeshAudit_Maps<Mesh_type>::check_face_to_nodes_ghost_data() const
     for (int k = 0; k < fnode.size(); ++k)
       if (node_map.GID(fnode[k]) != gids(j, k)) { bad_data = true; }
     if (bad_data) {
-      Entity_ID_View lfnode;
+      typename Mesh_type::Entity_ID_View lfnode;
       lfnode.fromConst(fnode);
       // Determine just how bad the data is.
-      Entity_ID_View fnode_ref("fnode_ref", maxnodes);
+      typename Mesh_type::Entity_ID_View fnode_ref("fnode_ref", maxnodes);
       for (int k = 0; k < maxnodes; ++k) {
         lfnode[k] = node_map.GID(lfnode[k]);
         fnode_ref[k] = gids(j, k);
@@ -1758,7 +1753,7 @@ MeshAudit_Sets<Mesh_type>::check_get_set(Set_ID sid,
   }
 
   // Get the set.
-  Entity_ID_View set;
+  typename Mesh_type::Entity_ID_View set;
   try {
     std::string set_name = mesh_->geometric_model()->FindRegion(sid)->name();
     mesh_->getSetEntities(set_name, kind, ptype, &set); // this may fail
@@ -1821,7 +1816,7 @@ MeshAudit_Sets<Mesh_type>::check_used_set(Set_ID sid,
     // In serial, the owned and used sets should be identical.
 
     int n = mesh_->getSetSize(set_name, kind, Parallel_kind::OWNED);
-    Entity_ID_View set_own;
+    typename Mesh_type::Entity_ID_View set_own;
     mesh_->getSetEntities(set_name, kind, Parallel_kind::OWNED, &set_own);
 
     // Set sizes had better be the same.

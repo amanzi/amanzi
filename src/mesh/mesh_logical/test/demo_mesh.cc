@@ -378,8 +378,8 @@ demoMeshLogicalYEmbedded()
                                                                comm,
                                                                m_log->getGeometricModel(),
                                                                Teuchos::null));
-  auto m_bg = Teuchos::rcp(new Mesh(
-    m_bg_fw, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+  auto m_bg = Teuchos::rcp(
+    new Mesh(m_bg_fw, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), Teuchos::null));
 
   // make the new connections, 1 per logical cell
   int ncells_log = m_log->getNumEntities(Entity_kind::CELL, Parallel_kind::ALL);
@@ -394,19 +394,18 @@ demoMeshLogicalYEmbedded()
 
   // cross-sectional areas and lengths given by root class
   // relatively made up numbers, this could be done formally if we wanted to.
-  Entity_ID_View coarse_roots, fine_roots;
-  coarse_roots = m_log->getSetEntities("coarse_root", Entity_kind::CELL, Parallel_kind::ALL);
-  fine_roots = m_log->getSetEntities("fine_root", Entity_kind::CELL, Parallel_kind::ALL);
+  auto coarse_roots = m_log->getSetEntities("coarse_root", Entity_kind::CELL, Parallel_kind::ALL);
+  auto fine_roots = m_log->getSetEntities("fine_root", Entity_kind::CELL, Parallel_kind::ALL);
 
   std::vector<Double_List> face_cell_lengths(ncells_log);
   Point_List face_area_normals(ncells_log);
   Point ihat(1., 0., 0.); // just must have 0 z to avoid gravity
-  for (Entity_ID_View::iterator c = coarse_roots.begin(); c != coarse_roots.end(); ++c) {
+  for (auto c = coarse_roots.begin(); c != coarse_roots.end(); ++c) {
     face_area_normals[*c] = 2.e-2 * ihat;
     face_cell_lengths[*c].push_back(1.e-2);
     face_cell_lengths[*c].push_back(0.5 / 4.);
   }
-  for (Entity_ID_View::iterator c = fine_roots.begin(); c != fine_roots.end(); ++c) {
+  for (auto c = fine_roots.begin(); c != fine_roots.end(); ++c) {
     face_area_normals[*c] = 1.e-2 * ihat;
     face_cell_lengths[*c].push_back(5.e-3);
     face_cell_lengths[*c].push_back(0.5 / 4.);

@@ -100,7 +100,7 @@ AssembleVectorFaceOp(int f,
     if (kind == AmanziMesh::Entity_kind::CELL) {
       Epetra_MultiVector& Xf = *X.ViewComponent("cell", true);
 
-      auto cells = mesh.getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh.getFaceCells(f);
       int ncells = cells.size();
 
       for (int n = 0; n != ncells; ++n) {
@@ -222,7 +222,7 @@ ExtractVectorFaceOp(int f,
     if (kind == AmanziMesh::Entity_kind::CELL) {
       const Epetra_MultiVector& Xf = *X.ViewComponent("cell", true);
 
-      auto cells = mesh.getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh.getFaceCells(f);
       int ncells = cells.size();
 
       for (int n = 0; n != ncells; ++n) {

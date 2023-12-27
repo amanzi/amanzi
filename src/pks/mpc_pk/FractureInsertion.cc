@@ -106,7 +106,7 @@ FractureInsertion::InitMatrixCellToFractureCell()
 
   for (int c = 0; c < ncells_owned_f; ++c) {
     int f = mesh_fracture_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
-    auto cells = mesh_matrix_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_matrix_->getFaceCells(f);
     int ncells = cells.size();
     if (ncells != 2) ierr = 1;
 
@@ -176,7 +176,7 @@ FractureInsertion::SetValues(const CompositeVector& flux)
     int f = mesh_fracture_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
     int first = mmap->FirstPointInElement(f);
 
-    auto cells = mesh_matrix_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_matrix_->getFaceCells(f);
     int ncells = cells.size();
     mesh_matrix_->getFaceNormal(f, cells[0], &dir);
     int shift = Operators::UniqueIndexFaceToCells(*mesh_matrix_, f, cells[0]);

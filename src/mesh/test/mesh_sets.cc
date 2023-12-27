@@ -18,6 +18,7 @@
 #include "framework_meshes.hh"
 #include "set_harnesses.hh"
 
+
 TEST(MESH_SETS_3CUBE)
 {
   // create the comm and gm
@@ -99,7 +100,8 @@ TEST(MESH_SETS_3CUBE_EXO)
 //               << "Testing 3D Box 3x3x3 Par with " << AmanziMesh::to_string(frm) << std::endl
 //               << "------------------------------------------------" << std::endl;
 //     auto mesh = createUnstructured(Preference{frm}, "test/hex_3x3x3_sets.par", comm, gm);
-//     testHexMeshSets3x3x3(mesh, true, frm);
+//     auto mesh_host = Teuchos::rcpFromRef(onMemSpace<MemSpace_kind::HOST>(*mesh));
+//     testHexMeshSets3x3x3(mesh_host, true, frm);
 //   }
 // }
 

@@ -161,7 +161,7 @@ class BCsIndependent : public EvaluatorIndependent<Operators::BCs, Operators::BC
     int nfaces_owned =
       mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     for (int f = 0; f != nfaces_owned; ++f) {
-      auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh->getFaceCells(f);
       if (cells.size() == 1) {
         model[f] = Operators::OPERATOR_BC_DIRICHLET;
         auto fc = mesh->getFaceCentroid(f);

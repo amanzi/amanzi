@@ -53,7 +53,7 @@ PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Comp
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
 
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
@@ -106,7 +106,7 @@ PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Comp
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
 
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);

@@ -28,7 +28,7 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "Mesh.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 
 // Operators
 #include "UniqueLocalIndex.hh"

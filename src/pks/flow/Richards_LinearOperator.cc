@@ -13,7 +13,7 @@
 */
 
 #include "InverseFactory.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"

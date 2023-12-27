@@ -64,13 +64,14 @@ ObservableSolute::ComputeRegionSize()
       variable_ == "aqueous volumetric flow rate") { // flux needs faces
     region_size_ = mesh_->getSetSize(
       region_, Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
-    Kokkos::resize(entity_ids_, region_size_);
-    std::tie(entity_ids_, vofs_) = mesh_->getSetEntitiesAndVolumeFractions(
+    const auto [entity_ids, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
       region_, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+    entity_ids_ = entity_ids;
+    vofs_ = vofs;
     obs_boundary_ = true;
     for (int i = 0; i != region_size_; ++i) {
       int f = entity_ids_[i];
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f);
       if (cells.size() == 2) {
         obs_boundary_ = false;
         break;
@@ -79,9 +80,10 @@ ObservableSolute::ComputeRegionSize()
   } else { // all others need cells
     region_size_ =
       mesh_->getSetSize(region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-    Kokkos::resize(entity_ids_, region_size_);
-    std::tie(entity_ids_, vofs_) = mesh_->getSetEntitiesAndVolumeFractions(
+    const auto [entity_ids, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
       region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    entity_ids_ = entity_ids;
+    vofs_ = vofs;
   }
 
   // find global meshblocksize
@@ -189,7 +191,7 @@ ObservableSolute::ComputeObservation(State& S,
     if (obs_boundary_) { // observation is on a boundary set
       for (int i = 0; i != region_size_; ++i) {
         int f = entity_ids_[i];
-        auto cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
 
         int sign, c = cells[0];
         mesh_->getFaceNormal(f, c, &sign);
@@ -204,7 +206,7 @@ ObservableSolute::ComputeObservation(State& S,
     } else if (obs_planar_) { // observation is on an interior planar set
       for (int i = 0; i != region_size_; ++i) {
         int f = entity_ids_[i];
-        auto cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
 
         int csign, c = cells[0];
         const AmanziGeometry::Point& face_normal = mesh_->getFaceNormal(f, c, &csign);

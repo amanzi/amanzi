@@ -26,7 +26,7 @@
 #include "RegionLogical.hh"
 #include "RegionPoint.hh"
 #include "MeshDefs.hh"
-//#include "Mesh_Algorithms.hh"
+//#include "MeshAlgorithms.hh"
 #include "MeshMaps.hh"
 
 namespace Amanzi {
@@ -49,7 +49,7 @@ View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
                               const Entity_kind kind,
                               const Parallel_kind ptype,
-                              Double_View& vol_fracs,
+                              View_type<double, MemSpace_kind::HOST>& vol_fracs,
                               const MeshCache<MemSpace_kind::HOST>& mesh);
 
 
@@ -117,7 +117,7 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
                       const Parallel_kind ptype,
                       const MeshCache<MemSpace_kind::HOST>& mesh);
 
-cEntity_ID_View
+View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
                     const Entity_kind kind,
                     const Parallel_kind ptype,

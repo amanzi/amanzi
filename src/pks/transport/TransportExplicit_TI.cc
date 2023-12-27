@@ -14,7 +14,7 @@
 
 #include <algorithm>
 
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
 #include "TransportExplicit_PK.hh"
 #include "UniqueLocalIndex.hh"

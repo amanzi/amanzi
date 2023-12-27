@@ -35,8 +35,8 @@ MeshMaps::VelocityEdge(int e, VectorPolynomial& v) const
 {
   AMANZI_ASSERT(d_ == 3);
 
-  auto points0 = mesh0_->getEdgeHOCoordinates(e);
-  auto points1 = mesh1_->getEdgeHOCoordinates(e);
+  auto points0 = alloc_and_deep_copy(mesh0_->getEdgeHOCoordinates(e));
+  auto points1 = alloc_and_deep_copy(mesh1_->getEdgeHOCoordinates(e));
   AMANZI_ASSERT(points0.size() == points1.size());
 
   // local coordinate system (-0.5, 0.5)
@@ -93,8 +93,8 @@ MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 {
   AMANZI_ASSERT(d_ == 2);
 
-  auto points0 = mesh0_->getFaceHOCoordinates(f);
-  auto points1 = mesh1_->getFaceHOCoordinates(f);
+  auto points0 = alloc_and_deep_copy(mesh0_->getFaceHOCoordinates(f));
+  auto points1 = alloc_and_deep_copy(mesh1_->getFaceHOCoordinates(f));
   AMANZI_ASSERT(points0.size() == points1.size());
 
   // local coordinate system

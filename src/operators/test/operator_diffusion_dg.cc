@@ -61,7 +61,6 @@ OperatorDiffusionDG(std::string solver_name,
                     int dim = 2,
                     int numi_order = 0)
 {
-  using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -76,14 +75,15 @@ OperatorDiffusionDG(std::string solver_name,
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+  Teuchos::ParameterList plist = xmlreader.getParameters();
 
   // create a mesh framework
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({ Framework::MSTK }));
-  RCP<const Mesh> mesh;
+  Teuchos::RCP<const Mesh> mesh;
   if (dim == 2) {
+    MeshFactory meshfactory(comm);
+    meshfactory.set_preference(Preference({ Framework::MSTK }));
+
     // mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 2);
     mesh = meshfactory.create("test/median7x8_filtered.exo");
     // mesh = meshfactory.create("test/triangular8_clockwise.exo");
@@ -92,6 +92,7 @@ OperatorDiffusionDG(std::string solver_name,
     fac_list->set<bool>("request edges", true);
     fac_list->set<bool>("request faces", true);
     MeshFactory meshfactory(comm, Teuchos::null, fac_list);
+    meshfactory.set_preference(Preference({ Framework::MSTK }));
     mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 2, 3, 3);
   }
 
@@ -133,7 +134,7 @@ OperatorDiffusionDG(std::string solver_name,
 
   // create boundary data. We use full Taylor expansion of boundary data in
   // the vicinity of domain boundary.
-  ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator dg");
+  Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator dg");
   int order = op_list.sublist("schema").get<int>("method order");
   int nk = WhetStone::PolynomialSpaceDimension(dim, order);
 

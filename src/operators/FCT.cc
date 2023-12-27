@@ -53,7 +53,7 @@ FCT::Compute(const CompositeVector& flux_lo,
   int dir;
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    auto cells = mesh0_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh0_->getFaceCells(f);
     int ncells = cells.size();
 
     mesh0_->getFaceNormal(f, cells[0], &dir);
@@ -114,7 +114,7 @@ FCT::Compute(const CompositeVector& flux_lo,
 
   // move cell-limiters to face limiters
   for (int f = 0; f < nfaces_owned; ++f) {
-    auto cells = mesh0_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh0_->getFaceCells(f);
 
     if (cells.size() == 2) {
       double tmp = -flux_ho_f[0][f] + flux_lo_f[0][f];

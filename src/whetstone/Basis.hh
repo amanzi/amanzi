@@ -39,7 +39,7 @@ namespace WhetStone {
 
 class Basis {
  public:
-  Basis(){};
+  Basis() : id_(-1){};
   virtual ~Basis(){};
 
   // initialization

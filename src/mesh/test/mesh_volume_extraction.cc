@@ -15,7 +15,7 @@
 #include <UnitTest++.h>
 #include <fstream>
 
-#include "Epetra_Map.h"
+
 #include "AmanziComm.hh"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
@@ -60,6 +60,7 @@ TEST(MESH_VOLUME_EXTRACTION_GENERATED)
               << "------------------------------------------------" << std::endl;
     auto parent_mesh =
       createStructuredUnitHex(Preference{ frm }, 6, 6, 3, comm, gm, Teuchos::null, 2, 2, 1);
+    cacheAll(*parent_mesh);
 
     // extract the volume
     MeshFrameworkFactory fac(comm, gm);
@@ -71,9 +72,10 @@ TEST(MESH_VOLUME_EXTRACTION_GENERATED)
       fac.create(parent_mesh, unit_hex_cells, AmanziMesh::Entity_kind::CELL);
 
     // make a MeshCache
-    auto mesh = Teuchos::rcp(new Mesh(
-      vol_framework_mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+    auto mesh = Teuchos::rcp(
+      new Mesh(vol_framework_mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
     mesh->setParentMesh(parent_mesh);
+    cacheAll(*mesh);
 
     // test the surface mesh as a 3x3 quad mesh
     // -- mesh audit
@@ -152,18 +154,16 @@ TEST(MESH_VOLUME_EXTRACTION_EXO)
     auto parent_mesh = createUnstructured(Preference{ frm }, filename, comm, gm, Teuchos::null);
 
     // make sure we can get sets on the mesh
-    AmanziMesh::Entity_ID_View set_ids = parent_mesh->getSetEntities(
+    auto set_ids = parent_mesh->getSetEntities(
       "Region 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
     CHECK_EQUAL(9, set_ids.size());
     parent_mesh->buildColumns();
 
     int ncells = 3;
-    AmanziMesh::Entity_ID_View const& cell_list =
-      parent_mesh->columns.cells_.getRowUnmanaged<MemSpace_kind::HOST>(0);
+    auto cell_list = parent_mesh->columns.cells_.getRowUnmanaged<MemSpace_kind::HOST>(0);
     CHECK_EQUAL(ncells, cell_list.size());
 
-    AmanziMesh::Entity_ID_View const& face_list =
-      parent_mesh->columns.faces_.getRowUnmanaged<MemSpace_kind::HOST>(0);
+    auto face_list = parent_mesh->columns.faces_.getRowUnmanaged<MemSpace_kind::HOST>(0);
     CHECK_EQUAL(ncells + 1, face_list.size());
 
     // construct a column mesh by extracting from mesh
@@ -171,8 +171,8 @@ TEST(MESH_VOLUME_EXTRACTION_EXO)
     MeshFrameworkFactory fac(comm, gm);
     fac.set_preference({ frm });
     auto column_mesh_fw = fac.create(parent_mesh, cell_list, AmanziMesh::Entity_kind::CELL);
-    auto column_mesh = Teuchos::rcp(new Mesh(
-      column_mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+    auto column_mesh = Teuchos::rcp(
+      new Mesh(column_mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
 
     // Number of cells in column mesh
     int ncells_col =
@@ -191,10 +191,9 @@ TEST(MESH_VOLUME_EXTRACTION_EXO)
     }
 
     // check we can still get sets
-    AmanziMesh::Entity_ID_View set_ids2;
     bool is_valid = column_mesh->isValidSetName("Region 1", AmanziMesh::Entity_kind::CELL);
     CHECK(is_valid);
-    set_ids2 = column_mesh->getSetEntities(
+    auto set_ids2 = column_mesh->getSetEntities(
       "Region 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
     CHECK_EQUAL(1, set_ids2.size());
 

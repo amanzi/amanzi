@@ -14,6 +14,7 @@ small sets, but is linear on insertion, containment checks, etc as data is
 stored as a vector under the hood.
 
 */
+#include <vector>
 
 #pragma once
 
@@ -49,6 +50,8 @@ class FIFO_Set {
   const T& back() const { return store_.back(); }
 
   std::size_t size() const { return store_.size(); }
+
+  const std::vector<T>& asVector() const { return store_; }
 
  protected:
   Container_type store_;

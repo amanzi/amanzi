@@ -20,7 +20,7 @@
 
 #include "GMVMesh.hh"
 #include "Mesh.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
 #include "State.hh"
 

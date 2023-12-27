@@ -97,7 +97,9 @@ RunTest(const std::string regname, int* cells, int* edges, const std::vector<int
     // extract fractures mesh
     try {
       auto mesh3D_cache = Teuchos::rcp(
-        new Mesh(mesh3D, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+        new Mesh(mesh3D, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+      cacheAll(*mesh3D_cache);
+
       RCP<MeshFramework> mesh = Teuchos::rcp(new MeshExtractedManifold(
         mesh3D_cache, setname, AmanziMesh::Entity_kind::FACE, comm, gm, plist));
 
@@ -123,8 +125,9 @@ RunTest(const std::string regname, int* cells, int* edges, const std::vector<int
 
       auto plist_tmp = Teuchos::rcp(new Teuchos::ParameterList);
       plist_tmp->set<bool>("natural map ordering", true);
-      RCP<Mesh> mesh_cache = Teuchos::rcp(
-        new Mesh(mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), plist_tmp));
+      RCP<Mesh> mesh_cache =
+        Teuchos::rcp(new Mesh(mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), plist_tmp));
+      cacheAll(*mesh_cache);
 
       // verify mesh
       MeshAudit audit(mesh_cache);

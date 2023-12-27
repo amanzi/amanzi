@@ -289,7 +289,7 @@ Operator_Schema::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
       std::tie(kind, std::ignore, num) = *it;
 
       if (kind == AmanziMesh::Entity_kind::CELL) {
-        auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) {
@@ -512,7 +512,7 @@ Operator_Schema::AssembleMatrixOp(const Op_Face_Schema& op,
       std::tie(kind, std::ignore, num) = *it;
 
       if (kind == AmanziMesh::Entity_kind::CELL) {
-        auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) {
