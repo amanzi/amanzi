@@ -8,9 +8,9 @@
 */
 
 //! A collection of meshes, indexed from a parent entity set.
-#include "Epetra_MultiVector.h"
 
 #include "Key.hh"
+#include "AmanziVector.hh"
 #include "Mesh.hh"
 #include "DomainSet.hh"
 
@@ -32,7 +32,7 @@ DomainSet::DomainSet(const std::string& name,
                      const Teuchos::RCP<const Mesh>& indexing_parent,
                      const std::vector<std::string>& indices,
                      const Teuchos::RCP<const Mesh>& referencing_parent,
-                     const std::map<std::string, Teuchos::RCP<const std::vector<int>>> maps)
+                     const std::map<std::string, Mesh::cEntity_ID_View> maps)
   : DomainSet(name, indexing_parent, indices)
 {
   referencing_parent_ = referencing_parent;
@@ -40,89 +40,54 @@ DomainSet::DomainSet(const std::string& name,
 }
 
 
-void
-DomainSet::doImport(const std::string& subdomain,
-                    const Epetra_MultiVector& src,
-                    Epetra_MultiVector& target) const
-{
-  const auto& map = getSubdomainMap(subdomain);
-
-  for (int j = 0; j != src.NumVectors(); ++j) {
-    for (int c = 0; c != src.MyLength(); ++c) { target[j][map[c]] = src[j][c]; }
-  }
-}
-
-// import from subdomains to parent domain
-void
-DomainSet::doImport(const std::vector<const Epetra_MultiVector*>& sources,
-                    Epetra_MultiVector& target) const
-{
-  AMANZI_ASSERT(sources.size() == size());
-  auto source = sources.begin();
-  for (const auto& subdomain : *this) {
-    doImport(subdomain, **source, target);
-    ++source;
-  }
-}
-
-void
-DomainSet::doExport(const std::string& subdomain,
-                    const Epetra_MultiVector& src,
-                    Epetra_MultiVector& target) const
-{
-  const auto& map = getSubdomainMap(subdomain);
-
-  for (int j = 0; j != src.NumVectors(); ++j) {
-    for (int c = 0; c != target.MyLength(); ++c) { target[j][c] = src[j][map[c]]; }
-  }
-}
-
-
 //
 // helper functions to create importers
 //
 // Creates an importer from an extracted mesh entity to its parent entities.
-Teuchos::RCP<const std::vector<int>>
+Mesh::Entity_ID_View
 createMapToParent(const AmanziMesh::Mesh& subdomain_mesh, const AmanziMesh::Entity_kind& src_kind)
 {
-  const Epetra_Map& src_map = subdomain_mesh.getMap(AmanziMesh::Entity_kind::CELL, false);
+  const auto& src_map = subdomain_mesh.getMap(AmanziMesh::Entity_kind::CELL, false);
 
   // create the target map
-  auto map = Teuchos::rcp(new std::vector<int>(src_map.NumMyElements(), -1));
-  for (int c = 0; c != src_map.NumMyElements(); ++c) {
-    (*map)[c] = subdomain_mesh.getEntityParent(src_kind, c);
-  }
+  Mesh::Entity_ID_View map("parent map", src_map->getLocalNumElements());
+  Kokkos::parallel_for(
+    "DomainSet::createMapToParent", src_map->getLocalNumElements(), KOKKOS_LAMBDA(const int c) {
+      map(c) = subdomain_mesh.getEntityParent(src_kind, c);
+    });
   return map;
 }
+
 
 //
 // Creates an importer from a surface mesh lifted from an extracted subdomain
 // mesh to the global surface mesh (which itself was lifted from the extracted
 // subdomain's parent mesh).
-Teuchos::RCP<const std::vector<int>>
+Mesh::Entity_ID_View
 createMapSurfaceToSurface(const AmanziMesh::Mesh& subdomain_mesh,
                           const AmanziMesh::Mesh& parent_mesh)
 {
-  const Epetra_Map& src_map = subdomain_mesh.getMap(AmanziMesh::Entity_kind::CELL, false);
-
+  const auto& src_map = subdomain_mesh.getMap(AmanziMesh::Entity_kind::CELL, false);
   int parent_ncells =
     parent_mesh.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // create the target map
-  auto map = Teuchos::rcp(new std::vector<int>(src_map.NumMyElements(), -1));
-  for (int c = 0; c != src_map.NumMyElements(); ++c) {
-    Entity_ID f = subdomain_mesh.getEntityParent(AmanziMesh::Entity_kind::CELL, c);
-    Entity_ID parent_f =
-      subdomain_mesh.getParentMesh()->getEntityParent(AmanziMesh::Entity_kind::FACE, f);
-
-    for (int parent_c = 0; parent_c != parent_ncells; ++parent_c) {
-      if (parent_mesh.getEntityParent(AmanziMesh::Entity_kind::CELL, parent_c) == parent_f) {
-        (*map)[c] = parent_c;
-        break;
+  Mesh::Entity_ID_View map("parent map", src_map->getLocalNumElements());
+  const AmanziMesh::Mesh& subdomain_parent_mesh = *subdomain_mesh.getParentMesh();
+  Kokkos::parallel_for(
+    "DomainSet::createMapSurfaceToSurface",
+    src_map->getLocalNumElements(),
+    KOKKOS_LAMBDA(const int c) {
+      Entity_ID f = subdomain_mesh.getEntityParent(AmanziMesh::Entity_kind::CELL, c);
+      Entity_ID parent_f = subdomain_parent_mesh.getEntityParent(AmanziMesh::Entity_kind::FACE, f);
+      map(c) = -1;
+      for (int parent_c = 0; parent_c != parent_ncells; ++parent_c) {
+        if (parent_mesh.getEntityParent(AmanziMesh::Entity_kind::CELL, parent_c) == parent_f) {
+          map(c) = parent_c;
+          break;
+        }
       }
-    }
-    AMANZI_ASSERT((*map)[c] >= 0);
-  }
+    });
   return map;
 }
 

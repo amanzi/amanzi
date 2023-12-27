@@ -40,7 +40,7 @@ using namespace Amanzi;
 TEST(MESH_COLUMNS)
 {
   auto comm = getDefaultComm();
-  int nprocs = comm->NumProc();
+  int nprocs = comm->getSize();
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh

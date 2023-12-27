@@ -66,13 +66,13 @@ RunTest(const std::string regname, int* cells, int* edges, const std::vector<int
       // mesh3D = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list));
       mesh3D = Teuchos::rcp(new Mesh_MSTK("test/mesh_extracted_fracture.exo", comm, gm, mesh_list));
 #endif
-    } else if (i == 1 && comm->NumProc() == 1) {
+    } else if (i == 1 && comm->getSize() == 1) {
       std::cout << "\nMesh framework: simple\n";
       mesh3D = Teuchos::rcp(
         new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list));
     } else if (i == 2) {
 #ifdef HAVE_MESH_MOAB
-      if (comm->NumProc() > 1) continue;
+      if (comm->getSize() > 1) continue;
       std::cout << "\nMesh framework: MOAB\n";
       mesh3D = Teuchos::rcp(new Mesh_MOAB("test/mesh_extracted_fracture.exo", comm, gm, mesh_list));
 #endif
@@ -87,10 +87,10 @@ RunTest(const std::string regname, int* cells, int* edges, const std::vector<int
         mesh3D->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::OWNED);
 
       int ncells(ncells_tmp), nfaces(nfaces_tmp), nedges(nedges_tmp);
-      comm->SumAll(&ncells_tmp, &ncells, 1);
-      comm->SumAll(&nfaces_tmp, &nfaces, 1);
-      comm->SumAll(&nedges_tmp, &nedges, 1);
-      std::cout << "PARENT mesh: " << i << "\n  pid=" << comm->MyPID() << " cells: " << ncells
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &ncells_tmp, &ncells);
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &nfaces_tmp, &nfaces);
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &nedges_tmp, &nedges);
+      std::cout << "PARENT mesh: " << i << "\n  pid=" << comm->getRank() << " cells: " << ncells
                 << " faces: " << nfaces << " edges: " << nedges << std::endl;
     }
 
@@ -113,11 +113,11 @@ RunTest(const std::string regname, int* cells, int* edges, const std::vector<int
       int mfaces_tmp = maps.getNBoundaryFaces(AmanziMesh::Parallel_kind::OWNED);
 
       int ncells(ncells_tmp), nfaces(nfaces_tmp), mfaces(mfaces_tmp);
-      comm->SumAll(&ncells_tmp, &ncells, 1);
-      comm->SumAll(&nfaces_tmp, &nfaces, 1);
-      comm->SumAll(&mfaces_tmp, &mfaces, 1);
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &ncells_tmp, &ncells);
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &nfaces_tmp, &nfaces);
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &mfaces_tmp, &mfaces);
 
-      std::cout << "EXTRACTED mesh: " << i << "\n  pid=" << comm->MyPID() << " cells: " << ncells
+      std::cout << "EXTRACTED mesh: " << i << "\n  pid=" << comm->getRank() << " cells: " << ncells
                 << " faces: " << nfaces << " bnd faces: " << mfaces << std::endl
                 << std::endl;
       CHECK(cells[i] == ncells);

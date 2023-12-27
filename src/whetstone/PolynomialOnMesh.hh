@@ -30,10 +30,10 @@ namespace WhetStone {
 
 class PolynomialOnMesh {
  public:
-  PolynomialOnMesh() : kind_((Entity_kind)WhetStone::CELL), id_(-1){};
+  PolynomialOnMesh() : kind_(Entity_kind::CELL), id_(-1){};
 
-  Polynomial& poly() { return poly_; }
-  const Polynomial& poly() const { return poly_; }
+  Polynomial<>& poly() { return poly_; }
+  const Polynomial<>& poly() const { return poly_; }
 
   void set_kind(Entity_kind kind) { kind_ = kind; }
   const Entity_kind& get_kind() const { return kind_; }
@@ -42,7 +42,7 @@ class PolynomialOnMesh {
   void set_id(Entity_ID id) { id_ = id; }
 
  private:
-  Polynomial poly_;
+  Polynomial<> poly_;
   Entity_kind kind_; // topological binding of polynomial
   Entity_ID id_;     // numerical id of topological entity
 };

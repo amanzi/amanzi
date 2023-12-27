@@ -1,15 +1,12 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
-  provided in the top-level COPYRIGHT file.
-
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
-/*
   Operators
 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_OPERATOR_PDE_ELECTROMAGNETICS_HH_
@@ -39,7 +36,6 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
     : PDE_HelperDiscretization(mesh), K_(Teuchos::null)
   {
     global_op_ = Teuchos::null;
-    pde_type_ = PDE_ELECTROMAGNETICS;
     Init_(plist);
   }
 
@@ -50,9 +46,7 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
   virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K);
 
   // -- creation of a linearized operator
-  using PDE_HelperDiscretization::UpdateMatrices;
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) override;
+  virtual void UpdateMatrices();
   // -- modify matrix due to boundary conditions
   //    primary=true indicates that the operator updates both matrix and right-hand
   //      side using BC data. If primary=false, only matrix is changed.
@@ -65,20 +59,16 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
   //      implementtion trick.
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
-  // -- postprocessing: calculated flux u from potential p
-  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override{};
+  // // new virtual members
+  // // -- before solving the problem
+  // virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt) {};
 
-  // new virtual members
-  // -- before solving the problem
-  virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt){};
+  // // -- after solving the problem
+  // virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt) {};
 
-  // -- after solving the problem
-  virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt){};
-
-  // support of AMS solver
-  Teuchos::RCP<Epetra_MultiVector> GraphGeometry();
-  Teuchos::RCP<Epetra_CrsMatrix> GradientOperator();
+  // access
+  int schema_prec_dofs() { return global_op_schema_; }
+  int schema_dofs() { return local_op_schema_; }
 
  protected:
   void Init_(Teuchos::ParameterList& plist);
@@ -89,9 +79,14 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
                       bool essential_eqn);
 
  protected:
-  Teuchos::RCP<WhetStone::BilinearForm> mfd_;
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K_;
   bool K_symmetric_;
+
+  // operator
+  int global_op_schema_, local_op_schema_;
+
+  // miscaleneous
+  int mfd_primary_, mfd_secondary_;
 };
 
 } // namespace Operators

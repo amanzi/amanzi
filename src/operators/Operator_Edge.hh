@@ -1,19 +1,17 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
-*/
-
-/*
-  Operators
 
   Operator whose unknowns are EDGEs.
   The only thing really implemented here is the visitor pattern Op
-  acceptors. Everything else should be done in the base class, with
+  acceptors. Everything else should be done in the base class, with 
   the exception of special assembly issues.
 */
 
@@ -28,16 +26,14 @@ namespace Operators {
 
 class Operator_Edge : public Operator {
  public:
+  // main constructor
   // The input CVS is the domain and range of the operator.
   Operator_Edge(const Teuchos::RCP<const CompositeVectorSpace>& cvs, Teuchos::ParameterList& plist)
     : Operator(cvs, plist, OPERATOR_SCHEMA_DOFS_EDGE)
   {
     set_schema_string("EDGE");
-    cell_max_edges = mesh_->getCellMaxEdges();
+    cell_max_edges = mesh_->cell_get_max_edges();
   }
-
-  // copy constructor
-  virtual Teuchos::RCP<Operator> Clone() const;
 
   // rhs update which multiplies by cell
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included);

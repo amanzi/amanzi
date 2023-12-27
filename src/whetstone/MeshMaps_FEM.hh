@@ -49,11 +49,11 @@ class MeshMaps_FEM : public MeshMapsBase {
                             VectorPolynomial& vc) const override;
 
  private:
-  void JacobianCellValue_(int c, double t, const AmanziGeometry::Point& x, Tensor& J) const;
+  void JacobianCellValue_(int c, double t, const AmanziGeometry::Point& x, Tensor<>& J) const;
 
-  Tensor JacobianValueInternal_(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                                int c,
-                                const AmanziGeometry::Point& xref) const;
+  Tensor<> JacobianValueInternal_(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                                  int c,
+                                  const AmanziGeometry::Point& xref) const;
 };
 
 } // namespace WhetStone

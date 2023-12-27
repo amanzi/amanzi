@@ -1,15 +1,13 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
-*/
-
-/*
-  Operators
 
   Operator whose unknowns are NODEs.
 */
@@ -26,16 +24,14 @@ namespace Operators {
 
 class Operator_Node : public Operator {
  public:
+  // main constructor
   //   The CVS is the domain and range of the operator
   Operator_Node(const Teuchos::RCP<const CompositeVectorSpace>& cvs, Teuchos::ParameterList& plist)
     : Operator(cvs, plist, OPERATOR_SCHEMA_DOFS_NODE)
   {
     set_schema_string("NODE");
-    cell_max_nodes = mesh_->getCellMaxNodes();
+    cell_max_nodes = mesh_->cell_get_max_nodes();
   }
-
-  // copy constructor
-  virtual Teuchos::RCP<Operator> Clone() const override;
 
   // rhs update which multiplies by cell
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included) override;

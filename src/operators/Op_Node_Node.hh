@@ -1,15 +1,12 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
-  provided in the top-level COPYRIGHT file.
-
-  Authors: Ethan Coon (ecoon@lanl.gov)
-*/
-
-/*
   Operators
 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ethan Coon (ecoon@lanl.gov)
 */
 
 #ifndef AMANZI_OP_NODE_NODE_HH_
@@ -27,10 +24,8 @@ class Op_Node_Node : public Op {
   Op_Node_Node(const std::string& name, const Teuchos::RCP<const AmanziMesh::Mesh> mesh, int nvec)
     : Op(OPERATOR_SCHEMA_BASE_NODE | OPERATOR_SCHEMA_DOFS_NODE, name, mesh)
   {
-    diag = Teuchos::rcp(
-      new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::NODE, false), nvec));
-    diag_shadow = Teuchos::rcp(
-      new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::NODE, false), nvec));
+    diag = Teuchos::rcp(new Epetra_MultiVector(mesh->node_map(false), nvec));
+    diag_shadow = Teuchos::rcp(new Epetra_MultiVector(mesh->node_map(false), nvec));
   }
 
   virtual void
@@ -59,8 +54,8 @@ class Op_Node_Node : public Op {
 
   virtual void Rescale(const CompositeVector& scaling)
   {
-    if (scaling.HasComponent("node")) {
-      const Epetra_MultiVector& s_v = *scaling.ViewComponent("node", false);
+    if (scaling.hasComponent("node")) {
+      const Epetra_MultiVector& s_v = *scaling.viewComponent("node", false);
       for (int k = 0; k != s_v.NumVectors(); ++k) {
         for (int i = 0; i != s_v.MyLength(); ++i) { (*diag)[k][i] *= s_v[0][i]; }
       }

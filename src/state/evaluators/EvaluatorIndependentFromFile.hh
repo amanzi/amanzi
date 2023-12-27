@@ -32,7 +32,7 @@ Within the file, data is expected to meet the following (HDF5) layout::
 
 This evaluator is used by providing the option:
 
-`"evaluator type`" == `"independent variable`"
+`"evaluator type`" == `"independent variable from file`"
 
 .. _independent-variable-from-file-evaluator-spec:
 .. admonition:: independent-variable-from-file-evaluator-spec
@@ -92,7 +92,7 @@ class EvaluatorIndependentFromFile
   // ---------------------------------------------------------------------------
   // Constructors
   // ---------------------------------------------------------------------------
-  explicit EvaluatorIndependentFromFile(Teuchos::ParameterList& plist);
+  explicit EvaluatorIndependentFromFile(const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
   EvaluatorIndependentFromFile(const EvaluatorIndependentFromFile& other) = default;
 
@@ -103,6 +103,9 @@ class EvaluatorIndependentFromFile
   EvaluatorIndependentFromFile& operator=(const EvaluatorIndependentFromFile& other);
 
   virtual void EnsureCompatibility(State& S) override;
+
+  static const std::string name;
+  virtual std::string getType() const override { return name; }
 
  protected:
   // ---------------------------------------------------------------------------
@@ -130,7 +133,7 @@ class EvaluatorIndependentFromFile
   Teuchos::RCP<Function> time_func_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFromFile> fac_;
+  static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFromFile> reg_;
 };
 
 } // namespace Amanzi

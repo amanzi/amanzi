@@ -18,7 +18,7 @@
 #include "Epetra_Map.h"
 
 #include "Op.hh"
-#include "Mesh.hh"
+#include "MeshFramework.hh"
 #include "OperatorDefs.hh"
 #include "Schema.hh"
 

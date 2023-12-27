@@ -18,11 +18,8 @@ An additive function simply adds two other function results together.
 where :math:`f_1` is defined by the `"function1`" sublist, and
 :math:`f_2` by the `"function2`" sublist.
 
-.. _function-additive-spec:
-.. admonition:: function-additive-spec
-
-   * `"function1`" ``[function-spec]`` :math:`f_1` in :math:`f(x) = f_1(x) + f_2(x)`
-   * `"function2`" ``[function-spec]`` :math:`f_2` in :math:`f(x) = f_1(x) + f_2(x)`
+* `"function1`" ``[function-spec]`` f_1 in f(x) = f_1(x) + f_2(x)
+* `"function2`" ``[function-spec]`` f_2 in f(x) = f_1(x) + f_2(x)
 
 Example:
 
@@ -57,10 +54,39 @@ class FunctionAdditive : public Function {
   {}
   ~FunctionAdditive(){};
   std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionAdditive>(*this); }
-  double operator()(const std::vector<double>& x) const { return (*f1_)(x) + (*f2_)(x); }
+
+  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
+  {
+    return (*f1_)(x) + (*f2_)(x);
+  }
+
+  void apply(const Kokkos::View<double**>& in,
+             Kokkos::View<double*>& out,
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+  {
+    Kokkos::View<double*> out_1("result", in.extent(1));
+    Kokkos::View<double*> out_2("result", in.extent(1));
+    f1_->apply(in, out_1);
+    f2_->apply(in, out_2);
+
+    // Sum result
+    if (ids) {
+      auto ids_loc = *ids;
+      Kokkos::parallel_for(
+        "FunctionAdditive::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(ids_loc(i)) = out_1(i) + out_2(i);
+        });
+    } else {
+      Kokkos::parallel_for(
+        "FunctionAdditive::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(i) = out_1(i) + out_2(i);
+        });
+    }
+  }
 
  private:
   std::unique_ptr<Function> f1_, f2_;
+  // Function *f1_, *f2_;
 };
 
 } // namespace Amanzi

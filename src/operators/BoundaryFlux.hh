@@ -1,21 +1,18 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Daniil Svyatskiy (dasvyat@lanl.gov)
-*/
-
-/*
-  Operators
-
+  Author: Daniil Svyatskiy (dasvyat@lanl.gov)
 */
 
 #ifndef AMANZI_BOUNDARY_FLUX_FUNC
 #define AMANZI_BOUNDARY_FLUX_FUNC
 
-#include "Brent.hh"
+#include <boost/math/tools/roots.hpp>
 
 
 namespace Amanzi {
@@ -53,7 +50,7 @@ class BoundaryFluxFn {
     nonlinfunc_ = nonlinfunc;
   }
 
-  double operator()(double face_p) const
+  double operator()(double face_p)
   {
     lambda_ = face_p;
     double krel = ((*model_).*nonlinfunc_)(patm_ - lambda_);
@@ -64,7 +61,7 @@ class BoundaryFluxFn {
 
  protected:
   double trans_f_;
-  mutable double lambda_;
+  double lambda_;
   int face_index_;
   double face_Mff_;
   double cell_p_;
@@ -74,6 +71,16 @@ class BoundaryFluxFn {
   double patm_;
   Teuchos::RCP<const Model> model_;
   NonlinFunc nonlinfunc_;
+};
+
+
+/* ******************************************************************
+* Auxiliaty class for toms748: convergence criteria.
+****************************************************************** */
+struct Tol_ {
+  Tol_(double eps) : eps_(eps){};
+  bool operator()(const double& a, const double& b) const { return std::abs(a - b) <= eps_; }
+  double eps_;
 };
 
 
@@ -97,15 +104,15 @@ class BoundaryFaceSolver {
                      double eps,
                      Teuchos::RCP<const Model> model,
                      NonlinFunc test_fun)
-    : lambda_(lambda),
-      cell_val_(cell_val),
-      trans_f_(trans_f),
+    : trans_f_(trans_f),
       g_f_(g_f),
+      cell_val_(cell_val),
+      lambda_(lambda),
       patm_(patm),
-      bnd_flux_(bnd_flux),
       min_val_(min_val),
       max_val_(max_val),
-      eps_(eps)
+      eps_(eps),
+      bnd_flux_(bnd_flux)
   {
     func_ = Teuchos::rcp(new BoundaryFluxFn<Model>(
       trans_f, lambda, cell_val, bnd_flux, g_f, dir, patm, model, test_fun));
@@ -115,15 +122,17 @@ class BoundaryFaceSolver {
                         double min_val,
                         double max_val,
                         BoundaryFluxFn<Model>& func,
-                        int max_it,
-                        int& actual_it);
+                        Tol_& tol,
+                        boost::uintmax_t max_it,
+                        boost::uintmax_t& actual_it);
 
   double FaceValue()
   {
-    int max_it = 100;
-    int actual_it(max_it);
+    Tol_ tol(eps_);
+    boost::uintmax_t max_it = 100;
+    boost::uintmax_t actual_it(max_it);
 
-    return SolveBisection(lambda_, min_val_, max_val_, *func_, max_it, actual_it);
+    return SolveBisection(lambda_, min_val_, max_val_, *func_, tol, max_it, actual_it);
   }
 
   double lambda_;                                     // initial guess
@@ -140,8 +149,9 @@ BoundaryFaceSolver<Model>::SolveBisection(double face_val,
                                           double min_val,
                                           double max_val,
                                           BoundaryFluxFn<Model>& func,
-                                          int max_it,
-                                          int& actual_it)
+                                          Tol_& tol,
+                                          boost::uintmax_t max_it,
+                                          boost::uintmax_t& actual_it)
 {
   double res = func(face_val);
   double left(0.0), right(0.0), lres(0.0), rres(0.0);
@@ -187,12 +197,16 @@ BoundaryFaceSolver<Model>::SolveBisection(double face_val,
             << ")\n";
 #endif
 
-  if (std::fabs(right - left) <= eps_) {
+  if (tol(left, right)) {
     face_val = right;
     actual_it = 0;
   } else {
-    actual_it = max_it;
-    face_val = Utils::findRootBrent(func, left, right, eps_, &actual_it, eps_);
+    std::pair<double, double> result;
+    result = boost::math::tools::toms748_solve(func, left, right, lres, rres, tol, actual_it);
+    // if (actual_it >= max_it) {
+    //   std::cout << " Failed to converged in " << actual_it << " steps." << std::endl;
+    // }
+    face_val = (result.first + result.second) / 2.0;
   }
 
 #if DEBUG_FLAG

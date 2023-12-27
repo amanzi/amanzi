@@ -21,7 +21,7 @@
 
 #include "CompositeVector.hh"
 #include "LimiterCell.hh"
-#include "Mesh.hh"
+#include "MeshFramework.hh"
 
 namespace Amanzi {
 namespace Operators {

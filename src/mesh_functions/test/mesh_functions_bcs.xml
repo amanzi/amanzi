@@ -1,0 +1,47 @@
+<ParameterList name="main">
+  <ParameterList name="dirichlet">
+    <ParameterList name="LEFT and RIGHT">
+      <Parameter name="regions" type="Array(string)" value="{LEFT,RIGHT}"/>
+      <ParameterList name="boundary pressure">
+        <ParameterList name="function-constant"> <!-- time component -->
+	  <Parameter name="value" type="double" value="1.0"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="neumann">
+    <ParameterList name="BOTTOM">
+      <ParameterList name="outward normal flux">
+        <ParameterList name="function-constant"> <!-- time component -->
+	  <Parameter name="value" type="double" value="0.0"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="TOP">
+      <ParameterList name="outward normal flux">
+        <ParameterList name="function-constant"> <!-- time component -->
+	  <Parameter name="value" type="double" value="3.0"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="critical depth">
+    <ParameterList name="FRONT">
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="seepage face">
+    <ParameterList name="seep face">
+      <Parameter name="region" type="string" value="BACK"/>
+      <ParameterList name="boundary pressure">
+        <ParameterList name="function-constant"> <!-- time component -->
+	  <Parameter name="value" type="double" value="5.0"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  
+
+</ParameterList>

@@ -43,31 +43,61 @@ add_definitions("-DMSTK_HAVE_MPI")
 
 # Library: data_structures
 #
-#file(GLOB data_structures_src_files "*.cc")
-set(data_structures_src_files BlockVector.cc
-                              CompositeVectorSpace.cc
-                              CompositeVector.cc
-                              NoxVector.cc
-                              TreeVectorSpace.cc
-                              TreeVector.cc
-                              ParallelCommunication.cc
-                              GraphFE.cc
-                              MatrixFE.cc
-                              SuperMapLumped.cc
-                              SuperMap.cc)
+set(data_structures_src_files
+  BlockSpace.cc
+  CompositeSpace.cc
+  CompositeVectorSpace.cc
+  TreeVectorSpace.cc
+  TreeVector.cc
+  SuperMapLumped.cc
+  SuperMap.cc
+  GraphFE.cc
+  MatrixFE.cc
+  DataStructuresHelpers.cc
+  )
 
-file(GLOB data_structures_inc_files "*.hh")
 
-add_amanzi_library(data_structures 
-                   SOURCE ${data_structures_src_files}
-                   HEADERS ${data_structures_inc_files}
-		   LINK_LIBS mesh error_handling 
-                             ${Teuchos_Libraries} ${Epetra_Libraries}
-                             ${Thyra_Libraries} ${NOX_LIBRARIES})
+set(data_structures_inc_files
+  Patch.hh
+  CSR.hh
+  BlockSpace.hh
+  BlockVector_decl.hh
+  BlockVector_impl.hh
+  BlockVector.hh
+  CompositeSpace.hh
+  CompositeVector_decl.hh
+  CompositeVector_impl.hh
+  CompositeVector.hh 
+  CompositeVectorSpace.hh
+  CompositeMatrix.hh 
+  TreeVectorSpace.hh
+  TreeVector.hh
+  TreeMatrix.hh
+  TensorVector.hh
+  GraphFE.hh
+  MatrixFE.hh
+  SuperMapLumped.hh
+  SuperMap.hh
+  DataStructuresHelpers.hh
+  )
+
+set(data_structures_link_libs mesh
+  error_handling 
+  ${Teuchos_Libraries}
+  ${Tpetra_Libraries}
+  ${Kokkos_Libraries}
+  )
+
 
 #
 # Install Target
 #
+add_amanzi_library(data_structures 
+                   SOURCE ${data_structures_src_files}
+                   HEADERS ${data_structures_inc_files}
+		   LINK_LIBS ${data_structures_link_libs}
+                   )
+
 
 if (BUILD_TESTS)
     # Add UnitTest includes
@@ -87,55 +117,73 @@ if (BUILD_TESTS)
         file(COPY ${DataFiles} DESTINATION ${DATA_STRUCTURES_BINARY_DIR}/test/)
     endif()
 
-    set(amanzi_libs data_structures geometry mesh_factory mesh)
+    set(data_structures_test_link_libs data_structures geometry mesh_factory mesh)
     if(ENABLE_MESH_MSTK)
         list(APPEND amanzi_libs mesh_mstk)
     endif() 
 
+    # Tests for low-level data structures
+    # add_amanzi_test(data_structures_CSR data_structures_CSR
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/data_structures_CSR.cc
+    #                 LINK_LIBS ${data_structures_test_link_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(data_structures_patch data_structures_patch
+                    KIND unit
+                    SOURCE test/Main.cc test/data_structures_patch.cc
+                    LINK_LIBS ${data_structures_test_link_libs} ${UnitTest_LIBRARIES})
+    
+    # Tests for distributed vectors
     add_amanzi_test(data_structures_vectors data_structures_vectors
                     KIND unit
                     NPROCS 2
-		    SOURCE test/Main.cc 
-			   test/data_structures_composite_vector.cc
-			   test/data_structures_tree_vector.cc
+        	    SOURCE test/Main.cc
+                           test/data_structures_communication.cc
+        		   test/data_structures_block_vector.cc
+        		   test/data_structures_composite_vector.cc
+        		   test/data_structures_int_composite_vector.cc
                            test/data_structures_vandelay.cc
-                           # test/test_thyra_wrappers.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
+        		   test/data_structures_tree_vector.cc
+                    LINK_LIBS ${data_structures_test_link_libs} ${UnitTest_LIBRARIES})
 
+    # Tests for supermaps
+    add_amanzi_test(data_structures_supermap data_structures_supermap
+                    KIND unit
+                    SOURCE test/Main.cc test/data_structures_supermap.cc
+                    LINK_LIBS ${data_structures_test_link_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(data_structures_supermap_np3 data_structures_supermap --kokkos-ndevices=1 NPROCS 3 KIND unit)
+    add_amanzi_test(data_structures_supermap_np5 data_structures_supermap --kokkos-ndevices=1 NPROCS 5 KIND unit)
+
+    # NOTE: TPETRA DOES NOT SUPPORT BLCOKMAP
+    # add_amanzi_test(data_structures_supermap_block data_structures_supermap_block
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/data_structures_supermap_block.cc
+    #                 LINK_LIBS ${data_structures_test_link_libs} ${UnitTest_LIBRARIES})
+
+                  
     # Test: tests for FE graph and matrices
     add_amanzi_test(data_structures_graph_fe data_structures_graph_fe
                     KIND unit
                     SOURCE test/Main.cc test/data_structures_graph_fe.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
+                    LINK_LIBS ${data_structures_test_link_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(data_structures_matrix_fe data_structures_matrix_fe
                     KIND unit
                     SOURCE test/Main.cc test/data_structures_matrix_fe.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
+                    LINK_LIBS ${data_structures_test_link_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(data_structures_matrix_fe_np2 data_structures_matrix_fe NPROCS 2 KIND unit)
     add_amanzi_test(data_structures_matrix_fe_np4 data_structures_matrix_fe NPROCS 4 KIND unit)
 
-    add_amanzi_test(data_structures_supermap data_structures_supermap 
-                    KIND unit
-                    SOURCE test/Main.cc test/data_structures_supermap.cc test/data_structures_supermap_block.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
-    add_amanzi_test(data_structures_supermap_np3 data_structures_supermap NPROCS 3 KIND unit)
-    add_amanzi_test(data_structures_supermap_np5 data_structures_supermap NPROCS 5 KIND unit)
 
-    add_amanzi_test(data_structures_supermap_block data_structures_supermap_block
-                    KIND unit
-                    SOURCE test/Main.cc test/data_structures_supermap_block.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
+    # # add_amanzi_test(data_structures_matrix_fe_speed data_structures_matrix_fe_speed
+    # #                 KIND unit
+    # # 	              SOURCE test/Main.cc test/data_structures_matrix_fe_speed.cc
+    # # 	              LINK_LIBS ${data_structures_test_link_libs} ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(data_structures_matrix_fe_speed data_structures_matrix_fe_speed
+    add_amanzi_test(data_structures_common_patterns, data_structures_common_patterns
                     KIND unit
-                    NPROCS 4
-                    SOURCE test/Main.cc test/data_structures_matrix_fe_speed.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    SOURCE test/Main.cc test/data_structures_common_patterns.cc
+                    LINK_LIBS ${data_structures_test_link_libs} ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(data_structures_access data_structures_access_times
-                    KIND int
-                    SOURCE test/Main.cc test/data_structures_cv_access.cc
-    	            LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()

@@ -127,7 +127,7 @@ TEST(MESH_CACHED_DEFORM2D)
 TEST(MESH_CACHED_GENERATED_DEFORM3D)
 {
   auto comm = getDefaultComm();
-  const int nproc(comm->NumProc());
+  const int nproc(comm->getSize());
   if (nproc != 1) {
     std::cout << "Parallel deformation not implemented" << std::endl;
     return;

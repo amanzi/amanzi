@@ -7,8 +7,7 @@
   Authors:
 */
 
-#ifndef _UTILS_HH_
-#define _UTILS_HH_
+#pragma once
 
 #include <vector>
 #include <ostream>
@@ -40,4 +39,3 @@ dump_vector_as_map(const V& data, std::ostream& stream)
 
 } // namespace Utils
 } // namespace Amanzi
-#endif

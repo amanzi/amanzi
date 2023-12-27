@@ -26,7 +26,7 @@ void
 AssembleVectorCellOp(int c,
                      const AmanziMesh::Mesh& mesh,
                      const Schema& schema,
-                     const WhetStone::DenseVector& v,
+                     const WhetStone::DenseVector<>& v,
                      CompositeVector& X)
 {
   int m(0);
@@ -36,7 +36,7 @@ AssembleVectorCellOp(int c,
     std::tie(kind, std::ignore, num) = *it;
 
     if (kind == AmanziMesh::Entity_kind::NODE) {
-      Epetra_MultiVector& Xn = *X.ViewComponent("node", true);
+      Epetra_MultiVector& Xn = *X.viewComponent("node", true);
 
       auto nodes = mesh.getCellNodes(c);
       int nnodes = nodes.size();
@@ -47,7 +47,7 @@ AssembleVectorCellOp(int c,
     }
 
     else if (kind == AmanziMesh::Entity_kind::FACE) {
-      Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
+      Epetra_MultiVector& Xf = *X.viewComponent("face", true);
 
       const auto& faces = mesh.getCellFaces(c);
       int nfaces = faces.size();
@@ -58,7 +58,7 @@ AssembleVectorCellOp(int c,
     }
 
     else if (kind == AmanziMesh::Entity_kind::EDGE) {
-      Epetra_MultiVector& Xe = *X.ViewComponent("edge", true);
+      Epetra_MultiVector& Xe = *X.viewComponent("edge", true);
 
       auto edges = mesh.getCellEdges(c);
       int nedges = edges.size();
@@ -69,7 +69,7 @@ AssembleVectorCellOp(int c,
     }
 
     else if (kind == AmanziMesh::Entity_kind::CELL) {
-      Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
+      Epetra_MultiVector& Xc = *X.viewComponent("cell", true);
 
       for (int k = 0; k < num; ++k) { Xc[k][c] += v(m++); }
     }
@@ -88,7 +88,7 @@ void
 AssembleVectorFaceOp(int f,
                      const AmanziMesh::Mesh& mesh,
                      const Schema& schema,
-                     const WhetStone::DenseVector& v,
+                     const WhetStone::DenseVector<>& v,
                      CompositeVector& X)
 {
   int m(0);
@@ -98,7 +98,7 @@ AssembleVectorFaceOp(int f,
     std::tie(kind, std::ignore, num) = *it;
 
     if (kind == AmanziMesh::Entity_kind::CELL) {
-      Epetra_MultiVector& Xf = *X.ViewComponent("cell", true);
+      Epetra_MultiVector& Xf = *X.viewComponent("cell", true);
 
       auto cells = mesh.getFaceCells(f);
       int ncells = cells.size();
@@ -118,7 +118,7 @@ void
 AssembleVectorNodeOp(int n,
                      const AmanziMesh::Mesh& mesh,
                      const Schema& schema,
-                     const WhetStone::DenseVector& v,
+                     const WhetStone::DenseVector<>& v,
                      CompositeVector& X)
 {
   int m(0);
@@ -128,7 +128,7 @@ AssembleVectorNodeOp(int n,
     std::tie(kind, std::ignore, num) = *it;
 
     if (kind == AmanziMesh::Entity_kind::CELL) {
-      Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
+      Epetra_MultiVector& Xc = *X.viewComponent("cell", true);
 
       auto cells = mesh.getNodeCells(n);
       int ncells = cells.size();
@@ -148,7 +148,7 @@ void
 ExtractVectorCellOp(int c,
                     const AmanziMesh::Mesh& mesh,
                     const Schema& schema,
-                    WhetStone::DenseVector& v,
+                    WhetStone::DenseVector<>& v,
                     const CompositeVector& X)
 {
   int m(0);
@@ -158,7 +158,7 @@ ExtractVectorCellOp(int c,
     std::tie(kind, std::ignore, num) = *it;
 
     if (kind == AmanziMesh::Entity_kind::NODE) {
-      const Epetra_MultiVector& Xn = *X.ViewComponent("node", true);
+      const Epetra_MultiVector& Xn = *X.viewComponent("node", true);
 
       auto nodes = mesh.getCellNodes(c);
       int nnodes = nodes.size();
@@ -169,7 +169,7 @@ ExtractVectorCellOp(int c,
     }
 
     else if (kind == AmanziMesh::Entity_kind::FACE) {
-      const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
+      const Epetra_MultiVector& Xf = *X.viewComponent("face", true);
 
       const auto& faces = mesh.getCellFaces(c);
       int nfaces = faces.size();
@@ -180,7 +180,7 @@ ExtractVectorCellOp(int c,
     }
 
     else if (kind == AmanziMesh::Entity_kind::EDGE) {
-      const Epetra_MultiVector& Xe = *X.ViewComponent("edge", true);
+      const Epetra_MultiVector& Xe = *X.viewComponent("edge", true);
 
       auto edges = mesh.getCellEdges(c);
       int nedges = edges.size();
@@ -191,7 +191,7 @@ ExtractVectorCellOp(int c,
     }
 
     else if (kind == AmanziMesh::Entity_kind::CELL) {
-      const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
+      const Epetra_MultiVector& Xc = *X.viewComponent("cell", true);
 
       for (int k = 0; k < num; ++k) { v(m++) = Xc[k][c]; }
     }
@@ -210,7 +210,7 @@ void
 ExtractVectorFaceOp(int f,
                     const AmanziMesh::Mesh& mesh,
                     const Schema& schema,
-                    WhetStone::DenseVector& v,
+                    WhetStone::DenseVector<>& v,
                     const CompositeVector& X)
 {
   int m(0);
@@ -220,7 +220,7 @@ ExtractVectorFaceOp(int f,
     std::tie(kind, std::ignore, num) = *it;
 
     if (kind == AmanziMesh::Entity_kind::CELL) {
-      const Epetra_MultiVector& Xf = *X.ViewComponent("cell", true);
+      const Epetra_MultiVector& Xf = *X.viewComponent("cell", true);
 
       auto cells = mesh.getFaceCells(f);
       int ncells = cells.size();
@@ -240,7 +240,7 @@ void
 ExtractVectorNodeOp(int n,
                     const AmanziMesh::Mesh& mesh,
                     const Schema& schema,
-                    WhetStone::DenseVector& v,
+                    WhetStone::DenseVector<>& v,
                     const CompositeVector& X)
 {
   int m(0);
@@ -250,7 +250,7 @@ ExtractVectorNodeOp(int n,
     std::tie(kind, std::ignore, num) = *it;
 
     if (kind == AmanziMesh::Entity_kind::CELL) {
-      const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
+      const Epetra_MultiVector& Xc = *X.viewComponent("cell", true);
 
       auto cells = mesh.getNodeCells(n);
       int ncells = cells.size();

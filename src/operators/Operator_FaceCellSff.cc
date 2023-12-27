@@ -1,15 +1,13 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
-*/
-
-/*
-  Operators
 
   Operator whose unknowns are CELL + FACE, but which assembles the
   FACE only system and Schur complements cells.
@@ -21,12 +19,11 @@
 */
 
 #include <vector>
-#include "EpetraExt_RowMatrixOut.h"
 
 #include "SuperMap.hh"
 #include "GraphFE.hh"
 #include "MatrixFE.hh"
-#include "InverseFactory.hh"
+#include "Preconditioner.hh"
 
 #include "OperatorDefs.hh"
 #include "OperatorUtils.hh"
@@ -35,9 +32,108 @@
 #include "Op_Cell_Face.hh"
 #include "Operator_FaceCellSff.hh"
 
-
 namespace Amanzi {
 namespace Operators {
+
+/* ******************************************************************
+* Special inverse algorithm is required to deal with Schur complement.
+****************************************************************** */
+int
+Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
+{
+  // Check preconditions -- Sff must have exactly one CELL+FACE schema,
+  // and no other CELL schemas that are not simply diagonal CELL_CELL.
+  // Additionally, collect the diagonal for inversion.
+  MultiVector_type D_c(mesh_->getMap(AmanziMesh::Entity_kind::CELL, false), 1);
+  auto D_c_view = D_c.getLocalViewHost(Tpetra::Access::ReadWrite);
+
+  int num_with_cells = 0;
+  for (const_op_iterator it = begin(); it != end(); ++it) {
+    if ((*it)->schema_old & OPERATOR_SCHEMA_DOFS_CELL) {
+      if (((*it)->schema_old == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL)) &&
+          ((*it)->diag->getLocalLength() == ncells_owned)) {
+        // diagonal schema
+        auto diag_view = (*it)->diag->getLocalViewHost(Tpetra::Access::ReadOnly);
+        for (int c = 0; c != ncells_owned; ++c) { D_c_view(c, 0) += diag_view(c, 0); }
+      } else {
+        num_with_cells++;
+      }
+    }
+  }
+
+  // This error is a false positive when doing coupled surface/subsurface runs. --etc
+  // if (num_with_cells == 0 || num_with_cells > 1) {
+  //   Errors::Message msg("Schur complement to Sff must have exactly one cell-based schema with off-diagonal entries or other, non-cell dofs.");
+  //   Exceptions::amanzi_throw(msg);
+  // }
+
+  int ierr(0);
+  Y.putScalarGhosted(0.0);
+
+  // apply preconditioner inversion
+  const auto& Xc = X.viewComponent("cell");
+  const auto& Xf = X.viewComponent("face", true);
+
+  // Temporary cell and face vectors.
+  CompositeVector T(X);
+  T.putScalarGhosted(0.0);
+
+  for (const_op_iterator it = begin(); it != end(); ++it) {
+    if ((*it)->schema_old ==
+        (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+      // FORWARD ELIMINATION:  Tf = Xf - Afc inv(Acc) Xc
+      {
+        auto Tf = T.viewComponent("face", true);
+        for (int c = 0; c < ncells_owned; c++) {
+          auto faces = mesh_->getCellFaces(c);
+          int nfaces = faces.size();
+
+          const WhetStone::DenseMatrix<>& Acell = (*it)->A.at_host(c);
+
+          double tmp = Xc(c, 0) / (Acell(nfaces, nfaces) + D_c_view(c, 0));
+          for (int n = 0; n < nfaces; n++) {
+            int f = faces[n];
+            Tf(f, 0) -= Acell(n, nfaces) * tmp;
+          }
+        }
+      }
+
+      T.gatherGhostedToMaster("face", Tpetra::CombineMode::ADD);
+
+      // Solve the Schur complement system Sff * Yf = Tf.
+      {
+        assert(false);
+        //const auto& Tf_short = T.viewComponent("face", false);
+        //auto Yf_short = Y.viewComponent("face", false);
+
+        //ierr = preconditioner_->applyInverse(Tf_short, Yf_short);
+        AMANZI_ASSERT(ierr >= 0);
+      }
+
+      Y.scatterMasterToGhosted("face");
+
+      {
+        const auto& Yf = Y.viewComponent("face", true);
+        auto Yc = Y.viewComponent("cell", false);
+        // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
+        for (int c = 0; c < ncells_owned; c++) {
+          auto faces = mesh_->getCellFaces(c);
+          int nfaces = faces.size();
+
+          const WhetStone::DenseMatrix<>& Acell = (*it)->A.at_host(c);
+
+          double tmp = Xc(c, 0);
+          for (int n = 0; n < nfaces; n++) {
+            int f = faces[n];
+            tmp -= Acell(nfaces, n) * Yf(f, 0);
+          }
+          Yc(c, 0) = tmp / (Acell(nfaces, nfaces) + D_c_view(c, 0));
+        }
+      }
+    }
+  }
+  return ierr;
+}
 
 
 /* ******************************************************************
@@ -52,24 +148,35 @@ Operator_FaceCellSff::AssembleMatrix(const SuperMap& map,
   // Check preconditions -- Scc must have exactly one CELL+FACE schema,
   // and no other CELL schemas that are not simply diagonal CELL_CELL.
   // Additionally, collect the diagonal for inversion.
-  Epetra_MultiVector D_c(mesh_->getMap(AmanziMesh::Entity_kind::CELL, false), 1);
+  MultiVector_type D_c(mesh_->getMap(AmanziMesh::Entity_kind::CELL, false), 1);
+  auto D_c_view = D_c.getLocalViewHost(Tpetra::Access::ReadWrite);
 
+  int num_with_cells = 0;
   for (const_op_iterator it = begin(); it != end(); ++it) {
-    if ((*it)->schema_old() & OPERATOR_SCHEMA_DOFS_CELL) {
-      if (((*it)->schema_old() == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL)) &&
-          ((*it)->diag->MyLength() == ncells_owned)) {
+    if ((*it)->schema_old & OPERATOR_SCHEMA_DOFS_CELL) {
+      if (((*it)->schema_old == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL)) &&
+          ((*it)->diag->getLocalLength() == ncells_owned)) {
         // diagonal schema
-        for (int c = 0; c != ncells_owned; ++c) { D_c[0][c] += (*(*it)->diag)[0][c]; }
+        auto diag_view = (*it)->diag->getLocalViewHost(Tpetra::Access::ReadOnly);
+        for (int c = 0; c != ncells_owned; ++c) { D_c_view(c, 0) += diag_view(c, 0); }
+      } else {
+        num_with_cells++;
       }
     }
   }
 
+  // This error is a false positive when doing coupled surface/subsurface runs. --etc
+  // if (num_with_cells == 0 || num_with_cells > 1) {
+  //   Errors::Message msg("Schur complement to Sff must have exactly one cell-based schema with off-diagonal entries or other, non-cell dofs.");
+  //   Exceptions::amanzi_throw(msg);
+  // }
+
   // schur complement
   int i_schur = 0;
   for (const_op_iterator it = begin(); it != end(); ++it) {
-    if ((*it)->schema_old() ==
+    if ((*it)->schema_old ==
         (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
-      AMANZI_ASSERT((*it)->matrices.size() == ncells_owned);
+      AMANZI_ASSERT((*it)->A.size() == ncells_owned);
 
       // create or get extra ops, and keep them for future use
       Teuchos::RCP<Op_Cell_Face> schur_op;
@@ -85,19 +192,20 @@ Operator_FaceCellSff::AssembleMatrix(const SuperMap& map,
         schur_ops_.push_back(schur_op);
         for (int c = 0; c != ncells_owned; ++c) {
           int nfaces = mesh_->getCellNumFaces(c);
-          schur_op->matrices[c] = WhetStone::DenseMatrix(nfaces, nfaces);
+          assert(false);
+          //schur_op->A.at_host[c].assign(WhetStone::DenseMatrix(nfaces, nfaces));
         }
       }
 
       // populate the schur component
       for (int c = 0; c != ncells_owned; ++c) {
-        const auto& faces = mesh_->getCellFaces(c);
+        auto faces = mesh_->getCellFaces(c);
         int nfaces = faces.size();
 
-        WhetStone::DenseMatrix& Scell = schur_op->matrices[c];
-        WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
+        WhetStone::DenseMatrix<> Scell = schur_op->A.at_host(c);
+        WhetStone::DenseMatrix<> Acell = (*it)->A.at_host(c);
 
-        double tmp = Acell(nfaces, nfaces) + D_c[0][c];
+        double tmp = Acell(nfaces, nfaces) + D_c_view(c, 0);
 
         for (int n = 0; n < nfaces; n++) {
           for (int m = 0; m < nfaces; m++) {
@@ -108,8 +216,8 @@ Operator_FaceCellSff::AssembleMatrix(const SuperMap& map,
 
       // Assemble this Schur Op into matrix
       schur_op->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
-    } else if (((*it)->schema_old() == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL)) &&
-               ((*it)->diag->MyLength() == ncells_owned)) {
+    } else if (((*it)->schema_old == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL)) &&
+               ((*it)->diag->getLocalLength() == ncells_owned)) {
       // pass, already part of cell inverse
     } else {
       (*it)->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
@@ -127,28 +235,34 @@ Operator_FaceCellSff::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
                                         const CompositeVector& X,
                                         CompositeVector& Y) const
 {
-  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
-  const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
-  const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
+  AMANZI_ASSERT(op.A.size() == ncells_owned);
+
+  X.scatterMasterToGhosted();
+  const auto& Xf = X.viewComponent("face", true);
+  const auto& Xc = X.viewComponent("cell");
+  Y.putScalarGhosted(0.);
+
   {
-    Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
-    Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
+    auto Yf = Y.viewComponent("face", true);
+    auto Yc = Y.viewComponent("cell");
 
     for (int c = 0; c != ncells_owned; ++c) {
-      const auto& faces = mesh_->getCellFaces(c);
+      auto faces = mesh_->getCellFaces(c);
       int nfaces = faces.size();
 
-      WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
-      for (int n = 0; n != nfaces; ++n) { v(n) = Xf[0][faces[n]]; }
-      v(nfaces) = Xc[0][c];
+      WhetStone::DenseVector<> v(nfaces + 1), av(nfaces + 1);
+      for (int n = 0; n != nfaces; ++n) { v(n) = Xf(faces[n], 0); }
+      v(nfaces) = Xc(c, 0);
 
-      const WhetStone::DenseMatrix& Acell = op.matrices[c];
+      const WhetStone::DenseMatrix<>& Acell = op.A.at_host(c);
       Acell.Multiply(v, av, false);
 
-      for (int n = 0; n != nfaces; ++n) { Yf[0][faces[n]] += av(n); }
-      Yc[0][c] += av(nfaces);
+      for (int n = 0; n != nfaces; ++n) { Yf(faces[n], 0) += av(n); }
+      Yc(c, 0) += av(nfaces);
     }
   }
+
+  Y.gatherGhostedToMaster(Tpetra::CombineMode::ADD);
   return 0;
 }
 
@@ -161,24 +275,22 @@ Operator_FaceCellSff::SymbolicAssembleMatrix()
 {
   // SuperMap for Sff is face only
   CompositeVectorSpace smap_space;
-  smap_space.SetMesh(mesh_)->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
-  smap_ = createSuperMap(smap_space);
+  smap_space.SetMesh(mesh_)->SetComponent("face", AmanziMesh::FACE, 1);
+  smap_ = createSuperMap(smap_space.CreateSpace().ptr());
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema(), 1);
-  Teuchos::RCP<GraphFE> graph =
-    Teuchos::rcp(new GraphFE(smap_->Map(), smap_->GhostedMap(), smap_->GhostedMap(), row_size));
+  Teuchos::RCP<GraphFE> graph = Teuchos::rcp(
+    new GraphFE(smap_->getMap(), smap_->getGhostedMap(), smap_->getGhostedMap(), row_size));
 
   Operator::SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
 
   // Completing and optimizing the graphs
-  int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
-  AMANZI_ASSERT(!ierr);
+  graph->fillComplete(smap_->getMap(), smap_->getMap());
 
   // create global matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
-  A_ = Amat_->Matrix();
-  assembly_complete_ = false;
+  A_ = Amat_->getMatrix();
 }
 
 
@@ -195,40 +307,6 @@ Operator_FaceCellSff::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   std::string name = "Sff alt CELL_FACE";
   Op_Cell_Face schur_op(name, mesh_);
   Operator_FaceCell::SymbolicAssembleMatrixOp(schur_op, map, graph, my_block_row, my_block_col);
-}
-
-void
-Operator_FaceCellSff::InitializeInverse()
-{
-  if (!inverse_pars_set_) {
-    Errors::Message msg("No inverse parameter list.  Provide a sublist \"inverse\" or ensure "
-                        "set_inverse_parameters() is called.");
-    msg << " In: " << typeid(*this).name() << "\n";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  schur_inv_ = Teuchos::rcp(new AmanziSolvers::InverseSchurComplement());
-  schur_inv_->set_inverse_parameters(inv_plist_);
-  schur_inv_->set_matrix(Teuchos::rcpFromRef(*this));
-
-  if (inv_plist_.isParameter("iterative method")) {
-    preconditioner_ =
-      AmanziSolvers::createIterativeMethod(inv_plist_, Teuchos::rcpFromRef(*this), schur_inv_);
-  } else {
-    preconditioner_ = schur_inv_;
-  }
-  preconditioner_->InitializeInverse();
-  initialize_complete_ = true;
-  compute_complete_ = false;
-}
-
-/* ******************************************************************
-* Copy constructor.
-****************************************************************** */
-Teuchos::RCP<Operator>
-Operator_FaceCellSff::Clone() const
-{
-  return Teuchos::rcp(new Operator_FaceCellSff(*this));
 }
 
 } // namespace Operators

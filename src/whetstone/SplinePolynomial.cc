@@ -36,7 +36,7 @@ SplineCubic::Setup(double x0, double f0, double df0, double x1, double f1, doubl
   AmanziGeometry::Point p0(1);
   p0[0] = x0;
 
-  poly_.Reshape(1, 3);
+  poly_.reshape(1, 3);
   poly_.set_origin(p0);
 
   poly_(0) = f0;
@@ -84,7 +84,7 @@ SplineQuadratic::Setup(double x0, double f0, double df0, double x1, double f1)
   AmanziGeometry::Point p0(1);
   p0[0] = x0;
 
-  poly_.Reshape(1, 2);
+  poly_.reshape(1, 2);
   poly_.set_origin(p0);
 
   poly_(0) = f0;

@@ -21,8 +21,10 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})  
 
+
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
+
 
 #
 # geometry library
@@ -54,36 +56,38 @@ if (BUILD_TESTS)
    # Test: test point creation and deletion
    add_amanzi_test(geometry_points geometry_points
                    KIND unit
-		   SOURCE test/Main.cc test/test_points.cc
+		   SOURCE test/Main.cc test/geometry_points.cc
 		   LINK_LIBS geometry ${UnitTest_LIBRARIES})
 
    # Test: test geometric operators
    add_amanzi_test(geometry_operators geometry_operations
                    KIND unit
                    SOURCE test/Main.cc 
-                          test/test_geometric_ops.cc
+                          test/geometry_geometric_ops.cc
                    LINK_LIBS geometry ${UnitTest_LIBRARIES})
 
    # Test: test region creation
    add_amanzi_test(geometry_region geometry_region
                    KIND unit
                    SOURCE test/Main.cc 
-                          test/test_box_region.cc
-                          test/test_plane_region.cc
-                          test/test_labeledset.cc
-                          test/test_enumeratedset.cc
-                          test/test_colorfunc_region.cc
-			  test/test_polygon_region.cc
-			  test/test_cylinder_region.cc
-                   LINK_LIBS geometry ${UnitTest_LIBRARIES})
+                          test/geometry_box_region.cc
+                          test/geometry_plane_region.cc
+                          test/geometry_labeledset.cc
+                          test/geometry_enumeratedset.cc
+			  test/geometry_polygon_region.cc
+			  test/geometry_cylinder_region.cc
+                   LINK_LIBS 
+                          geometry
+                          ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Tpetra_LIBRARIES})  
 
    # Test: test geometric model creation
    add_amanzi_test(geometry_geometric_model geometry_geometric_model
                    KIND unit
                    SOURCE test/Main.cc
-                          test/test_geometric_model.cc
-                   LINK_LIBS geometry
-                          ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})  
+                          test/geometry_geometric_model.cc
+                   LINK_LIBS 
+                          geometry
+                          ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Tpetra_LIBRARIES})  
 
 endif()
 

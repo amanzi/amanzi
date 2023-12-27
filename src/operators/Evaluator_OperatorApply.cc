@@ -126,7 +126,7 @@ Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList& plist)
   //
   // All of x, residual, and rhs must have this entity.
   primary_entity_ = plist_.get<std::string>("primary entity", "cell");
-  primary_entity_kind_ = AmanziMesh::createEntityKind(primary_entity_);
+  primary_createEntityKind_ = AmanziMesh::createEntityKind(primary_entity_);
 }
 
 void
@@ -159,9 +159,9 @@ Evaluator_OperatorApply::EnsureCompatibility(State& S)
   // Futhermore, derivatives must be considered.
   //
   bool has_derivs = S.HasDerivativeSet(my_keys_[0].first, my_keys_[0].second);
-  if (my_fac.Mesh() != Teuchos::null && my_fac.size() == 0) {
+  if (my_fac.getMesh() != Teuchos::null && my_fac.size() == 0) {
     // add the primary
-    my_fac.AddComponent(primary_entity_, primary_entity_kind_, 1);
+    my_fac.AddComponent(primary_entity_, primary_createEntityKind_, 1);
     CompositeVectorSpace my_fac_mesh_only(my_fac);
 
     // -- set the rhss' mesh, need for primary entity
@@ -225,7 +225,7 @@ Evaluator_OperatorApply::EnsureCompatibility(State& S)
         AMANZI_ASSERT(wrt.first == x0_key_); // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
         auto& deriv_fac = S.RequireDerivative<Operators::Operator, Operators::Operator_Factory>(
           my_keys_[0].first, my_keys_[0].second, wrt.first, tag, my_keys_[0].first);
-        deriv_fac.set_mesh(my_fac.Mesh());
+        deriv_fac.set_mesh(my_fac.getMesh());
 
         // FIX ME TO BE NON_SQUARE FOR OFF DIAGONALS? --etc
         deriv_fac.set_cvs(my_fac);
@@ -267,15 +267,15 @@ Evaluator_OperatorApply::Update_(State& S)
   auto& result = S.GetW<CompositeVector>(my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
 
   const auto& x = S.Get<CompositeVector>(x0_key_, my_keys_[0].second);
-  x.ScatterMasterToGhosted();
+  x.scatterMasterToGhosted();
   result.PutScalarMasterAndGhosted(0.);
 
   int i = 0;
   for (const auto& op_key : op0_keys_) {
     // create the global operator
     Operators::Operator_Factory global_op_fac;
-    global_op_fac.set_mesh(result.Mesh());
-    global_op_fac.set_cvs(x.Map(), result.Map());
+    global_op_fac.set_mesh(result.getMesh());
+    global_op_fac.set_cvs(x.getMap(), result.getMap());
     auto global_op = global_op_fac.Create();
 
     // do the apply
@@ -293,14 +293,14 @@ Evaluator_OperatorApply::Update_(State& S)
   int j = 0;
   for (const auto& op_list : op_keys_) {
     const auto& xj = S.Get<CompositeVector>(x_keys_[j], my_keys_[0].second);
-    xj.ScatterMasterToGhosted();
+    xj.scatterMasterToGhosted();
 
     int k = 0;
     for (const auto& op_key : op_list) {
       // create the global operator
       Operators::Operator_Factory global_op_fac;
-      global_op_fac.set_mesh(xj.Mesh());
-      global_op_fac.set_cvs(xj.Map(), result.Map());
+      global_op_fac.set_mesh(xj.getMesh());
+      global_op_fac.set_cvs(xj.getMap(), result.getMap());
       auto global_op = global_op_fac.Create();
 
       // do the apply
@@ -366,9 +366,9 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key, const T
           // drhs.Print(std::cout);
           for (const auto& comp : drhs) {
             if (AmanziMesh::createEntityKind(comp) == AmanziMesh::Entity_kind::CELL) {
-              auto op_cell = Teuchos::rcp(new Operators::Op_Cell_Cell(rhs_key, drhs.Mesh()));
+              auto op_cell = Teuchos::rcp(new Operators::Op_Cell_Cell(rhs_key, drhs.getMesh()));
               // clobber the diag
-              *op_cell->diag = *drhs.ViewComponent(comp, false);
+              *op_cell->diag = *drhs.viewComponent(comp, false);
               op_cell->diag->Scale(rhs_scalars_[j]);
               global_op->OpPushBack(op_cell);
             } else {

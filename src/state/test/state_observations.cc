@@ -11,7 +11,6 @@
 
 #include "AmanziComm.hh"
 #include "CompositeVector.hh"
-#include "IO.hh"
 #include "MeshFrameworkColumn.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
@@ -33,6 +32,7 @@ using namespace Amanzi;
 bool
 compareFiles(const std::string& p1, const std::string& p2)
 {
+  std::cout << "Comparing: " << p1 << " and " << p2 << std::endl;
   std::ifstream f1(p1, std::ifstream::binary | std::ifstream::ate);
   std::ifstream f2(p2, std::ifstream::binary | std::ifstream::ate);
 
@@ -60,7 +60,7 @@ struct obs_test {
  public:
   obs_test()
   {
-    auto comm = Amanzi::getDefaultComm();
+    comm = Amanzi::getDefaultComm();
 
     // create geometric model
     Teuchos::ParameterList region_list("regions");
@@ -84,15 +84,26 @@ struct obs_test {
                                               std::vector<double>{ -.35, -1, -1 });
     one_side_side.set<Teuchos::Array<double>>("high coordinate", std::vector<double>{ -0.3, 1, 1 });
 
-    auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
+    gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-    auto plist = Teuchos::rcp(new Teuchos::ParameterList("mesh factory"));
+    plist = Teuchos::rcp(new Teuchos::ParameterList("mesh factory"));
     plist->set<std::string>("partitioner", "zoltan_rcb");
     meshfactory = Teuchos::rcp(new AmanziMesh::MeshFactory(comm, gm, plist));
+
+    AmanziMesh::Preference pref;
+    pref.clear();
+    if (comm->getSize() == 1) {
+      pref.push_back(AmanziMesh::Framework::MSTK);
+      pref.push_back(AmanziMesh::Framework::SIMPLE);
+    } else {
+      pref.push_back(AmanziMesh::Framework::MSTK);
+    }
+
+    meshfactory->set_preference(pref);
     Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory->create(-1, -1, -1, 1, 1, 1, 3, 3, 3);
 
-    Teuchos::ParameterList state_list("state");
-    state_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    auto state_list = Teuchos::rcp(new Teuchos::ParameterList("state"));
+    state_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
     S = Teuchos::rcp(new State(state_list));
     S->RegisterMesh("domain", mesh);
@@ -126,41 +137,50 @@ struct obs_test {
   void setup()
   {
     S->Setup();
-    S->GetW<CompositeVector>("constant", Tags::DEFAULT, "my_password").PutScalar(2.0);
-    S->GetW<CompositeVector>("linear", Tags::DEFAULT, "my_password").PutScalar(0.0);
+    S->GetW<CompositeVector>("constant", Tags::DEFAULT, "my_password").putScalar(2.0);
+    S->GetW<CompositeVector>("linear", Tags::DEFAULT, "my_password").putScalar(0.0);
 
-    (*S->GetW<CV>("multi_dof", Tags::DEFAULT, "my_password").ViewComponent("cell"))(0)->PutScalar(
-      0.0);
-    (*S->GetW<CV>("multi_dof", Tags::DEFAULT, "my_password").ViewComponent("cell"))(1)->PutScalar(
-      1.0);
-    (*S->GetW<CV>("multi_dof", Tags::DEFAULT, "my_password").ViewComponent("cell"))(2)->PutScalar(
-      2.0);
+    S->GetW<CV>("multi_dof", Tags::DEFAULT, "my_password")
+      .getComponent("cell")
+      ->getVectorNonConst(0)
+      ->putScalar(0.0);
+    S->GetW<CV>("multi_dof", Tags::DEFAULT, "my_password")
+      .getComponent("cell")
+      ->getVectorNonConst(1)
+      ->putScalar(1.0);
+    S->GetW<CV>("multi_dof", Tags::DEFAULT, "my_password")
+      .getComponent("cell")
+      ->getVectorNonConst(2)
+      ->putScalar(2.0);
 
     auto mesh = S->GetMesh("domain");
-    Epetra_MultiVector& flux_f =
-      *S->GetW<CV>("flux", Tags::DEFAULT, "my_password").ViewComponent("face");
-    AmanziGeometry::Point plus_xz(1.0, 0.0, 1.0);
-
-    for (int f = 0; f != flux_f.MyLength(); ++f) {
-      flux_f[0][f] = mesh->getFaceNormal(f) * plus_xz;
+    {
+      auto flux_f =
+        S->GetW<CV>("flux", Tags::DEFAULT, "my_password").viewComponent<Kokkos::HostSpace>("face");
+      AmanziGeometry::Point plus_xz(1.0, 0.0, 1.0);
+      for (int f = 0; f != flux_f.extent(0); ++f) flux_f(f, 0) = mesh->getFaceNormal(f) * plus_xz;
     }
 
-    Epetra_MultiVector& id_c =
-      *S->GetW<CV>("id", Tags::DEFAULT, "my_password").ViewComponent("cell");
-    auto& cell_map = S->GetMesh("domain")->getMap(AmanziMesh::Entity_kind::CELL, false);
-
-    for (int c = 0; c != id_c.MyLength(); ++c) { id_c[0][c] = cell_map.GID(c); }
+    {
+      auto id_c =
+        S->GetW<CV>("id", Tags::DEFAULT, "my_password").viewComponent<Kokkos::HostSpace>("cell");
+      auto& cell_map = S->GetMesh("domain")->getMap(AmanziMesh::Entity_kind::CELL, false);
+      for (int c = 0; c != id_c.extent(0); ++c) id_c(c, 0) = cell_map->getGlobalElement(c);
+    }
   }
 
   void advance(double dt)
   {
     S->advance_time(dt);
-    S->GetW<CV>("linear", Tags::DEFAULT, "my_password").PutScalar(S->get_time() * 0.1);
+    S->GetW<CV>("linear", Tags::DEFAULT, "my_password").putScalar(S->get_time() * 0.1);
     S->advance_cycle();
   }
 
  public:
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Teuchos::ParameterList> plist;
   Teuchos::RCP<State> S;
+  Comm_ptr_type comm;
   Teuchos::RCP<AmanziMesh::MeshFactory> meshfactory;
 };
 
@@ -170,31 +190,29 @@ struct obs_domain_set_test : public obs_test {
   {
     // create the surface mesh
     auto parent = S->GetMesh("domain");
-
-    auto plist = Teuchos::rcp(new Teuchos::ParameterList("mesh factory"));
-    plist->set<std::string>("partitioner", "zoltan_rcb");
-    auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(*parent->getGeometricModel()));
-    AmanziMesh::MeshFactory fac(parent->getComm(), gm, plist);
-
-    std::vector<std::string> setnames({ "top face" });
-    auto surface_mesh = fac.create(parent, setnames, AmanziMesh::Entity_kind::FACE, true);
+    auto surface_mesh =
+      meshfactory->create(parent, { "top face" }, AmanziMesh::Entity_kind::FACE, true);
     S->RegisterMesh("surface", surface_mesh);
 
     // create domain set
     parent->buildColumns();
+    AMANZI_ASSERT(parent->columns.num_columns_owned * parent->columns.getCells(0).extent(0) ==
+                  parent->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED));
     std::vector<std::string> cols;
     for (int i = 0; i != parent->columns.num_columns_owned; ++i) {
-      cols.emplace_back(
-        std::to_string(surface_mesh->getMap(AmanziMesh::Entity_kind::CELL, false).GID(i)));
+      cols.emplace_back(std::to_string(
+        surface_mesh->getMap(AmanziMesh::Entity_kind::CELL, false)->getGlobalElement(i)));
     }
     auto domain_set =
       Teuchos::rcp(new AmanziMesh::DomainSet("column", S->GetMesh("surface"), cols));
     S->RegisterDomainSet("column", domain_set);
 
-    // create subdomain meshes
+    // create subdomain meshes on MPI_COMM_SELF
+    auto col_mesh_factory = Teuchos::rcp(new AmanziMesh::MeshFactory(getCommSelf(), gm, plist));
     int i = 0;
     for (auto& ds : *domain_set) {
-      Teuchos::RCP<AmanziMesh::Mesh> col_mesh = meshfactory->createColumn(parent, i, Teuchos::null);
+      auto parent_list = Teuchos::rcp(new Teuchos::ParameterList(*parent->getParameterList()));
+      auto col_mesh = col_mesh_factory->createColumn(parent, i, parent_list);
       S->RegisterMesh(ds, col_mesh);
       i++;
     }
@@ -214,7 +232,7 @@ struct obs_domain_set_test : public obs_test {
     for (auto& dname : *ds) {
       int index = Keys::getDomainSetIndex<int>(dname);
       S->GetW<CompositeVector>(Keys::getKey(dname, "variable"), Tags::DEFAULT, "my_password")
-        .PutScalar(index);
+        .putScalar(index);
     }
   }
 };
@@ -228,7 +246,8 @@ SUITE(STATE_OBSERVATIONS)
     int num_cells = S->GetMesh("domain")->getNumEntities(AmanziMesh::Entity_kind::CELL,
                                                          AmanziMesh::Parallel_kind::OWNED);
     int num_cells_total = 0;
-    S->GetMesh("domain")->getComm()->SumAll(&num_cells, &num_cells_total, 1);
+    Teuchos::reduceAll<int>(
+      *S->GetMesh("domain")->getComm(), Teuchos::REDUCE_SUM, 1, &num_cells, &num_cells_total);
     CHECK_EQUAL(27, num_cells_total);
 
     // globally empty regions now error
@@ -239,7 +258,8 @@ SUITE(STATE_OBSERVATIONS)
     int cells_all = S->GetMesh("domain")->getSetSize(
       "all", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     int cells_all_total = 0;
-    S->GetMesh("domain")->getComm()->SumAll(&cells_all, &cells_all_total, 1);
+    Teuchos::reduceAll<int>(
+      *S->GetMesh("domain")->getComm(), Teuchos::REDUCE_SUM, 1, &cells_all, &cells_all_total);
     CHECK_EQUAL(27, cells_all_total);
   }
 
@@ -265,7 +285,7 @@ SUITE(STATE_OBSERVATIONS)
     CHECK_EQUAL(1, obs.get_num_vectors());
 
     std::vector<double> observation(1, Observable::nan);
-    WriteStateStatistics(*S, *vo);
+    S->WriteStatistics(vo.ptr());
     obs.Update(S.ptr(), observation, 0);
     CHECK_CLOSE(2.0, observation[0], 1.e-10);
   }
@@ -480,9 +500,11 @@ SUITE(STATE_OBSERVATIONS)
   TEST_FIXTURE(obs_test, FileOne)
   {
     setup();
+    std::string filename = "obs1_np" + std::to_string(comm->getSize()) + ".dat";
+
     //  one observation in a file
     Teuchos::ParameterList obs_list("my obs");
-    obs_list.set<std::string>("observation output filename", "obs1.dat");
+    obs_list.set<std::string>("observation output filename", filename);
     obs_list.set<Teuchos::Array<int>>("cycles", std::vector<int>{ 0, 1 });
     obs_list.set<std::string>("variable", "linear");
     obs_list.set<std::string>("region", "all");
@@ -499,7 +521,8 @@ SUITE(STATE_OBSERVATIONS)
 
     // times: 0, 1
     // values: 0, .1
-    CHECK(compareFiles("obs1.dat", "test/obs1.dat.gold"));
+    comm->barrier();
+    if (comm->getRank() == 0) CHECK(compareFiles(filename, "test/" + filename + ".gold"));
   }
 
 
@@ -507,8 +530,10 @@ SUITE(STATE_OBSERVATIONS)
   {
     setup();
     //  one observation in a file
+    std::string filename = "obs2_np" + std::to_string(comm->getSize()) + ".dat";
+
     Teuchos::ParameterList obs_list("my obs");
-    obs_list.set<std::string>("observation output filename", "obs2.dat");
+    obs_list.set<std::string>("observation output filename", filename);
     obs_list.set<Teuchos::Array<int>>("cycles", std::vector<int>{ 0, 1 });
 
     auto& obsA_list = obs_list.sublist("observed quantities").sublist("obsA");
@@ -534,16 +559,19 @@ SUITE(STATE_OBSERVATIONS)
     // times: 0, 1
     // valuesA: 0, .1
     // valuesB: 2, 2
-    CHECK(compareFiles("obs2.dat", "test/obs2.dat.gold"));
+    comm->barrier();
+    if (comm->getRank() == 0) CHECK(compareFiles(filename, "test/" + filename + ".gold"));
   }
 
 
   TEST_FIXTURE(obs_test, TimeIntegrated)
   {
     setup();
+    std::string filename = "obs3_np" + std::to_string(comm->getSize()) + ".dat";
+
     //  one observation in a file
     Teuchos::ParameterList obs_list("my obs");
-    obs_list.set<std::string>("observation output filename", "obs3.dat");
+    obs_list.set<std::string>("observation output filename", filename);
     obs_list.set<Teuchos::Array<double>>("times", std::vector<double>{ 0, 1 });
 
     auto& obsA_list = obs_list.sublist("observed quantities").sublist("obsA");
@@ -572,7 +600,8 @@ SUITE(STATE_OBSERVATIONS)
     // times: 0, 1
     // valuesA: 0, 0.5*0.05 + 0.5*0.1  (0.075)
     // valuesB: 2, 2
-    CHECK(compareFiles("obs3.dat", "test/obs3.dat.gold"));
+    comm->barrier();
+    if (comm->getRank() == 0) CHECK(compareFiles(filename, "test/" + filename + ".gold"));
   }
 
   /* This test is no longer valid because globally empty regions now error...
@@ -582,8 +611,10 @@ SUITE(STATE_OBSERVATIONS)
     setup();
     // integrate an observable
     //  one observation in a file
+    std::string filename = "obs4_np" + std::to_string(comm->getSize()) + ".dat";
+
     Teuchos::ParameterList obs_list("my obs");
-    obs_list.set<std::string>("observation output filename", "obs4.dat");
+    obs_list.set<std::string>("observation output filename", filename);
     obs_list.set<Teuchos::Array<double>>("times", std::vector<double>{ 0, 1 });
 
     auto& obsA_list = obs_list.sublist("observed quantities").sublist("obsA");
@@ -604,7 +635,9 @@ SUITE(STATE_OBSERVATIONS)
 
     // times: 0, 1
     // valuesA: NaN NaN
-    CHECK(compareFiles("obs4.dat", "test/obs4.dat.gold"));
+    comm->barrier();
+    if (comm->getRank() == 0)
+      CHECK(compareFiles(filename, "test/"+filename+".gold"));
   }
 */
 
@@ -612,8 +645,9 @@ SUITE(STATE_OBSERVATIONS)
   {
     setup();
     //  one observation in a file
+    std::string filename = "obs5_np" + std::to_string(comm->getSize()) + ".dat";
     Teuchos::ParameterList obs_list("my obs");
-    obs_list.set<std::string>("observation output filename", "obs5.dat");
+    obs_list.set<std::string>("observation output filename", filename);
     obs_list.set<Teuchos::Array<int>>("cycles", std::vector<int>{ 0, 1 });
     obs_list.set<std::string>("variable", "linear");
     obs_list.set<std::string>("region", "all");
@@ -636,7 +670,8 @@ SUITE(STATE_OBSERVATIONS)
 
     // times: 0, 1
     // values: 0, .1
-    CHECK(compareFiles("obs5.dat", "test/obs5.dat.gold"));
+    comm->barrier();
+    if (comm->getRank() == 0) CHECK(compareFiles(filename, "test/" + filename + ".gold"));
   }
 
   TEST_FIXTURE(obs_domain_set_test, ObsDomainSet)
@@ -645,8 +680,9 @@ SUITE(STATE_OBSERVATIONS)
 
     // must be able to deal with column observations off process, and still write
     // only on the local process if all are local
+    std::string filename = "obs_ds1_np" + std::to_string(comm->getSize()) + ".dat";
     Teuchos::ParameterList obs_list1("my obs ds1");
-    obs_list1.set<std::string>("observation output filename", "obs_ds1.dat");
+    obs_list1.set<std::string>("observation output filename", filename);
     obs_list1.set<Teuchos::Array<double>>("times", std::vector<double>{ 0, 1 });
 
     auto& obsA_list = obs_list1.sublist("observed quantities").sublist("obsA");
@@ -674,7 +710,8 @@ SUITE(STATE_OBSERVATIONS)
     // times: 0, 1
     // valuesA: 0,0
     // valuesB: 8,8
-    CHECK(compareFiles("obs_ds1.dat", "test/obs_ds1.dat.gold"));
+    comm->barrier();
+    if (comm->getRank() == 0) CHECK(compareFiles(filename, "test/" + filename + ".gold"));
   }
 
 
@@ -683,8 +720,9 @@ SUITE(STATE_OBSERVATIONS)
     setup_domain_set();
 
     // observation that exists and is written on rank 1
+    std::string filename = "obs_ds2_np" + std::to_string(comm->getSize()) + ".dat";
     Teuchos::ParameterList obs_list("my obs ds2");
-    obs_list.set<std::string>("observation output filename", "obs_ds2.dat");
+    obs_list.set<std::string>("observation output filename", filename);
     obs_list.set<Teuchos::Array<double>>("times", std::vector<double>{ 0, 1 });
     obs_list.set<std::string>("domain", "column:8");
 
@@ -706,6 +744,7 @@ SUITE(STATE_OBSERVATIONS)
 
     // times: 0, 1
     // valuesB: 8,8
-    CHECK(compareFiles("obs_ds2.dat", "test/obs_ds2.dat.gold"));
+    comm->barrier();
+    if (comm->getRank() == 0) CHECK(compareFiles(filename, "test/" + filename + ".gold"));
   }
 }

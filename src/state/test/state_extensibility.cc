@@ -8,101 +8,53 @@
 */
 
 /*
-  State
+ State
 
-  Tests for state as a container of data
-  NOTE: this test passes if it compiles!
+ This test is simply for developers to stuff their own data in and try to see
+ if it can compile with State.
 */
 
 // TPLs
-#include "Epetra_MpiComm.h"
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_ParameterXMLFileReader.hpp"
-#include "Teuchos_RCP.hpp"
 #include "UnitTest++.h"
 
-// Amanzi
 #include "errors.hh"
 #include "MeshFactory.hh"
+#include "Patch.hh"
+#include "data/DataFactory.hh"
 
-// Amanzi::State
-#include "IO.hh"
-#include "Data.hh"
-#include "Data_Helpers.hh"
 #include "State.hh"
-
-struct MyPoint {
-  double a;
-  double b;
-};
-
-using MyPointList = std::vector<MyPoint>;
-
-bool inline UserInitialize(Teuchos::ParameterList& plist,
-                           MyPointList& t,
-                           const Amanzi::Key& fieldname,
-                           const std::vector<std::string>* subfieldnames)
-{
-  std::cout << "found it!" << std::endl;
-  return true;
-}
-
-void
-UserWriteVis(const Amanzi::Visualization& vis,
-             const Amanzi::Key& fieldname,
-             const std::vector<std::string>* subfieldnames,
-             const MyPointList& vec)
-{}
-
-void
-UserWriteCheckpoint(const Amanzi::Checkpoint& chkp,
-                    const Amanzi::Key& fieldname,
-                    const std::vector<std::string>* subfieldnames,
-                    const MyPointList& vec)
-{}
-bool
-UserReadCheckpoint(const Amanzi::Checkpoint& chkp,
-                   const Amanzi::Key& fieldname,
-                   const std::vector<std::string>* subfieldnames,
-                   MyPointList& vec)
-{
-  return true;
-}
+#include "Data_Helpers.hh"
 
 
-TEST(STATE_EXTENSIBILITY_CREATION)
+TEST(STATE_CONTAINS_MYDATA)
 {
   using namespace Amanzi;
 
-  auto comm = Amanzi::getDefaultComm();
-  Teuchos::ParameterList region_list;
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
+  Impl::DataFactory fac = Impl::dataFactory<MultiPatch<double>, MultiPatchSpace>();
 
-  Amanzi::AmanziMesh::Preference pref;
-  pref.clear();
-  pref.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+  // // Create the geometric model
+  // Teuchos::ParameterList regions;
+  // std::vector<double> low = { 0., 0., 0. };
+  // std::vector<double> high = { 4., 4., 4. };
+  // regions.sublist("left")
+  //   .sublist("region: box")
+  //   .set<Teuchos::Array<double>>("low coordinate", low)
+  //   .set<Teuchos::Array<double>>("high coordinate", {2., 4., 4.});
+  // regions.sublist("right")
+  //   .sublist("region: box")
+  //   .set<Teuchos::Array<double>>("low coordinate", {2.,0.,0.} )
+  //   .set<Teuchos::Array<double>>("high coordinate", high);
+  // regions.sublist("point")
+  //   .sublist("region: point")
+  //   .set<Teuchos::Array<double>("coordinate", { 2., 2., 2. });
+  // auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, regions, *comm));
 
-  Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(pref);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> m =
-    meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1);
+  // MeshFactory meshfac(comm, gm);
+  // auto mesh = meshfac.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
-  std::string xmlFileName = "test/state_extensibility.xml";
-  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-  auto plist = Teuchos::parameterList(xmlreader.getParameters());
+  // State s;
+  // // s.RegisterDomainMesh(mesh);
 
-  State s(*Teuchos::sublist(plist, "state"));
-  s.RegisterDomainMesh(m);
-  s.Require<MyPointList>("my_points", Tags::DEFAULT, "my_points");
-  s.GetRecordW("my_points", "my_points").set_io_vis();
-  s.Setup();
-  s.InitializeFields();
-
-  Visualization vis(plist->sublist("visualization"));
-  vis.set_mesh(m);
-  vis.CreateFiles();
-  WriteVis(vis, s);
-
-  Checkpoint chkp(plist->sublist("checkpoint"), s);
-  chkp.Write(s);
+  // // require data with factory
+  // s.Require<Patch, PatchSpace>("my_patch", Tags::DEFAULT, "my_patch");
 }

@@ -177,7 +177,7 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
   //
   // extract & flatten the top surface to form a 2D mesh, NX=NY=3
   std::vector<Framework> frameworks;
-  //if (comm->NumProc() == 1) frameworks.push_back(Framework::SIMPLE);
+  //if (comm->getSize() == 1) frameworks.push_back(Framework::SIMPLE);
   if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
 
   for (const auto& frm : frameworks) {

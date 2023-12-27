@@ -18,8 +18,8 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-const int MASTER = 1;
-const int GHOST = 2;
+static const int MASTER = 1;
+static const int GHOST = 2;
 
 } // namespace AmanziMesh
 } // namespace Amanzi

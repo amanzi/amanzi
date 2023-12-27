@@ -17,8 +17,8 @@ the initial guess to solve a harder problem.  As each successive problem is
 solved, the continuation parameter is changed closer and closer to the true
 value.
 
-Few if any PKs support this method currently -- it requires the PK to provide more
-interface about how to update the continuation parameter.
+Few if any PKs support this method currently -- it requires the PK to provide
+more interface about how to update the continuation parameter.
 
 .. _solver-continuation-spec:
 .. admonition:: solver-continuation-spec
@@ -57,13 +57,13 @@ class SolverContinuation : public Solver<Vector, VectorSpace> {
 
   SolverContinuation(Teuchos::ParameterList& plist,
                      const Teuchos::RCP<SolverFnBase<Vector>>& fn,
-                     const VectorSpace& map)
+                     const Teuchos::RCP<const VectorSpace>& map)
     : plist_(plist)
   {
     Init(fn, map);
   }
 
-  void Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const VectorSpace& map);
+  void Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const Teuchos::RCP<const VectorSpace>& map);
 
   int Solve(const Teuchos::RCP<Vector>& u)
   {
@@ -108,12 +108,12 @@ class SolverContinuation : public Solver<Vector, VectorSpace> {
 
 
 /* ******************************************************************
-* Public Init method.
-****************************************************************** */
+ * Public Init method.
+ ****************************************************************** */
 template <class Vector, class VectorSpace>
 void
 SolverContinuation<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
-                                              const VectorSpace& map)
+                                              const Teuchos::RCP<const VectorSpace>& map)
 {
   fn_ = fn;
   Init_();
@@ -122,8 +122,8 @@ SolverContinuation<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Ve
 
 
 /* ******************************************************************
-* Initialization of the NKA solver.
-****************************************************************** */
+ * Initialization of the NKA solver.
+ ****************************************************************** */
 template <class Vector, class VectorSpace>
 void
 SolverContinuation<Vector, VectorSpace>::Init_()
@@ -140,8 +140,8 @@ SolverContinuation<Vector, VectorSpace>::Init_()
 
 
 /* ******************************************************************
-* The body of NKA solver
-****************************************************************** */
+ * The body of NKA solver
+ ****************************************************************** */
 template <class Vector, class VectorSpace>
 int
 SolverContinuation<Vector, VectorSpace>::Solve_(const Teuchos::RCP<Vector>& u)

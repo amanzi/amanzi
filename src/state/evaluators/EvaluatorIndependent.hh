@@ -35,7 +35,7 @@ class EvaluatorIndependent_ : public Evaluator {
   // ---------------------------------------------------------------------------
   // Constructors, assignement operators, etc
   // ---------------------------------------------------------------------------
-  explicit EvaluatorIndependent_(Teuchos::ParameterList& plist);
+  explicit EvaluatorIndependent_(const Teuchos::RCP<Teuchos::ParameterList>& plist);
   EvaluatorIndependent_(const EvaluatorIndependent_& other) = default;
 
   EvaluatorIndependent_& operator=(const EvaluatorIndependent_& other);
@@ -73,8 +73,7 @@ class EvaluatorIndependent_ : public Evaluator {
   IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override final;
 
   virtual void EnsureCompatibility(State& S) override;
-
-  virtual std::string WriteToString() const override;
+  virtual std::ostream& writeInfo(std::ostream& os) const override final;
 
  protected:
   // ---------------------------------------------------------------------------
@@ -91,7 +90,7 @@ class EvaluatorIndependent_ : public Evaluator {
   bool computed_once_;
 
   KeySet requests_;
-  Teuchos::ParameterList plist_;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
   VerboseObject vo_;
 };
 
@@ -111,7 +110,6 @@ class EvaluatorIndependent : public EvaluatorIndependent_ {
   }
 };
 
-using EvaluatorIndependentCV = EvaluatorIndependent<CompositeVector, CompositeVectorSpace>;
 
 } // namespace Amanzi
 

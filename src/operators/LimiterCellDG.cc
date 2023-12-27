@@ -64,7 +64,7 @@ LimiterCellDG::ApplyLimiterDG(const AmanziMesh::Entity_ID_View& ids,
   }
 
   limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->getMap(AmanziMesh::Entity_kind::CELL, false)));
-  limiter_->PutScalar(1.0);
+  limiter_->putScalar(1.0);
 
   if (type_ == OPERATOR_LIMITER_BARTH_JESPERSEN_DG) {
     LimiterScalarDG_(dg, ids, bc_model, bc_value, [](double x) { return std::min(1.0, x); });
@@ -95,8 +95,8 @@ LimiterCellDG::LimiterScalarDG_(const WhetStone::DG_Modal& dg,
 
   double u1, u1f, umin, umax;
 
-  int nk = field_->NumVectors();
-  WhetStone::DenseVector data(nk);
+  int nk = field_->getNumVectors();
+  WhetStone::DenseVector<> data(nk);
   AmanziGeometry::Point x1(dim), x2(dim), xm(dim);
   int order = WhetStone::PolynomialSpaceOrder(dim, nk);
 
@@ -164,9 +164,9 @@ LimiterCellDG::LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
 
   double u1, u1f, umin, umax;
 
-  int nk = field_->NumVectors();
-  WhetStone::DenseVector data(nk);
-  AmanziGeometry::Point xm(dim);
+  int nk = field_->getNumVectors();
+  WhetStone::DenseVector<> data(nk);
+  AmanziGeometry::Point x1(dim), x2(dim), xm(dim);
   int order = WhetStone::PolynomialSpaceOrder(dim, nk);
 
   // calculate bounds
@@ -200,7 +200,7 @@ LimiterCellDG::LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
     for (int i = 0; i < nk; ++i) data(i) = (*field_)[i][c];
     auto poly = dg.cell_basis(c).CalculatePolynomial(mesh_, c, order, data);
     auto grad = Gradient(poly);
-    // poly.Reshape(dim, 1);
+    // poly.reshape(dim, 1);
 
     u1 = (*field_)[0][c];
     double tol = sqrt(OPERATOR_LIMITER_TOLERANCE) * fabs(u1);
@@ -212,8 +212,8 @@ LimiterCellDG::LimiterHierarchicalDG_(const WhetStone::DG_Modal& dg,
       int f = faces[i];
       auto nodes = mesh_->getFaceNodes(f);
 
-      const auto& x1 = mesh_->getNodeCoordinate(nodes[0]);
-      const auto& x2 = mesh_->getNodeCoordinate(nodes[1]);
+      x1 = mesh_->getNodeCoordinate(nodes[0]);
+      x2 = mesh_->getNodeCoordinate(nodes[1]);
 
       // limit mean values
       bounds_ = bounds[0];

@@ -38,12 +38,12 @@ namespace WhetStone {
 
 // non-member functions
 double
-IntegrateFunctionsTriangle(const AmanziMesh::Point_List& xy,
+IntegrateFunctionsTriangle(const std::vector<AmanziGeometry::Point>& xy,
                            const std::vector<const WhetStoneFunction*>& funcs,
                            int order);
 
 double
-IntegrateFunctionsTetrahedron(const AmanziMesh::Point_List& xy,
+IntegrateFunctionsTetrahedron(const std::vector<AmanziGeometry::Point>& xy,
                               const std::vector<const WhetStoneFunction*>& funcs,
                               int order);
 
@@ -56,7 +56,7 @@ IntegrateFunctionsEdge(const AmanziGeometry::Point& x1,
 double
 IntegratePolynomialsEdge(const AmanziGeometry::Point& x1,
                          const AmanziGeometry::Point& x2,
-                         const std::vector<const PolynomialBase*>& polys);
+                         const std::vector<const PolynomialBase<>*>& polys);
 
 
 class NumericalIntegration {
@@ -92,15 +92,15 @@ class NumericalIntegration {
   }
 
   // integrate product of polynomials and monomials with different origins
-  double IntegratePolynomialsCell(int c, const std::vector<const PolynomialBase*>& polys);
+  double IntegratePolynomialsCell(int c, const std::vector<const PolynomialBase<>*>& polys);
 
   double IntegratePolynomialsCell(int c,
-                                  const std::vector<const PolynomialBase*>& polys,
+                                  const std::vector<const PolynomialBase<>*>& polys,
                                   PolynomialOnMesh& integrals) const;
 
-  double IntegratePolynomialsFace(int f, const std::vector<const PolynomialBase*>& polys) const;
+  double IntegratePolynomialsFace(int f, const std::vector<const PolynomialBase<>*>& polys) const;
 
-  double IntegratePolynomialsEdge(int e, const std::vector<const PolynomialBase*>& polys) const
+  double IntegratePolynomialsEdge(int e, const std::vector<const PolynomialBase<>*>& polys) const
   {
     AmanziGeometry::Point x1(d_), x2(d_);
     auto nodes = mesh_->getEdgeNodes(e);
@@ -112,7 +112,7 @@ class NumericalIntegration {
   }
 
   // integral over a simplex
-  double IntegrateFunctionsSimplex(const AmanziMesh::Point_List& xy,
+  double IntegrateFunctionsSimplex(const std::vector<AmanziGeometry::Point>& xy,
                                    const std::vector<const WhetStoneFunction*>& funcs,
                                    int order) const
   {
@@ -124,24 +124,24 @@ class NumericalIntegration {
   }
 
   // integrate group of monomials
-  void IntegrateMonomialsCell(int c, int k, Polynomial& integrals) const;
-  void UpdateMonomialIntegralsCell(int c, int order, Polynomial& integrals) const;
+  void IntegrateMonomialsCell(int c, int k, Polynomial<>& integrals) const;
+  void UpdateMonomialIntegralsCell(int c, int order, Polynomial<>& integrals) const;
   void UpdateMonomialIntegralsCell(int c, int order, PolynomialOnMesh& integrals) const;
 
   // useful functions: integrate single polynomial
-  double IntegratePolynomialCell(int c, const Polynomial& poly);
+  double IntegratePolynomialCell(int c, const Polynomial<>& poly);
 
-  double IntegratePolynomialFace(int f, const Polynomial& poly) const
+  double IntegratePolynomialFace(int f, const Polynomial<>& poly) const
   {
-    const std::vector<const PolynomialBase*> polys(1, &poly);
+    const std::vector<const PolynomialBase<>*> polys(1, &poly);
     return IntegratePolynomialsFace(f, polys);
   }
 
   double IntegratePolynomialEdge(const AmanziGeometry::Point& x1,
                                  const AmanziGeometry::Point& x2,
-                                 const Polynomial& poly) const
+                                 const Polynomial<>& poly) const
   {
-    const std::vector<const PolynomialBase*> polys(1, &poly);
+    const std::vector<const PolynomialBase<>*> polys(1, &poly);
     return WhetStone::IntegratePolynomialsEdge(x1, x2, polys);
   }
 
@@ -156,19 +156,22 @@ class NumericalIntegration {
   }
 
   // various bounds
-  double PolynomialMaxValue(int f, const Polynomial& poly);
+  double PolynomialMaxValue(int f, const Polynomial<>& poly);
 
  private:
-  void IntegrateMonomialsFace_(int c, int f, double factor, int k, Polynomial& integrals) const;
+  void IntegrateMonomialsFace_(int c, int f, double factor, int k, Polynomial<>& integrals) const;
 
-  void
-  IntegrateMonomialsFaceReduction_(int c, int f, double factor, int k, Polynomial& integrals) const;
+  void IntegrateMonomialsFaceReduction_(int c,
+                                        int f,
+                                        double factor,
+                                        int k,
+                                        Polynomial<>& integrals) const;
 
   void IntegrateMonomialsEdge_(const AmanziGeometry::Point& x1,
                                const AmanziGeometry::Point& x2,
                                double factor,
                                int k,
-                               Polynomial& integrals) const;
+                               Polynomial<>& integrals) const;
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -182,11 +185,11 @@ class NumericalIntegration {
 
 
 //  -- trace of polynomials on manifold
-Polynomial
+Polynomial<>
 ConvertPolynomialsToSurfacePolynomial(
   const AmanziGeometry::Point& xf,
   const std::shared_ptr<AmanziGeometry::SurfaceCoordinateSystem>& coordsys,
-  const std::vector<const PolynomialBase*>& polys);
+  const std::vector<const PolynomialBase<>*>& polys);
 
 } // namespace WhetStone
 } // namespace Amanzi

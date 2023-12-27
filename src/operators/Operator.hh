@@ -1,35 +1,27 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
+  Copyright 2010-201x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-           Ethan Coon (ecoon@lanl.gov)
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
+      Ethan Coon (coonet@ornl.gov)
 */
 
-//! Operator represents a linear map, and typically encapsulates a discretization.
+//! Operator represents a linear map, and typically encapsulates a
+//! discretization.
+
 /*!
-
-Operators are discrete forms of linearized PDEs operators.
-They form a layer between physical process kernels and solvers
-and include accumulation, diffusion, advection, elasticity, reaction,
-and source operators.
-The residual associated with an operator :math:`L_h` helps to
-understand the employed sign convention:
-
-.. math::
-  r = f - L_h u.
-
-Operator represents a map from linear space X to linear space Y.  Typically,
+``Operator`` represents a map from linear space X to linear space Y.  Typically,
 this map is a linear map, and encapsulates much of the discretization involved
-in moving from continuous to discrete equations. The spaces X and Y are described
-by CompositeVectors (CV). A few maps X->Y are supported.
+in moving from continuous to discrete equations. The spaces X and Y are
+described by CompositeSpaces (CVS).
 
-An operator provides an interface for applying both the forward and inverse
+An ``Operator`` provides an interface for applying both the forward and inverse
 linear map (assuming the map is invertible).
 
-Typically the Operator is never seen by the user; instead the user provides
+Typically the ``Operator`` is never seen by the user; instead the user provides
 input information for helper classes based on the continuous mathematical
 operator and the desired discretization.  These helpers build the needed
 ``Operator``, which may include information from multiple helpers (i.e. in the
@@ -41,53 +33,6 @@ with nearly singular operators:
 * `"diagonal shift`" ``[double]`` **0.0** Adds a scalar shift to the diagonal
   of the ``Operator``, which can be useful if the ``Operator`` is singular or
   near-singular.
-
-A PK decides how to bundle operators in a collection of operators.
-For example, an advection-diffusion problem may benefit from using
-a single operator that combines two operators representing diffusion and advection process.
-Collection of operators must be used for implicit solvers and for building preconditioners.
-In such a case, the collections acts as a single operator.
-
-Operators use a few tools that are generic in nature and can be used independently by PKs.
-The list includes reconstruction and limiting algorithms.
-
-
-Schema
-------
-
-The operators use notion of schema to describe operator's abstract structure.
-Old operators use a simple schema which is simply the list of geometric objects where
-scalar degrees of freedom are defined.
-New operators use a list to define location, type, and number of degrees of freedom.
-In addition, the base of local stencil is either *face* or *cell*.
-A rectangular operator needs two schemas do describe its domain (called `"schema domain`")
-and its range (called `"schema range`").
-A square operator may use either two identical schema lists or a single list called `"schema`".
-
-.. code-block:: xml
-
-  <ParameterList name="pks operator name">  <!-- parent list-->
-  <ParameterList name="schema domain">
-    <Parameter name="base" type="string" value="cell"/>
-    <Parameter name="location" type="Array(string)" value="{node, face}"/>
-    <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
-    <Parameter name="number" type="Array(int)" value="{2, 1}"/>
-  </ParameterList>
-  <ParameterList name="schema domain">
-    <Parameter name="base" type="string" value="cell"/>
-    <Parameter name="location" type="Array(string)" value="{node, face}"/>
-    <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
-    <Parameter name="number" type="Array(int)" value="{2, 1}"/>
-  </ParameterList>
-  </ParameterList>
-
-This example describes a square operator with two degrees of freedom per mesh node and one
-degree of freedom per mesh face.
-The face-based degree of freedom is the normal component of a vector field.
-Such set of degrees of freedom is used in the Bernardi-Raugel element for discretizing
-Stokes equations.
-Parameter `"base`" indicates that local matrices are associated with mesh cells.
-
 */
 
 
@@ -148,6 +93,11 @@ Note on implementation for discretization/framework developers:
   Adding new Ops is a fairly straightforward process of providing
   implementations of how to use the mesh to implement the forward action and
   how to assumble the local Op into the global Operator matrix.
+
+* Ops can be shared by ``Operator``s. In combination with CopyShadowToMaster()
+  and Rescale(), the developer has a room for a variaty of optimized
+  implementations.  The key variable is ``ops_properties_``. The key parameters
+  are ``OPERATOR_PROPERTY_***`` and described in ``Operators_Defs.hh``.
 */
 
 #ifndef AMANZI_OPERATOR_HH_
@@ -157,11 +107,10 @@ Note on implementation for discretization/framework developers:
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_CrsMatrix.h"
-#include "EpetraExt_RowMatrixOut.h"
+#include "Tpetra_RowMatrix.hpp"
 
 #include "Mesh.hh"
-#include "CompositeVectorSpace.hh"
+#include "CompositeSpace.hh"
 #include "CompositeVector.hh"
 #include "DenseVector.hh"
 #include "OperatorDefs.hh"
@@ -170,81 +119,118 @@ Note on implementation for discretization/framework developers:
 
 namespace Amanzi {
 
-class CompositeVector;
+namespace AmanziPreconditioners {
+template <class Matrix, class Vector>
+class Preconditioner;
+}
+
+class MatrixFE;
+class GraphFE;
+class SuperMap;
 
 namespace Operators {
 
-class BCs;
-class SuperMap;
-class MatrixFE;
-class GraphFE;
 class Op;
 class Op_Cell_FaceCell;
 class Op_Cell_Face;
 class Op_Cell_Cell;
-class Op_Cell_Node;
-class Op_Cell_Edge;
-class Op_Cell_Schema;
-class Op_Diagonal;
+//class Op_Cell_Node;
+//class Op_Cell_Edge;
+//class Op_Cell_Schema;
+//class Op_Diagonal;
 class Op_Face_Cell;
 class Op_Face_CellBndFace;
-class Op_Face_Schema;
-class Op_Edge_Edge;
-class Op_Node_Node;
-class Op_Node_Schema;
+//class Op_Face_Schema;
+//class Op_Node_Node;
+//class Op_Edge_Edge;
 class Op_SurfaceCell_SurfaceCell;
 class Op_SurfaceFace_SurfaceCell;
-class Op_MeshInjection;
 
 
-class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
+class Operator : public Matrix<CompositeVector, CompositeSpace> {
  public:
   using Vector_t = CompositeVector;
-  using VectorSpace_t = CompositeVector::VectorSpace_t;
+  using VectorSpace_t = CompositeSpace;
 
   // constructors
   // At the moment CVS is the domain and range of the operator
   Operator() { apply_calls_ = 0; }
 
   // deprecated but yet supported
-  Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
+  Operator(const Teuchos::RCP<const CompositeSpace>& cvs,
            Teuchos::ParameterList& plist,
            int schema);
 
   // general operator (domain may differ from range)
-  Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
-           const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
+  Operator(const Teuchos::RCP<const CompositeSpace>& cvs_row,
+           const Teuchos::RCP<const CompositeSpace>& cvs_col,
            Teuchos::ParameterList& plist,
            const Schema& schema_row,
            const Schema& schema_col);
 
   // bijective operator (domain = range)
-  Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
+  Operator(const Teuchos::RCP<const CompositeSpace>& cvs,
            Teuchos::ParameterList& plist,
            const Schema& schema)
     : Operator(cvs, cvs, plist, schema, schema){};
 
   virtual ~Operator() = default;
 
-  // a specialized copy constructor is used to extend the operator, e.g.
-  // by adding more operators to it.
-  virtual Teuchos::RCP<Operator> Clone() const;
+  virtual Teuchos::RCP<Operator> clone() const;
 
-  void Init();
 
-  // main members
-  // -- virtual methods potentially altered by the schema, Schur complements
-  virtual int Apply(const CompositeVector& X, CompositeVector& Y) const override
+  // set all local values to 0.
+  void Zero();
+
+  // main members as an operator
+  virtual int apply(const CompositeVector& X, CompositeVector& Y, double scalar) const;
+  virtual int apply(const CompositeVector& X, CompositeVector& Y) const override
   {
-    return Apply(X, Y, 0.0);
+    return apply(X, Y, 0.0);
   }
-  // -- icomputes Y = A * X + scalar * Y
-  virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const;
-  virtual int
-  ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
-  virtual int
-  ApplyUnassembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
-  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const override;
+
+  int applyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
+  int applyUnassembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
+  virtual int applyInverse(const CompositeVector& X, CompositeVector& Y) const override;
+
+  // diagonal
+  void getLocalDiagCopy(CompositeVector& X) const;
+
+  // symbolic assembly:
+  // -- wrapper
+  void SymbolicAssembleMatrix();
+  // -- first dispatch
+  void SymbolicAssembleMatrix(const SuperMap& map,
+                              GraphFE& graph,
+                              int my_block_row,
+                              int my_block_col) const;
+
+  // actual assembly:
+  // -- wrapper
+  void AssembleMatrix();
+
+  // -- first dispatch
+  void
+  AssembleMatrix(const SuperMap& map, MatrixFE& matrix, int my_block_row, int my_block_col) const;
+
+  // modifiers
+  // -- add a vector to operator's rhs vector
+  void UpdateRHS(const CompositeVector& source, bool volume_included = true);
+  // -- rescale elemental matrices
+  void Rescale(double scaling);
+  void Rescale(const CompositeVector& scaling);
+  void Rescale(const CompositeVector& scaling, int iops);
+
+  // -- default functionality
+  virtual const Teuchos::RCP<const CompositeSpace> getDomainMap() const override
+  {
+    return cvs_col_;
+  }
+  virtual const Teuchos::RCP<const CompositeSpace> getRangeMap() const override { return cvs_row_; }
+  Teuchos::RCP<const CompositeSpace> getRowMap() const { return cvs_row_; }
+
+  int ComputeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
+  int ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
 
   // versions that make it easier to deal with Amanzi input spec format
   void set_inverse_parameters(const std::string& prec_name, const Teuchos::ParameterList& plist);
@@ -255,50 +241,9 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
                               bool make_one_iteration = true);
 
   // -- preferred methods -- set_parameters, initialize, compute
-  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override;
-  virtual void InitializeInverse() override;
-  virtual void ComputeInverse() override;
-
-  // symbolic assembly:
-  // -- wrapper
-  virtual void SymbolicAssembleMatrix();
-  // -- first dispatch
-  virtual void SymbolicAssembleMatrix(const SuperMap& map,
-                                      GraphFE& graph,
-                                      int my_block_row,
-                                      int my_block_col) const;
-
-  // actual assembly:
-  // -- wrapper
-  virtual void AssembleMatrix();
-  // -- first dispatch
-  virtual void
-  AssembleMatrix(const SuperMap& map, MatrixFE& matrix, int my_block_row, int my_block_col) const;
-
-  // modifiers
-  // -- add a vector to operator's rhs vector
-  virtual void UpdateRHS(const CompositeVector& source, bool volume_included = true);
-  // -- rescale elemental matrices
-  virtual void Rescale(double scaling);
-  virtual void Rescale(const CompositeVector& scaling);
-  virtual void Rescale(const CompositeVector& scaling, int iops);
-
-  // -- default functionality
-  const CompositeVectorSpace& DomainMap() const override { return *get_domain_map(); }
-  const CompositeVectorSpace& RangeMap() const override { return *get_range_map(); }
-  const Teuchos::RCP<const CompositeVectorSpace>& get_domain_map() const { return cvs_col_; }
-  const Teuchos::RCP<const CompositeVectorSpace>& get_range_map() const { return cvs_row_; }
-  const Teuchos::RCP<const CompositeVectorSpace>& get_col_map() const { return cvs_col_; }
-  const Teuchos::RCP<const CompositeVectorSpace>& get_row_map() const { return cvs_row_; }
-
-  int ComputeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
-  int ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
-
-  void CreateCheckPoint();
-  void RestoreCheckPoint();
-
-  // supporting members
-  int CopyShadowToMaster(int iops);
+  void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
+  void initializeInverse() override final;
+  void computeInverse() override final;
 
   // access
   virtual std::string name() const override
@@ -309,24 +254,25 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
   const Schema& schema_col() const { return schema_col_; }
   const Schema& schema_row() const { return schema_row_; }
 
+  const std::string& schema_string() const { return schema_string_; }
   void set_schema_string(const std::string& schema_string) { schema_string_ = schema_string; }
-  const std::string& get_schema_string() const { return schema_string_; }
 
-  Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return mesh_; }
-  Teuchos::RCP<SuperMap> get_supermap() const { return smap_; }
+  Teuchos::RCP<const AmanziMesh::Mesh> getMesh() const { return mesh_; }
+  Teuchos::RCP<SuperMap> getSuperMap() const { return smap_; }
 
-  Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; }
-  Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; }
+  Teuchos::RCP<Matrix_type> A() { return A_; }
+  Teuchos::RCP<const Matrix_type> A() const { return A_; }
   Teuchos::RCP<CompositeVector> rhs() { return rhs_; }
   Teuchos::RCP<const CompositeVector> rhs() const { return rhs_; }
   void set_rhs(const Teuchos::RCP<CompositeVector>& rhs) { rhs_ = rhs; }
+
+  int apply_calls() { return apply_calls_; }
+
   void set_coloring(int num_colors, const Teuchos::RCP<std::vector<int>>& coloring)
   {
     num_colors_ = num_colors;
     coloring_ = coloring;
   }
-
-  int apply_calls() { return apply_calls_; }
 
   // block access
   typedef std::vector<Teuchos::RCP<Op>>::const_iterator const_op_iterator;
@@ -340,45 +286,48 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
   op_iterator end() { return ops_.end(); }
   op_iterator FindMatrixOp(int schema_dofs, int matching_rule, bool action);
 
+  Teuchos::RCP<Op> getOp(int index) { return ops_[index]; }
+
   // block mutate
-  void OpPushBack(const Teuchos::RCP<Op>& op) { ops_.push_back(op); }
+  void OpPushBack(const Teuchos::RCP<Op>& block, int properties = 0);
   void OpExtend(op_iterator begin, op_iterator end);
   void OpReplace(const Teuchos::RCP<Op>& op, int index) { ops_[index] = op; }
-  void OpErase(op_iterator begin, op_iterator end) { ops_.erase(begin, end); }
 
-  // quality control
-  void Verify() const;
+  void WriteMatrix(const std::string& fname_base) const;
 
  public:
-  // visit methods for Apply
+  // // visit methods for Apply
   virtual int
   ApplyMatrixFreeOp(const Op_Cell_FaceCell& op, const CompositeVector& X, CompositeVector& Y) const;
   virtual int
   ApplyMatrixFreeOp(const Op_Cell_Face& op, const CompositeVector& X, CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Cell_Node& op, const CompositeVector& X, CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Cell_Edge& op, const CompositeVector& X, CompositeVector& Y) const;
+  // virtual int
+  // ApplyMatrixFreeOp(const Op_Cell_Node& op, const CompositeVector& X,
+  //                   CompositeVector& Y) const;
+  // virtual int
+  // ApplyMatrixFreeOp(const Op_Cell_Edge& op, const CompositeVector& X,
+  //                   CompositeVector& Y) const;
   virtual int
   ApplyMatrixFreeOp(const Op_Cell_Cell& op, const CompositeVector& X, CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Cell_Schema& op, const CompositeVector& X, CompositeVector& Y) const;
+  // virtual int
+  // ApplyMatrixFreeOp(const Op_Cell_Schema& op, const CompositeVector& X,
+  //                   CompositeVector& Y) const;
 
   virtual int
   ApplyMatrixFreeOp(const Op_Face_Cell& op, const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
                                 const CompositeVector& X,
                                 CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Face_Schema& op, const CompositeVector& X, CompositeVector& Y) const;
+  // virtual int
+  // ApplyMatrixFreeOp(const Op_Face_Schema& op, const CompositeVector& X,
+  //                   CompositeVector& Y) const;
 
-  virtual int
-  ApplyMatrixFreeOp(const Op_Edge_Edge& op, const CompositeVector& X, CompositeVector& Y) const;
-
-  virtual int
-  ApplyMatrixFreeOp(const Op_Node_Node& op, const CompositeVector& X, CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_Node_Schema& op, const CompositeVector& X, CompositeVector& Y) const;
+  // virtual int
+  // ApplyMatrixFreeOp(const Op_Edge_Edge& op, const CompositeVector& X,
+  //                   CompositeVector& Y) const;
+  // virtual int
+  // ApplyMatrixFreeOp(const Op_Node_Node& op, const CompositeVector& X,
+  //                   CompositeVector& Y) const;
 
   virtual int ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
                                 const CompositeVector& X,
@@ -386,11 +335,17 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
   virtual int ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
                                 const CompositeVector& X,
                                 CompositeVector& Y) const;
-  virtual int
-  ApplyMatrixFreeOp(const Op_MeshInjection& op, const CompositeVector& X, CompositeVector& Y) const;
 
-  virtual int
-  ApplyMatrixFreeOp(const Op_Diagonal& op, const CompositeVector& X, CompositeVector& Y) const;
+  // virtual int ApplyMatrixFreeOp(const Op_Diagonal& op, const CompositeVector& X,
+  //                               CompositeVector& Y) const;
+
+  // visit methods for ApplyTranspose
+  // virtual int
+  // ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op, const CompositeVector& X,
+  //                            CompositeVector& Y) const;
+  // virtual int
+  // ApplyTransposeMatrixFreeOp(const Op_Face_Schema& op, const CompositeVector& X,
+  //                            CompositeVector& Y) const;
 
   // visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
@@ -403,26 +358,23 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
                                         GraphFE& graph,
                                         int my_block_row,
                                         int my_block_col) const;
-  virtual void SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
-                                        const SuperMap& map,
-                                        GraphFE& graph,
-                                        int my_block_row,
-                                        int my_block_col) const;
-  virtual void SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
-                                        const SuperMap& map,
-                                        GraphFE& graph,
-                                        int my_block_row,
-                                        int my_block_col) const;
+  // virtual void
+  // SymbolicAssembleMatrixOp(const Op_Cell_Node& op, const SuperMap& map,
+  //                          GraphFE& graph, int my_block_row,
+  //                          int my_block_col) const;
+  // virtual void
+  // SymbolicAssembleMatrixOp(const Op_Cell_Edge& op, const SuperMap& map,
+  //                          GraphFE& graph, int my_block_row,
+  //                          int my_block_col) const;
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
                                         const SuperMap& map,
                                         GraphFE& graph,
                                         int my_block_row,
                                         int my_block_col) const;
-  virtual void SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
-                                        const SuperMap& map,
-                                        GraphFE& graph,
-                                        int my_block_row,
-                                        int my_block_col) const;
+  // virtual void
+  // SymbolicAssembleMatrixOp(const Op_Cell_Schema& op, const SuperMap& map,
+  //                          GraphFE& graph, int my_block_row,
+  //                          int my_block_col) const;
 
   virtual void SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
                                         const SuperMap& map,
@@ -434,28 +386,19 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
                                         GraphFE& graph,
                                         int my_block_row,
                                         int my_block_col) const;
-  virtual void SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
-                                        const SuperMap& map,
-                                        GraphFE& graph,
-                                        int my_block_row,
-                                        int my_block_col) const;
+  // virtual void
+  // SymbolicAssembleMatrixOp(const Op_Face_Schema& op, const SuperMap& map,
+  //                          GraphFE& graph, int my_block_row,
+  //                          int my_block_col) const;
 
-  virtual void SymbolicAssembleMatrixOp(const Op_Edge_Edge& op,
-                                        const SuperMap& map,
-                                        GraphFE& graph,
-                                        int my_block_row,
-                                        int my_block_col) const;
-
-  virtual void SymbolicAssembleMatrixOp(const Op_Node_Node& op,
-                                        const SuperMap& map,
-                                        GraphFE& graph,
-                                        int my_block_row,
-                                        int my_block_col) const;
-  virtual void SymbolicAssembleMatrixOp(const Op_Node_Schema& op,
-                                        const SuperMap& map,
-                                        GraphFE& graph,
-                                        int my_block_row,
-                                        int my_block_col) const;
+  // virtual void
+  // SymbolicAssembleMatrixOp(const Op_Edge_Edge& op, const SuperMap& map,
+  //                          GraphFE& graph, int my_block_row,
+  //                          int my_block_col) const;
+  // virtual void
+  // SymbolicAssembleMatrixOp(const Op_Node_Node& op, const SuperMap& map,
+  //                          GraphFE& graph, int my_block_row,
+  //                          int my_block_col) const;
 
   virtual void SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
                                         const SuperMap& map,
@@ -467,17 +410,11 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
                                         GraphFE& graph,
                                         int my_block_row,
                                         int my_block_col) const;
-  virtual void SymbolicAssembleMatrixOp(const Op_MeshInjection& op,
-                                        const SuperMap& map,
-                                        GraphFE& graph,
-                                        int my_block_row,
-                                        int my_block_col) const;
 
-  virtual void SymbolicAssembleMatrixOp(const Op_Diagonal& op,
-                                        const SuperMap& map,
-                                        GraphFE& graph,
-                                        int my_block_row,
-                                        int my_block_col) const;
+  // virtual void
+  // SymbolicAssembleMatrixOp(const Op_Diagonal& op, const SuperMap& map,
+  //                          GraphFE& graph, int my_block_row,
+  //                          int my_block_col) const;
 
   // visit methods for assemble
   virtual void AssembleMatrixOp(const Op_Cell_FaceCell& op,
@@ -490,26 +427,20 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
                                 MatrixFE& mat,
                                 int my_block_row,
                                 int my_block_col) const;
-  virtual void AssembleMatrixOp(const Op_Cell_Node& op,
-                                const SuperMap& map,
-                                MatrixFE& mat,
-                                int my_block_row,
-                                int my_block_col) const;
-  virtual void AssembleMatrixOp(const Op_Cell_Edge& op,
-                                const SuperMap& map,
-                                MatrixFE& mat,
-                                int my_block_row,
-                                int my_block_col) const;
+  // virtual void
+  // AssembleMatrixOp(const Op_Cell_Node& op, const SuperMap& map, MatrixFE& mat,
+  //                  int my_block_row, int my_block_col) const;
+  // virtual void
+  // AssembleMatrixOp(const Op_Cell_Edge& op, const SuperMap& map, MatrixFE& mat,
+  //                  int my_block_row, int my_block_col) const;
   virtual void AssembleMatrixOp(const Op_Cell_Cell& op,
                                 const SuperMap& map,
                                 MatrixFE& mat,
                                 int my_block_row,
                                 int my_block_col) const;
-  virtual void AssembleMatrixOp(const Op_Cell_Schema& op,
-                                const SuperMap& map,
-                                MatrixFE& mat,
-                                int my_block_row,
-                                int my_block_col) const;
+  // virtual void
+  // AssembleMatrixOp(const Op_Cell_Schema& op, const SuperMap& map, MatrixFE& mat,
+  //                  int my_block_row, int my_block_col) const;
 
   virtual void AssembleMatrixOp(const Op_Face_Cell& op,
                                 const SuperMap& map,
@@ -521,28 +452,16 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
                                 MatrixFE& mat,
                                 int my_block_row,
                                 int my_block_col) const;
-  virtual void AssembleMatrixOp(const Op_Face_Schema& op,
-                                const SuperMap& map,
-                                MatrixFE& mat,
-                                int my_block_row,
-                                int my_block_col) const;
+  // virtual void
+  // AssembleMatrixOp(const Op_Face_Schema& op, const SuperMap& map, MatrixFE& mat,
+  //                  int my_block_row, int my_block_col) const;
 
-  virtual void AssembleMatrixOp(const Op_Edge_Edge& op,
-                                const SuperMap& map,
-                                MatrixFE& mat,
-                                int my_block_row,
-                                int my_block_col) const;
-
-  virtual void AssembleMatrixOp(const Op_Node_Node& op,
-                                const SuperMap& map,
-                                MatrixFE& mat,
-                                int my_block_row,
-                                int my_block_col) const;
-  virtual void AssembleMatrixOp(const Op_Node_Schema& op,
-                                const SuperMap& map,
-                                MatrixFE& mat,
-                                int my_block_row,
-                                int my_block_col) const;
+  // virtual void
+  // AssembleMatrixOp(const Op_Edge_Edge& op, const SuperMap& map, MatrixFE& mat,
+  //                  int my_block_row, int my_block_col) const;
+  // virtual void
+  // AssembleMatrixOp(const Op_Node_Node& op, const SuperMap& map, MatrixFE& mat,
+  //                  int my_block_row, int my_block_col) const;
 
   virtual void AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
                                 const SuperMap& map,
@@ -554,22 +473,26 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
                                 MatrixFE& mat,
                                 int my_block_row,
                                 int my_block_col) const;
-  virtual void AssembleMatrixOp(const Op_MeshInjection& op,
-                                const SuperMap& map,
-                                MatrixFE& mat,
-                                int my_block_row,
-                                int my_block_col) const;
 
-  virtual void AssembleMatrixOp(const Op_Diagonal& op,
-                                const SuperMap& map,
-                                MatrixFE& mat,
-                                int my_block_row,
-                                int my_block_col) const;
+  // virtual void
+  // AssembleMatrixOp(const Op_Diagonal& op, const SuperMap& map, MatrixFE& mat,
+  //                  int my_block_row, int my_block_col) const;
 
-  // deep copy for building interfaces to TPLs, mainly to solvers
-  // -- composite vectors
-  void CopyVectorToSuperVector(const CompositeVector& cv, Epetra_Vector& sv) const;
-  void CopySuperVectorToVector(const Epetra_Vector& sv, CompositeVector& cv) const;
+  // local <-> global communications
+  // virtual void
+  // ExtractVectorCellOp(int c, const Schema& schema, WhetStone::DenseVector& v,
+  //                     const CompositeVector& X) const;
+  virtual void AssembleVectorCellOp(int c,
+                                    const Schema& schema,
+                                    const WhetStone::DenseVector<>& v,
+                                    CompositeVector& X) const;
+
+  // virtual void
+  // ExtractVectorFaceOp(int c, const Schema& schema, WhetStone::DenseVector& v,
+  //                     const CompositeVector& X) const;
+  // virtual void AssembleVectorFaceOp(int c, const Schema& schema,
+  //                                   const WhetStone::DenseVector& v,
+  //                                   CompositeVector& X) const;
 
   // diagnostics
   std::string PrintDiagnostics() const;
@@ -599,31 +522,31 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<const CompositeVectorSpace> cvs_row_;
-  Teuchos::RCP<const CompositeVectorSpace> cvs_col_;
+  Teuchos::RCP<const CompositeSpace> cvs_row_;
+  Teuchos::RCP<const CompositeSpace> cvs_col_;
   Teuchos::ParameterList plist_;
 
   mutable std::vector<Teuchos::RCP<Op>> ops_;
+  mutable std::vector<int> ops_properties_;
   Teuchos::RCP<CompositeVector> rhs_, rhs_checkpoint_;
 
   int ncells_owned, nfaces_owned, nnodes_owned, nedges_owned;
   int ncells_wghost, nfaces_wghost, nnodes_wghost, nedges_wghost;
 
-  int num_colors_;
-  Teuchos::RCP<std::vector<int>> coloring_;
-  Teuchos::ParameterList inv_plist_;
-  bool inverse_pars_set_;
-  bool initialize_complete_;
-  bool compute_complete_;
-  mutable bool assembly_complete_;
-
-  Teuchos::RCP<Epetra_CrsMatrix> A_;
-  Teuchos::RCP<Matrix<CompositeVector>> preconditioner_;
-
+  Teuchos::RCP<Matrix_type> A_;
   Teuchos::RCP<MatrixFE> Amat_;
   Teuchos::RCP<SuperMap> smap_;
 
+  Teuchos::RCP<Matrix<CompositeVector, CompositeSpace>> preconditioner_;
+
   Teuchos::RCP<VerboseObject> vo_;
+
+  int num_colors_;
+  Teuchos::RCP<std::vector<int>> coloring_;
+  Teuchos::ParameterList inv_plist_;
+
+  bool inverse_pars_set_;
+  bool initialize_complete_, compute_complete_, assembly_complete_;
 
   int schema_old_;
   Schema schema_row_, schema_col_;
@@ -633,7 +556,7 @@ class Operator : public Matrix<CompositeVector, CompositeVectorSpace> {
   mutable int apply_calls_;
 
  private:
-  // Operator(const Operator& op);
+  Operator(const Operator& op);
   Operator& operator=(const Operator& op);
 };
 

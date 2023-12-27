@@ -17,22 +17,126 @@
 #define H5Gopen_vers 2
 #define H5Dopen_vers 2
 #include "hdf5.h"
-#include "Epetra_SerialDenseMatrix.h"
+
+#include "Teuchos_Array.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "errors.hh"
+
+#include <Kokkos_Core.hpp>
 
 namespace Amanzi {
 
 class HDF5Reader {
  public:
-  explicit HDF5Reader(const std::string& filename);
-  ~HDF5Reader();
+  HDF5Reader(std::string filename) : filename_(filename)
+  {
+    htri_t ierr = H5Fis_hdf5(filename.c_str());
+    if (ierr > 0) {
+      file_ = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+    } else {
+      std::string header("HDF5Reader: error, invalid filename ");
+      Errors::Message message(header + filename);
+      Exceptions::amanzi_throw(message);
+    }
+  }
 
-  bool CheckVariableName(const std::string& varname);
+  ~HDF5Reader() { H5Fclose(file_); }
 
-  void ReadData(std::string varname, std::vector<double>& vec);
-  void ReadData(std::string varname, std::vector<int>& vec);
-  void ReadMatData(std::string varname, Epetra_SerialDenseMatrix& mat);
+  void ReadData(std::string varname, Teuchos::Array<double>& arr)
+  {
+    hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT);
+    hid_t dataspace = H5Dget_space(dataset);
+    hssize_t size = H5Sget_simple_extent_npoints(dataspace);
+
+    arr.resize(size);
+    herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, arr.data());
+    if (status) {
+      Errors::Message msg;
+      msg << "HDF5Reader: error reading variable \"" << varname << "\" in file \"" << filename_
+          << "\"";
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+
+  void ReadData(std::string varname, std::vector<double>& arr)
+  {
+    hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT);
+    hid_t dataspace = H5Dget_space(dataset);
+    hssize_t size = H5Sget_simple_extent_npoints(dataspace);
+
+    arr.resize(size);
+    herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, arr.data());
+    if (status) {
+      Errors::Message msg;
+      msg << "HDF5Reader: error reading variable \"" << varname << "\" in file \"" << filename_
+          << "\"";
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+
+  void ReadData(std::string varname, std::vector<int>& arr)
+  {
+    hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT);
+    hid_t dataspace = H5Dget_space(dataset);
+    hssize_t size = H5Sget_simple_extent_npoints(dataspace);
+
+    arr.resize(size);
+    herr_t status = H5Dread(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, arr.data());
+    if (status) {
+      Errors::Message msg;
+      msg << "HDF5Reader: error reading variable \"" << varname << "\" in file \"" << filename_
+          << "\"";
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+
+  void ReadData(std::string varname, Kokkos::View<double*, Kokkos::HostSpace>& vec)
+  {
+    hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT);
+    hid_t dataspace = H5Dget_space(dataset);
+    hssize_t size = H5Sget_simple_extent_npoints(dataspace);
+    Kokkos::resize(vec, size);
+    herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, vec.data());
+    if (status) {
+      Errors::Message msg;
+      msg << "HDF5Reader: error reading variable \"" << varname << "\" in file \"" << filename_
+          << "\"";
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+
+  void ReadMatData(std::string varname, Teuchos::SerialDenseMatrix<std::size_t, double>& mat)
+  {
+    hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT);
+    hid_t dataspace = H5Dget_space(dataset);
+    hsize_t dims[2];
+    int ndims = H5Sget_simple_extent_dims(dataspace, dims, NULL);
+    if (ndims != 2) {
+      Errors::Message message("HDF5Reader: dataset dimension is not 2.");
+      Exceptions::amanzi_throw(message);
+    }
+    mat.shape(dims[1], dims[0]);
+    herr_t status =
+      H5Dread(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, mat.values());
+    if (status) {
+      Errors::Message msg;
+      msg << "HDF5Reader: error reading variable \"" << varname << "\" in file \"" << filename_
+          << "\"";
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+
+  void ReadMatData(std::string varname, Kokkos::View<double**, Kokkos::HostSpace>& mat)
+  {
+    Teuchos::SerialDenseMatrix<std::size_t, double> m;
+    ReadMatData(varname, m);
+
+    Kokkos::resize(mat, m.numCols(), m.numRows());
+    for (int i = 0; i < mat.extent(0); ++i) {
+      for (int j = 0; j < mat.extent(1); ++j) { mat(i, j) = m[i][j]; }
+    }
+  }
 
  protected:
   std::string filename_;

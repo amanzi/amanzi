@@ -1,15 +1,13 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
-*/
-
-/*
-  Operators
 
   Operator whose unknowns are Edge.
 */
@@ -29,7 +27,7 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Apply a source which may or may not have edge volume included already.
+* Apply a source which may or may not have edge volume included already. 
 ****************************************************************** */
 void
 Operator_Edge::UpdateRHS(const CompositeVector& source, bool volume_included)
@@ -38,11 +36,13 @@ Operator_Edge::UpdateRHS(const CompositeVector& source, bool volume_included)
     Operator::UpdateRHS(source);
   } else {
     rhs_->PutScalarGhosted(0.0);
-    Epetra_MultiVector& rhs_e = *rhs_->ViewComponent("edge", true);
-    const Epetra_MultiVector& source_e = *source.ViewComponent("edge", true);
+    Epetra_MultiVector& rhs_e = *rhs_->viewComponent("edge", true);
+    const Epetra_MultiVector& source_e = *source.viewComponent("edge", true);
+
+    AmanziMesh::Entity_ID_List edges;
 
     for (int c = 0; c != ncells_owned; ++c) {
-      const auto& edges = mesh_->getCellEdges(c);
+      mesh_->cell_get_edges(c, &edges);
       int nedges = edges.size();
 
       double volume = mesh_->getCellVolume(c);
@@ -51,7 +51,7 @@ Operator_Edge::UpdateRHS(const CompositeVector& source, bool volume_included)
         rhs_e[0][e] += source_e[0][e] * volume / nedges;
       }
     }
-    rhs_->GatherGhostedToMaster("edge");
+    rhs_->gatherGhostedToMaster("edge");
   }
 }
 
@@ -65,12 +65,17 @@ Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
                                  CompositeVector& Y) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
-  const Epetra_MultiVector& Xe = *X.ViewComponent("edge", true);
-  {
-    Epetra_MultiVector& Ye = *Y.ViewComponent("edge", true);
 
+  X.scatterMasterToGhosted();
+  const Epetra_MultiVector& Xe = *X.viewComponent("edge", true);
+  Y.PutScalarGhosted(0.0);
+
+  {
+    Epetra_MultiVector& Ye = *Y.viewComponent("edge", true);
+
+    AmanziMesh::Entity_ID_List edges;
     for (int c = 0; c != ncells_owned; ++c) {
-      auto edges = mesh_->getCellEdges(c);
+      mesh_->cell_get_edges(c, &edges);
       int nedges = edges.size();
 
       WhetStone::DenseVector v(nedges), av(nedges);
@@ -82,13 +87,15 @@ Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
       for (int n = 0; n != nedges; ++n) { Ye[0][edges[n]] += av(n); }
     }
   }
+
+  Y.gatherGhostedToMaster(Add);
   return 0;
 }
 
 
 /* ******************************************************************
 * Visit methods for Apply.
-* Apply the local matrices directly as schema is a subset of
+* Apply the local matrices directly as schema is a subset of 
 * assembled schema.
 ****************************************************************** */
 int
@@ -96,8 +103,8 @@ Operator_Edge::ApplyMatrixFreeOp(const Op_Edge_Edge& op,
                                  const CompositeVector& X,
                                  CompositeVector& Y) const
 {
-  const Epetra_MultiVector& Xc = *X.ViewComponent("edge");
-  Epetra_MultiVector& Yc = *Y.ViewComponent("edge");
+  const Epetra_MultiVector& Xc = *X.viewComponent("edge");
+  Epetra_MultiVector& Yc = *Y.viewComponent("edge");
 
   for (int k = 0; k != Xc.NumVectors(); ++k) {
     for (int e = 0; e != nedges_owned; ++e) { Yc[k][e] += Xc[k][e] * (*op.diag)[k][e]; }
@@ -121,19 +128,20 @@ Operator_Edge::SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
   std::vector<int> lid_c(cell_max_edges);
 
   // ELEMENT: cell, DOFS: cell and edge
-  const std::vector<int>& edge_row_inds = map.GhostIndices(my_block_row, "edge", 0);
-  const std::vector<int>& edge_col_inds = map.GhostIndices(my_block_col, "edge", 0);
+  const std::vector<int>& edge_row_inds = map.viewGhostIndices(my_block_row, "edge", 0);
+  const std::vector<int>& edge_col_inds = map.viewGhostIndices(my_block_col, "edge", 0);
 
   int ierr(0);
+  AmanziMesh::Entity_ID_List edges;
   for (int c = 0; c != ncells_owned; ++c) {
-    auto edges = mesh_->getCellEdges(c);
+    mesh_->cell_get_edges(c, &edges);
     int nedges = edges.size();
 
     for (int n = 0; n != nedges; ++n) {
       lid_r[n] = edge_row_inds[edges[n]];
       lid_c[n] = edge_col_inds[edges[n]];
     }
-    ierr |= graph.InsertMyIndices(nedges, lid_r.data(), nedges, lid_c.data());
+    ierr |= graph.insertLocalIndices(nedges, lid_r.data(), nedges, lid_c.data());
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -150,15 +158,15 @@ Operator_Edge::SymbolicAssembleMatrixOp(const Op_Edge_Edge& op,
                                         int my_block_row,
                                         int my_block_col) const
 {
-  const std::vector<int>& edge_row_inds = map.GhostIndices(my_block_row, "edge", 0);
-  const std::vector<int>& edge_col_inds = map.GhostIndices(my_block_col, "edge", 0);
+  const std::vector<int>& edge_row_inds = map.viewGhostIndices(my_block_row, "edge", 0);
+  const std::vector<int>& edge_col_inds = map.viewGhostIndices(my_block_col, "edge", 0);
 
   int ierr(0);
   for (int e = 0; e != nedges_owned; ++e) {
     int row = edge_row_inds[e];
     int col = edge_col_inds[e];
 
-    ierr |= graph.InsertMyIndices(row, 1, &col);
+    ierr |= graph.insertLocalIndices(row, 1, &col);
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -181,12 +189,13 @@ Operator_Edge::AssembleMatrixOp(const Op_Cell_Edge& op,
   std::vector<int> lid_c(cell_max_edges);
 
   // ELEMENT: cell, DOFS: edge and cell
-  const std::vector<int>& edge_row_inds = map.GhostIndices(my_block_row, "edge", 0);
-  const std::vector<int>& edge_col_inds = map.GhostIndices(my_block_col, "edge", 0);
+  const std::vector<int>& edge_row_inds = map.viewGhostIndices(my_block_row, "edge", 0);
+  const std::vector<int>& edge_col_inds = map.viewGhostIndices(my_block_col, "edge", 0);
 
   int ierr(0);
+  AmanziMesh::Entity_ID_List edges;
   for (int c = 0; c != ncells_owned; ++c) {
-    auto edges = mesh_->getCellEdges(c);
+    mesh_->cell_get_edges(c, &edges);
     int nedges = edges.size();
 
     for (int n = 0; n != nedges; ++n) {
@@ -194,7 +203,7 @@ Operator_Edge::AssembleMatrixOp(const Op_Cell_Edge& op,
       lid_c[n] = edge_col_inds[edges[n]];
     }
 
-    ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[c]);
+    ierr |= mat.sumIntoLocalValues(lid_r.data(), lid_c.data(), op.matrices[c]);
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -213,27 +222,17 @@ Operator_Edge::AssembleMatrixOp(const Op_Edge_Edge& op,
 {
   AMANZI_ASSERT(op.diag->NumVectors() == 1);
 
-  const std::vector<int>& edge_row_inds = map.GhostIndices(my_block_row, "edge", 0);
-  const std::vector<int>& edge_col_inds = map.GhostIndices(my_block_col, "edge", 0);
+  const std::vector<int>& edge_row_inds = map.viewGhostIndices(my_block_row, "edge", 0);
+  const std::vector<int>& edge_col_inds = map.viewGhostIndices(my_block_col, "edge", 0);
 
   int ierr(0);
   for (int e = 0; e != nedges_owned; ++e) {
     int row = edge_row_inds[e];
     int col = edge_col_inds[e];
 
-    ierr |= mat.SumIntoMyValues(row, 1, &(*op.diag)[0][e], &col);
+    ierr |= mat.sumIntoLocalValues(row, 1, &(*op.diag)[0][e], &col);
   }
   AMANZI_ASSERT(!ierr);
-}
-
-
-/* ******************************************************************
-* Copy constructor.
-****************************************************************** */
-Teuchos::RCP<Operator>
-Operator_Edge::Clone() const
-{
-  return Teuchos::rcp(new Operator_Edge(*this));
 }
 
 } // namespace Operators

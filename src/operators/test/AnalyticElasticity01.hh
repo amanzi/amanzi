@@ -1,14 +1,12 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
-/*
-  Operators
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Linear vector field and constant tensor.
 */
@@ -27,14 +25,14 @@ class AnalyticElasticity01 : public AnalyticElasticityBase {
     : AnalyticElasticityBase(mesh), mu_(mu), lambda_(lambda), flag_(flag){};
   ~AnalyticElasticity01(){};
 
-  Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t)
+  Amanzi::WhetStone : Tensor<> Tensor(const Amanzi::AmanziGeometry::Point& p, double t)
   {
     if (lambda_ == 0.0 && !flag_) {
-      Amanzi::WhetStone::Tensor K(2, 1);
+      Amanzi::WhetStone::Tensor<> K(2, 1);
       K(0, 0) = 2 * mu_;
       return K;
     } else {
-      Amanzi::WhetStone::Tensor K(2, 4);
+      Amanzi::WhetStone::Tensor<> K(2, 4);
       K(0, 0) = K(1, 1) = 2 * mu_ + lambda_;
       K(1, 0) = K(0, 1) = lambda_;
       K(2, 2) = K(3, 3) = 2 * mu_;

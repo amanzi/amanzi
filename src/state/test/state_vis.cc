@@ -14,10 +14,9 @@
 */
 
 // TPLs
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_RCP.hpp"
 #include "UnitTest++.h"
 
@@ -26,7 +25,6 @@
 #include "MeshFactory.hh"
 
 // Amanzi::State
-#include "IO.hh"
 #include "State.hh"
 #include "Visualization.hh"
 
@@ -56,8 +54,7 @@ SUITE(VISUALIZATION)
     times[1] = 3.0;
     plist.set<Teuchos::Array<double>>("times", times);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    Amanzi::Visualization V(plist);
+    Amanzi::Visualization V(plist, Teuchos::null, false);
 
     // test the cycle stuff, the expected result is in cycles_ and
     // we store the computed result in cycles
@@ -85,15 +82,12 @@ SUITE(VISUALIZATION)
   {
     // here we just check that the code does not crash when
     // the mesh and data files are written
-    Teuchos::ParameterList plist;
-
     auto comm = Amanzi::getDefaultComm();
 
     std::string xmlFileName = "test/state_vis.xml";
-    Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-    plist = xmlreader.getParameters();
+    auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-    Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+    Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
     auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
     Amanzi::AmanziMesh::Preference pref;
@@ -104,7 +98,7 @@ SUITE(VISUALIZATION)
     meshfactory.set_preference(pref);
     auto Mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1);
 
-    auto state_list = plist.sublist("state");
+    auto state_list = Teuchos::sublist(plist, "state");
     Amanzi::State S0(state_list);
 
     S0.RegisterMesh("domain", Mesh);
@@ -118,11 +112,9 @@ SUITE(VISUALIZATION)
 
     S0.set_time(1.02);
 
-    Teuchos::ParameterList visualization_list = plist.get<Teuchos::ParameterList>("visualization");
-    Amanzi::Visualization V(visualization_list);
-    V.set_mesh(Mesh);
-    V.CreateFiles();
-
-    WriteVis(V, S0);
+    Teuchos::ParameterList& visualization_list = plist->sublist("visualization");
+    Amanzi::Visualization V(visualization_list, Mesh, false);
+    V.createFiles(0);
+    V.write(S0);
   }
 }

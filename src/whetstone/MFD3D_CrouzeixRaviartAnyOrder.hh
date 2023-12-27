@@ -47,22 +47,22 @@ class MFD3D_CrouzeixRaviartAnyOrder : public MFD3D {
   virtual std::vector<SchemaItem> schema() const override;
 
   // -- stiffness matrix
-  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
+  int H1consistency(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Ac);
+  virtual int StiffnessMatrix(int c, const Tensor<>& T, DenseMatrix<>& A) override;
 
   // -- l2 projectors
   virtual void L2Cell(int c,
-                      const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf,
-                      const Polynomial* moments,
-                      Polynomial& uc) override
+                      const std::vector<Polynomial<>>& ve,
+                      const std::vector<Polynomial<>>& vf,
+                      const Polynomial<>* moments,
+                      Polynomial<>& uc) override
   {
     ProjectorCell_(mesh_, c, ve, vf, ProjectorType::L2, moments, uc);
   }
 
   void L2GradientCell(int c,
                       const std::vector<VectorPolynomial>& vf,
-                      const std::shared_ptr<DenseVector>& moments,
+                      const std::shared_ptr<DenseVector<>>& moments,
                       MatrixPolynomial& uc)
   {
     ProjectorGradientCell_(c, vf, ProjectorType::L2, moments, uc);
@@ -70,10 +70,10 @@ class MFD3D_CrouzeixRaviartAnyOrder : public MFD3D {
 
   // -- h1 projectors
   virtual void H1Cell(int c,
-                      const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf,
-                      const Polynomial* moments,
-                      Polynomial& uc) override
+                      const std::vector<Polynomial<>>& ve,
+                      const std::vector<Polynomial<>>& vf,
+                      const Polynomial<>* moments,
+                      Polynomial<>& uc) override
   {
     ProjectorCell_(mesh_, c, ve, vf, ProjectorType::H1, moments, uc);
   }
@@ -81,35 +81,35 @@ class MFD3D_CrouzeixRaviartAnyOrder : public MFD3D {
   // access / setup
   // -- integrals of monomials in high-order schemes could be reused
   const PolynomialOnMesh& integrals() const { return integrals_; }
-  const DenseMatrix& G() const { return G_; }
-  const DenseMatrix& R() const { return R_; }
+  const DenseMatrix<>& G() const { return G_; }
+  const DenseMatrix<>& R() const { return R_; }
 
  private:
   // generic code for multiple projectors
   void ProjectorCell_(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
                       int c,
-                      const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf,
+                      const std::vector<Polynomial<>>& ve,
+                      const std::vector<Polynomial<>>& vf,
                       const ProjectorType type,
-                      const Polynomial* moments,
-                      Polynomial& uc);
+                      const Polynomial<>* moments,
+                      Polynomial<>& uc);
 
   void ProjectorGradientCell_(int c,
                               const std::vector<VectorPolynomial>& vf,
                               const ProjectorType type,
-                              const std::shared_ptr<DenseVector>& moments,
+                              const std::shared_ptr<DenseVector<>>& moments,
                               MatrixPolynomial& uc);
 
   // supporting routines
   void CalculateFaceDOFs_(int f,
-                          const Polynomial& vf,
-                          const Polynomial& pf,
-                          DenseVector& vdof,
+                          const Polynomial<>& vf,
+                          const Polynomial<>& pf,
+                          DenseVector<>& vdof,
                           int& row);
 
  protected:
   PolynomialOnMesh integrals_;
-  DenseMatrix R_, G_;
+  DenseMatrix<> R_, G_;
 
  private:
   static RegisteredFactory<MFD3D_CrouzeixRaviartAnyOrder> reg_;

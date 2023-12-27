@@ -49,10 +49,10 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
   // schema which connects cells to faces, and no other CELL schemas that are
   // not simply diagonal CELL_CELL.  Additionally, collect the diagonal for
   // inversion.
-  Epetra_MultiVector D_c(h_->Mesh()->getMap(AmanziMesh::Entity_kind::CELL, false), 1);
-  int ncells_owned = D_c.MyLength();
+  Epetra_MultiVector D_c(h_->getMesh()->getMap(AmanziMesh::Entity_kind::CELL, false), 1);
+  int ncells_owned = D_c.getLocalLength();
   int nfaces_owned =
-    h_->Mesh()->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+    h_->getMesh()->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
   int nschema_coupling = 0;
   for (const auto& op : *h_) {
@@ -60,7 +60,7 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
       // HAS CELLS
       if (op->Matches(Operators::OPERATOR_SCHEMA_BASE_CELL | Operators::OPERATOR_SCHEMA_DOFS_CELL,
                       Operators::OPERATOR_SCHEMA_RULE_EXACT) &&
-          (op->diag->MyLength() == ncells_owned)) {
+          (op->diag->getLocalLength() == ncells_owned)) {
         // diagonal schema
         for (int c = 0; c != ncells_owned; ++c) { D_c[0][c] += (*op->diag)[0][c]; }
       } else if (op->Matches(Operators::OPERATOR_SCHEMA_BASE_FACE,
@@ -90,7 +90,7 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
   Y.PutScalarGhosted(0.0);
 
   // apply preconditioner inversion
-  const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
+  const Epetra_MultiVector& Xc = *X.viewComponent("cell");
 
   // Temporary cell and face vectors.
   CompositeVector T(X);
@@ -103,12 +103,12 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
         op->matrices.size() == ncells_owned) {
       // FORWARD ELIMINATION:  Tf = Xf - Afc inv(Acc) Xc
       {
-        Epetra_MultiVector& Tf = *T.ViewComponent("face", true);
+        Epetra_MultiVector& Tf = *T.viewComponent("face", true);
         for (int c = 0; c < ncells_owned; c++) {
-          const auto& faces = h_->Mesh()->getCellFaces(c);
+          const auto& faces = h_->getMesh()->getCellFaces(c);
           int nfaces = faces.size();
 
-          WhetStone::DenseMatrix& Acell = op->matrices[c];
+          WhetStone::DenseMatrix<>& Acell = op->matrices[c];
 
           double tmp = Xc[0][c] / (Acell(nfaces, nfaces) + D_c[0][c]);
           for (int n = 0; n < nfaces; n++) {
@@ -118,27 +118,27 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
         }
       }
 
-      T.GatherGhostedToMaster("face", Add);
+      T.gatherGhostedToMaster("face", Add);
 
       // Solve the Schur complement system Sff * Yf = Tf.
       {
-        Epetra_MultiVector& Yf = *Y.ViewComponent("face", false);
-        const Epetra_MultiVector& Tf = *T.ViewComponent("face", false);
+        Epetra_MultiVector& Yf = *Y.viewComponent("face", false);
+        const Epetra_MultiVector& Tf = *T.viewComponent("face", false);
         ierr = solver_->ApplyInverse(*Tf(0), *Yf(0));
         AMANZI_ASSERT(ierr >= 0);
       }
 
-      Y.ScatterMasterToGhosted("face");
+      Y.scatterMasterToGhosted("face");
 
       {
-        const Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
-        Epetra_MultiVector& Yc = *Y.ViewComponent("cell", false);
+        const Epetra_MultiVector& Yf = *Y.viewComponent("face", true);
+        Epetra_MultiVector& Yc = *Y.viewComponent("cell", false);
         // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
         for (int c = 0; c < ncells_owned; c++) {
-          const auto& faces = h_->Mesh()->getCellFaces(c);
+          const auto& faces = h_->getMesh()->getCellFaces(c);
           int nfaces = faces.size();
 
-          WhetStone::DenseMatrix& Acell = op->matrices[c];
+          WhetStone::DenseMatrix<>& Acell = op->matrices[c];
 
           double tmp = Xc[0][c];
           for (int n = 0; n < nfaces; n++) {

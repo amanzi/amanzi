@@ -1,15 +1,12 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
-/*
-  Operators
-
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <vector>
@@ -92,6 +89,9 @@ PDE_Abstract::Init_(Teuchos::ParameterList& plist)
 
     global_op_ = Teuchos::rcp(
       new Operator_Schema(cvs_row, cvs_col, plist, global_schema_row_, global_schema_col_));
+    if (local_schema_col_.base() == AmanziMesh::CELL) {
+      local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
+    }
 
   } else {
     // constructor was given an Operator
@@ -101,10 +101,11 @@ PDE_Abstract::Init_(Teuchos::ParameterList& plist)
     mesh_ = global_op_->DomainMap().Mesh();
     local_schema_row_.Init(mfd_range, mesh_, base);
     local_schema_col_.Init(mfd_domain, mesh_, base);
+
+    local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
   }
 
   // register the advection Op
-  local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
   global_op_->OpPushBack(local_op_);
 
   // default values
@@ -124,10 +125,10 @@ PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                              const Teuchos::Ptr<const CompositeVector>& p)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  int d(mesh_->getSpaceDimension());
+  int d(mesh_->space_dimension());
 
   WhetStone::DenseMatrix Mcell, Acell, AcellT;
-  WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
+  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
 
   if (matrix_ == "mass") {
@@ -156,40 +157,17 @@ PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
       AcellT.Transpose(Acell);
       matrix[c] = AcellT;
     }
-  } else if (matrix_ == "advection" && coef_type_ == CoefType::CONSTANT) {
-    if (u->HasComponent("cell")) {
-      const Epetra_MultiVector& u_c = *u->ViewComponent("cell", false);
+  } else if (matrix_ == "advection" && coef_type_ == Coef_kind::CONSTANT) {
+    const Epetra_MultiVector& u_c = *u->viewComponent("cell", false);
 
-      for (int c = 0; c < ncells_owned; ++c) {
-        AmanziGeometry::Point vc(d);
-        for (int i = 0; i < d; ++i) vc[i] = u_c[i][c];
+    for (int c = 0; c < ncells_owned; ++c) {
+      AmanziGeometry::Point vc(d);
+      for (int i = 0; i < d; ++i) vc[i] = u_c[i][c];
 
-        mfd_->AdvectionMatrix(c, vc, Acell, grad_on_test_);
-        matrix[c] = Acell;
-      }
-    } else if (u->HasComponent("node")) {
-      u->ScatterMasterToGhosted();
-      const Epetra_MultiVector& u_c = *u->ViewComponent("node", true);
-
-      for (int c = 0; c < ncells_owned; ++c) {
-        auto nodes = mesh_->getCellNodes(c);
-
-        AmanziGeometry::Point vn(d);
-        std::vector<AmanziGeometry::Point> vec;
-
-        for (int n = 0; n < nodes.size(); ++n) {
-          int v = nodes[n];
-          for (int i = 0; i < d; ++i) vn[i] = u_c[i][v];
-          vec.push_back(vn);
-        }
-
-        mfd_->AdvectionMatrix(c, vec, Acell);
-        matrix[c] = Acell;
-      }
-    } else {
-      AMANZI_ASSERT(false);
+      mfd_->AdvectionMatrix(c, vc, Acell, grad_on_test_);
+      matrix[c] = Acell;
     }
-  } else if (matrix_ == "advection" && coef_type_ == CoefType::VECTOR_POLYNOMIAL) {
+  } else if (matrix_ == "advection" && coef_type_ == Coef_kind::VECTOR_POLYNOMIAL) {
     for (int c = 0; c < ncells_owned; ++c) {
       mfd_->AdvectionMatrix(c, (*Kvec_poly_)[c], Acell, grad_on_test_);
       matrix[c] = Acell;
@@ -240,7 +218,7 @@ PDE_Abstract::CreateStaticMatrices_()
 {
   AMANZI_ASSERT(matrix_ == "advection");
 
-  int d(mesh_->getSpaceDimension());
+  int d(mesh_->space_dimension());
   WhetStone::DenseMatrix Acell;
   WhetStone::VectorPolynomial poly(d, d, 0);
 

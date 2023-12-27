@@ -51,30 +51,29 @@ class MeshLogicalAudit {
   Teuchos::RCP<const AmanziMesh::MeshHost> mesh;
 
   Comm_ptr_type comm_;
-  const int MyPID;
-  const int nface;
-  const int ncell;
+  const int nfaces_all_;
+  const int ncells_all_;
 
-  std::ostream& os;
+  std::ostream& os_;
   unsigned int MAX_OUT;
 
   bool distinct_values(const MeshHost::cEntity_ID_View& list) const;
   void write_list(const Entity_ID_List&, unsigned int) const;
-  bool global_any(bool) const;
   int same_face(const MeshHost::Entity_ID_View, const MeshHost::Entity_ID_View) const;
+  bool globalAny_(bool) const;
 
-  bool check_maps(const Epetra_Map&, const Epetra_Map&) const;
+  bool check_maps(const Map_type&, const Map_type&) const;
   bool check_get_set_ids(AmanziMesh::Entity_kind) const;
   bool check_valid_set_id(AmanziMesh::Entity_kind) const;
-  bool check_sets(AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
+  bool check_sets(AmanziMesh::Entity_kind, const Map_type&, const Map_type&) const;
   bool check_get_set(AmanziMesh::Set_ID,
                      AmanziMesh::Entity_kind,
                      AmanziMesh::Parallel_kind,
-                     const Epetra_Map&) const;
+                     const Map_type&) const;
   bool check_used_set(AmanziMesh::Set_ID,
                       AmanziMesh::Entity_kind,
-                      const Epetra_Map&,
-                      const Epetra_Map&) const;
+                      const Map_type&,
+                      const Map_type&) const;
 
   // This is the vertex type for the test dependency graph.
   typedef bool (MeshLogicalAudit::*Test)() const;

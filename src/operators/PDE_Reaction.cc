@@ -1,15 +1,12 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
-/*
-  Operators
-
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <vector>
@@ -60,6 +57,7 @@ PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
 
     global_op_ =
       Teuchos::rcp(new Operator_Schema(cvs, cvs, plist, global_schema_row_, global_schema_col_));
+    local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
 
   } else {
     // constructor was given an Operator
@@ -69,26 +67,26 @@ PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
     mesh_ = global_op_->DomainMap().Mesh();
     local_schema_row_.Init(mfd_, mesh_, base);
     local_schema_col_ = local_schema_row_;
+
+    local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
   }
 
   // register the advection Op
-  local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
   global_op_->OpPushBack(local_op_);
 }
 
 
 /* ******************************************************************
 * Collection of local matrices.
-* NOTE: Not all input parameters are used yet.
 ****************************************************************** */
 void
-PDE_Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                             const Teuchos::Ptr<const CompositeVector>& p)
+PDE_Reaction::UpdateMatrices()
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
-  AmanziMesh::Entity_ID_View nodes;
-  int d = mesh_->getSpaceDimension();
+  AmanziMesh::Entity_ID_List nodes;
+  int d = mesh_->space_dimension();
 
   WhetStone::DenseMatrix Mcell;
   WhetStone::Tensor Kc(d, 1);
@@ -146,6 +144,7 @@ PDE_Reaction::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 void
 PDE_Reaction::CreateStaticMatrices_()
 {
+  int d(mesh_->space_dimension());
   WhetStone::DenseMatrix Mcell;
 
   static_matrices_.resize(ncells_owned);

@@ -1,14 +1,12 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
-/*
-  Operators
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   DiffusionDG implements the Diffusion interface using
   discontinuous polynomials.
@@ -43,10 +41,8 @@ class BCs;
 class PDE_DiffusionDG : public PDE_HelperDiscretization {
  public:
   PDE_DiffusionDG(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : PDE_HelperDiscretization(mesh), Kf_(NULL)
+    : PDE_HelperDiscretization(mesh), Kf_(nullptr)
   {
-    global_op_ = Teuchos::null;
-    pde_type_ = PDE_DIFFUSION_DG;
     Init_(plist);
   }
 
@@ -57,22 +53,26 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
   Setup(const std::shared_ptr<std::vector<T>>& Kc, const std::shared_ptr<std::vector<double>>& Kf);
 
   // -- creation of an operator
-  using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) override;
+                              const Teuchos::Ptr<const CompositeVector>& p = Teuchos::null);
+  virtual void UpdateMatrices() { UpdateMatrices(Teuchos::null, Teuchos::null); }
 
   // -- modify local matrices due to boundary conditions
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
   // -- postprocessing: calculated flux u from potential p
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
-                          const Teuchos::Ptr<CompositeVector>& flux) override;
+                          const Teuchos::Ptr<CompositeVector>& flux);
 
   // access
   const WhetStone::DG_Modal& dg() const { return *dg_; }
 
  private:
-  virtual void Init_(Teuchos::ParameterList& plist);
+  // NOTE: functions called in a constructor are not virtual.  You can call
+  // them virtual, but they do not call derived class methods.  If you want it
+  // to be virtual, make this public and call it in the factory (as is done in
+  // PDE_DiffusionFV, etc).
+  void Init_(Teuchos::ParameterList& plist);
 
  private:
   std::string matrix_;
@@ -80,6 +80,10 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
 
   // penalty coefficeint
   std::shared_ptr<std::vector<double>> Kf_;
+
+  // operator and schemas
+  Schema global_schema_col_, global_schema_row_;
+  Schema local_schema_col_, local_schema_row_;
 
   // other operators
   Teuchos::RCP<Op> jump_up_op_, jump_pu_op_, penalty_op_;

@@ -46,17 +46,17 @@ UpwindFlux::Compute(const CompositeVector& flux,
                     const std::vector<int>& bc_model,
                     CompositeVector& field)
 {
-  AMANZI_ASSERT(field.HasComponent("cell"));
-  AMANZI_ASSERT(field.HasComponent(face_comp_));
+  AMANZI_ASSERT(field.hasComponent("cell"));
+  AMANZI_ASSERT(field.hasComponent(face_comp_));
 
-  flux.ScatterMasterToGhosted("face");
-  field.ScatterMasterToGhosted("cell");
+  flux.scatterMasterToGhosted("face");
+  field.scatterMasterToGhosted("cell");
 
-  const Epetra_MultiVector& flux_f = *flux.ViewComponent("face", true);
+  const Epetra_MultiVector& flux_f = *flux.viewComponent("face", true);
 
-  const Epetra_MultiVector& field_c = *field.ViewComponent("cell", true);
-  const Epetra_MultiVector& field_bf = *field.ViewComponent("boundary_face", true);
-  Epetra_MultiVector& field_f = *field.ViewComponent(face_comp_, true);
+  const Epetra_MultiVector& field_c = *field.viewComponent("cell", true);
+  const Epetra_MultiVector& field_bf = *field.viewComponent("boundary_face", true);
+  Epetra_MultiVector& field_f = *field.viewComponent(face_comp_, true);
 
   double flxmin, flxmax, tol;
   flux_f.MinValue(&flxmin);

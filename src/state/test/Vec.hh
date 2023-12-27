@@ -7,6 +7,9 @@
   Authors:
 */
 
+#pragma once
+#include "Data_Helpers.hh"
+
 int g_constructor_calls_default = 0;
 int g_constructor_calls_copy = 0;
 int g_constructor_calls_main = 0;
@@ -37,34 +40,32 @@ class VecFactory {
   int size_;
 };
 
+
+template <>
 bool
-UserInitialize(Teuchos::ParameterList& plist,
-               Vec& t,
-               const Amanzi::Key& fieldname,
-               const std::vector<std::string>* subfieldnames)
+Amanzi::Helpers::Initialize<Vec>(Teuchos::ParameterList& plist, Vec& t)
 {
   std::cout << "found it!" << std::endl;
   return true;
 }
 
+template <>
 void
-UserWriteVis(const Amanzi::Visualization& vis,
-             const Amanzi::Key& fieldname,
-             const std::vector<std::string>* subfieldnames,
-             const Vec& vec)
+Amanzi::Helpers::WriteVis<Vec>(const Amanzi::Visualization& vis,
+                               Teuchos::ParameterList& attrs,
+                               const Vec& vec)
 {}
 
+template <>
 void
-UserWriteCheckpoint(const Amanzi::Checkpoint& chkp,
-                    const Amanzi::Key& fieldname,
-                    const std::vector<std::string>* subfieldnames,
-                    const Vec& vec)
+Amanzi::Helpers::WriteCheckpoint<Vec>(const Amanzi::Checkpoint& vis,
+                                      Teuchos::ParameterList& attrs,
+                                      const Vec& vec)
 {}
-bool
-UserReadCheckpoint(const Amanzi::Checkpoint& chkp,
-                   const Amanzi::Key& fieldname,
-                   const std::vector<std::string>* subfieldnames,
-                   Vec& vec)
-{
-  return true;
-}
+
+template <>
+void
+Amanzi::Helpers::ReadCheckpoint<Vec>(const Amanzi::Checkpoint& vis,
+                                     Teuchos::ParameterList& attrs,
+                                     Vec& vec)
+{}

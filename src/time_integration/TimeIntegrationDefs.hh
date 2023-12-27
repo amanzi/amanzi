@@ -7,11 +7,7 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  This is the flow component of the Amanzi code.
-
-*/
-
+//! <MISSING_ONELINE_DOCSTRING>
 #ifndef AMANZI_TIME_INTEGRATION_CONSTANTS_HH_
 #define AMANZI_TIME_INTEGRATION_CONSTANTS_HH_
 

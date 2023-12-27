@@ -1,16 +1,13 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
-  provided in the top-level COPYRIGHT file.
-
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-           Ethan Coon (ecoon@lanl.gov)
-*/
-
-/*
   Operators
 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+          Ethan Coon (ecoon@lanl.gov)
 */
 
 #ifndef AMANZI_OPERATOR_ACCUMULATION_HH_
@@ -39,13 +36,7 @@ This class is usually used as part of a preconditioner, providing the linearizat
 
 for a grid element :math:`\Omega_E`.
 
-
-.. _pde-accumulation-spec:
-.. admonition:: pde-accumulation-spec
-
-  * `"entity kind`" ``[string]`` **optional** Typically set by the PK
-  * `"number of vectors`" ``[int]`` **optional** Typically set by the PK
-
+No options are available here.
 */
 
 namespace Amanzi {
@@ -75,7 +66,7 @@ class PDE_Accumulation : public PDE_HelperBCsList {
   }
 
   PDE_Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op)
-    : global_op_(global_op), plist_(plist), mesh_(Teuchos::null)
+    : global_op_(global_op), mesh_(Teuchos::null), plist_(plist)
   {
     Schema schema;
     std::string name = plist_.get<std::string>("entity kind");
@@ -86,7 +77,7 @@ class PDE_Accumulation : public PDE_HelperBCsList {
   }
 
   PDE_Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<AmanziMesh::Mesh> mesh)
-    : global_op_(Teuchos::null), plist_(plist), mesh_(mesh)
+    : global_op_(Teuchos::null), mesh_(mesh), plist_(plist)
   {
     Schema schema;
     std::string name = plist_.get<std::string>("entity kind");
@@ -97,7 +88,7 @@ class PDE_Accumulation : public PDE_HelperBCsList {
   }
 
   PDE_Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : global_op_(Teuchos::null), plist_(plist), mesh_(mesh)
+    : global_op_(Teuchos::null), mesh_(mesh), plist_(plist)
   {
     Schema schema;
     std::string name = plist_.get<std::string>("entity kind");
@@ -122,12 +113,7 @@ class PDE_Accumulation : public PDE_HelperBCsList {
                            double dT,
                            const std::string& name,
                            bool volume = true);
-  void AddAccumulationTerm(const CompositeVector& du1,
-                           const CompositeVector& du2,
-                           double alpha,
-                           const std::string& name,
-                           bool volume = true);
-  // -- modifiers for diagonal operators and rhs
+  // // -- modifiers for diagonal operators and rhs
   void AddAccumulationRhs(const CompositeVector& s1,
                           const CompositeVector& s2,
                           double alpha,

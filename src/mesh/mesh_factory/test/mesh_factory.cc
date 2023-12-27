@@ -34,7 +34,7 @@ SUITE(MeshFramework)
   TEST(Generate3D)
   {
     auto comm = getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
+    bool parallel(comm->getSize() > 1);
 
     Preference pref;
     MeshFrameworkFactory meshfactory(comm);
@@ -121,7 +121,7 @@ SUITE(MeshFramework)
   TEST(ParameterGenerate3)
   {
     auto comm = getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
+    bool parallel(comm->getSize() > 1);
 
     Preference pref;
     Teuchos::RCP<MeshFramework> mesh;
@@ -254,7 +254,7 @@ SUITE(MeshFramework)
   TEST(ReadExodus)
   {
     auto comm = getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
+    bool parallel(comm->getSize() > 1);
 
     Teuchos::RCP<MeshFramework> mesh;
     MeshFrameworkFactory meshfactory(comm);
@@ -277,7 +277,7 @@ SUITE(MeshFramework)
   TEST(ReadNemesis)
   {
     auto comm = getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
+    bool parallel(comm->getSize() > 1);
 
     Teuchos::RCP<MeshFramework> mesh;
     MeshFrameworkFactory meshfactory(comm);
@@ -298,7 +298,7 @@ SUITE(MeshFramework)
   TEST(Extract3)
   {
     auto comm = getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
+    bool parallel(comm->getSize() > 1);
 
     double x0(0.0), y0(0.0), z0(0.0);
     double x1(10.0), y1(10.0), z1(10.0);

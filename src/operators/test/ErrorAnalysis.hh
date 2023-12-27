@@ -1,14 +1,12 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
-/*
-  Operators
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Miscaleneous tools for error analysis.
 */
@@ -18,34 +16,34 @@
 
 #include <cmath>
 
-#include "Epetra_MultiVector.h"
 
 #include "Mesh.hh"
 
 inline void
-ComputePolyError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-                 Epetra_MultiVector& poly,
-                 Epetra_MultiVector& poly_exact,
+ComputeGradError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+                 Epetra_MultiVector& grad,
+                 Epetra_MultiVector& grad_exact,
                  double& err_int,
                  double& err_glb,
                  double& gnorm)
 {
-  int npoly = poly.NumVectors();
-  int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
-                                          Amanzi::AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,
-                                          Amanzi::AmanziMesh::Parallel_kind::OWNED);
+  int dim = mesh->space_dimension();
+  int ncells_owned =
+    mesh->getNumEntities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_owned =
+    mesh->getNumEntities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   std::vector<int> flag(ncells_owned, 0);
 
+  Amanzi::AmanziMesh::Entity_ID_List cells;
   double err_bnd(0.0);
 
   err_bnd = 0.0;
   for (int f = 0; f < nfaces_owned; ++f) {
-    auto cells = mesh->getFaceCells(f);
+    mesh->face_get_cells(f, Amanzi::AmanziMesh::Parallel_kind::ALL, &cells);
     int c = cells[0];
     if (cells.size() == 1 && flag[c] == 0) {
-      for (int i = 0; i < npoly; ++i) {
-        double tmp = poly[i][c] - poly_exact[i][c];
+      for (int i = 0; i < dim; ++i) {
+        double tmp = grad[i][c] - grad_exact[i][c];
         err_bnd += tmp * tmp * mesh->getCellVolume(c);
       }
       flag[c] = 1;
@@ -56,21 +54,21 @@ ComputePolyError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   err_glb = 0.0;
   for (int c = 0; c < ncells_owned; ++c) {
     double volume = mesh->getCellVolume(c);
-    for (int i = 0; i < npoly; ++i) {
-      double tmp = poly[i][c] - poly_exact[i][c];
+    for (int i = 0; i < dim; ++i) {
+      double tmp = grad[i][c] - grad_exact[i][c];
       err_glb += tmp * tmp * volume;
-      gnorm += poly_exact[i][c] * poly_exact[i][c] * volume;
+      gnorm += grad_exact[i][c] * grad_exact[i][c] * volume;
     }
   }
-  err_int = std::abs(err_glb - err_bnd);
+  err_int = err_glb - err_bnd;
 
 #ifdef HAVE_MPI
   double tmp = err_int;
-  mesh->getComm()->SumAll(&tmp, &err_int, 1);
+  mesh->get_comm()->SumAll(&tmp, &err_int, 1);
   tmp = err_glb;
-  mesh->getComm()->SumAll(&tmp, &err_glb, 1);
+  mesh->get_comm()->SumAll(&tmp, &err_glb, 1);
   tmp = gnorm;
-  mesh->getComm()->SumAll(&tmp, &gnorm, 1);
+  mesh->get_comm()->SumAll(&tmp, &gnorm, 1);
 #endif
 
   err_int = std::pow(err_int / gnorm, 0.5);

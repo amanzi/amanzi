@@ -23,17 +23,22 @@ j=0, ... n-2` a tabular function :math:`f(x)` is defined as:
   f(x) &=& y_{{n-1}}, & x > x_{{n-1}}.
   \end{matrix}
 
-The functional forms :math:`{f_j}` may be constant, which uses the left endpoint, i.e.
+The functional forms :math:`{f_j}` may be constant, which uses the left
+endpoint, i.e.
 
 :math:`f_i(x) = y_i`,
 
 linear, i.e.
 
-:math:`f_i(x) = ( y_i * (x - x_i) + y_{{i+1}} * (x_{{i+1}} - x) ) / (x_{{i+1}} - x_i)`
+:math:`f_i(x) = ( y_i * (x - x_i) + y_{{i+1}} * (x_{{i+1}} - x) ) / (x_{{i+1}} -
+x_i)`
 
 or arbitrary, in which the :math:`f_j` must be provided.
 
-The :math:`x_i` and :math:`y_i` may be provided in one of two ways -- explicitly in the input spec or from an HDF5 file.  The length of these must be equal, and the :math:`x_i` must be monotonically increasing.  Forms, as defined on intervals, must be of length equal to the length of the :math:`x_i` less one.
+The :math:`x_i` and :math:`y_i` may be provided in one of two ways -- explicitly
+in the input spec or from an HDF5 file.  The length of these must be equal, and
+the :math:`x_i` must be monotonically increasing.  Forms, as defined on
+intervals, must be of length equal to the length of the :math:`x_i` less one.
 
 Explicitly specifying the data:
 
@@ -64,10 +69,11 @@ Example:
 .. code-block:: xml
 
   <ParameterList name="function-tabular">
-    <Parameter name="x values" type="Array(double)" value="{0.0, 1.0, 2.0, 3.0}"/>
-    <Parameter name="x coordinate" type="string" value="t"/>
-    <Parameter name="y values" type="Array(double)" value="{0.0, 1.0, 2.0, 2.0}"/>
-    <Parameter name="forms" type="Array(string)" value="{linear, constant, USER_FUNC}"/>
+    <Parameter name="x values" type="Array(double)"
+value="{0.0, 1.0, 2.0, 3.0}"/> <Parameter name="x coordinate" type="string"
+value="t"/> <Parameter name="y values" type="Array(double)"
+value="{0.0, 1.0, 2.0, 2.0}"/> <Parameter name="forms" type="Array(string)"
+value="{linear, constant, USER_FUNC}"/>
 
     <ParameterList name="USER_FUNC">
       <ParameterList name="function-standard-math">
@@ -89,7 +95,8 @@ but could be made so if requested).
    * `"forms`" ``[string]`` **optional**, Form of the interpolant, either
      `"constant`" or `"linear`"
 
-The example below would perform linear-interpolation on the intervals provided by data within the hdf5 file `"my_data.h5`".
+The example below would perform linear-interpolation on the intervals provided
+by data within the hdf5 file `"my_data.h5`".
 
 Example:
 
@@ -111,37 +118,106 @@ Example:
 #include <vector>
 
 #include "Function.hh"
+#include "AmanziTypes.hh"
 
 namespace Amanzi {
 
 class FunctionTabular : public Function {
  public:
-  FunctionTabular(const std::vector<double>& x, const std::vector<double>& y, const int xi);
-  FunctionTabular(const std::vector<double>& x,
-                  const std::vector<double>& y,
+  FunctionTabular(const Kokkos::View<double*, Kokkos::HostSpace>& x,
+                  const Kokkos::View<double*, Kokkos::HostSpace>& y,
+                  const int xi);
+  FunctionTabular(const Kokkos::View<double*, Kokkos::HostSpace>& x,
+                  const Kokkos::View<double*, Kokkos::HostSpace>& y,
                   const int xi,
-                  const std::vector<Form_kind>& form);
-  FunctionTabular(const std::vector<double>& x,
-                  const std::vector<double>& y,
+                  const Kokkos::View<Form_kind*, Kokkos::HostSpace>& form);
+  FunctionTabular(const Kokkos::View<double*, Kokkos::HostSpace>& x,
+                  const Kokkos::View<double*, Kokkos::HostSpace>& y,
                   const int xi,
-                  const std::vector<Form_kind>& form,
+                  const Kokkos::View<Form_kind*, Kokkos::HostSpace>& form,
                   std::vector<std::unique_ptr<Function>> func);
-  FunctionTabular(const FunctionTabular& other);
-  ~FunctionTabular(){};
+  FunctionTabular(const FunctionTabular& other)
+    : x_(other.x_), y_(other.y_), form_(other.form_), xi_(other.xi_)
+  {
+    for (const auto& f : other.func_) func_.emplace_back(f->Clone());
+  }
 
+  ~FunctionTabular(){};
   std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionTabular>(*this); }
-  double operator()(const std::vector<double>& x) const;
+  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>&) const;
+
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
+  {
+    double y;
+    double xv = x(xi_, i);
+    int n = x_.extent(0);
+    if (xv <= x_.view_device()[0]) {
+      y = y_.view_device()[0];
+    } else if (xv > x_.view_device()[n - 1]) {
+      y = y_.view_device()[n - 1];
+    } else {
+      // binary search to find interval containing xv
+      int j1 = 0, j2 = n - 1;
+      while (j2 - j1 > 1) {
+        int j = (j1 + j2) / 2;
+        // if (xv >= x_[j]) { // right continuous
+        if (xv > x_.view_device()[j]) { // left continuous
+          j1 = j;
+        } else {
+          j2 = j;
+        }
+      }
+      // Now have x_[j1] <= xv < x_[j2], if right continuous
+      // or x_[j1] < xv <= x_[j2], if left continuous
+      switch (form_.view_device()[j1]) {
+      case Form_kind::LINEAR:
+        // Linear interpolation between x[j1] and x[j2]
+        y = y_.view_device()[j1] + ((y_.view_device()[j2] - y_.view_device()[j1]) /
+                                    (x_.view_device()[j2] - x_.view_device()[j1])) *
+                                     (xv - x_.view_device()[j1]);
+        break;
+      case Form_kind::CONSTANT:
+        y = y_.view_device()[j1];
+        break;
+      case Form_kind::FUNCTION:
+        assert(false && "Not implemented for FUNCTION");
+        //  y = (*func_[j1])(x);
+      }
+    }
+    return y;
+  }
+
+
+  void apply(const Kokkos::View<double**>& in,
+             Kokkos::View<double*>& out,
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+  {
+    if (ids) {
+      auto ids_loc = *ids;
+      Kokkos::parallel_for(
+        "FunctionTabular::apply1", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(ids_loc(i)) = apply_gpu(in, i);
+        });
+    } else {
+      assert(in.extent(1) == out.extent(0));
+      Kokkos::parallel_for(
+        "FunctionTabular::apply2", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(i) = apply_gpu(in, i);
+        });
+    }
+  }
 
  private:
-  std::vector<double> x_, y_;
-  int xi_;
-  std::vector<Form_kind> form_;
+  Kokkos::DualView<double*, Amanzi::DeviceOnlyMemorySpace> x_;
+  Kokkos::DualView<double*, Amanzi::DeviceOnlyMemorySpace> y_;
+  Kokkos::DualView<Form_kind*, Amanzi::DeviceOnlyMemorySpace> form_;
   std::vector<std::unique_ptr<Function>> func_;
+  int xi_;
 
  private: // helper functions
-  void check_args(const std::vector<double>&,
-                  const std::vector<double>&,
-                  const std::vector<Form_kind>&) const;
+  void check_args(const Kokkos::View<double*, Kokkos::HostSpace>&,
+                  const Kokkos::View<double*, Kokkos::HostSpace>&,
+                  const Kokkos::View<Form_kind*, Kokkos::HostSpace>&) const;
 };
 
 } // namespace Amanzi

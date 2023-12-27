@@ -32,13 +32,13 @@ namespace WhetStone {
 * The conventional FV scheme for a general mesh.
 ****************************************************************** */
 int
-MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W)
+MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor<>& K, DenseMatrix<>& W)
 {
-  const auto& faces = mesh_->getCellFaces(c);
+  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
-  W.Reshape(nfaces, nfaces);
-  W.PutScalar(0.0);
+  W.reshape(nfaces, nfaces);
+  W.putScalar(0.0);
 
   const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
   AmanziGeometry::Point a(d_);
@@ -46,10 +46,10 @@ MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W)
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
     const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
-    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f, c);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
     a = xf - xc;
-    double s = mesh_->getFaceArea(f) / norm(a);
+    double s = mesh_->getFaceArea(f) * dirs[n] / norm(a);
     double Knn = ((K * a) * normal) * s;
     double dxn = a * normal;
     W(n, n) = Knn / fabs(dxn);
@@ -64,7 +64,7 @@ MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W)
 * routine must be consistent with the above routine.
 ****************************************************************** */
 double
-MFD3D_Diffusion::Transmissibility(int f, int c, const Tensor& K)
+MFD3D_Diffusion::Transmissibility(int f, int c, const Tensor<>& K)
 {
   int dir;
   const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
@@ -88,15 +88,15 @@ MFD3D_Diffusion::Transmissibility(int f, int c, const Tensor& K)
 * an orthogonal brick element.
 ****************************************************************** */
 int
-MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatrix& W)
+MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor<>& K, DenseMatrix<>& W)
 {
   double volume = mesh_->getCellVolume(c);
 
   const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
-  W.Reshape(nfaces, nfaces);
-  W.PutScalar(0.0);
+  W.reshape(nfaces, nfaces);
+  W.putScalar(0.0);
 
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
@@ -111,23 +111,23 @@ MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatrix& 
 * Second-generation MFD method as inlemented in RC1.
 ****************************************************************** */
 int
-MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
+MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor<>& K, DenseMatrix<>& W)
 {
   const auto& [faces, fdirs] = mesh_->getCellFacesAndDirections(c);
   int num_faces = faces.size();
 
-  AmanziMesh::Entity_ID_View corner_faces;
+  AmanziMesh::Mesh::Entity_ID_View corner_faces;
   auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
-  Tensor Kinv(K);
+  Tensor<> Kinv(K);
   Kinv.Inverse();
 
   // collect all corner matrices
-  std::vector<Tensor> Mv;
+  std::vector<Tensor<>> Mv;
   std::vector<double> cwgt;
 
-  Tensor N(d_, 2), NK(d_, 2);
+  Tensor<> N(d_, 2), NK(d_, 2);
 
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
@@ -146,7 +146,7 @@ MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
     double cwgt_tmp = fabs(N.Det());
 
     N.Inverse();
-    NK = N * Kinv;
+    NK.assign(N * Kinv);
 
     N.Transpose();
     auto Mv_tmp = NK * N;
@@ -167,13 +167,13 @@ MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   for (int n = 0; n < nnodes; n++) cwgt[n] *= factor;
 
   // assemble corner matrices
-  W.Reshape(num_faces, num_faces);
-  W.PutScalar(0.0);
+  W.reshape(num_faces, num_faces);
+  W.putScalar(0.0);
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
     node_get_cell_faces(*mesh_, v, c, Parallel_kind::ALL, &corner_faces);
 
-    Tensor& Mv_tmp = Mv[n];
+    Tensor<>& Mv_tmp = Mv[n];
     for (int i = 0; i < d_; i++) {
       int k = std::distance(faces.begin(), std::find(faces.begin(), faces.end(), corner_faces[i]));
       for (int j = i; j < d_; j++) {

@@ -20,16 +20,16 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
-EvaluatorIndependent_::EvaluatorIndependent_(Teuchos::ParameterList& plist)
-  : my_key_(Keys::cleanPListName(plist.name())),
-    my_tag_(Keys::readTag(plist, "tag")),
+EvaluatorIndependent_::EvaluatorIndependent_(const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  : my_key_(Keys::cleanPListName(plist->name())),
+    my_tag_(Keys::readTag(*plist, "tag")),
     time_(0.0),
-    temporally_variable_(!plist.get<bool>("constant in time", false)),
+    temporally_variable_(!plist->get<bool>("constant in time", false)),
     computed_once_(false),
     plist_(plist),
-    vo_(Keys::cleanPListName(plist.name()), plist)
+    vo_(Keys::cleanPListName(plist->name()), *plist)
 {
-  type_ = EvaluatorType::INDEPENDENT;
+  type_ = Evaluator_kind::INDEPENDENT;
 }
 
 
@@ -72,10 +72,10 @@ void
 EvaluatorIndependent_::EnsureCompatibility(State& S)
 {
   // check plist for vis or checkpointing control
-  bool io_my_key = plist_.get<bool>("visualize", true);
+  bool io_my_key = plist_->get<bool>("visualize", true);
   S.GetRecordW(my_key_, my_tag_, my_key_).set_io_vis(io_my_key);
 
-  bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
+  bool checkpoint_my_key = plist_->get<bool>("checkpoint", false);
   S.GetRecordW(my_key_, my_tag_, my_key_).set_io_checkpoint(checkpoint_my_key);
 }
 
@@ -177,23 +177,11 @@ EvaluatorIndependent_::IsDifferentiableWRT(const State& S,
 }
 
 
-// void EvaluatorIndependent_::EnsureCompatibleDerivative(
-//     State& S, const Key& wrt_key, const Tag& wrt_tag) {
-//   Errors::Message msg("Independent Variables are not differentiable");
-//   throw(msg);
-// }
-
-
-// ---------------------------------------------------------------------------
-// String representation of this evaluator
-// ---------------------------------------------------------------------------
-std::string
-EvaluatorIndependent_::WriteToString() const
+std::ostream&
+EvaluatorIndependent_::writeInfo(std::ostream& os) const
 {
-  std::stringstream result;
-  result << my_key_ << std::endl << "  Type: independent" << std::endl;
-  return result.str();
+  os << Keys::getKey(my_key_, my_tag_) << std::endl
+     << "(" << getType() << ") [" << to_string(getKind()) << "]" << std::endl;
+  return os;
 }
-
-
 } // namespace Amanzi

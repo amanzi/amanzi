@@ -1,16 +1,14 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
-  provided in the top-level COPYRIGHT file.
-
-  Authors: Ethan Coon (ecoon@lanl.gov)
-*/
-
-/*
   Operators
 
-  This operator is a container for local rectangular matrices of
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ethan Coon (ecoon@lanl.gov)
+
+  This operator is a container for local rectangular matrices of 
   length nnodes and with dofs given by two schemas.
 */
 
@@ -34,9 +32,8 @@ class Op_Node_Schema : public Op {
     : Op(schema_row, schema_col, mesh)
   {
     WhetStone::DenseMatrix null_matrix;
-    matrices.resize(
-      mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED),
-      null_matrix);
+    matrices.resize(mesh->getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::OWNED),
+                    null_matrix);
     matrices_shadow = matrices;
   }
 

@@ -4,16 +4,10 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
-/*
-  Time Integration
-
-  Interface that wraps a BDF_FnBase providing the interface for Solver_FnBase
-  as used by the BDF1 time integrator.
-*/
-
+//! <MISSING_ONELINE_DOCSTRING>
 #ifndef AMANZI_BDF1_SOLVER_FNBASE_
 #define AMANZI_BDF1_SOLVER_FNBASE_
 
@@ -28,7 +22,8 @@ namespace Amanzi {
 template <class Vector>
 class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
  public:
-  BDF1_SolverFnBase(Teuchos::ParameterList& plist, const Teuchos::RCP<BDFFnBase<Vector>>& bdf_fn)
+  BDF1_SolverFnBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                    const Teuchos::RCP<BDFFnBase<Vector>>& bdf_fn)
     : plist_(plist), bdf_fn_(bdf_fn){};
 
   // SolverFnBase interface
@@ -74,7 +69,7 @@ class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
   void SetPreviousTimeSolution(const Teuchos::RCP<Vector>& u_old) { u_old_ = u_old; }
 
  protected:
-  Teuchos::ParameterList plist_;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
 
   double t_new_;
   double t_old_;

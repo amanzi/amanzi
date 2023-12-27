@@ -18,32 +18,39 @@ W.Fichtner, Improving accuracy of GMRES with deflated restarting, 2007 SISC.
 .. _iterative-method-gmres-spec:
 .. admonition:: iterative-method-gmres-spec
 
-    * `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare success.
+    * `"error tolerance`" ``[double]`` **1.e-6** Tolerance on which to declare
+success.
 
-    * `"maximum number of iterations`" ``[int]`` **100** Maximum iterations before declaring failure.
+    * `"maximum number of iterations`" ``[int]`` **100** Maximum iterations
+before declaring failure.
 
-    * `"overflow tolerance`" ``[double]`` **3.e50** Error above this value results in failure.
+    * `"overflow tolerance`" ``[double]`` **3.e50** Error above this value
+results in failure.
 
     * `"convergence criterial`" ``[Array(string)]`` **{relative rhs}** A list of
       criteria, any of which can be applied.  Valid include:
 
       - `"relative rhs`" : measure error relative to the norm of the RHS vector
-      - `"relative residual`" : measure error relative to the norm of the residual
+      - `"relative residual`" : measure error relative to the norm of the
+residual
       - `"absolute residual`" : measure error directly, norm of error
-      - `"make one iteration`" : require at least one iteration to be performed before declaring success
+      - `"make one iteration`" : require at least one iteration to be performed
+before declaring success
 
-    * `"size of Krylov space`" ``[int]`` **10** Size of the Krylov space used to span the residual.
+    * `"size of Krylov space`" ``[int]`` **10** Size of the Krylov space used to
+span the residual.
 
-    * `"controller training start`" ``[int]`` **0** Start iteration for determining
-      convergence rates. (Add more please!)
+    * `"controller training start`" ``[int]`` **0** Start iteration for
+determining convergence rates. (Add more please!)
 
-    * `"controller training end`" ``[int]`` **3** Start iteration for determining
-      convergence rates. (Add more please!)
+    * `"controller training end`" ``[int]`` **3** Start iteration for
+determining convergence rates. (Add more please!)
 
     * `"preconditioning strategy`" ``[string]`` **left** Valid are "left" and
       "right"-type preconditioning (see Saad 1986)
 
-    * `"maximum size of deflation space`" ``[int]`` **0** Size of the deflation space, see Rollin et al.
+    * `"maximum size of deflation space`" ``[int]`` **0** Size of the deflation
+space, see Rollin et al.
 
 .. code-block:: xml
 
@@ -83,6 +90,7 @@ W.Fichtner, Improving accuracy of GMRES with deflated restarting, 2007 SISC.
 #include "Teuchos_RCP.hpp"
 #include "errors.hh"
 
+#include "AmanziDebug.hh"
 #include "DenseMatrix.hh"
 #include "InverseIterativeMethod.hh"
 #include "InverseDefs.hh"
@@ -104,7 +112,7 @@ class IterativeMethodGMRES
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
 
-  virtual int ApplyInverse(const Vector& v, Vector& hv) const override final
+  virtual int applyInverse(const Vector& v, Vector& hv) const override final
   {
     AMANZI_ASSERT(inited_ && h_.get());
     returned_code_ = GMRESRestart_(v, hv, this->tol_, this->max_itrs_, this->criteria_);
@@ -121,9 +129,10 @@ class IterativeMethodGMRES
   int GMRES_Deflated_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
 
   void
-  ComputeSolution_(Vector& x, int k, WhetStone::DenseMatrix& T, double* s, Vector& p, Vector& r)
+  ComputeSolution_(Vector& x, int k, WhetStone::DenseMatrix<>& T, double* s, Vector& p, Vector& r)
     const;
   void ComputeSolution_(Vector& x, double* d, Vector& p, Vector& r) const;
+
 
   void InitGivensRotation_(double& dx, double& dy, double& cs, double& sn) const;
   void ApplyGivensRotation_(double& dx, double& dy, double& cs, double& sn) const;
@@ -143,7 +152,7 @@ class IterativeMethodGMRES
   using InvIt::rnorm0_;
 
   mutable std::vector<Teuchos::RCP<Vector>> v_;
-  mutable WhetStone::DenseMatrix Hu_; // upper Hessenberg matrix
+  mutable WhetStone::DenseMatrix<> Hu_; // upper Hessenberg matrix
 
   mutable double fnorm_;
   mutable int num_itrs_inner_;
@@ -153,23 +162,22 @@ class IterativeMethodGMRES
   bool left_pc_;
   int deflation_;
   mutable int num_ritz_;
-  bool clean_work_memory_;
 };
 
 
 /* ******************************************************************
-* GMRES with restart input/output data:
-*  f [input]         the right-hand side
-*  x [input/output]  initial guess / final solution
-*  tol [input]       convergence tolerance
-*  max_itrs [input]  maximum number of iterations
-*  criteria [input]  sum of termination critaria
-*
-*  Return value. If it is positive, it indicates the sucessful
-*  convergence criterion (criteria in a few exceptional cases) that
-*  was checked first. If it is negative, it indicates a failure, see
-*  LinearSolverDefs.hh for the error explanation.
-***************************************************************** */
+ * GMRES with restart input/output data:
+ *  f [input]         the right-hand side
+ *  x [input/output]  initial guess / final solution
+ *  tol [input]       convergence tolerance
+ *  max_itrs [input]  maximum number of iterations
+ *  criteria [input]  sum of termination critaria
+ *
+ *  Return value. If it is positive, it indicates the sucessful
+ *  convergence criterion (criteria in a few exceptional cases) that
+ *  was checked first. If it is negative, it indicates a failure, see
+ *  LinearSolverDefs.hh for the error explanation.
+ ***************************************************************** */
 template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
 int
 IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRESRestart_(const Vector& f,
@@ -182,7 +190,7 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRESRestart_
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // allocate memory for Krylov space
-  if (v_.size() != krylov_dim_ + 1) { v_.resize(krylov_dim_ + 1, Teuchos::null); }
+  v_.resize(krylov_dim_ + 1, Teuchos::null);
 
   num_itrs_ = 0;
   rnorm0_ = -1.0;
@@ -205,22 +213,19 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRESRestart_
                  << std::endl;
   }
 
-  // release work memory for Krylov vectors
-  if (clean_work_memory_) v_.clear();
-
   return ierr;
 }
 
 
 /* ******************************************************************
-* GMRES input/output data:
-*  f [input]         the right-hand side
-*  x [input/output]  initial guess / final solution
-*  tol [input]       convergence tolerance
-*  max_itrs [input]  maximum number of iterations
-*  criteria [input]  sum of termination critaria
-*
-*  Return value. See above.
+ * GMRES input/output data:
+ *  f [input]         the right-hand side
+ *  x [input/output]  initial guess / final solution
+ *  tol [input]       convergence tolerance
+ *  max_itrs [input]  maximum number of iterations
+ *  criteria [input]  sum of termination critaria
+ *
+ *  Return value. See above.
  ***************************************************************** */
 template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
 int
@@ -230,36 +235,37 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_(const 
                                                                           int max_itrs,
                                                                           int criteria) const
 {
-  Vector w(f), r(f), p(f); // construct empty vectors
+  Vector w(f, Teuchos::Copy);
+  Vector r(f, Teuchos::Copy);
+  Vector p(f, Teuchos::Copy);
 
   double s[krylov_dim_ + 1], cs[krylov_dim_ + 1], sn[krylov_dim_ + 1];
-  WhetStone::DenseMatrix T(krylov_dim_ + 1, krylov_dim_);
+  WhetStone::DenseMatrix<> T(krylov_dim_ + 1, krylov_dim_);
+  T = 0.;
   num_itrs_inner_ = 0;
 
-  double fnorm;
-  // h_->ApplyInverse(f, r);
+  // h_->applyInverse(f, r);
   // r.Dot(fnorm, f);  This is the preconditioned norm of the residual.
-  f.Norm2(&fnorm);
+  double fnorm = w.norm2();
   fnorm_ = fnorm;
 
   // initial residual is r = f - M x for the right preconditioner
   // and r = H (f - M x)  for the left preconditioner
   if (left_pc_) {
-    m_->Apply(x, p);
-    p.Update(1.0, f, -1.0);
-    h_->ApplyInverse(p, r);
-  } else {
-    m_->Apply(x, r);
-    r.Update(1.0, f, -1.0);
-  }
+    m_->apply(x, p);
+    p.update(1.0, f, -1.0);
+    h_->applyInverse(p, r);
 
-  double rnorm0;
-  r.Norm2(&rnorm0);
+  } else {
+    m_->apply(x, r);
+    r.update(1.0, f, -1.0);
+  }
+  double rnorm0 = r.norm2();
   residual_ = rnorm0;
   if (rnorm0_ < 0.0) rnorm0_ = rnorm0;
 
   if (fnorm == 0.0) {
-    x.PutScalar(0.0);
+    x.putScalar(0.0);
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
       *vo_->os() << "Converged, itr=" << num_itrs_ << " ||r||=" << rnorm0 << std::endl;
     return criteria; // Zero solution satifies all criteria.
@@ -271,33 +277,31 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_(const 
     if (ierr != 0) return ierr;
   }
 
-  if (v_[0].get()) {
-    v_[0]->Update(1.0 / rnorm0, r, 0.0);
-  } else {
-    v_[0] = Teuchos::rcp(new Vector(r));
-    v_[0]->Scale(1.0 / rnorm0);
-  }
+  v_[0] = Teuchos::rcp(new Vector(r, Teuchos::DataAccess::Copy));
+  v_[0]->update(0.0, r, 1.0 / rnorm0);
 
   s[0] = rnorm0;
 
   for (int i = 0; i < krylov_dim_; i++) {
     // calculate H M v_i for the left preconditioner
     //       and M H v_i for the right preconditioner
+    // std::cout << "GMRES: v" << i << " = " << Debug::get0(*(v_[i])) <<
+    // std::endl;
     if (left_pc_) {
-      m_->Apply(*(v_[i]), p);
-      h_->ApplyInverse(p, w);
+      m_->apply(*(v_[i]), p);
+      h_->applyInverse(p, w);
     } else {
-      h_->ApplyInverse(*(v_[i]), p);
-      m_->Apply(p, w);
+      h_->applyInverse(*(v_[i]), p);
+      m_->apply(p, w);
     }
 
     double tmp(0.0);
     for (int k = 0; k <= i; k++) { // Arnoldi algorithm
-      w.Dot(*(v_[k]), &tmp);
-      w.Update(-tmp, *(v_[k]), 1.0);
+      tmp = w.dot(*(v_[k]));
+      w.update(-tmp, *(v_[k]), 1.0);
       T(k, i) = tmp;
     }
-    w.Norm2(&tmp);
+    tmp = w.norm2();
     T(i + 1, i) = tmp;
     s[i + 1] = 0.0;
 
@@ -307,7 +311,6 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_(const 
     ApplyGivensRotation_(T(i, i), T(i + 1, i), cs[i], sn[i]);
     ApplyGivensRotation_(s[i], s[i + 1], cs[i], sn[i]);
     residual_ = fabs(s[i + 1]);
-
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
     }
@@ -318,7 +321,15 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_(const 
 
     int ierr = CheckConvergence_(residual_, fnorm);
     if (ierr != 0) {
+      // std::cout << "GMRES: CS x = " << Debug::get0(x) << "," << x.normInf()
+      // << std::endl; std::cout << "GMRES: CS p = " << Debug::get0(p) << "," <<
+      // p.normInf() << std::endl; std::cout << "GMRES: CS r = " <<
+      // Debug::get0(r) << "," << r.normInf() << std::endl;
       ComputeSolution_(x, i, T, s, p, r); // vector s is overwritten
+      // std::cout << "GMRES: CS2 x = " << Debug::get0(x) << "," << x.normInf()
+      // << std::endl; std::cout << "GMRES: CS2 p = " << Debug::get0(p) << ","
+      // << p.normInf() << std::endl; std::cout << "GMRES: CS2 r = " <<
+      // Debug::get0(r) << "," << r.normInf() << std::endl;
       return ierr;
     }
 
@@ -343,16 +354,15 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_(const 
     }
 
     if (i < krylov_dim_ - 1) {
-      if (v_[i + 1].get()) {
-        if (tmp != 0.0)
-          v_[i + 1]->Update(1.0 / tmp, w, 0.0);
-        else
-          *v_[i + 1] = w;
-      } else {
-        v_[i + 1] = Teuchos::rcp(new Vector(w));
-        if (tmp != 0.0) { // zero occurs in exact arithmetic
-          v_[i + 1]->Update(0.0, r, 1.0 / tmp);
-        }
+      // v_[i + 1] = Teuchos::rcp(new Vector(w.getMap()));
+      // if (tmp != 0.0) {  // zero occurs in exact arithmetic
+      //   v_[i + 1]->update(1.0 / tmp, w, 0.);
+      // } else {
+      //   v_[i + 1]->assign(w);
+      // }
+      v_[i + 1] = Teuchos::rcp(new Vector(w, Teuchos::DataAccess::Copy));
+      if (tmp != 0.0) { // zero occurs in exact arithmetic
+        v_[i + 1]->update(0.0, r, 1.0 / tmp);
       }
     }
   }
@@ -363,8 +373,8 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_(const 
 
 
 /* ******************************************************************
-* GMRES with deflated start, input/output data: see GMRES_(...)
-***************************************************************** */
+ * GMRES with deflated start, input/output data: see GMRES_(...)
+ ***************************************************************** */
 template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
 int
 IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_Deflated_(
@@ -374,32 +384,34 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_Deflate
   int max_itrs,
   int criteria) const
 {
-  Vector p(f), r(f), w(f);
-  WhetStone::DenseVector d(krylov_dim_ + 1), g(krylov_dim_);
-  WhetStone::DenseMatrix T(krylov_dim_ + 1, krylov_dim_);
+  Vector w(f, Teuchos::Copy);
+  Vector r(f, Teuchos::Copy);
+  Vector p(f, Teuchos::Copy);
 
-  double fnorm;
-  f.Norm2(&fnorm);
+  // Vector p(f.getMap()), r(f.getMap()), w(f.getMap());
+  WhetStone::DenseVector<> d(krylov_dim_ + 1), g(krylov_dim_);
+  WhetStone::DenseMatrix<> T(krylov_dim_ + 1, krylov_dim_);
+
+  double fnorm = f.norm2();
   fnorm_ = fnorm;
 
   // initial residual is r = f - M x for the right preconditioner
   // and r = H (f - M x)  for the left preconditioner
   if (left_pc_) {
-    m_->Apply(x, p);
-    p.Update(1.0, f, -1.0);
-    h_->ApplyInverse(p, r);
+    m_->apply(x, p);
+    p.update(1.0, f, -1.0);
+    h_->applyInverse(p, r);
   } else {
-    m_->Apply(x, r);
-    r.Update(1.0, f, -1.0);
+    m_->apply(x, r);
+    r.update(1.0, f, -1.0);
   }
 
-  double rnorm0;
-  r.Norm2(&rnorm0);
+  double rnorm0 = r.norm2();
   residual_ = rnorm0;
   if (rnorm0_ < 0.0) rnorm0_ = rnorm0;
 
   if (fnorm == 0.0) {
-    x.PutScalar(0.0);
+    x.putScalar(0.0);
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
       *vo_->os() << "Converged, itr=" << num_itrs_ << " ||r||=" << rnorm0 << std::endl;
     return criteria; // Zero solution satifies all criteria.
@@ -414,25 +426,25 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_Deflate
   // calculate the first (num_ritz_ + l) rows of c.
   int i0(0);
   double tmp;
-  d.PutScalar(0.0);
+  d.putScalar(0.0);
   if (num_ritz_ == 0) {
-    if (v_[0].get()) {
-      v_[0]->Update(1.0 / rnorm0, r, 0.0);
-    } else {
-      v_[0] = Teuchos::rcp(new Vector(r));
-      v_[0]->Update(0.0, r, 1.0 / rnorm0);
-    }
+    v_[0] = Teuchos::rcp(new Vector(r, Teuchos::DataAccess::Copy));
+    v_[0]->update(0.0, r, 1.0 / rnorm0);
+
+    // v_[0] = Teuchos::rcp(new Vector(r.getMap()));
+    // v_[0]->update(1.0 / rnorm0, r, 0.);
+
     d(0) = rnorm0;
   } else {
     for (int i = 0; i <= num_ritz_; ++i) {
-      r.Dot(*(v_[i]), &tmp);
+      tmp = r.dot(*(v_[i]));
       d(i) = tmp;
     }
     i0 = num_ritz_;
   }
 
   // set the leading diagonal block of T
-  T.PutScalar(0.0);
+  T.putScalar(0.0);
   for (int i = 0; i <= num_ritz_; ++i) {
     for (int j = 0; j < num_ritz_; ++j) { T(i, j) = Hu_(i, j); }
   }
@@ -442,42 +454,49 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_Deflate
   double beta;
   for (int i = i0; i < krylov_dim_; i++) {
     if (left_pc_) {
-      m_->Apply(*(v_[i]), p);
-      h_->ApplyInverse(p, w);
+      m_->apply(*(v_[i]), p);
+      h_->applyInverse(p, w);
     } else {
-      h_->ApplyInverse(*(v_[i]), p);
-      m_->Apply(p, w);
+      h_->applyInverse(*(v_[i]), p);
+      m_->apply(p, w);
     }
 
     for (int k = 0; k <= i; k++) { // Arnoldi algorithm
-      w.Dot(*(v_[k]), &tmp);
-      w.Update(-tmp, *(v_[k]), 1.0);
+      tmp = w.dot(*(v_[k]));
+      w.update(-tmp, *(v_[k]), 1.0);
       T(k, i) = tmp;
     }
-    w.Norm2(&beta);
+    beta = w.norm2();
     T(i + 1, i) = beta;
     if (beta == 0.0) break;
 
-    if (v_[i + 1].get()) {
-      v_[i + 1]->Update(1.0 / beta, w, 0.0);
-    } else {
-      v_[i + 1] = Teuchos::rcp(new Vector(w));
-      v_[i + 1]->Update(0.0, r, 1.0 / beta);
-    }
+    v_[i + 1] = Teuchos::rcp(new Vector(w, Teuchos::DataAccess::Copy));
+    v_[i + 1]->update(0.0, r, 1.0 / beta);
+    // v_[i + 1] = Teuchos::rcp(new Vector(w.getMap()));
+    // v_[i + 1]->update(1.0 / beta, w, 0.);
   }
 
   // Solve the least-square problem min_d ||T d - c||.
-  WhetStone::DenseMatrix Ttmp(T);
+  WhetStone::DenseMatrix<> Ttmp(T);
   int m(krylov_dim_ + 1), n(krylov_dim_), nrhs(1), info;
   int lwork(m * n);
-  WhetStone::DenseVector work(lwork);
+  WhetStone::DenseVector<> work(lwork);
 
-  WhetStone::DGELS_F77(
-    "N", &m, &n, &nrhs, Ttmp.Values(), &m, d.Values(), &m, work.Values(), &lwork, &info);
+  WhetStone::DGELS_F77("N",
+                       &m,
+                       &n,
+                       &nrhs,
+                       Ttmp.Values_ptr(),
+                       &m,
+                       d.Values_ptr(),
+                       &m,
+                       work.Values_ptr(),
+                       &lwork,
+                       &info);
 
   residual_ = fabs(d(n));
   num_itrs_ += krylov_dim_;
-  ComputeSolution_(x, d.Values(), p, r);
+  ComputeSolution_(x, d.Values_ptr(), p, r);
 
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     *vo_->os() << num_itrs_ << " ||r||=" << residual_ << "  ritz vectors=" << num_ritz_
@@ -488,9 +507,9 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_Deflate
 
   // Compute Schur vectors
   // -- allocate memory: Tm, Hm, and Vm
-  WhetStone::DenseMatrix Tm(T, 0, krylov_dim_, 0, krylov_dim_);
-  WhetStone::DenseMatrix Sm(Tm);
-  WhetStone::DenseMatrix Vr(krylov_dim_ + 1, krylov_dim_);
+  WhetStone::DenseMatrix<> Tm(T, 0, krylov_dim_, 0, krylov_dim_);
+  WhetStone::DenseMatrix<> Sm(Tm);
+  WhetStone::DenseMatrix<> Vr(krylov_dim_ + 1, krylov_dim_);
 
   // -- auxiliary vector g = Tm^{-T} e_m
   Tm.Inverse();
@@ -500,19 +519,19 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_Deflate
   for (int i = 0; i < krylov_dim_; ++i) Sm(i, krylov_dim_ - 1) += beta * g(i);
 
   double Vl[1];
-  WhetStone::DenseVector wr(krylov_dim_), wi(krylov_dim_);
+  WhetStone::DenseVector<> wr(krylov_dim_), wi(krylov_dim_);
   WhetStone::DGEEV_F77("N",
                        "V",
                        &n,
-                       Sm.Values(),
+                       Sm.Values_ptr(),
                        &n,
-                       wr.Values(),
-                       wi.Values(),
+                       wr.Values_ptr(),
+                       wi.Values_ptr(),
                        Vl,
                        &nrhs,
-                       Vr.Values(),
+                       Vr.Values_ptr(),
                        &m,
-                       work.Values(),
+                       work.Values_ptr(),
                        &lwork,
                        &info);
 
@@ -548,20 +567,19 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_Deflate
   // Calculate new basis for the next loop.
   std::vector<Teuchos::RCP<Vector>> vv(num_ritz_ + 1);
   for (int i = 0; i <= num_ritz_; ++i) {
-    vv[i] = Teuchos::rcp(new Vector(x.Map()));
-    vv[i]->PutScalar(0.0);
-    for (int k = 0; k <= krylov_dim_; ++k) { vv[i]->Update(Vr(k, i), *(v_[k]), 1.0); }
+    vv[i] = Teuchos::rcp(new Vector(x.getMap()));
+    vv[i]->putScalar(0.0);
+    for (int k = 0; k <= krylov_dim_; ++k) { vv[i]->update(Vr(k, i), *(v_[k]), 1.0); }
   }
 
-  for (int i = 0; i <= num_ritz_; ++i) { *(v_[i]) = *(vv[i]); }
+  for (int i = 0; i <= num_ritz_; ++i) { v_[i]->assign(*(vv[i])); }
 
   // Calculate modified Hessenberg matrix Hu = Vr_{nr+1}^T * T * Vr_nr
-  WhetStone::DenseMatrix TVr(krylov_dim_ + 1, num_ritz_);
-  WhetStone::DenseMatrix VTVr(num_ritz_ + 1, num_ritz_);
+  WhetStone::DenseMatrix<> TVr(krylov_dim_ + 1, num_ritz_);
+  WhetStone::DenseMatrix<> VTVr(num_ritz_ + 1, num_ritz_);
 
-  WhetStone::DenseMatrix Vr1(Vr, 0, krylov_dim_, 0, num_ritz_);
-  WhetStone::DenseMatrix Vr2(
-    krylov_dim_ + 1, num_ritz_ + 1, Vr.Values(), WhetStone::WHETSTONE_DATA_ACCESS_VIEW);
+  WhetStone::DenseMatrix<> Vr1(Vr, 0, krylov_dim_, 0, num_ritz_);
+  WhetStone::DenseMatrix<> Vr2(krylov_dim_ + 1, num_ritz_ + 1, Vr.Values());
 
   TVr.Multiply(T, Vr1, false);
   VTVr.Multiply(Vr2, TVr, true);
@@ -572,11 +590,11 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_Deflate
 
 
 /* ******************************************************************
-* Initialization from a parameter list. Available parameters:
-* "error tolerance" [double] default = 1e-6
-* "maximum number of iterations" [int] default = 100
-* "convergence criteria" Array(string) default = "{relative rhs}"
-****************************************************************** */
+ * Initialization from a parameter list. Available parameters:
+ * "error tolerance" [double] default = 1e-6
+ * "maximum number of iterations" [int] default = 100
+ * "convergence criteria" Array(string) default = "{relative rhs}"
+ ****************************************************************** */
 template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
 void
 IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::set_inverse_parameters(
@@ -591,14 +609,12 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::set_inverse_p
   left_pc_ = (plist.get<std::string>("preconditioning strategy", "left") == "left");
   deflation_ = plist.get<int>("maximum size of deflation space", 0);
   num_ritz_ = 0;
-
-  clean_work_memory_ = plist.get<bool>("release Krylov vectors", false);
 }
 
 
 /* ******************************************************************
-* Givens rotations: initialization
-****************************************************************** */
+ * Givens rotations: initialization
+ ****************************************************************** */
 template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
 void
 IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::InitGivensRotation_(
@@ -623,8 +639,8 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::InitGivensRot
 
 
 /* ******************************************************************
-* Givens rotations: applications
-****************************************************************** */
+ * Givens rotations: applications
+ ****************************************************************** */
 template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
 void
 IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::ApplyGivensRotation_(
@@ -640,42 +656,54 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::ApplyGivensRo
 
 
 /* ******************************************************************
-* Computation of the solution destroys vector s.
-* Right preconditioner uses two auxiliary vectors p and r.
-****************************************************************** */
+ * Computation of the solution destroys vector s.
+ * Right preconditioner uses two auxiliary vectors p and r.
+ ****************************************************************** */
 template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
 void
 IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::ComputeSolution_(
   Vector& x,
   int k,
-  WhetStone::DenseMatrix& T,
+  WhetStone::DenseMatrix<>& T,
   double* s,
   Vector& p,
   Vector& r) const
 {
   for (int i = k; i >= 0; i--) {
+    // std::cout << "s(" << i << ") = " << s[i] << ",T(" << i << "," << i << ")
+    // = " << T(i,i);
     s[i] /= T(i, i);
+    // std::cout << " new si = " << s[i] << std::endl;
 
-    for (int j = i - 1; j >= 0; j--) { s[j] -= T(j, i) * s[i]; }
+    for (int j = i - 1; j >= 0; j--) {
+      // std::cout << "s(" << j << ") = " << s[j] << ",T(" << j << "," << i <<
+      // ") = " << T(j,i);
+      s[j] -= T(j, i) * s[i];
+      // std::cout << " new sj = " << s[j] << std::endl;
+    }
   }
 
   // solution is x = x0 + V s for the left preconditioner
   //         and x = x0 + H V s for the right preconditioner
   if (left_pc_) {
-    for (int j = 0; j <= k; j++) { x.Update(s[j], *(v_[j]), 1.0); }
+    for (int j = 0; j <= k; j++) { x.update(s[j], *(v_[j]), 1.0); }
   } else {
-    p.PutScalar(0.0);
-    for (int j = 0; j <= k; j++) { p.Update(s[j], *(v_[j]), 1.0); }
-    h_->ApplyInverse(p, r);
-    x.Update(1.0, r, 1.0);
+    p.putScalar(0.0);
+    for (int j = 0; j <= k; j++) {
+      // std::cout << "GMRES: CS (sj = " << s[j] <<") v" << j << " = " <<
+      // Debug::get0(*(v_[j])) << std::endl;
+      p.update(s[j], *(v_[j]), 1.0);
+    }
+    h_->applyInverse(p, r);
+    x.update(1.0, r, 1.0);
   }
 }
 
 
 /* ******************************************************************
-* solution is x = x0 + V s for the left preconditioner
-*         and x = x0 + H V s for the right preconditioner
-****************************************************************** */
+ * solution is x = x0 + V s for the left preconditioner
+ *         and x = x0 + H V s for the right preconditioner
+ ****************************************************************** */
 template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
 void
 IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::ComputeSolution_(Vector& x,
@@ -684,12 +712,12 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::ComputeSoluti
                                                                                     Vector& r) const
 {
   if (left_pc_) {
-    for (int j = 0; j < krylov_dim_; j++) { x.Update(d[j], *(v_[j]), 1.0); }
+    for (int j = 0; j < krylov_dim_; j++) { x.update(d[j], *(v_[j]), 1.0); }
   } else {
-    p.PutScalar(0.0);
-    for (int j = 0; j < krylov_dim_; j++) { p.Update(d[j], *(v_[j]), 1.0); }
-    h_->ApplyInverse(p, r);
-    x.Update(1.0, r, 1.0);
+    p.putScalar(0.0);
+    for (int j = 0; j < krylov_dim_; j++) { p.update(d[j], *(v_[j]), 1.0); }
+    h_->applyInverse(p, r);
+    x.update(1.0, r, 1.0);
   }
 }
 

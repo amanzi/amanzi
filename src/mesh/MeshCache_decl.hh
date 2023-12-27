@@ -170,7 +170,9 @@ for layering in the various capabilities that make this a fully-featured mesh.
 #include <string>
 
 #include "AmanziComm.hh"
+#include "AmanziMap.hh"
 #include "GeometricModel.hh"
+
 #include "MeshDefs.hh"
 #include "MeshSets.hh"
 #include "MeshColumns.hh"
@@ -432,8 +434,13 @@ struct MeshCache : public MeshCacheBase {
 
   Entity_GID getEntityGID(const Entity_kind kind, const Entity_ID lid) const
   {
-    return getMap(kind, false).GID(lid);
+    return getMap(kind, false)->getGlobalElement(lid);
   }
+  cEntity_GID_View getEntityGIDs(const Entity_kind kind, const Entity_ID lid) const
+  {
+    return getMap(kind, false)->getMyGlobalIndices();
+  }
+
   Teuchos::RCP<const MeshAlgorithms> getAlgorithms() const { return algorithms_; }
 
   //
@@ -507,7 +514,7 @@ struct MeshCache : public MeshCacheBase {
   cEntity_ID_View getBoundaryNodes() const { return maps_.getBoundaryNodes<MEM>(); }
 
   // maps define GIDs of each Entity_kind
-  const Map_type& getMap(const Entity_kind kind, bool is_ghosted) const
+  const Map_ptr_type& getMap(const Entity_kind kind, bool is_ghosted) const
   {
     return maps_.getMap(kind, is_ghosted);
   }
@@ -519,10 +526,17 @@ struct MeshCache : public MeshCacheBase {
   //
   // Note this is not the same as getImporter(BOUNDARY_FACE), which
   // communicates BOUNDARY_FACE-indexed objects to other BOUNDARY_FACE-indexed
-  // objects.  See more details in MeshMaps_decl.hh
+  // objects.
   const Import_type& getBoundaryFaceImporter() const { return maps_.getBoundaryFaceImporter(); }
+
   // an importer from NODE-indexed objects to BOUNDARY_NODE-indexed objects
   const Import_type& getBoundaryNodeImporter() const { return maps_.getBoundaryNodeImporter(); }
+
+  // an importer from CELL-indexed objects to BOUNDARY_FACE-indexed objects
+  const Import_type& getBoundaryFaceInternalCellImporter() const
+  {
+    return maps_.getBoundaryFaceInternalCellImporter();
+  }
 
   // ----------------
   // sets of entities
@@ -973,13 +987,6 @@ onMemSpace(const Teuchos::RCP<MeshCache<IN>>& mc_in);
 // -----------------------------------------------------------------------------
 // Default Mesh types
 // -----------------------------------------------------------------------------
-// NOTE: tests pass with this definition as well, which means that onMemSpace
-// and caching is correctly working.
-// using Mesh = MeshCache<MemSpace_kind::DEVICE>;
-
-// it is still preferred to use this when on HOST, because things need not be
-// cached then, as Mesh::MemSpace_kind will be HOST and framework stuff will
-// work.
 using Mesh = MeshCache<MemSpace_kind::HOST>;
 using MeshHost = MeshCache<MemSpace_kind::HOST>;
 

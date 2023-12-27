@@ -1,16 +1,13 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Authors: Daniil Svyatskiy (dasvyat@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
-/*
-  Operators
-
 */
 
 #include <vector>
@@ -34,9 +31,10 @@ PDE_DiffusionNLFVwithGravity::UpdateMatrices(const Teuchos::Ptr<const CompositeV
 {
   // affine map of u. It is equivalent to calculating hydraulic head.
   Teuchos::RCP<CompositeVector> hh = Teuchos::rcp(new CompositeVector(*u));
-  Epetra_MultiVector& hh_c = *hh->ViewComponent("cell");
-  const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
+  Epetra_MultiVector& hh_c = *hh->viewComponent("cell");
+  const Epetra_MultiVector& u_c = *u->viewComponent("cell");
 
+  AMANZI_ASSERT(is_scalar_);
   double rho_g = rho_ * norm(g_);
   for (int c = 0; c < ncells_owned; ++c) {
     double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
@@ -49,12 +47,14 @@ PDE_DiffusionNLFVwithGravity::UpdateMatrices(const Teuchos::Ptr<const CompositeV
   global_op_->rhs()->PutScalarGhosted(0.0);
 
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
-  Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell", true);
+  Epetra_MultiVector& rhs_cell = *global_op_->rhs()->viewComponent("cell", true);
+
+  AmanziMesh::Entity_ID_List cells;
 
   for (int f = 0; f < nfaces_owned; ++f) {
     WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
 
-    auto cells = mesh_->getFaceCells(f);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_kind::ALL, &cells);
     int ncells = cells.size();
 
     if (ncells == 2) {
@@ -76,7 +76,7 @@ PDE_DiffusionNLFVwithGravity::UpdateMatrices(const Teuchos::Ptr<const CompositeV
     }
   }
 
-  global_op_->rhs()->GatherGhostedToMaster();
+  global_op_->rhs()->gatherGhostedToMaster();
 }
 
 
@@ -87,12 +87,15 @@ void
 PDE_DiffusionNLFVwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                                          const Teuchos::Ptr<CompositeVector>& flux)
 {
+  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+
   // Map field u for the local system. For Richards's equation, this
   // is equivalent to calculating the hydraulic head.
   Teuchos::RCP<CompositeVector> hh = Teuchos::rcp(new CompositeVector(*u));
-  Epetra_MultiVector& hh_c = *hh->ViewComponent("cell");
-  const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
+  Epetra_MultiVector& hh_c = *hh->viewComponent("cell");
+  const Epetra_MultiVector& u_c = *u->viewComponent("cell");
 
+  AMANZI_ASSERT(is_scalar_);
   double rho_g = rho_ * norm(g_);
   for (int c = 0; c < ncells_owned; ++c) {
     double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
@@ -109,6 +112,7 @@ PDE_DiffusionNLFVwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVecto
 double
 PDE_DiffusionNLFVwithGravity::MapBoundaryValue_(int f, double u)
 {
+  AMANZI_ASSERT(is_scalar_);
   double rho_g = rho_ * fabs(g_[dim_ - 1]);
   double zf = (mesh_->getFaceCentroid(f))[dim_ - 1];
   return u + rho_g * zf;

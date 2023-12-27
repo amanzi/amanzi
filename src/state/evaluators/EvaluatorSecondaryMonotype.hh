@@ -194,7 +194,7 @@ EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility(State& S)
   // structure.
   EnsureCompatibility_Structure_(S);
 
-  std::string consistency_policy = plist_.get<std::string>("consistency policy", "give to child");
+  std::string consistency_policy = plist_->get<std::string>("consistency policy", "give to child");
   if (consistency_policy == "none") {
     // Structure is set by PKs and parents of this evaluator.  Do not pass my
     // structure onto my children, and do not get my structure from my

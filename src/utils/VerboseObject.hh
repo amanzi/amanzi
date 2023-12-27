@@ -91,14 +91,8 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
  public:
   // Constructors
   VerboseObject(const std::string& name, const std::string& verbosity);
-  VerboseObject(const std::string& name, Teuchos::ParameterList plist);
-  VerboseObject(const Comm_ptr_type& comm, const std::string& name, Teuchos::ParameterList plist);
-
-  // this constructor is fragile and should be frowned upon, but is useful for
-  // maintaining backward compatibility with the Epetra stack
-  VerboseObject(const Comm_type& comm, const std::string& name, Teuchos::ParameterList plist)
-    : VerboseObject(Teuchos::rcpFromRef(comm), name, plist)
-  {}
+  VerboseObject(const std::string& name, Teuchos::ParameterList& plist);
+  VerboseObject(const Comm_ptr_type& comm, const std::string& name, Teuchos::ParameterList& plist);
 
   // NOTE: Default destructor, copy construct should be ok.
 
@@ -107,7 +101,6 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
 
   // is the verbosity included?
   inline bool includesVerbLevel(Teuchos::EVerbosityLevel verbosity) const;
-
   std::string getVerbLevelString() const;
 
   // Get the stream (errors if !os_OK()).
@@ -132,7 +125,7 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   static unsigned int global_writing_rank;
 
   // Color output for developers
-  std::string color(const std::string& name) const;
+  std::string color(const std::string& name = "") const;
   std::string reset() const;
   std::string clock() const;
 

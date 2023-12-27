@@ -1,22 +1,20 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  This is the operators component of the Amanzi code.
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
-/*
-  This is the operators component of the Amanzi code.
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Non-polynomial solution plus discontinous (scalar) coefficient. This solution
   has discontinuous tangential flux:
 
   Solution:  p = x^2 / k1 + y^2       if x < 0.5,
-             p = x^2 / k2 + y^2 + b2  otherwise
-  Diffusion: K = k1 (2 + x sin(y))      if x < 0.5,
-             K = k2 (2 + 2 x^2 sin(y))  otherwise
+             p = x^x / k2 + y^2 + b2  otherwise
+  Diffusion: K = k1 (1 + x sin(y))      if x < 0.5,
+             K = k2 (1 + 2 x^2 sin(y))  otherwise
   Velocity: v = [0, 0]
   Source: f = -div(K grad(p))
 */
@@ -36,7 +34,7 @@ class Analytic03 : public AnalyticBase {
     a2 = 1.0 / k2;
     b2 = (a1 - a2) / 4;
 
-    dim = mesh_->getSpaceDimension();
+    dim = mesh_->space_dimension();
   }
   ~Analytic03(){};
 
@@ -46,9 +44,9 @@ class Analytic03 : public AnalyticBase {
     double y = p[1];
     Amanzi::WhetStone::Tensor K(dim, 1);
     if (x < 0.5) {
-      K(0, 0) = k1 * (2.0 + x * sin(y));
+      K(0, 0) = k1 * (1.0 + x * sin(y));
     } else {
-      K(0, 0) = k2 * (2.0 + 2 * x * x * sin(y));
+      K(0, 0) = k2 * (1.0 + 2 * x * x * sin(y));
     }
     return K;
   }
@@ -104,14 +102,15 @@ class Analytic03 : public AnalyticBase {
   double source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
   {
     double x = p[0];
+    double y = p[1];
 
-    double plaplace, kmean;
+    double plaplace, pmean, kmean;
     Amanzi::AmanziGeometry::Point pgrad(dim), kgrad(dim);
 
     kmean = (TensorDiffusivity(p, t))(0, 0);
     kgrad = ScalarTensorGradient(p, t);
 
-    pressure_exact(p, t);
+    pmean = pressure_exact(p, t);
     pgrad = gradient_exact(p, t);
 
     if (x < 0.5) {

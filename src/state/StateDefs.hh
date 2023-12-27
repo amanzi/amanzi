@@ -37,7 +37,27 @@ static const Tag NEXT(""); // an alias used by ATS
 static const Tag COPY("copy");
 } // namespace Tags
 
-enum class EvaluatorType { PRIMARY, SECONDARY, INDEPENDENT, OTHER };
+enum class Evaluator_kind { PRIMARY, SECONDARY, INDEPENDENT, OTHER };
+
+inline std::string
+to_string(const Evaluator_kind kind)
+{
+  switch (kind) {
+  case (Evaluator_kind::PRIMARY):
+    return "primary";
+  case (Evaluator_kind::SECONDARY):
+    return "secondary";
+  case (Evaluator_kind::INDEPENDENT):
+    return "independent";
+  default:
+    return "other";
+  }
+}
+
+
+// Type enumerator for derivatives in models.
+template <int>
+struct Deriv {};
 
 } // namespace Amanzi
 

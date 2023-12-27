@@ -62,13 +62,15 @@ MechanicsFlow_PK::Setup()
 
   auto pks =
     glist_->sublist("PKs").sublist(name_).get<Teuchos::Array<std::string>>("PKs order").toVector();
-  for (int i = 0; i < 2; ++i) {
-    glist_->sublist("PKs")
-      .sublist(pks[i])
-      .sublist("physical models and assumptions")
-      .set<bool>("biot scheme: undrained split", true)
-      .set<bool>("biot scheme: fixed stress split", false);
-  }
+  glist_->sublist("PKs")
+    .sublist(pks[1])
+    .sublist("physical models and assumptions")
+    .set<bool>("porosity strain model", true);
+
+  glist_->sublist("PKs")
+    .sublist(pks[0])
+    .sublist("physical models and assumptions")
+    .set<bool>("use biot model", true);
 
   PK_MPCWeak::Setup();
 }
@@ -80,26 +82,10 @@ MechanicsFlow_PK::Setup()
 bool
 MechanicsFlow_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
-  // S_->GetEvaluator(vol_strain_key_).Update(*S_, "biot");
-  // auto e0_c = *S_->Get<CV_t>(vol_strain_key_).ViewComponent("cell");
-
   auto pk0 = sub_pks_[0];
   bool fail = pk0->AdvanceStep(t_old, t_new, reinit);
   if (fail) return fail;
   pk0->CommitStep(t_old, t_new, Tags::DEFAULT);
-
-  // undrained weak split
-  /*
-  S_->GetEvaluator(vol_strain_key_).Update(*S_, "biot");
-  auto& p_c = *S_->GetW<CV_t>("pressure", Tags::DEFAULT, "").ViewComponent("cell");
-  const auto& e_c = *S_->Get<CV_t>(vol_strain_key_).ViewComponent("cell");
-
-  double biot_modulus = 1.0 / (0.2 * 3.906e-7); // FIXME
-  int ncells = e_c.MyLength();
-  for (int c = 0; c < ncells; ++c) {
-    p_c[0][c] -= biot_modulus * (e_c[0][c] - e0_c[0][c]);
-  } 
-  */
 
   auto pk1 = sub_pks_[1];
   fail = pk1->AdvanceStep(t_old, t_new, reinit);

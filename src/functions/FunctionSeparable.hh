@@ -18,11 +18,8 @@ A separable function is defined as the product of other functions such as
 where :math:`f_1` is defined by the `"function1`" sublist, and
 :math:`f_2` by the `"function2`" sublist.
 
-.. _function-separable-spec:
-.. admonition:: function-separable-spec
-
-   * `"function1`" ``[function-spec]`` :math:`f_1` in :math:`f(x) = f_1(x0) * f_2(x1...)`
-   * `"function2`" ``[function-spec]`` :math:`f_2` in :math:`f(x) = f_1(x0) * f_2(x1...)`
+* `"function1`" ``[function-spec]`` f_1 in f(x) = f_1(x0) * f_2(x1...)
+* `"function2`" ``[function-spec]`` f_2 in f(x) = f_1(x0) * f_2(x1...)
 
 
 .. code-block:: xml
@@ -58,16 +55,46 @@ class FunctionSeparable : public Function {
   {}
   ~FunctionSeparable() {} //{ if (f1_) delete f1_; if (f2_) delete f2_; }
   std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionSeparable>(*this); }
-  double operator()(const std::vector<double>& x) const
+
+  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
   {
-    std::vector<double>::const_iterator xb = x.begin();
-    xb++;
-    std::vector<double> y(xb, x.end());
+    // std::vector<double>::const_iterator xb = x.begin(); xb++;
+    // std::vector<double> y(xb, x.end());
+    auto y = Kokkos::subview(
+      x, Kokkos::make_pair(static_cast<size_t>(1), static_cast<size_t>(x.extent(0))));
     return (*f1_)(x) * (*f2_)(y);
+  }
+
+
+  void apply(const Kokkos::View<double**>& in,
+             Kokkos::View<double*>& out,
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+  {
+    Kokkos::View<double**> y =
+      Kokkos::subview(in,
+                      Kokkos::make_pair(static_cast<size_t>(1), static_cast<size_t>(in.extent(0))),
+                      Kokkos::ALL);
+    Kokkos::View<double*> out_1("out_1", in.extent(1));
+    f1_->apply(in, out_1);
+    f2_->apply(y, out, ids);
+
+    if (ids) {
+      auto ids_loc = *ids;
+      Kokkos::parallel_for(
+        "FunctionSeparable::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(ids_loc(i)) *= out_1(i);
+        });
+    } else {
+      Kokkos::parallel_for(
+        "FunctionSeparable::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(i) *= out_1(i);
+        });
+    }
   }
 
  private:
   std::unique_ptr<Function> f1_, f2_;
+  // Function *f1_, *f2_;
 };
 
 } // namespace Amanzi

@@ -1,56 +1,22 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-/*!
+  An abstract operator uses factory of mimetic schemes and standard
+  interface for creating stiffness, mass and divergence matrices.
 
-An abstract operator is designed for testing new discretization methods.
-It uses the factory of discretization methods and a few control parameters
-required by this factory and/or particular method in it.
-
-* `"method`" [string] defines a discretization method. The available
-  options are `"diffusion`", `"diffusion generalized`", `"BernardiRaugel`",
-  `"CrouzeixRaviart`", `"CrouzeixRaviart serendipity`", `"Lagrange`",
-  `"Lagrange serendipity`", and `"dg modal`".
-
-* `"method order`" [int] defines disretization order. It is used by
-  high-order discretization methods such as the discontinuous Galerkin.
-
-* `"matrix type`" [string] defines type of local matrix. Available options are
-  `"mass`", `"mass inverse`", `"stiffness`", `"divergence`", and `"advection`".
-
-.. code-block:: xml
-
-  <ParameterList name="_ABSTRACT OPERATOR">
-    <Parameter name="method" type="string" value="dg modal"/>
-    <Parameter name="method order" type="int" value="2"/>
-    <Parameter name="dg basis" type="string" value="regularized"/>
-    <Parameter name="matrix type" type="string" value="flux"/>
-
-    <ParameterList name="schema domain">
-      ...
-    </ParameterList>
-    <ParameterList name="schema range">
-      ...
-    </ParameterList>
-  </ParameterList>
-
-
-Diffusion is the most frequently used operator.
-Examples of usage this operator are in test/operators_stokes.cc
-and test/operators_diffusion_curved.cc
-In the first example, we set up a discrete divergence operator
-that corersponds to a rectangular matrix. In the second example,
-we set up an elliptic operator when Hermite-type degrees of
-freedom are used on curved faces.
-
-.. _Reconstruction:
-
+  Examples of usage this operator are in test/operators_stokes.cc
+  and test/operators_diffusion_curved.cc
+  In the first example, we set up a discrete divergence operator
+  that corersponds to a rectangular matrix. In the second example,
+  we set up an elliptic operator when Hermite-type degrees of 
+  freedom are used on curved faces.
 */
 
 #ifndef AMANZI_OPERATOR_PDE_ABSTRACT_HH_
@@ -81,7 +47,7 @@ class PDE_Abstract : public PDE_HelperDiscretization {
  public:
   PDE_Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op)
     : PDE_HelperDiscretization(global_op),
-      coef_type_(CoefType::CONSTANT),
+      coef_type_(Coef_kind::CONSTANT),
       static_matrices_initialized_(false)
   {
     Init_(plist);
@@ -89,7 +55,7 @@ class PDE_Abstract : public PDE_HelperDiscretization {
 
   PDE_Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : PDE_HelperDiscretization(mesh),
-      coef_type_(CoefType::CONSTANT),
+      coef_type_(Coef_kind::CONSTANT),
       static_matrices_initialized_(false)
   {
     global_op_ = Teuchos::null;
@@ -99,9 +65,10 @@ class PDE_Abstract : public PDE_HelperDiscretization {
 
   // main members
   // -- required by the interface
-  using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) override;
+                              const Teuchos::Ptr<const CompositeVector>& p = Teuchos::null);
+  void UpdateMatrices() { UpdateMatrices(Teuchos::null, Teuchos::null); }
+
   // -- new interface for pre-computed data
   void UpdateMatrices(double t);
 
@@ -111,15 +78,14 @@ class PDE_Abstract : public PDE_HelperDiscretization {
   template <typename T>
   void Setup(const Teuchos::RCP<std::vector<T>>& K, bool reset);
 
-  // optional calculation of flux from potential p
-  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override{};
-
  protected:
   // available models for operator coefficient
   Teuchos::RCP<std::vector<WhetStone::Polynomial>> Kpoly_;
   Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>> Kvec_poly_;
   Teuchos::RCP<std::vector<WhetStone::VectorSpaceTimePolynomial>> Kvec_stpoly_;
+
+  Schema global_schema_row_, global_schema_col_;
+  Schema local_schema_col_, local_schema_row_;
 
  private:
   void Init_(Teuchos::ParameterList& plist);
@@ -132,7 +98,7 @@ class PDE_Abstract : public PDE_HelperDiscretization {
   Teuchos::RCP<WhetStone::BilinearForm> mfd_;
   Teuchos::RCP<InterfaceWhetStone> interface_;
 
-  CoefType coef_type_;
+  Coef_kind coef_type_;
   bool static_matrices_initialized_;
   std::vector<std::vector<WhetStone::DenseMatrix>> static_matrices_;
 };
@@ -146,7 +112,7 @@ inline void
 PDE_Abstract::Setup<WhetStone::Tensor>(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K,
                                        bool reset)
 {
-  coef_type_ = CoefType::CONSTANT;
+  coef_type_ = Coef_kind::CONSTANT;
 
   auto Kc = Teuchos::get_shared_ptr(K);
   const auto coef = std::make_shared<CoefficientModel<WhetStone::Tensor>>(Kc);
@@ -162,7 +128,7 @@ PDE_Abstract::Setup<WhetStone::Polynomial>(
   bool reset)
 {
   Kpoly_ = K;
-  coef_type_ = CoefType::POLYNOMIAL;
+  coef_type_ = Coef_kind::POLYNOMIAL;
 
   auto Kc = Teuchos::get_shared_ptr(K);
   const auto coef = std::make_shared<CoefficientModel<WhetStone::Polynomial>>(Kc);
@@ -178,7 +144,7 @@ PDE_Abstract::Setup<WhetStone::VectorPolynomial>(
   bool reset)
 {
   Kvec_poly_ = K;
-  coef_type_ = CoefType::VECTOR_POLYNOMIAL;
+  coef_type_ = Coef_kind::VECTOR_POLYNOMIAL;
 }
 
 template <>
@@ -188,7 +154,7 @@ PDE_Abstract::Setup<WhetStone::VectorSpaceTimePolynomial>(
   bool reset)
 {
   Kvec_stpoly_ = K;
-  coef_type_ = CoefType::VECTOR_SPACETIME_POLYNOMIAL;
+  coef_type_ = Coef_kind::VECTOR_SPACETIME_POLYNOMIAL;
   if (!static_matrices_initialized_ || reset) CreateStaticMatrices_();
 }
 

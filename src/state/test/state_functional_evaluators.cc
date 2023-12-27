@@ -12,8 +12,6 @@
 
 */
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_RCP.hpp"
@@ -57,10 +55,9 @@ SUITE(EVALS)
     // Independent variable evaluator
     // -- Field A and its evaluator
     // A = c1 + (x - x0) dot grad
-    Teuchos::ParameterList A_list("fa");
-    A_list.set("evaluator name", "fa");
-    A_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    auto& A_func_list = A_list.sublist("function");
+    auto A_list = Teuchos::rcp(new Teuchos::ParameterList("fa"));
+    A_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    auto& A_func_list = A_list->sublist("function");
     auto& A_func_rlist = A_func_list.sublist("myregion");
     A_func_rlist.set("region", "ALL");
     A_func_rlist.set("component", "cell");
@@ -89,15 +86,15 @@ SUITE(EVALS)
 
     // calculate field A
     fa_eval->Update(*S, "main");
-    const Epetra_MultiVector& fa =
-      *S->GetW<CompositeVector>("fa", Tags::DEFAULT, "fa").ViewComponent("cell");
+    const auto fa = S->GetW<CompositeVector>("fa", Tags::DEFAULT, "fa")
+                      .viewComponent<DefaultHostMemorySpace>("cell");
 
     // eval point of 0th cell is:
     // {  1.1, 1, 1, 1 }
     // making the value
     // (  { 1.1, 1, 1, 1 } - {1.0, 2.0, 3.0, 4.0} ) *  {0.5, 1.0, 2.0, 2.0}  + 1
     // = (.05 -1 -4  -6 + 1) = -9.95
-    CHECK_CLOSE(-9.95, fa[0][0], 1e-12);
+    CHECK_CLOSE(-9.95, fa(0, 0), 1e-12);
   }
 
 
@@ -124,10 +121,9 @@ SUITE(EVALS)
     // Independent variable evaluator as before
     // -- Field A and its evaluator
     // A = c1 + (x - x0) dot grad
-    Teuchos::ParameterList A_list("fa");
-    A_list.set("evaluator name", "fa");
-    A_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    auto& A_func_list = A_list.sublist("function");
+    auto A_list = Teuchos::rcp(new Teuchos::ParameterList("fa"));
+    A_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    auto& A_func_list = A_list->sublist("function");
     auto& A_func_rlist = A_func_list.sublist("myregion");
     A_func_rlist.set("region", "ALL");
     A_func_rlist.set("component", "cell");
@@ -148,15 +144,14 @@ SUITE(EVALS)
     S->SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
     // -- Field B and its evaluator as a function of A
-    Teuchos::ParameterList B_list("fb");
-    B_list.set("evaluator name", "fb");
-    B_list.set("tag", "");
-    B_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    auto B_list = Teuchos::rcp(new Teuchos::ParameterList("fb"));
+    B_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    B_list->set("tag", "");
 
     auto deps = std::vector<std::string>{ "fa" };
-    B_list.set<Teuchos::Array<std::string>>("dependencies", deps)
-      .set<bool>("dependency tags are my tag", true);
-    auto& B_func_list = B_list.sublist("function");
+    B_list->set<Teuchos::Array<std::string>>("dependencies", deps);
+    B_list->set<bool>("dependency tags are my tag", true);
+    auto& B_func_list = B_list->sublist("function");
     auto& B_func_llist = B_func_list.sublist("function-linear");
 
     auto x02 = std::vector<double>{ -1 };
@@ -182,7 +177,8 @@ SUITE(EVALS)
 
     // calculate field B
     fb_eval->Update(*S, "main");
-    const auto& fb = *S->Get<CompositeVector>("fb", Tags::DEFAULT).ViewComponent("cell");
+    const auto fb =
+      S->Get<CompositeVector>("fb", Tags::DEFAULT).viewComponent<DefaultHostMemorySpace>("cell");
 
     // eval point of 0th cell is:
     // {  1.1, 1, 1, 1 }
@@ -190,6 +186,6 @@ SUITE(EVALS)
     // (  { 1.1, 1, 1, 1 } - {1.0, 2.0, 3.0, 4.0} ) *  {0.5, 1.0, 2.0, 2.0}  + 1
     // = (.05 -1 -4  -6 + 1) = -9.95 and then the value for B = (-9.95 - -1)
     // * 2.0 + 1.0 = -16.9
-    CHECK_CLOSE(-16.9, fb[0][0], 1e-12);
+    CHECK_CLOSE(-16.9, fb(0, 0), 1e-12);
   }
 }

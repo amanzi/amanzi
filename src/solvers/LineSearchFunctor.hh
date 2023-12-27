@@ -34,7 +34,7 @@ struct LineSearchFunctor {
     {}
 
   double operator()(double x) const {
-    u->Update(-x, *du, 1., *u0, 0);
+    u->update(-x, *du, 1., *u0, 0);
     fn->ChangedSolution();
     fn->Residual(u, r);
     error = fn->ErrorNorm(u, r);

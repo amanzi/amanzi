@@ -1,15 +1,12 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
-  provided in the top-level COPYRIGHT file.
-
-  Authors: Ethan Coon (ecoon@lanl.gov)
-*/
-
-/*
   Operators
 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ethan Coon (ecoon@lanl.gov)
 */
 
 #ifndef AMANZI_OP_CELL_EDGE_HH_
@@ -26,12 +23,11 @@ namespace Operators {
 class Op_Cell_Edge : public Op {
  public:
   Op_Cell_Edge(const std::string& name, const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : Op(OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_EDGE, name, mesh)
+    : Op(OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_NODE, name, mesh)
   {
     WhetStone::DenseMatrix null_matrix;
-    matrices.resize(
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED),
-      null_matrix);
+    matrices.resize(mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED),
+                    null_matrix);
     matrices_shadow = matrices;
   }
 
@@ -61,11 +57,12 @@ class Op_Cell_Edge : public Op {
 
   virtual void Rescale(const CompositeVector& scaling)
   {
-    if (scaling.HasComponent("node")) {
-      const Epetra_MultiVector& s_n = *scaling.ViewComponent("node", true);
+    if (scaling.hasComponent("node")) {
+      const Epetra_MultiVector& s_n = *scaling.viewComponent("node", true);
+      AmanziMesh::Entity_ID_List nodes;
 
       for (int c = 0; c != matrices.size(); ++c) {
-        auto nodes = mesh_->getCellNodes(c);
+        mesh_->cell_get_nodes(c, &nodes);
         for (int n = 0; n != nodes.size(); ++n) {
           for (int m = 0; m != nodes.size(); ++m) { matrices[c](n, m) *= s_n[0][nodes[n]]; }
         }

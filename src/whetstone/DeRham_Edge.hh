@@ -39,18 +39,22 @@ class DeRham_Edge : public MFD3D {
       1, std::make_tuple(AmanziMesh::Entity_kind::EDGE, DOF_Type::SCALAR, 1));
   }
 
-  int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override;
+  int L2consistency(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Mc, bool symmetry);
+  virtual int MassMatrix(int c, const Tensor<>& T, DenseMatrix<>& M) override;
 
-  int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) override;
+  int L2consistencyInverse(int c,
+                           const Tensor<>& T,
+                           DenseMatrix<>& R,
+                           DenseMatrix<>& Wc,
+                           bool symmetry);
+  virtual int MassMatrixInverse(int c, const Tensor<>& T, DenseMatrix<>& W) override;
 
  protected:
-  int L2consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
-  int L2consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
+  int L2consistency2D_(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Mc);
+  int L2consistency3D_(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Mc);
 
-  int L2consistencyInverse2D_(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
-  int L2consistencyInverse3D_(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
+  int L2consistencyInverse2D_(int c, const Tensor<>& T, DenseMatrix<>& R, DenseMatrix<>& Wc);
+  int L2consistencyInverse3D_(int c, const Tensor<>& T, DenseMatrix<>& R, DenseMatrix<>& Wc);
 };
 
 } // namespace WhetStone

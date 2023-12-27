@@ -4,16 +4,10 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
-/* -------------------------------------------------------------------------
-
-ATS
-
-Wraps a CompositeMatrix as a TreeMatrix.
-------------------------------------------------------------------------- */
-
+//!
 #ifndef AMANZI_COMPOSITEMATRIX_AS_TREEMATRIX_HH_
 #  define AMANZI_COMPOSITEMATRIX_AS_TREEMATRIX_HH_
 
@@ -57,13 +51,13 @@ class CompositeMatrixAsTreeMatrix : public TreeMatrix {
   // Apply matrix, b <-- Ax, returns ierr
   virtual int Apply(const TreeVector& x, TreeVector& b) const
   {
-    return cm_->Apply(x.data(), b.data());
+    return cm_->apply(x.data(), b.data());
   }
 
   // Apply the inverse, x <-- A^-1 b, returns ierr
   virtual int ApplyInverse(const TreeVector& b, TreeVector& x) const
   {
-    return cm_->ApplyInverse(x.data(), b.data());
+    return cm_->applyInverse(x.data(), b.data());
   }
 };
 

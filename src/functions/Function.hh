@@ -25,13 +25,49 @@ function of time:
 .. math::
    u = f(t,x,y,z)
 
+ONE OF:
+* `"function: constant`" ``[constant-function-spec]``
+OR:
+* `"function: tabular`" ``[tabular-function-spec]``
+OR:
+* `"function: smooth step`" ``[smooth-step-function-spec]``
+OR:
+* `"function: polynomial`" ``[polynomial-function-spec]``
+OR:
+* `"function: monomial`" ``[monomial-function-spec]``
+OR:
+* `"function: linear`" ``[linear-function-spec]``
+OR:
+* `"function: separable`" ``[separable-function-spec]``
+OR:
+* `"function: additive`" ``[additive-function-spec]``
+OR:
+* `"function: multiplicative`" ``[multiplicative-function-spec]``
+OR:
+* `"function: composition`" ``[composition-function-spec]``
+OR:
+* `"function: static head`" ``[static-head-function-spec]``
+OR:
+* `"function: standard math`" ``[standard-math-function-spec]``
+OR:
+* `"function: bilinear`" ``[bilinear-function-spec]``
+OR:
+* `"function: distance`" ``[distance-function-spec]``
+#OR:
+#* `"function: squared distance`" ``[squared-distance-function-spec]``
+END
 */
 
 #ifndef AMANZI_FUNCTION_HH_
 #define AMANZI_FUNCTION_HH_
 
 #include <vector>
-#include <memory>
+#include <cassert>
+
+#include "Kokkos_Core.hpp"
+#include "Kokkos_DualView.hpp"
+#include "AmanziTypes.hh"
+#include "MeshView.hh"
 
 namespace Amanzi {
 
@@ -41,7 +77,14 @@ class Function {
  public:
   virtual ~Function() {}
   virtual std::unique_ptr<Function> Clone() const = 0;
-  virtual double operator()(const std::vector<double>&) const = 0;
+
+  // Keep host version working
+  virtual double operator()(const Kokkos::View<double*, Kokkos::HostSpace>&) const = 0;
+
+  virtual void
+  apply(const Kokkos::View<double**>&,
+        Kokkos::View<double*>&,
+        const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* = nullptr) const = 0;
 };
 
 } // namespace Amanzi

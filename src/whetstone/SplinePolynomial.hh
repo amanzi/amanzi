@@ -47,12 +47,12 @@ class SplineCubic : public SplinePolynomial {
   virtual double GradientValue(double x) const;
 
   // access
-  const Polynomial poly() const { return poly_; }
-  const Polynomial grad() const { return grad_; }
+  const Polynomial<> poly() const { return poly_; }
+  const Polynomial<> grad() const { return grad_; }
 
  private:
-  Polynomial poly_;
-  Polynomial grad_;
+  Polynomial<> poly_;
+  Polynomial<> grad_;
 };
 
 
@@ -68,12 +68,12 @@ class SplineQuadratic : public SplinePolynomial {
   virtual double GradientValue(double x) const;
 
   // access
-  const Polynomial poly() const { return poly_; }
-  const Polynomial grad() const { return grad_; }
+  const Polynomial<> poly() const { return poly_; }
+  const Polynomial<> grad() const { return grad_; }
 
  private:
-  Polynomial poly_;
-  Polynomial grad_;
+  Polynomial<> poly_;
+  Polynomial<> grad_;
 };
 
 

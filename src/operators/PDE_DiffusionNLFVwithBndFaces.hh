@@ -1,17 +1,15 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Authors: Daniil Svyatskiy (dasvyat@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
 
-/*
-  Operators
-
-  PDE_DiffusionNLFVwithBndFaces implements the PDE_Diffusion interface
+  PDE_DiffusionNLFVwithBndFaces implements the PDE_Diffusion interface 
   using nonlinear finite volumes.
 */
 
@@ -22,7 +20,6 @@
 #include <vector>
 
 // TPLs
-#include "Epetra_IntVector.h"
 #include "Ifpack.h"
 #include "Teuchos_RCP.hpp"
 
@@ -38,40 +35,25 @@ namespace Operators {
 
 class BCs;
 
-class PDE_DiffusionNLFVwithBndFaces : public virtual PDE_Diffusion {
+class PDE_DiffusionNLFVwithBndFaces : public PDE_Diffusion {
  public:
   PDE_DiffusionNLFVwithBndFaces(Teuchos::ParameterList& plist,
                                 const Teuchos::RCP<Operator>& global_op)
-    : PDE_Diffusion(global_op), stencil_initialized_(false)
-  {
-    pde_type_ = PDE_DIFFUSION_NLFVFACES;
-    Init_(plist);
-  }
+    : PDE_Diffusion(plist, global_op), stencil_initialized_(false)
+  {}
 
   PDE_DiffusionNLFVwithBndFaces(Teuchos::ParameterList& plist,
                                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : PDE_Diffusion(mesh), stencil_initialized_(false)
-  {
-    pde_type_ = PDE_DIFFUSION_NLFVFACES;
-    Init_(plist);
-  }
+    : PDE_Diffusion(plist, mesh), stencil_initialized_(false)
+  {}
 
-  PDE_DiffusionNLFVwithBndFaces(Teuchos::ParameterList& plist,
-                                const Teuchos::RCP<AmanziMesh::Mesh>& mesh)
-    : PDE_Diffusion(mesh), stencil_initialized_(false)
-  {
-    pde_type_ = PDE_DIFFUSION_NLFVFACES;
-    Init_(plist);
-  }
+  // virtual functions for derived clases
+  // -- processing of control parameters
+  virtual void Init() override;
 
   // main virtual members
   // -- setup
   using PDE_Diffusion::Setup;
-  virtual void
-  SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K) override
-  {
-    K_ = K;
-  }
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) override;
 
@@ -94,28 +76,13 @@ class PDE_DiffusionNLFVwithBndFaces : public virtual PDE_Diffusion {
 
   // -- modify an operator
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
-  virtual void ModifyMatrices(const CompositeVector& u) override{};
-  virtual void ScaleMassMatrices(double s) override{};
-  virtual void ScaleMatricesColumns(const CompositeVector& s) override{};
-
-  // -- interface to solvers for treating nonlinear BCs.
-  virtual double ComputeTransmissibility(int f) const override { return 0.0; }
-  virtual double ComputeGravityFlux(int f) const override { return 0.0; }
-
- protected:
-  // virtual functions for derived clases
-  // -- processing of control parameters
-  void Init_(Teuchos::ParameterList& plist);
-  // -- solution can be modified on boundary faces. This reflects specifics
-  //    of nonlinear FV schemes, see implementation in the derived classes.
-  // virtual double MapBoundaryValue_(int f, double u) { return u; }
 
  protected:
   void InitStencils_();
   void OneSidedFluxCorrections_(int i0, const CompositeVector& u, CompositeVector& sideflux);
   void OneSidedWeightFluxes_(int i0, const CompositeVector& u, CompositeVector& sideflux);
   void OneSidedNeumannCorrections_(const CompositeVector& u, CompositeVector& sideflux);
-  int OrderCellsByGlobalId_(const AmanziMesh::cEntity_ID_View& cells, int& c1, int& c2);
+  int OrderCellsByGlobalId_(const AmanziMesh::Entity_ID_List& cells, int& c1, int& c2);
   int NLTPFAContributions_(int f, double& tc1, double& tc2);
 
  protected:

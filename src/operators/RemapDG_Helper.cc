@@ -1,14 +1,12 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
-/*
-  Operators
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   The helper advection-based base class for various remap methods. It
   provides support of time integration and calculation of various static
@@ -16,9 +14,7 @@
   implemented differently by an application.
 */
 
-#include "Epetra_Vector.h"
 
-#include "ReconstructionCellLinear.hh"
 #include "RemapDG.hh"
 #include "WhetStoneDefs.hh"
 
@@ -31,23 +27,17 @@ namespace Operators {
 RemapDG_Helper::RemapDG_Helper(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
                                const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
                                Teuchos::ParameterList& plist)
-  : mesh0_(mesh0), mesh1_(mesh1), dim_(mesh0->getSpaceDimension()), plist_(plist)
+  : mesh0_(mesh0), mesh1_(mesh1), plist_(plist), dim_(mesh0->space_dimension())
 {
   // mesh data
-  ncells_owned_ =
-    mesh0_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-  ncells_wghost_ =
-    mesh0_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
-  nfaces_owned_ =
-    mesh0_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  nfaces_wghost_ =
-    mesh0_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  ncells_owned_ = mesh0_->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  ncells_wghost_ = mesh0_->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
+  nfaces_owned_ = mesh0_->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
+  nfaces_wghost_ = mesh0_->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
 
   if (mesh0_->hasEdges()) {
-    nedges_owned_ =
-      mesh0_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::OWNED);
-    nedges_wghost_ =
-      mesh0_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::ALL);
+    nedges_owned_ = mesh0_->getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::OWNED);
+    nedges_wghost_ = mesh0_->getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::ALL);
   }
 
   auto& pklist = plist_.sublist("PK operator");
@@ -64,7 +54,7 @@ RemapDG_Helper::RemapDG_Helper(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
 
   if (is_limiter_) {
     smoothness_ = limlist.template get<std::string>("smoothness indicator", "none");
-    limiter_ = Teuchos::rcp(new LimiterCellDG(mesh0_));
+    limiter_ = Teuchos::rcp(new LimiterCell(mesh0_));
     limiter_->Init(limlist);
   }
 
@@ -98,13 +88,12 @@ RemapDG_Helper::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 
   // boundary data
   int nk = WhetStone::PolynomialSpaceDimension(dim_, order_);
-  auto bc =
-    Teuchos::rcp(new BCs(mesh0_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::VECTOR));
+  auto bc = Teuchos::rcp(new BCs(mesh0_, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<std::vector<double>>& bc_value = bc->bc_value_vector(nk);
 
-  const auto& fmap = mesh0_->getMap(AmanziMesh::Entity_kind::FACE, true);
-  const auto& bmap = mesh0_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
+  const auto& fmap = mesh0_->face_map(true);
+  const auto& bmap = mesh0_->exterior_face_map(true);
   for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
     int f = fmap.LID(bmap.GID(bf));
     for (int i = 0; i < nk; ++i) bc_value[f][i] = 0.0;
@@ -151,18 +140,19 @@ RemapDG_Helper::StaticEdgeFaceVelocities()
 void
 RemapDG_Helper::StaticCellVelocity()
 {
+  WhetStone::Entity_ID_List edges, faces;
   uc_.resize(ncells_owned_);
 
   for (int c = 0; c < ncells_owned_; ++c) {
     // faces are always included
-    const auto& faces = mesh0_->getCellFaces(c);
+    mesh0_->cell_get_faces(c, &faces);
 
     std::vector<WhetStone::VectorPolynomial> vve, vvf;
     for (int n = 0; n < faces.size(); ++n) { vvf.push_back(velf_vec_[faces[n]]); }
 
     // edges are included in 3D only
     if (dim_ == 3) {
-      auto edges = mesh0_->getCellEdges(c);
+      mesh0_->cell_get_edges(c, &edges);
 
       for (int n = 0; n < edges.size(); ++n) { vve.push_back(vele_vec_[edges[n]]); }
     }
@@ -181,7 +171,7 @@ RemapDG_Helper::StaticFaceCoVelocity()
   WhetStone::VectorSpaceTimePolynomial cn;
   for (int f = 0; f < nfaces_wghost_; ++f) {
     WhetStone::VectorSpaceTimePolynomial map(dim_, dim_, 1), tmp(dim_, dim_, 0);
-    const auto& origin = velf_vec_[f][0].get_origin();
+    const auto& origin = velf_vec_[f][0].origin();
 
     for (int i = 0; i < dim_; ++i) {
       map[i][0].Reshape(dim_, std::max(1, order_), true);
@@ -211,7 +201,7 @@ RemapDG_Helper::StaticCellCoVelocity()
     // space-time cell velocity: v = -j J^{-1} u = -C^t u
     WhetStone::MatrixSpaceTimePolynomial Jt(dim_, dim_, dim_, 1), Ct;
     WhetStone::VectorSpaceTimePolynomial tmp(dim_, dim_, 0);
-    const auto& origin = uc_[c][0].get_origin();
+    const auto& origin = uc_[c][0].origin();
 
     for (int i = 0; i < dim_; ++i) {
       for (int j = 0; j < dim_; ++j) {
@@ -239,14 +229,13 @@ RemapDG_Helper::StaticCellCoVelocity()
 void
 RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
 {
-  auto& x_c = *x.ViewComponent("cell", true);
+  const Epetra_MultiVector& x_c = *x.viewComponent("cell", true);
   int nk = x_c.NumVectors();
 
   // create list of cells where to apply limiter
   double L(-1.0);
   double threshold = -4.0 * std::log10((double)order_) - L;
-  AmanziMesh::Entity_ID_View ids("ids", ncells_owned_);
-  int ids_ct = 0;
+  AmanziMesh::Entity_ID_List ids;
 
   for (int c = 0; c < ncells_owned_; ++c) {
     if (smoothness_ == "high order term" && order_ > 1) {
@@ -256,39 +245,38 @@ RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
       double xnorm = honorm;
       for (int i = 0; i <= dim_; ++i) xnorm += x_c[i][c] * x_c[i][c];
 
-      if (xnorm > 0.0 && std::log10(honorm / xnorm) > threshold) ids[ids_ct++] = c;
+      if (xnorm > 0.0 && std::log10(honorm / xnorm) > threshold) ids.push_back(c);
     } else {
-      ids[ids_ct++] = c;
+      ids.push_back(c);
     }
   }
-  Kokkos::resize(ids, ids_ct);
+
   int nids, itmp = ids.size();
   mesh0_->getComm()->SumAll(&itmp, &nids, 1);
-  sharp_ = std::max(sharp_, 100.0 * nids / x.ViewComponent("cell")->GlobalLength());
+  sharp_ = std::max(sharp_, 100.0 * nids / x.viewComponent("cell")->GlobalLength());
 
   // apply limiter
   std::vector<int> bc_model(nfaces_wghost_, OPERATOR_BC_NONE);
   std::vector<double> bc_value(nfaces_wghost_, 0.0);
 
-  x.ScatterMasterToGhosted("cell");
+  x.scatterMasterToGhosted("cell");
 
-  if (limiter_->get_type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG ||
-      limiter_->get_type() == OPERATOR_LIMITER_MICHALAK_GOOCH_DG ||
-      limiter_->get_type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL) {
-    limiter_->ApplyLimiterDG(ids, x.ViewComponent("cell", true), *dg_, bc_model, bc_value);
+  if (limiter_->type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG ||
+      limiter_->type() == OPERATOR_LIMITER_MICHALAK_GOOCH_DG ||
+      limiter_->type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL) {
+    limiter_->ApplyLimiter(ids, x.viewComponent("cell", true), *dg_, bc_model, bc_value);
   } else {
     // -- create gradient in the natural basis
     WhetStone::DenseVector data(nk);
 
     CompositeVectorSpace cvs;
-    cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent(
-      "cell", AmanziMesh::Entity_kind::CELL, dim_);
+    cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim_);
     auto grad = Teuchos::rcp(new CompositeVector(cvs));
-    Epetra_MultiVector& grad_c = *grad->ViewComponent("cell", true);
+    Epetra_MultiVector& grad_c = *grad->viewComponent("cell", true);
 
-    // -- mean value is preserved automatically for the partially orthogonalized basis
+    // -- mean value is preserved automatiacally for the partially orthogonalized basis
     //    otherwise, a more complicated algorithm is needed
-    AMANZI_ASSERT(nk > dim_ || dg_->cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
+    AMANZI_ASSERT(dg_->cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
     for (int c = 0; c < ncells_wghost_; ++c) {
       for (int i = 0; i < nk; ++i) data(i) = x_c[i][c];
@@ -300,9 +288,7 @@ RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
     }
 
     // -- limit gradient and save it to solution
-    //    Reconstruction object does nothing but keeping poiter to gradient
-    auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh0_, grad));
-    limiter_->ApplyLimiter(ids, x.ViewComponent("cell", true), 0, lifting, bc_model, bc_value);
+    limiter_->ApplyLimiter(ids, x.viewComponent("cell", true), 0, grad, bc_model, bc_value);
 
     for (int n = 0; n < ids.size(); ++n) {
       int c = ids[n];

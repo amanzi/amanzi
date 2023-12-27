@@ -27,7 +27,8 @@ enum ConvergenceMonitor {
 
 enum BacktrackMonitor {
   BT_MONITOR_ENORM, // accept decrease in the ENORM
-  BT_MONITOR_L2,    // accept decrease in the Linf of the ConvergenceMonitor (residual)
+  BT_MONITOR_L2,    // accept decrease in the Linf of the ConvergenceMonitor
+                    // (residual)
   BT_MONITOR_EITHER // accept decrease in either of the above
 };
 

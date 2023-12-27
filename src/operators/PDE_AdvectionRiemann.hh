@@ -1,14 +1,12 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
-/*
-  Operators
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Riemann flux-based advection operator for a scalar field.
   The family will include DG and CG methods for linear and nonlinear
@@ -51,7 +49,7 @@ class PDE_AdvectionRiemann : public PDE_Advection {
 
   // main members
   // -- setup for various flux algorithms
-  virtual void Setup(const CompositeVector& u) final{};
+  virtual void Setup(const CompositeVector& u) override{};
 
   void Setup(const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>>& Kc,
              const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& Kf)
@@ -66,25 +64,32 @@ class PDE_AdvectionRiemann : public PDE_Advection {
   }
 
   // -- generate linearized operator: standard interface
-  using PDE_Advection::UpdateMatrices;
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) final{};
+  virtual void
+  UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                 const Teuchos::Ptr<const CompositeVector>& dhdu = Teuchos::null) override
+  {
+    AMANZI_ASSERT(false);
+  }
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u) override
+  {
+    AMANZI_ASSERT(false);
+  }
 
   virtual void
   UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u, double (*)(double)) final{};
 
   // -- generate linearized operator: new interface
-  void UpdateMatrices(const std::vector<WhetStone::Polynomial>& u);
+  void UpdateMatrices(const Teuchos::Ptr<const std::vector<WhetStone::Polynomial>>& u);
   void UpdateMatrices(double t);
 
   // -- determine advected flux of potential u
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
                           const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::RCP<BCs>& bc,
-                          const Teuchos::Ptr<CompositeVector>& flux) final;
+                          const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // boundary conditions
-  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) final;
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
   // access
   const WhetStone::DG_Modal& dg() const { return *dg_; }

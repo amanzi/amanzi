@@ -26,7 +26,7 @@
 
 // Amanzi
 #include "BCs_Factory.hh"
-#include "Mesh.hh"
+#include "MeshFramework.hh"
 #include "MeshFactory.hh"
 #include "Op_Cell_Cell.hh"
 #include "Op_Face_Cell.hh"
@@ -63,7 +63,7 @@ class BIndependent : public EvaluatorIndependent<CompositeVector, CompositeVecto
   {
     double cv = s.GetMesh()->getCellVolume(0);
     auto& b = s.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
-    b.ViewComponent("cell", false)->PutScalar(-4. * cv);
+    b.viewComponent("cell", false)->putScalar(-4. * cv);
   }
 };
 
@@ -80,16 +80,16 @@ class XIndependent : public EvaluatorIndependent<CompositeVector, CompositeVecto
   virtual void Update_(State& s) override
   {
     auto& x = s.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
-    auto& x_c = *x.ViewComponent("cell");
-    for (int c = 0; c != x_c.MyLength(); ++c) {
-      AmanziGeometry::Point cc = x.Mesh()->getCellCentroid(c);
+    auto& x_c = *x.viewComponent("cell");
+    for (int c = 0; c != x_c.getLocalLength(); ++c) {
+      AmanziGeometry::Point cc = x.getMesh()->getCellCentroid(c);
       x_c[0][c] = cc[0] * cc[0] + cc[1] * cc[1]; // x^2 + y^2
     }
 
-    if (x.HasComponent("face")) {
-      auto& x_f = *x.ViewComponent("face");
-      for (int f = 0; f != x_f.MyLength(); ++f) {
-        AmanziGeometry::Point fc = x.Mesh()->getFaceCentroid(f);
+    if (x.hasComponent("face")) {
+      auto& x_f = *x.viewComponent("face");
+      for (int f = 0; f != x_f.getLocalLength(); ++f) {
+        AmanziGeometry::Point fc = x.getMesh()->getFaceCentroid(f);
         x_f[0][f] = fc[0] * fc[0] + fc[1] * fc[1]; // x^2 + y^2
       }
     }
@@ -108,7 +108,7 @@ class DiagIndependent : public EvaluatorIndependent<CompositeVector, CompositeVe
  protected:
   virtual void Update_(State& s) override
   {
-    s.GetW<CompositeVector>(my_key_, my_tag_, my_key_).PutScalar(1.);
+    s.GetW<CompositeVector>(my_key_, my_tag_, my_key_).putScalar(1.);
   }
 };
 
@@ -130,7 +130,7 @@ class KIndependent : public EvaluatorIndependent<TensorVector, TensorVector_Fact
       // set this in consistent, and it should get init'ed somewhere during that
       // process, not now!
       k.Init(2, 1);
-      k.PutScalar(1.0);
+      k.putScalar(1.0);
     }
   }
 };
@@ -274,7 +274,7 @@ test(const std::string& discretization)
   // -- check error
   double error;
   const auto& r = S.Get<CompositeVector>("residual", Tags::DEFAULT);
-  r.NormInf(&error);
+  r.normInf(&error);
   std::cout << "Error=" << error << std::endl;
   CHECK_CLOSE(0.0, error, 1.e-3);
 }
@@ -394,7 +394,7 @@ test_inverse(const std::string& discretization)
   // run
   // -- setup and init
   S.Setup();
-  S.GetW<CompositeVector>("x", Tags::DEFAULT, "x").PutScalar(1.);
+  S.GetW<CompositeVector>("x", Tags::DEFAULT, "x").putScalar(1.);
   S.GetRecordW("x", Tags::DEFAULT, "x").set_initialized();
   S.Initialize();
 
@@ -406,7 +406,7 @@ test_inverse(const std::string& discretization)
     // -- check error of the initial guess
     double error(0.);
     auto& r = S.Get<CompositeVector>("residual", Tags::DEFAULT);
-    r.NormInf(&error);
+    r.normInf(&error);
     std::cout << "Error = " << error << std::endl;
   }
 
@@ -421,7 +421,7 @@ test_inverse(const std::string& discretization)
 
     // -- apply the inverse
     auto& r = S.Get<CompositeVector>("residual", Tags::DEFAULT);
-    CompositeVector dx(r.Map());
+    CompositeVector dx(r.getMap());
     lin_op.ApplyInverse(r, dx);
 
     // -- update x
@@ -445,7 +445,7 @@ test_inverse(const std::string& discretization)
     // -- check error after the preconditioner is applied
     double error;
     auto& r = S.Get<CompositeVector>("residual", Tags::DEFAULT);
-    r.NormInf(&error);
+    r.normInf(&error);
     std::cout << "Error = " << error << std::endl;
     CHECK_CLOSE(0.0, error, 1.e-3);
   }

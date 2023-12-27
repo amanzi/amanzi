@@ -17,51 +17,39 @@
   Vector interface for use with time integrators/nonlinear solvers.
 */
 
+//!
 #include "dbc.hh"
 #include "TreeVector.hh"
 
 
 namespace Amanzi {
 
-// Basic constructors
-TreeVector::TreeVector() : map_(Teuchos::rcp(new TreeVectorSpace())) {}
-
-TreeVector::TreeVector(const Comm_ptr_type& comm) : map_(Teuchos::rcp(new TreeVectorSpace(comm))) {}
-
-TreeVector::TreeVector(const TreeVectorSpace& space, InitMode mode)
-{
-  map_ = Teuchos::rcp(new TreeVectorSpace(space));
-  InitMap_(mode);
-  if (mode == INIT_MODE_ZERO) { PutScalar(0.); }
-}
-
-TreeVector::TreeVector(const Teuchos::RCP<TreeVectorSpace>& space, InitMode mode)
+TreeVector::TreeVector(const Teuchos::RCP<const TreeVectorSpace>& space, InitMode mode)
 {
   map_ = space;
   InitMap_(mode);
-  if (mode == INIT_MODE_ZERO) { PutScalar(0.); }
 }
 
-TreeVector::TreeVector(const TreeVector& other, InitMode mode)
+TreeVector::TreeVector(const TreeVector& other, Teuchos::DataAccess access, InitMode mode)
 {
+  if (access == Teuchos::DataAccess::View) {
+    Errors::Message message("TreeVector: View semantic not supported.");
+    throw(message);
+  }
   map_ = Teuchos::rcp(new TreeVectorSpace(*other.map_));
   InitMap_(mode);
-  if (mode == INIT_MODE_ZERO) {
-    PutScalar(0.);
-  } else if (mode == INIT_MODE_COPY) {
-    *this = other;
-  }
+  if (mode == InitMode::COPY) { *this = other; }
 }
 
 
 void
 TreeVector::InitMap_(InitMode mode)
 {
-  if (mode != INIT_MODE_NOALLOC && map_->Data() != Teuchos::null) {
-    data_ = Teuchos::rcp(new CompositeVector(*map_->Data()));
+  if (mode != InitMode::NOALLOC && map_->getData() != Teuchos::null) {
+    data_ = Teuchos::rcp(new CompositeVector(map_->getData()));
   }
 
-  for (const auto& i : *map_) { InitPushBack_(Teuchos::rcp(new TreeVector(*i, mode))); }
+  for (auto i : *map_) { subvecs_.emplace_back(Teuchos::rcp(new TreeVector(i, mode))); }
 }
 
 
@@ -70,7 +58,7 @@ TreeVector::operator=(const TreeVector& other)
 {
   if (&other != this) {
     // Ensure the maps match.
-    AMANZI_ASSERT(map_->SubsetOf(*other.map_));
+    AMANZI_ASSERT(map_->isSubsetOf(*other.map_));
 
     if (other.data_ != Teuchos::null) { *data_ = *other.data_; }
 
@@ -79,325 +67,243 @@ TreeVector::operator=(const TreeVector& other)
   return *this;
 };
 
-int
-TreeVector::PutScalar(double scalar)
+void
+TreeVector::putScalar(double scalar)
 {
   // Set all data of this node and all child nodes to scalar.
-  int ierr = 0;
-  if (data_ != Teuchos::null) {
-    ierr = data_->PutScalar(scalar);
-    if (ierr) return ierr;
+  if (data_ != Teuchos::null) { data_->putScalar(scalar); }
+  for (std::vector<Teuchos::RCP<TreeVector>>::iterator subvec = subvecs_.begin();
+       subvec != subvecs_.end();
+       ++subvec) {
+    (*subvec)->putScalar(scalar);
   }
-  for (const auto& subvec : subvecs_) {
-    ierr = subvec->PutScalar(scalar);
-    if (ierr) return ierr;
-  }
-  return ierr;
 }
 
-int
-TreeVector::PutScalarMasterAndGhosted(double scalar)
+void
+TreeVector::putScalarMasterAndGhosted(double scalar)
 {
   // Set all data of this node and all child nodes to scalar.
-  int ierr = 0;
-  if (data_ != Teuchos::null) {
-    ierr = data_->PutScalarMasterAndGhosted(scalar);
-    if (ierr) return ierr;
+  if (data_ != Teuchos::null) { data_->putScalarMasterAndGhosted(scalar); }
+  for (std::vector<Teuchos::RCP<TreeVector>>::iterator subvec = subvecs_.begin();
+       subvec != subvecs_.end();
+       ++subvec) {
+    (*subvec)->putScalarMasterAndGhosted(scalar);
   }
-  for (const auto& subvec : subvecs_) {
-    ierr = subvec->PutScalarMasterAndGhosted(scalar);
-    if (ierr) return ierr;
-  }
-  return ierr;
 }
 
-int
-TreeVector::PutScalarGhosted(double scalar)
+void
+TreeVector::putScalarGhosted(double scalar)
 {
   // Set all data of this node and all child nodes to scalar.
-  int ierr = 0;
-  if (data_ != Teuchos::null) {
-    ierr = data_->PutScalarGhosted(scalar);
-    if (ierr) return ierr;
+  if (data_ != Teuchos::null) { data_->putScalarGhosted(scalar); }
+  for (std::vector<Teuchos::RCP<TreeVector>>::iterator subvec = subvecs_.begin();
+       subvec != subvecs_.end();
+       ++subvec) {
+    (*subvec)->putScalarGhosted(scalar);
   }
-  for (const auto& subvec : subvecs_) {
-    ierr = subvec->PutScalarGhosted(scalar);
-    if (ierr) return ierr;
-  }
-  return ierr;
 }
 
-int
-TreeVector::Random()
+void
+TreeVector::randomize()
 {
   // Set all data of this node and all child nodes to random.
-  int ierr = 0;
-  if (data_ != Teuchos::null) {
-    ierr = data_->Random();
-    if (ierr) return ierr;
-  }
-  for (const auto& subvec : subvecs_) {
-    ierr = subvec->Random();
-    if (ierr) return ierr;
-  }
-  return ierr;
+  if (data_ != Teuchos::null) { data_->randomize(); }
+  for (const auto& subvec : subvecs_) { subvec->randomize(); }
 }
 
-int
-TreeVector::NormInf(double* ninf) const
+double
+TreeVector::normInf() const
 {
   // Take the L_Inf norm of this.
-  if (ninf == NULL) return 1;
-  if (data_ == Teuchos::null && subvecs_.size() == 0) return 1;
-
-  int ierr = 0;
-  *ninf = 0.0;
+  double ninf = 0.0;
   double ninf_loc;
 
   if (data_ != Teuchos::null) {
-    ierr = data_->NormInf(&ninf_loc);
-    if (ierr) return ierr;
-    if (ninf_loc > *ninf) *ninf = ninf_loc;
+    ninf_loc = data_->normInf();
+    if (ninf_loc > ninf) ninf = ninf_loc;
   }
 
   for (const auto& subvec : subvecs_) {
-    ierr = subvec->NormInf(&ninf_loc);
-    if (ierr) return ierr;
-    if (ninf_loc > *ninf) *ninf = ninf_loc;
+    ninf_loc = subvec->normInf();
+    if (ninf_loc > ninf) ninf = ninf_loc;
   }
-  return ierr;
+  return ninf;
 };
 
-int
-TreeVector::Norm1(double* n1) const
+double
+TreeVector::norm1() const
 {
   // Take the L_1 norm of this.
-  if (n1 == NULL) return 1;
-  if (data_ == Teuchos::null && subvecs_.size() == 0) return 1;
-
-  int ierr = 0;
-  *n1 = 0.0;
+  double n1 = 0.0;
   double n1_loc;
 
   if (data_ != Teuchos::null) {
-    ierr = data_->Norm1(&n1_loc);
-    if (ierr) return ierr;
-    *n1 += n1_loc;
+    n1_loc = data_->norm1();
+    n1 += n1_loc;
   }
 
   for (const auto& subvec : subvecs_) {
-    ierr = subvec->Norm1(&n1_loc);
-    if (ierr) return ierr;
-    *n1 += n1_loc;
+    n1_loc = subvec->norm1();
+    n1 += n1_loc;
   }
-  return ierr;
+  return n1;
 };
 
-int
-TreeVector::Norm2(double* n2) const
+double
+TreeVector::norm2() const
 {
   // Take the L_2 norm of this.
-  if (n2 == NULL) return 1;
-  if (data_ == Teuchos::null && subvecs_.size() == 0) return 1;
-
-  int ierr = 0;
-  *n2 = 0.0;
+  double n2 = 0.0;
   double n2_loc;
 
   if (data_ != Teuchos::null) {
-    ierr = data_->Norm2(&n2_loc);
-    if (ierr) return ierr;
-    *n2 += pow(n2_loc, 2);
+    n2_loc = data_->norm2();
+    n2 += pow(n2_loc, 2);
   }
 
   for (const auto& subvec : subvecs_) {
-    ierr = subvec->Norm2(&n2_loc);
-    if (ierr) return ierr;
-    *n2 += pow(n2_loc, 2);
+    n2_loc = subvec->norm2();
+    n2 += pow(n2_loc, 2);
   }
-  *n2 = sqrt(*n2);
-  return ierr;
+  return sqrt(n2);
 };
 
 void
-TreeVector::Print(std::ostream& os, bool data_io) const
+TreeVector::print(std::ostream& os) const
 {
   // Print data to ostream for this node and all children.
-  if (data_ != Teuchos::null) data_->Print(os, data_io);
+  if (data_ != Teuchos::null) data_->print(os);
 
-  for (const auto& subvec : subvecs_) { subvec->Print(os, data_io); }
+  for (const auto& subvec : subvecs_) subvec->print(os);
 };
 
 
 // this <- abs(this)
-int
-TreeVector::Abs(const TreeVector& other)
+void
+TreeVector::abs(const TreeVector& other)
 {
-  // this <- value*this
-  int ierr = 0;
-  if (data_ != Teuchos::null) {
-    ierr = data_->Abs(*other.data_);
-    if (ierr) return ierr;
+  if (data_ != Teuchos::null) { data_->abs(*other.data_); }
+  int i = 0;
+  for (const auto& subvec : subvecs_) {
+    subvec->abs(*other.subvecs_[i]);
+    i++;
   }
-  for (int i = 0; i != subvecs_.size(); ++i) {
-    ierr = subvecs_[i]->Abs(*other.subvecs_[i]);
-    if (ierr) return ierr;
-  }
-  return ierr;
 }
 
 
-int
-TreeVector::Scale(double value)
+void
+TreeVector::scale(double value)
 {
   // this <- value*this
-  int ierr = 0;
-  if (data_ != Teuchos::null) {
-    ierr = data_->Scale(value);
-    if (ierr) return ierr;
-  }
+  if (data_ != Teuchos::null) { data_->scale(value); }
 
-  for (const auto& subvec : subvecs_) {
-    ierr = subvec->Scale(value);
-    if (ierr) return ierr;
-  }
-  return ierr;
+  for (const auto& subvec : subvecs_) { subvec->scale(value); }
 };
 
-int
-TreeVector::Shift(double value)
-{
-  // this <- this + scalarA
-  int ierr = 0;
-  if (data_ != Teuchos::null) {
-    ierr = data_->Shift(value);
-    if (ierr) return ierr;
-  }
+// int TreeVector::Shift(double value) {
+//   // this <- this + scalarA
+//   int ierr = 0;
+//   if (data_ != Teuchos::null) {
+//     ierr = data_->Shift(value);
+//     if (ierr) return ierr;
+//   }
 
-  for (const auto& subvec : subvecs_) {
-    ierr = subvec->Shift(value);
-    if (ierr) return ierr;
-  }
-  return ierr;
-};
+//   for (std::vector< Teuchos::RCP<TreeVector> >::iterator subvec =
+//   subvecs_.begin();
+//        subvec != subvecs_.end(); ++subvec) {
+//     ierr = (*subvec)->Shift(value);
+//     if (ierr) return ierr;
+//   }
+//   return ierr;
+// };
 
 
 // this <- element-wise reciprocal(this)
-int
-TreeVector::Reciprocal(const TreeVector& other)
+void
+TreeVector::reciprocal(const TreeVector& other)
 {
   // this <- value*this
-  int ierr = 0;
-  if (data_ != Teuchos::null) {
-    ierr = data_->Reciprocal(*other.data_);
-    if (ierr) return ierr;
+  if (data_ != Teuchos::null) { data_->reciprocal(*other.data_); }
+
+  int i = 0;
+  for (const auto& subvec : subvecs_) {
+    subvec->reciprocal(*other.subvecs_[i]);
+    i++;
   }
-  for (int i = 0; i != subvecs_.size(); ++i) {
-    ierr = subvecs_[i]->Reciprocal(*other.subvecs_[i]);
-    if (ierr) return ierr;
-  }
-  return ierr;
 }
 
 
-int
-TreeVector::Dot(const TreeVector& other, double* result) const
+double
+TreeVector::dot(const TreeVector& other) const
 {
-  // compute the dot product of all components of the tree vector
-  // viewed as one flat vector
-  if (result == NULL) return 1;
-  if (data_ == Teuchos::null && subvecs_.size() == 0) return 1;
-  //  if (!map_->SameAs(*other.map_)) return 1;
-
-  int ierr = 0;
-  *result = 0.0;
-  if (data_ != Teuchos::null) {
-    ierr = data_->Dot(*other.data_, result);
-    if (ierr) return ierr;
-  }
+  double result = 0.0;
+  if (data_ != Teuchos::null) { result = data_->dot(*other.data_); }
 
   for (unsigned int i = 0; i != subvecs_.size(); ++i) {
-    double intermediate_result;
-    ierr = subvecs_[i]->Dot(*other.subvecs_[i], &intermediate_result);
-    if (ierr) return ierr;
-    *result += intermediate_result;
+    result += subvecs_[i]->dot(*other.subvecs_[i]);
   }
-  return ierr;
+  return result;
 };
 
 // this <- scalarA*A + scalarThis*this
-TreeVector&
-TreeVector::Update(double scalarA, const TreeVector& A, double scalarThis)
+void
+TreeVector::update(double scalarA, const TreeVector& A, double scalarThis)
 {
-  //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
-
-  if (data_ != Teuchos::null) { data_->Update(scalarA, *A.data_, scalarThis); }
+  if (data_ != Teuchos::null) { data_->update(scalarA, *A.data_, scalarThis); }
   for (unsigned int i = 0; i != subvecs_.size(); ++i) {
-    subvecs_[i]->Update(scalarA, *A.subvecs_[i], scalarThis);
+    subvecs_[i]->update(scalarA, *A.subvecs_[i], scalarThis);
   }
-  return *this;
 };
 
-TreeVector&
-TreeVector::Update(double scalarA,
+void
+TreeVector::update(double scalarA,
                    const TreeVector& A,
                    double scalarB,
                    const TreeVector& B,
                    double scalarThis)
 {
-  //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
-  //  AMANZI_ASSERT(map_->SubsetOf(*B.map_));
-
-  if (data_ != Teuchos::null) { data_->Update(scalarA, *A.data_, scalarB, *B.data_, scalarThis); }
+  if (data_ != Teuchos::null) { data_->update(scalarA, *A.data_, scalarB, *B.data_, scalarThis); }
   for (unsigned int i = 0; i != subvecs_.size(); ++i) {
-    subvecs_[i]->Update(scalarA, *A.subvecs_[i], scalarB, *B.subvecs_[i], scalarThis);
+    subvecs_[i]->update(scalarA, *A.subvecs_[i], scalarB, *B.subvecs_[i], scalarThis);
   }
-  return *this;
 };
 
-int
-TreeVector::Multiply(double scalarAB, const TreeVector& A, const TreeVector& B, double scalarThis)
+void
+TreeVector::elementWiseMultiply(double scalarAB,
+                                const TreeVector& A,
+                                const TreeVector& B,
+                                double scalarThis)
 {
-  //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
-  //  AMANZI_ASSERT(map_->SubsetOf(*B.map_));
-
-  int ierr = 0;
   if (data_ != Teuchos::null) {
-    ierr = data_->Multiply(scalarAB, *A.data_, *B.data_, scalarThis);
-    if (ierr) return ierr;
+    data_->elementWiseMultiply(scalarAB, *A.data_, *B.data_, scalarThis);
   }
 
   for (unsigned int i = 0; i != subvecs_.size(); ++i) {
-    ierr = subvecs_[i]->Multiply(scalarAB, *A.subvecs_[i], *B.subvecs_[i], scalarThis);
-    if (ierr) return ierr;
+    subvecs_[i]->elementWiseMultiply(scalarAB, *A.subvecs_[i], *B.subvecs_[i], scalarThis);
   }
-  return ierr;
 };
 
-int
-TreeVector::ReciprocalMultiply(double scalarAB,
-                               const TreeVector& A,
-                               const TreeVector& B,
-                               double scalarThis)
-{
-  //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
-  //  AMANZI_ASSERT(map_->SubsetOf(*B.map_));
+// int TreeVector::ReciprocalelementWiseMultiply(double scalarAB, const
+// TreeVector& A,
+//         const TreeVector& B, double scalarThis) {
+//   //  AMANZI_ASSERT(map_->isSubsetOf(*A.map_));
+//   //  AMANZI_ASSERT(map_->isSubsetOf(*B.map_));
 
-  int ierr = 0;
-  if (data_ != Teuchos::null) {
-    ierr = data_->ReciprocalMultiply(scalarAB, *A.data_, *B.data_, scalarThis);
-    if (ierr) return ierr;
-  }
+//   int ierr = 0;
+//   if (data_ != Teuchos::null) {
+//     ierr = data_->ReciprocalelementWiseMultiply(scalarAB, *A.data_, *B.data_,
+//     scalarThis); if (ierr) return ierr;
+//   }
 
-  for (unsigned int i = 0; i != subvecs_.size(); ++i) {
-    ierr = subvecs_[i]->ReciprocalMultiply(scalarAB, *A.subvecs_[i], *B.subvecs_[i], scalarThis);
-    if (ierr) return ierr;
-  }
-  return ierr;
-};
+//   for (unsigned int i = 0; i != subvecs_.size(); ++i) {
+//     ierr = subvecs_[i]->ReciprocalelementWiseMultiply(scalarAB,
+//     *A.subvecs_[i], *B.subvecs_[i], scalarThis); if (ierr) return ierr;
+//   }
+//   return ierr;
+// };
 
 Teuchos::RCP<TreeVector>
-TreeVector::SubVector(int index)
+TreeVector::getSubVector(int index)
 {
   // Get a pointer to the sub-vector by index
   if (index < subvecs_.size()) { return subvecs_[index]; }
@@ -405,7 +311,7 @@ TreeVector::SubVector(int index)
 };
 
 Teuchos::RCP<const TreeVector>
-TreeVector::SubVector(int index) const
+TreeVector::getSubVector(int index) const
 {
   // Get a pointer to the sub-vector by index
   if (index < subvecs_.size()) { return subvecs_[index]; }
@@ -413,36 +319,33 @@ TreeVector::SubVector(int index) const
 };
 
 void
-TreeVector::PushBack(const Teuchos::RCP<TreeVector>& subvec)
+TreeVector::setSubVector(int i, const Teuchos::RCP<TreeVector>& subvec)
 {
-  map_->PushBack(subvec->map_);
-  InitPushBack_(subvec);
-};
-
-void
-TreeVector::InitPushBack_(const Teuchos::RCP<TreeVector>& subvec)
-{
-  subvecs_.push_back(subvec);
-};
-
-
-void
-TreeVector::SetData(const Teuchos::RCP<CompositeVector>& data)
-{
-  data_ = data;
-  if (map_->Data() == Teuchos::null || !map_->Data()->SameAs(data->Map())) {
-    map_->SetData(Teuchos::rcp(new CompositeVectorSpace(data->Map())));
+  if (!subvec->getMap()->locallySameAs(*getMap()->getSubVector(i))) {
+    Errors::Message message("TreeVector: setSubVector called with incompatible vector.");
+    throw(message);
   }
+  subvecs_[i] = subvec;
+};
+
+void
+TreeVector::setData(const Teuchos::RCP<CompositeVector>& data)
+{
+  if (!getMap()->getData().get() || !data->getMap()->locallySameAs(*getMap()->getData())) {
+    Errors::Message message("TreeVector: setData called with incompatible vector.");
+    throw(message);
+  }
+  data_ = data;
 };
 
 
 int
-TreeVector::GlobalLength() const
+TreeVector::getGlobalLength() const
 {
   int total = 0;
-  if (data_ != Teuchos::null) { total += data_->GlobalLength(); }
+  if (data_ != Teuchos::null) { total += data_->getGlobalLength(); }
 
-  for (const auto& subvec : subvecs_) { total += subvec->GlobalLength(); }
+  for (const auto& subvec : subvecs_) { total += subvec->getGlobalLength(); }
   return total;
 };
 

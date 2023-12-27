@@ -1,17 +1,15 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
-  provided in the top-level COPYRIGHT file.
-
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
-/*
   Operators
 
-  Mini classes implement mathematical models for special physics, such
-  as serial 1D dual porosity models.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Mini classes implement mathematical models for special physics, such 
+  as serial 1D dual porosity models. 
 */
 
 #include <dbc.hh>
@@ -28,25 +26,15 @@ namespace Operators {
 * We use end values of sub-diagonals to impose boundary conditions.
 ****************************************************************** */
 void
-Mini_Diffusion1D::UpdateMatrices(const PDEType method)
-{
-  if (method == PDEType::PDE_DIFFUSION_MFD)
-    UpdateMatricesMFD_();
-  else if (method == PDEType::PDE_DIFFUSION_FD)
-    UpdateMatricesFD_();
-}
-
-
-/* ******************************************************************
-* MFD scheme with harmonic mean for K, arithmetic mean for k
-****************************************************************** */
-void
-Mini_Diffusion1D::UpdateMatricesMFD_()
+Mini_Diffusion1D::UpdateMatrices()
 {
   int ncells = mesh_->NumRows() - 1;
-  double al, ar, hl, hr, Kc;
+  double al, ar, hl, hr, x0, x1, Kc;
 
   const auto& mesh = *mesh_;
+
+  x0 = mesh(0);
+  x1 = mesh(ncells);
 
   Kc = (K_ != NULL) ? (*K_)(0) : Kconst_;
 
@@ -82,31 +70,6 @@ Mini_Diffusion1D::UpdateMatricesMFD_()
 
 
 /* ******************************************************************
-* FV scheme with K=1 and arithmetic for k
-****************************************************************** */
-void
-Mini_Diffusion1D::UpdateMatricesFD_()
-{
-  int ncells = mesh_->NumRows() - 1;
-  double al, ar;
-
-  const auto& mesh = *mesh_;
-
-  al = (*k_)(0) / (mesh(1) - mesh(0));
-
-  for (int i = 0; i < ncells; ++i) {
-    ar = (*k_)(i) / (mesh(i + 1) - mesh(i));
-
-    diag_(i) = al + ar;
-    down_(i) = -al;
-    up_(i) = -ar;
-
-    al = ar;
-  }
-}
-
-
-/* ******************************************************************
 * Jacobian matrix for operator A(k(p)) p - f(k(p)).
 * NOTE: we assume that k_ != NULL and dkdp_ != NULL, i.e. J != A.
 ****************************************************************** */
@@ -118,15 +81,18 @@ Mini_Diffusion1D::UpdateJacobian(const WhetStone::DenseVector& p,
                                  int type_r)
 {
   int ncells = mesh_->NumRows() - 1;
-  double al, ar, bl, br, hl, hr, Kc, tmp0, tmp1;
+  double al, ar, bl, br, hl, hr, x0, x1, Kc, tmp0, tmp1;
 
   const auto& mesh = *mesh_;
   const auto& k = *k_;
   const auto& dkdp = *dkdp_;
 
+  x0 = mesh(0);
+  x1 = mesh(ncells);
+
   // derivatives of A(k(p))
   Kc = (K_ != NULL) ? (*K_)(0) : Kconst_;
-  hl = Kc / mesh_cell_volume(0);
+  hl = Kc / mesh_getCellVolume(0);
   al = 2 * hl;
   tmp0 = al;
   bl = al * p(0);
@@ -151,7 +117,7 @@ Mini_Diffusion1D::UpdateJacobian(const WhetStone::DenseVector& p,
   }
 
   Kc = (K_ != NULL) ? (*K_)(ncells - 1) : Kconst_;
-  hr = Kc / mesh_cell_volume(ncells - 1);
+  hr = Kc / mesh_getCellVolume(ncells - 1);
   ar = 2 * hr;
   tmp1 = ar;
   br = ar * p(ncells - 1);

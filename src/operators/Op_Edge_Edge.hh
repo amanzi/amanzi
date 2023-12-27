@@ -1,15 +1,12 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
-  provided in the top-level COPYRIGHT file.
-
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
-/*
   Operators
 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_OP_EDGE_EDGE_HH_
@@ -27,10 +24,8 @@ class Op_Edge_Edge : public Op {
   Op_Edge_Edge(const std::string& name, const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : Op(OPERATOR_SCHEMA_BASE_EDGE | OPERATOR_SCHEMA_DOFS_EDGE, name, mesh)
   {
-    diag =
-      Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::EDGE, false), 1));
-    diag_shadow =
-      Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::EDGE, false), 1));
+    diag = Teuchos::rcp(new Epetra_MultiVector(mesh->edge_map(false), 1));
+    diag_shadow = Teuchos::rcp(new Epetra_MultiVector(mesh->edge_map(false), 1));
   }
 
   virtual void
@@ -59,8 +54,8 @@ class Op_Edge_Edge : public Op {
 
   virtual void Rescale(const CompositeVector& scaling)
   {
-    if (scaling.HasComponent("edge")) {
-      const Epetra_MultiVector& s_e = *scaling.ViewComponent("edge", false);
+    if (scaling.hasComponent("edge")) {
+      const Epetra_MultiVector& s_e = *scaling.viewComponent("edge", false);
       for (int k = 0; k != s_e.NumVectors(); ++k) {
         for (int i = 0; i != s_e.MyLength(); ++i) { (*diag)[k][i] *= s_e[0][i]; }
       }

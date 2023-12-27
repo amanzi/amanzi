@@ -23,8 +23,8 @@
 
 // Amanzi
 #include "CompositeVector.hh"
-#include "Mesh.hh"
-#include "MeshAlgorithms.hh"
+#include "MeshFramework.hh"
+#include "Mesh_Algorithms.hh"
 #include "Point.hh"
 
 // Operators
@@ -57,13 +57,13 @@ UpwindGravity::Compute(const CompositeVector& flux,
                        const std::vector<int>& bc_model,
                        CompositeVector& field)
 {
-  AMANZI_ASSERT(field.HasComponent("cell"));
-  AMANZI_ASSERT(field.HasComponent(face_comp_));
+  AMANZI_ASSERT(field.hasComponent("cell"));
+  AMANZI_ASSERT(field.hasComponent(face_comp_));
 
-  field.ScatterMasterToGhosted("cell");
-  const Epetra_MultiVector& field_c = *field.ViewComponent("cell", true);
-  const Epetra_MultiVector& field_bf = *field.ViewComponent("boundary_face", true);
-  Epetra_MultiVector& field_f = *field.ViewComponent(face_comp_, true);
+  field.scatterMasterToGhosted("cell");
+  const Epetra_MultiVector& field_c = *field.viewComponent("cell", true);
+  const Epetra_MultiVector& field_bf = *field.viewComponent("boundary_face", true);
+  Epetra_MultiVector& field_f = *field.viewComponent(face_comp_, true);
 
   int nfaces_wghost =
     mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);

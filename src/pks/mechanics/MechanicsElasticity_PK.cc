@@ -16,7 +16,6 @@
 
 #include "InverseFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
-#include "StateArchive.hh"
 
 #include "HydrostaticStressEvaluator.hh"
 #include "MechanicsElasticity_PK.hh"
@@ -186,10 +185,8 @@ MechanicsElasticity_PK::Initialize()
     mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   // -- control parameters
-  auto physical_models = Teuchos::sublist(ec_list_, "physical models and assumptions");
-  use_gravity_ = physical_models->get<bool>("use gravity");
-  biot_model_ = physical_models->get<bool>("biot scheme: undrained split", false) ||
-                physical_models->get<bool>("biot scheme: fixed stress split", false);
+  use_gravity_ = ec_list_->sublist("physical models and assumptions").get<bool>("use gravity");
+  biot_model_ = ec_list_->sublist("physical models and assumptions").get<bool>("use biot model");
 
   // Create verbosity object to print out initialiation statistics.
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -212,6 +209,7 @@ MechanicsElasticity_PK::Initialize()
   // -- create elastic block
   Teuchos::ParameterList& tmp1 = ec_list_->sublist("operators").sublist("elasticity operator");
   op_matrix_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
+  op_preconditioner_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
 
   // Create BC objects
   Teuchos::RCP<Teuchos::ParameterList> bc_list =
@@ -229,21 +227,10 @@ MechanicsElasticity_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        // nodal dofs
-        auto bc =
-          bc_factory.Create(spec, "no slip", AmanziMesh::NODE, Teuchos::null, Tags::DEFAULT, true);
+        auto bc = bc_factory.Create(spec, "no slip", AmanziMesh::NODE, Teuchos::null);
         bc->set_bc_name("no slip");
         bc->set_type(WhetStone::DOF_Type::POINT);
-        bc->set_kind(AmanziMesh::NODE);
         bcs_.push_back(bc);
-
-        // bubble dofs
-        auto bc2 =
-          bc_factory.Create(spec, "no slip", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
-        bc2->set_bc_name("no slip");
-        bc2->set_type(WhetStone::DOF_Type::POINT);
-        bc2->set_kind(AmanziMesh::FACE);
-        bcs_.push_back(bc2);
       }
     }
   }
@@ -257,11 +244,9 @@ MechanicsElasticity_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        auto bc = bc_factory.Create(
-          spec, "kinematic", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
+        auto bc = bc_factory.Create(spec, "kinematic", AmanziMesh::FACE, Teuchos::null);
         bc->set_bc_name("kinematic");
         bc->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
-        bc->set_kind(AmanziMesh::FACE);
         bcs_.push_back(bc);
       }
     }
@@ -276,11 +261,9 @@ MechanicsElasticity_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        auto bc =
-          bc_factory.Create(spec, "traction", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
+        auto bc = bc_factory.Create(spec, "traction", AmanziMesh::FACE, Teuchos::null);
         bc->set_bc_name("traction");
         bc->set_type(WhetStone::DOF_Type::POINT);
-        bc->set_kind(AmanziMesh::FACE);
         bcs_.push_back(bc);
       }
     }
@@ -295,11 +278,9 @@ MechanicsElasticity_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        auto bc = bc_factory.Create(
-          spec, "normal traction", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
+        auto bc = bc_factory.Create(spec, "normal traction", AmanziMesh::FACE, Teuchos::null);
         bc->set_bc_name("normal traction");
         bc->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
-        bc->set_kind(AmanziMesh::FACE);
         bcs_.push_back(bc);
       }
     }
@@ -307,12 +288,24 @@ MechanicsElasticity_PK::Initialize()
 
   // Populate matrix and preconditioner
   // -- setup phase
-  const auto E = S_->GetPtr<CV_t>(young_modulus_key_, Tags::DEFAULT);
-  const auto nu = S_->GetPtr<CV_t>(poisson_ratio_key_, Tags::DEFAULT);
+  double E = (*S_->Get<CV_t>(young_modulus_key_, Tags::DEFAULT).ViewComponent("cell"))[0][0];
+  double nu = (*S_->Get<CV_t>(poisson_ratio_key_, Tags::DEFAULT).ViewComponent("cell"))[0][0];
+  double mu = E / (2 * (1 + nu));
+  double lambda = (dim_ == 3) ? E * nu / (1 + nu) / (1 - 2 * nu) : E * nu / (1 + nu) / (1 - nu);
+
+  Amanzi::WhetStone::Tensor K(dim_, 4);
+  for (int i = 0; i < dim_ * dim_; ++i) K(i, i) = 2 * mu;
+  for (int i = 0; i < dim_; ++i) {
+    for (int j = 0; j < dim_; ++j) K(i, j) += lambda;
+  }
 
   op_matrix_ = op_matrix_elas_->global_operator();
   op_matrix_->Init();
-  op_matrix_elas_->SetTensorCoefficient(E, nu);
+  op_matrix_elas_->SetTensorCoefficient(K);
+
+  op_preconditioner_ = op_preconditioner_elas_->global_operator();
+  op_preconditioner_->Init();
+  op_preconditioner_elas_->SetTensorCoefficient(K);
 
   // -- initialize boundary conditions (memory allocation)
   auto bc = Teuchos::rcp(
@@ -331,7 +324,10 @@ MechanicsElasticity_PK::Initialize()
     new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   op_bcs_.push_back(bc);
 
-  for (auto bc : op_bcs_) op_matrix_elas_->AddBCs(bc, bc);
+  for (auto bc : op_bcs_) {
+    op_matrix_elas_->AddBCs(bc, bc);
+    op_preconditioner_elas_->AddBCs(bc, bc);
+  }
 
   UpdateSourceBoundaryData_(t_ini, t_ini);
   op_matrix_elas_->EnforceBCs(*solution_);
@@ -340,16 +336,22 @@ MechanicsElasticity_PK::Initialize()
   op_matrix_elas_->UpdateMatrices();
   op_matrix_elas_->ApplyBCs(true, true, true);
 
-  // -- preconditioned linear solver for alternative solution strategy
-  AMANZI_ASSERT(ti_list_->isParameter("linear solver"));
-  std::string solver_name = ti_list_->get<std::string>("linear solver");
+  op_preconditioner_elas_->UpdateMatrices();
+  op_preconditioner_elas_->ApplyBCs(true, true, true);
 
-  AMANZI_ASSERT(ti_list_->isParameter("preconditioner"));
   std::string pc_name = ti_list_->get<std::string>("preconditioner");
-  op_matrix_->set_inverse_parameters(
-    pc_name, *preconditioner_list_, solver_name, *linear_solver_list_, true);
+  op_preconditioner_elas_->global_operator()->set_inverse_parameters(pc_name,
+                                                                     *preconditioner_list_);
 
-  op_matrix_->InitializeInverse();
+  std::string name = ti_list_->get<std::string>("preconditioner enhancement", "none");
+  if (name != "none") {
+    AMANZI_ASSERT(linear_solver_list_->isSublist(name));
+    Teuchos::ParameterList tmp = linear_solver_list_->sublist(name);
+    op_pc_solver_ = AmanziSolvers::createIterativeMethod(tmp, op_preconditioner_);
+  } else {
+    op_pc_solver_ = op_preconditioner_;
+  }
+  op_pc_solver_->InitializeInverse();
 
   // we set up operators and can trigger re-initialization of stress
   Teuchos::rcp_dynamic_cast<HydrostaticStressEvaluator>(eval_hydro_stress_)
@@ -361,7 +363,8 @@ MechanicsElasticity_PK::Initialize()
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << " TI:\"" << ti_method_name.c_str() << "\"" << std::endl
-               << "matrix: " << op_matrix_->PrintDiagnostics() << std::endl;
+               << "matrix: " << op_matrix_->PrintDiagnostics() << std::endl
+               << "preconditioner: " << op_preconditioner_->PrintDiagnostics() << std::endl;
 
     *vo_->os() << "displacement BC assigned to " << dirichlet_bc_ << " nodes" << std::endl;
 
@@ -380,33 +383,43 @@ MechanicsElasticity_PK::Initialize()
 bool
 MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
+  dt_ = t_new - t_old;
+
+  // save a copy of primary and conservative fields
+  std::vector<std::string> fields({ displacement_key_, vol_strain_key_ });
   StateArchive archive(S_, vo_);
-  archive.Add({ displacement_key_ }, Tags::DEFAULT);
+  archive.Add(fields, Tags::DEFAULT);
 
-  UpdateSourceBoundaryData_(t_old, t_new);
+  // initialization
+  if (num_itrs_ == 0) {
+    Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln_));
+    udot->PutScalar(0.0);
+    bdf1_dae_->SetInitialState(t_old, soln_, udot);
 
-  auto op = op_matrix_elas_->global_operator();
-  op->Init();
-
-  // add external forces
-  auto rhs = op_matrix_->rhs();
-  if (use_gravity_) AddGravityTerm_(*rhs);
-  if (biot_model_) AddPressureGradient_(*rhs);
-
-  // update the matrix = preconditioner
-  op_matrix_elas_->UpdateMatrices();
-  op_matrix_elas_->ApplyBCs(true, true, true);
-
-  // solver the problem
-  op->ComputeInverse();
-  int ierr = op->ApplyInverse(*rhs, *solution_);
-  if (ierr != 0) {
-    archive.Restore("");
-    return true;
+    UpdatePreconditioner(t_old, soln_, dt_);
+    num_itrs_++;
   }
 
+  // trying to make a step
+  bool failed(false);
+  failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
+  if (failed) {
+    dt_ = dt_next_;
+
+    // recover the original primary solution
+    archive.Restore("");
+    eval_->SetChanged();
+    return failed;
+  }
+
+  // commit solution (should we do it here ?)
+  bdf1_dae_->CommitSolution(dt_, soln_);
   eval_->SetChanged();
-  return false;
+
+  num_itrs_++;
+  dt_ = dt_next_;
+
+  return failed;
 }
 
 
@@ -428,7 +441,11 @@ MechanicsElasticity_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 Teuchos::RCP<Operators::Operator>
 MechanicsElasticity_PK::my_operator(const Operators::OperatorType& type)
 {
-  return op_matrix_;
+  if (type == Operators::OPERATOR_MATRIX)
+    return op_matrix_;
+  else if (type == Operators::OPERATOR_PRECONDITIONER_RAW)
+    return op_preconditioner_;
+  return Teuchos::null;
 }
 
 } // namespace Mechanics

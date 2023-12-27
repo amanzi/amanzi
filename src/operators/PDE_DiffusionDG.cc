@@ -1,15 +1,12 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
-  provided in the top-level COPYRIGHT file.
-
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
-/*
   Operators
 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <vector>
@@ -65,7 +62,7 @@ PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
 
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true);
-    cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
+    cvs->AddComponent("cell", AmanziMesh::CELL, nk);
 
     global_op_ = Teuchos::rcp(new Operator_Schema(cvs, plist, my_schema));
 
@@ -84,7 +81,7 @@ PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
   // -- continuity terms
   Schema tmp_schema;
   Teuchos::ParameterList schema_copy = schema_list;
-  tmp_schema.Init(dg_, mesh_, AmanziMesh::Entity_kind::FACE);
+  tmp_schema.Init(dg_, mesh_, AmanziMesh::FACE);
 
   jump_up_op_ = Teuchos::rcp(new Op_Face_Schema(tmp_schema, tmp_schema, mesh_));
   global_op_->OpPushBack(jump_up_op_);
@@ -108,33 +105,36 @@ PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
 {
   WhetStone::DenseMatrix Acell, Aface;
 
+  int d = mesh_->space_dimension();
   double Kf(1.0);
+  AmanziMesh::Entity_ID_List cells;
+
   // volumetric term
   for (int c = 0; c != ncells_owned; ++c) {
     interface_->StiffnessMatrix(c, Acell);
-    local_op_->matrices[c] = Acell;
+    local_op_->matrices[c].assign(Acell);
   }
 
   // strenghen stability term
   for (int f = 0; f != nfaces_owned; ++f) {
     if (Kf_.get()) Kf = (*Kf_)[f];
     dg_->FaceMatrixPenalty(f, Kf, Aface);
-    penalty_op_->matrices[f] = Aface;
+    penalty_op_->matrices[f].assign(Aface);
   }
 
   // stability terms
   for (int f = 0; f != nfaces_owned; ++f) {
-    auto cells = mesh_->getFaceCells(f);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_kind::ALL, &cells);
     int c1 = cells[0];
     int c2 = (cells.size() > 1) ? cells[1] : c1;
 
     interface_->FaceMatrixJump(f, c1, c2, Aface);
 
     Aface *= -1.0;
-    jump_up_op_->matrices[f] = Aface;
+    jump_up_op_->matrices[f].assign(Aface);
 
     Aface.Transpose();
-    jump_pu_op_->matrices[f] = Aface;
+    jump_pu_op_->matrices[f].assign(Aface);
   }
 }
 
@@ -151,20 +151,23 @@ PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
   const std::vector<std::vector<double>>& bc_value = bcs_trial_[0]->bc_value_vector();
   int nk = bc_value[0].size();
 
-  Epetra_MultiVector& rhs_c = *global_op_->rhs()->ViewComponent("cell", true);
+  Epetra_MultiVector& rhs_c = *global_op_->rhs()->viewComponent("cell", true);
 
-  int d = mesh_->getSpaceDimension();
+  AmanziMesh::Entity_ID_List cells;
+
+  int dir, d = mesh_->space_dimension();
   std::vector<AmanziGeometry::Point> tau(d - 1);
 
   // create integration object for all mesh cells
-  WhetStone::NumericalIntegration numi(mesh_);
+  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET || bc_model[f] == OPERATOR_BC_NEUMANN) {
-      auto cells = mesh_->getFaceCells(f);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_kind::ALL, &cells);
       int c = cells[0];
 
       const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
 
       // set polynomial with Dirichlet data
       WhetStone::DenseVector coef(nk);

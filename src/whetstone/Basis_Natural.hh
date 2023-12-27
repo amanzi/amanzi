@@ -38,33 +38,35 @@ class Basis_Natural : public Basis {
   ~Basis_Natural(){};
 
   // initialization
-  virtual void
-  Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order, Polynomial& integrals)
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                    int c,
+                    int order,
+                    Polynomial<>& integrals) override
   {
     order_ = order;
   }
 
   // transformation of bilinear form
-  virtual void BilinearFormNaturalToMy(DenseMatrix& A) const {};
+  virtual void BilinearFormNaturalToMy(DenseMatrix<>& A) const override{};
   virtual void BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
                                        std::shared_ptr<Basis> br,
-                                       DenseMatrix& A) const {};
+                                       DenseMatrix<>& A) const override{};
 
   // transformation of linear form
-  virtual void LinearFormNaturalToMy(DenseVector& v) const {};
+  virtual void LinearFormNaturalToMy(DenseVector<>& v) const override{};
 
   // transformation of vector
-  virtual void ChangeBasisMyToNatural(DenseVector& v) const {};
-  virtual void ChangeBasisNaturalToMy(DenseVector& v) const {};
+  virtual void ChangeBasisMyToNatural(DenseVector<>& v) const override{};
+  virtual void ChangeBasisNaturalToMy(DenseVector<>& v) const override{};
 
   // recover polynomial in natural basis
-  virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                         int c,
-                                         int order,
-                                         DenseVector& coefs) const
+  virtual Polynomial<> CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                           int c,
+                                           int order,
+                                           const DenseVector<>& coefs) const override
   {
     int d = mesh->getSpaceDimension();
-    Polynomial poly(d, order, coefs);
+    Polynomial<> poly(d, order, coefs);
     poly.set_origin(mesh->getCellCentroid(c));
     return poly;
   }

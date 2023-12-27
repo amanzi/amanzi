@@ -7,6 +7,7 @@
   Authors:
 */
 
+//!
 #include "FunctionSmoothStep.hh"
 #include "errors.hh"
 
@@ -26,7 +27,7 @@ FunctionSmoothStep::FunctionSmoothStep(double x0, double y0, double x1, double y
 }
 
 double
-FunctionSmoothStep::operator()(const std::vector<double>& x) const
+FunctionSmoothStep::operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
 {
   double y;
   if (x[0] <= x0_) {

@@ -35,8 +35,8 @@ MeshMapsBase::VelocityEdge(int e, VectorPolynomial& v) const
 {
   AMANZI_ASSERT(d_ == 3);
 
-  auto points0 = alloc_and_deep_copy(mesh0_->getEdgeHOCoordinates(e));
-  auto points1 = alloc_and_deep_copy(mesh1_->getEdgeHOCoordinates(e));
+  auto points0 = mesh0_->getEdgeHOCoordinates(e);
+  auto points1 = mesh1_->getEdgeHOCoordinates(e);
   AMANZI_ASSERT(points0.size() == points1.size());
 
   // local coordinate system (-0.5, 0.5)
@@ -63,21 +63,22 @@ MeshMapsBase::VelocityEdge(int e, VectorPolynomial& v) const
   y1 -= x1;
   ye -= xe;
 
-  for (int i = 0; i < points1.size(); ++i) { points1[i] -= points0[i]; }
+  AmanziMesh::Mesh::Point_View dpoints("dpoints", points1.size());
+  for (int i = 0; i < points1.size(); ++i) { dpoints[i] = points1[i] - points0[i]; }
 
   // velocity is transformed from local to global coordinate systems
-  int order = points1.size() + 1;
+  int order = dpoints.size() + 1;
 
   v.resize(d_);
   for (int i = 0; i < d_; ++i) {
-    v[i].Reshape(d_ - 2, order);
+    v[i].reshape(d_ - 2, order);
     if (order == 1) {
       v[i](0) = ye[i];
       v[i](1) = y1[i] - y0[i];
     } else {
-      v[i](0) = points1[0][i];
+      v[i](0) = dpoints[0][i];
       v[i](1) = y1[i] - y0[i];
-      v[i](2) = 2 * y0[i] + 2 * y1[i] - 4 * points1[0][i];
+      v[i](2) = 2 * y0[i] + 2 * y1[i] - 4 * dpoints[0][i];
     }
 
     v[i].InverseChangeCoordinates(xe, tau);
@@ -93,8 +94,8 @@ MeshMapsBase::VelocityFace(int f, VectorPolynomial& v) const
 {
   AMANZI_ASSERT(d_ == 2);
 
-  auto points0 = alloc_and_deep_copy(mesh0_->getFaceHOCoordinates(f));
-  auto points1 = alloc_and_deep_copy(mesh1_->getFaceHOCoordinates(f));
+  auto points0 = mesh0_->getFaceHOCoordinates(f);
+  auto points1 = mesh1_->getFaceHOCoordinates(f);
   AMANZI_ASSERT(points0.size() == points1.size());
 
   // local coordinate system
@@ -121,21 +122,22 @@ MeshMapsBase::VelocityFace(int f, VectorPolynomial& v) const
   y1 -= x1;
   yf -= xf;
 
-  for (int i = 0; i < points1.size(); ++i) { points1[i] -= points0[i]; }
+  AmanziMesh::Mesh::Point_View dpoints("dpoints", points1.size());
+  for (int i = 0; i < points1.size(); ++i) { dpoints[i] = points1[i] - points0[i]; }
 
   // velocity is transformed from local to global coordinate systems
-  int order = points1.size() + 1;
+  int order = dpoints.size() + 1;
 
   v.resize(d_);
   for (int i = 0; i < d_; ++i) {
-    v[i].Reshape(d_ - 1, order);
+    v[i].reshape(d_ - 1, order);
     if (order == 1) {
       v[i](0) = yf[i];
       v[i](1) = y1[i] - y0[i];
     } else {
-      v[i](0) = points1[0][i];
+      v[i](0) = dpoints[0][i];
       v[i](1) = y1[i] - y0[i];
-      v[i](2) = 2 * y0[i] + 2 * y1[i] - 4 * points1[0][i];
+      v[i](2) = 2 * y0[i] + 2 * y1[i] - 4 * dpoints[0][i];
     }
 
     v[i].InverseChangeCoordinates(xf, tau);
@@ -148,8 +150,8 @@ MeshMapsBase::VelocityFace(int f, VectorPolynomial& v) const
 ****************************************************************** */
 void
 MeshMapsBase::NansonFormula(int f,
-                            const VectorSpaceTimePolynomial& map,
-                            VectorSpaceTimePolynomial& cn) const
+                        const VectorSpaceTimePolynomial& map,
+                        VectorSpaceTimePolynomial& cn) const
 {
   const auto& normal = mesh0_->getFaceNormal(f);
   cn.resize(d_);
@@ -180,7 +182,7 @@ MeshMapsBase::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
 {
   // allocate memory
   int nvc = vc.size();
-  J.Reshape(d_, nvc, d_, 0, false);
+  J.reshape(d_, nvc, d_, 0, false);
 
   // copy velocity gradients to Jacobian
   for (int i = 0; i < nvc; ++i) {
@@ -191,22 +193,22 @@ MeshMapsBase::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
 
 
 /* ******************************************************************
-* Polynomial approximation v of map x2 = F(x1).
+* Polynomial<> approximation v of map x2 = F(x1).
 * We assume that vectors of vertices have a proper length.
 ****************************************************************** */
 int
 MeshMapsBase::LeastSquareFit(int order,
-                             const AmanziMesh::Point_List& x1,
-                             const AmanziMesh::Point_List& x2,
-                             VectorPolynomial& v) const
+                         const AmanziMesh::Point_List& x1,
+                         const AmanziMesh::Point_List& x2,
+                         VectorPolynomial& v) const
 {
-  Polynomial poly(d_, order);
+  Polynomial<> poly(d_, order);
 
   int nk = poly.size();
   int nx = x1.size();
 
   // evaluate basis functions at given points
-  DenseMatrix psi(nx, nk);
+  DenseMatrix<> psi(nx, nk);
 
   for (auto it = poly.begin(); it < poly.end(); ++it) {
     int i = it.PolynomialPosition();
@@ -220,17 +222,17 @@ MeshMapsBase::LeastSquareFit(int order,
   }
 
   // form linear system
-  DenseMatrix A(nk, nk);
+  DenseMatrix<> A(nk, nk);
 
   A.Multiply(psi, psi, true);
   A.Inverse();
 
   // solver linear systems
-  DenseVector b(nk), u(nk);
+  DenseVector<> b(nk), u(nk);
 
   v.resize(d_);
   for (int k = 0; k < d_; ++k) {
-    v[k].Reshape(d_, order);
+    v[k].reshape(d_, order);
     v[k].set_origin(AmanziGeometry::Point(d_));
 
     for (int i = 0; i < nk; ++i) {
@@ -251,7 +253,7 @@ MeshMapsBase::LeastSquareFit(int order,
 * Project polynomial on mesh0 to polynomial space on mesh1.
 ****************************************************************** */
 void
-MeshMapsBase::ProjectPolynomial(int c, Polynomial& poly) const
+MeshMapsBase::ProjectPolynomial(int c, Polynomial<>& poly) const
 {
   int order = poly.order();
 
@@ -259,7 +261,7 @@ MeshMapsBase::ProjectPolynomial(int c, Polynomial& poly) const
   int nfaces = faces.size();
 
   AmanziGeometry::Point v0(d_), v1(d_);
-  std::vector<Polynomial> vvf;
+  std::vector<Polynomial<>> vvf;
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces[i];
@@ -272,7 +274,7 @@ MeshMapsBase::ProjectPolynomial(int c, Polynomial& poly) const
     double f1 = poly.Value(v1);
 
     WhetStone::Polynomial vf(d_ - 1, 1);
-    vf.Reshape(d_ - 1, order);
+    vf.reshape(d_ - 1, order);
     if (order == 1) {
       vf(0, 0) = (f0 + f1) / 2;
       vf(1, 0) = f1 - f0;
@@ -294,7 +296,7 @@ MeshMapsBase::ProjectPolynomial(int c, Polynomial& poly) const
     vvf.push_back(vf);
   }
 
-  Polynomial moments(d_, 0);
+  Polynomial<> moments(d_, 0);
 
   if (order == 2) {
     NumericalIntegration numi(mesh1_);

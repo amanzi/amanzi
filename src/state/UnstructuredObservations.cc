@@ -91,7 +91,7 @@ UnstructuredObservations::Setup(const Teuchos::Ptr<State>& S)
 
   // what rank writes the file?
   write_ = false;
-  if (comm_ != Teuchos::null && comm_->MyPID() == 0) write_ = true;
+  if (comm_ != Teuchos::null && comm_->getRank() == 0) write_ = true;
 }
 
 void
@@ -107,7 +107,7 @@ UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
     for (const auto& obs : observables_) {
       int num_local = obs->get_num_vectors();
       int num_global = -1;
-      comm_->MaxAll(&num_local, &num_global, 1);
+      Teuchos::reduceAll<int>(*comm_, Teuchos::REDUCE_MAX, 1, &num_local, &num_global);
       num_total_ += num_global;
       if (num_global <= 0) {
         // at last we can finally catch a bad observation name here -- no one
@@ -211,10 +211,10 @@ UnstructuredObservations::InitFile_(const Teuchos::Ptr<const State>& S)
     for (const auto& obs : observables_) {
       if (obs->get_num_vectors() > 1) {
         auto subfield_names = S->GetRecordSet(obs->get_variable()).subfieldnames();
-        std::vector<std::string> default_subfieldnames;
+        Teuchos::Array<std::string> default_subfieldnames(obs->get_num_vectors());
         if (!subfield_names) {
           for (int i = 0; i != obs->get_num_vectors(); ++i)
-            default_subfieldnames.emplace_back(std::string("dof ") + std::to_string(i));
+            default_subfieldnames[i] = std::string("dof ") + std::to_string(i);
           subfield_names = &default_subfieldnames;
         }
 

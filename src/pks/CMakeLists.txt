@@ -33,28 +33,26 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${ASCEMIO_INCLUDE_DIR})
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 
 #
 # Library: pks
 #
-set(pks_src_files PK_Factory.cc
-                  PK_Utils.cc
-                  PK_Physical.cc
-                  StateArchive.cc)
+set(pks_src_files
+        PK_Physical.cc
+        PKFactory.cc)
 
 add_amanzi_library(pks
                    SOURCE ${pks_src_files}
                    HEADERS ${pks_inc_files}
 		   LINK_LIBS state data_structures error_handling atk
-                             ${Epetra_LIBRARIES})
+                             ${Tpetra_LIBRARIES})
 
 #
 # Install Targets
 #
 set(pks_inc_files 
-  CommonDefs.hh
   PK.hh
   PK_BDF.hh
   PK_Implicit.hh
@@ -62,49 +60,9 @@ set(pks_inc_files
   PK_Physical.hh
   PK_PhysicalExplicit.hh
   PK_PhysicalBDF.hh
-  PK_DomainFunction.hh
-  PK_DomainFunctionFactory.hh
-  PK_DomainFunctionField.hh
-  PK_DomainFunctionSimple.hh
-  PK_DomainFunctionVolume.hh
-  PK_DomainFunctionVolumeFraction.hh
-  PK_DomainFunctionWeight.hh
-  PK_DomainFunctionWeightField.hh
-  PK_DomainFunctionCoupling.hh
-  PK_DomainFunctionSubgrid.hh
-  PK_DomainFunctionSubgridReturn.hh
-  PK_DomainFunctionFirstOrderExchange.hh
-  PK_DomainFunctionSimpleWell.hh
-  PK_Factory.hh
-  PK_Utils.hh
-  StateArchive.hh)
+  PKFactory.hh
+)
 
 add_install_include_file(${pks_inc_files})
 
-#
-# No tests so far
-#
-if (BUILD_TESTS) 
-endif()
-
-if (ENABLE_AmanziPhysicsModule)
-  # this should go first
-  add_subdirectory(eos)
-
-  add_subdirectory(flow)
-  add_subdirectory(energy)
-  add_subdirectory(multiphase)
-  add_subdirectory(navier_stokes)
-  add_subdirectory(mechanics)
-endif()
-
-  # chemistry should be processed before transport
-  add_subdirectory(chemistry)
-  add_subdirectory(transport)
-  add_subdirectory(shallow_water)
-
-if (ENABLE_AmanziPhysicsModule)
-  add_subdirectory(dummy)
-  add_subdirectory(mpc_pk)
-endif()
 

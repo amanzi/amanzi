@@ -46,7 +46,7 @@ class EvaluatorPrimary_ : public Evaluator {
   // ---------------------------------------------------------------------------
   // Constructors
   // ---------------------------------------------------------------------------
-  explicit EvaluatorPrimary_(Teuchos::ParameterList& plist);
+  explicit EvaluatorPrimary_(const Teuchos::RCP<Teuchos::ParameterList>& plist);
   EvaluatorPrimary_(const EvaluatorPrimary_& other) = default;
 
   virtual Evaluator& operator=(const Evaluator& other) override;
@@ -94,7 +94,8 @@ class EvaluatorPrimary_ : public Evaluator {
   // ---------------------------------------------------------------------------
   void SetChanged();
 
-  virtual std::string WriteToString() const override;
+  std::string getType() const override { return "primary"; }
+  virtual std::ostream& writeInfo(std::ostream& os) const override;
 
  protected:
   virtual void UpdateDerivative_(State& S) = 0;
@@ -120,7 +121,7 @@ class EvaluatorPrimary : public EvaluatorPrimary_ {
  public:
   using EvaluatorPrimary_::EvaluatorPrimary_;
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override final
+  virtual Teuchos::RCP<Evaluator> Clone() const override
   {
     return Teuchos::rcp(new EvaluatorPrimary<Data_t, DataFactory_t>(*this));
   }
@@ -161,7 +162,7 @@ template <>
 inline void
 EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::UpdateDerivative_(State& S)
 {
-  S.GetDerivativeW<CompositeVector>(my_key_, my_tag_, my_key_, my_tag_, my_key_).PutScalar(1.0);
+  S.GetDerivativeW<CompositeVector>(my_key_, my_tag_, my_key_, my_tag_, my_key_).putScalar(1.0);
 }
 
 // Implementatin for a CV also updates derivatives, but not clear why it is

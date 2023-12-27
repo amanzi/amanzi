@@ -1,13 +1,14 @@
+//! A factory for creating Operator objects (the global version)
+
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Author: Ethan Coon (ecoon@lanl.gov)
 */
 
-//! A factory for creating Operator objects (the global version)
 /*!
 
 */
@@ -26,12 +27,13 @@ class Operator_Factory {
   Operator_Factory(){};
 
   void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) { mesh_ = mesh; }
-  void set_cvs(const CompositeVectorSpace& cvs)
+  void set_cvs(const Teuchos::RCP<const CompositeSpace>& cvs)
   {
     cvs_row_ = cvs;
     cvs_col_ = cvs;
   }
-  void set_cvs(const CompositeVectorSpace& cvs_row, const CompositeVectorSpace& cvs_col)
+  void set_cvs(const Teuchos::RCP<const CompositeSpace>& cvs_row,
+               const Teuchos::RCP<const CompositeSpace>& cvs_col)
   {
     cvs_row_ = cvs_row;
     cvs_col_ = cvs_col;
@@ -49,11 +51,10 @@ class Operator_Factory {
   void set_plist(const Teuchos::RCP<Teuchos::ParameterList>& plist) { plist_ = plist; }
 
   Teuchos::RCP<Operator> Create();
-  Teuchos::RCP<Operator> CreateFromSchema();
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  CompositeVectorSpace cvs_row_, cvs_col_;
+  Teuchos::RCP<const CompositeSpace> cvs_row_, cvs_col_;
   Schema schema_row_, schema_col_;
 
   Teuchos::RCP<Teuchos::ParameterList> plist_;

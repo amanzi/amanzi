@@ -15,7 +15,6 @@
 
 */
 
-#include "Epetra_Vector.h"
 #include "Amesos2_Factory.hpp"
 
 #include "Key.hh"
@@ -28,8 +27,8 @@ namespace AmanziSolvers {
 
 
 /* ******************************************************************
-* Initialization from a parameter list.
-****************************************************************** */
+ * Initialization from a parameter list.
+ ****************************************************************** */
 void
 DirectMethodAmesos2::set_inverse_parameters(Teuchos::ParameterList& plist)
 {
@@ -46,15 +45,15 @@ DirectMethodAmesos2::set_inverse_parameters(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
-* Update sets symbolic structure
-****************************************************************** */
+ * Update sets symbolic structure
+ ****************************************************************** */
 void
-DirectMethodAmesos2::InitializeInverse()
+DirectMethodAmesos2::initializeInverse()
 {
   AMANZI_ASSERT(inited_);
   AMANZI_ASSERT(h_.get());
 
-  solver_ = Amesos2::create<Epetra_CrsMatrix, Epetra_MultiVector>(solver_name_, h_);
+  solver_ = Amesos2::create<Matrix_type, MultiVector_type>(solver_name_, h_);
 
   if (!solver_.get()) {
     Errors::Message msg;
@@ -69,10 +68,10 @@ DirectMethodAmesos2::InitializeInverse()
 
 
 /* ******************************************************************
-* Compute sets symbolic structure
-****************************************************************** */
+ * Compute sets symbolic structure
+ ****************************************************************** */
 void
-DirectMethodAmesos2::ComputeInverse()
+DirectMethodAmesos2::computeInverse()
 {
   AMANZI_ASSERT(updated_);
   solver_->numericFactorization();
@@ -81,12 +80,12 @@ DirectMethodAmesos2::ComputeInverse()
 
 
 int
-DirectMethodAmesos2::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
+DirectMethodAmesos2::applyInverse(const Vector_type& v, Vector_type& hv) const
 {
   AMANZI_ASSERT(computed_);
 
-  solver_->setB(Teuchos::rcpFromRef<const Epetra_MultiVector>(v));
-  solver_->setX(Teuchos::rcpFromRef<Epetra_MultiVector>(hv));
+  solver_->setB(Teuchos::rcpFromRef<const MultiVector_type>(v));
+  solver_->setX(Teuchos::rcpFromRef<MultiVector_type>(hv));
 
   solver_->solve();
   returned_code_ = 0;

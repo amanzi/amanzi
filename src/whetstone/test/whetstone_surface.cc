@@ -43,7 +43,7 @@ TEST(DARCY_SURFACE_MESH)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 3, 4);
 
-  Tensor T(2, 1);
+  Tensor<> T(2, 1);
   T(0, 0) = 1;
 
   for (int f = 0;
@@ -54,7 +54,7 @@ TEST(DARCY_SURFACE_MESH)
 
     MFD3D_Diffusion mfd(surfmesh);
 
-    DenseMatrix M;
+    DenseMatrix<> M;
     mfd.MassMatrix(0, T, M);
     int nrows = M.NumRows();
 
@@ -89,14 +89,14 @@ TEST(DARCY_SURFACE)
 
   MFD3D_Diffusion mfd(mesh);
 
-  Tensor T(2, 1);
+  Tensor<> T(2, 1);
   T(0, 0) = 1;
 
   for (int c = 0; c < 3; c++) {
     auto faces = mesh->getCellFaces(c);
     int nfaces = faces.size();
 
-    DenseMatrix W(nfaces, nfaces);
+    DenseMatrix<> W(nfaces, nfaces);
     for (int method = 0; method < 2; method++) {
       int ok(0);
       if (method == 0) {

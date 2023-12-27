@@ -27,13 +27,17 @@ namespace WhetStone {
 * Non-symmetric tensor is not yet used.
 ****************************************************************** */
 int
-DeRham_Node::L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc)
+DeRham_Node::L2consistency(int c,
+                           const Tensor<>& T,
+                           DenseMatrix<>& N,
+                           DenseMatrix<>& Mc,
+                           bool symmetry)
 {
   auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
-  N.Reshape(nnodes, 1);
-  Mc.Reshape(nnodes, nnodes);
+  N.reshape(nnodes, 1);
+  Mc.reshape(nnodes, nnodes);
 
   const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
@@ -42,7 +46,7 @@ DeRham_Node::L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& 
   const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
   // to calculate matrix R, we use temporary matrix N
-  N.PutScalar(0.0);
+  N.putScalar(0.0);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
@@ -75,11 +79,11 @@ DeRham_Node::L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& 
 * Mass matrix: adding stability matrix to the consistency matrix.
 ****************************************************************** */
 int
-DeRham_Node::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
+DeRham_Node::MassMatrix(int c, const Tensor<>& T, DenseMatrix<>& M)
 {
-  DenseMatrix N;
+  DenseMatrix<> N;
 
-  int ok = L2consistency(c, T, N, M);
+  int ok = L2consistency(c, T, N, M, true);
   if (ok) return ok;
 
   // StabilityScalar_(N, M);

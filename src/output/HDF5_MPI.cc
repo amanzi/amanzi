@@ -756,7 +756,7 @@ HDF5_MPI::createTimestep(double time, int iteration, const std::string& tag)
 {
   setIteration(iteration);
   setTime(time);
-  set_tag(tag);
+  setTag(tag);
 
   if (TrackXdmf() && viz_comm_->MyPID() == 0) {
     // create single step xdmf file

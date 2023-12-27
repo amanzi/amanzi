@@ -13,31 +13,49 @@
   A field evaluator for an unchanging cell volume.
 */
 
-#include "EvaluatorCellVolume.hh"
-#include "EvaluatorDeformingCellVolume.hh"
 #include "EvaluatorIndependentFromFile.hh"
 #include "EvaluatorIndependentFunction.hh"
 #include "EvaluatorIndependentConstant.hh"
-#include "EvaluatorMultiplicativeReciprocal.hh"
+#include "EvaluatorIndependentTensorFunction.hh"
+#include "EvaluatorIndependentPatchFunction.hh"
 #include "EvaluatorSecondaryMonotypeFromFunction.hh"
+#include "EvaluatorSecondaryMonotypeAdditive.hh"
+#include "EvaluatorPrimaryStaticMesh.hh"
+#include "EvaluatorSecondaryMeshedQuantity.hh"
+#include "EvaluatorAggregateBCs.hh"
+
+#include "registration_macro.hh"
 
 namespace Amanzi {
 
-Utils::RegisteredFactory<Evaluator, EvaluatorCellVolume> EvaluatorCellVolume::fac_("cell volume");
-Utils::RegisteredFactory<Evaluator, EvaluatorDeformingCellVolume>
-  EvaluatorDeformingCellVolume::fac_("deforming cell volume");
+REGISTER(EvaluatorIndependentFunction);
+REGISTER(EvaluatorIndependentFromFile);
+REGISTER(EvaluatorIndependentConstant);
 
-Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFunction>
-  EvaluatorIndependentFunction::fac_("independent variable");
-Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFromFile>
-  EvaluatorIndependentFromFile::fac_("independent variable from file");
-Utils::RegisteredFactory<Evaluator, EvaluatorIndependentConstant>
-  EvaluatorIndependentConstant::fac_("independent variable constant");
-
-Utils::RegisteredFactory<Evaluator, EvaluatorMultiplicativeReciprocal>
-  EvaluatorMultiplicativeReciprocal::fac_("multiplicative reciprocal");
+Utils::RegisteredFactory<Evaluator, EvaluatorIndependentTensorFunction>
+  EvaluatorIndependentTensorFunction::fac_("independent variable tensor");
+Utils::RegisteredFactory<Evaluator, EvaluatorIndependentPatchFunction>
+  EvaluatorIndependentPatchFunction::fac_("independent variable patch");
 
 Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction>
   EvaluatorSecondaryMonotypeFromFunction::fac_("secondary variable from function");
+
+template <>
+REGISTER(EvaluatorSecondaryMonotypeAdditiveCV);
+
+Utils::RegisteredFactory<Evaluator, EvaluatorPrimaryStaticMesh>
+  EvaluatorPrimaryStaticMesh::fac_("static mesh");
+
+
+template <>
+REGISTER(EvaluatorCellVolume);
+template <>
+REGISTER(EvaluatorMeshElevation);
+template <>
+REGISTER(EvaluatorMeshSlopeMagnitude);
+
+Utils::RegisteredFactory<Evaluator, EvaluatorAggregateBCs>
+  EvaluatorAggregateBCs::fac_("boundary condition aggregator");
+
 
 } // namespace Amanzi
