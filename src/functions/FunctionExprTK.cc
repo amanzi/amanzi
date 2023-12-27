@@ -30,9 +30,9 @@ FunctionExprTK::FunctionExprTK(int n, const std::string& formula)
 
 
 double
-FunctionExprTK::operator()(const std::vector<double>& args) const
+FunctionExprTK::operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
 {
-  return (*exprtk_)(args);
+  return (*exprtk_)(x);
 }
 
 } // namespace Amanzi

@@ -7,11 +7,7 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-/*
-  Functions
-
-*/
-
+//! <MISSING_ONELINE_DOCSTRING>
 #include <math.h>
 
 #include "errors.hh"
@@ -20,30 +16,33 @@
 namespace Amanzi {
 
 FunctionMonomial::FunctionMonomial(double c,
-                                   const std::vector<double>& x0,
-                                   const std::vector<int>& p)
+                                   const Kokkos::View<double*, Kokkos::HostSpace>& x0,
+                                   const Kokkos::View<int*, Kokkos::HostSpace>& p)
 {
-  if (x0.size() != p.size()) {
+  if (x0.extent(0) != p.extent(0)) {
     Errors::Message m;
     m << "Mismatch of multi-index and reference point dimensions.";
     Exceptions::amanzi_throw(m);
   }
   c_ = c;
-  x0_ = x0;
-  p_ = p;
+  Kokkos::resize(x0_, x0.extent(0));
+  Kokkos::resize(p_, p.extent(0));
+  Kokkos::deep_copy(x0_.view_host(), x0);
+  Kokkos::deep_copy(p_.view_host(), p);
+  Kokkos::deep_copy(x0_.view_device(), x0);
+  Kokkos::deep_copy(p_.view_device(), p);
 }
 
-
 double
-FunctionMonomial::operator()(const std::vector<double>& x) const
+FunctionMonomial::operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
 {
   double y = c_;
-  if (x.size() < x0_.size()) {
+  if (x.extent(0) < x0_.extent(0)) {
     Errors::Message m;
     m << "FunctionMonomial expects higher-dimensional argument.";
     Exceptions::amanzi_throw(m);
   }
-  for (int j = 0; j < x0_.size(); ++j) y *= pow(x[j] - x0_[j], p_[j]);
+  for (int j = 0; j < x0_.extent(0); ++j) y *= pow(x[j] - x0_.view_host()[j], p_.view_host()[j]);
   return y;
 }
 

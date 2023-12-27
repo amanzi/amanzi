@@ -36,7 +36,7 @@ namespace Amanzi {
 
 class EvaluatorSecondary : public Evaluator {
  public:
-  explicit EvaluatorSecondary(Teuchos::ParameterList& plist);
+  explicit EvaluatorSecondary(const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
   EvaluatorSecondary(const EvaluatorSecondary& other) = default;
 
@@ -66,7 +66,9 @@ class EvaluatorSecondary : public Evaluator {
   virtual bool
   IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override;
 
-  virtual std::string WriteToString() const override;
+  const KeyTagSet& getDependencies() const { return dependencies_; }
+  const KeyTagVector& getMyKeys() const { return my_keys_; }
+  virtual std::ostream& writeInfo(std::ostream& os) const override final;
 
  protected:
   // These do the actual work
@@ -89,7 +91,7 @@ class EvaluatorSecondary : public Evaluator {
 
   bool updated_once_;
 
-  Teuchos::ParameterList plist_;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
   VerboseObject vo_;
 
 }; // class Evaluator

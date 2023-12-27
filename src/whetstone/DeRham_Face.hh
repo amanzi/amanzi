@@ -39,11 +39,15 @@ class DeRham_Face : public MFD3D {
       1, std::make_tuple(AmanziMesh::Entity_kind::FACE, DOF_Type::SCALAR, 1));
   }
 
-  int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override;
+  int L2consistency(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Mc, bool symmetry);
+  virtual int MassMatrix(int c, const Tensor<>& T, DenseMatrix<>& M) override;
 
-  int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) override;
+  int L2consistencyInverse(int c,
+                           const Tensor<>& T,
+                           DenseMatrix<>& R,
+                           DenseMatrix<>& Wc,
+                           bool symmetry);
+  virtual int MassMatrixInverse(int c, const Tensor<>& T, DenseMatrix<>& W) override;
 };
 
 } // namespace WhetStone

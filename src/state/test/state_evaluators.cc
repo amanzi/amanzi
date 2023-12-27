@@ -12,10 +12,9 @@
 
 */
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_RCP.hpp"
 #include "UnitTest++.h"
 
@@ -36,7 +35,8 @@ using namespace Amanzi::AmanziMesh;
  ****************************************************************** */
 class AEvaluator : public EvaluatorSecondaryMonotype<double> {
  public:
-  AEvaluator(Teuchos::ParameterList& plist) : EvaluatorSecondaryMonotype<double>(plist)
+  AEvaluator(const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    : EvaluatorSecondaryMonotype<double>(plist)
   {
     dependencies_.insert(std::make_pair(Key{ "fb" }, Tags::DEFAULT));
   }
@@ -45,6 +45,9 @@ class AEvaluator : public EvaluatorSecondaryMonotype<double> {
   {
     return Teuchos::rcp(new AEvaluator(*this));
   };
+
+  virtual std::string getType() const override { return "AEvaluator"; }
+
 
   virtual void Evaluate_(const State& S, const std::vector<double*>& results) override
   {
@@ -74,6 +77,7 @@ class AIndependent : public EvaluatorIndependent<double> {
   {
     return Teuchos::rcp(new AIndependent(*this));
   };
+  virtual std::string getType() const override { return "AIndependent"; }
 
  protected:
   virtual void Update_(State& s) override { s.GetW<double>(my_key_, my_tag_, my_key_) = 3.0; }
@@ -88,6 +92,7 @@ class BIndependent : public EvaluatorIndependent<double> {
   {
     return Teuchos::rcp(new BIndependent(*this));
   };
+  virtual std::string getType() const override { return "BIndependent"; }
 
  protected:
   virtual void Update_(State& S) override
@@ -104,9 +109,9 @@ SUITE(EVALUATORS)
     std::cout << "Primary Variable Test" << std::endl;
     State S;
 
-    Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    es_list.setName("fa");
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList());
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list->setName("fa");
 
     S.Require<double>("fa", Tags::DEFAULT, "fa");
     S.RequireDerivative<double>("fa", Tags::DEFAULT, "fa", Tags::DEFAULT);
@@ -171,18 +176,18 @@ SUITE(EVALUATORS)
     State S;
 
     // make the primary.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
-    Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    es_list.setName("fb");
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList());
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list->setName("fb");
     S.Require<double>("fb", Tags::DEFAULT, "fb");
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<double>(es_list));
     S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
-    Teuchos::ParameterList ea_list;
-    ea_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    ea_list.setName("fa");
-    ea_list.set("tag", "");
+    auto ea_list = Teuchos::rcp(new Teuchos::ParameterList());
+    ea_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    ea_list->setName("fa");
+    ea_list->set("tag", "");
     S.Require<double>("fa", Tags::DEFAULT, "fa");
     S.RequireDerivative<double>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
@@ -251,10 +256,9 @@ SUITE(EVALUATORS)
     std::cout << "Independent Variable Test (Temporally constant)" << std::endl;
     State S;
 
-    Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    es_list.setName("fa");
-    es_list.set("constant in time", true);
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList("fa"));
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list->set("constant in time", true);
 
     S.Require<double>("fa", Tags::DEFAULT, "fa");
 
@@ -306,10 +310,10 @@ SUITE(EVALUATORS)
     std::cout << "Independent Variable Test (Temporally varying)" << std::endl;
     State S;
 
-    Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    es_list.setName("fa");
-    es_list.set("constant in time", false);
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList());
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list->setName("fa");
+    es_list->set("constant in time", false);
 
     S.Require<double>("fa", Tags::DEFAULT, "fa");
 

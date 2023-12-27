@@ -36,13 +36,13 @@ class MatrixObjects {
     polys_.resize(m_);
     for (int i = 0; i < m_; ++i) {
       polys_[i].resize(n_);
-      for (int j = 0; j < n_; ++j) polys_[i][j].Reshape(d_, order, true);
+      for (int j = 0; j < n_; ++j) polys_[i][j].reshape(d_, order, true);
     }
   }
   ~MatrixObjects(){};
 
   // reshape polynomial with erase (optionally) memory
-  void Reshape(int d, int m, int n, int order, bool reset = false);
+  void reshape(int d, int m, int n, int order, bool reset = false);
 
   // minimal set of vector operations
   int NumRows() const { return m_; }
@@ -52,12 +52,12 @@ class MatrixObjects {
   const T& operator()(int i, int j) const { return polys_[i][j]; }
 
   // typical operations with polynomials
-  void PutScalar(double val)
+  void putScalar(double val)
   {
     for (int i = 0; i < m_; ++i)
-      for (int j = 0; j < n_; ++j) polys_[i][j].PutScalar(val);
+      for (int j = 0; j < n_; ++j) polys_[i][j].putScalar(val);
   }
-  double NormInf() const;
+  double normInf() const;
 
   // ring algebra
   template <typename U>
@@ -109,11 +109,11 @@ class MatrixObjects {
 
   // simple operations with vector polynomials
   // -- value
-  DenseMatrix Value(const AmanziGeometry::Point& xp) const;
+  DenseMatrix<> Value(const AmanziGeometry::Point& xp) const;
 
   // -- matrix-vector products
   void Multiply(const VectorObjects<T>& v, VectorObjects<T>& av, bool transpose);
-  void Multiply(const DenseVector& v, VectorObjects<T>& av, bool transpose);
+  void Multiply(const DenseVector<>& v, VectorObjects<T>& av, bool transpose);
   void Multiply(const AmanziGeometry::Point& p, VectorObjects<T>& av, bool transpose) const;
 
   // output
@@ -132,16 +132,16 @@ class MatrixObjects {
 
 
 // used types
-typedef MatrixObjects<Polynomial> MatrixPolynomial;
+typedef MatrixObjects<Polynomial<>> MatrixPolynomial;
 typedef MatrixObjects<SpaceTimePolynomial> MatrixSpaceTimePolynomial;
 
 
 /* ******************************************************************
-* Re-shape polynomials
-****************************************************************** */
+ * Re-shape polynomials
+ ****************************************************************** */
 template <class T>
 void
-MatrixObjects<T>::Reshape(int d, int m, int n, int order, bool reset)
+MatrixObjects<T>::reshape(int d, int m, int n, int order, bool reset)
 {
   d_ = d;
   m_ = m;
@@ -150,19 +150,19 @@ MatrixObjects<T>::Reshape(int d, int m, int n, int order, bool reset)
   polys_.resize(m_);
   for (int i = 0; i < m_; ++i) {
     polys_[i].resize(n_);
-    for (int j = 0; j < n_; ++j) { polys_[i][j].Reshape(d, order, reset); }
+    for (int j = 0; j < n_; ++j) { polys_[i][j].reshape(d, order, reset); }
   }
 }
 
 
 /* ******************************************************************
-* Calculate value at a point
-****************************************************************** */
+ * Calculate value at a point
+ ****************************************************************** */
 template <class T>
-DenseMatrix
+DenseMatrix<>
 MatrixObjects<T>::Value(const AmanziGeometry::Point& xp) const
 {
-  DenseMatrix val(m_, n_);
+  DenseMatrix<> val(m_, n_);
 
   for (int i = 0; i < m_; ++i)
     for (int j = 0; j < n_; ++j) val(i, j) = polys_[i][j].Value(xp);
@@ -172,8 +172,8 @@ MatrixObjects<T>::Value(const AmanziGeometry::Point& xp) const
 
 
 /* ******************************************************************
-* Ring algebra
-****************************************************************** */
+ * Ring algebra
+ ****************************************************************** */
 template <class T>
 MatrixObjects<T>&
 MatrixObjects<T>::operator+=(const MatrixObjects<T>& mp)
@@ -196,8 +196,8 @@ MatrixObjects<T>::operator-=(const MatrixObjects<T>& mp)
 
 
 /* ******************************************************************
-* Matrix-vector operations
-***************************************************************** */
+ * Matrix-vector operations
+ ***************************************************************** */
 template <class T>
 void
 MatrixObjects<T>::Multiply(const VectorObjects<T>& v, VectorObjects<T>& av, bool transpose)
@@ -224,7 +224,7 @@ MatrixObjects<T>::Multiply(const VectorObjects<T>& v, VectorObjects<T>& av, bool
 
 template <class T>
 void
-MatrixObjects<T>::Multiply(const DenseVector& v, VectorObjects<T>& av, bool transpose)
+MatrixObjects<T>::Multiply(const DenseVector<>& v, VectorObjects<T>& av, bool transpose)
 {
   if (!transpose) {
     av.resize(m_);
@@ -272,8 +272,8 @@ MatrixObjects<T>::Multiply(const AmanziGeometry::Point& p,
 
 
 /* ******************************************************************
-* Set same origin for all polynomials without modyfying them
-****************************************************************** */
+ * Set same origin for all polynomials without modyfying them
+ ****************************************************************** */
 template <class T>
 void
 MatrixObjects<T>::set_origin(const AmanziGeometry::Point& origin)
@@ -284,8 +284,8 @@ MatrixObjects<T>::set_origin(const AmanziGeometry::Point& origin)
 
 
 /* ******************************************************************
-* Change all polynomials to new same origin
-****************************************************************** */
+ * Change all polynomials to new same origin
+ ****************************************************************** */
 template <class T>
 void
 MatrixObjects<T>::ChangeOrigin(const AmanziGeometry::Point& origin)
@@ -296,15 +296,15 @@ MatrixObjects<T>::ChangeOrigin(const AmanziGeometry::Point& origin)
 
 
 /* ******************************************************************
-* Maximum norm
-****************************************************************** */
+ * Maximum norm
+ ****************************************************************** */
 template <class T>
 double
-MatrixObjects<T>::NormInf() const
+MatrixObjects<T>::normInf() const
 {
   double tmp(0.0);
   for (int i = 0; i < m_; ++i)
-    for (int j = 0; j < n_; ++j) tmp = std::max(tmp, polys_[i][j].NormInf());
+    for (int j = 0; j < n_; ++j) tmp = std::max(tmp, polys_[i][j].normInf());
 
   return tmp;
 }

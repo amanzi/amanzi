@@ -1,19 +1,16 @@
+// PDE_DiffusionMFDwithGravity: Discrete gravity operator blended with the MFD diffusion operator.
+
 /*
-  Copyright 2010-202x held jointly by participating institutions.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-
-// PDE_DiffusionMFDwithGravity: Discrete gravity operator blended with the MFD diffusion operator.
-
 
 #ifndef AMANZI_OPERATOR_PDE_DIFFUSION_MFD_WITH_GRAVITY_HH_
 #define AMANZI_OPERATOR_PDE_DIFFUSION_MFD_WITH_GRAVITY_HH_
-
-#include "Epetra_IntVector.h"
 
 #include "DenseMatrix.hh"
 #include "Tensor.hh"
@@ -36,75 +33,42 @@ Additional options for MFD with the gravity term include:
 namespace Amanzi {
 namespace Operators {
 
+namespace Impl {
+// Developments
+// -- interface to solvers for treating nonlinear BCs.
+KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
+GravitySpecialDirection(const AmanziMesh::Mesh* const mesh, int f)
+{
+  auto cells = mesh->getFaceCells(f);
+  int ncells = cells.size();
+
+  if (ncells == 2) {
+    return mesh->getCellCentroid(cells[1]) - mesh->getCellCentroid(cells[0]);
+  } else {
+    return mesh->getFaceCentroid(f) - mesh->getCellCentroid(cells[0]);
+  }
+}
+} // namespace Impl
+
 class BCs;
 
 class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD, public PDE_DiffusionWithGravity {
  public:
   PDE_DiffusionMFDwithGravity(Teuchos::ParameterList& plist,
                               const Teuchos::RCP<Operator>& global_op)
-    : PDE_Diffusion(global_op),
+    : PDE_Diffusion(plist, global_op),
       PDE_DiffusionMFD(plist, global_op),
-      PDE_DiffusionWithGravity(global_op)
-  {
-    pde_type_ = PDE_DIFFUSION_MFD_GRAVITY;
-    Init_(plist);
-  }
+      PDE_DiffusionWithGravity(plist, global_op)
+  {}
 
   PDE_DiffusionMFDwithGravity(Teuchos::ParameterList& plist,
                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : PDE_Diffusion(mesh), PDE_DiffusionMFD(plist, mesh), PDE_DiffusionWithGravity(mesh)
-  {
-    pde_type_ = PDE_DIFFUSION_MFD_GRAVITY;
-    Init_(plist);
-  }
+    : PDE_Diffusion(plist, mesh),
+      PDE_DiffusionMFD(plist, mesh),
+      PDE_DiffusionWithGravity(plist, mesh)
+  {}
 
-  PDE_DiffusionMFDwithGravity(Teuchos::ParameterList& plist,
-                              const Teuchos::RCP<Operator>& global_op,
-                              const AmanziGeometry::Point& g)
-    : PDE_Diffusion(global_op),
-      PDE_DiffusionMFD(plist, global_op),
-      PDE_DiffusionWithGravity(global_op)
-  {
-    pde_type_ = PDE_DIFFUSION_MFD_GRAVITY;
-    Init_(plist);
-    SetGravity(g);
-  }
-
-  PDE_DiffusionMFDwithGravity(Teuchos::ParameterList& plist,
-                              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                              const AmanziGeometry::Point& g)
-    : PDE_Diffusion(mesh), PDE_DiffusionMFD(plist, mesh), PDE_DiffusionWithGravity(mesh)
-  {
-    pde_type_ = PDE_DIFFUSION_MFD_GRAVITY;
-    Init_(plist);
-    SetGravity(g);
-  }
-
-  PDE_DiffusionMFDwithGravity(Teuchos::ParameterList& plist,
-                              const Teuchos::RCP<Operator>& global_op,
-                              double rho,
-                              const AmanziGeometry::Point& g)
-    : PDE_Diffusion(global_op),
-      PDE_DiffusionMFD(plist, global_op),
-      PDE_DiffusionWithGravity(global_op)
-  {
-    pde_type_ = PDE_DIFFUSION_MFD_GRAVITY;
-    Init_(plist);
-    SetGravity(g);
-    SetDensity(rho);
-  }
-
-  PDE_DiffusionMFDwithGravity(Teuchos::ParameterList& plist,
-                              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                              double rho,
-                              const AmanziGeometry::Point& g)
-    : PDE_Diffusion(mesh), PDE_DiffusionMFD(plist, mesh), PDE_DiffusionWithGravity(mesh)
-  {
-    pde_type_ = PDE_DIFFUSION_MFD_GRAVITY;
-    Init_(plist);
-    SetGravity(g);
-    SetDensity(rho);
-  }
+  virtual void Init() override;
 
   // main members
   // -- required by the base class
@@ -114,46 +78,13 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD, public PDE_Diffusio
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
 
-  // -- problem initialiation
-  using PDE_DiffusionMFD::Setup;
-  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K,
-             const Teuchos::RCP<const CompositeVector>& k,
-             const Teuchos::RCP<const CompositeVector>& dkdp,
-             double rho,
-             const AmanziGeometry::Point& g)
-  {
-    SetDensity(rho);
-    SetGravity(g);
-    PDE_DiffusionMFD::SetTensorCoefficient(K);
-    PDE_DiffusionMFD::SetScalarCoefficient(k, dkdp);
-  }
+  // virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
+  //                                    const Teuchos::Ptr<CompositeVector>& flux) override;
 
-  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K,
-             const Teuchos::RCP<const CompositeVector>& k,
-             const Teuchos::RCP<const CompositeVector>& dkdp,
-             const Teuchos::RCP<const CompositeVector>& rho,
-             const AmanziGeometry::Point& g)
-  {
-    SetDensity(rho);
-    SetGravity(g);
-    PDE_DiffusionMFD::SetTensorCoefficient(K);
-    PDE_DiffusionMFD::SetScalarCoefficient(k, dkdp);
-  }
-
-  // Developments
-  // -- interface to solvers for treating nonlinear BCs.
-  virtual double ComputeGravityFlux(int f) const override;
-
- protected:
-  virtual void UpdateFluxManifold_(const Teuchos::Ptr<const CompositeVector>& u,
-                                   const Teuchos::Ptr<CompositeVector>& flux) override;
 
   virtual void AddGravityToRHS_();
-  inline AmanziGeometry::Point GravitySpecialDirection_(int f) const;
-  void Init_(Teuchos::ParameterList& plist);
 
  protected:
-  bool gravity_term_initialized_;
   bool gravity_special_projection_;
   int gravity_method_;
 };

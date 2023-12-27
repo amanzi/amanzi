@@ -157,11 +157,15 @@ template <typename Data_t, typename DataFactory_t>
 inline void
 EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility(State& S)
 {
+  for (const auto& key_tag : my_keys_) {
+    S.CheckIsDebugEval(key_tag.first, key_tag.second, "ensure compatibilitied");
+  }
+
   if (db_ == Teuchos::null &&
-      (plist_.isParameter("debug cells") || plist_.isParameter("debug faces"))) {
+      (plist_->isParameter("debug cells") || plist_->isParameter("debug faces"))) {
     Key name = my_keys_.front().first + "evaluator";
     db_mesh_ = S.GetMesh(Keys::getDomain(my_keys_.front().first));
-    db_ = Teuchos::rcp(new Debugger(db_mesh_, name, plist_));
+    db_ = Teuchos::rcp(new Debugger(db_mesh_, name, *plist_));
   }
 
   // Calls Require, setting the data type
@@ -206,7 +210,7 @@ EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility(State& S)
   // structure.
   EnsureCompatibility_Structure_(S);
 
-  std::string consistency_policy = plist_.get<std::string>("consistency policy", "give to child");
+  std::string consistency_policy = plist_->get<std::string>("consistency policy", "give to child");
   if (consistency_policy == "none") {
     // Structure is set by PKs and parents of this evaluator.  Do not pass my
     // structure onto my children, and do not get my structure from my
@@ -396,14 +400,14 @@ EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::Update_(State& S)
   Evaluate_(S, results);
 
   // debug
-  if constexpr (std::is_same_v<Data_t, CompositeVector>) {
+  if constexpr(std::is_same_v<Data_t, CompositeVector>) {
     if (db_ != Teuchos::null) {
       std::vector<std::string> names;
       std::vector<Teuchos::Ptr<const CompositeVector>> vecs;
 
       for (const auto& dep : dependencies_) {
         auto dep_ptr = S.GetPtr<Data_t>(dep.first, dep.second);
-        if (dep_ptr->Mesh() == db_mesh_) {
+        if (dep_ptr->getMesh() == db_mesh_) {
           names.emplace_back(dep.first);
           vecs.emplace_back(dep_ptr.ptr());
         }
@@ -416,7 +420,7 @@ EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::Update_(State& S)
 
       for (const auto& mykey : my_keys_) {
         auto my_ptr = S.GetPtr<Data_t>(mykey.first, mykey.second);
-        if (my_ptr->Mesh() == db_mesh_) {
+        if (my_ptr->getMesh() == db_mesh_) {
           names.emplace_back(mykey.first);
           vecs.emplace_back(my_ptr.ptr());
         }

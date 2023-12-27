@@ -35,15 +35,15 @@ namespace WhetStone {
 ****************************************************************** */
 int
 MFD3D_Electromagnetics::L2consistencyBoundary(int f,
-                                              const Tensor& T,
-                                              DenseMatrix& N,
-                                              DenseMatrix& Mc)
+                                              const Tensor<>& T,
+                                              DenseMatrix<>& N,
+                                              DenseMatrix<>& Mc)
 {
   auto [edges, dirs] = mesh_->getFaceEdgesAndDirections(f);
   int nedges = edges.size();
 
-  N.Reshape(nedges, d_ - 1);
-  Mc.Reshape(nedges, nedges);
+  N.reshape(nedges, d_ - 1);
+  Mc.reshape(nedges, nedges);
 
   AmanziGeometry::Point v1(d_), v2(d_), v3(d_);
   const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
@@ -70,7 +70,7 @@ MFD3D_Electromagnetics::L2consistencyBoundary(int f,
   Tensor PTP(d_, 2), Pt(P), Tinv(T);
   Tinv.Inverse();
   Pt.Transpose();
-  PTP = Pt * Tinv * P;
+  PTP.assign(Pt * Tinv * P);
 
   for (int i = 0; i < nedges; i++) {
     int e = edges[i];
@@ -107,7 +107,7 @@ MFD3D_Electromagnetics::L2consistencyBoundary(int f,
 * Matrix matrix for edge-based discretization.
 ****************************************************************** */
 int
-MFD3D_Electromagnetics::MassMatrixBoundary(int f, const Tensor& T, DenseMatrix& M)
+MFD3D_Electromagnetics::MassMatrixBoundary(int f, const Tensor<>& T, DenseMatrix<>& M)
 {
   DenseMatrix N;
 

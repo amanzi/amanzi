@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
 //! SuperMapLumped class for blocking same-type maps into a single, common map.
@@ -26,117 +26,138 @@
 #define AMANZI_OPERATORS_SUPER_MAP_HH_
 
 #include "Teuchos_RCP.hpp"
-#include "AmanziComm.hh"
 
+#include "AmanziTypes.hh"
 #include "dbc.hh"
 #include "Mesh.hh"
-
+#include "CompositeSpace.hh"
+#include "BlockVector.hh"
 
 namespace Amanzi {
 
-class CompositeVectorSpace;
-
-namespace Operators {
+// template<typename Scalar> class BlockVector;
 
 class SuperMapLumped {
  public:
-  // Constructor
-  SuperMapLumped(const Comm_ptr_type& comm,
-                 const std::vector<std::string>& compnames,
-                 const std::vector<int>& dofnums,
-                 const std::vector<Teuchos::RCP<const Epetra_BlockMap>>& maps,
-                 const std::vector<Teuchos::RCP<const Epetra_BlockMap>>& ghost_maps);
+  explicit SuperMapLumped(const Teuchos::RCP<const BlockSpace>& maps);
 
   SuperMapLumped(const SuperMapLumped& other) = delete;
-  virtual ~SuperMapLumped() = default;
+  ~SuperMapLumped();
 
   // meta-data
-  bool HasComponent(const std::string& compname) const;
+  bool hasComponent(const std::string& compname) const;
 
   // map accessors
-  Teuchos::RCP<const Epetra_Map> Map() const { return map_; }
-  Teuchos::RCP<const Epetra_Map> GhostedMap() const { return ghosted_map_; }
+  Map_ptr_type getMap() const { return map_; }
+  Map_ptr_type getGhostedMap() const { return ghosted_map_; }
 
   // -- component map accessors
-  Teuchos::RCP<const Epetra_BlockMap> ComponentMap(const std::string& compname) const
+  BlockMap_ptr_type getComponentMap(const std::string& compname) const
   {
-    return comp_maps_.at(compname);
+    return comp_maps_->getComponentMap(compname, false);
   }
 
-  Teuchos::RCP<const Epetra_BlockMap> ComponentGhostedMap(const std::string& compname)
+  BlockMap_ptr_type getComponentGhostedMap(const std::string& compname)
   {
-    return comp_ghosted_maps_.at(compname);
+    return comp_maps_->getComponentMap(compname, true);
   }
 
   // index accessors
-  const std::vector<int>& Indices(const std::string& compname, int dofnum) const;
-  const std::vector<int>& GhostIndices(const std::string& compname, int dofnum) const;
+  template <class DeviceType = DefaultDevice>
+  cVectorView_type_<DeviceType, LO> viewIndices(const std::string& compname, int dofnum) const;
+  template <class DeviceType = DefaultDevice>
+  cVectorView_type_<DeviceType, LO> viewGhostIndices(const std::string& compname, int dofnum) const;
 
-  // block indices.  This is an array of integers, length Map().MyLength(),
-  // where each dof and component have a unique integer value.  The returned
-  // int is the number of unique values, equal to
-  // sum(NumDofs(comp) for comp in components), in this array.
-  std::pair<int, Teuchos::RCP<std::vector<int>>> BlockIndices() const;
+  // block indices.  This is an array of integers, length
+  // Map().getLocalLength(), where each dof and component have a unique integer
+  // value.  The returned int is the number of unique values, equal to
+  // sum(getNumVectors(comp) for comp in components), in this array.
+  //  std::pair<int, Teuchos::RCP<std::vector<int> > > BlockIndices() const;
+
+#ifdef SUPERMAP_TESTING
+ public:
+#else
+ protected:
+#endif
 
   // meta-data accessors
-  int Offset(const std::string& compname) const { return offsets_.at(compname); }
-  int GhostedOffset(const std::string& compname) const { return ghosted_offsets_.at(compname); }
-  int NumOwnedElements(const std::string& compname) const { return counts_.at(compname); }
-  int NumUsedElements(const std::string& compname) const
+  LO getOffset(const std::string& compname) const
+  {
+    return offsets_.at(compname);
+  }
+  LO getGhostedOffset(const std::string& compname) const
+  {
+    return ghosted_offsets_.at(compname);
+  }
+  LO getNumOwnedElements(const std::string& compname) const
+  {
+    return counts_.at(compname);
+  }
+  LO getNumUsedElements(const std::string& compname) const
   {
     return counts_.at(compname) + ghosted_counts_.at(compname);
   }
-  int NumDofs(const std::string& compname) const { return num_dofs_.at(compname); }
+  int getNumVectors(const std::string& compname) const
+  {
+    return comp_maps_->getNumVectors(compname);
+  }
 
  protected:
   // iterate over compnames
-  typedef std::vector<std::string>::const_iterator name_iterator;
-  name_iterator begin() const { return compnames_.begin(); }
-  name_iterator end() const { return compnames_.end(); }
-  unsigned int size() const { return compnames_.size(); }
+  using name_iterator = std::vector<std::string>::const_iterator;
+  name_iterator begin() const
+  {
+    return comp_maps_->begin();
+  }
+  name_iterator end() const
+  {
+    return comp_maps_->end();
+  }
+  std::size_t size() const
+  {
+    return comp_maps_->size();
+  }
+
+ public:
+  void createIndexing_();
 
  protected:
-  // Constructs and returns the vector of indices for a given component into the SuperMapLumped
-  virtual const std::vector<int>&
-  CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const;
+  std::map<std::string, LO> offsets_;
+  std::map<std::string, LO> counts_;
+  std::map<std::string, LO> ghosted_offsets_;
+  std::map<std::string, LO> ghosted_counts_;
 
-  // step one of the construction process
-  //
-  // After this, CreateIndices_() can be called
-  void CreateIndexing_();
+  LO n_local_;
+  LO n_local_ghosted_;
 
-  // step two of the construction process
-  //
-  // This creates the SuperMapLumped and uses CreateIndices_() to populate and
-  // create the ghosted SuperMapLumped.
-  void CreateMap_(const Comm_ptr_type& comm);
+  std::unique_ptr<BlockVector<LO>> indices_;
+  Teuchos::RCP<const BlockSpace> comp_maps_;
 
- protected:
-  std::vector<std::string> compnames_;
-  std::map<std::string, int> offsets_;
-  std::map<std::string, int> num_dofs_;
-  std::map<std::string, int> counts_;
-  std::map<std::string, int> ghosted_offsets_;
-  std::map<std::string, int> ghosted_counts_;
-
-  int n_local_;
-  int n_local_ghosted_;
-
-  mutable std::map<std::string, std::map<int, std::vector<int>>> indices_;
-  mutable std::map<std::string, std::map<int, std::vector<int>>> ghosted_indices_;
-
-  Teuchos::RCP<Epetra_Map> map_;
-  Teuchos::RCP<Epetra_Map> ghosted_map_;
-
-  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> comp_maps_;
-  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap>> comp_ghosted_maps_;
+  Map_ptr_type map_;         // the supermap
+  Map_ptr_type ghosted_map_; // the ghosted supermap
 };
 
 
 Teuchos::RCP<SuperMapLumped>
-createSuperMapLumped(const CompositeVectorSpace& cv);
+createSuperMapLumped(const BlockSpace& cv);
 
-} // namespace Operators
+// implementation of templated member functions
+template <class DeviceType>
+cVectorView_type_<DeviceType, LO>
+SuperMapLumped::viewIndices(const std::string& compname, int dofnum) const
+{
+  return indices_->viewComponent<DeviceType>(compname, dofnum, false);
+}
+
+
+template <class DeviceType>
+cVectorView_type_<DeviceType, LO>
+SuperMapLumped::viewGhostIndices(const std::string& compname, int dofnum) const
+{
+  return indices_->viewComponent<DeviceType>(compname, dofnum, true);
+}
+
+
 } // namespace Amanzi
 
 #endif

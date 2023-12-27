@@ -22,6 +22,7 @@
 
 // Amanzi
 #include "Mesh.hh"
+#include "MeshHelpers.hh"
 #include "MeshFactory.hh"
 
 // Amanzi::WhetStone
@@ -56,18 +57,19 @@ TEST(DG_MAP_DETERMINANT_CELL)
   // deform the second mesh
   int dim(2), cell(0), nnodes(5), nfaces(5);
   AmanziGeometry::Point xv(dim);
-  AmanziMesh::Entity_ID_View nodeids("nodeids", nnodes), faces;
-  AmanziMesh::Point_View new_positions("new_positions", nnodes), final_positions;
+  typename AmanziMesh::Mesh::Entity_ID_View nodeids("nodeids", nnodes), faces;
+  typename AmanziMesh::Mesh::Point_View new_positions("new_positions", nnodes);
 
-  for (int v = 0; v < nnodes; ++v) {
-    xv = mesh1->getNodeCoordinate(v);
+  Kokkos::parallel_for(
+    "deform", nnodes, KOKKOS_LAMBDA(const int v) {
+      auto xv = mesh1->getNodeCoordinate(v);
+      xv[0] = (xv[0] + xv[0] * xv[0] + xv[0] * xv[0] * xv[0]) / 3;
+      xv[1] = (xv[1] + xv[1] * xv[1]) / 2;
 
-    xv[0] = (xv[0] + xv[0] * xv[0] + xv[0] * xv[0] * xv[0]) / 3;
-    xv[1] = (xv[1] + xv[1] * xv[1]) / 2;
+      nodeids[v] = v;
+      new_positions[v] = xv;
+    });
 
-    nodeids[v] = v;
-    new_positions[v] = xv;
-  }
   Amanzi::AmanziMesh::deform(*mesh1, nodeids, new_positions);
 
   // cell-baced velocities and Jacobian matrices
@@ -111,8 +113,8 @@ TEST(DG_MAP_DETERMINANT_CELL)
              name,
              tmp,
              err,
-             uc[0].NormInf(),
-             uc[1].NormInf());
+             uc[0].normInf(),
+             uc[1].normInf());
     }
   }
 }
@@ -139,15 +141,15 @@ TEST(DG_MAP_LEAST_SQUARE_CELL)
   // deform the second mesh
   int d(2), cell(0), nnodes(5), nfaces(5);
   AmanziGeometry::Point xv(d), yv(d);
-  AmanziMesh::Entity_ID_View nodeids("nodeids", nnodes), faces;
-  AmanziMesh::Point_View new_positions("new_positions", nnodes), final_positions;
+  typename AmanziMesh::Mesh::Entity_ID_View nodeids("nodeids", nnodes);
+  typename AmanziMesh::Mesh::Point_View new_positions("new_positions", nnodes);
 
   // -- deformation function
   double dt(0.05);
   VectorPolynomial u(d, d);
 
   for (int i = 0; i < d; ++i) {
-    u[i].Reshape(d, 2, true);
+    u[i].reshape(d, 2, true);
     u[i](0, 0) = 1.0 + i;
     u[i](1, 0) = 2.0;
     u[i](1, 1) = 3.0 + i;
@@ -197,7 +199,7 @@ TEST(DG_MAP_LEAST_SQUARE_CELL)
   maps->VelocityCell(0, vf, vf, vc2);
 
   vc1 -= vc2;
-  CHECK_CLOSE(0.0, vc1.NormInf(), 1e-12);
+  CHECK_CLOSE(0.0, vc1.normInf(), 1e-12);
 }
 
 
@@ -263,7 +265,7 @@ TEST(DG_MAP_GCL)
 
   // error
   det1 -= det0;
-  double err = det1.NormInf();
+  double err = det1.normInf();
   std::cout << "GCL error=" << err << ", poly order=3" << std::endl;
   CHECK(err < 1e-10);
 
@@ -272,7 +274,7 @@ TEST(DG_MAP_GCL)
     v[0] = C(i, 0);
     v[1] = C(i, 1);
     u = Divergence(v);
-    err = u.NormInf();
+    err = u.normInf();
     std::cout << "Piola compatibility condition error=" << err << std::endl;
   }
 }
@@ -289,10 +291,12 @@ TEST(DG_MAP_VELOCITY_CELL)
 
   std::cout << "\nTest: Velocity reconstruction in 3D." << std::endl;
   auto comm = Amanzi::getDefaultComm();
-  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
-  fac_list->set<bool>("request edges", true);
-  fac_list->set<bool>("request faces", true);
-  MeshFactory meshfactory(comm, Teuchos::null, fac_list);
+
+  // create two meshes
+  Teuchos::RCP<Teuchos::ParameterList> factory_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  factory_plist->set<bool>("request edges", true);
+  factory_plist->set<bool>("request faces", true);
+  MeshFactory meshfactory(comm, Teuchos::null, factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh0 = meshfactory.create("test/cube_unit.exo");
   Teuchos::RCP<Mesh> mesh1 = meshfactory.create("test/cube_unit.exo");
@@ -300,14 +304,14 @@ TEST(DG_MAP_VELOCITY_CELL)
   // deform the second mesh
   int d(3), nnodes(8), nfaces(6), nedges(12);
   AmanziGeometry::Point xv(d), yv(d);
-  AmanziMesh::Entity_ID_View nodeids("nodeids", nnodes);
-  AmanziMesh::Point_View new_positions("new_positions", nnodes), final_positions;
+  typename AmanziMesh::Mesh::Entity_ID_View nodeids("nodeids", nnodes);
+  typename AmanziMesh::Mesh::Point_View new_positions("new_positions", nnodes);
 
   // -- deformation function
   int order(1);
   VectorPolynomial u(d, d);
   for (int i = 0; i < d; ++i) {
-    u[i].Reshape(d, order, true);
+    u[i].reshape(d, order, true);
     u[i](0, 0) = 1.0 + i;
     u[i](1, 0) = 2.0 - i;
     u[i](1, 1) = 3.0;
@@ -349,5 +353,5 @@ TEST(DG_MAP_VELOCITY_CELL)
   vc.ChangeOrigin(AmanziGeometry::Point(3));
 
   vc -= u;
-  CHECK_CLOSE(0.0, vc.NormInf(), 1e-12);
+  CHECK_CLOSE(0.0, vc.normInf(), 1e-12);
 }

@@ -33,62 +33,9 @@
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
     <ParameterList name="electromagnetics operator">
-      <ParameterList name="schema electric">
-        <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{edge}"/>
-        <Parameter name="method" type="string" value="electromagnetics"/>
-        <Parameter name="method order" type="int" value="0"/>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="magnetic diffusion operators">
-      <ParameterList name="schema electric">
-        <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{edge}"/>
-        <Parameter name="method" type="string" value="electromagnetics"/>
-        <Parameter name="method order" type="int" value="0"/>
-      </ParameterList>
-      <ParameterList name="schema magnetic">
-        <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{face}"/>
-        <Parameter name="method" type="string" value="mfd: default"/>
-        <Parameter name="method order" type="int" value="0"/>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="magnetic diffusion operators vem">
-      <ParameterList name="schema electric">
-        <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{edge}"/>
-        <Parameter name="method" type="string" value="Nedelec serendipity type2"/>
-        <Parameter name="method order" type="int" value="0"/>
-      </ParameterList>
-      <ParameterList name="schema magnetic">
-        <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{face}"/>
-        <Parameter name="method" type="string" value="RaviartThomas serendipity"/>
-        <Parameter name="method order" type="int" value="0"/>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="curlcurl operator">
-      <Parameter name="matrix type" type="string" value="stiffness"/>
-      <ParameterList name="schema">
-        <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{edge}"/>
-        <Parameter name="method" type="string" value="electromagnetics"/>
-        <Parameter name="method order" type="int" value="0"/>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="accumulation operator">
-      <Parameter name="matrix type" type="string" value="mass"/>
-      <ParameterList name="schema">
-        <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{edge}"/>
-        <Parameter name="method" type="string" value="electromagnetics"/>
-        <Parameter name="method order" type="int" value="0"/>
-      </ParameterList>
+      <Parameter name="schema" type="Array(string)" value="{edge}"/>
+      <Parameter name="discretization primary" type="string" value="mfd: default"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{edge}"/>
     </ParameterList>
   </ParameterList>
 
@@ -97,7 +44,7 @@
     <ParameterList name="default">
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
-        <Parameter name="error tolerance" type="double" value="1e-6"/>
+        <Parameter name="error tolerance" type="double" value="1e-12"/>
         <Parameter name="maximum number of iterations" type="int" value="200"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
@@ -115,34 +62,12 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
-    <ParameterList name="GMRES">
-      <Parameter name="iterative method" type="string" value="gmres"/>
-      <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="1e-12"/>
-        <Parameter name="maximum number of iterations" type="int" value="200"/>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="none"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
-    <ParameterList name="Hypre AMS">
-      <Parameter name="preconditioning method" type="string" value="ams"/>
-      <ParameterList name="ams parameters">
-        <Parameter name="cycle applications" type="int" value="1"/>
-        <Parameter name="cycle type" type="int" value="1"/>
-        <Parameter name="tolerance" type="double" value="0.0"/>
-        <Parameter name="relaxation type" type="int" value="6"/>
-        <Parameter name="coarse level relaxation" type="int" value="9"/>
-        <Parameter name="verbosity" type="int" value="0"/>
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="Hypre AMG">
-      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
+      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="cycle applications" type="int" value="1"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>

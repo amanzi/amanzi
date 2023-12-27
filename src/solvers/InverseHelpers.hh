@@ -56,7 +56,7 @@ struct is_assembling {
 template <typename Operator>
 struct is_assembling<Operator,
                      typename std::enable_if<std::is_member_function_pointer<
-                       decltype(static_cast<Teuchos::RCP<Epetra_CrsMatrix> (Operator::*)(void)>(
+                       decltype(static_cast<Teuchos::RCP<Matrix_type> (Operator::*)(void)>(
                          &Operator::A))>::value>::type> {
   const static bool value = true;
 };

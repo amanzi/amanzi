@@ -46,26 +46,26 @@ class Basis {
   virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                     int c,
                     int order,
-                    Polynomial& integrals) = 0;
+                    Polynomial<>& integrals) = 0;
 
   // transformation of bilinear form
-  virtual void BilinearFormNaturalToMy(DenseMatrix& A) const = 0;
+  virtual void BilinearFormNaturalToMy(DenseMatrix<>& A) const = 0;
   virtual void BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
                                        std::shared_ptr<Basis> br,
-                                       DenseMatrix& A) const = 0;
+                                       DenseMatrix<>& A) const = 0;
 
   // transformation of a linear form
-  virtual void LinearFormNaturalToMy(DenseVector& v) const = 0;
+  virtual void LinearFormNaturalToMy(DenseVector<>& v) const = 0;
 
   // transformation of vector
-  virtual void ChangeBasisMyToNatural(DenseVector& v) const = 0;
-  virtual void ChangeBasisNaturalToMy(DenseVector& v) const = 0;
+  virtual void ChangeBasisMyToNatural(DenseVector<>& v) const = 0;
+  virtual void ChangeBasisNaturalToMy(DenseVector<>& v) const = 0;
 
   // recover polynomial in the natural basis
-  virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
-                                         int c,
-                                         int order,
-                                         DenseVector& coefs) const = 0;
+  virtual Polynomial<> CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
+                                           int c,
+                                           int order,
+                                           const DenseVector<>& coefs) const = 0;
 
   // assess
   int id() const { return id_; };

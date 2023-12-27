@@ -8,7 +8,7 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-//! Base class for providing Apply() and ApplyInverse() methods.
+//! Base class for providing Apply() and applyInverse() methods.
 /*!
 
 The following interface is implemented by all Operator-like classes, and
@@ -31,14 +31,14 @@ Developer notes:
 
 - ComputeInverse() does numerical work on the values of the operator
   (e.g. factorizations, etc).  It should be called each time the operator's
-  values have changed, and may be called lazily by ApplyInverse().
+  values have changed, and may be called lazily by applyInverse().
 
-- ApplyInverse(X,Y) requires (but may not check) that X is from RangeMap() and
+- applyInverse(X,Y) requires (but may not check) that X is from RangeMap() and
   Y from DomainMap().  It returns 0 on success and something else on failure,
   for ALL METHODS!
 
 - returned_code() and returned_code_string() may be used to get the actual
-  value returned by the inner method implementing ApplyInverse(), and its
+  value returned by the inner method implementing applyInverse(), and its
   transliteration.  Frequently, for iterative methods, this is postive and
   equal to the number of iterations if converged, and negative if failed.  For
   direct methods and preconditioners, it may be set by a TPL, or may simply be
@@ -57,7 +57,7 @@ Developer notes:
 
 namespace Amanzi {
 
-template <class Vector, class VectorSpace = typename Vector::VectorSpace_t>
+template <class Vector, class VectorSpace>
 class Matrix {
  public:
   using Vector_t = Vector;
@@ -65,15 +65,15 @@ class Matrix {
 
   virtual ~Matrix() = default;
 
-  virtual int Apply(const Vector& x, Vector& y) const = 0;
+  virtual int apply(const Vector& x, Vector& y) const = 0;
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& inv_list) = 0;
-  virtual void InitializeInverse() = 0;
-  virtual void ComputeInverse() = 0;
-  virtual int ApplyInverse(const Vector& y, Vector& x) const = 0;
+  virtual void initializeInverse() = 0;
+  virtual void computeInverse() = 0;
+  virtual int applyInverse(const Vector& y, Vector& x) const = 0;
 
-  virtual const VectorSpace& DomainMap() const = 0;
-  virtual const VectorSpace& RangeMap() const = 0;
+  virtual const Teuchos::RCP<const VectorSpace> getDomainMap() const = 0;
+  virtual const Teuchos::RCP<const VectorSpace> getRangeMap() const = 0;
 
   //  virtual double TrueResidual(const Vector& x, const Vector& y) const = 0;
 

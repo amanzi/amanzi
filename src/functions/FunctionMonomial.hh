@@ -55,15 +55,47 @@ namespace Amanzi {
 
 class FunctionMonomial : public Function {
  public:
-  FunctionMonomial(double c, const std::vector<double>& x0, const std::vector<int>& p);
+  FunctionMonomial(double c,
+                   const Kokkos::View<double*, Kokkos::HostSpace>& x0,
+                   const Kokkos::View<int*, Kokkos::HostSpace>& p);
   ~FunctionMonomial() {}
   std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionMonomial>(*this); }
-  double operator()(const std::vector<double>& x) const;
+  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>&) const;
+
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
+  {
+    double y = c_;
+    if (x.extent(0) < x0_.extent(0)) {
+      assert(false && "FunctionMonomial expects higher-dimensional argument.");
+    }
+    for (int j = 0; j < x0_.extent(0); ++j)
+      y *= pow(x(j, i) - x0_.view_device()[j], p_.view_device()[j]);
+    return y;
+  }
+
+  void apply(const Kokkos::View<double**>& in,
+             Kokkos::View<double*>& out,
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+  {
+    if (ids) {
+      auto ids_loc = *ids;
+      Kokkos::parallel_for(
+        "FunctionBilinear::apply1", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(ids_loc(i)) = apply_gpu(in, i);
+        });
+    } else {
+      assert(in.extent(1) == out.extent(0));
+      Kokkos::parallel_for(
+        "FunctionBilinear::apply2", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(i) = apply_gpu(in, i);
+        });
+    }
+  }
 
  private:
   double c_;
-  std::vector<double> x0_;
-  std::vector<int> p_;
+  Kokkos::DualView<double*> x0_;
+  Kokkos::DualView<int*> p_;
 };
 
 } // namespace Amanzi

@@ -1,14 +1,12 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
-/*
-  Operators
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Solution: u = sqrt((x - x0)^2 + (y - y0)^2 + 0.05) - 0.3
             x0 = 0.5 + 0.25 cos(t)
@@ -92,10 +90,10 @@ class AnalyticDG06b : public AnalyticDGBase {
   // -- accumulation
   virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p,
                                   double t,
-                                  Amanzi::WhetStone::Polynomial& acc) override
+                                  Amanzi::WhetStone::Polynomial& a) override
   {
-    acc.Reshape(d_, 0, true);
-    acc.set_origin(p);
+    a.Reshape(d_, 0, true);
+    a.set_origin(p);
   }
 
   // -- velocity

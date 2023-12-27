@@ -24,11 +24,11 @@ the action of the Jacobian.  They are documented in Knoll & Keyes 2004 paper.
     * `"typical solution value`" ``[double]`` **100** Used in relative action
       approximations. OPTION NOT IMPLEMENTED
 
-    * `"finite difference epsilon`" ``[double]`` **1.e-8** defines the base finite
-      difference epsilon.
+    * `"finite difference epsilon`" ``[double]`` **1.e-8** defines the base
+finite difference epsilon.
 
-    * `"method for epsilon`" ``[string]`` defines a method for calculating finite
-      difference epsilon. Available option is "Knoll-Keyes", "Knoll-Keyes L2",
+    * `"method for epsilon`" ``[string]`` defines a method for calculating
+finite difference epsilon. Available option is "Knoll-Keyes", "Knoll-Keyes L2",
       "Brown-Saad".  See Knoll
 
 */
@@ -50,7 +50,7 @@ the action of the Jacobian.  They are documented in Knoll & Keyes 2004 paper.
 #include "Teuchos_ParameterList.hpp"
 
 #include "errors.hh"
-#include "Matrix.hh"
+// #include "Matrix.hh"
 #include "SolverFnBase.hh"
 
 namespace Amanzi {
@@ -66,34 +66,33 @@ class MatrixJF {
 
   MatrixJF(Teuchos::ParameterList& plist,
            const Teuchos::RCP<SolverFnBase<Vector>> fn,
-           const VectorSpace& map)
-    : fn_(fn), plist_(plist)
+           const Teuchos::RCP<const VectorSpace>& map)
+    : plist_(plist), fn_(fn), map_(map)
   {
-    map_ = Teuchos::rcp(new VectorSpace(map));
-    r0_ = Teuchos::rcp(new Vector(*map_));
+    r0_ = Teuchos::rcp(new Vector(map_));
     eps_ = plist_.get<double>("finite difference epsilon", 1.0e-8);
     method_name_ = plist_.get<std::string>("method for epsilon", "Knoll-Keyes");
   }
 
   // Space for the domain of the operator.
-  const VectorSpace& DomainMap() const { return *map_; }
+  const Teuchos::RCP<const VectorSpace> getDomainMap() const { return map_; }
 
   // Space for the range of the operator.
-  const VectorSpace& RangeMap() const { return *map_; }
+  const Teuchos::RCP<const VectorSpace> getRangeMap() const { return map_; }
 
   // Apply matrix, b <-- Ax, returns ierr = 0 if success, !0 otherwise
-  int Apply(const Vector& x, Vector& b) const;
+  int apply(const Vector& x, Vector& b) const;
 
   // Apply the inverse, x <-- A^-1 b, returns ierr = 0 if success, !0 otherwise
   void set_inverse_parameters(Teuchos::ParameterList& inv_list) {}
-  void InitializeInverse() {}
-  void ComputeInverse() {}
-  int ApplyInverse(const Vector& b, Vector& x) const;
+  void initializeInverse() {}
+  void computeInverse() {}
+  int applyInverse(const Vector& b, Vector& x) const;
 
   void set_linearization_point(const Teuchos::RCP<const Vector>& u);
 
  protected:
-  double CalculateEpsilon_(const Vector& u, const Vector& x) const;
+  double calculateEpsilon_(const Vector& u, const Vector& x) const;
 
  protected:
   Teuchos::RCP<const VectorSpace> map_;
@@ -110,23 +109,23 @@ class MatrixJF {
 // Forward (Apply) operator
 template <class Vector, class VectorSpace>
 int
-MatrixJF<Vector, VectorSpace>::Apply(const Vector& x, Vector& b) const
+MatrixJF<Vector, VectorSpace>::apply(const Vector& x, Vector& b) const
 {
-  Teuchos::RCP<Vector> r1 = Teuchos::rcp(new Vector(*map_));
+  Teuchos::RCP<Vector> r1 = Teuchos::rcp(new Vector(map_));
 
-  double eps = CalculateEpsilon_(*u0_, x);
+  double eps = calculateEpsilon_(*u0_, x);
 
   // evaluate r1 = f(u0 + eps*x)
-  u0_->Update(eps, x, 1.0);
+  u0_->update(eps, x, 1.0);
   fn_->ChangedSolution();
   fn_->Residual(u0_, r1);
 
   // evaluate Jx = (r1 - r0) / eps
-  b = *r1;
-  b.Update(-1.0 / eps, *r0_, 1.0 / eps);
+  b.assign(*r1);
+  b.update(-1.0 / eps, *r0_, 1.0 / eps);
 
   // revert to old u0
-  u0_->Update(-eps, x, 1.0);
+  u0_->update(-eps, x, 1.0);
   fn_->ChangedSolution();
   return 0;
 }
@@ -135,7 +134,7 @@ MatrixJF<Vector, VectorSpace>::Apply(const Vector& x, Vector& b) const
 // Forward (Apply) operator
 template <class Vector, class VectorSpace>
 int
-MatrixJF<Vector, VectorSpace>::ApplyInverse(const Vector& b, Vector& x) const
+MatrixJF<Vector, VectorSpace>::applyInverse(const Vector& b, Vector& x) const
 {
   Teuchos::RCP<const Vector> b_ptr = Teuchos::rcpFromRef(b);
   Teuchos::RCP<Vector> x_ptr = Teuchos::rcpFromRef(x);
@@ -155,39 +154,32 @@ MatrixJF<Vector, VectorSpace>::set_linearization_point(const Teuchos::RCP<const 
 
 template <class Vector, class VectorSpace>
 double
-MatrixJF<Vector, VectorSpace>::CalculateEpsilon_(const Vector& u, const Vector& x) const
+MatrixJF<Vector, VectorSpace>::calculateEpsilon_(const Vector& u, const Vector& x) const
 {
   double eps = eps_;
   double typical_size_u = 100.;
 
   // simple algorithm eqn 14 from Knoll and Keyes
   if (method_name_ == "Knoll-Keyes") {
-    double xinf(0.0);
-    x.NormInf(&xinf);
+    double xinf = x.normInf();
 
     if (xinf > 0) {
-      double uinf(0.0);
-      u.NormInf(&uinf);
+      double uinf = u.normInf();
       eps = std::sqrt((1 + uinf) * 1.0e-12) / xinf;
     }
   } else if (method_name_ == "Knoll-Keyes L2") {
-    double x_l2(0.0);
-    x.Norm2(&x_l2);
+    double x_l2 = x.norm2();
 
     if (x_l2 > 0) {
-      double u_l2(0.0);
-      u.Norm2(&u_l2);
+      double u_l2 = u.norm2();
       eps = std::sqrt((1 + u_l2) * 1.0e-12) / x_l2;
     }
   } else if (method_name_ == "Brown-Saad") {
-    double x_l2(0.0);
-    x.Norm2(&x_l2);
-    double xinf(0.0);
-    x.NormInf(&xinf);
+    double x_l2 = x.norm2();
+    double xinf = x.normInf();
 
     if (x_l2 > 0) {
-      double alp(0.);
-      u.Dot(x, &alp);
+      double alp = u.dot(x);
       // double sgn = (alp > 0) ? 1 : -1;
       eps = (1e-12 / x_l2) * std::max(fabs(alp), typical_size_u * xinf);
     }

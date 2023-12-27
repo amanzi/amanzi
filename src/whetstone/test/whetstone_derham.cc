@@ -49,9 +49,9 @@ TEST(DERHAM_COMPLEX_NODE)
   DeRham_Node drc(mesh);
 
   int nnodes(4), cell(0);
-  DenseMatrix M(nnodes, nnodes);
+  DenseMatrix<> M(nnodes, nnodes);
 
-  Tensor T(2, 1);
+  Tensor<> T(2, 1);
   T(0, 0) = 1.0;
 
   drc.MassMatrix(cell, T, M);

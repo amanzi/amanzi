@@ -32,6 +32,9 @@
 namespace Amanzi {
 namespace Impl {
 
+//
+// template magic to infer whether the factory has a Create() method
+//
 template <typename T>
 class HasCreate {
  private:
@@ -68,10 +71,10 @@ class DataFactory_Intf {
   virtual Data Create() const = 0;
 
   template <typename T, typename F>
-  const F& Get() const;
+  Teuchos::RCP<const F> Get() const;
 
   template <typename T, typename F>
-  F& GetW();
+  Teuchos::RCP<F> GetW();
 };
 
 
@@ -79,11 +82,9 @@ class DataFactory_Intf {
 template <typename T, typename F>
 class DataFactory_Impl : public DataFactory_Intf {
  public:
-  explicit DataFactory_Impl(const F& f) : f_(std::move(std::unique_ptr<F>(new F(f)))) {}
-
-  DataFactory_Impl(const DataFactory_Impl& other)
-    : f_(std::move(std::unique_ptr<F>(new F(*other.f_))))
-  {}
+  explicit DataFactory_Impl() : f_(Teuchos::rcp(new F())) {}
+  explicit DataFactory_Impl(const Teuchos::RCP<F>& f) : f_(f) {}
+  DataFactory_Impl(const DataFactory_Impl& other) : f_(other.f_) {}
 
   std::unique_ptr<DataFactory_Intf> Clone() const override
   {
@@ -95,19 +96,16 @@ class DataFactory_Impl : public DataFactory_Intf {
     t = Create();
     return;
   }
-
   Data Create() const override { return Create_(); }
 
-  const F& Get() const { return *f_; }
-
-  F& GetW() { return *f_; }
+  Teuchos::RCP<const F> Get() const { return f_; }
+  Teuchos::RCP<F> GetW() { return f_; }
 
  private:
-  std::unique_ptr<F> f_;
+  Teuchos::RCP<F> f_;
 
-
-  // two ways to Create a T from an F.  Either:
-  // Constructor:  T(F);
+  // two supported ways to Create a T from an F.  Either:
+  // Constructor:  T(Teuchos::RCP<F>);
   // Create method: Teuchos::RCP<T> = F.Create();
   //
   template <class Q = F>
@@ -119,20 +117,20 @@ class DataFactory_Impl : public DataFactory_Intf {
   template <class Q = F>
   typename std::enable_if<!HasCreate<Q>::value, Data>::type Create_() const
   {
-    return data<T>(Teuchos::rcp(new T(*f_)));
+    return data<T>(Teuchos::rcp(new T(f_)));
   }
 };
 
 
-// partial specialization for NullFactory
+// partial specialization for NullFactory, e.g. things that can be default-constructed
+//
+// Note this specialization is identical to the default template except for in
+// the Create() method, which calls the default (no argument) constructor.
 template <typename T>
 class DataFactory_Impl<T, NullFactory> : public DataFactory_Intf {
  public:
-  explicit DataFactory_Impl(const NullFactory& f)
-    : f_(std::unique_ptr<NullFactory>(new NullFactory(f))){};
-
-  DataFactory_Impl(const DataFactory_Impl& other)
-    : f_(std::unique_ptr<NullFactory>(new NullFactory(*other.f_))){};
+  explicit DataFactory_Impl() {}
+  DataFactory_Impl(const DataFactory_Impl& other) {}
 
   std::unique_ptr<DataFactory_Intf> Clone() const override
   {
@@ -141,16 +139,15 @@ class DataFactory_Impl<T, NullFactory> : public DataFactory_Intf {
   }
 
   // factory Create specialization on NullFactory factory (i.e. null factory)
-  void Create(Data& t) const override { t.SetPtr<T>(Teuchos::rcp(new T())); }
-
+  void Create(Data& t) const override
+  {
+    t = Create();
+    return;
+  }
   Data Create() const override { return data<T>(Teuchos::rcp(new T())); }
 
-  const NullFactory& Get() const { return *f_; }
-
-  NullFactory& GetW() { return *f_; }
-
- private:
-  std::unique_ptr<NullFactory> f_;
+  Teuchos::RCP<const NullFactory> Get() const { return Teuchos::null; }
+  Teuchos::RCP<NullFactory> GetW() { return Teuchos::null; }
 };
 
 
@@ -168,7 +165,7 @@ DataFactory_Intf::ValidType() const
 }
 
 template <typename T, typename F>
-const F&
+Teuchos::RCP<const F>
 DataFactory_Intf::Get() const
 {
   auto p = dynamic_cast<DataFactory_Impl<T, F>*>(this);
@@ -181,7 +178,7 @@ DataFactory_Intf::Get() const
 }
 
 template <typename T, typename F>
-F&
+Teuchos::RCP<F>
 DataFactory_Intf::GetW()
 {
   auto p = dynamic_cast<DataFactory_Impl<T, F>*>(this);

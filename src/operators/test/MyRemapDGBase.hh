@@ -1,14 +1,12 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
-/*
-  Operators
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Base class for remap methods.
 */
@@ -43,7 +41,7 @@ class MyRemapDGBase : public Operators::RemapDG {
   // output
   void CollectStatistics(double t, const CompositeVector& u);
   virtual double global_time(double t) { return t; }
-  void set_dt_output(double dt) { dt_output_ = dt; }
+  void setDt_output(double dt) { dt_output_ = dt; }
 
   // statistics
   double tprint_, dt_output_, l2norm_;
@@ -77,7 +75,7 @@ template <class AnalyticDG>
 double
 MyRemapDGBase<AnalyticDG>::InitialMass(const CompositeVector& p1, int order)
 {
-  const Epetra_MultiVector& p1c = *p1.ViewComponent("cell", false);
+  const Epetra_MultiVector& p1c = *p1.viewComponent("cell", false);
   int nk = p1c.NumVectors();
   int ncells = p1c.MyLength();
 
@@ -91,7 +89,7 @@ MyRemapDGBase<AnalyticDG>::InitialMass(const CompositeVector& p1, int order)
     mass += numi.IntegratePolynomialCell(c, poly);
   }
 
-  mesh0_->getComm()->SumAll(&mass, &mass0, 1);
+  mesh0_->get_comm()->SumAll(&mass, &mass0, 1);
   return mass0;
 }
 
@@ -113,7 +111,7 @@ MyRemapDGBase<AnalyticDG>::CollectStatistics(double t, const CompositeVector& u)
     op_reac_->global_operator()->Apply(u, rhs);
     rhs.Dot(u, &l2norm_);
 
-    Epetra_MultiVector& xc = *rhs.ViewComponent("cell");
+    Epetra_MultiVector& xc = *rhs.viewComponent("cell");
     int nk = xc.NumVectors();
     double xmax[nk], xmin[nk], lmax(-1.0), lmin(-1.0), lavg(-1.0);
     xc.MaxValue(xmax);
@@ -126,7 +124,7 @@ MyRemapDGBase<AnalyticDG>::CollectStatistics(double t, const CompositeVector& u)
       lim.MeanValue(&lavg);
     }
 
-    if (mesh0_->getComm()->MyPID() == 0) {
+    if (mesh0_->get_comm()->MyPID() == 0) {
       printf("t=%8.5f  L2=%9.5g  nfnc=%5d  sharp=%5.1f%%  limiter: %6.3f %6.3f %6.3f  umax/umin: "
              "%9.5g %9.5g\n",
              tglob,

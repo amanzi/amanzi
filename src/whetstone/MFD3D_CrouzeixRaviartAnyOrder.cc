@@ -72,9 +72,9 @@ MFD3D_CrouzeixRaviartAnyOrder::schema() const
 ****************************************************************** */
 int
 MFD3D_CrouzeixRaviartAnyOrder::H1consistency(int c,
-                                             const Tensor& K,
-                                             DenseMatrix& N,
-                                             DenseMatrix& Ac)
+                                             const Tensor<>& K,
+                                             DenseMatrix<>& N,
+                                             DenseMatrix<>& Ac)
 {
   const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
@@ -84,16 +84,16 @@ MFD3D_CrouzeixRaviartAnyOrder::H1consistency(int c,
 
   // calculate degrees of freedom
   Polynomial poly(d_, order_), pf(d_ - 1, order_ - 1), pc;
-  if (order_ > 1) { pc.Reshape(d_, order_ - 2); }
+  if (order_ > 1) { pc.reshape(d_, order_ - 2); }
   int nd = poly.size();
   int ndf = pf.size();
   int ndc = pc.size();
 
   int ndof = nfaces * ndf + ndc;
-  N.Reshape(ndof, nd);
-  R_.Reshape(ndof, nd);
-  Ac.Reshape(ndof, ndof);
-  G_.Reshape(nd, nd);
+  N.reshape(ndof, nd);
+  R_.reshape(ndof, nd);
+  Ac.reshape(ndof, ndof);
+  G_.reshape(nd, nd);
 
   // select regularized basis
   Polynomial ptmp;
@@ -105,10 +105,10 @@ MFD3D_CrouzeixRaviartAnyOrder::H1consistency(int c,
   numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
 
   // populate matrices N and R
-  R_.PutScalar(0.0);
-  N.PutScalar(0.0);
+  R_.putScalar(0.0);
+  N.putScalar(0.0);
 
-  std::vector<const PolynomialBase*> polys(2);
+  std::vector<const PolynomialBase<>*> polys(2);
 
   for (auto it = poly.begin(); it < poly.end(); ++it) {
     const int* index = it.multi_index();
@@ -210,14 +210,14 @@ MFD3D_CrouzeixRaviartAnyOrder::H1consistency(int c,
 * Stiffness matrix for a high-order scheme.
 ****************************************************************** */
 int
-MFD3D_CrouzeixRaviartAnyOrder::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
+MFD3D_CrouzeixRaviartAnyOrder::StiffnessMatrix(int c, const Tensor<>& K, DenseMatrix<>& A)
 {
   DenseMatrix N;
 
   int ok = H1consistency(c, K, N, A);
   if (ok) return ok;
 
-  StabilityScalar_(N, A);
+  MFD3D::StabilityScalar_(N, A);
   return 0;
 }
 
@@ -229,7 +229,7 @@ void
 MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(int c,
                                                       const std::vector<VectorPolynomial>& vf,
                                                       const ProjectorType type,
-                                                      const std::shared_ptr<DenseVector>& moments,
+                                                      const std::shared_ptr<DenseVector<>>& moments,
                                                       MatrixPolynomial& uc)
 {
   AMANZI_ASSERT(d_ == 2);
@@ -252,13 +252,13 @@ MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(int c,
 
   // create zero vector polynomial
   int dim = vf[0].size();
-  uc.Reshape(d_, dim, d_, order_ - 1, true);
+  uc.reshape(d_, dim, d_, order_ - 1, true);
 
-  std::vector<const PolynomialBase*> polys(2);
+  std::vector<const PolynomialBase<>*> polys(2);
   NumericalIntegration numi(mesh_);
 
   // selecting regularized basis
-  Polynomial ptmp;
+  Polynomial<> ptmp;
   Basis_Regularized basis;
   basis.Init(mesh_, c, order_, ptmp);
 
@@ -266,15 +266,15 @@ MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(int c,
     for (int j = 0; j < d_; ++j) {
       // calculate right-hand side matrix R for the L2 projector
       int md = poly.size();
-      DenseVector v4(md), v5(md);
+      DenseVector<> v4(md), v5(md);
 
-      v4.PutScalar(0.0);
+      v4.putScalar(0.0);
       for (auto it = poly.begin(); it < poly.end(); ++it) {
         int row = it.PolynomialPosition();
         const int* index = it.multi_index();
 
         double factor = basis.monomial_scales()[it.MonomialSetOrder()];
-        Polynomial cmono(d_, index, factor);
+        Polynomial<> cmono(d_, index, factor);
         cmono.set_origin(xc);
 
         polys[0] = &cmono;
@@ -320,12 +320,12 @@ MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(int c,
 ****************************************************************** */
 void
 MFD3D_CrouzeixRaviartAnyOrder::CalculateFaceDOFs_(int f,
-                                                  const Polynomial& vf,
-                                                  const Polynomial& pf,
-                                                  DenseVector& vdof,
+                                                  const Polynomial<>& vf,
+                                                  const Polynomial<>& pf,
+                                                  DenseVector<>& vdof,
                                                   int& row)
 {
-  std::vector<const PolynomialBase*> polys(2);
+  std::vector<const PolynomialBase<>*> polys(2);
 
   NumericalIntegration numi(mesh_);
 
@@ -340,7 +340,7 @@ MFD3D_CrouzeixRaviartAnyOrder::CalculateFaceDOFs_(int f,
 
   for (auto it = pf.begin(); it < pf.end(); ++it) {
     const int* index = it.multi_index();
-    Polynomial fmono(d_ - 1, index, 1.0);
+    Polynomial<> fmono(d_ - 1, index, 1.0);
     fmono.InverseChangeCoordinates(xf, *coordsys.tau());
 
     polys[1] = &fmono;
@@ -357,11 +357,11 @@ MFD3D_CrouzeixRaviartAnyOrder::CalculateFaceDOFs_(int f,
 void
 MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
                                               int c,
-                                              const std::vector<Polynomial>& ve,
-                                              const std::vector<Polynomial>& vf,
+                                              const std::vector<Polynomial<>>& ve,
+                                              const std::vector<Polynomial<>>& vf,
                                               const ProjectorType type,
-                                              const Polynomial* moments,
-                                              Polynomial& uc)
+                                              const Polynomial<>* moments,
+                                              Polynomial<>& uc)
 {
   AMANZI_ASSERT(d_ == 2);
 
@@ -372,8 +372,8 @@ MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(const Teuchos::RCP<const AmanziMes
   double volume = mymesh->getCellVolume(c);
 
   // calculate stiffness matrix
-  Tensor T(d_, 1);
-  DenseMatrix N, A;
+  Tensor<> T(d_, 1);
+  DenseMatrix<> N, A;
 
   T(0, 0) = 1.0;
   StiffnessMatrix(c, T, A);
@@ -388,10 +388,10 @@ MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(const Teuchos::RCP<const AmanziMes
   int ndof_c(ndof - ndof_f);
 
   // calculate DOFs for boundary polynomial
-  DenseVector vdof(ndof);
+  DenseVector<> vdof(ndof);
 
   // selecting regularized basis
-  Polynomial ptmp;
+  Polynomial<> ptmp;
   Basis_Regularized basis;
   basis.Init(mymesh, c, order_, ptmp);
 
@@ -405,14 +405,14 @@ MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(const Teuchos::RCP<const AmanziMes
   // degrees of freedom in cell
   if (ndof_c > 0) {
     AMANZI_ASSERT(moments != NULL);
-    const DenseVector& v3 = moments->coefs();
+    const DenseVector<>& v3 = moments->coefs();
     AMANZI_ASSERT(ndof_c == v3.NumRows());
 
     for (int n = 0; n < ndof_c; ++n) { vdof(row + n) = v3(n); }
   }
 
   // calculate polynomial coefficients (in natural basis)
-  DenseVector v4(nd), v5(nd);
+  DenseVector<> v4(nd), v5(nd);
   R_.Multiply(vdof, v4, true);
   G_.Multiply(v4, v5, false);
 
@@ -436,9 +436,9 @@ MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(const Teuchos::RCP<const AmanziMes
 
     uc(0) = a1 / a2;
   } else if (order_ >= 2) {
-    v4 = integrals_.poly().coefs();
+    v4.assign(integrals_.poly().coefs());
     basis.ChangeBasisMyToNatural(v4);
-    v4.Reshape(nd);
+    v4.reshape(nd);
     uc(0) = vdof(row) - (v4 * v5) / volume;
   }
 
@@ -447,17 +447,17 @@ MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(const Teuchos::RCP<const AmanziMes
     v5(0) = uc(0);
 
     DenseMatrix M, M2;
-    DenseVector v6(nd - ndof_c);
+    DenseVector<> v6(nd - ndof_c);
     Polynomial poly(d_, order_);
     NumericalIntegration numi(mymesh);
 
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
     GrammMatrix(poly, integrals_, basis, M);
 
-    M2 = M.SubMatrix(ndof_c, nd, 0, nd);
+    M2.assign(M.SubMatrix(ndof_c, nd, 0, nd));
     M2.Multiply(v5, v6, false);
 
-    const DenseVector& v3 = moments->coefs();
+    const DenseVector<>& v3 = moments->coefs();
     for (int n = 0; n < ndof_c; ++n) { v4(n) = v3(n) * mymesh->getCellVolume(c); }
 
     for (int n = 0; n < nd - ndof_c; ++n) { v4(ndof_c + n) = v6(n); }

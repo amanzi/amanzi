@@ -4,19 +4,16 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
-/*
-  Data Structures
-
-*/
-
+//! <MISSING_ONELINE_DOCSTRING>
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
 #include <string>
 #include <vector>
+#include <numeric>
 
 #include "UnitTest++.h"
 
@@ -27,14 +24,11 @@
 #include "MeshFactory.hh"
 
 #include "Teuchos_TimeMonitor.hpp"
-#include "Epetra_IntSerialDenseVector.h"
-#include "Epetra_SerialDenseVector.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsGraph.h"
-#include "Epetra_FECrsMatrix.h"
+#include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "AmanziComm.hh"
+#include "AmanziMatrix.hh"
 #include "VerboseObject.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
@@ -43,18 +37,17 @@
 
 /* *****************************************************************
  * this test is a null test -- all entries are local
-* **************************************************************** */
+ * **************************************************************** */
 TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
+  if (getRank == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
@@ -74,20 +67,16 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
+  //  Teuchos::RCP<const Mesh> mesh =
+  //  meshfactory.create("test/median32x33.exo");
 
   // grab the maps
-  int ncells =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-  Teuchos::RCP<Epetra_Map> cell_map =
-    Teuchos::rcp(new Epetra_Map(mesh->getMap(AmanziMesh::Entity_kind::CELL, false)));
-  Teuchos::RCP<Epetra_Map> cell_map_ghosted =
-    Teuchos::rcp(new Epetra_Map(mesh->getMap(AmanziMesh::Entity_kind::CELL, true)));
+  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  auto cell_map = mesh->getMap(Entity_kind::CELL, false);
+  auto cell_map_ghosted = mesh->getMap(Entity_kind::CELL, true);
 
   // create the graph
-  int ierr(0);
-  Teuchos::RCP<GraphFE> graph =
-    Teuchos::rcp(new GraphFE(cell_map, cell_map_ghosted, cell_map_ghosted, 5));
+  auto graph = Teuchos::rcp(new GraphFE(cell_map, cell_map_ghosted, cell_map_ghosted, 5));
 
   std::vector<int> neighbor_cells;
   for (int c = 0; c != ncells; ++c) {
@@ -102,18 +91,16 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
       }
     }
 
-    ierr |= graph->InsertMyIndices(c, neighbor_cells.size(), &neighbor_cells[0]);
-    CHECK(!ierr);
+    graph->insertLocalIndices(c, neighbor_cells.size(), &neighbor_cells[0]);
   }
 
-  ierr |= graph->FillComplete(cell_map, cell_map);
-  CHECK(!ierr);
+  graph->fillComplete(cell_map, cell_map);
 
   // create the test matrix
   MatrixFE matrix(graph);
 
   // and the control matrix
-  Epetra_FECrsMatrix control(Copy, graph->Graph());
+  Matrix_type control(graph->getGraph());
 
   for (int c = 0; c != ncells; ++c) {
     neighbor_cells.resize(0);
@@ -127,69 +114,66 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
       }
     }
 
-    Epetra_SerialDenseVector vals(neighbor_cells.size());
-    vals.Random();
+    Teuchos::SerialDenseMatrix<int, double> vals(neighbor_cells.size(), 1);
+    vals.random();
 
-    ierr |= matrix.SumIntoMyValues(c, neighbor_cells.size(), &vals[0], &neighbor_cells[0]);
-    AMANZI_ASSERT(!ierr);
-    CHECK(!ierr);
+    matrix.sumIntoLocalValues(c, neighbor_cells.size(), &vals(0, 0), neighbor_cells.data());
 
-    std::vector<int> neighbor_cell_gids(neighbor_cells.size());
+    std::vector<GO> neighbor_cell_gids(neighbor_cells.size());
     for (int n = 0; n != neighbor_cells.size(); ++n) {
-      neighbor_cell_gids[n] = cell_map_ghosted->GID(neighbor_cells[n]);
+      neighbor_cell_gids[n] = cell_map_ghosted->getGlobalElement(neighbor_cells[n]);
       AMANZI_ASSERT(neighbor_cell_gids[n] >= 0);
     }
-    AMANZI_ASSERT(cell_map_ghosted->GID(c) >= 0);
-    ierr |= control.SumIntoGlobalValues(
-      cell_map_ghosted->GID(c), neighbor_cells.size(), &vals[0], &neighbor_cell_gids[0]);
-    AMANZI_ASSERT(!ierr);
-    CHECK(!ierr);
+    AMANZI_ASSERT(cell_map_ghosted->getGlobalElement(c) >= 0);
+    control.sumIntoGlobalValues(cell_map_ghosted->getGlobalElement(c),
+                                neighbor_cells.size(),
+                                &vals(0, 0),
+                                neighbor_cell_gids.data());
   }
 
-  ierr |= matrix.FillComplete();
-  CHECK(!ierr);
+  matrix.fillComplete();
 
-  ierr |= control.GlobalAssemble();
-  CHECK(!ierr);
+  control.fillComplete(graph->getDomainMap(), graph->getRangeMap());
+
+  auto os = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+  matrix.getMatrix()->describe(*os, Teuchos::VERB_EXTREME);
+  control.describe(*os, Teuchos::VERB_EXTREME);
+
 
   // check matrix equality
   for (int c = 0; c != ncells; ++c) {
-    int nentries(0);
-    std::vector<double> mat_vals(5);
-    std::vector<double> ctrl_vals(5);
-    std::vector<int> mat_inds(5);
-    std::vector<int> ctrl_inds(5);
+    MatrixFE::cValues_host_view_type mat_vals, ctrl_vals;
+    MatrixFE::cLocalIndices_host_view_type mat_inds, ctrl_inds;
+    int ctrl_nentries, mat_nentries;
 
-    ierr |= matrix.Matrix()->ExtractMyRowCopy(c, 5, nentries, &mat_vals[0], &mat_inds[0]);
-    CHECK(!ierr);
-    mat_vals.resize(nentries);
-    mat_inds.resize(nentries);
+    matrix.getLocalRowView(c, mat_inds, mat_vals);
+    mat_nentries = mat_vals.size();
 
-    ierr |= control.ExtractMyRowCopy(c, 5, nentries, &ctrl_vals[0], &ctrl_inds[0]);
-    CHECK(!ierr);
-    ctrl_vals.resize(nentries);
-    ctrl_inds.resize(nentries);
+    control.getLocalRowView(c, ctrl_inds, ctrl_vals);
+    ctrl_nentries = ctrl_vals.size();
 
-    CHECK(mat_vals == ctrl_vals);
-    CHECK(mat_inds == ctrl_inds);
+    CHECK_EQUAL(ctrl_nentries, mat_nentries);
+    for (int i = 0; i != std::min(ctrl_nentries, mat_nentries); ++i) {
+      CHECK_EQUAL(ctrl_inds[i], mat_inds[i]);
+      CHECK_CLOSE(ctrl_vals[i], mat_vals[i], 1.e-10);
+    }
   }
 }
 
 
 /* *****************************************************************
  * this test is a real test with FE-like assembly of face-face system
-* **************************************************************** */
+ * **************************************************************** */
 TEST(FE_MATRIX_FACE_FACE)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
+  if (getRank == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
@@ -202,103 +186,72 @@ TEST(FE_MATRIX_FACE_FACE)
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  Preference pref;
-  pref.clear();
-  pref.push_back(Framework::MSTK);
-
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(pref);
+  meshfactory.set_preference({ Framework::MSTK });
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
-  int ncells =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-  Teuchos::RCP<Epetra_Map> face_map =
-    Teuchos::rcp(new Epetra_Map(mesh->getMap(AmanziMesh::Entity_kind::FACE, false)));
-  Teuchos::RCP<Epetra_Map> face_map_ghosted =
-    Teuchos::rcp(new Epetra_Map(mesh->getMap(AmanziMesh::Entity_kind::FACE, true)));
+  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  auto face_map = mesh->getMap(Entity_kind::FACE, false);
+  auto face_map_ghosted = mesh->getMap(Entity_kind::FACE, true);
 
   // create the graph
-  int ierr(0);
   Teuchos::RCP<GraphFE> graph =
-    Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 5));
+    Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 7));
 
   for (int c = 0; c != ncells; ++c) {
-    auto cfaces = mesh->getCellFaces(c);
-    AmanziMesh::Entity_ID_View faces;
-    faces.fromConst(cfaces);
-
+    auto faces = mesh->getCellFaces(c);
     for (int n = 0; n != faces.size(); ++n) {
-      ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces[0]);
-      CHECK(!ierr);
+      graph->insertLocalIndices(faces[n], faces.size(), &faces(0));
     }
   }
 
-  ierr |= graph->FillComplete(face_map, face_map);
-  CHECK(!ierr);
+  graph->fillComplete(face_map, face_map);
 
   // create the test matrix
   MatrixFE matrix(graph);
 
   // and the control matrix
-  Epetra_FECrsMatrix control(Copy, graph->Graph());
+  Matrix_type control(graph->getGraph());
 
   for (int c = 0; c != ncells; ++c) {
     auto faces = mesh->getCellFaces(c);
 
-    Epetra_IntSerialDenseVector face_gids(faces.size());
+    Teuchos::SerialDenseVector<int, GO> face_gids(faces.size());
     for (int n = 0; n != faces.size(); ++n) {
-      face_gids[n] = face_map_ghosted->GID(faces[n]);
+      face_gids[n] = face_map_ghosted->getGlobalElement(faces[n]);
       AMANZI_ASSERT(face_gids[n] > -1);
     }
 
-    Epetra_SerialDenseMatrix vals(faces.size(), faces.size());
-    vals.Random();
+    Teuchos::SerialDenseMatrix<int, double> vals(faces.size(), faces.size());
+    vals.random();
+    matrix.sumIntoLocalValuesTransposed(faces.data(), faces.data(), vals);
 
-    ierr |= matrix.SumIntoMyValues(&faces[0], vals);
-    CHECK(!ierr);
-
-    ierr |= control.SumIntoGlobalValues(face_gids, vals);
-    CHECK(!ierr);
+    for (int i = 0; i != faces.size(); ++i) {
+      control.sumIntoGlobalValues(face_gids[i], faces.size(), &vals(0, i), &face_gids[0]);
+    }
   }
 
-  ierr |= matrix.FillComplete();
-  CHECK(!ierr);
-
-  ierr |= control.GlobalAssemble();
-  CHECK(!ierr);
+  matrix.fillComplete();
+  control.fillComplete(graph->getDomainMap(), graph->getRangeMap());
 
   // check matrix equality
-  int nfaces =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f != nfaces; ++f) {
-    int nentries(0);
-    std::vector<double> mat_vals(7);
-    std::vector<double> ctrl_vals(7);
-    std::vector<int> mat_inds(7);
-    std::vector<int> ctrl_inds(7);
+    MatrixFE::cValues_host_view_type mat_vals, ctrl_vals;
+    MatrixFE::cLocalIndices_host_view_type mat_inds, ctrl_inds;
+    int ctrl_nentries, mat_nentries;
 
-    ierr |= matrix.Matrix()->ExtractMyRowCopy(f, 7, nentries, &mat_vals[0], &mat_inds[0]);
-    CHECK(!ierr);
-    mat_vals.resize(nentries);
-    mat_inds.resize(nentries);
+    matrix.getLocalRowView(f, mat_inds, mat_vals);
+    mat_nentries = mat_vals.size();
 
-    ierr |= control.ExtractMyRowCopy(f, 7, nentries, &ctrl_vals[0], &ctrl_inds[0]);
-    CHECK(!ierr);
-    ctrl_vals.resize(nentries);
-    ctrl_inds.resize(nentries);
+    control.getLocalRowView(f, ctrl_inds, ctrl_vals);
+    ctrl_nentries = ctrl_vals.size();
 
-    CHECK(mat_inds == ctrl_inds);
-    CHECK(mat_vals == ctrl_vals);
-    if (!(mat_vals == ctrl_vals)) {
-      std::cout << "Bad mat: ";
-      for (std::vector<double>::const_iterator it = mat_vals.begin(); it != mat_vals.end(); ++it)
-        std::cout << " " << *it;
-      std::cout << std::endl << "   ctrl: ";
-      for (std::vector<double>::const_iterator it = ctrl_vals.begin(); it != ctrl_vals.end(); ++it)
-        std::cout << " " << *it;
-      std::cout << std::endl;
+    CHECK_EQUAL(ctrl_nentries, mat_nentries);
+    for (int i = 0; i != std::min(ctrl_nentries, mat_nentries); ++i) {
+      CHECK_EQUAL(ctrl_inds[i], mat_inds[i]);
+      CHECK_CLOSE(ctrl_vals[i], mat_vals[i], 1.e-10);
     }
   }
 }

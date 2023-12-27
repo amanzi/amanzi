@@ -16,6 +16,7 @@
 #define AMANZI_EXPRTK_HH_
 
 #include "exprtk.hpp"
+#include "Kokkos_Core.hpp"
 
 namespace Amanzi {
 namespace Utils {
@@ -26,6 +27,7 @@ class ExprTK {
   bool Initialize(int n, const std::string& formula);
 
   double operator()(const std::vector<double>& txyz);
+  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>& txyz);
 
  private:
   int n_;

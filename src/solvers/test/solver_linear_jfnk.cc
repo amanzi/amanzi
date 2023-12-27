@@ -48,7 +48,7 @@ SUITE(SOLVERS)
     virtual int ApplyPreconditioner(const Teuchos::RCP<const Epetra_Vector>& r,
                                     const Teuchos::RCP<Epetra_Vector>& Pr)
     {
-      return ApplyInverse(*r, *Pr);
+      return applyInverse(*r, *Pr);
     }
     virtual void UpdatePreconditioner(const Teuchos::RCP<const Epetra_Vector>& u) {}
 
@@ -68,7 +68,7 @@ SUITE(SOLVERS)
       for (int i = 0; i < 4; i++) mv[i] -= v[i + 1];
       return 0;
     }
-    virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
+    virtual int applyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
     {
       for (int i = 0; i < 5; i++) hv[i] = v[i];
       return 0;

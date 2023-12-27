@@ -32,7 +32,6 @@
       <Parameter name="discretization primary" type="string" value="mfd: monotone for hex"/>
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{cell,face}"/>
-      <Parameter name="use surface flux" type="bool" value="false"/>
     </ParameterList>
   </ParameterList>
 
@@ -54,7 +53,7 @@
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="discretization method" type="string" value="generic mfd"/>
-      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
+      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="cycle applications" type="int" value="2"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>

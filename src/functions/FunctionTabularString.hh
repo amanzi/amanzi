@@ -18,8 +18,6 @@
 #include <string>
 #include <vector>
 
-#include "Function.hh"
-
 namespace Amanzi {
 
 class FunctionTabularString {

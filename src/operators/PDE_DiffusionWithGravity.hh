@@ -23,14 +23,12 @@ namespace Operators {
 
 class PDE_DiffusionWithGravity : public virtual PDE_Diffusion {
  public:
-  PDE_DiffusionWithGravity(const Teuchos::RCP<Operator>& global_op)
-    : PDE_Diffusion(global_op), is_scalar_(false){};
+  PDE_DiffusionWithGravity(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
+    : PDE_Diffusion(plist, global_op), is_scalar_(false){};
 
-  PDE_DiffusionWithGravity(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : PDE_Diffusion(mesh), is_scalar_(false){};
-
-  PDE_DiffusionWithGravity(const Teuchos::RCP<AmanziMesh::Mesh>& mesh)
-    : PDE_Diffusion(mesh), is_scalar_(false){};
+  PDE_DiffusionWithGravity(Teuchos::ParameterList& plist,
+                           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : PDE_Diffusion(plist, mesh), is_scalar_(false){};
 
   virtual ~PDE_DiffusionWithGravity() = default;
 
@@ -45,13 +43,23 @@ class PDE_DiffusionWithGravity : public virtual PDE_Diffusion {
   virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho)
   {
     is_scalar_ = false;
-    if (rho->HasComponent("cell")) { rho_cv_ = rho; }
+    if (rho->hasComponent("cell")) { rho_cv_ = rho; }
   }
 
-  double GetDensity(int c)
+  cMultiVectorView_type_<DefaultDevice, double> DensityCells(bool scatter) const
   {
-    if (is_scalar_) return rho_;
-    return (*rho_cv_->ViewComponent("cell", true))[0][c];
+    if (!is_scalar_ && !rho_cv_.get()) {
+      Errors::Message msg("Diffusion: density was not set.");
+      Exceptions::amanzi_throw(msg);
+    }
+    if (!is_scalar_) {
+      if (scatter) rho_cv_->scatterMasterToGhosted("cell");
+      AMANZI_ASSERT(rho_cv_->hasComponent("cell"));
+      return rho_cv_->viewComponent("cell", true);
+    }
+    MultiVectorView_type_<DefaultDevice, double> rho_c("rho_cell", ncells_wghost, 1);
+    Kokkos::deep_copy(rho_c, rho_);
+    return rho_c;
   }
 
  protected:

@@ -34,7 +34,7 @@ namespace WhetStone {
 * This is the experimental algorithm.
 ****************************************************************** */
 int
-MFD3D_Electromagnetics::H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
+MFD3D_Electromagnetics::H1consistency(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Ac)
 {
   int ok;
   if (d_ == 2) {
@@ -50,14 +50,17 @@ MFD3D_Electromagnetics::H1consistency(int c, const Tensor& T, DenseMatrix& N, De
 * Consistency condition for a stiffness matrix.
 ****************************************************************** */
 int
-MFD3D_Electromagnetics::H1consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
+MFD3D_Electromagnetics::H1consistency2D_(int c,
+                                         const Tensor<>& T,
+                                         DenseMatrix<>& N,
+                                         DenseMatrix<>& Ac)
 {
   const auto& [faces, fdirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   int nd = 3;
-  N.Reshape(nfaces, nd);
-  Ac.Reshape(nfaces, nfaces);
+  N.reshape(nfaces, nd);
+  Ac.reshape(nfaces, nfaces);
 
   // calculate Ac = R (R^T N)^{+} R^T
   double T00 = T(0, 0);
@@ -98,7 +101,10 @@ MFD3D_Electromagnetics::H1consistency2D_(int c, const Tensor& T, DenseMatrix& N,
 * Consistency condition for a stiffness matrix.
 ****************************************************************** */
 int
-MFD3D_Electromagnetics::H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
+MFD3D_Electromagnetics::H1consistency3D_(int c,
+                                         const Tensor<>& T,
+                                         DenseMatrix<>& N,
+                                         DenseMatrix<>& Ac)
 {
   std::vector<int> map;
 
@@ -109,11 +115,11 @@ MFD3D_Electromagnetics::H1consistency3D_(int c, const Tensor& T, DenseMatrix& N,
   int nedges = edges.size();
 
   int nd = 6; // order_ * (order_ + 2) * (order_ + 3) / 2;
-  N.Reshape(nedges, nd);
-  Ac.Reshape(nedges, nedges);
+  N.reshape(nedges, nd);
+  Ac.reshape(nedges, nedges);
 
   // To calculate matrix R, we re-use matrix N
-  N.PutScalar(0.0);
+  N.putScalar(0.0);
 
   AmanziGeometry::Point v1(d_), v2(d_), v3(d_);
 
@@ -175,11 +181,11 @@ MFD3D_Electromagnetics::H1consistency3D_(int c, const Tensor& T, DenseMatrix& N,
 * Mass matrix optimized for sparsity.
 ****************************************************************** */
 int
-MFD3D_Electromagnetics::MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& M)
+MFD3D_Electromagnetics::MassMatrixOptimized(int c, const Tensor<>& T, DenseMatrix<>& M)
 {
   DenseMatrix N;
 
-  int ok = L2consistency(c, T, N, M);
+  int ok = L2consistency(c, T, N, M, true);
   if (ok) return ok;
 
   ok = StabilityOptimized_(T, N, M);
@@ -192,11 +198,11 @@ MFD3D_Electromagnetics::MassMatrixOptimized(int c, const Tensor& T, DenseMatrix&
 * for starcity.
 ****************************************************************** */
 int
-MFD3D_Electromagnetics::MassMatrixInverseOptimized(int c, const Tensor& T, DenseMatrix& W)
+MFD3D_Electromagnetics::MassMatrixInverseOptimized(int c, const Tensor<>& T, DenseMatrix<>& W)
 {
   DenseMatrix R;
 
-  int ok = L2consistencyInverse(c, T, R, W);
+  int ok = L2consistencyInverse(c, T, R, W, true);
   if (ok) return ok;
 
   ok = StabilityOptimized_(T, R, W);
@@ -208,14 +214,14 @@ MFD3D_Electromagnetics::MassMatrixInverseOptimized(int c, const Tensor& T, Dense
 * A simple mass matrix for testing.
 ****************************************************************** */
 int
-MFD3D_Electromagnetics::MassMatrixDiagonal(int c, const Tensor& T, DenseMatrix& M)
+MFD3D_Electromagnetics::MassMatrixDiagonal(int c, const Tensor<>& T, DenseMatrix<>& M)
 {
   double volume = mesh_->getCellVolume(c);
 
   const auto& edges = mesh_->getCellEdges(c);
   int nedges = edges.size();
 
-  M.PutScalar(0.0);
+  M.putScalar(0.0);
   for (int n = 0; n < nedges; n++) { M(n, n) = d_ * volume / (nedges * T(0, 0)); }
   return 0;
 }
@@ -225,7 +231,7 @@ MFD3D_Electromagnetics::MassMatrixDiagonal(int c, const Tensor& T, DenseMatrix& 
 * Stiffness matrix: the standard algorithm.
 ****************************************************************** */
 int
-MFD3D_Electromagnetics::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
+MFD3D_Electromagnetics::StiffnessMatrix(int c, const Tensor<>& T, DenseMatrix<>& A)
 {
   DenseMatrix M, C;
 
@@ -240,10 +246,10 @@ MFD3D_Electromagnetics::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
 ****************************************************************** */
 int
 MFD3D_Electromagnetics::StiffnessMatrix(int c,
-                                        const Tensor& T,
-                                        DenseMatrix& A,
-                                        DenseMatrix& M,
-                                        DenseMatrix& C)
+                                        const Tensor<>& T,
+                                        DenseMatrix<>& A,
+                                        DenseMatrix<>& M,
+                                        DenseMatrix<>& C)
 {
   MFD3D_Diffusion diffusion(mesh_);
   diffusion.MassMatrixScaledArea(c, T, M);
@@ -253,7 +259,7 @@ MFD3D_Electromagnetics::StiffnessMatrix(int c,
   int nfaces = C.NumRows();
   int nedges = C.NumCols();
 
-  A.Reshape(nedges, nedges);
+  A.reshape(nedges, nedges);
   DenseMatrix MC(nfaces, nedges);
 
   MC.Multiply(M, C, false);
@@ -267,7 +273,7 @@ MFD3D_Electromagnetics::StiffnessMatrix(int c,
 * Stiffness matrix: the algorithm based on new consistency condition
 ****************************************************************** */
 int
-MFD3D_Electromagnetics::StiffnessMatrix_GradCorrection(int c, const Tensor& T, DenseMatrix& A)
+MFD3D_Electromagnetics::StiffnessMatrix_GradCorrection(int c, const Tensor<>& T, DenseMatrix<>& A)
 {
   DenseMatrix N;
 
@@ -286,7 +292,7 @@ MFD3D_Electromagnetics::StiffnessMatrix_GradCorrection(int c, const Tensor& T, D
 * no face area scaling below.
 ****************************************************************** */
 void
-MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
+MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix<>& C)
 {
   std::vector<int> map;
 
@@ -296,8 +302,8 @@ MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
   const auto& [faces, fdirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
-  C.Reshape(nfaces, nedges);
-  C.PutScalar(0.0);
+  C.reshape(nfaces, nedges);
+  C.putScalar(0.0);
 
   if (d_ == 2) {
     auto nodes = mesh_->getCellNodes(c);

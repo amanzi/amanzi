@@ -25,8 +25,7 @@
 
 #include "Point.hh"
 #include "MeshDefs.hh"
-
-class Epetra_MultiVector;
+#include "MeshCache_decl.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -103,8 +102,8 @@ getCellFaceAdjacentCells(const Mesh_type& mesh, Entity_ID c, Parallel_kind ptype
 template <MemSpace_kind MEM>
 void
 copyFacesToBoundaryFaces(const MeshCache<MEM>& mesh,
-                         const Epetra_MultiVector& faces,
-                         Epetra_MultiVector& boundary_faces);
+                         const MultiVector_type& faces,
+                         MultiVector_type& boundary_faces);
 
 //
 // Given a vector on faces, import to vector on boundary faces
@@ -112,8 +111,8 @@ copyFacesToBoundaryFaces(const MeshCache<MEM>& mesh,
 template <MemSpace_kind MEM>
 void
 copyBoundaryFacesToFaces(const MeshCache<MEM>& mesh,
-                         const Epetra_MultiVector& boundary_faces,
-                         Epetra_MultiVector& faces);
+                         const MultiVector_type& boundary_faces,
+                         MultiVector_type& faces);
 
 //
 // Given a vector on cells, set the boundary_face entries by their internal cell
@@ -121,8 +120,8 @@ copyBoundaryFacesToFaces(const MeshCache<MEM>& mesh,
 template <MemSpace_kind MEM>
 void
 copyCellsToBoundaryFaces(const MeshCache<MEM>& mesh,
-                         const Epetra_MultiVector& cells,
-                         Epetra_MultiVector& boundary_faces);
+                         const MultiVector_type& cells,
+                         MultiVector_type& boundary_faces);
 
 
 // -----------------------------------------------------------------------------

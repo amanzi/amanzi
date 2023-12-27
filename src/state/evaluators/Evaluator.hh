@@ -27,7 +27,7 @@ namespace Amanzi {
 
 class Evaluator {
  public:
-  Evaluator() : type_(EvaluatorType::OTHER){};
+  Evaluator() : type_(Evaluator_kind::OTHER){};
   virtual ~Evaluator(){};
   virtual Teuchos::RCP<Evaluator> Clone() const = 0;
   virtual Evaluator& operator=(const Evaluator& other) = 0;
@@ -70,14 +70,15 @@ class Evaluator {
   virtual void EnsureCompatibility(State& S) = 0;
 
   // access
-  EvaluatorType get_type() { return type_; }
+  Evaluator_kind getKind() const { return type_; }
+  virtual std::string getType() const = 0;
+  virtual std::ostream& writeInfo(std::ostream& os) const = 0;
 
   // Virtual method for debugging, plotting the dependency graph, etc.
-  virtual std::string WriteToString() const = 0;
   friend std::ostream& operator<<(std::ostream&, const Evaluator&);
 
  protected:
-  EvaluatorType type_;
+  Evaluator_kind type_;
 };
 
 } // namespace Amanzi

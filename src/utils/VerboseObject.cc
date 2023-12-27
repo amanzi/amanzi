@@ -46,7 +46,7 @@ VerboseObject::VerboseObject(const std::string& name, const std::string& verbosi
 /* ******************************************************************
 * Read verbosity from a parameter list
 ****************************************************************** */
-VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList plist)
+VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList& plist)
 {
   // Options from ParameterList
   // Set up the default level.
@@ -84,7 +84,7 @@ VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList pli
 
 VerboseObject::VerboseObject(const Comm_ptr_type& comm,
                              const std::string& name,
-                             Teuchos::ParameterList outer_plist)
+                             Teuchos::ParameterList& outer_plist)
   : comm_(comm)
 {
   Teuchos::ParameterList& plist = outer_plist.sublist("verbose object");
@@ -119,8 +119,8 @@ VerboseObject::VerboseObject(const Comm_ptr_type& comm,
   getOStream()->setShowProcRank(show_rank);
 
   // -- set the comm info
-  int size = comm_->NumProc();
-  int pid = comm_->MyPID();
+  int size = comm_->getSize();
+  int pid = comm_->getRank();
   getOStream()->setProcRankAndSize(pid, size);
 
   // -- write from a different rank than 0
@@ -189,6 +189,8 @@ VerboseObject::color(const std::string& name) const
     output = color("green");
   } else if (name == "bad") {
     output = color("red");
+  } else if (name.empty()) {
+    return reset();
   }
   return output;
 }

@@ -71,21 +71,21 @@ Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
 {
   // require the rhs
   auto& rhs_fac = S.Require<CompositeVector, CompositeVectorSpace>(rhs_key_, my_tag_, rhs_key_);
-  if (rhs_fac.Mesh().get()) {
+  if (rhs_fac.getMesh().get()) {
     // we have a mesh for the RHS, so we can create a diffusion op to get the
     // schema
     Operators::PDE_DiffusionFactory diff_fac;
-    auto diff = diff_fac.Create(plist_, rhs_fac.Mesh());
+    auto diff = diff_fac.Create(plist_, rhs_fac.getMesh());
 
     // now we can set up the local op
     auto& lop_fac =
       S.Require<Operators::Op, Operators::Op_Factory>(local_op_key_, my_tag_, local_op_key_);
-    lop_fac.set_mesh(rhs_fac.Mesh());
+    lop_fac.set_mesh(rhs_fac.getMesh());
     Operators::Schema schema(diff->schema_dofs());
     lop_fac.set_schema(schema);
 
     // push schema to the rhs cvs
-    CompositeVectorSpace cvs = Operators::cvsFromSchema(schema, rhs_fac.Mesh(), true);
+    CompositeVectorSpace cvs = Operators::cvsFromSchema(schema, rhs_fac.getMesh(), true);
     rhs_fac.Update(cvs);
 
     // require scalar coef on the space required by little_k option of
@@ -96,7 +96,7 @@ Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
 
     // require bcs
     auto& bc_fac = S.Require<Operators::BCs, Operators::BCs_Factory>(bcs_key_, my_tag_);
-    bc_fac.set_mesh(rhs_fac.Mesh());
+    bc_fac.set_mesh(rhs_fac.getMesh());
     bc_fac.set_kind(AmanziMesh::Entity_kind::FACE);
     bc_fac.set_type(WhetStone::DOF_Type::SCALAR);
     S.RequireEvaluator(bcs_key_, my_tag_).EnsureCompatibility(S);
@@ -104,7 +104,7 @@ Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
     // require tensors on cells
     auto& K_fac = S.Require<TensorVector, TensorVector_Factory>(tensor_coef_key_, my_tag_);
     CompositeVectorSpace K_map;
-    K_map.SetMesh(rhs_fac.Mesh());
+    K_map.SetMesh(rhs_fac.getMesh());
     K_map.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     K_fac.set_map(K_map);
     S.RequireEvaluator(tensor_coef_key_, my_tag_).EnsureCompatibility(S);
@@ -114,7 +114,7 @@ Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
     if (!jac_op_key_.empty()) {
       auto& jac_op_fac =
         S.Require<Operators::Op, Operators::Op_Factory>(jac_op_key_, my_tag_, jac_op_key_);
-      jac_op_fac.set_mesh(rhs_fac.Mesh());
+      jac_op_fac.set_mesh(rhs_fac.getMesh());
       jac_op_fac.set_schema(diff->schema_jacobian());
     }
   }
@@ -196,8 +196,8 @@ Evaluator_PDE_Diffusion::Update_(State& S)
 
   // create the global operator
   Operators::Operator_Factory global_op_fac;
-  global_op_fac.set_mesh(A_rhs->Mesh());
-  global_op_fac.set_cvs(A_rhs->Map(), A_rhs->Map());
+  global_op_fac.set_mesh(A_rhs->getMesh());
+  global_op_fac.set_cvs(A_rhs->getMap(), A_rhs->getMap());
   auto global_op = global_op_fac.Create();
 
   // set up the global operator
@@ -211,7 +211,7 @@ Evaluator_PDE_Diffusion::Update_(State& S)
   pde->SetBCs(bcs, bcs);
 
   const auto& K = S.Get<TensorVector>(tensor_coef_key_, my_tag_);
-  Teuchos::RCP<const std::vector<WhetStone::Tensor>> Kdata = Teuchos::rcpFromRef(K.data);
+  Teuchos::RCP<const std::vector<WhetStone : Tensor<>>> Kdata = Teuchos::rcpFromRef(K.data);
   pde->SetTensorCoefficient(Kdata);
 
   // at least this is const!
@@ -236,8 +236,8 @@ Evaluator_PDE_Diffusion::UpdateDerivative_(State& S, const Key& wrt_key, const T
 
   // create the global operator
   Operators::Operator_Factory global_op_fac;
-  global_op_fac.set_mesh(A_rhs.Mesh());
-  global_op_fac.set_cvs(A_rhs.Map(), A_rhs.Map());
+  global_op_fac.set_mesh(A_rhs.getMesh());
+  global_op_fac.set_cvs(A_rhs.getMap(), A_rhs.getMap());
   auto global_op = global_op_fac.Create();
 
   // set up the global operator
@@ -255,7 +255,7 @@ Evaluator_PDE_Diffusion::UpdateDerivative_(State& S, const Key& wrt_key, const T
 
   // set the tensor coef
   const auto& K = S.Get<TensorVector>(tensor_coef_key_, my_tag_);
-  Teuchos::RCP<const std::vector<WhetStone::Tensor>> Kdata = Teuchos::rcpFromRef(K.data);
+  Teuchos::RCP<const std::vector<WhetStone : Tensor<>>> Kdata = Teuchos::rcpFromRef(K.data);
   pde->SetTensorCoefficient(Kdata);
 
   // set the scalar coef and derivatives

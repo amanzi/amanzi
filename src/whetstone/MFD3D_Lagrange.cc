@@ -46,13 +46,13 @@ MFD3D_Lagrange::MFD3D_Lagrange(const Teuchos::ParameterList& plist,
 * High-order consistency condition for the stiffness matrix.
 ****************************************************************** */
 int
-MFD3D_Lagrange::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
+MFD3D_Lagrange::H1consistency(int c, const Tensor<>& K, DenseMatrix<>& N, DenseMatrix<>& Ac)
 {
   auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
-  N.Reshape(nnodes, d_ + 1);
-  Ac.Reshape(nnodes, nnodes);
+  N.reshape(nnodes, d_ + 1);
+  Ac.reshape(nnodes, nnodes);
 
   const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
 
@@ -60,7 +60,7 @@ MFD3D_Lagrange::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatri
   AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
 
   // calculate matrix R. We temporaryly reuse matrix N
-  N.PutScalar(0.0);
+  N.putScalar(0.0);
 
   int num_faces = faces.size();
   for (int i = 0; i < num_faces; i++) {
@@ -127,7 +127,7 @@ MFD3D_Lagrange::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatri
 * Stiffness matrix for a high-order scheme.
 ****************************************************************** */
 int
-MFD3D_Lagrange::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
+MFD3D_Lagrange::StiffnessMatrix(int c, const Tensor<>& K, DenseMatrix<>& A)
 {
   DenseMatrix N;
 
@@ -144,9 +144,9 @@ MFD3D_Lagrange::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 ***************************************************************** */
 void
 MFD3D_Lagrange::ProjectorCell_(int c,
-                               const std::vector<Polynomial>& ve,
-                               const std::vector<Polynomial>& vf,
-                               Polynomial& uc)
+                               const std::vector<Polynomial<>>& ve,
+                               const std::vector<Polynomial<>>& vf,
+                               Polynomial<>& uc)
 {
   auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
@@ -158,7 +158,7 @@ MFD3D_Lagrange::ProjectorCell_(int c,
   DenseMatrix R(nnodes, d_);
   AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
 
-  R.PutScalar(0.0);
+  R.putScalar(0.0);
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
@@ -196,7 +196,7 @@ MFD3D_Lagrange::ProjectorCell_(int c,
     }
   }
 
-  uc.Reshape(d_, 1, true);
+  uc.reshape(d_, 1, true);
   for (int i = 0; i < nnodes; i++) {
     for (int k = 0; k < d_; k++) { uc(k + 1) += R(i, k) * vf[i](0); }
   }

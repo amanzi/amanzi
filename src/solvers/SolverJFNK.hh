@@ -25,7 +25,8 @@ inverse, the estimate of the inverse.
 .. _solver-jfnk-spec:
 .. admonition:: solver-jfnk-spec
 
-    * `"nonlinear solver`" ``[solver-typed-spec]`` The outer nonlinear solver to use.
+    * `"nonlinear solver`" ``[solver-typed-spec]`` The outer nonlinear solver to
+use.
 
     * `"inverse`" ``[inverse-typed-spec]`` The Krylov method to use.
 
@@ -93,7 +94,8 @@ class SolverJFNK : public Solver<Vector, VectorSpace> {
     Init(fn, map);
   }
 
-  void Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const VectorSpace& map);
+  void
+  Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const Teuchos::RCP<const VectorSpace>& map);
 
   int Solve(const Teuchos::RCP<Vector>& u) { return solver_->Solve(u); }
 
@@ -119,12 +121,12 @@ class SolverJFNK : public Solver<Vector, VectorSpace> {
 
 
 /* ******************************************************************
-* Public Init method.
-****************************************************************** */
+ * Public Init method.
+ ****************************************************************** */
 template <class Vector, class VectorSpace>
 void
 SolverJFNK<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
-                                      const VectorSpace& map)
+                                      const Teuchos::RCP<const VectorSpace>& map)
 {
   // create the nonlinear solver
   Teuchos::ParameterList& slist = plist_.sublist("nonlinear solver");

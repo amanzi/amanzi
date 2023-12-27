@@ -90,13 +90,13 @@ class SolverLS : public Solver<Vector, VectorSpace> {
 
   SolverLS(Teuchos::ParameterList& plist,
            const Teuchos::RCP<SolverFnBase<Vector>>& fn,
-           const VectorSpace& map)
+           const Teuchos::RCP<const VectorSpace>& map)
     : plist_(plist)
   {
     Init(fn, map);
   }
 
-  void Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const VectorSpace& map);
+  void Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const Teuchos::RCP<const VectorSpace>& map);
 
   int Solve(const Teuchos::RCP<Vector>& u)
   {
@@ -157,7 +157,7 @@ class SolverLS : public Solver<Vector, VectorSpace> {
 template <class Vector, class VectorSpace>
 void
 SolverLS<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
-                                    const VectorSpace& map)
+                                    const Teuchos::RCP<const VectorSpace>& map)
 {
   fn_ = fn;
   Init_();
@@ -200,13 +200,12 @@ int
 SolverLS<Vector, VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
 {
   // create storage
-  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> u0 = Teuchos::rcp(new Vector(*u));
+  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> u0 = Teuchos::rcp(new Vector(u->getMap()));
 
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0);
-  double l2_error(0.0);
   int db_write_iter = 0;
 
   num_itrs_ = 0;
@@ -220,7 +219,7 @@ SolverLS<Vector, VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
   error = fn_->ErrorNorm(u, r);
   previous_error = error;
   residual_ = error;
-  r->Norm2(&l2_error);
+  auto l2_error = r->norm2();
 
   int ierr = BT_ErrorControl_(error, previous_error, l2_error);
   if (ierr == SOLVER_CONVERGED) return num_itrs_;
@@ -254,12 +253,12 @@ SolverLS<Vector, VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
 
     // find an admissible endpoint, starting from ten times the full correction
     double endpoint = max_alpha_;
-    *u0 = *u;
-    u->Update(-endpoint, *du, 1.0);
+    u0->assign(*u);
+    u->update(-endpoint, *du, 1.0);
     fn_->ChangedSolution();
     while (!fn_->IsAdmissible(u)) {
       endpoint *= 0.1;
-      u->Update(-endpoint, *du, 1., *u0, 0.);
+      u->update(-endpoint, *du, 1., *u0, 0.);
       fn_->ChangedSolution();
     }
 
@@ -287,7 +286,7 @@ SolverLS<Vector, VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
     }
 
     // update the correction
-    u->Update(-result, *du, 1., *u0, 0.);
+    u->update(-result, *du, 1., *u0, 0.);
     fn_->ChangedSolution();
 
     // Increment iteration counter.
@@ -300,7 +299,7 @@ SolverLS<Vector, VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
     previous_error = error;
     error = linesearch_func.error;
     residual_ = error;
-    r->Norm2(&l2_error);
+    l2_error = r->norm2();
 
     int ierr2 = BT_ErrorControl_(error, previous_error, l2_error);
     if (ierr2 == SOLVER_CONVERGED) return num_itrs_;

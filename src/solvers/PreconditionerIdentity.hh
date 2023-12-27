@@ -26,8 +26,8 @@ No parameters are required.
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_MultiVector.h"
-#include "Epetra_RowMatrix.h"
+// #include "Epetra_MultiVector.h"
+// #include "Epetra_RowMatrix.h"
 
 #include "exceptions.hh"
 #include "Inverse.hh"
@@ -45,12 +45,12 @@ class PreconditionerIdentity : public Inverse<Matrix, Preconditioner, Vector, Ve
   ~PreconditionerIdentity(){};
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final{};
-  virtual void InitializeInverse() override final{};
-  virtual void ComputeInverse() override final{};
+  virtual void initializeInverse() override final{};
+  virtual void computeInverse() override final{};
 
-  virtual int ApplyInverse(const Vector& v, Vector& hv) const override final
+  virtual int applyInverse(const Vector& v, Vector& hv) const override final
   {
-    hv = v;
+    hv.assign(v);
     return 0;
   }
 

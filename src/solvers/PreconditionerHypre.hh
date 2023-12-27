@@ -21,33 +21,38 @@ spec.
 .. _preconditioner-boomer-amg-spec:
 .. admonition:: preconditioner-boomer-amg-spec:
 
-    * `"tolerance`" ``[double]`` **0.** If is not zero, the preconditioner is dynamic
-      and approximate the inverse matrix with the prescribed tolerance (in
-      the energy norm ???).
+    * `"tolerance`" ``[double]`` **0.** If is not zero, the preconditioner is
+dynamic and approximate the inverse matrix with the prescribed tolerance (in the
+energy norm ???).
 
-    * `"smoother sweeps`" ``[int]`` **3** defines the number of smoothing loops. Default is 3.
+    * `"smoother sweeps`" ``[int]`` **3** defines the number of smoothing loops.
+Default is 3.
 
     * `"cycle applications`" ``[int]`` **5** defines the number of V-cycles.
 
-    * `"strong threshold`" ``[double]`` **0.5** defines the number of V-cycles. Default is 5.
+    * `"strong threshold`" ``[double]`` **0.5** defines the number of V-cycles.
+Default is 5.
 
-    * `"relaxation type`" ``[int]`` **6** defines the smoother to be used. Default is 6
-      which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid method. TODO: add others!
+    * `"relaxation type`" ``[int]`` **6** defines the smoother to be used.
+Default is 6 which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid
+method. TODO: add others!
 
-    * `"coarsen type`" ``[int]`` **0** defines the coarsening strategy to be used. Default is 0
-      which specifies a Falgout method. TODO: add others!
+    * `"coarsen type`" ``[int]`` **0** defines the coarsening strategy to be
+used. Default is 0 which specifies a Falgout method. TODO: add others!
 
-    * `"max multigrid levels`" ``[int]`` optionally defined the maximum number of multigrid levels.
+    * `"max multigrid levels`" ``[int]`` optionally defined the maximum number
+of multigrid levels.
 
     * `"use block indices`" ``[bool]`` **false** If true, uses the `"systems of
       PDEs`" code with blocks given by the SuperMap, or one per DoF per entity
       type.
 
     * `"number of functions`" ``[int]`` **1** Any value > 1 tells Boomer AMG to
-      use the `"systems of PDEs`" code with strided block type.  Note that, to use
-      this approach, unknowns must be ordered with DoF fastest varying (i.e. not
+      use the `"systems of PDEs`" code with strided block type.  Note that, to
+use this approach, unknowns must be ordered with DoF fastest varying (i.e. not
       the native Epetra_MultiVector order).  By default, it uses the `"unknown`"
-      approach in which each equation is coarsened and interpolated independently.
+      approach in which each equation is coarsened and interpolated
+independently.
 
     * `"nodal strength of connection norm`" ``[int]`` tells AMG to coarsen such
       that each variable has the same coarse grid - sometimes this is more
@@ -76,19 +81,8 @@ Example:
   </ParameterList>
 
 
-ILU is a Parallel Incomplete LU, provided as part of the HYPRE project
-through the Ifpack interface.
-
-This is provided when using the `"preconditioning method`"=`"ILU`" or
-=`"hypre: ILU`" in the `Preconditioner`_ spec.
-
-.. _preconditioner-ILU-spec:
-.. admonition:: preconditioner-ILU-spec:
-
-    * `"ilu(k) fill level`" ``[int]`` **1** The factorization level.
-    * `"ilut drop tolerance`" ``[double]`` **0** Defines a drop tolerance relative to the largest absolute value of any entry in the row being factored.
-    * `"verbosity`" ``[int]`` **0** Prints a summary of runtime settings and timing information to stdout.
-
+todo: add description
+ILU Preconditioner: see https://hypre.readthedocs.io/en/latest/solvers-ilu.html#ilu
 
 */
 
@@ -97,10 +91,7 @@ This is provided when using the `"preconditioning method`"=`"ILU`" or
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_RowMatrix.h"
-#include "Ifpack_Hypre.h"
+#include "Tpetra_RowMatrix_decl.hpp"
 
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
@@ -109,8 +100,11 @@ This is provided when using the `"preconditioning method`"=`"ILU`" or
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
-#include "AmanziTypes.hh"
+#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 
+#include "AmanziTypes.hh"
+#include "AmanziComm.hh"
 #include "HYPRE_IJ_mv.h"
 #include "HYPRE_parcsr_ls.h"
 #include "krylov.h"
@@ -119,8 +113,12 @@ This is provided when using the `"preconditioning method`"=`"ILU`" or
 #include "HYPRE_parcsr_mv.h"
 #include "HYPRE.h"
 
+#include "cuda_decl.h"
+
 #include "exceptions.hh"
 #include "Preconditioner.hh"
+
+#define HAVE_IFPACK2_HYPRE
 
 namespace Amanzi {
 
@@ -128,95 +126,101 @@ class VerboseObject;
 
 namespace AmanziSolvers {
 
-class PreconditionerHypre : public AmanziSolvers::Preconditioner {
-  enum HyprePreconditioners { Boomer, ILU, MGR, AMS };
+class PreconditionerHypre : public Preconditioner {
+  enum HyprePreconditioners { Boomer, ILU };
+
+  using RowMatrix_type = Tpetra::RowMatrix<double_type, LO, GO>;
 
  public:
-  PreconditionerHypre()
-    : AmanziSolvers::Preconditioner(),
-      block_indices_(Teuchos::null),
-      num_blocks_(0),
-      returned_code_(0)
-  {}
-
   ~PreconditionerHypre()
   {
     HYPRE_IJVectorDestroy(XHypre_);
     HYPRE_IJVectorDestroy(YHypre_);
-    if (method_type_ == Boomer) {
-      HYPRE_BoomerAMGDestroy(method_);
-    } else if (method_type_ == ILU) {
-      HYPRE_ILUDestroy(method_);
-    } else if (method_type_ == AMS) {
-      HYPRE_AMSDestroy(method_);
-    } else if (method_type_ == MGR) {
-      HYPRE_MGRDestroy(method_);
+    if (PrecondType == Boomer) {
+      HYPRE_BoomerAMGDestroy(HyprePrecond_);
+    } else if (PrecondType == ILU) {
+      HYPRE_ILUDestroy(HyprePrecond_);
     }
   }
 
+  static void init()
+  {
+    nvtxRangePush("HP: init");
+    if (!inited) {
+      HYPRE_Init();
+      HYPRE_SetMemoryLocation(HYPRE_MEMORY_DEVICE);
+      HYPRE_SetExecutionPolicy(HYPRE_EXEC_DEVICE);
+      HYPRE_SetSpGemmUseCusparse(true);
+      HYPRE_SetUseGpuRand(true);
+      // if (useHypreGpuMemPool)
+      //{
+      /* use hypre's GPU memory pool */
+      // HYPRE_SetGPUMemoryPoolSize(bin_growth, min_bin, max_bin, max_bytes);
+      //}
+      // else if (useUmpireGpuMemPool)
+      //{
+      /* or use Umpire GPU memory pool */
+      //  HYPRE_SetUmpireUMPoolName("HYPRE_UM_POOL_TEST");
+      //  HYPRE_SetUmpireDevicePoolName("HYPRE_DEVICE_POOL_TEST");
+      //}
+      inited = true;
+    }
+    nvtxRangePop();
+  }
+
+  PreconditionerHypre()
+    : Preconditioner(),
+      num_blocks_(0),
+      block_indices_(Teuchos::null),
+      HyprePrecond_(),
+      returned_code_(0)
+  {
+    init();
+  }
+
   virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final;
-  virtual void InitializeInverse() override final;
-  virtual void ComputeInverse() override final;
-  virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final;
+  virtual void initializeInverse() override final;
+  virtual void computeInverse() override final;
+  virtual int applyInverse(const Vector_type& v, Vector_type& hv) const override final;
 
   virtual int returned_code() const override final { return returned_code_; }
   virtual std::string returned_code_string() const override final { return "success"; }
 
- private:
+  // Need to be public for Kokkos::parallel_for
   void copy_matrix_();
 
 
+ private:
+  void Init_(){};
   void InitBoomer_();
   void InitILU_();
-  void InitAMS_();
-  void Init_(){};
-  void InitMGR_();
 
-  int SetCoordinates_(Teuchos::RCP<Epetra_MultiVector>);
-  int SetDiscreteGradient_(Teuchos::RCP<const Epetra_CrsMatrix>);
-  Teuchos::RCP<const Epetra_Map>
-  MakeContiguousColumnMap_(Teuchos::RCP<const Epetra_RowMatrix>&) const;
+  Teuchos::RCP<const Map_type> make_contiguous_(Teuchos::RCP<const RowMatrix_type>& Matrix);
 
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
 
-  HYPRE_Solver method_;
   Teuchos::RCP<std::vector<int>> block_indices_;
   int num_blocks_;
-
   mutable int returned_code_;
-  Teuchos::RCP<Epetra_RowMatrix> A_;
 
   Teuchos::RCP<const Map_type> GloballyContiguousRowMap_;
   Teuchos::RCP<const Map_type> GloballyContiguousColMap_;
 
-  Teuchos::RCP<const Map_type> GloballyContiguousNodeRowMap_;
-  Teuchos::RCP<const Map_type> GloballyContiguousNodeColMap_;
-
+  HYPRE_Solver HyprePrecond_;
   HYPRE_ParCSRMatrix ParMatrix_;
   HYPRE_IJMatrix HypreA_;
   HYPRE_ParVector ParX_;
   HYPRE_ParVector ParY_;
   HYPRE_IJVector XHypre_;
   HYPRE_IJVector YHypre_;
-
-  HYPRE_ParCSRMatrix ParMatrixG_;
-  HYPRE_IJMatrix HypreG_;
-
-  HYPRE_IJVector xHypre_;
-  HYPRE_IJVector yHypre_;
-  HYPRE_IJVector zHypre_;
-  HYPRE_ParVector xPar_;
-  HYPRE_ParVector yPar_;
-  HYPRE_ParVector zPar_;
-
   Teuchos::RCP<hypre_ParVector> XVec_;
   Teuchos::RCP<hypre_ParVector> YVec_;
 
-  static bool inited;
-  HyprePreconditioners method_type_ = Boomer;
+  Teuchos::RCP<RowMatrix_type> h_row;
 
-  Teuchos::RCP<const Epetra_CrsMatrix> G_;
+  static bool inited;
+  HyprePreconditioners PrecondType = Boomer;
 };
 
 } // namespace AmanziSolvers

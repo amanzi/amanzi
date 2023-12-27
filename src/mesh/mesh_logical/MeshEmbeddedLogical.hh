@@ -10,9 +10,7 @@
 #ifndef AMANZI_EMBEDDED_LOGICAL_MESH_H_
 #define AMANZI_EMBEDDED_LOGICAL_MESH_H_
 
-#include <Epetra_Map.h>
 #include <AmanziComm.hh>
-#include <Epetra_SerialComm.h>
 
 #include <memory>
 #include <vector>
@@ -146,8 +144,8 @@ class MeshEmbeddedLogical : public MeshFramework {
   Teuchos::RCP<Mesh> bg_mesh_;  // background mesh, typically a Mesh_MSTK
   Teuchos::RCP<Mesh> log_mesh_; // embedded mesh, typically a MeshLogical
 
-  Teuchos::RCP<Epetra_Map> cell_map_;
-  Teuchos::RCP<Epetra_Map> face_map_;
+  Teuchos::RCP<Map_type> cell_map_;
+  Teuchos::RCP<Map_type> face_map_;
 };
 
 } // namespace AmanziMesh

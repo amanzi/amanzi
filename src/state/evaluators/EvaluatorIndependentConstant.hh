@@ -41,15 +41,18 @@ namespace Amanzi {
 class EvaluatorIndependentConstant
   : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit EvaluatorIndependentConstant(Teuchos::ParameterList& plist);
+  explicit EvaluatorIndependentConstant(const Teuchos::RCP<Teuchos::ParameterList>& plist);
   EvaluatorIndependentConstant(const EvaluatorIndependentConstant& other) = default;
   virtual Teuchos::RCP<Evaluator> Clone() const override;
+
+  static const std::string eval_type;
+  virtual std::string getType() const override { return eval_type; }
 
  protected:
   virtual void Update_(State& S) override;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentConstant> fac_;
+  static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentConstant> reg_;
 };
 
 } // namespace Amanzi

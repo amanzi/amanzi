@@ -19,7 +19,8 @@ namespace Amanzi {
 std::ostream&
 operator<<(std::ostream& os, const Evaluator& self)
 {
-  return os << self.WriteToString();
+  return self.writeInfo(os);
 }
+
 
 } // namespace Amanzi

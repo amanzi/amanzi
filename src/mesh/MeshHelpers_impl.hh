@@ -10,8 +10,6 @@
 
 #pragma once
 
-#include "Epetra_MultiVector.h"
-
 #include "Point.hh"
 #include "Geometry.hh"
 #include "MeshDefs.hh"
@@ -29,6 +27,7 @@ namespace AmanziMesh {
 //
 // Non-collective functions
 // -----------------------------------------------------------------------------
+
 //
 // Given a boundary face ID, get the corresponding face ID
 //
@@ -50,7 +49,7 @@ getFaceOnBoundaryBoundaryFace(const MeshCache<MEM>& mesh, Entity_ID f)
   // should this be deprecated?  It seems likely to not perform well
   const auto& fmap = mesh.getMap(AmanziMesh::Entity_kind::FACE, true);
   const auto& bfmap = mesh.getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
-  return bfmap.LID(fmap.GID(f));
+  return bfmap->getLocalElement(fmap->getGlobalElement(f));
 }
 
 
@@ -63,7 +62,6 @@ getBoundaryFaceInternalCell(const Mesh_type& mesh, Entity_ID bf)
 {
   return getFaceOnBoundaryInternalCell(mesh, getBoundaryFaceFace(mesh, bf));
 }
-
 
 //
 // Given a face ID, and assuming it is a boundary face, get the cell internal.
@@ -143,17 +141,17 @@ getCellFaceAdjacentCells(const Mesh_type& mesh, Entity_ID c, Parallel_kind ptype
 // -----------------------------------------------------------------------------
 // Collective operations
 // -----------------------------------------------------------------------------
+
 //
 // Given a vector on faces, import to vector on boundary faces
 //
 template <MemSpace_kind MEM>
 void
 copyFacesToBoundaryFaces(const MeshCache<MEM>& mesh,
-                         const Epetra_MultiVector& faces,
-                         Epetra_MultiVector& boundary_faces)
+                         const MultiVector_type& faces,
+                         MultiVector_type& boundary_faces)
 {
-  int ierr = boundary_faces.Import(faces, mesh.getBoundaryFaceImporter(), Insert);
-  AMANZI_ASSERT(!ierr);
+  boundary_faces.doImport(faces, mesh.getBoundaryFaceFaceImporter(), Tpetra::INSERT);
 }
 
 
@@ -163,11 +161,10 @@ copyFacesToBoundaryFaces(const MeshCache<MEM>& mesh,
 template <MemSpace_kind MEM>
 void
 copyBoundaryFacesToFaces(const MeshCache<MEM>& mesh,
-                         const Epetra_MultiVector& boundary_faces,
-                         Epetra_MultiVector& faces)
+                         const MultiVector_type& boundary_faces,
+                         MultiVector_type& faces)
 {
-  int ierr = faces.Export(boundary_faces, mesh.getBoundaryFaceImporter(), Insert);
-  AMANZI_ASSERT(!ierr);
+  faces.doExport(boundary_faces, mesh.getBoundaryFaceImporter(), Tpetra::INSERT);
 }
 
 
@@ -177,14 +174,10 @@ copyBoundaryFacesToFaces(const MeshCache<MEM>& mesh,
 template <MemSpace_kind MEM>
 void
 copyCellsToBoundaryFaces(const MeshCache<MEM>& mesh,
-                         const Epetra_MultiVector& cells,
-                         Epetra_MultiVector& boundary_faces)
+                         const MultiVector_type& cells,
+                         MultiVector_type& boundary_faces)
 {
-  AMANZI_ASSERT(cells.NumVectors() == boundary_faces.NumVectors());
-  for (Entity_ID bf = 0; bf != boundary_faces.MyLength(); ++bf) {
-    Entity_ID c = getBoundaryFaceInternalCell(mesh, bf);
-    for (int i = 0; i != boundary_faces.NumVectors(); ++i) { boundary_faces[i][bf] = cells[i][c]; }
-  }
+  boundary_faces.doImport(cells, mesh.getBoundaryFaceInternalCellImporter(), Tpetra::INSERT);
 }
 
 
@@ -199,6 +192,7 @@ deform(Mesh_type& mesh,
 {
   mesh.setNodeCoordinates(nodeids, newpos);
 }
+
 
 } // namespace AmanziMesh
 } // namespace Amanzi

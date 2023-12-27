@@ -39,15 +39,19 @@ MFD3D_GeneralizedDiffusion::schema() const
 * Consistency condition for inner product on a generized polyhedron.
 ****************************************************************** */
 int
-MFD3D_GeneralizedDiffusion::L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc)
+MFD3D_GeneralizedDiffusion::L2consistency(int c,
+                                          const Tensor<>& K,
+                                          DenseMatrix<>& N,
+                                          DenseMatrix<>& Mc,
+                                          bool symmetry)
 {
   const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   int nx(d_ * nfaces);
 
-  N.Reshape(nx, d_);
-  Mc.Reshape(nx, nx);
+  N.reshape(nx, d_);
+  Mc.reshape(nx, nx);
 
   const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
   double volume = mesh_->getCellVolume(c);
@@ -96,14 +100,14 @@ MFD3D_GeneralizedDiffusion::L2consistency(int c, const Tensor& K, DenseMatrix& N
 * Mass matrix for genelized polyhedron
 ****************************************************************** */
 int
-MFD3D_GeneralizedDiffusion::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
+MFD3D_GeneralizedDiffusion::MassMatrix(int c, const Tensor<>& K, DenseMatrix<>& M)
 {
   DenseMatrix N;
 
   Tensor Kinv(K);
   Kinv.Inverse();
 
-  int ok = L2consistency(c, Kinv, N, M);
+  int ok = L2consistency(c, Kinv, N, M, true);
   if (ok) return ok;
 
   StabilityScalar_(N, M);
@@ -115,14 +119,14 @@ MFD3D_GeneralizedDiffusion::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 * Mass matrix for genelized polyhedron
 ****************************************************************** */
 int
-MFD3D_GeneralizedDiffusion::MassMatrixOptimized(int c, const Tensor& K, DenseMatrix& M)
+MFD3D_GeneralizedDiffusion::MassMatrixOptimized(int c, const Tensor<>& K, DenseMatrix<>& M)
 {
   DenseMatrix N;
 
   Tensor Kinv(K);
   Kinv.Inverse();
 
-  int ok = L2consistency(c, Kinv, N, M);
+  int ok = L2consistency(c, Kinv, N, M, true);
   if (ok) return ok;
 
   StabilityOptimized_(K, N, M);
@@ -136,17 +140,18 @@ MFD3D_GeneralizedDiffusion::MassMatrixOptimized(int c, const Tensor& K, DenseMat
 ****************************************************************** */
 int
 MFD3D_GeneralizedDiffusion::L2consistencyInverse(int c,
-                                                 const Tensor& K,
-                                                 DenseMatrix& R,
-                                                 DenseMatrix& Wc)
+                                                 const Tensor<>& K,
+                                                 DenseMatrix<>& R,
+                                                 DenseMatrix<>& Wc,
+                                                 bool symmetry)
 {
   const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
 
   int nfaces = faces.size();
   int nx(d_ * nfaces);
 
-  R.Reshape(nx, d_);
-  Wc.Reshape(nx, nx);
+  R.reshape(nx, d_);
+  Wc.reshape(nx, nx);
 
   const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
   double volume = mesh_->getCellVolume(c);
@@ -155,7 +160,7 @@ MFD3D_GeneralizedDiffusion::L2consistencyInverse(int c,
   AmanziMesh::Point_List vv(3), xm(3);
 
   // populate matrices R and N
-  DenseMatrix N(R);
+  DenseMatrix<> N((const DenseMatrix<>)R);
   for (int i = 0; i < nfaces; ++i) {
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
@@ -192,11 +197,11 @@ MFD3D_GeneralizedDiffusion::L2consistencyInverse(int c,
 * Inverse mass matrix for generalized polyhedron
 ****************************************************************** */
 int
-MFD3D_GeneralizedDiffusion::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
+MFD3D_GeneralizedDiffusion::MassMatrixInverse(int c, const Tensor<>& K, DenseMatrix<>& W)
 {
   DenseMatrix R;
 
-  int ok = L2consistencyInverse(c, K, R, W);
+  int ok = L2consistencyInverse(c, K, R, W, true);
   if (ok) return ok;
 
   StabilityScalar_(R, W);
@@ -208,7 +213,7 @@ MFD3D_GeneralizedDiffusion::MassMatrixInverse(int c, const Tensor& K, DenseMatri
 * Stiffness matrix is calculated by a hybridization algorithm.
 ****************************************************************** */
 int
-MFD3D_GeneralizedDiffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
+MFD3D_GeneralizedDiffusion::StiffnessMatrix(int c, const Tensor<>& K, DenseMatrix<>& A)
 {
   DenseMatrix M;
   MassMatrixInverse(c, K, M);
@@ -220,7 +225,7 @@ MFD3D_GeneralizedDiffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix&
 
   // populate areas
   DenseVector area(nx), area_div(nx);
-  area_div.PutScalar(0.0);
+  area_div.putScalar(0.0);
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces[i];
@@ -234,7 +239,7 @@ MFD3D_GeneralizedDiffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix&
   }
 
   // populate stiffness matrix
-  A.Reshape(nx + 1, nx + 1);
+  A.reshape(nx + 1, nx + 1);
 
   double cntr(0.0);
   for (int i = 0; i < nx; ++i) {
@@ -256,13 +261,13 @@ MFD3D_GeneralizedDiffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix&
 * Divergence matrix.
 ****************************************************************** */
 int
-MFD3D_GeneralizedDiffusion::DivergenceMatrix(int c, DenseMatrix& A)
+MFD3D_GeneralizedDiffusion::DivergenceMatrix(int c, DenseMatrix<>& A)
 {
   const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
-  A.Reshape(1, d_ * nfaces);
-  A.PutScalar(0.0);
+  A.reshape(1, d_ * nfaces);
+  A.putScalar(0.0);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];

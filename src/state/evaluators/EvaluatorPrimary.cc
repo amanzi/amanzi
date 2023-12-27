@@ -23,12 +23,12 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 // Constructors
 // ---------------------------------------------------------------------------
-EvaluatorPrimary_::EvaluatorPrimary_(Teuchos::ParameterList& plist)
-  : my_key_(Keys::cleanPListName(plist.name())),
-    my_tag_(Keys::readTag(plist, "tag")),
-    vo_(Keys::cleanPListName(plist.name()), plist)
+EvaluatorPrimary_::EvaluatorPrimary_(const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  : my_key_(Keys::cleanPListName(plist->name())),
+    my_tag_(Keys::readTag(*plist, "tag")),
+    vo_(Keys::cleanPListName(plist->name()), *plist)
 {
-  type_ = EvaluatorType::PRIMARY;
+  type_ = Evaluator_kind::PRIMARY;
 }
 
 
@@ -169,12 +169,12 @@ EvaluatorPrimary_::ProvidesKey(const Key& key, const Tag& tag) const
 }
 
 
-std::string
-EvaluatorPrimary_::WriteToString() const
+std::ostream&
+EvaluatorPrimary_::writeInfo(std::ostream& os) const
 {
-  std::stringstream result;
-  result << my_key_ << std::endl << "  Type: primary" << std::endl;
-  return result.str();
+  os << Keys::getKey(my_key_, my_tag_) << std::endl
+     << "(" << getType() << ") [" << to_string(getKind()) << "]" << std::endl;
+  return os;
 }
 
 } // namespace Amanzi

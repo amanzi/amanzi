@@ -62,29 +62,30 @@ class MFD3D_Electromagnetics : public DeRham_Edge {
   using DeRham_Edge::MassMatrixInverse;
 
   // -- stiffness matrix
-  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
+  int H1consistency(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Ac);
+  virtual int StiffnessMatrix(int c, const Tensor<>& T, DenseMatrix<>& A) override;
 
   // other methods
-  int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& M);
-  int MassMatrixInverseOptimized(int c, const Tensor& T, DenseMatrix& M);
+  int MassMatrixOptimized(int c, const Tensor<>& T, DenseMatrix<>& M);
+  int MassMatrixInverseOptimized(int c, const Tensor<>& T, DenseMatrix<>& M);
 
-  int MassMatrixDiagonal(int c, const Tensor& T, DenseMatrix& M);
+  int MassMatrixDiagonal(int c, const Tensor<>& T, DenseMatrix<>& M);
 
   using BilinearForm::StiffnessMatrix;
-  int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C);
-  int StiffnessMatrix_GradCorrection(int c, const Tensor& T, DenseMatrix& A);
+  int
+  StiffnessMatrix(int c, const Tensor<>& T, DenseMatrix<>& A, DenseMatrix<>& M, DenseMatrix<>& C);
+  int StiffnessMatrix_GradCorrection(int c, const Tensor<>& T, DenseMatrix<>& A);
 
   // curl matrix
-  void CurlMatrix(int c, DenseMatrix& C);
+  void CurlMatrix(int c, DenseMatrix<>& C);
 
   // boundary and surface methods
-  int L2consistencyBoundary(int f, const Tensor& K, DenseMatrix& R, DenseMatrix& Mf);
-  int MassMatrixBoundary(int f, const Tensor& K, DenseMatrix& M);
+  int L2consistencyBoundary(int f, const Tensor<>& K, DenseMatrix<>& R, DenseMatrix<>& Mf);
+  int MassMatrixBoundary(int f, const Tensor<>& K, DenseMatrix<>& M);
 
  private:
-  int H1consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
-  int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  int H1consistency2D_(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Ac);
+  int H1consistency3D_(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Ac);
 
  private:
   static RegisteredFactory<MFD3D_Electromagnetics> reg_;

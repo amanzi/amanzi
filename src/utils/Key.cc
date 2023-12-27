@@ -523,10 +523,9 @@ readKeyTag(Teuchos::ParameterList& list,
            const Tag& tag)
 {
   Key key = readKey(list, domain, basename, default_name);
-  Tag tag_out(list.get<std::string>(basename + " tag", tag.get()));
-  return KeyTag{ key, tag_out };
+  Tag tag_out(list.get<std::string>(basename+" tag", tag.get()));
+  return KeyTag{key, tag_out};
 }
-
 
 Teuchos::Array<Key>
 readKeys(Teuchos::ParameterList& list,

@@ -529,11 +529,11 @@ resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
 
     // note that we have to sort these by owned, then ghosted
     std::size_t cpt = 0, cpt_g = 0;
-    Entity_ID_View result("SetEnumerated", mesh_map.NumMyElements());
-    Entity_ID_View result_g("ghosted SetEnumerated", mesh_map.NumMyElements());
+    Entity_ID_View result("SetEnumerated", mesh_map->getLocalNumElements());
+    Entity_ID_View result_g("ghosted SetEnumerated", mesh_map->getLocalNumElements());
     Entity_ID nowned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
     for (Entity_GID gid : region_entities) {
-      Entity_ID lid = mesh_map.LID(gid);
+      Entity_ID lid = mesh_map->getLocalElement(gid);
       if (lid >= 0) {
         if (lid < nowned) {
           result[cpt++] = lid;
@@ -553,6 +553,7 @@ resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
   }
 }
 
+
 View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetGeometric(const AmanziGeometry::Region& region,
                         const Entity_kind kind,
@@ -570,7 +571,6 @@ resolveMeshSetGeometric(const AmanziGeometry::Region& region,
   } else {
     begin = 0;
     end = mesh.getNumEntities(kind, ptype);
-    if (end < 0) return MeshCache<MemSpace_kind::HOST>::Entity_ID_View();
   }
 
   // check whether centroid is inside region

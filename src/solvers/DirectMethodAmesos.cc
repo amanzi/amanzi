@@ -35,7 +35,12 @@ DirectMethodAmesos::set_inverse_parameters(Teuchos::ParameterList& plist)
 {
   plist_ = plist;
 
-  solver_name_ = plist.get<std::string>("solver name", "Klu");
+  solver_name_ = plist.get<std::string>("method", "Klu");
+  if (solver_name_ != "Klu") {
+    Errors::Message msg << "DirectMethodAmesos: unknown method for Amesos2: \""
+                        << solver_name_ << "\", valid are {\"Klu\",}";
+    Exceptions::amanzi_throw(msg);
+  }
   std::string vo_name = this->name() + " (Amesos " + solver_name_ + ")";
 
   vo_ = Teuchos::rcp(new VerboseObject(vo_name, plist));

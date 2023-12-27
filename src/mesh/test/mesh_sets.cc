@@ -32,7 +32,7 @@ TEST(MESH_SETS_3CUBE)
   // works in MSTK & SIMPLE (in serial)
   std::vector<Framework> frameworks;
   if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
-  if (getDefaultComm()->NumProc() == 1) frameworks.push_back(Framework::SIMPLE);
+  if (getDefaultComm()->getSize() == 1) frameworks.push_back(Framework::SIMPLE);
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
@@ -57,7 +57,7 @@ TEST(MESH_SETS_3CUBE_EXO)
   // works in MSTK or MOAB
   std::vector<Framework> frameworks;
   if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
-  if (framework_enabled(Framework::MOAB) && getDefaultComm()->NumProc() == 1) {
+  if (framework_enabled(Framework::MOAB) && getDefaultComm()->getSize() == 1) {
     // moab only reads exo in serial, otherwise must read par
     frameworks.push_back(Framework::MOAB);
   }
@@ -77,7 +77,7 @@ TEST(MESH_SETS_3CUBE_EXO)
 // {
 //   // create the comm and gm
 //   auto comm = Amanzi::getDefaultComm();
-//   int nprocs = comm->NumProc();
+//   int nprocs = comm->getSize();
 //   if (nprocs != 2) return;
 
 //   std::string infilename = "test/hex_3x3x3.xml";

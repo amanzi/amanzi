@@ -53,85 +53,27 @@ class MFD3D : public BilinearForm {
   // experimental methods (for stability region analysis; unit test)
   void ModifyStabilityScalingFactor(double factor);
 
-  // Projectors is a special type of bilinear form (P(u), v) = (u, v) for any v
-  // where coef = 1. If different operators are supported by the derived class,
-  // different projectors can be computed.
-  // NOTE: we need both (1) action on a function u and (2) matrix form of the
-  //       project; hence, the interface will be extended.
-  // -- L2 projectors
-  virtual void L2Cell(int c,
-                      const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf,
-                      const Polynomial* moments,
-                      Polynomial& vc)
-  {
-    Errors::Message msg("L2 projector is not supported.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  virtual void
-  L2Face(int f, const std::vector<Polynomial>& ve, const Polynomial* moments, Polynomial& vf)
-  {
-    Errors::Message msg("L2 face projector is not supported.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  virtual void L2Cell(int c, const DenseVector& dofs, Polynomial& vc)
-  {
-    Errors::Message msg("L2 projector (from DOFs) is not supported.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  // -- H1 projectors
-  virtual void H1Cell(int c,
-                      const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf,
-                      const Polynomial* moments,
-                      Polynomial& vc)
-  {
-    Errors::Message msg("H1 cell projector is not supported.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  virtual void
-  H1Face(int f, const std::vector<Polynomial>& ve, const Polynomial* moments, Polynomial& vf)
-  {
-    Errors::Message msg("H1 face projector is not supported.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  virtual void H1Cell(int c, const DenseVector& dofs, Polynomial& vc)
-  {
-    Errors::Message msg("H1 cell projector (from DOFs) is not supported.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  virtual void H1Cell(int c, const DenseVector& dofs, Tensor& Tc)
-  {
-    Errors::Message msg("H1 cell projector (from DOFs) is not supported.");
-    Exceptions::amanzi_throw(msg);
-  }
-
  protected:
-  void StabilityScalar_(DenseMatrix& N, DenseMatrix& M);
-  void StabilityScalarNonSymmetric_(DenseMatrix& N, DenseMatrix& M);
-  int StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M);
+  void StabilityScalar_(DenseMatrix<>& N, DenseMatrix<>& M);
+  void StabilityScalarNonSymmetric_(DenseMatrix<>& N, DenseMatrix<>& M);
+  int StabilityOptimized_(const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& M);
 
-  double CalculateStabilityScalar_(DenseMatrix& Mc);
-  void GrammSchmidt_(DenseMatrix& N);
+  double CalculateStabilityScalar_(DenseMatrix<>& Mc);
+  void GrammSchmidt_(DenseMatrix<>& N);
 
   // supporting stability methods (add matrix M += Mstab)
   // use R, Wc, W for the inverse matrix
-  int StabilityMonotoneHex(int c, const Tensor& T, DenseMatrix& Mc, DenseMatrix& M);
+  int StabilityMonotoneHex(int c, const Tensor<>& T, DenseMatrix<>& Mc, DenseMatrix<>& M);
 
   int StabilityMMatrix_(int c,
-                        DenseMatrix& N,
-                        DenseMatrix& M,
+                        DenseMatrix<>& N,
+                        DenseMatrix<>& M,
                         int objective = WHETSTONE_SIMPLEX_FUNCTIONAL_SUMALL);
 
-  int SimplexFindFeasibleSolution_(DenseMatrix& T, int m1, int m2, int m3, int* izrow, int* iypos);
-  void SimplexPivotElement_(DenseMatrix& T, int kp, int* ip);
-  void SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip);
+  int
+  SimplexFindFeasibleSolution_(DenseMatrix<>& T, int m1, int m2, int m3, int* izrow, int* iypos);
+  void SimplexPivotElement_(DenseMatrix<>& T, int kp, int* ip);
+  void SimplexExchangeVariables_(DenseMatrix<>& T, int kp, int ip);
 
  protected:
   int stability_method_; // stability parameters
@@ -144,7 +86,7 @@ class MFD3D : public BilinearForm {
 
 // non-member functions
 void
-AddGradient(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, DenseMatrix& N);
+AddGradient(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, DenseMatrix<>& N);
 
 } // namespace WhetStone
 } // namespace Amanzi

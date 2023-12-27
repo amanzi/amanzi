@@ -16,21 +16,21 @@
 #include "SolverNKA_BT_ATS.hh"
 #include "SolverNKA_LS_ATS.hh"
 #include "SolverNewton.hh"
-#include "SolverNox.hh"
 #include "SolverJFNK.hh"
 #include "SolverContinuation.hh"
 #include "SolverLS.hh"
 
-#include "Epetra_MultiVector.h"
+// #include "Epetra_MultiVector.h"
 #include "CompositeVector.hh"
+#include "CompositeSpace.hh"
 #include "TreeVector.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
 
 /* ******************************************************************
-* Initialization of the Solver
-****************************************************************** */
+ * Initialization of the Solver
+ ****************************************************************** */
 template <class Vector, class VectorSpace>
 Teuchos::RCP<Solver<Vector, VectorSpace>>
 SolverFactory<Vector, VectorSpace>::Create(const std::string& name,
@@ -50,8 +50,8 @@ SolverFactory<Vector, VectorSpace>::Create(const std::string& name,
 
 
 /* ******************************************************************
-* Initialization of the solver
-****************************************************************** */
+ * Initialization of the solver
+ ****************************************************************** */
 template <class Vector, class VectorSpace>
 Teuchos::RCP<Solver<Vector, VectorSpace>>
 SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
@@ -78,8 +78,8 @@ SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
       Teuchos::ParameterList aa_list = slist.sublist("aa parameters");
       if (!aa_list.isSublist("verbose object"))
         aa_list.set("verbose object", slist.sublist("verbose object"));
-      Teuchos::RCP<Solver<Vector, VectorSpace>> solver =
-        Teuchos::rcp(new SolverAA<Vector, VectorSpace>(aa_list));
+      Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
+        Teuchos::rcp(new SolverAA<Vector,VectorSpace>(aa_list));
       return solver;
     } else if (type == "Newton") {
       if (!slist.isSublist("Newton parameters")) {
@@ -100,8 +100,8 @@ SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
       Teuchos::ParameterList nka_list = slist.sublist("nka line search parameters");
       if (!nka_list.isSublist("verbose object"))
         nka_list.set("verbose object", slist.sublist("verbose object"));
-      Teuchos::RCP<Solver<Vector, VectorSpace>> solver =
-        Teuchos::rcp(new SolverNKA_LS<Vector, VectorSpace>(nka_list));
+      Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
+        Teuchos::rcp(new SolverNKA_LS<Vector,VectorSpace>(nka_list));
       return solver;
     } else if (type == "nka_bt_ats") {
       if (!slist.isSublist("nka_bt_ats parameters")) {
@@ -122,8 +122,8 @@ SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
       Teuchos::ParameterList nka_list = slist.sublist("nka_ls_ats parameters");
       if (!nka_list.isSublist("verbose object"))
         nka_list.set("verbose object", slist.sublist("verbose object"));
-      Teuchos::RCP<Solver<Vector, VectorSpace>> solver =
-        Teuchos::rcp(new SolverNKA_LS_ATS<Vector, VectorSpace>(nka_list));
+      Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
+        Teuchos::rcp(new SolverNKA_LS_ATS<Vector,VectorSpace>(nka_list));
       return solver;
     } else if (type == "JFNK") {
       if (!slist.isSublist("JFNK parameters")) {
@@ -133,8 +133,8 @@ SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
       Teuchos::ParameterList jfnk_list = slist.sublist("JFNK parameters");
       if (!jfnk_list.isSublist("verbose object"))
         jfnk_list.set("verbose object", slist.sublist("verbose object"));
-      Teuchos::RCP<Solver<Vector, VectorSpace>> solver =
-        Teuchos::rcp(new SolverJFNK<Vector, VectorSpace>(jfnk_list));
+      Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
+        Teuchos::rcp(new SolverJFNK<Vector,VectorSpace>(jfnk_list));
       return solver;
     } else if (type == "continuation") {
       if (!slist.isSublist("continuation parameters")) {
@@ -144,8 +144,8 @@ SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
       Teuchos::ParameterList cont_list = slist.sublist("continuation parameters");
       if (!cont_list.isSublist("verbose object"))
         cont_list.set("verbose object", slist.sublist("verbose object"));
-      Teuchos::RCP<Solver<Vector, VectorSpace>> solver =
-        Teuchos::rcp(new SolverContinuation<Vector, VectorSpace>(cont_list));
+      Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
+        Teuchos::rcp(new SolverContinuation<Vector,VectorSpace>(cont_list));
       return solver;
     } else if (type == "line search") {
       if (!slist.isSublist("line search parameters")) {
@@ -155,23 +155,9 @@ SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
       Teuchos::ParameterList ls_list = slist.sublist("line search parameters");
       if (!ls_list.isSublist("verbose object"))
         ls_list.set("verbose object", slist.sublist("verbose object"));
-      Teuchos::RCP<Solver<Vector, VectorSpace>> solver =
-        Teuchos::rcp(new SolverLS<Vector, VectorSpace>(ls_list));
+      Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
+        Teuchos::rcp(new SolverLS<Vector,VectorSpace>(ls_list));
       return solver;
-    } else if (type == "nox") {
-      if (!slist.isSublist("nox parameters")) {
-        Errors::Message msg("SolverFactory: missing sublist \"nox parameters\"");
-        Exceptions::amanzi_throw(msg);
-      }
-      Teuchos::ParameterList ls_list = slist.sublist("nox parameters");
-      if (!ls_list.isSublist("verbose object"))
-        ls_list.set("verbose object", slist.sublist("verbose object"));
-      Teuchos::RCP<Solver<Vector, VectorSpace>> solver =
-        Teuchos::rcp(new SolverNox<Vector, VectorSpace>(ls_list));
-      return solver;
-    } else {
-      Errors::Message msg("SolverFactory: wrong value of parameter `\"solver type`\"");
-      Exceptions::amanzi_throw(msg);
     }
   } else {
     Errors::Message msg("SolverFactory: parameter `\"solver type`\" is missing");
@@ -180,8 +166,8 @@ SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
   return Teuchos::null;
 }
 
-template class SolverFactory<Epetra_Vector, Epetra_BlockMap>;
-template class SolverFactory<CompositeVector, CompositeVectorSpace>;
+template class SolverFactory<Vector_type, Map_type>;
+template class SolverFactory<CompositeVector, CompositeSpace>;
 template class SolverFactory<TreeVector, TreeVectorSpace>;
 
 } // namespace AmanziSolvers

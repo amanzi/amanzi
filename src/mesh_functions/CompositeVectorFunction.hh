@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
 #pragma once
@@ -18,27 +18,14 @@
 #include "CompositeVector.hh"
 
 namespace Amanzi {
-
-class VerboseObject;
-
 namespace Functions {
 
-class CompositeVectorFunction final {
+class CompositeVectorFunction : public MeshFunction {
  public:
-  CompositeVectorFunction(const Teuchos::RCP<const MeshFunction>& func,
-                          const std::vector<std::string>& names);
-  ~CompositeVectorFunction() = default;
-
-  void
-  Compute(double time, const Teuchos::Ptr<CompositeVector>& vec, const VerboseObject* vo = nullptr);
-
- protected:
-  typedef std::pair<std::string, Teuchos::RCP<MeshFunction::Spec>> CompositeVectorSpec;
-  typedef std::vector<Teuchos::RCP<CompositeVectorSpec>> CompositeVectorSpecList;
-
-  Teuchos::RCP<const MeshFunction> func_;
-  CompositeVectorSpecList cv_spec_list_;
+  using MeshFunction::MeshFunction;
+  void Compute(double time, CompositeVector& vec);
 };
+
 
 } // namespace Functions
 } // namespace Amanzi

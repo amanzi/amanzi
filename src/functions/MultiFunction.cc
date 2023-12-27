@@ -7,8 +7,11 @@
   Authors: Ethan Coon
 */
 
-/*
-  Functions
+//! Function from R^d to R^n.
+/*!
+
+  A MultiFunction is simply an array of functions, which allow Functions to
+  be used for MultiVectors.
 
   Factory for vector functions which are composed of multiple scalar functions.
   The expected plist is of the form:
@@ -50,12 +53,12 @@ namespace Amanzi {
 MultiFunction::MultiFunction(const std::vector<Teuchos::RCP<const Function>>& functions)
   : functions_(functions)
 {
-  values_ = new double[functions_.size()];
+  Kokkos::resize(values_, functions_.size());
 };
 
 MultiFunction::MultiFunction(const Teuchos::RCP<const Function>& function) : functions_(1, function)
 {
-  values_ = new double[1];
+  Kokkos::resize(values_, 1);
 };
 
 
@@ -97,14 +100,12 @@ MultiFunction::MultiFunction(Teuchos::ParameterList& plist)
     functions_.push_back(Teuchos::rcp(factory.Create(plist)));
   };
 
-  values_ = new double[functions_.size()];
+  // values_ = new double[functions_.size()];
+  Kokkos::resize(values_, functions_.size());
 }
 
 
-MultiFunction::~MultiFunction()
-{
-  delete[] values_;
-};
+MultiFunction::~MultiFunction() {}
 
 
 int
@@ -114,11 +115,11 @@ MultiFunction::size() const
 };
 
 
-double*
-MultiFunction::operator()(const std::vector<double>& xt) const
+Kokkos::View<double*, Kokkos::HostSpace>
+MultiFunction::operator()(const Kokkos::View<double*, Kokkos::HostSpace>& xt) const
 {
-  for (int i = 0; i != size(); ++i) { values_[i] = (*functions_[i])(xt); }
-  return values_;
+  for (int i = 0; i != size(); ++i) { values_.view_host()[i] = (*functions_[i])(xt); }
+  return values_.view_host();
 };
 
 

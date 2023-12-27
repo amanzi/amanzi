@@ -55,7 +55,7 @@ using View_type = Kokkos::MeshView<T*, typename Impl::MemorySpace<MEM>::space>;
 //
 using Entity_ID_List = std::vector<Entity_ID>;
 using Entity_GID_List = std::vector<Entity_ID>;
-using Entity_Direction_List = std::vector<int>;
+using Direction_List = std::vector<int>;
 using Point_List = std::vector<AmanziGeometry::Point>;
 using Double_List = std::vector<double>;
 template <typename T>
@@ -66,7 +66,7 @@ template <typename T>
 using DualView_type = Kokkos::MeshDualView<T*, Kokkos::DefaultHostExecutionSpace>;
 using Entity_ID_DualView = DualView_type<Entity_ID>;
 using Entity_GID_DualView = DualView_type<Entity_GID>;
-using Entity_Direction_DualView = DualView_type<int>;
+using Direction_DualView = DualView_type<int>;
 using Point_DualView = DualView_type<AmanziGeometry::Point>;
 using Double_DualView = DualView_type<double>;
 

@@ -71,13 +71,13 @@ class DataFactory {
   }
 
   template <typename T, typename F>
-  const F& Get() const
+  Teuchos::RCP<F> Get() const
   {
     return p_->Get<T, F>();
   }
 
   template <typename T, typename F>
-  F& GetW()
+  Teuchos::RCP<F> GetW()
   {
     return p_->GetW<T, F>();
   }
@@ -98,7 +98,7 @@ class DataFactory {
 
 template <typename T, typename F>
 DataFactory
-dataFactory(const F& f)
+dataFactory(const Teuchos::RCP<F>& f)
 {
   return DataFactory(new DataFactory_Impl<T, F>(f), new Data_Impl<T>());
 }
@@ -108,7 +108,7 @@ typename std::enable_if<std::is_default_constructible<F>::value, DataFactory>::t
 dataFactory()
 {
   F f;
-  return DataFactory(new DataFactory_Impl<T, F>(f), new Data_Impl<T>());
+  return DataFactory(new DataFactory_Impl<T, F>(), new Data_Impl<T>());
 }
 
 

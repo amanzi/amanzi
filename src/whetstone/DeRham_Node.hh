@@ -39,9 +39,9 @@ class DeRham_Node : public MFD3D {
       1, std::make_tuple(AmanziMesh::Entity_kind::NODE, DOF_Type::SCALAR, 1));
   }
 
-  int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
+  int L2consistency(int c, const Tensor<>& T, DenseMatrix<>& N, DenseMatrix<>& Mc, bool symmetry);
 
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override;
+  virtual int MassMatrix(int c, const Tensor<>& T, DenseMatrix<>& M) override;
 };
 
 } // namespace WhetStone

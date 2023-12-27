@@ -82,7 +82,6 @@ Example:
 // TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_MultiVector.h"
 
 // Amanzi
 #include "CompositeVector.hh"
@@ -90,7 +89,6 @@ Example:
 #include "DomainSet.hh"
 #include "Key.hh"
 #include "Mesh.hh"
-#include "MeshPartition.hh"
 
 // Amanzi::State
 #include "ObservationData.hh"
@@ -110,17 +108,13 @@ class State {
  private:
   typedef std::map<Key, std::pair<Teuchos::RCP<AmanziMesh::Mesh>, bool>> MeshMap;
   typedef std::map<Key, Teuchos::RCP<AmanziMesh::DomainSet>> DomainSetMap;
-  typedef std::map<Key, Teuchos::RCP<Functions::MeshPartition>> MeshPartitionMap;
 
   using RecordSetMap = std::map<Key, std::unique_ptr<RecordSet>>;
   using EvaluatorMap = std::map<Key, std::unordered_map<Tag, Teuchos::RCP<Evaluator>>>;
 
  public:
   State();
-  explicit State(Teuchos::ParameterList& state_plist);
-
-  // Copy constructor, copies memory not pointers.
-  // State(const State& other, StateConstructMode mode=STATE_CONSTRUCT_MODE_COPY_DATA);
+  explicit State(const Teuchos::RCP<Teuchos::ParameterList>& state_plist);
 
   // Assignment and copy operators. Note this should be replaced with smart
   // usage of tags
@@ -135,7 +129,7 @@ class State {
 
   // Sub-steps in the initialization process. (Used by Amanzi)
   void Initialize();
-  void InitializeFields(const Tag& tag = Tags::DEFAULT);
+  void InitializeFields();
   void InitializeEvaluators();
   void InitializeFieldCopies(const Tag& ref = Tags::DEFAULT);
   bool CheckAllFieldsInitialized();
@@ -198,38 +192,38 @@ class State {
   // Requiring data from State takes up to two template arguments:
   //  T is the data type required
   //  F is a factory, which must provide a method Create() that makes a T, or
-  //    can be used in a constructor, e.g. T(F), or is optional if T needs no
-  //    metadata to be created, e.g. T == double.
+  //    can be used in a constructor, e.g. T(Teuchos::RCP<F>), or is optional
+  //    if T needs no metadata to be created, e.g. T() such as plain old data.
   //
-  //
-  // This Require call will not compile for factories F that do not have a
-  // default constructor (e.g. Epetra_Map).
+
+  // This is for data that require a factory, and that factory (but not the
+  // data!) is default constructible (e.g CompositeVector + CompositeVectorSpace)
   template <typename T, typename F>
   F& Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = true)
   {
-    CheckIsDebugData_(fieldname, tag);
+    CheckIsDebugData(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
     GetRecordSetW(fieldname).RequireRecord(tag, owner, alias_ok);
-    return GetRecordSetW(fieldname).SetType<T, F>();
+    return *GetRecordSetW(fieldname).SetType<T, F>();
   }
 
-  // This Require call is for factories that do not have a default constructor.
-  // (e.g. Epetra_Map).
+  // This is for data that requires a factory, and the factory IS NOT default
+  // constrictible.  (e.g. Tpetra::Vector + Tpetra::Map).
   template <typename T, typename F>
-  F& Require(const F& f,
+  F& Require(const Teuchos::RCP<F>& f,
              const Key& fieldname,
              const Tag& tag,
              const Key& owner = "",
              bool alias_ok = true)
   {
-    CheckIsDebugData_(fieldname, tag);
+    CheckIsDebugData(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
     GetRecordSetW(fieldname).RequireRecord(tag, owner, alias_ok);
-    return GetRecordSetW(fieldname).SetType<T, F>(f);
+    return *GetRecordSetW(fieldname).SetType<T, F>(f);
   }
 
   // This Require call is for default-constructible data that does not need a
@@ -237,7 +231,7 @@ class State {
   template <typename T>
   void Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = true)
   {
-    CheckIsDebugData_(fieldname, tag);
+    CheckIsDebugData(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
@@ -246,8 +240,8 @@ class State {
     rs.SetType<T>();
   }
 
-  // This Require call will not compile for factories F that do not have a
-  // default constructor (e.g. Epetra_Map).
+  // A wrapper for additionally providing subfield names for multi-component
+  // vectors.
   template <typename T, typename F>
   F& Require(const Key& fieldname,
              const Tag& tag,
@@ -255,34 +249,30 @@ class State {
              const std::vector<std::string>& subfield_names,
              bool alias_ok = true)
   {
-    CheckIsDebugData_(fieldname, tag);
-    if (!Keys::hasKey(data_, fieldname)) {
-      data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
-    }
-    auto& rs = GetRecordSetW(fieldname);
-    rs.set_subfieldnames(subfield_names);
-    rs.RequireRecord(tag, owner, alias_ok);
-    return rs.SetType<T, F>();
+    auto res = Require<T, F>(fieldname, tag, owner, alias_ok);
+    GetRecordSetW(fieldname).set_subfieldnames(subfield_names);
+    return res;
   }
 
-  // This Require call is for factories that do not have a default constructor.
-  // (e.g. Epetra_Map).
+  // A wrapper for additionally providing subfield names for multi-component
+  // vectors.
   template <typename T, typename F>
-  F& Require(const F& f,
+  F& Require(const Teuchos::RCP<F>& f,
              const Key& fieldname,
              const Tag& tag,
              const Key& owner,
              const std::vector<std::string>& subfield_names,
              bool alias_ok = true)
   {
-    CheckIsDebugData_(fieldname, tag);
-    if (!Keys::hasKey(data_, fieldname)) {
-      data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
-    }
-    auto& rs = GetRecordSetW(fieldname);
-    rs.set_subfieldnames(subfield_names);
-    rs.RequireRecord(tag, owner, alias_ok);
-    return rs.SetType<T, F>(f);
+    auto res = Require<T, F>(f, fieldname, tag, owner, alias_ok);
+    GetRecordSetW(fieldname).set_subfieldnames(subfield_names);
+    return res;
+  }
+
+  template <typename T, typename F>
+  Teuchos::RCP<F> GetFactoryW(const Key& fieldname)
+  {
+    return GetRecordSetW(fieldname).GetFactory<T, F>();
   }
 
   //
@@ -329,7 +319,7 @@ class State {
     Tag dertag(Keys::getKey(wrt_key, wrt_tag));
     auto& deriv_set = GetDerivativeSetW(key, tag);
     deriv_set.RequireRecord(dertag, owner);
-    return deriv_set.SetType<T, F>();
+    return *deriv_set.SetType<T, F>();
   }
 
   template <typename T>
@@ -346,7 +336,7 @@ class State {
     Tag dertag = make_tag(Keys::getKey(wrt_key, wrt_tag));
     auto& deriv_set = GetDerivativeSetW(key, tag);
     deriv_set.RequireRecord(dertag, owner);
-    return deriv_set.SetType<T>();
+    deriv_set.SetType<T>();
   }
 
   // set operations
@@ -437,9 +427,21 @@ class State {
 #endif
 
   template <typename T>
+  const T& Get(const KeyTag& keytag) const
+  {
+    return Get<T>(keytag.first, keytag.second);
+  }
+
+  template <typename T>
   T& GetW(const Key& fieldname, const Tag& tag, const Key& owner)
   {
     return GetRecordSetW(fieldname).GetW<T>(tag, owner);
+  }
+
+  template <typename T>
+  T& GetW(const KeyTag& keytag, const Key& owner)
+  {
+    return GetW<T>(keytag.first, keytag.second, owner);
   }
 
   template <typename T>
@@ -487,13 +489,74 @@ class State {
   // managed in State, where each node is an Evaluator.
   //
   // -- allows PKs to add to this list to custom evaluators
-  Teuchos::ParameterList& FEList() { return state_plist_.sublist("evaluators"); }
-  const Teuchos::ParameterList& FEList() const { return state_plist_.sublist("evaluators"); }
+  Teuchos::ParameterList& ConstantsList() const
+  {
+    return state_plist_->sublist("constants");
+  }
+
+
+  //
+  // Get a constant value from the constants list
+  //
+  template<typename T>
+  T GetConstant(const std::string& name) const
+  {
+    T t;
+    bool inited = Helpers::Initialize<T>(ConstantsList().sublist(name), t);
+    if (!inited) {
+      Errors::Message msg;
+      msg << "Unable to initialize constant \"" << name << "\".";
+      Exceptions::amanzi_throw(msg);
+    }
+    return t;
+  }
+
+  //
+  // Get a map of region to constant value from the constants list
+  //
+  template<typename T>
+  std::map<std::string, T> GetConstantByRegion(const std::string& name) const
+  {
+    std::map<std::string, T> result;
+    const Teuchos::ParameterList& plist = ConstantsList().sublist(name);
+    for (const auto& element : plist) {
+      bool inited = Helpers::Initialize<T>(plist.sublist(element.first), result[element.first]);
+      if (!inited) {
+        Errors::Message msg;
+        msg << "Unable to initialize constant \"" << name << "\".";
+        Exceptions::amanzi_throw(msg);
+      }
+    }
+    return result;
+  }
+
+  //
+  // Get a constant on a region
+  //
+  template<typename T>
+  T GetConstantByRegion(const std::string& name, const std::string& region) const
+  {
+    T t;
+    bool inited = Helpers::Initialize<T>(ConstantsList().sublist(name).sublist(region), t);
+    if (!inited) {
+      Errors::Message msg;
+      msg << "Unable to initialize constant \"" << name << "\" on region \"" << region << "\".";
+      Exceptions::amanzi_throw(msg);
+    }
+    return t;
+  }
+
+
+  Teuchos::ParameterList& FEList()
+  {
+    return state_plist_->sublist("evaluators");
+  }
+  const Teuchos::ParameterList& FEList() const
+  {
+    return state_plist_->sublist("evaluators");
+  }
   Teuchos::ParameterList& GetEvaluatorList(const Key& key);
   bool HasEvaluatorList(const Key& key) const;
-
-  // -- allows PKs to add to this list to initial conditions
-  Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
 
   // Evaluator interface
   Evaluator& RequireEvaluator(const Key& key, const Tag& tag);
@@ -513,10 +576,16 @@ class State {
   Teuchos::RCP<Evaluator> GetEvaluatorPtr(const Key& key, const Tag& tag);
 
   // -- iterators/counts
-  int evaluator_count() { return evaluators_.size(); }
+  int evaluator_count()
+  {
+    return evaluators_.size();
+  }
 
   // Write evaluators to file for drawing dependency graph.
   void WriteDependencyGraph() const;
+  void WriteStatistics(Teuchos::Ptr<const VerboseObject> vo = Teuchos::null,
+                       const Teuchos::EVerbosityLevel vl = Teuchos::VERB_HIGH) const;
+
 
   // -----------------------------------------------------------------------------
   // State handles model parameters.
@@ -527,16 +596,7 @@ class State {
   // should be used and tested more thoroughly.
   //
   // Get a parameter list.
-  Teuchos::ParameterList GetModelParameters(std::string modelname);
-
-  // -----------------------------------------------------------------------------
-  // State handles MeshPartitions
-  // -----------------------------------------------------------------------------
-  // Some models, typically only defined on cells, are defined by the region.
-  // MeshPartitions are a non-overlapping set of cell regions whose union
-  // covers the mesh.
-  //
-  Teuchos::RCP<const Functions::MeshPartition> GetMeshPartition(Key);
+  const Teuchos::ParameterList& GetModelParameters(const std::string& modelname);
 
   // -----------------------------------------------------------------------------
   // Time tags and vector copies
@@ -546,49 +606,106 @@ class State {
   {
     return Require<double>("time", tag, owner, false);
   }
-  double get_time(const Tag& tag = Tags::DEFAULT) const { return Get<double>("time", tag); }
-  void set_time(const Tag& tag, double value) { Assign("time", tag, "time", value); }
-  void set_time(double value) { Assign("time", Tags::DEFAULT, "time", value); }
+  double get_time(const Tag& tag = Tags::DEFAULT) const
+  {
+    return Get<double>("time", tag);
+  }
+  void set_time(const Tag& tag, double value)
+  {
+    Assign("time", tag, "time", value);
+  }
+  void set_time(double value)
+  {
+    Assign("time", Tags::DEFAULT, "time", value);
+  }
 
-  void advance_time(const Tag& tag, double dt) { Assign("time", tag, "time", get_time(tag) + dt); }
-  void advance_time(double dt) { advance_time(Tags::DEFAULT, dt); }
+  void advance_time(const Tag& tag, double dt)
+  {
+    Assign("time", tag, "time", get_time(tag) + dt);
+  }
+  void advance_time(double dt)
+  {
+    advance_time(Tags::DEFAULT, dt);
+  }
 
   // can these go away in favor of time at different tags?
-  double final_time() const { return final_time_; }
-  void set_final_time(double new_time) { final_time_ = new_time; }
-  double intermediate_time() const { return intermediate_time_; }
-  void set_intermediate_time(double new_time) { intermediate_time_ = new_time; }
+  double final_time() const
+  {
+    return final_time_;
+  }
+  void set_final_time(double new_time)
+  {
+    final_time_ = new_time;
+  }
+  double intermediate_time() const
+  {
+    return intermediate_time_;
+  }
+  void set_intermediate_time(double new_time)
+  {
+    intermediate_time_ = new_time;
+  }
 
-  double last_time() const { return last_time_; }
-  void set_last_time(double last_time) { last_time_ = last_time; }
-  double initial_time() const { return initial_time_; }
-  void set_initial_time(double initial_time) { initial_time_ = initial_time; }
+  double last_time() const
+  {
+    return last_time_;
+  }
+  void set_last_time(double last_time)
+  {
+    last_time_ = last_time;
+  }
+  double initial_time() const
+  {
+    return initial_time_;
+  }
+  void set_initial_time(double initial_time)
+  {
+    initial_time_ = initial_time;
+  }
 
   // Cycle accessor and mutators.
-  void require_cycle(const Tag& tag) { Require<int>("cycle", tag, "cycle", false); }
-  int get_cycle(Tag tag = Tags::DEFAULT) const { return Get<int>("cycle", tag); }
-  void set_cycle(Tag tag, int cycle) { Assign("cycle", tag, "cycle", cycle); }
-  void set_cycle(int cycle) { set_cycle(Tags::DEFAULT, cycle); }
+  void require_cycle(const Tag& tag)
+  {
+    Require<int>("cycle", tag, "cycle", false);
+  }
+  int get_cycle(Tag tag = Tags::DEFAULT) const
+  {
+    return Get<int>("cycle", tag);
+  }
+  void set_cycle(Tag tag, int cycle)
+  {
+    Assign("cycle", tag, "cycle", cycle);
+  }
+  void set_cycle(int cycle)
+  {
+    set_cycle(Tags::DEFAULT, cycle);
+  }
   void advance_cycle(Tag tag = Tags::DEFAULT, int dcycle = 1)
   {
     Assign("cycle", tag, "cycle", get_cycle(tag) + dcycle);
   }
 
   // Position accessor and mutators.
-  int get_position() const { return Get<int>("position", Tags::DEFAULT); }
-  void set_position(int pos) { Assign("position", Tags::DEFAULT, "position", pos); }
+  int get_position() const
+  {
+    return Get<int>("position", Tags::DEFAULT);
+  }
+  void set_position(int pos)
+  {
+    Assign("position", Tags::DEFAULT, "position", pos);
+  }
 
   // Utility for setting vis flags using blacklist and whitelist
   void InitializeIOFlags();
 
+  // a hook to allow debuggers to connect
+  void CheckIsDebugEval(const Key& key, const Tag& tag, const std::string& message="");
+  void CheckIsDebugData(const Key& key, const Tag& tag, const std::string& message="");
+
  private:
   // Accessors that return null if the Key does not exist.
   Teuchos::RCP<AmanziMesh::Mesh> GetMesh_(const Key& key) const;
-  Teuchos::RCP<const Functions::MeshPartition> GetMeshPartition_(Key);
-
-  // a hook to allow debuggers to connect
-  void CheckIsDebugEval_(const Key& key, const Tag& tag);
-  void CheckIsDebugData_(const Key& key, const Tag& tag);
+  Teuchos::RCP<Teuchos::ParameterList> GetEvaluatorListPtr_(const Key& key);
 
  private:
   Teuchos::RCP<VerboseObject> vo_;
@@ -600,15 +717,15 @@ class State {
   RecordSetMap derivs_;
   EvaluatorMap evaluators_;
 
-  MeshPartitionMap mesh_partitions_;
   DomainSetMap domain_sets_;
 
   // meta-data
   double final_time_, intermediate_time_, last_time_, initial_time_;
 
   // parameter list
-  Teuchos::ParameterList state_plist_;
+  Teuchos::RCP<Teuchos::ParameterList> state_plist_;
 };
+
 
 } // namespace Amanzi
 

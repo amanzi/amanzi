@@ -57,7 +57,7 @@ TEST(VEC_FACTORY)
   valid = !fac.ValidType<double, VecFactory>();
   CHECK(valid);
 
-  fac.GetW<Vec, VecFactory>().set_size(2);
+  fac.GetW<Vec, VecFactory>()->set_size(2);
 
   auto s = fac.Create();
   valid = fac.ValidType<Vec>();
@@ -84,7 +84,7 @@ TEST(VEC_FACTORY_MISDIRECTED)
   g_constructor_calls_main = 0;
   g_constructor_calls_copy = 0;
   Impl::DataFactory fac = Impl::dataFactory<Vec, VecFactory>();
-  fac.GetW<Vec, VecFactory>().set_size(2);
+  fac.GetW<Vec, VecFactory>()->set_size(2);
 
   auto s = Impl::data<Vec>();
   fac.Create(s);

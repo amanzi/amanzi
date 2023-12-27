@@ -38,7 +38,7 @@ MeshFramework::getEntityPtype(const Entity_kind kind, const Entity_ID entid) con
 Entity_GID
 MeshFramework::getEntityGID(const Entity_kind kind, const Entity_ID lid) const
 {
-  AMANZI_ASSERT(comm_->NumProc() == 1);
+  AMANZI_ASSERT(comm_->getSize() == 1);
   return lid;
 }
 

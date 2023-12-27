@@ -98,7 +98,7 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
   //
   // extract two inner surfaces as fractures
   std::vector<Framework> frameworks;
-  //if (comm->NumProc() == 1) {
+  //if (comm->getSize() == 1) {
   //  frameworks.push_back(Framework::SIMPLE);
   //}
   if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }

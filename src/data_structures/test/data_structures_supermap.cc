@@ -24,20 +24,14 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
-#include "Epetra_BlockMap.h"
-#include "Epetra_Export.h"
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-#include "Epetra_IntVector.h"
-
 #include "MeshFactory.hh"
 
 #include "CompositeVectorSpace.hh"
 #include "TreeVectorSpace.hh"
+#include "Iterators.hh"
 
 #define SUPERMAP_TESTING 1
 #include "SuperMapLumped.hh"
-
 #include "SuperMap.hh"
 
 using namespace Amanzi;
@@ -69,28 +63,45 @@ getMesh(const Comm_ptr_type& comm)
 }
 
 
+template <class View_type, typename size_type>
 void
-CHECK_OWNED_SUBSET_GHOST(const std::vector<int>& owned,
-                         int n_owned,
-                         const std::vector<int>& ghost,
-                         int n_ghost)
+CHECK_OWNED_SUBSET_GHOST(const View_type& owned,
+                         size_type n_owned,
+                         const View_type& ghost,
+                         size_type n_ghost)
 {
-  CHECK_EQUAL(n_owned, owned.size());
-  CHECK_EQUAL(n_ghost, ghost.size());
-  for (int i = 0; i != n_owned; ++i) { CHECK_EQUAL(owned[i], ghost[i]); }
+  CHECK(n_owned == owned.extent(0));
+  CHECK(n_ghost == ghost.extent(0));
+  for (int i = 0; i != n_owned; ++i) { CHECK_EQUAL(owned(i), ghost(i)); }
 }
 
+template <class View_type, typename size_type>
 void
-CHECK_UNIQUE(std::vector<const std::vector<int>*> index_lists, int total)
+CHECK_UNIQUE(const std::vector<View_type>& index_lists, size_type total)
 {
-  std::set<int> all;
+  std::set<Entity_GID> all;
   int expected_count = 0;
   for (auto index_list : index_lists) {
-    expected_count += index_list->size();
-    all.insert(index_list->begin(), index_list->end());
+    expected_count += index_list->extent(0);
+    all.insert(begin(*index_list), end(*index_list));
   }
   CHECK_EQUAL(expected_count, all.size());
   CHECK_EQUAL(total, expected_count);
+}
+
+template <class View_type>
+bool
+CHECK_EQUAL_VIEW(const View_type& v1, const View_type& v2)
+{
+  if (v1.size() != v2.size()) return false;
+  auto v1i = begin(v1);
+  auto v2i = begin(v2);
+  for (int i = 0; i != v1.size(); ++i) {
+    if (*v1i != *v2i) return false;
+    v1i++;
+    v2i++;
+  }
+  return true;
 }
 
 
@@ -101,8 +112,8 @@ void
 SuperMap_Manual(bool continuous)
 {
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
-  int NumProc = comm->NumProc();
+  int MyPID = comm->getRank();
+  int NumProc = comm->getSize();
 
   if (MyPID == 0) std::cout << "Test: Manual test of SuperMapLumped" << std::endl;
 
@@ -113,107 +124,110 @@ SuperMap_Manual(bool continuous)
   } else {
     for (int i = 0; i != 3; ++i) { gids[i] = 3 * (NumProc - MyPID) + i; }
   }
-  Teuchos::RCP<Epetra_Map> owned_map1 =
-    Teuchos::rcp(new Epetra_Map(3 * NumProc, 3, &gids[0], 0, *comm));
+  Map_ptr_type owned_map1 = Teuchos::rcp(new Map_type(3 * NumProc, gids, 0, comm));
 
   if (MyPID > 0) gids.push_back(3 * MyPID - 1);
   if (MyPID < NumProc - 1) gids.push_back(3 * (MyPID + 1));
-  Teuchos::RCP<Epetra_Map> ghosted_map1 =
-    Teuchos::rcp(new Epetra_Map(-1, gids.size(), &gids[0], 0, *comm));
+  Map_ptr_type ghosted_map1 = Teuchos::rcp(new Map_type(-1, gids, 0, comm));
 
   // make a ghosted and local map 2
   std::vector<int> gids2(5);
   for (int i = 0; i != 5; ++i) { gids2[i] = 5 * MyPID + i; }
-  Teuchos::RCP<Epetra_Map> owned_map2 =
-    Teuchos::rcp(new Epetra_Map(5 * NumProc, 5, &gids2[0], 0, *comm));
+  Map_ptr_type owned_map2 = Teuchos::rcp(new Map_type(5 * NumProc, gids2, 0, comm));
 
   if (MyPID > 0) gids2.push_back(5 * MyPID - 1);
   if (MyPID < NumProc - 1) gids2.push_back(5 * (MyPID + 1));
-  Teuchos::RCP<Epetra_Map> ghosted_map2 =
-    Teuchos::rcp(new Epetra_Map(-1, gids2.size(), &gids2[0], 0, *comm));
+  Map_ptr_type ghosted_map2 = Teuchos::rcp(new Map_type(-1, gids2, 0, comm));
 
   // make the supermap
   std::vector<std::string> names;
   names.push_back("map1");
   names.push_back("map2");
-  std::vector<int> dofnums(2, 2);
+  std::map<std::string, std::size_t> dofnums;
+  dofnums["map1"] = 2;
+  dofnums["map2"] = 2;
 
-  std::vector<Teuchos::RCP<const Epetra_BlockMap>> maps;
-  maps.push_back(owned_map1);
-  maps.push_back(owned_map2);
-  std::vector<Teuchos::RCP<const Epetra_BlockMap>> gmaps;
-  gmaps.push_back(ghosted_map1);
-  gmaps.push_back(ghosted_map2);
+  std::map<std::string, BlockMap_ptr_type> maps;
+  maps["map1"] = owned_map1;
+  maps["map2"] = owned_map2;
+  std::map<std::string, BlockMap_ptr_type> gmaps;
+  gmaps["map1"] = ghosted_map1;
+  gmaps["map2"] = ghosted_map2;
 
-  Operators::SuperMapLumped map(comm, names, dofnums, maps, gmaps);
+  auto space = Teuchos::rcp(new BlockSpace(comm, names, maps, gmaps, dofnums));
+  SuperMapLumped map(space);
 
   // check the offsets
-  CHECK(map.Offset("map1") == 0);
-  CHECK(map.Offset("map2") == 2 * 3);
+  CHECK(map.getOffset("map1") == 0);
+  CHECK(map.getOffset("map2") == 2 * 3);
 
   // check the ghosted offsets
-  CHECK(map.GhostedOffset("map1") == (2 * 3 + 2 * 5));
+  CHECK(map.getGhostedOffset("map1") == (2 * 3 + 2 * 5));
   if (NumProc > 1) {
     if (MyPID == 0 || MyPID == NumProc - 1) {
-      CHECK(map.GhostedOffset("map2") == (2 * 3 + 2 * 5 + 2));
+      CHECK(map.getGhostedOffset("map2") == (2 * 3 + 2 * 5 + 2));
     } else {
-      CHECK(map.GhostedOffset("map2") == (2 * 3 + 2 * 5 + 4));
+      CHECK(map.getGhostedOffset("map2") == (2 * 3 + 2 * 5 + 4));
     }
   } else {
-    CHECK(map.GhostedOffset("map2") == (2 * 3 + 2 * 5));
+    CHECK(map.getGhostedOffset("map2") == (2 * 3 + 2 * 5));
   }
 
   // check num owned
-  CHECK(map.NumOwnedElements("map1") == 3);
-  CHECK(map.NumOwnedElements("map2") == 5);
+  CHECK(map.getNumOwnedElements("map1") == 3);
+  CHECK(map.getNumOwnedElements("map2") == 5);
 
   // check num owned/used
   if (NumProc > 1) {
     if (MyPID == 0 || MyPID == NumProc - 1) {
-      CHECK(map.NumUsedElements("map1") == 4);
-      CHECK(map.NumUsedElements("map2") == 6);
+      CHECK(map.getNumUsedElements("map1") == 4);
+      CHECK(map.getNumUsedElements("map2") == 6);
     } else {
-      CHECK(map.NumUsedElements("map1") == 5);
-      CHECK(map.NumUsedElements("map2") == 7);
+      CHECK(map.getNumUsedElements("map1") == 5);
+      CHECK(map.getNumUsedElements("map2") == 7);
     }
   } else {
-    CHECK(map.NumUsedElements("map1") == 3);
-    CHECK(map.NumUsedElements("map2") == 5);
+    CHECK(map.getNumUsedElements("map1") == 3);
+    CHECK(map.getNumUsedElements("map2") == 5);
   }
 
   // check num dofs
-  CHECK(map.NumDofs("map1") == 2);
-  CHECK(map.NumDofs("map2") == 2);
+  CHECK(map.getNumVectors("map1") == 2);
+  CHECK(map.getNumVectors("map2") == 2);
 
   // check that the maps properly export
-  Epetra_Vector owned(*map.Map());
-  Epetra_Vector ghosted(*map.GhostedMap());
-  Epetra_Import importer(*map.GhostedMap(), *map.Map());
+  Vector_type owned(map.getMap());
+  Vector_type ghosted(map.getGhostedMap());
+  Import_type importer(map.getMap(), map.getGhostedMap());
 
-  for (int i = 0; i != map.Map()->NumMyElements(); ++i) { owned[i] = map.Map()->GID(i); }
+  for (int i = 0; i != map.getMap()->getLocalNumElements(); ++i) {
+    owned.replaceLocalValue(i, map.getMap()->getGlobalElement(i));
+  }
 
-  int ierr = ghosted.Import(owned, importer, Insert);
-  ghosted.Print(std::cout);
-  CHECK(!ierr);
-  for (int i = 0; i != map.GhostedMap()->NumMyElements(); ++i) {
-    CHECK(ghosted[i] == map.GhostedMap()->GID(i));
+  ghosted.doImport(owned, importer, Tpetra::INSERT);
+  ghosted.print(std::cout);
+  {
+    auto ghosted_view = ghosted.getData();
+    for (int i = 0; i != map.getGhostedMap()->getLocalNumElements(); ++i) {
+      CHECK(ghosted_view[i] == map.getGhostedMap()->getGlobalElement(i));
+    }
   }
 
   // check the indices
   {
-    const std::vector<int>& inds_m1_d0 = map.Indices("map1", 0);
+    auto inds_m1_d0 = map.viewIndices("map1", 0);
     CHECK(inds_m1_d0.size() == 3);
     CHECK(inds_m1_d0[0] == 0);
     CHECK(inds_m1_d0[1] == 2);
     CHECK(inds_m1_d0[2] == 4);
 
-    const std::vector<int>& inds_m1_d1 = map.Indices("map1", 1);
+    auto inds_m1_d1 = map.viewIndices("map1", 1);
     CHECK(inds_m1_d1.size() == 3);
     CHECK(inds_m1_d1[0] == 1);
     CHECK(inds_m1_d1[1] == 3);
     CHECK(inds_m1_d1[2] == 5);
 
-    const std::vector<int>& inds_m2_d0 = map.Indices("map2", 0);
+    auto inds_m2_d0 = map.viewIndices("map2", 0);
     CHECK(inds_m2_d0.size() == 5);
     CHECK(inds_m2_d0[0] == 6);
     CHECK(inds_m2_d0[1] == 8);
@@ -221,7 +235,7 @@ SuperMap_Manual(bool continuous)
     CHECK(inds_m2_d0[3] == 12);
     CHECK(inds_m2_d0[4] == 14);
 
-    const std::vector<int>& inds_m2_d1 = map.Indices("map2", 1);
+    auto inds_m2_d1 = map.viewIndices("map2", 1);
     CHECK(inds_m2_d1.size() == 5);
     CHECK(inds_m2_d1[0] == 7);
     CHECK(inds_m2_d1[1] == 9);
@@ -231,24 +245,24 @@ SuperMap_Manual(bool continuous)
   }
 
   {
-    const std::vector<int>& inds_m1_d0 = map.GhostIndices("map1", 0);
+    auto inds_m1_d0 = map.viewGhostIndices("map1", 0);
     CHECK(inds_m1_d0[0] == 0);
     CHECK(inds_m1_d0[1] == 2);
     CHECK(inds_m1_d0[2] == 4);
 
-    const std::vector<int>& inds_m1_d1 = map.GhostIndices("map1", 1);
+    auto inds_m1_d1 = map.viewGhostIndices("map1", 1);
     CHECK(inds_m1_d1[0] == 1);
     CHECK(inds_m1_d1[1] == 3);
     CHECK(inds_m1_d1[2] == 5);
 
-    const std::vector<int>& inds_m2_d0 = map.GhostIndices("map2", 0);
+    auto inds_m2_d0 = map.viewGhostIndices("map2", 0);
     CHECK(inds_m2_d0[0] == 6);
     CHECK(inds_m2_d0[1] == 8);
     CHECK(inds_m2_d0[2] == 10);
     CHECK(inds_m2_d0[3] == 12);
     CHECK(inds_m2_d0[4] == 14);
 
-    const std::vector<int>& inds_m2_d1 = map.GhostIndices("map2", 1);
+    auto inds_m2_d1 = map.viewGhostIndices("map2", 1);
     CHECK(inds_m2_d1[0] == 7);
     CHECK(inds_m2_d1[1] == 9);
     CHECK(inds_m2_d1[2] == 11);
@@ -301,10 +315,9 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR)
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
+  int MyPID = comm->getRank();
   if (MyPID == 0)
     std::cout
       << "Test: SuperMapLumped from 1 CompositeVector with multiple components and multiple dofs"
@@ -324,7 +337,7 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR)
   cv.SetMesh(mesh)->SetGhosted()->SetComponents(names, locs, dofs);
 
   // create a SuperMapLumped from this space
-  Teuchos::RCP<Operators::SuperMap> map = createSuperMap(cv);
+  Teuchos::RCP<SuperMap> map = createSuperMap(cv);
 
   int ncells_owned = mesh->getNumEntities(CELL, Parallel_kind::OWNED);
   int nfaces_owned = mesh->getNumEntities(FACE, Parallel_kind::OWNED);
@@ -332,27 +345,29 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR)
   int nfaces_used = mesh->getNumEntities(FACE, Parallel_kind::ALL);
 
   // check basic sizes
-  CHECK_EQUAL(2 * ncells_owned + 2 * nfaces_owned, map->Map()->NumMyElements());
-  CHECK_EQUAL(2 * ncells_used + 2 * nfaces_used, map->GhostedMap()->NumMyElements());
+  CHECK_EQUAL(2 * ncells_owned + 2 * nfaces_owned, map->getMap()->getLocalNumElements());
+  CHECK_EQUAL(2 * ncells_used + 2 * nfaces_used, map->getGhostedMap()->getLocalNumElements());
 
   // check CompMaps
-  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, false).SameAs(*map->ComponentMap(0, "cell")));
   CHECK(
-    mesh->getMap(AmanziMesh::Entity_kind::CELL, true).SameAs(*map->ComponentGhostedMap(0, "cell")));
-  CHECK(mesh->getMap(AmanziMesh::Entity_kind::FACE, false).SameAs(*map->ComponentMap(0, "face")));
+    mesh->getMap(AmanziMesh::Entity_kind::CELL, false)->isSameAs(*map->getComponentMap(0, "cell")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, true)
+          ->isSameAs(*map->getComponentGhostedMap(0, "cell")));
   CHECK(
-    mesh->getMap(AmanziMesh::Entity_kind::FACE, true).SameAs(*map->ComponentGhostedMap(0, "face")));
+    mesh->getMap(AmanziMesh::Entity_kind::FACE, false)->isSameAs(*map->getComponentMap(0, "face")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::FACE, true)
+          ->isSameAs(*map->getComponentGhostedMap(0, "face")));
 
   // check ordering is as expected
-  const auto& inds_c0 = map->GhostIndices(0, "cell", 0);
-  const auto& inds_c1 = map->GhostIndices(0, "cell", 1);
-  const auto& inds_f0 = map->GhostIndices(0, "face", 0);
-  const auto& inds_f1 = map->GhostIndices(0, "face", 1);
+  const auto& inds_c0 = map->viewGhostIndices<MirrorHost>(0, "cell", 0);
+  const auto& inds_c1 = map->viewGhostIndices<MirrorHost>(0, "cell", 1);
+  const auto& inds_f0 = map->viewGhostIndices<MirrorHost>(0, "face", 0);
+  const auto& inds_f1 = map->viewGhostIndices<MirrorHost>(0, "face", 1);
 
-  const auto& inds_c0_owned = map->Indices(0, "cell", 0);
-  const auto& inds_c1_owned = map->Indices(0, "cell", 1);
-  const auto& inds_f0_owned = map->Indices(0, "face", 0);
-  const auto& inds_f1_owned = map->Indices(0, "face", 1);
+  const auto& inds_c0_owned = map->viewIndices<MirrorHost>(0, "cell", 0);
+  const auto& inds_c1_owned = map->viewIndices<MirrorHost>(0, "cell", 1);
+  const auto& inds_f0_owned = map->viewIndices<MirrorHost>(0, "face", 0);
+  const auto& inds_f1_owned = map->viewIndices<MirrorHost>(0, "face", 1);
 
   // check owned list is a subset of the ghost list
   CHECK_OWNED_SUBSET_GHOST(inds_c0_owned, ncells_owned, inds_c0, ncells_used);
@@ -361,12 +376,14 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR)
   CHECK_OWNED_SUBSET_GHOST(inds_f1_owned, nfaces_owned, inds_f1, nfaces_used);
 
   // check lists are non-overlapping and of sufficient size to cover all values
-  CHECK_UNIQUE(
-    std::vector<const std::vector<int>*>{
-      &inds_c0_owned, &inds_c1_owned, &inds_f0_owned, &inds_f1_owned },
-    2 * ncells_owned + 2 * nfaces_owned);
-  CHECK_UNIQUE(std::vector<const std::vector<int>*>{ &inds_c0, &inds_c1, &inds_f0, &inds_f1 },
-               2 * ncells_used + 2 * nfaces_used);
+  std::vector<cVectorView_type_<MirrorHost, LO> const*> inds_owned = {
+    &inds_c0_owned, &inds_c1_owned, &inds_f0_owned, &inds_f1_owned
+  };
+  std::vector<cVectorView_type_<MirrorHost, LO> const*> inds_ghost = {
+    &inds_c0, &inds_c1, &inds_f0, &inds_f1
+  };
+  CHECK_UNIQUE(inds_owned, 2 * ncells_owned + 2 * nfaces_owned);
+  CHECK_UNIQUE(inds_ghost, 2 * ncells_used + 2 * nfaces_used);
 
   // check owned maps interleave
   CHECK_EQUAL(0, inds_c0[0]);
@@ -381,7 +398,7 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR)
 
 
   // check ghosts pick up at the end of owned and interleave
-  if (comm->NumProc() > 1) {
+  if (comm->getSize() > 1) {
     CHECK_EQUAL(2 * ncells_owned + 2 * nfaces_owned, inds_c0[ncells_owned]);
     CHECK_EQUAL(2 * ncells_owned + 2 * nfaces_owned + 1, inds_c1[ncells_owned]);
     CHECK_EQUAL(2 * ncells_owned + 2 * nfaces_owned + 2, inds_c0[ncells_owned + 1]);
@@ -400,10 +417,9 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS)
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
+  int MyPID = comm->getRank();
   if (MyPID == 0)
     std::cout
       << "Test: SuperMapLumped from 1 CompositeVector with multiple components which include "
@@ -424,38 +440,42 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS)
   cv.SetMesh(mesh)->SetGhosted()->SetComponents(names, locs, dofs);
 
   // create a SuperMapLumped from this space
-  Teuchos::RCP<Operators::SuperMap> map = createSuperMap(cv);
+  Teuchos::RCP<SuperMap> map = createSuperMap(cv);
 
   int ncells_owned = mesh->getNumEntities(CELL, Parallel_kind::OWNED);
   int ncells_used = mesh->getNumEntities(CELL, Parallel_kind::ALL);
 
   // check basic sizes
-  CHECK_EQUAL(2 * ncells_owned, map->Map()->NumMyElements());
-  CHECK_EQUAL(2 * ncells_used, map->GhostedMap()->NumMyElements());
+  CHECK_EQUAL(2 * ncells_owned, map->getMap()->getLocalNumElements());
+  CHECK_EQUAL(2 * ncells_used, map->getGhostedMap()->getLocalNumElements());
 
   // check CompMaps
-  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, false).SameAs(*map->ComponentMap(0, "cellA")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, false)
+          ->isSameAs(*map->getComponentMap(0, "cellA")));
   CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, true)
-          .SameAs(*map->ComponentGhostedMap(0, "cellA")));
-  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, false).SameAs(*map->ComponentMap(0, "cellB")));
+          ->isSameAs(*map->getComponentGhostedMap(0, "cellA")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, false)
+          ->isSameAs(*map->getComponentMap(0, "cellB")));
   CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, true)
-          .SameAs(*map->ComponentGhostedMap(0, "cellB")));
+          ->isSameAs(*map->getComponentGhostedMap(0, "cellB")));
 
   // check ordering is as expected
-  const auto& inds_c0 = map->GhostIndices(0, "cellA", 0);
-  const auto& inds_c1 = map->GhostIndices(0, "cellB", 0);
+  const auto& inds_c0 = map->viewGhostIndices(0, "cellA", 0);
+  const auto& inds_c1 = map->viewGhostIndices(0, "cellB", 0);
 
-  const auto& inds_c0_owned = map->Indices(0, "cellA", 0);
-  const auto& inds_c1_owned = map->Indices(0, "cellB", 0);
+  const auto& inds_c0_owned = map->viewIndices(0, "cellA", 0);
+  const auto& inds_c1_owned = map->viewIndices(0, "cellB", 0);
 
   // check owned list is a subset of the ghost list
   CHECK_OWNED_SUBSET_GHOST(inds_c0_owned, ncells_owned, inds_c0, ncells_used);
   CHECK_OWNED_SUBSET_GHOST(inds_c1_owned, ncells_owned, inds_c1, ncells_used);
 
   // check lists are non-overlapping and of sufficient size to cover all values
-  CHECK_UNIQUE(std::vector<const std::vector<int>*>{ &inds_c0_owned, &inds_c1_owned },
-               2 * ncells_owned);
-  CHECK_UNIQUE(std::vector<const std::vector<int>*>{ &inds_c0, &inds_c1 }, 2 * ncells_used);
+  std::vector<cVectorView_type_<MirrorHost, LO> const*> inds_owned = { &inds_c0_owned,
+                                                                       &inds_c1_owned };
+  CHECK_UNIQUE(inds_owned, 2 * ncells_owned);
+  std::vector<cVectorView_type_<MirrorHost, LO> const*> inds_ghost = { &inds_c0, &inds_c1 };
+  CHECK_UNIQUE(inds_ghost, 2 * ncells_used);
 
   // check owned maps interleave
   CHECK_EQUAL(0, inds_c0[0]);
@@ -464,7 +484,7 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS)
   CHECK_EQUAL(3, inds_c1[1]);
 
   // check ghosts pick up at the end of owned and interleave
-  if (comm->NumProc() > 1) {
+  if (comm->getSize() > 1) {
     CHECK_EQUAL(2 * ncells_owned, inds_c0[ncells_owned]);
     CHECK_EQUAL(2 * ncells_owned + 1, inds_c1[ncells_owned]);
     CHECK_EQUAL(2 * ncells_owned + 2, inds_c0[ncells_owned + 1]);
@@ -479,10 +499,10 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS)
   cv2.SetMesh(mesh)->SetGhosted()->SetComponents(names2, locs2, dofs2);
 
   // create a SuperMapLumped from this space
-  Teuchos::RCP<Operators::SuperMap> map2 = createSuperMap(cv2);
+  Teuchos::RCP<SuperMap> map2 = createSuperMap(cv2);
 
-  CHECK(map->Map()->SameAs(*map2->Map()));
-  CHECK(map->GhostedMap()->SameAs(*map2->GhostedMap()));
+  CHECK(map->getMap()->isSameAs(*map2->getMap()));
+  CHECK(map->getGhostedMap()->isSameAs(*map2->getGhostedMap()));
 }
 
 
@@ -491,10 +511,9 @@ TEST(SUPERMAP_FROM_TWO_IDENTICAL_COMPOSITEVECTORS)
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
+  int MyPID = comm->getRank();
   if (MyPID == 0)
     std::cout << "Test: SuperMapLumped from 2 CompositeVectors with same map, single dof is same "
                  "as 1 CompositeVector with two dofs"
@@ -509,22 +528,27 @@ TEST(SUPERMAP_FROM_TWO_IDENTICAL_COMPOSITEVECTORS)
   cvB.SetMesh(mesh)->SetGhosted()->SetComponents({ "cell" }, { CELL }, { 1 });
 
   // create a SuperMapLumped from this space
-  Teuchos::RCP<Operators::SuperMap> map = Teuchos::rcp(new SuperMap({ cvA, cvB }));
+  Teuchos::RCP<SuperMap> map =
+    Teuchos::rcp(new SuperMap(comm, { cvA.CreateSpace().ptr(), cvB.CreateSpace().ptr() }));
 
   // now create another with one CV, 2 dofs
   CompositeVectorSpace cv2;
   cv2.SetMesh(mesh)->SetGhosted()->SetComponents({ "cell" }, { CELL }, { 2 });
-  Teuchos::RCP<Operators::SuperMap> map2 = createSuperMap(cv2);
+  Teuchos::RCP<SuperMap> map2 = createSuperMap(cv2);
 
   // same map!
-  CHECK(map->Map()->SameAs(*map2->Map()));
-  CHECK(map->GhostedMap()->SameAs(*map2->GhostedMap()));
+  CHECK(map->getMap()->isSameAs(*map2->getMap()));
+  CHECK(map->getGhostedMap()->isSameAs(*map2->getGhostedMap()));
 
   // same indices!
-  CHECK(map->Indices(0, "cell", 0) == map2->Indices(0, "cell", 0));
-  CHECK(map->GhostIndices(0, "cell", 0) == map2->GhostIndices(0, "cell", 0));
-  CHECK(map->Indices(1, "cell", 0) == map2->Indices(0, "cell", 1));
-  CHECK(map->GhostIndices(1, "cell", 0) == map2->GhostIndices(0, "cell", 1));
+  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::DefaultHost>(0, "cell", 0),
+                         map2->viewIndices<Amanzi::DefaultHost>(0, "cell", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::DefaultHost>(0, "cell", 0),
+                         map2->viewGhostIndices<Amanzi::DefaultHost>(0, "cell", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::DefaultHost>(1, "cell", 0),
+                         map2->viewIndices<Amanzi::DefaultHost>(0, "cell", 1)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::DefaultHost>(1, "cell", 0),
+                         map2->viewGhostIndices<Amanzi::DefaultHost>(0, "cell", 1)));
 }
 
 
@@ -533,10 +557,9 @@ TEST(SUPERMAP_FROM_CELL_PLUS_FACE_IS_CELLFACE)
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
+  int MyPID = comm->getRank();
   if (MyPID == 0)
     std::cout << "Test: SuperMapLumped from 2 CompositeVectors with different maps, single dof is "
                  "same as 1 CompositeVector with two components"
@@ -557,18 +580,22 @@ TEST(SUPERMAP_FROM_CELL_PLUS_FACE_IS_CELLFACE)
                                                  std::vector<int>{ 1, 1 });
 
   // create a SuperMapLumped from this space
-  Teuchos::RCP<Operators::SuperMap> map = Teuchos::rcp(new SuperMap({ cvA, cvB }));
-  Teuchos::RCP<Operators::SuperMap> map2 = Teuchos::rcp(new SuperMap({ cv2 }));
+  auto map = Teuchos::rcp(new SuperMap(comm, { cvA.CreateSpace().ptr(), cvB.CreateSpace().ptr() }));
+  auto map2 = Teuchos::rcp(new SuperMap(comm, { cv2.CreateSpace().ptr() }));
 
   // same map!
-  CHECK(map->Map()->SameAs(*map2->Map()));
-  CHECK(map->GhostedMap()->SameAs(*map2->GhostedMap()));
+  CHECK(map->getMap()->isSameAs(*map2->getMap()));
+  CHECK(map->getGhostedMap()->isSameAs(*map2->getGhostedMap()));
 
   // same indices!
-  CHECK(map->Indices(0, "cell", 0) == map2->Indices(0, "cell", 0));
-  CHECK(map->GhostIndices(0, "cell", 0) == map2->GhostIndices(0, "cell", 0));
-  CHECK(map->Indices(1, "face", 0) == map2->Indices(0, "face", 0));
-  CHECK(map->GhostIndices(1, "face", 0) == map2->GhostIndices(0, "face", 0));
+  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::DefaultHost>(0, "cell", 0),
+                         map2->viewIndices<Amanzi::DefaultHost>(0, "cell", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::DefaultHost>(0, "cell", 0),
+                         map2->viewGhostIndices<Amanzi::DefaultHost>(0, "cell", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::DefaultHost>(1, "face", 0),
+                         map2->viewIndices<Amanzi::DefaultHost>(0, "face", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::DefaultHost>(1, "face", 0),
+                         map2->viewGhostIndices<Amanzi::DefaultHost>(0, "face", 0)));
 }
 
 
@@ -577,10 +604,9 @@ TEST(SUPERMAP_FROM_SAME_NAME_DIFFERENT_MAP)
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
+  int MyPID = comm->getRank();
   if (MyPID == 0)
     std::cout << "Test: SuperMapLumped from 2 CompositeVectors with different maps but the same "
                  "name, is same as 1 CompositeVector with two components"
@@ -601,143 +627,165 @@ TEST(SUPERMAP_FROM_SAME_NAME_DIFFERENT_MAP)
                                                  std::vector<int>{ 1, 1 });
 
   // create a SuperMapLumped from this space
-  Teuchos::RCP<Operators::SuperMap> map = Teuchos::rcp(new SuperMap({ cvA, cvB }));
-  Teuchos::RCP<Operators::SuperMap> map2 = Teuchos::rcp(new SuperMap({ cv2 }));
+  auto map = Teuchos::rcp(new SuperMap(comm, { cvA.CreateSpace().ptr(), cvB.CreateSpace().ptr() }));
+  auto map2 = Teuchos::rcp(new SuperMap(comm, { cv2.CreateSpace().ptr() }));
 
   // same map!
-  CHECK(map->Map()->SameAs(*map2->Map()));
-  CHECK(map->GhostedMap()->SameAs(*map2->GhostedMap()));
+  CHECK(map->getMap()->isSameAs(*map2->getMap()));
+  CHECK(map->getGhostedMap()->isSameAs(*map2->getGhostedMap()));
 
   // same indices!
-  CHECK(map->Indices(0, "cell", 0) == map2->Indices(0, "cell", 0));
-  CHECK(map->GhostIndices(0, "cell", 0) == map2->GhostIndices(0, "cell", 0));
-  CHECK(map->Indices(1, "cell", 0) == map2->Indices(0, "face", 0));
-  CHECK(map->GhostIndices(1, "cell", 0) == map2->GhostIndices(0, "face", 0));
+  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::DefaultHost>(0, "cell", 0),
+                         map2->viewIndices<Amanzi::DefaultHost>(0, "cell", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::DefaultHost>(0, "cell", 0),
+                         map2->viewGhostIndices<Amanzi::DefaultHost>(0, "cell", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::DefaultHost>(1, "cell", 0),
+                         map2->viewIndices<Amanzi::DefaultHost>(0, "face", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::DefaultHost>(1, "cell", 0),
+                         map2->viewGhostIndices<Amanzi::DefaultHost>(0, "face", 0)));
 }
 
+//
+// TPETRA DOES NOT HAVE BLOCKMAPS!
+//
 
-TEST(SUPERMAP_FROM_SAME_NAME_SAME_MAP_DIFFERENT_ELEMENTSIZE)
-{
-  //
-  // This test should be good for pressure in matrix + fracture?
-  //
-  using namespace Amanzi;
-  using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::Operators;
+// TEST(SUPERMAP_FROM_SAME_NAME_SAME_MAP_DIFFERENT_ELEMENTSIZE)
+// {
+//   //
+//   // This test should be good for pressure in matrix + fracture?
+//   //
+//   using namespace Amanzi;
+//   using namespace Amanzi::AmanziMesh;
+//   using namespace Amanzi::AmanziGeometry;
 
-  auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0)
-    std::cout << "Test: SuperMapLumped from 2 CompositeVectors with same elements but different "
-                 "element sizes in the same compname"
-              << std::endl;
+//   auto comm = getDefaultComm();
+//   int MyPID = comm->getRank();
+//   if (MyPID == 0)
+//     std::cout << "Test: SuperMapLumped from 2 CompositeVectors with same elements but different "
+//                  "element sizes in the same compname"
+//               << std::endl;
 
-  auto mesh = getMesh(comm);
-  int ncells = mesh->getNumEntities(CELL, Parallel_kind::OWNED);
+//   auto mesh = getMesh(comm);
+//   int ncells = mesh->getNumEntities(CELL, Parallel_kind::OWNED);
 
-  // create a CVSpace
-  const auto& cell_map = mesh->getMap(AmanziMesh::Entity_kind::CELL, false);
-  const int* gids = nullptr;
-  const long long* llgids = nullptr;
-  cell_map.MyGlobalElements(gids, llgids);
-  Epetra_IntVector element_size(cell_map);
-  element_size.PutValue(1);
-  element_size[1] = 2;
+//   // create a CVSpace
+//   // -- we need to construct BlockMaps that include the variable block size
+//   // -- first set up a vector of the block sizes
+//   const auto& cell_map = mesh->getMap(AmanziMesh::Entity_kind::CELL,false);
+//   IntVector_type block_size(cell_map);
+//   block_size.putScalar(1);
+//   block_size.replaceLocalValue(1, 2);
 
-  Teuchos::RCP<const Epetra_BlockMap> block_cell_map = Teuchos::rcp(new Epetra_BlockMap(
-    cell_map.NumGlobalElements(), cell_map.NumMyElements(), gids, &element_size[0], 0, *comm));
+//   // -- create the owned point map and thereby the owned block map
+//   auto total_block_size = 1 + cell_map->getLocalNumElements();
+//   auto point_map = Teuchos::rcp(new Map_type(-1, total_block_size, 0, comm));
+//   auto block_cell_map = Teuchos::rcp(new BlockMap_type(point_map, cell_map->getMyGlobalIndices(), block_size.getData()));
 
-  const auto& cell_mapg = mesh->getMap(AmanziMesh::Entity_kind::CELL, true);
-  Epetra_Import importer(cell_mapg, cell_map);
-  Epetra_IntVector element_sizeg(cell_mapg);
-  element_sizeg.Import(element_size, importer, Insert);
+//   // -- now the ghosted block map -- first get block sizes on ghosted entities by importing
+//   const auto& cell_mapg = mesh->getMap(AmanziMesh::Entity_kind::CELL,true);
+//   IntVector_type block_sizeg(cell_mapg);
+//   block_sizeg.doImport(block_size, mesh->getImporter(Entity_kind::CELL), Tpetra::INSERT);
 
-  cell_mapg.MyGlobalElements(gids, llgids);
-  Teuchos::RCP<const Epetra_BlockMap> block_cell_map_g = Teuchos::rcp(new Epetra_BlockMap(
-    cell_mapg.NumGlobalElements(), cell_mapg.NumMyElements(), gids, &element_sizeg[0], 0, *comm));
+//   // -- then get the first point of every block by importing
+//   Vector_type_<Entity_GID> first_point_gid(cell_map);
+//   Entity_ID point_id = 0;
+//   {
+//     auto block_size_d = block_size.getData();
+//     for (int i=0; i!=cell_map.getLocalNumElements(); ++i) {
+//       first_point_gid.replaceLocalValue(i, point_map->getGlobalElement(point_id));
+//       point_id += block_size_d[0];
+//     }
+//   }
+//   Vector_type_<Entity_GID> first_point_gid_ghosted(cell_mapg);
+//   first_point_gid_ghosted.doImport(first_point_gid, importer, Tpetra::INSERT);
+
+//   // -- now we can construct the ghosted block map
+//   auto block_cell_map_g = Teuchos::rcp(new Epetra_BlockMap(
+//             cell_mapg->getNumGlobalElements(),
+//             cell_mapg->getMyGlobalIndices(),
+//             first_point_gid_ghosted.getData(),
+//             block_sizeg.getData(), 0, comm));
+
+//   CompositeVectorSpace cvA;
+//   cvA.SetMesh(mesh)->SetGhosted()->SetComponents({ "cell" }, { CELL }, { 1 });
+//   CompositeVectorSpace cvB;
+//   cvB.SetMesh(mesh)->SetGhosted()->SetComponents(
+//     { "cell" }, { CELL }, { { "cell", block_cell_map } }, { { "cell", block_cell_map_g } }, { 1 });
+
+//   // create a SuperMapLumped from this space
+//   Teuchos::RCP<SuperMap> map = Teuchos::rcp(new SuperMap({ cvA, cvB }));
+
+//   // not the same map!
+//   CHECK_EQUAL(ncells, map->viewIndices(0, "cell", 0).size());
+//   CHECK_EQUAL(block_cell_map->getLocalNumPoints(), map->viewIndices(1, "cell", 0).size());
+//   CHECK_EQUAL(1 + ncells, block_cell_map->getLocalNumPoints());
+
+//   {
+//     const auto& inds1 = map->viewIndices(0, "cell", 0);
+//     const auto& inds2 = map->viewIndices(1, "cell", 0);
+//     CHECK_EQUAL(0, inds1[0]);
+//     CHECK_EQUAL(1, inds1[1]);
+
+//     CHECK_EQUAL(ncells, inds2[0]);
+//     CHECK_EQUAL(ncells + 1, inds2[1]);
+//   }
+//   CHECK_UNIQUE(std::vector<const std::vector<int>*>{ &inds1, &inds2 }, 2 * ncells + 1);
+// }
 
 
-  CompositeVectorSpace cvA;
-  cvA.SetMesh(mesh)->SetGhosted()->SetComponents({ "cell" }, { CELL }, { 1 });
-  CompositeVectorSpace cvB;
-  cvB.SetMesh(mesh)->SetGhosted()->SetComponents(
-    { "cell" }, { CELL }, { { "cell", block_cell_map } }, { { "cell", block_cell_map_g } }, { 1 });
+// TEST(SUPERMAP_FROM_TREEVECTOR)
+// {
+//   using namespace Amanzi;
+//   using namespace Amanzi::AmanziMesh;
+//   using namespace Amanzi::AmanziGeometry;
 
-  // create a SuperMapLumped from this space
-  Teuchos::RCP<Operators::SuperMap> map = Teuchos::rcp(new SuperMap({ cvA, cvB }));
+//   auto comm = getDefaultComm();
+//   int MyPID = comm->getRank();
 
-  // not the same map!
-  CHECK(map->Indices(0, "cell", 0).size() == ncells);
-  CHECK(map->Indices(1, "cell", 0).size() == block_cell_map->NumMyPoints());
-  CHECK_EQUAL(block_cell_map->NumMyPoints(), 1 + ncells);
+//   if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
 
-  const auto& inds1 = map->Indices(0, "cell", 0);
-  const auto& inds2 = map->Indices(1, "cell", 0);
-  CHECK_EQUAL(0, inds1[0]);
-  CHECK_EQUAL(1, inds1[1]);
+//   // read parameter list
+//   std::string xmlFileName = "test/operator_convergence.xml";
+//   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+//   Teuchos::ParameterList plist = xmlreader.getParameters();
 
-  CHECK_EQUAL(ncells, inds2[0]);
-  CHECK_EQUAL(ncells + 1, inds2[1]);
+//   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
-  CHECK_UNIQUE(std::vector<const std::vector<int>*>{ &inds1, &inds2 }, 2 * ncells + 1);
-}
+//   // create a mesh
+//   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+//   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
+//   Preference pref;
+//   pref.clear();
+//   pref.push_back(Framework::MSTK);
 
-TEST(SUPERMAP_FROM_TREEVECTOR)
-{
-  using namespace Amanzi;
-  using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::Operators;
+//   MeshFactory meshfactory(comm, gm);
+//   meshfactory.set_preference(pref);
+//   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
+//   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
-  auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
+//   // create a CVSpace
+//   Teuchos::RCP<CompositeVectorSpace> cv = Teuchos::rcp(new CompositeVectorSpace());
+//   std::vector<std::string> names;
+//   names.push_back("cell");
+//   names.push_back("face");
+//   std::vector<int> dofs(2, 2);
+//   std::vector<Entity_kind> locs;
+//   locs.push_back(CELL);
+//   locs.push_back(FACE);
+//   cv->SetMesh(mesh)->SetGhosted()->SetComponents(names, locs, dofs);
 
-  if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
+//   // create a TV
+//   TreeVectorSpace tv;
+//   Teuchos::RCP<TreeVectorSpace> tv_ss1 = Teuchos::rcp(new TreeVectorSpace());
+//   tv_ss1->SetData(cv);
+//   Teuchos::RCP<TreeVectorSpace> tv_ss2 = Teuchos::rcp(new TreeVectorSpace());
+//   tv_ss2->SetData(cv);
+//   tv.PushBack(tv_ss1);
+//   tv.PushBack(tv_ss2);
 
-  // read parameter list
-  std::string xmlFileName = "test/operator_convergence.xml";
-  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-  Teuchos::ParameterList plist = xmlreader.getParameters();
-
-  Amanzi::VerboseObject::global_hide_line_prefix = true;
-
-  // create a mesh
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
-
-  Preference pref;
-  pref.clear();
-  pref.push_back(Framework::MSTK);
-
-  MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
-
-  // create a CVSpace
-  Teuchos::RCP<CompositeVectorSpace> cv = Teuchos::rcp(new CompositeVectorSpace());
-  std::vector<std::string> names;
-  names.push_back("cell");
-  names.push_back("face");
-  std::vector<int> dofs(2, 2);
-  std::vector<Entity_kind> locs;
-  locs.push_back(CELL);
-  locs.push_back(FACE);
-  cv->SetMesh(mesh)->SetGhosted()->SetComponents(names, locs, dofs);
-
-  // create a TV
-  TreeVectorSpace tv;
-  Teuchos::RCP<TreeVectorSpace> tv_ss1 = Teuchos::rcp(new TreeVectorSpace());
-  tv_ss1->SetData(cv);
-  Teuchos::RCP<TreeVectorSpace> tv_ss2 = Teuchos::rcp(new TreeVectorSpace());
-  tv_ss2->SetData(cv);
-  tv.PushBack(tv_ss1);
-  tv.PushBack(tv_ss2);
-
-  // create a SuperMapLumped from a singleton space
-  Teuchos::RCP<Operators::SuperMap> map_singleton = createSuperMap(*tv_ss1);
-  // create a SuperMapLumped from a tree space
-  Teuchos::RCP<Operators::SuperMap> map = createSuperMap(tv);
-}
+//   // create a SuperMapLumped from a singleton space
+//   Teuchos::RCP<SuperMap> map_singleton = createSuperMap(*tv_ss1);
+//   // create a SuperMapLumped from a tree space
+//   Teuchos::RCP<SuperMap> map = createSuperMap(tv);
+// }

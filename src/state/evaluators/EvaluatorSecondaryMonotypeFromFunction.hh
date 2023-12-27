@@ -76,9 +76,13 @@ class Function;
 class EvaluatorSecondaryMonotypeFromFunction
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit EvaluatorSecondaryMonotypeFromFunction(Teuchos::ParameterList& plist);
+  explicit EvaluatorSecondaryMonotypeFromFunction(
+    const Teuchos::RCP<Teuchos::ParameterList>& plist);
   EvaluatorSecondaryMonotypeFromFunction(const EvaluatorSecondaryMonotypeFromFunction& other);
   virtual Teuchos::RCP<Evaluator> Clone() const override;
+
+  static const std::string eval_type;
+  virtual std::string getType() const override { return eval_type; }
 
  protected:
   // These do the actual work
@@ -91,14 +95,14 @@ class EvaluatorSecondaryMonotypeFromFunction
                                           const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override
   {
-    for (auto& r : results) { r->PutScalar(0.0); }
+    for (auto& r : results) { r->putScalar(0.0); }
   }
 
  protected:
   std::vector<Teuchos::RCP<const Function>> funcs_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction> fac_;
+  static Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction> reg_;
 };
 
 } // namespace Amanzi

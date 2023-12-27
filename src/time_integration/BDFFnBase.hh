@@ -68,10 +68,9 @@ class BDFFnBase {
   // calling this indicates that the time
   // integration scheme is changing the value of the solution in
   // state.
-  virtual void ChangedSolution() = 0;
+  virtual void MarkChangedSolution() = 0;
 
-  // experimental routine -- returns the number of linear iterations.
-  virtual int ReportStatistics() { return 0; }
+  virtual int ReportStatistics() { return -1; };
 };
 
 } // namespace Amanzi

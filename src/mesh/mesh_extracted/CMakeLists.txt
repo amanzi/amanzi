@@ -36,14 +36,12 @@ include_directories(${Epetra_INCLUDE_DIRS})
 # Library: mesh
 #
 set(mesh_extracted_inc_files
-    BlockMapUtils.hh
     MeshExtractedManifold.hh
     MeshFrameworkColumn.hh
     MeshSurfaceCell.hh
     )
 
 set(mesh_extracted_src_files
-  BlockMapUtils.cc
   MeshExtractedManifold.cc
   MeshFrameworkColumn.cc
   MeshSurfaceCell.cc

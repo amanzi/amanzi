@@ -20,36 +20,17 @@
 #include "Teuchos_RCP.hpp"
 
 #include "BDFFnBase.hh"
-#include "Key.hh"
-#include "Operator.hh"
-#include "OperatorDefs.hh"
-#include "PDE_HelperDiscretization.hh"
-#include "EvaluatorPrimary.hh"
-
-#include "PK_Physical.hh"
+#include "PK.hh"
 
 namespace Amanzi {
 
-class PK_BDF : virtual public PK, public BDFFnBase<TreeVector> {
+namespace Operators {
+class Operator;
+} // namespace Operators
+
+class PK_BDF : public PK, public BDFFnBase<TreeVector> {
  public:
-  PK_BDF() : PK(), BDFFnBase<TreeVector>(){};
-
-  PK_BDF(Teuchos::ParameterList& pk_tree,
-         const Teuchos::RCP<Teuchos::ParameterList>& glist,
-         const Teuchos::RCP<State>& S,
-         const Teuchos::RCP<TreeVector>& soln)
-    : PK(pk_tree, glist, S, soln), BDFFnBase<TreeVector>(){};
-
-  // access to operators and PDEs in sub-PKs
-  virtual Teuchos::RCP<Operators::Operator> my_operator(const Operators::OperatorType& type)
-  {
-    return Teuchos::null;
-  }
-
-  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization> my_pde(const Operators::PDEType& type)
-  {
-    return Teuchos::null;
-  }
+  virtual Teuchos::RCP<Operators::Operator> getPreconditioner() = 0;
 };
 
 } // namespace Amanzi

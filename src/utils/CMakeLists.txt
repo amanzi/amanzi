@@ -10,7 +10,6 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(LibraryManager)
-include(BinaryManager)
 
 #
 # Define a project name
@@ -21,22 +20,14 @@ include(BinaryManager)
 # through these variables.
 project(ATK)
 
-include_directories(${EXPRTK_INLUCDE_DIR})
 include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${Epetra_INCLUDE_DIRS})
-
 include_directories(${DBC_SOURCE_DIR})
-
-set(tpl_link_libs
-  ${Epetra_LIBRARIES}
-  ${Teuchos_LIBRARIES}
-  ${HDF5_LIBRARIES})
+include_directories(${EXPRTK_INLCUDE_DIR})
 
 add_amanzi_library(atk
                    SOURCE AmanziComm.cc
                           ExprTK.cc
                           Formatter.cc
-                          HDF5Reader.cc
                           IOEvent.cc
                           Key.cc
                           LeastSquare.cc 
@@ -73,24 +64,11 @@ add_amanzi_library(atk
                            ViewUtils.hh
                            XMLParameterListWriter.hh
                            StringReducer.hh
-                    LINK_LIBS error_handling ${tpl_link_libs})
+                    LINK_LIBS error_handling ${Tpetra_LIBRARIES} ${Teuchos_LIBRARIES} ${HDF5_LIBRARIES})
 
 if (APPLE AND BUILD_SHARED_LIBS)
   set_target_properties(atk PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
 endif()			  
-
-add_amanzi_executable(xml_to_yaml
-  SOURCE XmlToYaml.cc
-  LINK_LIBS ${tpl_link_libs}
-  OUTPUT_NAME xml_to_yaml
-  OUTPUT_DIRECTORY ${ATS_BINARY_DIR})
-
-add_amanzi_executable(yaml_to_xml
-  SOURCE YamlToXml.cc
-  LINK_LIBS ${tpl_link_libs}
-  OUTPUT_NAME yaml_to_xml
-  OUTPUT_DIRECTORY ${ATS_BINARY_DIR})
-
 
 if (BUILD_TESTS)
     # Add UnitTest include directoy
@@ -155,6 +133,10 @@ if (BUILD_TESTS)
     add_amanzi_test(utils_brent utils_brent
                     KIND unit
                     SOURCE test/Main.cc test/utils_brent.cc
+                    LINK_LIBS atk ${UnitTest_LIBRARIES})
+    add_amanzi_test(utils_set_pars utils_set_pars
+                    KIND unit
+                    SOURCE test/Main.cc test/utils_set_pars.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
 
 endif()

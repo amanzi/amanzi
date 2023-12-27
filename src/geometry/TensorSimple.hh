@@ -13,6 +13,7 @@
   Special implementation of tensors of rank 2.
 */
 
+//! <MISSING_ONELINE_DOCSTRING>
 #ifndef AMANZI_TENSOR_SIMPLE_HH_
 #define AMANZI_TENSOR_SIMPLE_HH_
 

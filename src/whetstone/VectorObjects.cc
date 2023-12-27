@@ -24,10 +24,10 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Gradient for polynomials
-****************************************************************** */
+ * Gradient for polynomials
+ ****************************************************************** */
 VectorPolynomial
-Gradient(const Polynomial& p)
+Gradient(const Polynomial<>& p)
 {
   int d = p.dimension();
   int order = std::max(0, p.order() - 1);
@@ -60,8 +60,8 @@ Gradient(const Polynomial& p)
 
 
 /* ******************************************************************
-* Gradient for space-time polynomials
-****************************************************************** */
+ * Gradient for space-time polynomials
+ ****************************************************************** */
 VectorSpaceTimePolynomial
 Gradient(const SpaceTimePolynomial& p)
 {
@@ -80,9 +80,9 @@ Gradient(const SpaceTimePolynomial& p)
 
 
 /* ******************************************************************
-* Divergence
-****************************************************************** */
-Polynomial
+ * Divergence
+ ****************************************************************** */
+Polynomial<>
 Divergence(const VectorPolynomial& vp)
 {
   int d = vp[0].dimension();
@@ -91,7 +91,7 @@ Divergence(const VectorPolynomial& vp)
   int order = vp[0].order();
   order = std::max(0, order - 1);
 
-  Polynomial div(d, order);
+  Polynomial<> div(d, order);
   div.set_origin(vp[0].get_origin());
 
   int index[3];
@@ -119,10 +119,10 @@ Divergence(const VectorPolynomial& vp)
 
 
 /* ******************************************************************
-* Projecton of gradient using Taylor expansion with k terms
-****************************************************************** */
+ * Projecton of gradient using Taylor expansion with k terms
+ ****************************************************************** */
 VectorPolynomial
-GradientOnUnitSphere(const Polynomial& poly, int k)
+GradientOnUnitSphere(const Polynomial<>& poly, int k)
 {
   int d = poly.dimension();
   AMANZI_ASSERT(d == 2);

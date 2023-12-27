@@ -1,19 +1,15 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-           Ethan Coon (ecoon@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+          Ethan Coon (ecoon@lanl.gov)
 */
 
-/*
-  Operators
+//! Composes BCs, local_op, and global_operator objects for use by discretizations.
 
-  Helper class for discrete PDE operators. It provides support of
-  common functionality.
-*/
 
 #ifndef AMANZI_OPERATOR_PDE_HELPER_DISCRETIZATION_HH_
 #define AMANZI_OPERATOR_PDE_HELPER_DISCRETIZATION_HH_
@@ -24,51 +20,15 @@
 #include "Mesh.hh"
 #include "Op.hh"
 #include "Operator.hh"
-#include "PDE_HelperBCsList.hh"
 #include "Schema.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class PDE_HelperDiscretization : public PDE_HelperBCsList {
+class PDE_HelperDiscretization {
  public:
-  PDE_HelperDiscretization(){};
   PDE_HelperDiscretization(const Teuchos::RCP<Operator>& global_op);
-  PDE_HelperDiscretization(const Teuchos::RCP<AmanziMesh::Mesh>& mesh);
   PDE_HelperDiscretization(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-  virtual ~PDE_HelperDiscretization(){};
-
-  // generate linearized operator
-  // -- generate matrix. We can use parameter to define coefficeints
-  //    or/and perform on-a-fly linearization.
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) = 0;
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u)
-  {
-    UpdateMatrices(u, Teuchos::null);
-  }
-  virtual void UpdateMatrices() { UpdateMatrices(Teuchos::null, Teuchos::null); }
-  // -- modify matrix due to boundary conditions: generic implementation
-  //    for PDE classes based on new schema:
-  //    primary=true indicates that the operator updates both matrix and right-hand
-  //      side using BC data. If primary=false, only matrix is changed.
-  //    eliminate=true indicates that we eliminate essential BCs for a trial
-  //      function, i.e. zeros go in the corresponding matrix columns and
-  //      right-hand side is modified using BC values. This is the optional
-  //      parameter that enforces symmetry for a symmetric tree  operators.
-  //    essential_eqn=true indicates that the operator places a positive number on
-  //      the main matrix diagonal for the case of essential BCs. This is the
-  //      implementtion trick.
-  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn);
-
-  // postprocessing
-  // -- flux calculation uses potential p to calculate flux u
-  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) = 0;
-
-  // preprocessing
-  // -- set essential boundary conditions
-  void EnforceBCs(CompositeVector& field);
 
   // access
   // -- global operator (collection of ops with Apply, etc)
@@ -81,29 +41,11 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   Teuchos::RCP<const Op> local_op() const { return local_op_; }
   void set_local_op(const Teuchos::RCP<Op>& op);
 
-  // -- schemas
-  const Schema& global_schema_col() { return global_schema_col_; }
-  const Schema& schema_col() { return local_schema_col_; }
-  const Schema& schema_row() { return local_schema_row_; }
-
- protected:
-  void ApplyBCs_Cell_Scalar_(const BCs& bc,
-                             Teuchos::RCP<Op> op,
-                             bool primary,
-                             bool eliminate,
-                             bool essential_eqn);
-
-  void ApplyBCs_Cell_Point_(const BCs& bc,
-                            Teuchos::RCP<Op> op,
-                            bool primary,
-                            bool eliminate,
-                            bool essential_eqn);
-
-  void ApplyBCs_Cell_Vector_(const BCs& bc,
-                             Teuchos::RCP<Op> op,
-                             bool primary,
-                             bool eliminate,
-                             bool essential_eqn);
+  // boundary conditions (BC) require information on test and
+  // trial spaces. For a single PDE, these BCs could be the same.
+  void SetBCs(const Teuchos::RCP<const BCs>& bc_trial, const Teuchos::RCP<const BCs>& bc_test);
+  // void AddBCs(const Teuchos::RCP<const BCs>& bc_trial,
+  //             const Teuchos::RCP<const BCs>& bc_test);
 
  private:
   void PopulateDimensions_();
@@ -111,11 +53,7 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
  protected:
   Teuchos::RCP<Operator> global_op_;
   Teuchos::RCP<Op> local_op_;
-  PDEType pde_type_;
-
-  // schemas
-  Schema global_schema_col_, global_schema_row_;
-  Schema local_schema_col_, local_schema_row_;
+  std::vector<Teuchos::RCP<const BCs>> bcs_trial_, bcs_test_;
 
   // mesh info
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -127,27 +65,27 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
 };
 
 
-// non-member functions
-Teuchos::RCP<CompositeVectorSpace>
-CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                         const Teuchos::RCP<const AmanziMesh::Mesh>& fracture);
+// // non-member functions
+// Teuchos::RCP<CompositeVectorSpace>
+// CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+//                          const Teuchos::RCP<const AmanziMesh::Mesh>& fracture);
 
-Teuchos::RCP<CompositeVectorSpace>
-CreateManifoldCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+// Teuchos::RCP<CompositeVectorSpace>
+// CreateManifoldCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
-void
-CellToBoundaryFaces(const std::vector<int>& bc_model, CompositeVector& field);
+// void
+// CellToBoundaryFaces(const std::vector<int>& bc_model, CompositeVector& field);
 
-void
-CellToBoundaryFaces(CompositeVector& field);
+// void
+// CellToBoundaryFaces(CompositeVector& field);
 
-void
-BoundaryFacesToFaces(const std::vector<int>& bc_model,
-                     const CompositeVector& input,
-                     CompositeVector& output);
+// void
+// BoundaryFacesToFaces(const std::vector<int>& bc_model,
+//                      const CompositeVector& input,
+//                      CompositeVector& output);
 
-void
-BoundaryDataToFaces(const Teuchos::RCP<Operators::BCs>& op_bc, CompositeVector& field);
+// void
+// BoundaryDataToFaces(const Teuchos::RCP<Operators::BCs>& op_bc, CompositeVector& field);
 
 } // namespace Operators
 } // namespace Amanzi

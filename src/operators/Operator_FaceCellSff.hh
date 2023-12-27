@@ -1,17 +1,15 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
-*/
 
-/*
-  Operators
-
-  Operator whose unknowns are CELL + FACE, but which assembles the
+  Operator whose unknowns are CELL + FACE, but which assembles the 
   CELL only system and Schur complements the face.
 */
 
@@ -20,7 +18,6 @@
 
 #include "DenseMatrix.hh"
 #include "Operator_FaceCell.hh"
-#include "InverseSchurComplement.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -31,7 +28,7 @@ class Operator_FaceCellSff : public Operator_FaceCell {
   //   The CVS is the domain and range of the operator
   Operator_FaceCellSff(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                        Teuchos::ParameterList& plist)
-    : Operator_FaceCell(cvs, plist)
+    : Operator_FaceCell(cvs->CreateSpace(), plist)
   {
     // changing schema for the Schur complement
     int schema = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE;
@@ -40,54 +37,38 @@ class Operator_FaceCellSff : public Operator_FaceCell {
     set_schema_string("FACE+CELL Schur to FACE");
   }
 
-  virtual void InitializeInverse() override;
-  virtual Teuchos::RCP<Operator> Clone() const override;
-
-  // cannot do an assembled forward apply as the assembled thing is not the full
-  // operator
-  virtual int Apply(const CompositeVector& X, CompositeVector& Y) const override
-  {
-    return Apply(X, Y, 0.0);
-  }
-  virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const override
-  {
-    return ApplyUnassembled(X, Y, scalar);
-  }
+  // Special Apply Inverse required to deal with schur complement
+  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
   // Special AssembleMatrix required to deal with schur complement
-  virtual void AssembleMatrix(const SuperMap& map,
-                              MatrixFE& matrix,
-                              int my_block_row,
-                              int my_block_col) const override;
+  virtual void
+  AssembleMatrix(const SuperMap& map, MatrixFE& matrix, int my_block_row, int my_block_col) const;
 
   // visit method for Apply -- this is identical to Operator_FaceCell's
   // version.
-  virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
-                                const CompositeVector& X,
-                                CompositeVector& Y) const override;
+  virtual int
+  ApplyMatrixFreeOp(const Op_Cell_FaceCell& op, const CompositeVector& X, CompositeVector& Y) const;
 
   // driver symbolic assemble creates the face-only supermap
-  virtual void SymbolicAssembleMatrix() override;
+  virtual void SymbolicAssembleMatrix();
 
   // visit method for sparsity structure of Schur complement
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
                                         const SuperMap& map,
                                         GraphFE& graph,
                                         int my_block_row,
-                                        int my_block_col) const override;
+                                        int my_block_col) const;
 
   // visit method for sparsity structure of Schur complement
   // handled in Schur complement -- no cell dofs.
-  using Operator_FaceCell::SymbolicAssembleMatrixOp;
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
                                         const SuperMap& map,
                                         GraphFE& graph,
                                         int my_block_row,
-                                        int my_block_col) const override{};
+                                        int my_block_col) const {};
 
  protected:
   mutable std::vector<Teuchos::RCP<Op_Cell_Face>> schur_ops_;
-  Teuchos::RCP<AmanziSolvers::InverseSchurComplement> schur_inv_;
 };
 
 } // namespace Operators

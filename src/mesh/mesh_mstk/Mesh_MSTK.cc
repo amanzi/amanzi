@@ -8,10 +8,13 @@
 */
 
 //! Implementation of the Mesh interface leveraging MSTK.
+#include "Teuchos_CommHelpers.hpp"
+
 #include "dbc.hh"
 #include "errors.hh"
 
 #include "VerboseObject.hh"
+#include "ViewUtils.hh"
 #include "Point.hh"
 #include "GeometricModel.hh"
 #include "ViewUtils.hh"
@@ -53,7 +56,7 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
 
   int cell_dim = MESH_Num_Regions(mesh_) ? 3 : 2;
   int max;
-  comm->MaxAll(&cell_dim, &max, 1);
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &cell_dim, &max);
 
   if (max != cell_dim) {
     Errors::Message mesg("cell dimension on this processor is different from max cell dimension "
@@ -83,7 +86,7 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
     }
 
     if (planar) space_dim = 2;
-    comm->MaxAll(&space_dim, &max, 1);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &space_dim, &max);
     space_dim = max;
     setSpaceDimension(space_dim);
   }
@@ -2825,9 +2828,9 @@ Mesh_MSTK::pre_create_steps_(const int space_dimension)
     myprocid = 0;
     numprocs = 1;
   } else {
-    mpicomm_ = mpicomm->GetMpiComm();
-    myprocid = comm_->MyPID();
-    numprocs = comm_->NumProc();
+    mpicomm_ = *mpicomm->getRawMpiComm();
+    myprocid = comm_->getRank();
+    numprocs = comm_->getSize();
     serial_run = (numprocs == 1);
   }
 }

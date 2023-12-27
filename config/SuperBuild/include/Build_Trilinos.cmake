@@ -264,9 +264,7 @@ if (ENABLE_CUDA)
   if(NOT DEFINED ENV{CUDA_LAUNCH_BLOCKING}) 
     message(FATAL_ERROR "Environment variable CUDA_LAUNCH_BLOCKING has to be set to 1 to continue") 
   endif() 
-  set(NVCC_WRAPPER_DEFAULT_COMPILER "${CMAKE_CXX_COMPILER}")
   set(NVCC_WRAPPER_PATH "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
-  message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER ${NVCC_WRAPPER_DEFAULT_COMPILER}")
   set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} \
   -Wno-deprecated-declarations -lineinfo \
   -Xcudafe --diag_suppress=conversion_function_not_usable \
@@ -275,8 +273,8 @@ if (ENABLE_CUDA)
   list(APPEND Trilinos_CMAKE_ARCH_ARGS
     "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON"
     "-DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON") 
-  # Change the default compiler for Trilinos to use nvcc_wrapper 
-  set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
+  # Change the default compiler for Trilinos to use nvcc_wrapper
+  set(MPICH_CXX ${NVCC_WRAPPER_PATH})
 endif()
 
 # Set ARCH-specific options
@@ -376,3 +374,4 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
 # --- Useful variables for packages that depends on Trilinos
 global_set(Trilinos_INSTALL_PREFIX "${Trilinos_install_dir}")
 global_set(Zoltan_INSTALL_PREFIX "${Trilinos_install_dir}")
+

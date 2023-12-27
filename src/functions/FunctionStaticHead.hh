@@ -49,20 +49,39 @@ namespace Amanzi {
 class FunctionStaticHead : public Function {
  public:
   FunctionStaticHead(double patm, double rho, double g, std::unique_ptr<Function> h, int dim)
-    : dim_(dim), patm_(patm), rho_g_(rho * g), h_(std::move(h))
+    : patm_(patm), rho_g_(rho * g), h_(std::move(h)), dim_(dim)
   {}
   FunctionStaticHead(double patm, double rho, double g, const Function& h, int dim)
-    : dim_(dim), patm_(patm), rho_g_(rho * g), h_(h.Clone())
+    : patm_(patm), rho_g_(rho * g), h_(h.Clone()), dim_(dim)
   {}
   FunctionStaticHead(const FunctionStaticHead& src)
-    : dim_(src.dim_), patm_(src.patm_), rho_g_(src.rho_g_), h_(src.h_->Clone())
+    : patm_(src.patm_), rho_g_(src.rho_g_), h_(src.h_->Clone()), dim_(src.dim_)
   {}
   ~FunctionStaticHead() {}
   std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionStaticHead>(*this); }
   // The array (t,x,y,z) is passed as *x, so that x[dim_] is z in 3D, y in 2D
-  double operator()(const std::vector<double>& x) const
+  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
   {
-    return patm_ + rho_g_ * ((*h_)(x)-x[dim_]);
+    return patm_ + rho_g_ * ((*h_)(x)-x(dim_));
+  }
+
+  void apply(const Kokkos::View<double**>& in,
+             Kokkos::View<double*>& out,
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+  {
+    h_->apply(in, out, ids);
+    if (ids) {
+      auto ids_loc = *ids;
+      Kokkos::parallel_for(
+        "FunctionStaticHead::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(ids_loc(i)) = patm_ + rho_g_ * (out(ids_loc(i)) - in(dim_, i));
+        });
+    } else {
+      Kokkos::parallel_for(
+        "FunctionStaticHead::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(i) = patm_ + rho_g_ * (out(i) - in(dim_, i));
+        });
+    }
   }
 
  private:

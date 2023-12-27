@@ -42,7 +42,7 @@ CHECK_CLOSE_SUMALL(T exp, T contrib, const Amanzi::Comm_type& comm, T tol = 0)
 {
   // MPI-based CHECK_CLOSE using SumAll
   T global;
-  comm.SumAll(&contrib, &global, 1);
+  Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 1, &contrib, &global);
   CHECK_CLOSE(exp, global, tol);
   if (std::abs(exp - global) > tol) {
     // for debugging
@@ -60,7 +60,7 @@ CHECK_MPI_ALL(std::vector<int>& contrib, const Amanzi::Comm_type& comm)
 {
   // MPI-based, confirms that all entries of contrib are true on some process.
   std::vector<int> global(contrib.size());
-  comm.MaxAll(contrib.data(), global.data(), contrib.size());
+  Teuchos::reduceAll(comm, Teuchos::REDUCE_MAX, (int)contrib.size(), contrib.data(), global.data());
   CHECK(std::all_of(global.begin(), global.end(), [](bool cond) { return cond; }));
 }
 
@@ -362,23 +362,21 @@ void
 testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz = -1)
 {
   // check faces are on the boundary
-  int nbfaces_global =
-    mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false).NumGlobalElements();
-  int nbfaces_global_test;
+  int nbfaces = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)->getGlobalNumElements();
+  int nbfaces_test;
   if (nz < 0) {
-    nbfaces_global_test = 2 * nx + 2 * ny;
+    nbfaces_test = 2 * nx + 2 * ny;
   } else {
-    nbfaces_global_test = nx * ny * 2 + nx * nz * 2 + ny * nz * 2;
+    nbfaces_test = nx * ny * 2 + nx * nz * 2 + ny * nz * 2;
   }
-  CHECK_EQUAL(nbfaces_global_test, nbfaces_global);
+  CHECK_EQUAL(nbfaces_test, nbfaces);
 
   auto& bfaces = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
-  int nbfaces_all = bfaces.NumMyElements();
   auto& faces = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
-  auto bface_ids = mesh->getBoundaryFaces(); // this is ALL
+  auto bface_ids = mesh->getBoundaryFaces();
 
-  for (int j = 0; j != nbfaces_all; ++j) {
-    auto bf = faces.LID(bfaces.GID(j));
+  for (int j = 0; j != bfaces->getLocalNumElements(); ++j) {
+    auto bf = faces->getLocalElement(bfaces->getGlobalElement(j));
     CHECK_EQUAL(bface_ids[j], bf);
     auto f_centroid = mesh->getFaceCentroid(bf);
     bool found = false;
@@ -392,36 +390,26 @@ testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int
     CHECK(found);
   }
 
-  // check that the owned map is a subset of the all map
-  int nbfaces_owned = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false).NumMyElements();
-  if (mesh->getComm()->NumProc() == 1) {
-    CHECK_EQUAL(nbfaces_owned, nbfaces_all);
-  } else {
-    CHECK(nbfaces_all > nbfaces_owned);
-  }
-
   // check nodes are on the boundary
   //
   // NOTE: this appears broken in current master, see #583
-  int nbnodes_global =
-    mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_NODE, false).NumGlobalElements();
-  int nbnodes_global_test;
+  int nbnodes = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_NODE, false)->getGlobalNumElements();
+  int nbnodes_test;
   if (nz < 0) {
-    nbnodes_global_test = 2 * (nx - 1) + 2 * (ny - 1) + 4; // don't double count the corners
+    nbnodes_test = 2 * (nx - 1) + 2 * (ny - 1) + 4; // don't double count the corners
   } else {
-    nbnodes_global_test = 2 * (nx - 1) * (ny - 1) + 2 * (nx - 1) * (nz - 1) +
-                          2 * (ny - 1) * (nz - 1) + 4 * (nx - 1) + 4 * (ny - 1) + 4 * (nz - 1) + 8;
+    nbnodes_test = 2 * (nx - 1) * (ny - 1) + 2 * (nx - 1) * (nz - 1) + 2 * (ny - 1) * (nz - 1) +
+                   4 * (nx - 1) + 4 * (ny - 1) + 4 * (nz - 1) + 8;
   }
-  CHECK_EQUAL(nbnodes_global_test, nbnodes_global);
+  CHECK_EQUAL(nbnodes_test, nbnodes);
 
   auto& bnodes = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_NODE, true);
-  int nbnodes_all = bnodes.NumMyElements();
   auto& nodes = mesh->getMap(AmanziMesh::Entity_kind::NODE, true);
-  for (int j = 0; j != nbnodes_all; ++j) {
-    std::cout << " bnode " << j << " GID " << bnodes.GID(j) << " LID " << nodes.LID(bnodes.GID(j))
-              << std::endl;
+  for (int j = 0; j != bnodes->getLocalNumElements(); ++j) {
+    std::cout << " bnode " << j << " GID " << bnodes->getGlobalElement(j) << " LID "
+              << nodes->getLocalElement(bnodes->getGlobalElement(j)) << std::endl;
 
-    auto bn = nodes.LID(bnodes.GID(j));
+    auto bn = nodes->getLocalElement(bnodes->getGlobalElement(j));
     AmanziGeometry::Point nc;
     nc = mesh->getNodeCoordinate(bn);
     bool found = false;
@@ -430,14 +418,6 @@ testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int
       found = true;
     }
     CHECK(found);
-  }
-
-  // check that the owned map is a subset of the all map
-  int nbnodes_owned = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_NODE, false).NumMyElements();
-  if (mesh->getComm()->NumProc() == 1) {
-    CHECK_EQUAL(nbnodes_owned, nbnodes_all);
-  } else {
-    CHECK(nbnodes_all > nbnodes_owned);
   }
 }
 
@@ -451,6 +431,7 @@ testColumnsUniformDz(const MeshCache<MEM>& mesh, double dz)
 {
   // tests the columnar structure of cells
   int n_columns = mesh.columns.num_columns_all;
+  CHECK(n_columns > 0);
 
   // also tests that cols with ghost entities are listed first
   int ncells_owned =

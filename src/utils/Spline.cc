@@ -47,7 +47,7 @@ Spline::Setup(double x1, double y1, double dy1, double x2, double y2, double dy2
 
 
 double
-Spline::Value(double x)
+Spline::Value(double x) const
 {
   AMANZI_ASSERT(x1_ <= x && x <= x2_);
   double t = T(x);
@@ -62,7 +62,7 @@ Spline::Value(double x)
 }
 
 double
-Spline::Derivative(double x)
+Spline::Derivative(double x) const
 {
   AMANZI_ASSERT(x1_ <= x && x <= x2_);
   double t = T(x);

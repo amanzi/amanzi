@@ -228,7 +228,7 @@ Observable::Setup(const Teuchos::Ptr<State>& S)
 
   // communicate so that all ranks know number of vectors
   int num_vectors_local = num_vectors_;
-  comm_->MaxAll(&num_vectors_local, &num_vectors_, 1);
+  Teuchos::reduceAll<int>(*comm_, Teuchos::REDUCE_MAX, 1, &num_vectors_local, &num_vectors_);
 }
 
 
@@ -242,13 +242,13 @@ Observable::FinalizeStructure(const Teuchos::Ptr<State>& S)
   if (has_data_ && num_vectors_ < 0) {
     const auto& field = S->Get<CompositeVector>(variable_, tag_);
 
-    if (!field.HasComponent(location_)) {
+    if (!field.hasComponent(location_)) {
       Errors::Message msg;
       msg << "Observable: \"" << name_ << "\" uses variable \"" << variable_
           << "\" but this field does not have the observed component \"" << location_ << "\"";
       Exceptions::amanzi_throw(msg);
     } else {
-      num_vectors_ = field.NumVectors(location_);
+      num_vectors_ = field.getNumVectors(location_);
     }
 
     if (num_vectors_ < dof_) {
@@ -260,13 +260,13 @@ Observable::FinalizeStructure(const Teuchos::Ptr<State>& S)
 
     // communicate so that all ranks know number of vectors
     int num_vectors_local = num_vectors_;
-    comm_->MaxAll(&num_vectors_local, &num_vectors_, 1);
+    Teuchos::reduceAll<int>(*comm_, Teuchos::REDUCE_MAX, 1, &num_vectors_local, &num_vectors_);
   }
 
   // must communicate the number of vectors so that all in comm have the right
   // size and get_num_vectors() is valid
   int num_vectors_l(num_vectors_);
-  comm_->MaxAll(&num_vectors_l, &num_vectors_, 1);
+  Teuchos::reduceAll<int>(*comm_, Teuchos::REDUCE_MAX, 1, &num_vectors_l, &num_vectors_);
 }
 
 
@@ -304,119 +304,150 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
   if (has_record && S->GetRecord(variable_, tag_).ValidType<double>()) {
     // scalars, just return the value
     value[0] = S->GetRecord(variable_, tag_).Get<double>();
-    if (modifier_) value[0] = (*modifier_)(std::vector<double>(1, value[0]));
+    Kokkos::View<double*, DefaultHostMemorySpace> args("observation args", 1);
+    args(0) = value[0];
+    if (modifier_) value[0] = (*modifier_)(args);
     value[1] = 1;
 
   } else if (has_record && S->GetRecord(variable_, tag_).ValidType<CompositeVector>()) {
     // vector field
     const auto& vec = S->GetRecord(variable_, tag_).Get<CompositeVector>();
-    AMANZI_ASSERT(vec.HasComponent(location_));
+    AMANZI_ASSERT(vec.hasComponent(location_));
 
     // get the region
     AmanziMesh::Entity_kind entity = AmanziMesh::createEntityKind(location_);
 
-    // get the vector component
-    auto ids = vec.Mesh()->getSetEntities(region_, entity, AmanziMesh::Parallel_kind::OWNED);
-    const Epetra_MultiVector& subvec = *vec.ViewComponent(location_, false);
+    { // get the vector component
+      auto ids = vec.getMesh()->getSetEntities(region_, entity, AmanziMesh::Parallel_kind::OWNED);
+      auto subvec = vec.viewComponent<DefaultHostMemorySpace>(location_, false);
 
-    if (entity == AmanziMesh::Entity_kind::CELL) {
-      for (auto id : ids) {
-        double vol = vec.Mesh()->getCellVolume(id);
+      if (entity == AmanziMesh::Entity_kind::CELL) {
+        for (auto id : ids) {
+          double vol = vec.getMesh()->getCellVolume(id);
 
-        if (dof_ < 0) {
-          for (int i = 0; i != get_num_vectors(); ++i) {
-            double val = subvec[i][id];
-            if (modifier_) val = (*modifier_)(std::vector<double>(1, val));
-            value[i] = (*reducer_)(value[i], val, vol);
-          }
-        } else {
-          double val = subvec[dof_][id];
-          if (modifier_) val = (*modifier_)(std::vector<double>(1, val));
-          value[0] = (*reducer_)(value[0], val, vol);
-        }
-        value[get_num_vectors()] += vol;
-      }
-    } else if (entity == AmanziMesh::Entity_kind::FACE) {
-      for (auto id : ids) {
-        double vol = vec.Mesh()->getFaceArea(id);
-
-        // hack to orient flux to outward-normal along a boundary only
-        double sign = 1;
-        if (flux_normalize_) {
-          if (direction_.get()) {
-            // normalize to the provided vector
-            AmanziGeometry::Point normal = vec.Mesh()->getFaceNormal(id);
-            sign = (normal * (*direction_)) / AmanziGeometry::norm(normal);
-
-          } else if (!flux_normalize_region_.empty()) {
-            // normalize to outward normal relative to a volumetric region
-            auto vol_cells = vec.Mesh()->getSetEntities(flux_normalize_region_,
-                                                        AmanziMesh::Entity_kind::CELL,
-                                                        AmanziMesh::Parallel_kind::ALL);
-
-            // which cell of the face is "inside" the volume
-            auto cells = vec.Mesh()->getFaceCells(id);
-            AmanziMesh::Entity_ID c = -1;
-            for (const auto& cc : cells) {
-              if (std::find(vol_cells.begin(), vol_cells.end(), cc) != vol_cells.end()) {
-                c = cc;
-                break;
+          if (dof_ < 0) {
+            for (int i = 0; i != get_num_vectors(); ++i) {
+              double val = subvec(id, i);
+              if (modifier_) {
+                Kokkos::View<double*, DefaultHostMemorySpace> obs_val("observation val", 1);
+                obs_val(0) = val;
+                val = (*modifier_)(obs_val);
               }
+              value[i] = (*reducer_)(value[i], val, vol);
             }
-            if (c < 0) {
-              Errors::Message msg;
-              msg << "Observeable on face region \"" << region_
-                  << "\" flux normalized relative to volumetric region \"" << flux_normalize_region_
-                  << "\" but face "
-                  << vec.Mesh()->getMap(AmanziMesh::Entity_kind::FACE, true).GID(id)
-                  << " does not border the volume region.";
-              Exceptions::amanzi_throw(msg);
-            }
-
-            // normalize with respect to that cell's direction
-            auto [faces, dirs] = vec.Mesh()->getCellFacesAndDirections(c);
-            int i = std::find(faces.begin(), faces.end(), id) - faces.begin();
-
-            sign = dirs[i];
-
           } else {
-            // normalize to outward normal
-            auto cells = vec.Mesh()->getFaceCells(id);
-            auto [faces, dirs] = vec.Mesh()->getCellFacesAndDirections(cells[0]);
-            int i = std::find(faces.begin(), faces.end(), id) - faces.begin();
-            sign = dirs[i];
+            double val = subvec(id, dof_);
+            if (modifier_) {
+              Kokkos::View<double*, DefaultHostMemorySpace> obs_val("observation val", 1);
+              obs_val(0) = val;
+              val = (*modifier_)(obs_val);
+            }
+            value[0] = (*reducer_)(value[0], val, vol);
           }
+          value[get_num_vectors()] += vol;
         }
 
-        if (dof_ < 0) {
-          for (int i = 0; i != get_num_vectors(); ++i) {
-            double val = sign * subvec[i][id];
-            if (modifier_) val = (*modifier_)(std::vector<double>(1, val));
-            value[i] = (*reducer_)(value[i], val, vol);
-          }
-        } else {
-          double val = sign * subvec[dof_][id];
-          if (modifier_) val = (*modifier_)(std::vector<double>(1, val));
-          value[0] = (*reducer_)(value[0], val, vol);
-        }
-        value[get_num_vectors()] += std::abs(vol);
-      }
-    } else if (entity == AmanziMesh::Entity_kind::NODE) {
-      for (auto id : ids) {
-        double vol = 1.0;
+      } else if (entity == AmanziMesh::Entity_kind::FACE) {
+        for (auto id : ids) {
+          double vol = vec.getMesh()->getFaceArea(id);
 
-        if (dof_ < 0) {
-          for (int i = 0; i != get_num_vectors(); ++i) {
-            double val = subvec[i][id];
-            if (modifier_) val = (*modifier_)(std::vector<double>(1, val));
-            value[i] = (*reducer_)(value[i], val, vol);
+          // hack to orient flux to outward-normal along a boundary only
+          double sign = 1;
+          if (flux_normalize_) {
+            if (direction_.get()) {
+              // normalize to the provided vector
+              AmanziGeometry::Point normal = vec.getMesh()->getFaceNormal(id);
+              sign = (normal * (*direction_)) / AmanziGeometry::norm(normal);
+
+            } else if (!flux_normalize_region_.empty()) {
+              // normalize to outward normal relative to a volumetric region
+              auto vol_cells = vec.getMesh()->getSetEntities(flux_normalize_region_,
+                                                             AmanziMesh::Entity_kind::CELL,
+                                                             AmanziMesh::Parallel_kind::ALL);
+
+              // which cell of the face is "inside" the volume
+              auto cells = vec.getMesh()->getFaceCells(id);
+              AmanziMesh::Entity_ID c = -1;
+              for (const auto& cc : cells) {
+                if (std::find(vol_cells.begin(), vol_cells.end(), cc) != vol_cells.end()) {
+                  c = cc;
+                  break;
+                }
+              }
+              if (c < 0) {
+                Errors::Message msg;
+                msg << "Observeable on face region \"" << region_
+                    << "\" flux normalized relative to volumetric region \""
+                    << flux_normalize_region_ << "\" but face "
+                    << vec.getMesh()
+                         ->getMap(AmanziMesh::Entity_kind::FACE, true)
+                         ->getGlobalElement(id)
+                    << " does not border the volume region.";
+                Exceptions::amanzi_throw(msg);
+              }
+
+              // normalize with respect to that cell's direction
+              auto [faces, dirs] = vec.getMesh()->getCellFacesAndDirections(c);
+              int i = std::find(faces.begin(), faces.end(), id) - faces.begin();
+
+              sign = dirs[i];
+
+            } else {
+              // normalize to outward normal
+              auto cells = vec.getMesh()->getFaceCells(id);
+              auto [faces, dirs] = vec.getMesh()->getCellFacesAndDirections(cells[0]);
+              int i = std::find(faces.begin(), faces.end(), id) - faces.begin();
+              sign = dirs[i];
+            }
           }
-        } else {
-          double val = subvec[dof_][id];
-          if (modifier_) val = (*modifier_)(std::vector<double>(1, val));
-          value[0] = (*reducer_)(value[0], val, vol);
+
+          if (dof_ < 0) {
+            for (int i = 0; i != get_num_vectors(); ++i) {
+              double val = sign * subvec(id, i);
+              if (modifier_) {
+                Kokkos::View<double*, DefaultHostMemorySpace> obs_val("observation val", 1);
+                obs_val(0) = val;
+                val = (*modifier_)(obs_val);
+              }
+              value[i] = (*reducer_)(value[i], val, vol);
+            }
+          } else {
+            double val = sign * subvec(id, dof_);
+            if (modifier_) {
+              Kokkos::View<double*, DefaultHostMemorySpace> obs_val("observation val", 1);
+              obs_val(0) = val;
+              val = (*modifier_)(obs_val);
+            }
+            value[0] = (*reducer_)(value[0], val, vol);
+          }
+          value[get_num_vectors()] += std::abs(vol);
         }
-        value[get_num_vectors()] += vol;
+
+      } else if (entity == AmanziMesh::Entity_kind::NODE) {
+        for (auto id : ids) {
+          double vol = 1.0;
+
+          if (dof_ < 0) {
+            for (int i = 0; i != get_num_vectors(); ++i) {
+              double val = subvec(id, i);
+              if (modifier_) {
+                Kokkos::View<double*, DefaultHostMemorySpace> obs_val("observation val", 1);
+                obs_val(0) = val;
+                val = (*modifier_)(obs_val);
+              }
+              value[i] = (*reducer_)(value[i], val, vol);
+            }
+          } else {
+            double val = subvec(id, dof_);
+            if (modifier_) {
+              Kokkos::View<double*, DefaultHostMemorySpace> obs_val("observation val", 1);
+              obs_val(0) = val;
+              val = (*modifier_)(obs_val);
+            }
+            value[0] = (*reducer_)(value[0], val, vol);
+          }
+          value[get_num_vectors()] += vol;
+        }
       }
     }
   }
@@ -425,7 +456,8 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
   if (reduction_ == "point" || reduction_ == "integral" || reduction_ == "average" ||
       reduction_ == "extensive integral") {
     std::vector<double> global_value(value);
-    comm_->SumAll(value.data(), global_value.data(), value.size());
+    Teuchos::reduceAll<int>(
+      *comm_, Teuchos::REDUCE_SUM, value.size(), value.data(), global_value.data());
 
     if (global_value[get_num_vectors()] > 0) {
       if (reduction_ == "point" || reduction_ == "average") {
@@ -440,11 +472,13 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
     }
   } else if (reduction_ == "minimum") {
     std::vector<double> global_value(value);
-    comm_->MinAll(value.data(), global_value.data(), value.size() - 1);
+    Teuchos::reduceAll<int>(
+      *comm_, Teuchos::REDUCE_MIN, value.size() - 1, value.data(), global_value.data());
     value = global_value;
   } else if (reduction_ == "maximum") {
     std::vector<double> global_value(value);
-    comm_->MaxAll(value.data(), global_value.data(), value.size() - 1);
+    Teuchos::reduceAll<int>(
+      *comm_, Teuchos::REDUCE_MAX, value.size() - 1, value.data(), global_value.data());
     value = global_value;
   } else {
     AMANZI_ASSERT(false);

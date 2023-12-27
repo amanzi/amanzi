@@ -6,7 +6,6 @@
 
   Authors:
 */
-
 #include <iostream>
 #include "stdlib.h"
 #include <UnitTest++.h>

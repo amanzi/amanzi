@@ -49,7 +49,7 @@ SUITE(MeshFileType)
     std::string fname(NEMESIS_TEST_FILE);
 
     Amanzi::AmanziMesh::FileFormat f;
-    if (comm->NumProc() > 1 && comm->NumProc() <= 4) {
+    if (comm->getSize() > 1 && comm->getSize() <= 4) {
       try {
         f = Amanzi::AmanziMesh::fileFormatFromFilename(*comm, fname);
       } catch (const Amanzi::AmanziMesh::Message& e) {

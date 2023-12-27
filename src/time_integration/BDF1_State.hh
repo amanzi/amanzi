@@ -5,16 +5,10 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt
-           Ethan Coon (ecoon@lanl.gov)
+           Ethan Coon (coonet@ornl.gov)
 */
 
-//! Storage and parameters for BDF1 problems.
-/*
-
-  NOTE: Documentation for this file lives in BDF1_TI.hh
-
-*/
-
+//! <MISSING_ONELINE_DOCSTRING>
 #ifndef AMANZI_BDF1STATE_HH_
 #define AMANZI_BDF1STATE_HH_
 

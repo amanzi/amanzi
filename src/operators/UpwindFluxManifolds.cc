@@ -43,16 +43,16 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
                              const std::vector<int>& bc_model,
                              CompositeVector& field)
 {
-  AMANZI_ASSERT(field.HasComponent("cell"));
-  AMANZI_ASSERT(field.HasComponent("face"));
+  AMANZI_ASSERT(field.hasComponent("cell"));
+  AMANZI_ASSERT(field.hasComponent("face"));
 
-  flux.ScatterMasterToGhosted("face");
-  field.ScatterMasterToGhosted("cell");
+  flux.scatterMasterToGhosted("face");
+  field.scatterMasterToGhosted("cell");
 
-  const auto& flux_f = *flux.ViewComponent("face", true);
-  const auto& field_c = *field.ViewComponent("cell", true);
-  const auto& field_bf = *field.ViewComponent("boundary_face", true);
-  auto& field_f = *field.ViewComponent("face", true);
+  const auto& flux_f = *flux.viewComponent("face", true);
+  const auto& field_c = *field.viewComponent("cell", true);
+  const auto& field_bf = *field.viewComponent("boundary_face", true);
+  auto& field_f = *field.viewComponent("face", true);
 
   double flxmin, flxmax, tol;
   flux_f.MinValue(&flxmin);

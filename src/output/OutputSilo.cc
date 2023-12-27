@@ -19,14 +19,13 @@
 #include "errors.hh"
 #include "Point.hh"
 #include "Mesh.hh"
+#include "OutputFactory.hh"
 #include "OutputSilo.hh"
 
 namespace Amanzi {
 
 OutputSilo::OutputSilo(Teuchos::ParameterList& plist,
-                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                       bool is_vis,
-                       bool is_dynamic)
+                       const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh)
   : count_(0), mesh_(mesh), fid_(nullptr)
 {
   if (mesh_->getVisMesh().getSpaceDimension() != 3 ||
@@ -34,36 +33,35 @@ OutputSilo::OutputSilo(Teuchos::ParameterList& plist,
     Errors::Message msg("OutputSilo is untested on non-3D meshes.");
     Exceptions::amanzi_throw(msg);
   }
-  Init_(plist);
+
+  formatter_ = OutputFactory::createDirectoryFormatter(plist);
 }
 
 
 // destructor must release file resource on non-finalized
 OutputSilo::~OutputSilo()
 {
-  CloseFile_();
+  closeFile_();
 }
 
 
 // open and close files
 void
-OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag)
+OutputSilo::createTimestep(double time, int cycle)
 {
   // check not open
   AMANZI_ASSERT(fid_ == NULL);
-  CloseFile_();
-  int comm_size = mesh_->getComm()->NumProc();
-  int comm_rank = mesh_->getComm()->MyPID();
+  closeFile_();
+  int comm_size = mesh_->getComm()->getSize();
+  int comm_rank = mesh_->getComm()->getRank();
 
   // open file
-  std::stringstream filename;
-  filename << filenamebase_ << "_" << std::setfill('0') << std::setw(sigfigs_) << count_;
-  std::string fname = filename.str() + ".silo";
+  auto fname = getFilename(count_);
 
   if (comm_rank == 0) {
     std::cout << "Creating " << fname << " at " << cycle << " time " << time << std::endl;
     fid_ = DBCreate(fname.c_str(), DB_CLOBBER, DB_LOCAL, NULL, DB_HDF5);
-    CloseFile_();
+    closeFile_();
   }
 
   for (int rank = 0; rank != comm_size; ++rank) {
@@ -100,7 +98,7 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag)
       std::vector<double> x(nnodes), y(nnodes), z(nnodes);
 
       for (int i = 0; i != nnodes; ++i) {
-        auto xyz = mesh_->getVisMesh().getNodeCoordinate(i);
+        AmanziGeometry::Point xyz = mesh_->getVisMesh().getNodeCoordinate(i);
         x[i] = xyz[0];
         y[i] = xyz[1];
         z[i] = xyz.dim() > 2 ? xyz[2] : 0.0;
@@ -138,9 +136,8 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag)
       // const auto& nmap = mesh_->getVisMesh().node_map(true);
       for (int f = 0; f != nfaces; ++f) {
         auto fnodes = mesh_->getVisMesh().getFaceNodes(f);
-        //for (int i=0; i!=fnodes.size(); ++i) fnodes[i] = nmap.GID(fnodes[i]);
         face_node_counts[f] = fnodes.size();
-        face_node_list.insert(face_node_list.end(), fnodes.begin(), fnodes.end());
+        face_node_list.insert(face_node_list.end(), begin(fnodes), end(fnodes));
 
         auto fcells = mesh_->getVisMesh().getFaceCells(f);
         if (fcells.size() == 1) { ext_faces[f] = 0x1; }
@@ -149,18 +146,11 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag)
       // -- Construct the silo cell-face info
       std::vector<int> cell_face_counts(ncells);
       std::vector<int> cell_face_list;
-      // const auto& fmap = mesh_->getVisMesh().face_map(true);
 
       for (int c = 0; c != ncells; ++c) {
-        const auto& [cfaces, dirs] = mesh_->getVisMesh().getCellFacesAndDirections(c);
-        auto vcfaces = asVector(cfaces);
-        for (int i = 0; i != cfaces.size(); ++i) {
-          if (dirs[i] < 0) vcfaces[i] = ~vcfaces[i];
-          // cfaces[i] = fmap.GID(cfaces[i]);
-        }
-
-        cell_face_counts[c] = vcfaces.size();
-        cell_face_list.insert(cell_face_list.end(), vcfaces.begin(), vcfaces.end());
+        auto cfaces = mesh_->getVisMesh().getCellFaces(c);
+        cell_face_counts[c] = cfaces.size();
+        cell_face_list.insert(cell_face_list.end(), begin(cfaces), end(cfaces));
       }
 
       ierr |= DBPutPHZonelist(fid_,
@@ -182,9 +172,9 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag)
 
       // -- clean up (could be done on finalize if needed? --etc)
       DBFreeOptlist(optlist);
-      CloseFile_();
+      closeFile_();
     }
-    mesh_->getComm()->Barrier();
+    mesh_->getComm()->barrier();
   }
 
   if (comm_rank == 0) {
@@ -203,134 +193,19 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag)
     int ierrl = DBPutMultimesh(
       fid_, meshname.c_str(), comm_size, (char**)meshnames.data(), (int*)meshtypes.data(), nullptr);
     AMANZI_ASSERT(!ierrl);
-    CloseFile_();
+    closeFile_();
   }
 }
 
 void
-OutputSilo::FinalizeCycle()
+OutputSilo::finalizeTimestep()
 {
   count_++;
 }
 
 
-// write data to file
 void
-OutputSilo::WriteVector(const Epetra_Vector& vec,
-                        const std::string& name,
-                        const AmanziMesh::Entity_kind& kind) const
-{
-  int comm_size = mesh_->getComm()->NumProc();
-  int comm_rank = mesh_->getComm()->MyPID();
-  auto varname = FixName_(name);
-
-  // open file
-  std::stringstream filename;
-  filename << filenamebase_ << "_" << std::setfill('0') << std::setw(sigfigs_) << count_;
-  std::string fname = filename.str() + ".silo";
-
-  for (int rank = 0; rank != comm_size; ++rank) {
-    if (rank == comm_rank) {
-      fid_ = DBOpen(fname.c_str(), DB_HDF5, DB_APPEND);
-
-      // directory
-      std::string dirname = "/domain_";
-      dirname = dirname + std::to_string(rank);
-      int ierr = DBSetDir(fid_, dirname.c_str());
-      AMANZI_ASSERT(!ierr);
-
-      if (kind == AmanziMesh::CELL) {
-        int ierr = DBPutUcdvar1(fid_,
-                                varname.c_str(),
-                                "mesh",
-                                (void*)&vec[0],
-                                vec.MyLength(),
-                                NULL,
-                                0,
-                                DB_DOUBLE,
-                                DB_ZONECENT,
-                                NULL);
-        AMANZI_ASSERT(!ierr);
-      } else if (kind == AmanziMesh::NODE) {
-        int ierr = DBPutUcdvar1(fid_,
-                                varname.c_str(),
-                                "mesh",
-                                (void*)&vec[0],
-                                vec.MyLength(),
-                                NULL,
-                                0,
-                                DB_DOUBLE,
-                                DB_NODECENT,
-                                NULL);
-        AMANZI_ASSERT(!ierr);
-      } else {
-        Errors::Message msg("OutputSilo only knows how to write CELL and NODE based quantities.");
-        Exceptions::amanzi_throw(msg);
-      }
-      CloseFile_();
-    }
-    mesh_->getComm()->Barrier();
-  }
-
-  if (comm_rank == 0) {
-    fid_ = DBOpen(fname.c_str(), DB_HDF5, DB_APPEND);
-    DBSetDir(fid_, "/");
-    std::string meshname("mesh");
-    std::vector<std::string> varnames_str(comm_size);
-    std::vector<char*> varnames(comm_size, nullptr);
-    std::vector<int> vartypes(comm_size);
-    for (int i = 0; i != comm_size; ++i) {
-      varnames_str[i] = std::string("/domain_") + std::to_string(i) + "/" + varname;
-      varnames[i] = const_cast<char*>(varnames_str[i].c_str());
-      vartypes[i] = DB_UCDVAR;
-    }
-
-    int ierrl = DBPutMultivar(fid_,
-                              FixName_(name).c_str(),
-                              comm_size,
-                              (char**)varnames.data(),
-                              (int*)vartypes.data(),
-                              nullptr);
-    AMANZI_ASSERT(!ierrl);
-    CloseFile_();
-  }
-}
-
-
-void
-OutputSilo::WriteMultiVector(const Epetra_MultiVector& vec,
-                             const std::vector<std::string>& names,
-                             const AmanziMesh::Entity_kind& kind) const
-{
-  AMANZI_ASSERT(vec.NumVectors() == names.size());
-  for (int i = 0; i != vec.NumVectors(); ++i) { WriteVector(*vec(i), names[i], kind); }
-}
-
-// can we template this?
-void
-OutputSilo::WriteAttribute(const double& val, const std::string& name) const
-{}
-
-void
-OutputSilo::WriteAttribute(const int& val, const std::string& name) const
-{}
-
-
-void
-OutputSilo::WriteAttribute(const std::string& val, const std::string& name) const
-{}
-
-
-void
-OutputSilo::Init_(Teuchos::ParameterList& plist)
-{
-  filenamebase_ = plist.get<std::string>("file name base", "amanzi_vis");
-  sigfigs_ = plist.get<int>("file name counter digits", 5);
-}
-
-
-void
-OutputSilo::CloseFile_() const
+OutputSilo::closeFile_() const
 {
   if (fid_) {
     DBClose(fid_);
@@ -339,7 +214,7 @@ OutputSilo::CloseFile_() const
 }
 
 std::string
-OutputSilo::FixName_(const std::string& s) const
+OutputSilo::fixName_(const std::string& s) const
 {
   int n = s.size(), wp = 0;
   std::vector<char> result(n);
@@ -353,11 +228,21 @@ OutputSilo::FixName_(const std::string& s) const
   return std::string(&result[0], &result[wp]);
 }
 
-void
-OutputSilo::ReadThrowsError_() const
+int
+OutputSilo::getSiloLocation_(AmanziMesh::Entity_kind entity_kind) const
 {
-  Errors::Message msg("OutputSilo does not yet support read -- only write.");
-  Exceptions::amanzi_throw(msg);
+  switch (entity_kind) {
+  case AmanziMesh::Entity_kind::CELL:
+    return DB_ZONECENT;
+    break;
+  case AmanziMesh::Entity_kind::NODE:
+    return DB_NODECENT;
+    break;
+  default:
+    Errors::Message msg("OutputSilo only knows how to write NODEs and CELLs.");
+    Exceptions::amanzi_throw(msg);
+    return -1;
+  }
 }
 
 } // namespace Amanzi

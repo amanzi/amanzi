@@ -53,6 +53,9 @@ class FIFO_Set {
 
   const std::vector<T>& asVector() const { return store_; }
 
+  T& operator[](const int i) { return store_[i]; }
+  const T& operator[](const int i) const { return store_[i]; }
+
  protected:
   Container_type store_;
 };

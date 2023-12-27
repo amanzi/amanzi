@@ -1,15 +1,12 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
-  provided in the top-level COPYRIGHT file.
-
-  Authors: Ethan Coon (ecoon@lanl.gov)
-*/
-
-/*
   Operators
 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ethan Coon (ecoon@lanl.gov)
 */
 
 #ifndef AMANZI_OP_CELL_FACECELL_HH_
@@ -30,11 +27,34 @@ class Op_Cell_FaceCell : public Op {
          name,
          mesh)
   {
-    WhetStone::DenseMatrix null_matrix;
-    matrices.resize(
-      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED),
-      null_matrix);
-    matrices_shadow = matrices;
+    int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+    A = DenseMatrix_Vector(ncells_owned);
+
+    for (int c = 0; c != ncells_owned; ++c) {
+      auto faces = mesh->getCellFaces(c); // This perform the prefix_sum
+      int nfaces = faces.extent(0);
+      A.set_shape(c, nfaces + 1, nfaces + 1);
+    }
+    A.Init();
+  }
+
+  virtual void SumLocalDiag(CompositeVector& X) const
+  {
+    std::cout << "Op_Cell_FaceCell.hh::SumLocalDiag" << std::endl;
+
+    AmanziMesh::Mesh const* mesh_ = mesh.get();
+    auto Xf = X.viewComponent("face", true);
+    auto Xc = X.viewComponent("cell", false);
+    Kokkos::parallel_for(
+      "Op_Cell_FaceCell::GetLocalDiagCopy", A.size(), KOKKOS_LAMBDA(const int c) {
+        // Extract matrix
+        auto lA = A[c];
+
+        auto faces = mesh_->getCellFaces(c);
+        int nfaces = faces.extent(0);
+        for (int m = 0; m != nfaces; ++m) Kokkos::atomic_add(&Xf(faces(m), 0), lA(m, m));
+        Kokkos::atomic_add(&Xc(c, 0), lA(nfaces, nfaces));
+      });
   }
 
   virtual void
@@ -63,27 +83,29 @@ class Op_Cell_FaceCell : public Op {
 
   virtual void Rescale(const CompositeVector& scaling)
   {
-    if (scaling.HasComponent("face")) {
-      const Epetra_MultiVector& s_c = *scaling.ViewComponent("face", true);
-      for (int c = 0; c != matrices.size(); ++c) {
-        const auto& faces = mesh_->getCellFaces(c);
-        for (int n = 0; n != faces.size(); ++n) {
-          for (int m = 0; m != faces.size(); ++m) { matrices[c](n, m) *= s_c[0][faces[n]]; }
-          matrices[c](n, faces.size()) *= s_c[0][faces[n]];
-        }
-      }
+    const Amanzi::AmanziMesh::Mesh* mesh_ = mesh.get();
+
+    if (scaling.hasComponent("face")) {
+      const auto s_c = scaling.viewComponent("face", true);
+      Kokkos::parallel_for(
+        "Op_Cell_FaceCell::Rescale(face)", A.size(), KOKKOS_LAMBDA(const int& c) {
+          auto faces = mesh_->getCellFaces(c);
+          auto lA = A[c];
+          for (int n = 0; n != faces.size(); ++n) {
+            for (int m = 0; m != faces.size(); ++m) { lA(n, m) *= s_c(0, faces[n]); }
+            lA(n, faces.size()) *= s_c(0, faces[n]);
+          }
+        });
     }
-
-    if (scaling.HasComponent("cell")) {
-      const Epetra_MultiVector& s_c = *scaling.ViewComponent("cell", true);
-      AMANZI_ASSERT(s_c.MyLength() == matrices.size());
-
-      AmanziMesh::Entity_ID_View face;
-      for (int c = 0; c != matrices.size(); ++c) {
-        int nfaces = mesh_->getCellNumFaces(c);
-        for (int m = 0; m != nfaces; ++m) { matrices[c](nfaces, m) *= s_c[0][c]; }
-        matrices[c](nfaces, nfaces) *= s_c[0][c];
-      }
+    if (scaling.hasComponent("cell")) {
+      const auto s_c = scaling.viewComponent("cell", true);
+      Kokkos::parallel_for(
+        "Op_Cell_FaceCell::Rescale(cell)", A.size(), KOKKOS_LAMBDA(const int& c) {
+          auto lA = A[c];
+          int nfaces = mesh_->getCellNumFaces(c);
+          for (int m = 0; m != nfaces; ++m) { lA(nfaces, m) *= s_c(0, c); }
+          lA(nfaces, nfaces) *= s_c(0, c);
+        });
     }
   }
 };

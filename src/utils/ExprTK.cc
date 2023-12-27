@@ -46,5 +46,16 @@ ExprTK::operator()(const std::vector<double>& txyz)
   return expression_.value();
 }
 
+double
+ExprTK::operator()(const Kokkos::View<double*, Kokkos::HostSpace>& txyz)
+{
+  t = txyz(0);
+  if (n_ > 1) x = txyz(1);
+  if (n_ > 2) y = txyz(2);
+  if (n_ > 3) z = txyz(3);
+  return expression_.value();
+}
+
+
 } // namespace Utils
 } // namespace Amanzi

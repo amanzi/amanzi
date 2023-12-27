@@ -17,10 +17,13 @@
 
 namespace Amanzi {
 
+const std::string EvaluatorIndependentConstant::eval_type = "independent variable constant";
+
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
-EvaluatorIndependentConstant::EvaluatorIndependentConstant(Teuchos::ParameterList& plist)
+EvaluatorIndependentConstant::EvaluatorIndependentConstant(
+  const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorIndependent<CompositeVector, CompositeVectorSpace>(plist)
 {
   temporally_variable_ = false;
@@ -43,7 +46,7 @@ EvaluatorIndependentConstant::Clone() const
 void
 EvaluatorIndependentConstant::Update_(State& S)
 {
-  S.GetRecordW(my_key_, my_tag_, my_key_).Initialize(plist_);
+  S.GetRecordW(my_key_, my_tag_, my_key_).Initialize(*plist_);
 }
 
 } // namespace Amanzi

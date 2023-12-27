@@ -44,8 +44,6 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class Polynomial;
-
 class DG_Modal : public BilinearForm {
  public:
   DG_Modal(const Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
@@ -55,45 +53,45 @@ class DG_Modal : public BilinearForm {
   virtual std::vector<SchemaItem> schema() const override;
 
   // -- mass matrices
-  virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M) override;
-  virtual int MassMatrix(int c, const Polynomial& K, DenseMatrix& M) override;
-  int MassMatrix(int c, const Tensor& K, PolynomialOnMesh& integrals, DenseMatrix& M);
+  virtual int MassMatrix(int c, const Tensor<>& K, DenseMatrix<>& M) override;
+  virtual int MassMatrix(int c, const Polynomial<>& K, DenseMatrix<>& M) override;
+  int MassMatrix(int c, const Tensor<>& K, PolynomialOnMesh& integrals, DenseMatrix<>& M);
 
   // -- stiffness matrices. General coefficient requires to specify the quadrature order
-  virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
-  virtual int StiffnessMatrix(int c, const WhetStoneFunction* K, DenseMatrix& A) override;
-  virtual int StiffnessMatrix(int c, const MatrixPolynomial& K, DenseMatrix& A) override;
+  virtual int StiffnessMatrix(int c, const Tensor<>& K, DenseMatrix<>& A) override;
+  virtual int StiffnessMatrix(int c, const WhetStoneFunction* K, DenseMatrix<>& A) override;
+  virtual int StiffnessMatrix(int c, const MatrixPolynomial& K, DenseMatrix<>& A) override;
 
   // -- advection matrices
   virtual int
-  AdvectionMatrix(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test) override;
+  AdvectionMatrix(int c, const VectorPolynomial& uc, DenseMatrix<>& A, bool grad_on_test) override;
 
   // -- flux matrices
   //    returns point flux value (u.n) in the last parameter
   int FluxMatrix(int f,
-                 const Polynomial& uf,
-                 DenseMatrix& A,
+                 const Polynomial<>& uf,
+                 DenseMatrix<>& A,
                  bool upwind,
                  bool jump_on_test,
                  double* flux);
   int FluxMatrixRusanov(int f,
                         const VectorPolynomial& uc1,
                         const VectorPolynomial& uc2,
-                        const Polynomial& uf,
-                        DenseMatrix& A);
+                        const Polynomial<>& uf,
+                        DenseMatrix<>& A);
   int FluxMatrixGaussPoints(int f,
-                            const Polynomial& uf,
-                            DenseMatrix& A,
+                            const Polynomial<>& uf,
+                            DenseMatrix<>& A,
                             bool upwind,
                             bool jump_on_test);
 
   // -- interface matrices: jumps and penalty
   template <typename Coef, typename std::enable_if<!std::is_pointer<Coef>::value>::type* = nullptr>
-  int FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A);
+  int FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix<>& A);
   int
-  FaceMatrixJump(int f, const WhetStoneFunction* K1, const WhetStoneFunction* K2, DenseMatrix& A);
+  FaceMatrixJump(int f, const WhetStoneFunction* K1, const WhetStoneFunction* K2, DenseMatrix<>& A);
 
-  int FaceMatrixPenalty(int f, double Kf, DenseMatrix& A);
+  int FaceMatrixPenalty(int f, double Kf, DenseMatrix<>& A);
 
   // miscalleneous
   // -- order of polynomials in each cell
@@ -102,13 +100,13 @@ class DG_Modal : public BilinearForm {
 
   // -- access
   const Basis& cell_basis(int c) const { return *basis_[c]; }
-  Polynomial& monomial_integrals(int c) { return monomial_integrals_[c]; }
+  Polynomial<>& monomial_integrals(int c) { return monomial_integrals_[c]; }
 
  private:
   int numi_order_;
   NumericalIntegration numi_;
 
-  std::vector<Polynomial> monomial_integrals_; // integrals of non-normalized monomials
+  std::vector<Polynomial<>> monomial_integrals_; // integrals of non-normalized monomials
   std::vector<std::shared_ptr<Basis>> basis_;
 
   static RegisteredFactory<DG_Modal> reg_;
@@ -121,16 +119,16 @@ class DG_Modal : public BilinearForm {
 ****************************************************************** */
 template <typename Coef, typename std::enable_if<!std::is_pointer<Coef>::value>::type*>
 int
-DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A)
+DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix<>& A)
 {
   auto cells = mesh_->getFaceCells(f);
   int ncells = cells.size();
 
-  Polynomial poly(d_, order_);
+  Polynomial<> poly(d_, order_);
   int size = poly.size();
 
   int nrows = ncells * size;
-  A.Reshape(nrows, nrows);
+  A.reshape(nrows, nrows);
 
   // Calculate integrals needed for scaling
   int c1 = cells[0];
@@ -146,13 +144,13 @@ DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A)
   // integrate traces of polynomials on face f
   double coef00, coef01, coef10, coef11;
   VectorPolynomial pgrad;
-  std::vector<const PolynomialBase*> polys(2);
+  std::vector<const PolynomialBase<>*> polys(2);
 
   for (auto it = poly.begin(); it < poly.end(); ++it) {
     const int* idx0 = it.multi_index();
     int k = PolynomialPosition(d_, idx0);
 
-    Polynomial p0(d_, idx0, 1.0);
+    Polynomial<> p0(d_, idx0, 1.0);
     p0.set_origin(mesh_->getCellCentroid(c1));
 
     pgrad = Gradient(p0);
@@ -162,7 +160,7 @@ DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A)
       const int* idx1 = jt.multi_index();
       int l = PolynomialPosition(d_, idx1);
 
-      Polynomial q0(d_, idx1, 1.0);
+      Polynomial<> q0(d_, idx1, 1.0);
       q0.set_origin(mesh_->getCellCentroid(c1));
 
       polys[0] = &p0;
@@ -172,13 +170,13 @@ DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A)
       A(k, l) = coef00 / ncells;
 
       if (c2 >= 0) {
-        Polynomial p1(d_, idx0, 1.0);
+        Polynomial<> p1(d_, idx0, 1.0);
         p1.set_origin(mesh_->getCellCentroid(c2));
 
         pgrad = Gradient(p1);
         p1 = pgrad * conormal2;
 
-        Polynomial q1(d_, idx1, 1.0);
+        Polynomial<> q1(d_, idx1, 1.0);
         q1.set_origin(mesh_->getCellCentroid(c2));
 
         polys[1] = &q1;

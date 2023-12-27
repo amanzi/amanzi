@@ -61,11 +61,11 @@ template <class Matrix,
 class InverseIterativeMethod : public Inverse<Matrix, Preconditioner, Vector, VectorSpace> {
  public:
   InverseIterativeMethod()
-    : Inverse<Matrix, Preconditioner, Vector, VectorSpace>(), inited_(false){};
+    : inited_(false), Inverse<Matrix, Preconditioner, Vector, VectorSpace>(){};
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override;
-  virtual void InitializeInverse() override { h_->InitializeInverse(); }
-  virtual void ComputeInverse() override { h_->ComputeInverse(); }
+  virtual void initializeInverse() override { h_->initializeInverse(); }
+  virtual void computeInverse() override { h_->computeInverse(); }
 
   // control and statistics -- must be valid for both iterative and
   // non-iterative methods, approximate and exact methods.
@@ -141,7 +141,7 @@ template <class Matrix, class Preconditioner, class Vector, class VectorSpace>
 void inline InverseIterativeMethod<Matrix, Preconditioner, Vector, VectorSpace>::
   set_inverse_parameters(Teuchos::ParameterList& plist)
 {
-  std::string vo_name = this->name() + "::" + this->MethodName_();
+  std::string vo_name = this->MethodName_(); // this->name() + "::" + this->MethodName_();
   vo_ = Teuchos::rcp(new VerboseObject(vo_name, plist));
 
   tol_ = plist.template get<double>("error tolerance", 1e-16);

@@ -74,7 +74,7 @@ class HDF5_MPI {
   void setTime(double Time) { Time_ = Time; }
   void setDynMesh(const bool dynamic_mesh) { dynamic_mesh_ = dynamic_mesh; }
   std::string get_tag() { return tag_; }
-  void set_tag(const std::string& tag) { tag_ = tag; }
+  void setTag(const std::string& tag) { tag_ = tag; }
 
   Comm_ptr_type Comm() const { return viz_comm_; }
 

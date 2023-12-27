@@ -18,7 +18,7 @@
 
 #include "DenseVector.hh"
 #include "CompositeVector.hh"
-#include "Mesh.hh"
+#include "MeshFramework.hh"
 
 #include "Schema.hh"
 
@@ -29,39 +29,39 @@ void
 ExtractVectorFaceOp(int f,
                     const AmanziMesh::Mesh& mesh,
                     const Schema& schema,
-                    WhetStone::DenseVector& v,
+                    WhetStone::DenseVector<>& v,
                     const CompositeVector& X);
 void
 AssembleVectorFaceOp(int f,
                      const AmanziMesh::Mesh& mesh,
                      const Schema& schema,
-                     const WhetStone::DenseVector& v,
+                     const WhetStone::DenseVector<>& v,
                      CompositeVector& X);
 
 void
 ExtractVectorNodeOp(int n,
                     const AmanziMesh::Mesh& mesh,
                     const Schema& schema,
-                    WhetStone::DenseVector& v,
+                    WhetStone::DenseVector<>& v,
                     const CompositeVector& X);
 void
 AssembleVectorNodeOp(int n,
                      const AmanziMesh::Mesh& mesh,
                      const Schema& schema,
-                     const WhetStone::DenseVector& v,
+                     const WhetStone::DenseVector<>& v,
                      CompositeVector& X);
 
 void
 ExtractVectorCellOp(int c,
                     const AmanziMesh::Mesh& mesh,
                     const Schema& schema,
-                    WhetStone::DenseVector& v,
+                    WhetStone::DenseVector<>& v,
                     const CompositeVector& X);
 void
 AssembleVectorCellOp(int c,
                      const AmanziMesh::Mesh& mesh,
                      const Schema& schema,
-                     const WhetStone::DenseVector& v,
+                     const WhetStone::DenseVector<>& v,
                      CompositeVector& X);
 
 } // namespace Operators

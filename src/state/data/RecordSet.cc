@@ -21,33 +21,81 @@
 
 namespace Amanzi {
 
+// gather attributes for use with other functionality
+Teuchos::ParameterList
+RecordSet::attributes(Tag const* const tag = nullptr) const
+{
+  std::string name;
+  if (tag)
+    name = Keys::getKey(vis_fieldname(), *tag);
+  else
+    name = vis_fieldname();
+
+  Teuchos::ParameterList attrs(name);
+  // attrs.set("units", units());
+  attrs.set("location", location());
+  auto names = subfieldnames();
+  if (names) attrs.set("subfieldnames", *names);
+  return attrs;
+}
+
+
 // pass-throughs for other functionality
 void
 RecordSet::WriteVis(const Visualization& vis, Tag const* const tag) const
 {
   if (tag) {
-    if (HasRecord(*tag)) { GetRecord(*tag).WriteVis(vis, subfieldnames()); }
+    if (HasRecord(*tag)) {
+      auto attrs = attributes();
+      GetRecord(*tag).WriteVis(vis, attrs);
+    }
   } else {
-    for (auto& e : records_) { e.second->WriteVis(vis, subfieldnames()); }
+    for (auto& e : records_) {
+      auto attrs = attributes(&e.first);
+      e.second->WriteVis(vis, attrs);
+    }
   }
 }
+
 void
 RecordSet::WriteCheckpoint(const Checkpoint& chkp, bool post_mortem) const
 {
   for (auto& e : records_) {
-    e.second->WriteCheckpoint(chkp, e.first, post_mortem, subfieldnames());
+    auto attrs = attributes(&e.first);
+    e.second->WriteCheckpoint(chkp, attrs, post_mortem);
   }
 }
+
 void
-RecordSet::ReadCheckpoint(const Checkpoint& chkp)
+RecordSet::ReadCheckpoint(const Checkpoint& chkp, Tag const* const tag)
 {
-  for (auto& e : records_) { e.second->ReadCheckpoint(chkp, e.first, subfieldnames()); }
+  if (tag && HasRecord(*tag)) {
+    auto attrs = attributes(tag);
+    GetRecord(*tag).ReadCheckpoint(chkp, attrs);
+  } else {
+    for (auto& e : records_) {
+      auto attrs = attributes(&e.first);
+      e.second->ReadCheckpoint(chkp, attrs);
+    }
+  }
 }
+
 bool
 RecordSet::Initialize(Teuchos::ParameterList& plist, bool force)
 {
   bool init = false;
-  for (auto& e : records_) { init |= e.second->Initialize(plist, subfieldnames(), force); }
+
+  if (plist.isParameter("units")) set_units(plist.get<std::string>("units"));
+  if (plist.isParameter("location"))
+    set_location(AmanziMesh::createEntityKind(plist.get<std::string>("location")));
+  if (plist.isParameter("subfieldnames")) {
+    set_subfieldnames(plist.get<Teuchos::Array<std::string>>("subfieldnames"));
+  } else {
+    auto names = subfieldnames();
+    if (names) plist.set<Teuchos::Array<std::string>>("subfieldnames", *names);
+  }
+
+  for (auto& e : records_) { init |= e.second->Initialize(plist, force); }
   return init;
 }
 
@@ -78,7 +126,7 @@ RecordSet::GetRecord(const Tag& tag)
     return *records_.at(tag);
   } catch (const std::out_of_range& e) {
     Errors::Message msg;
-    msg << "Record: \"" << fieldname_ << "\" does not have tag \"" << tag.get() << "\"";
+    msg << "Record: \"" << fieldname_ << "\" << does not have tag \"" << tag.get() << "\"";
     throw(msg);
   }
 }
@@ -90,7 +138,7 @@ RecordSet::GetRecord(const Tag& tag) const
     return *records_.at(tag);
   } catch (const std::out_of_range& e) {
     Errors::Message msg;
-    msg << "Record: \"" << fieldname_ << "\" does not have tag \"" << tag.get() << "\"";
+    msg << "Record: \"" << fieldname_ << "\" << does not have tag \"" << tag.get() << "\"";
     throw(msg);
   }
 }
@@ -145,7 +193,6 @@ RecordSet::isInitialized(Tag& failed)
 {
   for (auto& r : records_) {
     if (!r.second->initialized()) {
-      ;
       failed = r.first;
       return false;
     }

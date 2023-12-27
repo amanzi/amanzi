@@ -12,6 +12,8 @@
 //! Caches mesh information for fast repeated access.
 #pragma once
 
+#include "Teuchos_CommHelpers.hpp"
+
 #include "Geometry.hh"
 #include "Iterators.hh"
 #include "MeshUtils.hh"
@@ -273,6 +275,8 @@ MeshCache<MEM>::getCentroid(const Entity_kind kind, const Entity_ID ent) const
     return getCellCentroid<AP>(ent);
   case (Entity_kind::FACE):
     return getFaceCentroid<AP>(ent);
+  case (Entity_kind::BOUNDARY_FACE):
+    return getFaceCentroid<AP>(getBoundaryFaceFace(*this, ent));
   case (Entity_kind::EDGE):
     return getEdgeCentroid<AP>(ent);
   case (Entity_kind::NODE):
@@ -293,6 +297,8 @@ MeshCache<MEM>::getCentroid(const Entity_ID ent) const
     return getCellCentroid<AP>(ent);
   } else if constexpr (EK == Entity_kind::FACE) {
     return getFaceCentroid<AP>(ent);
+  } else if constexpr (EK == Entity_kind::BOUNDARY_FACE) {
+    return getFaceCentroid<AP>(getBoundaryFaceFace(*this, ent));
   } else if constexpr (EK == Entity_kind::EDGE) {
     return getEdgeCentroid<AP>(ent);
   } else if constexpr (EK == Entity_kind::NODE) {
@@ -928,13 +934,14 @@ template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION typename MeshCache<MEM>::cPoint_View
 MeshCache<MEM>::getCellCoordinates(const Entity_ID c) const
 {
+  auto cf = Impl::ComputeFunction<MEM>::template hostOnly<
+    std::function<MeshCache<MEM>::cPoint_View(const Entity_ID)>>();
+  if constexpr (MEM == MemSpace_kind::HOST) {
+    cf = [&](const int i) { return framework_mesh_->getCellCoordinates(i); };
+  }
+
   return Impl::RaggedGetter<MEM, AP>::get(
-    data_.cell_coordinates_cached,
-    data_.cell_coordinates,
-    framework_mesh_,
-    [&](const int i) { return framework_mesh_->getCellCoordinates(i); },
-    nullptr,
-    c);
+    data_.cell_coordinates_cached, data_.cell_coordinates, framework_mesh_, cf, nullptr, c);
 }
 
 
@@ -1847,30 +1854,30 @@ template <MemSpace_kind MEM>
 void
 MeshCache<MEM>::PrintMeshStatistics() const
 {
-  auto vo_ = Teuchos::rcp(new VerboseObject("Mesh Output", *plist_));
-  if (vo_.get() && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
-    int ncells = getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-    int nfaces = getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-    int nnodes = getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::OWNED);
-    int nedges(0);
-    if (has_edges_) nedges = getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::OWNED);
+  // auto vo_ = Teuchos::rcp(new VerboseObject("Mesh Output", *plist_));
+  // if (vo_.get() && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+  //   int ncells = getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  //   int nfaces = getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
+  //   int nnodes = getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::OWNED);
+  //   int nedges(0);
+  //   if (has_edges_) nedges = getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::OWNED);
 
-    int min_out[4], max_out[4], sum_out[4], tmp_in[4] = { ncells, nfaces, nedges, nnodes };
-    getComm()->MinAll(tmp_in, min_out, 4);
-    getComm()->MaxAll(tmp_in, max_out, 4);
-    getComm()->SumAll(tmp_in, sum_out, 4);
+  //   int min_out[4], max_out[4], sum_out[4], tmp_in[4] = { ncells, nfaces, nedges, nnodes };
+  //   getComm()->MinAll(tmp_in, min_out, 4);
+  //   getComm()->MaxAll(tmp_in, max_out, 4);
+  //   getComm()->SumAll(tmp_in, sum_out, 4);
 
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "cells, tot/min/max: " << sum_out[0] << "/" << min_out[0] << "/" << max_out[0]
-               << "\n";
-    *vo_->os() << "faces, tot/min/max: " << sum_out[1] << "/" << min_out[1] << "/" << max_out[1]
-               << "\n";
-    if (has_edges_)
-      *vo_->os() << "edges, tot/min/max: " << sum_out[2] << "/" << min_out[2] << "/" << max_out[2]
-                 << "\n";
-    *vo_->os() << "nodes, tot/min/max: " << sum_out[3] << "/" << min_out[3] << "/" << max_out[3]
-               << "\n\n";
-  }
+  //   Teuchos::OSTab tab = vo_->getOSTab();
+  //   *vo_->os() << "cells, tot/min/max: " << sum_out[0] << "/" << min_out[0] << "/" << max_out[0]
+  //              << "\n";
+  //   *vo_->os() << "faces, tot/min/max: " << sum_out[1] << "/" << min_out[1] << "/" << max_out[1]
+  //              << "\n";
+  //   if (has_edges_)
+  //     *vo_->os() << "edges, tot/min/max: " << sum_out[2] << "/" << min_out[2] << "/" << max_out[2]
+  //                << "\n";
+  //   *vo_->os() << "nodes, tot/min/max: " << sum_out[3] << "/" << min_out[3] << "/" << max_out[3]
+  //              << "\n\n";
+  // }
 }
 
 

@@ -15,9 +15,6 @@
 #include <set>
 #include <utility>
 
-// TPLs
-#include "Epetra_IntVector.h"
-
 // Amanzi
 #include "dbc.hh"
 #include "errors.hh"
@@ -26,7 +23,6 @@
 #include "VerboseObject.hh"
 
 // Amanzi::Mesh
-#include "BlockMapUtils.hh"
 #include "MeshExtractedManifold.hh"
 
 #include "MeshExtractedDefs.hh"
@@ -55,7 +51,7 @@ MeshExtractedManifold::MeshExtractedManifold(
   if (flattened_) setSpaceDimension(d - 1);
 
   InitParentMaps(setname);
-  InitEpetraMaps();
+  InitMaps();
 }
 
 
@@ -65,7 +61,7 @@ MeshExtractedManifold::MeshExtractedManifold(
 * inter-partition dependencies of the data.
 ****************************************************************** */
 void
-MeshExtractedManifold::InitEpetraMaps()
+MeshExtractedManifold::InitMaps()
 {
   std::vector<Entity_kind> kinds_extracted({ CELL, FACE, NODE });
   std::vector<Entity_kind> kinds_parent({ FACE, EDGE, NODE });
@@ -75,38 +71,25 @@ MeshExtractedManifold::InitEpetraMaps()
     auto kind_p = kinds_parent[i];
 
     // compute (discontinuous) owned global ids using the parent map
-    Teuchos::RCP<const Epetra_BlockMap> parent_map =
-      Teuchos::rcpFromRef(parent_mesh_->getMap(kind_p, false));
-    Teuchos::RCP<const Epetra_BlockMap> parent_map_wghost =
-      Teuchos::rcpFromRef(parent_mesh_->getMap(kind_p, true));
+    auto parent_map = parent_mesh_->getMap(kind_p, false);
+    auto parent_map_wghost = parent_mesh_->getMap(kind_p, true);
 
     int nents = nents_owned_[kind_d];
     int nents_wghost = nents_owned_[kind_d] + nents_ghost_[kind_d];
-    auto gids = new int[nents_wghost];
 
-    for (int n = 0; n < nents; ++n) {
-      int id = entid_to_parent_[kind_d][n];
-      gids[n] = parent_map_wghost->GID(id);
-    }
-
-    auto subset_map = Teuchos::rcp(new Epetra_Map(-1, nents, gids, 0, *comm_));
-
-    // compute owned + ghost ids using the parent map and the minimum global id
+    Kokkos::View<int*, Amanzi::HostSpace> gids("gids", nents_wghost);
     for (int n = 0; n < nents_wghost; ++n) {
       int id = entid_to_parent_[kind_d][n];
-      gids[n] = parent_map_wghost->GID(id);
+      gids(n) = parent_map_wghost->getGlobalElement(id);
     }
+    auto subset_map_wghost = Teuchos::rcp(new Map_type(-1, gids, 0, comm_));
 
-    auto subset_map_wghost = Teuchos::rcp(new Epetra_Map(-1, nents_wghost, gids, 0, *comm_));
-    delete[] gids;
+    Kokkos::resize(gids, nents);
+    auto subset_map = Teuchos::rcp(new Map_type(-1, gids, 0, comm_));
 
     // create continuous maps
-    auto mymesh = Teuchos::rcpFromRef(*this);
-    auto tmp = createContiguousMaps(mymesh,
-                                    std::make_pair(parent_map, parent_map_wghost),
-                                    std::make_pair(subset_map, subset_map_wghost));
-
-    ent_map_wghost_[kind_d] = tmp.second;
+    auto tmp = createContiguousMaps(subset_map_wghost, subset_map);
+    ent_map_wghost_[kind_d] = tmp.first;
   }
 }
 
@@ -497,7 +480,7 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
     const auto& fmap = parent_mesh_->getMap(Entity_kind::FACE, true);
 
     int nowned = parent_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
-    int gidmax = fmap.MaxAllGID();
+    int gidmax = fmap->getMaxGlobalIndex();
 
     for (auto it = edgeset.begin(); it != edgeset.end(); ++it) {
       if (it->second == MASTER + GHOST) {
@@ -509,8 +492,8 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
         for (int n = 0; n < nfaces; ++n) {
           Entity_ID f = faces[n];
           if (auxset.find(f) != auxset.end()) {
-            gid_wghost_min = std::min(gid_wghost_min, fmap.GID(f));
-            if (f < nowned) gid_owned_min = std::min(gid_owned_min, fmap.GID(f));
+            gid_wghost_min = std::min(gid_wghost_min, fmap->getGlobalElement(f));
+            if (f < nowned) gid_owned_min = std::min(gid_owned_min, fmap->getGlobalElement(f));
           }
         }
         it->second = (gid_wghost_min == gid_owned_min) ? MASTER : GHOST;
@@ -521,7 +504,7 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
     const auto& fmap = parent_mesh_->getMap(Entity_kind::FACE, true);
 
     int nowned = parent_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
-    int gidmax = fmap.MaxAllGID();
+    int gidmax = fmap->getMaxGlobalIndex();
 
     for (auto it = nodeset.begin(); it != nodeset.end(); ++it) {
       if (it->second == MASTER + GHOST) {
@@ -533,8 +516,8 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
         for (int n = 0; n < nfaces; ++n) {
           Entity_ID f = faces[n];
           if (auxset.find(f) != auxset.end()) {
-            gid_wghost_min = std::min(gid_wghost_min, fmap.GID(f));
-            if (f < nowned) gid_owned_min = std::min(gid_owned_min, fmap.GID(f));
+            gid_wghost_min = std::min(gid_wghost_min, fmap->getGlobalElement(f));
+            if (f < nowned) gid_owned_min = std::min(gid_owned_min, fmap->getGlobalElement(f));
           }
         }
         it->second = (gid_wghost_min == gid_owned_min) ? MASTER : GHOST;

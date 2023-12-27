@@ -7,13 +7,7 @@
   Authors:
 */
 
-/*
-  Utils
-
-*/
-
-#ifndef AMANZI_OBSERVATION_DATA_HH
-#define AMANZI_OBSERVATION_DATA_HH
+#pragma once
 
 #include <map>
 #include <ostream>
@@ -104,5 +98,3 @@ class ObservationData {
 };
 
 } // namespace Amanzi
-
-#endif

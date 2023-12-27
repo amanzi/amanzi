@@ -25,7 +25,7 @@ TEST(TENSOR_INVERSE)
 
   std::cout << "Test: Inversion of Tensors rank 2" << std::endl;
 
-  Tensor T(2, 2);
+  Tensor<> T(2, 2);
   T(0, 0) = 1.1;
   T(0, 1) = -2.0;
   T(1, 0) = 0.5;
@@ -49,12 +49,14 @@ TEST(TENSOR_CONSTRUCTOR)
 
   std::cout << "Test: Construction of Tensors rank 2" << std::endl;
 
-  double data[4];
 
-  Tensor T1;
-  Tensor T2a(2, 1), T2b(2, 2), T2c(3, 1), T2d(3, 2), T2e(2, 4);
+  Tensor<> T1;
+  Tensor<> T2a(2, 1), T2b(2, 2), T2c(3, 1), T2d(3, 2), T2e(2, 4);
 
-  Tensor T3(2, 2, data);
+#if WHETSTONE_VIEW_SEMANTICS
+  Kokkos::View<double*> data("tensor data", 4);
+  Tensor<> T3(data, 2, 2, 4);
+#endif
 
-  Tensor T4(T2d);
+  Tensor<> T4(T2d);
 }

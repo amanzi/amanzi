@@ -33,7 +33,6 @@
 #include "RegionBoxVolumeFractions.hh"
 #include "RegionCylinder.hh"
 #include "RegionEnumerated.hh"
-#include "RegionFunctionColor.hh"
 #include "RegionHalfSpace.hh"
 #include "RegionLabeledSet.hh"
 #include "RegionLineSegment.hh"
@@ -143,11 +142,11 @@ createRegion(const std::string& reg_name,
     region = Teuchos::rcp(
       new RegionLabeledSet(reg_name, reg_id, entity_str, file, format, name, lifecycle));
 
-  } else if (shape == "color function") {
-    std::string file = plist.get<std::string>("file");
-    int value = plist.get<int>("value");
+    // } else if (shape == "color function") {
+    //   std::string file = plist.get<std::string>("file");
+    //   int value = plist.get<int>("value");
 
-    region = Teuchos::rcp(new RegionFunctionColor(reg_name, reg_id, file, value, comm, lifecycle));
+    //   region = Teuchos::rcp(new RegionFunctionColor(reg_name, reg_id, file, value, comm, lifecycle));
 
   } else if (shape == "point") {
     auto p_vec = plist.get<Teuchos::Array<double>>("coordinate");

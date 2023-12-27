@@ -45,7 +45,7 @@ MFD3D_BernardiRaugel::schema() const
 * components at faces. Fixed normal is used for the latter.
 ****************************************************************** */
 int
-MFD3D_BernardiRaugel::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
+MFD3D_BernardiRaugel::H1consistency(int c, const Tensor<>& K, DenseMatrix<>& N, DenseMatrix<>& Ac)
 {
   AmanziGeometry::Point xv(d_), tau(d_), v1(d_);
 
@@ -57,39 +57,40 @@ MFD3D_BernardiRaugel::H1consistency(int c, const Tensor& K, DenseMatrix& N, Dens
 
   int nrows = d_ * nnodes + nfaces;
   int nd = d_ * (d_ + 1);
-  Ac.Reshape(nrows, nrows);
+  N.reshape(nrows, nd);
+  Ac.reshape(nrows, nrows);
 
   const AmanziGeometry::Point& xm = mesh_->getCellCentroid(c);
   double volume = mesh_->getCellVolume(c);
 
   // convolute tensors for non-zero modes
-  std::vector<Tensor> vT, vKT;
+  std::vector<Tensor<>> vT, vKT;
 
   for (int i = 0; i < d_; ++i) {
     for (int j = i; j < d_; ++j) {
-      Tensor T(d_, 2);
+      Tensor<> T(d_, 2);
       T(i, j) = T(j, i) = 1.0;
       vT.push_back(T);
 
-      Tensor KT(K * T);
+      Tensor<> KT(K * T);
       vKT.push_back(KT);
     }
   }
 
   // calculate exact integration matrix
   int modes = d_ * (d_ + 1) / 2;
-  coefM_.Reshape(modes, modes);
+  DenseMatrix<> coefM(modes, modes);
 
   for (int i = 0; i < modes; ++i) {
     for (int j = i; j < modes; ++j) {
-      coefM_(i, j) = DotTensor(vT[i], vKT[j]) * volume;
-      coefM_(j, i) = coefM_(i, j);
+      coefM(i, j) = DotTensor(vT[i], vKT[j]) * volume;
+      coefM(j, i) = coefM(i, j);
     }
   }
 
+  // to calculate matrix R, we use temporary matrix N
   // 2D algorithm is separated out since it is fast
-  R_.Reshape(nrows, nd);
-  R_.PutScalar(0.0);
+  N.putScalar(0.0);
 
   if (d_ == 2) {
     for (int n = 0; n < nnodes; n++) {
@@ -110,79 +111,48 @@ MFD3D_BernardiRaugel::H1consistency(int c, const Tensor& K, DenseMatrix& N, Dens
         v1 = vKT[i] * normal;
         double t = (tau * v1) * length / 2;
 
-        R_(2 * n, i) += tau[0] * t;
-        R_(2 * n + 1, i) += tau[1] * t;
+        N(2 * n, i) += tau[0] * t;
+        N(2 * n + 1, i) += tau[1] * t;
 
-        R_(2 * m, i) += tau[0] * t;
-        R_(2 * m + 1, i) += tau[1] * t;
-      }
-    }
-
-    for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
-      double area = mesh_->getFaceArea(f);
-
-      for (int i = 0; i < modes; i++) {
-        v1 = vKT[i] * normal;
-        double p = (normal * v1) / area;
-        R_(d_ * nnodes + n, i) += p * dirs[n];
-      }
-    }
-    // 3D case
-  } else {
-    for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
-      const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
-      double area = mesh_->getFaceArea(f);
-
-      const auto& fnodes = mesh_->getFaceNodes(f);
-      int nfnodes = fnodes.size();
-      for (int j = 0; j < nfnodes; ++j) {
-        int v = fnodes[j];
-        const AmanziGeometry::Point& p = mesh_->getNodeCoordinate(v);
-
-        int jnext = (j + 1) % nfnodes;
-        int jprev = (j + nfnodes - 1) % nfnodes;
-
-        int vnext = fnodes[jnext];
-        int vprev = fnodes[jprev];
-
-        const AmanziGeometry::Point& pnext = mesh_->getNodeCoordinate(vnext);
-        const AmanziGeometry::Point& pprev = mesh_->getNodeCoordinate(vprev);
-
-        auto v1 = pprev - pnext;
-        auto v2 = p - xf;
-        auto v3 = v1 ^ v2;
-        double u = dirs[n] * norm(v3) / (4 * area);
-
-        int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
-        for (int i = 0; i < modes; ++i) {
-          auto v4 = vKT[i] * normal;
-          for (int k = 0; k < d_; ++k) R_(d_ * pos + k, i) += v4[k] * u;
-        }
+        N(2 * m, i) += tau[0] * t;
+        N(2 * m + 1, i) += tau[1] * t;
       }
     }
   }
 
+  for (int n = 0; n < nfaces; n++) {
+    int f = faces[n];
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+    double area = mesh_->getFaceArea(f);
+
+    for (int i = 0; i < modes; i++) {
+      v1 = vKT[i] * normal;
+      double p = (normal * v1) / area;
+      N(d_ * nnodes + n, i) += p * dirs[n];
+    }
+  }
+
   // calculate R coefM^{-1} R^T
-  DenseVector a1(modes), a2(modes), a3(modes);
-  coefM_.Inverse();
+  DenseVector<> a1(modes), a2(modes), a3(modes);
+  coefM.Inverse();
 
   for (int i = 0; i < nrows; i++) {
-    for (int k = 0; k < modes; ++k) a1(k) = R_(i, k);
-    coefM_.Multiply(a1, a3, false);
+    a1(0) = N(i, 0);
+    a1(1) = N(i, 1);
+    a1(2) = N(i, 2);
+    coefM.Multiply(a1, a3, false);
 
     for (int j = i; j < nrows; j++) {
-      for (int k = 0; k < modes; ++k) a2(k) = R_(j, k);
+      a2(0) = N(j, 0);
+      a2(1) = N(j, 1);
+      a2(2) = N(j, 2);
+
       Ac(i, j) = a2 * a3;
     }
   }
 
   // calculate N (common algorihtm for 2D and 3D)
-  N.Reshape(nrows, nd);
-  N.PutScalar(0.0);
+  N.putScalar(0.0);
 
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
@@ -258,9 +228,9 @@ MFD3D_BernardiRaugel::H1consistency(int c, const Tensor& K, DenseMatrix& N, Dens
 * Stiffness matrix: the standard algorithm.
 ****************************************************************** */
 int
-MFD3D_BernardiRaugel::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
+MFD3D_BernardiRaugel::StiffnessMatrix(int c, const Tensor<>& K, DenseMatrix<>& A)
 {
-  DenseMatrix N;
+  DenseMatrix<> N;
 
   int ok = H1consistency(c, K, N, A);
   if (ok) return ok;
@@ -274,7 +244,9 @@ MFD3D_BernardiRaugel::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 * Advection matrix depends on velocity u.
 ****************************************************************** */
 int
-MFD3D_BernardiRaugel::AdvectionMatrix(int c, const AmanziMesh::Point_List& u, DenseMatrix& A)
+MFD3D_BernardiRaugel::AdvectionMatrix(int c,
+                                      const std::vector<AmanziGeometry::Point>& u,
+                                      DenseMatrix<>& A)
 {
   AMANZI_ASSERT(d_ == 2);
 
@@ -287,7 +259,7 @@ MFD3D_BernardiRaugel::AdvectionMatrix(int c, const AmanziMesh::Point_List& u, De
   // calculate corner normals and weigths
   std::vector<double> w(nnodes, 0.0);
   AmanziGeometry::Point xv(d_);
-  AmanziMesh::Point_List N(nnodes, xv);
+  std::vector<AmanziGeometry::Point> N(nnodes, xv);
 
   const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
@@ -308,8 +280,8 @@ MFD3D_BernardiRaugel::AdvectionMatrix(int c, const AmanziMesh::Point_List& u, De
 
   // populate matrix
   int ndofs = d_ * nnodes + nfaces;
-  A.Reshape(ndofs, ndofs);
-  A.PutScalar(0.0);
+  A.reshape(ndofs, ndofs);
+  A.putScalar(0.0);
 
   for (int i = 0; i < nnodes; ++i) {
     int i1 = 2 * i;
@@ -331,7 +303,7 @@ MFD3D_BernardiRaugel::AdvectionMatrix(int c, const AmanziMesh::Point_List& u, De
 * Fixed normal vector is used for the latter.
 ****************************************************************** */
 int
-MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
+MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix<>& A)
 {
   auto nodes = mesh_->getCellNodes(c);
 
@@ -339,7 +311,7 @@ MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
   int nfaces = faces.size();
 
   int n1 = d_ * nodes.size();
-  A.Reshape(1, n1 + nfaces);
+  A.reshape(1, n1 + nfaces);
 
   for (int n = 0; n < n1; ++n) A(0, n) = 0.0;
 
@@ -349,37 +321,6 @@ MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
   }
 
   return 0;
-}
-
-
-/* ******************************************************************
-* Stress recostruction from nodal values
-****************************************************************** */
-void
-MFD3D_BernardiRaugel::H1Cell(int c, const DenseVector& dofs, Tensor& Tc)
-{
-  Tensor T(d_, 1);
-  T(0, 0) = 1.0;
-
-  DenseMatrix N, A;
-  H1consistency(c, T, N, A);
-
-  int nrows = A.NumRows();
-  int modes = d_ * (d_ + 1) / 2;
-  DenseVector v(modes), av(modes);
-
-  for (int i = 0; i < modes; ++i) {
-    double sum(0.0);
-    for (int k = 0; k < nrows; ++k) sum += R_(k, i) * dofs(k);
-    v(i) = sum;
-  }
-
-  coefM_.Multiply(v, av, false);
-
-  Tc.Init(d_, 2);
-  int n(0);
-  for (int k = 0; k < d_; k++)
-    for (int l = k; l < d_; l++) Tc(k, l) = Tc(l, k) = av(n++);
 }
 
 } // namespace WhetStone

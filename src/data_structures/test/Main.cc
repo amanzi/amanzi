@@ -7,9 +7,8 @@
   Authors:
 */
 
-#include <UnitTest++.h>
-#include <TestReporterStdout.h>
-
+#include "UnitTest++.h"
+#include "TestReporterStdout.h"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "VerboseObject_objs.hh"
 
@@ -18,9 +17,14 @@
 int
 main(int argc, char* argv[])
 {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Kokkos::initialize();
-  auto res = UnitTest::RunAllTests();
-  Kokkos::finalize();
+  int res;
+  {
+    Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+    Kokkos::initialize();
+    {
+      res = UnitTest::RunAllTests();
+    }
+    Kokkos::finalize();
+  }
   return res;
 }

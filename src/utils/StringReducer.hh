@@ -80,7 +80,7 @@ class StringReducer {
     // get the raw comm
     auto comm_raw = Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm);
     AMANZI_ASSERT(comm_raw);
-    comm_ = comm_raw->Comm();
+    comm_ = *comm_raw->getRawMpiComm();
 
     // construct the data type
     MPI_Type_contiguous(MAXLEN, MPI_CHAR, &dtype_);

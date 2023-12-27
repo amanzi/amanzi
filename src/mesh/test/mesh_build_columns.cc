@@ -40,7 +40,7 @@ using namespace Amanzi;
 TEST(MESH_COLUMNS)
 {
   auto comm = getDefaultComm();
-  int nprocs = comm->NumProc();
+  int nprocs = comm->getSize();
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh
@@ -64,5 +64,43 @@ TEST(MESH_COLUMNS)
 
     // call test function
     testColumnsUniformDz(*mesh, 2.0 / 10);
+  }
+}
+
+TEST(MESH_COLUMNS_COPY)
+{
+  // must be able to copy-construct the mesh and still get the columns (via lambda capture)
+  auto comm = getDefaultComm();
+  int nprocs = comm->getSize();
+
+  // We are not including MOAB since Mesh_MOAB.cc does not have
+  // routines for generating a mesh
+  std::vector<AmanziMesh::Framework> frameworks;
+  if (AmanziMesh::framework_enabled(AmanziMesh::Framework::MSTK)) {
+    frameworks.push_back(AmanziMesh::Framework::MSTK);
+  }
+  if (nprocs == 1) { frameworks.push_back(AmanziMesh::Framework::SIMPLE); }
+
+  auto mesh_pars = Teuchos::rcp(new Teuchos::ParameterList());
+  mesh_pars->set<std::string>("partitioner", "zoltan_rcb");
+
+  for (const auto& frm : frameworks) {
+    std::cerr << "Testing columns with " << AmanziMesh::to_string(frm) << std::endl;
+
+    // Create the mesh
+    auto mesh = createStructuredUnitHex({ frm }, 3, 3, 10, comm, Teuchos::null, mesh_pars, 2, 3, 2);
+
+    // Explicitly call build columns method
+    mesh->buildColumns();
+
+    AmanziMesh::Mesh mesh2(*mesh);
+    CHECK(mesh2.columns.num_columns_owned > 0);
+    Kokkos::parallel_for("access columns",
+                         mesh2.columns.num_columns_owned,
+                         KOKKOS_LAMBDA(const int col) {
+                           auto cells_of_col = mesh2.columns.getCells(col);
+                           assert((cells_of_col.extent(0) > 0));
+                           std::cout << "the copy's column " << col << " has " << cells_of_col.extent(0) << "entries" << std::endl;
+                         });
   }
 }

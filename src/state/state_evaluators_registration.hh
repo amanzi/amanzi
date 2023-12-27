@@ -13,31 +13,41 @@
   A field evaluator for an unchanging cell volume.
 */
 
-#include "EvaluatorCellVolume.hh"
-#include "EvaluatorDeformingCellVolume.hh"
 #include "EvaluatorIndependentFromFile.hh"
 #include "EvaluatorIndependentFunction.hh"
 #include "EvaluatorIndependentConstant.hh"
-#include "EvaluatorMultiplicativeReciprocal.hh"
+#include "EvaluatorIndependentTensorFunction.hh"
+#include "EvaluatorIndependentPatchFunction.hh"
 #include "EvaluatorSecondaryMonotypeFromFunction.hh"
+#include "EvaluatorSecondaryMonotypeAdditive.hh"
+#include "EvaluatorSecondaryMonotypeMultiplicative.hh"
+#include "EvaluatorPrimaryStaticMesh.hh"
+#include "EvaluatorSecondaryMeshedQuantity.hh"
+#include "EvaluatorSecondaryVectorAsPatch.hh"
+#include "EvaluatorAggregateBCs.hh"
+
+#include "registration_macro.hh"
 
 namespace Amanzi {
 
-Utils::RegisteredFactory<Evaluator, EvaluatorCellVolume> EvaluatorCellVolume::fac_("cell volume");
-Utils::RegisteredFactory<Evaluator, EvaluatorDeformingCellVolume>
-  EvaluatorDeformingCellVolume::fac_("deforming cell volume");
+REGISTER(EvaluatorIndependentFunction);
+REGISTER(EvaluatorIndependentFromFile);
+REGISTER(EvaluatorIndependentConstant);
+REGISTER(EvaluatorIndependentTensorFunction);
+REGISTER(EvaluatorIndependentPatchFunction);
+REGISTER(EvaluatorSecondaryMonotypeFromFunction);
+template<> REGISTER(EvaluatorSecondaryMonotypeAdditiveCV);
+template<> REGISTER(EvaluatorSecondaryMonotypeMultiplicativeCV);
 
-Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFunction>
-  EvaluatorIndependentFunction::fac_("independent variable");
-Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFromFile>
-  EvaluatorIndependentFromFile::fac_("independent variable from file");
-Utils::RegisteredFactory<Evaluator, EvaluatorIndependentConstant>
-  EvaluatorIndependentConstant::fac_("independent variable constant");
+const std::string EvaluatorPrimaryStaticMesh::eval_type = "static mesh";
+REGISTER(EvaluatorPrimaryStaticMesh);
 
-Utils::RegisteredFactory<Evaluator, EvaluatorMultiplicativeReciprocal>
-  EvaluatorMultiplicativeReciprocal::fac_("multiplicative reciprocal");
+template <> REGISTER(EvaluatorCellVolume);
+template <> REGISTER(EvaluatorMeshElevation);
+template <> REGISTER(EvaluatorMeshSlopeMagnitude);
+template <> REGISTER(EvaluatorMeshAspect);
 
-Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction>
-  EvaluatorSecondaryMonotypeFromFunction::fac_("secondary variable from function");
+REGISTER(EvaluatorAggregateBCs);
+REGISTER(EvaluatorSecondaryVectorAsPatch);
 
 } // namespace Amanzi

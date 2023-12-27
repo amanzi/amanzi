@@ -63,6 +63,17 @@ class FunctionComposition : public Function {
     return (*f1_)(y);
   }
 
+  void apply(const Kokkos::View<double**>& in,
+             Kokkos::View<double*>& out,
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+  {
+    f2_->apply(in, out, ids);
+
+    Kokkos::View<double**> in_1("in", 1, in.extent(1));
+    Kokkos::deep_copy(Kokkos::subview(in_1, 0, Kokkos::ALL), out);
+    f1_->apply(in_1, out, ids);
+  }
+
  private:
   std::unique_ptr<Function> f1_, f2_;
 };

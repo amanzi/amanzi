@@ -1,0 +1,29 @@
+<ParameterList name="CV Function">
+  <ParameterList name="celldataL">
+    <Parameter name="region" type="string" value="HALF1"/>
+    <Parameter name="component" type="string" value="cell"/>
+    <ParameterList name="function">
+      <ParameterList name="function-constant"> <!-- time component -->
+	<Parameter name="value" type="double" value="0.5"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="celldataR">
+    <Parameter name="region" type="string" value="HALF2"/>
+    <Parameter name="component" type="string" value="cell"/>
+    <ParameterList name="function">
+      <ParameterList name="function-constant"> <!-- time component -->
+	<Parameter name="value" type="double" value="2.0"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="facedata">
+    <Parameter name="region" type="string" value="DOMAIN"/>
+    <Parameter name="component" type="string" value="face"/>
+    <ParameterList name="function">
+      <ParameterList name="function-constant"> <!-- time component -->
+	<Parameter name="value" type="double" value="3.0"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

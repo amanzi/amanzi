@@ -93,7 +93,7 @@ MeshFrameworkFactory::create(const std::string& filename)
   }
 
   for (auto p : preference_) {
-    int nproc = comm_->NumProc();
+    int nproc = comm_->getSize();
 
 #ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
@@ -156,7 +156,7 @@ MeshFrameworkFactory::create(const double x0,
                              const int ny,
                              const int nz)
 {
-  int nproc = comm_->NumProc();
+  int nproc = comm_->getSize();
 
   for (auto p : preference_) {
     if (p == Framework::SIMPLE && nproc == 1) {
@@ -316,12 +316,13 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
     // mpi comm split
     MPI_Comm child_comm;
     bool empty = setids.size() == 0;
-    int ierr = MPI_Comm_split(parent_comm->Comm(), empty ? MPI_UNDEFINED : 1, 0, &child_comm);
+    int ierr =
+      MPI_Comm_split(*parent_comm->getRawMpiComm(), empty ? MPI_UNDEFINED : 1, 0, &child_comm);
     if (ierr) {
       Errors::Message msg("Error in MPI_Comm_split in creating extracted mesh.");
       Exceptions::amanzi_throw(msg);
     }
-    if (!empty) comm = Teuchos::rcp(new Epetra_MpiComm(child_comm));
+    if (!empty) comm = Teuchos::rcp(new MpiComm_type(child_comm));
   } else {
     // note, this could be parent_comm or it could be COMM_SELF or any other
     // comm that the factory was made with.
