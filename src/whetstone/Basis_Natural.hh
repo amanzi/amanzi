@@ -69,12 +69,6 @@ class Basis_Natural : public Basis {
     return poly;
   }
 
-  // assess
-  int id() { return id_; };
-
- protected:
-  int id_;
-
  private:
   int order_;
 };

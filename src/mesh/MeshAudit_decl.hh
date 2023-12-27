@@ -87,8 +87,8 @@ class MeshAudit_Geometry : public MeshAudit_Base<Mesh_type> {
 template <class Mesh_type>
 class MeshAudit_Maps : public MeshAudit_Geometry<Mesh_type> {
  public:
-  MeshAudit_Maps(const Teuchos::RCP<const Mesh_type>& mesh_, std::ostream& os = std::cout)
-    : MeshAudit_Geometry<Mesh_type>(mesh_, os)
+  MeshAudit_Maps(const Teuchos::RCP<const Mesh_type>& mesh, std::ostream& os = std::cout)
+    : MeshAudit_Geometry<Mesh_type>(mesh, os)
   {}
 
   // This is the main method.
@@ -120,8 +120,8 @@ class MeshAudit_Maps : public MeshAudit_Geometry<Mesh_type> {
 template <class Mesh_type>
 class MeshAudit_Sets : public MeshAudit_Maps<Mesh_type> {
  public:
-  MeshAudit_Sets(const Teuchos::RCP<const Mesh_type>& mesh_, std::ostream& os = std::cout)
-    : MeshAudit_Maps<Mesh_type>(mesh_, os)
+  MeshAudit_Sets(const Teuchos::RCP<const Mesh_type>& mesh, std::ostream& os = std::cout)
+    : MeshAudit_Maps<Mesh_type>(mesh, os)
   {}
 
   bool check_node_set_ids() const;

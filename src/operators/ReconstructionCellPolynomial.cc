@@ -242,8 +242,8 @@ ReconstructionCellPolynomial::CellAdjCellsTwoLevels_(AmanziMesh::Entity_ID c,
   // neighboors of neighboors
   auto cells_copy(cells);
   for (int c1 : cells_copy) {
-    auto faces = mesh_->getCellFaces(c1);
-    for (int f : faces) {
+    auto faces1 = mesh_->getCellFaces(c1);
+    for (int f : faces1) {
       auto fcells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       for (int c2 : fcells) {
         if (cells.find(c2) == cells.end() && c != c2) cells.insert(c2);

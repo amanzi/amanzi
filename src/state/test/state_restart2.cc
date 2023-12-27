@@ -50,11 +50,11 @@ SUITE(RESTART2)
       Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0, 0, 0, 1, 1, 1, 4, 1, 1, comm_serial));
     auto domain_mesh = Teuchos::rcp(
       new AmanziMesh::Mesh(domain_mesh_mstk,
-                           Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()),
+                           Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()),
                            Teuchos::null));
     auto serial_mesh = Teuchos::rcp(
       new AmanziMesh::Mesh(serial_mesh_mstk,
-                           Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()),
+                           Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()),
                            Teuchos::null));
 
 

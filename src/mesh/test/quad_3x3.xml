@@ -28,13 +28,15 @@
   </ParameterList>
 
   <!-- color functions -->
+  <!-- NOT SUPPORTED IN TPETRA
   <ParameterList name="Top ColFunc">
     <ParameterList name="region: color function">
       <Parameter name="file" type="string" value="test/colorfunc.txt"/>
       <Parameter name="value" type="int" value="10"/>
     </ParameterList>
   </ParameterList>
-  
+  -->
+
   <!-- geometric regions -->
   <ParameterList name="Box">
     <ParameterList name="region: box">

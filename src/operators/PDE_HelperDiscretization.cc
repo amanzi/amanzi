@@ -15,7 +15,7 @@
 
 #include "errors.hh"
 
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "WhetStoneDefs.hh"
 
 #include "SchemaUtils.hh"

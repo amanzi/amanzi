@@ -23,7 +23,7 @@ namespace AmanziMesh {
 
 Teuchos::RCP<Mesh>
 MeshFactory::create(const Teuchos::RCP<const Mesh>& parent_mesh,
-                    const Entity_ID_View& setids,
+                    const MeshFramework::cEntity_ID_View& setids,
                     const Entity_kind setkind,
                     const bool flatten)
 {
@@ -34,7 +34,7 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& parent_mesh,
   Teuchos::RCP<MeshFramework> mesh_fw =
     MeshFrameworkFactory::create(parent_mesh, setids, setkind, flatten);
   auto mesh =
-    Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new MeshFrameworkAlgorithms()), Teuchos::null));
+    Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
   mesh->setParentMesh(parent_mesh);
   return mesh;
 }
@@ -53,7 +53,7 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& parent_mesh,
   Teuchos::RCP<MeshFramework> mesh_fw =
     MeshFrameworkFactory::create(parent_mesh, setnames, setkind, flatten);
   auto mesh =
-    Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new MeshFrameworkAlgorithms()), Teuchos::null));
+    Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
   mesh->setParentMesh(parent_mesh);
   return mesh;
 }
@@ -92,7 +92,7 @@ MeshFactory::createColumn(const Teuchos::RCP<Mesh>& parent,
 
   // create and return the Mesh
   auto mesh =
-    Teuchos::rcp(new Mesh(column_1D, Teuchos::rcp(new MeshFrameworkColumnAlgorithms()), plist));
+    Teuchos::rcp(new Mesh(column_1D, Teuchos::rcp(new MeshColumnAlgorithms()), plist));
   mesh->setParentMesh(parent);
   return mesh;
 }
@@ -108,7 +108,7 @@ MeshFactory::createSurfaceCell(const Teuchos::RCP<const Mesh>& parent)
   Teuchos::RCP<MeshFramework> mesh_surf_cell_fw =
     Teuchos::rcp(new MeshSurfaceCell(parent->getMeshFramework()));
   auto mesh = Teuchos::rcp(
-    new Mesh(mesh_surf_cell_fw, Teuchos::rcp(new MeshFrameworkAlgorithms()), Teuchos::null));
+    new Mesh(mesh_surf_cell_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
   mesh->setParentMesh(parent);
   return mesh;
 }

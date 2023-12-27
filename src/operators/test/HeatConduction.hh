@@ -19,7 +19,7 @@
 #include <vector>
 
 // Amanzi
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "CompositeVector.hh"
 
 // Operators

@@ -28,7 +28,7 @@ MeshColumns::initialize(const MeshCache<MemSpace_kind::HOST>& mesh)
 
   // loop over all boundary faces and look for those whose normal z component
   // is not zero and whose opposing face is below them.
-  Entity_ID_View surface_faces("surface_faces", mesh.getBoundaryFaces().size());
+  MeshCache<MemSpace_kind::HOST>::Entity_ID_View surface_faces("surface_faces", mesh.getBoundaryFaces().size());
   int sf = 0;
   for (const Entity_ID f : mesh.getBoundaryFaces()) {
     auto f_normal = mesh.getFaceNormal(f);
@@ -62,7 +62,7 @@ MeshColumns::initialize(const MeshCache<MemSpace_kind::HOST>& mesh,
     for (Entity_ID f : r_faces)
       vsurface_faces.insert(std::upper_bound(vsurface_faces.begin(), vsurface_faces.end(), f), f);
   }
-  Entity_ID_View surface_faces;
+  MeshCache<MemSpace_kind::HOST>::Entity_ID_View surface_faces;
   vectorToView(surface_faces, vsurface_faces);
 
   // build columns for each face
@@ -72,7 +72,7 @@ MeshColumns::initialize(const MeshCache<MemSpace_kind::HOST>& mesh,
 
 void
 MeshColumns::initialize(const MeshCache<MemSpace_kind::HOST>& mesh,
-                        const Entity_ID_View& surface_faces)
+                        const MeshCache<MemSpace_kind::HOST>::Entity_ID_View& surface_faces)
 {
   // figure out the correct size
   // Note, this is done to make life easier for Kokkos

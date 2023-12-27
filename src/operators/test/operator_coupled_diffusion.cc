@@ -30,7 +30,7 @@
 
 // Amanzi
 #include "Mesh_MSTK.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
 
@@ -129,9 +129,6 @@ struct Problem {
       Epetra_MultiVector& kr0_v_c = *kr0_v->ViewComponent("cell", false);
       Epetra_MultiVector& kr1_u_c = *kr1_u->ViewComponent("cell", false);
       Epetra_MultiVector& kr1_v_c = *kr1_v->ViewComponent("cell", false);
-
-      const Epetra_MultiVector& u_c = *u.ViewComponent("cell", false);
-      const Epetra_MultiVector& v_c = *v.ViewComponent("cell", false);
 
       for (int c = 0; c != ncells; ++c) {
         kr0_u_c[0][c] = ana->DScalarCoefficient00D0(u_c[0][c], v_c[0][c]);
@@ -647,7 +644,7 @@ getProblem(const std::string& discretization, bool upwind, int nx, int ny)
   // create a mesh
   auto mesh_mstk = Teuchos::rcp(new Mesh_MSTK(0., 0., 1., 1., nx, ny, comm));
   auto mesh = Teuchos::rcp(new Mesh(
-    mesh_mstk, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+    mesh_mstk, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), Teuchos::null));
 
   // create the analytic solution
   Teuchos::RCP<AnalyticNonlinearCoupledBase> ana =

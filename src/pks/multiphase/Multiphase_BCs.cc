@@ -32,7 +32,7 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 
 // Multiphase
 #include "Multiphase_PK.hh"

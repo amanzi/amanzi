@@ -13,7 +13,7 @@
   Rel perm( pc ( sat ) ).
 */
 
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "RelPermEvaluator.hh"
 
 namespace Amanzi {

@@ -16,7 +16,7 @@
 #include <vector>
 
 // Amanzi
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "MFD3D_Diffusion.hh"
 #include "nlfv.hh"
 #include "ParallelCommunication.hh"
@@ -525,9 +525,6 @@ PDE_DiffusionNLFVwithBndFaces::UpdateMatricesNewtonCorrection(
   const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
 
   // populate the local matrices
-  double v, vmod;
-  AmanziMesh::Entity_ID_View cells;
-
   for (int f = 0; f < nfaces_owned; f++) {
     auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
@@ -535,8 +532,8 @@ PDE_DiffusionNLFVwithBndFaces::UpdateMatricesNewtonCorrection(
     Aface.PutScalar(0.0);
 
     // We use the upwind discretization of the generalized flux.
-    v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dkdp_f[0][f] / kf[0][f] : 0.0;
-    vmod = std::abs(v);
+    double v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dkdp_f[0][f] / kf[0][f] : 0.0;
+    double vmod = std::abs(v);
 
     // prototype for future limiters
     vmod *= scalar_factor;

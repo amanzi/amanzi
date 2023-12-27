@@ -137,8 +137,8 @@ class Mesh_simple : public MeshFramework {
   Entity_ID_View face_to_cell_;
 
   // orientation arrays
-  Entity_Direction_View cell_to_face_dirs_;
-  Entity_Direction_View face_to_edge_dirs_;
+  Direction_View cell_to_face_dirs_;
+  Direction_View face_to_edge_dirs_;
 };
 
 

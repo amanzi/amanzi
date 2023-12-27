@@ -54,8 +54,6 @@ SUITE(MeshFramework)
     plist->set<bool>("create subcommunicator", true);
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm, plist);
 
-    bool flatten = true;
-
     if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::MSTK)) {
       pref.clear();
       pref.push_back(Amanzi::AmanziMesh::Framework::MSTK);
@@ -64,10 +62,9 @@ SUITE(MeshFramework)
       auto parent_mesh = meshfactory.create(x0, y0, z0, x1, y1, z1, nx, ny, nz);
       CHECK(!parent_mesh.is_null());
 
-      Amanzi::AmanziMesh::Entity_ID_View setents =
-        parent_mesh->getSetEntities("Top Surface",
-                                    Amanzi::AmanziMesh::Entity_kind::FACE,
-                                    Amanzi::AmanziMesh::Parallel_kind::OWNED);
+      auto setents = parent_mesh->getSetEntities("Top Surface",
+              Amanzi::AmanziMesh::Entity_kind::FACE,
+              Amanzi::AmanziMesh::Parallel_kind::OWNED);
       int local_count = setents.size();
       int global_min_count;
       std::cout << "Count on rank " << comm->MyPID() << " is " << local_count << std::endl;

@@ -20,7 +20,7 @@
 #include "EvaluatorMultiplicativeReciprocal.hh"
 #include "EvaluatorPrimary.hh"
 #include "Mesh.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "State.hh"
 #include "WhetStoneDefs.hh"

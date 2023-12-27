@@ -133,7 +133,7 @@ MeshExtractedManifold::getNumEntities(const Entity_kind kind, const Parallel_kin
 void
 MeshExtractedManifold::getCellFacesAndDirs(const Entity_ID c,
                                            cEntity_ID_View& faces,
-                                           cEntity_Direction_View* fdirs) const
+                                           cDirection_View* fdirs) const
 {
   Entity_ID_View lfaces;
   int fp = entid_to_parent_[Entity_kind::CELL][c];
@@ -152,7 +152,7 @@ MeshExtractedManifold::getCellFacesAndDirs(const Entity_ID c,
   // orientation. In this case, the result is correct iff the 3D face normal
   // is exterior.
   if (!flattened_ && fdirs) {
-    Entity_Direction_View lfdirs;
+    Direction_View lfdirs;
     lfdirs.fromConst(*fdirs);
     for (int i = 0; i < nfaces; ++i) { (lfdirs)[i] = 1; }
     *fdirs = lfdirs;
@@ -168,7 +168,7 @@ void
 MeshExtractedManifold::getCellEdges(const Entity_ID c, cEntity_ID_View& edges) const
 {
   Entity_ID_View ledges;
-  cEntity_Direction_View edirs;
+  cDirection_View edirs;
 
   int fp = entid_to_parent_[Entity_kind::CELL][c];
   parent_mesh_->getFaceEdgesAndDirs(fp, edges, &edirs);
@@ -206,7 +206,7 @@ MeshExtractedManifold::getFaceNodes(const Entity_ID f, cEntity_ID_View& nodes) c
 void
 MeshExtractedManifold::getFaceEdgesAndDirs(const Entity_ID f,
                                            cEntity_ID_View& edges,
-                                           cEntity_Direction_View* edirs) const
+                                           cDirection_View* edirs) const
 {
   cEntity_ID_View v0;
 
@@ -309,11 +309,13 @@ MeshExtractedManifold::InitParentMaps(const std::string& setname)
 
     // build edge set from Exodus labeled face set
     Entity_ID_View setents;
-
     TryExtension_(setname, kind_p, kind_d, &setents);
-    if (setents.size() == 0)
-      std::tie(setents, std::ignore) =
+    if (setents.size() == 0) {
+      auto [lsetents, lvfs] =
         parent_mesh_->getSetEntitiesAndVolumeFractions(setname, kind_p, Parallel_kind::ALL);
+      Kokkos::resize(setents, lsetents.size());
+      Kokkos::deep_copy(setents, lsetents);
+    }
 
     auto marked_ents = EnforceOneLayerOfGhosts_(setname, kind_p, &setents);
 
@@ -365,7 +367,7 @@ MeshExtractedManifold::TryExtension_(const std::string& setname,
   auto marked_ents = EnforceOneLayerOfGhosts_(setname, Entity_kind::FACE, &faceents);
 
   cEntity_ID_View edges, nodes;
-  cEntity_Direction_View dirs;
+  cDirection_View dirs;
   std::set<Entity_ID> setents_tmp;
 
   for (auto it = marked_ents.begin(); it != marked_ents.end(); ++it) {
@@ -395,10 +397,10 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
                                                 Entity_ID_View_Type* setents) const
 {
   // base set is the set of master cells
-  Entity_ID_View fullset;
+  cEntity_ID_View fullset;
   if (kind != Entity_kind::FACE) {
-    Double_View vofs;
-    std::tie(fullset, vofs) = parent_mesh_->getSetEntitiesAndVolumeFractions(
+    cDouble_View vofs;
+    Kokkos::tie(fullset, vofs) = parent_mesh_->getSetEntitiesAndVolumeFractions(
       setname, Entity_kind::FACE, Parallel_kind::ALL);
   } else {
     fullset = *setents;
@@ -407,7 +409,7 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
   // initial set of entities is defined by master parent faces and is marked as
   // potential master entities
   cEntity_ID_View nodes, edges, faces;
-  cEntity_Direction_View dirs;
+  cDirection_View dirs;
   int nfaces_owned = parent_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   std::map<Entity_ID, int> nodeset0, nodeset, edgeset, faceset;
 

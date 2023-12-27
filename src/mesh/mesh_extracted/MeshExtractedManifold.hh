@@ -146,13 +146,13 @@ class MeshExtractedManifold : public MeshFramework {
   //    implemented in each mesh framework. The results are cached in the base class
   virtual void getCellFacesAndDirs(const Entity_ID c,
                                    cEntity_ID_View& faces,
-                                   cEntity_Direction_View* fdirs) const override;
+                                   cDirection_View* fdirs) const override;
 
   // -- edges of a face - this function is implemented in each mesh
   //    framework. The results are cached in the base class
   virtual void getFaceEdgesAndDirs(const Entity_ID f,
                                    cEntity_ID_View& edges,
-                                   cEntity_Direction_View* edirs) const override;
+                                   cDirection_View* edirs) const override;
 
   // -- edges of a cell - this function is implemented in each mesh
   //    framework. The results are cached in the base class.

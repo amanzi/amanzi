@@ -17,6 +17,7 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 using MeshAudit = MeshAudit_<Mesh, Impl::MeshAudit_Sets>;
+using MeshAuditHost = MeshAudit_<MeshHost, Impl::MeshAudit_Sets>;
 
-}
+} // namespace AmanziMesh
 } // namespace Amanzi

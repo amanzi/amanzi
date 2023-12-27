@@ -11,14 +11,12 @@
 
 #include "MeshFrameworkTraits.hh"
 #include "MeshAudit.hh"
+#include "MeshAlgorithms.hh"
 
 #include "geometry_harnesses.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
-
-using Entity_Direction_View = std::vector<int>;
-
 
 //
 // Helper functions for testing sets
@@ -31,11 +29,13 @@ template <class Mesh_type>
 void
 testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework f)
 {
+  std::cout << "Testing Hex Mesh Sets: 3x3x3" << std::endl;
   auto gm = mesh->getGeometricModel();
   CHECK_EQUAL(3, mesh->getSpaceDimension());
   CHECK_EQUAL(3, mesh->getManifoldDimension());
   for (const auto& r : *gm) {
     std::string r_name = r->get_name();
+    std::cout << " ... " << r_name << std::endl;
     if (r_name == "Entire Mesh") {
       if (!mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
 
@@ -64,8 +64,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
 
         CHECK_CLOSE_SUMALL(3 * 3, n_ents, *mesh->getComm());
 
-        AmanziMesh::Entity_ID_View ents;
-        ents = mesh->getSetEntities(
+        auto ents = mesh->getSetEntities(
           r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
         for (const auto& e : ents) {
           auto cc = mesh->getCellCentroid(e);
@@ -84,8 +83,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
           mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
         CHECK_CLOSE_SUMALL(3 * 3, n_ents, *mesh->getComm());
 
-        AmanziMesh::Entity_ID_View ents;
-        ents = mesh->getSetEntities(
+        auto ents = mesh->getSetEntities(
           r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
         for (const auto& e : ents) {
           auto cc = mesh->getCellCentroid(e);
@@ -105,8 +103,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
           mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
         CHECK_CLOSE_SUMALL(3 * 3, n_ents, *mesh->getComm());
 
-        AmanziMesh::Entity_ID_View ents;
-        ents = mesh->getSetEntities(
+        auto ents = mesh->getSetEntities(
           r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
         for (const auto& e : ents) {
           auto cc = mesh->getCellCentroid(e);
@@ -124,8 +121,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
         mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       CHECK_CLOSE_SUMALL(3 * 3, n_ents, *mesh->getComm());
 
-      AmanziMesh::Entity_ID_View ents;
-      ents =
+      auto ents =
         mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
       for (const auto& e : ents) {
         auto cc = mesh->getCellCentroid(e);
@@ -140,8 +136,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
         mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       CHECK_CLOSE_SUMALL(3 * 3 * 2, n_ents, *mesh->getComm());
 
-      AmanziMesh::Entity_ID_View ents;
-      ents =
+      auto ents =
         mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
       for (const auto& e : ents) {
         auto cc = mesh->getCellCentroid(e);
@@ -160,8 +155,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
         mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       CHECK_CLOSE_SUMALL(1, n_ents, *mesh->getComm());
 
-      AmanziMesh::Entity_ID_View ents;
-      ents =
+      auto ents =
         mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
       for (const auto& e : ents) {
         auto cc = mesh->getCellCentroid(e);
@@ -179,8 +173,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
           mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
         CHECK_CLOSE_SUMALL(3 * 3 + 1, n_ents, *mesh->getComm());
 
-        AmanziMesh::Entity_ID_View ents;
-        ents = mesh->getSetEntities(
+        auto ents = mesh->getSetEntities(
           r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
         for (const auto& e : ents) {
           auto cc = mesh->getCellCentroid(e);
@@ -201,8 +194,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
           mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
         CHECK_CLOSE_SUMALL(3, n_ents, *mesh->getComm());
 
-        AmanziMesh::Entity_ID_View ents;
-        ents = mesh->getSetEntities(
+        auto ents = mesh->getSetEntities(
           r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
         for (const auto& e : ents) {
           auto cc = mesh->getCellCentroid(e);
@@ -220,8 +212,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
       // int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       // CHECK_CLOSE_SUMALL(3, n_ents, *mesh->getComm());
 
-      // AmanziMesh::Entity_ID_View ents;
-      // ents = mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+      // auto ents = mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
       // std::vector<int> ents_found(3, 0);
       // for (const auto& e : ents) {
       //   int gid = mesh->getMap(AmanziMesh::Entity_kind::CELL, false).GID(e);
@@ -245,8 +236,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
           mesh->getSetSize(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
         CHECK_CLOSE_SUMALL(3 * 3, n_ents, *mesh->getComm());
 
-        AmanziMesh::Entity_ID_View ents;
-        ents = mesh->getSetEntities(
+        auto ents = mesh->getSetEntities(
           r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
         for (const auto& e : ents) {
           auto fc = mesh->getFaceCentroid(e);
@@ -268,8 +258,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
           mesh->getSetSize(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
         CHECK_CLOSE_SUMALL(3 * 3, n_ents, *mesh->getComm());
 
-        AmanziMesh::Entity_ID_View ents;
-        ents = mesh->getSetEntities(
+        auto ents = mesh->getSetEntities(
           r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
         for (const auto& e : ents) {
           auto fc = mesh->getFaceCentroid(e);
@@ -290,8 +279,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
         mesh->getSetSize(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
       CHECK_CLOSE_SUMALL(1, n_ents, *mesh->getComm());
 
-      AmanziMesh::Entity_ID_View ents;
-      ents =
+      auto ents =
         mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
       for (const auto& e : ents) {
         auto fc = mesh->getFaceCentroid(e);
@@ -309,8 +297,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
           mesh->getSetSize(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
         CHECK_CLOSE_SUMALL(3 * 3 - 1, n_ents, *mesh->getComm());
 
-        AmanziMesh::Entity_ID_View ents;
-        ents = mesh->getSetEntities(
+        auto ents = mesh->getSetEntities(
           r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
         for (const auto& e : ents) {
           auto fc = mesh->getFaceCentroid(e);
@@ -328,8 +315,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
         mesh->getSetSize(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
       CHECK_CLOSE_SUMALL(3 * 3 * 6, n_ents, *mesh->getComm());
 
-      AmanziMesh::Entity_ID_View ents;
-      ents =
+      auto ents =
         mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
       for (const auto& e : ents) {
         auto fc = mesh->getFaceCentroid(e);
@@ -346,8 +332,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
       // int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       // CHECK_CLOSE_SUMALL(2, n_ents, *mesh->getComm());
 
-      // AmanziMesh::Entity_ID_View ents;
-      // ents = mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+      // auto ents = mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
       // for (const auto& e : ents) {
       //   auto cc = mesh->getCellCentroid(e);
       //   CHECK_CLOSE(0.5, cc[1], 1.e-10);
@@ -366,8 +351,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
       // int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       // CHECK_CLOSE_SUMALL(4, n_ents, *mesh->getComm());
 
-      // AmanziMesh::Entity_ID_View ents;
-      // ents = mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+      // auto ents = mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
       // for (const auto& e : ents) {
       //   auto cc = mesh->getCellCentroid(e);
       //   CHECK_CLOSE(0.5, cc[2], 1.e-10);
@@ -385,8 +369,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
       // int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       // CHECK_CLOSE_SUMALL(8, n_ents, *mesh->getComm());
 
-      // AmanziMesh::Entity_ID_View ents;
-      // ents = mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+      // auto ents = mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
       // for (const auto& e : ents) {
       //   auto cc = mesh->getCellCentroid(e);
 
@@ -405,8 +388,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
         mesh->getSetSize(r_name, AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
       CHECK_CLOSE_SUMALL(4 * 4, n_ents, *mesh->getComm());
 
-      AmanziMesh::Entity_ID_View ents;
-      ents =
+      auto ents =
         mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
       for (const auto& e : ents) {
         AmanziGeometry::Point nc;
@@ -421,8 +403,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
         mesh->getSetSize(r_name, AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
       CHECK_CLOSE_SUMALL(4, n_ents, *mesh->getComm());
 
-      AmanziMesh::Entity_ID_View ents;
-      ents =
+      auto ents =
         mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
       for (const auto& e : ents) {
         AmanziGeometry::Point nc;
@@ -443,15 +424,15 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
       // CHECK_THROW(
       //   mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL),
       //   Errors::Message);
-      // int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
-      // CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
+      int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+      CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
 
       CHECK(mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL));
       // CHECK_THROW(
       //   mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED),
       //   Errors::Message);
-      // n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-      // CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
+      n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+      CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
 
     } else if (r_name == "Empty Labeled Set") {
       if (labeled) {
@@ -459,15 +440,15 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
         // CHECK_THROW(
         //   mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL),
         //   Errors::Message);
-        //int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
-        //CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
+        int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+        CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
 
         CHECK(mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL));
         // CHECK_THROW(
         //   mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED),
         //   Errors::Message);
-        //n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-        //CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
+        n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+        CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
       }
 
     } else if (r_name == "Unit Hex") {
@@ -492,12 +473,14 @@ template <class Mesh_type>
 void
 testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework f, bool extracted)
 {
+  std::cout << "Testing Quad Mesh Sets: 3x3" << std::endl;
   auto gm = mesh->getGeometricModel();
   CHECK_EQUAL(2, mesh->getSpaceDimension());
   CHECK_EQUAL(2, mesh->getManifoldDimension());
 
   for (const auto& r : *gm) {
     std::string r_name = r->get_name();
+    std::cout << " ... " << r_name << std::endl;
 
     if (r_name == "Entire Mesh") {
       if (!mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
@@ -537,8 +520,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework
         mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       CHECK_CLOSE_SUMALL(3 * 3, n_ents, *mesh->getComm());
 
-      AmanziMesh::Entity_ID_View ents;
-      ents =
+      auto ents =
         mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
     } else if (r_name == "Box") {
@@ -550,8 +532,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework
         mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       CHECK_CLOSE_SUMALL(3, n_ents, *mesh->getComm());
 
-      AmanziMesh::Entity_ID_View ents;
-      ents =
+      auto ents =
         mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
       for (const auto& e : ents) {
         auto cc = mesh->getCellCentroid(e);
@@ -566,8 +547,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework
         mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       CHECK_CLOSE_SUMALL(2 * 3, n_ents, *mesh->getComm());
 
-      AmanziMesh::Entity_ID_View ents;
-      ents =
+      auto ents =
         mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
       for (const auto& e : ents) {
         auto cc = mesh->getCellCentroid(e);
@@ -586,8 +566,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework
         mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       CHECK_CLOSE_SUMALL(1, n_ents, *mesh->getComm());
 
-      AmanziMesh::Entity_ID_View ents;
-      ents =
+      auto ents =
         mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
       for (const auto& e : ents) {
         auto cc = mesh->getCellCentroid(e);
@@ -602,8 +581,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework
         mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       CHECK_CLOSE_SUMALL(3 + 1, n_ents, *mesh->getComm());
 
-      AmanziMesh::Entity_ID_View ents;
-      ents =
+      auto ents =
         mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
       for (const auto& e : ents) {
         auto cc = mesh->getCellCentroid(e);
@@ -644,8 +622,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework
           mesh->getSetSize(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
         CHECK_CLOSE_SUMALL(3, n_ents, *mesh->getComm());
 
-        AmanziMesh::Entity_ID_View ents;
-        ents = mesh->getSetEntities(
+        auto ents = mesh->getSetEntities(
           r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
         for (const auto& e : ents) {
           auto fc = mesh->getFaceCentroid(e);
@@ -662,8 +639,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework
         mesh->getSetSize(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
       CHECK_CLOSE_SUMALL(1, n_ents, *mesh->getComm());
 
-      AmanziMesh::Entity_ID_View ents;
-      ents =
+      auto ents =
         mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
       for (const auto& e : ents) {
         auto fc = mesh->getFaceCentroid(e);
@@ -681,8 +657,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework
           mesh->getSetSize(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
         CHECK_CLOSE_SUMALL(3 - 1, n_ents, *mesh->getComm());
 
-        AmanziMesh::Entity_ID_View ents;
-        ents = mesh->getSetEntities(
+        auto ents = mesh->getSetEntities(
           r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
         for (const auto& e : ents) {
           auto fc = mesh->getFaceCentroid(e);
@@ -703,8 +678,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework
         mesh->getSetSize(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
       CHECK_CLOSE_SUMALL(3 * 4, n_ents, *mesh->getComm());
 
-      AmanziMesh::Entity_ID_View ents;
-      ents =
+      auto ents =
         mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
       for (const auto& e : ents) {
         auto fc = mesh->getFaceCentroid(e);
@@ -720,8 +694,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework
       // int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       // CHECK_CLOSE_SUMALL(2, n_ents, *mesh->getComm());
 
-      // AmanziMesh::Entity_ID_View ents;
-      // ents = mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+      // auto ents = mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
       // for (const auto& e : ents) {
       //   auto cc = mesh->getCellCentroid(e);
       //   CHECK_CLOSE(0.5, cc[1], 1.e-10);
@@ -740,8 +713,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework
       // int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       // CHECK_CLOSE_SUMALL(4, n_ents, *mesh->getComm());
 
-      // AmanziMesh::Entity_ID_View ents;
-      // ents = mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+      // auto ents = mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
       // for (const auto& e : ents) {
       //   auto cc = mesh->getCellCentroid(e);
       //   CHECK_CLOSE(0.5, cc[2], 1.e-10);
@@ -758,8 +730,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework
         mesh->getSetSize(r_name, AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
       CHECK_CLOSE_SUMALL(4, n_ents, *mesh->getComm());
 
-      AmanziMesh::Entity_ID_View ents;
-      ents =
+      auto ents =
         mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
       for (const auto& e : ents) {
         AmanziGeometry::Point nc;
@@ -774,8 +745,7 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework
         mesh->getSetSize(r_name, AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
       CHECK_CLOSE_SUMALL(4, n_ents, *mesh->getComm());
 
-      AmanziMesh::Entity_ID_View ents;
-      ents =
+      auto ents =
         mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
       for (const auto& e : ents) {
         AmanziGeometry::Point nc;
@@ -794,16 +764,16 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework
       CHECK(mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL));
       // CHECK_THROW(
       //   mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL),
-      //  Errors::Message);
-      // int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
-      // CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
+      //   Errors::Message);
+      int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+      CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
 
       CHECK(mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL));
       // CHECK_THROW(
       //   mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED),
       //   Errors::Message);
-      // n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-      // CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
+      n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+      CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
 
     } else if (r_name == "Empty Labeled Set") {
       if (labeled) {
@@ -811,15 +781,15 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framework
         // CHECK_THROW(
         //   mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL),
         //   Errors::Message);
-        //int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
-        //CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
+        int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+        CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
 
         CHECK(mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL));
         // CHECK_THROW(
         //   mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED),
         //   Errors::Message);
-        //n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-        //CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
+        n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+        CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
       }
 
     } else {

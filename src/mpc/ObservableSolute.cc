@@ -64,9 +64,10 @@ ObservableSolute::ComputeRegionSize()
       variable_ == "aqueous volumetric flow rate") { // flux needs faces
     region_size_ = mesh_->getSetSize(
       region_, Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
-    Kokkos::resize(entity_ids_, region_size_);
-    std::tie(entity_ids_, vofs_) = mesh_->getSetEntitiesAndVolumeFractions(
+    const auto [entity_ids, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
       region_, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+    entity_ids_ = entity_ids;
+    vofs_ = vofs;
     obs_boundary_ = true;
     for (int i = 0; i != region_size_; ++i) {
       int f = entity_ids_[i];
@@ -79,9 +80,10 @@ ObservableSolute::ComputeRegionSize()
   } else { // all others need cells
     region_size_ =
       mesh_->getSetSize(region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-    Kokkos::resize(entity_ids_, region_size_);
-    std::tie(entity_ids_, vofs_) = mesh_->getSetEntitiesAndVolumeFractions(
+    const auto [entity_ids, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
       region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    entity_ids_ = entity_ids;
+    vofs_ = vofs;
   }
 
   // find global meshblocksize

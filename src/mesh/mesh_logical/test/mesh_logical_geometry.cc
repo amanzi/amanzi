@@ -41,7 +41,7 @@ POINT_CLOSE(const Point& p1, const Point& p2)
 #define CHECK_POINT_CLOSE(p1, p2) CHECK(POINT_CLOSE(p1, p2))
 
 void
-test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m, bool test_region)
+test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::MeshHost>& m, bool test_region)
 {
   MeshLogicalAudit audit(m, std::cout);
   CHECK(!audit.Verify());
@@ -52,9 +52,9 @@ test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m, bool
   for (int i = 0; i != 4; ++i) {
     CHECK_EQUAL(0.25, m->getCellVolume(i));
 
-    cEntity_ID_View faces;
-    cEntity_Direction_View dirs;
-    Amanzi::AmanziMesh::cPoint_View bisectors;
+    typename MeshHost::cEntity_ID_View faces;
+    typename MeshHost::cDirection_View dirs;
+    typename MeshHost::cPoint_View bisectors;
     m->getCellFacesAndDirs(i, faces, &dirs);
     CHECK_EQUAL(2, faces.size());
     CHECK_EQUAL(i, faces[0]);
@@ -82,8 +82,7 @@ test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m, bool
       CHECK_POINT_CLOSE(Point(-1., 0., 0.), normal);
     }
 
-    cEntity_ID_View cells;
-    m->getFaceCells(i, Parallel_kind::ALL, cells);
+    auto cells = m->getFaceCells(i, Parallel_kind::ALL);
     if (i == 0) {
       CHECK_EQUAL(1, cells.size());
       CHECK_EQUAL(0, cells[0]);
@@ -103,19 +102,15 @@ test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m, bool
     CHECK_EQUAL(4, m->getSetSize("myregion", Entity_kind::CELL, Parallel_kind::ALL));
     CHECK_EQUAL(0, m->getSetSize("myregion", Entity_kind::FACE, Parallel_kind::ALL));
 
-    cEntity_ID_View set_ents;
-    set_ents = m->getSetEntities("myregion", Entity_kind::CELL, Parallel_kind::ALL);
+    auto set_ents = m->getSetEntities("myregion", Entity_kind::CELL, Parallel_kind::ALL);
     CHECK_EQUAL(0, set_ents[0]);
     CHECK_EQUAL(2, set_ents[2]);
   }
 }
 
 void
-test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m, bool test_region)
+test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::MeshHost>& m, bool test_region)
 {
-  using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziGeometry;
-
   MeshLogicalAudit audit(m, std::cout);
   CHECK(!audit.Verify());
 
@@ -134,8 +129,7 @@ test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m, bool tes
   // CHECK_THROW(m->getSetSize("myregion", Entity_kind::FACE, Parallel_kind::ALL), Errors::Message);
 
   if (test_region) {
-    Entity_ID_View set_ents;
-    set_ents = m->getSetEntities("myregion", Entity_kind::CELL, Parallel_kind::ALL);
+    auto set_ents = m->getSetEntities("myregion", Entity_kind::CELL, Parallel_kind::ALL);
     CHECK_EQUAL(0, set_ents[0]);
     CHECK_EQUAL(2, set_ents[1]);
   }
@@ -143,11 +137,8 @@ test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m, bool tes
 
 
 void
-test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m, bool test_region)
+test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::MeshHost>& m, bool test_region)
 {
-  using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziGeometry;
-
   MeshLogicalAudit audit(m, std::cout);
   CHECK(!audit.Verify());
 
@@ -165,8 +156,8 @@ test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m, bool test_region)
   CHECK_CLOSE(0., norm(branch - m->getCellCentroid(2)), 1.e-6);
   branch[2] = -3.0;
 
-  cEntity_ID_View branch_faces;
-  cEntity_Direction_View dirs;
+  typename MeshHost::cEntity_ID_View branch_faces;
+  typename MeshHost::cDirection_View dirs;
   m->getCellFacesAndDirs(2, branch_faces, &dirs);
   CHECK_EQUAL(5, branch_faces.size());
 
@@ -184,20 +175,17 @@ test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m, bool test_region)
 
 
 void
-test_2Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m, bool test_region)
+test_2Y(const Teuchos::RCP<Amanzi::AmanziMesh::MeshHost>& m, bool test_region)
 {
-  using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziGeometry;
-
   MeshLogicalAudit audit(m, std::cout);
   CHECK(!audit.Verify());
 
   CHECK_EQUAL(3, m->getNumEntities(Entity_kind::CELL, Parallel_kind::ALL));
   CHECK_EQUAL(5, m->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL));
 
-  cEntity_ID_View branch_faces;
-  cEntity_Direction_View dirs;
-  Amanzi::AmanziMesh::cPoint_View bisectors;
+  typename MeshHost::cEntity_ID_View branch_faces;
+  typename MeshHost::cDirection_View dirs;
+  typename MeshHost::cPoint_View bisectors;
   double r22 = sqrt(2.0) / 2.0;
 
   // check topology/geometry

@@ -52,7 +52,7 @@ ReconstructionCellLinear::Init(Teuchos::ParameterList& plist)
 * least-square fit.
 ****************************************************************** */
 void
-ReconstructionCellLinear::Compute(const AmanziMesh::Entity_ID_View& ids,
+ReconstructionCellLinear::Compute(const AmanziMesh::cEntity_ID_View& ids,
                                   const Teuchos::RCP<const Epetra_MultiVector>& field,
                                   int component,
                                   const Teuchos::RCP<const BCs>& bc)

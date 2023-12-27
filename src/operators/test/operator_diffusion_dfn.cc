@@ -91,7 +91,7 @@ RunTest(int icase, double gravity)
     auto sm = Teuchos::rcp(
       new MeshExtractedManifold(mesh, setname, AmanziMesh::Entity_kind::FACE, comm, gm, plist));
     surfmesh = Teuchos::rcp(
-      new Mesh(sm, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+      new Mesh(sm, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), Teuchos::null));
   }
 
   // modify diffusion coefficient

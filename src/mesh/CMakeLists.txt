@@ -33,9 +33,9 @@ set(mesh_inc_files
   KDTree.hh
   MeshDefs.hh
   MeshFramework.hh
-  Mesh_Helpers_decl.hh
-  Mesh_Helpers_impl.hh
-  Mesh_Helpers.hh
+  MeshHelpers_decl.hh
+  MeshHelpers_impl.hh
+  MeshHelpers.hh
   MeshAudit_decl.hh
   MeshAudit_impl.hh
   MeshFrameworkAudit.hh
@@ -50,7 +50,9 @@ set(mesh_inc_files
   MeshColumns.hh
   MeshUtils.hh
   Mesh.hh
-  Mesh_Algorithms.hh
+  MeshAlgorithms.hh
+  MeshAlgorithms_decl.hh
+  MeshAlgorithms_impl.hh
   SingleFaceMesh.hh
 )
 
@@ -58,7 +60,6 @@ set(mesh_src_files
   MeshFramework.cc
   MeshSets.cc
   MeshColumns.cc
-  Mesh_Algorithms.cc
   DomainSet.cc
 )
 

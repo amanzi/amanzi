@@ -55,10 +55,9 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
   const auto& field_bf = *field.ViewComponent("boundary_face", true);
   auto& field_f = *field.ViewComponent("face", true);
 
-  double flxmin, flxmax, tol;
+  double flxmin, flxmax;
   flux_f.MinValue(&flxmin);
   flux_f.MaxValue(&flxmax);
-  tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
   int nfaces_wghost = mesh_->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
 

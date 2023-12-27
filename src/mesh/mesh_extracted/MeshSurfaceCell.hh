@@ -50,6 +50,8 @@ class MeshSurfaceCell : public MeshFramework {
       return parent_face_;
     } else if (kind == Entity_kind::NODE) {
       return node_parents_[entid];
+    } else if (kind == Entity_kind::FACE) {
+      return -1; // this is wrong, but should not ever be used.
     } else {
       Errors::Message msg;
       msg << "MeshSurfaceCell: Cannot getEntityParent() for Entity kind " << to_string(kind);
@@ -120,7 +122,7 @@ class MeshSurfaceCell : public MeshFramework {
   // cell_get_faces_and_dirs method of this class
   virtual void getCellFacesAndDirs(const Entity_ID cellid,
                                    cEntity_ID_View& faceids,
-                                   cEntity_Direction_View* const dirs) const override;
+                                   cDirection_View* const dirs) const override;
 
   // Cells connected to a face - this function is implemented in each
   // mesh framework. The results are cached in the base class

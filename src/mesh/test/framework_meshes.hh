@@ -53,8 +53,8 @@ createStructuredUnitQuad(const AmanziMesh::Preference& pref,
                          double dy = 1.0)
 {
   auto mesh_fw = createFrameworkStructuredUnitQuad(pref, nx, ny, comm, gm, plist, dx, dy);
-  auto mesh = Teuchos::rcp(new AmanziMesh::Mesh(
-    mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+  auto mesh = Teuchos::rcp(
+    new AmanziMesh::Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
   return mesh;
 }
 
@@ -91,8 +91,8 @@ createStructuredUnitHex(const AmanziMesh::Preference& pref,
                         double dz = 1.0)
 {
   auto mesh_fw = createFrameworkStructuredUnitHex(pref, nx, ny, nz, comm, gm, plist, dx, dy, dz);
-  auto mesh = Teuchos::rcp(new AmanziMesh::Mesh(
-    mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+  auto mesh = Teuchos::rcp(
+    new AmanziMesh::Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
   return mesh;
 }
 
@@ -120,7 +120,7 @@ createUnstructured(const AmanziMesh::Preference& pref,
   AmanziMesh::MeshFactory fac(comm, gm, plist);
   fac.set_preference(pref);
   auto mesh_fw = createFrameworkUnstructured(pref, filename, comm, gm, plist);
-  auto mesh = Teuchos::rcp(new AmanziMesh::Mesh(
-    mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+  auto mesh = Teuchos::rcp(
+    new AmanziMesh::Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
   return mesh;
 }

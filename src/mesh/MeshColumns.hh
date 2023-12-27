@@ -48,7 +48,7 @@ struct MeshColumns {
   //
   // Note these MUST be constructed on HOST caches.
   //
-  void initialize(const MeshCache<MemSpace_kind::HOST>& mesh, const Entity_ID_View& surface_faces);
+  void initialize(const MeshCache<MemSpace_kind::HOST>& mesh, const View_type<Entity_ID, MemSpace_kind::HOST>& surface_faces);
 
   int num_columns_owned;
   int num_columns_all;

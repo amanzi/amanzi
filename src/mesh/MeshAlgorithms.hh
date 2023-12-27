@@ -5,13 +5,18 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (coonet@ornl.gov)
-           Julien Loiseau (jloiseau@lanl.gov)
+*/
+
+// Functions for commonly used Mesh operations and algorithms
+/*
+
+  Note that these are distinct from Mesh_Helpers.  Helpers are functions most
+  commonly used within the mesh library, while these are functions that are
+  commonly used by clients of the mesh library.
+
 */
 
 #pragma once
 
-#include "MeshCache_decl.hh"
 #include "MeshAlgorithms_decl.hh"
-#include "MeshCache_impl.hh"
 #include "MeshAlgorithms_impl.hh"
-

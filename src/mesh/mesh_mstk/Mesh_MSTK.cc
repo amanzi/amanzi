@@ -14,6 +14,7 @@
 #include "VerboseObject.hh"
 #include "Point.hh"
 #include "GeometricModel.hh"
+#include "ViewUtils.hh"
 
 #include "RegionLogical.hh"
 #include "RegionPoint.hh"
@@ -241,7 +242,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0,
 // Extract MSTK entities from an ID list and make a new MSTK mesh
 //---------------------------------------------------------
 Mesh_MSTK::Mesh_MSTK(const Teuchos::RCP<const MeshFramework>& parent_mesh,
-                     const Entity_ID_View& entity_ids,
+                     const cEntity_ID_View& entity_ids,
                      const Entity_kind entity_kind,
                      const bool flatten,
                      const Comm_ptr_type& comm,
@@ -493,7 +494,7 @@ Mesh_MSTK::getCellFacesAndDirs_ordered_(
     if (celltype == Cell_kind::TET || celltype == Cell_kind::PRISM ||
         celltype == Cell_kind::PYRAMID || celltype == Cell_kind::HEX) {
       Entity_ID_View lfaceids;
-      Entity_Direction_View lface_dirs;
+      Direction_View lface_dirs;
       int lid, nf;
       MEntity_ptr cell = cell_id_to_handle_[cellid];
 
@@ -622,7 +623,7 @@ Mesh_MSTK::getCellFacesAndDirs_unordered_(
   View_type<const Direction_type, MemSpace_kind::HOST>* face_dirs) const
 {
   Entity_ID_View lfaceids;
-  Entity_Direction_View lface_dirs;
+  Direction_View lface_dirs;
   MEntity_ptr cell = cell_id_to_handle_[cellid];
 
   if (getManifoldDimension() == 3) {
@@ -845,7 +846,7 @@ Mesh_MSTK::getFaceEdgesAndDirs(
   AMANZI_ASSERT(edges_initialized_);
 
   Entity_ID_View ledgeids;
-  Entity_Direction_View ledge_dirs;
+  Direction_View ledge_dirs;
 
   MEntity_ptr face = face_id_to_handle_[faceid];
   if (getManifoldDimension() == 3) {
@@ -2045,7 +2046,7 @@ Mesh_MSTK::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
         // FIXME meanwhile, we print a warning
         if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
           *(vo_->os()) << "Mismatch of entity type in labeled set region and mesh set (3D)\n";
-         }    
+        }
         // Errors::Message mesg("Mismatch of entity type in labeled set region and mesh set (3D)");
         // Exceptions::amanzi_throw(mesg);
       }
@@ -3262,8 +3263,8 @@ Mesh_MSTK::extract_mstk_mesh_(List_ptr src_entities,
     // Have to assign global IDs and build ghost entities
     int num_ghost_layers = 1;
     int input_type = 0; /* No parallel info is given */
-    int status = MSTK_Weave_DistributedMeshes(
-      mesh_, getManifoldDimension(), num_ghost_layers, input_type, mpicomm_);
+    MSTK_Weave_DistributedMeshes(mesh_, getManifoldDimension(), num_ghost_layers,
+            input_type, mpicomm_);
 
     // Now we have to build parent information for global entities
     MAttrib_ptr vparentgid_att = MAttrib_New(mesh_, "vparent_gid", INT, MVERTEX);
@@ -3314,7 +3315,7 @@ Mesh_MSTK::extract_mstk_mesh_(List_ptr src_entities,
 
     // Update attributes on ghost entities - this will ensure that
     // ghost entities have their parent global ID information
-    status &= MESH_UpdateAttributes(mesh_, mpicomm_);
+    MESH_UpdateAttributes(mesh_, mpicomm_);
 
     // Now reverse engineer the parents of ghost entities from the global IDs
     idx = 0;

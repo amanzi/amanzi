@@ -20,7 +20,7 @@
 
 #include "EvaluatorMultiplicativeReciprocal.hh"
 #include "Mesh.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
@@ -842,12 +842,7 @@ Flow_PK::DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells,
 {
   auto& fmap = ufaces.Map();
 
-  int nfaces =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int ncells_owned =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-
-  for (int f = 0; f < nfaces; f++) {
+  for (int f = 0; f < nfaces_owned; f++) {
     auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 

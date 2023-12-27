@@ -1,5 +1,5 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
+  Copyright 2010-201x held jointly by LANL, ORNL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -39,7 +39,7 @@ TEST(MESH_CACHE_GEOMETRY_PLANAR)
 
     auto mesh = createStructuredUnitQuad(Preference{ frm }, 2, 2);
     // cache, pitch the framework, repeat
-    AmanziMesh::MeshAlgorithms::cacheAll(*mesh);
+    AmanziMesh::cacheAll(*mesh);
     mesh->destroyFramework();
 
     testMeshAudit<MeshAudit, Mesh>(mesh);
@@ -66,7 +66,7 @@ TEST(MESH_CACHE_GEOMETRY_1CUBE_GENERATED)
               << "------------------------------------------------" << std::endl;
     auto mesh = createStructuredUnitHex(Preference{ frm }, 1, 1, 1);
     // cache, pitch the framework, repeat
-    AmanziMesh::MeshAlgorithms::cacheAll(*mesh);
+    AmanziMesh::cacheAll(*mesh);
     mesh->destroyFramework();
 
     testMeshAudit<MeshAudit, Mesh>(mesh);
@@ -94,7 +94,7 @@ TEST(MESH_CACHE_GEOMETRY_1CUBE_EXO)
               << "------------------------------------------------" << std::endl;
     auto mesh = createUnstructured(Preference{ frm }, "test/hex_1x1x1_sets.exo");
     // cache, pitch the framework, repeat
-    AmanziMesh::MeshAlgorithms::cacheAll(*mesh);
+    AmanziMesh::cacheAll(*mesh);
     mesh->destroyFramework();
 
     testMeshAudit<MeshAudit, Mesh>(mesh);
@@ -118,7 +118,7 @@ TEST(MESH_CACHE_GEOMETRY_3CUBE)
               << "------------------------------------------------" << std::endl;
     auto mesh = createStructuredUnitHex(Preference{ frm }, 3, 3, 3);
     // cache, pitch the framework, repeat
-    AmanziMesh::MeshAlgorithms::cacheAll(*mesh);
+    AmanziMesh::cacheAll(*mesh);
     mesh->destroyFramework();
 
     testMeshAudit<MeshAudit, Mesh>(mesh);
@@ -145,7 +145,7 @@ TEST(MESH_CACHE_GEOMETRY_3CUBE_EXO)
               << "------------------------------------------------" << std::endl;
     auto mesh = createUnstructured(Preference{ frm }, "test/hex_3x3x3_sets.exo");
     // cache, pitch the framework, repeat
-    AmanziMesh::MeshAlgorithms::cacheAll(*mesh);
+    AmanziMesh::cacheAll(*mesh);
     mesh->destroyFramework();
 
     testMeshAudit<MeshAudit, Mesh>(mesh);
@@ -179,7 +179,7 @@ TEST(MESH_CACHE_GEOMETRY_3CUBE_EXO)
 //               << "------------------------------------------------" << std::endl;
 //     auto mesh = createUnstructured(Preference{frm}, "test/hex_3x3x3.par");
 // // cache, pitch the framework, repeat
-// AmanziMesh::MeshAlgorithms::cacheAll(*mesh);
+// AmanziMesh::cacheAll(*mesh);
 // mesh->destroyFramework();
 //     testMeshAudit<MeshAudit, Mesh>(mesh);
 //     testGeometryCube(mesh,3,3,3);
@@ -204,7 +204,7 @@ TEST(MESH_CACHE_GEOMETRY_2x3CUBE)
               << "------------------------------------------------" << std::endl;
     auto mesh = createStructuredUnitHex(Preference{ frm }, 2, 2, 3);
     // cache, pitch the framework, repeat
-    AmanziMesh::MeshAlgorithms::cacheAll(*mesh);
+    AmanziMesh::cacheAll(*mesh);
     mesh->destroyFramework();
 
     testMeshAudit<MeshAudit, Mesh>(mesh);
@@ -234,7 +234,7 @@ TEST(MESH_CACHE_GEOMETRY_FRACTURE_EXO)
               << "------------------------------------------------" << std::endl;
     auto mesh = createUnstructured(Preference{ frm }, "test/fractures.exo");
     // cache, pitch the framework, repeat
-    AmanziMesh::MeshAlgorithms::cacheAll(*mesh);
+    AmanziMesh::cacheAll(*mesh);
     mesh->destroyFramework();
     testMeshAudit<MeshAudit, Mesh>(mesh);
   }
@@ -253,7 +253,7 @@ TEST(MESH_CACHE_GEOMETRY_PINCHOUTS)
               << "------------------------------------------------" << std::endl;
     auto mesh = createUnstructured(Preference{ frm }, "test/test_pri_pinchout_mesh.exo");
     // cache, pitch the framework, repeat
-    AmanziMesh::MeshAlgorithms::cacheAll(*mesh);
+    AmanziMesh::cacheAll(*mesh);
     mesh->destroyFramework();
     testMeshAudit<MeshAudit, Mesh>(mesh);
   }

@@ -16,7 +16,7 @@
 #include <vector>
 
 // Amanzi
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "nlfv.hh"
 #include "ParallelCommunication.hh"
 
@@ -262,7 +262,7 @@ PDE_DiffusionNLFV::InitStencils_()
         weight[k + i][f] = ws[i];
         (*stencil_faces_[k + i])[f] = faces[ids[i]];
         (*stencil_cells_[k + i])[f] =
-          AmanziMesh::MeshAlgorithms::getFaceAdjacentCell(*mesh_, c, faces[ids[i]]);
+          AmanziMesh::getFaceAdjacentCell(*mesh_, c, faces[ids[i]]);
       }
     }
   }

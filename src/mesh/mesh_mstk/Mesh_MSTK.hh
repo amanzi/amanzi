@@ -88,7 +88,7 @@ class Mesh_MSTK : public MeshFramework {
   // volume mesh, constructor can be asked to "flatten" the mesh to a
   // lower dimensional space.
   Mesh_MSTK(const Teuchos::RCP<const MeshFramework>& parent_mesh,
-            const Entity_ID_View& entity_ids,
+            const cEntity_ID_View& entity_ids,
             const Entity_kind entity_kind,
             const bool flatten = false,
             const Comm_ptr_type& comm = Teuchos::null,

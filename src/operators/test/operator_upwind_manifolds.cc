@@ -27,7 +27,7 @@
 #include "GMVMesh.hh"
 #include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "VerboseObject.hh"
 
 // Operators
@@ -80,7 +80,7 @@ TEST(UPWIND_FLUX_MANIFOLDS)
     auto mesh_fw =
       Teuchos::rcp(new MeshExtractedManifold(mesh3D, setname, AmanziMesh::FACE, comm, gm, plist));
     auto mesh =
-      Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new MeshFrameworkAlgorithms()), Teuchos::null));
+      Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
 
     int ncells_wghost = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
     int nfaces_owned = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);

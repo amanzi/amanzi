@@ -21,7 +21,7 @@ A new Framework really must supply only a handful of methods, but may choose to
 provide more, as long as they are consistent.
 
 Note that the framework is split into two classes, MeshFramework and
-MeshFrameworkAlgorithms, both of which must exist.  For many, the algorithms
+MeshAlgorithms, both of which must exist.  For many, the algorithms
 will be the default class.  But some "special" frameworks may implement special
 algorithms.  If they do so, the MeshCache object will need the algorithms even
 if the Framework itself is deleted (hence the split).
@@ -38,7 +38,6 @@ if the Framework itself is deleted (hence the split).
 #include "GeometryDefs.hh"
 #include "MeshDefs.hh"
 #include "AmanziComm.hh"
-#include "Mesh_Helpers.hh"
 
 namespace Amanzi {
 
@@ -50,8 +49,6 @@ class GeometricModel;
 } // namespace AmanziGeometry
 
 namespace AmanziMesh {
-
-class MeshFramework;
 
 //
 // The framework class itself provides setters/getters/attributes, all
@@ -65,6 +62,17 @@ class MeshFramework {
 
  public:
   virtual ~MeshFramework() = default;
+
+  using Entity_ID_View = View_type<Entity_ID, MemSpace_kind::HOST>;
+  using cEntity_ID_View = View_type<const Entity_ID, MemSpace_kind::HOST>;
+  using Entity_GID_View = View_type<Entity_GID, MemSpace_kind::HOST>;
+  using cEntity_GID_View = View_type<const Entity_GID, MemSpace_kind::HOST>;
+  using Direction_View = View_type<Direction_type, MemSpace_kind::HOST>;
+  using cDirection_View = View_type<const Direction_type, MemSpace_kind::HOST>;
+  using Point_View = View_type<AmanziGeometry::Point, MemSpace_kind::HOST>;
+  using cPoint_View = View_type<const AmanziGeometry::Point, MemSpace_kind::HOST>;
+  using Double_View = View_type<double, MemSpace_kind::HOST>;
+  using cDouble_View = View_type<const double, MemSpace_kind::HOST>;
 
   // ----------------------
   // Accessors and Mutators

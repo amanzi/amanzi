@@ -32,7 +32,7 @@ SurfaceComplex::SurfaceComplex(const std::string& name,
                                const std::vector<Species>& primary_species,
                                const std::vector<SurfaceSite>& surface_sites,
                                const Teuchos::ParameterList& plist)
-  : name_(name), id_(id), surface_concentration_(0.0), lnQK_(0.0)
+  : name_(name), surface_concentration_(0.0), lnQK_(0.0)
 {
   std::string reaction = plist.get<std::string>("reaction");
   charge_ = plist.get<int>("charge");

@@ -23,9 +23,67 @@ namespace AmanziMesh {
 // Move these to an Impl namespace?
 //
 
+// -----------------------------------------------------------------------------
+// Helper functions and structs for getting things out of MeshCache
+// -----------------------------------------------------------------------------
+
+//
+// An empty struct for when a compute function is not valid
+//
+struct NullFunc {};
+
+//
+// Struct for selecting between two types, a function pointer and a nullptr,
+// based on the memory space.
+//
+template <MemSpace_kind MEM>
+struct ComputeFunction {
+  //
+  // Returns an initialized function pointer on HOST, NoFunc (e.g. nullptr) on DEVICE
+  //
+  template <typename CF>
+  static decltype(auto) hostOnly()
+  {
+    if constexpr (MEM == MemSpace_kind::HOST) {
+      return CF();
+    } else {
+      return NullFunc();
+    }
+  }
+
+  //
+  // Returns an initialized function pointer on DEVICE, NoFunc (e.g. nullptr) on HOST
+  //
+  template <typename CF>
+  static decltype(auto) deviceOnly()
+  {
+    if constexpr (MEM == MemSpace_kind::DEVICE) {
+      return CF();
+    } else {
+      return NullFunc();
+    }
+  }
+};
+
+
+//
+// A generic "recipe" for getting or computing a MeshCache quantity.
+//
+// A Getter works to provide any single entity or computed/derived quantity
+// that may be cached, provided by the framework, or computed, on device or on
+// host.  It does so following a generic recipe that can be used by all such
+// get{Thing}() methods in MeshCache.
+//
+// See MeshCache::getCellVolume() for an example.
+//
 template <MemSpace_kind MEM = MemSpace_kind::HOST,
           AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
 struct Getter {
+  // DATA: the View-type storing the quantity to be got
+  // MF: the MeshFramework-like object
+  // FF: the Framework Function -- a lambda that uses the framework, if it is
+  //     not-null, to get the quantity.
+  // CF: the compute function -- a lambda or NullFunc
   template <typename DATA, typename MF, typename FF, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
   get(bool cached, DATA& d, MF& mf, FF&& f, CF&& c, const Entity_ID i)
@@ -33,16 +91,16 @@ struct Getter {
     using type_t = typename DATA::t_dev::traits::value_type;
     // To avoid the cast to non-reference
     if (cached) return static_cast<type_t>(view<MEM>(d)(i));
-    if constexpr (MEM == MemSpace_kind::HOST) {
-      if constexpr (!std::is_same_v<FF, decltype(nullptr)>)
-        if (mf.get()) return f(i);
+    if constexpr (MEM == MemSpace_kind::HOST && (!std::is_same_v<FF, decltype(nullptr)>)) {
+      if (mf.get()) return f(i);
     }
-    if constexpr (!std::is_same_v<CF, decltype(nullptr)>) return c(i);
-    assert(false);
+    if constexpr (std::is_invocable_v<CF, const Entity_ID>) { return c(i); }
+    assert(false && "No access to cache/framework/compute available in Getter");
     return type_t{};
   }
 }; // Getter
 
+// specialization for CACHE
 template <MemSpace_kind MEM>
 struct Getter<MEM, AccessPattern_kind::CACHE> {
   template <typename DATA, typename MF, typename FF, typename CF>
@@ -54,6 +112,7 @@ struct Getter<MEM, AccessPattern_kind::CACHE> {
   }
 }; // Getter
 
+// specialization for FRAMEWORK
 template <MemSpace_kind MEM>
 struct Getter<MEM, AccessPattern_kind::FRAMEWORK> {
   template <typename DATA, typename MF, typename FF, typename CF>
@@ -67,84 +126,113 @@ struct Getter<MEM, AccessPattern_kind::FRAMEWORK> {
   }
 }; // Getter
 
-
+// specialization for COMPUTE
 template <MemSpace_kind MEM>
 struct Getter<MEM, AccessPattern_kind::COMPUTE> {
   template <typename DATA, typename MF, typename FF, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
   get(bool, DATA&, MF&, FF&&, CF&& c, const Entity_ID i)
   {
-    static_assert(!std::is_same<CF, decltype(nullptr)>::value);
+    static_assert(std::is_invocable_v<CF, const Entity_ID>);
     return c(i);
   }
 }; // Getter
 
 
-// Getters for raggedViews
+//
+// A generic "recipe" for getting or computing a MeshCache quantity.
+//
+// A RaggedGetter works to provide collection of entities or computed/derived
+// quantities that may be cached, provided by the framework, or computed, on
+// device or on host.  It does so following a generic recipe that can be used
+// by all such get{Thing}() methods in MeshCache.
+//
+// See MeshCache::getCellFaces() for an example.
+//
 template <MemSpace_kind MEM = MemSpace_kind::HOST,
           AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
 struct RaggedGetter {
-  template <typename DATA, typename MF, typename FF, typename CFD, typename CF>
+  // DATA: the View-type storing the quantity to be got
+  // MF: the MeshFramework-like object
+  // FF: the Framework Function -- a lambda that uses the framework, if it is
+  //     not-null, to get the quantity.
+  // CF: the compute function -- a lambda or NullFunc
+  template <typename DATA, typename MF, typename FF, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
-  get(bool cached, DATA& d, MF& mf, FF&& f, CFD&& cd, CF&& c, const Entity_ID n)
+  get(bool cached, DATA& d, MF& mf, FF&& f, CF&& c, const Entity_ID n)
   {
     using view_t = typename decltype(d.template getRow<MEM>(n))::const_type;
     if (cached) { return static_cast<view_t>(d.template getRowUnmanaged<MEM>(n)); }
-    if constexpr (MEM == MemSpace_kind::HOST) {
-      if constexpr (!std::is_same<FF, decltype(nullptr)>::value) {
-        if (mf.get()) { return static_cast<view_t>(f(n)); }
-      }
-      if constexpr (!std::is_same<CF, decltype(nullptr)>::value) {
-        return static_cast<view_t>(c(c));
-      }
-    } else {
-      if constexpr (!std::is_same<CFD, decltype(nullptr)>::value) { static_cast<view_t>(cd(c)); }
+
+    if constexpr (MEM == MemSpace_kind::HOST && (!std::is_same_v<FF, decltype(nullptr)>)) {
+      if (mf.get()) { return static_cast<view_t>(f(n)); }
     }
-    assert(false && "No access to cache/framework/compute available");
+
+    if constexpr (std::is_invocable_v<CF, const Entity_ID>) {
+      view_t v = c(n);
+      return v;
+    }
+    assert(false && "No access to cache/framework/compute available in RaggedGetter");
     return view_t{};
   }
 };
 
+// specialization for CACHE
 template <MemSpace_kind MEM>
 struct RaggedGetter<MEM, AccessPattern_kind::CACHE> {
-  template <typename DATA, typename MF, typename FF, typename CFD, typename CF>
+  template <typename DATA, typename MF, typename FF, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
-  get(bool cached, DATA& d, MF&, FF&&, CFD&&, CF&&, const Entity_ID n)
+  get(bool cached, DATA& d, MF&, FF&&, CF&&, const Entity_ID n)
   {
     assert(cached);
     return d.template getRowUnmanaged<MEM>(n);
   }
 };
 
+// specialization for FRAMEWORK
 template <MemSpace_kind MEM>
 struct RaggedGetter<MEM, AccessPattern_kind::FRAMEWORK> {
-  template <typename DATA, typename MF, typename FF, typename CFD, typename CF>
+  template <typename DATA, typename MF, typename FF, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
-  get(bool, DATA&, MF& mf, FF&& f, CFD&&, CF&&, const Entity_ID n)
+  get(bool, DATA&, MF& mf, FF&& f, CF&&, const Entity_ID n)
   {
-    static_assert(!std::is_same<FF, decltype(nullptr)>::value);
+    static_assert(!std::is_same_v<FF, decltype(nullptr)>);
     static_assert(MEM == MemSpace_kind::HOST);
     assert(mf.get());
     return f(n);
   }
 };
 
+// specialization for COMPUTE
 template <MemSpace_kind MEM>
 struct RaggedGetter<MEM, AccessPattern_kind::COMPUTE> {
-  template <typename DATA, typename MF, typename FF, typename CFD, typename CF>
+  template <typename DATA, typename MF, typename FF, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
-  get(bool, DATA&, MF&, FF&&, CFD&& cd, CF&& c, const Entity_ID n)
+  get(bool, DATA&, MF&, FF&&, CF&& c, const Entity_ID n)
   {
-    if constexpr (MEM == MemSpace_kind::HOST) {
-      static_assert(!std::is_same<CF, decltype(nullptr)>::value);
-      return c(n);
-    } else {
-      static_assert(MEM == MemSpace_kind::DEVICE);
-      static_assert(!std::is_same<CFD, decltype(nullptr)>::value);
-      return cd(n);
-    }
+    static_assert(std::is_invocable_v<CF, const Entity_ID>);
+    return c(n);
   }
 };
 
 } // namespace AmanziMesh
 } // namespace Amanzi
+
+
+namespace Errors {
+//
+// Exception to be thrown when Framework does not or cannot implement a concept.
+//
+class FrameworkNotImplemented : public Message {
+  using Message::Message;
+};
+
+//
+// Exception to be thrown when MeshCache cannot find a concept.
+//
+class MeshNotImplemented : public Message {
+  using Message::Message;
+};
+
+
+} // namespace Errors

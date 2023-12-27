@@ -22,7 +22,7 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "Mesh.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 
 // Operators
 #include "UpwindSecondOrder.hh"
@@ -93,7 +93,7 @@ UpwindSecondOrder::Compute(const CompositeVector& flux,
       if (bc_model[f] == OPERATOR_BC_NONE && fabs(flx_face[0][f]) <= tol) {
         double tmp(0.5);
         assert(false);
-        int c2 = AmanziMesh::MeshAlgorithms::getFaceAdjacentCell(*mesh_, c, f);
+        int c2 = AmanziMesh::getFaceAdjacentCell(*mesh_, c, f);
         if (c2 >= 0) {
           double v1 = mesh_->getCellVolume(c);
           double v2 = mesh_->getCellVolume(c2);

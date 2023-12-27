@@ -19,6 +19,7 @@
 #include "dbc.hh"
 #include "errors.hh"
 #include "RegionLogical.hh"
+#include "ViewUtils.hh"
 
 #include "Mesh_simple.hh"
 
@@ -461,7 +462,7 @@ Mesh_simple::getCellFacesAndDirs(
   for (int i = 0; i < 6; ++i) lfaceids[i] = cell_to_face_[offset + i];
 
   if (cfacedirs) {
-    Entity_Direction_View lcfacedirs("lcfacedirs", 6);
+    Direction_View lcfacedirs("lcfacedirs", 6);
     for (int i = 0; i < 6; ++i) lcfacedirs[i] = cell_to_face_dirs_[offset + i];
     *cfacedirs = lcfacedirs;
   }
@@ -498,7 +499,7 @@ Mesh_simple::getFaceEdgesAndDirs(
   edgeids = ledgeids;
 
   if (fedgedirs) {
-    Entity_Direction_View lfedgedirs("lfedgedirs", 4);
+    Direction_View lfedgedirs("lfedgedirs", 4);
     for (int i = 0; i < 4; ++i) lfedgedirs[i] = face_to_edge_dirs_[offset + i];
     *fedgedirs = lfedgedirs;
   }

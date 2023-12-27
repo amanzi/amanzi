@@ -94,6 +94,7 @@ StateArchive::get(const std::string& name)
   if (it != fields_.end()) return it->second;
 
   AMANZI_ASSERT(false);
+  return it->second;
 }
 
 

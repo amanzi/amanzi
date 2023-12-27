@@ -79,6 +79,10 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const MeshFramework>& parent
 
 // Number of entities of any kind (cell, face, node) and in a
 // particular category (OWNED, GHOST, ALL)
+//
+// This is currently conceptually inconsistent -- it should be a 0D,
+// e.g. cell-only, mesh with no faces/edges/nodes.  But that change may break
+// things, so it should be done alone first.
 std::size_t
 MeshSurfaceCell::getNumEntities(const Entity_kind kind, const Parallel_kind ptype) const
 {
@@ -87,7 +91,6 @@ MeshSurfaceCell::getNumEntities(const Entity_kind kind, const Parallel_kind ptyp
   case Entity_kind::CELL:
     count = 1;
     break;
-
   default: // num_nodes == num_faces == num_boundary_faces
     count = nodes_.size();
     break;
@@ -163,11 +166,11 @@ MeshSurfaceCell::getNodeFaces(const Entity_ID nodeid,
 void
 MeshSurfaceCell::getCellFacesAndDirs(const Entity_ID cellid,
                                      cEntity_ID_View& faceids,
-                                     cEntity_Direction_View* const face_dirs) const
+                                     cDirection_View* const face_dirs) const
 {
   AMANZI_ASSERT(cellid == 0);
   Entity_ID_View lfaceids("lfaceids", nodes_.size());
-  Entity_Direction_View lface_dirs;
+  Direction_View lface_dirs;
   for (int i = 0; i != nodes_.size(); ++i) lfaceids[i] = i;
   if (face_dirs) {
     Kokkos::resize(lface_dirs, nodes_.size());

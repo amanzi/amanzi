@@ -24,7 +24,7 @@ namespace AmanziMesh {
 
 class MeshLogicalAudit {
  public:
-  MeshLogicalAudit(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_, std::ostream& os = std::cout);
+  MeshLogicalAudit(const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh_, std::ostream& os = std::cout);
 
   // This is the main method.
   int Verify() const;
@@ -50,7 +50,7 @@ class MeshLogicalAudit {
   bool check_cell_face_bisector_geometry() const;
 
  private:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh;
+  Teuchos::RCP<const AmanziMesh::MeshHost> mesh;
 
   Comm_ptr_type comm_;
   const int MyPID;
@@ -60,10 +60,10 @@ class MeshLogicalAudit {
   std::ostream& os;
   unsigned int MAX_OUT;
 
-  bool distinct_values(const AmanziMesh::cEntity_ID_View& list) const;
+  bool distinct_values(const MeshHost::cEntity_ID_View& list) const;
   void write_list(const Entity_ID_List&, unsigned int) const;
   bool global_any(bool) const;
-  int same_face(const AmanziMesh::Entity_ID_View, const AmanziMesh::Entity_ID_View) const;
+  int same_face(const MeshHost::Entity_ID_View, const MeshHost::Entity_ID_View) const;
 
   bool check_maps(const Epetra_Map&, const Epetra_Map&) const;
   bool check_get_set_ids(AmanziMesh::Entity_kind) const;
