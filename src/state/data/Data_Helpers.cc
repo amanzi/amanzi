@@ -391,7 +391,7 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist,
           const AmanziGeometry::Point& normal = t.Mesh()->getFaceNormal(f);
           dat_f[0][g] = vel * normal;
         } else {
-          auto cells = t.Mesh()->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+          auto cells = t.Mesh()->getFaceCells(f);
 
           for (int i = 0; i < ndofs; ++i) {
             const AmanziGeometry::Point& normal = t.Mesh()->getFaceNormal(f, cells[i], &dir);

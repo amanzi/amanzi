@@ -182,7 +182,7 @@ AnalyticBase::ComputeFaceError(Epetra_MultiVector& u,
 
   for (int f = 0; f < nfaces; f++) {
     // we need the cell-based normal for this utility to work on manifolds
-    const auto& cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
+    const auto& cells = mesh_->getFaceCells(f);
 
     int dir;
     double area = mesh_->getFaceArea(f);
@@ -406,7 +406,7 @@ AnalyticBase::ComputeEdgeMomentsError(Epetra_MultiVector& p,
 inline Amanzi::AmanziGeometry::Point
 AnalyticBase::face_normal_exterior(int f, bool* flag)
 {
-  auto cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
+  auto cells = mesh_->getFaceCells(f);
   *flag = (cells.size() == 1);
 
   int dir;

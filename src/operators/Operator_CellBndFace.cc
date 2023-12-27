@@ -45,7 +45,7 @@ Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
   Epetra_MultiVector& Ybnd = *Y.ViewComponent("boundary_face", true);
 
   for (int f = 0; f != nfaces_owned; ++f) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     if (ncells == 2) {
@@ -95,7 +95,7 @@ Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_Face_CellBndFace& op,
 
   int ierr(0);
   for (int f = 0; f != nfaces_owned; ++f) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
 
     int ncells = cells.size();
     if (ncells == 2) {
@@ -138,7 +138,7 @@ Operator_CellBndFace::AssembleMatrixOp(const Op_Face_CellBndFace& op,
 
   int ierr(0);
   for (int f = 0; f != nfaces_owned; ++f) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
 
     int ncells = cells.size();
     if (ncells == 2) {
@@ -197,7 +197,7 @@ Operator_CellBndFace::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
   Epetra_MultiVector& Yf = *Y.ViewComponent("boundary_face", true);
 
   for (int sf = 0; sf != nsurf_faces; ++sf) {
-    auto cells = op.surf_mesh->getFaceCells(sf, AmanziMesh::Parallel_kind::ALL);
+    auto cells = op.surf_mesh->getFaceCells(sf);
     int ncells = cells.size();
 
     WhetStone::DenseVector v(ncells), av(ncells);
@@ -267,7 +267,7 @@ Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell&
 
   int ierr = 0;
   for (int sf = 0; sf != nsurf_faces; ++sf) {
-    auto cells = op.surf_mesh->getFaceCells(sf, AmanziMesh::Parallel_kind::ALL);
+    auto cells = op.surf_mesh->getFaceCells(sf);
     int ncells = cells.size();
     for (int n = 0; n != ncells; ++n) {
       int f = op.surf_mesh->getEntityParent(AmanziMesh::Entity_kind::CELL, cells[n]);
@@ -330,7 +330,7 @@ Operator_CellBndFace::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 
   int ierr = 0;
   for (int sf = 0; sf != nsurf_faces; ++sf) {
-    auto cells = op.surf_mesh->getFaceCells(sf, AmanziMesh::Parallel_kind::ALL);
+    auto cells = op.surf_mesh->getFaceCells(sf);
     int ncells = cells.size();
     for (int n = 0; n != ncells; ++n) {
       int f = op.surf_mesh->getEntityParent(AmanziMesh::Entity_kind::CELL, cells[n]);

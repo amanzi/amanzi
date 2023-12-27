@@ -38,8 +38,10 @@ MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
        ++region) {
     // Get the ids from the mesh by region name and entity kind.
     if (mesh_->isValidSetName(*region, kind)) {
-      auto [ids, vofs] =
+      auto [ids, cvofs] =
         mesh_->getSetEntitiesAndVolumeFractions(*region, kind, AmanziMesh::Parallel_kind::ALL);
+
+      auto vofs = alloc_and_deep_copy(cvofs);
 
       // populating default volume fractions (move this to mesh framework?)
       if (vofs.size() == 0) {

@@ -215,7 +215,7 @@ TEST(RECONSTRUCTION_QUADRATIC_2D)
   std::vector<double>& bc_value = bcs->bc_value();
 
   for (int f = 0; f < nfaces_wghost; ++f) {
-    auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh->getFaceCells(f);
     if (cells.size() == 1) {
       const auto& xf = mesh->getFaceCentroid(f);
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;

@@ -1211,7 +1211,6 @@ Mesh_MOAB::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
 //--------------------------------------------------------------------
 void
 Mesh_MOAB::getNodeCells(const Entity_ID nodeid,
-                        const Parallel_kind ptype,
                         View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const
 {
   unsigned char pstatus;
@@ -1224,15 +1223,7 @@ Mesh_MOAB::getNodeCells(const Entity_ID nodeid,
   Entity_ID_List vcellids;
   for (int i = 0; i < nids; ++i) {
     mbcore_->tag_get_data(lid_tag, &(ids[i]), 1, &lid);
-
-    if (ptype == Parallel_kind::ALL) { vcellids.push_back(lid); }
-    if (ptype == Parallel_kind::OWNED) {
-      mbcomm_->get_pstatus(ids[i], pstatus);
-      if ((pstatus & PSTATUS_NOT_OWNED) == 0) { vcellids.push_back(lid); }
-    } else if (ptype == Parallel_kind::GHOST) {
-      mbcomm_->get_pstatus(ids[i], pstatus);
-      if ((pstatus & PSTATUS_NOT_OWNED) == 1) { vcellids.push_back(lid); }
-    }
+    vcellids.push_back(lid);
   }
   vectorToView(lcellids, vcellids);
   cellids = lcellids;
@@ -1244,7 +1235,6 @@ Mesh_MOAB::getNodeCells(const Entity_ID nodeid,
 //--------------------------------------------------------------------
 void
 Mesh_MOAB::getNodeFaces(const Entity_ID nodeid,
-                        const Parallel_kind ptype,
                         View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const
 {
   throw std::exception();
@@ -1256,7 +1246,6 @@ Mesh_MOAB::getNodeFaces(const Entity_ID nodeid,
 //--------------------------------------------------------------------
 void
 Mesh_MOAB::getFaceCells(const Entity_ID faceid,
-                        const Parallel_kind ptype,
                         View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const
 {
   int result;
@@ -1281,38 +1270,10 @@ Mesh_MOAB::getFaceCells(const Entity_ID faceid,
 
   unsigned char pstatus;
   int n = 0;
-  switch (ptype) {
-  case Parallel_kind::ALL:
-    for (int i = 0; i < nc; i++) {
-      *it = fcellids[i];
-      ++it;
-      ++n;
-    }
-    break;
-  case Parallel_kind::OWNED:
-    for (int i = 0; i < nc; i++) {
-      result = mbcomm_->get_pstatus(fcells[i], pstatus);
-      if ((pstatus & PSTATUS_NOT_OWNED) == 0) {
-        *it = fcellids[i];
-        ++it;
-        ++n;
-      }
-    }
-    break;
-  case Parallel_kind::GHOST:
-    for (int i = 0; i < nc; i++) {
-      result = mbcomm_->get_pstatus(fcells[i], pstatus);
-      if ((pstatus & PSTATUS_NOT_OWNED) == 1) {
-        *it = fcellids[i];
-        ++it;
-        ++n;
-      }
-    }
-    break;
-  default:
-    Errors::Message mesg("Unknown geometric entity");
-    amanzi_throw(mesg);
-    break;
+  for (int i = 0; i < nc; i++) {
+    *it = fcellids[i];
+    ++it;
+    ++n;
   }
 
   Kokkos::resize(lcellids, n);

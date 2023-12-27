@@ -19,6 +19,7 @@
 #include "dbc.hh"
 #include "errors.hh"
 #include "RegionLogical.hh"
+#include "ViewUtils.hh"
 
 #include "Mesh_simple.hh"
 
@@ -93,7 +94,7 @@ Mesh_simple::CreateCache_()
   Kokkos::resize(cell_to_face_, 6 * num_cells_);
   Kokkos::resize(cell_to_face_dirs_, 6 * num_cells_);
   Kokkos::resize(face_to_cell_, 2 * num_faces_);
-  initView(face_to_cell_, -1);
+  Kokkos::deep_copy(face_to_cell_, -1);
 
   Kokkos::resize(face_to_node_, 4 * num_faces_);
   Kokkos::resize(node_to_face_, 13 * num_nodes_); // 1 extra for num faces
@@ -461,7 +462,7 @@ Mesh_simple::getCellFacesAndDirs(
   for (int i = 0; i < 6; ++i) lfaceids[i] = cell_to_face_[offset + i];
 
   if (cfacedirs) {
-    Entity_Direction_View lcfacedirs("lcfacedirs", 6);
+    Direction_View lcfacedirs("lcfacedirs", 6);
     for (int i = 0; i < 6; ++i) lcfacedirs[i] = cell_to_face_dirs_[offset + i];
     *cfacedirs = lcfacedirs;
   }
@@ -498,7 +499,7 @@ Mesh_simple::getFaceEdgesAndDirs(
   edgeids = ledgeids;
 
   if (fedgedirs) {
-    Entity_Direction_View lfedgedirs("lfedgedirs", 4);
+    Direction_View lfedgedirs("lfedgedirs", 4);
     for (int i = 0; i < 4; ++i) lfedgedirs[i] = face_to_edge_dirs_[offset + i];
     *fedgedirs = lfedgedirs;
   }
@@ -553,7 +554,6 @@ Mesh_simple::setNodeCoordinate(const AmanziMesh::Entity_ID local_node_id,
 void
 Mesh_simple::getNodeFaces(
   const AmanziMesh::Entity_ID nodeid,
-  const AmanziMesh::Parallel_kind ptype,
   AmanziMesh::View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const
 {
   unsigned int offset = (unsigned int)13 * nodeid;
@@ -571,7 +571,6 @@ Mesh_simple::getNodeFaces(
 void
 Mesh_simple::getEdgeFaces(
   const AmanziMesh::Entity_ID edgeid,
-  const AmanziMesh::Parallel_kind ptype,
   AmanziMesh::View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const
 {
   unsigned int offset = (unsigned int)5 * edgeid;
@@ -590,7 +589,6 @@ Mesh_simple::getEdgeFaces(
 void
 Mesh_simple::getFaceCells(
   const AmanziMesh::Entity_ID faceid,
-  const AmanziMesh::Parallel_kind ptype,
   AmanziMesh::View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const
 {
   unsigned int offset = (unsigned int)2 * faceid;

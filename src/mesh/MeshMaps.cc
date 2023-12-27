@@ -8,55 +8,38 @@
 */
 
 //! Collects maps and importers for Mesh objects.
-#pragma once
 
 #include <set>
-#include "Epetra_Vector.h"
+#include "Epetra_IntVector.h"
 #include "MeshDefs.hh"
+#include "MeshMaps.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
 
-// returns used, owned
-template <class Mesh_type>
-std::pair<Map_ptr_type, Map_ptr_type>
-createMapsFromMeshGIDs(const Mesh_type& mesh, const Entity_kind kind)
-{
-  Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
-  cEntity_GID_View gids = mesh.getEntityGIDs(kind, true);
-  return std::make_pair(
-    Teuchos::rcp(new Epetra_Map(-1, gids.size(), gids.data(), 0, *mesh.getComm())),
-    Teuchos::rcp(new Epetra_Map(-1, num_owned, gids.data(), 0, *mesh.getComm())));
-}
 
 // returns used, owned
-template <class Mesh_type>
 std::pair<Map_ptr_type, Map_ptr_type>
-createMapsFromContiguousGIDs(const Mesh_type& mesh, const Entity_kind kind)
+createContiguousMaps(const Map_ptr_type& ghosted, const Map_ptr_type& owned)
 {
-  Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
-  auto owned_map = Teuchos::rcp(new Epetra_Map(-1, num_owned, 0, *mesh.getComm()));
-  ;
+  auto owned_contiguous =
+    Teuchos::rcp(new Epetra_Map(-1, owned->NumMyElements(), 0, owned->Comm()));
 
   // communicated owned to ghosted using the mesh's maps
-  auto [ghosted_mesh_map, owned_mesh_map] = createMapsFromMeshGIDs(mesh, kind);
-  Epetra_Vector owned_ids(*owned_mesh_map);
-  for (int i = 0; i != num_owned; ++i) owned_ids[i] = owned_map->GID(i);
-  Epetra_Import importer(*ghosted_mesh_map, *owned_mesh_map);
-  Epetra_Vector all_ids(*ghosted_mesh_map);
+  Epetra_IntVector owned_ids(*owned);
+  for (int i = 0; i != owned_ids.MyLength(); ++i) owned_ids[i] = owned_contiguous->GID(i);
+  Epetra_Import importer(*ghosted, *owned);
+  Epetra_IntVector all_ids(*ghosted);
   all_ids.Import(owned_ids, importer, Insert);
 
-  std::vector<int> all_ids_vec(all_ids.MyLength());
-  for (int i = 0; i != all_ids.MyLength(); ++i) all_ids_vec[i] = (int)all_ids[i];
-  auto ghosted_map =
-    Teuchos::rcp(new Epetra_Map(-1, all_ids_vec.size(), all_ids_vec.data(), 0, *mesh.getComm()));
-  return std::make_pair(ghosted_map, owned_map);
+  auto ghosted_contiguous =
+    Teuchos::rcp(new Epetra_Map(-1, all_ids.MyLength(), &all_ids[0], 0, owned->Comm()));
+  return std::make_pair(ghosted_contiguous, owned_contiguous);
 }
 
 
-template <class Mesh_type>
 void
-MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
+MeshMaps::initialize(const MeshFramework& mesh, bool renumber)
 {
   std::vector<Entity_kind> to_construct{ Entity_kind::CELL, Entity_kind::FACE };
   if (mesh.hasEdges()) to_construct.emplace_back(Entity_kind::EDGE);
@@ -78,8 +61,8 @@ MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
   // -- get a list of all owned face LIDs with 1 cell
   std::size_t nfaces_owned = mesh.getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   std::size_t nfaces_all = mesh.getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
-  Entity_ID_View boundary_faces("boundary_faces", nfaces_all);
-  initView(boundary_faces, -1);
+  MeshFramework::Entity_ID_View boundary_faces("boundary_faces", nfaces_all);
+  Kokkos::deep_copy(boundary_faces, -1);
 
   std::size_t nbf_owned = 0;
   std::size_t nbf_all = 0;
@@ -87,8 +70,8 @@ MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
   // that have one cell on this rank but that more than one cell on the other rank.
   // As a result nbf_owned = nbf_all
   for (Entity_ID f = 0; f != nfaces_all; ++f) {
-    cEntity_ID_View fcells;
-    mesh.getFaceCells(f, Parallel_kind::ALL, fcells);
+    MeshFramework::cEntity_ID_View fcells;
+    mesh.getFaceCells(f, fcells);
     if (fcells.size() == 1) {
       boundary_faces[nbf_all++] = f;
       if (f < nfaces_owned) nbf_owned = nbf_all;
@@ -96,7 +79,7 @@ MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
   }
 
   // -- convert to GID
-  Entity_GID_View boundary_face_GIDs("boundary_face_GIDs", boundary_faces.size());
+  MeshFramework::Entity_GID_View boundary_face_GIDs("boundary_face_GIDs", boundary_faces.size());
   const auto& fmap_all = getMap(Entity_kind::FACE, true);
   for (std::size_t i = 0; i != nbf_all; ++i) {
     boundary_face_GIDs[i] = fmap_all.GID(boundary_faces[i]);
@@ -145,15 +128,15 @@ MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
   if (mesh.hasNodes()) {
     std::set<Entity_ID> bnodes_lid;
     for (std::size_t i = 0; i != nbf_all; ++i) {
-      cEntity_ID_View fnodes;
+      MeshFramework::cEntity_ID_View fnodes;
       mesh.getFaceNodes(boundary_faces[i], fnodes);
       for (const auto& n : fnodes) bnodes_lid.insert(n);
     }
 
     // -- convert to GID
-    Entity_ID_View boundary_nodes("boundary_nodes", bnodes_lid.size());
-    initView(boundary_nodes, -1);
-    Entity_GID_View boundary_node_GIDs("boundary_node_GIDs", bnodes_lid.size());
+    MeshFramework::Entity_ID_View boundary_nodes("boundary_nodes", bnodes_lid.size());
+    Kokkos::deep_copy(boundary_nodes, -1);
+    MeshFramework::Entity_GID_View boundary_node_GIDs("boundary_node_GIDs", bnodes_lid.size());
     std::size_t nnodes_owned = mesh.getNumEntities(Entity_kind::NODE, Parallel_kind::OWNED);
     std::size_t nbn_owned = 0;
     std::size_t nbn_all = 0;
@@ -179,7 +162,8 @@ MeshMaps::initialize(const Mesh_type& mesh, bool renumber)
   }
 }
 
-inline const Map_type&
+
+const Map_type&
 MeshMaps::getMap(Entity_kind kind, bool include_ghost) const
 {
   if (all_.count(kind) == 0) {
@@ -194,10 +178,30 @@ MeshMaps::getMap(Entity_kind kind, bool include_ghost) const
   }
 }
 
-inline const Epetra_Import&
+
+const Epetra_Import&
 MeshMaps::getImporter(Entity_kind kind) const
 {
   return *importer_.at(kind);
+}
+
+
+std::size_t
+MeshMaps::getNBoundaryFaces(Parallel_kind ptype)
+{
+  if (Parallel_kind::OWNED == ptype)
+    return owned_[Entity_kind::BOUNDARY_FACE]->NumMyElements();
+  else
+    return all_[Entity_kind::BOUNDARY_FACE]->NumMyElements();
+}
+
+std::size_t
+MeshMaps::getNBoundaryNodes(Parallel_kind ptype)
+{
+  if (Parallel_kind::OWNED == ptype)
+    return owned_[Entity_kind::BOUNDARY_NODE]->NumMyElements();
+  else
+    return all_[Entity_kind::BOUNDARY_NODE]->NumMyElements();
 }
 
 

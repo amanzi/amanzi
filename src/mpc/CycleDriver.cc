@@ -229,7 +229,6 @@ CycleDriver::Setup()
   }
 
   pk_->Setup();
-  pk_->set_tags(Tags::CURRENT, Tags::NEXT);
   S_->Require<double>("dt", Tags::NEXT, "dt");
   S_->Setup();
 
@@ -689,7 +688,6 @@ CycleDriver::Visualize(bool force, const Tag& tag)
 
   for (const auto& vis : visualization_) {
     if (force || vis->DumpRequested(S_->get_cycle(), S_->get_time())) {
-      vis->set_tag(tag);
       WriteVis(*vis, *S_);
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "writing visualization file: " << vis->get_name() << std::endl;

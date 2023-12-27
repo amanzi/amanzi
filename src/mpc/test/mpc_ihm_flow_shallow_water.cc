@@ -74,7 +74,7 @@ TEST(MPC_DRIVER_IHM_FLOW_SHALLOW_WATER_DAM_BREAK)
     node_crd = mesh->getNodeCoordinate(n);
     new_positions[n] = node_crd;
   }
-  AmanziMesh::MeshAlgorithms::deform(*mesh, nodeids, new_positions);
+  AmanziMesh::deform(*mesh, nodeids, new_positions);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;

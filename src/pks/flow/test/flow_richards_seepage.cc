@@ -73,7 +73,7 @@ Flow2D_SeepageTest(std::string filename, bool deform)
       xv[1] *= (xv[0] * 0.4 + (100.0 - xv[0])) / 100.0;
       new_positions[v] = xv;
     }
-    AmanziMesh::MeshAlgorithms::deform(*mesh, nodeids, new_positions);
+    AmanziMesh::deform(*mesh, nodeids, new_positions);
   }
 
   // create a simple state and populate it

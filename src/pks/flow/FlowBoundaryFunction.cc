@@ -134,7 +134,7 @@ FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziM
 
   for (int i = 0; i < n; i++) {
     int f1 = ss_faces[i];
-    auto cells = mesh->getFaceCells(f1, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh->getFaceCells(f1);
 
     auto nodes1 = mesh->getFaceNodes(f1);
     AmanziMesh::Entity_ID_View lnodes1;
@@ -150,7 +150,7 @@ FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziM
     for (int j = 0; j < nfaces; j++) {
       int f2 = faces[j];
       if (f2 != f1) {
-        cells = mesh->getFaceCells(f2, AmanziMesh::Parallel_kind::ALL);
+        cells = mesh->getFaceCells(f2);
         int ncells = cells.size();
         if (ncells == 1) {
           auto nodes2 = mesh->getFaceNodes(f2);

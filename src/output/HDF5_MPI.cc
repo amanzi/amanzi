@@ -549,7 +549,7 @@ HDF5_MPI::writeDualMesh(const double time, const int iteration)
   int nfaces_local = fmap.NumMyElements();
 
   for (int f = 0; f != nfaces_local; ++f) {
-    auto cells = vis_mesh.getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = vis_mesh.getFaceCells(f);
     if (cells.size() > 1) {
       local_conn += cells.size();
       local_entities++;
@@ -578,7 +578,7 @@ HDF5_MPI::writeDualMesh(const double time, const int iteration)
   int lcv_entity = 0;
   int internal_f = 0;
   for (int f = 0; f != nfaces_local; ++f) {
-    auto cells = vis_mesh.getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = vis_mesh.getFaceCells(f);
     if (cells.size() > 1) {
       // store cell type id
       // conn[lcv++] = 2;

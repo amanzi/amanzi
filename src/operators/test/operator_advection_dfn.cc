@@ -92,7 +92,7 @@ RunTest(double gravity)
     int g = map->FirstPointInElement(f);
     int ndofs = map->ElementSize(f);
 
-    auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh->getFaceCells(f);
     if (ndofs > 1) CHECK(ndofs == cells.size());
 
     for (int i = 0; i < ndofs; ++i) {

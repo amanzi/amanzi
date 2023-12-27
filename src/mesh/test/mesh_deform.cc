@@ -16,7 +16,7 @@
 #include "MeshFrameworkFactory.hh"
 #include "MeshFrameworkAudit.hh"
 #include "MeshAudit.hh"
-#include "MeshException.hh"
+#include "MeshHelpers.hh"
 
 #include "framework_meshes.hh"
 #include "geometry_harnesses.hh"
@@ -27,11 +27,16 @@ template <class MeshAudit_type, class Mesh_type>
 void
 test2D(const Teuchos::RCP<Mesh_type>& mesh)
 {
+  std::cout << "Pre-deform mesh audit" << std::endl
+            << "----------------------------------------" << std::endl;
+  testMeshAudit<MeshAudit_type, Mesh_type>(mesh);
+
+  std::cout << "Deform" << std::endl << "----------------------------------------" << std::endl;
   // Deform the mesh
   int nnodes =
     mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
-  AmanziMesh::Entity_ID_View nodeids("nodeids", nnodes);
-  AmanziMesh::Point_View newpos("newpos", nnodes);
+  typename Mesh_type::Entity_ID_View nodeids("nodeids", nnodes);
+  typename Mesh_type::Point_View newpos("newpos", nnodes);
 
   for (int j = 0; j < nnodes; j++) {
     nodeids[j] = j;
@@ -41,8 +46,7 @@ test2D(const Teuchos::RCP<Mesh_type>& mesh)
     newpos[j] = newcoord;
   }
 
-  int ierr = MeshAlgorithms::deform(*mesh, nodeids, newpos);
-  CHECK_EQUAL(ierr, 0);
+  deform(*mesh, nodeids, newpos);
 
   // If the deformation was successful, the cell volumes should be half
   // of what they were
@@ -52,6 +56,8 @@ test2D(const Teuchos::RCP<Mesh_type>& mesh)
     double volume = mesh->getCellVolume(j);
     CHECK_CLOSE(0.5, volume, 1.e-10);
   }
+  std::cout << "Post-deform mesh audit" << std::endl
+            << "----------------------------------------" << std::endl;
   testMeshAudit<MeshAudit_type, Mesh_type>(mesh);
 }
 
@@ -59,11 +65,16 @@ template <class MeshAudit_type, class Mesh_type>
 void
 test3D(const Teuchos::RCP<Mesh_type>& mesh)
 {
+  std::cout << "Pre-deform mesh audit" << std::endl
+            << "----------------------------------------" << std::endl;
+  testMeshAudit<MeshAudit_type, Mesh_type>(mesh);
+
+  std::cout << "Deform" << std::endl << "----------------------------------------" << std::endl;
   // Deform the mesh
   int nnodes =
     mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
-  AmanziMesh::Entity_ID_View nodeids("nodesids", nnodes);
-  AmanziMesh::Point_View newpos("newpos", nnodes);
+  typename Mesh_type::Entity_ID_View nodeids("nodesids", nnodes);
+  typename Mesh_type::Point_View newpos("newpos", nnodes);
 
   for (int j = 0; j < nnodes; j++) {
     nodeids[j] = j;
@@ -72,13 +83,17 @@ test3D(const Teuchos::RCP<Mesh_type>& mesh)
     newcoord.set(oldcoord[0], oldcoord[1], oldcoord[2] / 2.0);
     newpos[j] = newcoord;
   }
-  int ierr = MeshAlgorithms::deform(*mesh, nodeids, newpos);
-  CHECK_EQUAL(ierr, 0);
+  deform(*mesh, nodeids, newpos);
 
   // check geometry
+  std::cout << "Post-deform mesh audit" << std::endl
+            << "----------------------------------------" << std::endl;
   testMeshAudit<MeshAudit_type, Mesh_type>(mesh);
+  std::cout << "Post-deform mesh geometry" << std::endl
+            << "----------------------------------------" << std::endl;
   testGeometryCube<Mesh_type>(mesh, 3, 3, 3);
 }
+
 
 TEST(MESH_CACHED_DEFORM2D)
 {
@@ -95,11 +110,14 @@ TEST(MESH_CACHED_DEFORM2D)
 
   for (const auto& frm : frameworks) {
     // Set the framework
-    std::cout << "Testing deformation with " << AmanziMesh::to_string(frm) << std::endl;
+    std::cout << std::endl
+              << "Testing deformation 2D with " << AmanziMesh::to_string(frm) << std::endl
+              << "===========================================" << std::endl;
 
     // Create the mesh
     auto mesh =
       createStructuredUnitQuad({ frm }, 10, 10, comm, Teuchos::null, Teuchos::null, 10.0, 10.0);
+    AmanziMesh::cacheAll(*mesh);
 
     // deform and test
     test2D<MeshAudit>(mesh);
@@ -127,11 +145,14 @@ TEST(MESH_CACHED_GENERATED_DEFORM3D)
   }
 
   for (const auto& frm : frameworks) {
-    std::cout << "Testing deformation with " << AmanziMesh::to_string(frm) << std::endl;
+    std::cout << std::endl
+              << "Testing deformation 3D with " << AmanziMesh::to_string(frm) << std::endl
+              << "===========================================" << std::endl;
 
     // start with a mesh that will be deformed into the known mesh coordinates
     auto mesh =
       createStructuredUnitHex({ frm }, 3, 3, 3, comm, Teuchos::null, Teuchos::null, 1.0, 1.0, 2.0);
+    AmanziMesh::cacheAll(*mesh);
 
     test3D<MeshAudit>(mesh);
   }

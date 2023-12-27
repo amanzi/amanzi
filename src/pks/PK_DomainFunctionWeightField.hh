@@ -27,7 +27,7 @@ computational domain.
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "State.hh"
 #include "Tag.hh"
 

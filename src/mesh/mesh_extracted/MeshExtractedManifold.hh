@@ -96,8 +96,7 @@ class MeshExtractedManifold : public MeshFramework {
 
   // -- faces of type 'ptype' connected to a node - The order of faces is not guaranteed
   //    to be the same for corresponding nodes on different processors
-  virtual void
-  getNodeFaces(const Entity_ID n, const Parallel_kind ptype, cEntity_ID_View& nfaces) const override
+  virtual void getNodeFaces(const Entity_ID n, cEntity_ID_View& nfaces) const override
   {
     auto parent_nodes = entid_to_parent_.at(Entity_kind::NODE);
     auto parent_faces = entid_to_parent_.at(Entity_kind::FACE);
@@ -115,8 +114,7 @@ class MeshExtractedManifold : public MeshFramework {
 
   // -- cells of type 'ptype' connected to an edge - The order of cells is not guaranteed
   //    to be the same for corresponding edges on different processors
-  virtual void
-  getEdgeCells(const Entity_ID e, const Parallel_kind ptype, cEntity_ID_View& cells) const override;
+  virtual void getEdgeCells(const Entity_ID e, cEntity_ID_View& cells) const override;
 
   // same level adjacencies
   // -- face connected neighboring cells of given cell of a particular ptype
@@ -125,8 +123,7 @@ class MeshExtractedManifold : public MeshFramework {
   // The order in which the cellids are returned cannot be guaranteed in general
   // except when ptype = ALL, in which case the cell ids will correspond to cells
   // across the respective faces given by cell_get_faces().
-  virtual void
-  getFaceCells(const Entity_ID c, const Parallel_kind ptype, cEntity_ID_View& cells) const override;
+  virtual void getFaceCells(const Entity_ID c, cEntity_ID_View& cells) const override;
 
   // Mesh entity geometry
   // -- nodes
@@ -146,13 +143,13 @@ class MeshExtractedManifold : public MeshFramework {
   //    implemented in each mesh framework. The results are cached in the base class
   virtual void getCellFacesAndDirs(const Entity_ID c,
                                    cEntity_ID_View& faces,
-                                   cEntity_Direction_View* fdirs) const override;
+                                   cDirection_View* fdirs) const override;
 
   // -- edges of a face - this function is implemented in each mesh
   //    framework. The results are cached in the base class
   virtual void getFaceEdgesAndDirs(const Entity_ID f,
                                    cEntity_ID_View& edges,
-                                   cEntity_Direction_View* edirs) const override;
+                                   cDirection_View* edirs) const override;
 
   // -- edges of a cell - this function is implemented in each mesh
   //    framework. The results are cached in the base class.

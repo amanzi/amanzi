@@ -33,7 +33,7 @@ class ObservableLineSegment : public virtual Observable {
   void ComputeInterpolationPoints(Teuchos::RCP<const AmanziGeometry::Region> reg_ptr);
 
  protected:
-  AmanziMesh::Double_View lofs_;
+  AmanziMesh::cDouble_View lofs_;
   std::string interpolation_;
   std::string weighting_;
   std::vector<AmanziGeometry::Point> line_points_;
@@ -72,10 +72,10 @@ ObservableLineSegment::ComputeRegionSize()
   // all others need cells
   region_size_ =
     mesh_->getSetSize(region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-  Kokkos::resize(entity_ids_, region_size_);
-  std::tie(entity_ids_, lofs_) = mesh_->getSetEntitiesAndVolumeFractions(
+  const auto [entity_ids, lofs] = mesh_->getSetEntitiesAndVolumeFractions(
     region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-
+  entity_ids_ = entity_ids;
+  lofs_ = lofs;
   ComputeInterpolationPoints(reg_ptr);
 
   // find global meshblocksize

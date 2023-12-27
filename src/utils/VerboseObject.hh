@@ -108,6 +108,8 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   // is the verbosity included?
   inline bool includesVerbLevel(Teuchos::EVerbosityLevel verbosity) const;
 
+  std::string getVerbLevelString() const;
+
   // Get the stream (errors if !os_OK()).
   inline Teuchos::RCP<Teuchos::FancyOStream> os() const;
 

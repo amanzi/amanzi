@@ -246,7 +246,7 @@ PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     for (auto c : *entity_ids_) {
       AmanziMesh::Entity_ID f = mesh_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
 
-      auto cells = mesh_out_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_out_->getFaceCells(f);
 
       if (cells.size() != flux_map->ElementSize(f)) {
         msg << "Number of flux DOFs doesn't equal to the number of cells sharing a face: "
@@ -293,7 +293,7 @@ PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     for (auto c : *entity_ids_) {
       AmanziMesh::Entity_ID f = mesh_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
 
-      auto cells = mesh_out_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_out_->getFaceCells(f);
 
       if (cells.size() != flux_map->ElementSize(f)) {
         msg << "Number of flux DOFs doesn't equal to the number of cells sharing a face: "
@@ -355,7 +355,7 @@ PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
       int sc = it->second;
 
       // accept it all
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f);
       AMANZI_ASSERT(cells.size() == 1);
 
       auto [faces, dirs] = mesh_->getCellFacesAndDirections(cells[0]);

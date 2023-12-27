@@ -457,7 +457,7 @@ DG_Modal::FluxMatrix(int f,
                      bool jump_on_test,
                      double* flux)
 {
-  auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+  auto cells = mesh_->getFaceCells(f);
   int ncells = cells.size();
 
   int size = PolynomialSpaceDimension(d_, order_);
@@ -618,7 +618,7 @@ DG_Modal::FluxMatrixGaussPoints(int f,
                                 bool upwind,
                                 bool jump_on_test)
 {
-  auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+  auto cells = mesh_->getFaceCells(f);
   int ncells = cells.size();
 
   Polynomial poly(d_, order_);
@@ -740,7 +740,7 @@ DG_Modal::FluxMatrixRusanov(int f,
                             DenseMatrix& A)
 {
   AmanziMesh::Entity_ID_View nodes;
-  auto cells = mesh_->getFaceCells(f, Parallel_kind::ALL);
+  auto cells = mesh_->getFaceCells(f);
   int ncells = cells.size();
 
   Polynomial poly(d_, order_);
@@ -839,7 +839,7 @@ DG_Modal::FaceMatrixJump(int f,
                          const WhetStoneFunction* K2,
                          DenseMatrix& A)
 {
-  auto cells = mesh_->getFaceCells(f, Parallel_kind::ALL);
+  auto cells = mesh_->getFaceCells(f);
   int ncells = cells.size();
 
   Polynomial poly(d_, order_);
@@ -933,7 +933,7 @@ DG_Modal::FaceMatrixJump(int f,
 int
 DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
 {
-  auto cells = mesh_->getFaceCells(f, Parallel_kind::ALL);
+  auto cells = mesh_->getFaceCells(f);
   int ncells = cells.size();
 
   Polynomial poly(d_, order_);

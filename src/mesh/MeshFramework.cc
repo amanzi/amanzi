@@ -13,7 +13,7 @@
 #include "errors.hh"
 #include "exceptions.hh"
 #include "MeshFramework.hh"
-#include "Mesh_Helpers_impl.hh"
+#include "MeshInternals.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -134,19 +134,19 @@ MeshFramework::setNodeCoordinate(const Entity_ID nodeid, const AmanziGeometry::P
 View_type<const AmanziGeometry::Point, MemSpace_kind::HOST>
 MeshFramework::getCellCoordinates(const Entity_ID c) const
 {
-  return MeshAlgorithms::getCellCoordinates(*this, c);
+  return Impl::computeCellCoordinates(*this, c);
 }
 
 View_type<const AmanziGeometry::Point, MemSpace_kind::HOST>
 MeshFramework::getFaceCoordinates(const Entity_ID f) const
 {
-  return MeshAlgorithms::getFaceCoordinates(*this, f);
+  return Impl::computeFaceCoordinates(*this, f);
 }
 
 View_type<const AmanziGeometry::Point, MemSpace_kind::HOST>
 MeshFramework::getEdgeCoordinates(const Entity_ID e) const
 {
-  return MeshAlgorithms::getEdgeCoordinates(*this, e);
+  return Impl::computeEdgeCoordinates(*this, e);
 }
 
 //
@@ -157,14 +157,14 @@ MeshFramework::getCellEdges(const Entity_ID c,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& edges) const
 {
   hasEdgesOrThrow();
-  edges = MeshAlgorithms::computeCellEdges(*this, c);
+  edges = Impl::computeCellEdges(*this, c);
 }
 
 void
 MeshFramework::getCellNodes(const Entity_ID c,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& nodes) const
 {
-  nodes = MeshAlgorithms::computeCellNodes(*this, c);
+  nodes = Impl::computeCellNodes(*this, c);
 }
 
 void
@@ -189,7 +189,6 @@ MeshFramework::getEdgeNodes(const Entity_ID e,
 
 void
 MeshFramework::getEdgeCells(const Entity_ID e,
-                            const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& cells) const
 {
   hasEdgesOrThrow();
@@ -198,7 +197,6 @@ MeshFramework::getEdgeCells(const Entity_ID e,
 
 void
 MeshFramework::getEdgeFaces(const Entity_ID e,
-                            const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& faces) const
 {
   hasEdgesOrThrow();
@@ -207,15 +205,13 @@ MeshFramework::getEdgeFaces(const Entity_ID e,
 
 void
 MeshFramework::getNodeCells(const Entity_ID n,
-                            const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& cells) const
 {
-  cells = MeshAlgorithms::computeNodeCells(*this, n, ptype);
+  cells = Impl::computeNodeCells(*this, n);
 }
 
 void
 MeshFramework::getNodeEdges(const Entity_ID nodeid,
-                            const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const
 {
   hasEdgesOrThrow();

@@ -24,7 +24,7 @@
 #include "EvaluatorPrimary.hh"
 #include "errors.hh"
 #include "exceptions.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PK_Utils.hh"
 #include "TimestepControllerFactory.hh"
@@ -675,8 +675,8 @@ Darcy_PK::UpdateSpecificYield_()
   for (int c = 0; c < ncells_owned; c++) {
     if (specific_yield[0][c] > 0.0) {
       auto [faces, dirs] = mesh_->getCellFacesAndDirections(c);
-      auto adjcells = AmanziMesh::MeshAlgorithms::getCellFaceAdjacentCells(
-        *mesh_, c, AmanziMesh::Parallel_kind::OWNED);
+      auto adjcells =
+        AmanziMesh::getCellFaceAdjacentCells(*mesh_, c, AmanziMesh::Parallel_kind::OWNED);
 
       double area = 0.0;
       int nfaces = faces.size();

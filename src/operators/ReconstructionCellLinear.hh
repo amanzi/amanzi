@@ -80,7 +80,7 @@ class ReconstructionCellLinear : public Reconstruction {
 
   // compute gradient only in specified cells
   // -- NOTE: algorithm uses data in the neighbooring cells
-  void Compute(const AmanziMesh::Entity_ID_View& ids,
+  void Compute(const AmanziMesh::cEntity_ID_View& ids,
                const Teuchos::RCP<const Epetra_MultiVector>& field,
                int component,
                const Teuchos::RCP<const BCs>& bc = Teuchos::null);
@@ -94,7 +94,6 @@ class ReconstructionCellLinear : public Reconstruction {
   // On intersecting manifolds, we extract neighboors living in the same manifold
   // using a smoothness criterion.
   void CellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
-                                 AmanziMesh::Parallel_kind ptype,
                                  std::vector<AmanziMesh::Entity_ID>& cells) const;
 
  private:

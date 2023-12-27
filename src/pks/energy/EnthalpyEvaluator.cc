@@ -16,7 +16,7 @@
 #include "CommonDefs.hh"
 #include "Key.hh"
 #include "Mesh.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 
 #include "EnthalpyEvaluator.hh"
 #include "IEMEvaluator.hh"

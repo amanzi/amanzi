@@ -55,10 +55,9 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
   const auto& field_bf = *field.ViewComponent("boundary_face", true);
   auto& field_f = *field.ViewComponent("face", true);
 
-  double flxmin, flxmax, tol;
+  double flxmin, flxmax;
   flux_f.MinValue(&flxmin);
   flux_f.MaxValue(&flxmax);
-  tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
   int nfaces_wghost = mesh_->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
 
@@ -66,7 +65,7 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
   const auto& fmap = *flux.ComponentMap("face", true);
 
   for (int f = 0; f < nfaces_wghost; ++f) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     int g = fmap.FirstPointInElement(f);

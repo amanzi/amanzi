@@ -79,10 +79,8 @@ RunTest(const std::string xmlInFileName)
   // auto mesh_fracture = factory.create(mesh, names, AmanziMesh::Entity_kind::FACE);
   auto mesh_fracture_framework = Teuchos::rcp(new MeshExtractedManifold(
     mesh, "fracture", AmanziMesh::Entity_kind::FACE, comm, gm, mesh_list));
-  auto mesh_fracture =
-    Teuchos::rcp(new Mesh(mesh_fracture_framework,
-                          Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()),
-                          mesh_list));
+  auto mesh_fracture = Teuchos::rcp(new Mesh(
+    mesh_fracture_framework, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), mesh_list));
 
   S->RegisterMesh("fracture", mesh_fracture);
 

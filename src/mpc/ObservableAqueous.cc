@@ -66,13 +66,14 @@ ObservableAqueous::ComputeRegionSize()
       variable_ == "fractures aqueous volumetric flow rate") { // flux needs faces
     region_size_ = mesh_->getSetSize(
       region_, Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
-    Kokkos::resize(entity_ids_, region_size_);
-    std::tie(entity_ids_, vofs_) = mesh_->getSetEntitiesAndVolumeFractions(
+    const auto [entity_ids, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
       region_, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+    entity_ids_ = entity_ids;
+    vofs_ = vofs;
     obs_boundary_ = 1;
     for (int i = 0; i != region_size_; ++i) {
       int f = entity_ids_[i];
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f);
       if (cells.size() == 2) {
         obs_boundary_ = 0;
         break;
@@ -85,9 +86,10 @@ ObservableAqueous::ComputeRegionSize()
   } else { // all others need cells
     region_size_ =
       mesh_->getSetSize(region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-    Kokkos::resize(entity_ids_, region_size_);
-    std::tie(entity_ids_, vofs_) = mesh_->getSetEntitiesAndVolumeFractions(
+    auto [entity_ids, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
       region_, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    entity_ids_ = entity_ids;
+    vofs_ = vofs;
   }
 
   // find global mesh block size
@@ -274,7 +276,7 @@ ObservableAqueous::ComputeObservation(State& S,
     if (obs_boundary_ == 1) { // observation is on a boundary set
       for (int i = 0; i != region_size_; ++i) {
         int f = entity_ids_[i];
-        auto cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
 
         int sign, c = cells[0];
         mesh_->getFaceNormal(f, c, &sign);
@@ -293,7 +295,7 @@ ObservableAqueous::ComputeObservation(State& S,
         double area = mesh_->getFaceArea(f);
         double sign = (reg_normal_ * face_normal) / area;
 
-        auto cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
         int c = cells[0];
 
         double scale = 1.0;
@@ -351,7 +353,7 @@ ObservableAqueous::ComputeObservation(State& S,
  * Auxiliary routine: calculate maximum water table in a region.
  ****************************************************************** */
 double
-ObservableAqueous::CalculateWaterTable_(State& S, AmanziMesh::Entity_ID_View& ids)
+ObservableAqueous::CalculateWaterTable_(State& S, AmanziMesh::cEntity_ID_View& ids)
 {
   auto pressure = S.Get<CompositeVector>("pressure").ViewComponent("cell", true);
   double patm = S.Get<double>("atmospheric_pressure");

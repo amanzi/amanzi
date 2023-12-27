@@ -29,7 +29,7 @@
 #include "exceptions.hh"
 #include "InverseFactory.hh"
 #include "Mesh.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "Point.hh"
@@ -1181,7 +1181,7 @@ Richards_PK::DeriveBoundaryFaceValue(int f,
   } else {
     const auto& mu_cell = *S_->Get<CV_t>(viscosity_liquid_key_).ViewComponent("cell");
     const auto& u_cell = *u.ViewComponent("cell");
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int c = cells[0];
 
     double pc_shift(atm_pressure_);
