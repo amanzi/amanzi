@@ -44,7 +44,7 @@ class MFD3D_Elasticity : public MFD3D {
   virtual std::vector<SchemaItem> schema() const override
   {
     return std::vector<SchemaItem>(
-      1, std::make_tuple(AmanziMesh::Entity_kind::NODE, DOF_Type::SCALAR, d_));
+      1, std::make_tuple(AmanziMesh::Entity_kind::NODE, DOF_Type::POINT, d_));
   }
 
   // -- stiffness matrix

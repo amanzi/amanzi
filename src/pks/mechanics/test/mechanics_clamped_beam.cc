@@ -27,7 +27,7 @@
 #include "MechanicsElasticity_PK.hh"
 
 /* **************************************************************** */
-TEST(ELASTIC_2D)
+TEST(CLAMPED_BEAM)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -36,19 +36,21 @@ TEST(ELASTIC_2D)
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: Elastic deformation in 2D" << std::endl;
+  if (MyPID == 0) std::cout << "Test: clamped beam" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/mechanics_elasticity_2D.xml";
+  std::string xmlFileName = "test/mechanics_clamped_beam.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a mesh framework
   Teuchos::ParameterList regions_list = plist->sublist("regions");
-  auto gm = Teuchos::rcp(new GeometricModel(2, regions_list, *comm));
+  auto gm = Teuchos::rcp(new GeometricModel(3, regions_list, *comm));
 
+  int nx(100), ny(4);
+  double L(25.0), W(1.3);
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 20, 20);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, L, W, W, nx, ny, ny);
 
   // create a simple state and populate it
   Teuchos::ParameterList state_list = plist->sublist("state");
@@ -74,13 +76,11 @@ TEST(ELASTIC_2D)
   double dT = plist->get<double>("initial time step", 1.0);
   double T(0.0), T0(0.0), dT0(dT), dTnext;
 
-  // T = T1;
   while (T < T1 && itrs < max_itrs) {
     if (itrs == 0) {
       Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
       udot->PutScalar(0.0);
       EPK->bdf1_dae()->SetInitialState(T0, soln, udot);
-
       EPK->UpdatePreconditioner(T0, soln, dT0);
     }
 
@@ -100,23 +100,50 @@ TEST(ELASTIC_2D)
     EPK->CommitStep(T - dT, T, Tags::DEFAULT);
   }
 
+  // update mesh
+  int nnodes = mesh->getNumEntities(Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  double scale(20.0);
+  const auto& u = *S->Get<CompositeVector>("displacement").ViewComponent("node");
+  auto mesh_vis = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(mesh);
+
+  for (int n = 0; n < nnodes; ++n) {
+    auto xp = mesh->getNodeCoordinate(n);
+    for (int k = 0; k < 3; ++k) xp[k] += u[k][n] * scale;
+    mesh_vis->setNodeCoordinate(n, xp);
+  }
+
   // initialize I/O
   Teuchos::ParameterList iolist;
   iolist.get<std::string>("file name base", "plot");
   OutputXDMF io(iolist, mesh, true, false);
 
   io.InitializeCycle(T, 1, "");
-  const auto& u = *S->Get<CompositeVector>("displacement").ViewComponent("node");
-  io.WriteVector(*u(0), "displacement", AmanziMesh::NODE);
+  io.WriteVector(*u(0), "displacement_x", AmanziMesh::NODE);
+  io.WriteVector(*u(1), "displacement_y", AmanziMesh::NODE);
+  io.WriteVector(*u(2), "displacement_z", AmanziMesh::NODE);
   io.FinalizeCycle();
 
   // summary
   WriteStateStatistics(*S);
-  // S->Get<CompositeVector>("displacement", Tags::DEFAULT).Print(std::cout);
 
-  int nnodes = mesh->getNumEntities(Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
-  for (int n = 0; n < nnodes; ++n) {
-    const auto& xv = mesh->getNodeCoordinate(n);
-    CHECK_CLOSE(u[0][n], xv[0], 1e-6);
+  // exact solution is quadratic
+  const auto& E = *S->Get<CompositeVector>("young_modulus").ViewComponent("cell");
+  const auto& rho = *S->Get<CompositeVector>("particle_density").ViewComponent("cell");
+  const auto& gravity = S->Get<AmanziGeometry::Point>("gravity");
+
+  double f0 = rho[0][0] * gravity[2] * W * W;
+  double I = std::pow(W, 4) / 12;
+  double umax = 1.5 * rho[0][0] * std::fabs(gravity[2]) * std::pow(L, 4) / E[0][0] / W / W;
+
+  double err(0.0);
+  for (int n = 0; n < nx + 1; ++n) {
+    double x = (mesh->getNodeCoordinate(n))[0];
+    double exact = f0 / (24 * E[0][0] * I) * x * x * (x * x + 6 * L * L - 4 * L * x);
+    // if (n < 101) std::cout << x << " " << u[2][n] << " " << exact << " " << err << std::endl;
+    err = std::max(err, std::fabs(u[2][n] - exact) / umax);
+    CHECK_CLOSE(u[2][n], exact, 6e-2 * umax);
   }
+
+  std::cout << "Maximum error " << err * 100 << " %\n";
 }
+

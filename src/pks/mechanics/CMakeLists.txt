@@ -88,5 +88,11 @@ if (BUILD_TESTS)
                   KIND int
                   SOURCE test/Main.cc test/mechanics_elasticity_2D.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+  # Test: 2D clamped beam
+  add_amanzi_test(mechanicsclamped_beam mechanics_clamped_beam
+                  KIND int
+                  SOURCE test/Main.cc test/mechanics_clamped_beam.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 endif()
 

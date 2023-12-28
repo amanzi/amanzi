@@ -40,8 +40,11 @@
 /* *****************************************************************
 * Elasticity model: exactness test.
 ***************************************************************** */
-void
-RunTest(int icase, const std::string& solver, double mu, double lambda, bool flag)
+template<class Analytic>
+double
+RunTest(int icase, const std::string& solver, 
+        double mu, double lambda,
+        bool flag, double tol = 1e-10, int scale = 1)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -69,18 +72,17 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
   // create the MSTK mesh framework
   // -- geometric model is not created. Instead, we specify boundary conditions
   // -- using centroids of mesh faces.
+  double Lx(1.0), Ly(2.0);
   auto mesh_list = Teuchos::rcp(new Teuchos::ParameterList());
   mesh_list->set<bool>("request edges", true);
   mesh_list->set<bool>("request faces", true);
   MeshFactory meshfactory(comm, Teuchos::null, mesh_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 5);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, Lx, Ly, 4 * scale, 5 * scale);
 
   // -- general information about mesh
-  int ncells =
+  int ncells_owned =
     mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nnodes =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_wghost =
     mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
   int nnodes_wghost =
@@ -88,11 +90,11 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
 
   // select an analytic solution for error calculations and setup of
   // boundary conditions
-  AnalyticElasticity01 ana(mesh, mu, lambda, flag);
+  Analytic ana(mesh, mu, lambda, flag);
 
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  for (int c = 0; c < ncells; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     const Point& xc = mesh->getCellCentroid(c);
     const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
     K->push_back(Kc);
@@ -117,8 +119,8 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
       const Point& normal = mesh->getFaceNormal(f);
       double area = mesh->getFaceArea(f);
 
-      if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
-          fabs(xf[1] - 1.0) < 1e-6) {
+      if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - Lx) < 1e-6 || fabs(xf[1]) < 1e-6 ||
+          fabs(xf[1] - Ly) < 1e-6) {
         bcf_model[f] = OPERATOR_BC_DIRICHLET;
         bcf_value[f] = (ana.velocity_exact(xf, 0.0) * normal) / area;
         ndir++;
@@ -137,8 +139,8 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
     for (int v = 0; v < nnodes_wghost; ++v) {
       auto xv = mesh->getNodeCoordinate(v);
 
-      if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1]) < 1e-6 ||
-          fabs(xv[1] - 1.0) < 1e-6) {
+      if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - Lx) < 1e-6 || fabs(xv[1]) < 1e-6 ||
+          fabs(xv[1] - Ly) < 1e-6) {
         bcv_model[v] = OPERATOR_BC_DIRICHLET;
         bcv_value[v] = ana.velocity_exact(xv, 0.0);
         ndir++;
@@ -149,7 +151,7 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
 
   // -- full velocity at boundary nodes (a vector)
   if (icase == 3) {
-    double tol(1e-4);
+    double eps(1e-4);
     auto bcf =
       Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
     std::vector<int>& bcf_model = bcf->bc_model();
@@ -161,8 +163,8 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
       const Point& tau = mesh->getEdgeVector(f);
       double area = mesh->getFaceArea(f);
 
-      if ((fabs(xf[1]) < 1e-6 && xf[0] > tol && xf[0] < 1.0 - tol) ||
-          (fabs(xf[1] - 1.0) < 1e-6 && xf[0] > tol && xf[0] < 1.0 - tol)) {
+      if ((fabs(xf[1]) < 1e-6 && xf[0] > eps && xf[0] < Lx - eps) ||
+          (fabs(xf[1] - Ly) < 1e-6 && xf[0] > eps && xf[0] < Lx - eps)) {
         bcf_model[f] = OPERATOR_BC_SHEAR_STRESS;
         bcf_value[f] = ((ana.stress_exact(xf, 0.0) * tau) * normal) / area / area;
         nshear++;
@@ -178,8 +180,8 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
     for (int v = 0; v < nnodes_wghost; ++v) {
       auto xv = mesh->getNodeCoordinate(v);
 
-      if ((fabs(xv[1]) < 1e-6 && xv[0] > tol && xv[0] < 1.0 - tol) ||
-          (fabs(xv[1] - 1.0) < 1e-6 && xv[0] > tol && xv[0] < 1.0 - tol)) {
+      if ((fabs(xv[1]) < 1e-6 && xv[0] > eps && xv[0] < Lx - eps) ||
+          (fabs(xv[1] - Ly) < 1e-6 && xv[0] > eps && xv[0] < Lx - eps)) {
         auto normal = WhetStone::getNodeUnitNormal(*mesh, v);
         bcv_model[v] = OPERATOR_BC_KINEMATIC;
         bcv_value[v] = ana.velocity_exact(xv, 0.0) * normal;
@@ -195,7 +197,7 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
 
     for (int v = 0; v < nnodes_wghost; ++v) {
       auto xv = mesh->getNodeCoordinate(v);
-      if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6) {
+      if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - Lx) < 1e-6) {
         bcp_model[v] = OPERATOR_BC_DIRICHLET;
         bcp_value[v] = ana.velocity_exact(xv, 0.0);
         ndir++;
@@ -212,11 +214,20 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
   // create source
   CompositeVector source(cvs);
   Epetra_MultiVector& src = *source.ViewComponent("node");
+  src.PutScalar(0.0);
 
-  for (int v = 0; v < nnodes; v++) {
-    auto xv = mesh->getNodeCoordinate(v);
-    Point tmp(ana.source_exact(xv, 0.0));
-    for (int k = 0; k < 2; ++k) src[k][v] = tmp[k];
+  for (int c = 0; c < ncells_owned; ++c) {
+    double vol = mesh->getCellVolume(c);
+
+    auto nodes = mesh->getCellNodes(c);
+    int nnodes = nodes.size();
+
+    for (int n = 0; n < nnodes; ++n) {
+      int v = nodes[n]; 
+      auto xv = mesh->getNodeCoordinate(v);
+      Point tmp(ana.source_exact(xv, 0.0));
+      for (int k = 0; k < 2; ++k) src[k][v] += tmp[k] * (vol / nnodes);
+    }
   }
 
   // populate the elasticity operator
@@ -263,43 +274,69 @@ RunTest(int icase, const std::string& solver, double mu, double lambda, bool fla
     ul2_err /= unorm;
     printf("L2(u)=%12.8g  Inf(u)=%12.8g  itr=%3d\n", ul2_err, uinf_err, global_op->num_itrs());
 
-    CHECK(ul2_err < 1e-10);
+    CHECK(ul2_err < tol);
     CHECK(global_op->num_itrs() < 15);
   }
+ 
+  return ul2_err;
 }
 
 
 TEST(OPERATOR_ELASTICITY_EXACTNESS_BERNARDI_RAUGEL)
 {
-  RunTest(1, "PCG", 1.0, 0.0, false);
+  RunTest<AnalyticElasticity01>(1, "PCG", 1.0, 0.0, false);
 }
 
 TEST(OPERATOR_ELASTICITY_EXACTNESS_ELASTICITY_SCALAR_COEFFICIENT)
 {
-  RunTest(2, "PCG", 2.0, 0.0, false);
+  RunTest<AnalyticElasticity01>(2, "PCG", 2.0, 0.0, false);
 }
 
 TEST(OPERATOR_ELASTICITY_EXACTNESS_ELASTICITY_SCALAR_TENSOR)
 {
-  RunTest(2, "PCG", 2.0, 0.0, true);
+  RunTest<AnalyticElasticity01>(2, "PCG", 2.0, 0.0, true);
 }
 
 TEST(OPERATOR_ELASTICITY_EXACTNESS_ELASTICITY_FULL_TENSOR)
 {
-  RunTest(2, "PCG", 2.0, 1.0, true);
+  RunTest<AnalyticElasticity01>(2, "PCG", 2.0, 1.0, true);
 }
 
 TEST(OPERATOR_ELASTICITY_EXACTNESS_KINEMATIC_SCALAR_COEFFICIENT)
 {
-  RunTest(3, "GMRES", 2.0, 0.0, false);
+  RunTest<AnalyticElasticity01>(3, "GMRES", 2.0, 0.0, false);
 }
 
 TEST(OPERATOR_ELASTICITY_EXACTNESS_KINEMATIC_SCALAR_TENSOR)
 {
-  RunTest(3, "GMRES", 2.0, 0.0, true);
+  RunTest<AnalyticElasticity01>(3, "GMRES", 2.0, 0.0, true);
 }
 
 TEST(OPERATOR_ELASTICITY_EXACTNESS_KINEMATIC_FULL_TENSOR)
 {
-  RunTest(3, "GMRES", 2.0, 1.0, true);
+  RunTest<AnalyticElasticity01>(3, "GMRES", 2.0, 1.0, true);
 }
+
+TEST(OPERATOR_CONVERGENCE_ELASTICITY_FULL_TENSOR_BERNARDI_RAUGEL)
+{
+  double E(1e+10), nu(0.2);
+  double mu =  E / (2 * (1 + nu));
+  // double lambda = E * nu / ((1 + nu) * (1 - 2 * nu)); // 3D
+  double lambda = E * nu / ((1 + nu) * (1 - nu)); // 2D
+  double err1 = RunTest<AnalyticElasticity03>(1, "PCG", mu, lambda, true, 5e-2, 5);
+  double err2 = RunTest<AnalyticElasticity03>(1, "PCG", mu, lambda, true, 5e-2, 10);
+  
+  CHECK(err1 / err2 > 3.8); 
+}
+
+TEST(OPERATOR_CONVERGENCE_ELASTICITY_FULL_TENSOR_NODAL)
+{
+  double E(1e+10), nu(0.2);
+  double mu =  E / (2 * (1 + nu));
+  double lambda = E * nu / ((1 + nu) * (1 - nu)); // 2D
+  double err1 = RunTest<AnalyticElasticity03>(2, "PCG", mu, lambda, true, 5e-2, 5);
+  double err2 = RunTest<AnalyticElasticity03>(2, "PCG", mu, lambda, true, 5e-2, 10);
+  
+  CHECK(err1 / err2 > 3.8); 
+}
+

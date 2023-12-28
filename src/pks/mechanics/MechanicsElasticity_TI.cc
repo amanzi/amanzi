@@ -19,6 +19,8 @@
 namespace Amanzi {
 namespace Mechanics {
 
+using CV_t = CompositeVector;
+
 /* ******************************************************************
 * Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
 ****************************************************************** */
@@ -30,17 +32,18 @@ MechanicsElasticity_PK::FunctionalResidual(double t_old,
                                            Teuchos::RCP<TreeVector> f)
 {
   double dtp = t_new - t_old;
-
-  // refresh data
   UpdateSourceBoundaryData_(t_old, t_new);
 
-  // assemble residual using linear operator
   op_matrix_elas_->global_operator()->Init();
+
+  // Add gravity before adding boundary conditions
+  if (use_gravity_) {
+    auto rhs = op_matrix_->rhs();
+    AddGravityTerm_(*rhs);
+  }
+
   op_matrix_elas_->UpdateMatrices();
   op_matrix_elas_->ApplyBCs(true, true, true);
-
-  // Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
-  // AddSourceTerms(*rhs);
 
   // compute negative residual, A u - f
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *f->Data());
@@ -55,7 +58,8 @@ MechanicsElasticity_PK::ApplyPreconditioner(
   Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
-  return op_preconditioner_->ApplyInverse(*X->Data(), *Y->Data());
+  // return op_preconditioner_->ApplyInverse(*X->Data(), *Y->Data());
+  return op_pc_solver_->ApplyInverse(*X->Data(), *Y->Data());
 }
 
 
@@ -91,13 +95,13 @@ MechanicsElasticity_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
 {
   if (!u->Data()->HasComponent("node")) return 0.0;
 
-  const Epetra_MultiVector& uv = *u->Data()->ViewComponent("node");
-  const Epetra_MultiVector& duv = *du->Data()->ViewComponent("node");
+  const auto& uv = *u->Data()->ViewComponent("node");
+  const auto& duv = *du->Data()->ViewComponent("node");
 
   double error(0.0);
 
   for (int v = 0; v < nnodes_owned_; v++) {
-    for (int k = 0; k < dim; ++k) {
+    for (int k = 0; k < dim_; ++k) {
       double tmp = fabs(duv[k][v]) / (fabs(uv[k][v]) + 1.0);
       error = std::max(error, tmp);
     }
@@ -171,6 +175,28 @@ MechanicsElasticity_PK::ComputeOperatorBCs()
         bc_value[n] = it->second[0];
       }
     }
+  }
+}
+
+
+/* ******************************************************************
+* Add forcing term due to gravity
+****************************************************************** */
+void
+MechanicsElasticity_PK::AddGravityTerm_(CompositeVector& rhs)
+{
+  int d = mesh_->getSpaceDimension();
+  double g = (S_->Get<AmanziGeometry::Point>("gravity"))[d - 1];
+
+  const auto& rho_c = *S_->Get<CV_t>(particle_density_key_, Tags::DEFAULT).ViewComponent("cell");
+  auto& rhs_v = *rhs.ViewComponent("node");
+  
+  for (int c = 0; c < ncells_owned_; ++c) {
+    auto nodes = mesh_->getCellNodes(c);
+    int nnodes = nodes.size();
+
+    double add = g * rho_c[0][c] * mesh_->getCellVolume(c) / nnodes;
+    for (int n = 0; n < nnodes; ++n) rhs_v[d - 1][nodes[n]] += add;
   }
 }
 

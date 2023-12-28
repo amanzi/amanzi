@@ -157,7 +157,7 @@ EnergyTwoPhase_PK::Setup()
       x_gas_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, x_gas_key_)
     .SetGhosted();
 
-  // other evalautors
+  // other evaluators
   if (!S_->HasRecord(particle_density_key_)) {
     S_->Require<CV_t, CVS_t>(particle_density_key_, Tags::DEFAULT, particle_density_key_);
   }

@@ -63,7 +63,7 @@ namespace Operators {
 class PDE_Elasticity : public PDE_HelperDiscretization {
  public:
   PDE_Elasticity(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : PDE_HelperDiscretization(mesh), K_(Teuchos::null), K_default_(1.0)
+    : PDE_HelperDiscretization(mesh), K_(Teuchos::null)
   {
     global_op_ = Teuchos::null;
     pde_type_ = PDE_ELASTICITY;
@@ -73,7 +73,7 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   // main virtual members
   // -- setup
   void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K);
-  void SetTensorCoefficient(double K);
+  void SetTensorCoefficient(const WhetStone::Tensor& K);
 
   // -- creation of an operator
   using PDE_HelperDiscretization::UpdateMatrices;
@@ -101,7 +101,7 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
 
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K_;
-  double K_default_;
+  WhetStone::Tensor K_default_;
 
   Teuchos::RCP<WhetStone::BilinearForm> mfd_;
   AmanziMesh::Entity_kind base_;

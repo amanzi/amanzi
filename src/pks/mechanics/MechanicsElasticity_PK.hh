@@ -133,6 +133,7 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
 
  private:
   void UpdateSourceBoundaryData_(double t_old, double t_new);
+  void AddGravityTerm_(CompositeVector& rhs);
 
  public:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
@@ -146,6 +147,8 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
   int nnodes_owned_, nnodes_wghost_;
 
   double dt_, dt_next_, dt_desirable_;
+
+  bool use_gravity_;
 
  protected:
   // pointers to primary fields and their evaluators
@@ -161,10 +164,11 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
 
  private:
   std::string passwd_;
-  int dim;
+  int dim_;
 
   Key displacement_key_;
   Key young_modulus_key_, poisson_ratio_key_;
+  Key particle_density_key_;
 
   // time integrators
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae_;

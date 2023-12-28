@@ -14,6 +14,7 @@
 
 #include <vector>
 
+#include "InverseFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
 
 #include "MechanicsElasticity_PK.hh"
@@ -69,20 +70,27 @@ MechanicsElasticity_PK::Setup()
 {
   dt_ = 0.0;
   mesh_ = S_->GetMesh();
-  dim = mesh_->getSpaceDimension();
+  dim_ = mesh_->getSpaceDimension();
 
   displacement_key_ = Keys::getKey(domain_, "displacement");
   young_modulus_key_ = Keys::getKey(domain_, "young_modulus");
   poisson_ratio_key_ = Keys::getKey(domain_, "poisson_ratio");
 
+  particle_density_key_ = Keys::getKey(domain_, "particle_density");
+
+  // constant fields
+  S_->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT, "state");
+
   // primary fields
   // -- displacement
+  const auto& list = ec_list_->sublist("operators").sublist("elasticity operator");
+  auto schema = Operators::schemaFromPList(list, mesh_);
+
   if (!S_->HasRecord(displacement_key_)) {
-    S_->Require<CV_t, CVS_t>(displacement_key_, Tags::DEFAULT, passwd_)
+    auto cvs = Operators::cvsFromSchema(schema, mesh_, true);
+    *S_->Require<CV_t, CVS_t>(displacement_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->AddComponent("node", AmanziMesh::NODE, dim)
-      ->AddComponent("face", AmanziMesh::FACE, 1);
+      ->SetGhosted(true) = cvs;
 
     Teuchos::ParameterList elist(displacement_key_);
     elist.set<std::string>("evaluator name", displacement_key_);
@@ -100,6 +108,14 @@ MechanicsElasticity_PK::Setup()
     .SetMesh(mesh_)
     ->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  if (!S_->HasRecord(particle_density_key_)) {
+    S_->Require<CV_t, CVS_t>(particle_density_key_, Tags::DEFAULT, particle_density_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    S_->RequireEvaluator(particle_density_key_, Tags::DEFAULT);
+  }
 
   // set units
   S_->GetRecordSetW(displacement_key_).set_units("m");
@@ -130,6 +146,9 @@ MechanicsElasticity_PK::Initialize()
 
   nnodes_owned_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
   nnodes_wghost_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
+
+  // -- gravity
+  use_gravity_ = ec_list_->sublist("physical models and assumptions").get<bool>("use gravity");
 
   // Create verbosity object to print out initialiation statistics.
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -199,17 +218,24 @@ MechanicsElasticity_PK::Initialize()
   // -- setup phase
   double E = (*S_->Get<CV_t>(young_modulus_key_, Tags::DEFAULT).ViewComponent("cell"))[0][0];
   double nu = (*S_->Get<CV_t>(poisson_ratio_key_, Tags::DEFAULT).ViewComponent("cell"))[0][0];
-  double mu = E * (1.0 - nu) / (1.0 + nu) / (1.0 - 2 * nu);
+  double mu =  E / (2 * (1 + nu));
+  double lambda = (dim_ == 3 ) ? E * nu / (1 + nu) / (1 - 2 * nu) : E * nu / (1 + nu) / (1 - nu);
+
+  Amanzi::WhetStone::Tensor K(dim_, 4);
+  for (int i = 0; i < dim_ * dim_; ++i) K(i, i) = 2 * mu;
+  for (int i = 0; i < dim_; ++i) {
+    for (int j = 0; j < dim_; ++j) K(i, j) += lambda;
+  }
 
   op_matrix_ = op_matrix_elas_->global_operator();
   op_matrix_->Init();
-  op_matrix_elas_->SetTensorCoefficient(mu);
+  op_matrix_elas_->SetTensorCoefficient(K);
 
   op_preconditioner_ = op_preconditioner_elas_->global_operator();
   op_preconditioner_->Init();
-  op_preconditioner_elas_->SetTensorCoefficient(mu);
+  op_preconditioner_elas_->SetTensorCoefficient(K);
 
-  // -- iniailize boundary conditions (memory allocation)
+  // -- initialize boundary conditions (memory allocation)
   auto schema = op_matrix_elas_->schema_col();
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     AmanziMesh::Entity_kind kind;
@@ -235,6 +261,16 @@ MechanicsElasticity_PK::Initialize()
   std::string pc_name = ti_list_->get<std::string>("preconditioner");
   op_preconditioner_elas_->global_operator()->set_inverse_parameters(pc_name,
                                                                      *preconditioner_list_);
+
+  std::string name = ti_list_->get<std::string>("preconditioner enhancement", "none");
+  if (name != "none") {
+    AMANZI_ASSERT(linear_solver_list_->isSublist(name));
+    Teuchos::ParameterList tmp = linear_solver_list_->sublist(name);
+    op_pc_solver_ = AmanziSolvers::createIterativeMethod(tmp, op_preconditioner_);
+  } else {
+    op_pc_solver_ = op_preconditioner_;
+  }
+  op_pc_solver_->InitializeInverse();
 
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -310,12 +346,7 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 ******************************************************************* */
 void
 MechanicsElasticity_PK::CommitStep(double t_old, double t_new, const Tag& tag)
-{
-  Teuchos::OSTab tab = vo_->getOSTab();
-  double tmp;
-  solution_->Norm2(&tmp);
-  *vo_->os() << "solution norm=" << tmp << std::endl;
-}
+{}
 
 
 /* ******************************************************************

@@ -44,11 +44,11 @@ void
 PDE_Elasticity::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K)
 {
   K_ = K;
-  K_default_ = 1.0;
+  K_default_.Init(1, 1);
 }
 
 void
-PDE_Elasticity::SetTensorCoefficient(double K)
+PDE_Elasticity::SetTensorCoefficient(const WhetStone::Tensor& K)
 {
   K_ = Teuchos::null;
   K_default_ = K;
@@ -64,9 +64,7 @@ PDE_Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                                const Teuchos::Ptr<const CompositeVector>& p)
 {
   WhetStone::DenseMatrix Acell;
-
-  WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
-  Kc(0, 0) = K_default_;
+  WhetStone::Tensor Kc(K_default_);
 
   for (int c = 0; c < ncells_owned; c++) {
     if (K_.get()) Kc = (*K_)[c];

@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "BilinearForm.hh"
+#include "BilinearFormFactory.hh"
 #include "CompositeVectorSpace.hh"
 #include "Mesh.hh"
 #include "MeshDefs.hh"
@@ -133,6 +134,21 @@ cvsFromSchema(const Schema& schema, const Teuchos::RCP<const AmanziMesh::Mesh>& 
     cvs.AddComponent(AmanziMesh::to_string(kind), kind, num);
   }
   return cvs;
+}
+
+
+inline Schema
+schemaFromPList(const Teuchos::ParameterList& plist,
+                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+{
+  Schema schema;
+
+  auto& list = plist.sublist("schema");
+  auto form = WhetStone::BilinearFormFactory::Create(list, mesh);
+  auto base = schema.StringToKind(list.get<std::string>("base"));
+  schema.Init(form, mesh, base);
+
+  return schema;
 }
 
 } // namespace Operators
