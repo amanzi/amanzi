@@ -269,7 +269,8 @@ NavierStokes_PK::Initialize()
 
   // Populate matrix and preconditioner
   // -- setup phase
-  double mu = S_->Get<double>("const_fluid_viscosity");
+  WhetStone::Tensor mu(dim, 1);
+  mu(0, 0) = S_->Get<double>("const_fluid_viscosity");
   op_matrix_elas_->global_operator()->Init();
   op_matrix_elas_->SetTensorCoefficient(mu);
 
@@ -314,7 +315,7 @@ NavierStokes_PK::Initialize()
                                                                      *preconditioner_list_);
 
   CompositeVector vol(op_mass_->global_operator()->DomainMap());
-  vol.PutScalar(1.0 / mu);
+  vol.PutScalar(1.0 / mu(0, 0));
   op_mass_->AddAccumulationTerm(vol, 1.0, "cell");
   op_mass_->global_operator()->set_inverse_parameters("Diagonal", *preconditioner_list_);
 

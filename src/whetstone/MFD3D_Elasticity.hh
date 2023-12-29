@@ -33,6 +33,8 @@
 namespace Amanzi {
 namespace WhetStone {
 
+class Polynomial;
+
 class MFD3D_Elasticity : public MFD3D {
  public:
   MFD3D_Elasticity(const Teuchos::ParameterList& plist,
@@ -54,6 +56,8 @@ class MFD3D_Elasticity : public MFD3D {
   // optimization methods (mainly for research, since the maximum principle does not exists)
   int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);
   int StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A);
+
+  // void H1Cell(int c, const DenseVector& dofs, Polynomial& vc){};
 
  private:
   void MatrixMatrixProduct_(const DenseMatrix& A,
