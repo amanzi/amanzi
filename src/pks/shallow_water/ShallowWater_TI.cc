@@ -346,8 +346,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        UR[3] = ComputeWettedAngleNewton(UL[0]); 
      }
      if (bc_model_vector[f] == Operators::OPERATOR_BC_DIRICHLET) {
-       UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
-       UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
+       //UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
+       //UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
+       UR[1] = bc_value_qx[f]; // This assumes that the BC value is specified after taking the dot product with the normal
+       UR[2] = bc_value_qy[f];
        UL[1] = UR[1];
        UL[2] = UR[2];
     } 
