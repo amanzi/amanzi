@@ -18,7 +18,7 @@
 namespace Amanzi {
 namespace Mechanics {
 
-RegisteredPKFactory<MechanicsElasticity_PK> MechanicsElasticity_PK::reg_("elasticity");
+RegisteredPKFactory<MechanicsElasticity_PK> MechanicsElasticity_PK::reg_("elastic");
 
 } // namespace Mechanics
 } // namespace Amanzi

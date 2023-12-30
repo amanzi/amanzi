@@ -68,7 +68,7 @@ MechanicsElasticity_PK::MechanicsElasticity_PK(
 void
 MechanicsElasticity_PK::Setup()
 {
-  dt_ = 0.0;
+  dt_ = 1e+98;
   mesh_ = S_->GetMesh();
   dim_ = mesh_->getSpaceDimension();
 

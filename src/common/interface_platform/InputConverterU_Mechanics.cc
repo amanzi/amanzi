@@ -68,7 +68,7 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
     "unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
 
   // insert time integrator
-  std::string err_options("mechanics"),
+  std::string err_options("displacement"),
     unstr_controls("unstructured_controls, unstr_mechanics_controls");
 
   if (pk_master_.find("mechanics") != pk_master_.end()) {
@@ -80,6 +80,17 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
                                                                    TI_TS_REDUCTION_FACTOR,
                                                                    TI_TS_INCREASE_FACTOR);
   }
+
+  // other parameters
+  out_list.sublist("operators").sublist("elasticity operator")
+    .set<std::string>("matrix type", "stiffness")
+    .sublist("schema")
+    .set<std::string>("base", "cell")
+    .set<std::string>("method", "elasticity")
+    .set<int>("method order", 1);
+
+  out_list.sublist("physical models and assumptions")
+    .set<bool>("use gravity", true);
 
   // insert boundary conditions and source terms
   out_list.sublist("boundary conditions") = TranslateMechanicsBCs_(domain);
@@ -140,7 +151,7 @@ InputConverterU::TranslateMechanicsBCs_(const std::string& domain)
     bc.set<Teuchos::Array<std::string>>("regions", regions)
       .set<std::string>("spatial distribution method", "none");
 
-    Teuchos::ParameterList& bcfn = bc.sublist("displacement");
+    Teuchos::ParameterList& bcfn = bc.sublist("no slip");
     TranslateGenericMath_(bcs, bcfn);
   }
 

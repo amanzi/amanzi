@@ -156,8 +156,8 @@ Flow_PK::Setup()
       S_->SetEvaluator(permeability_eff_key_, Tags::DEFAULT, eval);
     }
 
-    // -- matrix absolute permeability
   } else {
+    // -- matrix absolute permeability
     if (!S_->HasRecord(permeability_key_)) {
       S_->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_)
         .SetMesh(mesh_)

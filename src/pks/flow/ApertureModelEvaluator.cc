@@ -35,7 +35,7 @@ ApertureModelEvaluator::ApertureModelEvaluator(Teuchos::ParameterList& plist,
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("aperture key"), Tags::DEFAULT));
   }
 
-  // my dependency is pressure.
+  // dependencies
   pressure_key_ = plist_.get<std::string>("pressure key");
   dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
 }

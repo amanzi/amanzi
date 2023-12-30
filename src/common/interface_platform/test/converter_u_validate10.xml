@@ -157,9 +157,12 @@
   </ParameterList>
   <ParameterList name="PKs">
     <ParameterList name="steady:mechanics">
-      <Parameter isUsed="true" name="PK type" type="string" value="elastic"/>
+      <Parameter name="domain name" type="string" value=""/>
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="use gravity" type="bool" value="true"/>
+      </ParameterList>
       <ParameterList name="time integrator">
-        <Parameter name="error control options" type="Array(string)" value="{residual}"/>
+        <Parameter name="error control options" type="Array(string)" value="{displacement}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <ParameterList name="pressure-lambda constraints">
@@ -196,6 +199,16 @@
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
           <ParameterList name="verbose object">
             <Parameter name="verbosity level" type="string" value="high"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="operators">
+        <ParameterList name="elasticity operator">
+          <Parameter name="matrix type" type="string" value="stiffness"/>
+          <ParameterList name="schema">
+            <Parameter name="base" type="string" value="cell"/>
+            <Parameter name="method" type="string" value="elasticity"/>
+            <Parameter name="method order" type="int" value="1"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -283,7 +296,7 @@
   </ParameterList>
   <ParameterList name="analysis">
     <ParameterList name="domain">
-      <Parameter name="used boundary condition regions" type="Array(string)" value="{}"/>
+      <Parameter name="used boundary condition regions" type="Array(string)" value="{TopSurface}"/>
       <Parameter name="used source regions" type="Array(string)" value="{}"/>
       <Parameter name="used observation regions" type="Array(string)" value="{}"/>
     </ParameterList>

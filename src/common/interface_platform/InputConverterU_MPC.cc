@@ -343,7 +343,11 @@ InputConverterU::TranslateCycleDriverNew_()
       break;
     case 64:
       pk_master_["mechanics"] = true;
-      tmp += "mechanics";
+      tmp = "mechanics";
+      PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
+      break;
+    case 76:
+      tmp = "mechanics and " + tmp + "flow";
       PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
       break;
     default:
@@ -519,6 +523,10 @@ InputConverterU::PopulatePKTree_(Teuchos::ParameterList& pk_tree, const std::str
       .set<std::string>("PK type", "shallow water");
     tmp.sublist(Keys::merge(prefix, "transport", delimiter))
       .set<std::string>("PK type", "transport");
+  } else if (basename == "mechanics and coupled flow") {
+    tmp.set<std::string>("PK type", "mechanics and coupled flow");
+    PopulatePKTree_(tmp, Keys::merge(prefix, "mechanics", delimiter));
+    PopulatePKTree_(tmp, Keys::merge(prefix, "coupled flow", delimiter));
   } else {
     Errors::Message msg;
     msg << "Internal error: cannot add \"" << pk_name << "\" to the PK tree.\n";
@@ -773,6 +781,10 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
         auto& tmp = glist.sublist("state");
         out_list.sublist(pk) = TranslateMultiphase_("fracture", tmp);
       }
+      // -- mechanics PKs
+      else if (basename == "mechanics") {
+        out_list.sublist(pk) = TranslateMechanics_(pk_domain_["mechanics"]);
+      }
       // -- coupled PKs (matrix and fracture)
       else if (basename == "coupled flow") {
         Teuchos::Array<std::string> pk_names;
@@ -980,6 +992,13 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
                             Keys::getKey(pk_domain_["shallow_water"], "riemann_flux"))
           .set<std::string>("saturation key",
                             Keys::getKey(pk_domain_["shallow_water"], "ponded_depth"));
+      } else if (basename == "mechanics and coupled flow") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back(Keys::merge(prefix, "mechanics", delimiter));
+        pk_names.push_back(Keys::merge(prefix, "coupled flow", delimiter));
+        out_list.sublist(pk)
+          .set<Teuchos::Array<std::string>>("PKs order", pk_names)
+          .set<std::string>("domain name", pk_domain_["mechanics"]);
       }
 
       // add time integrator to PKs that have no transport and chemistry sub-PKs.

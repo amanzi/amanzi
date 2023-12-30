@@ -1034,6 +1034,14 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
                                  "value",
                                  domain);
 
+      // poisson ratio
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, poisson_ratio", flag);
+      if (flag) { TranslateFieldIC_(node, "poisson_ratio", "-", reg_str, regions, out_ic); }
+
+      // Young modulus
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, young_modulus", flag);
+      if (flag) { TranslateFieldIC_(node, "young_modulus", "-", reg_str, regions, out_ic); }
+
       // internal energy for liquid
       node = GetUniqueElementByTagsString_(inode, "thermal_properties, liquid_heat_capacity", flag);
       if (flag) {

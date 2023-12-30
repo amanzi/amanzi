@@ -35,6 +35,7 @@ include_directories(${FLOW_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOCHEM_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${MECHANICS_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_EXTRACTED_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
@@ -73,7 +74,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
   add_amanzi_library(udriver
                    SOURCE AmanziUnstructuredGridSimulationDriver.cc
                    LINK_LIBS mesh mesh_factory state mpc eos 
-                             flow transport energy shallow_water multiphase
+                             flow transport energy shallow_water multiphase mechanics
                              interface error_handling
                              ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES}
                              ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
