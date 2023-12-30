@@ -57,7 +57,8 @@ class MFD3D_Elasticity : public MFD3D {
   int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);
   int StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A);
 
-  // void H1Cell(int c, const DenseVector& dofs, Polynomial& vc){};
+  // projectors
+  virtual void H1Cell(int c, const DenseVector& dofs, Tensor& vc) override;
 
  private:
   void MatrixMatrixProduct_(const DenseMatrix& A,
@@ -66,6 +67,8 @@ class MFD3D_Elasticity : public MFD3D {
                             DenseMatrix& AB);
 
  private:
+  DenseMatrix coefM_, R_;
+
   static RegisteredFactory<MFD3D_Elasticity> reg_;
 };
 

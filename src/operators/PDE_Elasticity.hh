@@ -92,9 +92,12 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   //      valid for all BCs.
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
-  // -- postprocessing: calculated stress u from displacement p
+  // -- postprocessing: place holder
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
                           const Teuchos::Ptr<CompositeVector>& u) override{};
+
+  // -- processing: calculate pressure from displacement stress
+  void ComputeHydrostaticStress(const CompositeVector& u, CompositeVector& p);
 
  protected:
   void Init_(Teuchos::ParameterList& plist);

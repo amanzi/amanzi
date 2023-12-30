@@ -89,10 +89,18 @@ if (BUILD_TESTS)
                   SOURCE test/Main.cc test/mechanics_elasticity_2D.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-  # Test: 2D clamped beam
-  add_amanzi_test(mechanicsclamped_beam mechanics_clamped_beam
+  # Test: 3D clamped beam
+  add_amanzi_test(mechanics_clamped_beam mechanics_clamped_beam
                   KIND int
+                  NPROCS 2
                   SOURCE test/Main.cc test/mechanics_clamped_beam.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+  # Test: hydrostatic stress
+  add_amanzi_test(mechanics_hydrostatic_stress mechanics_hydrostatic_stress
+                  KIND int
+                  NPROCS 2
+                  SOURCE test/Main.cc test/mechanics_hydrostatic_stress.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 endif()
 

@@ -166,7 +166,7 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
   std::string passwd_;
   int dim_;
 
-  Key displacement_key_;
+  Key displacement_key_, hydrostatic_stress_key_;
   Key young_modulus_key_, poisson_ratio_key_;
   Key particle_density_key_;
 

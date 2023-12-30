@@ -60,13 +60,13 @@ TEST(ELASTICITY_STIFFNESS_2D)
 
   for (int method = 0; method < 2; method++) {
     Tensor T;
-    double lambda(1.0), mu(0.0);
+    double lambda(0.0), mu(0.5);
     if (method == 0) {
       T.Init(2, 1);
       T(0, 0) = 1.0;
     } else if (method == 1) {
       mu = 3.0;
-      lambda = 0.0;
+      lambda = 1.0;
       T.Init(2, 4);
       T(0, 0) = T(1, 1) = lambda + 2 * mu;
       T(0, 1) = T(1, 0) = lambda;
@@ -91,26 +91,36 @@ TEST(ELASTICITY_STIFFNESS_2D)
     int d = mesh->getSpaceDimension();
     Point p(d);
 
-    double xx[nrows], yy[nrows];
+    DenseVector xx(nrows), yy(nrows), xy(nrows);
     for (int i = 0; i < nnodes; i++) {
       int v = nodes[i];
       p = mesh->getNodeCoordinate(v);
-      xx[2 * i] = p[0];
-      xx[2 * i + 1] = 0.0;
+      xx(2 * i) = p[0];
+      xx(2 * i + 1) = 0.0;
 
-      yy[2 * i] = 0.0;
-      yy[2 * i + 1] = p[1];
+      yy(2 * i) = 0.0;
+      yy(2 * i + 1) = p[1];
+
+      xy(2 * i) = p[0] + p[1];
+      xy(2 * i + 1) = p[1];
     }
 
     double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);
     for (int i = 0; i < nrows; i++) {
       for (int j = 0; j < nrows; j++) {
-        vxx += A(i, j) * xx[i] * xx[j];
-        vxy += A(i, j) * yy[i] * xx[j];
+        vxx += A(i, j) * xx(i) * xx(j);
+        vxy += A(i, j) * yy(i) * xx(j);
       }
     }
     CHECK_CLOSE((2 * mu + lambda) * volume, vxx, 1e-10);
-    CHECK_CLOSE(0.0, vxy, 1e-10);
+    CHECK_CLOSE(lambda * volume, vxy, 1e-10);
+
+    // projector
+    DenseVector dofs;
+    Tensor Tc;
+    mfd.H1Cell(cell, xy, Tc);
+    CHECK_CLOSE(Tc(0, 1), 0.5, 1e-10);
+    CHECK_CLOSE(Tc(1, 1), 1.0, 1e-10);
   }
 }
 
@@ -155,28 +165,39 @@ TEST(ELASTICITY_STIFFNESS_3D)
   int d = mesh->getSpaceDimension();
   Point p(d);
 
-  double xx[nrows], yy[nrows];
+  DenseVector xx(nrows), yy(nrows), xy(nrows);
   for (int i = 0; i < nnodes; i++) {
     int v = nodes[i];
     p = mesh->getNodeCoordinate(v);
-    xx[3 * i] = p[0];
-    xx[3 * i + 1] = 0.0;
-    xx[3 * i + 2] = 0.0;
+    xx(3 * i) = p[0];
+    xx(3 * i + 1) = 0.0;
+    xx(3 * i + 2) = 0.0;
 
-    yy[3 * i] = 0.0;
-    yy[3 * i + 1] = p[1];
-    yy[3 * i + 2] = 0.0;
+    yy(3 * i) = 0.0;
+    yy(3 * i + 1) = p[1];
+    yy(3 * i + 2) = 0.0;
+
+    xy(3 * i) = p[0] + p[1];
+    xy(3 * i + 1) = p[1];
+    xy(3 * i + 2) = 0.0;
   }
 
   double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);
   for (int i = 0; i < nrows; i++) {
     for (int j = 0; j < nrows; j++) {
-      vxx += A(i, j) * xx[i] * xx[j];
-      vxy += A(i, j) * xx[i] * yy[j];
+      vxx += A(i, j) * xx(i) * xx(j);
+      vxy += A(i, j) * xx(i) * yy(j);
     }
   }
   CHECK_CLOSE(vxx, volume, 1e-10);
   CHECK_CLOSE(vxy, 0.0, 1e-10);
+
+  // projector
+  DenseVector dofs;
+  Tensor Tc;
+  mfd.H1Cell(cell, xy, Tc);
+  CHECK_CLOSE(Tc(0, 1), 0.5, 1e-10);
+  CHECK_CLOSE(Tc(1, 1), 1.0, 1e-10);
 }
 
 

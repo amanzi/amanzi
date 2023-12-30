@@ -106,6 +106,12 @@ class MFD3D : public BilinearForm {
     Exceptions::amanzi_throw(msg);
   }
 
+  virtual void H1Cell(int c, const DenseVector& dofs, Tensor& Tc)
+  {
+    Errors::Message msg("H1 cell projector (from DOFs) is not supported.");
+    Exceptions::amanzi_throw(msg);
+  }
+
  protected:
   void StabilityScalar_(DenseMatrix& N, DenseMatrix& M);
   void StabilityScalarNonSymmetric_(DenseMatrix& N, DenseMatrix& M);

@@ -73,9 +73,10 @@ MechanicsElasticity_PK::Setup()
   dim_ = mesh_->getSpaceDimension();
 
   displacement_key_ = Keys::getKey(domain_, "displacement");
+  hydrostatic_stress_key_ = Keys::getKey(domain_, "hydrostatic_stress");
+
   young_modulus_key_ = Keys::getKey(domain_, "young_modulus");
   poisson_ratio_key_ = Keys::getKey(domain_, "poisson_ratio");
-
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
 
   // constant fields
@@ -96,6 +97,13 @@ MechanicsElasticity_PK::Setup()
     elist.set<std::string>("evaluator name", displacement_key_);
     eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
     S_->SetEvaluator(displacement_key_, Tags::DEFAULT, eval_);
+  }
+
+  if (!S_->HasRecord(hydrostatic_stress_key_)) {
+    S_->Require<CV_t, CVS_t>(hydrostatic_stress_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // -- rock properties
@@ -159,6 +167,9 @@ MechanicsElasticity_PK::Initialize()
   // Create pointers to the primary flow field displacement.
   solution_ = S_->GetPtrW<CV_t>(displacement_key_, Tags::DEFAULT, passwd_);
   soln_->SetData(solution_);
+
+  // Initialize fields
+  InitializeCVField(S_, *vo_, hydrostatic_stress_key_, Tags::DEFAULT, passwd_, 0.0);
 
   // Initialize time integrator.
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
@@ -346,7 +357,12 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 ******************************************************************* */
 void
 MechanicsElasticity_PK::CommitStep(double t_old, double t_new, const Tag& tag)
-{}
+{
+  auto u = S_->Get<CV_t>(displacement_key_, Tags::DEFAULT);
+  auto& p = S_->GetW<CV_t>(hydrostatic_stress_key_, Tags::DEFAULT, passwd_);
+
+  op_matrix_elas_->ComputeHydrostaticStress(u, p);
+}
 
 
 /* ******************************************************************

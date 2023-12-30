@@ -101,10 +101,14 @@ TEST(CLAMPED_BEAM)
   }
 
   // update mesh
+  auto mesh_tmp = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(mesh);
+  Teuchos::RCP<Mesh> mesh_vis = meshfactory.create(0.0, 0.0, 0.0, L, W, W, nx, ny, ny);
+  mesh_tmp->setVisMesh(mesh_vis);
+
   int nnodes = mesh->getNumEntities(Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
   double scale(20.0);
   const auto& u = *S->Get<CompositeVector>("displacement").ViewComponent("node");
-  auto mesh_vis = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(mesh);
+  const auto& p = *S->Get<CompositeVector>("hydrostatic_stress").ViewComponent("cell");
 
   for (int n = 0; n < nnodes; ++n) {
     auto xp = mesh->getNodeCoordinate(n);
@@ -121,6 +125,7 @@ TEST(CLAMPED_BEAM)
   io.WriteVector(*u(0), "displacement_x", AmanziMesh::NODE);
   io.WriteVector(*u(1), "displacement_y", AmanziMesh::NODE);
   io.WriteVector(*u(2), "displacement_z", AmanziMesh::NODE);
+  io.WriteVector(*p(0), "hydrostatic_stress", AmanziMesh::CELL);
   io.FinalizeCycle();
 
   // summary

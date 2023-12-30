@@ -27,7 +27,7 @@
 #include "MechanicsElasticity_PK.hh"
 
 /* **************************************************************** */
-TEST(ELASTIC_2D)
+TEST(HYDROSTATIC_STRESS)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -36,19 +36,19 @@ TEST(ELASTIC_2D)
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: Elastic deformation in 2D" << std::endl;
+  if (MyPID == 0) std::cout << "Test: hydrostatic stress" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/mechanics_elasticity_2D.xml";
+  std::string xmlFileName = "test/mechanics_hydrostatic_stress.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a mesh framework
   Teuchos::ParameterList regions_list = plist->sublist("regions");
-  auto gm = Teuchos::rcp(new GeometricModel(2, regions_list, *comm));
+  auto gm = Teuchos::rcp(new GeometricModel(3, regions_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 20, 20);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 1.0, 25.0, 16, 4, 25);
 
   // create a simple state and populate it
   Teuchos::ParameterList state_list = plist->sublist("state");
@@ -68,57 +68,44 @@ TEST(ELASTIC_2D)
   S->CheckAllFieldsInitialized();
 
   // solve the problem
-  int itrs(0);
-  int max_itrs = plist->get<int>("max iterations", 50);
-  double T1 = plist->get<double>("end time", 100.0);
   double dT = plist->get<double>("initial time step", 1.0);
-  double T(0.0), T0(0.0), dT0(dT), dTnext;
 
-  // T = T1;
-  while (T < T1 && itrs < max_itrs) {
-    if (itrs == 0) {
-      Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
-      udot->PutScalar(0.0);
-      EPK->bdf1_dae()->SetInitialState(T0, soln, udot);
+  Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
+  udot->PutScalar(0.0);
+  EPK->bdf1_dae()->SetInitialState(0.0, soln, udot);
+  EPK->UpdatePreconditioner(0.0, soln, dT);
 
-      EPK->UpdatePreconditioner(T0, soln, dT0);
-    }
+  EPK->bdf1_dae()->TimeStep(dT, dT, soln);
+  EPK->bdf1_dae()->CommitSolution(dT, soln);
 
-    while (EPK->bdf1_dae()->TimeStep(dT, dTnext, soln)) { dT = dTnext; }
-    EPK->bdf1_dae()->CommitSolution(dT, soln);
-
-    T = EPK->bdf1_dae()->time();
-    dT = dTnext;
-    itrs++;
-
-    // reset primary fields
-    auto eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
-      S->GetEvaluatorPtr("displacement", Tags::DEFAULT));
-    eval->SetChanged();
-
-    // commit step
-    EPK->CommitStep(T - dT, T, Tags::DEFAULT);
-  }
+  EPK->CommitStep(0.0, dT, Tags::DEFAULT);
 
   // initialize I/O
+  const auto& u = *S->Get<CompositeVector>("displacement").ViewComponent("node");
+  const auto& p = *S->Get<CompositeVector>("hydrostatic_stress").ViewComponent("cell");
+
   Teuchos::ParameterList iolist;
   iolist.get<std::string>("file name base", "plot");
   OutputXDMF io(iolist, mesh, true, false);
 
-  io.InitializeCycle(T, 1, "");
-  const auto& u = *S->Get<CompositeVector>("displacement").ViewComponent("node");
-  const auto& p = *S->Get<CompositeVector>("hydrostatic_stress").ViewComponent("cell");
-  io.WriteVector(*u(0), "displacement", AmanziMesh::NODE);
+  io.InitializeCycle(dT, 1, "");
+  io.WriteVector(*u(0), "displacement_x", AmanziMesh::NODE);
+  io.WriteVector(*u(1), "displacement_y", AmanziMesh::NODE);
+  io.WriteVector(*u(2), "displacement_z", AmanziMesh::NODE);
   io.WriteVector(*p(0), "hydrostatic_stress", AmanziMesh::CELL);
   io.FinalizeCycle();
 
   // summary
   WriteStateStatistics(*S);
-  // S->Get<CompositeVector>("displacement", Tags::DEFAULT).Print(std::cout);
 
-  int nnodes = mesh->getNumEntities(Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
-  for (int n = 0; n < nnodes; ++n) {
-    const auto& xv = mesh->getNodeCoordinate(n);
-    CHECK_CLOSE(u[0][n], xv[0], 1e-6);
+  // check
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  for (int c = 0; c < ncells_owned; ++c) {
+    const auto& xp = mesh->getCellCentroid(c);
+    if (xp[0] < 0.135 && xp[2] < 0.51)
+      CHECK_CLOSE(-p[0][c], 200000.0, 50000.0);
+    if (xp[0] > 3.871 && xp[2] < 0.51)
+      CHECK_CLOSE(-p[0][c], 490000.0, 40000.0);
   }
 }
+
