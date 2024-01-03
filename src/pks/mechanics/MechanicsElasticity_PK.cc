@@ -17,6 +17,7 @@
 #include "InverseFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
 
+#include "HydrostaticStressEvaluator.hh"
 #include "MechanicsElasticity_PK.hh"
 
 namespace Amanzi {
@@ -100,10 +101,17 @@ MechanicsElasticity_PK::Setup()
   }
 
   if (!S_->HasRecord(hydrostatic_stress_key_)) {
-    S_->Require<CV_t, CVS_t>(hydrostatic_stress_key_, Tags::DEFAULT, passwd_)
+    S_->Require<CV_t, CVS_t>(hydrostatic_stress_key_, Tags::DEFAULT, hydrostatic_stress_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  {
+    Teuchos::ParameterList elist(hydrostatic_stress_key_);
+    elist.set<std::string>("tag", "");
+    eval_hydro_stress_ = Teuchos::rcp(new HydrostaticStressEvaluator(elist));
+    S_->SetEvaluator(hydrostatic_stress_key_, Tags::DEFAULT, eval_hydro_stress_);
   }
 
   // -- rock properties
@@ -168,9 +176,6 @@ MechanicsElasticity_PK::Initialize()
   solution_ = S_->GetPtrW<CV_t>(displacement_key_, Tags::DEFAULT, passwd_);
   soln_->SetData(solution_);
 
-  // Initialize fields
-  InitializeCVField(S_, *vo_, hydrostatic_stress_key_, Tags::DEFAULT, passwd_, 0.0);
-
   // Initialize time integrator.
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
   if (ti_method_name == "BDF1") {
@@ -189,6 +194,7 @@ MechanicsElasticity_PK::Initialize()
     Teuchos::rcp(new Teuchos::ParameterList(ec_list_->sublist("boundary conditions", true)));
 
   bcs_.clear();
+  bool flag_node_point(false), flag_face_scalar(false), flag_face_point(false);
 
   // -- displacement
   if (bc_list->isSublist("displacement")) {
@@ -204,6 +210,8 @@ MechanicsElasticity_PK::Initialize()
         bc->set_bc_name("no slip");
         bc->set_type(WhetStone::DOF_Type::POINT);
         bcs_.push_back(bc);
+
+        flag_node_point = true;
       }
     }
   }
@@ -221,6 +229,27 @@ MechanicsElasticity_PK::Initialize()
         bc->set_bc_name("no slip");
         bc->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
         bcs_.push_back(bc);
+
+        flag_face_scalar = true;
+      }
+    }
+  }
+
+  if (bc_list->isSublist("traction")) {
+    PK_DomainFunctionFactory<MechanicsBoundaryFunction> bc_factory(mesh_, S_);
+
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("traction");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+
+        auto bc = bc_factory.Create(spec, "traction", AmanziMesh::FACE, Teuchos::null);
+        bc->set_bc_name("traction");
+        bc->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
+        bcs_.push_back(bc);
+
+        flag_face_point = true;
       }
     }
   }
@@ -247,16 +276,24 @@ MechanicsElasticity_PK::Initialize()
   op_preconditioner_elas_->SetTensorCoefficient(K);
 
   // -- initialize boundary conditions (memory allocation)
-  auto schema = op_matrix_elas_->schema_col();
-  for (auto it = schema.begin(); it != schema.end(); ++it) {
-    AmanziMesh::Entity_kind kind;
-    WhetStone::DOF_Type type;
-    std::tie(kind, type, std::ignore) = *it;
+  if (flag_node_point) {
+    auto bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::POINT));
+    op_bcs_.push_back(bc);
+  }
 
-    auto bc = Teuchos::rcp(new Operators::BCs(mesh_, kind, type));
+  if (flag_face_scalar) {
+    auto bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+    op_bcs_.push_back(bc);
+  }
+
+  if (flag_face_point) {
+    auto bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::POINT));
+    op_bcs_.push_back(bc);
+  }
+
+  for (auto bc : op_bcs_) {
     op_matrix_elas_->AddBCs(bc, bc);
     op_preconditioner_elas_->AddBCs(bc, bc);
-    op_bcs_.push_back(bc);
   }
 
   UpdateSourceBoundaryData_(t_ini, t_ini);
@@ -282,6 +319,10 @@ MechanicsElasticity_PK::Initialize()
     op_pc_solver_ = op_preconditioner_;
   }
   op_pc_solver_->InitializeInverse();
+
+  // we set up operators and can trigger re-initialization of stress
+  Teuchos::rcp_dynamic_cast<HydrostaticStressEvaluator>(eval_hydro_stress_)->set_op(op_matrix_elas_);
+  eval_->SetChanged();
 
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -358,10 +399,7 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 MechanicsElasticity_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
-  auto u = S_->Get<CV_t>(displacement_key_, Tags::DEFAULT);
-  auto& p = S_->GetW<CV_t>(hydrostatic_stress_key_, Tags::DEFAULT, passwd_);
-
-  op_matrix_elas_->ComputeHydrostaticStress(u, p);
+  S_->GetEvaluator(hydrostatic_stress_key_).Update(*S_, "mechanics");
 }
 
 

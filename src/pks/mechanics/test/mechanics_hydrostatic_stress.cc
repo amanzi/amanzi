@@ -57,14 +57,14 @@ TEST(HYDROSTATIC_STRESS)
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("mechanics elasticity");
-  auto EPK = Teuchos::rcp(new MechanicsElasticity_PK(pk_tree, plist, S, soln));
+  auto MPK = Teuchos::rcp(new MechanicsElasticity_PK(pk_tree, plist, S, soln));
 
-  EPK->Setup();
+  MPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
-  EPK->Initialize();
+  MPK->Initialize();
   S->CheckAllFieldsInitialized();
 
   // solve the problem
@@ -72,13 +72,13 @@ TEST(HYDROSTATIC_STRESS)
 
   Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
   udot->PutScalar(0.0);
-  EPK->bdf1_dae()->SetInitialState(0.0, soln, udot);
-  EPK->UpdatePreconditioner(0.0, soln, dT);
+  MPK->bdf1_dae()->SetInitialState(0.0, soln, udot);
+  MPK->UpdatePreconditioner(0.0, soln, dT);
 
-  EPK->bdf1_dae()->TimeStep(dT, dT, soln);
-  EPK->bdf1_dae()->CommitSolution(dT, soln);
+  MPK->bdf1_dae()->TimeStep(dT, dT, soln);
+  MPK->bdf1_dae()->CommitSolution(dT, soln);
 
-  EPK->CommitStep(0.0, dT, Tags::DEFAULT);
+  MPK->CommitStep(0.0, dT, Tags::DEFAULT);
 
   // initialize I/O
   const auto& u = *S->Get<CompositeVector>("displacement").ViewComponent("node");

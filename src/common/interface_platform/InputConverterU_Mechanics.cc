@@ -113,7 +113,6 @@ InputConverterU::TranslateMechanicsBCs_(const std::string& domain)
   char* text;
   DOMNodeList* children;
   DOMNode* node;
-  DOMElement* element;
 
   // correct list of boundary conditions for given domain
   bool flag;
@@ -151,8 +150,15 @@ InputConverterU::TranslateMechanicsBCs_(const std::string& domain)
     bc.set<Teuchos::Array<std::string>>("regions", regions)
       .set<std::string>("spatial distribution method", "none");
 
-    Teuchos::ParameterList& bcfn = bc.sublist("no slip");
-    TranslateGenericMath_(bcs, bcfn);
+    std::string name = (bcs.type == "displacement") ? "no slip" : "traction";
+    Teuchos::ParameterList& bcfn = bc.sublist(name);
+    bcfn.set<int>("number of dofs", dim_)
+        .set<std::string>("function type", "composite function");
+    for (int k = 0; k < dim_; ++k) {
+      std::stringstream dof_str;
+      dof_str << "dof " << k + 1 << " function";
+      bcfn.sublist(dof_str.str()).sublist("function-constant").set<double>("value", bcs.vectors[0][k]);
+    }
   }
 
   return out_list;

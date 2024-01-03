@@ -47,8 +47,6 @@ MechanicsFlowMatrixFracture_PK::MechanicsFlowMatrixFracture_PK(
 void
 MechanicsFlowMatrixFracture_PK::Setup()
 {
-  PK_MPCWeak::Setup();
-
   std::string passwd("");
   hydrostatic_stress_key_ = "hydrostatic_stress";
 
@@ -56,6 +54,25 @@ MechanicsFlowMatrixFracture_PK::Setup()
     .SetMesh(S_->GetMesh())
     ->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+  PK_MPCWeak::Setup();
+}
+
+
+/* ******************************************************************
+* Extended treatment of time step in transport PK.
+****************************************************************** */
+bool
+MechanicsFlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+{
+  auto pk0 = sub_pks_[0];
+  bool fail = pk0->AdvanceStep(t_old, t_new, reinit);
+  if (fail) return fail;
+  pk0->CommitStep(t_old, t_new, Tags::DEFAULT);
+
+  auto pk1 = sub_pks_[1];
+  fail = pk1->AdvanceStep(t_old, t_new, reinit);
+  return fail;
 }
 
 } // namespace Amanzi

@@ -37,6 +37,7 @@
 #include "AnalyticElasticity03.hh"
 #include "Verification.hh"
 
+
 /* *****************************************************************
 * Elasticity model: exactness test.
 ***************************************************************** */
@@ -65,7 +66,7 @@ RunTest(int icase, const std::string& solver,
   Teuchos::ParameterList plist = xmlreader.getParameters();
   Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("elasticity operator");
 
-  if (icase == 2 || icase == 3) {
+  if (icase == 2 || icase == 3 || icase == 4) {
     op_list.sublist("schema").set<std::string>("method", "elasticity");
   }
 
@@ -206,6 +207,40 @@ RunTest(int icase, const std::string& solver,
     op->AddBCs(bcp, bcp);
   }
 
+  if (icase == 4) {
+    auto bcv =
+      Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::POINT));
+    std::vector<int>& bcv_model = bcv->bc_model();
+    std::vector<AmanziGeometry::Point>& bcv_value = bcv->bc_value_point();
+
+    for (int v = 0; v < nnodes_wghost; ++v) {
+      auto xv = mesh->getNodeCoordinate(v);
+
+      if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - Lx) < 1e-6 || fabs(xv[1]) < 1e-6) {
+        bcv_model[v] = OPERATOR_BC_DIRICHLET;
+        bcv_value[v] = ana.velocity_exact(xv, 0.0);
+      }
+    }
+    op->AddBCs(bcv, bcv);
+
+    auto bcf =
+      Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::POINT));
+    std::vector<int>& bcf_model = bcf->bc_model();
+    std::vector<AmanziGeometry::Point>& bcf_value = bcf->bc_value_point();
+
+    for (int f = 0; f < nfaces_wghost; ++f) {
+      auto xf = mesh->getFaceCentroid(f);
+
+      if (fabs(xf[1] - Ly) < 1e-6) {
+        double area = mesh->getFaceArea(f);
+        auto normal = mesh->getFaceNormal(f);
+        bcf_model[f] = OPERATOR_BC_NORMAL_STRESS;
+        bcf_value[f] = (ana.stress_exact(xf, 0.0) * normal) / area;
+      }
+    }
+    op->AddBCs(bcf, bcf);
+  }
+
   // create and initialize solution
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
   CompositeVector solution(cvs);
@@ -316,6 +351,11 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS_KINEMATIC_SCALAR_TENSOR)
 TEST(OPERATOR_ELASTICITY_EXACTNESS_KINEMATIC_FULL_TENSOR)
 {
   RunTest<AnalyticElasticity01>(3, "GMRES", 2.0, 1.0, true);
+}
+
+TEST(OPERATOR_ELASTICITY_EXACTNESS_NORMAL_STRESS_FULL_TENSOR)
+{
+  RunTest<AnalyticElasticity01>(4, "GMRES", 2.0, 1.0, true);
 }
 
 TEST(OPERATOR_CONVERGENCE_ELASTICITY_FULL_TENSOR_BERNARDI_RAUGEL)

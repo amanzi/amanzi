@@ -41,6 +41,7 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 set(mechanics_src_files MechanicsElasticity_PK.cc
                         MechanicsElasticity_TI.cc
                         MechanicsBoundaryFunction.cc
+                        HydrostaticStressEvaluator.cc
    )
 set(mechanics_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
 if (Ifpack_ENABLE_HYPRE)
@@ -59,6 +60,7 @@ add_amanzi_library(mechanics SOURCE ${mechanics_src_files}
 set(mechanics_inc_files 
   MechanicsElasticity_PK.hh
   MechanicsBoundaryFunction.hh
+  HydrostaticStressEvaluator.hh
 )
 
 add_install_include_file(${mechanics_inc_files})

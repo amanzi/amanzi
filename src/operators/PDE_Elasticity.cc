@@ -187,88 +187,192 @@ PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
 void
 PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  int d = mesh_->getSpaceDimension();
-  auto rhs = global_op_->rhs();
+  // implementation of specific BCs: shear stress (2D), kinematic (3D), traction
+  for (auto bc : bcs_trial_) {
+    auto kind = bc->kind();
+    auto type = bc->type();
 
+    if (kind == AmanziMesh::Entity_kind::FACE &&
+        type == WhetStone::DOF_Type::SCALAR) {
+      ApplyBCs_ShearStress_(*bc, primary, eliminate, essential_eqn);
+
+    } else if (kind == AmanziMesh::Entity_kind::FACE &&
+               type == WhetStone::DOF_Type::POINT) {
+      ApplyBCs_Traction_(*bc, primary, eliminate, essential_eqn);
+
+    } else if (kind == AmanziMesh::NODE &&
+               type == WhetStone::DOF_Type::SCALAR) {
+      ApplyBCs_Kinematic_(*bc, primary, eliminate, essential_eqn);
+    }
+  }
+
+  // default implementation of essential BCs
+  for (auto bc : bcs_trial_) {
+    auto type = bc->type();
+
+    if (type == WhetStone::DOF_Type::POINT) {
+      ApplyBCs_Cell_Point_(*bc, local_op_, primary, eliminate, essential_eqn);
+    } else if (type == WhetStone::DOF_Type::SCALAR ||
+               type == WhetStone::DOF_Type::NORMAL_COMPONENT) {
+      ApplyBCs_Cell_Scalar_(*bc, local_op_, primary, eliminate, essential_eqn);
+    }
+  }
+}
+
+
+/* ******************************************************************
+* BCs: shear stress
+****************************************************************** */
+void
+PDE_Elasticity::ApplyBCs_ShearStress_(
+  const BCs& bc, bool primary, bool eliminate, bool essential_eqn)
+{
+  int d = mesh_->getSpaceDimension();
+  const auto& bc_model = bc.bc_model();
+  const auto& bc_value = bc.bc_value();
+
+  auto rhs = global_op_->rhs();
   Teuchos::RCP<Epetra_MultiVector> rhs_node;
   if (rhs()->HasComponent("node")) rhs_node = rhs->ViewComponent("node", true);
 
-  for (auto bc : bcs_trial_) {
-    const auto& bc_model = bc->bc_model();
-    const auto& bc_value = bc->bc_value();
-    AmanziMesh::Entity_kind kind = bc->kind();
+  rhs->PutScalarGhosted(0.0);
 
-    global_op_->rhs()->PutScalarGhosted(0.0);
+  for (int c = 0; c != ncells_owned; ++c) {
+    auto faces = mesh_->getCellFaces(c);
+    int nfaces = faces.size();
 
-    for (int c = 0; c != ncells_owned; ++c) {
-      WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
-      int ncols = Acell.NumCols();
+    for (int n = 0; n != nfaces; ++n) {
+      int f = faces[n];
 
-      if (kind == AmanziMesh::FACE && d == 2) {
-        auto faces = mesh_->getCellFaces(c);
-        int nfaces = faces.size();
+      if (bc_model[f] == OPERATOR_BC_SHEAR_STRESS) {
+        double area = mesh_->getFaceArea(f);
+        const auto& tau = mesh_->getEdgeVector(f);
+        auto lnodes = mesh_->getEdgeNodes(f);
+        int nlnodes = lnodes.size();
 
-        for (int n = 0; n != nfaces; ++n) {
-          int f = faces[n];
+        std::vector<double> weights(nlnodes, 0.5);
+        if (d == 3) WhetStone::PolygonCentroidWeights(*mesh_, lnodes, area, weights);
 
-          if (bc_model[f] == OPERATOR_BC_SHEAR_STRESS) {
-            double value = bc_value[f];
-            const auto& tau = mesh_->getEdgeVector(f);
-            auto lnodes = mesh_->getEdgeNodes(f);
-
-            for (int k = 0; k < d; ++k) {
-              (*rhs_node)[k][lnodes[0]] += value * tau[k] / 2;
-              (*rhs_node)[k][lnodes[1]] += value * tau[k] / 2;
-            }
-          }
-        }
-      } else if (kind == AmanziMesh::NODE) {
-        auto nodes = mesh_->getCellNodes(c);
-        int nnodes = nodes.size();
-
-        for (int n = 0; n != nnodes; ++n) {
-          int v = nodes[n];
-
-          if (bc_model[v] == OPERATOR_BC_KINEMATIC) {
-            double value = bc_value[v];
-            if (local_op_->matrices_shadow[c].NumRows() == 0) {
-              local_op_->matrices_shadow[c] = Acell;
-            }
-            auto cells = mesh_->getNodeCells(v);
-            int ncells = cells.size();
-
-            auto normal = WhetStone::getNodeUnitNormal(*mesh_, v);
-            int k = (std::fabs(normal[0]) > std::fabs(normal[1])) ? 0 : 1;
-            if (d == 3) k = (std::fabs(normal[k]) > std::fabs(normal[2])) ? k : 2;
-
-            // keeps positive number on the main diagonal
-            if (normal[k] < 0.0) {
-              normal *= -1.0;
-              value *= -1.0;
-            }
-
-            int noff(d * n);
-            for (int m = 0; m < ncols; m++) Acell(noff + k, m) = 0.0;
-            for (int i = 0; i < d; ++i) Acell(noff + k, noff + i) = normal[i] / ncells;
-            if (v < nnodes_owned) (*rhs_node)[k][v] = value;
-
-            if (eliminate) {
-              // AMANZI_ASSERT(false);
-            }
+        double value = bc_value[f];
+        for (int m = 0; m < nlnodes; ++m) {
+          int v = lnodes[m];
+          for (int k = 0; k < d; ++k) {
+            (*rhs_node)[k][v] += value * tau[k] * weights[m];
           }
         }
       }
     }
-    global_op_->rhs()->GatherGhostedToMaster(Add);
+  }
 
-    // impose essential BCs via the default implementation
-    if (bc->type() == WhetStone::DOF_Type::POINT) {
-      ApplyBCs_Cell_Point_(*bc, local_op_, primary, eliminate, essential_eqn);
-    } else if (bc->type() == WhetStone::DOF_Type::SCALAR ||
-               bc->type() == WhetStone::DOF_Type::NORMAL_COMPONENT) {
-      ApplyBCs_Cell_Scalar_(*bc, local_op_, primary, eliminate, essential_eqn);
+  rhs->GatherGhostedToMaster(Add);
+}
+
+
+/* ******************************************************************
+* BCs: traction
+****************************************************************** */
+void
+PDE_Elasticity::ApplyBCs_Traction_(
+  const BCs& bc, bool primary, bool eliminate, bool essential_eqn)
+{
+  int d = mesh_->getSpaceDimension();
+  const auto& bc_model = bc.bc_model();
+  const auto& bc_value = bc.bc_value_point();
+
+  auto rhs = global_op_->rhs();
+  Teuchos::RCP<Epetra_MultiVector> rhs_node;
+  if (rhs()->HasComponent("node")) rhs_node = rhs->ViewComponent("node", true);
+
+  rhs->PutScalarGhosted(0.0);
+
+  for (int c = 0; c != ncells_owned; ++c) {
+    auto faces = mesh_->getCellFaces(c);
+    int nfaces = faces.size();
+
+    for (int n = 0; n != nfaces; ++n) {
+      int f = faces[n];
+
+      if (bc_model[f] == OPERATOR_BC_NORMAL_STRESS) {
+        double area = mesh_->getFaceArea(f);
+        auto lnodes = mesh_->getFaceNodes(f);
+        int nlnodes = lnodes.size();
+
+        std::vector<double> weights(nlnodes, 0.5);
+        if (d == 3) WhetStone::PolygonCentroidWeights(*mesh_, lnodes, area, weights);
+
+        auto& value = bc_value[f];
+        for (int m = 0; m < nlnodes; ++m) {
+          int v = lnodes[m];
+          for (int k = 0; k < d; ++k) {
+            (*rhs_node)[k][v] += value[k] * weights[m] * area;
+          }
+        }
+      }
     }
   }
+
+  rhs->GatherGhostedToMaster(Add);
+}
+
+
+/* ******************************************************************
+* BCs: kinematic
+****************************************************************** */
+void
+PDE_Elasticity::ApplyBCs_Kinematic_(
+  const BCs& bc, bool primary, bool eliminate, bool essential_eqn)
+{
+  int d = mesh_->getSpaceDimension();
+  const auto& bc_model = bc.bc_model();
+  const auto& bc_value = bc.bc_value();
+
+  auto rhs = global_op_->rhs();
+  Teuchos::RCP<Epetra_MultiVector> rhs_node;
+  if (rhs()->HasComponent("node")) rhs_node = rhs->ViewComponent("node", true);
+
+  rhs->PutScalarGhosted(0.0);
+
+  for (int c = 0; c != ncells_owned; ++c) {
+    WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
+    int ncols = Acell.NumCols();
+
+    auto nodes = mesh_->getCellNodes(c);
+    int nnodes = nodes.size();
+
+    for (int n = 0; n != nnodes; ++n) {
+      int v = nodes[n];
+
+      if (bc_model[v] == OPERATOR_BC_KINEMATIC) {
+        double value = bc_value[v];
+        if (local_op_->matrices_shadow[c].NumRows() == 0) {
+          local_op_->matrices_shadow[c] = Acell;
+        }
+        auto cells = mesh_->getNodeCells(v);
+        int ncells = cells.size();
+
+        auto normal = WhetStone::getNodeUnitNormal(*mesh_, v);
+        int k = (std::fabs(normal[0]) > std::fabs(normal[1])) ? 0 : 1;
+        if (d == 3) k = (std::fabs(normal[k]) > std::fabs(normal[2])) ? k : 2;
+
+        // keeps positive number on the main diagonal
+        if (normal[k] < 0.0) {
+          normal *= -1.0;
+          value *= -1.0;
+        }
+
+        int noff(d * n);
+        for (int m = 0; m < ncols; m++) Acell(noff + k, m) = 0.0;
+        for (int i = 0; i < d; ++i) Acell(noff + k, noff + i) = normal[i] / ncells;
+        if (v < nnodes_owned) (*rhs_node)[k][v] = value;
+
+        if (eliminate) {
+          // AMANZI_ASSERT(false);
+        }
+      }
+    }
+  }
+
+  rhs->GatherGhostedToMaster(Add);
 }
 
 } // namespace Operators

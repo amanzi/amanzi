@@ -357,7 +357,6 @@ Richards_PK::Setup()
       .set<std::string>("pressure key", pressure_key_)
       .set<std::string>("tag", "");
 
-    // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     auto eval = Teuchos::rcp(new WRMEvaluator(elist, wrm_));
     S_->SetEvaluator(saturation_liquid_key_, Tags::DEFAULT, eval);
   }
@@ -460,7 +459,7 @@ Richards_PK::Setup()
       elist.set<std::string>("aperture key", aperture_key_)
         .set<std::string>("pressure key", pressure_key_)
         .set<std::string>("tag", "");
-      // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+      if (S_->HasRecord("hydrostatic_stress")) elist.set<bool>("use stress", true);
 
       auto eval = Teuchos::rcp(new ApertureModelEvaluator(elist, fam));
       S_->SetEvaluator(aperture_key_, Tags::DEFAULT, eval);

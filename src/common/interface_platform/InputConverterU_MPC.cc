@@ -318,6 +318,11 @@ InputConverterU::TranslateCycleDriverNew_()
       tmp += "flow and energy";
       PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
       break;
+    case 14:
+      pk_master_["thermal flow"] = true;
+      tmp += "thermal flow and transport";
+      PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
+      break;
     case 15:
       pk_master_["thermal flow"] = true;
       tmp += "thermal flow and reactive transport";
@@ -513,6 +518,10 @@ InputConverterU::PopulatePKTree_(Teuchos::ParameterList& pk_tree, const std::str
     tmp.set<std::string>("PK type", "flow reactive transport"); // same as for single domain
     PopulatePKTree_(tmp, Keys::merge(prefix, "coupled flow", delimiter));
     PopulatePKTree_(tmp, Keys::merge(prefix, "coupled reactive transport", delimiter));
+  } else if (basename == "coupled thermal flow and transport") {
+    tmp.set<std::string>("PK type", "flow reactive transport");
+    PopulatePKTree_(tmp, Keys::merge(prefix, "coupled flow and energy", delimiter));
+    PopulatePKTree_(tmp, Keys::merge(prefix, "coupled transport", delimiter));
   } else if (basename == "coupled thermal flow and reactive transport") {
     tmp.set<std::string>("PK type", "flow reactive transport");
     PopulatePKTree_(tmp, Keys::merge(prefix, "coupled flow and energy", delimiter));
@@ -970,6 +979,13 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
         pk_names.push_back(Keys::merge(prefix, "coupled reactive transport", delimiter));
         out_list.sublist(pk).set<Teuchos::Array<std::string>>("PKs order", pk_names);
         out_list.sublist(pk).set<int>("master PK index", 0);
+      } else if (basename == "coupled thermal flow and transport") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back(Keys::merge(prefix, "coupled flow and energy", delimiter));
+        pk_names.push_back(Keys::merge(prefix, "coupled transport", delimiter));
+        out_list.sublist(pk)
+          .set<Teuchos::Array<std::string>>("PKs order", pk_names)
+          .set<int>("master PK index", 0);
       } else if (basename == "coupled thermal flow and reactive transport") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "coupled flow and energy", delimiter));

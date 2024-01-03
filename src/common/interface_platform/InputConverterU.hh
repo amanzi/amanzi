@@ -52,6 +52,7 @@ struct BCs {
 
   std::string type;
   std::vector<double> times, values, fluxes;
+  std::vector<std::vector<double>> vectors;
   std::vector<std::string> forms, formulas;
 
   std::string filename, xheader, yheader, variable;

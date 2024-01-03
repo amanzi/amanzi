@@ -62,9 +62,11 @@ class ApertureModel_BartonBandis : public ApertureModel {
   ~ApertureModel_BartonBandis(){};
 
   // required methods from the base class
-  double Aperture(double p) { return a0_ - A_ * (pov_ - p) / (1.0 + B_ * (pov_ - p)); }
+  virtual double OverburdenPressure() override { return pov_; }
 
-  double dAperturedPressure(double p) { return A_ / std::pow(1.0 + B_ * (pov_ - p), 2); }
+  virtual double Aperture(double p, double pov) override { return a0_ - A_ * (pov - p) / (1.0 + B_ * (pov - p)); }
+
+  virtual double dAperturedPressure(double p, double pov) override { return A_ / std::pow(1.0 + B_ * (pov - p), 2); }
 
  private:
   double a0_, pov_, A_, B_;

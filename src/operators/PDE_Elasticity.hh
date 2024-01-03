@@ -102,6 +102,11 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
  protected:
   void Init_(Teuchos::ParameterList& plist);
 
+ private:
+  void ApplyBCs_Kinematic_(const BCs& bc, bool primary, bool eliminate, bool essential_eqn);
+  void ApplyBCs_ShearStress_(const BCs& bc, bool primary, bool eliminate, bool essential_eqn);
+  void ApplyBCs_Traction_(const BCs& bc, bool primary, bool eliminate, bool essential_eqn);
+
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K_;
   WhetStone::Tensor K_default_;

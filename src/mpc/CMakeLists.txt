@@ -33,12 +33,13 @@ include_directories(${FLOW_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${GEOCHEM_SOURCE_DIR})
-include_directories(${MFUNCS_SOURCE_DIR})
+include_directories(${MECHANICS_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${MESH_EXTRACTED_SOURCE_DIR})
-include_directories(${MESH_SOURCE_DIR})
-include_directories(${MPC_TREE_SOURCE_DIR})
 include_directories(${MESH_MSTK_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
+include_directories(${MFUNCS_SOURCE_DIR})
+include_directories(${MPC_TREE_SOURCE_DIR})
 include_directories(${MULTIPHASE_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
@@ -94,7 +95,7 @@ add_amanzi_library(mpc
                           ObservableAqueous.cc ObservableSolute.cc
                    HEADERS ${mpc_inc_files}
                    LINK_LIBS time_integration solvers output mpc_tree state mesh dbg
-                             flow ${mpc_tpl_libs})
+                             flow mechanics ${mpc_tpl_libs})
 
 if (BUILD_TESTS)
     include_directories(${MESH_FACTORY_SOURCE_DIR})
@@ -307,4 +308,10 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 
+    # Test: mechanics
+    add_amanzi_test(mpc_mechanics_flow_aperture mpc_mechanics_flow_aperture
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_mechanics_flow_aperture.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
 endif()

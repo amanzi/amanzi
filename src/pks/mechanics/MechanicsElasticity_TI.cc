@@ -128,33 +128,24 @@ MechanicsElasticity_PK::UpdateSourceBoundaryData_(double t_old, double t_new)
 
 
 /* ******************************************************************
-* Add a boundary marker to used faces.
-* WARNING: we can skip update of ghost boundary faces, b/c they
-* should be always owned.
+* Add a boundary condition marker to the used faces.
 ****************************************************************** */
 void
 MechanicsElasticity_PK::ComputeOperatorBCs()
 {
-  int d(mesh_->getSpaceDimension()), mv(0), mf(1);
-
+  int d(mesh_->getSpaceDimension()), nbcs(op_bcs_.size());
   dirichlet_bc_ = 0;
 
-  for (int i = 0; i < op_bcs_.size(); ++i) {
+  // nodal BCs are the first on the list
+  for (int i = 0; i < nbcs; ++i) {
     std::vector<int>& bc_model = op_bcs_[i]->bc_model();
     for (int n = 0; n < bc_model.size(); n++) { bc_model[n] = Operators::OPERATOR_BC_NONE; }
-
-    if (op_bcs_[i]->type() == WhetStone::DOF_Type::POINT) {
-      mv = i;
-      mf = 1 - mv;
-      std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[i]->bc_value_point();
-      for (int n = 0; n < bc_value.size(); n++) { bc_value[n] = AmanziGeometry::Point(d); }
-    }
   }
 
   for (int i = 0; i < bcs_.size(); ++i) {
     if (bcs_[i]->get_bc_name() == "no slip" && bcs_[i]->type() == WhetStone::DOF_Type::POINT) {
-      std::vector<int>& bc_model = op_bcs_[mv]->bc_model();
-      std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[mv]->bc_value_point();
+      std::vector<int>& bc_model = op_bcs_[0]->bc_model();
+      std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[0]->bc_value_point();
 
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;
@@ -166,13 +157,26 @@ MechanicsElasticity_PK::ComputeOperatorBCs()
 
     if (bcs_[i]->get_bc_name() == "no slip" &&
         bcs_[i]->type() == WhetStone::DOF_Type::NORMAL_COMPONENT) {
-      std::vector<int>& bc_model = op_bcs_[mf]->bc_model();
-      std::vector<double>& bc_value = op_bcs_[mf]->bc_value();
+      std::vector<int>& bc_model = op_bcs_[1]->bc_model();
+      std::vector<double>& bc_value = op_bcs_[1]->bc_value();
 
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;
         bc_model[n] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value[n] = it->second[0];
+      }
+    }
+  }
+
+  for (int i = 0; i < bcs_.size(); ++i) {
+    if (bcs_[i]->get_bc_name() == "traction" && bcs_[i]->type() == WhetStone::DOF_Type::NORMAL_COMPONENT) {
+      std::vector<int>& bc_model = op_bcs_[nbcs - 1]->bc_model();
+      std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[nbcs - 1]->bc_value_point();
+
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int n = it->first;
+        bc_model[n] = Operators::OPERATOR_BC_NORMAL_STRESS;
+        for (int k = 0; k < d; ++k) { bc_value[n][k] = it->second[k]; }
       }
     }
   }

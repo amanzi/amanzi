@@ -52,6 +52,7 @@ and
 #include "Units.hh"
 #include "VerboseObject.hh"
 
+#include "HydrostaticStressEvaluator.hh"
 #include "MechanicsBoundaryFunction.hh"
 
 namespace Amanzi {
@@ -155,6 +156,7 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
   Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<CompositeVector> solution_;
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> eval_;
+  Teuchos::RCP<HydrostaticStressEvaluator> eval_hydro_stress_;
 
   // solvers
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_;
