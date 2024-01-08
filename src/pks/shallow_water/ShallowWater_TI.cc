@@ -157,14 +157,14 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        }
     }
     
-    else if (bcs_[i]->get_bc_name() == "outward discharge") {
+    else if (bcs_[i]->get_bc_name() == "outward discharge") { // can be merged with "discharge"; but might consider 
+    // setting this as a scalar BC instead of vector. Tangential discharge physical necessity?
        outward_discharge_flag = true;
        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
           int f = it->first;
           bc_model_vector[f] = Operators::OPERATOR_BC_DIRICHLET; 
           bc_value_qx[f] = it->second[0];
           bc_value_qy[f] = it->second[1];
-          std::cout<<"bc_value_qn = "<<bc_value_qx[f]<<std::endl;
           if (primary_variable_Dirichlet){
              AmanziMesh::Entity_ID_List nodes;
              mesh_->face_get_nodes(f, &nodes);
