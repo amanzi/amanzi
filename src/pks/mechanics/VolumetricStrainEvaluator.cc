@@ -15,7 +15,7 @@
 
 #include "PDE_Elasticity.hh"
 
-#include "HydrostaticStressEvaluator.hh"
+#include "VolumetricStrainEvaluator.hh"
 
 namespace Amanzi {
 namespace Mechanics {
@@ -23,7 +23,7 @@ namespace Mechanics {
 /* ******************************************************************
 * Constructor
 ****************************************************************** */
-HydrostaticStressEvaluator::HydrostaticStressEvaluator(Teuchos::ParameterList& plist)
+VolumetricStrainEvaluator::VolumetricStrainEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   displacement_key_ = plist.get<std::string>("displacement key", "displacement");
@@ -34,7 +34,7 @@ HydrostaticStressEvaluator::HydrostaticStressEvaluator(Teuchos::ParameterList& p
 /* ******************************************************************
 * A copy constructor.
 ****************************************************************** */
-HydrostaticStressEvaluator::HydrostaticStressEvaluator(const HydrostaticStressEvaluator& other)
+VolumetricStrainEvaluator::VolumetricStrainEvaluator(const VolumetricStrainEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     displacement_key_(other.displacement_key_),
     op_(other.op_)
@@ -45,9 +45,9 @@ HydrostaticStressEvaluator::HydrostaticStressEvaluator(const HydrostaticStressEv
 * Clone with unclear yet purpose.
 ****************************************************************** */
 Teuchos::RCP<Evaluator>
-HydrostaticStressEvaluator::Clone() const
+VolumetricStrainEvaluator::Clone() const
 {
-  return Teuchos::rcp(new HydrostaticStressEvaluator(*this));
+  return Teuchos::rcp(new VolumetricStrainEvaluator(*this));
 }
 
 
@@ -55,12 +55,12 @@ HydrostaticStressEvaluator::Clone() const
 * Evaluator
 ****************************************************************** */
 void
-HydrostaticStressEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
+VolumetricStrainEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   // operator may not be available during initialization time
   if (op_.get()) {
     auto u = S.Get<CompositeVector>(displacement_key_, Tags::DEFAULT);
-    op_->ComputeHydrostaticStress(u, *results[0]);
+    op_->ComputeVolumetricStrain(u, *results[0]);
   } else {
     results[0]->PutScalar(0.0);
   }

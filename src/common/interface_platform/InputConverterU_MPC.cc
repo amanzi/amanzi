@@ -532,6 +532,10 @@ InputConverterU::PopulatePKTree_(Teuchos::ParameterList& pk_tree, const std::str
       .set<std::string>("PK type", "shallow water");
     tmp.sublist(Keys::merge(prefix, "transport", delimiter))
       .set<std::string>("PK type", "transport");
+  } else if (basename == "mechanics and flow") {
+    tmp.set<std::string>("PK type", "mechanics and flow");
+    PopulatePKTree_(tmp, Keys::merge(prefix, "mechanics", delimiter));
+    PopulatePKTree_(tmp, Keys::merge(prefix, "flow", delimiter));
   } else if (basename == "mechanics and coupled flow") {
     tmp.set<std::string>("PK type", "mechanics and coupled flow");
     PopulatePKTree_(tmp, Keys::merge(prefix, "mechanics", delimiter));
@@ -1008,6 +1012,13 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
                             Keys::getKey(pk_domain_["shallow_water"], "riemann_flux"))
           .set<std::string>("saturation key",
                             Keys::getKey(pk_domain_["shallow_water"], "ponded_depth"));
+      } else if (basename == "mechanics and flow") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back(Keys::merge(prefix, "mechanics", delimiter));
+        pk_names.push_back(Keys::merge(prefix, "flow", delimiter));
+        out_list.sublist(pk)
+          .set<Teuchos::Array<std::string>>("PKs order", pk_names)
+          .set<std::string>("domain name", pk_domain_["mechanics"]);
       } else if (basename == "mechanics and coupled flow") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "mechanics", delimiter));

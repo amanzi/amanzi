@@ -150,14 +150,27 @@ InputConverterU::TranslateMechanicsBCs_(const std::string& domain)
     bc.set<Teuchos::Array<std::string>>("regions", regions)
       .set<std::string>("spatial distribution method", "none");
 
-    std::string name = (bcs.type == "displacement") ? "no slip" : "traction";
-    Teuchos::ParameterList& bcfn = bc.sublist(name);
-    bcfn.set<int>("number of dofs", dim_)
-        .set<std::string>("function type", "composite function");
-    for (int k = 0; k < dim_; ++k) {
-      std::stringstream dof_str;
-      dof_str << "dof " << k + 1 << " function";
-      bcfn.sublist(dof_str.str()).sublist("function-constant").set<double>("value", bcs.vectors[0][k]);
+    if (bcs.type == "displacement") {
+      Teuchos::ParameterList& bcfn = bc.sublist("no slip");
+      bcfn.set<int>("number of dofs", dim_)
+          .set<std::string>("function type", "composite function");
+      for (int k = 0; k < dim_; ++k) {
+        std::stringstream dof_str;
+        dof_str << "dof " << k + 1 << " function";
+        bcfn.sublist(dof_str.str()).sublist("function-constant").set<double>("value", bcs.vectors[0][k]);
+      }
+    } else if (bcs.type == "traction") {
+      Teuchos::ParameterList& bcfn = bc.sublist("traction");
+      bcfn.set<int>("number of dofs", dim_)
+          .set<std::string>("function type", "composite function");
+      for (int k = 0; k < dim_; ++k) {
+        std::stringstream dof_str;
+        dof_str << "dof " << k + 1 << " function";
+        bcfn.sublist(dof_str.str()).sublist("function-constant").set<double>("value", bcs.vectors[0][k]);
+      }
+    } else if (bcs.type == "kinematic") {
+      Teuchos::ParameterList& bcfn = bc.sublist("no slip");
+      bcfn.sublist("function-constant").set<double>("value", bcs.values[0]);
     }
   }
 

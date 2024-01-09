@@ -42,6 +42,7 @@ set(mechanics_src_files MechanicsElasticity_PK.cc
                         MechanicsElasticity_TI.cc
                         MechanicsBoundaryFunction.cc
                         HydrostaticStressEvaluator.cc
+                        VolumetricStrainEvaluator.cc
    )
 set(mechanics_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
 if (Ifpack_ENABLE_HYPRE)
@@ -61,6 +62,7 @@ set(mechanics_inc_files
   MechanicsElasticity_PK.hh
   MechanicsBoundaryFunction.hh
   HydrostaticStressEvaluator.hh
+  VolumetricStrainEvaluator.hh
 )
 
 add_install_include_file(${mechanics_inc_files})

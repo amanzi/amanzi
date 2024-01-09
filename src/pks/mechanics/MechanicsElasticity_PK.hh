@@ -54,6 +54,7 @@ and
 
 #include "HydrostaticStressEvaluator.hh"
 #include "MechanicsBoundaryFunction.hh"
+#include "VolumetricStrainEvaluator.hh"
 
 namespace Amanzi {
 namespace Mechanics {
@@ -135,6 +136,7 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
  private:
   void UpdateSourceBoundaryData_(double t_old, double t_new);
   void AddGravityTerm_(CompositeVector& rhs);
+  void AddPressureGradient_(CompositeVector& rhs);
 
  public:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
@@ -149,7 +151,7 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
 
   double dt_, dt_next_, dt_desirable_;
 
-  bool use_gravity_;
+  bool use_gravity_, biot_model_;
 
  protected:
   // pointers to primary fields and their evaluators
@@ -157,6 +159,7 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
   Teuchos::RCP<CompositeVector> solution_;
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> eval_;
   Teuchos::RCP<HydrostaticStressEvaluator> eval_hydro_stress_;
+  Teuchos::RCP<VolumetricStrainEvaluator> eval_vol_strain_;
 
   // solvers
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_;
@@ -169,6 +172,7 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
   int dim_;
 
   Key displacement_key_, hydrostatic_stress_key_;
+  Key vol_strain_key_, prev_vol_strain_key_;
   Key young_modulus_key_, poisson_ratio_key_;
   Key particle_density_key_;
 

@@ -68,6 +68,12 @@ PorosityEvaluator::InitializeFromPlist_()
   // my dependency is pressure.
   pressure_key_ = plist_.get<std::string>("pressure key");
   dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
+
+  if (plist_.isParameter("volumetric strain key")) {
+    use_strain_ = true;
+    strain_key_ = plist_.get<std::string>("volumetric strain key");
+    dependencies_.insert(std::make_pair(strain_key_, Tags::DEFAULT));
+  }
 }
 
 
@@ -83,6 +89,14 @@ PorosityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>
   int ncells = phi_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
     phi_c[0][c] = pom_->second[(*pom_->first)[c]]->PorosityValue(pres_c[0][c]);
+  }
+
+  if (use_strain_) {
+    const auto& e_c = *S.Get<CompositeVector>("volumetric_strain").ViewComponent("cell");
+    const auto& prev_e_c = *S.Get<CompositeVector>("prev_volumetric_strain").ViewComponent("cell");
+    for (int c = 0; c != ncells; ++c) {
+      phi_c[0][c] += e_c[0][c] - prev_e_c[0][c];
+    }
   }
 
   // optional copy of cell data to boundary
@@ -103,8 +117,12 @@ PorosityEvaluator::EvaluatePartialDerivative_(const State& S,
   const auto& pres_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
 
   int ncells = phi_c.MyLength();
-  for (int c = 0; c != ncells; ++c) {
-    phi_c[0][c] = pom_->second[(*pom_->first)[c]]->dPorositydPressure(pres_c[0][c]);
+  if (wrt_key == pressure_key_) {
+    for (int c = 0; c != ncells; ++c) {
+      phi_c[0][c] = pom_->second[(*pom_->first)[c]]->dPorositydPressure(pres_c[0][c]);
+    }
+  } else if (wrt_key == strain_key_) {
+    for (int c = 0; c != ncells; ++c) phi_c[0][c] = 1.0;
   }
 
   Operators::CellToBoundaryFaces(*results[0]);

@@ -68,6 +68,7 @@ if (ENABLE_AmanziPhysicsModule)
       FlowEnergy_PK.hh
       FlowEnergyMatrixFracture_PK.hh
       FlowMatrixFracture_PK.hh
+      MechanicsFlow_PK.hh
       MechanicsFlowMatrixFracture_PK.hh
       MultiphaseMatrixFracture_PK.hh
       TransportMatrixFracture_PK.hh    
@@ -90,6 +91,7 @@ if (ENABLE_AmanziPhysicsModule)
       FlowEnergyMatrixFracture_PK.cc
       FlowMatrixFracture_PK.cc
       HeatDiffusionMatrixFracture.cc
+      MechanicsFlow_PK.cc
       MechanicsFlowMatrixFracture_PK.cc
       MultiphaseMatrixFracture_PK.cc
       TransportMatrixFracture_PK.cc        

@@ -51,7 +51,9 @@ class PorosityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Com
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<PorosityModelPartition> pom_;
-  Key pressure_key_;
+  Key pressure_key_, strain_key_;
+
+  bool use_strain_ = false;
 
  private:
   static Utils::RegisteredFactory<Evaluator, PorosityEvaluator> reg_;

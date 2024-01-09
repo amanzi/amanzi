@@ -96,8 +96,9 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
                           const Teuchos::Ptr<CompositeVector>& u) override{};
 
-  // -- processing: calculate pressure from displacement stress
+  // -- processing: calculate stesses from displacement
   void ComputeHydrostaticStress(const CompositeVector& u, CompositeVector& p);
+  void ComputeVolumetricStrain(const CompositeVector& u, CompositeVector& e);
 
  protected:
   void Init_(Teuchos::ParameterList& plist);

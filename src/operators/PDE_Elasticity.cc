@@ -131,6 +131,58 @@ PDE_Elasticity::ComputeHydrostaticStress(const CompositeVector& u, CompositeVect
 
 
 /* ******************************************************************
+* Cell-centered volumetric strain 
+****************************************************************** */
+void
+PDE_Elasticity::ComputeVolumetricStrain(const CompositeVector& u, CompositeVector& e)
+{
+  WhetStone::Tensor Tc;
+  WhetStone::DenseVector dofs;
+
+  auto& e_c = *e.ViewComponent("cell");
+  const auto& u_n = *u.ViewComponent("node", true);
+
+  Teuchos::RCP<const Epetra_MultiVector> u_f;
+  if (u.HasComponent("face")) u_f = u.ViewComponent("face", true);
+
+  int d = mesh_->getSpaceDimension();
+  auto mfd3d = Teuchos::rcp_dynamic_cast<WhetStone::MFD3D>(mfd_);
+
+  e_c.PutScalar(0.0);
+ 
+  for (int c = 0; c < ncells_owned; c++) {
+    // nodal DoFs go first
+    auto nodes = mesh_->getCellNodes(c);
+    int nnodes = nodes.size();
+
+    dofs.Reshape(d * nnodes);
+    for (int n = 0; n < nnodes; ++n) {
+      int v = nodes[n];
+      for (int k = 0; k < d; ++k) {
+        dofs(d * n + k) = u_n[k][v];
+      }
+    }
+
+    // optional face DoFs
+    if (u_f.get()) {
+      auto faces = mesh_->getCellFaces(c);
+      int nfaces = faces.size();
+
+      dofs.Reshape(d * nnodes + nfaces);
+      for (int n = 0; n < nfaces; ++n) {
+        int f = faces[n];
+        dofs(d * nnodes + n) = (*u_f)[0][f];
+      }
+    }
+
+    mfd3d->H1Cell(c, dofs, Tc);
+
+    for (int k = 0; k < d; ++k) e_c[0][c] += Tc(k, k);
+  }
+}
+
+
+/* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
 void

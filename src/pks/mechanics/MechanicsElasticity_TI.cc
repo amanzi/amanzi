@@ -36,11 +36,10 @@ MechanicsElasticity_PK::FunctionalResidual(double t_old,
 
   op_matrix_elas_->global_operator()->Init();
 
-  // Add gravity before adding boundary conditions
-  if (use_gravity_) {
-    auto rhs = op_matrix_->rhs();
-    AddGravityTerm_(*rhs);
-  }
+  // Add external forces
+  auto rhs = op_matrix_->rhs();
+  if (use_gravity_) AddGravityTerm_(*rhs);
+  if (biot_model_) AddPressureGradient_(*rhs);
 
   op_matrix_elas_->UpdateMatrices();
   op_matrix_elas_->ApplyBCs(true, true, true);
@@ -202,6 +201,16 @@ MechanicsElasticity_PK::AddGravityTerm_(CompositeVector& rhs)
     double add = g * rho_c[0][c] * mesh_->getCellVolume(c) / nnodes;
     for (int n = 0; n < nnodes; ++n) rhs_v[d - 1][nodes[n]] += add;
   }
+}
+
+
+/* ******************************************************************
+* Add pressure gradient
+****************************************************************** */
+void
+MechanicsElasticity_PK::AddPressureGradient_(CompositeVector& rhs)
+{
+  int d = mesh_->getSpaceDimension();
 }
 
 } // namespace Mechanics

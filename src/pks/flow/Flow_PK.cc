@@ -255,7 +255,7 @@ Flow_PK::Setup()
 void
 Flow_PK::Initialize()
 {
-  dt_ = 0.0;
+  dt_ = 1.0e+99;
 
   ncells_owned =
     mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
