@@ -724,7 +724,7 @@ State::InitializeFields(const Tag& tag)
       auto owner = GetRecord(it->first, tag).owner();
       auto& r = GetRecordW(it->first, tag, owner);
       if (r.ValidType<CompositeVector>()) {
-        r.ReadCheckpoint(file_input, tag);
+        r.ReadCheckpoint(file_input, tag, it->second->subfieldnames());
 
         // this is pretty hacky -- why are these ICs not in the PK's list?  And
         // if they aren't owned by a PK, they should be independent variables

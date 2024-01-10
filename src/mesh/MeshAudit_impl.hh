@@ -576,12 +576,11 @@ MeshAudit_Geometry<Mesh_type>::check_cell_degeneracy() const
 {
   os_ << "Checking cells for topological degeneracy ..." << std::endl;
 
-  View_type<const Entity_ID, MemSpace_kind::HOST> cnode;
   Entity_ID_List bad_cells;
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
-    mesh_->getCellNodes(j, cnode); // should not fail
-    if (!this->areDistinctValues_(cnode)) bad_cells.push_back(j);
+    auto cnodes = mesh_->getCellNodes(j); // should not fail
+    if (!this->areDistinctValues_(cnodes)) bad_cells.push_back(j);
   }
 
   bool error = false;
