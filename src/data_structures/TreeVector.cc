@@ -61,7 +61,7 @@ TreeVector::InitMap_(InitMode mode)
     data_ = Teuchos::rcp(new CompositeVector(*map_->Data()));
   }
 
-  for (TreeVectorSpace::iterator i = map_->begin(); i != map_->end(); ++i) {
+  for (const auto& i : *map_) {
     InitPushBack_(Teuchos::rcp(new TreeVector(*i, mode)));
   }
 }
@@ -90,10 +90,8 @@ TreeVector::PutScalar(double scalar)
     ierr = data_->PutScalar(scalar);
     if (ierr) return ierr;
   }
-  for (std::vector<Teuchos::RCP<TreeVector>>::iterator subvec = subvecs_.begin();
-       subvec != subvecs_.end();
-       ++subvec) {
-    ierr = (*subvec)->PutScalar(scalar);
+  for (const auto& subvec : subvecs_) {
+    ierr = subvec->PutScalar(scalar);
     if (ierr) return ierr;
   }
   return ierr;
@@ -108,10 +106,8 @@ TreeVector::PutScalarMasterAndGhosted(double scalar)
     ierr = data_->PutScalarMasterAndGhosted(scalar);
     if (ierr) return ierr;
   }
-  for (std::vector<Teuchos::RCP<TreeVector>>::iterator subvec = subvecs_.begin();
-       subvec != subvecs_.end();
-       ++subvec) {
-    ierr = (*subvec)->PutScalarMasterAndGhosted(scalar);
+  for (const auto& subvec : subvecs_) {
+    ierr = subvec->PutScalarMasterAndGhosted(scalar);
     if (ierr) return ierr;
   }
   return ierr;
@@ -126,10 +122,8 @@ TreeVector::PutScalarGhosted(double scalar)
     ierr = data_->PutScalarGhosted(scalar);
     if (ierr) return ierr;
   }
-  for (std::vector<Teuchos::RCP<TreeVector>>::iterator subvec = subvecs_.begin();
-       subvec != subvecs_.end();
-       ++subvec) {
-    ierr = (*subvec)->PutScalarGhosted(scalar);
+  for (const auto& subvec : subvecs_) {
+    ierr = subvec->PutScalarGhosted(scalar);
     if (ierr) return ierr;
   }
   return ierr;
@@ -144,10 +138,8 @@ TreeVector::Random()
     ierr = data_->Random();
     if (ierr) return ierr;
   }
-  for (std::vector<Teuchos::RCP<TreeVector>>::iterator subvec = subvecs_.begin();
-       subvec != subvecs_.end();
-       ++subvec) {
-    ierr = (*subvec)->Random();
+  for (const auto& subvec : subvecs_) {
+    ierr = subvec->Random();
     if (ierr) return ierr;
   }
   return ierr;
@@ -170,10 +162,8 @@ TreeVector::NormInf(double* ninf) const
     if (ninf_loc > *ninf) *ninf = ninf_loc;
   }
 
-  for (std::vector<Teuchos::RCP<TreeVector>>::const_iterator subvec = subvecs_.begin();
-       subvec != subvecs_.end();
-       ++subvec) {
-    ierr = (*subvec)->NormInf(&ninf_loc);
+  for (const auto& subvec : subvecs_) {
+    ierr = subvec->NormInf(&ninf_loc);
     if (ierr) return ierr;
     if (ninf_loc > *ninf) *ninf = ninf_loc;
   }
@@ -197,10 +187,8 @@ TreeVector::Norm1(double* n1) const
     *n1 += n1_loc;
   }
 
-  for (std::vector<Teuchos::RCP<TreeVector>>::const_iterator subvec = subvecs_.begin();
-       subvec != subvecs_.end();
-       ++subvec) {
-    ierr = (*subvec)->Norm1(&n1_loc);
+  for (const auto& subvec : subvecs_) {
+    ierr = subvec->Norm1(&n1_loc);
     if (ierr) return ierr;
     *n1 += n1_loc;
   }
@@ -224,10 +212,8 @@ TreeVector::Norm2(double* n2) const
     *n2 += pow(n2_loc, 2);
   }
 
-  for (std::vector<Teuchos::RCP<TreeVector>>::const_iterator subvec = subvecs_.begin();
-       subvec != subvecs_.end();
-       ++subvec) {
-    ierr = (*subvec)->Norm2(&n2_loc);
+  for (const auto& subvec : subvecs_) {
+    ierr = subvec->Norm2(&n2_loc);
     if (ierr) return ierr;
     *n2 += pow(n2_loc, 2);
   }
@@ -241,10 +227,8 @@ TreeVector::Print(std::ostream& os, bool data_io) const
   // Print data to ostream for this node and all children.
   if (data_ != Teuchos::null) data_->Print(os, data_io);
 
-  for (std::vector<Teuchos::RCP<TreeVector>>::const_iterator subvec = subvecs_.begin();
-       subvec != subvecs_.end();
-       ++subvec) {
-    (*subvec)->Print(os, data_io);
+  for (const auto& subvec : subvecs_) {
+    subvec->Print(os, data_io);
   }
 };
 
@@ -259,10 +243,8 @@ TreeVector::Abs(const TreeVector& other)
     ierr = data_->Abs(*other.data_);
     if (ierr) return ierr;
   }
-  for (std::vector<Teuchos::RCP<TreeVector>>::iterator subvec = subvecs_.begin();
-       subvec != subvecs_.end();
-       ++subvec) {
-    ierr = (*subvec)->Abs(*other.subvecs_[subvec - subvecs_.begin()]);
+  for (int i=0; i!=subvecs_.size(); ++i) {
+    ierr = subvecs_[i]->Abs(*other.subvecs_[i]);
     if (ierr) return ierr;
   }
   return ierr;
@@ -279,10 +261,8 @@ TreeVector::Scale(double value)
     if (ierr) return ierr;
   }
 
-  for (std::vector<Teuchos::RCP<TreeVector>>::iterator subvec = subvecs_.begin();
-       subvec != subvecs_.end();
-       ++subvec) {
-    ierr = (*subvec)->Scale(value);
+  for (const auto& subvec : subvecs_) {
+    ierr = subvec->Scale(value);
     if (ierr) return ierr;
   }
   return ierr;
@@ -298,10 +278,8 @@ TreeVector::Shift(double value)
     if (ierr) return ierr;
   }
 
-  for (std::vector<Teuchos::RCP<TreeVector>>::iterator subvec = subvecs_.begin();
-       subvec != subvecs_.end();
-       ++subvec) {
-    ierr = (*subvec)->Shift(value);
+  for (const auto& subvec : subvecs_) {
+    ierr = subvec->Shift(value);
     if (ierr) return ierr;
   }
   return ierr;
@@ -318,10 +296,8 @@ TreeVector::Reciprocal(const TreeVector& other)
     ierr = data_->Reciprocal(*other.data_);
     if (ierr) return ierr;
   }
-  for (std::vector<Teuchos::RCP<TreeVector>>::iterator subvec = subvecs_.begin();
-       subvec != subvecs_.end();
-       ++subvec) {
-    ierr = (*subvec)->Reciprocal(*other.subvecs_[subvec - subvecs_.begin()]);
+  for (int i=0; i!=subvecs_.size(); ++i) {
+    ierr = subvecs_[i]->Reciprocal(*other.subvecs_[i]);
     if (ierr) return ierr;
   }
   return ierr;
@@ -470,10 +446,8 @@ TreeVector::GlobalLength() const
   int total = 0;
   if (data_ != Teuchos::null) { total += data_->GlobalLength(); }
 
-  for (std::vector<Teuchos::RCP<TreeVector>>::const_iterator subvec = subvecs_.begin();
-       subvec != subvecs_.end();
-       ++subvec) {
-    total += (*subvec)->GlobalLength();
+  for (const auto& subvec : subvecs_) {
+    total += subvec->GlobalLength();
   }
   return total;
 };
