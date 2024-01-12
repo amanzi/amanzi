@@ -44,12 +44,16 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
     *vo_->os() << "Translating mechanics, domain=" << domain << std::endl;
 
   MemoryManager mm;
-  DOMNode* node;
+  DOMNode *node;
   DOMElement* element;
 
   // process expert parameters
   bool flag;
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_mechanics_controls", flag);
+
+  bool biot_model(false);
+  node = GetUniqueElementByTagsString_(node, "biot_model", flag);
+  if (flag) biot_model = GetTextContentL_(node, false);
 
   // create flow header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
@@ -90,7 +94,8 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
     .set<int>("method order", 1);
 
   out_list.sublist("physical models and assumptions")
-    .set<bool>("use gravity", true);
+    .set<bool>("use gravity", gravity_on_)
+    .set<bool>("use biot model", biot_model);
 
   // insert boundary conditions and source terms
   out_list.sublist("boundary conditions") = TranslateMechanicsBCs_(domain);

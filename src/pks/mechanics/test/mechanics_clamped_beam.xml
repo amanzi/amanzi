@@ -27,6 +27,7 @@
     <ParameterList name="mechanics elasticity">
       <ParameterList name="physical models and assumptions">
 	<Parameter name="use gravity" type="bool" value="true"/>
+        <Parameter name="use biot model" type="bool" value="false"/>
       </ParameterList>
 
       <ParameterList name="operators">

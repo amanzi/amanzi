@@ -31,7 +31,6 @@ MechanicsElasticity_PK::FunctionalResidual(double t_old,
                                            Teuchos::RCP<TreeVector> u_new,
                                            Teuchos::RCP<TreeVector> f)
 {
-  double dtp = t_new - t_old;
   UpdateSourceBoundaryData_(t_old, t_new);
 
   op_matrix_elas_->global_operator()->Init();
@@ -105,6 +104,11 @@ MechanicsElasticity_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
       error = std::max(error, tmp);
     }
   }
+
+#ifdef HAVE_MPI
+  double buf = error;
+  du->Comm()->MaxAll(&buf, &error, 1);
+#endif
 
   return error;
 }
@@ -193,6 +197,8 @@ MechanicsElasticity_PK::AddGravityTerm_(CompositeVector& rhs)
 
   const auto& rho_c = *S_->Get<CV_t>(particle_density_key_, Tags::DEFAULT).ViewComponent("cell");
   auto& rhs_v = *rhs.ViewComponent("node");
+
+  rhs.PutScalarGhosted(0.0);
   
   for (int c = 0; c < ncells_owned_; ++c) {
     auto nodes = mesh_->getCellNodes(c);
@@ -201,6 +207,8 @@ MechanicsElasticity_PK::AddGravityTerm_(CompositeVector& rhs)
     double add = g * rho_c[0][c] * mesh_->getCellVolume(c) / nnodes;
     for (int n = 0; n < nnodes; ++n) rhs_v[d - 1][nodes[n]] += add;
   }
+
+  rhs.GatherGhostedToMaster("node");
 }
 
 
@@ -211,6 +219,43 @@ void
 MechanicsElasticity_PK::AddPressureGradient_(CompositeVector& rhs)
 {
   int d = mesh_->getSpaceDimension();
+  const auto& p = S_->Get<CV_t>("pressure", Tags::DEFAULT);
+
+  if (p.HasComponent("face")) {
+    const auto& p_f = *p.ViewComponent("face", true);
+    auto& rhs_v = *rhs.ViewComponent("node");
+
+    p.ScatterMasterToGhosted("face");
+    rhs.PutScalarGhosted(0.0);
+
+    for (int c = 0; c < ncells_owned_; ++c) {
+      // pressure gradient
+      double vol = mesh_->getCellVolume(c);
+      const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+      const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
+      int nfaces = faces.size();
+
+      AmanziGeometry::Point grad(d);
+      for (int i = 0; i < nfaces; ++i) {
+        int f = faces[i];
+        const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+        const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+        grad += normal * (p_f[0][f] * dirs[i]);
+      }
+      grad /= vol;
+
+      // pressure gradient
+      auto nodes = mesh_->getCellNodes(c);
+      int nnodes = nodes.size();
+
+      for (int i = 0; i < d; ++i) {
+        double add = grad[i] * vol / nnodes;
+        for (int n = 0; n < nnodes; ++n) rhs_v[i][nodes[n]] -= add;
+      }
+    }
+  }
+
+  rhs.GatherGhostedToMaster("node");
 }
 
 } // namespace Mechanics

@@ -57,7 +57,7 @@
   <ParameterList name="PKs">
     <ParameterList name="flow">
       <ParameterList name="physical models and assumptions">
-	<Parameter name="porosity model" type="string" value="compressible: pressure function"/>
+	<Parameter name="porosity model" type="string" value="compressible"/>
       </ParameterList>
 
       <ParameterList name="relative permeability">

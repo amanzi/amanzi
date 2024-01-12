@@ -147,6 +147,7 @@ Richards_PK::Setup()
   alpha_key_ = Keys::getKey(domain_, "alpha_coef");
 
   temperature_key_ = Keys::getKey(domain_, "temperature");
+  Key vol_strain_key = Keys::getKey(domain_, "volumetric_strain");
 
   // set up the base class
   key_ = pressure_key_;
@@ -156,8 +157,9 @@ Richards_PK::Setup()
   auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
   vapor_diffusion_ = physical_models->get<bool>("vapor diffusion", false);
   std::string msm_name = physical_models->get<std::string>("multiscale model", "single continuum");
-  std::string pom_name = physical_models->get<std::string>("porosity model", "constant porosity");
+  std::string pom_name = physical_models->get<std::string>("porosity model", "constant");
   bool use_ppm = physical_models->get<bool>("permeability porosity model", false);
+  bool use_strain = physical_models->get<bool>("porosity strain model", false);
 
   // Require primary field for this PK, which is pressure
   std::vector<std::string> names({ "cell" });
@@ -278,7 +280,7 @@ Richards_PK::Setup()
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
-    if (pom_name == "compressible: pressure function") {
+    if (pom_name == "compressible") {
       Teuchos::RCP<Teuchos::ParameterList> pom_list =
         Teuchos::sublist(fp_list_, "porosity models", true);
       Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, pom_list);
@@ -287,6 +289,7 @@ Richards_PK::Setup()
       elist.set<std::string>("porosity key", porosity_key_)
         .set<std::string>("pressure key", pressure_key_)
         .set<std::string>("tag", "");
+      if (use_strain) elist.set<std::string>("volumetric strain key", vol_strain_key);
       // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
       S_->RequireDerivative<CV_t, CVS_t>(

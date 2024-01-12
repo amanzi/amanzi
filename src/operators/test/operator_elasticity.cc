@@ -219,6 +219,7 @@ RunTest(int icase, const std::string& solver,
       if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - Lx) < 1e-6 || fabs(xv[1]) < 1e-6) {
         bcv_model[v] = OPERATOR_BC_DIRICHLET;
         bcv_value[v] = ana.velocity_exact(xv, 0.0);
+        ndir++;
       }
     }
     op->AddBCs(bcv, bcv);
@@ -236,6 +237,7 @@ RunTest(int icase, const std::string& solver,
         auto normal = mesh->getFaceNormal(f);
         bcf_model[f] = OPERATOR_BC_NORMAL_STRESS;
         bcf_value[f] = (ana.stress_exact(xf, 0.0) * normal) / area;
+        nshear++;
       }
     }
     op->AddBCs(bcf, bcf);

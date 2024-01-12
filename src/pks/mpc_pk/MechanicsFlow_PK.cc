@@ -30,10 +30,11 @@ using CVS_t = CompositeVectorSpace;
 ****************************************************************** */
 MechanicsFlow_PK::MechanicsFlow_PK(
   Teuchos::ParameterList& pk_tree,
-  const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+  const Teuchos::RCP<Teuchos::ParameterList>& glist,
   const Teuchos::RCP<State>& S,
   const Teuchos::RCP<TreeVector>& soln)
-  : PK_MPCWeak(pk_tree, global_list, S, soln)
+  : PK_MPCWeak(pk_tree, glist, S, soln),
+    glist_(glist)
 {
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = my_list_->sublist("verbose object");
@@ -49,11 +50,27 @@ MechanicsFlow_PK::Setup()
 {
   std::string passwd("");
   hydrostatic_stress_key_ = "hydrostatic_stress";
+  vol_strain_key_ = "volumetric_strain";
 
   S_->Require<CV_t, CVS_t>(hydrostatic_stress_key_, Tags::DEFAULT, passwd)
     .SetMesh(S_->GetMesh())
     ->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+  S_->Require<CV_t, CVS_t>(vol_strain_key_, Tags::DEFAULT, passwd)
+    .SetMesh(S_->GetMesh())
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+  auto pks =
+    glist_->sublist("PKs").sublist(name_).get<Teuchos::Array<std::string>>("PKs order").toVector();
+  glist_->sublist("PKs").sublist(pks[1])
+         .sublist("physical models and assumptions")
+         .set<bool>("porosity strain model", true);
+
+  glist_->sublist("PKs").sublist(pks[0])
+         .sublist("physical models and assumptions")
+         .set<bool>("use biot model", true);
 
   PK_MPCWeak::Setup();
 }

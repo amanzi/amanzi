@@ -34,7 +34,7 @@ MechanicsElasticity_PK::MechanicsElasticity_PK(
   const Teuchos::RCP<Teuchos::ParameterList>& glist,
   const Teuchos::RCP<State>& S,
   const Teuchos::RCP<TreeVector>& soln)
-  : soln_(soln), passwd_("mechanics")
+  : soln_(soln), passwd_("")
 {
   S_ = S;
 
@@ -109,7 +109,6 @@ MechanicsElasticity_PK::Setup()
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
-
   {
     Teuchos::ParameterList elist(hydrostatic_stress_key_);
     elist.set<std::string>("tag", "");
@@ -122,7 +121,8 @@ MechanicsElasticity_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-
+  }
+  {
     Teuchos::ParameterList elist(vol_strain_key_);
     elist.set<std::string>("tag", "");
     eval_vol_strain_ = Teuchos::rcp(new VolumetricStrainEvaluator(elist));
@@ -171,6 +171,8 @@ void
 MechanicsElasticity_PK::Initialize()
 {
   // Initialize miscalleneous defaults.
+  num_itrs_ = 0;
+
   // -- times
   double t_ini = S_->get_time();
   dt_desirable_ = dt_;
@@ -186,8 +188,9 @@ MechanicsElasticity_PK::Initialize()
   nnodes_owned_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
   nnodes_wghost_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
-  // -- gravity
+  // -- control parameters
   use_gravity_ = ec_list_->sublist("physical models and assumptions").get<bool>("use gravity");
+  biot_model_ = ec_list_->sublist("physical models and assumptions").get<bool>("use biot model");
 
   // Create verbosity object to print out initialiation statistics.
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -379,7 +382,11 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   dt_ = t_new - t_old;
 
   // save a copy of primary and conservative fields
-  CompositeVector displacement_copy(S_->Get<CV_t>(displacement_key_));
+  std::vector<std::string> fields({ displacement_key_, vol_strain_key_ });
+
+  StateArchive archive(S_, vo_);
+  archive.Add(fields, Tags::DEFAULT);
+  archive.CopyFieldsToPrevFields(fields, "");
 
   // initialization
   if (num_itrs_ == 0) {
@@ -398,7 +405,7 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     dt_ = dt_next_;
 
     // recover the original primary solution
-    S_->GetW<CV_t>(displacement_key_, Tags::DEFAULT, passwd_) = displacement_copy;
+    archive.Restore("");
     eval_->SetChanged();
 
     Teuchos::OSTab tab = vo_->getOSTab();

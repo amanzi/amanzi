@@ -61,7 +61,7 @@ class AnalyticElasticity03 : public AnalyticElasticityBase {
   virtual Amanzi::WhetStone::Tensor stress_exact(const Amanzi::AmanziGeometry::Point& p, double t)
   {
     Amanzi::WhetStone::Tensor T(2, 2);
-    T(0, 0) = 2 * mu_ - lambda_;
+    T(0, 0) = 2 * mu_ - lambda_; // FIXME
     T(0, 1) = T(1, 0) = 2 * mu_;
     T(1, 1) = -4 * mu_ - lambda_;
     return T;

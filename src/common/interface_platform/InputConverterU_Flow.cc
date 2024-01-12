@@ -115,7 +115,7 @@ InputConverterU::TranslateFlow_(const std::string& mode,
     out_list.sublist("porosity models") = TranslatePOM_(domain);
     if (out_list.sublist("porosity models").numParams() > 0) {
       flow_list->sublist("physical models and assumptions")
-        .set<std::string>("porosity model", "compressible: pressure function");
+        .set<std::string>("porosity model", "compressible");
     }
     out_list.sublist("multiscale models") = TranslateFlowMSM_();
     if (out_list.sublist("multiscale models").numParams() > 0) {

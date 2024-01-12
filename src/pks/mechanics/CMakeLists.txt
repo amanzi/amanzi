@@ -93,6 +93,12 @@ if (BUILD_TESTS)
                   SOURCE test/Main.cc test/mechanics_elasticity_2D.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+  # Test: symmetry preservation
+  add_amanzi_test(mechanics_symmetry mechanics_symmetry
+                  KIND int
+                  SOURCE test/Main.cc test/mechanics_symmetry.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
   # Test: 3D clamped beam
   add_amanzi_test(mechanics_clamped_beam mechanics_clamped_beam
                   KIND int

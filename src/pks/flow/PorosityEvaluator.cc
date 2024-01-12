@@ -72,7 +72,7 @@ PorosityEvaluator::InitializeFromPlist_()
   if (plist_.isParameter("volumetric strain key")) {
     use_strain_ = true;
     strain_key_ = plist_.get<std::string>("volumetric strain key");
-    dependencies_.insert(std::make_pair(strain_key_, Tags::DEFAULT));
+    // dependencies_.insert(std::make_pair(strain_key_, Tags::DEFAULT)); // FIXME
   }
 }
 

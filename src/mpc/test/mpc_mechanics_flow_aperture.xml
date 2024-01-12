@@ -524,6 +524,7 @@
       </ParameterList>
       <ParameterList name="physical models and assumptions">
         <Parameter name="use gravity" type="bool" value="true"/>
+        <Parameter name="use biot model" type="bool" value="false"/>
       </ParameterList>
       <ParameterList name="boundary conditions">
         <ParameterList name="displacement">
@@ -698,7 +699,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="physical models and assumptions">
-        <Parameter name="porosity model" type="string" value="compressible: pressure function"/>
+        <Parameter name="porosity model" type="string" value="compressible"/>
         <Parameter name="permeability porosity model" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="permeability porosity models">

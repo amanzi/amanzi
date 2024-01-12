@@ -160,6 +160,7 @@
       <Parameter name="domain name" type="string" value=""/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="use gravity" type="bool" value="true"/>
+        <Parameter name="use biot model" type="bool" value="false"/>
       </ParameterList>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{displacement}"/>
