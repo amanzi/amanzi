@@ -325,6 +325,11 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double vy_rec = factor * qy_rec;
 
     // rotating velocity to the face-based coordinate system
+    // note: this implicitly assumes that the velocity and the
+    // normal and tangent to the face are expressed with respect
+    // to the same reference frame.
+    // for SW, that is the standard reference frame
+    // for pipe, that is the pipe reference frame
     double vn, vt;
     vn = vx_rec * normal[0] + vy_rec * normal[1];
     vt = -vx_rec * normal[1] + vy_rec * normal[0];
