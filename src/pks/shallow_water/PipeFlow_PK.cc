@@ -569,7 +569,7 @@ double PipeFlow_PK::ComputeWaterDepth(double WettedAngle){
 double PipeFlow_PK::ComputeWettedAngleNewton(double WettedArea){
 
    double tol = 1.e-15;
-   unsigned max_iter = 1000;
+   unsigned max_iter = 10000;
    double WettedAngle;
    double PipeCrossSection = Pi * 0.25 * pipe_diameter_ * pipe_diameter_;
 
