@@ -58,8 +58,8 @@ Richards_PK::FunctionalResidual(double t_old,
   // upwind diffusion coefficient and its derivative
   vol_flowrate_copy->ScatterMasterToGhosted("face");
 
-  auto& alpha = S_->GetW<CV_t>(alpha_key_, Tags::DEFAULT, alpha_key_);
   S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
+  auto& alpha = S_->GetW<CV_t>(alpha_key_, Tags::DEFAULT, alpha_key_);
 
   if (!flow_on_manifold_) {
     std::vector<int>& bc_model = op_bc_->bc_model();

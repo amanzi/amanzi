@@ -23,6 +23,7 @@
 #include "EnergyOnePhase_PK.hh"
 #include "EnthalpyEvaluator.hh"
 #include "IEMEvaluator.hh"
+#include "PK_Utils.hh"
 #include "TCMEvaluator_OnePhase.hh"
 #include "TotalEnergyEvaluator.hh"
 
@@ -279,16 +280,12 @@ EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   dt_ = t_new - t_old;
 
-  // save a copy of primary unknwon
-  CompositeVector temperature_copy(S_->Get<CV_t>(temperature_key_));
+  // save a copy of primary and conservative fields
+  std::vector<std::string> fields({ temperature_key_, energy_key_ });
 
-  // swap conserved field (i.e., energy) and save
-  S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
-  const CompositeVector& e = S_->Get<CV_t>(energy_key_);
-  CompositeVector& e_prev = S_->GetW<CV_t>(prev_energy_key_, passwd_);
-
-  CompositeVector e_prev_copy(e_prev);
-  e_prev = e;
+  StateArchive archive(S_, vo_);
+  archive.Add(fields, Tags::DEFAULT);
+  archive.CopyFieldsToPrevFields(fields, "");
 
   // initialization
   if (num_itrs_ == 0) {
@@ -301,21 +298,12 @@ EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // trying to make a step
-  bool failed(false);
-  failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
+  bool failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
   if (failed) {
     dt_ = dt_next_;
 
-    // restore the original primary solution, temperature
-    S_->GetW<CV_t>(temperature_key_, passwd_) = temperature_copy;
+    archive.Restore("");
     temperature_eval_->SetChanged();
-
-    // restore the original fields
-    S_->GetW<CV_t>(prev_energy_key_, passwd_) = e_prev_copy;
-
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Step failed. Restored temperature, prev_energy." << std::endl;
-
     return failed;
   }
 

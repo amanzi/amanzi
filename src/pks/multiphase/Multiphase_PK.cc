@@ -950,6 +950,8 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // update fields from previous time step
+  // KL: calling Update here may lead to an incorrect prev_field when the
+  //     field has dependencies on fields handled by other weakly coupled PKs. 
   S_->GetEvaluator(tws_key_).Update(*S_, passwd_);
   S_->GetW<CV_t>(prev_tws_key_, Tags::DEFAULT, passwd_) = S_->Get<CV_t>(tws_key_);
 

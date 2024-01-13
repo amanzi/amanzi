@@ -65,7 +65,6 @@ RunTest(const std::string xmlInFileName)
   S = cycle_driver.Go();
 
   // verify Mandel-Creyer effect using observations at central region
-  std::cout << "T integral increase in fracture: " << std::endl;
   std::string label = obs_data.observationLabels()[0];
   
   int status(0);

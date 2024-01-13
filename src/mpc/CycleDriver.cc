@@ -887,7 +887,6 @@ CycleDriver::Go()
           // dt = get_dt(fail);
         } // while not finished
 
-
         time_period_id_++;
         if (time_period_id_ < num_time_periods_) {
           WriteStateStatistics(*S_, *vo_);

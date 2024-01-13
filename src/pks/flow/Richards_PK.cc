@@ -707,6 +707,7 @@ Richards_PK::Initialize()
     DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
                                    *pressure.ViewComponent("face"));
     S_->GetRecordW(pressure_key_, passwd_).set_initialized(true);
+    pressure_eval_->SetChanged();
   }
 
   // error control options
@@ -905,6 +906,14 @@ Richards_PK::Initialize()
   }
   op_pc_solver_->InitializeInverse();
 
+  // initialize previous fields
+  InitializeCVFieldFromCVField(
+    S_, *vo_, prev_saturation_liquid_key_, saturation_liquid_key_, passwd_);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_water_storage_key_, water_storage_key_, passwd_);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_aperture_key_, aperture_key_, passwd_);
+  if (use_strain_)
+    InitializeCVFieldFromCVField(S_, *vo_, ini_vol_strain_key_, vol_strain_key_, passwd_);
+
   // Verbose output of initialization statistics.
   InitializeStatistics_();
 }
@@ -931,13 +940,6 @@ Richards_PK::InitializeFields_()
       }
     }
   }
-
-  InitializeCVFieldFromCVField(
-    S_, *vo_, prev_saturation_liquid_key_, saturation_liquid_key_, passwd_);
-  InitializeCVFieldFromCVField(S_, *vo_, prev_water_storage_key_, water_storage_key_, passwd_);
-  InitializeCVFieldFromCVField(S_, *vo_, prev_aperture_key_, aperture_key_, passwd_);
-  if (use_strain_)
-    InitializeCVFieldFromCVField(S_, *vo_, ini_vol_strain_key_, vol_strain_key_, passwd_);
 
   // set matrix fields assuming pressure equilibrium
   // -- pressure
