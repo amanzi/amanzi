@@ -147,7 +147,9 @@ Richards_PK::Setup()
   alpha_key_ = Keys::getKey(domain_, "alpha_coef");
 
   temperature_key_ = Keys::getKey(domain_, "temperature");
-  Key vol_strain_key = Keys::getKey(domain_, "volumetric_strain");
+
+  vol_strain_key_ = Keys::getKey(domain_, "volumetric_strain");
+  ini_vol_strain_key_ = Keys::getKey(domain_, "initial_volumetric_strain");
 
   // set up the base class
   key_ = pressure_key_;
@@ -159,7 +161,7 @@ Richards_PK::Setup()
   std::string msm_name = physical_models->get<std::string>("multiscale model", "single continuum");
   std::string pom_name = physical_models->get<std::string>("porosity model", "constant");
   bool use_ppm = physical_models->get<bool>("permeability porosity model", false);
-  bool use_strain = physical_models->get<bool>("porosity strain model", false);
+  use_strain_ = physical_models->get<bool>("porosity strain model", false);
 
   // Require primary field for this PK, which is pressure
   std::vector<std::string> names({ "cell" });
@@ -289,8 +291,16 @@ Richards_PK::Setup()
       elist.set<std::string>("porosity key", porosity_key_)
         .set<std::string>("pressure key", pressure_key_)
         .set<std::string>("tag", "");
-      if (use_strain) elist.set<std::string>("volumetric strain key", vol_strain_key);
-      // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+
+      if (use_strain_) {
+        S_->Require<CV_t, CVS_t>(ini_vol_strain_key_, Tags::DEFAULT, passwd_)
+          .SetMesh(mesh_)
+          ->SetGhosted(true)
+          ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+        elist.set<std::string>("volumetric strain key", vol_strain_key_);
+        // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+      }
 
       S_->RequireDerivative<CV_t, CVS_t>(
           porosity_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, porosity_key_)
@@ -926,6 +936,8 @@ Richards_PK::InitializeFields_()
     S_, *vo_, prev_saturation_liquid_key_, saturation_liquid_key_, passwd_);
   InitializeCVFieldFromCVField(S_, *vo_, prev_water_storage_key_, water_storage_key_, passwd_);
   InitializeCVFieldFromCVField(S_, *vo_, prev_aperture_key_, aperture_key_, passwd_);
+  if (use_strain_)
+    InitializeCVFieldFromCVField(S_, *vo_, ini_vol_strain_key_, vol_strain_key_, passwd_);
 
   // set matrix fields assuming pressure equilibrium
   // -- pressure
@@ -1021,48 +1033,20 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   dt_ = t_new - t_old;
 
   // save a copy of primary and conservative fields
-  std::vector<std::string> fields;
+  std::vector<std::string> fields({ pressure_key_, saturation_liquid_key_, water_storage_key_ });
   if (flow_on_manifold_) { fields.push_back(aperture_key_); }
+  if (multiscale_porosity_) {
+    fields.push_back(pressure_msp_key_);
+    fields.push_back(water_storage_msp_key_);
+  }
 
   StateArchive archive(S_, vo_);
   archive.Add(fields, Tags::DEFAULT);
   archive.CopyFieldsToPrevFields(fields, "");
 
-  std::map<std::string, CompositeVector> copies;
-  copies.emplace(pressure_key_, S_->Get<CV_t>(pressure_key_, Tags::DEFAULT));
-
-  // -- saturations, swap prev <- current
-  S_->GetEvaluator(saturation_liquid_key_).Update(*S_, "flow");
-  const auto& sat = S_->Get<CV_t>(saturation_liquid_key_);
-  auto& sat_prev = S_->GetW<CV_t>(prev_saturation_liquid_key_, Tags::DEFAULT, passwd_);
-
-  copies.emplace(prev_saturation_liquid_key_, sat_prev);
-  sat_prev = sat;
-
-  // -- water_storage, swap prev <- current
-  S_->GetEvaluator(water_storage_key_).Update(*S_, "flow");
-  auto& wc = S_->GetW<CV_t>(water_storage_key_, Tags::DEFAULT, water_storage_key_);
-  auto& wc_prev = S_->GetW<CV_t>(prev_water_storage_key_, Tags::DEFAULT, passwd_);
-
-  copies.emplace(prev_water_storage_key_, wc_prev);
-  wc_prev = wc;
-
-  // -- field for multiscale models, save and swap
-  Teuchos::RCP<CompositeVector> pressure_msp_copy, wc_matrix_prev_copy;
-  if (multiscale_porosity_) {
-    copies.emplace(pressure_msp_key_, S_->Get<CV_t>(pressure_msp_key_));
-
-    auto& wc_matrix = S_->GetW<CV_t>(water_storage_msp_key_, Tags::DEFAULT, passwd_);
-    auto& wc_matrix_prev = S_->GetW<CV_t>(prev_water_storage_msp_key_, Tags::DEFAULT, passwd_);
-
-    copies.emplace(prev_water_storage_msp_key_, wc_matrix_prev);
-    wc_matrix_prev = wc_matrix;
-  }
-
   // enter subspace
   if (reinit && solution->HasComponent("face")) {
     EnforceConstraints(t_new, solution);
-
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) { VV_PrintHeadExtrema(*solution); }
   }
 
@@ -1082,13 +1066,6 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (failed) {
     dt_ = dt_next_;
 
-    // revover the original primary solution, pressure
-    for (auto it = copies.begin(); it != copies.end(); ++it) {
-      S_->GetW<CV_t>(it->first, passwd_) = it->second;
-
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "Reverted field \"" << it->first << "\"" << std::endl;
-    }
     archive.Restore("");
     pressure_eval_->SetChanged();
 

@@ -72,7 +72,7 @@ PorosityEvaluator::InitializeFromPlist_()
   if (plist_.isParameter("volumetric strain key")) {
     use_strain_ = true;
     strain_key_ = plist_.get<std::string>("volumetric strain key");
-    // dependencies_.insert(std::make_pair(strain_key_, Tags::DEFAULT)); // FIXME
+    dependencies_.insert(std::make_pair(strain_key_, Tags::DEFAULT));
   }
 }
 
@@ -93,9 +93,9 @@ PorosityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>
 
   if (use_strain_) {
     const auto& e_c = *S.Get<CompositeVector>("volumetric_strain").ViewComponent("cell");
-    const auto& prev_e_c = *S.Get<CompositeVector>("prev_volumetric_strain").ViewComponent("cell");
+    const auto& e0_c = *S.Get<CompositeVector>("initial_volumetric_strain").ViewComponent("cell");
     for (int c = 0; c != ncells; ++c) {
-      phi_c[0][c] += e_c[0][c] - prev_e_c[0][c];
+      phi_c[0][c] += e_c[0][c] - e0_c[0][c];
     }
   }
 

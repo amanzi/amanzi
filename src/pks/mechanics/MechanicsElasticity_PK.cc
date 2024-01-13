@@ -75,9 +75,7 @@ MechanicsElasticity_PK::Setup()
 
   displacement_key_ = Keys::getKey(domain_, "displacement");
   hydrostatic_stress_key_ = Keys::getKey(domain_, "hydrostatic_stress");
-
   vol_strain_key_ = Keys::getKey(domain_, "volumetric_strain");
-  prev_vol_strain_key_ = Keys::getKey(domain_, "prev_volumetric_strain");
 
   young_modulus_key_ = Keys::getKey(domain_, "young_modulus");
   poisson_ratio_key_ = Keys::getKey(domain_, "poisson_ratio");
@@ -120,21 +118,14 @@ MechanicsElasticity_PK::Setup()
     S_->Require<CV_t, CVS_t>(vol_strain_key_, Tags::DEFAULT, vol_strain_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1); // copy of states needs it
   }
   {
     Teuchos::ParameterList elist(vol_strain_key_);
     elist.set<std::string>("tag", "");
     eval_vol_strain_ = Teuchos::rcp(new VolumetricStrainEvaluator(elist));
     S_->SetEvaluator(vol_strain_key_, Tags::DEFAULT, eval_vol_strain_);
-  }
-
-  if (!S_->HasRecord(prev_vol_strain_key_)) {
-    S_->Require<CV_t, CVS_t>(prev_vol_strain_key_, Tags::DEFAULT, passwd_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-    S_->GetRecordW(prev_vol_strain_key_, passwd_).set_io_vis(false);
   }
 
   // -- rock properties
@@ -351,8 +342,6 @@ MechanicsElasticity_PK::Initialize()
   Teuchos::rcp_dynamic_cast<VolumetricStrainEvaluator>(eval_vol_strain_)->set_op(op_matrix_elas_);
   eval_->SetChanged();
 
-  InitializeCVFieldFromCVField(S_, *vo_, prev_vol_strain_key_, vol_strain_key_, passwd_);
-
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -433,6 +422,7 @@ void
 MechanicsElasticity_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   S_->GetEvaluator(hydrostatic_stress_key_).Update(*S_, "mechanics");
+  S_->GetEvaluator(vol_strain_key_).Update(*S_, "mechanics");
 }
 
 

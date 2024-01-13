@@ -314,4 +314,10 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_mechanics_flow_aperture.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
+
+    add_amanzi_test(mpc_mechanics_mandel mpc_mechanics_mandel
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_mechanics_mandel.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
 endif()

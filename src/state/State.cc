@@ -633,7 +633,7 @@ State::Initialize(const State& other)
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab1 = vo_->getOSTab();
-    *vo_->os() << "copying fields to new state.." << std::endl;
+    *vo_->os() << "copying fields to new state..." << std::endl;
   }
 
   for (auto& e : data_) {
