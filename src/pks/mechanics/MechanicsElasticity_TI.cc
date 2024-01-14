@@ -131,16 +131,18 @@ MechanicsElasticity_PK::UpdateSourceBoundaryData_(double t_old, double t_new)
 
 
 /* ******************************************************************
-* Add a boundary condition marker to the used faces.
+* We have four BCs on two locations (Node and Face) times two types
+* (Point or Scalar).
+* NOTE: The order of BCs is fixed and important: N+P, N+S, F+P, F+S
 ****************************************************************** */
 void
 MechanicsElasticity_PK::ComputeOperatorBCs()
 {
-  int d(mesh_->getSpaceDimension()), nbcs(op_bcs_.size());
+  int d(mesh_->getSpaceDimension());
   dirichlet_bc_ = 0;
 
-  // nodal BCs are the first on the list
-  for (int i = 0; i < nbcs; ++i) {
+  // two nodal BCs are the first on the list
+  for (int i = 0; i < op_bcs_.size(); ++i) {
     std::vector<int>& bc_model = op_bcs_[i]->bc_model();
     for (int n = 0; n < bc_model.size(); n++) { bc_model[n] = Operators::OPERATOR_BC_NONE; }
   }
@@ -158,10 +160,10 @@ MechanicsElasticity_PK::ComputeOperatorBCs()
       }
     }
 
-    if (bcs_[i]->get_bc_name() == "no slip" &&
+    if (bcs_[i]->get_bc_name() == "kinematic" &&
         bcs_[i]->type() == WhetStone::DOF_Type::NORMAL_COMPONENT) {
-      std::vector<int>& bc_model = op_bcs_[1]->bc_model();
-      std::vector<double>& bc_value = op_bcs_[1]->bc_value();
+      std::vector<int>& bc_model = op_bcs_[3]->bc_model();
+      std::vector<double>& bc_value = op_bcs_[3]->bc_value();
 
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;
@@ -171,10 +173,11 @@ MechanicsElasticity_PK::ComputeOperatorBCs()
     }
   }
 
+  // facial BCs make the second group on the list
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->get_bc_name() == "traction" && bcs_[i]->type() == WhetStone::DOF_Type::NORMAL_COMPONENT) {
-      std::vector<int>& bc_model = op_bcs_[nbcs - 1]->bc_model();
-      std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[nbcs - 1]->bc_value_point();
+    if (bcs_[i]->get_bc_name() == "traction") {
+      std::vector<int>& bc_model = op_bcs_[2]->bc_model();
+      std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[2]->bc_value_point();
 
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;

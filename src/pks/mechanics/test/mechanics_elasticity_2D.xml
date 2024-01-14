@@ -121,7 +121,7 @@
           <ParameterList name="BC 1">
             <Parameter name="regions" type="Array(string)" value="{Right side}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
-            <ParameterList name="no slip">
+            <ParameterList name="kinematic">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="2"/>
                 <Parameter name="formula" type="string" value="x"/>
@@ -131,7 +131,7 @@
           <ParameterList name="BC 2">
             <Parameter name="regions" type="Array(string)" value="{Left side}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
-            <ParameterList name="no slip">
+            <ParameterList name="kinematic">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="2"/>
                 <Parameter name="formula" type="string" value="-x"/>

@@ -174,7 +174,7 @@ InputConverterU::TranslateMechanicsBCs_(const std::string& domain)
         bcfn.sublist(dof_str.str()).sublist("function-constant").set<double>("value", bcs.vectors[0][k]);
       }
     } else if (bcs.type == "kinematic") {
-      Teuchos::ParameterList& bcfn = bc.sublist("no slip");
+      Teuchos::ParameterList& bcfn = bc.sublist("kinematic");
       bcfn.sublist("function-constant").set<double>("value", bcs.values[0]);
     }
   }

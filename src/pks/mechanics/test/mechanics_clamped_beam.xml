@@ -103,7 +103,7 @@
           <ParameterList name="BC 1">
             <Parameter name="regions" type="Array(string)" value="{Left side}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
-            <ParameterList name="no slip">
+            <ParameterList name="kinematic">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>

@@ -505,6 +505,8 @@ void
 PDE_HelperDiscretization::EnforceBCs(CompositeVector& field)
 {
   for (auto bc : bcs_trial_) {
+    if (!bc->get_status()) continue; // skip inactive BCs
+
     std::string name = to_string(bc->kind());
     if (field.HasComponent(name)) {
       auto& field_comp = *field.ViewComponent(name, true);

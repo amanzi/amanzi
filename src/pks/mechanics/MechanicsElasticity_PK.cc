@@ -211,7 +211,6 @@ MechanicsElasticity_PK::Initialize()
     Teuchos::rcp(new Teuchos::ParameterList(ec_list_->sublist("boundary conditions", true)));
 
   bcs_.clear();
-  bool flag_node_point(false), flag_face_scalar(false), flag_face_point(false);
 
   // -- displacement
   if (bc_list->isSublist("displacement")) {
@@ -227,8 +226,6 @@ MechanicsElasticity_PK::Initialize()
         bc->set_bc_name("no slip");
         bc->set_type(WhetStone::DOF_Type::POINT);
         bcs_.push_back(bc);
-
-        flag_node_point = true;
       }
     }
   }
@@ -242,12 +239,10 @@ MechanicsElasticity_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        auto bc = bc_factory.Create(spec, "no slip", AmanziMesh::FACE, Teuchos::null);
-        bc->set_bc_name("no slip");
+        auto bc = bc_factory.Create(spec, "kinematic", AmanziMesh::FACE, Teuchos::null);
+        bc->set_bc_name("kinematic");
         bc->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
         bcs_.push_back(bc);
-
-        flag_face_scalar = true;
       }
     }
   }
@@ -263,10 +258,25 @@ MechanicsElasticity_PK::Initialize()
 
         auto bc = bc_factory.Create(spec, "traction", AmanziMesh::FACE, Teuchos::null);
         bc->set_bc_name("traction");
+        bc->set_type(WhetStone::DOF_Type::POINT);
+        bcs_.push_back(bc);
+      }
+    }
+  }
+
+  if (bc_list->isSublist("normal traction")) {
+    PK_DomainFunctionFactory<MechanicsBoundaryFunction> bc_factory(mesh_, S_);
+
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("normal traction");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+
+        auto bc = bc_factory.Create(spec, "normal traction", AmanziMesh::FACE, Teuchos::null);
+        bc->set_bc_name("normal traction");
         bc->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
         bcs_.push_back(bc);
-
-        flag_face_point = true;
       }
     }
   }
@@ -293,20 +303,17 @@ MechanicsElasticity_PK::Initialize()
   op_preconditioner_elas_->SetTensorCoefficient(K);
 
   // -- initialize boundary conditions (memory allocation)
-  if (flag_node_point) {
-    auto bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::POINT));
-    op_bcs_.push_back(bc);
-  }
+  auto bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::POINT));
+  op_bcs_.push_back(bc);
 
-  if (flag_face_scalar) {
-    auto bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
-    op_bcs_.push_back(bc);
-  }
+  bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::SCALAR));
+  op_bcs_.push_back(bc);
 
-  if (flag_face_point) {
-    auto bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::POINT));
-    op_bcs_.push_back(bc);
-  }
+  bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::POINT));
+  op_bcs_.push_back(bc);
+
+  bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  op_bcs_.push_back(bc);
 
   for (auto bc : op_bcs_) {
     op_matrix_elas_->AddBCs(bc, bc);
