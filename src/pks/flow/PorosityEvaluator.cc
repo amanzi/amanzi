@@ -93,9 +93,8 @@ PorosityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>
 
   if (use_strain_) {
     const auto& e_c = *S.Get<CompositeVector>("volumetric_strain").ViewComponent("cell");
-    const auto& e0_c = *S.Get<CompositeVector>("initial_volumetric_strain").ViewComponent("cell");
     for (int c = 0; c != ncells; ++c) {
-      phi_c[0][c] += e_c[0][c] - e0_c[0][c];
+      phi_c[0][c] += e_c[0][c]; // e0 = 0.0
     }
   }
 

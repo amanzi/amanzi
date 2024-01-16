@@ -26,15 +26,8 @@ void
 StateArchive::Add(std::vector<std::string>& fields, const Tag& tag)
 {
   tag_ = tag;
-
   for (const auto& name : fields) {
-    if (S_->HasEvaluator(name, tag_)) {
-      if (S_->GetEvaluatorPtr(name, tag_)->get_type() == EvaluatorType::PRIMARY) {
-        fields_.emplace(name, S_->Get<CompositeVector>(name, tag));
-      }
-    } else {
-      fields_.emplace(name, S_->Get<CompositeVector>(name, tag));
-    }
+    fields_.emplace(name, S_->Get<CompositeVector>(name, tag));
   }
 }
 
@@ -46,7 +39,12 @@ void
 StateArchive::Restore(const std::string& passwd)
 {
   for (auto it = fields_.begin(); it != fields_.end(); ++it) {
-    S_->GetW<CompositeVector>(it->first, tag_, passwd) = it->second;
+    if (S_->HasEvaluator(it->first, tag_)) {
+      if (S_->GetEvaluatorPtr(it->first, tag_)->get_type() == EvaluatorType::SECONDARY)
+        S_->GetW<CompositeVector>(it->first, tag_, it->first) = it->second;
+    } else {
+      S_->GetW<CompositeVector>(it->first, tag_, passwd) = it->second;
+    }
 
     if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
       Teuchos::OSTab tab = vo_->getOSTab();

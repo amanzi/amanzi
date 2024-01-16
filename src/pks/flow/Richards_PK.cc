@@ -147,9 +147,7 @@ Richards_PK::Setup()
   alpha_key_ = Keys::getKey(domain_, "alpha_coef");
 
   temperature_key_ = Keys::getKey(domain_, "temperature");
-
   vol_strain_key_ = Keys::getKey(domain_, "volumetric_strain");
-  ini_vol_strain_key_ = Keys::getKey(domain_, "initial_volumetric_strain");
 
   // set up the base class
   key_ = pressure_key_;
@@ -292,15 +290,8 @@ Richards_PK::Setup()
         .set<std::string>("pressure key", pressure_key_)
         .set<std::string>("tag", "");
 
-      if (use_strain_) {
-        S_->Require<CV_t, CVS_t>(ini_vol_strain_key_, Tags::DEFAULT, passwd_)
-          .SetMesh(mesh_)
-          ->SetGhosted(true)
-          ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-
-        elist.set<std::string>("volumetric strain key", vol_strain_key_);
-        // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-      }
+      if (use_strain_) elist.set<std::string>("volumetric strain key", vol_strain_key_);
+      // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
       S_->RequireDerivative<CV_t, CVS_t>(
           porosity_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, porosity_key_)
@@ -911,8 +902,6 @@ Richards_PK::Initialize()
     S_, *vo_, prev_saturation_liquid_key_, saturation_liquid_key_, passwd_);
   InitializeCVFieldFromCVField(S_, *vo_, prev_water_storage_key_, water_storage_key_, passwd_);
   InitializeCVFieldFromCVField(S_, *vo_, prev_aperture_key_, aperture_key_, passwd_);
-  if (use_strain_)
-    InitializeCVFieldFromCVField(S_, *vo_, ini_vol_strain_key_, vol_strain_key_, passwd_);
 
   // Verbose output of initialization statistics.
   InitializeStatistics_();
@@ -1044,7 +1033,6 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   StateArchive archive(S_, vo_);
   archive.Add(fields, Tags::DEFAULT);
-  archive.CopyFieldsToPrevFields(fields, "");
 
   // enter subspace
   if (reinit && solution->HasComponent("face")) {
@@ -1100,6 +1088,12 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 Richards_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
+  // update previous fields
+  std::vector<std::string> fields({ saturation_liquid_key_, water_storage_key_, aperture_key_ });
+  StateArchive archive(S_, vo_);
+  archive.CopyFieldsToPrevFields(fields, "");
+
+  // update velocities
   auto vol_flowrate = S_->GetPtrW<CV_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_);
   op_matrix_diff_->UpdateFlux(solution.ptr(), vol_flowrate.ptr());
 

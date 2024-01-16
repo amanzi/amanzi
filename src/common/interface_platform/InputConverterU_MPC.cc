@@ -351,7 +351,7 @@ InputConverterU::TranslateCycleDriverNew_()
       tmp = "mechanics";
       PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
       break;
-    case 76:
+    case 68:
       tmp = "mechanics and " + tmp + "flow";
       PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
       break;

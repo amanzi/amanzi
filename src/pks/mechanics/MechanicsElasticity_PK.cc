@@ -379,10 +379,8 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // save a copy of primary and conservative fields
   std::vector<std::string> fields({ displacement_key_, vol_strain_key_ });
-
   StateArchive archive(S_, vo_);
   archive.Add(fields, Tags::DEFAULT);
-  archive.CopyFieldsToPrevFields(fields, "");
 
   // initialization
   if (num_itrs_ == 0) {
@@ -403,10 +401,6 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     // recover the original primary solution
     archive.Restore("");
     eval_->SetChanged();
-
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Reverted displacement" << std::endl;
-
     return failed;
   }
 

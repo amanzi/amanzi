@@ -204,8 +204,7 @@ class Richards_PK : public Flow_PK {
   bool vapor_diffusion_;
 
   // miscaleneous models
-  Key ppfactor_key_;
-  Key vol_strain_key_, ini_vol_strain_key_;
+  Key ppfactor_key_, vol_strain_key_;
   bool use_strain_;
 
   // multiscale models
