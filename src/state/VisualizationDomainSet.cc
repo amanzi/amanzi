@@ -30,7 +30,7 @@ VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec,
   if (!lifted_vectors_.count(vis_name)) {
     // create a lifted vector if we don't currently have one
     auto lifted_vec = Teuchos::rcp(new Epetra_MultiVector(
-      mesh()->getMap(AmanziMesh::Entity_kind::CELL, false), vec.NumVectors()));
+      mesh()->getMap(kind, false), vec.NumVectors()));
 
     // also create a lifted set of names
     std::vector<std::string> lifted_names;
@@ -39,20 +39,22 @@ VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec,
       Keys::splitDomainSet(name, split_name);
       lifted_names.emplace_back(Keys::getKey(std::get<0>(split_name), std::get<2>(split_name)));
     }
-    lifted_vectors_[vis_name] = std::make_pair(lifted_vec, lifted_names);
+    lifted_vectors_[vis_name] = std::make_tuple(lifted_vec, lifted_names, kind);
   }
 
   // copy from the domain-set vector into the lifted vector
   //
   // Note that to get the domain, we use name_ rather than names[0]'s domain
   // name, as this could be an alias.
-  Epetra_MultiVector& lifted_vec = *lifted_vectors_[vis_name].first;
+  Epetra_MultiVector& lifted_vec = *std::get<0>(lifted_vectors_[vis_name]);
   ds_->doImport(Keys::getDomainInSet(name_, std::get<1>(dset_triple)), vec, lifted_vec);
 }
 
 
 void
-VisualizationDomainSet::WriteVector(const Epetra_Vector& vec, const std::string& name) const
+VisualizationDomainSet::WriteVector(const Epetra_Vector& vec,
+        const std::string& name,
+        AmanziMesh::Entity_kind kind) const
 {
   // replace names[0] domain index with a *
   KeyTriple dset_triple;
@@ -62,7 +64,7 @@ VisualizationDomainSet::WriteVector(const Epetra_Vector& vec, const std::string&
   if (!lifted_vectors_.count(vis_name)) {
     // create a lifted vector if we don't currently have one
     auto lifted_vec =
-      Teuchos::rcp(new Epetra_MultiVector(mesh()->getMap(AmanziMesh::Entity_kind::CELL, false), 1));
+      Teuchos::rcp(new Epetra_MultiVector(mesh()->getMap(kind, false), 1));
 
     std::vector<std::string> lifted_names;
 
@@ -70,11 +72,11 @@ VisualizationDomainSet::WriteVector(const Epetra_Vector& vec, const std::string&
     Keys::splitDomainSet(name, split_name);
     lifted_names.emplace_back(Keys::getKey(std::get<0>(split_name), std::get<2>(split_name)));
 
-    lifted_vectors_[vis_name] = std::make_pair(lifted_vec, lifted_names);
+    lifted_vectors_[vis_name] = std::make_tuple(lifted_vec, lifted_names, kind);
   }
 
   // copy from the domain-set vector into the lifted vector
-  Epetra_MultiVector& lifted_vec = *lifted_vectors_[vis_name].first;
+  Epetra_MultiVector& lifted_vec = *std::get<0>(lifted_vectors_[vis_name]);
   ds_->doImport(Keys::getDomainInSet(name_, std::get<1>(dset_triple)), vec, lifted_vec);
 }
 
@@ -95,10 +97,10 @@ VisualizationDomainSet::FinalizeTimestep() const
   // write the lifted vectors
   for (const auto& vecname : lifted_vector_names_) {
     const auto& vecs = lifted_vectors_.at(vecname);
-    if (vecs.first->NumVectors() == 1) {
-      Visualization::WriteVector(*(*vecs.first)(0), vecs.second[0]);
+    if (std::get<0>(vecs)->NumVectors() == 1) {
+      Visualization::WriteVector(*(*std::get<0>(vecs))(0), std::get<1>(vecs), std::get<2>(vecs));
     } else {
-      Visualization::WriteVector(*vecs.first, vecs.second, AmanziMesh::Entity_kind::CELL);
+      Visualization::WriteVector(*std::get<0>(vecs), std::get<1>(vecs), std::get<2>(vecs));
     }
   }
 

@@ -100,7 +100,9 @@ class Visualization : public IOEvent {
   virtual void WriteVector(const Epetra_MultiVector& vec,
                            const std::vector<std::string>& names,
                            AmanziMesh::Entity_kind kind) const;
-  virtual void WriteVector(const Epetra_Vector& vec, const std::string& name) const;
+  virtual void WriteVector(const Epetra_Vector& vec,
+                           const std::string& name,
+                           AmanziMesh::Entity_kind kind) const;
   virtual void WriteRegions();
   virtual void WritePartition();
 
@@ -127,7 +129,7 @@ template <>
 inline void
 Visualization::Write<Epetra_Vector>(const std::string& name, const Epetra_Vector& t) const
 {
-  WriteVector(t, name);
+  WriteVector(t, name, AmanziMesh::Entity_kind::CELL);
 }
 
 template <>

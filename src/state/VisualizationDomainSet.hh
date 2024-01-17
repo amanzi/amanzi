@@ -70,7 +70,9 @@ class VisualizationDomainSet : public Visualization {
   virtual void WriteVector(const Epetra_MultiVector& vec,
                            const std::vector<std::string>& names,
                            AmanziMesh::Entity_kind kind) const override;
-  virtual void WriteVector(const Epetra_Vector& vec, const std::string& name) const override;
+  virtual void WriteVector(const Epetra_Vector& vec,
+                           const std::string& name,
+                           AmanziMesh::Entity_kind kind) const override;
 
   virtual void FinalizeTimestep() const override;
 
@@ -78,7 +80,7 @@ class VisualizationDomainSet : public Visualization {
   // note this is lazily constructed, so must be mutable
   // Note that this relies on map being ORDERED!
   mutable std::map<std::string,
-                   std::pair<Teuchos::RCP<Epetra_MultiVector>, std::vector<std::string>>>
+                   std::tuple<Teuchos::RCP<Epetra_MultiVector>, std::vector<std::string>, AmanziMesh::Entity_kind>>
     lifted_vectors_;
   mutable std::vector<std::string> lifted_vector_names_;
   Teuchos::RCP<const AmanziMesh::DomainSet> ds_;
