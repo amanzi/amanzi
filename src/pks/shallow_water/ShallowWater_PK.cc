@@ -798,6 +798,8 @@ ShallowWater_PK::get_dt()
   int dir;
   double d, d_min = 1.e10, vn, dt = 1.e10, dt_dry = 1.e-1;
   double h, vx, vy;
+  double vnMax = 0.0;
+  double hMax = 0.0;
 
   const auto& h_c = *S_->Get<CV_t>(primary_variable_key_).ViewComponent("cell", true);
   const auto& vel_c = *S_->Get<CV_t>(velocity_key_).ViewComponent("cell", true);
@@ -832,6 +834,8 @@ ShallowWater_PK::get_dt()
          d_min = std::min(d_min, d);
 
          dt = std::min(d / std::max((2.0 * (std::abs(vn) + std::sqrt(g_ * h))), 1.e-12), dt);
+         vnMax = std::max(std::abs(vn), vnMax);
+         hMax = std::max(h, hMax);
      }
     }
   }
@@ -868,9 +872,10 @@ ShallowWater_PK::get_dt()
   double dt_min;
   mesh_->get_comm()->MinAll(&dt, &dt_min, 1);
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "stable dt=" << dt_min << ", cfl=" << cfl_ << std::endl;
+    *vo_->os() << "stable dt = " << dt_min << ", cfl = " << cfl_ << std::endl;
+    *vo_->os() << "max abs vel normal to face = " << vnMax << ", max primary variable = " << hMax << std::endl;
   }
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH && iters_ == max_iters_) {
