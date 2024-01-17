@@ -150,6 +150,11 @@ Checkpoint::Checkpoint(const std::string& filename,
   // check the comm_size for consistency
   int num_procs(-1);
   Read("mpi_num_procs", num_procs);
+  if (num_procs == 0) {
+    // checkpoint file has no attribute of that name
+    Read("mpi_comm_world_rank", num_procs); // old, deprecated name
+  }
+
   if (comm->NumProc() != num_procs) {
     Errors::Message msg;
     msg << "Requested checkpoint file " << filename << " was created on " << num_procs
