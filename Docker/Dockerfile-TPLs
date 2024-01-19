@@ -40,7 +40,8 @@ RUN apt-get -q update -y && apt-get install -y tzdata && apt-get -q install -y \
   wget \
   vim \
   zlib1g-dev \
-  && apt-get clean
+  # && apt-get clean - Dockerfile best practices indicate ubuntu apt-get calls by default
+  && rm -rf /var/lib/apt/lists/*
 
 # Note this installs numpy as well
 RUN pip3 install --no-cache-dir --upgrade pip && \
@@ -52,7 +53,7 @@ RUN if [ "$build_mpi" = "True" ]; then \
         && wget https://www.mpich.org/static/downloads/${mpi_version}/mpich-${mpi_version}.tar.gz \
         && tar xvf mpich-${mpi_version}.tar.gz \
         && cd mpich-${mpi_version} \
-        && ./configure --enable-shared --with-device=ch3:sock --enable-fast=all,Os --prefix=/usr \
+        && FFLAGS="-fallow-argument-mismatch" FCFLAGS="-fallow-argument-mismatch" ./configure --enable-shared --with-device=ch3:sock --enable-fast=all,Os --prefix=/usr \
         && make \
         && make install \
         && cd ../ \
@@ -63,7 +64,7 @@ RUN if [ "$build_mpi" = "True" ]; then \
         && wget https://download.open-mpi.org/release/open-mpi/v${mpi_version_major}/openmpi-${mpi_version}.tar.gz \
         && tar xvf openmpi-${mpi_version}.tar.gz \
         && cd openmpi-${mpi_version} \
-        && ./configure --enable-shared --prefix=/usr \
+        && FFLAGS="-fallow-argument-mismatch" FCFLAGS="-fallow-argument-mismatch" ./configure --enable-shared --prefix=/usr \
         && make \
         && make install \
         && cd ../ \
@@ -129,7 +130,11 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
   --with-python=/usr/bin/python \
   && git checkout master \
   && rm -r /home/amanzi_user/amanzi_builddir \
-  && rm -r /home/amanzi_user/amanzi/build/tools/
+  && rm -r /home/amanzi_user/amanzi/build/tools/ \
+  && cd /home/amanzi_user/install \
+  && find . -type f -name '*.pdf' -exec rm {} \; \
+  && find . -type f -name '*.png' -exec rm {} \; \
+  && find . -type f -name '*.html' -exec rm {} \;
 
 # Set the LD_LIBRARY_PATH for Amanzi builds in the next stage
 ENV LD_LIBRARY_PATH=${AMANZI_TPLS_DIR}/lib:${AMANZI_PETSC_LIBS}:${AMANZI_TRILINOS_LIBS}:${AMANZI_SEACAS_LIBS}
