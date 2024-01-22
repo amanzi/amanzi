@@ -40,8 +40,6 @@ set(mesh_inc_files
   MeshAudit_impl.hh
   MeshFrameworkAudit.hh
   MeshAudit.hh
-  MeshMaps_decl.hh
-  MeshMaps_impl.hh
   MeshMaps.hh
   MeshCache.hh
   MeshCache_decl.hh
@@ -58,6 +56,8 @@ set(mesh_inc_files
 
 set(mesh_src_files
   MeshFramework.cc
+  MeshAlgorithms.cc
+  MeshMaps.cc
   MeshSets.cc
   MeshColumns.cc
   DomainSet.cc

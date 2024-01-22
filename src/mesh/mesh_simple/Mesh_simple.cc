@@ -94,7 +94,7 @@ Mesh_simple::CreateCache_()
   Kokkos::resize(cell_to_face_, 6 * num_cells_);
   Kokkos::resize(cell_to_face_dirs_, 6 * num_cells_);
   Kokkos::resize(face_to_cell_, 2 * num_faces_);
-  initView(face_to_cell_, -1);
+  Kokkos::deep_copy(face_to_cell_, -1);
 
   Kokkos::resize(face_to_node_, 4 * num_faces_);
   Kokkos::resize(node_to_face_, 13 * num_nodes_); // 1 extra for num faces

@@ -13,7 +13,7 @@
 #include "errors.hh"
 #include "exceptions.hh"
 #include "MeshFramework.hh"
-#include "MeshHelpers_impl.hh"
+#include "MeshInternals.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -210,7 +210,7 @@ MeshFramework::getNodeCells(const Entity_ID n,
                             const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& cells) const
 {
-  cells = Impl::computeNodeCells(*this, n, ptype);
+  cells = Impl::computeNodeCells(*this, n);
 }
 
 void

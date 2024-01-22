@@ -33,12 +33,6 @@ view(DualView& dv)
   }
 }
 
-template <typename View, typename T>
-KOKKOS_INLINE_FUNCTION void
-initView(View& v, const T& t)
-{
-  for (auto& vv : v) vv = t;
-}
 
 //
 // Conversion from view on host to vector

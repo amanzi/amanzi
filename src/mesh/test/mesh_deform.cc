@@ -16,7 +16,7 @@
 #include "MeshFrameworkFactory.hh"
 #include "MeshFrameworkAudit.hh"
 #include "MeshAudit.hh"
-#include "MeshException.hh"
+#include "MeshHelpers.hh"
 
 #include "framework_meshes.hh"
 #include "geometry_harnesses.hh"

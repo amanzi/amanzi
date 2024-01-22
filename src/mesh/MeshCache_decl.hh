@@ -951,36 +951,37 @@ struct MeshCache : public MeshCacheBase {
 };
 
 
-template <MemSpace_kind OUT, MemSpace_kind IN>
-inline const MeshCache<OUT>
-onMemSpace(const MeshCache<IN>& mc_in)
-{
-  if constexpr (IN == OUT) return mc_in;
-  MeshCache<IN>* mc_in_nc = const_cast<MeshCache<IN>*>(&mc_in);
-  MeshCache<OUT> mc_out(*mc_in_nc);
-  return mc_out;
-}
+// -----------------------------------------------------------------------------
+// Caching algorithms
+// -----------------------------------------------------------------------------
+template <MemSpace_kind MEM>
+void
+cacheDefault(MeshCache<MEM>& mesh);
+
+template <MemSpace_kind MEM>
+void
+cacheAll(MeshCache<MEM>& mesh);
 
 
+// -----------------------------------------------------------------------------
+// Memory space transfer
+// -----------------------------------------------------------------------------
 template <MemSpace_kind OUT, MemSpace_kind IN>
-inline Teuchos::RCP<const MeshCache<OUT>>
-onMemSpace(const Teuchos::RCP<const MeshCache<IN>>& mc_in)
-{
-  if constexpr (IN == OUT) return mc_in;
-  MeshCache<IN>* mc_in_nc = const_cast<MeshCache<IN>*>(mc_in.ptr().get());
-  Teuchos::RCP<MeshCache<OUT>> mc_on_out = Teuchos::rcp(new MeshCache<OUT>(*mc_in_nc));
-  return (Teuchos::RCP<const MeshCache<OUT>>)mc_on_out;
-}
+const MeshCache<OUT>
+onMemSpace(const MeshCache<IN>& mc_in);
 
 template <MemSpace_kind OUT, MemSpace_kind IN>
-inline Teuchos::RCP<MeshCache<OUT>>
-onMemSpace(const Teuchos::RCP<MeshCache<IN>>& mc_in)
-{
-  if constexpr (IN == OUT) return mc_in;
-  return Teuchos::rcp(new MeshCache<OUT>(*mc_in));
-}
+Teuchos::RCP<const MeshCache<OUT>>
+onMemSpace(const Teuchos::RCP<const MeshCache<IN>>& mc_in);
+
+template <MemSpace_kind OUT, MemSpace_kind IN>
+Teuchos::RCP<MeshCache<OUT>>
+onMemSpace(const Teuchos::RCP<MeshCache<IN>>& mc_in);
 
 
+// -----------------------------------------------------------------------------
+// Default Mesh types
+// -----------------------------------------------------------------------------
 // NOTE: tests pass with this definition as well, which means that onMemSpace
 // and caching is correctly working.
 // using Mesh = MeshCache<MemSpace_kind::DEVICE>;
@@ -1003,7 +1004,6 @@ using Point_View = Mesh::Point_View;
 using cPoint_View = Mesh::cPoint_View;
 using Double_View = Mesh::Double_View;
 using cDouble_View = Mesh::cDouble_View;
-
 
 
 } // namespace AmanziMesh

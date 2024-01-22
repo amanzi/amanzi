@@ -6,6 +6,10 @@
 
   Authors: Julien Loiseau
 */
+/*
+  Note: these utilities are used internally to the mesh library and are not
+  needed by client code.
+*/
 
 #pragma once
 
@@ -15,12 +19,11 @@
 
 namespace Amanzi {
 namespace AmanziMesh {
+namespace Impl {
 
 //
 // These Getter and RaggedGetter functions are used within MeshCache to create
 // a standard way of choosing between access patterns.
-//
-// Move these to an Impl namespace?
 //
 
 // -----------------------------------------------------------------------------
@@ -215,6 +218,7 @@ struct RaggedGetter<MEM, AccessPattern_kind::COMPUTE> {
   }
 };
 
+} // namespace Impl
 } // namespace AmanziMesh
 } // namespace Amanzi
 

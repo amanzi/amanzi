@@ -13,7 +13,7 @@
 #include "FIFO_Set.hh"
 #include "RegionLabeledSet.hh"
 #include "MeshCache.hh"
-#include "MeshAlgorithms.hh"
+#include "MeshHelpers.hh"
 #include "MeshSets.hh"
 
 namespace Amanzi {
