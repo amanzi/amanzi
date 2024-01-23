@@ -383,33 +383,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
      }
 
-     if (c1IsJunction){
-
-        qx_rec = q_temp[0][c2];
-        qy_rec = q_temp[1][c2];
-
-        factor = inverse_with_tolerance(V_rec[0], cell_area2_max_);
-
-        vx_rec = factor * qx_rec;
-        vy_rec = factor * qy_rec;
-
-        // if c1 is a junction the normal has not been rotated,
-        // c2 is a pipe cell so the normal should be rotated
-        vn = vx_rec * normalRotated[0] + vy_rec * normalRotated[1];
-        vt = -vx_rec * normalRotated[1] + vy_rec * normalRotated[0];
-     }
-
-     UR[0] = V_rec[0];
-     UR[1] = V_rec[0] * vn;
-     UR[2] = V_rec[0] * vt;
-     UR[3] = V_rec[1];
-
-     if (c2IsJunction) {
-
-        V_rec = ComputeFieldsOnEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
-
-        ierr = ErrorDiagnostics_(t, c2, V_rec[0]);
-        if (ierr < 0) break;
+     if (c1IsJunction || c2IsJunction){
 
         qx_rec = vel_c[0][c2] * V_rec[0];
         qy_rec = vel_c[1][c2] * V_rec[0];
@@ -419,18 +393,26 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         vx_rec = factor * qx_rec;
         vy_rec = factor * qy_rec;
 
-        // if c2 is a junction, it means c1 is not, hence both normal
-        // and normalRotated have been rotated. Hence we need to
-        // use normalNotRotated
-        vn = vx_rec * normalNotRotated[0] + vy_rec * normalNotRotated[1];
-        vt = -vx_rec * normalNotRotated[1] + vy_rec * normalNotRotated[0];
+        if(c1IsJunction){
+           // if c1 is a junction the normal has not been rotated,
+           // c2 is a pipe cell so the normal should be rotated
+           vn = vx_rec * normalRotated[0] + vy_rec * normalRotated[1];
+           vt = -vx_rec * normalRotated[1] + vy_rec * normalRotated[0];
+        }
 
-        UR[0] = V_rec[0];
-        UR[1] = V_rec[0] * vn;
-        UR[2] = V_rec[0] * vt;
-        UR[3] = V_rec[1];
+        if(c2IsJunction){
+           // if c2 is a junction, it means c1 is not, hence both normal
+           // and normalRotated have been rotated. Hence we need to
+           // use normalNotRotated
+           vn = vx_rec * normalNotRotated[0] + vy_rec * normalNotRotated[1];
+           vt = -vx_rec * normalNotRotated[1] + vy_rec * normalNotRotated[0];
+        }
+     }
 
-    }
+     UR[0] = V_rec[0];
+     UR[1] = V_rec[0] * vn;
+     UR[2] = V_rec[0] * vt;
+     UR[3] = V_rec[1];
 
  }
 
