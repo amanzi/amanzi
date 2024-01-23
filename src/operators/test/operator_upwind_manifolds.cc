@@ -132,7 +132,7 @@ TEST(UPWIND_FLUX_MANIFOLDS)
       int g = fmap.FirstPointInElement(f);
       int ndofs = fmap.ElementSize(f);
 
-      auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh->getFaceCells(f);
       AMANZI_ASSERT(cells.size() == ndofs);
 
       for (int i = 0; i < ndofs; ++i) {
@@ -151,7 +151,7 @@ TEST(UPWIND_FLUX_MANIFOLDS)
     // calculate errors
     double error(0.0);
     for (int f = 0; f < nfaces_owned; f++) {
-      auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh->getFaceCells(f);
 
       const Point& xf = mesh->getFaceCentroid(f);
       double exact = Value(xf);

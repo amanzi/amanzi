@@ -189,7 +189,6 @@ MeshFramework::getEdgeNodes(const Entity_ID e,
 
 void
 MeshFramework::getEdgeCells(const Entity_ID e,
-                            const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& cells) const
 {
   hasEdgesOrThrow();
@@ -198,7 +197,6 @@ MeshFramework::getEdgeCells(const Entity_ID e,
 
 void
 MeshFramework::getEdgeFaces(const Entity_ID e,
-                            const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& faces) const
 {
   hasEdgesOrThrow();
@@ -207,7 +205,6 @@ MeshFramework::getEdgeFaces(const Entity_ID e,
 
 void
 MeshFramework::getNodeCells(const Entity_ID n,
-                            const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& cells) const
 {
   cells = Impl::computeNodeCells(*this, n);
@@ -215,7 +212,6 @@ MeshFramework::getNodeCells(const Entity_ID n,
 
 void
 MeshFramework::getNodeEdges(const Entity_ID nodeid,
-                            const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const
 {
   hasEdgesOrThrow();

@@ -87,7 +87,7 @@ MPC_CoupledFlowTransport(const std::string& xmlfile, const std::string& exofile)
     mesh, "fracture", AmanziMesh::Entity_kind::FACE, comm, gm, mesh_list));
   auto mesh_fracture =
     Teuchos::rcp(new Mesh(mesh_fracture_framework,
-                          Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()),
+                          Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()),
                           mesh_list));
 
   S->RegisterMesh("fracture", mesh_fracture);

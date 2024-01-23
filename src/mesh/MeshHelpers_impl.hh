@@ -96,7 +96,7 @@ template <class Mesh_type>
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 getFaceNormalExterior(const Mesh_type& mesh, int f, int* dir)
 {
-  auto cells = mesh.getFaceCells(f, Parallel_kind::ALL);
+  auto cells = mesh.getFaceCells(f);
   auto normal = mesh.getFaceNormal(f, cells[0], dir);
   if (cells.size() > 1) *dir = 0;
   return normal;
@@ -111,7 +111,7 @@ template <class Mesh_type>
 int
 getFaceAdjacentCell(const Mesh_type& mesh, int c, int f)
 {
-  auto cells = mesh.getFaceCells(f, Parallel_kind::ALL);
+  auto cells = mesh.getFaceCells(f);
   if (cells.size() == 2) return cells[0] + cells[1] - c;
   return -1;
 }
@@ -129,7 +129,7 @@ getCellFaceAdjacentCells(const Mesh_type& mesh, Entity_ID c, Parallel_kind ptype
   typename Mesh_type::Entity_ID_View adj_cells;
   Entity_ID_List vadj_cells;
   for (const auto& f : cfaces) {
-    auto fcells = mesh.getFaceCells(f, ptype);
+    auto fcells = mesh.getFaceCells(f);
     for (const auto& fc : fcells) {
       if (c != fc && std::find(vadj_cells.begin(), vadj_cells.end(), fc) == vadj_cells.end())
         vadj_cells.push_back(fc);

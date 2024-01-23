@@ -153,7 +153,6 @@ class MeshLogical : public MeshFramework {
   virtual void getFaceNodes(const Entity_ID f, cEntity_ID_View& nodes) const override;
 
   virtual void getNodeFaces(const Entity_ID nodeid,
-                            const Parallel_kind ptype,
                             cEntity_ID_View& faceids) const override;
 
   //
@@ -175,7 +174,7 @@ class MeshLogical : public MeshFramework {
   // MeshLogical defines face quantities
   //
   virtual void
-  getFaceCells(const Entity_ID f, const Parallel_kind ptype, cEntity_ID_View& cells) const override;
+  getFaceCells(const Entity_ID f, cEntity_ID_View& cells) const override;
   double getFaceArea(const Entity_ID f) const;
   AmanziGeometry::Point getFaceCentroid(const Entity_ID f) const;
   AmanziGeometry::Point

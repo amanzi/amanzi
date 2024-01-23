@@ -239,7 +239,7 @@ PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
     } else if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
         kf[n] = (c == cells[0]) ? (*k_face)[0][f] : (*k_twin)[0][f];
       }
 
@@ -420,7 +420,7 @@ PDE_DiffusionMFD::UpdateMatricesTPFA_()
 
   // populate the global matrix
   for (int f = 0; f < nfaces_owned; f++) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
 
@@ -665,14 +665,14 @@ PDE_DiffusionMFD::ApplyBCs_Cell_(const Teuchos::Ptr<const BCs>& bc_trial,
     WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
 
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f);
       rhs_cell[0][cells[0]] += bc_value[f] * Aface(0, 0);
     }
     // Neumann condition contributes to the RHS
     else if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {
       local_op_->matrices_shadow[f] = Aface;
 
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f);
       rhs_cell[0][cells[0]] -= bc_value[f] * mesh_->getFaceArea(f);
       Aface *= 0.0;
     }
@@ -680,7 +680,7 @@ PDE_DiffusionMFD::ApplyBCs_Cell_(const Teuchos::Ptr<const BCs>& bc_trial,
     else if (bc_model[f] == OPERATOR_BC_MIXED && primary) {
       local_op_->matrices_shadow[f] = Aface;
 
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f);
       double area = mesh_->getFaceArea(f);
       double factor = area / (1.0 + bc_mixed[f] * area / Aface(0, 0));
       rhs_cell[0][cells[0]] -= bc_value[f] * factor;
@@ -832,7 +832,7 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
   // populate the local matrices
   double v, vmod;
   for (int f = 0; f < nfaces_owned; f++) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
@@ -884,7 +884,7 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
   // populate the local matrices
   double v, vmod;
   for (int f = 0; f < nfaces_owned; f++) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
@@ -1439,7 +1439,7 @@ PDE_DiffusionMFD::ComputeTransmissibility(int f) const
 {
   WhetStone::MFD3D_Diffusion mfd(mesh_);
 
-  auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+  auto cells = mesh_->getFaceCells(f);
   int c = cells[0];
 
   if (K_.get()) {

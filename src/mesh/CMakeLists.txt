@@ -49,8 +49,6 @@ set(mesh_inc_files
   MeshUtils.hh
   Mesh.hh
   MeshAlgorithms.hh
-  MeshAlgorithms_decl.hh
-  MeshAlgorithms_impl.hh
   SingleFaceMesh.hh
 )
 

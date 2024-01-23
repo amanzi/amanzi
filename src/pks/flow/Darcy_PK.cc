@@ -675,7 +675,7 @@ Darcy_PK::UpdateSpecificYield_()
   for (int c = 0; c < ncells_owned; c++) {
     if (specific_yield[0][c] > 0.0) {
       auto [faces, dirs] = mesh_->getCellFacesAndDirections(c);
-      auto adjcells = AmanziMesh::Impl::getCellFaceAdjacentCells(
+      auto adjcells = AmanziMesh::getCellFaceAdjacentCells(
         *mesh_, c, AmanziMesh::Parallel_kind::OWNED);
 
       double area = 0.0;

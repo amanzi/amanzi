@@ -441,17 +441,17 @@ MeshCache<MEM>::getFaceNumCells(const Entity_ID f, const Parallel_kind ptype) co
     }
   } else {
     if (data_.face_cells_cached) return getFaceNumCells<AccessPattern_kind::CACHE>(f, ptype);
-    return getFaceCells(f, ptype).size();
+    return getFaceCells(f).size();
   }
 }
 
 
 template <MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION typename MeshCache<MEM>::cEntity_ID_View
-MeshCache<MEM>::getFaceCells(const Entity_ID f, const Parallel_kind ptype) const
+MeshCache<MEM>::getFaceCells(const Entity_ID f) const
 {
   cEntity_ID_View fcells;
-  getFaceCells(f, ptype, fcells);
+  getFaceCells(f, fcells);
   return fcells;
 }
 
@@ -468,7 +468,6 @@ template <MemSpace_kind MEM>
 template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION void
 MeshCache<MEM>::getFaceCells(const Entity_ID f,
-                             const Parallel_kind ptype,
                              cEntity_ID_View& fcells) const
 {
   fcells = Impl::RaggedGetter<MEM, AP>::get(
@@ -477,7 +476,7 @@ MeshCache<MEM>::getFaceCells(const Entity_ID f,
     framework_mesh_,
     [&](const int i) {
       cEntity_ID_View cells;
-      framework_mesh_->getFaceCells(f, ptype, cells);
+      framework_mesh_->getFaceCells(f, cells);
       return cells;
     },
     nullptr,
@@ -514,7 +513,7 @@ MeshCache<MEM>::getFaceNormal(const Entity_ID f, const Entity_ID c, int* orienta
       if (abs(nat_dir) == 1) {
         return nat_dir * normal;
       } else {
-        auto fcells = getFaceCells(f, Parallel_kind::ALL);
+        auto fcells = getFaceCells(f);
         assert(fcells.size() == 2);
 
         // average normals oriented from lower to higher GIDs
@@ -527,7 +526,7 @@ MeshCache<MEM>::getFaceNormal(const Entity_ID f, const Entity_ID c, int* orienta
       }
     }
 
-    auto fcells = getFaceCells(f, Parallel_kind::ALL);
+    auto fcells = getFaceCells(f);
     std::size_t i;
     for (i = 0; i != fcells.size(); ++i)
       if (fcells[i] == c) break;
@@ -1127,7 +1126,7 @@ MeshCache<MEM>::getNodeCells(const Entity_ID n,
     framework_mesh_,
     [&](const int i) {
       cEntity_ID_View lcells;
-      framework_mesh_->getNodeCells(i, ptype, lcells);
+      framework_mesh_->getNodeCells(i, lcells);
       return lcells;
     },
     nullptr,
@@ -1156,7 +1155,7 @@ MeshCache<MEM>::getNodeFaces(const Entity_ID n,
     framework_mesh_,
     [&](const int i) {
       cEntity_ID_View lfaces;
-      framework_mesh_->getNodeFaces(i, Parallel_kind::ALL, lfaces);
+      framework_mesh_->getNodeFaces(i, lfaces);
       return lfaces;
     },
     nullptr,
@@ -1315,7 +1314,7 @@ MeshCache<MEM>::getEdgeCells(const Entity_ID e,
     framework_mesh_,
     [&](const int i) {
       cEntity_ID_View lcells;
-      framework_mesh_->getEdgeCells(i, Parallel_kind::ALL, lcells);
+      framework_mesh_->getEdgeCells(i, lcells);
       return lcells;
     },
     nullptr,
@@ -1344,7 +1343,7 @@ MeshCache<MEM>::getEdgeFaces(const Entity_ID e,
     framework_mesh_,
     [&](const int i) {
       cEntity_ID_View lfaces;
-      framework_mesh_->getEdgeFaces(i, Parallel_kind::ALL, lfaces);
+      framework_mesh_->getEdgeFaces(i, lfaces);
       return lfaces;
     },
     nullptr,
@@ -1475,7 +1474,7 @@ MeshCache<MEM>::cacheFaceGeometry()
     Direction_View ldirs;
     // This NEEDS to call the framework or be passed an host mesh to call the function on the host.
     View_type<const Entity_ID, MemSpace_kind::HOST> fcells;
-    framework_mesh_->getFaceCells(f, Parallel_kind::ALL, fcells);
+    framework_mesh_->getFaceCells(f, fcells);
     Kokkos::resize(ldirs, fcells.size());
     for (int i = 0; i != fcells.size(); ++i) {
       if ((getSpaceDimension() == getManifoldDimension()) || (fcells.size() != 2)) {
@@ -1505,7 +1504,7 @@ MeshCache<MEM>::cacheFaceCells()
 {
   if (data_.face_cells_cached) return;
   auto lambda = [this](Entity_ID f, View_type<const Entity_ID, MemSpace_kind::HOST>& fcells) {
-    this->framework_mesh_->getFaceCells(f, Parallel_kind::ALL, fcells);
+    this->framework_mesh_->getFaceCells(f, fcells);
   };
   data_.face_cells = asRaggedArray_DualView<Entity_ID>(lambda, nfaces_all);
   data_.face_cells_cached = true;
@@ -1583,7 +1582,7 @@ MeshCache<MEM>::cacheEdgeCells()
   if (data_.edge_cells_cached) return;
   framework_mesh_->hasEdgesOrThrow();
   auto lambda = [this](Entity_ID f, View_type<const Entity_ID, MemSpace_kind::HOST>& ecells) {
-    this->framework_mesh_->getEdgeCells(f, Parallel_kind::ALL, ecells);
+    this->framework_mesh_->getEdgeCells(f, ecells);
   };
   data_.edge_cells = asRaggedArray_DualView<Entity_ID>(lambda, nedges_all);
   data_.edge_cells_cached = true;
@@ -1598,7 +1597,7 @@ MeshCache<MEM>::cacheEdgeFaces()
   if (data_.edge_faces_cached) return;
   framework_mesh_->hasEdgesOrThrow();
   auto lambda = [this](Entity_ID f, View_type<const Entity_ID, MemSpace_kind::HOST>& efaces) {
-    this->framework_mesh_->getEdgeFaces(f, Parallel_kind::ALL, efaces);
+    this->framework_mesh_->getEdgeFaces(f, efaces);
   };
   data_.edge_faces = asRaggedArray_DualView<Entity_ID>(lambda, nedges_all);
   data_.edge_faces_cached = true;
@@ -1643,7 +1642,7 @@ MeshCache<MEM>::cacheNodeCells()
   assert(framework_mesh_.get());
   if (data_.node_cells_cached) return;
   auto lambda = [this](Entity_ID f, View_type<const Entity_ID, MemSpace_kind::HOST>& ncells) {
-    this->framework_mesh_->getNodeCells(f, Parallel_kind::ALL, ncells);
+    this->framework_mesh_->getNodeCells(f, ncells);
   };
   data_.node_cells = asRaggedArray_DualView<Entity_ID>(lambda, nnodes_all);
   data_.node_cells_cached = true;
@@ -1657,7 +1656,7 @@ MeshCache<MEM>::cacheNodeFaces()
   assert(framework_mesh_.get());
   if (data_.node_faces_cached) return;
   auto lambda = [this](Entity_ID f, View_type<const Entity_ID, MemSpace_kind::HOST>& nfaces) {
-    this->framework_mesh_->getNodeFaces(f, Parallel_kind::ALL, nfaces);
+    this->framework_mesh_->getNodeFaces(f, nfaces);
   };
   data_.node_faces = asRaggedArray_DualView<Entity_ID>(lambda, nnodes_all);
   data_.node_faces_cached = true;
@@ -1672,7 +1671,7 @@ MeshCache<MEM>::cacheNodeEdges()
   if (data_.node_edges_cached) return;
   framework_mesh_->hasEdgesOrThrow();
   auto lambda = [this](Entity_ID f, View_type<const Entity_ID, MemSpace_kind::HOST>& nedges) {
-    this->framework_mesh_->getNodeEdges(f, Parallel_kind::ALL, nedges);
+    this->framework_mesh_->getNodeEdges(f, nedges);
   };
   data_.node_edges = asRaggedArray_DualView<Entity_ID>(lambda, nnodes_all);
   data_.node_edges_cached = true;

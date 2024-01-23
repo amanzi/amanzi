@@ -57,7 +57,7 @@ UpdateEnthalpyCouplingFluxes(
     int f = mesh_fracture->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
     int first = mmap.FirstPointInElement(f);
 
-    const auto& cells = mesh_matrix->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    const auto& cells = mesh_matrix->getFaceCells(f);
     int ncells = cells.size();
     mesh_matrix->getFaceNormal(f, cells[0], &dir);
     shift = Operators::UniqueIndexFaceToCells(*mesh_matrix, f, cells[0]);

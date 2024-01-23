@@ -88,17 +88,14 @@ class Mesh_simple : public MeshFramework {
 
   virtual void
   getEdgeFaces(const Entity_ID edgeid,
-               const Parallel_kind ptype,
                View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
 
 
   virtual void getFaceCells(const Entity_ID f,
-                            const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& cells) const override;
 
   virtual void
   getNodeFaces(const Entity_ID nodeid,
-               const Parallel_kind ptype,
                View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
 
  private:

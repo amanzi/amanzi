@@ -43,7 +43,7 @@ MeshLogicalAlgorithms::computeFaceGeometry(const MeshHost& mesh, const Entity_ID
   AmanziGeometry::Point centroid = mesh.getFaceCentroid(f);
 
   MeshHost::cEntity_ID_View fcells;
-  mesh.getFaceCells(f, Parallel_kind::ALL, fcells);
+  mesh.getFaceCells(f, fcells);
   MeshHost::Point_View normals("normals", fcells.size());
   for (int i = 0; i != fcells.size(); ++i) {
     normals[i] = mesh.getFaceNormal(f, fcells[i], nullptr);
@@ -243,7 +243,7 @@ MeshLogical::setLogicalGeometry(Double_List const* const cell_volumes,
 
     for (Entity_ID f = 0; f != n_faces; ++f) {
       cEntity_ID_View f_cells;
-      getFaceCells(f, Parallel_kind::ALL, f_cells);
+      getFaceCells(f, f_cells);
       AMANZI_ASSERT((*face_cell_bisectors)[f].size() == f_cells.size());
 
       for (int c_index = 0; c_index != f_cells.size(); ++c_index) {
@@ -326,7 +326,6 @@ MeshLogical::getFaceNodes(const Entity_ID f, cEntity_ID_View& nodes) const
 
 void
 MeshLogical::getNodeFaces(const Entity_ID nodeid,
-                          const Parallel_kind ptype,
                           cEntity_ID_View& faceids) const
 {
   Errors::Message mesg("There are no nodes in a MeshLogical.");
@@ -376,7 +375,6 @@ MeshLogical::getCellCentroid(const Entity_ID c) const
 //
 void
 MeshLogical::getFaceCells(const Entity_ID f,
-                          const Parallel_kind ptype,
                           cEntity_ID_View& cells) const
 {
   cells = face_cell_ids_.getRowUnmanaged<MemSpace_kind::HOST>(f);
@@ -393,7 +391,7 @@ MeshLogical::getFaceCentroid(const Entity_ID f) const
 {
   if (cell_centroids_.size() > 0) {
     cEntity_ID_View fcells;
-    getFaceCells(f, Parallel_kind::ALL, fcells);
+    getFaceCells(f, fcells);
     auto c0 = fcells[0];
 
     cEntity_ID_View cfaces;
@@ -430,7 +428,7 @@ MeshLogical::getFaceNormal(const Entity_ID f, const Entity_ID c, int* const orie
   Entity_ID cc = c;
   if (c == -1) {
     cEntity_ID_View fcells;
-    getFaceCells(f, Parallel_kind::ALL, fcells);
+    getFaceCells(f, fcells);
     cc = fcells[0];
   }
 

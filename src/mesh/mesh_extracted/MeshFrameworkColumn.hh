@@ -152,10 +152,9 @@ class MeshFrameworkColumn : public MeshFramework {
   // not guaranteed to be the same for corresponding nodes on
   // different processors
   virtual void getNodeCells(const Entity_ID nodeid,
-                            const Parallel_kind ptype,
                             cEntity_ID_View& cellids) const override
   {
-    col3D_mesh_->getNodeCells(nodeid, ptype, cellids);
+    col3D_mesh_->getNodeCells(nodeid, cellids);
   }
 
 
@@ -163,7 +162,6 @@ class MeshFrameworkColumn : public MeshFramework {
   // not guarnateed to be the same for corresponding nodes on
   // different processors
   virtual void getNodeFaces(const Entity_ID nodeid,
-                            const Parallel_kind ptype,
                             cEntity_ID_View& faceids) const override
   {
     Errors::Message mesg("Not implemented");
@@ -213,10 +211,9 @@ class MeshFrameworkColumn : public MeshFramework {
   // Cells connected to a face - this function is implemented in each
   // mesh framework. The results are cached in the base class
   virtual void getFaceCells(const Entity_ID faceid,
-                            const Parallel_kind ptype,
                             cEntity_ID_View& cellids) const override
   {
-    col3D_mesh_->getFaceCells(column_faces_(faceid), ptype, cellids);
+    col3D_mesh_->getFaceCells(column_faces_(faceid), cellids);
   }
 
  protected:

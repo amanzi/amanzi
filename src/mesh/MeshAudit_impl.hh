@@ -845,7 +845,7 @@ MeshAudit_Geometry<Mesh_type>::check_face_cell_adjacency_consistency() const
       bool bad_data = false;
 
       View_type<const Entity_ID, MemSpace_kind::HOST> fcells;
-      mesh_->getFaceCells(f, Parallel_kind::ALL, fcells);
+      mesh_->getFaceCells(f, fcells);
       for (const auto& c : fcells) {
         View_type<const Entity_ID, MemSpace_kind::HOST> cfaces;
         View_type<const Direction_type, MemSpace_kind::HOST> cfdirs;
@@ -921,7 +921,7 @@ MeshAudit_Geometry<Mesh_type>::check_face_normal_relto_cell() const
       auto fc = mesh_->getFaceCentroid(j);
 
       View_type<const Entity_ID, MemSpace_kind::HOST> fcells;
-      mesh_->getFaceCells(j, Parallel_kind::ALL, fcells);
+      mesh_->getFaceCells(j, fcells);
       for (int k = 0; k < fcells.size(); ++k) {
         AmanziGeometry::Point cc = mesh_->getCellCentroid(fcells[k]);
         AmanziGeometry::Point fnormal = mesh_->getFaceNormal(j, fcells[k]);
@@ -966,7 +966,7 @@ MeshAudit_Geometry<Mesh_type>::check_face_normal_orientation() const
       AmanziGeometry::Point fnormal = mesh_->getFaceNormal(j);
 
       View_type<const Entity_ID, MemSpace_kind::HOST> fcells;
-      mesh_->getFaceCells(j, Parallel_kind::ALL, fcells);
+      mesh_->getFaceCells(j, fcells);
       for (int k = 0; k < fcells.size(); ++k) {
         int orientation = 0;
         AmanziGeometry::Point fnormalc = mesh_->getFaceNormal(j, fcells[k], &orientation);

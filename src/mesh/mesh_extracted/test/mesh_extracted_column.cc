@@ -112,7 +112,7 @@ TEST(COLUMN_MESH_3D)
 
   for (int j = 0; j < nfaces; j++) {
     AmanziMesh::Mesh::cEntity_ID_View fcells;
-    colmesh.getFaceCells(j, AmanziMesh::Parallel_kind::ALL, fcells);
+    colmesh.getFaceCells(j, fcells);
 
     if (j == 0) {
       CHECK_EQUAL(1, fcells.size());
@@ -266,7 +266,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
 
   for (int j = 0; j < nfaces; j++) {
     AmanziMesh::Mesh::cEntity_ID_View fcells;
-    colmesh.getFaceCells(j, AmanziMesh::Parallel_kind::ALL, fcells);
+    colmesh.getFaceCells(j, fcells);
 
     if (j == 0) {
       CHECK_EQUAL(1, fcells.size());

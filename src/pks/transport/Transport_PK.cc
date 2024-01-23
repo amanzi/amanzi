@@ -943,7 +943,7 @@ Transport_PK::ComputeBCs_(std::vector<int>& bc_model, std::vector<double>& bc_va
   }
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     if (cells.size() == 1) bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
   }
 
@@ -1014,7 +1014,7 @@ Transport_PK::IdentifyUpwindCells()
 
       for (int i = 0; i < faces.size(); i++) {
         int f = faces[i];
-        auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
 
         int g = map->FirstPointInElement(f);
         int ndofs = map->ElementSize(f);

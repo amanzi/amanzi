@@ -73,7 +73,7 @@ ObservableAqueous::ComputeRegionSize()
     obs_boundary_ = 1;
     for (int i = 0; i != region_size_; ++i) {
       int f = entity_ids_[i];
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f);
       if (cells.size() == 2) {
         obs_boundary_ = 0;
         break;
@@ -276,7 +276,7 @@ ObservableAqueous::ComputeObservation(State& S,
     if (obs_boundary_ == 1) { // observation is on a boundary set
       for (int i = 0; i != region_size_; ++i) {
         int f = entity_ids_[i];
-        auto cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
 
         int sign, c = cells[0];
         mesh_->getFaceNormal(f, c, &sign);
@@ -295,7 +295,7 @@ ObservableAqueous::ComputeObservation(State& S,
         double area = mesh_->getFaceArea(f);
         double sign = (reg_normal_ * face_normal) / area;
 
-        auto cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
         int c = cells[0];
 
         double scale = 1.0;

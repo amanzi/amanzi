@@ -142,7 +142,7 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag)
         face_node_counts[f] = fnodes.size();
         face_node_list.insert(face_node_list.end(), fnodes.begin(), fnodes.end());
 
-        auto fcells = mesh_->getVisMesh().getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+        auto fcells = mesh_->getVisMesh().getFaceCells(f);
         if (fcells.size() == 1) { ext_faces[f] = 0x1; }
       }
 

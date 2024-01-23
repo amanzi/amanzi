@@ -71,7 +71,7 @@ ReconstructionCellLinear::Compute(const AmanziMesh::cEntity_ID_View& ids,
     const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
     // mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_kind::ALL, &cells);
-    CellFaceAdjCellsManifold_(c, AmanziMesh::Parallel_kind::ALL, cells);
+    CellFaceAdjCellsManifold_(c, cells);
     int ncells = cells.size();
 
     matrix.PutScalar(0.0);
@@ -138,7 +138,6 @@ ReconstructionCellLinear::PopulateLeastSquareSystem_(AmanziGeometry::Point& cent
 ****************************************************************** */
 void
 ReconstructionCellLinear::CellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
-                                                    AmanziMesh::Parallel_kind ptype,
                                                     std::vector<AmanziMesh::Entity_ID>& cells) const
 {
   const auto& faces = mesh_->getCellFaces(c);
@@ -148,7 +147,7 @@ ReconstructionCellLinear::CellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
 
   for (int n = 0; n < nfaces; ++n) {
     AmanziMesh::Entity_ID f = faces[n];
-    auto fcells = mesh_->getFaceCells(f, ptype);
+    auto fcells = mesh_->getFaceCells(f);
     int ncells = fcells.size();
 
     if (ncells == 2) {

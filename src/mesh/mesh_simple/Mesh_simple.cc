@@ -554,7 +554,6 @@ Mesh_simple::setNodeCoordinate(const AmanziMesh::Entity_ID local_node_id,
 void
 Mesh_simple::getNodeFaces(
   const AmanziMesh::Entity_ID nodeid,
-  const AmanziMesh::Parallel_kind ptype,
   AmanziMesh::View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const
 {
   unsigned int offset = (unsigned int)13 * nodeid;
@@ -572,7 +571,6 @@ Mesh_simple::getNodeFaces(
 void
 Mesh_simple::getEdgeFaces(
   const AmanziMesh::Entity_ID edgeid,
-  const AmanziMesh::Parallel_kind ptype,
   AmanziMesh::View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const
 {
   unsigned int offset = (unsigned int)5 * edgeid;
@@ -591,7 +589,6 @@ Mesh_simple::getEdgeFaces(
 void
 Mesh_simple::getFaceCells(
   const AmanziMesh::Entity_ID faceid,
-  const AmanziMesh::Parallel_kind ptype,
   AmanziMesh::View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const
 {
   unsigned int offset = (unsigned int)2 * faceid;

@@ -147,7 +147,7 @@ InputAnalysis::RegionAnalysis()
       int bc_flag(1);
 
       for (int n = 0; n < nblock; ++n) {
-        auto cells = mesh_->getFaceCells(block[n], AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(block[n]);
         if (cells.size() != 1) bc_flag = 0;
       }
 

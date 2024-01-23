@@ -134,7 +134,6 @@ MeshSurfaceCell::getFaceNodes(const Entity_ID faceid, cEntity_ID_View& nodeids) 
 // different processors
 void
 MeshSurfaceCell::getNodeCells(const Entity_ID nodeid,
-                              const Parallel_kind ptype,
                               cEntity_ID_View& cellids) const
 {
   AMANZI_ASSERT(nodeid < nodes_.size());
@@ -149,7 +148,6 @@ MeshSurfaceCell::getNodeCells(const Entity_ID nodeid,
 // different processors
 void
 MeshSurfaceCell::getNodeFaces(const Entity_ID nodeid,
-                              const Parallel_kind ptype,
                               cEntity_ID_View& faceids) const
 {
   Entity_ID_View lfaceids("lfaceids", 2);
@@ -185,7 +183,6 @@ MeshSurfaceCell::getCellFacesAndDirs(const Entity_ID cellid,
 // mesh framework. The results are cached in the base class
 void
 MeshSurfaceCell::getFaceCells(const Entity_ID faceid,
-                              const Parallel_kind ptype,
                               cEntity_ID_View& cellids) const
 {
   Entity_ID_View lcellids("lcellids", 1);

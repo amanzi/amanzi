@@ -863,7 +863,7 @@ LimiterCell::BoundsForCells(const Epetra_MultiVector& field,
   if (bc_model.size() > 0) {
     for (int f = 0; f < nfaces_wghost_; ++f) {
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-        auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
 
         for (int n = 0; n < cells.size(); ++n) {
           int c = cells[n];
@@ -899,7 +899,7 @@ LimiterCell::BoundsForFaces(const Epetra_MultiVector& field,
   }
 
   for (int f = 0; f < nfaces_wghost_; ++f) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
 
     for (int i = 0; i < cells.size(); ++i) {
       int c = cells[i];

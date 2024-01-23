@@ -94,7 +94,6 @@ class ReconstructionCellLinear : public Reconstruction {
   // On intersecting manifolds, we extract neighboors living in the same manifold
   // using a smoothness criterion.
   void CellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
-                                 AmanziMesh::Parallel_kind ptype,
                                  std::vector<AmanziMesh::Entity_ID>& cells) const;
 
  private:

@@ -121,7 +121,7 @@ ApertureModelEvaluator::UpdateOverburdenPressure_(const State& S)
   for (int c = 0; c < ncells; ++c) {
     if (flag) {
       int f = mesh->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
-      auto cells = mesh_parent->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_parent->getFaceCells(f);
       pov_[c] = -((*p_c)[0][cells[0]] + (*p_c)[0][cells[1]]) / 2;
     } else { 
       pov_[c] = apm_->second[(*apm_->first)[c]]->OverburdenPressure();

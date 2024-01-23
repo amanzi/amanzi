@@ -89,7 +89,7 @@ CompositeVectorFunction::Compute(double time,
 
           // loop over indices
           for (auto id = id_list.begin(); id != id_list.end(); ++id) {
-            auto cells = mesh->getFaceCells(*id, AmanziMesh::Parallel_kind::ALL);
+            auto cells = mesh->getFaceCells(*id);
             if (cells.size() == 1) {
               AmanziMesh::Entity_ID bf = vandelay_map.LID(face_map.GID(*id));
               AMANZI_ASSERT(bf >= 0);

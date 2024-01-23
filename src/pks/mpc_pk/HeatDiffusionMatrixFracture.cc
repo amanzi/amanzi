@@ -60,7 +60,7 @@ HeatDiffusionMatrixFracture::Update_(State& S)
     const AmanziGeometry::Point& xf = mesh->getCellCentroid(c);
     int f = mesh->getEntityParent(AmanziMesh::CELL, c);
 
-    auto cells = mesh_parent->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_parent->getFaceCells(f);
     int ndofs = cells.size();
 
     double dist = aperture_c[0][c] / 2;

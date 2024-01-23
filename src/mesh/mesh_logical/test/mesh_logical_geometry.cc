@@ -82,7 +82,7 @@ test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::MeshHost>& m, 
       CHECK_POINT_CLOSE(Point(-1., 0., 0.), normal);
     }
 
-    auto cells = m->getFaceCells(i, Parallel_kind::ALL);
+    auto cells = m->getFaceCells(i);
     if (i == 0) {
       CHECK_EQUAL(1, cells.size());
       CHECK_EQUAL(0, cells[0]);

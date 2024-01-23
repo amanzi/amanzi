@@ -274,7 +274,6 @@ MeshEmbeddedLogical::getFaceNodes(const Entity_ID f, cEntity_ID_View& nodes) con
 
 void
 MeshEmbeddedLogical::getNodeFaces(const Entity_ID nodeid,
-                                  const Parallel_kind ptype,
                                   cEntity_ID_View& faceids) const
 {
   Errors::Message mesg("There are no nodes in a MeshEmbeddedLogical.");
@@ -432,7 +431,6 @@ MeshEmbeddedLogical::getCellCentroid(const Entity_ID c) const
 
 void
 MeshEmbeddedLogical::getFaceCells(const Entity_ID f,
-                                  const Parallel_kind ptype,
                                   cEntity_ID_View& cells) const
 {
   Entity_ID_View lcells;
@@ -440,9 +438,9 @@ MeshEmbeddedLogical::getFaceCells(const Entity_ID f,
   auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   auto nfaces_extra = extra_face_cell_ids_.size<MemSpace_kind::HOST>();
   if (f < nfaces_log) {
-    log_mesh_->getFaceCells(f, ptype, cells);
+    log_mesh_->getFaceCells(f, cells);
   } else if (f >= (nfaces_log + nfaces_extra)) {
-    bg_mesh_->getFaceCells(f - nfaces_log - nfaces_extra, ptype, cells);
+    bg_mesh_->getFaceCells(f - nfaces_log - nfaces_extra, cells);
     lcells.fromConst(cells);
     for (auto& c : lcells) c += ncells_log;
     cells = lcells;

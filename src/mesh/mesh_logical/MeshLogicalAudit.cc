@@ -331,14 +331,14 @@ MeshLogicalAudit::check_faces_cell_consistency() const
   for (Entity_ID j = 0; j < ncell; ++j) {
     mesh->getCellFaces(j, cface);
     for (int k = 0; k < cface.size(); ++k) {
-      mesh->getFaceCells(cface[k], Parallel_kind::ALL, fcell);
+      mesh->getFaceCells(cface[k], fcell);
       if (std::find(fcell.begin(), fcell.end(), j) == fcell.end()) { bad_cells.push_back(j); }
     }
   }
 
   Entity_ID_List bad_faces;
   for (Entity_ID j = 0; j < nface; ++j) {
-    mesh->getFaceCells(j, Parallel_kind::ALL, fcell);
+    mesh->getFaceCells(j, fcell);
     for (int k = 0; k < fcell.size(); ++k) {
       mesh->getCellFaces(fcell[k], cface);
       if (std::find(cface.begin(), cface.end(), j) == cface.end()) { bad_faces.push_back(j); }

@@ -107,7 +107,7 @@ class HeatConduction {
       mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
     for (int f = 0; f < nfaces; f++) {
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f);
       int ncells = cells.size();
 
       if (ncells == 2) {
@@ -159,7 +159,7 @@ class HeatConduction {
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f);
       int ncells = cells.size();
 
       int c = cells[0];

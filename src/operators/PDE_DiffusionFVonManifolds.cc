@@ -176,7 +176,7 @@ PDE_DiffusionFVonManifolds::UpdateMatrices(const Teuchos::Ptr<const CompositeVec
         // skip
       } else if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         double factor = rho_ * norm(g_);
-        auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
         int c = cells[0];
 
         double zc = (mesh_->getCellCentroid(c))[d - 1];
@@ -187,7 +187,7 @@ PDE_DiffusionFVonManifolds::UpdateMatrices(const Teuchos::Ptr<const CompositeVec
         v.Reshape(ndofs);
         av.Reshape(ndofs);
 
-        auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
         for (int n = 0; n < ndofs; ++n) {
           double zc = (mesh_->getCellCentroid(cells[n]))[d - 1];
           v(n) = zc * factor;
@@ -221,7 +221,7 @@ PDE_DiffusionFVonManifolds::ApplyBCs(bool primary, bool eliminate, bool essentia
 
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] != OPERATOR_BC_NONE) {
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f);
       int c = cells[0];
 
       if (bc_model[f] == OPERATOR_BC_DIRICHLET && primary) {
@@ -296,7 +296,7 @@ PDE_DiffusionFVonManifolds::UpdateFlux(const Teuchos::Ptr<const CompositeVector>
       ti.Reshape(ndofs);
       pi.Reshape(ndofs);
 
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f);
 
       double sum(0.0), pf(0.0);
       for (int i = 0; i != ndofs; ++i) {
@@ -333,7 +333,7 @@ PDE_DiffusionFVonManifolds::ComputeBeta_()
   Kc(0, 0) = 1.0;
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     int g = fmap.FirstPointInElement(f);

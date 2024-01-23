@@ -210,37 +210,31 @@ class Mesh_MSTK : public MeshFramework {
   // Cells connected to a face
   virtual void
   getFaceCells(const Entity_ID faceid,
-               const Parallel_kind ptype,
                View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const override;
 
   // Cells of type 'ptype' connected to an edge
   virtual void
   getEdgeCells(const Entity_ID edgeid,
-               const Parallel_kind ptype,
                View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const override;
 
   // Faces of type 'ptype' connected to an edge
   virtual void
   getEdgeFaces(const Entity_ID edgeid,
-               const Parallel_kind ptype,
                View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
 
   // Cells of type 'ptype' connected to a node
   virtual void
   getNodeCells(const Entity_ID nodeid,
-               const Parallel_kind ptype,
                View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const override;
 
   // Faces of type 'ptype' connected to a node
   virtual void
   getNodeFaces(const Entity_ID nodeid,
-               const Parallel_kind ptype,
                View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
 
   // Edges of type 'ptype' connected to a node
   virtual void
   getNodeEdges(const Entity_ID nodeid,
-               const Parallel_kind ptype,
                View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const override;
 
   //

@@ -139,7 +139,7 @@ testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
           // Check the normal with respect to each connected cell is given as the
           // natural times the orientation.
           typename Mesh_type::cEntity_ID_View cellids;
-          mesh->getFaceCells(i, Parallel_kind::ALL, cellids);
+          mesh->getFaceCells(i, cellids);
 
           for (int k = 0; k < cellids.size(); k++) {
             int orientation = 0;

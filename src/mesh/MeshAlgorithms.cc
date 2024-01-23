@@ -36,7 +36,7 @@ MeshAlgorithms::computeFaceNormal(const MeshHost& mesh,
   auto geom = Impl::computeFaceGeometry(mesh, f);
 
   Mesh::cEntity_ID_View fcells;
-  mesh.getFaceCells(f, Parallel_kind::ALL, fcells);
+  mesh.getFaceCells(f, fcells);
   if (orientation) *orientation = 0;
 
   Entity_ID cc;

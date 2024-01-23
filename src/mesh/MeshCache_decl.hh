@@ -842,14 +842,14 @@ struct MeshCache : public MeshCacheBase {
                                                    const Parallel_kind ptype) const;
 
   KOKKOS_INLINE_FUNCTION
-  cEntity_ID_View getFaceCells(const Entity_ID f, const Parallel_kind ptype) const;
+  cEntity_ID_View getFaceCells(const Entity_ID f) const;
 
   KOKKOS_INLINE_FUNCTION
   const Entity_ID& getFaceCell(const Entity_ID f, const size_type i) const;
 
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION void
-  getFaceCells(const Entity_ID f, const Parallel_kind ptype, cEntity_ID_View& cells) const;
+  getFaceCells(const Entity_ID f, cEntity_ID_View& cells) const;
 
   KOKKOS_INLINE_FUNCTION
   std::size_t getCellMaxFaces() const;

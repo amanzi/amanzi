@@ -82,7 +82,7 @@ TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string>& region
       int f = block[n];
       value_[f].resize(chem_engine_->NumPrimarySpecies());
 
-      const auto& cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      const auto& cells = mesh_->getFaceCells(f);
       AMANZI_ASSERT(cells.size() == 1);
       cell_for_face_[f] = cells[0];
     }

@@ -182,9 +182,9 @@ computeNodeCells(const Mesh_type& mesh, const Entity_ID n)
 {
   typename Mesh_type::cEntity_ID_View faces, fcells;
   std::vector<Entity_ID> vcells;
-  mesh.getNodeFaces(n, Parallel_kind::ALL, faces);
+  mesh.getNodeFaces(n, faces);
   for (const auto& f : faces) {
-    mesh.getFaceCells(f, Parallel_kind::ALL, fcells);
+    mesh.getFaceCells(f, fcells);
     for (const auto& c : fcells) {
       if (std::find(vcells.begin(), vcells.end(), c) == vcells.end()) { vcells.emplace_back(c); }
     }
@@ -251,7 +251,7 @@ computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
     AmanziGeometry::polygon_get_area_centroid_normal(fcoords, &area, &centroid, &normal);
 
     typename Mesh_type::cEntity_ID_View fcells;
-    mesh.getFaceCells(f, Parallel_kind::ALL, fcells);
+    mesh.getFaceCells(f, fcells);
     typename Mesh_type::Point_View normals("normals", fcells.size());
     Kokkos::deep_copy(normals, normal);
 
@@ -274,7 +274,7 @@ computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
 
       // only one normal needed
       typename Mesh_type::cEntity_ID_View fcells;
-      mesh.getFaceCells(f, Parallel_kind::ALL, fcells);
+      mesh.getFaceCells(f, fcells);
       typename Mesh_type::Point_View normals("normals", fcells.size());
       Kokkos::deep_copy(normals, normal);
       for (int i = 0; i != fcells.size(); ++i) {
@@ -297,7 +297,7 @@ computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
       AmanziGeometry::Point centroid = 0.5 * (fcoords[0] + fcoords[1]);
 
       typename Mesh_type::cEntity_ID_View cellids;
-      mesh.getFaceCells(f, Parallel_kind::ALL, cellids);
+      mesh.getFaceCells(f, cellids);
       typename Mesh_type::Point_View normals("normals", cellids.size());
       for (int i = 0; i < cellids.size(); i++) {
         AmanziGeometry::Point cvec = fcoords[0] - mesh.getCellCentroid(cellids[i]);

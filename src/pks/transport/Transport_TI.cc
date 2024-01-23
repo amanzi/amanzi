@@ -276,7 +276,7 @@ Transport_PK::FunctionalTimeDerivative_FCT_(double t,
   auto& flux_numer_f = *flux_numer.ViewComponent("face");
 
   for (int f = 0; f < nfaces_owned; f++) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
@@ -344,7 +344,7 @@ Transport_PK::FunctionalTimeDerivative_FCT_(double t,
   for (int f = 0; f < nfaces_owned; ++f) {
     tcc_flux = flux_numer_f[0][f] / dt_;
 
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     if (ncells == 2) {

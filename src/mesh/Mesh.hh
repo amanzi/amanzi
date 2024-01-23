@@ -46,6 +46,7 @@ externally to this library.
 #include "MeshInternals_decl.hh"
 #include "MeshCache_decl.hh"
 #include "MeshAlgorithms.hh"
+#include "MeshHelpers.hh"
 #include "MeshInternals_impl.hh"
 #include "MeshCache_impl.hh"
 

@@ -69,7 +69,7 @@ MeshMaps::initialize(const MeshFramework& mesh, bool renumber)
   // As a result nbf_owned = nbf_all
   for (Entity_ID f = 0; f != nfaces_all; ++f) {
     MeshFramework::cEntity_ID_View fcells;
-    mesh.getFaceCells(f, Parallel_kind::ALL, fcells);
+    mesh.getFaceCells(f, fcells);
     if (fcells.size() == 1) {
       boundary_faces[nbf_all++] = f;
       if (f < nfaces_owned) nbf_owned = nbf_all;

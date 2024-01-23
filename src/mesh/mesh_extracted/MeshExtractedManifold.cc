@@ -228,7 +228,6 @@ MeshExtractedManifold::getFaceEdgesAndDirs(const Entity_ID f,
 ****************************************************************** */
 void
 MeshExtractedManifold::getEdgeCells(const Entity_ID e,
-                                    const Parallel_kind ptype,
                                     cEntity_ID_View& cells) const
 {
   cEntity_ID_View faces;
@@ -254,7 +253,6 @@ MeshExtractedManifold::getEdgeCells(const Entity_ID e,
 ****************************************************************** */
 void
 MeshExtractedManifold::getFaceCells(const Entity_ID f,
-                                    const Parallel_kind ptype,
                                     cEntity_ID_View& cells) const
 {
   cEntity_ID_View faces;
