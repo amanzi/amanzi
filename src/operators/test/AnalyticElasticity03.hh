@@ -27,7 +27,7 @@ class AnalyticElasticity03 : public AnalyticElasticityBase {
     : AnalyticElasticityBase(mesh), mu_(mu), lambda_(lambda), a_(2.0){};
   ~AnalyticElasticity03(){};
 
-  Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t)
+  virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t)
   {
     Amanzi::WhetStone::Tensor K(2, 4);
     K(0, 0) = K(1, 1) = 2 * mu_ + lambda_;
@@ -36,7 +36,7 @@ class AnalyticElasticity03 : public AnalyticElasticityBase {
     return K;
   }
 
-  Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  virtual Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t)
   {
     double x = p[0];
     double y = p[1];
@@ -44,9 +44,9 @@ class AnalyticElasticity03 : public AnalyticElasticityBase {
     return Amanzi::AmanziGeometry::Point(tmp, a_ * tmp);
   }
 
-  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { return 0.0; }
+  virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { return 0.0; }
 
-  Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  virtual Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
   {
     double x = p[0];
     double y = p[1];
@@ -65,6 +65,12 @@ class AnalyticElasticity03 : public AnalyticElasticityBase {
     T(0, 1) = T(1, 0) = 2 * mu_;
     T(1, 1) = -4 * mu_ - lambda_;
     return T;
+  }
+
+  virtual double volumetric_strain_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+    double x = p[0];
+    double y = p[1];
+    return (2 * x - 1.0) * y * (y - 1.0) + a_ * x * (x - 1.0) * (2 * y - 1.0);
   }
 
  private:

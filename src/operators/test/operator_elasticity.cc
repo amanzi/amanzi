@@ -315,6 +315,26 @@ RunTest(int icase, const std::string& solver,
     CHECK(ul2_err < tol);
     CHECK(global_op->num_itrs() < 15);
   }
+
+  // compute volumetric strain error
+  CompositeVectorSpace cvs2;
+  cvs2.SetMesh(mesh);
+  cvs2.SetGhosted(true);
+  cvs2.SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+  CompositeVector e(cvs2);
+  op->ComputeVolumetricStrain(solution, e);
+  const auto& e_c = *e.ViewComponent("cell");
+
+  double el2_err(0.0);
+  for (int c = 0; c < ncells_owned; ++c) {
+    const auto& xc = mesh->getCellCentroid(c);
+    double e_exact = ana.volumetric_strain_exact(xc, 0.0);
+    el2_err += std::pow(e_exact - e_c[0][c], 2);
+  }
+  ana.GlobalOp("sum", &el2_err, 1);
+  el2_err = std::sqrt(el2_err / ncells_owned);
+  CHECK(el2_err < tol);
  
   return ul2_err;
 }

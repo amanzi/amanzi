@@ -46,6 +46,7 @@ class AnalyticElasticityBase {
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   virtual Amanzi::WhetStone::Tensor
   stress_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual double volumetric_strain_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // -- source term
   virtual Amanzi::AmanziGeometry::Point

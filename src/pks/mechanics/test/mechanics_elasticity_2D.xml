@@ -117,7 +117,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="kinematic">
+        <!--ParameterList name="kinematic">
           <ParameterList name="BC 1">
             <Parameter name="regions" type="Array(string)" value="{Right side}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
@@ -138,7 +138,7 @@
               </ParameterList>
             </ParameterList>
           </ParameterList>
-        </ParameterList>
+        </ParameterList-->
       </ParameterList>
 
       <ParameterList name="verbose object">

@@ -148,7 +148,9 @@ MechanicsElasticity_PK::ComputeOperatorBCs()
   }
 
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->get_bc_name() == "no slip" && bcs_[i]->type() == WhetStone::DOF_Type::POINT) {
+    if (bcs_[i]->get_bc_name() == "no slip" && 
+        bcs_[i]->type() == WhetStone::DOF_Type::POINT &&
+        bcs_[i]->kind() == AmanziMesh::Entity_kind::NODE) {
       std::vector<int>& bc_model = op_bcs_[0]->bc_model();
       std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[0]->bc_value_point();
 
@@ -160,6 +162,24 @@ MechanicsElasticity_PK::ComputeOperatorBCs()
       }
     }
 
+    if (bcs_[i]->get_bc_name() == "no slip" && 
+        bcs_[i]->type() == WhetStone::DOF_Type::POINT &&
+        bcs_[i]->kind() == AmanziMesh::Entity_kind::FACE) {
+      std::vector<int>& bc_model = op_bcs_[3]->bc_model();
+      std::vector<double>& bc_value = op_bcs_[3]->bc_value();
+
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int n = it->first;
+
+        double dot(0.0);
+        const auto& normal = mesh_->getFaceNormal(n);
+        for (int k = 0; k < d; ++k) { dot += it->second[k] * normal[k]; }
+
+        bc_model[n] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value[n] = dot / mesh_->getFaceArea(n);
+      }
+    }
+
     if (bcs_[i]->get_bc_name() == "kinematic" &&
         bcs_[i]->type() == WhetStone::DOF_Type::NORMAL_COMPONENT) {
       std::vector<int>& bc_model = op_bcs_[3]->bc_model();
@@ -167,7 +187,7 @@ MechanicsElasticity_PK::ComputeOperatorBCs()
 
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;
-        bc_model[n] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_model[n] = Operators::OPERATOR_BC_KINEMATIC;
         bc_value[n] = it->second[0];
       }
     }

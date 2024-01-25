@@ -84,6 +84,8 @@ PDE_Elasticity::ComputeHydrostaticStress(const CompositeVector& u, CompositeVect
   WhetStone::Tensor Kc(K_default_);
   WhetStone::DenseVector dofs;
 
+  u.ScatterMasterToGhosted();
+
   auto& p_c = *p.ViewComponent("cell");
   const auto& u_n = *u.ViewComponent("node", true);
 
@@ -110,7 +112,7 @@ PDE_Elasticity::ComputeHydrostaticStress(const CompositeVector& u, CompositeVect
 
     // optional face DoFs
     if (u_f.get()) {
-      auto faces = mesh_->getCellFaces(c);
+      const auto& faces = mesh_->getCellFaces(c);
       int nfaces = faces.size();
 
       dofs.Reshape(d * nnodes + nfaces);
@@ -139,6 +141,8 @@ PDE_Elasticity::ComputeVolumetricStrain(const CompositeVector& u, CompositeVecto
   WhetStone::Tensor Tc;
   WhetStone::DenseVector dofs;
 
+  u.ScatterMasterToGhosted();
+
   auto& e_c = *e.ViewComponent("cell");
   const auto& u_n = *u.ViewComponent("node", true);
 
@@ -165,7 +169,7 @@ PDE_Elasticity::ComputeVolumetricStrain(const CompositeVector& u, CompositeVecto
 
     // optional face DoFs
     if (u_f.get()) {
-      auto faces = mesh_->getCellFaces(c);
+      const auto& faces = mesh_->getCellFaces(c);
       int nfaces = faces.size();
 
       dofs.Reshape(d * nnodes + nfaces);

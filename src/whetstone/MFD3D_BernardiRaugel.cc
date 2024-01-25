@@ -117,6 +117,8 @@ MFD3D_BernardiRaugel::H1consistency(int c, const Tensor& K, DenseMatrix& N, Dens
         R_(2 * m + 1, i) += tau[1] * t;
       }
     }
+  } else {
+    AMANZI_ASSERT(false);
   }
 
   for (int n = 0; n < nfaces; n++) {
@@ -347,11 +349,9 @@ MFD3D_BernardiRaugel::H1Cell(int c, const DenseVector& dofs, Tensor& Tc)
   coefM_.Multiply(v, av, false);
 
   Tc.Init(d_, 2);
-  for (int k = 0; k < d_; k++) Tc(k, k) = av(k);
-
-  int n(d_);
+  int n(0);
   for (int k = 0; k < d_; k++)
-    for (int l = k + 1; l < d_; l++) Tc(k, l) = Tc(l, k) = av(n++);
+    for (int l = k; l < d_; l++) Tc(k, l) = Tc(l, k) = av(n++);
 }
 
 } // namespace WhetStone

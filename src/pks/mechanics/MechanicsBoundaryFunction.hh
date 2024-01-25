@@ -42,9 +42,13 @@ class MechanicsBoundaryFunction : public PK_DomainFunction {
   void set_type(WhetStone::DOF_Type type) { type_ = type; }
   WhetStone::DOF_Type type() { return type_; }
 
+  void set_kind(AmanziMesh::Entity_kind kind) { kind_ = kind; }
+  AmanziMesh::Entity_kind kind() { return kind_; }
+
  private:
   std::string bc_name_;
   WhetStone::DOF_Type type_; // type of dofs related to this bc
+  AmanziMesh::Entity_kind kind_;
 };
 
 } // namespace Mechanics
