@@ -39,7 +39,9 @@ include_directories(${HDF5_INCLUDE_DIRS})
 #
 # Library: pks
 #
-set(pks_src_files PKFactory.cc)
+set(pks_src_files
+        PK_Physical.cc
+        PKFactory.cc)
 
 add_amanzi_library(pks
                    SOURCE ${pks_src_files}
