@@ -183,6 +183,9 @@ class Multiphase_PK : public PK_PhysicalBDF {
   // access methods for unit test
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae() { return bdf1_dae_; }
 
+  // for computing flux direction
+  virtual void ComputeFluxDir(const Teuchos::Ptr<const CompositeVector>& u, const Teuchos::Ptr<CompositeVector>& flux);
+
  protected:
   Teuchos::ParameterList MyRequire_(const Key& key, const std::string& owner);
 

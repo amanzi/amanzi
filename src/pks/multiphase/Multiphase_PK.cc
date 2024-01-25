@@ -880,12 +880,14 @@ Multiphase_PK::Initialize()
     kr_c = *S_->Get<CV_t>(adv_names_[phase]).ViewComponent("cell");
 
     auto flux = S_->GetPtrW<CV_t>(flux_names_[phase], Tags::DEFAULT, passwd_);
-    //upwind_->Compute(*flux, bcnone, *kr);
+    upwind_->Compute(*flux, bcnone, *kr);
 
     // debugging
+    /*    
     const auto& bc_model1 = op_bcs_[adv_names_[phase]]->bc_model();
-    Operators::CellToBoundaryFaces(bc_model1, *kr);
+    //Operators::CellToBoundaryFaces(bc_model1, *kr);
     upwind_->Compute(*flux, bc_model1, *kr);
+    */
 
     auto pdeK = pde_diff_K_[phase];
     pdeK->Setup(Kptr, kr, Teuchos::null);
@@ -895,6 +897,18 @@ Multiphase_PK::Initialize()
     auto var = S_->GetPtr<CV_t>(pressure_names_[phase], Tags::DEFAULT);
     pdeK->UpdateFlux(var.ptr(), flux.ptr());
   }
+  
+  // debugging
+  /*
+  Epetra_MultiVector kr_c_print = *S_->Get<CompositeVector>(advection_liquid_key_).ViewComponent("cell");
+  std::cout<<"kr_c = "<<kr_c_print<<std::endl;
+  Epetra_MultiVector flux_print_l = *S_->Get<CompositeVector>(mol_flowrate_liquid_key_).ViewComponent("face", "true");
+  std::cout<<"Liquid flux = "<<flux_print_l;
+
+  Epetra_MultiVector flux_print_g = *S_->Get<CompositeVector>(mol_flowrate_gas_key_).ViewComponent("face");
+  std::cout<<"Gas flux  = "<<flux_print_g;
+  */
+  
 
   // io
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -913,6 +927,16 @@ Multiphase_PK::Initialize()
                << vo_->reset() << std::endl
                << std::endl;
   }
+
+  // debugging
+  /*
+  Epetra_MultiVector eta_l = *S_->Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
+  std::cout<<"eta_l = "<<eta_l<<std::endl;
+
+  Epetra_MultiVector eta_g = *S_->Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
+  std::cout<<"eta_g = "<<eta_g<<std::endl;
+  */
+
 }
 
 
@@ -1027,8 +1051,7 @@ Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 
     // debugging
     const auto& bc_model1 = op_bcs_[adv_names_[phase]]->bc_model();
-    Operators::CellToBoundaryFaces(bc_model1, *kr);
-
+    //Operators::CellToBoundaryFaces(bc_model1, *kr);
     upwind_->Compute(*flux, bc_model1, *kr);
 
     auto pdeK = pde_diff_K_[phase];
@@ -1040,6 +1063,12 @@ Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
     auto var = S_->GetPtr<CV_t>(pressure_names_[phase], Tags::DEFAULT);
     pdeK->UpdateFlux(var.ptr(), flux.ptr());
   }
+  
+  // debugging output flux
+  /*
+  Epetra_MultiVector flux_print_l = *S_->Get<CompositeVector>(mol_flowrate_liquid_key_).ViewComponent("face", "true");
+  std::cout<<"Liquid flux = "<<flux_print_l;
+  */
 
   // other fields
   if (S_->HasEvaluator(ncp_fg_key_, Tags::DEFAULT)) {
@@ -1278,6 +1307,20 @@ Multiphase_PK::CreateCVforUpwind_()
   cvs.AddComponent("cell", AmanziMesh::CELL, 1);
   return Teuchos::rcp(new CompositeVector(cvs));
 }
+
+
+/* *******************************************************************
+* Special function to compute pressure based flux direction (used for upwinding).
+******************************************************************* */
+void 
+Multiphase_PK::ComputeFluxDir(const Teuchos::Ptr<const CompositeVector>& solution,
+                              const Teuchos::Ptr<CompositeVector>& darcy_mass_flux)
+{
+  const Epetra_MultiVector& p = *solution->ViewComponent("cell", true);
+  Epetra_MultiVector& flux = *darcy_mass_flux->ViewComponent("face", false);
+}
+
+
 
 } // namespace Multiphase
 } // namespace Amanzi

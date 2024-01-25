@@ -88,7 +88,18 @@ Multiphase_PK::FunctionalResidual(double t_old,
 
   Key fname, gname, key;
   for (int n = 0; n < neqns - nncps; ++n) {
+
+    // debugging
+    if (n == 0) {
+      std::cout<<"Water eqn--------------------------"<<std::endl;
+    } else {
+      std::cout<<"H eqn------------------------------"<<std::endl;
+    }
+
     Key keyr = soln_names_[eqns_flattened_[n][0]];
+
+    // debugging
+    std::cout<<"keyr = "<<keyr<<std::endl;
 
     ModifyEvaluators(n);
     PopulateBCs(eqns_flattened_[n][1], true);
@@ -100,6 +111,8 @@ Multiphase_PK::FunctionalResidual(double t_old,
       fname = eqns_[n].advection[phase].first;
       gname = eqns_[n].advection[phase].second;
 
+      std::cout<<"n = "<<n<<"; fname = "<<fname<<"; gname = "<<gname<<std::endl;
+
       if (fname != "") {
         CheckCompatibilityBCs(keyr, gname);
         S_->GetEvaluator(fname).Update(*S_, passwd_);
@@ -107,32 +120,61 @@ Multiphase_PK::FunctionalResidual(double t_old,
         // -- upwind cell-centered coefficient
         auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
         kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
+      
+        
+        //std::cout<<"kr_bf = "<<kr_bf<<std::endl;
+        
         //upwind_->Compute(flux, bcnone, *kr);
 
-        // debugging
-        /*
-        const auto& bc_model1 = op_bcs_[fname]->bc_model();
-        Operators::CellToBoundaryFaces(bc_model1, *kr);
-        upwind_->Compute(flux, bc_model1, *kr);
-        */
-
-        // debugging  
+        // debugging        
+        /* 
+        if (n == 1 && fname == "advection_liquid" ) {
+          const Epetra_MultiVector& kr_bf = *kr->ViewComponent("boundary_face", true);
+          std::cout<<"kr_bf = "<<kr_bf<<std::endl;
+          const auto& bc_model1_val = op_bcs_[fname]->bc_value();
+          const auto& bc_model1_mod = op_bcs_[fname]->bc_model();
         
+          for (int f = 0; f < nfaces_wghost_; ++f) { 
+            if (bc_model1_mod[f] == 1) {
+              std::cout<<"f = "<<f<<std::endl;
+              kr_bf[0][f] = bc_model1_val[f];
+            }
+          }
+        }
+        */
+        
+        
+        
+        //Operators::CellToBoundaryFaces(bc_model1, *kr);
+        //upwind_->Compute(flux, bc_model1, *kr);
+        
+        
+        // debugging  
+                
         if (n == 1 && fname == "advection_liquid") {
           std::cout<<"Entered advection_liquid"<<std::endl;
           const auto& bc_model1 = op_bcs_[fname]->bc_model();
-          Operators::CellToBoundaryFaces(bc_model1, *kr);
-          upwind_->Compute(flux, bc_model1, *kr);
+          const auto& bc_value1 = op_bcs_[fname]->bc_value();
+          //Operators::CellToBoundaryFaces(bc_model1, *kr);
+          upwind_->Compute_wBC(flux, bc_model1, bc_value1, *kr);
         } else if (n == 1 && fname == "advection_gas") {
           std::cout<<"Entered advection_gas"<<std::endl;
           const auto& bc_model1 = op_bcs_[fname]->bc_model();
-          Operators::CellToBoundaryFaces(bc_model1, *kr);
+          const auto& bc_value1 = op_bcs_[fname]->bc_value();
+          //Operators::CellToBoundaryFaces(bc_model1, *kr);
           upwind_->Compute(flux, bc_model1, *kr);
         }
         else {
           upwind_->Compute(flux, bcnone, *kr);
         }
         
+        
+        
+        // debugging  
+        /*
+        Epetra_MultiVector kr_f_print = *kr->ViewComponent("face");
+        std::cout<<"kr_f print = "<<kr_f_print<<std::endl;
+        */
 
 
         // -- form diffusion operator for variable g
@@ -159,6 +201,9 @@ Multiphase_PK::FunctionalResidual(double t_old,
     for (int phase = 0; phase < 2; ++phase) {
       fname = eqns_[n].diffusion[phase].first;
       gname = eqns_[n].diffusion[phase].second;
+
+      // debugging
+      std::cout<<"DIFFUSION: n = "<<n<<"; fname = "<<fname<<"; gname = "<<gname<<std::endl;
 
       if (fname != "") {
         S_->GetEvaluator(fname).Update(*S_, passwd_);
@@ -217,6 +262,15 @@ Multiphase_PK::FunctionalResidual(double t_old,
       }
     }
 
+    // debugging output residual
+    /* 
+    for (int c = 0; c < ncells_owned_; ++c) { 
+      std::cout<<"c = "<<c<<"; fone_c = "<<fone_c[0][c]<<std::endl;
+    }
+    */
+    
+    
+
     // copy temporary vector to residual
     auto& fc = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");
     for (int c = 0; c < ncells_owned_; ++c) fc[eqns_flattened_[n][1]][c] = fone_c[0][c];
@@ -235,7 +289,10 @@ Multiphase_PK::FunctionalResidual(double t_old,
 
     auto& fci = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");
     if (ncp_ == "min") {
-      for (int c = 0; c < ncells_owned_; ++c) { fci[0][c] = std::min(ncp_fc[0][c], ncp_gc[0][c]); }
+      for (int c = 0; c < ncells_owned_; ++c) { 
+        fci[0][c] = std::min(ncp_fc[0][c], ncp_gc[0][c]); 
+        //std::cout<<"ncp c = "<<c<<"; val = min{"<<ncp_fc[0][c]<<", "<<ncp_gc[0][c]<<"}"<<std::endl; 
+      }
     } else if (ncp_ == "Fischer-Burmeister") {
       for (int c = 0; c < ncells_owned_; ++c) {
         double a = ncp_fc[0][c];
@@ -331,15 +388,19 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
             kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
 
             auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
+            //upwind_->Compute(flux, bcnone, *kr);          
 
             // debugging
+            
             if (row == 1) {
               const auto& bc_model1 = op_bcs_[fname]->bc_model();
-              Operators::CellToBoundaryFaces(bc_model1, *kr);
+              //Operators::CellToBoundaryFaces(bc_model1, *kr);
               upwind_->Compute(flux, bc_model1, *kr);
             } else {
               upwind_->Compute(flux, bcnone, *kr);
             }
+            
+           
 
             pde->Setup(Kptr, kr, Teuchos::null);
             pde->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
@@ -371,6 +432,18 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
             const auto& flux = S_->Get<CompositeVector>(flux_names_[phase]);
             upwind_->Compute(flux, bcnone, *kr);
 
+
+            // debugging
+            /*
+            if (row == 1) {
+              const auto& bc_model1 = op_bcs_[fname]->bc_model();
+              //Operators::CellToBoundaryFaces(bc_model1, *kr);
+              upwind_->Compute(flux, bc_model1, *kr);
+            } else {
+              upwind_->Compute(flux, bcnone, *kr);
+            }
+            */
+            
             // --- calculate advective flux from div(K kr grad g)
             S_->GetEvaluator(gname).Update(*S_, passwd_);
             auto var = S_->GetPtr<CompositeVector>(gname, Tags::DEFAULT);
