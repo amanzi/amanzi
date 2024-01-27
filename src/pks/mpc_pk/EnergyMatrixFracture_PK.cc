@@ -19,6 +19,7 @@
 #include "InverseFactory.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
+#include "StateArchive.hh"
 #include "TreeOperator.hh"
 
 #include "EnergyMatrixFracture_PK.hh"
@@ -26,7 +27,6 @@
 #include "FractureInsertion_Helper.hh"
 #include "HeatDiffusionMatrixFracture.hh"
 #include "PK_MPCStrong.hh"
-#include "PK_Utils.hh"
 
 namespace Amanzi {
 

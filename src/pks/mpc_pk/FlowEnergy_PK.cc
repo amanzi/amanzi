@@ -13,13 +13,13 @@
   Process kernel for coupling Flow PK with Energy PK.
 */
 
+#include "Flow_PK.hh"
 #include "Energy_PK.hh"
 #include "OperatorDefs.hh"
-#include "Flow_PK.hh"
+#include "StateArchive.hh"
 
 #include "FlowEnergy_PK.hh"
 #include "PK_MPCStrong.hh"
-#include "PK_Utils.hh"
 
 namespace Amanzi {
 

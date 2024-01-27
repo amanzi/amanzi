@@ -32,8 +32,8 @@
 #include "Mesh_Algorithms.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
-#include "PK_Utils.hh"
 #include "Point.hh"
+#include "StateArchive.hh"
 #include "UpwindFactory.hh"
 #include "XMLParameterListWriter.hh"
 
@@ -121,7 +121,7 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 void
 Richards_PK::Setup()
 {
-  dt_ = 0.0;
+  dt_ = 1e+98;
   mesh_ = S_->GetMesh(domain_);
   dim = mesh_->getSpaceDimension();
 

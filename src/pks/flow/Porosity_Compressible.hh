@@ -38,12 +38,12 @@ class Porosity_Compressible : public Porosity {
   inline double PorosityValue(double p)
   {
     double dp = p - p_ref_;
-    return (dp <= 0.0) ? porosity_ : porosity_ * std::exp(c_ * dp);
+    return porosity_ * std::exp(c_ * dp);
   }
   inline double dPorositydPressure(double p)
   {
     double dp = p - p_ref_;
-    return (dp <= 0.0) ? 0.0 : factor_ * std::exp(c_ * dp);
+    return factor_ * std::exp(c_ * dp);
   }
 
  private:

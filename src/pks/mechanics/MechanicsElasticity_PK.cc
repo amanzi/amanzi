@@ -16,6 +16,7 @@
 
 #include "InverseFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
+#include "StateArchive.hh"
 
 #include "HydrostaticStressEvaluator.hh"
 #include "MechanicsElasticity_PK.hh"
@@ -342,6 +343,7 @@ MechanicsElasticity_PK::Initialize()
   op_preconditioner_elas_->UpdateMatrices();
   op_preconditioner_elas_->ApplyBCs(true, true, true);
 
+  // -- optional wrapping of preconditioner
   std::string pc_name = ti_list_->get<std::string>("preconditioner");
   op_preconditioner_elas_->global_operator()->set_inverse_parameters(pc_name,
                                                                      *preconditioner_list_);
@@ -405,8 +407,7 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // trying to make a step
-  bool failed(false);
-  failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
+  bool failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
   if (failed) {
     dt_ = dt_next_;
 

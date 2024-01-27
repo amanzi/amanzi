@@ -17,9 +17,9 @@
 #include <cmath>
 #include <vector>
 
-#include "PK_DomainFunctionFactory.hh"
-
 #include "CompositeVector.hh"
+#include "PK_DomainFunctionFactory.hh"
+#include "StateArchive.hh"
 
 // Amanzi::ShallowWater
 #include "DischargeEvaluator.hh"
