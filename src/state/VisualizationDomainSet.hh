@@ -79,8 +79,9 @@ class VisualizationDomainSet : public Visualization {
  protected:
   // note this is lazily constructed, so must be mutable
   // Note that this relies on map being ORDERED!
-  mutable std::map<std::string,
-                   std::tuple<Teuchos::RCP<Epetra_MultiVector>, std::vector<std::string>, AmanziMesh::Entity_kind>>
+  mutable std::map<
+    std::string,
+    std::tuple<Teuchos::RCP<Epetra_MultiVector>, std::vector<std::string>, AmanziMesh::Entity_kind>>
     lifted_vectors_;
   mutable std::vector<std::string> lifted_vector_names_;
   Teuchos::RCP<const AmanziMesh::DomainSet> ds_;

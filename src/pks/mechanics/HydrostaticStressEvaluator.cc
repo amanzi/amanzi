@@ -28,7 +28,7 @@ HydrostaticStressEvaluator::HydrostaticStressEvaluator(Teuchos::ParameterList& p
 {
   displacement_key_ = plist.get<std::string>("displacement key", "displacement");
   dependencies_.insert(std::make_pair(displacement_key_, Tags::DEFAULT));
-} 
+}
 
 
 /* ******************************************************************
@@ -68,4 +68,3 @@ HydrostaticStressEvaluator::Evaluate_(const State& S, const std::vector<Composit
 
 } // namespace Mechanics
 } // namespace Amanzi
-

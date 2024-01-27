@@ -29,8 +29,8 @@ VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec,
 
   if (!lifted_vectors_.count(vis_name)) {
     // create a lifted vector if we don't currently have one
-    auto lifted_vec = Teuchos::rcp(new Epetra_MultiVector(
-      mesh()->getMap(kind, false), vec.NumVectors()));
+    auto lifted_vec =
+      Teuchos::rcp(new Epetra_MultiVector(mesh()->getMap(kind, false), vec.NumVectors()));
 
     // also create a lifted set of names
     std::vector<std::string> lifted_names;
@@ -53,8 +53,8 @@ VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec,
 
 void
 VisualizationDomainSet::WriteVector(const Epetra_Vector& vec,
-        const std::string& name,
-        AmanziMesh::Entity_kind kind) const
+                                    const std::string& name,
+                                    AmanziMesh::Entity_kind kind) const
 {
   // replace names[0] domain index with a *
   KeyTriple dset_triple;
@@ -63,8 +63,7 @@ VisualizationDomainSet::WriteVector(const Epetra_Vector& vec,
 
   if (!lifted_vectors_.count(vis_name)) {
     // create a lifted vector if we don't currently have one
-    auto lifted_vec =
-      Teuchos::rcp(new Epetra_MultiVector(mesh()->getMap(kind, false), 1));
+    auto lifted_vec = Teuchos::rcp(new Epetra_MultiVector(mesh()->getMap(kind, false), 1));
 
     std::vector<std::string> lifted_names;
 

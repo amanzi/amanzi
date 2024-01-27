@@ -30,11 +30,10 @@ using CVS_t = CompositeVectorSpace;
 /* ******************************************************************
 * New constructor: extracts lists and requires fields.
 ****************************************************************** */
-MechanicsElasticity_PK::MechanicsElasticity_PK(
-  Teuchos::ParameterList& pk_tree,
-  const Teuchos::RCP<Teuchos::ParameterList>& glist,
-  const Teuchos::RCP<State>& S,
-  const Teuchos::RCP<TreeVector>& soln)
+MechanicsElasticity_PK::MechanicsElasticity_PK(Teuchos::ParameterList& pk_tree,
+                                               const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                                               const Teuchos::RCP<State>& S,
+                                               const Teuchos::RCP<TreeVector>& soln)
   : soln_(soln), passwd_("")
 {
   S_ = S;
@@ -93,8 +92,8 @@ MechanicsElasticity_PK::Setup()
   if (!S_->HasRecord(displacement_key_)) {
     auto cvs = Operators::cvsFromSchema(schema, mesh_, true);
     *S_->Require<CV_t, CVS_t>(displacement_key_, Tags::DEFAULT, passwd_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true) = cvs;
+       .SetMesh(mesh_)
+       ->SetGhosted(true) = cvs;
 
     Teuchos::ParameterList elist(displacement_key_);
     elist.set<std::string>("evaluator name", displacement_key_);
@@ -171,14 +170,20 @@ MechanicsElasticity_PK::Initialize()
   dt_next_ = dt_;
 
   // -- mesh dimensions
-  ncells_owned_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-  ncells_wghost_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  ncells_owned_ =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  ncells_wghost_ =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
-  nfaces_owned_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  nfaces_wghost_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  nfaces_owned_ =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  nfaces_wghost_ =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
-  nnodes_owned_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
-  nnodes_wghost_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
+  nnodes_owned_ =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  nnodes_wghost_ =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   // -- control parameters
   use_gravity_ = ec_list_->sublist("physical models and assumptions").get<bool>("use gravity");
@@ -298,8 +303,8 @@ MechanicsElasticity_PK::Initialize()
   // -- setup phase
   double E = (*S_->Get<CV_t>(young_modulus_key_, Tags::DEFAULT).ViewComponent("cell"))[0][0];
   double nu = (*S_->Get<CV_t>(poisson_ratio_key_, Tags::DEFAULT).ViewComponent("cell"))[0][0];
-  double mu =  E / (2 * (1 + nu));
-  double lambda = (dim_ == 3 ) ? E * nu / (1 + nu) / (1 - 2 * nu) : E * nu / (1 + nu) / (1 - nu);
+  double mu = E / (2 * (1 + nu));
+  double lambda = (dim_ == 3) ? E * nu / (1 + nu) / (1 - 2 * nu) : E * nu / (1 + nu) / (1 - nu);
 
   Amanzi::WhetStone::Tensor K(dim_, 4);
   for (int i = 0; i < dim_ * dim_; ++i) K(i, i) = 2 * mu;
@@ -316,16 +321,20 @@ MechanicsElasticity_PK::Initialize()
   op_preconditioner_elas_->SetTensorCoefficient(K);
 
   // -- initialize boundary conditions (memory allocation)
-  auto bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::POINT));
+  auto bc = Teuchos::rcp(
+    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::POINT));
   op_bcs_.push_back(bc);
 
-  bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::SCALAR));
+  bc = Teuchos::rcp(
+    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::SCALAR));
   op_bcs_.push_back(bc);
 
-  bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::POINT));
+  bc = Teuchos::rcp(
+    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::POINT));
   op_bcs_.push_back(bc);
 
-  bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  bc = Teuchos::rcp(
+    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   op_bcs_.push_back(bc);
 
   for (auto bc : op_bcs_) {
@@ -359,7 +368,8 @@ MechanicsElasticity_PK::Initialize()
   op_pc_solver_->InitializeInverse();
 
   // we set up operators and can trigger re-initialization of stress
-  Teuchos::rcp_dynamic_cast<HydrostaticStressEvaluator>(eval_hydro_stress_)->set_op(op_matrix_elas_);
+  Teuchos::rcp_dynamic_cast<HydrostaticStressEvaluator>(eval_hydro_stress_)
+    ->set_op(op_matrix_elas_);
   Teuchos::rcp_dynamic_cast<VolumetricStrainEvaluator>(eval_vol_strain_)->set_op(op_matrix_elas_);
   eval_->SetChanged();
 
@@ -367,10 +377,8 @@ MechanicsElasticity_PK::Initialize()
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << " TI:\"" << ti_method_name.c_str() << "\"" << std::endl
-               << "matrix: "
-               << op_matrix_->PrintDiagnostics() << std::endl
-               << "preconditioner: "
-               << op_preconditioner_->PrintDiagnostics() << std::endl;
+               << "matrix: " << op_matrix_->PrintDiagnostics() << std::endl
+               << "preconditioner: " << op_preconditioner_->PrintDiagnostics() << std::endl;
 
     *vo_->os() << "displacement BC assigned to " << dirichlet_bc_ << " nodes" << std::endl;
 

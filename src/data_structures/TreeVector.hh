@@ -69,14 +69,16 @@ class TreeVector {
 
   // Access to SubVectors
   using iterator = std::vector<Teuchos::RCP<TreeVector>>::iterator;
-  using const_iterator = Teuchos::RCP<const TreeVector> const * const;
+  using const_iterator = Teuchos::RCP<const TreeVector> const* const;
 
   // this is a very poor-man's hacky replacement for boost iterator_adaptor
   // which aims to make const_iterators iterate over pointers to const objects.
-  const_iterator begin() const {
+  const_iterator begin() const
+  {
     return reinterpret_cast<const Teuchos::RCP<const TreeVector>*>(&*subvecs_.begin());
   }
-  const_iterator end() const {
+  const_iterator end() const
+  {
     return reinterpret_cast<const Teuchos::RCP<const TreeVector>*>(&*subvecs_.end());
   }
 

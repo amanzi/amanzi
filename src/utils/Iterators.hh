@@ -136,5 +136,3 @@ end(const View_type& view)
 }
 
 } // namespace Kokkos
-
-

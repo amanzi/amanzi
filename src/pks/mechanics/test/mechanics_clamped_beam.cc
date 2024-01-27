@@ -151,4 +151,3 @@ TEST(CLAMPED_BEAM)
 
   std::cout << "Maximum error " << err * 100 << " %\n";
 }
-

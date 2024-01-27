@@ -99,13 +99,11 @@ TEST(HYDROSTATIC_STRESS)
   WriteStateStatistics(*S);
 
   // check
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells_owned; ++c) {
     const auto& xp = mesh->getCellCentroid(c);
-    if (xp[0] < 0.135 && xp[2] < 0.51)
-      CHECK_CLOSE(-p[0][c], 200000.0, 50000.0);
-    if (xp[0] > 3.871 && xp[2] < 0.51)
-      CHECK_CLOSE(-p[0][c], 490000.0, 40000.0);
+    if (xp[0] < 0.135 && xp[2] < 0.51) CHECK_CLOSE(-p[0][c], 200000.0, 50000.0);
+    if (xp[0] > 3.871 && xp[2] < 0.51) CHECK_CLOSE(-p[0][c], 490000.0, 40000.0);
   }
 }
-

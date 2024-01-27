@@ -96,7 +96,7 @@ PDE_Elasticity::ComputeHydrostaticStress(const CompositeVector& u, CompositeVect
   auto mfd3d = Teuchos::rcp_dynamic_cast<WhetStone::MFD3D>(mfd_);
 
   p_c.PutScalar(0.0);
- 
+
   for (int c = 0; c < ncells_owned; c++) {
     // nodal DoFs go first
     auto nodes = mesh_->getCellNodes(c);
@@ -105,9 +105,7 @@ PDE_Elasticity::ComputeHydrostaticStress(const CompositeVector& u, CompositeVect
     dofs.Reshape(d * nnodes);
     for (int n = 0; n < nnodes; ++n) {
       int v = nodes[n];
-      for (int k = 0; k < d; ++k) {
-        dofs(d * n + k) = u_n[k][v];
-      }
+      for (int k = 0; k < d; ++k) { dofs(d * n + k) = u_n[k][v]; }
     }
 
     // optional face DoFs
@@ -125,7 +123,7 @@ PDE_Elasticity::ComputeHydrostaticStress(const CompositeVector& u, CompositeVect
     mfd3d->H1Cell(c, dofs, Tc);
 
     if (K_.get()) Kc = (*K_)[c];
-    WhetStone::Tensor TKc = Kc * Tc; 
+    WhetStone::Tensor TKc = Kc * Tc;
 
     for (int k = 0; k < d; ++k) p_c[0][c] += TKc(k, k);
   }
@@ -153,7 +151,7 @@ PDE_Elasticity::ComputeVolumetricStrain(const CompositeVector& u, CompositeVecto
   auto mfd3d = Teuchos::rcp_dynamic_cast<WhetStone::MFD3D>(mfd_);
 
   e_c.PutScalar(0.0);
- 
+
   for (int c = 0; c < ncells_owned; c++) {
     // nodal DoFs go first
     auto nodes = mesh_->getCellNodes(c);
@@ -162,9 +160,7 @@ PDE_Elasticity::ComputeVolumetricStrain(const CompositeVector& u, CompositeVecto
     dofs.Reshape(d * nnodes);
     for (int n = 0; n < nnodes; ++n) {
       int v = nodes[n];
-      for (int k = 0; k < d; ++k) {
-        dofs(d * n + k) = u_n[k][v];
-      }
+      for (int k = 0; k < d; ++k) { dofs(d * n + k) = u_n[k][v]; }
     }
 
     // optional face DoFs
@@ -248,16 +244,13 @@ PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
     auto kind = bc->kind();
     auto type = bc->type();
 
-    if (kind == AmanziMesh::Entity_kind::FACE &&
-        type == WhetStone::DOF_Type::SCALAR) {
+    if (kind == AmanziMesh::Entity_kind::FACE && type == WhetStone::DOF_Type::SCALAR) {
       ApplyBCs_ShearStress_(*bc, primary, eliminate, essential_eqn);
 
-    } else if (kind == AmanziMesh::Entity_kind::FACE &&
-               type == WhetStone::DOF_Type::POINT) {
+    } else if (kind == AmanziMesh::Entity_kind::FACE && type == WhetStone::DOF_Type::POINT) {
       ApplyBCs_Traction_(*bc, primary, eliminate, essential_eqn);
 
-    } else if (kind == AmanziMesh::NODE &&
-               type == WhetStone::DOF_Type::SCALAR) {
+    } else if (kind == AmanziMesh::NODE && type == WhetStone::DOF_Type::SCALAR) {
       ApplyBCs_Kinematic_(*bc, primary, eliminate, essential_eqn);
     }
   }
@@ -280,8 +273,10 @@ PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 * BCs: shear stress
 ****************************************************************** */
 void
-PDE_Elasticity::ApplyBCs_ShearStress_(
-  const BCs& bc, bool primary, bool eliminate, bool essential_eqn)
+PDE_Elasticity::ApplyBCs_ShearStress_(const BCs& bc,
+                                      bool primary,
+                                      bool eliminate,
+                                      bool essential_eqn)
 {
   int d = mesh_->getSpaceDimension();
   const auto& bc_model = bc.bc_model();
@@ -312,9 +307,7 @@ PDE_Elasticity::ApplyBCs_ShearStress_(
         double value = bc_value[f];
         for (int m = 0; m < nlnodes; ++m) {
           int v = lnodes[m];
-          for (int k = 0; k < d; ++k) {
-            (*rhs_node)[k][v] += value * tau[k] * weights[m];
-          }
+          for (int k = 0; k < d; ++k) { (*rhs_node)[k][v] += value * tau[k] * weights[m]; }
         }
       }
     }
@@ -328,8 +321,7 @@ PDE_Elasticity::ApplyBCs_ShearStress_(
 * BCs: traction
 ****************************************************************** */
 void
-PDE_Elasticity::ApplyBCs_Traction_(
-  const BCs& bc, bool primary, bool eliminate, bool essential_eqn)
+PDE_Elasticity::ApplyBCs_Traction_(const BCs& bc, bool primary, bool eliminate, bool essential_eqn)
 {
   int d = mesh_->getSpaceDimension();
   const auto& bc_model = bc.bc_model();
@@ -359,9 +351,7 @@ PDE_Elasticity::ApplyBCs_Traction_(
         auto& value = bc_value[f];
         for (int m = 0; m < nlnodes; ++m) {
           int v = lnodes[m];
-          for (int k = 0; k < d; ++k) {
-            (*rhs_node)[k][v] += value[k] * weights[m] * area;
-          }
+          for (int k = 0; k < d; ++k) { (*rhs_node)[k][v] += value[k] * weights[m] * area; }
         }
       }
     }
@@ -375,8 +365,7 @@ PDE_Elasticity::ApplyBCs_Traction_(
 * BCs: kinematic
 ****************************************************************** */
 void
-PDE_Elasticity::ApplyBCs_Kinematic_(
-  const BCs& bc, bool primary, bool eliminate, bool essential_eqn)
+PDE_Elasticity::ApplyBCs_Kinematic_(const BCs& bc, bool primary, bool eliminate, bool essential_eqn)
 {
   int d = mesh_->getSpaceDimension();
   const auto& bc_model = bc.bc_model();
@@ -400,9 +389,7 @@ PDE_Elasticity::ApplyBCs_Kinematic_(
 
       if (bc_model[v] == OPERATOR_BC_KINEMATIC) {
         double value = bc_value[v];
-        if (local_op_->matrices_shadow[c].NumRows() == 0) {
-          local_op_->matrices_shadow[c] = Acell;
-        }
+        if (local_op_->matrices_shadow[c].NumRows() == 0) { local_op_->matrices_shadow[c] = Acell; }
         auto cells = mesh_->getNodeCells(v);
         int ncells = cells.size();
 

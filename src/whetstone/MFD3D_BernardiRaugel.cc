@@ -327,7 +327,7 @@ MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
 /* ******************************************************************
 * Stress recostruction from nodal values
 ****************************************************************** */
-void 
+void
 MFD3D_BernardiRaugel::H1Cell(int c, const DenseVector& dofs, Tensor& Tc)
 {
   Tensor T(d_, 1);

@@ -61,9 +61,15 @@ class ApertureModel_ExponentialLaw : public ApertureModel {
   // required methods from the base class
   virtual double OverburdenPressure() override { return pov_; }
 
-  virtual double Aperture(double p, double pov) override { return a0_ * std::exp(-alpha_ * (pov - p)); }
+  virtual double Aperture(double p, double pov) override
+  {
+    return a0_ * std::exp(-alpha_ * (pov - p));
+  }
 
-  virtual double dAperturedPressure(double p, double pov) override { return a0_ * alpha_ * std::exp(-alpha_ * (pov - p)); }
+  virtual double dAperturedPressure(double p, double pov) override
+  {
+    return a0_ * alpha_ * std::exp(-alpha_ * (pov - p));
+  }
 
  private:
   double a0_, pov_, alpha_;

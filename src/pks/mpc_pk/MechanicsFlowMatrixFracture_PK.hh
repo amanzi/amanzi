@@ -34,7 +34,7 @@ class MechanicsFlowMatrixFracture_PK : public PK_MPCWeak {
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override;
 
  private:
-   Key hydrostatic_stress_key_;
+  Key hydrostatic_stress_key_;
 
  private:
   // factory registration

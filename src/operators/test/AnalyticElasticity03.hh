@@ -36,7 +36,8 @@ class AnalyticElasticity03 : public AnalyticElasticityBase {
     return K;
   }
 
-  virtual Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  virtual Amanzi::AmanziGeometry::Point
+  velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t)
   {
     double x = p[0];
     double y = p[1];
@@ -46,7 +47,8 @@ class AnalyticElasticity03 : public AnalyticElasticityBase {
 
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { return 0.0; }
 
-  virtual Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  virtual Amanzi::AmanziGeometry::Point
+  source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
   {
     double x = p[0];
     double y = p[1];
@@ -67,7 +69,8 @@ class AnalyticElasticity03 : public AnalyticElasticityBase {
     return T;
   }
 
-  virtual double volumetric_strain_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+  virtual double volumetric_strain_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     double x = p[0];
     double y = p[1];
     return (2 * x - 1.0) * y * (y - 1.0) + a_ * x * (x - 1.0) * (2 * y - 1.0);

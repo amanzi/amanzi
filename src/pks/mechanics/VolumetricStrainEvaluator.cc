@@ -28,7 +28,7 @@ VolumetricStrainEvaluator::VolumetricStrainEvaluator(Teuchos::ParameterList& pli
 {
   displacement_key_ = plist.get<std::string>("displacement key", "displacement");
   dependencies_.insert(std::make_pair(displacement_key_, Tags::DEFAULT));
-} 
+}
 
 
 /* ******************************************************************
@@ -68,4 +68,3 @@ VolumetricStrainEvaluator::Evaluate_(const State& S, const std::vector<Composite
 
 } // namespace Mechanics
 } // namespace Amanzi
-

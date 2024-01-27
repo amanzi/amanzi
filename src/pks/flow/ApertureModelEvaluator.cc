@@ -107,7 +107,7 @@ ApertureModelEvaluator::UpdateOverburdenPressure_(const State& S)
 {
   std::string key("hydrostatic_stress");
   bool flag = S.HasRecord(key);
-  Teuchos::RCP<const Epetra_MultiVector> p_c; 
+  Teuchos::RCP<const Epetra_MultiVector> p_c;
   if (flag) {
     S.Get<CompositeVector>(key, Tags::DEFAULT).ScatterMasterToGhosted();
     p_c = S.Get<CompositeVector>(key, Tags::DEFAULT).ViewComponent("cell");
@@ -115,7 +115,8 @@ ApertureModelEvaluator::UpdateOverburdenPressure_(const State& S)
 
   auto mesh_parent = S.GetMesh();
   auto mesh = S.GetMesh("fracture");
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   pov_.resize(ncells);
 
   for (int c = 0; c < ncells; ++c) {
@@ -123,7 +124,7 @@ ApertureModelEvaluator::UpdateOverburdenPressure_(const State& S)
       int f = mesh->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
       auto cells = mesh_parent->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
       pov_[c] = -((*p_c)[0][cells[0]] + (*p_c)[0][cells[1]]) / 2;
-    } else { 
+    } else {
       pov_[c] = apm_->second[(*apm_->first)[c]]->OverburdenPressure();
     }
   }

@@ -52,8 +52,8 @@ MechanicsElasticity_PK::FunctionalResidual(double t_old,
 * Apply preconditioner inv(B) * X.
 ****************************************************************** */
 int
-MechanicsElasticity_PK::ApplyPreconditioner(
-  Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y)
+MechanicsElasticity_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
+                                            Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
   // return op_preconditioner_->ApplyInverse(*X->Data(), *Y->Data());
@@ -65,8 +65,9 @@ MechanicsElasticity_PK::ApplyPreconditioner(
 * Update new preconditioner on the interval (tp-dtp, tp].
 ****************************************************************** */
 void
-MechanicsElasticity_PK::UpdatePreconditioner(
-  double tp, Teuchos::RCP<const TreeVector> u, double dtp)
+MechanicsElasticity_PK::UpdatePreconditioner(double tp,
+                                             Teuchos::RCP<const TreeVector> u,
+                                             double dtp)
 {
   double t_old = tp - dtp;
   // Teuchos::RCP<const CompositeVector> uu = u->SubVector(0)->Data();
@@ -80,6 +81,14 @@ MechanicsElasticity_PK::UpdatePreconditioner(
   op_preconditioner_elas_->UpdateMatrices();
   op_preconditioner_elas_->ApplyBCs(true, true, true);
 
+  // -- force component-wise coarsening
+  /*
+  auto block_indices = Teuchos::rcp(new std::vector<int>(nnodes_owned_ * dim_));
+  for (int n = 0; n < nnodes_owned_ * dim_; ++n) (*block_indices)[n] = n % dim_;
+  auto block_ids = std::make_pair(dim_, block_indices);
+  op_preconditioner_elas_->global_operator()->set_coloring(dim_, block_indices);
+  */
+
   op_preconditioner_->ComputeInverse();
 }
 
@@ -89,7 +98,8 @@ MechanicsElasticity_PK::UpdatePreconditioner(
 * This is a wrapper for various error control methods.
 ****************************************************************** */
 double
-MechanicsElasticity_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du)
+MechanicsElasticity_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                                  Teuchos::RCP<const TreeVector> du)
 {
   if (!u->Data()->HasComponent("node")) return 0.0;
 
@@ -148,8 +158,7 @@ MechanicsElasticity_PK::ComputeOperatorBCs()
   }
 
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->get_bc_name() == "no slip" && 
-        bcs_[i]->type() == WhetStone::DOF_Type::POINT &&
+    if (bcs_[i]->get_bc_name() == "no slip" && bcs_[i]->type() == WhetStone::DOF_Type::POINT &&
         bcs_[i]->kind() == AmanziMesh::Entity_kind::NODE) {
       std::vector<int>& bc_model = op_bcs_[0]->bc_model();
       std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[0]->bc_value_point();
@@ -162,8 +171,7 @@ MechanicsElasticity_PK::ComputeOperatorBCs()
       }
     }
 
-    if (bcs_[i]->get_bc_name() == "no slip" && 
-        bcs_[i]->type() == WhetStone::DOF_Type::POINT &&
+    if (bcs_[i]->get_bc_name() == "no slip" && bcs_[i]->type() == WhetStone::DOF_Type::POINT &&
         bcs_[i]->kind() == AmanziMesh::Entity_kind::FACE) {
       std::vector<int>& bc_model = op_bcs_[3]->bc_model();
       std::vector<double>& bc_value = op_bcs_[3]->bc_value();
@@ -222,7 +230,7 @@ MechanicsElasticity_PK::AddGravityTerm_(CompositeVector& rhs)
   auto& rhs_v = *rhs.ViewComponent("node");
 
   rhs.PutScalarGhosted(0.0);
-  
+
   for (int c = 0; c < ncells_owned_; ++c) {
     auto nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();

@@ -81,7 +81,8 @@ PKUtils_FluxToVector(const State& S, const CompositeVector& flux, CompositeVecto
   const auto& flux_f = *flux.ViewComponent("face", true);
   auto& grad_c = *grad.ViewComponent("cell");
 
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int ncells =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells; ++c) {
     double vol = mesh->getCellVolume(c);
     const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);

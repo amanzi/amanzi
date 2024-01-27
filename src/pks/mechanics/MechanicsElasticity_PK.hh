@@ -104,7 +104,11 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
   //    using extrapolation and the time step that is used to compute
   //    this predictor this function returns true if the predictor was
   //    modified, false if not
-  bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) override { return false; }
+  bool
+  ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) override
+  {
+    return false;
+  }
 
   // -- possibly modifies the correction, after the nonlinear solver (NKA)
   //    has computed it, will return true if it did change the correction,
@@ -130,8 +134,13 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
 
   // -- access
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae() { return bdf1_dae_; }
-  virtual Teuchos::RCP<Operators::Operator> my_operator(const Operators::OperatorType& type) override;
-  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization> my_pde(const Operators::PDEType& type) override { return op_matrix_elas_; }
+  virtual Teuchos::RCP<Operators::Operator>
+  my_operator(const Operators::OperatorType& type) override;
+  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
+  my_pde(const Operators::PDEType& type) override
+  {
+    return op_matrix_elas_;
+  }
 
  private:
   void UpdateSourceBoundaryData_(double t_old, double t_new);

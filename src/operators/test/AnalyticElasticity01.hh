@@ -65,7 +65,10 @@ class AnalyticElasticity01 : public AnalyticElasticityBase {
     return T;
   }
 
-  virtual double volumetric_strain_exact(const Amanzi::AmanziGeometry::Point& p, double t) { return -1.0; }
+  virtual double volumetric_strain_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
+    return -1.0;
+  }
 
  private:
   double mu_, lambda_;

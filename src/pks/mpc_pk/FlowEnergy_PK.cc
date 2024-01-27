@@ -206,7 +206,8 @@ bool
 FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // save a copy of conservative fields
-  std::vector<std::string> fields({ pressure_key_, temperature_key_, sat_liquid_key_, energy_key_ });
+  std::vector<std::string> fields(
+    { pressure_key_, temperature_key_, sat_liquid_key_, energy_key_ });
   if (S_->HasRecord(wc_key_)) fields.push_back(wc_key_);
 
   StateArchive archive(S_, vo_);

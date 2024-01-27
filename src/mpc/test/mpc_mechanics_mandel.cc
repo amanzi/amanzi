@@ -66,12 +66,14 @@ RunTest(const std::string xmlInFileName)
 
   // verify Mandel-Creyer effect using observations at central region
   std::string label = obs_data.observationLabels()[0];
-  
+
   int status(0);
   double tmp(0.0);
   for (auto& quad : obs_data[label]) {
-    if (quad.value > tmp) CHECK(status == 0);
-    else status++;
+    if (quad.value > tmp)
+      CHECK(status == 0);
+    else
+      status++;
 
     tmp = quad.value;
   }
@@ -82,4 +84,3 @@ TEST(MPC_DRIVER_MECHANICS_MANDEL)
 {
   RunTest("test/mpc_mechanics_mandel.xml");
 }
-

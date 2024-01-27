@@ -228,7 +228,7 @@ MFD3D_Elasticity::StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A)
 /* ******************************************************************
 * Stress recostruction from nodal values
 ****************************************************************** */
-void 
+void
 MFD3D_Elasticity::H1Cell(int c, const DenseVector& dofs, Tensor& Tc)
 {
   Tensor T(d_, 1);

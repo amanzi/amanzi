@@ -41,11 +41,15 @@
 /* *****************************************************************
 * Elasticity model: exactness test.
 ***************************************************************** */
-template<class Analytic>
+template <class Analytic>
 double
-RunTest(int icase, const std::string& solver, 
-        double mu, double lambda,
-        bool flag, double tol = 1e-10, int scale = 1)
+RunTest(int icase,
+        const std::string& solver,
+        double mu,
+        double lambda,
+        bool flag,
+        double tol = 1e-10,
+        int scale = 1)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -260,7 +264,7 @@ RunTest(int icase, const std::string& solver,
     int nnodes = nodes.size();
 
     for (int n = 0; n < nnodes; ++n) {
-      int v = nodes[n]; 
+      int v = nodes[n];
       auto xv = mesh->getNodeCoordinate(v);
       Point tmp(ana.source_exact(xv, 0.0));
       for (int k = 0; k < 2; ++k) src[k][v] += tmp[k] * (vol / nnodes);
@@ -335,7 +339,7 @@ RunTest(int icase, const std::string& solver,
   ana.GlobalOp("sum", &el2_err, 1);
   el2_err = std::sqrt(el2_err / ncells_owned);
   CHECK(el2_err < tol);
- 
+
   return ul2_err;
 }
 
@@ -383,23 +387,22 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS_NORMAL_STRESS_FULL_TENSOR)
 TEST(OPERATOR_CONVERGENCE_ELASTICITY_FULL_TENSOR_BERNARDI_RAUGEL)
 {
   double E(1e+10), nu(0.2);
-  double mu =  E / (2 * (1 + nu));
+  double mu = E / (2 * (1 + nu));
   // double lambda = E * nu / ((1 + nu) * (1 - 2 * nu)); // 3D
   double lambda = E * nu / ((1 + nu) * (1 - nu)); // 2D
   double err1 = RunTest<AnalyticElasticity03>(1, "PCG", mu, lambda, true, 5e-2, 5);
   double err2 = RunTest<AnalyticElasticity03>(1, "PCG", mu, lambda, true, 5e-2, 10);
-  
-  CHECK(err1 / err2 > 3.8); 
-} 
+
+  CHECK(err1 / err2 > 3.8);
+}
 
 TEST(OPERATOR_CONVERGENCE_ELASTICITY_FULL_TENSOR_NODAL)
 {
   double E(1e+10), nu(0.2);
-  double mu =  E / (2 * (1 + nu));
+  double mu = E / (2 * (1 + nu));
   double lambda = E * nu / ((1 + nu) * (1 - nu)); // 2D
   double err1 = RunTest<AnalyticElasticity03>(2, "PCG", mu, lambda, true, 5e-2, 5);
   double err2 = RunTest<AnalyticElasticity03>(2, "PCG", mu, lambda, true, 5e-2, 10);
-   
-  CHECK(err1 / err2 > 3.8); 
-}
 
+  CHECK(err1 / err2 > 3.8);
+}

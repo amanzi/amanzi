@@ -44,7 +44,7 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
     *vo_->os() << "Translating mechanics, domain=" << domain << std::endl;
 
   MemoryManager mm;
-  DOMNode *node;
+  DOMNode* node;
   DOMElement* element;
 
   // process expert parameters
@@ -86,7 +86,8 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
   }
 
   // other parameters
-  out_list.sublist("operators").sublist("elasticity operator")
+  out_list.sublist("operators")
+    .sublist("elasticity operator")
     .set<std::string>("matrix type", "stiffness")
     .sublist("schema")
     .set<std::string>("base", "cell")
@@ -157,21 +158,23 @@ InputConverterU::TranslateMechanicsBCs_(const std::string& domain)
 
     if (bcs.type == "displacement") {
       Teuchos::ParameterList& bcfn = bc.sublist("no slip");
-      bcfn.set<int>("number of dofs", dim_)
-          .set<std::string>("function type", "composite function");
+      bcfn.set<int>("number of dofs", dim_).set<std::string>("function type", "composite function");
       for (int k = 0; k < dim_; ++k) {
         std::stringstream dof_str;
         dof_str << "dof " << k + 1 << " function";
-        bcfn.sublist(dof_str.str()).sublist("function-constant").set<double>("value", bcs.vectors[0][k]);
+        bcfn.sublist(dof_str.str())
+          .sublist("function-constant")
+          .set<double>("value", bcs.vectors[0][k]);
       }
     } else if (bcs.type == "traction") {
       Teuchos::ParameterList& bcfn = bc.sublist("traction");
-      bcfn.set<int>("number of dofs", dim_)
-          .set<std::string>("function type", "composite function");
+      bcfn.set<int>("number of dofs", dim_).set<std::string>("function type", "composite function");
       for (int k = 0; k < dim_; ++k) {
         std::stringstream dof_str;
         dof_str << "dof " << k + 1 << " function";
-        bcfn.sublist(dof_str.str()).sublist("function-constant").set<double>("value", bcs.vectors[0][k]);
+        bcfn.sublist(dof_str.str())
+          .sublist("function-constant")
+          .set<double>("value", bcs.vectors[0][k]);
       }
     } else if (bcs.type == "kinematic") {
       Teuchos::ParameterList& bcfn = bc.sublist("kinematic");

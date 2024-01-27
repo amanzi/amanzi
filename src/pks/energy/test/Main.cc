@@ -21,7 +21,7 @@ main(int argc, char* argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   Kokkos::initialize();
-  int result; 
+  int result;
   {
     result = UnitTest::RunAllTests();
   }

@@ -112,4 +112,3 @@ TEST(MPC_DRIVER_MECHANICS_COUPLED_FLOW_APERTURE)
 {
   RunTest("test/mpc_mechanics_flow_aperture.xml");
 }
-
