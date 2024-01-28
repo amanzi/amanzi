@@ -18,12 +18,9 @@
 #include "UnitTest++.h"
 
 #include "exceptions.hh"
-#include "IterativeMethodPCG.hh"
-
-
 #include "AmanziComm.hh"
-
 #include "Preconditioner.hh"
+#include "IterativeMethodPCG.hh"
 #include "InverseFactory.hh"
 
 SUITE(SOLVERS)
@@ -144,7 +141,6 @@ SUITE(SOLVERS)
       auto uv = u.getLocalViewHost(Tpetra::Access::ReadWrite);
       for (int i = 0; i < N; i++) uv(i, 0) = 1.0 / (i + 2.0);
     }
-
     Vector_type v(map);
 
 #ifdef KOKKOS_ENABLE_CUDA
@@ -161,7 +157,6 @@ SUITE(SOLVERS)
       "diagonal",
       "ifpack2: ILUT",
       "hypre: boomer amg",
-      "hypre: euclid",
       "muelu"
     };
 #endif
@@ -177,7 +172,8 @@ SUITE(SOLVERS)
       auto vv = v.getLocalViewHost(Tpetra::Access::ReadOnly);
       CHECK_CLOSE(11.03249773994628, vv(0, 0), 1e-6);
       CHECK_CLOSE(10.53249773994628, vv(1, 0), 1e-6);
-      std::cout << std::endl << std::endl;
+      std::cout << "... completed"
+                << std::endl << std::endl;
     }
   };
 

@@ -138,7 +138,9 @@ void DomainSet::doImport(const std::string& subdomain,
   auto target = target_vec.getLocalViewDevice(Tpetra::Access::ReadWrite);
   Kokkos::parallel_for("DomainSet::doImport",
                        Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0,0},{src.extent(0), src.extent(1)}),
-                       KOKKOS_LAMBDA(const int i, const int j) { target(map(i),j) = src(i,j); });
+                       KOKKOS_LAMBDA(const int i, const int j) {
+                         assert(map(i) >= 0 && map(i) < target.extent(0));
+                         target(map(i),j) = src(i,j); });
 }
 
 // import from parent domain to subdomain

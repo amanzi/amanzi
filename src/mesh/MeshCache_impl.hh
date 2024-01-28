@@ -1856,30 +1856,30 @@ template <MemSpace_kind MEM>
 void
 MeshCache<MEM>::PrintMeshStatistics() const
 {
-  auto vo_ = Teuchos::rcp(new VerboseObject("Mesh Output", *plist_));
-  if (vo_.get() && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
-    int ncells = getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-    int nfaces = getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-    int nnodes = getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::OWNED);
-    int nedges(0);
-    if (has_edges_) nedges = getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::OWNED);
+  // auto vo_ = Teuchos::rcp(new VerboseObject("Mesh Output", *plist_));
+  // if (vo_.get() && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+  //   int ncells = getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  //   int nfaces = getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
+  //   int nnodes = getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::OWNED);
+  //   int nedges(0);
+  //   if (has_edges_) nedges = getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::OWNED);
 
-    int min_out[4], max_out[4], sum_out[4], tmp_in[4] = { ncells, nfaces, nedges, nnodes };
-    getComm()->MinAll(tmp_in, min_out, 4);
-    getComm()->MaxAll(tmp_in, max_out, 4);
-    getComm()->SumAll(tmp_in, sum_out, 4);
+  //   int min_out[4], max_out[4], sum_out[4], tmp_in[4] = { ncells, nfaces, nedges, nnodes };
+  //   getComm()->MinAll(tmp_in, min_out, 4);
+  //   getComm()->MaxAll(tmp_in, max_out, 4);
+  //   getComm()->SumAll(tmp_in, sum_out, 4);
 
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "cells, tot/min/max: " << sum_out[0] << "/" << min_out[0] << "/" << max_out[0]
-               << "\n";
-    *vo_->os() << "faces, tot/min/max: " << sum_out[1] << "/" << min_out[1] << "/" << max_out[1]
-               << "\n";
-    if (has_edges_)
-      *vo_->os() << "edges, tot/min/max: " << sum_out[2] << "/" << min_out[2] << "/" << max_out[2]
-                 << "\n";
-    *vo_->os() << "nodes, tot/min/max: " << sum_out[3] << "/" << min_out[3] << "/" << max_out[3]
-               << "\n\n";
-  }
+  //   Teuchos::OSTab tab = vo_->getOSTab();
+  //   *vo_->os() << "cells, tot/min/max: " << sum_out[0] << "/" << min_out[0] << "/" << max_out[0]
+  //              << "\n";
+  //   *vo_->os() << "faces, tot/min/max: " << sum_out[1] << "/" << min_out[1] << "/" << max_out[1]
+  //              << "\n";
+  //   if (has_edges_)
+  //     *vo_->os() << "edges, tot/min/max: " << sum_out[2] << "/" << min_out[2] << "/" << max_out[2]
+  //                << "\n";
+  //   *vo_->os() << "nodes, tot/min/max: " << sum_out[3] << "/" << min_out[3] << "/" << max_out[3]
+  //              << "\n\n";
+  // }
 }
 
 template <MemSpace_kind MEM>

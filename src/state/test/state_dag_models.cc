@@ -39,7 +39,7 @@ class make_state {
     // create a mesh
     auto comm = Amanzi::getDefaultComm();
 
-    std::string xmlFileName = "test/state_evaluators_dag_models.xml";
+    std::string xmlFileName = "test/state_dag_models.xml";
     Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
     Teuchos::ParameterList plist = xmlreader.getParameters();
 

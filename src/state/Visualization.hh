@@ -95,12 +95,10 @@ class Visualization : public IOEvent {
   }
 
   // a few special cases get intercepted and delegated to a virtual protected member
-  template<>
-  inline void write<Vector_type>(const Teuchos::ParameterList& attrs, const Vector_type& t) const {
+  inline void write(const Teuchos::ParameterList& attrs, const Vector_type& t) const {
     writeVector_(attrs, t);
   }
-  template<>
-  inline void write<MultiVector_type>(const Teuchos::ParameterList& attrs, const MultiVector_type& t) const {
+  inline void write(const Teuchos::ParameterList& attrs, const MultiVector_type& t) const {
     writeVector_(attrs, t);
   }
 

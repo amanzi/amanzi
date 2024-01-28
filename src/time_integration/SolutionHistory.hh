@@ -276,7 +276,7 @@ SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x, unsigned int o
   AMANZI_ASSERT(order < (*nvec_));
   AMANZI_ASSERT(order >= 0);
 
-  x = *d_[order];
+  x.assign(*d_[order]);
   for (int k = order - 1; k >= 0; k--) { x.update(1.0, *d_[k], t - (*times_)[k]); }
 }
 

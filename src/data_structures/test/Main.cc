@@ -7,9 +7,8 @@
   Authors:
 */
 
-#include <UnitTest++.h>
-#include <TestReporterStdout.h>
-
+#include "UnitTest++.h"
+#include "TestReporterStdout.h"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "VerboseObject_objs.hh"
 

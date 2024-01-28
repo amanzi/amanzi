@@ -84,11 +84,10 @@ struct obs_test {
                                               std::vector<double>{ -.35, -1, -1 });
     one_side_side.set<Teuchos::Array<double>>("high coordinate", std::vector<double>{ -0.3, 1, 1 });
 
-    auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
+    gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-    auto plist = Teuchos::rcp(new Teuchos::ParameterList("mesh factory"));
+    plist = Teuchos::rcp(new Teuchos::ParameterList("mesh factory"));
     plist->set<std::string>("partitioner", "zoltan_rcb");
-    plist->set("create subcommunicator", true);
     meshfactory = Teuchos::rcp(new AmanziMesh::MeshFactory(comm, gm, plist));
 
     AmanziMesh::Preference pref;
@@ -167,6 +166,8 @@ struct obs_test {
   }
 
  public:
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Teuchos::ParameterList> plist;
   Teuchos::RCP<State> S;
   Comm_ptr_type comm;
   Teuchos::RCP<AmanziMesh::MeshFactory> meshfactory;
@@ -193,11 +194,12 @@ struct obs_domain_set_test : public obs_test {
       Teuchos::rcp(new AmanziMesh::DomainSet("column", S->GetMesh("surface"), cols));
     S->RegisterDomainSet("column", domain_set);
 
-    // create subdomain meshes
+    // create subdomain meshes on MPI_COMM_SELF
+    auto col_mesh_factory = Teuchos::rcp(new AmanziMesh::MeshFactory(getCommSelf(), gm, plist));
     int i = 0;
     for (auto& ds : *domain_set) {
       auto parent_list = Teuchos::rcp(new Teuchos::ParameterList(*parent->getParameterList()));
-      auto col_mesh = meshfactory->createColumn(parent, i, parent_list);
+      auto col_mesh = col_mesh_factory->createColumn(parent, i, parent_list);
       S->RegisterMesh(ds, col_mesh);
       i++;
     }

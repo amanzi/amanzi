@@ -27,6 +27,10 @@ using namespace Amanzi;
 SUITE(OUTPUT_XDMF) {
   TEST_FIXTURE(output_test_harness, XDMF_STRUCTURED)
   {
+    std::cout << std::endl
+              << std::endl
+              << "Writing structured mesh to XDMF" << std::endl
+              << "===============================" << std::endl;
     create_mesh_structured();
     create_data();
 
@@ -42,17 +46,9 @@ SUITE(OUTPUT_XDMF) {
       std::string prefix = std::string("amanzi_vis_xdmf_structured_np") + std::to_string(comm->getSize());
       std::string test_prefix = std::string("test/gold_") + prefix;
 
-      // mesh h5 file
-      std::string command = std::string("h5diff ") + prefix+"_mesh.h5 test/gold_"+prefix+"_mesh.h5";
-      int res = system(command.c_str());
-      std::cout << "res = " << res << std::endl;
-      CHECK(!res);
-
-      // data h5 file
-      command = std::string("h5diff ") + prefix+"_data.h5 test/gold_"+prefix+"_data.h5";
-      res = system(command.c_str());
-      std::cout << "res = " << res << std::endl;
-      CHECK(!res);
+      // mesh and data h5 files
+      CHECK(compareH5Files(prefix+"_mesh.h5", test_prefix+"_mesh.h5"));
+      CHECK(compareH5Files(prefix+"_data.h5", test_prefix+"_data.h5"));
 
       // xmf files
       CHECK(compareTextFiles(prefix+"_mesh.VisIt.xmf", test_prefix+"_mesh.VisIt.xmf"));
@@ -67,6 +63,10 @@ SUITE(OUTPUT_XDMF) {
 
   TEST_FIXTURE(output_test_harness, XDMF_POLYHEDRAL)
   {
+    std::cout << std::endl
+              << std::endl
+              << "Writing polyhedral mesh to XDMF" << std::endl
+              << "===============================" << std::endl;
     create_mesh_polyhedral();
     create_data();
 
@@ -82,17 +82,9 @@ SUITE(OUTPUT_XDMF) {
       std::string prefix = std::string("amanzi_vis_xdmf_polyhedral_np") + std::to_string(comm->getSize());
       std::string test_prefix = std::string("test/gold_") + prefix;
 
-      // mesh h5 file
-      std::string command = std::string("h5diff ") + prefix+"_mesh.h5 test/gold_"+prefix+"_mesh.h5";
-      int res = system(command.c_str());
-      std::cout << "res = " << res << std::endl;
-      CHECK(!res);
-
-      // data h5 file
-      command = std::string("h5diff ") + prefix+"_data.h5 test/gold_"+prefix+"_data.h5";
-      res = system(command.c_str());
-      std::cout << "res = " << res << std::endl;
-      CHECK(!res);
+      // mesh and data h5 files
+      CHECK(compareH5Files(prefix+"_mesh.h5", test_prefix+"_mesh.h5"));
+      CHECK(compareH5Files(prefix+"_data.h5", test_prefix+"_data.h5"));
 
       // xmf files
       CHECK(compareTextFiles(prefix+"_mesh.VisIt.xmf", test_prefix+"_mesh.VisIt.xmf"));

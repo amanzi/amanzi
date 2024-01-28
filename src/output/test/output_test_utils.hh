@@ -38,9 +38,14 @@ read_text_file(const std::string& filename)
 bool
 compareTextFiles(const std::string& p1, const std::string& p2)
 {
+  std::cout << " ... comparing text files:" << std::endl
+            << "       - " << p1 << std::endl
+            << "       - " << p2 << std::endl;
   auto s1 = read_text_file(p1);
   auto s2 = read_text_file(p2);
-  return s1 == s2;
+  auto res = (s1 == s2);
+  std:: cout << "    " << (res ? "matches" : "differs") << std::endl;
+  return res;
 }
 
 //
@@ -49,24 +54,47 @@ compareTextFiles(const std::string& p1, const std::string& p2)
 bool
 compareBinaryFiles(const std::string& p1, const std::string& p2)
 {
+  std::cout << " ... comparing binary files:" << std::endl
+            << "       - " << p1 << std::endl
+            << "       - " << p2 << std::endl;
+
   std::ifstream f1(p1, std::ifstream::binary | std::ifstream::ate);
   std::ifstream f2(p2, std::ifstream::binary | std::ifstream::ate);
 
   if (f1.fail() || f2.fail()) {
+    std::cout << "   file problem" << std::endl;
     return false; // file problem
   }
 
   if (f1.tellg() != f2.tellg()) {
+    std::cout << "   binary size mismatch" << std::endl;
     return false; // size mismatch
   }
 
   // seek back to beginning and use std::equal to compare contents
   f1.seekg(0, std::ifstream::beg);
   f2.seekg(0, std::ifstream::beg);
-  return std::equal(std::istreambuf_iterator<char>(f1.rdbuf()),
+  auto res = std::equal(std::istreambuf_iterator<char>(f1.rdbuf()),
                     std::istreambuf_iterator<char>(),
                     std::istreambuf_iterator<char>(f2.rdbuf()));
+  std::cout << "   " << (res ? "matches" : "differs") << std::endl;
+  return res;
 }
+
+
+bool
+compareH5Files(const std::string& p1, const std::string& p2)
+{
+  std::cout << " ... comparing h5 files:" << std::endl
+            << "       - " << p1 << std::endl
+            << "       - " << p2 << std::endl;
+  std::string command = std::string("h5diff ") + p1 + " " + p2;
+  int ierr = system(command.c_str());
+  bool res = (ierr == 0);
+  std::cout << "   " << (res ? "matches" : "differs") << std::endl;
+  return res;
+}
+
 
 using namespace Amanzi;
 
@@ -219,7 +247,7 @@ struct output_test_harness {
     double time = 0.0;
     int NITS = 5;
     for (int i = 0; i < NITS; i++) {
-      std::cout << "iteration... " << i << std::endl;
+      std::cout << "writing iteration... " << i << std::endl;
 
       // write time step data
       out.createTimestep(time, i);

@@ -40,31 +40,29 @@ SUITE(SolutionHistoryTests)
   {
     std::cout << "Test: SolutionHistory_1" << std::endl;
 
-    
-
     // create a solution history of size three
     Teuchos::RCP<Amanzi::SolutionHistory<Vector_type>> SH =
       Teuchos::rcp(new Amanzi::SolutionHistory<Vector_type>("myhist", 3, 0.0, *x));
     x->putScalar(1.0);
-    CHECK_EQUAL(SH->history_size(), 1);
-    CHECK_EQUAL(SH->MostRecentTime(), 0.0);
+    CHECK_EQUAL(1, SH->history_size());
+    CHECK_EQUAL(0.0, SH->MostRecentTime());
 
     SH->RecordSolution(1.0, *x);
 
-    CHECK_EQUAL(SH->history_size(), 2);
-    CHECK_EQUAL(SH->MostRecentTime(), 1.0);
+    CHECK_EQUAL(2, SH->history_size());
+    CHECK_EQUAL(1.0, SH->MostRecentTime());
 
     x->putScalar(4.0);
     SH->RecordSolution(2.0, *x);
 
-    CHECK_EQUAL(SH->history_size(), 3);
-    CHECK_EQUAL(SH->MostRecentTime(), 2.0);
+    CHECK_EQUAL(3, SH->history_size());
+    CHECK_EQUAL(2.0, SH->MostRecentTime());
 
     x->putScalar(9.0);
     SH->RecordSolution(3.0, *x);
 
-    CHECK_EQUAL(SH->history_size(), 3);
-    CHECK_EQUAL(SH->MostRecentTime(), 3.0);
+    CHECK_EQUAL(3, SH->history_size());
+    CHECK_EQUAL(3.0, SH->MostRecentTime());
 
     // check that the most recent vector in fact is the
     // one that contains  9.0
@@ -72,21 +70,21 @@ SUITE(SolutionHistoryTests)
     SH->MostRecentSolution(*y);
 
     double norminf = y->normInf(); // compute the max norm of the computed difference
-    CHECK_EQUAL(norminf, 9.0);
+    CHECK_EQUAL(9.0, norminf);
 
     std::vector<double> h;
     SH->TimeDeltas(h);
 
-    CHECK_EQUAL(h.size(), SH->history_size() - 1);
-    CHECK_EQUAL(h[0], 1.0);
-    CHECK_EQUAL(h[1], 2.0);
+    CHECK_EQUAL(SH->history_size() - 1, h.size());
+    CHECK_EQUAL(1.0, h[0]);
+    CHECK_EQUAL(2.0, h[1]);
 
     // interpolate 1st order
     SH->InterpolateSolution(2.5, *y, 1);
 
     // we should get 6.5
     norminf = y->normInf();
-    CHECK_EQUAL(norminf, 6.5);
+    CHECK_EQUAL(6.5, norminf);
 
     // interpolate 2nd order
     SH->InterpolateSolution(2.5, *y, 2);
@@ -96,7 +94,7 @@ SUITE(SolutionHistoryTests)
     // x->putScalar(6.25);
     // x->update(-1.0, *y, 1.0);
     norminf = y->normInf();
-    CHECK_EQUAL(norminf, 6.25);
+    CHECK_EQUAL(6.25, norminf);
 
     // interpolate maximum order (should be 2nd)
     SH->InterpolateSolution(2.5, *y);
@@ -104,7 +102,7 @@ SUITE(SolutionHistoryTests)
     // from the quadratic through (1,1),(2,4),(3,9)
     // we should get 6.25
     norminf = y->normInf();
-    CHECK_EQUAL(norminf, 6.25);
+    CHECK_EQUAL(6.25, norminf);
   }
 
   TEST_FIXTURE(test_data, SolutionHistory_2)
@@ -127,12 +125,12 @@ SUITE(SolutionHistoryTests)
     SH->InterpolateSolution(0.5, *y, 2);
 
     double norminf = y->normInf();
-    CHECK_EQUAL(norminf, 0.25);
+    CHECK_EQUAL(0.25, norminf);
 
     // interpolate maximum order (3rd in this case)
     SH->InterpolateSolution(0.5, *y);
 
     norminf = y->normInf();
-    CHECK_EQUAL(norminf, 0.25);
+    CHECK_EQUAL(0.25, norminf);
   }
 }

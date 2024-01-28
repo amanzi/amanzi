@@ -21,16 +21,17 @@ project(SOLVERS)
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
-include_directories(${DBG_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
+
 # -- below needed only by ResidualDebugger -- maybe this can be fixed?
-include_directories(${DATA_STRUCTURES_SOURCE_DIR})
-include_directories(${MESH_SOURCE_DIR})
-include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+include_directories(${OUTPUT_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Kokkos_INCLUDE_DIRS})	
 include_directories(${Tpetra_INCLUDE_DIRS})	
 include_directories(${Belos_INCLUDE_DIRS})
 include_directories(${NOX_INCLUDE_DIRS})
@@ -46,10 +47,8 @@ include_directories(${HYPRE_INCLUDE_DIRS})
 file(GLOB solvers_inc_files "*.hh")
 set(solvers_source_files 
   ResidualDebugger.cc
-#  DirectMethodAmesos.cc
   DirectMethodAmesos2.cc
   PreconditionerHypre.cc
-#  PreconditionerML.cc
   SolverFactory.cc
   )
 
@@ -63,18 +62,21 @@ endif()
 
 message(STATUS "GINKGO LIBRARIES: ${Ginkgo_LIBRARIES}")
 
-set(solvers_tpl_libs ${DBC_LIBRARIES}
+set(solvers_tpl_libs
+  ${DBC_LIBRARIES}
   ${Teuchos_LIBRARIES}
-  ${Tpetra_LIBRARIES}
+  ${Kokkos_LIBRARIES}
+  ${kokkos_cuda_libs}
   ${Belos_LIBRARIES}
   ${NOX_LIBRARIES}
   ${Amesos2_LIBRARIES}
   ${Ifpack2_LIBRARIES}
-  ${kokkos_cuda_libs}
   ${HYPRE_LIBRARY}
   ${HYPRE_LIBRARIES}
   ${Ginkgo_LIBRARIES}
-  ${MueLu_LIBRARIES})
+  ${MueLu_LIBRARIES}
+  ${Tpetra_LIBRARIES}
+)
 
 list(REVERSE solvers_tpl_libs)
 list(REMOVE_DUPLICATES solvers_tpl_libs)
@@ -92,7 +94,7 @@ add_amanzi_library(solvers
                    SOURCE ${solvers_source_files} 
                    HEADERS ${solvers_inc_files}
 		   LINK_LIBS data_structures output whetstone atk
-                             ${solver_depends} ${solvers_tpl_libs} ${Epetra_LIBRARIES})
+                             ${solver_depends} ${solvers_tpl_libs})
 
 if (BUILD_TESTS)
     set(solvers_test_link_libs solvers ${solvers_link_libs})
@@ -117,7 +119,7 @@ if (BUILD_TESTS)
     add_amanzi_test(solver_linear_operators solver_linear_operators
                     KIND unit
                     SOURCE test/Main.cc test/solver_linear_operators.cc
-                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+                    LINK_LIBS ${solvers_test_link_libs} ${Tpetra_LIBRARIES} ${UnitTest_LIBRARIES}  ${Tpetra_LIBRARIES} ${solvers_tpl_libs}  ${Tpetra_LIBRARIES} )
 
     add_amanzi_test(solver_preconditioners solver_preconditioners
                     KIND unit
@@ -142,7 +144,7 @@ if (BUILD_TESTS)
     add_amanzi_test(solver_nka solver_nka
                     KIND unit
                     SOURCE test/Main.cc test/solver_nka.cc
-                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs} )
 
     #add_amanzi_test(solver_continuation solver_continuation
     #                KIND unit
