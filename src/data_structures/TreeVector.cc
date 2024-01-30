@@ -61,9 +61,7 @@ TreeVector::InitMap_(InitMode mode)
     data_ = Teuchos::rcp(new CompositeVector(*map_->Data()));
   }
 
-  for (const auto& i : *map_) {
-    InitPushBack_(Teuchos::rcp(new TreeVector(*i, mode)));
-  }
+  for (const auto& i : *map_) { InitPushBack_(Teuchos::rcp(new TreeVector(*i, mode))); }
 }
 
 
@@ -227,9 +225,7 @@ TreeVector::Print(std::ostream& os, bool data_io) const
   // Print data to ostream for this node and all children.
   if (data_ != Teuchos::null) data_->Print(os, data_io);
 
-  for (const auto& subvec : subvecs_) {
-    subvec->Print(os, data_io);
-  }
+  for (const auto& subvec : subvecs_) { subvec->Print(os, data_io); }
 };
 
 
@@ -243,7 +239,7 @@ TreeVector::Abs(const TreeVector& other)
     ierr = data_->Abs(*other.data_);
     if (ierr) return ierr;
   }
-  for (int i=0; i!=subvecs_.size(); ++i) {
+  for (int i = 0; i != subvecs_.size(); ++i) {
     ierr = subvecs_[i]->Abs(*other.subvecs_[i]);
     if (ierr) return ierr;
   }
@@ -296,7 +292,7 @@ TreeVector::Reciprocal(const TreeVector& other)
     ierr = data_->Reciprocal(*other.data_);
     if (ierr) return ierr;
   }
-  for (int i=0; i!=subvecs_.size(); ++i) {
+  for (int i = 0; i != subvecs_.size(); ++i) {
     ierr = subvecs_[i]->Reciprocal(*other.subvecs_[i]);
     if (ierr) return ierr;
   }
@@ -446,9 +442,7 @@ TreeVector::GlobalLength() const
   int total = 0;
   if (data_ != Teuchos::null) { total += data_->GlobalLength(); }
 
-  for (const auto& subvec : subvecs_) {
-    total += subvec->GlobalLength();
-  }
+  for (const auto& subvec : subvecs_) { total += subvec->GlobalLength(); }
   return total;
 };
 
