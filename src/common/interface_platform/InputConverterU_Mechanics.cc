@@ -51,9 +51,13 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
   bool flag;
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_mechanics_controls", flag);
 
-  bool biot_model(false);
+  bool biot_undrained_split(false), biot_stress_split(false);
   node = GetUniqueElementByTagsString_(node, "biot_model", flag);
-  if (flag) biot_model = GetTextContentL_(node, false);
+  if (flag) {
+    std::string method = GetTextContentS_(node, "undrained_split, fixed_stress_split");
+    biot_undrained_split = (method == "undrained_split");
+    biot_stress_split = (method == "fixed_stress_split");
+  }
 
   // create flow header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
@@ -96,7 +100,8 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
 
   out_list.sublist("physical models and assumptions")
     .set<bool>("use gravity", gravity_on_)
-    .set<bool>("use biot model", biot_model);
+    .set<bool>("biot scheme: undrained split", biot_undrained_split)
+    .set<bool>("biot scheme: fixed stress split", biot_stress_split);
 
   // insert boundary conditions and source terms
   out_list.sublist("boundary conditions") = TranslateMechanicsBCs_(domain);

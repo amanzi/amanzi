@@ -177,7 +177,6 @@ InputConverterU::TranslateCycleDriverNew_()
   // -- parse available PKs
   int tp_id(0);
   std::string model, state, pkname, strong_name, weak_name;
-  std::vector<std::string> pks_strong, pks_weak;
   std::map<std::string, bool> pk_state;
 
   node_list = doc_->getElementsByTagName(mm.transcode("process_kernels"));
@@ -259,20 +258,20 @@ InputConverterU::TranslateCycleDriverNew_()
     }
 
     // we allow so far only one strongly coupled MPC
-    pks_strong.clear();
+    pks_strong_.clear();
     node = GetUniqueElementByTagsString_(inode, "strongly_coupled", flag);
     if (flag) {
       pkname = GetAttributeValueS_(node, "name");
-      pks_strong = CharToStrings_(mm.transcode(node->getTextContent()));
+      pks_strong_ = CharToStrings_(mm.transcode(node->getTextContent()));
       strong_name = mm.transcode(node->getNodeName());
     }
 
     // we allow so far only one weakly coupled MPC
-    pks_weak.clear();
+    pks_weak_.clear();
     node = GetUniqueElementByTagsString_(inode, "weakly_coupled", flag);
     if (flag) {
       pkname = GetAttributeValueS_(node, "name");
-      pks_weak = CharToStrings_(mm.transcode(node->getTextContent()));
+      pks_weak_ = CharToStrings_(mm.transcode(node->getTextContent()));
       weak_name = mm.transcode(node->getNodeName());
     }
 
@@ -352,7 +351,7 @@ InputConverterU::TranslateCycleDriverNew_()
       PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
       break;
     case 68:
-      tmp = "mechanics and " + tmp + "flow";
+      tmp = pks_weak_[0] + " and " + tmp + pks_weak_[1];
       PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
       break;
     default:
@@ -536,6 +535,10 @@ InputConverterU::PopulatePKTree_(Teuchos::ParameterList& pk_tree, const std::str
     tmp.set<std::string>("PK type", "mechanics and flow");
     PopulatePKTree_(tmp, Keys::merge(prefix, "mechanics", delimiter));
     PopulatePKTree_(tmp, Keys::merge(prefix, "flow", delimiter));
+  } else if (basename == "flow and mechanics") {
+    tmp.set<std::string>("PK type", "flow and mechanics");
+    PopulatePKTree_(tmp, Keys::merge(prefix, "flow", delimiter));
+    PopulatePKTree_(tmp, Keys::merge(prefix, "mechanics", delimiter));
   } else if (basename == "mechanics and coupled flow") {
     tmp.set<std::string>("PK type", "mechanics and coupled flow");
     PopulatePKTree_(tmp, Keys::merge(prefix, "mechanics", delimiter));
@@ -1016,6 +1019,13 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "mechanics", delimiter));
         pk_names.push_back(Keys::merge(prefix, "flow", delimiter));
+        out_list.sublist(pk)
+          .set<Teuchos::Array<std::string>>("PKs order", pk_names)
+          .set<std::string>("domain name", pk_domain_["mechanics"]);
+      } else if (basename == "flow and mechanics") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back(Keys::merge(prefix, "flow", delimiter));
+        pk_names.push_back(Keys::merge(prefix, "mechanics", delimiter));
         out_list.sublist(pk)
           .set<Teuchos::Array<std::string>>("PKs order", pk_names)
           .set<std::string>("domain name", pk_domain_["mechanics"]);

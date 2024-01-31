@@ -87,7 +87,8 @@
       </ParameterList>
       <ParameterList name="physical models and assumptions">
         <Parameter name="use gravity" type="bool" value="false"/>
-        <Parameter name="use biot model" type="bool" value="false"/>
+        <Parameter name="biot scheme: undrained split" type="bool" value="false"/>
+        <Parameter name="biot scheme: fixed stress split" type="bool" value="false"/>
       </ParameterList>
       <ParameterList name="boundary conditions">
         <ParameterList name="traction">

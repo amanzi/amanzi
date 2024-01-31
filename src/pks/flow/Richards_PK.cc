@@ -159,7 +159,8 @@ Richards_PK::Setup()
   std::string msm_name = physical_models->get<std::string>("multiscale model", "single continuum");
   std::string pom_name = physical_models->get<std::string>("porosity model", "constant");
   bool use_ppm = physical_models->get<bool>("permeability porosity model", false);
-  use_strain_ = physical_models->get<bool>("porosity strain model", false);
+  use_strain_ = physical_models->get<bool>("biot scheme: undrained split", false) ||
+                physical_models->get<bool>("biot scheme: fixed stress split", false);
 
   // Require primary field for this PK, which is pressure
   std::vector<std::string> names({ "cell" });

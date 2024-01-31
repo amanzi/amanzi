@@ -20,6 +20,7 @@
 #include "FlowEnergy_PK.hh"
 #include "FlowEnergyMatrixFracture_PK.hh"
 #include "FlowMatrixFracture_PK.hh"
+#include "FlowMechanics_PK.hh"
 #include "FlowReactiveTransport_PK.hh"
 
 #include "ChemistryMatrixFracture_PK.hh"
@@ -67,6 +68,7 @@ RegisteredPKFactory<ReactiveTransportMatrixFracture_PK>
 RegisteredPKFactory<MechanicsFlowMatrixFracture_PK>
   MechanicsFlowMatrixFracture_PK::reg_("mechanics and coupled flow");
 RegisteredPKFactory<MechanicsFlow_PK> MechanicsFlow_PK::reg_("mechanics and flow");
+RegisteredPKFactory<FlowMechanics_PK> FlowMechanics_PK::reg_("flow and mechanics");
 
 // integrated surface-subsurface models
 RegisteredPKFactory<SurfaceSubsurface_PK> SurfaceSubsurface_PK::reg_("surface subsurface");

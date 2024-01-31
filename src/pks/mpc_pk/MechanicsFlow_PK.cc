@@ -62,15 +62,13 @@ MechanicsFlow_PK::Setup()
 
   auto pks =
     glist_->sublist("PKs").sublist(name_).get<Teuchos::Array<std::string>>("PKs order").toVector();
-  glist_->sublist("PKs")
-    .sublist(pks[1])
-    .sublist("physical models and assumptions")
-    .set<bool>("porosity strain model", true);
-
-  glist_->sublist("PKs")
-    .sublist(pks[0])
-    .sublist("physical models and assumptions")
-    .set<bool>("use biot model", true);
+  for (int i = 0; i < 2; ++i) {
+    glist_->sublist("PKs")
+      .sublist(pks[i])
+      .sublist("physical models and assumptions")
+      .set<bool>("biot scheme: undrained split", true)
+      .set<bool>("biot scheme: fixed stress split", false);
+  }
 
   PK_MPCWeak::Setup();
 }

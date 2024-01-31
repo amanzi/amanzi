@@ -23,6 +23,7 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+include_directories(${FLOW_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
@@ -51,9 +52,10 @@ endif()
 list(REVERSE mechanics_tpl_libs)
 list(REMOVE_DUPLICATES mechanics_tpl_libs)
 list(REVERSE mechanics_tpl_libs)
+
 add_amanzi_library(mechanics SOURCE ${mechanics_src_files}
                    LINK_LIBS functions mesh_functions time_integration data_structures state
-                             pks operators ${mechanics_tpl_libs})
+                             pks flow operators ${mechanics_tpl_libs})
 
 #
 # Install Targets

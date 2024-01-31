@@ -418,7 +418,7 @@ InputConverterU::TranslatePOM_(const std::string& domain)
     node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
-    // get optional complessibility
+    // get compressibility
     node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
     std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
     if (type == "h5file") {
@@ -429,6 +429,15 @@ InputConverterU::TranslatePOM_(const std::string& domain)
     double phi = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0);
     double compres =
       GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, 0.0, 1.0, "Pa^-1", false, 0.0);
+
+    // get reference pressure
+    double ref_pressure =
+      GetAttributeValueD_(node, "reference_pressure", TYPE_NUMERICAL, 0.0, DBL_MAX, "Pa", false, const_atm_pressure_);
+
+    // get Biot-Willis coefficient
+    double biot(1.0);
+    node = GetUniqueElementByTagsString_(inode, "mechanical_properties, biot_coefficient", flag);
+    if (flag) biot = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0, "");
 
     std::stringstream ss;
     ss << "POM " << i;
@@ -441,10 +450,11 @@ InputConverterU::TranslatePOM_(const std::string& domain)
       pom_list.set<std::string>("porosity model", "constant");
       pom_list.set<double>("value", phi);
     } else {
-      pom_list.set<std::string>("porosity model", "compressible");
-      pom_list.set<double>("undeformed soil porosity", phi);
-      pom_list.set<double>("reference pressure", const_atm_pressure_);
-      pom_list.set<double>("pore compressibility", compres);
+      pom_list.set<std::string>("porosity model", "compressible")
+        .set<double>("undeformed soil porosity", phi)
+        .set<double>("reference pressure", ref_pressure)
+        .set<double>("pore compressibility", compres)
+        .set<double>("biot coefficient", biot);
       compressibility_ = true;
     }
   }

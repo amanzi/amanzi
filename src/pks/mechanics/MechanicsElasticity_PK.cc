@@ -186,8 +186,10 @@ MechanicsElasticity_PK::Initialize()
     mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   // -- control parameters
-  use_gravity_ = ec_list_->sublist("physical models and assumptions").get<bool>("use gravity");
-  biot_model_ = ec_list_->sublist("physical models and assumptions").get<bool>("use biot model");
+  auto physical_models = Teuchos::sublist(ec_list_, "physical models and assumptions");
+  use_gravity_ = physical_models->get<bool>("use gravity");
+  biot_model_ = physical_models->get<bool>("biot scheme: undrained split", false) ||
+                physical_models->get<bool>("biot scheme: fixed stress split", false);
 
   // Create verbosity object to print out initialiation statistics.
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {

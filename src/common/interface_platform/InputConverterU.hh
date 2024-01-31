@@ -372,6 +372,9 @@ class InputConverterU : public InputConverter {
   std::vector<std::string> comp_names_all_;
   std::map<std::string, double> solute_molar_mass_;
 
+  // global mpc parameters
+  std::vector<std::string> pks_strong_, pks_weak_;
+
   // global state parameters
   // -- initialization filename, different from restart
   bool restart_;

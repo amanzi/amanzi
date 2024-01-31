@@ -45,6 +45,8 @@ class PorosityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Com
                                           const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
+  double getBiotCoefficient(int c) { return pom_->second[(*pom_->first)[c]]->getBiotCoefficient(); }
+
  protected:
   void InitializeFromPlist_();
 

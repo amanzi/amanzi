@@ -31,8 +31,9 @@ class Porosity_Constant : public Porosity {
   ~Porosity_Constant(){};
 
   // required methods from the base class
-  inline double PorosityValue(double p) { return porosity_; }
-  inline double dPorositydPressure(double p) { return 0.0; }
+  virtual double PorosityValue(double p) override { return porosity_; }
+  virtual double dPorositydPressure(double p) override { return 0.0; }
+  virtual double getBiotCoefficient() override { return 1.0; }
 
  private:
   double porosity_;

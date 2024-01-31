@@ -13,6 +13,7 @@
 */
 
 #include "WhetStoneDefs.hh"
+#include "PorosityEvaluator.hh"
 
 #include "MechanicsElasticity_PK.hh"
 
@@ -252,6 +253,8 @@ MechanicsElasticity_PK::AddPressureGradient_(CompositeVector& rhs)
   int d = mesh_->getSpaceDimension();
   const auto& p = S_->Get<CV_t>("pressure", Tags::DEFAULT);
 
+  auto eval = Teuchos::rcp_dynamic_cast<Flow::PorosityEvaluator>(S_->GetEvaluatorPtr("porosity", Tags::DEFAULT));
+
   if (p.HasComponent("face")) {
     const auto& p_f = *p.ViewComponent("face", true);
     auto& rhs_v = *rhs.ViewComponent("node");
@@ -275,12 +278,14 @@ MechanicsElasticity_PK::AddPressureGradient_(CompositeVector& rhs)
       }
       grad /= vol;
 
+      double b = eval->getBiotCoefficient(c);
+
       // pressure gradient
       auto nodes = mesh_->getCellNodes(c);
       int nnodes = nodes.size();
 
       for (int i = 0; i < d; ++i) {
-        double add = grad[i] * vol / nnodes;
+        double add = b * grad[i] * vol / nnodes;
         for (int n = 0; n < nnodes; ++n) rhs_v[i][nodes[n]] -= add;
       }
     }

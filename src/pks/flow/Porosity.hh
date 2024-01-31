@@ -17,9 +17,15 @@ includes a few mandatory parameters: *regions names*, *model name*, and paramete
 * `"porosity model`" [string] specifies a model for the soil.
   The available models are `"compressible`" and `"constant`".
 
-  * The model `"compressible`" requires `"underformed soil porosity"`" [double],
-    `"reference pressure`" [double], and `"pore compressibility`" [string] [Pa^-1].
-    Default value for `"reference pressure`" is 101325.0 [Pa].
+  * The model `"compressible`" requires mandatory parameters:
+    * `"underformed soil porosity"`" [double]
+    * `"reference pressure`" [double]. Default value is 101325.0 Pa.
+    * `"pore compressibility`" [double] [Pa^-1]
+
+    Additional physics introduces more parameters
+    * `"Biot coefficient`" [double] [-]
+    * `"volumetric thermal dilation`" [double] [K^-1]
+    * `"reference temperature`" [double] [K]. Default value is 20 C.
 
   * The model `"constant`" requires `"value`" [double].
 
@@ -60,6 +66,8 @@ class Porosity {
   virtual ~Porosity(){};
   virtual double PorosityValue(double p) = 0;
   virtual double dPorositydPressure(double p) = 0; // derivative wrt to pressure
+
+  virtual double getBiotCoefficient() = 0;
 };
 
 } // namespace Flow
