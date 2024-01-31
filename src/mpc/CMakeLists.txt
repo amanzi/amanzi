@@ -320,4 +320,11 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_mechanics_mandel.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
+
+    add_amanzi_test(mpc_mechanics_stress_split mpc_mechanics_stress_split
+                    KIND      int
+                    NPROCS    3
+                    SOURCE    test/Main.cc test/mpc_mechanics_stress_split.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
 endif()
