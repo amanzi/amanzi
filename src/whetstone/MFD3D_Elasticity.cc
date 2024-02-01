@@ -235,7 +235,7 @@ MFD3D_Elasticity::H1Cell(int c, const DenseVector& dofs, Tensor& Tc)
   T(0, 0) = 1.0;
 
   DenseMatrix N, A;
-  int ok = H1consistency(c, T, N, A);
+  H1consistency(c, T, N, A);
 
   int nrows = A.NumCols();
   int modes = d_ * (d_ + 1) / 2;

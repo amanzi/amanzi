@@ -569,6 +569,7 @@ resolveMeshSetGeometric(const AmanziGeometry::Region& region,
   } else {
     begin = 0;
     end = mesh.getNumEntities(kind, ptype);
+    if (end < 0) return MeshCache<MemSpace_kind::HOST>::Entity_ID_View();
   }
 
   // check whether centroid is inside region

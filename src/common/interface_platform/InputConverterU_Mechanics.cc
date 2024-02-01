@@ -77,7 +77,7 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
 
   // insert time integrator
   std::string err_options("displacement"),
-    unstr_controls("unstructured_controls, unstr_mechanics_controls");
+    unstr_controls("unstructured_controls, unstr_transient_controls");
 
   if (pk_master_.find("mechanics") != pk_master_.end()) {
     out_list.sublist("time integrator") = TranslateTimeIntegrator_(err_options,

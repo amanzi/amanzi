@@ -1213,7 +1213,6 @@ void
 Mesh_MOAB::getNodeCells(const Entity_ID nodeid,
                         View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const
 {
-  unsigned char pstatus;
   std::vector<EntityHandle> ids;
   View_type<Entity_ID, MemSpace_kind::HOST> lcellids;
 
@@ -1237,7 +1236,19 @@ void
 Mesh_MOAB::getNodeFaces(const Entity_ID nodeid,
                         View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const
 {
-  throw std::exception();
+  std::vector<EntityHandle> ids;
+  View_type<Entity_ID, MemSpace_kind::HOST> lfaceids;
+
+  mbcore_->get_adjacencies(&(node_id_to_handle[nodeid]), 1, facedim, true, ids);
+  int lid, nids = ids.size();
+
+  Entity_ID_List vfaceids;
+  for (int i = 0; i < nids; ++i) {
+    mbcore_->tag_get_data(lid_tag, &(ids[i]), 1, &lid);
+    vfaceids.push_back(lid);
+  }
+  vectorToView(lfaceids, vfaceids);
+  faceids = lfaceids;
 }
 
 
@@ -1268,7 +1279,6 @@ Mesh_MOAB::getFaceCells(const Entity_ID faceid,
   Kokkos::resize(lcellids, 2);
   auto it = lcellids.begin();
 
-  unsigned char pstatus;
   int n = 0;
   for (int i = 0; i < nc; i++) {
     *it = fcellids[i];
