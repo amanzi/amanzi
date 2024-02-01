@@ -16,6 +16,7 @@
 #include <string>
 
 #include "PK_BDF.hh"
+#include "PorosityEvaluator.hh"
 #include "StateArchive.hh"
 #include "Transport_PK.hh"
 
@@ -60,7 +61,7 @@ FlowMechanics_PK::Setup()
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
   water_storage_key_ = Keys::getKey(domain_, "water_storage");
 
-  // mechanics 
+  // mechanics
   auto mesh = S_->GetMesh(domain_);
   S_->Require<CV_t, CVS_t>(hydrostatic_stress_key_, Tags::DEFAULT, passwd)
     .SetMesh(mesh)
@@ -113,9 +114,11 @@ FlowMechanics_PK::Setup()
 bool
 FlowMechanics_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
-  
-  std::vector<std::string> fields({ pressure_key_, saturation_liquid_key_, water_storage_key_, 
-                                    displacement_key_, vol_strain_key_ });
+  std::vector<std::string> fields({ pressure_key_,
+                                    saturation_liquid_key_,
+                                    water_storage_key_,
+                                    displacement_key_,
+                                    vol_strain_key_ });
   StateArchive archive(S_, vo_);
   archive.Add(fields, Tags::DEFAULT);
 
@@ -127,7 +130,7 @@ FlowMechanics_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 
 /* ******************************************************************
-* Use Error norms for each PK.
+* Use error norms for each PK.
 ****************************************************************** */
 double
 FlowMechanics_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du)
@@ -138,6 +141,34 @@ FlowMechanics_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const
     err = std::max(err, pk->ErrorNorm(u->SubVector(i), du->SubVector(i)));
   }
   return err;
+}
+
+
+/* ******************************************************************
+* Update previous accumulation field
+****************************************************************** */
+void
+FlowMechanics_PK::CommitSequentialStep(Teuchos::RCP<const TreeVector> u_old,
+                                       Teuchos::RCP<const TreeVector> u_new)
+{
+  Key prev = Keys::getKey(domain_, "prev_water_storage");
+  auto& ws_c = *S_->GetW<CV_t>(prev, Tags::DEFAULT, "").ViewComponent("cell");
+  auto& u0_c = *u_old->SubVector(0)->Data()->ViewComponent("cell");
+  auto& u1_c = *u_new->SubVector(0)->Data()->ViewComponent("cell");
+
+  const auto& E = *S_->Get<CompositeVector>("young_modulus").ViewComponent("cell");
+  const auto& nu = *S_->Get<CompositeVector>("poisson_ratio").ViewComponent("cell");
+  const auto& n_l = *S_->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
+
+  auto tmp = const_cast<Evaluator*>(&S_->GetEvaluator(porosity_key_));
+  auto eval = dynamic_cast<Flow::PorosityEvaluator*>(tmp);
+
+  int ncells = ws_c.MyLength();
+  for (int c = 0; c != ncells; ++c) {
+    double b = eval->getBiotCoefficient(c);
+    double stability = FixedStressStability(E[0][c], nu[0][c], b);
+    ws_c[0][c] += stability * n_l[0][c] * (u1_c[0][c] - u0_c[0][c]);
+  }
 }
 
 } // namespace Amanzi

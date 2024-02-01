@@ -44,6 +44,8 @@ class PK_MPCSequential : public PK_MPC<PK> {
 
   // New PK methods
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
+  virtual void CommitSequentialStep(Teuchos::RCP<const TreeVector> u_old,
+                                    Teuchos::RCP<const TreeVector> u_new){ /* pass */ };
 
   // access
   int num_itrs() { return num_itrs_; }

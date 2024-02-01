@@ -77,6 +77,7 @@ PK_MPCSequential::AdvanceStep(double t_old, double t_new, bool reinit)
       fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
       if (fail) return fail;
     }
+    CommitSequentialStep(du, solution_);
 
     // calculate error
     if (num_itrs_ > 0) {

@@ -253,7 +253,8 @@ MechanicsElasticity_PK::AddPressureGradient_(CompositeVector& rhs)
   int d = mesh_->getSpaceDimension();
   const auto& p = S_->Get<CV_t>("pressure", Tags::DEFAULT);
 
-  auto eval = Teuchos::rcp_dynamic_cast<Flow::PorosityEvaluator>(S_->GetEvaluatorPtr("porosity", Tags::DEFAULT));
+  auto eval = Teuchos::rcp_dynamic_cast<Flow::PorosityEvaluator>(
+    S_->GetEvaluatorPtr("porosity", Tags::DEFAULT));
 
   if (p.HasComponent("face")) {
     const auto& p_f = *p.ViewComponent("face", true);

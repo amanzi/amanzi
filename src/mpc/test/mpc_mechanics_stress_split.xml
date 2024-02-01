@@ -123,21 +123,6 @@
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
-      <ParameterList name="porosity">
-        <ParameterList name="function">
-          <ParameterList name="EntireDomain">
-            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-        <Parameter name="constant in time" type="bool" value="true"/>
-      </ParameterList>
       <ParameterList name="particle_density">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -398,9 +383,9 @@
         <ParameterList name="POM 0">
           <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
           <Parameter name="porosity model" type="string" value="compressible"/>
-          <Parameter name="undeformed soil porosity" type="double" value="1.0"/>
+          <Parameter name="undeformed soil porosity" type="double" value="0.1"/>
           <Parameter name="reference pressure" type="double" value="0.0"/>
-          <Parameter name="pore compressibility" type="double" value="3.90560000000000024e-07"/>
+          <Parameter name="pore compressibility" type="double" value="3.9056e-06"/>
           <Parameter name="biot coefficient" type="double" value="9.45770000000000000e-01"/>
         </ParameterList>
       </ParameterList>
@@ -672,8 +657,8 @@
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.0"/>
-        <Parameter name="smoother sweeps" type="int" value="3"/>
-        <Parameter name="cycle applications" type="int" value="5"/>
+        <Parameter name="smoother sweeps" type="int" value="2"/>
+        <Parameter name="cycle applications" type="int" value="3"/>
         <Parameter name="strong threshold" type="double" value="0.5"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>

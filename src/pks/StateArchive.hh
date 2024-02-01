@@ -37,7 +37,8 @@ class StateArchive {
 
   void Restore(const std::string& passwd);
 
-  void CopyFieldsToPrevFields(std::vector<std::string>& fields, const std::string& passwd);
+  void
+  CopyFieldsToPrevFields(std::vector<std::string>& fields, const std::string& passwd, bool add);
 
   // access
   const CompositeVector& get(const std::string& name);

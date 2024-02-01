@@ -61,15 +61,18 @@ StateArchive::Restore(const std::string& passwd)
 
 /* *******************************************************************
 * Copy: Field (BASE) -> Field (prev_BASE)
+* NOTE: boolean flag = false when the function is used in CommitStep()
 ******************************************************************* */
 void
-StateArchive::CopyFieldsToPrevFields(std::vector<std::string>& fields, const std::string& passwd)
+StateArchive::CopyFieldsToPrevFields(std::vector<std::string>& fields,
+                                     const std::string& passwd,
+                                     bool add)
 {
   for (auto it = fields.begin(); it != fields.end(); ++it) {
     auto name = Keys::splitKey(*it);
     std::string prev = Keys::getKey(name.first, "prev_" + name.second);
     if (S_->HasRecord(prev, tag_)) {
-      fields_.emplace(prev, S_->Get<CompositeVector>(prev));
+      if (add) fields_.emplace(prev, S_->Get<CompositeVector>(prev));
       S_->GetW<CompositeVector>(prev, tag_, passwd) = S_->Get<CompositeVector>(*it);
     }
   }

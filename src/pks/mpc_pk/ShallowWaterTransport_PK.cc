@@ -75,7 +75,7 @@ ShallowWaterTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   std::vector<std::string> fields = { ponded_depth_key, discharge_key, velocity_key };
   StateArchive archive(S_, vo_);
   archive.Add(fields, Tags::DEFAULT);
-  archive.CopyFieldsToPrevFields(fields, "");
+  archive.CopyFieldsToPrevFields(fields, "", true);
 
   double dt0 = t_new - t_old;
   fail = sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);

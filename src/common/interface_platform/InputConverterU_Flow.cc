@@ -431,8 +431,8 @@ InputConverterU::TranslatePOM_(const std::string& domain)
       GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, 0.0, 1.0, "Pa^-1", false, 0.0);
 
     // get reference pressure
-    double ref_pressure =
-      GetAttributeValueD_(node, "reference_pressure", TYPE_NUMERICAL, 0.0, DBL_MAX, "Pa", false, const_atm_pressure_);
+    double ref_pressure = GetAttributeValueD_(
+      node, "reference_pressure", TYPE_NUMERICAL, 0.0, DBL_MAX, "Pa", false, const_atm_pressure_);
 
     // get Biot-Willis coefficient
     double biot(1.0);

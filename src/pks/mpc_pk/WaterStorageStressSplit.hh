@@ -26,7 +26,18 @@
 
 namespace Amanzi {
 
-class WaterStorageStressSplit : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+// Optimal stabilizty coefficient due to Makilic, Wheeler.
+// Convergence of iterative coupling for coupled flow and geomechanics.
+// Comput Geosci 2013.
+inline double
+FixedStressStability(double E, double nu, double b)
+{
+  double mu = E / (2 * (1 + nu));
+  return b * b / mu / 2;
+}
+
+class WaterStorageStressSplit
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   explicit WaterStorageStressSplit(Teuchos::ParameterList& plist);
   WaterStorageStressSplit(const WaterStorageStressSplit& other);

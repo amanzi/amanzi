@@ -51,8 +51,7 @@ WaterStorageStressSplit::WaterStorageStressSplit(Teuchos::ParameterList& plist)
 * Copy constructors.
 ****************************************************************** */
 WaterStorageStressSplit::WaterStorageStressSplit(const WaterStorageStressSplit& other)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other)
-{};
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other){};
 
 
 Teuchos::RCP<Evaluator>
@@ -82,10 +81,9 @@ WaterStorageStressSplit::Evaluate_(const State& S, const std::vector<CompositeVe
   auto& result_v = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell");
 
-  for (int c = 0; c != ncells; ++c) { 
-    double mu = E[0][c] / (2 * (1 + nu[0][c]));
+  for (int c = 0; c != ncells; ++c) {
     double b = eval->getBiotCoefficient(c);
-    double stability = b * b / mu;
+    double stability = FixedStressStability(E[0][c], nu[0][c], b);
     result_v[0][c] = phi[0][c] * s_l[0][c] * n_l[0][c] + stability * n_l[0][c] * p_l[0][c];
   }
 }
@@ -121,9 +119,8 @@ WaterStorageStressSplit::EvaluatePartialDerivative_(const State& S,
     for (int c = 0; c != ncells; ++c) { result_v[0][c] = phi[0][c] * s_l[0][c]; }
   } else if (wrt_key == pressure_key_) {
     for (int c = 0; c != ncells; ++c) {
-      double mu = E[0][c] / (2 * (1 + nu[0][c]));
       double b = eval->getBiotCoefficient(c);
-      double stability = b * b / mu;
+      double stability = FixedStressStability(E[0][c], nu[0][c], b);
       result_v[0][c] = stability * n_l[0][c];
     }
   } else {

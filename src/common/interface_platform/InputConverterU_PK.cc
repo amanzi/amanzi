@@ -258,7 +258,9 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
                                               CharToStrings_(mm.transcode(node->getTextContent())));
 
   node = GetUniqueElementByTagsString_(controls + ", max_sequential_iterations", flag);
-  if (flag) out_list.set<int>("maximum number of iterations", std::stoi(mm.transcode(node->getTextContent())));
+  if (flag)
+    out_list.set<int>("maximum number of iterations",
+                      std::stoi(mm.transcode(node->getTextContent())));
 
   node = GetUniqueElementByTagsString_(controls + ", preconditioner", flag);
   if (flag) {

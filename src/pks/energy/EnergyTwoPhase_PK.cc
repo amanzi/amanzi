@@ -370,7 +370,7 @@ EnergyTwoPhase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   // update previous fields
   std::vector<std::string> fields({ energy_key_ });
   StateArchive archive(S_, vo_);
-  archive.CopyFieldsToPrevFields(fields, "");
+  archive.CopyFieldsToPrevFields(fields, "", false);
 }
 
 } // namespace Energy
