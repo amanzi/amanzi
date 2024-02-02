@@ -308,7 +308,7 @@ Energy_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
         bc_temperature_.push_back(bc_factory.Create(
-          spec, "boundary temperature", AmanziMesh::Entity_kind::FACE, Teuchos::null));
+          spec, "boundary temperature", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true));
       }
     }
   }
@@ -323,7 +323,7 @@ Energy_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
         bc_flux_.push_back(bc_factory.Create(
-          spec, "outward energy flux", AmanziMesh::Entity_kind::FACE, Teuchos::null));
+          spec, "outward energy flux", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true));
       }
     }
   }

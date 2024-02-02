@@ -35,7 +35,7 @@ class PK_DomainFunctionSubgridReturn : public FunctionBase, public Functions::Un
  public:
   PK_DomainFunctionSubgridReturn(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                  const Teuchos::ParameterList& plist)
-    : FunctionBase(plist), UniqueMeshFunction(mesh){};
+    : FunctionBase(plist), UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED) {};
   virtual ~PK_DomainFunctionSubgridReturn() = default;
 
   // member functions

@@ -36,7 +36,6 @@ the domain function.
 
 #include "CommonDefs.hh"
 #include "Mesh.hh"
-#include "UniqueMeshFunction.hh"
 #include "Evaluator.hh"
 
 #include "PK_Utils.hh"

@@ -258,7 +258,7 @@ NavierStokes_PK::Initialize()
           WhetStone::DOF_Type type;
           std::tie(kind, type, std::ignore) = *jt;
 
-          bc = bc_factory.Create(spec, "no slip", kind, Teuchos::null);
+          bc = bc_factory.Create(spec, "no slip", kind, Teuchos::null, Tags::DEFAULT, true);
           bc->set_bc_name("no slip");
           bc->set_type(type);
           bcs_.push_back(bc);

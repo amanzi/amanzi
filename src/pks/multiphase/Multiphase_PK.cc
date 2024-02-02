@@ -684,7 +684,7 @@ Multiphase_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
         bc = bc_factory.Create(
-          spec, "boundary pressure", AmanziMesh::Entity_kind::FACE, Teuchos::null);
+          spec, "boundary pressure", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("pressure");
         bcs_.push_back(bc);
       }
@@ -700,7 +700,7 @@ Multiphase_PK::Initialize()
       if (it->second.isList()) {
         Teuchos::ParameterList spec = Teuchos::getValue<Teuchos::ParameterList>(it->second);
         bc = bc_factory.Create(
-          spec, "outward mass flux", AmanziMesh::Entity_kind::FACE, Teuchos::null);
+          spec, "outward mass flux", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("flux");
         bc->SetComponentId(component_names_);
         bcs_.push_back(bc);
@@ -718,7 +718,7 @@ Multiphase_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
         bc = bc_factory.Create(
-          spec, "boundary saturation", AmanziMesh::Entity_kind::FACE, Teuchos::null);
+          spec, "boundary saturation", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("saturation");
         bcs_.push_back(bc);
       }
@@ -735,7 +735,7 @@ Multiphase_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
         bc = bc_factory.Create(
-          spec, "boundary concentration", AmanziMesh::Entity_kind::FACE, Teuchos::null);
+          spec, "boundary concentration", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("concentration");
         bc->SetComponentId(component_names_);
         bcs_.push_back(bc);
