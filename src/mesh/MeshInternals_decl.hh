@@ -52,6 +52,9 @@ template <class Mesh_type>
 typename Mesh_type::Entity_ID_View
 computeNodeCells(const Mesh_type& mesh, const Entity_ID n);
 
+template <class Mesh_type>
+typename Mesh_type::Entity_ID_View
+computeEdgeCells(const Mesh_type& mesh, const Entity_ID n);
 
 //
 // Geometry algorithms

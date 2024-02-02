@@ -191,8 +191,7 @@ void
 MeshFramework::getEdgeCells(const Entity_ID e,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& cells) const
 {
-  hasEdgesOrThrow();
-  throwNotImplemented_("getEdgeCells");
+  cells = Impl::computeEdgeCells(*this, e);
 }
 
 void

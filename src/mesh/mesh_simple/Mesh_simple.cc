@@ -104,6 +104,7 @@ Mesh_simple::CreateCache_()
     Kokkos::resize(face_to_edge_dirs_, 4 * num_faces_);
     Kokkos::resize(edge_to_node_, 2 * num_edges_);
     Kokkos::resize(edge_to_face_, 5 * num_edges_); // 1 extra for num faces
+    Kokkos::resize(node_to_edge_, 7 * num_nodes_); // 1 extra for num edges
   }
 
   // loop over cells and initialize cell <-> face
@@ -388,9 +389,21 @@ Mesh_simple::CreateCache_()
       for (int iy = 0; iy <= ny_; iy++) {
         for (int ix = 0; ix < nx_; ix++) {
           int istart = 2 * xedge_index_(ix, iy, iz);
+          int jstart = 0;
+          int nedges = 0;
 
           edge_to_node_[istart] = node_index_(ix, iy, iz);
           edge_to_node_[istart + 1] = node_index_(ix + 1, iy, iz);
+
+          jstart = 7 * node_index_(ix, iy, iz);
+          nedges = node_to_edge_[jstart];
+          node_to_edge_[jstart + 1 + nedges] = xedge_index_(ix, iy, iz);
+          (node_to_edge_[jstart])++;
+
+          jstart = 7 * node_index_(ix + 1, iy, iz);
+          nedges = node_to_edge_[jstart];
+          node_to_edge_[jstart + 1 + nedges] = xedge_index_(ix, iy, iz);
+          (node_to_edge_[jstart])++;
         }
       }
     }
@@ -400,9 +413,21 @@ Mesh_simple::CreateCache_()
       for (int iy = 0; iy < ny_; iy++) {
         for (int ix = 0; ix <= nx_; ix++) {
           int istart = 2 * yedge_index_(ix, iy, iz);
+          int jstart = 0;
+          int nedges = 0;
 
           edge_to_node_[istart] = node_index_(ix, iy, iz);
           edge_to_node_[istart + 1] = node_index_(ix, iy + 1, iz);
+
+          jstart = 7 * node_index_(ix, iy, iz);
+          nedges = node_to_edge_[jstart];
+          node_to_edge_[jstart + 1 + nedges] = yedge_index_(ix, iy, iz);
+          (node_to_edge_[jstart])++;
+
+          jstart = 7 * node_index_(ix, iy + 1, iz);
+          nedges = node_to_edge_[jstart];
+          node_to_edge_[jstart + 1 + nedges] = yedge_index_(ix, iy, iz);
+          (node_to_edge_[jstart])++;
         }
       }
     }
@@ -412,9 +437,21 @@ Mesh_simple::CreateCache_()
       for (int iy = 0; iy <= ny_; iy++) {
         for (int ix = 0; ix <= nx_; ix++) {
           int istart = 2 * zedge_index_(ix, iy, iz);
+          int jstart = 0;
+          int nedges = 0;
 
           edge_to_node_[istart] = node_index_(ix, iy, iz);
           edge_to_node_[istart + 1] = node_index_(ix, iy, iz + 1);
+
+          jstart = 7 * node_index_(ix, iy, iz);
+          nedges = node_to_edge_[jstart];
+          node_to_edge_[jstart + 1 + nedges] = zedge_index_(ix, iy, iz);
+          (node_to_edge_[jstart])++;
+
+          jstart = 7 * node_index_(ix, iy, iz + 1);
+          nedges = node_to_edge_[jstart];
+          node_to_edge_[jstart + 1 + nedges] = zedge_index_(ix, iy, iz);
+          (node_to_edge_[jstart])++;
         }
       }
     }
@@ -545,6 +582,23 @@ Mesh_simple::setNodeCoordinate(const AmanziMesh::Entity_ID local_node_id,
 
   int spdim = getSpaceDimension();
   for (int i = 0; i < spdim; i++) { coordinates_[offset + i] = ncoord[i]; }
+}
+
+
+//---------------------------------------------------------
+// Edges of type 'ptype' connected to a node
+//---------------------------------------------------------
+void
+Mesh_simple::getNodeEdges(
+  const AmanziMesh::Entity_ID nodeid,
+  AmanziMesh::View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const
+{
+  unsigned int offset = (unsigned int)7 * nodeid;
+  unsigned int nedges = node_to_edge_[offset];
+  Entity_ID_View ledgeids("ledgeids", nedges);
+
+  for (int i = 0; i < nedges; i++) ledgeids[i] = node_to_edge_[offset + i + 1];
+  edgeids = ledgeids;
 }
 
 

@@ -196,6 +196,29 @@ computeNodeCells(const Mesh_type& mesh, const Entity_ID n)
 
 
 template <class Mesh_type>
+typename Mesh_type::Entity_ID_View
+computeEdgeCells(const Mesh_type& mesh, const Entity_ID e)
+{
+  typename Mesh_type::cEntity_ID_View nodes;
+  std::vector<Entity_ID> ecells;
+
+  mesh.getEdgeNodes(e, nodes);
+  for (const auto& v : nodes) {
+    auto vcells = computeNodeCells(mesh, v);
+    for (const auto& c : vcells) {
+      if (std::find(ecells.begin(), ecells.end(), c) == ecells.end()) { ecells.emplace_back(c); }
+    }
+  }
+  typename Mesh_type::Entity_ID_View cells;
+  vectorToView(cells, ecells);
+  return cells;
+}
+
+
+//
+// Geometry algorithms
+//
+template <class Mesh_type>
 std::pair<double, AmanziGeometry::Point>
 computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
 {

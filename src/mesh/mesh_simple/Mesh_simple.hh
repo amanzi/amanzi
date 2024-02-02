@@ -86,6 +86,15 @@ class Mesh_simple : public MeshFramework {
   virtual void getEdgeNodes(const Entity_ID e,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& nodes) const override;
 
+  // backward compatilities
+  virtual void 
+  getNodeEdges(const Entity_ID nodeid,
+               View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const override;
+
+  virtual void
+  getNodeFaces(const Entity_ID nodeid,
+               View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
+
   virtual void
   getEdgeFaces(const Entity_ID edgeid,
                View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
@@ -93,10 +102,6 @@ class Mesh_simple : public MeshFramework {
 
   virtual void getFaceCells(const Entity_ID f,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& cells) const override;
-
-  virtual void
-  getNodeFaces(const Entity_ID nodeid,
-               View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const override;
 
  private:
   void CreateCache_();
@@ -128,8 +133,8 @@ class Mesh_simple : public MeshFramework {
   Entity_ID_View face_to_node_;
   Entity_ID_View edge_to_node_;
 
-  Entity_ID_View node_to_face_;
   Entity_ID_View node_to_edge_;
+  Entity_ID_View node_to_face_;
   Entity_ID_View edge_to_face_;
   Entity_ID_View face_to_cell_;
 
