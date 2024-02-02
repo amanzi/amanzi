@@ -40,7 +40,7 @@ class PK_DomainFunctionFirstOrderExchange : public FunctionBase,
                                       AmanziMesh::Entity_kind kind)
     : FunctionBase(plist),
       UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED),
-      kind_(kind) {};
+      kind_(kind){};
   virtual ~PK_DomainFunctionFirstOrderExchange() = default;
 
   // member functions

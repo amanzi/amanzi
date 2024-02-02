@@ -66,7 +66,8 @@
       <comments />
       <region name="Aquifer">
         <comments>One region comprising the entire domain</comments>
-        <region_file entity="cell" format="exodus ii" label="1" name="porflow4_4.exo" type="labeled set" />
+        <!--region_file entity="cell" format="exodus ii" label="1" name="porflow4_4.exo" type="labeled set" /-->
+        <box high_coordinates="1000.0, 1000.0" low_coordinates="0.0, 0.0"/>
       </region>
       <region name="Left side">
         <comments>left side</comments>

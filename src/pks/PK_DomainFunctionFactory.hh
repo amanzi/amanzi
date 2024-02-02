@@ -43,17 +43,17 @@ class PK_DomainFunctionFactory : public FunctionBase {
   ~PK_DomainFunctionFactory(){};
 
   Teuchos::RCP<FunctionBase> Create(Teuchos::ParameterList& plist,
-          AmanziMesh::Entity_kind kind,
-          Teuchos::RCP<const Epetra_MultiVector> weight,
-          const Tag& tag = Tags::DEFAULT,
-          bool ghosted = false);
+                                    AmanziMesh::Entity_kind kind,
+                                    Teuchos::RCP<const Epetra_MultiVector> weight,
+                                    const Tag& tag = Tags::DEFAULT,
+                                    bool ghosted = false);
 
   Teuchos::RCP<FunctionBase> Create(Teuchos::ParameterList& plist,
-          const std::string& keyword,
-          AmanziMesh::Entity_kind kind,
-          Teuchos::RCP<const Epetra_MultiVector> weight,
-          const Tag& tag = Tags::DEFAULT,
-          bool ghosted = false);
+                                    const std::string& keyword,
+                                    AmanziMesh::Entity_kind kind,
+                                    Teuchos::RCP<const Epetra_MultiVector> weight,
+                                    const Tag& tag = Tags::DEFAULT,
+                                    bool ghosted = false);
 
 
  protected:
@@ -65,11 +65,11 @@ class PK_DomainFunctionFactory : public FunctionBase {
 template <class FunctionBase>
 Teuchos::RCP<FunctionBase>
 PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
-        const std::string& keyword,
-        AmanziMesh::Entity_kind kind,
-        Teuchos::RCP<const Epetra_MultiVector> weight,
-        const Tag& tag,
-        bool ghosted)
+                                               const std::string& keyword,
+                                               AmanziMesh::Entity_kind kind,
+                                               Teuchos::RCP<const Epetra_MultiVector> weight,
+                                               const Tag& tag,
+                                               bool ghosted)
 {
   // verify completeness of the list
   Errors::Message msg;
@@ -167,10 +167,10 @@ PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
 template <class FunctionBase>
 Teuchos::RCP<FunctionBase>
 PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
-        AmanziMesh::Entity_kind kind,
-        Teuchos::RCP<const Epetra_MultiVector> weight,
-        const Tag& tag,
-        bool ghosted)
+                                               AmanziMesh::Entity_kind kind,
+                                               Teuchos::RCP<const Epetra_MultiVector> weight,
+                                               const Tag& tag,
+                                               bool ghosted)
 {
   int n(0);
   std::string keyword;

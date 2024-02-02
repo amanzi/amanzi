@@ -72,6 +72,10 @@ StateArchive::CopyFieldsToPrevFields(std::vector<std::string>& fields,
     auto name = Keys::splitKey(*it);
     std::string prev = Keys::getKey(name.first, "prev_" + name.second);
     if (S_->HasRecord(prev, tag_)) {
+      if (S_->HasEvaluator(*it, tag_)) {
+        if (S_->GetEvaluatorPtr(*it, tag_)->get_type() == EvaluatorType::SECONDARY)
+          S_->GetEvaluator(*it).Update(*S_, "archive");
+      }
       if (add) fields_.emplace(prev, S_->Get<CompositeVector>(prev));
       S_->GetW<CompositeVector>(prev, tag_, passwd) = S_->Get<CompositeVector>(*it);
     }

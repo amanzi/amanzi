@@ -231,14 +231,16 @@ MechanicsElasticity_PK::Initialize()
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
         // nodal dofs
-        auto bc = bc_factory.Create(spec, "no slip", AmanziMesh::NODE, Teuchos::null, Tags::DEFAULT, true);
+        auto bc =
+          bc_factory.Create(spec, "no slip", AmanziMesh::NODE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("no slip");
         bc->set_type(WhetStone::DOF_Type::POINT);
         bc->set_kind(AmanziMesh::NODE);
         bcs_.push_back(bc);
 
         // bubble dofs
-        auto bc2 = bc_factory.Create(spec, "no slip", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
+        auto bc2 =
+          bc_factory.Create(spec, "no slip", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
         bc2->set_bc_name("no slip");
         bc2->set_type(WhetStone::DOF_Type::POINT);
         bc2->set_kind(AmanziMesh::FACE);
@@ -256,7 +258,8 @@ MechanicsElasticity_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        auto bc = bc_factory.Create(spec, "kinematic", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
+        auto bc = bc_factory.Create(
+          spec, "kinematic", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("kinematic");
         bc->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
         bc->set_kind(AmanziMesh::FACE);
@@ -274,7 +277,8 @@ MechanicsElasticity_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        auto bc = bc_factory.Create(spec, "traction", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
+        auto bc =
+          bc_factory.Create(spec, "traction", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("traction");
         bc->set_type(WhetStone::DOF_Type::POINT);
         bc->set_kind(AmanziMesh::FACE);
@@ -292,7 +296,8 @@ MechanicsElasticity_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        auto bc = bc_factory.Create(spec, "normal traction", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
+        auto bc = bc_factory.Create(
+          spec, "normal traction", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("normal traction");
         bc->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
         bc->set_kind(AmanziMesh::FACE);

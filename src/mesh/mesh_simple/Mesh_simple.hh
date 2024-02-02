@@ -87,7 +87,7 @@ class Mesh_simple : public MeshFramework {
                             View_type<const Entity_ID, MemSpace_kind::HOST>& nodes) const override;
 
   // backward compatilities
-  virtual void 
+  virtual void
   getNodeEdges(const Entity_ID nodeid,
                View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const override;
 

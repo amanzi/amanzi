@@ -468,8 +468,8 @@ Transport_PK::Initialize()
         Teuchos::ParameterList::ConstIterator it1 = bc_list.begin();
         std::string specname = it1->first;
         Teuchos::ParameterList& spec = bc_list.sublist(specname);
-        Teuchos::RCP<TransportDomainFunction> bc =
-          factory.Create(spec, "boundary concentration", AmanziMesh::Entity_kind::FACE, Kxy, Tags::DEFAULT, true);
+        Teuchos::RCP<TransportDomainFunction> bc = factory.Create(
+          spec, "boundary concentration", AmanziMesh::Entity_kind::FACE, Kxy, Tags::DEFAULT, true);
 
         for (int i = 0; i < component_names_.size(); i++) {
           bc->tcc_names().push_back(component_names_[i]);
@@ -484,8 +484,12 @@ Transport_PK::Initialize()
           for (auto it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
             std::string specname = it1->first;
             Teuchos::ParameterList& spec = bc_list.sublist(specname);
-            Teuchos::RCP<TransportDomainFunction> bc =
-              factory.Create(spec, "boundary concentration", AmanziMesh::Entity_kind::FACE, Kxy, Tags::DEFAULT, true);
+            Teuchos::RCP<TransportDomainFunction> bc = factory.Create(spec,
+                                                                      "boundary concentration",
+                                                                      AmanziMesh::Entity_kind::FACE,
+                                                                      Kxy,
+                                                                      Tags::DEFAULT,
+                                                                      true);
 
             bc->tcc_names().push_back(name);
             bc->tcc_index().push_back(FindComponentNumber(name));
@@ -506,8 +510,8 @@ Transport_PK::Initialize()
         Teuchos::ParameterList& spec = cvlist.sublist(name);
         spec.set<Teuchos::RCP<AmanziChemistry::Chemistry_PK>>("chemical pk", chem_pk_);
 
-        Teuchos::RCP<TransportBoundaryFunction_Chemistry> bc =
-          factory2.Create(spec, "boundary constraints", AmanziMesh::Entity_kind::FACE, Kxy, Tags::DEFAULT, true);
+        Teuchos::RCP<TransportBoundaryFunction_Chemistry> bc = factory2.Create(
+          spec, "boundary constraints", AmanziMesh::Entity_kind::FACE, Kxy, Tags::DEFAULT, true);
 
         for (int i = 0; i < component_names_.size(); i++) {
           bc->tcc_names().push_back(component_names_[i]);

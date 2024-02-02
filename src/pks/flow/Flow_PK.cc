@@ -419,8 +419,12 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        bc = bc_factory.Create(
-          spec, "boundary pressure", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true);
+        bc = bc_factory.Create(spec,
+                               "boundary pressure",
+                               AmanziMesh::Entity_kind::FACE,
+                               Teuchos::null,
+                               Tags::DEFAULT,
+                               true);
         bc->set_bc_name("pressure");
         bcs_.push_back(bc);
       }
@@ -436,7 +440,8 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        bc = bc_factory.Create(spec, "static head", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true);
+        bc = bc_factory.Create(
+          spec, "static head", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("head");
         bcs_.push_back(bc);
       }
@@ -451,8 +456,12 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       if (it->second.isList()) {
         Teuchos::ParameterList spec = Teuchos::getValue<Teuchos::ParameterList>(it->second);
-        bc = bc_factory.Create(
-          spec, "outward mass flux", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true);
+        bc = bc_factory.Create(spec,
+                               "outward mass flux",
+                               AmanziMesh::Entity_kind::FACE,
+                               Teuchos::null,
+                               Tags::DEFAULT,
+                               true);
         bc->set_bc_name("flux");
         bcs_.push_back(bc);
       }
@@ -468,8 +477,12 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        bc = bc_factory.Create(
-          spec, "outward mass flux", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true);
+        bc = bc_factory.Create(spec,
+                               "outward mass flux",
+                               AmanziMesh::Entity_kind::FACE,
+                               Teuchos::null,
+                               Tags::DEFAULT,
+                               true);
         bc->set_bc_name("seepage");
         bcs_.push_back(bc);
       }
@@ -841,7 +854,8 @@ Flow_PK::DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells,
                                         Epetra_MultiVector& ufaces)
 {
   auto& fmap = ufaces.Map();
-  int nfaces = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
   for (int f = 0; f < nfaces; f++) {
     auto cells = mesh_->getFaceCells(f);

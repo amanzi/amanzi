@@ -433,6 +433,11 @@ if (ENABLE_TESTS)
                     SOURCE test/Main.cc test/operator_elasticity.cc
                     LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(operators_elasticity_weak_symmetry operators_elasticity_weak_symmetry
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_elasticity_weak_symmetry.cc
+                    LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     add_amanzi_test(operators_stokes operators_stokes
                     KIND unit
                     SOURCE test/Main.cc test/operator_stokes.cc

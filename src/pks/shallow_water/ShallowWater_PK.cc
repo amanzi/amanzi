@@ -216,7 +216,8 @@ ShallowWater_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        bc = bc_factory.Create(spec, "velocity", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true);
+        bc = bc_factory.Create(
+          spec, "velocity", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("velocity");
         bc->set_type(WhetStone::DOF_Type::VECTOR);
         bcs_.push_back(bc);
@@ -234,7 +235,8 @@ ShallowWater_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        bc = bc_factory.Create(spec, "ponded depth", AmanziMesh::Entity_kind::NODE, Teuchos::null, Tags::DEFAULT, true);
+        bc = bc_factory.Create(
+          spec, "ponded depth", AmanziMesh::Entity_kind::NODE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("ponded depth");
         bc->set_type(WhetStone::DOF_Type::SCALAR);
         bcs_.push_back(bc);

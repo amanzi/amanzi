@@ -33,8 +33,8 @@ class UniqueMeshFunction : public MeshFunction {
   // Constructor
   UniqueMeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                      AmanziMesh::Parallel_kind parallel_kind)
-    : MeshFunction(mesh),
-      parallel_kind_(parallel_kind) {}
+    : MeshFunction(mesh), parallel_kind_(parallel_kind)
+  {}
 
   // Overload the AddSpec method to check uniqueness.
   virtual void AddSpec(const Teuchos::RCP<Spec>& spec);
