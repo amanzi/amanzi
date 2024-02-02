@@ -155,6 +155,7 @@ class Alquimia_PK : public Chemistry_PK {
   // Auxiliary output data, requested by and stored within Amanzi.
   std::vector<std::string> aux_names_;
   std::vector<std::vector<std::string>> aux_subfield_names_;
+  std::vector<std::string> alq_extra_props_;
   Teuchos::RCP<Epetra_MultiVector> aux_output_;
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
 

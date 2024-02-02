@@ -124,6 +124,23 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   comp_names_.clear();
   chem_engine_->GetPrimarySpeciesNames(comp_names_);
 
+  // grab the extra properties names
+  alq_extra_props_.clear();
+  chem_engine_->GetExtraPropertiesNames(alq_extra_props_);
+  // -- enforce that these are prefixed with the right domain name to allow for visualization
+  for (auto& extra_prop_name : alq_extra_props_) {
+    auto extra_prop_domain = Keys::getDomain(extra_prop_domain);
+    if (extra_prop_domain == "") {
+      // if no domain is provided, use our domain
+      extra_prop_name = Keys::getKey(domain_, extra_prop_domain);
+    } else if (extra_prop_domain != domain_) {
+      // if a domain is provided and it doesn't match, throw an error
+      Errors::Message msg;
+      msg << "Alquimia_PK on domain \"" << domain << "\" was requested by the chemistry engine to provide an extra property named \"" << extra_prop_name << "\" which does not follow the naming convention for this domain.";
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+
   number_aqueous_components_ = comp_names_.size();
   number_free_ion_ = number_aqueous_components_;
   number_total_sorbed_ = number_aqueous_components_;
@@ -208,6 +225,15 @@ Alquimia_PK::Setup()
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, num_aux_data);
 
     S_->GetRecordW(alquimia_aux_data_key_, tag_next_, passwd_).set_io_vis(false);
+  }
+
+  // Set up the extra property data and evaluator
+  for (auto extra_prop : alq_extra_props_) {
+    S_->Require<CompositeVector,CompositeVectorSpace>(alq_extra_props_, tag_current_)
+      .SetMesh(mesh_)
+      ->SetGhosted(false)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    S_->RequireEvaluator(alq_extra_props_, tag_current_);
   }
 }
 
@@ -672,6 +698,18 @@ Alquimia_PK::CopyToAlquimia(int cell,
       mat_props.aqueous_kinetic_rate_cnst.data[i] = aqueous_kinetics_rate[i][cell];
     }
   }
+
+  // extra properties
+  int count = 0;
+  for (const auto& extra_prop : alq_extra_props_) {
+    // Note, this is somewhat memory inefficient -- if needed, we could grab
+    // and temporarily store raw pointers to all the Epetra_MultiVectors to
+    // make for faster access, rather than do the Get<>().ViewComponent("cell")
+    // in the inner loop over grid cells.  Avoiding premature optimization for
+    // now.  --ETC
+    mat_props.extra_properties.data[count++] =
+      (*S_->Get<CompositeVector>(extra_prop, tag_current_).ViewComponent("cell"))[0][cell];
+  }
 }
 
 
@@ -894,6 +932,11 @@ Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   S_->GetEvaluator(poro_key_, Tags::DEFAULT).Update(*S_, name_);
   S_->GetEvaluator(fluid_den_key_, Tags::DEFAULT).Update(*S_, name_);
   S_->GetEvaluator(saturation_key_, Tags::DEFAULT).Update(*S_, name_);
+
+  // extra property dependencies
+  for (const auto& extra_prop : alq_extra_props_) {
+    S_->GetEvaluator(extra_prop, tag_current_).Update(*S_, name_);
+  }
 
   // Now loop through all the cells and advance the chemistry.
   int convergence_failure = 0;
