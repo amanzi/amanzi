@@ -171,10 +171,8 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
   Teuchos::RCP<VolumetricStrainEvaluator> eval_vol_strain_;
 
   // solvers
-  Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_;
-  Teuchos::RCP<Matrix<CompositeVector, CompositeVectorSpace>> op_pc_solver_;
-  Teuchos::RCP<Operators::PDE_Elasticity> op_matrix_elas_, op_preconditioner_elas_;
-  std::string solver_name_;
+  Teuchos::RCP<Operators::Operator> op_matrix_;
+  Teuchos::RCP<Operators::PDE_Elasticity> op_matrix_elas_;
 
  private:
   std::string passwd_;

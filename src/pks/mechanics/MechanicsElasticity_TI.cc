@@ -57,8 +57,7 @@ MechanicsElasticity_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
                                             Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
-  // return op_preconditioner_->ApplyInverse(*X->Data(), *Y->Data());
-  return op_pc_solver_->ApplyInverse(*X->Data(), *Y->Data());
+  return op_matrix_->ApplyInverse(*X->Data(), *Y->Data());
 }
 
 
@@ -70,27 +69,15 @@ MechanicsElasticity_PK::UpdatePreconditioner(double tp,
                                              Teuchos::RCP<const TreeVector> u,
                                              double dtp)
 {
-  double t_old = tp - dtp;
-  // Teuchos::RCP<const CompositeVector> uu = u->SubVector(0)->Data();
-
-  // refresh data
-  UpdateSourceBoundaryData_(t_old, tp);
-
-  // populate elastic operator
-  auto global_op = op_preconditioner_elas_->global_operator();
-  global_op->Init();
-  op_preconditioner_elas_->UpdateMatrices();
-  op_preconditioner_elas_->ApplyBCs(true, true, true);
-
-  // -- force component-wise coarsening
+  // force component-wise coarsening
   /*
   auto block_indices = Teuchos::rcp(new std::vector<int>(nnodes_owned_ * dim_));
   for (int n = 0; n < nnodes_owned_ * dim_; ++n) (*block_indices)[n] = n % dim_;
   auto block_ids = std::make_pair(dim_, block_indices);
-  op_preconditioner_elas_->global_operator()->set_coloring(dim_, block_indices);
+  op_matrix_->set_coloring(dim_, block_indices);
   */
 
-  op_preconditioner_->ComputeInverse();
+  op_matrix_->ComputeInverse();
 }
 
 

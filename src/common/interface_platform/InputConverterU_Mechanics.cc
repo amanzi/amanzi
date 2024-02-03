@@ -84,7 +84,7 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
                                                                    nonlinear_solver,
                                                                    modify_correction,
                                                                    unstr_controls,
-                                                                   TI_SOLVER,
+                                                                   "PCG for elasticity",
                                                                    TI_TS_REDUCTION_FACTOR,
                                                                    TI_TS_INCREASE_FACTOR);
   }

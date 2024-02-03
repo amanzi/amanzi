@@ -70,14 +70,7 @@ TEST(HYDROSTATIC_STRESS)
   // solve the problem
   double dT = plist->get<double>("initial time step", 1.0);
 
-  Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
-  udot->PutScalar(0.0);
-  MPK->bdf1_dae()->SetInitialState(0.0, soln, udot);
-  MPK->UpdatePreconditioner(0.0, soln, dT);
-
-  MPK->bdf1_dae()->TimeStep(dT, dT, soln);
-  MPK->bdf1_dae()->CommitSolution(dT, soln);
-
+  MPK->AdvanceStep(0.0, dT);
   MPK->CommitStep(0.0, dT, Tags::DEFAULT);
 
   // initialize I/O

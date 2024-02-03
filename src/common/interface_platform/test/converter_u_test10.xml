@@ -54,7 +54,12 @@
       </unstr_transient_controls>
 
       <unstr_mechanics_controls>
-        <algorithm>explicit second-order</algorithm>
+        <elasticity_linear_solver>
+          <method>pcg</method>
+          <max_iterations>400</max_iterations>
+          <tolerance>1.0e-8</tolerance>
+          <convergence_criteria>relative residual,relative rhs,make one iteration</convergence_criteria>
+        </elasticity_linear_solver>
       </unstr_mechanics_controls>
     </unstructured_controls>
   </numerical_controls>
