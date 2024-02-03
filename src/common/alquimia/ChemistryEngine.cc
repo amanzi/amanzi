@@ -317,6 +317,16 @@ ChemistryEngine::GetAuxiliaryOutputNames(
   }
 }
 
+void
+ChemistryEngine::GetExtraPropertiesNames(std::vector<std::string>& extra_prop_names) const
+{
+  const AlquimiaProblemMetaData* metadata = &chem_metadata_;
+  int N = metadata->extra_prop_names.size;
+  extra_prop_names.resize(N);
+  for (int i = 0; i < N; ++i) extra_prop_names[i] = std::string(metadata->extra_prop_names.data[i]);
+}
+
+
 int
 ChemistryEngine::NumAqueousKinetics() const
 {

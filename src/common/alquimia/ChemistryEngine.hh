@@ -73,6 +73,7 @@ class ChemistryEngine {
   int NumFreeIonSpecies() const;
   void GetAuxiliaryOutputNames(std::vector<std::string>& aux_names,
                                std::vector<std::vector<std::string>>& subfield_names) const;
+  void GetExtraPropertiesNames(std::vector<std::string>& extra_prop_names) const;
   int NumAqueousKinetics() const;
   void GetAqueousKineticNames(std::vector<std::string>& kinetics_names) const;
 
