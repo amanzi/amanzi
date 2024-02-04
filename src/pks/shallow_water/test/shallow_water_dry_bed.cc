@@ -176,10 +176,10 @@ RunTest(int icase)
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
+  dry_bed_setIC(mesh, S, icase);
+
   S->set_time(0.0);
   SWPK.Initialize();
-
-  dry_bed_setIC(mesh, S, icase);
   S->CheckAllFieldsInitialized();
 
   const auto& hh = *S->Get<CompositeVector>("surface-ponded_depth").ViewComponent("cell");
