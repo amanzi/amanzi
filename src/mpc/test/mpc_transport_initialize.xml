@@ -1,16 +1,6 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
-  <ParameterList name="checkpoint data">
-    <Parameter name="file name base" type="string" value="chk_transport"/>
-    <Parameter name="file name digits" type="int" value="5"/>
-    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
-  </ParameterList>
-  <ParameterList name="visualization data">
-    <Parameter name="file name base" type="string" value="plot_transport"/>
-    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
-  </ParameterList>
-
   <ParameterList name="regions">
     <ParameterList name="Computational domain">
       <ParameterList name="region: labeled set">
@@ -79,6 +69,7 @@
   </ParameterList>
 
   <ParameterList name="state">
+    <Parameter name="initialization filename" type="string" value="chk_transport_final.h5"/>
     <ParameterList name="evaluators">
       <ParameterList name="porosity">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
@@ -157,28 +148,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="total_component_concentration">
-        <ParameterList name="function">
-          <ParameterList name="Computational domain">
-            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <Parameter name="number of dofs" type="int" value="2"/>
-              <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="dof 1 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="dof 2 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
       <ParameterList name="volumetric_flow_rate">
         <Parameter name="dot with normal" type="bool" value="true"/>
         <ParameterList name="function">
@@ -220,6 +189,9 @@
       <ParameterList name="materials">
         <Parameter name="region list" type="Array(string)" value="{Computational domain}"/>
       </ParameterList>
+    </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
 

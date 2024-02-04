@@ -627,7 +627,7 @@ Transport_PK::Initialize()
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Number of components: " << tcc->size() << std::endl
+    *vo_->os() << "Number of components: " << component_names_.size() << std::endl
                << "cfl=" << cfl_ << " spatial/temporal discretization: " << spatial_disc_order
                << " " << temporal_disc_order << std::endl
                << "using transport porosity: " << use_transport_porosity_ << std::endl;
