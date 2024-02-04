@@ -307,20 +307,12 @@ MechanicsElasticity_PK::Initialize()
 
   // Populate matrix and preconditioner
   // -- setup phase
-  double E = (*S_->Get<CV_t>(young_modulus_key_, Tags::DEFAULT).ViewComponent("cell"))[0][0];
-  double nu = (*S_->Get<CV_t>(poisson_ratio_key_, Tags::DEFAULT).ViewComponent("cell"))[0][0];
-  double mu = E / (2 * (1 + nu));
-  double lambda = (dim_ == 3) ? E * nu / (1 + nu) / (1 - 2 * nu) : E * nu / (1 + nu) / (1 - nu);
-
-  Amanzi::WhetStone::Tensor K(dim_, 4);
-  for (int i = 0; i < dim_ * dim_; ++i) K(i, i) = 2 * mu;
-  for (int i = 0; i < dim_; ++i) {
-    for (int j = 0; j < dim_; ++j) K(i, j) += lambda;
-  }
+  const auto E = S_->GetPtr<CV_t>(young_modulus_key_, Tags::DEFAULT);
+  const auto nu = S_->GetPtr<CV_t>(poisson_ratio_key_, Tags::DEFAULT);
 
   op_matrix_ = op_matrix_elas_->global_operator();
   op_matrix_->Init();
-  op_matrix_elas_->SetTensorCoefficient(K);
+  op_matrix_elas_->SetTensorCoefficient(E, nu);
 
   // -- initialize boundary conditions (memory allocation)
   auto bc = Teuchos::rcp(

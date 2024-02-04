@@ -78,7 +78,7 @@ TEST(ELASTIC_2D)
     std::cout << "Cycle #" << itrs << std::endl;
     EPK->AdvanceStep(T, T + dT);
     EPK->CommitStep(T, T + dT, Tags::DEFAULT);
- 
+
     T += dT;
     dT *= 1.2;
     itrs++;

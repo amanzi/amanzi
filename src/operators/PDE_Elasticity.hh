@@ -74,6 +74,8 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   // -- setup
   void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K);
   void SetTensorCoefficient(const WhetStone::Tensor& K);
+  void SetTensorCoefficient(const Teuchos::RCP<const CompositeVector>& E,
+                            const Teuchos::RCP<const CompositeVector>& nu);
 
   // -- creation of an operator
   using PDE_HelperDiscretization::UpdateMatrices;
@@ -102,6 +104,7 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
 
  protected:
   void Init_(Teuchos::ParameterList& plist);
+  WhetStone::Tensor computeElasticityTensor_(int c);
 
  private:
   void ApplyBCs_Kinematic_(const BCs& bc, bool primary, bool eliminate, bool essential_eqn);
@@ -111,6 +114,7 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K_;
   WhetStone::Tensor K_default_;
+  Teuchos::RCP<const CompositeVector> E_, nu_;
 
   Teuchos::RCP<WhetStone::BilinearForm> mfd_;
   AmanziMesh::Entity_kind base_;

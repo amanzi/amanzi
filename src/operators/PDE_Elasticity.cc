@@ -45,6 +45,9 @@ PDE_Elasticity::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::T
 {
   K_ = K;
   K_default_.Init(1, 1);
+
+  E_ = Teuchos::null;
+  nu_ = Teuchos::null;
 }
 
 void
@@ -52,6 +55,20 @@ PDE_Elasticity::SetTensorCoefficient(const WhetStone::Tensor& K)
 {
   K_ = Teuchos::null;
   K_default_ = K;
+
+  E_ = Teuchos::null;
+  nu_ = Teuchos::null;
+}
+
+void
+PDE_Elasticity::SetTensorCoefficient(const Teuchos::RCP<const CompositeVector>& E,
+                                     const Teuchos::RCP<const CompositeVector>& nu)
+{
+  E_ = E;
+  nu_ = nu;
+
+  K_ = Teuchos::null;
+  K_default_.Init(1, 1);
 }
 
 
@@ -67,7 +84,12 @@ PDE_Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
   WhetStone::Tensor Kc(K_default_);
 
   for (int c = 0; c < ncells_owned; c++) {
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get()) {
+      Kc = (*K_)[c];
+    } else if (E_.get() && nu_.get()) {
+      Kc = computeElasticityTensor_(c);
+    }
+
     mfd_->StiffnessMatrix(c, Kc, Acell);
     local_op_->matrices[c] = Acell;
   }
@@ -122,7 +144,11 @@ PDE_Elasticity::ComputeHydrostaticStress(const CompositeVector& u, CompositeVect
 
     mfd3d->H1Cell(c, dofs, Tc);
 
-    if (K_.get()) Kc = (*K_)[c];
+    if (K_.get()) {
+      Kc = (*K_)[c];
+    } else if (E_.get() && nu_.get()) {
+      Kc = computeElasticityTensor_(c);
+    }
     WhetStone::Tensor TKc = Kc * Tc;
 
     for (int k = 0; k < d; ++k) p_c[0][c] += TKc(k, k);
@@ -416,6 +442,29 @@ PDE_Elasticity::ApplyBCs_Kinematic_(const BCs& bc, bool primary, bool eliminate,
   }
 
   rhs->GatherGhostedToMaster(Add);
+}
+
+
+/* ******************************************************************
+* Supporting function
+****************************************************************** */
+WhetStone::Tensor
+PDE_Elasticity::computeElasticityTensor_(int c)
+{
+  int d = mesh_->getSpaceDimension();
+  double E, nu, mu, lambda;
+
+  E = (*E_->ViewComponent("cell"))[0][c];
+  nu = (*nu_->ViewComponent("cell"))[0][c];
+  mu = E / (2 * (1 + nu));
+  lambda = (d == 3) ? E * nu / (1 + nu) / (1 - 2 * nu) : E * nu / (1 + nu) / (1 - nu);
+
+  Amanzi::WhetStone::Tensor Kc(d, 4);
+  for (int i = 0; i < d * d; ++i) Kc(i, i) = 2 * mu;
+  for (int i = 0; i < d; ++i) {
+    for (int j = 0; j < d; ++j) Kc(i, j) += lambda;
+  }
+  return Kc;
 }
 
 } // namespace Operators
