@@ -37,24 +37,17 @@ struct test_cv {
 
   test_cv()
   {
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    MeshFactory mesh_fact(comm);
-    mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+    comm = Amanzi::getDefaultComm();
+    MeshFactory mesh_factory(comm);
+    mesh_factory.set_preference(Preference({ Framework::MSTK }));
+    mesh = mesh_factory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
-    std::vector<Entity_kind> locations(2);
-    locations[0] = CELL;
-    locations[1] = FACE;
-
-    std::vector<std::string> names(2);
-    names[0] = "cell";
-    names[1] = "face";
-
-    std::vector<int> num_dofs(2);
-    num_dofs[0] = 2;
-    num_dofs[1] = 1;
-
-    x = Teuchos::rcp(new CompositeVector(mesh, names, locations, num_dofs, true));
-    //    x2 = Teuchos::rcp(new CompositeVector(mesh, CELL, 1, true));
+    CompositeVectorSpace cvs;
+    cvs.SetMesh(mesh)
+      ->SetGhosted(true)
+      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 2);
+    x = Teuchos::rcp(new CompositeVector(cvs));
   }
   ~test_cv() {}
 };
@@ -63,7 +56,6 @@ SUITE(COMPOSITE_VECTOR)
 {
   TEST_FIXTURE(test_cv, CVAccessTiming)
   {
-    x->CreateData();
     x->PutScalar(2.0);
 
     Teuchos::RCP<Teuchos::Time> cvtime =

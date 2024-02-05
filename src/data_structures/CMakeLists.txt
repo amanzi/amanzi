@@ -128,16 +128,14 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/data_structures_supermap_block.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
-    # add_amanzi_test(data_structures_matrix_fe_speed data_structures_matrix_fe_speed
-    #                 KIND unit
-    # 	              SOURCE test/Main.cc test/data_structures_matrix_fe_speed.cc
-    # 	              LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(data_structures_matrix_fe_speed data_structures_matrix_fe_speed
+                    KIND unit
+                    NPROCS 4
+                    SOURCE test/Main.cc test/data_structures_matrix_fe_speed.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    # add_amanzi_test(data_structures_access data_structures_access_times
-    #                 KIND int
-    #		      SOURCE test/Main.cc test/data_structures_cv_access.cc
-    #		      LINK_LIBS data_structures mesh
-    #	                        geometry mesh_factory
-    #                           simple_mesh
-    #	                        ${UnitTest_LIBRARIES})
+    add_amanzi_test(data_structures_access data_structures_access_times
+                    KIND int
+                    SOURCE test/Main.cc test/data_structures_cv_access.cc
+    	            LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()

@@ -62,7 +62,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs)
 
   // create a mesh
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
+  auto gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
   Preference pref;
   pref.clear();
@@ -71,28 +71,25 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs)
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
-  //Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  Teuchos::RCP<Epetra_Map> cell_map = Teuchos::rcp(new Epetra_Map(mesh->cell_map(false)));
-  Teuchos::RCP<Epetra_Map> cell_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->cell_map(true)));
+  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  auto cell_map = Teuchos::rcp(new Epetra_Map(mesh->getMap(Entity_kind::CELL, false)));
+  auto cell_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->getMap(Entity_kind::CELL, true)));
 
   // create the graph
   int ierr(0);
   Teuchos::RCP<GraphFE> graph =
     Teuchos::rcp(new GraphFE(cell_map, cell_map_ghosted, cell_map_ghosted, 5));
 
-  Entity_ID_View faces;
-  Entity_ID_View face_cells;
   std::vector<int> neighbor_cells;
   for (int c = 0; c != ncells; ++c) {
     neighbor_cells.resize(0);
     neighbor_cells.push_back(c);
 
-    mesh->cell_get_faces(c, &faces);
+    const auto& faces = mesh->getCellFaces(c);
     for (int n = 0; n != faces.size(); ++n) {
-      mesh->face_get_cells(faces[n], AmanziMesh::Parallel_kind::ALL, &face_cells);
+      const auto& face_cells = mesh->getFaceCells(faces[n]);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
       }
@@ -113,9 +110,9 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs)
       neighbor_cells.resize(0);
       neighbor_cells.push_back(c);
 
-      mesh->cell_get_faces(c, &faces);
+      const auto& faces = mesh->getCellFaces(c);
       for (int n = 0; n != faces.size(); ++n) {
-        mesh->face_get_cells(faces[n], AmanziMesh::Parallel_kind::ALL, &face_cells);
+        const auto face_cells = mesh->getFaceCells(faces[n]);
         if (face_cells.size() > 1) {
           neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
         }
@@ -149,7 +146,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal)
   auto comm = getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: FD like matrix, null off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
@@ -161,7 +158,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal)
 
   // create a mesh
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
+  auto gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
   Preference pref;
   pref.clear();
@@ -170,28 +167,25 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal)
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  Teuchos::RCP<Epetra_Map> cell_map = Teuchos::rcp(new Epetra_Map(mesh->cell_map(false)));
-  Teuchos::RCP<Epetra_Map> cell_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->cell_map(true)));
+  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  auto cell_map = Teuchos::rcp(new Epetra_Map(mesh->getMap(Entity_kind::CELL, false)));
+  auto cell_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->getMap(Entity_kind::CELL, true)));
 
   // create the graph
   int ierr(0);
   Teuchos::RCP<Epetra_FECrsGraph> graph =
     Teuchos::rcp(new Epetra_FECrsGraph(Copy, *cell_map, *cell_map_ghosted, 5, false, true));
 
-  Entity_ID_View faces;
-  Entity_ID_View face_cells;
   std::vector<int> neighbor_cells;
   for (int c = 0; c != ncells; ++c) {
     neighbor_cells.resize(0);
     neighbor_cells.push_back(c);
 
-    mesh->cell_get_faces(c, &faces);
+    const auto& faces = mesh->getCellFaces(c);
     for (int n = 0; n != faces.size(); ++n) {
-      mesh->face_get_cells(faces[n], AmanziMesh::Parallel_kind::ALL, &face_cells);
+      const auto& face_cells = mesh->getFaceCells(faces[n]);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
       }
@@ -219,9 +213,9 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal)
       neighbor_cells.resize(0);
       neighbor_cells.push_back(c);
 
-      mesh->cell_get_faces(c, &faces);
+      const auto& faces = mesh->getCellFaces(c);
       for (int n = 0; n != faces.size(); ++n) {
-        mesh->face_get_cells(faces[n], AmanziMesh::Parallel_kind::ALL, &face_cells);
+        const auto& face_cells = mesh->getFaceCells(faces[n]);
         if (face_cells.size() > 1) {
           neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
         }
@@ -255,7 +249,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE)
   auto comm = getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: FD like matrix, null off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
@@ -267,7 +261,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE)
 
   // create a mesh
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
+  auto gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
   Preference pref;
   pref.clear();
@@ -276,28 +270,25 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE)
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  Teuchos::RCP<Epetra_Map> cell_map = Teuchos::rcp(new Epetra_Map(mesh->cell_map(false)));
-  Teuchos::RCP<Epetra_Map> cell_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->cell_map(true)));
+  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  auto cell_map = Teuchos::rcp(new Epetra_Map(mesh->getMap(Entity_kind::CELL, false)));
+  auto cell_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->getMap(Entity_kind::CELL, true)));
 
   // create the graph
   int ierr(0);
   Teuchos::RCP<GraphFE> graph =
     Teuchos::rcp(new GraphFE(cell_map, cell_map_ghosted, cell_map_ghosted, 5));
 
-  Entity_ID_View faces;
-  Entity_ID_View face_cells;
   std::vector<int> neighbor_cells;
   for (int c = 0; c != ncells; ++c) {
     neighbor_cells.resize(0);
     neighbor_cells.push_back(c);
 
-    mesh->cell_get_faces(c, &faces);
+    const auto& faces = mesh->getCellFaces(c);
     for (int n = 0; n != faces.size(); ++n) {
-      mesh->face_get_cells(faces[n], AmanziMesh::Parallel_kind::ALL, &face_cells);
+      const auto& face_cells = mesh->getFaceCells(faces[n]);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
       }
@@ -319,9 +310,9 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE)
       neighbor_cells.resize(0);
       neighbor_cells.push_back(c);
 
-      mesh->cell_get_faces(c, &faces);
+      const auto& faces = mesh->getCellFaces(c);
       for (int n = 0; n != faces.size(); ++n) {
-        mesh->face_get_cells(faces[n], AmanziMesh::Parallel_kind::ALL, &face_cells);
+        const auto& face_cells = mesh->getFaceCells(faces[n]);
         if (face_cells.size() > 1) {
           neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
         }
@@ -348,7 +339,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2)
   auto comm = getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: FE like matrix, off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
@@ -360,7 +351,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2)
 
   // create a mesh
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
+  auto gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
   Preference pref;
   pref.clear();
@@ -369,25 +360,25 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2)
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  Teuchos::RCP<Epetra_Map> face_map = Teuchos::rcp(new Epetra_Map(mesh->face_map(false)));
-  Teuchos::RCP<Epetra_Map> face_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->face_map(true)));
+  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  auto face_map = Teuchos::rcp(new Epetra_Map(mesh->getMap(Entity_kind::FACE, false)));
+  auto face_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->getMap(Entity_kind::FACE, true)));
 
   // create the graph
   int ierr(0);
   Teuchos::RCP<GraphFE> graph =
     Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 5));
 
-  Entity_ID_View faces;
-  Entity_ID_View face_cells;
   for (int c = 0; c != ncells; ++c) {
-    mesh->cell_get_faces(c, &faces);
+    const auto& faces = mesh->getCellFaces(c);
+
+    std::vector<int> faces_tmp;
+    for (int n = 0; n != faces.size(); ++n) faces_tmp.push_back(faces[n]);
 
     for (int n = 0; n != faces.size(); ++n) {
-      ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces[0]);
+      ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces_tmp[0]);
       CHECK(!ierr);
     }
   }
@@ -401,7 +392,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2)
   {
     Teuchos::TimeMonitor monitor(*timer);
     for (int c = 0; c != ncells; ++c) {
-      mesh->cell_get_faces(c, &faces);
+      const auto& faces = mesh->getCellFaces(c);
       Epetra_IntSerialDenseVector face_gids(faces.size());
       for (int n = 0; n != faces.size(); ++n) { face_gids[n] = face_map_ghosted->GID(faces[n]); }
 
@@ -423,7 +414,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2)
   auto comm = getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: FE like matrix, off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
@@ -436,7 +427,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2)
 
   // create a mesh
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
+  auto gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
   Preference pref;
   pref.clear();
@@ -445,21 +436,20 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2)
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
+  // Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  Teuchos::RCP<Epetra_Map> face_map = Teuchos::rcp(new Epetra_Map(mesh->face_map(false)));
-  Teuchos::RCP<Epetra_Map> face_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->face_map(true)));
+  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  auto face_map = Teuchos::rcp(new Epetra_Map(mesh->getMap(Entity_kind::FACE, false)));
+  auto face_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->getMap(Entity_kind::FACE, true)));
 
   // create the graph
   int ierr(0);
   Teuchos::RCP<Epetra_FECrsGraph> graph =
     Teuchos::rcp(new Epetra_FECrsGraph(Copy, *face_map, *face_map_ghosted, 8, false, true));
 
-  Entity_ID_View faces;
   for (int c = 0; c != ncells; ++c) {
-    mesh->cell_get_faces(c, &faces);
+    const auto& faces = mesh->getCellFaces(c);
 
     std::vector<int> face_gids(faces.size());
     for (int n = 0; n != faces.size(); ++n) face_gids[n] = face_map_ghosted->GID(faces[n]);
@@ -478,7 +468,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2)
   {
     Teuchos::TimeMonitor monitor(*timer);
     for (int c = 0; c != ncells; ++c) {
-      mesh->cell_get_faces(c, &faces);
+      const auto& faces = mesh->getCellFaces(c);
       Epetra_IntSerialDenseVector face_gids(faces.size());
       for (int n = 0; n != faces.size(); ++n) { face_gids[n] = face_map_ghosted->GID(faces[n]); }
 
@@ -501,7 +491,7 @@ TEST(FE_MATRIX_FACE_FACE_MatrixFE2)
   auto comm = getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: FE like matrix, off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
@@ -513,7 +503,7 @@ TEST(FE_MATRIX_FACE_FACE_MatrixFE2)
 
   // create a mesh
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
+  auto gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
   Preference pref;
   pref.clear();
@@ -522,25 +512,26 @@ TEST(FE_MATRIX_FACE_FACE_MatrixFE2)
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  Teuchos::RCP<Epetra_Map> face_map = Teuchos::rcp(new Epetra_Map(mesh->face_map(false)));
-  Teuchos::RCP<Epetra_Map> face_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->face_map(true)));
+  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  auto face_map = Teuchos::rcp(new Epetra_Map(mesh->getMap(Entity_kind::FACE, false)));
+  auto face_map_ghosted = Teuchos::rcp(new Epetra_Map(mesh->getMap(Entity_kind::FACE, true)));
 
   // create the graph
   int ierr(0);
   Teuchos::RCP<GraphFE> graph =
     Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 5));
 
-  Entity_ID_View faces;
   Entity_ID_View face_cells;
   for (int c = 0; c != ncells; ++c) {
-    mesh->cell_get_faces(c, &faces);
+    const auto& faces = mesh->getCellFaces(c);
+
+    std::vector<int> faces_tmp;
+    for (int n = 0; n != faces.size(); ++n) faces_tmp.push_back(faces[n]);
 
     for (int n = 0; n != faces.size(); ++n) {
-      ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces[0]);
+      ierr |= graph->InsertMyIndices(faces[n], faces.size(), &faces_tmp[0]);
       CHECK(!ierr);
     }
   }
@@ -555,7 +546,7 @@ TEST(FE_MATRIX_FACE_FACE_MatrixFE2)
     Teuchos::TimeMonitor monitor(*timer);
 
     for (int c = 0; c != ncells; ++c) {
-      mesh->cell_get_faces(c, &faces);
+      const auto& faces = mesh->getCellFaces(c);
 
       Epetra_SerialDenseMatrix vals(faces.size(), faces.size());
       ierr |= matrix.SumIntoMyValues(&faces[0], vals);
