@@ -793,7 +793,13 @@ ShallowWater_PK::NumericalSourceBedSlope(int c, double htc, double Bc,
 double
 ShallowWater_PK::get_dt()
 {
+
+  ComputeCellArrays();
+  int dir;
   double d, d_min = 1.e10, vn, dt = 1.e10, dt_dry = 1.e-1;
+  double h, vx, vy;
+  double vnMax = 0.0;
+  double hMax = 0.0;
 
   const auto& h_c = *S_->Get<CV_t>(primary_variable_key_).ViewComponent("cell", true);
   const auto& vel_c = *S_->Get<CV_t>(velocity_key_).ViewComponent("cell", true);
@@ -801,7 +807,41 @@ ShallowWater_PK::get_dt()
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   AmanziMesh::Entity_ID_List cfaces;
 
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int cell = 0; cell < model_cells_owned_.size(); cell++) {
+    int c = model_cells_owned_[cell];
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+
+    mesh_->cell_get_faces(c, &cfaces);
+
+    for (int n = 0; n < cfaces.size(); ++n) {
+      int f = cfaces[n];
+      bool skipFace = false;
+      double farea = mesh_->face_area(f);
+      const auto& xf = mesh_->face_centroid(f);
+      AmanziGeometry::Point normal = mesh_->face_normal(f, false, c, &dir);
+      normal /= farea;
+      ProjectNormalOntoMeshDirection(c, normal);
+      SkipFace(normal, skipFace);
+
+      if(!skipFace){
+         h = h_c[0][c];
+         vx = vel_c[0][c];
+         vy = vel_c[1][c];
+
+         // computing local (cell, face) time step using Kurganov's estimate d / (2a)
+         vn = (vx * normal[0] + vy * normal[1]);
+         d = norm(xc - xf);
+         d_min = std::min(d_min, d);
+
+         dt = std::min(d / std::max((2.0 * (std::abs(vn) + std::sqrt(g_ * h))), 1.e-12), dt);
+         vnMax = std::max(std::abs(vn), vnMax);
+         hMax = std::max(h, hMax);
+     }
+    }
+  }
+
+  for (int cell = 0; cell < junction_cells_owned_.size(); cell++) {
+    int c = model_cells_owned_[cell];
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
     mesh_->cell_get_faces(c, &cfaces);
@@ -810,14 +850,15 @@ ShallowWater_PK::get_dt()
       int f = cfaces[n];
       double farea = mesh_->face_area(f);
       const auto& xf = mesh_->face_centroid(f);
-      const auto& normal = mesh_->face_normal(f);
+      AmanziGeometry::Point normal = mesh_->face_normal(f, false, c, &dir);
+      normal /= farea;
 
-      double h = h_c[0][c];
-      double vx = vel_c[0][c];
-      double vy = vel_c[1][c];
+      h = h_c[0][c];
+      vx = vel_c[0][c];
+      vy = vel_c[1][c];
 
       // computing local (cell, face) time step using Kurganov's estimate d / (2a)
-      vn = (vx * normal[0] + vy * normal[1]) / farea;
+      vn = (vx * normal[0] + vy * normal[1]);
       d = norm(xc - xf);
       d_min = std::min(d_min, d);
 
@@ -831,9 +872,10 @@ ShallowWater_PK::get_dt()
   double dt_min;
   mesh_->get_comm()->MinAll(&dt, &dt_min, 1);
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "stable dt=" << dt_min << ", cfl=" << cfl_ << std::endl;
+    *vo_->os() << "stable dt = " << dt_min << ", cfl = " << cfl_ << std::endl;
+    *vo_->os() << "max abs vel normal to face = " << vnMax << ", max primary variable = " << hMax << std::endl;
   }
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH && iters_ == max_iters_) {
