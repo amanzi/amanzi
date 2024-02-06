@@ -147,7 +147,7 @@ EnergyOnePhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
         auto dRdT = Teuchos::rcp(new CompositeVector(S_->GetDerivative<CompositeVector>(
           mol_density_liquid_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT)));
 
-        const auto& H_l = S_->Get<CompositeVector>(mol_density_liquid_key_);
+        const auto& H_l = S_->Get<CompositeVector>(enthalpy_key_);
         dRdT->Multiply(1.0, *dRdT, H_l, 0.0);
         dHdT->Update(1.0, *dRdT, 1.0);
       }

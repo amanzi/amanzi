@@ -232,7 +232,7 @@
             <ParameterList name="IEM parameters">
               <Parameter name="iem type" type="string" value="linear"/>
               <Parameter name="molar heat capacity" type="double" value="75.2"/>
-              <Parameter name="reference temperature" type="double" value="290.0"/>
+              <Parameter name="reference temperature" type="double" value="273.13"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -249,7 +249,7 @@
             <ParameterList name="IEM parameters">
               <Parameter name="iem type" type="string" value="linear"/>
               <Parameter name="molar heat capacity" type="double" value="75.2"/>
-              <Parameter name="reference temperature" type="double" value="290.0"/>
+              <Parameter name="reference temperature" type="double" value="273.15"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>

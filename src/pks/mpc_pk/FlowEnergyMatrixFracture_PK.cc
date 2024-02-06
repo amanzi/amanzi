@@ -595,16 +595,16 @@ FlowEnergyMatrixFracture_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   // residual control for energy (note that we cannot do it at
   // the lower level due to coupling terms.
   const auto mesh_f = S_->GetMesh("fracture");
-  const auto& mol_fc = *S_->Get<CV_t>("fracture-molar_density_liquid").ViewComponent("cell");
+  const auto& energy_fc = *S_->Get<CV_t>("fracture-energy").ViewComponent("cell");
 
-  int ncells = mol_fc.MyLength();
-  double mean_energy, error_r(0.0), mass(0.0);
+  int ncells = energy_fc.MyLength();
+  double mean_energy, error_r(0.0), energy(0.0);
 
   for (int c = 0; c < ncells; ++c) {
-    mass += mol_fc[0][c] * mesh_f->getCellVolume(c); // reference cell energy
+    energy += energy_fc[0][c] * mesh_f->getCellVolume(c); // reference cell energy
   }
   if (ncells > 0) {
-    mean_energy = 76.0 * mass / ncells;
+    mean_energy = energy / ncells;
     error_r = (residual_norm_ * dt_) / mean_energy;
   }
 
