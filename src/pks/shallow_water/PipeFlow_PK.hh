@@ -93,6 +93,8 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   double Manning_coeff_;
 
+  bool flatten_bath_;
+
  protected:
  Key water_depth_key_, pressure_head_key_;
  // unit vector that defines the pipe direction

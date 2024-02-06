@@ -34,6 +34,8 @@ PipeFlow_PK::PipeFlow_PK(Teuchos::ParameterList& pk_tree,
 
   Manning_coeff_ = sw_list_->get<double>("Manning coefficient", 0.005);
 
+  flatten_bath_ = sw_list_->get<bool>("flatten bathemetry", false);
+
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = sw_list_->sublist("verbose object");
   vo_ = Teuchos::rcp(new VerboseObject("PipeFlow", vlist));
@@ -143,7 +145,6 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
      mesh_->cell_get_faces(c, &cfaces);
      double vol = mesh_->cell_volume(c);
      int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-     auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, direction_key_).ViewComponent("cell", true);
 
      double BGrad = 0.0;
      double OtherTermLeft = 0.0;
@@ -570,7 +571,7 @@ double PipeFlow_PK::ComputeWaterDepth(double WettedAngle){
 double PipeFlow_PK::ComputeWettedAngleNewton(double WettedArea){
 
    double tol = 1.e-15;
-   unsigned max_iter = 1000;
+   unsigned max_iter = 10000;
    double WettedAngle;
    double PipeCrossSection = Pi * 0.25 * pipe_diameter_ * pipe_diameter_;
 
@@ -681,43 +682,46 @@ void PipeFlow_PK::InitializeFields(){
   }
   auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, direction_key_).ViewComponent("cell", true);
   double eps = 1e-2;
-  
-  for (int c = 0; c < ncells_owned; ++c) {
-    if (dir_c[0][c]*dir_c[0][c] + dir_c[1][c]*dir_c[1][c] > eps) continue;    
 
-    AmanziMesh::Entity_ID_List nodes;
-    mesh_->cell_get_nodes(c, &nodes);
-    int nnodes = nodes.size();
-    for (int n = 0; n < nnodes; ++n) {
-      int v = nodes[n];
-      B_n[0][v] = B_c[0][c];
+  if (flatten_bath_) {
+    // Junction cells
+    for (int c = 0; c < ncells_owned; ++c) {
+      if (dir_c[0][c]*dir_c[0][c] + dir_c[1][c]*dir_c[1][c] > eps) continue;    
+
+      AmanziMesh::Entity_ID_List nodes;
+      mesh_->cell_get_nodes(c, &nodes);
+      int nnodes = nodes.size();
+      for (int n = 0; n < nnodes; ++n) {
+        int v = nodes[n];
+        B_n[0][v] = B_c[0][c];
+      }
+    }
+
+    // Non-junction cells
+    for (int c = 0; c < ncells_owned; ++c) {
+      if (dir_c[0][c]*dir_c[0][c] + dir_c[1][c]*dir_c[1][c] < eps) continue;
+
+      std::vector<int> dirs;
+      AmanziMesh::Entity_ID_List faces;
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      int nfaces = faces.size();
+      for (int n = 0; n < nfaces; ++n) {
+        int f = faces[n];
+        AmanziGeometry::Point normal = mesh_->face_normal(f);
+        double cosa = normal[0]*dir_c[0][c] + normal[1]*dir_c[1][c];
+        if (1 - abs(cosa) > eps) continue;
+
+        AmanziMesh::Entity_ID_List face_nodes;
+        mesh_->face_get_nodes(f, &face_nodes);
+        int n0 = face_nodes[0];
+        int n1 = face_nodes[1];
+
+        double Bavr = 0.5*(B_n[0][n1] + B_n[0][n0]);
+        B_n[0][n1] = Bavr;
+        B_n[0][n0] = Bavr;         
+      }
     }
   }
-     
-
-  for (int c = 0; c < ncells_owned; ++c) {
-    if (dir_c[0][c]*dir_c[0][c] + dir_c[1][c]*dir_c[1][c] < eps) continue;
-
-    std::vector<int> dirs;
-    AmanziMesh::Entity_ID_List faces;
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-    for (int n = 0; n < nfaces; ++n) {
-      int f = faces[n];
-      AmanziGeometry::Point normal = mesh_->face_normal(f);
-      double cosa = normal[0]*dir_c[0][c] + normal[1]*dir_c[1][c];
-      if (1 - abs(cosa) > eps) continue;
-
-      AmanziMesh::Entity_ID_List face_nodes;
-      mesh_->face_get_nodes(f, &face_nodes);
-      int n0 = face_nodes[0];
-      int n1 = face_nodes[1];
-
-      double Bavr = 0.5*(B_n[0][n1] + B_n[0][n0]);
-      B_n[0][n1] = Bavr;
-      B_n[0][n0] = Bavr;         
-    }
-  }              
     
   InitializeBathymetry();
   
@@ -851,6 +855,8 @@ bool PipeFlow_PK::IsJunction(const int &cell)
 //--------------------------------------------------------------
 // Check if a face needs to be skipped in the flux computation
 // (it is skipped if parallel to the flow direction)
+// note that this function expects the normal to already
+// be rotated according to the pipe direction
 //--------------------------------------------------------------
 void PipeFlow_PK::SkipFace(AmanziGeometry::Point normal, bool &skipFace)
 {
@@ -880,7 +886,6 @@ void PipeFlow_PK::GetDx(const int &cell, double &dx)
   mesh_->cell_get_faces(cell, &cell_faces);
   AmanziGeometry::Point x1;
   AmanziGeometry::Point x2;
-  auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, direction_key_).ViewComponent("cell", true);
   for (int n = 0; n < cell_faces.size(); ++n) {
      int f = cell_faces[n];
      int orient;
@@ -923,7 +928,9 @@ void PipeFlow_PK::ProjectNormalOntoMeshDirection(int c, AmanziGeometry::Point &n
 
    //the mesh direction is the pipe direction
    auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, direction_key_).ViewComponent("cell", true);
+   bool counterClockwise = (dir_c[1][c] < 0.0) ? false : true;
    // first find the angle between pipe direction and x-axis
+   // this angle has values between 0 and pi
    double angle = acos(dir_c[0][c]/sqrt(dir_c[0][c]*dir_c[0][c]+dir_c[1][c]*dir_c[1][c]));
    // then rotate the unit vectors of the reference frame according to this angle
    std::vector<double> e1(2);
@@ -932,15 +939,25 @@ void PipeFlow_PK::ProjectNormalOntoMeshDirection(int c, AmanziGeometry::Point &n
    double e1Tmp2 = 0;
    double e2Tmp1 = 0;
    double e2Tmp2 = 1;
-   e1[0] = e1Tmp1 * cos(angle) - e1Tmp2 * sin(angle);
-   e1[1] = e1Tmp1 * sin(angle) + e1Tmp2 * cos(angle);
-   e2[0] = e2Tmp1 * cos(angle) - e2Tmp2 * sin(angle);
-   e2[1] = e2Tmp1 * sin(angle) + e2Tmp2 * cos(angle);
+   if(counterClockwise){
+      e1[0] = e1Tmp1 * cos(angle) - e1Tmp2 * sin(angle);
+      e1[1] = e1Tmp1 * sin(angle) + e1Tmp2 * cos(angle);
+      e2[0] = e2Tmp1 * cos(angle) - e2Tmp2 * sin(angle);
+      e2[1] = e2Tmp1 * sin(angle) + e2Tmp2 * cos(angle);
+   }
+   else{
+      e1[0] = e1Tmp1 * cos(angle) + e1Tmp2 * sin(angle);
+      e1[1] = - e1Tmp1 * sin(angle) + e1Tmp2 * cos(angle);
+      e2[0] = e2Tmp1 * cos(angle) + e2Tmp2 * sin(angle);
+      e2[1] = - e2Tmp1 * sin(angle) + e2Tmp2 * cos(angle);
+   }
+   double e1Norm = sqrt(e1[0] * e1[0] + e1[1] * e1[1]);
+   double e2Norm = sqrt(e2[0] * e2[0] + e2[1] * e2[1]);
    // finally, project the normal on rotated frame
    double nTmp1 = normal[0];
    double nTmp2 = normal[1];
-   normal[0] = nTmp1 * e1[0] + nTmp2 * e1[1];
-   normal[1] = nTmp1 * e2[0] + nTmp2 * e2[1];
+   normal[0] = (nTmp1 * e1[0] + nTmp2 * e1[1]) / e1Norm;
+   normal[1] = (nTmp1 * e2[0] + nTmp2 * e2[1]) / e2Norm;
 
 }
 
