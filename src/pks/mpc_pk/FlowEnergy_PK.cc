@@ -13,6 +13,7 @@
   Process kernel for coupling Flow PK with Energy PK.
 */
 
+#include "CommonDefs.hh"
 #include "Flow_PK.hh"
 #include "Energy_PK.hh"
 #include "OperatorDefs.hh"
@@ -242,6 +243,9 @@ FlowEnergy_PK::FunctionalResidual(double t_old,
   auto mol_flowrate = S_->GetPtrW<CV_t>(key, Tags::DEFAULT, "");
   auto op0 = sub_pks_[0]->my_pde(Operators::PDEType::PDE_DIFFUSION);
   op0->UpdateFlux(u_new0->Data().ptr(), mol_flowrate.ptr());
+
+  if (Keys::getVarName(sub_pks_[0]->name()) == "darcy")
+     mol_flowrate->Scale(1.0 / CommonDefs::MOLAR_MASS_H2O);
 
   // energy
   auto u_old1 = u_old->SubVector(1);

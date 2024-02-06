@@ -131,12 +131,13 @@ EnergyOnePhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
 
   // add advection term dHdT
   if (prec_include_enthalpy_) {
-    auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);
+    auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
 
     S_->GetEvaluator(enthalpy_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
     auto dHdT = Teuchos::rcp(new CompositeVector(S_->GetDerivative<CompositeVector>(
       enthalpy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT)));
 
+    /*
     const auto& n_l = S_->Get<CompositeVector>(mol_density_liquid_key_);
     dHdT->Multiply(1.0, *dHdT, n_l, 0.0);
 
@@ -152,6 +153,7 @@ EnergyOnePhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
         dHdT->Update(1.0, *dRdT, 1.0);
       }
     }
+    */
 
     op_preconditioner_advection_->Setup(*flux);
     op_preconditioner_advection_->UpdateMatrices(flux.ptr(), dHdT.ptr());
