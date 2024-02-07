@@ -157,8 +157,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        }
     }
     
-    else if (bcs_[i]->get_bc_name() == "outward discharge") { // can be merged with "discharge"; but might consider 
-    // setting this as a scalar BC instead of vector. Tangential discharge physical necessity?
+    else if (bcs_[i]->get_bc_name() == "outward discharge") {
        outward_discharge_flag = true;
        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
           int f = it->first;
