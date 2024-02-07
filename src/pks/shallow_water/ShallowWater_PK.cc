@@ -8,6 +8,7 @@
 
  Authors: Svetlana Tokareva (tokareva@lanl.gov)
           Giacomo Capodaglio (gcapodaglio@lanl.gov)
+          Naren Vohra (vohra@lanl.gov)
 */
 
 #include <algorithm>
