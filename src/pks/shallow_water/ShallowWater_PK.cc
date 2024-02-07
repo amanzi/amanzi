@@ -8,6 +8,7 @@
 
  Authors: Svetlana Tokareva (tokareva@lanl.gov)
           Giacomo Capodaglio (gcapodaglio@lanl.gov)
+          Naren Vohra (vohra@lanl.gov)
 */
 
 #include <algorithm>
@@ -264,6 +265,24 @@ ShallowWater_PK::Initialize()
 
         bc = bc_factory.Create(spec, "discharge", AmanziMesh::FACE, Teuchos::null);
         bc->set_bc_name("discharge");
+        bc->set_type(WhetStone::DOF_Type::VECTOR);
+        bcs_.push_back(bc);
+      }
+    }
+  }
+
+  
+  if (bc_list->isSublist("outward discharge")) {
+    PK_DomainFunctionFactory<ShallowWaterBoundaryFunction> bc_factory(mesh_, S_);
+
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("outward discharge");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+
+        bc = bc_factory.Create(spec, "outward discharge", AmanziMesh::FACE, Teuchos::null);
+        bc->set_bc_name("outward discharge");
         bc->set_type(WhetStone::DOF_Type::VECTOR);
         bcs_.push_back(bc);
       }

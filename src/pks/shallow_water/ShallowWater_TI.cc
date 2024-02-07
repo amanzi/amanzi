@@ -8,6 +8,7 @@
 
  Authors: Svetlana Tokareva (tokareva@lanl.gov)
           Giacomo Capodaglio (gcapodaglio@lanl.gov)
+          Naren Vohra (vohra@lanl.gov)
  */
 
 #include "errors.hh"
@@ -82,6 +83,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   std::vector<double> bc_value_ht(nfaces_wghost, 0.0);
   std::vector<double> bc_value_qx(nfaces_wghost, 0.0);
   std::vector<double> bc_value_qy(nfaces_wghost, 0.0);
+  bool outward_discharge_flag = false;
   unsigned primary_variable_Dirichlet = 0;
 
   // NOTE: right now we are assuming that the junction cells cannot be boundary cells
@@ -155,6 +157,27 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
           }
        }
     }
+    
+    else if (bcs_[i]->get_bc_name() == "outward discharge") {
+       outward_discharge_flag = true;
+       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+          int f = it->first;
+          bc_model_vector[f] = Operators::OPERATOR_BC_DIRICHLET; 
+          bc_value_qx[f] = it->second[0];
+          bc_value_qy[f] = it->second[1];
+          if (primary_variable_Dirichlet){
+             AmanziMesh::Entity_ID_List nodes;
+             mesh_->face_get_nodes(f, &nodes);
+             int n0 = nodes[0], n1 = nodes[1];
+             bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
+             bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
+             bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
+             double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
+             bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], bc_value_b[f], WettedAngle_f);
+          }
+       }
+    }
+
   }
 
   // limited reconstructions using boundary data
@@ -351,8 +374,14 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        UR[3] = ComputeWettedAngleNewton(UL[0]); 
      }
      if (bc_model_vector[f] == Operators::OPERATOR_BC_DIRICHLET) {
-       UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
-       UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
+       if (outward_discharge_flag == true) { 
+        UR[1] = bc_value_qx[f]; // This assumes that the BC value is specified after taking the dot product with the normal
+        UR[2] = bc_value_qy[f]; // This should probably be 0.
+       } else {
+        UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
+        UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
+       }
+
        UL[1] = UR[1];
        UL[2] = UR[2];
     } 
