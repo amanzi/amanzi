@@ -191,19 +191,50 @@ Multiphase_PK::PopulateSecondaryBCs_()
   auto& bc_model_pl = op_bcs_[pressure_liquid_key_]->bc_model();
   auto& bc_value_pl = op_bcs_[pressure_liquid_key_]->bc_value();
 
+  auto& bc_model_sl = op_bcs_[saturation_liquid_key_]->bc_model();
+  auto& bc_value_sl = op_bcs_[saturation_liquid_key_]->bc_value();
+
+  auto& bc_model_advl = op_bcs_[advection_liquid_key_]->bc_model();
+  auto& bc_value_advl = op_bcs_[advection_liquid_key_]->bc_value();
+
+  auto& bc_model_advg = op_bcs_[advection_gas_key_]->bc_model();
+  auto& bc_value_advg = op_bcs_[advection_gas_key_]->bc_value();
+
+  auto& bc_model_etal = op_bcs_[mol_density_liquid_key_]->bc_model();
+  auto& bc_value_etal = op_bcs_[mol_density_liquid_key_]->bc_value();
+
   bc_model_pg = bc_model_pl;
+  bc_model_advl = bc_model_pl;
+  bc_model_advg = bc_model_pg;
 
   const auto& sl_c =
     *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+
+  // ideal gas law parameters and variables
+  auto T = *S_->GetPtr<CompositeVector>(temperature_key_, Tags::DEFAULT);
+  const Epetra_MultiVector& T_c = *T.ViewComponent("cell", true);
+
+  auto eos_parameter_list = glist_->sublist("state").sublist("evaluators").sublist("molar_density_gas").sublist("EOS parameters");
+  double R;
+  if(eos_parameter_list.isParameter("ideal gas constant")) {
+    R = eos_parameter_list.get<double>("ideal gas constant");
+  } else {
+    R = 8.31446261815324;
+  }
 
   for (int f = 0; f != nfaces_wghost_; ++f) {
     if (bc_model_pl[f] == Operators::OPERATOR_BC_DIRICHLET) {
       int c = getFaceOnBoundaryInternalCell(*mesh_, f);
 
-      bc_value_pg[f] =
-        bc_value_pl[f] + wrm_->second[(*wrm_->first)[c]]->capillaryPressure(sl_c[0][c]);
+      bc_value_pg[f] = bc_value_pl[f] + wrm_->second[(*wrm_->first)[c]]->capillaryPressure(bc_value_sl[f]);
+      
+      bc_value_advl[f] =  wrm_->second[(*wrm_->first)[c]]->k_relative(bc_value_sl[f], MULTIPHASE_PHASE_LIQUID);
+      bc_value_advl[f] *= bc_value_etal[f] * (1.0 / mu_l_);
+
     } else if (bc_model_pl[f] == Operators::OPERATOR_BC_NEUMANN) {
       bc_value_pg[f] = 0.0;
+      bc_value_advl[f] = 0.0;
+      bc_value_advg[f] = 0.0;
     }
   }
 }
