@@ -70,6 +70,11 @@ class Upwind {
                        const std::vector<int>& bc_model,
                        CompositeVector& field) = 0;
 
+  // same as Compute but also takes the Dirichlet BCs provided for upwinding
+  virtual void Compute_wBC(const CompositeVector& flux,
+                       const std::vector<int>& bc_model, const std::vector<double>& bc_value,
+                       CompositeVector& field) {};
+
   // -- returns combined map for the original and upwinded fields.
   // -- Currently, composite vector cannot be extended on a fly.
   virtual Teuchos::RCP<CompositeVectorSpace> Map()

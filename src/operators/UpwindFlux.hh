@@ -48,6 +48,8 @@ class UpwindFlux : public Upwind {
   void
   Compute(const CompositeVector& flux, const std::vector<int>& bc_model, CompositeVector& field);
 
+  virtual void Compute_wBC(const CompositeVector& flux, const std::vector<int>& bc_model, const std::vector<double>& bc_value, CompositeVector& field) override;
+
  private:
   int method_, order_;
   double tolerance_;

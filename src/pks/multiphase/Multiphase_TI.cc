@@ -106,7 +106,15 @@ Multiphase_PK::FunctionalResidual(double t_old,
         // -- upwind cell-centered coefficient
         auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
         kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
-        upwind_->Compute(flux, bcnone, *kr);
+
+        // [Gharbia, Jaffre' 14] model assumptions
+        if (n == 1) {
+          const auto& bc_model_fname = op_bcs_[fname]->bc_model();
+          const auto& bc_value_fname = op_bcs_[fname]->bc_value();
+          upwind_->Compute_wBC(flux, bc_model_fname, bc_value_fname, *kr);
+        } else {
+          upwind_->Compute(flux, bcnone, *kr);
+        }
 
         // -- form diffusion operator for variable g
         //    Neuman BCs: separate fluxes for each phase OR the total flux but only once
