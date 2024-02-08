@@ -273,6 +273,7 @@ ShallowWater_PK::Initialize()
 
   
   if (bc_list->isSublist("outward discharge")) {
+    // in the xml, a negative sign on the BC will mean inflow of water  
     PK_DomainFunctionFactory<ShallowWaterBoundaryFunction> bc_factory(mesh_, S_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("outward discharge");

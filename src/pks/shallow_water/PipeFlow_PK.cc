@@ -313,8 +313,6 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
      double BGrad = 0.0;
      double OtherTermLeft = 0.0;
      double OtherTermRight = 0.0;
-     double FaceAreaL = 0.0;
-     double FaceAreaR = 0.0;
      double denomL = 0.0;
      double denomR = 0.0;
      int c1, c2;
