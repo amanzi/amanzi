@@ -86,24 +86,23 @@ EnergyMatrixFracture_PK::Setup()
     AddDefaultPrimaryEvaluator(S_, "temperature", Tags::DEFAULT);
   }
 
-  // -- darcy flux
-  if (!S_->HasRecord("volumetric_flow_rate")) {
+  // -- molar flow rates
+  if (!S_->HasRecord("molar_flow_rate")) {
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S_->Require<CV_t, CVS_t>("volumetric_flow_rate", Tags::DEFAULT)
+    S_->Require<CV_t, CVS_t>("molar_flow_rate", Tags::DEFAULT)
       .SetMesh(mesh_matrix_)
       ->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
-    AddDefaultPrimaryEvaluator(S_, "volumetric_flow_rate", Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator(S_, "molar_flow_rate", Tags::DEFAULT);
   }
 
-  // -- darcy flux for fracture
-  if (!S_->HasRecord("fracture-volumetric_flow_rate")) {
+  if (!S_->HasRecord("fracture-molar_flow_rate")) {
     auto cvs2 = Operators::CreateManifoldCVS(mesh_fracture_);
-    *S_->Require<CV_t, CVS_t>("fracture-volumetric_flow_rate", Tags::DEFAULT)
+    *S_->Require<CV_t, CVS_t>("fracture-molar_flow_rate", Tags::DEFAULT)
        .SetMesh(mesh_fracture_)
        ->SetGhosted(true) = *cvs2;
-    AddDefaultPrimaryEvaluator(S_, "fracture-volumetric_flow_rate", Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator(S_, "fracture-molar_flow_rate", Tags::DEFAULT);
   }
 
   // additional fields and evaluators related to matrix-frcature coupling

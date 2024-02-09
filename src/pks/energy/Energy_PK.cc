@@ -107,7 +107,6 @@ Energy_PK::Setup()
   mol_density_gas_key_ = Keys::getKey(domain_, "molar_density_gas");
   x_gas_key_ = Keys::getKey(domain_, "molar_fraction_gas");
 
-  vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate");
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
   Key pressure_key = Keys::getKey(domain_, "pressure");
@@ -205,18 +204,19 @@ Energy_PK::Setup()
       .SetGhosted();
   }
 
-  // -- volumetric and molar flow rates
-  if (!S_->HasRecord(vol_flowrate_key_)) {
-    S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
-  }
+  // -- molar flow rates as a regular field
   if (!S_->HasRecord(mol_flowrate_key_)) {
-    auto cvs = S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_);
+    CompositeVectorSpace cvs;
+    if (flow_on_manifold_) {
+      cvs = *Operators::CreateManifoldCVS(mesh_);
+    } else {
+      cvs.SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
+    }
+
     *S_->Require<CV_t, CVS_t>(mol_flowrate_key_, Tags::DEFAULT, passwd_)
        .SetMesh(mesh_)
        ->SetGhosted(true) = cvs;
+    S_->RequireEvaluator(mol_flowrate_key_, Tags::DEFAULT);
   }
 
   // -- effective fracture conductivity
@@ -350,30 +350,9 @@ Energy_PK::Initialize()
     }
   }
 
-  // initialized fields
-  InitializeFields_();
-
   // other parameters
   prec_include_enthalpy_ =
     ep_list_->sublist("operators").get<bool>("include enthalpy in preconditioner", true);
-}
-
-
-/* ****************************************************************
-* This completes initialization of missed fields in the state.
-* This is useful for unit tests.
-**************************************************************** */
-void
-Energy_PK::InitializeFields_()
-{
-  InitializeCVField(S_, *vo_, temperature_key_, Tags::DEFAULT, passwd_, 298.0);
-  InitializeCVField(S_, *vo_, vol_flowrate_key_, Tags::DEFAULT, passwd_, 0.0);
-
-  if (!S_->GetRecord(mol_flowrate_key_, Tags::DEFAULT).initialized()) {
-    InitializeCVFieldFromCVField(S_, *vo_, mol_flowrate_key_, vol_flowrate_key_, passwd_);
-    double factor = S_->Get<double>("const_fluid_density") / CommonDefs::MOLAR_MASS_H2O;
-    S_->GetW<CV_t>(mol_flowrate_key_, passwd_).Scale(factor);
-  }
 }
 
 

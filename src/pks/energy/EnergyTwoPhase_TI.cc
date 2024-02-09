@@ -37,6 +37,7 @@ EnergyTwoPhase_PK::FunctionalResidual(double t_old,
   temperature_eval_->SetChanged();
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
 
+  S_->GetEvaluator(mol_flowrate_key_).Update(*S_, passwd_);
   auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
 
   S_->GetEvaluator(conductivity_gen_key_).Update(*S_, passwd_);

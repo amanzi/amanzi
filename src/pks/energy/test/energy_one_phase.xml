@@ -317,6 +317,9 @@
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="molar_flow_rate">
+        <Parameter name="evaluator type" type="string" value="independent variable constant"/>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">

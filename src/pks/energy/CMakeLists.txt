@@ -69,7 +69,7 @@ add_amanzi_library(energy SOURCE ${energy_src_files}
 #
 # Install Targets
 #
-set(flow_inc_files 
+set(energy_inc_files 
   Energy_PK.hh
   EnergyDefs.hh
   EnergyOnePhase_PK.hh

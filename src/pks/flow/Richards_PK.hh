@@ -210,7 +210,7 @@ class Richards_PK : public Flow_PK {
   // multiscale models
   Key pressure_msp_key_, porosity_msp_key_;
   Key water_storage_msp_key_, prev_water_storage_msp_key_;
-  Key mass_density_liquid_key_, temperature_key_;
+  Key temperature_key_;
 
   bool multiscale_porosity_;
   int ms_itrs_;
@@ -230,7 +230,7 @@ class Richards_PK : public Flow_PK {
   int functional_max_cell;
 
   // copies of state fields
-  Teuchos::RCP<CompositeVector> vol_flowrate_copy;
+  Teuchos::RCP<CompositeVector> mol_flowrate_copy;
 
   // upwind
   int upwind_frequency_;

@@ -115,7 +115,8 @@ TEST(STIFFNESS_STOKES_2D)
 /* ******************************************************************
 * DoFs: vectors at nodes, normal component on faces.
 ****************************************************************** */
-void runStiffness3D(const std::string& filename)
+void
+runStiffness3D(const std::string& filename)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -129,7 +130,7 @@ void runStiffness3D(const std::string& filename)
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh;
-  if (filename == "") 
+  if (filename == "")
     mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3);
   else
     mesh = meshfactory.create(filename);
@@ -202,10 +203,12 @@ void runStiffness3D(const std::string& filename)
 }
 
 
-TEST(STIFFNESS_STOKES_3D_BOXMESH) {
+TEST(STIFFNESS_STOKES_3D_BOXMESH)
+{
   runStiffness3D("");
 }
-TEST(STIFFNESS_STOKES_3D_POLYTOPE) {
+TEST(STIFFNESS_STOKES_3D_POLYTOPE)
+{
   runStiffness3D("test/dodecahedron.exo");
 }
 

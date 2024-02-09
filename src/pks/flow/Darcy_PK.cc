@@ -32,10 +32,10 @@
 
 // Amanzi::Flow
 #include "Darcy_PK.hh"
-#include "DarcyVelocityEvaluator.hh"
 #include "FlowDefs.hh"
 #include "ModelEvaluator.hh"
 #include "SpecificStorage.hh"
+#include "VolumetricFlowRateEvaluator.hh"
 #include "WRM.hh"
 
 namespace Amanzi {
@@ -133,12 +133,12 @@ Darcy_PK::Setup()
     Exceptions::amanzi_throw(msg);
   }
 
-  // Require primary field for this PK.
   Teuchos::RCP<Teuchos::ParameterList> list1 = Teuchos::sublist(fp_list_, "operators", true);
   Teuchos::RCP<Teuchos::ParameterList> list2 = Teuchos::sublist(list1, "diffusion operator", true);
   Teuchos::RCP<Teuchos::ParameterList> list3 = Teuchos::sublist(list2, "matrix", true);
   std::string name = list3->get<std::string>("discretization primary");
 
+  // primary field: pressure
   if (!S_->HasRecord(pressure_key_)) {
     std::vector<std::string> names;
     std::vector<AmanziMesh::Entity_kind> locations;
@@ -158,7 +158,6 @@ Darcy_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
-
     AddDefaultPrimaryEvaluator(S_, pressure_key_);
   }
 
@@ -208,6 +207,11 @@ Darcy_PK::Setup()
     S_->Require<double>("const_fluid_viscosity", Tags::DEFAULT, "state");
   }
 
+  // -- molar and volumetric flow rates
+  double rho = S_->ICList().sublist("const_fluid_density").get<double>("value");
+  double molar_rho = rho / CommonDefs::MOLAR_MASS_H2O;
+  Setup_FlowRates_(true, molar_rho);
+
   // -- fracture dynamics
   if (flow_on_manifold_) {
     S_->Require<CV_t, CVS_t>(compliance_key_, Tags::DEFAULT, compliance_key_)
@@ -223,30 +227,6 @@ Darcy_PK::Setup()
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(bulk_modulus_key_, Tags::DEFAULT);
-  }
-
-  // Local fields and evaluators.
-  if (!S_->HasRecord(hydraulic_head_key_)) {
-    S_->Require<CV_t, CVS_t>(hydraulic_head_key_, Tags::DEFAULT, passwd_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-  }
-
-  // full velocity vector
-  if (!S_->HasRecord(darcy_velocity_key_)) {
-    S_->Require<CV_t, CVS_t>(darcy_velocity_key_, Tags::DEFAULT, darcy_velocity_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, dim);
-
-    Teuchos::ParameterList elist(darcy_velocity_key_);
-    elist.set<std::string>("domain name", domain_)
-      .set("names", Teuchos::Array<std::string>({ darcy_velocity_key_ }))
-      .set("tags", Teuchos::Array<std::string>({ "" }))
-      .set<std::string>("volumetric flow rate key", vol_flowrate_key_);
-    auto eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
-    S_->SetEvaluator(darcy_velocity_key_, Tags::DEFAULT, eval);
   }
 
   // Require additional components for the existing fields
@@ -277,29 +257,25 @@ Darcy_PK::Setup()
   }
 
   // to force other PKs to use density, we define it here
-  Key mol_density_key = Keys::getKey(domain_, "molar_density_liquid");
-  Key mass_density_key = Keys::getKey(domain_, "mass_density_liquid");
+  if (S_->HasEvaluator(mol_density_liquid_key_, Tags::DEFAULT))
+    AddDefaultIndependentEvaluator(S_, mol_density_liquid_key_, Tags::DEFAULT, molar_rho);
 
-  double rho = S_->ICList().sublist("const_fluid_density").get<double>("value");
-  double molar_rho = rho / CommonDefs::MOLAR_MASS_H2O;
-  if (S_->HasEvaluator(mol_density_key, Tags::DEFAULT))
-    AddDefaultIndependentEvaluator(S_, mol_density_key, Tags::DEFAULT, molar_rho);
-
-  if (!S_->HasRecord(mass_density_key)) {
-    S_->Require<CV_t, CVS_t>(mass_density_key, Tags::DEFAULT, mass_density_key)
+  if (!S_->HasRecord(mass_density_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT, mass_density_liquid_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
-    AddDefaultIndependentEvaluator(S_, mass_density_key, Tags::DEFAULT, rho);
+    AddDefaultIndependentEvaluator(S_, mass_density_liquid_key_, Tags::DEFAULT, rho);
   }
+
+  // -- hyadraulic head and full Darcy velocity
+  Setup_LocalFields_();
 
   // save frequently used evaluators
   pressure_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
     S_->GetEvaluatorPtr(pressure_key_, Tags::DEFAULT));
-  vol_flowrate_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-    S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT));
 
   // set units
   S_->GetRecordSetW(pressure_key_).set_units("Pa");
@@ -446,6 +422,10 @@ Darcy_PK::Initialize()
     SolveFullySaturatedProblem(*solution, wells_on);
     init_darcy = true;
   }
+
+  // set up operators for evaluators
+  auto eval = S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT);
+  Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_bc(op_bc_);
 
   // Verbose output of initialization statistics.
   InitializeStatistics_(init_darcy);
@@ -633,18 +613,9 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 Darcy_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
-  // calculate molar (optional) and volumetric flow rates
-  auto flowrate = S_->GetPtrW<CV_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_);
-  op_diff_->UpdateFlux(solution.ptr(), flowrate.ptr());
+  ComputeMolarFlowRate_(true);
+  S_->GetEvaluator(vol_flowrate_key_).Update(*S_, passwd_);
 
-  if (S_->HasRecord(mol_flowrate_key_, Tags::DEFAULT)) {
-    auto mol_flowrate = S_->GetPtrW<CV_t>(mol_flowrate_key_, Tags::DEFAULT, passwd_);
-    *mol_flowrate = *flowrate;
-    // this PK uses mass flux, so we need to re-scale it
-    mol_flowrate->Scale(1.0 / CommonDefs::MOLAR_MASS_H2O);
-  }
-
-  flowrate->Scale(1.0 / rho_);
   if (coupled_to_matrix_ || flow_on_manifold_) VV_FractureConservationLaw();
 
   // update time derivative

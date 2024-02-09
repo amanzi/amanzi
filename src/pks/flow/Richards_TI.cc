@@ -56,7 +56,7 @@ Richards_PK::FunctionalResidual(double t_old,
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
 
   // upwind diffusion coefficient and its derivative
-  vol_flowrate_copy->ScatterMasterToGhosted("face");
+  mol_flowrate_copy->ScatterMasterToGhosted("face");
 
   S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
   auto& alpha = S_->GetW<CV_t>(alpha_key_, Tags::DEFAULT, alpha_key_);
@@ -66,7 +66,7 @@ Richards_PK::FunctionalResidual(double t_old,
 
     *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
-    upwind_->Compute(*vol_flowrate_copy, bc_model, *alpha_upwind_);
+    upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_);
 
     // modify relative permeability coefficient for influx faces
     // UpwindInflowBoundary_New(u_new->Data());
@@ -77,12 +77,12 @@ Richards_PK::FunctionalResidual(double t_old,
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
-    upwind_->Compute(*vol_flowrate_copy, bc_model, *alpha_upwind_dP_);
+    upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_dP_);
   }
 
   // assemble residual for diffusion operator
   op_matrix_->Init();
-  op_matrix_diff_->UpdateMatrices(vol_flowrate_copy.ptr(), solution.ptr());
+  op_matrix_diff_->UpdateMatrices(mol_flowrate_copy.ptr(), solution.ptr());
   op_matrix_diff_->ApplyBCs(true, true, true);
 
   Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
@@ -358,11 +358,9 @@ Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, d
   // -- Darcy flux
   //    We need only direction of the flux copy
   if (upwind_frequency_ == FLOW_UPWIND_UPDATE_ITERATION) {
-    op_matrix_diff_->UpdateFlux(solution.ptr(), vol_flowrate_copy.ptr());
-    auto& flowrate = *vol_flowrate_copy->ViewComponent("face");
-    flowrate.Scale(1.0 / molar_rho_);
+    op_matrix_diff_->UpdateFlux(solution.ptr(), mol_flowrate_copy.ptr());
   }
-  vol_flowrate_copy->ScatterMasterToGhosted("face");
+  mol_flowrate_copy->ScatterMasterToGhosted("face");
 
   // diffusion coefficient and its derivative
   auto& alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
@@ -371,7 +369,7 @@ Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, d
   if (!flow_on_manifold_) {
     *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
-    upwind_->Compute(*vol_flowrate_copy, bc_model, *alpha_upwind_);
+    upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_);
 
     // modify relative permeability coefficient for influx faces
     // UpwindInflowBoundary_New(u->Data());
@@ -382,14 +380,14 @@ Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, d
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
-    upwind_->Compute(*vol_flowrate_copy, bc_model, *alpha_upwind_dP_);
+    upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_dP_);
   }
 
   // create diffusion operators
   op_preconditioner_->Init();
-  op_preconditioner_diff_->UpdateMatrices(vol_flowrate_copy.ptr(), solution.ptr());
+  op_preconditioner_diff_->UpdateMatrices(mol_flowrate_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->UpdateMatricesNewtonCorrection(
-    vol_flowrate_copy.ptr(), solution.ptr(), molar_rho_);
+    mol_flowrate_copy.ptr(), solution.ptr(), 1.0);
   op_preconditioner_diff_->ApplyBCs(true, true, true);
 
   // add time derivative

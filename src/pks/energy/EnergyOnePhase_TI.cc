@@ -39,6 +39,7 @@ EnergyOnePhase_PK::FunctionalResidual(double t_old,
   temperature_eval_->SetChanged();
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
 
+  S_->GetEvaluator(mol_flowrate_key_).Update(*S_, passwd_);
   auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
 
   S_->GetEvaluator(conductivity_gen_key_).Update(*S_, passwd_);
@@ -134,26 +135,10 @@ EnergyOnePhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
     auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
 
     S_->GetEvaluator(enthalpy_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
-    auto dHdT = Teuchos::rcp(new CompositeVector(S_->GetDerivative<CompositeVector>(
-      enthalpy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT)));
+    auto dHdT = S_->GetDerivativePtr<CompositeVector>(
+      enthalpy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
 
-    /*
-    const auto& n_l = S_->Get<CompositeVector>(mol_density_liquid_key_);
-    dHdT->Multiply(1.0, *dHdT, n_l, 0.0);
-
-    if (S_->HasEvaluator(mol_density_liquid_key_, Tags::DEFAULT)) {
-      auto& eval = S_->GetEvaluator(mol_density_liquid_key_);
-      if (eval.get_type() == EvaluatorType::SECONDARY) {
-        eval.UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
-        auto dRdT = Teuchos::rcp(new CompositeVector(S_->GetDerivative<CompositeVector>(
-          mol_density_liquid_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT)));
-
-        const auto& H_l = S_->Get<CompositeVector>(enthalpy_key_);
-        dRdT->Multiply(1.0, *dRdT, H_l, 0.0);
-        dHdT->Update(1.0, *dRdT, 1.0);
-      }
-    }
-    */
+    // should we differentiate alpha = (H eta k/mu) in div(H q) ?
 
     op_preconditioner_advection_->Setup(*flux);
     op_preconditioner_advection_->UpdateMatrices(flux.ptr(), dHdT.ptr());

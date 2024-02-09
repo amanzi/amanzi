@@ -34,12 +34,12 @@
 #include "PDE_DiffusionFactory.hh"
 #include "Point.hh"
 #include "StateArchive.hh"
+#include "VolumetricFlowRateEvaluator.hh"
 #include "UpwindFactory.hh"
 #include "XMLParameterListWriter.hh"
 
 // Amanzi::Flow
 #include "ApertureModelEvaluator.hh"
-#include "DarcyVelocityEvaluator.hh"
 #include "PermeabilityEvaluator.hh"
 #include "PorosityEvaluator.hh"
 #include "Richards_PK.hh"
@@ -139,8 +139,6 @@ Richards_PK::Setup()
   prev_water_storage_msp_key_ = Keys::getKey(domain_, "prev_water_storage_msp");
 
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
-  mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
-  mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
 
   relperm_key_ = Keys::getKey(domain_, "relative_permeability");
   ppfactor_key_ = Keys::getKey(domain_, "permeability_porosity_factor");
@@ -162,7 +160,7 @@ Richards_PK::Setup()
   use_strain_ = physical_models->get<bool>("biot scheme: undrained split", false) ||
                 physical_models->get<bool>("biot scheme: fixed stress split", false);
 
-  // Require primary field for this PK, which is pressure
+  // primary field: pressure
   std::vector<std::string> names({ "cell" });
   std::vector<AmanziMesh::Entity_kind> locations({ AmanziMesh::Entity_kind::CELL });
   std::vector<int> ndofs(1, 1);
@@ -473,31 +471,8 @@ Richards_PK::Setup()
     }
   }
 
-  // Local fields and evaluators.
-  // -- hydraulic head
-  if (!S_->HasRecord(hydraulic_head_key_)) {
-    S_->Require<CV_t, CVS_t>(hydraulic_head_key_, Tags::DEFAULT, passwd_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-  }
-
-  // -- Darcy velocity vector
-  if (!S_->HasRecord(darcy_velocity_key_)) {
-    S_->Require<CV_t, CVS_t>(darcy_velocity_key_, Tags::DEFAULT, darcy_velocity_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, dim);
-
-    Teuchos::ParameterList elist(darcy_velocity_key_);
-    elist.set<std::string>("domain name", domain_);
-    elist.set<std::string>("darcy velocity key", darcy_velocity_key_)
-      .set<std::string>("volumetric flow rate key", vol_flowrate_key_)
-      .set<std::string>("tag", "");
-
-    auto eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
-    S_->SetEvaluator(darcy_velocity_key_, Tags::DEFAULT, eval);
-  }
+  // -- molar and volumetric flow rates
+  Setup_FlowRates_(false, 0.0);
 
   // -- temperature for EOSs
   if (!S_->HasRecord(temperature_key_)) {
@@ -521,12 +496,13 @@ Richards_PK::Setup()
     cvs.AddComponent("offd", AmanziMesh::Entity_kind::CELL, noff)->SetOwned(true);
   }
 
+  // -- hyadraulic head and full Darcy velocity
+  Setup_LocalFields_();
+
   // Since high-level PK may own some fields, we have to populate
   // frequently used evaluators outside of field registration
   pressure_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
     S_->GetEvaluatorPtr(pressure_key_, Tags::DEFAULT));
-  vol_flowrate_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-    S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT));
 
   // set unit
   S_->GetRecordSetW(pressure_key_).set_units("Pa");
@@ -690,7 +666,7 @@ Richards_PK::Initialize()
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap_owned));
 
   // Initialize flux copy for the upwind operator.
-  vol_flowrate_copy = Teuchos::rcp(new CompositeVector(S_->Get<CV_t>(vol_flowrate_key_)));
+  mol_flowrate_copy = Teuchos::rcp(new CompositeVector(S_->Get<CV_t>(mol_flowrate_key_)));
 
   // Conditional initialization of lambdas from pressures.
   auto& pressure = S_->GetW<CV_t>(pressure_key_, Tags::DEFAULT, passwd_);
@@ -756,9 +732,9 @@ Richards_PK::Initialize()
 
   op_preconditioner_->Init();
   op_preconditioner_diff_->SetBCs(op_bc_, op_bc_);
-  op_preconditioner_diff_->UpdateMatrices(vol_flowrate_copy.ptr(), solution.ptr());
+  op_preconditioner_diff_->UpdateMatrices(mol_flowrate_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->UpdateMatricesNewtonCorrection(
-    vol_flowrate_copy.ptr(), solution.ptr(), molar_rho_);
+    mol_flowrate_copy.ptr(), solution.ptr(), 1.0);
   op_preconditioner_diff_->ApplyBCs(true, true, true);
 
   if (vapor_diffusion_) {
@@ -844,10 +820,10 @@ Richards_PK::Initialize()
   // Derive volumetric flow rate (state may not have it at time 0)
   // We need simply direction rather than accurate value of the flux copy.
   double tmp;
-  vol_flowrate_copy->Norm2(&tmp);
+  mol_flowrate_copy->Norm2(&tmp);
   if (tmp == 0.0) {
-    op_matrix_diff_->UpdateFlux(solution.ptr(), vol_flowrate_copy.ptr());
-    vol_flowrate_copy->ScaleMasterAndGhosted(1.0 / molar_rho_);
+    ComputeMolarFlowRate_(false);
+    *mol_flowrate_copy = S_->Get<CV_t>(mol_flowrate_key_);
   }
 
   // Subspace entering: re-initialize lambdas.
@@ -864,8 +840,7 @@ Richards_PK::Initialize()
       op_matrix_->Init();
       op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
       op_matrix_diff_->ApplyBCs(true, true, true);
-      op_matrix_diff_->UpdateFlux(solution.ptr(), vol_flowrate_copy.ptr());
-      vol_flowrate_copy->ScaleMasterAndGhosted(1.0 / molar_rho_);
+      op_matrix_diff_->UpdateFlux(solution.ptr(), mol_flowrate_copy.ptr());
     }
   }
 
@@ -903,6 +878,11 @@ Richards_PK::Initialize()
     S_, *vo_, prev_saturation_liquid_key_, saturation_liquid_key_, passwd_);
   InitializeCVFieldFromCVField(S_, *vo_, prev_water_storage_key_, water_storage_key_, passwd_);
   InitializeCVFieldFromCVField(S_, *vo_, prev_aperture_key_, aperture_key_, passwd_);
+
+  // set up operators for evaluators
+  auto eval = S_->GetEvaluatorPtr(vol_flowrate_key_, Tags::DEFAULT);
+  Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_bc(op_bc_);
+  Teuchos::rcp_dynamic_cast<VolumetricFlowRateEvaluator>(eval)->set_upwind(upwind_);
 
   // Verbose output of initialization statistics.
   InitializeStatistics_();
@@ -1094,17 +1074,11 @@ Richards_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   StateArchive archive(S_, vo_);
   archive.CopyFieldsToPrevFields(fields, "", false);
 
-  // update velocities
-  auto vol_flowrate = S_->GetPtrW<CV_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_);
-  op_matrix_diff_->UpdateFlux(solution.ptr(), vol_flowrate.ptr());
+  // update flow rates
+  ComputeMolarFlowRate_(false);
+  *mol_flowrate_copy = S_->Get<CV_t>(mol_flowrate_key_, Tags::DEFAULT);
 
-  if (S_->HasRecord(mol_flowrate_key_, Tags::DEFAULT)) {
-    S_->GetW<CV_t>(mol_flowrate_key_, Tags::DEFAULT, passwd_) = *vol_flowrate;
-  }
-
-  // compute volumetric flow rate from molar flow rate
-  MolarFlowRateToVolumetricFlowRate_();
-  *vol_flowrate_copy = *vol_flowrate;
+  S_->GetEvaluator(vol_flowrate_key_).Update(*S_, passwd_);
 
   if (coupled_to_matrix_ || flow_on_manifold_) VV_FractureConservationLaw();
 
@@ -1112,35 +1086,6 @@ Richards_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   *pdot_cells_prev = *pdot_cells;
 
   dt_ = dt_next_;
-}
-
-
-/* ******************************************************************
-* Conversion between fluxes using previous flux for upwinding.
-****************************************************************** */
-void
-Richards_PK::MolarFlowRateToVolumetricFlowRate_()
-{
-  CV_t beta(alpha_upwind_->Map());
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  auto& mol_density = S_->Get<CV_t>(mol_density_liquid_key_);
-
-  // populate auxiliary field for upwind purpose
-  *beta.ViewComponent("cell") = *mol_density.ViewComponent("cell");
-  if (mol_density.HasComponent("boundary_face")) {
-    Operators::BoundaryFacesToFaces(bc_model, mol_density, beta);
-  } else {
-    Operators::CellToBoundaryFaces(bc_model, beta);
-  }
-
-  upwind_->Compute(*vol_flowrate_copy, bc_model, beta);
-
-  auto& vol_flowrate_f =
-    *S_->GetW<CV_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_).ViewComponent("face");
-  auto& beta_f = *beta.ViewComponent("face");
-
-  int nfaces = vol_flowrate_f.MyLength();
-  for (int f = 0; f < nfaces; ++f) vol_flowrate_f[0][f] /= beta_f[0][f];
 }
 
 

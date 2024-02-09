@@ -129,7 +129,7 @@ MFD3D_BernardiRaugel::H1consistency(int c, const Tensor& K, DenseMatrix& N, Dens
         R_(d_ * nnodes + n, i) += p * dirs[n];
       }
     }
-  // 3D case
+    // 3D case
   } else {
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];

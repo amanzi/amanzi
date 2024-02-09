@@ -120,7 +120,6 @@ FlowEnergy_PK::Setup()
     S_->RequireEvaluator(ie_liquid_key_, Tags::DEFAULT);
   }
 
-
   // -- molar and mass density
   if (!S_->HasRecord(mol_density_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
@@ -245,7 +244,7 @@ FlowEnergy_PK::FunctionalResidual(double t_old,
   op0->UpdateFlux(u_new0->Data().ptr(), mol_flowrate.ptr());
 
   if (Keys::getVarName(sub_pks_[0]->name()) == "darcy")
-     mol_flowrate->Scale(1.0 / CommonDefs::MOLAR_MASS_H2O);
+    mol_flowrate->Scale(1.0 / CommonDefs::MOLAR_MASS_H2O);
 
   // energy
   auto u_old1 = u_old->SubVector(1);

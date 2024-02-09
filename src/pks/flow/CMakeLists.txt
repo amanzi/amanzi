@@ -51,6 +51,7 @@ set(flow_src_files Flow_PK.cc
                    WRMPartition.cc WRMFactory.cc WRMEvaluator.cc 
                    WaterStorage.cc
                    DarcyVelocityEvaluator.cc
+                   VolumetricFlowRateEvaluator.cc
                    MultiscaleFlowPorosityFactory.cc MultiscaleFlowPorosityPartition.cc
                    MultiscaleFlowPorosity_DPM.cc
                    MultiscaleFlowPorosity_GDPM.cc
@@ -96,6 +97,7 @@ set(flow_inc_files
   Porosity.hh
   PorosityModelPartition.hh
   Richards_PK.hh
+  VolumetricFlowRateEvaluator.hh
   WRM.hh
   WRM_BrooksCorey.hh
   WRM_linear.hh

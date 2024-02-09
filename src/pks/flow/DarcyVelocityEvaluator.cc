@@ -28,7 +28,9 @@ DarcyVelocityEvaluator::DarcyVelocityEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   AMANZI_ASSERT(my_keys_.size() > 0);
-  vol_flowrate_key_ = plist.get<std::string>("volumetric flow rate key");
+
+  domain_ = Keys::getDomain(my_keys_[0].first);
+  vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate");
   dependencies_.insert(std::make_pair(vol_flowrate_key_, Tags::DEFAULT));
 }
 
@@ -58,7 +60,6 @@ DarcyVelocityEvaluator::Clone() const
 void
 DarcyVelocityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
-  Key domain = plist_.get<std::string>("domain name");
   S.Get<CompositeVector>(vol_flowrate_key_).ScatterMasterToGhosted("face");
 
   const auto& flux = *S.Get<CompositeVector>(vol_flowrate_key_).ViewComponent("face", true);
@@ -66,7 +67,7 @@ DarcyVelocityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVec
 
   const auto& fmap = *S.Get<CompositeVector>(vol_flowrate_key_).Map().Map("face", true);
 
-  auto mesh = S.GetMesh(domain);
+  auto mesh = S.GetMesh(domain_);
   int ncells_owned =
     mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int dim = mesh->getSpaceDimension();

@@ -27,21 +27,17 @@ UpdateEnthalpyCouplingFluxes(
   const std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>>& adv_coupling_ops)
 {
   S->Get<CompositeVector>("enthalpy").ScatterMasterToGhosted("cell");
-  S->Get<CompositeVector>("molar_density_liquid").ScatterMasterToGhosted("cell");
   S->Get<CompositeVector>("temperature").ScatterMasterToGhosted("cell");
-  S->Get<CompositeVector>("volumetric_flow_rate").ScatterMasterToGhosted("face");
+  S->Get<CompositeVector>("molar_flow_rate").ScatterMasterToGhosted("face");
 
   // extract enthalpy fields
   S->GetEvaluator("enthalpy").Update(*S, "enthalpy");
   const auto& H_m = *S->Get<CompositeVector>("enthalpy").ViewComponent("cell", true);
   const auto& T_m = *S->Get<CompositeVector>("temperature").ViewComponent("cell", true);
-  const auto& n_l_m = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell", true);
 
   S->GetEvaluator("fracture-enthalpy").Update(*S, "fracture-enthalpy");
   const auto& H_f = *S->Get<CompositeVector>("fracture-enthalpy").ViewComponent("cell", true);
   const auto& T_f = *S->Get<CompositeVector>("fracture-temperature").ViewComponent("cell", true);
-  const auto& n_l_f =
-    *S->Get<CompositeVector>("fracture-molar_density_liquid").ViewComponent("cell", true);
 
   // update coupling terms for advection
   int ncells_owned_f =
@@ -51,7 +47,7 @@ UpdateEnthalpyCouplingFluxes(
 
   int np(0), dir, shift;
   AmanziMesh::Entity_ID_List cells;
-  const auto& flux = *S->Get<CompositeVector>("volumetric_flow_rate").ViewComponent("face", true);
+  const auto& flux = *S->Get<CompositeVector>("molar_flow_rate").ViewComponent("face", true);
   const auto& mmap = flux.Map();
   for (int c = 0; c < ncells_owned_f; ++c) {
     int f = mesh_fracture->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
@@ -66,13 +62,13 @@ UpdateEnthalpyCouplingFluxes(
       double tmp = flux[0][first + shift] * dir;
 
       // since we multiply by temperature, the model for the flux is
-      // q (\eta H / T) * T for both matrix and preconditioner
+      // q (H / T) * T for both matrix and preconditioner
       if (tmp > 0) {
         int c1 = cells[k];
-        double factor = H_m[0][c1] * n_l_m[0][c1] / T_m[0][c1];
+        double factor = H_m[0][c1] / T_m[0][c1];
         (*values1)[np] = tmp * factor;
       } else {
-        double factor = H_f[0][c] * n_l_f[0][c] / T_f[0][c];
+        double factor = H_f[0][c] / T_f[0][c];
         (*values2)[np] = -tmp * factor;
       }
 
