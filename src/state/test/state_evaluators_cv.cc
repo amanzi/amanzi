@@ -35,11 +35,11 @@ using namespace Amanzi::AmanziMesh;
 ****************************************************************** */
 class AEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  AEvaluator(Teuchos::ParameterList& plist)
+  AEvaluator(const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
   {
     dependencies_.insert(std::make_pair(Key("fb"), Tags::DEFAULT));
-    comp_ = plist.get<std::string>("component", "cell");
+    comp_ = plist->get<std::string>("component", "cell");
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override
@@ -86,9 +86,9 @@ SUITE(EVALUATORS_CV)
     State S;
     S.RegisterDomainMesh(mesh);
 
-    Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    es_list.setName("fa");
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList());
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list->setName("fa");
 
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
@@ -159,9 +159,9 @@ SUITE(EVALUATORS_CV)
     S.RegisterDomainMesh(mesh);
 
     // make the primary.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
-    Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    es_list.setName("fb");
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList());
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list->setName("fb");
     S.Require<CompositeVector, CompositeVectorSpace>("fb", Tags::DEFAULT, "fb")
       .SetMesh(mesh)
       ->SetGhosted(true)
@@ -172,10 +172,10 @@ SUITE(EVALUATORS_CV)
     S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
-    Teuchos::ParameterList ea_list;
-    ea_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    ea_list.setName("fa");
-    ea_list.set("tag", "");
+    auto ea_list = Teuchos::rcp(new Teuchos::ParameterList());
+    ea_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    ea_list->setName("fa");
+    ea_list->set("tag", "");
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
       ->SetGhosted(true)
@@ -280,19 +280,19 @@ SUITE(EVALUATORS_CV)
     S.RegisterDomainMesh(mesh);
 
     // make the primary
-    Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    es_list.setName("fb");
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList());
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list->setName("fb");
     S.Require<CompositeVector, CompositeVectorSpace>("fb", Tags::DEFAULT, "fb");
     auto fb_eval =
       Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
     S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary
-    Teuchos::ParameterList ea_list;
-    ea_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    ea_list.setName("fa");
-    ea_list.set("tag", "");
+    auto ea_list = Teuchos::rcp(new Teuchos::ParameterList());
+    ea_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    ea_list->setName("fa");
+    ea_list->set("tag", "");
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
       ->SetGhosted(true)
@@ -304,11 +304,11 @@ SUITE(EVALUATORS_CV)
     S.SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
     // make another secondary
-    Teuchos::ParameterList ec_list;
-    ec_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    ec_list.setName("fc");
-    ec_list.set("tag", "");
-    ec_list.set("component", "face");
+    auto ec_list = Teuchos::rcp(new Teuchos::ParameterList());
+    ec_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    ec_list->setName("fc");
+    ec_list->set("tag", "");
+    ec_list->set("component", "face");
     S.Require<CompositeVector, CompositeVectorSpace>("fc", Tags::DEFAULT, "fc")
       .SetMesh(mesh)
       ->SetGhosted(true)
@@ -360,19 +360,19 @@ SUITE(EVALUATORS_CV)
     S.RegisterMesh("m2", mesh2);
 
     // make the primary
-    Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    es_list.setName("fb");
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList());
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list->setName("fb");
     S.Require<CompositeVector, CompositeVectorSpace>("fb", Tags::DEFAULT, "fb").SetMesh(mesh2);
     auto fb_eval =
       Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
     S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary
-    Teuchos::ParameterList ea_list;
-    ea_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    ea_list.setName("fa");
-    ea_list.set("tag", "");
+    auto ea_list = Teuchos::rcp(new Teuchos::ParameterList());
+    ea_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    ea_list->setName("fa");
+    ea_list->set("tag", "");
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
       ->SetGhosted(true)
@@ -401,9 +401,9 @@ SUITE(EVALUATORS_CV)
     S.RegisterMesh("m2", mesh2);
 
     // make the primary
-    Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    es_list.setName("fb");
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList());
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list->setName("fb");
     S.Require<CompositeVector, CompositeVectorSpace>("fb", Tags::DEFAULT, "fb")
       .SetMesh(mesh)
       ->SetComponent("face", AmanziMesh::FACE, 1);
@@ -412,10 +412,10 @@ SUITE(EVALUATORS_CV)
     S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary
-    Teuchos::ParameterList ea_list;
-    ea_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    ea_list.setName("fa");
-    ea_list.set("tag", "");
+    auto ea_list = Teuchos::rcp(new Teuchos::ParameterList());
+    ea_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    ea_list->setName("fa");
+    ea_list->set("tag", "");
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
       ->SetGhosted(true)
@@ -443,19 +443,19 @@ SUITE(EVALUATORS_CV)
     S.RegisterMesh("m2", mesh2);
 
     // make the primary
-    Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    es_list.setName("fb");
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList());
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list->setName("fb");
     S.Require<CompositeVector, CompositeVectorSpace>("fb", Tags::DEFAULT, "fb");
     auto fb_eval =
       Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
     S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary
-    Teuchos::ParameterList ea_list;
-    ea_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    ea_list.setName("fa");
-    ea_list.set("tag", "");
+    auto ea_list = Teuchos::rcp(new Teuchos::ParameterList());
+    ea_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    ea_list->setName("fa");
+    ea_list->set("tag", "");
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
       ->SetGhosted(true)
@@ -467,11 +467,11 @@ SUITE(EVALUATORS_CV)
 
 
     // make another secondary
-    Teuchos::ParameterList ec_list;
-    ec_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    ec_list.setName("fc");
-    ec_list.set("tag", "");
-    ec_list.set("component", "face");
+    auto ec_list = Teuchos::rcp(new Teuchos::ParameterList());
+    ec_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    ec_list->setName("fc");
+    ec_list->set("tag", "");
+    ec_list->set("component", "face");
     S.Require<CompositeVector, CompositeVectorSpace>("fc", Tags::DEFAULT, "fc")
       .SetMesh(mesh2)
       ->SetGhosted(true)
@@ -500,19 +500,19 @@ SUITE(EVALUATORS_CV)
     S.RegisterMesh("m2", mesh2);
 
     // make the primary
-    Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    es_list.setName("fb");
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList());
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list->setName("fb");
     S.Require<CompositeVector, CompositeVectorSpace>("fb", Tags::DEFAULT, "fb");
     auto fb_eval =
       Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
     S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary
-    Teuchos::ParameterList ea_list;
-    ea_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    ea_list.setName("fa");
-    ea_list.set("tag", "");
+    auto ea_list = Teuchos::rcp(new Teuchos::ParameterList());
+    ea_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    ea_list->setName("fa");
+    ea_list->set("tag", "");
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
       ->SetGhosted(true)
@@ -524,11 +524,11 @@ SUITE(EVALUATORS_CV)
 
 
     // make another secondary
-    Teuchos::ParameterList ec_list;
-    ec_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    ec_list.setName("fc");
-    ec_list.set("tag", "");
-    ec_list.set("component", "face");
+    auto ec_list = Teuchos::rcp(new Teuchos::ParameterList());
+    ec_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    ec_list->setName("fc");
+    ec_list->set("tag", "");
+    ec_list->set("component", "face");
     S.Require<CompositeVector, CompositeVectorSpace>("fc", Tags::DEFAULT, "fc")
       .SetMesh(mesh2)
       ->SetGhosted(true)
@@ -555,9 +555,9 @@ SUITE(EVALUATORS_CV)
     S.RegisterDomainMesh(mesh);
 
     // make the primary
-    Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    es_list.setName("fb");
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList());
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list->setName("fb");
     S.Require<CompositeVector, CompositeVectorSpace>("fb", Tags::DEFAULT, "fb")
       .SetMesh(mesh)
       ->SetGhosted(true)
@@ -567,11 +567,11 @@ SUITE(EVALUATORS_CV)
     S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary
-    Teuchos::ParameterList ea_list;
-    ea_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    ea_list.setName("fa");
-    ea_list.set("tag", "");
-    ea_list.set("consistency policy", "take from child");
+    auto ea_list = Teuchos::rcp(new Teuchos::ParameterList());
+    ea_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    ea_list->setName("fa");
+    ea_list->set("tag", "");
+    ea_list->set("consistency policy", "take from child");
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa");
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
       "fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
@@ -601,9 +601,9 @@ SUITE(EVALUATORS_CV)
     S.RegisterDomainMesh(mesh);
 
     // make the primary
-    Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    es_list.setName("fb");
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList());
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list->setName("fb");
     S.Require<CompositeVector, CompositeVectorSpace>("fb", Tags::DEFAULT, "fb")
       .SetMesh(mesh)
       ->SetGhosted(true)
@@ -613,10 +613,10 @@ SUITE(EVALUATORS_CV)
     S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary
-    Teuchos::ParameterList ea_list;
-    ea_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    ea_list.setName("fa");
-    ea_list.set("tag", "");
+    auto ea_list = Teuchos::rcp(new Teuchos::ParameterList());
+    ea_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    ea_list->setName("fa");
+    ea_list->set("tag", "");
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa").SetMesh(mesh);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
       "fa", Tags::DEFAULT, "fb", Tags::DEFAULT);

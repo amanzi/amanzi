@@ -102,8 +102,8 @@ struct obs_test {
     meshfactory->set_preference(pref);
     Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory->create(-1, -1, -1, 1, 1, 1, 3, 3, 3);
 
-    Teuchos::ParameterList state_list("state");
-    state_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    auto state_list = Teuchos::rcp(new Teuchos::ParameterList("state"));
+    state_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
     S = Teuchos::rcp(new State(state_list));
     S->RegisterMesh("domain", mesh);

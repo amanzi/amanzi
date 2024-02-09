@@ -276,7 +276,7 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
         KOKKOS_LAMBDA(const int c) {
 
           auto [faces, bisectors] = m->getCellFacesAndBisectors(c);
-          WhetStone::Tensor<DeviceOnlyMemorySpace> Kc = K->at(c);
+          auto Kc = K->at(c);
 
           for (int i = 0; i < faces.extent(0); i++) {
             auto f = faces(i);

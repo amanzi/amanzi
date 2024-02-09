@@ -74,7 +74,7 @@ class Function;
 class EvaluatorSecondaryMonotypeFromFunction
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit EvaluatorSecondaryMonotypeFromFunction(Teuchos::ParameterList& plist);
+  explicit EvaluatorSecondaryMonotypeFromFunction(const Teuchos::RCP<Teuchos::ParameterList>& plist);
   EvaluatorSecondaryMonotypeFromFunction(const EvaluatorSecondaryMonotypeFromFunction& other);
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 

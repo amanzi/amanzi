@@ -35,7 +35,7 @@ class EvaluatorIndependent_ : public Evaluator {
   // ---------------------------------------------------------------------------
   // Constructors, assignement operators, etc
   // ---------------------------------------------------------------------------
-  explicit EvaluatorIndependent_(Teuchos::ParameterList& plist);
+  explicit EvaluatorIndependent_(const Teuchos::RCP<Teuchos::ParameterList>& plist);
   EvaluatorIndependent_(const EvaluatorIndependent_& other) = default;
 
   EvaluatorIndependent_& operator=(const EvaluatorIndependent_& other);
@@ -90,7 +90,7 @@ class EvaluatorIndependent_ : public Evaluator {
   bool computed_once_;
 
   KeySet requests_;
-  Teuchos::ParameterList plist_;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
   VerboseObject vo_;
 };
 

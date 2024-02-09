@@ -111,10 +111,7 @@ class State {
 
  public:
   State();
-  explicit State(Teuchos::ParameterList& state_plist);
-
-  // Copy constructor, copies memory not pointers.
-  // State(const State& other, StateConstructMode mode=STATE_CONSTRUCT_MODE_COPY_DATA);
+  explicit State(const Teuchos::RCP<Teuchos::ParameterList>& state_plist);
 
   // Assignment and copy operators. Note this should be replaced with smart
   // usage of tags
@@ -129,7 +126,7 @@ class State {
 
   // Sub-steps in the initialization process. (Used by Amanzi)
   void Initialize();
-  void InitializeFields(const Tag& tag = Tags::DEFAULT);
+  void InitializeFields();
   void InitializeEvaluators();
   void InitializeFieldCopies(const Tag& ref = Tags::DEFAULT);
   bool CheckAllFieldsInitialized();
@@ -476,13 +473,10 @@ class State {
   // managed in State, where each node is an Evaluator.
   //
   // -- allows PKs to add to this list to custom evaluators
-  Teuchos::ParameterList& FEList() { return state_plist_.sublist("evaluators"); }
-  const Teuchos::ParameterList& FEList() const { return state_plist_.sublist("evaluators"); }
+  Teuchos::ParameterList& FEList() { return state_plist_->sublist("evaluators"); }
+  const Teuchos::ParameterList& FEList() const { return state_plist_->sublist("evaluators"); }
   Teuchos::ParameterList& GetEvaluatorList(const Key& key);
   bool HasEvaluatorList(const Key& key) const;
-
-  // -- allows PKs to add to this list to initial conditions
-  Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
 
   // Evaluator interface
   Evaluator& RequireEvaluator(const Key& key, const Tag& tag);
@@ -519,7 +513,7 @@ class State {
   // should be used and tested more thoroughly.
   //
   // Get a parameter list.
-  Teuchos::ParameterList GetModelParameters(std::string modelname);
+  const Teuchos::ParameterList& GetModelParameters(const std::string& modelname);
 
   // -----------------------------------------------------------------------------
   // Time tags and vector copies
@@ -567,6 +561,7 @@ class State {
  private:
   // Accessors that return null if the Key does not exist.
   Teuchos::RCP<AmanziMesh::Mesh> GetMesh_(const Key& key) const;
+  Teuchos::RCP<Teuchos::ParameterList> GetEvaluatorListPtr_(const Key& key);
 
   // a hook to allow debuggers to connect
   void CheckIsDebugEval_(const Key& key, const Tag& tag);
@@ -588,7 +583,7 @@ class State {
   double final_time_, intermediate_time_, last_time_, initial_time_;
 
   // parameter list
-  Teuchos::ParameterList state_plist_;
+  Teuchos::RCP<Teuchos::ParameterList> state_plist_;
 };
 
 } // namespace Amanzi

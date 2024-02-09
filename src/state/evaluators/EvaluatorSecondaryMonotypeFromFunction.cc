@@ -49,7 +49,7 @@ so if it was found useful.
 namespace Amanzi {
 
 EvaluatorSecondaryMonotypeFromFunction::EvaluatorSecondaryMonotypeFromFunction(
-  Teuchos::ParameterList& plist)
+  const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (dependencies_.size() == 0) {
@@ -60,15 +60,15 @@ EvaluatorSecondaryMonotypeFromFunction::EvaluatorSecondaryMonotypeFromFunction(
   }
 
   FunctionFactory fac;
-  if (plist.isSublist("functions")) {
-    auto& flist = plist.sublist("functions");
+  if (plist_->isSublist("functions")) {
+    auto& flist = plist_->sublist("functions");
     for (auto& lcv : flist) {
       if (flist.isSublist(lcv.first)) {
         funcs_.push_back(Teuchos::rcp(fac.Create(flist.sublist(lcv.first))));
       }
     }
-  } else if (plist.isSublist("function")) {
-    funcs_.push_back(Teuchos::rcp(fac.Create(plist.sublist("function"))));
+  } else if (plist_->isSublist("function")) {
+    funcs_.push_back(Teuchos::rcp(fac.Create(plist_->sublist("function"))));
   } else {
     Errors::Message m;
     m << "EvaluatorSecondaryMonotypeFromFunction: " << my_keys_[0].first << ","

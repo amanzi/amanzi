@@ -22,11 +22,11 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
-EvaluatorIndependentPatchFunction::EvaluatorIndependentPatchFunction(Teuchos::ParameterList& plist)
+EvaluatorIndependentPatchFunction::EvaluatorIndependentPatchFunction(const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorIndependent<MultiPatch<double>, MultiPatchSpace>(plist)
 {
-  function_outer_name_ = plist_.get<std::string>("function list name", "function");
-  function_inner_name_ = plist_.get<std::string>("function inner list name", "function");
+  function_outer_name_ = plist_->get<std::string>("function list name", "function");
+  function_inner_name_ = plist_->get<std::string>("function inner list name", "function");
 };
 
 
@@ -79,7 +79,7 @@ EvaluatorIndependentPatchFunction::EnsureCompatibility(State& S)
   auto& mps = S.Require<MultiPatch<double>, MultiPatchSpace>(my_key_, my_tag_, my_key_);
   if (func_ == Teuchos::null && mps.mesh != Teuchos::null) {
     AMANZI_ASSERT(mps.size() == 0);
-    func_ = Teuchos::rcp(new Functions::MeshFunction(plist_.sublist(function_outer_name_),
+    func_ = Teuchos::rcp(new Functions::MeshFunction(plist_->sublist(function_outer_name_),
             mps.mesh,
             function_inner_name_,
             mps.entity_kind,

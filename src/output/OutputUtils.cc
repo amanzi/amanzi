@@ -33,13 +33,15 @@ std::vector<std::string>
 names(const Teuchos::ParameterList& attrs, std::size_t count)
 {
   std::vector<std::string> names;
+  bool always_write = attrs.isParameter("always write subfield dof") &&
+    attrs.get<bool>("always write subfield dof");
   if (attrs.isParameter("subfieldnames") &&
       attrs.get<Teuchos::Array<std::string>>("subfieldnames").size() == count) {
     auto subfield_names = attrs.get<Teuchos::Array<std::string>>("subfieldnames");
     for (int i = 0; i != count; ++i) {
       names.emplace_back(attrs.name() + "." + subfield_names[i]);
     }
-  } else if (count > 1) {
+  } else if (count > 1 || always_write) {
     for (int i = 0; i != count; ++i) {
       names.emplace_back(attrs.name() + "." + std::to_string(i));
     }

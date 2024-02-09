@@ -36,7 +36,7 @@ class EvaluatorSecondaryMeshedQuantity
   // ---------------------------------------------------------------------------
   // Constructors, assignement operators, etc
   // ---------------------------------------------------------------------------
-  EvaluatorSecondaryMeshedQuantity(Teuchos::ParameterList& plist)
+  EvaluatorSecondaryMeshedQuantity(const Teuchos::RCP<Teuchos::ParameterList>& plist)
       : EvaluatorSecondary(plist),
         inited_(false)
   {}

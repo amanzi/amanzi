@@ -37,7 +37,7 @@ class EvaluatorSecondaryMonotypeAdditive
   : public EvaluatorSecondaryMonotype<Data_t, DataFactory_t> {
 
  public:
-  EvaluatorSecondaryMonotypeAdditive(Teuchos::ParameterList& plist);
+  EvaluatorSecondaryMonotypeAdditive(const Teuchos::RCP<Teuchos::ParameterList>& plist);
   EvaluatorSecondaryMonotypeAdditive(const EvaluatorSecondaryMonotypeAdditive& other) = default;
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
@@ -65,7 +65,7 @@ class EvaluatorSecondaryMonotypeAdditive
 
 
 template <typename Data_t, typename DataFactory_t>
-EvaluatorSecondaryMonotypeAdditive<Data_t,DataFactory_t>::EvaluatorSecondaryMonotypeAdditive(Teuchos::ParameterList& plist)
+EvaluatorSecondaryMonotypeAdditive<Data_t,DataFactory_t>::EvaluatorSecondaryMonotypeAdditive(const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : EvaluatorSecondaryMonotype<Data_t, DataFactory_t>(plist)
 {
   AMANZI_ASSERT(my_keys_.size() == 1);
@@ -79,10 +79,10 @@ EvaluatorSecondaryMonotypeAdditive<Data_t,DataFactory_t>::EvaluatorSecondaryMono
     Key coef_name = Keys::getKey(dep.first, dep.second);
     Key pname = dep.first + " coefficient";
     Key pname_full = coef_name + " coefficient";
-    if (plist.isParameter(pname_full))
-      coefs_[coef_name] = plist.get<double>(pname_full);
-    else if (plist.isParameter(pname))
-      coefs_[coef_name] = plist.get<double>(pname);
+    if (plist->isParameter(pname_full))
+      coefs_[coef_name] = plist->get<double>(pname_full);
+    else if (plist->isParameter(pname))
+      coefs_[coef_name] = plist->get<double>(pname);
     else
       coefs_[coef_name] = 1.0;
   }

@@ -61,8 +61,8 @@ class AModel {
   static const int n_dependencies = 4;
   static const std::string name;
 
-  AModel(Teuchos::ParameterList& plist)
-    : alpha_(plist.sublist("model parameters").get<double>("alpha"))
+  AModel(const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    : alpha_(plist->sublist("model parameters").get<double>("alpha"))
   {}
 
   void setViews(const std::vector<cView_type>& dependency_views,
@@ -140,7 +140,7 @@ class CModel {
   static const int n_dependencies = 2;
   static const std::string name;
 
-  CModel(Teuchos::ParameterList& plist) {}
+  CModel(const Teuchos::RCP<Teuchos::ParameterList>& plist) {}
 
   void setViews(const std::vector<cView_type>& deps,
                 const std::vector<View_type>& res,
@@ -194,7 +194,7 @@ class DModel_ {
   static const std::string name;
   using Accessor_View_type = Kokkos::View<const int*, typename View_type::device_type>;
 
-  DModel_(Teuchos::ParameterList& plist) {}
+  DModel_(const Teuchos::RCP<Teuchos::ParameterList>& plist) {}
 
   void setViews(const std::vector<cView_type>& deps,
                 const std::vector<View_type>& res,
@@ -254,7 +254,7 @@ class EModel {
   static const int n_dependencies = 2;
   static const std::string name;
 
-  EModel(Teuchos::ParameterList& plist) {}
+  EModel(const Teuchos::RCP<Teuchos::ParameterList>& plist) {}
 
   void setViews(const std::vector<cView_type>& deps,
                 const std::vector<View_type>& res,
@@ -307,7 +307,7 @@ class FModel {
   static const int n_dependencies = 1;
   static const std::string name;
 
-  FModel(Teuchos::ParameterList& plist) {}
+  FModel(const Teuchos::RCP<Teuchos::ParameterList>& plist) {}
 
   void setViews(const std::vector<cView_type>& deps,
                 const std::vector<View_type>& res,
@@ -353,7 +353,7 @@ class HModel {
   static const int n_dependencies = 1;
   static const std::string name;
 
-  HModel(Teuchos::ParameterList& plist) {}
+  HModel(const Teuchos::RCP<Teuchos::ParameterList>& plist) {}
 
   void setViews(const std::vector<cView_type>& deps,
                 const std::vector<View_type>& res,

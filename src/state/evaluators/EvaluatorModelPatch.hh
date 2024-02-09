@@ -63,9 +63,7 @@ class EvaluatorModelPatch
   using cView_type = cMultiVectorView_type<Device_type>;
   using Model_type = Model<cView_type, View_type>;
 
-  Teuchos::ParameterList plist_;
-
-  EvaluatorModelPatch(Teuchos::ParameterList& plist);
+  EvaluatorModelPatch(const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
   virtual std::string getType() const override { return model_->name + " on patch"; }
@@ -103,12 +101,11 @@ protected:
 // -----------------------------------------------------------------------------
 template <template <class, class> class Model, class Device_type>
 EvaluatorModelPatch<Model, Device_type>::
-  EvaluatorModelPatch(Teuchos::ParameterList& plist)
+  EvaluatorModelPatch(const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorSecondary(plist),
-    plist_(plist),
     model_(Teuchos::rcp(new Model_type(plist))),
-    name_(plist.name()),
-    tag_(plist.get<std::string>("tag"))
+    name_(plist->name()),
+    tag_(plist->get<std::string>("tag"))
 {
   for (const auto& dep : model_->getDependencies())
     dependencies_.insert(KeyTag(dep, tag_));

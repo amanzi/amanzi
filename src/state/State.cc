@@ -44,17 +44,17 @@ namespace Amanzi {
 // Constructors
 // -----------------------------------------------------------------------------
 State::State()
-{
-  vo_ = Teuchos::rcp(new VerboseObject("State", "none"));
-};
+  : state_plist_(Teuchos::rcp(new Teuchos::ParameterList("state"))),
+    vo_(Teuchos::rcp(new VerboseObject("State", "none")))
+{};
 
-State::State(Teuchos::ParameterList& state_plist) : state_plist_(state_plist)
+State::State(const Teuchos::RCP<Teuchos::ParameterList>& state_plist)
+  : state_plist_(state_plist),
+    vo_(Teuchos::rcp(new VerboseObject("State", *state_plist)))
 {
-  vo_ = Teuchos::rcp(new VerboseObject("State", state_plist_));
-
   // touch the "evaluators" list to make sure it exists, even in tests that
   // don't use it, to make sure that const calls to FEList() can work.
-  state_plist_.sublist("evaluators");
+  state_plist_->sublist("evaluators");
 };
 
 
@@ -351,24 +351,21 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
   }
 
   // Create the evaluator from State's plist
-  // -- Get the Field Evaluator plist
-  Teuchos::ParameterList& fm_plist = state_plist_.sublist("evaluators");
-
   if (HasEvaluatorList(key)) {
     // -- Get this evaluator's plist.
-    Teuchos::ParameterList sublist = GetEvaluatorList(key);
-    sublist.setName(key);
+    auto sublist = GetEvaluatorListPtr_(key);
+
     // -- Insert any model parameters.
-    if (sublist.isParameter("model parameters") &&
-        sublist.isType<std::string>("model parameters")) {
-      std::string modelname = sublist.get<std::string>("model parameters");
-      Teuchos::ParameterList modellist = GetModelParameters(modelname);
-      sublist.set(modelname, modellist);
+    if (sublist->isParameter("model parameters") &&
+        sublist->isType<std::string>("model parameters")) {
+      std::string modelname = sublist->get<std::string>("model parameters");
+      sublist->remove("model parameters");
+      sublist->set("model parameters", GetModelParameters(modelname));
     }
 
     // -- Create and set the evaluator.
     Evaluator_Factory evaluator_factory;
-    sublist.set("tag", tag.get());
+    sublist->set("tag", tag.get());
     auto evaluator = evaluator_factory.createEvaluator(sublist);
     SetEvaluator(key, tag, evaluator);
     return *evaluator;
@@ -377,24 +374,24 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
   // is it a meshed quantity?
   // recursive calls will result in the above, HasEvaluatorList() branch being taken.
   if (Keys::getVarName(key) == "cell_volume") {
-    Teuchos::ParameterList& cv_list = GetEvaluatorList(key);
+    auto& cv_list = GetEvaluatorList(key);
     cv_list.set("evaluator type", "cell volume");
     return RequireEvaluator(key, tag);
   } else if (Keys::getVarName(key) == "face_area") {
-    Teuchos::ParameterList& cv_list = GetEvaluatorList(key);
+    auto& cv_list = GetEvaluatorList(key);
     cv_list.set("evaluator type", "face area");
     return RequireEvaluator(key, tag);
   } else if (Keys::getVarName(key) == "elevation") {
-    Teuchos::ParameterList& cv_list = GetEvaluatorList(key);
+    auto& cv_list = GetEvaluatorList(key);
     cv_list.set("evaluator type", "meshed elevation");
     return RequireEvaluator(key, tag);
   } else if (Keys::getVarName(key) == "slope_magnitude") {
-    Teuchos::ParameterList& cv_list = GetEvaluatorList(key);
+    auto& cv_list = GetEvaluatorList(key);
     cv_list.set("evaluator type", "meshed slope magnitude");
     return RequireEvaluator(key, tag);
   } else if (Keys::getVarName(key) == "mesh") {
-    Teuchos::ParameterList& eval_list = GetEvaluatorList(key);
-    eval_list.set("evaluator type", "static mesh");
+    auto& cv_list = GetEvaluatorList(key);
+    cv_list.set("evaluator type", "static mesh");
     return RequireEvaluator(key, tag);
   }
 
@@ -403,7 +400,7 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
   message << "Evaluator \"" << key << "@" << tag.get() << "\" cannot be created in State. "
           << "Verify (1) SetEvaluator is called or (2) name exists in state->evaluators.";
   Exceptions::amanzi_throw(message);
-  return *Evaluator_Factory().createEvaluator(fm_plist); // silences warning
+  return *Evaluator_Factory().createEvaluator(Teuchos::null); // silences warning
 }
 
 
@@ -486,13 +483,16 @@ State::WriteStatistics(Teuchos::Ptr<const VerboseObject> vo,
 // -----------------------------------------------------------------------------
 // State handles model parameters.
 // -----------------------------------------------------------------------------
-Teuchos::ParameterList
-State::GetModelParameters(std::string modelname)
+const Teuchos::ParameterList&
+State::GetModelParameters(const std::string& modelname)
 {
-  AMANZI_ASSERT(state_plist_.isSublist("model parameters"));
-  Teuchos::ParameterList model_plist = state_plist_.sublist("model parameters");
-  AMANZI_ASSERT(model_plist.isSublist(modelname));
-  return model_plist.sublist(modelname);
+  Teuchos::ParameterList& model_params = state_plist_->sublist("model parameters");
+  if (!model_params.isSublist(modelname)) {
+    Errors::Message message;
+    message << "No set of \"model parameters\" named \"" << modelname << "\" in state->model parameters.";
+    Exceptions::amanzi_throw(message);
+  }
+  return model_params.sublist(modelname);
 }
 
 
@@ -683,10 +683,9 @@ State::InitializeEvaluators()
 void
 State::InitializeFieldCopies(const Tag& reference_tag)
 {
-  VerboseObject vo("State", state_plist_);
-  if (vo.os_OK(Teuchos::VERB_EXTREME)) {
-    Teuchos::OSTab tab = vo.getOSTab();
-    *vo.os() << "initializing field copies..." << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "initializing field copies..." << std::endl;
   }
 
   for (auto& e : data_) {
@@ -706,83 +705,41 @@ State::InitializeFieldCopies(const Tag& reference_tag)
 
 
 void
-State::InitializeFields(const Tag& tag)
+State::InitializeFields()
 {
-  bool pre_initialization = false;
-  VerboseObject vo("State", state_plist_);
-
-  // this directly overlaps with "initial conditions" --> "varname" -->
-  // "restart file" capability, but is done globally instead of by variable.
-  // Can the be refactored to use that instead?
-  if (state_plist_.isParameter("initialization filename")) {
-    pre_initialization = true;
-    std::string filename = state_plist_.get<std::string>("initialization filename");
-    Amanzi::Checkpoint file_input(filename, *this);
-
-    for (auto it = data_.begin(); it != data_.end(); ++it) {
-      auto owner = GetRecord(it->first, tag).owner();
-      auto& rs = GetRecordSetW(it->first);
-      if (rs.ValidType<CompositeVector>()) {
-        rs.ReadCheckpoint(file_input, &tag);
-
-        // this is pretty hacky -- why are these ICs not in the PK's list?  And
-        // if they aren't owned by a PK, they should be independent variables
-        // not primary variables.
-        if (HasEvaluator(it->first, tag)) {
-          Evaluator& fm = GetEvaluator(it->first, tag);
-          auto tmp = dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>*>(&fm);
-          if (tmp != nullptr) { tmp->SetChanged(); }
-        }
-      }
-
-      if (vo.os_OK(Teuchos::VERB_HIGH)) {
-        Teuchos::OSTab tab = vo.getOSTab();
-        *vo_->os() << "initializing from HDF5 file: \"" << it->first << std::endl;
-      }
-    }
-    // file_input.close_h5file();
+  Teuchos::OSTab tab = vo_->getOSTab();
+  // Initialize through constants list
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+    *vo_->os() << "initializing data through constants list..." << std::endl;
   }
 
-  // Initialize through initial condition
-  if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
-    Teuchos::OSTab tab = vo.getOSTab();
-    *vo.os() << "initializing data through initial conditions..." << std::endl;
-  }
+  Teuchos::ParameterList& constants_list = state_plist_->sublist("constants");
 
-  Tag failed;
-  if (state_plist_.isSublist("initial conditions")) {
-    double t_ini = state_plist_.sublist("initial conditions").get<double>("time", 0.0);
-    for (auto& e : data_) {
-      std::string flag("... skipped");
-      if (pre_initialization || !e.second->isInitialized(failed)) {
-        if (state_plist_.sublist("initial conditions").isSublist(e.first)) {
-          flag = "[ok]";
-          if (state_plist_.sublist("initial conditions").isSublist(e.first)) {
-            Teuchos::ParameterList sublist =
-              state_plist_.sublist("initial conditions").sublist(e.first);
-            sublist.set<double>("time", t_ini);
-            e.second->Initialize(sublist, true);
-          }
-        } else {
-          // check for domain set
-          KeyTriple split;
-          bool is_ds = Keys::splitDomainSet(e.first, split);
-          Key ds_name = std::get<0>(split);
-          if (is_ds) {
-            Key lifted_key = Keys::getKey(ds_name, "*", std::get<2>(split));
-            if (state_plist_.sublist("initial conditions").isSublist(lifted_key)) {
-              flag = "[ok]";
-              Teuchos::ParameterList sublist =
-                state_plist_.sublist("initial conditions").sublist(lifted_key);
-              sublist.set("evaluator name", e.first);
-              e.second->Initialize(sublist);
-            }
+  for (auto& e : data_) {
+    std::string flag("... skipped");
+    Tag not_init_tag;
+    if (!e.second->isInitialized(not_init_tag)) {
+      if (constants_list.isSublist(e.first)) {
+        flag = "[ok]";
+        e.second->Initialize(constants_list.sublist(e.first));
+      } else {
+        // check for domain set
+        KeyTriple split;
+        bool is_ds = Keys::splitDomainSet(e.first, split);
+        Key ds_name = std::get<0>(split);
+        if (is_ds) {
+          Key lifted_key = Keys::getKey(ds_name, "*", std::get<2>(split));
+          if (constants_list.isSublist(lifted_key)) {
+            flag = "[ok]";
+            // make a copy
+            Teuchos::ParameterList sublist = constants_list.sublist(lifted_key);
+            sublist.setName(e.first);
+            e.second->Initialize(sublist);
           }
         }
       }
 
-      if (vo.os_OK(Teuchos::VERB_HIGH)) {
-        Teuchos::OSTab tab = vo.getOSTab();
+      if (vo_->os_OK(Teuchos::VERB_HIGH)) {
         *vo_->os() << "initializing \"" << e.first << "\" " << flag << std::endl;
       }
     }
@@ -817,7 +774,7 @@ State::InitializeIOFlags()
 
   // removing fields from vis dump
   std::vector<std::string> blacklist =
-    state_plist_.get<Teuchos::Array<std::string>>("blacklist", empty).toVector();
+    state_plist_->get<Teuchos::Array<std::string>>("blacklist", empty).toVector();
 
   for (auto it = data_begin(); it != data_end(); ++it) {
     bool io_block(false);
@@ -832,7 +789,7 @@ State::InitializeIOFlags()
 
   // adding fields to vis dump
   std::vector<std::string> whitelist =
-    state_plist_.get<Teuchos::Array<std::string>>("whitelist", empty).toVector();
+    state_plist_->get<Teuchos::Array<std::string>>("whitelist", empty).toVector();
 
   for (auto it = data_begin(); it != data_end(); ++it) {
     bool io_allow(false);
@@ -888,6 +845,7 @@ State::GetEvaluatorPtr(const Key& key, const Tag& tag)
 void
 State::SetEvaluator(const Key& key, const Tag& tag, const Teuchos::RCP<Evaluator>& evaluator)
 {
+  CheckIsDebugEval_(key, tag);
   evaluators_[key][tag] = evaluator;
 }
 
@@ -927,13 +885,35 @@ State::HasEvaluatorList(const Key& key) const
 }
 
 
+Teuchos::RCP<Teuchos::ParameterList>
+State::GetEvaluatorListPtr_(const Key& key)
+{
+  if (FEList().isSublist(key)) {
+    return Teuchos::sublist(Teuchos::sublist(state_plist_, "evaluators"), key);
+  } else {
+    KeyTriple split;
+    bool is_ds = Keys::splitDomainSet(key, split);
+    if (is_ds) {
+      Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
+      if (FEList().isSublist(lifted_key)) {
+        auto list_copy = Teuchos::rcp(new Teuchos::ParameterList(GetEvaluatorList(lifted_key)));
+        list_copy->setName(key);
+        // NOTE: should we put list_copy in "evaluators" list?
+        return list_copy;
+      }
+    }
+  }
+  return Teuchos::null;
+}
+
+
 void
 State::CheckIsDebugEval_(const Key& key, const Tag& tag)
 {
   // check for debugging.  This provides a line for setting breakpoints for
   // debugging PK and Evaluator dependencies.
 #ifdef ENABLE_DBC
-  Teuchos::Array<Key> debug_evals = state_plist_.sublist("debug").get<Teuchos::Array<std::string>>(
+  Teuchos::Array<Key> debug_evals = state_plist_->sublist("debug").get<Teuchos::Array<std::string>>(
     "evaluators", Teuchos::Array<Key>());
   if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
@@ -954,7 +934,7 @@ State::CheckIsDebugData_(const Key& key, const Tag& tag)
   // debugging PK and Evaluator dependencies.
 #ifdef ENABLE_DBC
   Teuchos::Array<Key> debug_evals =
-    state_plist_.sublist("debug").get<Teuchos::Array<std::string>>("data", Teuchos::Array<Key>());
+    state_plist_->sublist("debug").get<Teuchos::Array<std::string>>("data", Teuchos::Array<Key>());
   if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << "State: data for debug field \"" << key << "@" << tag << "\" was required."

@@ -48,7 +48,7 @@ namespace Amanzi {
 class EvaluatorIndependentPatchFunction
   : public EvaluatorIndependent<MultiPatch<double>, MultiPatchSpace> {
  public:
-  explicit EvaluatorIndependentPatchFunction(Teuchos::ParameterList& plist);
+  explicit EvaluatorIndependentPatchFunction(const Teuchos::RCP<Teuchos::ParameterList>& plist);
   EvaluatorIndependentPatchFunction(const EvaluatorIndependentPatchFunction& other) = default;
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;

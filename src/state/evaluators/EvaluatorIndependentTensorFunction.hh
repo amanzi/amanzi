@@ -33,7 +33,7 @@ namespace Impl {
         "TensorFunctionUpdate",
         v.extent(0),
         KOKKOS_LAMBDA(const int& i) {
-          WhetStone::Tensor<DeviceOnlyMemorySpace> Ti = tv.at(j+i);
+          auto Ti = tv.at(j+i);
           Ti(0,0) = v(i,0);
         });
   }
@@ -45,7 +45,7 @@ class EvaluatorIndependentTensorFunction
   // ---------------------------------------------------------------------------
   // Constructors
   // ---------------------------------------------------------------------------
-  explicit EvaluatorIndependentTensorFunction(Teuchos::ParameterList& plist);
+  explicit EvaluatorIndependentTensorFunction(const Teuchos::RCP<Teuchos::ParameterList>& plist);
   EvaluatorIndependentTensorFunction(
     const EvaluatorIndependentTensorFunction& other) = default;
 

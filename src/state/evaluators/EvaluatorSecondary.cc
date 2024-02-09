@@ -21,22 +21,22 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 // Constructor
 // -----------------------------------------------------------------------------
-EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
+EvaluatorSecondary::EvaluatorSecondary(const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : nonlocal_dependencies_(false),
     updated_once_(false),
     plist_(plist),
-    vo_(Keys::cleanPListName(plist.name()), plist)
+    vo_(Keys::cleanPListName(plist->name()), *plist)
 {
   type_ = Evaluator_kind::SECONDARY;
 
   // process the plist for names and tags of the things this evaluator calculates
-  if (plist_.isParameter("names")) {
-    auto names = plist_.get<Teuchos::Array<std::string>>("names");
-    if (plist_.isParameter("tags")) {
-      auto tags = plist_.get<Teuchos::Array<std::string>>("tags");
+  if (plist_->isParameter("names")) {
+    auto names = plist_->get<Teuchos::Array<std::string>>("names");
+    if (plist_->isParameter("tags")) {
+      auto tags = plist_->get<Teuchos::Array<std::string>>("tags");
       if (names.size() != tags.size()) {
         Errors::Message message;
-        message << "EvaluatorSecondary: " << Keys::cleanPListName(plist.name())
+        message << "EvaluatorSecondary: " << Keys::cleanPListName(plist_->name())
                 << " has names and tags lists of different sizes!";
         throw(message);
       }
@@ -47,31 +47,31 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
         ++i;
       }
     } else {
-      auto tag = make_tag(plist_.get<std::string>("tag"));
+      auto tag = make_tag(plist_->get<std::string>("tag"));
       for (auto name : names) { my_keys_.emplace_back(KeyTag{ name, Tag{ tag } }); }
     }
   } else {
-    auto name = Keys::cleanPListName(plist.name());
-    if (plist_.isParameter("tags")) {
-      auto tags = plist_.get<Teuchos::Array<std::string>>("tags");
+    auto name = Keys::cleanPListName(plist_->name());
+    if (plist_->isParameter("tags")) {
+      auto tags = plist_->get<Teuchos::Array<std::string>>("tags");
       for (auto tag : tags) { my_keys_.emplace_back(KeyTag{ name, Tag{ tag } }); }
     } else {
-      auto tag = make_tag(plist_.get<std::string>("tag"));
+      auto tag = make_tag(plist_->get<std::string>("tag"));
       my_keys_.emplace_back(KeyTag{ name, Tag{ tag } });
     }
   }
   if (my_keys_.size() == 0) {
     Errors::Message msg;
-    msg << "EvaluatorSecondary: " << plist.name() << " processed no key-tag pairs.";
+    msg << "EvaluatorSecondary: " << plist_->name() << " processed no key-tag pairs.";
     throw(msg);
   }
 
   // process the plist for dependencies
-  if (plist_.isParameter("dependencies")) {
-    auto deps = plist_.get<Teuchos::Array<std::string>>("dependencies");
+  if (plist_->isParameter("dependencies")) {
+    auto deps = plist_->get<Teuchos::Array<std::string>>("dependencies");
 
-    if (plist_.isParameter("dependency tags")) {
-      auto tags = plist_.get<Teuchos::Array<std::string>>("dependency tags");
+    if (plist_->isParameter("dependency tags")) {
+      auto tags = plist_->get<Teuchos::Array<std::string>>("dependency tags");
       if (deps.size() != tags.size()) {
         Errors::Message message;
         message << "EvaluatorSecondary: " << my_keys_[0].first
@@ -86,16 +86,16 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
       }
     } else {
       auto my_tag = my_keys_.front().second;
-      auto dep_tag = Keys::readTag(plist_, my_tag);
+      auto dep_tag = Keys::readTag(*plist_, my_tag);
       for (const auto& dep : deps) { dependencies_.insert(KeyTag(dep, dep_tag)); }
     }
 
-  } else if (plist_.isParameter("dependency suffixes")) {
-    auto dep_suff = plist_.get<Teuchos::Array<std::string>>("dependency suffixes");
+  } else if (plist_->isParameter("dependency suffixes")) {
+    auto dep_suff = plist_->get<Teuchos::Array<std::string>>("dependency suffixes");
     auto domain = Keys::getDomain(my_keys_.front().first);
 
-    if (plist_.isParameter("dependency tags")) {
-      auto tags = plist_.get<Teuchos::Array<std::string>>("dependency tags");
+    if (plist_->isParameter("dependency tags")) {
+      auto tags = plist_->get<Teuchos::Array<std::string>>("dependency tags");
       if (dep_suff.size() != tags.size()) {
         Errors::Message message;
         message << "EvaluatorSecondary: " << my_keys_[0].first
@@ -110,14 +110,14 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
       }
     } else {
       const auto& my_tag = my_keys_[0].second;
-      auto dep_tag = Keys::readTag(plist_, my_tag);
+      auto dep_tag = Keys::readTag(*plist_, my_tag);
       for (const auto& suffix : dep_suff) {
         dependencies_.insert(KeyTag(Keys::getKey(domain, suffix), dep_tag));
       }
     }
   }
 
-  nonlocal_dependencies_ = plist_.get<bool>("includes non-rank-local dependencies", false);
+  nonlocal_dependencies_ = plist_->get<bool>("includes non-rank-local dependencies", false);
 }
 
 
@@ -370,8 +370,8 @@ void
 EvaluatorSecondary::EnsureCompatibility_Flags_(State& S)
 {
   // check plist for vis or checkpointing control
-  bool io_my_key = plist_.get<bool>("visualize", true);
-  bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
+  bool io_my_key = plist_->get<bool>("visualize", true);
+  bool checkpoint_my_key = plist_->get<bool>("checkpoint", false);
   for (auto keytag : my_keys_) {
     S.GetRecordW(keytag.first, keytag.second, keytag.first).set_io_vis(io_my_key);
     S.GetRecordW(keytag.first, keytag.second, keytag.first).set_io_checkpoint(checkpoint_my_key);

@@ -45,7 +45,8 @@ TreeOperator::TreeOperator()
     num_colors_(0),
     coloring_(Teuchos::null)
 {
-  vo_ = Teuchos::rcp(new VerboseObject("TreeOperator", Teuchos::ParameterList()));
+  Teuchos::ParameterList plist;
+  vo_ = Teuchos::rcp(new VerboseObject("TreeOperator", plist));
 }
 
 

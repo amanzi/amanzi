@@ -19,7 +19,7 @@ namespace Amanzi {
 
 class EvaluatorAggregateBCs : public EvaluatorSecondary {
  public:
-  explicit EvaluatorAggregateBCs(Teuchos::ParameterList& plist);
+  explicit EvaluatorAggregateBCs(const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
   EvaluatorAggregateBCs(const EvaluatorAggregateBCs& other) = default;
   virtual Teuchos::RCP<Evaluator> Clone() const override

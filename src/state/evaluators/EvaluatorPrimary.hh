@@ -46,7 +46,7 @@ class EvaluatorPrimary_ : public Evaluator {
   // ---------------------------------------------------------------------------
   // Constructors
   // ---------------------------------------------------------------------------
-  explicit EvaluatorPrimary_(Teuchos::ParameterList& plist);
+  explicit EvaluatorPrimary_(const Teuchos::RCP<Teuchos::ParameterList>& plist);
   EvaluatorPrimary_(const EvaluatorPrimary_& other) = default;
 
   virtual Evaluator& operator=(const Evaluator& other) override;

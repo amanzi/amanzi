@@ -31,19 +31,19 @@ const std::string EvaluatorIndependentFromFile::name = "independent variable fro
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
-EvaluatorIndependentFromFile::EvaluatorIndependentFromFile(Teuchos::ParameterList& plist)
+EvaluatorIndependentFromFile::EvaluatorIndependentFromFile(const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorIndependent<CompositeVector, CompositeVectorSpace>(plist),
-    filename_(plist.get<std::string>("filename")),
-    meshname_(plist.get<std::string>("domain name", "domain")),
-    varname_(plist.get<std::string>("variable name")),
-    compname_(plist.get<std::string>("component name", "cell")),
-    locname_(plist.get<std::string>("mesh entity", "cell")),
-    ndofs_(plist.get<int>("number of DoFs", 1)),
+    filename_(plist->get<std::string>("filename")),
+    meshname_(plist->get<std::string>("domain name", "domain")),
+    varname_(plist->get<std::string>("variable name")),
+    compname_(plist->get<std::string>("component name", "cell")),
+    locname_(plist->get<std::string>("mesh entity", "cell")),
+    ndofs_(plist->get<int>("number of DoFs", 1)),
     current_interval_(0)
 {
-  if (plist.isSublist("time function")) {
+  if (plist->isSublist("time function")) {
     FunctionFactory fac;
-    time_func_ = Teuchos::rcp(fac.Create(plist.sublist("time function")));
+    time_func_ = Teuchos::rcp(fac.Create(plist->sublist("time function")));
   }
 }
 

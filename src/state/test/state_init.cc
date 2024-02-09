@@ -15,6 +15,7 @@
 // TPLs
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_RCP.hpp"
 #include "UnitTest++.h"
 
@@ -32,11 +33,10 @@ TEST(FIELD_INITIALIZATION)
   auto comm = Amanzi::getDefaultComm();
 
   std::string xmlFileName = "test/state_init.xml";
-  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-  Teuchos::ParameterList plist = xmlreader.getParameters();
+  auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create geometric model
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   // create a mesh
@@ -49,7 +49,7 @@ TEST(FIELD_INITIALIZATION)
   Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory.create("test/cube3x3x3.exo");
 
   // create a state
-  Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("state");
+  auto state_list = Teuchos::sublist(plist, "state");
   State S(state_list);
 
   // populate state

@@ -12,8 +12,6 @@
 
 */
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_RCP.hpp"
@@ -77,11 +75,10 @@ TEST(DOMAIN_FUNCTIONS_SOURCES) {
     // NOTE: this one, we do not need to addPatch -- the region is set by the
     // function spec/MeshFunction which gets read out of the parameter list.
     //  ps.addPatch("left", AmanziMesh::Entity_kind::CELL, 1);
+    auto plist = Teuchos::rcp(new Teuchos::ParameterList("source_left"));
+    plist->set<std::string>("function inner list name", "well pressure [m]");
 
-    Teuchos::ParameterList plist("source_left");
-    plist.set<std::string>("function inner list name", "well pressure [m]");
-
-    Teuchos::ParameterList& f1 = plist.sublist("function").sublist("source left");
+    Teuchos::ParameterList& f1 = plist->sublist("function").sublist("source left");
     f1.set<std::string>("region", "left");
     f1.sublist("well pressure [m]").set<std::string>("function type", "constant");
     f1.sublist("well pressure [m]").set<double>("value", 3.14);
@@ -97,11 +94,11 @@ TEST(DOMAIN_FUNCTIONS_SOURCES) {
       .SetMesh(mesh)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
-    Teuchos::ParameterList glist("G");
-    Teuchos::ParameterList& g1 = glist.sublist("function").sublist("right").sublist("function");
+    auto glist = Teuchos::rcp(new Teuchos::ParameterList("G"));
+    Teuchos::ParameterList& g1 = glist->sublist("function").sublist("right").sublist("function");
     g1.set<std::string>("function type", "constant");
     g1.set<double>("value", 2.0);
-    glist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    glist->sublist("verbose object").set<std::string>("verbosity level", "extreme");
     auto Geval = Teuchos::rcp(new EvaluatorIndependentFunction(glist));
     S->SetEvaluator("G", Tags::DEFAULT, Geval);
 
@@ -115,9 +112,9 @@ TEST(DOMAIN_FUNCTIONS_SOURCES) {
     // parameterlist...
     ps.addPatch("right", AmanziMesh::Entity_kind::CELL, 1);
 
-    Teuchos::ParameterList dlist("D"); // requires no list?
-    dlist.set<std::string>("tag", "");
-    dlist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    auto dlist = Teuchos::rcp(new Teuchos::ParameterList("D"));
+    dlist->set<std::string>("tag", "");
+    dlist->sublist("verbose object").set<std::string>("verbosity level", "extreme");
     auto Deval = Teuchos::rcp(new EvaluatorModelPatch<DModelAccessor>(dlist));
     S->SetEvaluator("D", Tags::DEFAULT, Deval);
   }
@@ -176,11 +173,11 @@ TEST(DOMAIN_FUNCTIONS_BCS) {
     ps.set_flag(Operators::OPERATOR_BC_DIRICHLET);
     // ps.addPatch("left", AmanziMesh::Entity_kind::FACE, 1); // this set by func_?
 
-    Teuchos::ParameterList plist("bc_left");
-    plist.set<std::string>("function list name", "pressure");
-    plist.set<std::string>("function inner list name", "pressure [Pa]");
+    auto plist = Teuchos::rcp(new Teuchos::ParameterList("bc_left"));
+    plist->set<std::string>("function list name", "pressure");
+    plist->set<std::string>("function inner list name", "pressure [Pa]");
 
-    Teuchos::ParameterList& f1 = plist.sublist("pressure").sublist("source left");
+    Teuchos::ParameterList& f1 = plist->sublist("pressure").sublist("source left");
     f1.set<std::string>("region", "left");
     f1.sublist("pressure [Pa]").set<std::string>("function type", "constant");
     f1.sublist("pressure [Pa]").set<double>("value", 3.14);
@@ -196,12 +193,12 @@ TEST(DOMAIN_FUNCTIONS_BCS) {
       ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
     // G here plays the role of h
-    Teuchos::ParameterList glist("G");
-    Teuchos::ParameterList& g1 = glist.sublist("function").sublist("right").sublist("function");
+    auto glist = Teuchos::rcp(new Teuchos::ParameterList("G"));
+    Teuchos::ParameterList& g1 = glist->sublist("function").sublist("right").sublist("function");
     g1.set<std::string>("function type", "constant")
       .set<std::string>("component", "face")
       .set<double>("value", 2.0);
-    glist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    glist->sublist("verbose object").set<std::string>("verbosity level", "extreme");
     auto Geval = Teuchos::rcp(new EvaluatorIndependentFunction(glist));
     S->SetEvaluator("G", Tags::DEFAULT, Geval);
 
@@ -213,10 +210,10 @@ TEST(DOMAIN_FUNCTIONS_BCS) {
     // ps.addPatch("right", AmanziMesh::Entity_kind::FACE, 1);
     ps.addPatch("right", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
-    Teuchos::ParameterList dlist("D"); // requires no list?
-    dlist.set<std::string>("tag", "");
-    dlist.set<int>("flag", Operators::OPERATOR_BC_NEUMANN);
-    dlist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    auto dlist = Teuchos::rcp(new Teuchos::ParameterList("D")); // requires no list?
+    dlist->set<std::string>("tag", "");
+    dlist->set<int>("flag", Operators::OPERATOR_BC_NEUMANN);
+    dlist->sublist("verbose object").set<std::string>("verbosity level", "extreme");
     auto Deval = Teuchos::rcp(new EvaluatorModelPatch<DModelAccessor>(dlist));
     S->SetEvaluator("D", Tags::DEFAULT, Deval);
   }
@@ -228,10 +225,10 @@ TEST(DOMAIN_FUNCTIONS_BCS) {
     bc_fac.set_entity_kind(AmanziMesh::Entity_kind::FACE);
 
     // and the evaluator
-    Teuchos::ParameterList bclist("diffusion_bcs");
-    bclist.set<std::string>("tag", "");
-    bclist.set<Teuchos::Array<std::string>>("dependencies", std::vector<std::string>{"bc_left", "D"});
-    bclist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    auto bclist = Teuchos::rcp(new Teuchos::ParameterList("diffusion_bcs"));
+    bclist->set<std::string>("tag", "");
+    bclist->set<Teuchos::Array<std::string>>("dependencies", std::vector<std::string>{"bc_left", "D"});
+    bclist->sublist("verbose object").set<std::string>("verbosity level", "extreme");
     auto bceval = Teuchos::rcp(new EvaluatorAggregateBCs(bclist));
     S->SetEvaluator("diffusion_bcs", Tags::DEFAULT, bceval);
   }

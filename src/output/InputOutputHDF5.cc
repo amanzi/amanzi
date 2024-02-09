@@ -139,17 +139,17 @@ OutputHDF5::write(const Teuchos::ParameterList& attrs, const IntVector_type& vec
   file_->writeVector(attrs.name(), vec);
 }
 
-void
-OutputHDF5::write(const Teuchos::ParameterList& attrs, const MultiVector_type& vec) const
-{
-  file_->writeMultiVector(attrs.name(), vec);
-}
+// void
+// OutputHDF5::write(const Teuchos::ParameterList& attrs, const MultiVector_type& vec) const
+// {
+//   file_->writeMultiVector(attrs.name(), vec);
+// }
 
-void
-OutputHDF5::write(const Teuchos::ParameterList& attrs, const IntMultiVector_type& vec) const
-{
-  file_->writeMultiVector(attrs.name(), vec);
-}
+// void
+// OutputHDF5::write(const Teuchos::ParameterList& attrs, const IntMultiVector_type& vec) const
+// {
+//   file_->writeMultiVector(attrs.name(), vec);
+// }
 
 
 } // namespace Amanzi

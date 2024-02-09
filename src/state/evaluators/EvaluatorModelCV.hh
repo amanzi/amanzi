@@ -74,9 +74,7 @@ class EvaluatorModelCV
   using cView_type = cMultiVectorView_type<Device_type>;
   using Model_type = Model<cView_type, View_type>;
 
-  Teuchos::ParameterList plist_;
-
-  EvaluatorModelCV(Teuchos::ParameterList& plist);
+  EvaluatorModelCV(const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
   virtual std::string getType() const override { return model_->name; }
@@ -111,12 +109,11 @@ class EvaluatorModelCV
 // -----------------------------------------------------------------------------
 template <template <class, class> class Model, class Device_type>
 EvaluatorModelCV<Model, Device_type>::
-  EvaluatorModelCV(Teuchos::ParameterList& plist)
+  EvaluatorModelCV(const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
-    plist_(plist),
     model_(Teuchos::rcp(new Model_type(plist))),
-    name_(plist.name()),
-    tag_(plist.get<std::string>("tag"))
+    name_(plist->name()),
+    tag_(plist->get<std::string>("tag"))
 {
   my_keys_.clear();
   for (const auto& k : model_->getMyKeys())

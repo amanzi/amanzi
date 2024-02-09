@@ -25,7 +25,8 @@ namespace Amanzi {
 TimeStepManager::TimeStepManager()
 {
   dt_stable_storage = -1.;
-  vo_ = Teuchos::rcp(new VerboseObject("TimeStepManager", Teuchos::ParameterList()));
+  Teuchos::ParameterList verb_list;
+  vo_ = Teuchos::rcp(new VerboseObject("TimeStepManager", verb_list));
 }
 
 TimeStepManager::TimeStepManager(Teuchos::ParameterList& verb_list)

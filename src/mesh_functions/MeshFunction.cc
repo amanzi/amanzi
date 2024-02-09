@@ -32,7 +32,7 @@ MeshFunction::MeshFunction(Teuchos::ParameterList& list,
     flag_(flag)
 {
   // All are expected to be sublists of identical structure.
-  for (auto sublist : list) {
+  for (const auto& sublist : list) {
     std::string name = sublist.first;
     if (list.isSublist(name)) {
       Teuchos::ParameterList& spec_plist = list.sublist(name);

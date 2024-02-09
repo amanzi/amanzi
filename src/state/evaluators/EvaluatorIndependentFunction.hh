@@ -47,7 +47,7 @@ namespace Amanzi {
 class EvaluatorIndependentFunction
   : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit EvaluatorIndependentFunction(Teuchos::ParameterList& plist);
+  explicit EvaluatorIndependentFunction(const Teuchos::RCP<Teuchos::ParameterList>& plist);
   EvaluatorIndependentFunction(const EvaluatorIndependentFunction& other) = default;
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;

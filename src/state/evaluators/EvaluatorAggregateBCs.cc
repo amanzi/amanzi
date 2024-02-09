@@ -20,12 +20,12 @@ namespace Amanzi {
 
 const std::string EvaluatorAggregateBCs::name = "boundary condition aggregrator";
 
-EvaluatorAggregateBCs::EvaluatorAggregateBCs(Teuchos::ParameterList& plist)
+EvaluatorAggregateBCs::EvaluatorAggregateBCs(const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : EvaluatorSecondary(plist),
       inited_(false)
 {
   AMANZI_ASSERT(my_keys_.size() == 1);
-  auto deps = plist.get<Teuchos::Array<std::string>>("dependencies");
+  auto deps = plist_->get<Teuchos::Array<std::string>>("dependencies");
   for (const auto& dep : deps) {
     dependencies_.insert(std::make_pair(dep, my_keys_[0].second));
   }

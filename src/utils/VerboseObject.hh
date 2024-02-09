@@ -91,14 +91,8 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
  public:
   // Constructors
   VerboseObject(const std::string& name, const std::string& verbosity);
-  VerboseObject(const std::string& name, Teuchos::ParameterList plist);
-  VerboseObject(const Comm_ptr_type& comm, const std::string& name, Teuchos::ParameterList plist);
-
-  // this constructor is fragile and should be frowned upon, but is useful for
-  // maintaining backward compatibility with the Epetra stack
-  VerboseObject(const Comm_type& comm, const std::string& name, Teuchos::ParameterList plist)
-    : VerboseObject(Teuchos::rcpFromRef(comm), name, plist)
-  {}
+  VerboseObject(const std::string& name, Teuchos::ParameterList& plist);
+  VerboseObject(const Comm_ptr_type& comm, const std::string& name, Teuchos::ParameterList& plist);
 
   // NOTE: Default destructor, copy construct should be ok.
 
@@ -107,6 +101,7 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
 
   // is the verbosity included?
   inline bool includesVerbLevel(Teuchos::EVerbosityLevel verbosity) const;
+  std::string getVerbLevelString() const;
 
   // Get the stream (errors if !os_OK()).
   inline Teuchos::RCP<Teuchos::FancyOStream> os() const;

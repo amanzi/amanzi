@@ -55,7 +55,7 @@
    // eos_implementation.hh
    #include "eos.hh"
    class DerivedEOS : public EOS {
-     DerivedEOS(Teuchos::ParameterList& plist);
+     DerivedEOS(const Teuchos::RCP<Teuchos::ParameterList>& plist);
      ...
    private:
      static RegisteredFactory<EOS,DerivedEOS> factory_; // my factory
@@ -72,8 +72,6 @@
      my_eos_ = eos_factory.CreateInstance("my_eos_type", eos_plist);
      ...
 
-  You're not supposed to understand this, just find another example that uses
-  it and copy it.
 */
 
 #ifndef AMANZI_FACTORY_HH_
@@ -90,9 +88,9 @@ namespace Utils {
 template <typename TBase>
 class Factory {
  public:
-  typedef std::map<std::string, TBase* (*)(Teuchos::ParameterList&)> map_type;
+  typedef std::map<std::string, TBase* (*)(const Teuchos::RCP<Teuchos::ParameterList>&)> map_type;
 
-  static TBase* CreateInstance(const std::string& s, Teuchos::ParameterList& plist)
+  static TBase* CreateInstance(const std::string& s, const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
     typename map_type::iterator iter = GetMap()->find(s);
     if (iter == GetMap()->end()) {
@@ -123,7 +121,7 @@ typename Factory<TBase>::map_type* Factory<TBase>::map_;
 
 template <typename TBase, typename TDerived>
 TBase*
-CreateT(Teuchos::ParameterList& plist)
+CreateT(const Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
   return new TDerived(plist);
 }
@@ -141,7 +139,7 @@ class RegisteredFactory : public Factory<TBase> {
          iter != Factory<TBase>::GetMap()->end();
          ++iter) {}
     Factory<TBase>::GetMap()->insert(
-      std::pair<std::string, TBase* (*)(Teuchos::ParameterList&)>(s, &CreateT<TBase, TDerived>));
+      std::pair<std::string, TBase* (*)(const Teuchos::RCP<Teuchos::ParameterList>&)>(s, &CreateT<TBase, TDerived>));
     for (typename Factory<TBase>::map_type::iterator iter = Factory<TBase>::GetMap()->begin();
          iter != Factory<TBase>::GetMap()->end();
          ++iter) {}

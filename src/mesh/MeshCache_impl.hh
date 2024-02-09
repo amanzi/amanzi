@@ -307,7 +307,7 @@ MeshCache<MEM>::getCentroid(const Entity_ID ent) const
 
 template <MemSpace_kind MEM>
 template <AccessPattern_kind AP>
-KOKKOS_INLINE_FUNCTION double
+double
 MeshCache<MEM>::getExtent(const Entity_kind kind, const Entity_ID ent) const
 {
   switch (kind) {
@@ -949,11 +949,17 @@ template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION typename MeshCache<MEM>::cPoint_View
 MeshCache<MEM>::getCellCoordinates(const Entity_ID c) const
 {
+  auto cf = Impl::ComputeFunction<MEM>::template hostOnly<
+    std::function<MeshCache<MEM>::cPoint_View(const Entity_ID)>>();
+  if constexpr (MEM == MemSpace_kind::HOST) {
+    cf = [&](const int i) { return framework_mesh_->getCellCoordinates(i); };
+  }
+
   return Impl::RaggedGetter<MEM, AP>::get(
     data_.cell_coordinates_cached,
     data_.cell_coordinates,
     framework_mesh_,
-    [&](const int i) { return framework_mesh_->getCellCoordinates(i); },
+    cf,
     nullptr,
     c);
 }

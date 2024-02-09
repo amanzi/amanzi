@@ -24,7 +24,7 @@ const std::string EvaluatorIndependentFunction::name = "independent variable";
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
-EvaluatorIndependentFunction::EvaluatorIndependentFunction(Teuchos::ParameterList& plist)
+EvaluatorIndependentFunction::EvaluatorIndependentFunction(const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorIndependent<CompositeVector, CompositeVectorSpace>(plist){};
 
 
@@ -75,8 +75,8 @@ EvaluatorIndependentFunction::Update_(State& S)
 
   if (!computed_once_) {
     // Create the function.
-    AMANZI_ASSERT(plist_.isSublist("function"));
-    func_ = Teuchos::rcp(new Functions::CompositeVectorFunction(plist_.sublist("function"), cv->getMesh()));
+    AMANZI_ASSERT(plist_->isSublist("function"));
+    func_ = Teuchos::rcp(new Functions::CompositeVectorFunction(plist_->sublist("function"), cv->getMesh()));
   }
 
   // NOTE: EvaluatorIndependentFunctions own their own data.

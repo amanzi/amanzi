@@ -60,7 +60,7 @@ template <class DeviceType>
 class AEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  AEvaluator(Teuchos::ParameterList& plist)
+  AEvaluator(const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
   {
     dependencies_.insert(std::make_pair(Key("fb"), Tag()));
@@ -127,7 +127,7 @@ class AEvaluator
 class CEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  CEvaluator(Teuchos::ParameterList& plist)
+  CEvaluator(const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
   {
     dependencies_.insert(std::make_pair(Key("fd"), Tags::DEFAULT));
@@ -172,7 +172,7 @@ class CEvaluator
 class DEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  DEvaluator(Teuchos::ParameterList& plist)
+  DEvaluator(const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
   {
     dependencies_.insert(std::make_pair(Key("fg"), Tags::DEFAULT));
@@ -212,7 +212,7 @@ class DEvaluator
 class EEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  EEvaluator(Teuchos::ParameterList& plist)
+  EEvaluator(const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
   {
     dependencies_.insert(std::make_pair(Key("fd"), Tags::DEFAULT));
@@ -262,7 +262,7 @@ class EEvaluator
 class FEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  FEvaluator(Teuchos::ParameterList& plist)
+  FEvaluator(const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
   {
     dependencies_.insert(std::make_pair(Key("fg"), Tags::DEFAULT));
@@ -302,7 +302,7 @@ class FEvaluator
 class HEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  HEvaluator(Teuchos::ParameterList& plist)
+  HEvaluator(const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
   {
     dependencies_.insert(std::make_pair(Key("ff"), Tags::DEFAULT));
@@ -340,13 +340,11 @@ class make_state {
  public:
   make_state()
   {
-    Teuchos::ParameterList es_list, ep_list;
-    es_list.sublist("verbose object")
-      .set<std::string>("verbosity level", "extreme");
-    es_list.set("tag", "");
-    ep_list.sublist("verbose object")
-      .set<std::string>("verbosity level", "extreme");
-
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList());
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list->set("tag", "");
+    auto ep_list = Teuchos::rcp(new Teuchos::ParameterList());
+    ep_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
     // create a mesh
     auto comm = Amanzi::getDefaultComm();
@@ -358,7 +356,7 @@ class make_state {
     S.RegisterDomainMesh(mesh);
 
     // Primary fields
-    ep_list.setName("fb");
+    ep_list->setName("fb");
     // -- field B and its evaluator
     S.Require<CompositeVector, CompositeVectorSpace>("fb", Tags::DEFAULT, "fb")
       .SetMesh(mesh)
@@ -369,7 +367,7 @@ class make_state {
     S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // -- field G and its evaluator
-    ep_list.setName("fg");
+    ep_list->setName("fg");
     S.Require<CompositeVector, CompositeVectorSpace>("fg", Tags::DEFAULT, "fg")
       .SetMesh(mesh)
       ->SetGhosted(true)
@@ -380,7 +378,7 @@ class make_state {
 
     // Secondary fields
     // --  D and its evaluator
-    es_list.setName("fd");
+    es_list->setName("fd");
     S.Require<CompositeVector, CompositeVectorSpace>("fd", Tags::DEFAULT, "fd")
       .SetMesh(mesh)
       ->SetGhosted(true)
@@ -389,7 +387,7 @@ class make_state {
     S.SetEvaluator("fd", Tags::DEFAULT, fd_eval);
 
     // --  C and its evaluator
-    es_list.setName("fc");
+    es_list->setName("fc");
     S.Require<CompositeVector, CompositeVectorSpace>("fc", Tags::DEFAULT, "fc")
       .SetMesh(mesh)
       ->SetGhosted(true)
@@ -398,7 +396,7 @@ class make_state {
     S.SetEvaluator("fc", Tags::DEFAULT, fc_eval);
 
     // --  F and its evaluator
-    es_list.setName("ff");
+    es_list->setName("ff");
     S.Require<CompositeVector, CompositeVectorSpace>("ff", Tags::DEFAULT, "ff")
       .SetMesh(mesh)
       ->SetGhosted(true)
@@ -407,7 +405,7 @@ class make_state {
     S.SetEvaluator("ff", Tags::DEFAULT, ff_eval);
 
     // --  E and its evaluator
-    es_list.setName("fe");
+    es_list->setName("fe");
     S.Require<CompositeVector, CompositeVectorSpace>("fe", Tags::DEFAULT, "fe")
       .SetMesh(mesh)
       ->SetGhosted(true)
@@ -418,7 +416,7 @@ class make_state {
     S.SetEvaluator("fe", Tags::DEFAULT, fe_eval);
 
     // --  H and its evaluator
-    es_list.setName("fh");
+    es_list->setName("fh");
     S.Require<CompositeVector, CompositeVectorSpace>("fh", Tags::DEFAULT, "fh")
       .SetMesh(mesh)
       ->SetGhosted(true)
@@ -427,7 +425,7 @@ class make_state {
     S.SetEvaluator("fh", Tags::DEFAULT, fh_eval);
 
     // --  A and its evaluator
-    es_list.setName("fa");
+    es_list->setName("fa");
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
       ->SetGhosted(true)

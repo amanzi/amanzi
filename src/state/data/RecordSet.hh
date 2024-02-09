@@ -216,7 +216,7 @@ class RecordSet {
   }
 
   // initialization of set is the collective (AND) operation
-  bool isInitialized(Tag& failed);
+  bool isInitialized(Tag& tag);
   void initializeTags(bool initialized = true)
   {
     for (auto& r : records_) r.second->set_initialized(initialized);

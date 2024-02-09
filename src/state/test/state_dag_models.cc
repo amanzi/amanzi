@@ -103,12 +103,10 @@ class make_state {
   requireSecondary(const std::string& name,
                    const std::vector<std::string>& derivs)
   {
-    Teuchos::ParameterList es_list(name);
-    es_list.sublist("verbose object")
-      .set<std::string>("verbosity level", "extreme");
-    es_list.setName(name);
-    es_list.set("tag", "");
-    if (name == "A") { es_list.sublist("model parameters").set("alpha", 2.0); }
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList(name));
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list->set("tag", "");
+    if (name == "A") { es_list->sublist("model parameters").set("alpha", 2.0); }
     S.Require<CompositeVector, CompositeVectorSpace>(name, Tags::DEFAULT, name)
       .SetMesh(S.GetMesh())
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -131,12 +129,10 @@ class make_state {
   requireSecondaryByMaterial(const std::string& name,
                              const std::vector<std::string>& derivs)
   {
-    Teuchos::ParameterList es_list(name);
-    es_list.sublist("verbose object")
-      .set<std::string>("verbosity level", "extreme");
-    es_list.setName(name);
-    es_list.set("tag", "");
-    auto& region_list = es_list.sublist("model parameters");
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList(name));
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list->set("tag", "");
+    auto& region_list = es_list->sublist("model parameters");
     region_list.sublist("left").set("alpha", 2.0);
     region_list.sublist("right").set("alpha", 3.0);
 
@@ -156,11 +152,9 @@ class make_state {
 
   Teuchos::RCP<EvaluatorPrimary_> requirePrimary(const std::string& name)
   {
-    Teuchos::ParameterList es_list(name);
-    es_list.sublist("verbose object")
-      .set<std::string>("verbosity level", "extreme");
-    es_list.setName(name);
-    es_list.set("tag", "");
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList(name));
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list->set("tag", "");
     S.Require<CompositeVector, CompositeVectorSpace>(name, Tags::DEFAULT, name)
       .SetMesh(S.GetMesh())
       ->SetComponent("cell", AmanziMesh::CELL, 1);

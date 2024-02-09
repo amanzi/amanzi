@@ -29,9 +29,9 @@ class EvaluatorPrimaryStaticMesh
   // ---------------------------------------------------------------------------
   // Constructors, assignement operators, etc
   // ---------------------------------------------------------------------------
-  EvaluatorPrimaryStaticMesh(Teuchos::ParameterList& plist)
+  EvaluatorPrimaryStaticMesh(const Teuchos::RCP<Teuchos::ParameterList>& plist)
       : EvaluatorPrimary<double>(plist),
-        domain_(Keys::getDomain(Keys::cleanPListName(plist))) {}
+        domain_(Keys::getDomain(Keys::cleanPListName(*plist))) {}
 
   EvaluatorPrimaryStaticMesh(const EvaluatorPrimaryStaticMesh& other) = default;
 

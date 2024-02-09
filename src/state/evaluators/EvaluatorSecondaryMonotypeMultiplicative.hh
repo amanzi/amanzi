@@ -34,7 +34,7 @@ template <typename Data_t, typename DataFactory_t = NullFactory>
 class EvaluatorSecondaryMonotypeMultiplicative
   : public EvaluatorSecondaryMonotype<Data_t, DataFactory_t> {
  public:
-  EvaluatorSecondaryMonotypeMultiplicative(Teuchos::ParameterList& plist)
+  EvaluatorSecondaryMonotypeMultiplicative(const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : EvaluatorSecondaryMonotype<Data_t, DataFactory_t>(plist)
   {
     if (dependencies_.size() == 0) {
@@ -43,10 +43,10 @@ class EvaluatorSecondaryMonotypeMultiplicative
       throw(msg);
     }
 
-    coef_ = plist_.template get<double>("coefficient", 1.0);
+    coef_ = plist_->template get<double>("coefficient", 1.0);
 
     // if true, the last dependency is "divided by"
-    reciprocal_ = plist_.template get<bool>("reciprocal", false);
+    reciprocal_ = plist_->template get<bool>("reciprocal", false);
   }
 
 

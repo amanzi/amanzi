@@ -92,7 +92,7 @@ class EvaluatorIndependentFromFile
   // ---------------------------------------------------------------------------
   // Constructors
   // ---------------------------------------------------------------------------
-  explicit EvaluatorIndependentFromFile(Teuchos::ParameterList& plist);
+  explicit EvaluatorIndependentFromFile(const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
   EvaluatorIndependentFromFile(const EvaluatorIndependentFromFile& other) = default;
 

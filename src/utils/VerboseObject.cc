@@ -46,7 +46,7 @@ VerboseObject::VerboseObject(const std::string& name, const std::string& verbosi
 /* ******************************************************************
 * Read verbosity from a parameter list
 ****************************************************************** */
-VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList plist)
+VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList& plist)
 {
   // Options from ParameterList
   // Set up the default level.
@@ -84,7 +84,7 @@ VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList pli
 
 VerboseObject::VerboseObject(const Comm_ptr_type& comm,
                              const std::string& name,
-                             Teuchos::ParameterList outer_plist)
+                             Teuchos::ParameterList& outer_plist)
   : comm_(comm)
 {
   Teuchos::ParameterList& plist = outer_plist.sublist("verbose object");
@@ -173,6 +173,32 @@ VerboseObject::reset() const
   std::string output("");
   output = std::string("\033[0m");
   return output;
+}
+
+
+std::string
+VerboseObject::getVerbLevelString() const
+{
+  Teuchos::EVerbosityLevel level = getVerbLevel();
+  std::string level_str;
+  switch (level) {
+  case Teuchos::VERB_NONE:
+    level_str = "none";
+    break;
+  case Teuchos::VERB_LOW:
+    level_str = "low";
+    break;
+  case Teuchos::VERB_MEDIUM:
+    level_str = "medium";
+    break;
+  case Teuchos::VERB_HIGH:
+    level_str = "high";
+    break;
+  case Teuchos::VERB_EXTREME:
+    level_str = "extreme";
+    break;
+  }
+  return level_str;
 }
 
 

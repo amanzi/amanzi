@@ -41,7 +41,7 @@ namespace Amanzi {
 class EvaluatorIndependentConstant
   : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit EvaluatorIndependentConstant(Teuchos::ParameterList& plist);
+  explicit EvaluatorIndependentConstant(const Teuchos::RCP<Teuchos::ParameterList>& plist);
   EvaluatorIndependentConstant(const EvaluatorIndependentConstant& other) = default;
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 

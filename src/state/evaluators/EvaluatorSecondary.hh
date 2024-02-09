@@ -36,7 +36,7 @@ namespace Amanzi {
 
 class EvaluatorSecondary : public Evaluator {
  public:
-  explicit EvaluatorSecondary(Teuchos::ParameterList& plist);
+  explicit EvaluatorSecondary(const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
   EvaluatorSecondary(const EvaluatorSecondary& other) = default;
 
@@ -89,7 +89,7 @@ class EvaluatorSecondary : public Evaluator {
 
   bool updated_once_;
 
-  Teuchos::ParameterList plist_;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
   VerboseObject vo_;
 
 }; // class Evaluator

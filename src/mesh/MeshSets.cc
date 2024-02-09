@@ -521,28 +521,33 @@ resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
                          const MeshCache<MemSpace_kind::HOST>& mesh)
 {
   if (kind == createEntityKind(region.entity_str())) {
-    View_type<Entity_ID, MemSpace_kind::HOST> region_entities;
-    auto vregion_entities = region.entities();
-    vectorToView(region_entities, vregion_entities);
-
+    Entity_ID_List region_entities = region.entities();
     bool ghosted = (ptype != Parallel_kind::OWNED);
     auto& mesh_map = mesh.getMap(kind, ghosted);
-    View_type<Entity_ID, MemSpace_kind::HOST> mesh_ents("mesh_ents",
-                                                        mesh_map->getLocalNumElements());
-    for (int i = 0; i != mesh_map->getLocalNumElements(); ++i)
-      mesh_ents(i) = mesh_map->getGlobalElement(i);
 
-    Entity_ID_List vresult;
-    vresult.reserve(mesh_ents.size());
-    std::set_intersection(mesh_ents.begin(),
-                          mesh_ents.end(),
-                          region_entities.begin(),
-                          region_entities.end(),
-                          std::back_inserter(vresult));
-    vectorToView(region_entities, vresult);
-    return region_entities;
+    // note that we have to sort these by owned, then ghosted
+    std::size_t cpt = 0, cpt_g = 0;
+    Entity_ID_View result("SetEnumerated", mesh_map->getLocalNumElements());
+    Entity_ID_View result_g("ghosted SetEnumerated", mesh_map->getLocalNumElements());
+    Entity_ID nowned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
+    for (Entity_GID gid : region_entities) {
+      Entity_ID lid = mesh_map->getLocalElement(gid);
+      if (lid >= 0) {
+        if (lid < nowned) {
+          result[cpt++] = lid;
+        } else {
+          result_g[cpt_g++] = lid;
+        }
+      }
+    }
+
+    // now copy ghosted into end of owned
+    for (std::size_t i = 0; i != cpt_g; ++i) { result[cpt++] = result_g[i]; }
+
+    Kokkos::resize(result, cpt);
+    return result;
   } else {
-    return MeshCache<MemSpace_kind::HOST>::cEntity_ID_View();
+    return Entity_ID_View();
   }
 }
 

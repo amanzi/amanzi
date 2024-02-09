@@ -60,7 +60,7 @@ class EvaluatorModelCVByMaterial
   using View_type = MultiVectorView_type<Device_type>;
   using Model_type = Model<cView_type, View_type>;
 
-  EvaluatorModelCVByMaterial(Teuchos::ParameterList& plist);
+  EvaluatorModelCVByMaterial(const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
   virtual std::string getType() const override {
@@ -96,20 +96,19 @@ protected:
 
 template <template <class, class> class Model, class Device_type>
 EvaluatorModelCVByMaterial<Model, Device_type>::EvaluatorModelCVByMaterial(
-  Teuchos::ParameterList& plist)
+  const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
-    name_(plist.name()),
-    tag_(plist.get<std::string>("tag"))
+    name_(plist->name()),
+    tag_(plist->get<std::string>("tag"))
 {
-  Teuchos::ParameterList& region_plist = plist.sublist("model parameters");
-
-  // make a copy for use in the Model
-  Teuchos::ParameterList model_list(plist);
+  const Teuchos::ParameterList& region_plist = plist->sublist("model parameters");
 
   for (const auto& region : region_plist) {
     std::string region_name = region.first;
     if (region_plist.isSublist(region_name)) {
-      model_list.set("model parameters", region_plist.sublist(region_name));
+      // make a copy for use in the Model
+      auto model_list = Teuchos::rcp(new Teuchos::ParameterList(*plist));
+      model_list->set("model parameters", region_plist.sublist(region_name));
       models_.push_back(
         std::make_pair(region_name, Teuchos::rcp(new Model_type(model_list))));
     } else {

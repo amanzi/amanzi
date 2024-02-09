@@ -66,8 +66,8 @@ class OutputHDF5 : public Output {
   virtual void write(const Teuchos::ParameterList& attrs, const std::string& val) const override;
   virtual void write(const Teuchos::ParameterList& attrs, const Vector_type& vec) const override;
   virtual void write(const Teuchos::ParameterList& attrs, const IntVector_type& vec) const override;
-  virtual void write(const Teuchos::ParameterList& attrs, const MultiVector_type& vec) const override;
-  virtual void write(const Teuchos::ParameterList& attrs, const IntMultiVector_type& vec) const override;
+  // virtual void write(const Teuchos::ParameterList& attrs, const MultiVector_type& vec) const override;
+  // virtual void write(const Teuchos::ParameterList& attrs, const IntMultiVector_type& vec) const override;
 
  protected:
   std::string getFilename_(int cycle) const;

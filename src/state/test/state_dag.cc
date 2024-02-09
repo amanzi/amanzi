@@ -59,7 +59,7 @@ using namespace Amanzi::AmanziMesh;
  ****************************************************************** */
 class AEvaluator : public EvaluatorSecondaryMonotype<double> {
  public:
-  AEvaluator(Teuchos::ParameterList& plist) : EvaluatorSecondaryMonotype<double>(plist)
+  AEvaluator(const Teuchos::RCP<Teuchos::ParameterList>& plist) : EvaluatorSecondaryMonotype<double>(plist)
   {
     dependencies_.insert(std::make_pair(Key("fb"), Tags::DEFAULT));
     dependencies_.insert(std::make_pair(Key("fc"), Tags::DEFAULT));
@@ -109,7 +109,7 @@ class AEvaluator : public EvaluatorSecondaryMonotype<double> {
  ****************************************************************** */
 class CEvaluator : public EvaluatorSecondaryMonotype<double> {
  public:
-  CEvaluator(Teuchos::ParameterList& plist) : EvaluatorSecondaryMonotype<double>(plist)
+  CEvaluator(const Teuchos::RCP<Teuchos::ParameterList>& plist) : EvaluatorSecondaryMonotype<double>(plist)
   {
     dependencies_.insert(std::make_pair(Key("fd"), Tags::DEFAULT));
     dependencies_.insert(std::make_pair(Key("fg"), Tags::DEFAULT));
@@ -146,7 +146,7 @@ class CEvaluator : public EvaluatorSecondaryMonotype<double> {
  ****************************************************************** */
 class DEvaluator : public EvaluatorSecondaryMonotype<double> {
  public:
-  DEvaluator(Teuchos::ParameterList& plist) : EvaluatorSecondaryMonotype<double>(plist)
+  DEvaluator(const Teuchos::RCP<Teuchos::ParameterList>& plist) : EvaluatorSecondaryMonotype<double>(plist)
   {
     dependencies_.insert(std::make_pair(Key("fg"), Tags::DEFAULT));
   }
@@ -177,7 +177,7 @@ class DEvaluator : public EvaluatorSecondaryMonotype<double> {
  ****************************************************************** */
 class EEvaluator : public EvaluatorSecondaryMonotype<double> {
  public:
-  EEvaluator(Teuchos::ParameterList& plist) : EvaluatorSecondaryMonotype<double>(plist)
+  EEvaluator(const Teuchos::RCP<Teuchos::ParameterList>& plist) : EvaluatorSecondaryMonotype<double>(plist)
   {
     dependencies_.insert(std::make_pair(Key("fd"), Tags::DEFAULT));
     dependencies_.insert(std::make_pair(Key("ff"), Tags::DEFAULT));
@@ -217,7 +217,7 @@ class EEvaluator : public EvaluatorSecondaryMonotype<double> {
  ****************************************************************** */
 class FEvaluator : public EvaluatorSecondaryMonotype<double> {
  public:
-  FEvaluator(Teuchos::ParameterList& plist) : EvaluatorSecondaryMonotype<double>(plist)
+  FEvaluator(const Teuchos::RCP<Teuchos::ParameterList>& plist) : EvaluatorSecondaryMonotype<double>(plist)
   {
     dependencies_.insert(std::make_pair(Key("fg"), Tags::DEFAULT));
   }
@@ -248,7 +248,7 @@ class FEvaluator : public EvaluatorSecondaryMonotype<double> {
  ****************************************************************** */
 class HEvaluator : public EvaluatorSecondaryMonotype<double> {
  public:
-  HEvaluator(Teuchos::ParameterList& plist) : EvaluatorSecondaryMonotype<double>(plist)
+  HEvaluator(const Teuchos::RCP<Teuchos::ParameterList>& plist) : EvaluatorSecondaryMonotype<double>(plist)
   {
     dependencies_.insert(std::make_pair(Key("ff"), Tags::DEFAULT));
   }
@@ -278,14 +278,15 @@ class make_state {
  public:
   make_state()
   {
-    Teuchos::ParameterList es_list, ep_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    ep_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    auto es_list = Teuchos::rcp(new Teuchos::ParameterList());
+    es_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    auto ep_list = Teuchos::rcp(new Teuchos::ParameterList());
+    ep_list->sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
     // Secondary fields
     // --  A and its evaluator
-    es_list.setName("fa");
-    es_list.set("tag", "");
+    es_list->setName("fa");
+    es_list->set("tag", "");
     S.Require<double>("fa", Tags::DEFAULT, "fa");
     S.RequireDerivative<double>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     S.RequireDerivative<double>("fa", Tags::DEFAULT, "fg", Tags::DEFAULT);
@@ -293,45 +294,45 @@ class make_state {
     S.SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
     // --  C and its evaluator
-    es_list.setName("fc");
+    es_list->setName("fc");
     S.Require<double>("fc", Tags::DEFAULT, "fc");
     fc_eval = Teuchos::rcp(new CEvaluator(es_list));
     S.SetEvaluator("fc", Tags::DEFAULT, fc_eval);
 
     // --  D and its evaluator
-    es_list.setName("fd");
+    es_list->setName("fd");
     S.Require<double>("fd", Tags::DEFAULT, "fd");
     fd_eval = Teuchos::rcp(new DEvaluator(es_list));
     S.SetEvaluator("fd", Tags::DEFAULT, fd_eval);
 
     // --  E and its evaluator
-    es_list.setName("fe");
+    es_list->setName("fe");
     S.Require<double>("fe", Tags::DEFAULT, "fe");
     S.RequireDerivative<double>("fe", Tags::DEFAULT, "fg", Tags::DEFAULT);
     fe_eval = Teuchos::rcp(new EEvaluator(es_list));
     S.SetEvaluator("fe", Tags::DEFAULT, fe_eval);
 
     // --  F and its evaluator
-    es_list.setName("ff");
+    es_list->setName("ff");
     S.Require<double>("ff", Tags::DEFAULT, "ff");
     ff_eval = Teuchos::rcp(new FEvaluator(es_list));
     S.SetEvaluator("ff", Tags::DEFAULT, ff_eval);
 
     // --  H and its evaluator
-    es_list.setName("fh");
+    es_list->setName("fh");
     S.Require<double>("fh", Tags::DEFAULT, "fh");
     fh_eval = Teuchos::rcp(new HEvaluator(es_list));
     S.SetEvaluator("fh", Tags::DEFAULT, fh_eval);
 
     // Primary fields
-    ep_list.setName("fb");
+    ep_list->setName("fb");
     // -- field B and its evaluator
     S.Require<double>("fb", Tags::DEFAULT, "fb");
     fb_eval = Teuchos::rcp(new EvaluatorPrimary<double>(ep_list));
     S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // -- field G and its evaluator
-    ep_list.setName("fg");
+    ep_list->setName("fg");
     S.Require<double>("fg", Tags::DEFAULT, "fg");
     fg_eval = Teuchos::rcp(new EvaluatorPrimary<double>(ep_list));
     S.SetEvaluator("fg", Tags::DEFAULT, fg_eval);

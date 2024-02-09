@@ -27,12 +27,12 @@ namespace Amanzi {
 // Constructor
 // ---------------------------------------------------------------------------
 EvaluatorIndependentTensorFunction::EvaluatorIndependentTensorFunction(
-  Teuchos::ParameterList& plist)
+  const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorIndependent<TensorVector, TensorVector_Factory>(plist),
     dimension_(-1),
     rank_(-1),
     num_funcs_(-1),
-    rescaling_(plist.get<double>("rescaling factor", 1.0))
+    rescaling_(plist->get<double>("rescaling factor", 1.0))
 {}
 
 // ---------------------------------------------------------------------------
@@ -54,21 +54,31 @@ EvaluatorIndependentTensorFunction::EnsureCompatibility(State& S)
   if (rank_ == -1 && f.getMap().getMesh().get()) {
     dimension_ = f.getDimension();
     AMANZI_ASSERT(dimension_ > 0);
-    rank_ = plist_.get<int>("tensor rank");
+    rank_ = plist_->get<int>("tensor rank");
+    if (rank_ < 1 || rank_ > 4 || rank_ == 3) {
+      Errors::Message msg;
+      msg << "EvaluatorIndependentTensorFunction: Invalid \"tensor rank\" of " << rank_ << " requested, valid are 1 (scalar), 2 (square), and 4.";
+      Exceptions::amanzi_throw(msg);
+    }
     f.setRank(rank_);
 
     // the map needs to be updated with the correct number of values
     CompositeVectorSpace map_new;
     auto& map_old = f.getMap();
     map_new.SetMesh(map_old.getMesh());
-    num_funcs_ = WhetStone::WHETSTONE_TENSOR_SIZE[dimension_ - 1][rank_ - 1];
-    num_funcs_ *= num_funcs_;
+
+    // this is not correct -- should be this for a generic, nonsymmetric
+    // tensor.  In practice we will want to supply options to have, e.g. rank
+    // but also diagonal (but not isotropic), symmetric, horizontal + vertical,
+    // etc
+    int tensor_size = WhetStone::WHETSTONE_TENSOR_SIZE[dimension_ - 1][rank_ - 1];
+    num_funcs_ = tensor_size * tensor_size;
     for (auto& name : map_old) {
       map_new.AddComponent(name, map_old.getLocation(name), num_funcs_);
     }
     f.setMap(map_new);
+    }
   }
-}
 
 // ---------------------------------------------------------------------------
 // Update the value in the state.
@@ -79,9 +89,9 @@ EvaluatorIndependentTensorFunction::Update_(State& S)
   if (!computed_once_) {
     // Create the function.
     auto& tv = S.Get<TensorVector>(my_key_, my_tag_);
-    AMANZI_ASSERT(plist_.isSublist("function"));
+    AMANZI_ASSERT(plist_->isSublist("function"));
 
-    func_ = Teuchos::rcp(new Functions::CompositeVectorFunction(plist_.sublist("function"), tv.map.getMesh()));
+    func_ = Teuchos::rcp(new Functions::CompositeVectorFunction(plist_->sublist("function"), tv.map.getMesh()));
   }
 
   auto& tv = S.GetW<TensorVector>(my_key_, my_tag_, my_key_);

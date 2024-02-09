@@ -16,6 +16,7 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_RCP.hpp"
 #include "UnitTest++.h"
 
@@ -32,7 +33,6 @@ SUITE(RESTART)
   TEST(RESTART_DUMP_REQUIRED_INTERVAL)
   {
     Teuchos::ParameterList plist;
-
     plist.set<std::string>("file name base", "restartdump");
     plist.set<int>("file name digits", 5);
 
@@ -173,22 +173,12 @@ SUITE(RESTART)
 
   TEST(DUMP_DATA)
   {
-    Teuchos::ParameterList plist;
-    // plist.set<std::string>("File Name Base","restart_dump");
-    // plist.set<int>("File Name Digits",4);
-    // Teuchos::ParameterList& i1_ = plist.sublist("Cycle Data");
-
-    // i1_.set<int>("Start",0);
-    // i1_.set<int>("End",10);
-    // i1_.set<int>("Interval",1);
-
     auto comm = getDefaultComm();
 
     std::string xmlFileName = "test/state_restart.xml";
-    Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-    plist = xmlreader.getParameters();
+    auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-    Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+    Teuchos::ParameterList& region_list = plist->sublist("regions");
     auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
     AmanziMesh::Preference pref;
@@ -200,7 +190,7 @@ SUITE(RESTART)
     meshfactory.set_preference(pref);
     auto Mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1);
 
-    Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("state");
+    auto state_list = Teuchos::sublist(plist, "state");
     State S0(state_list);
 
     S0.RegisterDomainMesh(Mesh);
@@ -214,7 +204,7 @@ SUITE(RESTART)
     S0.Setup();
     S0.set_time(1.02);
 
-    Teuchos::ParameterList checkpoint_list = plist.get<Teuchos::ParameterList>("checkpoint");
+    Teuchos::ParameterList checkpoint_list = plist->get<Teuchos::ParameterList>("checkpoint");
     Checkpoint R(checkpoint_list, S0);
 
     R.write(S0);
