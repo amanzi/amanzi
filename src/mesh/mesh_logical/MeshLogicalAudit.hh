@@ -12,18 +12,15 @@
 
 #include "Teuchos_RCP.hpp"
 
-
 #include "Mesh.hh"
-
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/visitors.hpp>
-#include <boost/graph/breadth_first_search.hpp>
 
 namespace Amanzi {
 namespace AmanziMesh {
 
 class MeshLogicalAudit {
  public:
+  enum Status_kind : int { NONE = 0, GOOD = 1, FAIL = 2, SKIP = 3 };
+
   MeshLogicalAudit(const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh_,
                    std::ostream& os = std::cout);
 
@@ -81,25 +78,75 @@ class MeshLogicalAudit {
 
   // This is the vertex type for the test dependency graph.
   typedef bool (MeshLogicalAudit::*Test)() const;
+
   struct Vertex {
-    Vertex() : run(true) {}
+    Vertex() : status(Status_kind::NONE) {}
     std::string name;
-    mutable bool run;
+    mutable int status;
     Test test;
   };
 
-  typedef boost::adjacency_list<boost::listS, boost::vecS, boost::directedS, Vertex> Graph;
-  Graph g;
+  // vertex operations
+  int AddVertex(const std::string& name, const Test& test)
+  {
+    Vertex v;
+    v.name = name;
+    v.test = test;
+    vertices_.push_back(v);
+    return vertices_.size() - 1;
+  }
 
-  struct mark_do_not_run : public boost::bfs_visitor<> {
-    template <class Vertex, class Graph>
-    void discover_vertex(Vertex v, Graph& gr)
-    {
-      gr[v].run = false;
+  // edge operations
+  void AddEdge(int vert_out, int vert_in) { edges_.push_back(std::make_pair(vert_out, vert_in)); }
+
+  // graph operations
+  int FindAnyRoot() const
+  {
+    int nv = vertices_.size();
+    std::vector<int> flag(nv);
+
+    for (int i = 0; i < nv; ++i) {
+      if (vertices_[i].status == Status_kind::NONE) flag[i] = 1;
     }
-  };
+
+    for (auto it = edges_.begin(); it != edges_.end(); ++it) {
+      auto& v1 = vertices_[it->first];
+      if (v1.status == Status_kind::NONE) flag[it->second] = 0;
+    }
+
+    for (int i = 0; i < nv; ++i)
+      if (flag[i] == 1) return i;
+    return -1;
+  }
+
+  void SkipBranches(int v, std::ostream& os) const
+  {
+    bool found(true);
+
+    while (found) {
+      found = false;
+      for (auto it = edges_.begin(); it != edges_.end(); ++it) {
+        auto& v1 = vertices_[it->first];
+        auto& v2 = vertices_[it->second];
+        if (v1.status == Status_kind::FAIL && v2.status == Status_kind::NONE) {
+          v2.status = Status_kind::SKIP;
+          os << "Skipping " << v2.name << " check because of previous failures." << std::endl;
+          found = true;
+        } else if (v1.status == Status_kind::SKIP && v2.status == Status_kind::NONE) {
+          v2.status = Status_kind::SKIP;
+          os << "Skipping " << v2.name << " check because of previous failures." << std::endl;
+          found = true;
+        }
+      }
+    }
+  }
 
   void create_test_dependencies();
+
+ private:
+  // adjacency structure
+  std::vector<Vertex> vertices_;
+  std::vector<std::pair<int, int>> edges_;
 };
 
 } // namespace AmanziMesh
