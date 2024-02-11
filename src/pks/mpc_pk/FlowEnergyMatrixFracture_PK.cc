@@ -379,7 +379,7 @@ FlowEnergyMatrixFracture_PK::FunctionalResidual(double t_old,
   PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
 
   // add contribution of coupling terms to the residual
-  UpdateEnthalpyCouplingFluxes(S_, mesh_domain_, mesh_fracture_, adv_coupling_matrix_);
+  UpdateEnthalpyCouplingFluxes(S_, mesh_domain_, mesh_fracture_, adv_coupling_matrix_, true);
   op_tree_matrix_->Apply(*u_new, *f, 1.0);
 
   // convergence control
@@ -398,7 +398,7 @@ FlowEnergyMatrixFracture_PK::UpdatePreconditioner(double t,
   // generate local matrices and apply boundary conditions
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
 
-  UpdateEnthalpyCouplingFluxes(S_, mesh_domain_, mesh_fracture_, adv_coupling_pc_);
+  UpdateEnthalpyCouplingFluxes(S_, mesh_domain_, mesh_fracture_, adv_coupling_pc_, false);
 
   std::string pc_name = ti_list_->get<std::string>("preconditioner");
   Teuchos::ParameterList pc_list = preconditioner_list_->sublist(pc_name);

@@ -24,20 +24,35 @@ UpdateEnthalpyCouplingFluxes(
   const Teuchos::RCP<State>& S,
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_matrix,
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_fracture,
-  const std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>>& adv_coupling_ops)
+  const std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>>& adv_coupling_ops,
+  bool flag)
 {
-  S->Get<CompositeVector>("enthalpy").ScatterMasterToGhosted("cell");
-  S->Get<CompositeVector>("temperature").ScatterMasterToGhosted("cell");
+  Key temperature_key_m("temperature"), temperature_key_f("fracture-temperature");
+  Key enthalpy_key_m("enthalpy"), enthalpy_key_f("fracture-enthalpy");
+
+  S->Get<CompositeVector>(enthalpy_key_m).ScatterMasterToGhosted("cell");
+  S->Get<CompositeVector>(temperature_key_m).ScatterMasterToGhosted("cell");
   S->Get<CompositeVector>("molar_flow_rate").ScatterMasterToGhosted("face");
 
   // extract enthalpy fields
-  S->GetEvaluator("enthalpy").Update(*S, "enthalpy");
-  const auto& H_m = *S->Get<CompositeVector>("enthalpy").ViewComponent("cell", true);
-  const auto& T_m = *S->Get<CompositeVector>("temperature").ViewComponent("cell", true);
+  S->GetEvaluator(enthalpy_key_m).Update(*S, enthalpy_key_m);
+  const auto& H_m = *S->Get<CompositeVector>(enthalpy_key_m).ViewComponent("cell", true);
+  const auto& T_m = *S->Get<CompositeVector>(temperature_key_m).ViewComponent("cell", true);
 
-  S->GetEvaluator("fracture-enthalpy").Update(*S, "fracture-enthalpy");
-  const auto& H_f = *S->Get<CompositeVector>("fracture-enthalpy").ViewComponent("cell", true);
-  const auto& T_f = *S->Get<CompositeVector>("fracture-temperature").ViewComponent("cell", true);
+  S->GetEvaluator(enthalpy_key_f).Update(*S, enthalpy_key_f);
+  const auto& H_f = *S->Get<CompositeVector>(enthalpy_key_f).ViewComponent("cell", true);
+  const auto& T_f = *S->Get<CompositeVector>(temperature_key_f).ViewComponent("cell", true);
+
+  Teuchos::RCP<Epetra_MultiVector> dHdT_m, dHdT_f;
+  if (!flag) {
+    auto tmp1 = S->GetDerivative<CompositeVector>(enthalpy_key_m, Tags::DEFAULT, temperature_key_m, Tags::DEFAULT);
+    tmp1.ScatterMasterToGhosted("cell");
+    dHdT_m = tmp1.ViewComponent("cell");
+
+    auto tmp2 = S->GetDerivative<CompositeVector>(enthalpy_key_f, Tags::DEFAULT, temperature_key_f, Tags::DEFAULT);
+    tmp2.ScatterMasterToGhosted("cell");
+    dHdT_f = tmp2.ViewComponent("cell");
+  }
 
   // update coupling terms for advection
   int ncells_owned_f =
@@ -65,10 +80,10 @@ UpdateEnthalpyCouplingFluxes(
       // q (H / T) * T for both matrix and preconditioner
       if (tmp > 0) {
         int c1 = cells[k];
-        double factor = H_m[0][c1] / T_m[0][c1];
+        double factor = (flag) ? H_m[0][c1] / T_m[0][c1] : (*dHdT_m)[0][c1];
         (*values1)[np] = tmp * factor;
       } else {
-        double factor = H_f[0][c] / T_f[0][c];
+        double factor = (flag) ? H_f[0][c] / T_f[0][c] : (*dHdT_f)[0][c];
         (*values2)[np] = -tmp * factor;
       }
 

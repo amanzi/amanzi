@@ -350,7 +350,7 @@ EnergyMatrixFracture_PK::FunctionalResidual(double t_old,
 {
   PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
 
-  UpdateEnthalpyCouplingFluxes(S_, mesh_matrix_, mesh_fracture_, adv_coupling_ops_);
+  UpdateEnthalpyCouplingFluxes(S_, mesh_matrix_, mesh_fracture_, adv_coupling_ops_, true);
 
   int ierr = op_matrix_->Apply(*u_new, *f, 1.0);
   AMANZI_ASSERT(!ierr);

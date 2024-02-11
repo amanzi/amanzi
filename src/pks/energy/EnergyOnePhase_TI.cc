@@ -125,8 +125,8 @@ EnergyOnePhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
   // update with accumulation terms
   // update the accumulation derivatives, dE/dT
   S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
-  auto& dEdT = S_->GetDerivativeW<CompositeVector>(
-    energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, energy_key_);
+  const auto& dEdT = S_->GetDerivative<CompositeVector>(
+    energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
 
   if (dt > 0.0) { op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell"); }
 
@@ -138,8 +138,7 @@ EnergyOnePhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
     auto dHdT = S_->GetDerivativePtr<CompositeVector>(
       enthalpy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
 
-    // should we differentiate alpha = (H eta k/mu) in div(H q) ?
-
+    // should we differentiate alpha = (H eta/mu) in div(H q) ?
     op_preconditioner_advection_->Setup(*flux);
     op_preconditioner_advection_->UpdateMatrices(flux.ptr(), dHdT.ptr());
     op_preconditioner_advection_->ApplyBCs(false, true, false);

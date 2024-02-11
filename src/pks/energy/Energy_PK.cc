@@ -258,7 +258,8 @@ Energy_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-    AddDefaultIndependentEvaluator(S_, pressure_key, Tags::DEFAULT, 101325.0);
+    // AddDefaultIndependentEvaluator(S_, pressure_key, Tags::DEFAULT, 101325.0);
+    S_->RequireEvaluator(pressure_key, Tags::DEFAULT);
   }
 
   // -- fracture aperture
