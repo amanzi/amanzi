@@ -310,7 +310,15 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
             kr_c = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
 
             auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
-            upwind_->Compute(flux, bcnone, *kr);
+
+            // [Gharbia, Jaffre' 14] model assumptions
+            if (fname == "advection_liquid" || fname == "advection_gas") {
+              const auto& bc_model_fname = op_bcs_[fname]->bc_model();
+              const auto& bc_value_fname = op_bcs_[fname]->bc_value();
+              upwind_->Compute_wBC(flux, bc_model_fname, bc_value_fname, *kr);
+            } else {
+              upwind_->Compute(flux, bcnone, *kr);
+            }
 
             pde->Setup(Kptr, kr, Teuchos::null);
             pde->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);

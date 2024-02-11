@@ -108,6 +108,7 @@ Multiphase_PK::PopulateBCs(int icomp, bool flag)
 
     if (bcs_[i]->get_bc_name() == "concentration" && bcs_[i]->component_id() == icomp) {
       Key x_key_base = splitPhase(soln_names_[n0]).first;
+      auto phase = bcs_[i]->component_phase();
       Key x_key = mergePhase(x_key_base, bcs_[i]->component_phase());
 
       auto& bc_model = op_bcs_[x_key]->bc_model();
@@ -194,6 +195,7 @@ Multiphase_PK::PopulateSecondaryBCs_()
   auto& bc_model_sl = op_bcs_[saturation_liquid_key_]->bc_model();
   auto& bc_value_sl = op_bcs_[saturation_liquid_key_]->bc_value();
 
+  // current advection BC implementation for one component only
   auto& bc_model_advl = op_bcs_[advection_liquid_key_]->bc_model();
   auto& bc_value_advl = op_bcs_[advection_liquid_key_]->bc_value();
 
@@ -207,8 +209,7 @@ Multiphase_PK::PopulateSecondaryBCs_()
   bc_model_advl = bc_model_pl;
   bc_model_advg = bc_model_pg;
 
-  const auto& sl_c =
-    *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+  double bc_value_sg, bc_value_etag;
 
   // ideal gas law parameters and variables
   auto T = *S_->GetPtr<CompositeVector>(temperature_key_, Tags::DEFAULT);
@@ -226,10 +227,23 @@ Multiphase_PK::PopulateSecondaryBCs_()
     if (bc_model_pl[f] == Operators::OPERATOR_BC_DIRICHLET) {
       int c = getFaceOnBoundaryInternalCell(*mesh_, f);
 
+      // calculate gas phase BCs from liquid saturation/pressure
       bc_value_pg[f] = bc_value_pl[f] + wrm_->second[(*wrm_->first)[c]]->capillaryPressure(bc_value_sl[f]);
-      
+      bc_value_sg = 1.0 - bc_value_sl[f];
+
       bc_value_advl[f] =  wrm_->second[(*wrm_->first)[c]]->k_relative(bc_value_sl[f], MULTIPHASE_PHASE_LIQUID);
       bc_value_advl[f] *= bc_value_etal[f] * (1.0 / mu_l_);
+
+      bc_value_advg[f] = 0.0; // dummy value for now
+
+      // need more info on the phase: for example, need to specify gas BC concentration, but currently bc->component_phase is either 1 or 2, for liquid or gas.  
+      /*
+      bc_value_sg = 1.0 - bc_value_sl[f];
+      bc_value_etag = bc_value_pg[f] / (R * T_c[0][c]);
+      
+      bc_value_advg[f] =  wrm_->second[(*wrm_->first)[c]]->k_relative(bc_value_sl[f], MULTIPHASE_PHASE_GAS);
+      bc_value_advg[f] *= bc_value_etag * (1.0 / mu_g_);
+      */
 
     } else if (bc_model_pl[f] == Operators::OPERATOR_BC_NEUMANN) {
       bc_value_pg[f] = 0.0;

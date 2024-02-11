@@ -797,14 +797,11 @@ Multiphase_PK::Initialize()
     op_bcs_[name] = op_bc;
   }
 
-  // FIX ME (move advection_liquid_key_/gas_key_ to secondary names)
-  {
+  for (const auto&name : adv_names_) { 
     auto op_bc = Teuchos::rcp(
       new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
-    op_bcs_[advection_liquid_key_] = op_bc;
-    op_bcs_[advection_gas_key_] = op_bc;
+    op_bcs_[name] = op_bc;
   }
-
 
   double t_ini = S_->get_time();
   for (int i = 0; i < bcs_.size(); i++) {
