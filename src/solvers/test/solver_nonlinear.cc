@@ -23,7 +23,7 @@
 #include "SolverNKA_BT_ATS.hh"
 #include "SolverNKA_LS_ATS.hh"
 #include "SolverAA.hh"
-#include "SolverBT.hh"
+#include "SolverLS.hh"
 #include "SolverNox.hh"
 
 using namespace Amanzi;
@@ -46,11 +46,11 @@ SUITE(SOLVERS)
     ~test_data() { delete comm; }
   };
 
-
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN_MONITOR_UPDATE)
   {
-    std::cout << "NKA solver, exact Jacobian (monitor update)..." << std::endl;
+    std::cout << std::endl << "NKA solver, exact Jacobian (monitor update)..." << std::endl
+              << "==============================================" << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
@@ -81,7 +81,8 @@ SUITE(SOLVERS)
     CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
 
     // repeat solve with exact solution.
-    std::cout << "\nNKA solver, repeat solver..." << std::endl;
+    std::cout << std::endl << "NKA solver, repeat solver..." << std::endl
+              << "--------------------------------------------" << std::endl;
     nka->Solve(u);
     CHECK(nka->num_itrs() == 1);
   };
@@ -90,7 +91,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN_MONITOR_RESIDUAL)
   {
-    std::cout << "\nNKA solver, exact Jacobian (monitor residual)..." << std::endl;
+    std::cout << std::endl << "NKA solver, exact Jacobian (monitor residual)..." << std::endl
+              << "==============================================" << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
@@ -123,7 +125,8 @@ SUITE(SOLVERS)
     CHECK_CLOSE(0.0, (*u)[1], 1.0e-5);
 
     // repeat solve with eaxt solution
-    std::cout << "\nNKA solver, repeat solver..." << std::endl;
+    std::cout << std::endl << "NKA solver, repeat solver..." << std::endl
+              << "--------------------------------------------" << std::endl;
     nka->Solve(u);
     CHECK(nka->num_itrs() == 1);
   };
@@ -132,7 +135,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN_GLOBALIZED)
   {
-    std::cout << "\nNKA solver, exact Jacobian..." << std::endl;
+    std::cout << std::endl << "NKA solver, exact Jacobian (globalized)..." << std::endl
+              << "============================================" << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem6> fn = Teuchos::rcp(new NonlinearProblem6(1.0, 1.0, true));
@@ -167,7 +171,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_SOLVER_INEXACT_JACOBIAN)
   {
-    std::cout << "\nNKA solver, inexact Jacobian..." << std::endl;
+    std::cout << std::endl << "NKA solver, inexact Jacobian..." << std::endl
+              << "==============================================" << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, false));
@@ -202,7 +207,9 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_SOLVER_INEXACT_JACOBIAN_GLOBALIZED)
   {
-    std::cout << "\nNKA solver, inexact Jacobian..." << std::endl;
+    std::cout << std::endl << "NKA solver, inexact Jacobian (globalized)..." << std::endl
+              << "==============================================" << std::endl;
+
 
     // create the function class
     Teuchos::RCP<NonlinearProblem6> fn = Teuchos::rcp(new NonlinearProblem6(1.0, 1.0, false));
@@ -237,7 +244,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_LS_SOLVER)
   {
-    std::cout << std::endl << "NKA with backtracking..." << std::endl;
+    std::cout << std::endl << "NKA with line search..." << std::endl
+              << "==============================================" << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
@@ -267,11 +275,11 @@ SUITE(SOLVERS)
     CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
   };
 
-
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_LS_SOLVER_GLOBALIZATION)
   {
-    std::cout << std::endl << "NKA with backtracking..." << std::endl;
+    std::cout << std::endl << "NKA with line search (globalized)..." << std::endl
+              << "==============================================" << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem6> fn = Teuchos::rcp(new NonlinearProblem6(1.0, 1.0, true));
@@ -305,7 +313,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_BT_ATS_SOLVER)
   {
-    std::cout << std::endl << "NKA with backtracking, ATS custom..." << std::endl;
+    std::cout << std::endl << "NKA with backtracking, ATS custom..." << std::endl
+              << "============================================" << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
@@ -342,7 +351,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_BT_ATS_SOLVER_GLOBALIZED)
   {
-    std::cout << std::endl << "NKA with backtracking, ATS custom..." << std::endl;
+    std::cout << std::endl << "NKA with backtracking, ATS custom (globalized)..." << std::endl
+              << "============================================" << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem6> fn = Teuchos::rcp(new NonlinearProblem6(1.0, 1.0, true));
@@ -379,7 +389,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_LS_ATS_SOLVER)
   {
-    std::cout << std::endl << "NKA with backtracking via line search, ATS custom..." << std::endl;
+    std::cout << std::endl << "NKA with backtracking via line search, ATS custom..." << std::endl
+              << "============================================" << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
@@ -416,7 +427,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_LS_ATS_SOLVER_GLOBALIZED)
   {
-    std::cout << std::endl << "NKA with backtracking via line search, ATS custom..." << std::endl;
+    std::cout << std::endl << "NKA with backtracking via line search, ATS custom (globalized)..." << std::endl
+              << "============================================" << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem6> fn = Teuchos::rcp(new NonlinearProblem6(1.0, 1.0, true));
@@ -453,7 +465,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, BT_LS_SOLVER)
   {
-    std::cout << std::endl << "Backtracking line-search using Brent..." << std::endl;
+    std::cout << std::endl << "Line-search using Brent..." << std::endl
+              << "============================================" << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
@@ -468,8 +481,8 @@ SUITE(SOLVERS)
     plist.sublist("verbose object").set("verbosity level", "high");
 
     // create the Solver
-    Teuchos::RCP<AmanziSolvers::SolverBT<Epetra_Vector, Epetra_BlockMap>> nka_bt =
-      Teuchos::rcp(new AmanziSolvers::SolverBT<Epetra_Vector, Epetra_BlockMap>(plist));
+    Teuchos::RCP<AmanziSolvers::SolverLS<Epetra_Vector, Epetra_BlockMap>> nka_bt =
+      Teuchos::rcp(new AmanziSolvers::SolverLS<Epetra_Vector, Epetra_BlockMap>(plist));
     nka_bt->Init(fn, *map);
 
     // initial guess
@@ -490,7 +503,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, BT_LS_SOLVER_GLOBALIZED)
   {
-    std::cout << std::endl << "Backtracking line-search using Brent..." << std::endl;
+    std::cout << std::endl << "Line-search using Brent (globalized)..." << std::endl
+              << "============================================" << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem6> fn = Teuchos::rcp(new NonlinearProblem6(1.0, 1.0, true));
@@ -505,8 +519,8 @@ SUITE(SOLVERS)
     plist.sublist("verbose object").set("verbosity level", "high");
 
     // create the Solver
-    Teuchos::RCP<AmanziSolvers::SolverBT<Epetra_Vector, Epetra_BlockMap>> nka_bt =
-      Teuchos::rcp(new AmanziSolvers::SolverBT<Epetra_Vector, Epetra_BlockMap>(plist));
+    Teuchos::RCP<AmanziSolvers::SolverLS<Epetra_Vector, Epetra_BlockMap>> nka_bt =
+      Teuchos::rcp(new AmanziSolvers::SolverLS<Epetra_Vector, Epetra_BlockMap>(plist));
     nka_bt->Init(fn, *map);
 
     // initial guess
@@ -527,7 +541,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, AA_SOLVER)
   {
-    std::cout << std::endl << "AA solver...." << std::endl;
+    std::cout << std::endl << "AA solver...." << std::endl
+              << "============================================" << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
@@ -566,7 +581,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, AA_SOLVER_GLOBALIZED)
   {
-    std::cout << std::endl << "AA solver...." << std::endl;
+    std::cout << std::endl << "AA solver (globalized)...." << std::endl
+              << "============================================" << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem6> fn = Teuchos::rcp(new NonlinearProblem6(1.0, 1.0, true));
@@ -605,7 +621,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NOX_SOLVER)
   {
-    std::cout << "\nNOX solver..." << std::endl;
+    std::cout << std::endl << "NOX solver..." << std::endl
+              << "============================================" << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
@@ -638,5 +655,4 @@ SUITE(SOLVERS)
     CHECK_CLOSE(0.0, (*u)[0], 1.0e-6);
     CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
   };
-
 } // SUITE

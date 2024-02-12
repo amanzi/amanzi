@@ -7,8 +7,6 @@
   Authors: William Perkins, Ethan Coon
 */
 
-#include <boost/format.hpp>
-
 #include "RegionLogical.hh"
 #include "MeshException.hh"
 #include "MeshFrameworkFactory.hh"
@@ -89,8 +87,9 @@ MeshFrameworkFactory::create(const std::string& filename)
   FileFormat fmt = fileFormatFromFilename(*comm_, filename);
 
   if (fmt == FileFormat::UNKNOWN) {
-    FileMessage e(
-      std::string(boost::str(boost::format("%s: unknown file format") % filename)).c_str());
+    FileMessage e;
+    e << "MeshFrameworkFactory: unknown file format for file \""
+      << filename << "\"";
     Exceptions::amanzi_throw(e);
   }
 
