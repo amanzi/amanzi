@@ -44,9 +44,11 @@ class ApertureModel_Constant : public ApertureModel {
   ~ApertureModel_Constant(){};
 
   // required methods from the base class
-  double Aperture(double p) { return a0_; }
+  virtual double OverburdenPressure() override { return 0.0; }
 
-  double dAperturedPressure(double p) { return 0.0; }
+  virtual double Aperture(double p, double pov) override { return a0_; }
+
+  virtual double dAperturedPressure(double p, double pov) override { return 0.0; }
 
  private:
   double a0_;

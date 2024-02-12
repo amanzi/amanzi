@@ -23,7 +23,7 @@
 #include "COM_Tortuosity.hh"
 #include "EOS_Diffusion.hh"
 #include "Key.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "CommonDefs.hh"
 
 #include "Richards_PK.hh"
@@ -48,8 +48,6 @@ Richards_PK::FunctionalResidual(double t_old,
   // verify that u_new = solution@default
   Solution_to_State(*u_new, Tags::DEFAULT);
 
-  std::vector<int>& bc_model = op_bc_->bc_model();
-
   if (S_->HasEvaluator(viscosity_liquid_key_, Tags::DEFAULT)) {
     S_->GetEvaluator(viscosity_liquid_key_).Update(*S_, "flow");
   }
@@ -58,16 +56,17 @@ Richards_PK::FunctionalResidual(double t_old,
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
 
   // upwind diffusion coefficient and its derivative
-  vol_flowrate_copy->ScatterMasterToGhosted("face");
+  mol_flowrate_copy->ScatterMasterToGhosted("face");
 
-  pressure_eval_->SetChanged();
-  auto& alpha = S_->GetW<CV_t>(alpha_key_, Tags::DEFAULT, alpha_key_);
   S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
+  auto& alpha = S_->GetW<CV_t>(alpha_key_, Tags::DEFAULT, alpha_key_);
 
   if (!flow_on_manifold_) {
+    std::vector<int>& bc_model = op_bc_->bc_model();
+
     *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
-    upwind_->Compute(*vol_flowrate_copy, bc_model, *alpha_upwind_);
+    upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_);
 
     // modify relative permeability coefficient for influx faces
     // UpwindInflowBoundary_New(u_new->Data());
@@ -78,12 +77,12 @@ Richards_PK::FunctionalResidual(double t_old,
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
-    upwind_->Compute(*vol_flowrate_copy, bc_model, *alpha_upwind_dP_);
+    upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_dP_);
   }
 
   // assemble residual for diffusion operator
   op_matrix_->Init();
-  op_matrix_diff_->UpdateMatrices(vol_flowrate_copy.ptr(), solution.ptr());
+  op_matrix_diff_->UpdateMatrices(mol_flowrate_copy.ptr(), solution.ptr());
   op_matrix_diff_->ApplyBCs(true, true, true);
 
   Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
@@ -94,7 +93,6 @@ Richards_PK::FunctionalResidual(double t_old,
   // add accumulation term
   Epetra_MultiVector& f_cell = *f->Data()->ViewComponent("cell");
 
-  pressure_eval_->SetChanged();
   S_->GetEvaluator(porosity_key_).Update(*S_, "flow");
   const auto& phi_c = *S_->Get<CV_t>(porosity_key_).ViewComponent("cell");
 
@@ -114,10 +112,7 @@ Richards_PK::FunctionalResidual(double t_old,
   if (vapor_diffusion_) { Functional_AddVaporDiffusion_(f->Data()); }
 
   // add water storage in matrix
-  if (multiscale_porosity_) {
-    pressure_msp_eval_->SetChanged();
-    Functional_AddMassTransferMatrix_(dt_, f->Data());
-  }
+  if (multiscale_porosity_) { Functional_AddMassTransferMatrix_(dt_, f->Data()); }
 
   // calculate normalized residual
   functional_max_norm = 0.0;
@@ -261,7 +256,7 @@ Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& kvapo
 void
 Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<CompositeVector> f)
 {
-  double mu = S_->Get<double>("const_fluid_viscosity");
+  const auto& mu = *S_->Get<CV_t>(viscosity_liquid_key_).ViewComponent("cell");
 
   const auto& prf = *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
   auto& prm = *S_->GetW<CV_t>(pressure_msp_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
@@ -291,7 +286,7 @@ Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Composite
 
     int num_itrs(100);
     wcm1 = msp_->second[(*msp_->first)[c]]->WaterContentMatrix(
-      prf0, prm0, wcm0, dt, phi0, molar_rho_, mu, num_itrs);
+      prf0, prm0, wcm0, dt, phi0, molar_rho_, mu[0][c], num_itrs);
 
     fc[0][c] += (wcm1(0) - wcm0(0)) / dt;
 
@@ -349,10 +344,10 @@ Richards_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<
 void
 Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
+  double t_old = tp - dtp;
+
   // verify that u = solution@default
   Solution_to_State(*u, Tags::DEFAULT);
-
-  double t_old = tp - dtp;
 
   std::vector<int>& bc_model = op_bc_->bc_model();
   // std::vector<double>& bc_value = op_bc_->bc_value();
@@ -361,22 +356,20 @@ Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, d
   UpdateSourceBoundaryData(t_old, tp, *u->Data());
 
   // -- Darcy flux
+  //    We need only direction of the flux copy
   if (upwind_frequency_ == FLOW_UPWIND_UPDATE_ITERATION) {
-    op_matrix_diff_->UpdateFlux(solution.ptr(), vol_flowrate_copy.ptr());
-    auto& flowrate = *vol_flowrate_copy->ViewComponent("face");
-    flowrate.Scale(1.0 / molar_rho_); // FIXME
+    op_matrix_diff_->UpdateFlux(solution.ptr(), mol_flowrate_copy.ptr());
   }
-  vol_flowrate_copy->ScatterMasterToGhosted("face");
+  mol_flowrate_copy->ScatterMasterToGhosted("face");
 
   // diffusion coefficient and its derivative
-  pressure_eval_->SetChanged();
   auto& alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
   S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
 
   if (!flow_on_manifold_) {
     *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
-    upwind_->Compute(*vol_flowrate_copy, bc_model, *alpha_upwind_);
+    upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_);
 
     // modify relative permeability coefficient for influx faces
     // UpwindInflowBoundary_New(u->Data());
@@ -387,14 +380,14 @@ Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, d
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
-    upwind_->Compute(*vol_flowrate_copy, bc_model, *alpha_upwind_dP_);
+    upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_dP_);
   }
 
   // create diffusion operators
   op_preconditioner_->Init();
-  op_preconditioner_diff_->UpdateMatrices(vol_flowrate_copy.ptr(), solution.ptr());
+  op_preconditioner_diff_->UpdateMatrices(mol_flowrate_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->UpdateMatricesNewtonCorrection(
-    vol_flowrate_copy.ptr(), solution.ptr(), molar_rho_);
+    mol_flowrate_copy.ptr(), solution.ptr(), 1.0);
   op_preconditioner_diff_->ApplyBCs(true, true, true);
 
   // add time derivative

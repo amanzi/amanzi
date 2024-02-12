@@ -113,7 +113,11 @@ class Richards_PK : public Flow_PK {
 
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
-  virtual void ChangedSolution() override { pressure_eval_->SetChanged(); }
+  virtual void ChangedSolution() override
+  {
+    pressure_eval_->SetChanged();
+    if (multiscale_porosity_) { pressure_msp_eval_->SetChanged(); }
+  }
 
   // -- returns the number of linear iterations.
   virtual int ReportStatistics() override { return op_preconditioner_->apply_calls(); }
@@ -199,13 +203,14 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Operators::PDE_Diffusion> op_vapor_diff_;
   bool vapor_diffusion_;
 
-  // permebility-porosity scaling factor
-  Key ppfactor_key_;
+  // miscaleneous models
+  Key ppfactor_key_, vol_strain_key_;
+  bool use_strain_;
 
   // multiscale models
   Key pressure_msp_key_, porosity_msp_key_;
   Key water_storage_msp_key_, prev_water_storage_msp_key_;
-  Key mass_density_liquid_key_, temperature_key_;
+  Key temperature_key_;
 
   bool multiscale_porosity_;
   int ms_itrs_;
@@ -225,7 +230,7 @@ class Richards_PK : public Flow_PK {
   int functional_max_cell;
 
   // copies of state fields
-  Teuchos::RCP<CompositeVector> vol_flowrate_copy;
+  Teuchos::RCP<CompositeVector> mol_flowrate_copy;
 
   // upwind
   int upwind_frequency_;

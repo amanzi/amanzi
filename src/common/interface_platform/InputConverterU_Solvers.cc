@@ -84,6 +84,11 @@ InputConverterU::TranslateSolvers_()
       "unstr_flow_controls, constraints_linear_solver", LINEAR_SOLVER_METHOD, enforce);
   }
 
+  if (pk_model_.find("mechanics") != pk_model_.end()) {
+    out_list.sublist("PCG for elasticity") =
+      TranslateLinearSolvers_("unstr_mechanics_controls, elasticity_linear_solver", "pcg", "");
+  }
+
   // add default "GMRES for Newton" solver
   for (int i = 0; i < gmres_solvers_.size(); ++i) {
     Teuchos::ParameterList& gmres_list = out_list.sublist(gmres_solvers_[i].first);

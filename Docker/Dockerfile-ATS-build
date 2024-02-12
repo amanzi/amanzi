@@ -10,6 +10,9 @@
 #
 # The former is preferred in development, but the latter should be
 # done to confirm that the submodule will work for users
+#
+# Note, no amanzi_branch is provided by CI, as CI will already have
+# checked out Amanzi at the right hash.
 
 ARG amanzi_tpls_ver=latest
 ARG mpi_flavor=mpich
@@ -18,7 +21,7 @@ FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_flavor}
 LABEL Description="ATS CI: Build ATS in a Docker image."
 SHELL ["/bin/bash", "-c"]
 
-ARG amanzi_branch=master
+ARG amanzi_branch=
 ARG ats_branch=
 ARG ats_tests_branch=
 ARG https_proxy=
@@ -29,35 +32,34 @@ USER amanzi_user
 ENV https_proxy=$https_proxy \
     http_proxy=$http_proxy
 
-RUN echo "${AMANZI_PREFIX}"
-RUN echo "${AMANZI_TPLS_DIR}"
+# Make sure we have updated branch information
+RUN echo "${AMANZI_PREFIX}"; echo "${AMANZI_TPLS_DIR}"; echo "Amanzi branch = \"$amanzi_branch\""
 
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
-
-# Make sure we have updated branch information
-RUN echo "Amanzi branch = $amanzi_branch"
-RUN git remote prune origin
-RUN git fetch
+ 
+# update the docker's Amanzi repo to current master, not master when
+# TPLs layer was built
+RUN git remote prune origin; git fetch; git reset --hard origin/master
 
 # Checkout the local branch and forcibly move it to the origin's
 # version of that branch.  Do not git pull because that can author
 # commits (and therefore fail) if a merge is required to do the pull
-# (if the local branch already exists and diverges from the remote
-# branch)
-RUN if [[ -n "$amanzi_branch" ]] ; then git checkout $amanzi_branch; git reset --hard origin/$amanzi_branch; fi
+# (if the local branch already exists, and diverges because it was
+# rebased and force-pushed from the remote branch)
+RUN if [[ -n "$amanzi_branch" ]] ; then echo "checking out Amanzi branch: \"$amanzi_branch"\"; git checkout $amanzi_branch; git reset --hard origin/$amanzi_branch; fi
 RUN git rev-parse --short HEAD
 
 # Checkout ATS at the right branch
 RUN git submodule update --init
 WORKDIR /home/amanzi_user/amanzi/src/physics/ats
-RUN if [[ -n "$ats_branch" ]] ; then git fetch; git checkout $ats_branch; git reset --hard origin/$ats_branch; fi
+RUN if [[ -n "$ats_branch" ]] ; then echo "checking out ATS branch: \"$ats_branch\""; git fetch; git checkout $ats_branch; git reset --hard origin/$ats_branch; fi
 RUN git rev-parse --short HEAD
 
 # Checkout ats-regression-tests at the right branch
 RUN git submodule update --init 
 WORKDIR /home/amanzi_user/amanzi/src/physics/ats/testing/ats-regression-tests
-RUN if [[ -n "$ats_tests_branch" ]] ; then git fetch; git checkout $ats_tests_branch; git reset --hard origin/$ats_tests_branch; fi
+RUN if [[ -n "$ats_tests_branch" ]] ; then echo "checking out ATS tests branch: \"$ats_tests_branch\""; git fetch; git checkout $ats_tests_branch; git reset --hard origin/$ats_tests_branch; fi
 RUN git rev-parse --short HEAD
 WORKDIR /home/amanzi_user/amanzi
 

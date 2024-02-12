@@ -52,6 +52,7 @@ struct BCs {
 
   std::string type;
   std::vector<double> times, values, fluxes;
+  std::vector<std::vector<double>> vectors;
   std::vector<std::string> forms, formulas;
 
   std::string filename, xheader, yheader, variable;
@@ -258,6 +259,10 @@ class InputConverterU : public InputConverter {
                                        std::vector<std::string>& regions,
                                        Teuchos::ParameterList& out_list);
 
+  // -- mechanics
+  Teuchos::ParameterList TranslateMechanics_(const std::string& domain);
+  Teuchos::ParameterList TranslateMechanicsBCs_(const std::string& domain);
+
   // -- backward compatibility
   void TranslateTransportBCsAmanziGeochemistry_(Teuchos::ParameterList& out_list);
   void TranslateStateICsAmanziGeochemistry_(Teuchos::ParameterList& out_list,
@@ -366,6 +371,9 @@ class InputConverterU : public InputConverter {
   bool transport_permeability_, transport_implicit_;
   std::vector<std::string> comp_names_all_;
   std::map<std::string, double> solute_molar_mass_;
+
+  // global mpc parameters
+  std::vector<std::string> pks_strong_, pks_weak_;
 
   // global state parameters
   // -- initialization filename, different from restart

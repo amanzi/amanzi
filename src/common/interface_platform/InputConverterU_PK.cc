@@ -257,6 +257,11 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
     out_list.set<Teuchos::Array<std::string>>("error control options",
                                               CharToStrings_(mm.transcode(node->getTextContent())));
 
+  node = GetUniqueElementByTagsString_(controls + ", max_sequential_iterations", flag);
+  if (flag)
+    out_list.set<int>("maximum number of iterations",
+                      std::stoi(mm.transcode(node->getTextContent())));
+
   node = GetUniqueElementByTagsString_(controls + ", preconditioner", flag);
   if (flag) {
     std::string text = GetTextContentS_(node, "hypre_amg, trilinos_ml, block_ilu");

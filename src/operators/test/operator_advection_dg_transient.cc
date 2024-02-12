@@ -579,7 +579,7 @@ AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
   for (int f = 0; f < nfaces_owned; ++f) {
     const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
-    cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     WhetStone::Polynomial poly(dim, order_);

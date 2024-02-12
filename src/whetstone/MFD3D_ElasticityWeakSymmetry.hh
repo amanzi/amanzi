@@ -41,13 +41,12 @@ class MFD3D_ElasticityWeakSymmetry : public MFD3D {
     : MFD3D(mesh){};
 
   // required methods
-  // -- schema for stress, displacement and rotations
+  // -- schema for displacement and rotations in the stiffness matrix
   virtual std::vector<SchemaItem> schema() const override
   {
     std::vector<SchemaItem> items;
-    items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, d_));
-    items.push_back(std::make_tuple(AmanziMesh::CELL, DOF_Type::SCALAR, d_));
-    items.push_back(std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, d_ * (d_ - 1) / 2));
+    items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, d_ * d_));
+    items.push_back(std::make_tuple(AmanziMesh::CELL, DOF_Type::SCALAR, d_ * (d_ + 1) / 2));
     return items;
   }
 

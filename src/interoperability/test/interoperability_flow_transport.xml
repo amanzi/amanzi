@@ -252,6 +252,7 @@
       <Parameter name="maximum Newton iterations" type="int" value="50"/>
       <Parameter name="minerals" type="Array(string)" value="{Halite}"/>
       <Parameter name="number of component concentrations" type="int" value="4"/>
+      <Parameter name="log formulation" type="bool" value="true"/>
     </ParameterList>
 
     <ParameterList name="transport">

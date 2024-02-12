@@ -194,7 +194,7 @@ PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
 
     // updating matrix blocks
     for (int f = 0; f != nfaces_owned; ++f) {
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f);
       int ncells = cells.size();
 
       WhetStone::DenseMatrix Aface(ncells, ncells);
@@ -263,7 +263,7 @@ PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
     for (int f = 0; f < nfaces_owned; f++) {
       if (bc_model[f] != OPERATOR_BC_NONE) {
-        auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
         int c = cells[0];
 
         if (bc_model[f] == OPERATOR_BC_DIRICHLET && primary) {
@@ -334,7 +334,7 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
 
       } else {
         if (f < nfaces_owned && !flag[f]) {
-          auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+          auto cells = mesh_->getFaceCells(f);
           if (cells.size() <= 1) {
             Errors::Message msg("Flow PK: These boundary conditions are not supported by FV.");
             Exceptions::amanzi_throw(msg);
@@ -366,7 +366,7 @@ PDE_DiffusionFV::ScaleMatricesColumns(const CompositeVector& s)
   for (int f = 0; f < nfaces_owned; ++f) {
     WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
 
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     for (int n = 0; n < ncells; ++n) {
@@ -400,7 +400,7 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
   if (dkdp_->HasComponent("face")) { dKdP_face = dkdp_->ViewComponent("face", true); }
 
   for (int f = 0; f != nfaces_owned; ++f) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int mcells = cells.size();
 
     WhetStone::DenseMatrix Aface(mcells, mcells);

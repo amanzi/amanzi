@@ -63,10 +63,10 @@ is "terrain following."
 namespace Amanzi {
 namespace AmanziMesh {
 
-struct MeshFrameworkColumnAlgorithms : public MeshFrameworkAlgorithms {
+struct MeshColumnAlgorithms : public MeshAlgorithms {
   // lumped things for more efficient calculation
   virtual std::pair<double, AmanziGeometry::Point>
-  computeCellGeometry(const Mesh& mesh, const Entity_ID c) const override;
+  computeCellGeometry(const MeshHost& mesh, const Entity_ID c) const override;
 };
 
 
@@ -151,20 +151,16 @@ class MeshFrameworkColumn : public MeshFramework {
   // Cells of type 'ptype' connected to a node - The order of cells is
   // not guaranteed to be the same for corresponding nodes on
   // different processors
-  virtual void getNodeCells(const Entity_ID nodeid,
-                            const Parallel_kind ptype,
-                            cEntity_ID_View& cellids) const override
+  virtual void getNodeCells(const Entity_ID nodeid, cEntity_ID_View& cellids) const override
   {
-    col3D_mesh_->getNodeCells(nodeid, ptype, cellids);
+    col3D_mesh_->getNodeCells(nodeid, cellids);
   }
 
 
   // Faces of type 'ptype' connected to a node - The order of faces is
   // not guarnateed to be the same for corresponding nodes on
   // different processors
-  virtual void getNodeFaces(const Entity_ID nodeid,
-                            const Parallel_kind ptype,
-                            cEntity_ID_View& faceids) const override
+  virtual void getNodeFaces(const Entity_ID nodeid, cEntity_ID_View& faceids) const override
   {
     Errors::Message mesg("Not implemented");
     Exceptions::amanzi_throw(mesg);
@@ -185,17 +181,17 @@ class MeshFrameworkColumn : public MeshFramework {
   // cell_get_faces_and_dirs method of this class
   virtual void getCellFacesAndDirs(const Entity_ID cellid,
                                    cEntity_ID_View& faceids,
-                                   cEntity_Direction_View* const face_dirs) const override
+                                   cDirection_View* const face_dirs) const override
   {
     Entity_ID_View lfaceids("lfaceids", 2);
-    Entity_Direction_View lface_dirs;
+    Direction_View lface_dirs;
     if (face_dirs) Kokkos::resize(lface_dirs, 2);
 
     // NOTE: the face directions with respect to the cell may be at
     // odds with how it is in the parent mesh but within this mesh its
     // consistent - so we think everything will work as it should
     cEntity_ID_View faceids_extracted;
-    cEntity_Direction_View face_dirs_extracted;
+    cDirection_View face_dirs_extracted;
     col3D_mesh_->getCellFacesAndDirs(cellid, faceids_extracted, &face_dirs_extracted);
 
     int count = 0;
@@ -212,11 +208,9 @@ class MeshFrameworkColumn : public MeshFramework {
 
   // Cells connected to a face - this function is implemented in each
   // mesh framework. The results are cached in the base class
-  virtual void getFaceCells(const Entity_ID faceid,
-                            const Parallel_kind ptype,
-                            cEntity_ID_View& cellids) const override
+  virtual void getFaceCells(const Entity_ID faceid, cEntity_ID_View& cellids) const override
   {
-    col3D_mesh_->getFaceCells(column_faces_(faceid), ptype, cellids);
+    col3D_mesh_->getFaceCells(column_faces_(faceid), cellids);
   }
 
  protected:
@@ -231,7 +225,7 @@ class MeshFrameworkColumn : public MeshFramework {
 };
 
 
-namespace MeshAlgorithms {
+namespace Impl {
 
 // helper function
 template <class Mesh_type>
@@ -240,7 +234,7 @@ computeMeshColumnCellGeometry(const Mesh_type& mesh, const Entity_ID c)
 {
   /* compute volume on the assumption that the top and bottom faces form
      a vertical columnar cell or in other words a polygonal prism */
-  cEntity_ID_View cfaces;
+  typename Mesh_type::cEntity_ID_View cfaces;
   mesh.getCellFaces(c, cfaces);
   AMANZI_ASSERT(cfaces.size() == 2);
   double farea = mesh.getFaceArea(cfaces[0]);
@@ -254,7 +248,7 @@ computeMeshColumnCellGeometry(const Mesh_type& mesh, const Entity_ID c)
 }
 
 
-} // namespace MeshAlgorithms
+} // namespace Impl
 } // namespace AmanziMesh
 } // namespace Amanzi
 

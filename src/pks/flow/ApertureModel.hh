@@ -25,8 +25,9 @@ namespace Flow {
 class ApertureModel {
  public:
   virtual ~ApertureModel(){};
-  virtual double Aperture(double pressure) = 0;
-  virtual double dAperturedPressure(double pressure) = 0;
+  virtual double OverburdenPressure() = 0;
+  virtual double Aperture(double pressure, double pov) = 0;
+  virtual double dAperturedPressure(double pressure, double pov) = 0;
 };
 
 } // namespace Flow

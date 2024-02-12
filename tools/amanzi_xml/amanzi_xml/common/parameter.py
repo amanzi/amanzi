@@ -163,8 +163,8 @@ class Parameter(base.TeuchosBaseXML):
             self.set("value", self._checkSingleValueFromType(self.value))
 
     def getValue(self):
-        """Gets the value, cast to the correct type."""
-        return self._checkSingleValueFromString(self.get('value'))
+        """Gets the value, cast to the correct type. Note this is here for API consistency only."""
+        return self.value
 
     def _checkSingleValueFromString(self, value):
         retval = _valid_parameter_from_string(self._basetype, value)

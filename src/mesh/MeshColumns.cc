@@ -28,11 +28,12 @@ MeshColumns::initialize(const MeshCache<MemSpace_kind::HOST>& mesh)
 
   // loop over all boundary faces and look for those whose normal z component
   // is not zero and whose opposing face is below them.
-  Entity_ID_View surface_faces("surface_faces", mesh.getBoundaryFaces().size());
+  MeshCache<MemSpace_kind::HOST>::Entity_ID_View surface_faces("surface_faces",
+                                                               mesh.getBoundaryFaces().size());
   int sf = 0;
   for (const Entity_ID f : mesh.getBoundaryFaces()) {
     auto f_normal = mesh.getFaceNormal(f);
-    Entity_ID c = mesh.getFaceCells(f, Parallel_kind::ALL)[0];
+    Entity_ID c = mesh.getFaceCells(f)[0];
     if (Impl::orientFace(mesh, f, c) == 1) surface_faces[sf++] = f;
   }
   Kokkos::resize(surface_faces, sf);
@@ -62,7 +63,7 @@ MeshColumns::initialize(const MeshCache<MemSpace_kind::HOST>& mesh,
     for (Entity_ID f : r_faces)
       vsurface_faces.insert(std::upper_bound(vsurface_faces.begin(), vsurface_faces.end(), f), f);
   }
-  Entity_ID_View surface_faces;
+  MeshCache<MemSpace_kind::HOST>::Entity_ID_View surface_faces;
   vectorToView(surface_faces, vsurface_faces);
 
   // build columns for each face
@@ -72,7 +73,7 @@ MeshColumns::initialize(const MeshCache<MemSpace_kind::HOST>& mesh,
 
 void
 MeshColumns::initialize(const MeshCache<MemSpace_kind::HOST>& mesh,
-                        const Entity_ID_View& surface_faces)
+                        const MeshCache<MemSpace_kind::HOST>::Entity_ID_View& surface_faces)
 {
   // figure out the correct size
   // Note, this is done to make life easier for Kokkos
@@ -117,7 +118,7 @@ MeshColumns::buildColumn_(const MeshCache<MemSpace_kind::HOST>& mesh, Entity_ID 
 {
   Parallel_kind ptype = mesh.getParallelType(Entity_kind::FACE, f);
 
-  Entity_ID c = mesh.getFaceCells(f, Parallel_kind::ALL)[0]; // guaranteed size 1
+  Entity_ID c = mesh.getFaceCells(f)[0]; // guaranteed size 1
   if (mesh.getParallelType(Entity_kind::CELL, c) != ptype) {
     Errors::Message msg(
       "MeshColumns::buildColumn() mesh was not partitioned vertically using zoltan_rcb");
@@ -191,7 +192,7 @@ findDownFace(const MeshCache<MemSpace_kind::HOST>& mesh, const Entity_ID c)
 Entity_ID
 findOpposingCell(const MeshCache<MemSpace_kind::HOST>& mesh, const Entity_ID c, const Entity_ID f)
 {
-  auto fcells = mesh.getFaceCells(f, Parallel_kind::ALL);
+  auto fcells = mesh.getFaceCells(f);
   if (fcells.size() == 1)
     return -1;
   else if (fcells[0] == c)
@@ -207,7 +208,7 @@ std::size_t
 countCellsInColumn(const MeshCache<MemSpace_kind::HOST>& mesh, Entity_ID f)
 {
   std::size_t count = 0;
-  Entity_ID c = mesh.getFaceCells(f, Parallel_kind::ALL)[0]; // guaranteed size 1
+  Entity_ID c = mesh.getFaceCells(f)[0]; // guaranteed size 1
   bool done = false;
   while (!done) {
     count++;

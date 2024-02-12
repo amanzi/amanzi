@@ -29,26 +29,30 @@ class Porosity_Compressible : public Porosity {
     porosity_ = plist.get<double>("undeformed soil porosity");
     p_ref_ = plist.get<double>("reference pressure");
     c_ = plist.get<double>("pore compressibility");
+    b_ = plist.get<double>("biot coefficient", 1.0);
 
     factor_ = porosity_ * c_;
   }
   ~Porosity_Compressible(){};
 
   // required methods from the base class
-  inline double PorosityValue(double p)
+  virtual double PorosityValue(double p) override
   {
     double dp = p - p_ref_;
-    return (dp <= 0.0) ? porosity_ : porosity_ * std::exp(c_ * dp);
+    return porosity_ * std::exp(c_ * dp);
   }
-  inline double dPorositydPressure(double p)
+  virtual double dPorositydPressure(double p) override
   {
     double dp = p - p_ref_;
-    return (dp <= 0.0) ? 0.0 : factor_ * std::exp(c_ * dp);
+    return factor_ * std::exp(c_ * dp);
   }
+
+  virtual double getBiotCoefficient() override { return b_; }
 
  private:
   double porosity_, p_ref_, c_;
   double factor_;
+  double b_;
 };
 
 } // namespace Flow

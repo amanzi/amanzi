@@ -45,13 +45,17 @@ class PorosityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Com
                                           const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
+  double getBiotCoefficient(int c) { return pom_->second[(*pom_->first)[c]]->getBiotCoefficient(); }
+
  protected:
   void InitializeFromPlist_();
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<PorosityModelPartition> pom_;
-  Key pressure_key_;
+  Key pressure_key_, strain_key_;
+
+  bool use_strain_ = false;
 
  private:
   static Utils::RegisteredFactory<Evaluator, PorosityEvaluator> reg_;

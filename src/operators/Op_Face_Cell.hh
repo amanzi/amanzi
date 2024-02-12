@@ -74,7 +74,7 @@ class Op_Face_Cell : public Op {
     if (scaling.HasComponent("cell")) {
       const Epetra_MultiVector& s_c = *scaling.ViewComponent("cell", true);
       for (int f = 0; f != matrices.size(); ++f) {
-        auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
         matrices[f](0, 0) *= s_c[0][cells[0]];
         if (cells.size() > 1) {
           matrices[f](0, 1) *= s_c[0][cells[1]];

@@ -64,6 +64,15 @@ TEST(DensityEOS)
 
       double der = eos_fehm.DDensityDT(T + T0, p);
       CHECK(der < 0.0);
+
+      // finite difference approximation
+      double T1 = T + T0;
+      double der_fd = 10 * (eos_fehm.Density(T1 + 0.05, p) - eos_fehm.Density(T1 - 0.05, p));
+      CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
+
+      der = eos_fehm.DDensityDp(T1, p);
+      der_fd = eos_fehm.Density(T1, p + 0.5) - eos_fehm.Density(T1, p - 0.5);
+      CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
     }
   }
 }
@@ -85,8 +94,37 @@ TEST(ViscosityEOS)
       CHECK(nu1 < nu0);
       double der = eos.DViscosityDT(T + T0, p);
       CHECK(der < 0.0);
+
+      // finite difference approximation
+      double T1 = T + T0;
+      double der_fd = 10 * (eos.Viscosity(T1 + 0.05, p) - eos.Viscosity(T1 - 0.05, p));
+      CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
     }
     nu0 = nu1;
+  }
+
+  // next EOS
+  H2O_ViscosityFEHM eos_fehm(plist);
+
+  p = 101325.0;
+  for (int loop = 0; loop < 5; loop++) {
+    p *= 2.0;
+    for (double T = 15; T < 300; T += 1.5) {
+      nu1 = eos_fehm.Viscosity(T + T0, p);
+      CHECK(nu1 < 0.0012 && nu1 > 9e-6);
+
+      double der = eos_fehm.DViscosityDT(T + T0, p);
+      CHECK(der < 0.0);
+
+      // finite difference approximation
+      double T1 = T + T0;
+      double der_fd = 10 * (eos_fehm.Viscosity(T1 + 0.05, p) - eos_fehm.Viscosity(T1 - 0.05, p));
+      CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
+
+      der = eos_fehm.DViscosityDp(T1, p);
+      der_fd = eos_fehm.Viscosity(T1, p + 0.5) - eos_fehm.Viscosity(T1, p - 0.5);
+      CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
+    }
   }
 }
 
@@ -97,7 +135,9 @@ TEST(TabularEOS_Amanzi)
 
   int ierr;
   Teuchos::ParameterList plist;
-  plist.set<std::string>("table name", "test/h2o.eos").set<std::string>("field name", "density");
+  plist.set<std::string>("table name", "test/h2o.eos")
+    .set<std::string>("field name", "density")
+    .set<std::string>("format", "Amanzi");
 
   LookupTable_Amanzi eos(plist);
 
@@ -133,7 +173,8 @@ TEST(TabularEOS_FEHM)
     Teuchos::ParameterList plist;
     plist.set<std::string>("table name", "test/air.eos")
       .set<std::string>("field name", fields[loop])
-      .set<double>("molar weight", 0.02896);
+      .set<double>("molar weight", 0.02896)
+      .set<std::string>("format", "FEHM");
 
     LookupTable_FEHM eos(plist);
 
@@ -169,7 +210,8 @@ TEST(FactoryEOS)
     Teuchos::ParameterList plist;
     plist.set<std::string>("table name", "test/h2o.eos")
       .set<std::string>("field name", "density")
-      .set<std::string>("eos type", name);
+      .set<std::string>("eos type", name)
+      .set<std::string>("format", "Amanzi");
 
     EOSFactory<EOS_Density> factory;
     auto eos = factory.Create(plist);
@@ -184,7 +226,8 @@ TEST(FactoryEOS)
     Teuchos::ParameterList plist;
     plist.set<std::string>("table name", "test/h2o.eos")
       .set<std::string>("field name", "viscosity")
-      .set<std::string>("eos type", name);
+      .set<std::string>("eos type", name)
+      .set<std::string>("format", "Amanzi");
 
     EOSFactory<EOS_Viscosity> factory;
     auto eos = factory.Create(plist);
@@ -206,7 +249,8 @@ TEST(Exceptions)
     Teuchos::ParameterList plist;
     plist.set<std::string>("table name", "test/h2o.eos")
       .set<std::string>("field name", "density")
-      .set<std::string>("eos type", name);
+      .set<std::string>("eos type", name)
+      .set<std::string>("format", "Amanzi");
 
     // density
     {

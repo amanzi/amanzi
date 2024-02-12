@@ -103,7 +103,7 @@ LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    auto cells = surfmesh->getFaceCells(f, Parallel_kind::ALL);
+    auto cells = surfmesh->getFaceCells(f);
     if (cells.size() == 2) continue;
 
     const Point& xf = surfmesh->getFaceCentroid(f);

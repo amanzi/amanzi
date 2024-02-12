@@ -24,7 +24,7 @@
 // Amanzi
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "Operator.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_DiffusionMFD.hh"

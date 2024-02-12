@@ -18,7 +18,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 
 namespace Amanzi {
 

@@ -62,16 +62,16 @@ test_segment_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m, bool test_
   CHECK_EQUAL(0., bisectors[1][2]);
 
   Entity_ID_View cells;
-  m->getFaceCells(0, Parallel_kind::ALL, cells);
+  m->getFaceCells(0, cells);
   CHECK_EQUAL(1, cells.size());
   CHECK_EQUAL(0, cells[0]);
 
-  m->getFaceCells(1, Parallel_kind::ALL, cells);
+  m->getFaceCells(1, cells);
   CHECK_EQUAL(2, cells.size());
   CHECK_EQUAL(0, cells[0]);
   CHECK_EQUAL(1, cells[1]);
 
-  m->getFaceCells(4, Parallel_kind::ALL, cells);
+  m->getFaceCells(4, cells);
   CHECK_EQUAL(1, cells.size());
   CHECK_EQUAL(3, cells[0]);
 

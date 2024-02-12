@@ -117,7 +117,7 @@ class BCs {
   BCs(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
       AmanziMesh::Entity_kind kind,
       WhetStone::DOF_Type type)
-    : kind_(kind), type_(type), mesh_(mesh){};
+    : status_(false), kind_(kind), type_(type), mesh_(mesh){};
   ~BCs(){};
 
   // non-const access
@@ -136,6 +136,7 @@ class BCs {
 
   std::vector<double>& bc_value()
   {
+    status_ = true;
     if (bc_value_.size() == 0) {
       int nent = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_kind::ALL);
       bc_value_.resize(nent, 0.0);
@@ -145,6 +146,7 @@ class BCs {
 
   std::vector<double>& bc_mixed()
   {
+    status_ = true;
     if (bc_mixed_.size() == 0) {
       int nent = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_kind::ALL);
       bc_mixed_.resize(nent, 0.0);
@@ -154,6 +156,7 @@ class BCs {
 
   std::vector<AmanziGeometry::Point>& bc_value_point()
   {
+    status_ = true;
     if (bc_value_point_.size() == 0) {
       AmanziGeometry::Point p(mesh_->getSpaceDimension());
       int nent = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_kind::ALL);
@@ -164,6 +167,7 @@ class BCs {
 
   std::vector<std::vector<double>>& bc_value_vector(int n = 1)
   {
+    status_ = true;
     if (bc_value_vector_.size() == 0) {
       int nent = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_kind::ALL);
       bc_value_vector_.resize(nent);
@@ -174,6 +178,7 @@ class BCs {
   }
 
   // const access
+  bool get_status() const { return status_; }
   const std::vector<int>& bc_model() const { return bc_model_; }
   const std::vector<double>& bc_value() const { return bc_value_; }
   const std::vector<double>& bc_mixed() const { return bc_mixed_; }
@@ -181,6 +186,7 @@ class BCs {
   const std::vector<std::vector<double>>& bc_value_vector() const { return bc_value_vector_; }
 
  private:
+  bool status_;
   AmanziMesh::Entity_kind kind_;
   WhetStone::DOF_Type type_;
 

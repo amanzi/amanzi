@@ -47,9 +47,18 @@ class ApertureModelEvaluator
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
+  virtual void EnsureCompatibility_ToDeps_(State& S) override{};
+
+ private:
+  void UpdateOverburdenPressure_(const State& S);
+
+ protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<ApertureModelPartition> apm_;
   Key pressure_key_;
+
+  bool use_stress_ = false;
+  std::vector<double> pov_; // overburden pressure
 
  private:
   static Utils::RegisteredFactory<Evaluator, ApertureModelEvaluator> reg_;

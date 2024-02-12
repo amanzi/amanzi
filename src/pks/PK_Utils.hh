@@ -27,39 +27,6 @@
 
 namespace Amanzi {
 
-/*
-  Keeps copies of fields which could be restored. e.g. when a time integration step
-  fails. The list is populated by
-
-    - input fields which are primary evaluators
-    - input fields which have no evaluators
-    - fields with previous prev_ when they are overwritten
-*/
-
-class StateArchive {
- public:
-  StateArchive() = delete;
-  StateArchive(Teuchos::RCP<State>& S, Teuchos::RCP<VerboseObject>& vo) : S_(S), vo_(vo){};
-
-  void Add(std::vector<std::string>& fields, const Tag& tag);
-
-  void Restore(const std::string& passwd);
-
-  void CopyFieldsToPrevFields(std::vector<std::string>& fields, const std::string& passwd);
-
-  // access
-  const CompositeVector& get(const std::string& name);
-
- private:
-  Teuchos::RCP<State> S_;
-  Teuchos::RCP<VerboseObject> vo_;
-
-  Tag tag_;
-  std::map<std::string, CompositeVector> fields_;
-};
-
-
-// Miscalleneous functions.
 // Average permeability tensor in horizontal direction.
 void
 PKUtils_CalculatePermeabilityFactorInWell(const Teuchos::Ptr<State>& S,
@@ -67,6 +34,9 @@ PKUtils_CalculatePermeabilityFactorInWell(const Teuchos::Ptr<State>& S,
 
 AmanziGeometry::Point
 PKUtils_EntityCoordinates(int id, AmanziMesh::Entity_ID kind, const AmanziMesh::Mesh& mesh);
+
+void
+PKUtils_FluxToVector(const State& S, const CompositeVector& flux, CompositeVector& grad);
 
 } // namespace Amanzi
 

@@ -200,7 +200,7 @@ LimiterCell::ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field,
 * Apply an internal limiter.
 ****************************************************************** */
 void
-LimiterCell::ApplyLimiter(const AmanziMesh::Entity_ID_View& ids,
+LimiterCell::ApplyLimiter(const AmanziMesh::cEntity_ID_View& ids,
                           Teuchos::RCP<const Epetra_MultiVector> field,
                           int component,
                           const Teuchos::RCP<Reconstruction>& lifting,
@@ -271,7 +271,7 @@ LimiterCell::ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter)
 * calculation of a 3x3 matrix.
 ******************************************************************* */
 void
-LimiterCell::LimiterTensorial_(const AmanziMesh::Entity_ID_View& ids,
+LimiterCell::LimiterTensorial_(const AmanziMesh::cEntity_ID_View& ids,
                                const std::vector<int>& bc_model,
                                const std::vector<double>& bc_value)
 {
@@ -420,7 +420,7 @@ LimiterCell::LimiterExtensionTransportTensorial_()
 * time step estimate.
 ******************************************************************* */
 void
-LimiterCell::LimiterScalar_(const AmanziMesh::Entity_ID_View& ids,
+LimiterCell::LimiterScalar_(const AmanziMesh::cEntity_ID_View& ids,
                             const std::vector<int>& bc_model,
                             const std::vector<double>& bc_value,
                             Teuchos::RCP<Epetra_Vector> limiter,
@@ -561,7 +561,7 @@ LimiterCell::LimiterExtensionTransportScalar_(Teuchos::RCP<Epetra_Vector> limite
 * Kuzmin's limiter use all neighbors of a computational cell.
 ******************************************************************* */
 void
-LimiterCell::LimiterKuzmin_(const AmanziMesh::Entity_ID_View& ids,
+LimiterCell::LimiterKuzmin_(const AmanziMesh::cEntity_ID_View& ids,
                             const std::vector<int>& bc_model,
                             const std::vector<double>& bc_value)
 {
@@ -831,8 +831,7 @@ LimiterCell::BoundsForCells(const Epetra_MultiVector& field,
       bounds_c[0][c] = std::min(bounds_c[0][c], value);
       bounds_c[1][c] = std::max(bounds_c[1][c], value);
 
-      auto cells = AmanziMesh::MeshAlgorithms::getCellFaceAdjacentCells(
-        *mesh_, c, AmanziMesh::Parallel_kind::ALL);
+      auto cells = AmanziMesh::getCellFaceAdjacentCells(*mesh_, c, AmanziMesh::Parallel_kind::ALL);
       for (int i = 0; i < cells.size(); i++) {
         value = field[component_][cells[i]];
         bounds_c[0][c] = std::min(bounds_c[0][c], value);
@@ -863,7 +862,7 @@ LimiterCell::BoundsForCells(const Epetra_MultiVector& field,
   if (bc_model.size() > 0) {
     for (int f = 0; f < nfaces_wghost_; ++f) {
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-        auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
 
         for (int n = 0; n < cells.size(); ++n) {
           int c = cells[n];
@@ -899,7 +898,7 @@ LimiterCell::BoundsForFaces(const Epetra_MultiVector& field,
   }
 
   for (int f = 0; f < nfaces_wghost_; ++f) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
 
     for (int i = 0; i < cells.size(); ++i) {
       int c = cells[i];

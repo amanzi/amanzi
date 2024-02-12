@@ -19,12 +19,12 @@
 #include "InverseFactory.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
+#include "StateArchive.hh"
 #include "TreeOperator.hh"
 
 #include "FractureInsertion.hh"
 #include "FlowMatrixFracture_PK.hh"
 #include "PK_MPCStrong.hh"
-#include "PK_Utils.hh"
 
 namespace Amanzi {
 
@@ -83,23 +83,23 @@ FlowMatrixFracture_PK::Setup()
   }
 
   // -- darcy flux
-  if (!S_->HasRecord("volumetric_flow_rate")) {
+  if (!S_->HasRecord("molar_flow_rate")) {
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S_->Require<CV_t, CVS_t>("volumetric_flow_rate", Tags::DEFAULT)
+    S_->Require<CV_t, CVS_t>("molar_flow_rate", Tags::DEFAULT)
       .SetMesh(mesh_matrix_)
       ->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
-    AddDefaultPrimaryEvaluator(S_, "volumetric_flow_rate", Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator(S_, "molar_flow_rate", Tags::DEFAULT);
   }
 
   // -- darcy flux for fracture
-  if (!S_->HasRecord("fracture-volumetric_flow_rate")) {
+  if (!S_->HasRecord("fracture-molar_flow_rate")) {
     auto cvs2 = Operators::CreateManifoldCVS(mesh_fracture_);
-    *S_->Require<CV_t, CVS_t>("fracture-volumetric_flow_rate", Tags::DEFAULT)
+    *S_->Require<CV_t, CVS_t>("fracture-molar_flow_rate", Tags::DEFAULT)
        .SetMesh(mesh_fracture_)
        ->SetGhosted(true) = *cvs2;
-    AddDefaultPrimaryEvaluator(S_, "fracture-volumetric_flow_rate", Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator(S_, "fracture-molar_flow_rate", Tags::DEFAULT);
   }
 
   // additional fields and evaluators related to coupling
@@ -229,8 +229,6 @@ FlowMatrixFracture_PK::Initialize()
   op_tree_pc_->set_operator_block(1, 0, op_coupling10->global_operator());
 
   // -- configure preconditioner
-  sub_pks_[0]->my_pde(Operators::PDE_DIFFUSION)->ApplyBCs(true, true, true);
-
   std::string name = ti_list_->get<std::string>("preconditioner");
   std::string ls_name = ti_list_->get<std::string>("preconditioner enhancement", "none");
   auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
@@ -285,7 +283,6 @@ FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   StateArchive archive(S_, vo_);
   archive.Add(fields, Tags::DEFAULT);
-  archive.CopyFieldsToPrevFields(fields, "");
 
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
 

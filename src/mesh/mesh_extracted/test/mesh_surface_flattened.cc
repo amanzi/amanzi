@@ -49,13 +49,16 @@ TEST(MESH_SURFACE_FLATTENED)
     Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list));
 
   bool flatten = true;
-  auto mesh3D_cache = Teuchos::rcp(
-    new Mesh(mesh3D, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+  auto mesh3D_cache =
+    Teuchos::rcp(new Mesh(mesh3D, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+  cacheAll(*mesh3D_cache);
+
   RCP<MeshFramework> mesh = Teuchos::rcp(new MeshExtractedManifold(
     mesh3D_cache, "Top side", AmanziMesh::Entity_kind::FACE, comm, gm, plist, flatten));
 
-  RCP<Mesh> mesh_cached = Teuchos::rcp(
-    new Mesh(mesh, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+  RCP<Mesh> mesh_cached =
+    Teuchos::rcp(new Mesh(mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+  cacheAll(*mesh_cached);
 
   int ncells = mesh_cached->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   int nfaces = mesh_cached->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);

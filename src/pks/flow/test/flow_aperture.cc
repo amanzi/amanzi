@@ -37,11 +37,13 @@ TEST(vanGenuchten)
   ApertureModel_BartonBandis abb(plist);
   ApertureModel_ExponentialLaw ael(plist);
 
+  double pov1 = abb.OverburdenPressure();
+  double pov2 = ael.OverburdenPressure();
+
   for (double p = 10e+6; p < 30e+6; p += 1e+6) {
-    double a1 = abb.Aperture(p);
-    double a2 = ael.Aperture(p);
+    double a1 = abb.Aperture(p, pov1);
+    double a2 = ael.Aperture(p, pov2);
     CHECK(a1 > 0.0 && a2 > 0.0);
     CHECK(a1 < 1e-3 && a2 < 1e-3);
-    // std::cout << p << " " << a1 << " " << a2 << std::endl;
   }
 }

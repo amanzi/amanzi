@@ -81,8 +81,8 @@ RunTest(const std::string& xmlInFileName)
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   cycle_driver.Go();
 
-  // test aperture opening (2% error)
-  VerifyDriverAperture(*S, 0.02);
+  // test aperture opening (4% error)
+  VerifyDriverAperture(*S, 0.04);
 }
 
 

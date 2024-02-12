@@ -162,66 +162,70 @@ InputConverterU::TranslateState_()
         unit = "m/s";
       }
 
-      // First we get either permeability value or the file name
-      int file(0);
-      std::string file_name, model, format;
-      std::vector<std::string> attr_names;
-      double kx, ky, kz;
+      if (flag) {
+        // First we get either permeability value or the file name
+        int file(0);
+        std::string file_name, model, format;
+        std::vector<std::string> attr_names;
+        double kx, ky, kz;
 
-      kx = GetAttributeValueD_(node, "x", TYPE_NUMERICAL, 0.0, DVAL_MAX, unit, false, -1.0);
-      ky = GetAttributeValueD_(node, "y", TYPE_NUMERICAL, 0.0, DVAL_MAX, unit, false, -1.0);
-      kz = GetAttributeValueD_(node, "z", TYPE_NUMERICAL, 0.0, DVAL_MAX, unit, false, -1.0);
+        kx = GetAttributeValueD_(node, "x", TYPE_NUMERICAL, 0.0, DVAL_MAX, unit, false, -1.0);
+        ky = GetAttributeValueD_(node, "y", TYPE_NUMERICAL, 0.0, DVAL_MAX, unit, false, -1.0);
+        kz = GetAttributeValueD_(node, "z", TYPE_NUMERICAL, 0.0, DVAL_MAX, unit, false, -1.0);
 
-      model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
-      if (model == "file") file++;
-      // format = GetAttributeValueS_(node, "format", TYPE_NONE, false, "");
-      // if (format !="") file++;
-      file_name = GetAttributeValueS_(node, "filename", TYPE_NONE, false, "");
-      if (file_name != "") file++;
-      attr_names = GetAttributeVectorS_(node, "attribute", false);
-      if (attr_names.size() > 0) file++;
+        model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
+        if (model == "file") file++;
+        // format = GetAttributeValueS_(node, "format", TYPE_NONE, false, "");
+        // if (format !="") file++;
+        file_name = GetAttributeValueS_(node, "filename", TYPE_NONE, false, "");
+        if (file_name != "") file++;
+        attr_names = GetAttributeVectorS_(node, "attribute", false);
+        if (attr_names.size() > 0) file++;
 
-      if (conductivity) {
-        kx *= viscosity / (rho_ * const_gravity_);
-        ky *= viscosity / (rho_ * const_gravity_);
-        kz *= viscosity / (rho_ * const_gravity_);
-      }
-
-      // Second, we copy collected data to XML file.
-      // For now permeability is not dumped into checkpoint files.
-      Teuchos::ParameterList& permeability_ic = out_ic.sublist("permeability");
-      permeability_ic.set<bool>("write checkpoint", false);
-
-      if (file == 2) {
-        permeability_ic.set<std::string>("restart file", file_name);
-        kx = ky = kz = 1.0;
-      } else if (file == 3) {
-        permeability_ic.sublist("exodus file initialization")
-          .set<std::string>("file", file_name)
-          .set<Teuchos::Array<std::string>>("attributes", attr_names);
-        kx = ky = kz = 1.0;
-      } else if (file == 0) {
-        if (ky < 0) ky = kz; // x-z system was defined
-        Teuchos::ParameterList& aux_list = permeability_ic.sublist("function")
-                                             .sublist(reg_str)
-                                             .set<Teuchos::Array<std::string>>("regions", regions)
-                                             .set<std::string>("component", "cell")
-                                             .sublist("function");
-        aux_list.set<int>("number of dofs", dim_)
-          .set<std::string>("function type", "composite function");
-        aux_list.sublist("dof 1 function").sublist("function-constant").set<double>("value", kx);
-        aux_list.sublist("dof 2 function").sublist("function-constant").set<double>("value", ky);
-        if (dim_ == 3) {
-          aux_list.sublist("dof 3 function").sublist("function-constant").set<double>("value", kz);
-        } else {
-          kz = 0.0;
+        if (conductivity) {
+          kx *= viscosity / (rho_ * const_gravity_);
+          ky *= viscosity / (rho_ * const_gravity_);
+          kz *= viscosity / (rho_ * const_gravity_);
         }
-      } else {
-        perm_err = true;
-      }
-      if (kx < 0.0 || ky < 0.0 || kz < 0.0 || perm_err) {
-        ThrowErrorIllformed_(
-          "materials", "permeability/hydraulic_conductivity", "file/filename/x/y/z");
+
+        // Second, we copy collected data to XML file.
+        // For now permeability is not dumped into checkpoint files.
+        Teuchos::ParameterList& permeability_ic = out_ic.sublist("permeability");
+        permeability_ic.set<bool>("write checkpoint", false);
+
+        if (file == 2) {
+          permeability_ic.set<std::string>("restart file", file_name);
+          kx = ky = kz = 1.0;
+        } else if (file == 3) {
+          permeability_ic.sublist("exodus file initialization")
+            .set<std::string>("file", file_name)
+            .set<Teuchos::Array<std::string>>("attributes", attr_names);
+          kx = ky = kz = 1.0;
+        } else if (file == 0) {
+          if (ky < 0) ky = kz; // x-z system was defined
+          Teuchos::ParameterList& aux_list = permeability_ic.sublist("function")
+                                               .sublist(reg_str)
+                                               .set<Teuchos::Array<std::string>>("regions", regions)
+                                               .set<std::string>("component", "cell")
+                                               .sublist("function");
+          aux_list.set<int>("number of dofs", dim_)
+            .set<std::string>("function type", "composite function");
+          aux_list.sublist("dof 1 function").sublist("function-constant").set<double>("value", kx);
+          aux_list.sublist("dof 2 function").sublist("function-constant").set<double>("value", ky);
+          if (dim_ == 3) {
+            aux_list.sublist("dof 3 function")
+              .sublist("function-constant")
+              .set<double>("value", kz);
+          } else {
+            kz = 0.0;
+          }
+        } else {
+          perm_err = true;
+        }
+        if (kx < 0.0 || ky < 0.0 || kz < 0.0 || perm_err) {
+          ThrowErrorIllformed_(
+            "materials", "permeability/hydraulic_conductivity", "file/filename/x/y/z");
+        }
       }
 
       // -- bulk modulus
@@ -259,6 +263,11 @@ InputConverterU::TranslateState_()
                                   "molar density key",
                                   "eos",
                                   "density");
+      AddSecondaryFieldEvaluator_(out_ev,
+                                  Keys::getKey("domain", "viscosity_liquid"),
+                                  "viscosity key",
+                                  "viscosity",
+                                  "viscosity");
     }
     if (phases_[GAS].active && phases_[GAS].dissolved.size() > 0) {
       AddSecondaryFieldEvaluator_(
@@ -446,6 +455,11 @@ InputConverterU::TranslateState_()
                                   "molar density key",
                                   "eos",
                                   "density");
+      AddSecondaryFieldEvaluator_(out_ev,
+                                  Keys::getKey("fracture", "viscosity_liquid"),
+                                  "viscosity key",
+                                  "viscosity",
+                                  "viscosity");
     }
   }
 
@@ -499,7 +513,7 @@ InputConverterU::TranslateState_()
                                          .sublist("function")
                                          .sublist(reg_str)
                                          .set<Teuchos::Array<std::string>>("regions", regions)
-                                         .set<std::string>("component", "cell")
+                                         .set<std::string>("component", "*")
                                          .sublist("function");
 
         TranslateFunctionGradient_(p, grad, refc, icfn);
@@ -1020,6 +1034,14 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
                                  "value",
                                  domain);
 
+      // poisson ratio
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, poisson_ratio", flag);
+      if (flag) { TranslateFieldIC_(node, "poisson_ratio", "-", reg_str, regions, out_ic); }
+
+      // Young modulus
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, young_modulus", flag);
+      if (flag) { TranslateFieldIC_(node, "young_modulus", "-", reg_str, regions, out_ic); }
+
       // internal energy for liquid
       node = GetUniqueElementByTagsString_(inode, "thermal_properties, liquid_heat_capacity", flag);
       if (flag) {
@@ -1044,9 +1066,10 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
             .sublist(reg_str)
             .set<Teuchos::Array<std::string>>("regions", regions)
             .sublist("IEM parameters")
-            .set<std::string>("iem type", "tabular")
+            .set<std::string>("iem type", "lookup table")
             .set<std::string>("table name", eos_lookup_table_)
-            .set<std::string>("field name", "internal_energy");
+            .set<std::string>("field name", "internal_energy")
+            .set<std::string>("format", "Amanzi");
         }
       }
     }
@@ -1091,6 +1114,20 @@ InputConverterU::TranslateFieldEvaluator_(DOMNode* node,
       .set<std::string>("variable name", field)
       .set<int>("number of dofs", 1)
       .set<bool>("constant in time", temporal);
+  } else if (model == "constant") { // FIXME: some overlap between "constant" and ""
+    double val =
+      GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
+
+    Teuchos::ParameterList& field_ev = out_ev.sublist(field);
+    field_ev.sublist("function")
+      .sublist(reg_str)
+      .set<Teuchos::Array<std::string>>("regions", regions)
+      .set<std::string>("component", "cell")
+      .sublist("function")
+      .sublist("function-constant")
+      .set<double>("value", val);
+    field_ev.set<std::string>("evaluator type", "independent variable")
+      .set<bool>("constant in time", true);
   } else if (model == "") {
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
 
@@ -1339,9 +1376,9 @@ InputConverterU::AddSecondaryFieldEvaluator_(Teuchos::ParameterList& out_ev,
     out_ev.sublist(field)
       .sublist("EOS parameters")
       .set<std::string>("eos type", "lookup table")
-      .set<std::string>("format", "Amanzi")
       .set<std::string>("table name", eos_lookup_table_)
-      .set<std::string>("field name", eos_table_name);
+      .set<std::string>("field name", eos_table_name)
+      .set<std::string>("format", "Amanzi");
   }
 
   // extensions

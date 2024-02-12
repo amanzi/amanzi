@@ -36,7 +36,7 @@ namespace Functions {
 class BoundaryFunction : public UniqueMeshFunction {
  public:
   BoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : UniqueMeshFunction(mesh), finalized_(false){};
+    : UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::ALL), finalized_(false){};
 
   void Define(const std::vector<std::string>& regions, const Teuchos::RCP<const MultiFunction>& f);
 

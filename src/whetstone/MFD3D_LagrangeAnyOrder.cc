@@ -417,9 +417,9 @@ MFD3D_LagrangeAnyOrder::H1consistency3D_(int c,
 
     // -- map : edge moments
     {
-      const auto [ids, dirs_aux] = mesh_->getFaceEdgesAndDirections(f);
-      for (int i = 0; i < ids.size(); ++i) {
-        int e = ids[i];
+      const auto [lids, dirs_aux] = mesh_->getFaceEdgesAndDirections(f);
+      for (int i = 0; i < lids.size(); ++i) {
+        int e = lids[i];
         pos = std::distance(edges.begin(), std::find(edges.begin(), edges.end(), e));
         pos = rowe + pos * nde;
 

@@ -30,7 +30,7 @@ struct MeshFactory : public MeshFrameworkFactory {
   {
     Teuchos::RCP<MeshFramework> mesh_fw = MeshFrameworkFactory::create(filename);
     auto mesh = Teuchos::rcp(
-      new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+      new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
     return mesh;
   }
 
@@ -47,7 +47,7 @@ struct MeshFactory : public MeshFrameworkFactory {
     Teuchos::RCP<MeshFramework> mesh_fw =
       MeshFrameworkFactory::create(x0, y0, z0, x1, y1, z1, nx, ny, nz);
     auto mesh = Teuchos::rcp(
-      new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+      new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
     return mesh;
   }
 
@@ -60,7 +60,7 @@ struct MeshFactory : public MeshFrameworkFactory {
   {
     Teuchos::RCP<MeshFramework> mesh_fw = MeshFrameworkFactory::create(x0, y0, x1, y1, nx, ny);
     auto mesh = Teuchos::rcp(
-      new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+      new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
     return mesh;
   }
 
@@ -68,14 +68,14 @@ struct MeshFactory : public MeshFrameworkFactory {
   {
     Teuchos::RCP<MeshFramework> mesh_fw = MeshFrameworkFactory::create(gen_plist);
     auto mesh = Teuchos::rcp(
-      new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+      new Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
     return mesh;
   }
 
   // Need a special one for extracted meshes, since they differ not just in
   // return type but also in parent mesh type (MeshCache vs MeshFramework.
   Teuchos::RCP<Mesh> create(const Teuchos::RCP<const Mesh>& parent_mesh,
-                            const Entity_ID_View& setids,
+                            const MeshFramework::cEntity_ID_View& setids,
                             const Entity_kind setkind,
                             const bool flatten = false);
 

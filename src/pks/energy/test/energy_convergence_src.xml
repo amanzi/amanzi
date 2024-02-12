@@ -369,6 +369,9 @@
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="molar_flow_rate">
+        <Parameter name="evaluator type" type="string" value="independent variable constant"/>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
@@ -394,29 +397,6 @@
                 <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>              
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="volumetric_flow_rate">
-        <Parameter name="dot with normal" type="bool" value="true"/>
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="face"/>
-            <ParameterList name="function">
-              <Parameter name="number of dofs" type="int" value="2"/>
-              <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="dof 1 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="dof 2 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>

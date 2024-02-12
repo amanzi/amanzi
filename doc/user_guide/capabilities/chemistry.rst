@@ -105,7 +105,7 @@ Alquimia is an Application Programming Interface (API) that exposes the function
 
 Currently, the geochemical capabilities of the reactive transport code PFloTran 
 (http://ees.lanl.gov/pflotran/ and https://bitbucket.org/pflotran) 
-and CrunchFlow (https://bitbucket.org/crunchflow/crunchtope/downloads) are available within Amanzi through the Alquimia interface. 
+and CrunchFlow (https://github.com/cisteefel/crunchtope) are available within Amanzi through the Alquimia interface. 
 These capabilities are described in the documentation for these packages. 
 Some examples are available in the Amanzi documentation (:ref:`Benchmark Testing/Chemistry <sec-benchmarks-chemistry>`).
 

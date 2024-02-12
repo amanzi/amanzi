@@ -49,7 +49,12 @@ class MFD3D_BernardiRaugel : public MFD3D {
   virtual int DivergenceMatrix(int c, DenseMatrix& A) override;
   virtual int AdvectionMatrix(int c, const AmanziMesh::Point_List& u, DenseMatrix& A) override;
 
+  // projectors
+  virtual void H1Cell(int c, const DenseVector& dofs, Tensor& vc) override;
+
  private:
+  DenseMatrix coefM_, R_;
+
   static RegisteredFactory<MFD3D_BernardiRaugel> reg_;
 };
 

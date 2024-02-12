@@ -60,13 +60,13 @@ TEST(ELASTICITY_STIFFNESS_2D)
 
   for (int method = 0; method < 2; method++) {
     Tensor T;
-    double lambda(1.0), mu(0.0);
+    double lambda(0.0), mu(0.5);
     if (method == 0) {
       T.Init(2, 1);
       T(0, 0) = 1.0;
     } else if (method == 1) {
       mu = 3.0;
-      lambda = 0.0;
+      lambda = 1.0;
       T.Init(2, 4);
       T(0, 0) = T(1, 1) = lambda + 2 * mu;
       T(0, 1) = T(1, 0) = lambda;
@@ -91,26 +91,36 @@ TEST(ELASTICITY_STIFFNESS_2D)
     int d = mesh->getSpaceDimension();
     Point p(d);
 
-    double xx[nrows], yy[nrows];
+    DenseVector xx(nrows), yy(nrows), xy(nrows);
     for (int i = 0; i < nnodes; i++) {
       int v = nodes[i];
       p = mesh->getNodeCoordinate(v);
-      xx[2 * i] = p[0];
-      xx[2 * i + 1] = 0.0;
+      xx(2 * i) = p[0];
+      xx(2 * i + 1) = 0.0;
 
-      yy[2 * i] = 0.0;
-      yy[2 * i + 1] = p[1];
+      yy(2 * i) = 0.0;
+      yy(2 * i + 1) = p[1];
+
+      xy(2 * i) = p[0] + p[1];
+      xy(2 * i + 1) = p[1];
     }
 
     double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);
     for (int i = 0; i < nrows; i++) {
       for (int j = 0; j < nrows; j++) {
-        vxx += A(i, j) * xx[i] * xx[j];
-        vxy += A(i, j) * yy[i] * xx[j];
+        vxx += A(i, j) * xx(i) * xx(j);
+        vxy += A(i, j) * yy(i) * xx(j);
       }
     }
     CHECK_CLOSE((2 * mu + lambda) * volume, vxx, 1e-10);
-    CHECK_CLOSE(0.0, vxy, 1e-10);
+    CHECK_CLOSE(lambda * volume, vxy, 1e-10);
+
+    // projector
+    DenseVector dofs;
+    Tensor Tc;
+    mfd.H1Cell(cell, xy, Tc);
+    CHECK_CLOSE(Tc(0, 1), 0.5, 1e-10);
+    CHECK_CLOSE(Tc(1, 1), 1.0, 1e-10);
   }
 }
 
@@ -155,28 +165,39 @@ TEST(ELASTICITY_STIFFNESS_3D)
   int d = mesh->getSpaceDimension();
   Point p(d);
 
-  double xx[nrows], yy[nrows];
+  DenseVector xx(nrows), yy(nrows), xy(nrows);
   for (int i = 0; i < nnodes; i++) {
     int v = nodes[i];
     p = mesh->getNodeCoordinate(v);
-    xx[3 * i] = p[0];
-    xx[3 * i + 1] = 0.0;
-    xx[3 * i + 2] = 0.0;
+    xx(3 * i) = p[0];
+    xx(3 * i + 1) = 0.0;
+    xx(3 * i + 2) = 0.0;
 
-    yy[3 * i] = 0.0;
-    yy[3 * i + 1] = p[1];
-    yy[3 * i + 2] = 0.0;
+    yy(3 * i) = 0.0;
+    yy(3 * i + 1) = p[1];
+    yy(3 * i + 2) = 0.0;
+
+    xy(3 * i) = p[0] + p[1];
+    xy(3 * i + 1) = p[1];
+    xy(3 * i + 2) = 0.0;
   }
 
   double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);
   for (int i = 0; i < nrows; i++) {
     for (int j = 0; j < nrows; j++) {
-      vxx += A(i, j) * xx[i] * xx[j];
-      vxy += A(i, j) * xx[i] * yy[j];
+      vxx += A(i, j) * xx(i) * xx(j);
+      vxy += A(i, j) * xx(i) * yy(j);
     }
   }
   CHECK_CLOSE(vxx, volume, 1e-10);
   CHECK_CLOSE(vxy, 0.0, 1e-10);
+
+  // projector
+  DenseVector dofs;
+  Tensor Tc;
+  mfd.H1Cell(cell, xy, Tc);
+  CHECK_CLOSE(Tc(0, 1), 0.5, 1e-10);
+  CHECK_CLOSE(Tc(1, 1), 1.0, 1e-10);
 }
 
 
@@ -257,16 +278,16 @@ TEST(ELASTICITY_WEAK_SYMMETRY_2D)
       double area = mesh->getFaceArea(f);
 
       const auto p1 = T1 * normal;
-      xx[2 * i] = p1[0] / area;
-      xx[2 * i + 1] = p1[1] / area;
+      xx[4 * i] = p1[0] / area;
+      xx[4 * i + 1] = p1[1] / area;
 
       const auto p2 = T2 * normal;
-      yy[2 * i] = p2[0] / area;
-      yy[2 * i + 1] = p2[1] / area;
+      yy[4 * i] = p2[0] / area;
+      yy[4 * i + 1] = p2[1] / area;
 
       const auto p3 = Ty * normal;
-      rr[2 * i] = p3[0] / area;
-      rr[2 * i + 1] = p3[1] / area;
+      rr[4 * i] = p3[0] / area;
+      rr[4 * i + 1] = p3[1] / area;
     }
 
     double vxx(0.0), vxy(0.0), rot(0.0);
@@ -287,8 +308,8 @@ TEST(ELASTICITY_WEAK_SYMMETRY_2D)
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
       const auto& xf = mesh->getFaceCentroid(f);
-      vx[2 * i] = 1.0;
-      vx[2 * i + 1] = 1.0;
+      vx[4 * i] = 1.0;
+      vx[4 * i + 1] = 1.0;
     }
 
     const auto& xc = mesh->getCellCentroid(0);
@@ -385,16 +406,16 @@ RunWeakSymmetry3D(const std::string& filename)
       double area = mesh->getFaceArea(f);
 
       auto p = T1 * normal;
-      for (int k = 0; k < 3; ++k) xx[3 * i + k] = p[k] / area;
+      for (int k = 0; k < 3; ++k) xx[9 * i + k] = p[k] / area;
 
       p = T2 * normal;
-      for (int k = 0; k < 3; ++k) yy[3 * i + k] = p[k] / area;
+      for (int k = 0; k < 3; ++k) yy[9 * i + k] = p[k] / area;
 
       p = T3 * normal;
-      for (int k = 0; k < 3; ++k) zz[3 * i + k] = p[k] / area;
+      for (int k = 0; k < 3; ++k) zz[9 * i + k] = p[k] / area;
 
       p = Ty * normal;
-      for (int k = 0; k < 3; ++k) rr[3 * i + k] = p[k] / area;
+      for (int k = 0; k < 3; ++k) rr[9 * i + k] = p[k] / area;
     }
 
     double vxx(0.0), vxy(0.0), vzz(0.0), rot(0.0);

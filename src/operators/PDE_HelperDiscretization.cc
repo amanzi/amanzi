@@ -15,7 +15,7 @@
 
 #include "errors.hh"
 
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "WhetStoneDefs.hh"
 
 #include "SchemaUtils.hh"
@@ -257,7 +257,7 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(const BCs& bc,
               (*rhs_kind)[0][x] = (x < nents_owned) ? value : 0.0;
 
               if (kind == AmanziMesh::Entity_kind::FACE) {
-                cells = mesh_->getFaceCells(x, AmanziMesh::Parallel_kind::ALL);
+                cells = mesh_->getFaceCells(x);
               } else if (kind == AmanziMesh::Entity_kind::NODE) {
                 cells = mesh_->getNodeCells(x);
               } else if (kind == AmanziMesh::Entity_kind::EDGE) {
@@ -505,6 +505,8 @@ void
 PDE_HelperDiscretization::EnforceBCs(CompositeVector& field)
 {
   for (auto bc : bcs_trial_) {
+    if (!bc->get_status()) continue; // skip inactive BCs
+
     std::string name = to_string(bc->kind());
     if (field.HasComponent(name)) {
       auto& field_comp = *field.ViewComponent(name, true);
@@ -556,7 +558,7 @@ CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 
   for (int c = 0; c < ncells_f; ++c) {
     int f = fracture->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
-    auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh->getFaceCells(f);
     (*points)[f] = cells.size();
   }
 
@@ -605,7 +607,7 @@ CreateManifoldCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   points->PutValue(1);
 
   for (int f = 0; f < nfaces; ++f) {
-    auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh->getFaceCells(f);
     (*points)[f] = cells.size();
   }
 

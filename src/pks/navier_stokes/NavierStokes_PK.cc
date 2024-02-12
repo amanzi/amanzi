@@ -258,7 +258,7 @@ NavierStokes_PK::Initialize()
           WhetStone::DOF_Type type;
           std::tie(kind, type, std::ignore) = *jt;
 
-          bc = bc_factory.Create(spec, "no slip", kind, Teuchos::null);
+          bc = bc_factory.Create(spec, "no slip", kind, Teuchos::null, Tags::DEFAULT, true);
           bc->set_bc_name("no slip");
           bc->set_type(type);
           bcs_.push_back(bc);
@@ -269,7 +269,8 @@ NavierStokes_PK::Initialize()
 
   // Populate matrix and preconditioner
   // -- setup phase
-  double mu = S_->Get<double>("const_fluid_viscosity");
+  WhetStone::Tensor mu(dim, 1);
+  mu(0, 0) = S_->Get<double>("const_fluid_viscosity");
   op_matrix_elas_->global_operator()->Init();
   op_matrix_elas_->SetTensorCoefficient(mu);
 
@@ -314,7 +315,7 @@ NavierStokes_PK::Initialize()
                                                                      *preconditioner_list_);
 
   CompositeVector vol(op_mass_->global_operator()->DomainMap());
-  vol.PutScalar(1.0 / mu);
+  vol.PutScalar(1.0 / mu(0, 0));
   op_mass_->AddAccumulationTerm(vol, 1.0, "cell");
   op_mass_->global_operator()->set_inverse_parameters("Diagonal", *preconditioner_list_);
 
@@ -382,7 +383,7 @@ NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     S_->GetW<CV_t>(pressure_key_, Tags::DEFAULT, passwd_) = pressure_copy;
     pressure_eval_->SetChanged();
 
-    S_->GetW<CV_t>("fluid_velocity", Tags::DEFAULT, passwd_) = fluid_velocity_copy;
+    S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_) = fluid_velocity_copy;
     fluid_velocity_eval_->SetChanged();
 
     Teuchos::OSTab tab = vo_->getOSTab();

@@ -88,7 +88,7 @@ ReconstructionCellPolynomial::Compute(const AmanziMesh::Entity_ID_View& ids,
     const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     quad.set_origin(xc);
 
-    CellAllAdjCells_(c, AmanziMesh::Parallel_kind::ALL, cells);
+    CellAllAdjCells_(c, cells);
 
     // compute othogonality coefficients
     int n(0);
@@ -205,7 +205,6 @@ ReconstructionCellPolynomial::PopulateLeastSquareSystem_(WhetStone::DenseVector&
 ****************************************************************** */
 void
 ReconstructionCellPolynomial::CellAllAdjCells_(AmanziMesh::Entity_ID c,
-                                               AmanziMesh::Parallel_kind ptype,
                                                std::set<AmanziMesh::Entity_ID>& cells) const
 {
   cells.clear();
@@ -225,7 +224,6 @@ ReconstructionCellPolynomial::CellAllAdjCells_(AmanziMesh::Entity_ID c,
 
 void
 ReconstructionCellPolynomial::CellAdjCellsTwoLevels_(AmanziMesh::Entity_ID c,
-                                                     AmanziMesh::Parallel_kind ptype,
                                                      std::set<AmanziMesh::Entity_ID>& cells) const
 {
   cells.clear();
@@ -233,7 +231,7 @@ ReconstructionCellPolynomial::CellAdjCellsTwoLevels_(AmanziMesh::Entity_ID c,
   // face neighboors
   auto faces = mesh_->getCellFaces(c);
   for (int f : faces) {
-    auto fcells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto fcells = mesh_->getFaceCells(f);
     for (int c1 : fcells) {
       if (cells.find(c1) == cells.end() && c != c1) cells.insert(c1);
     }
@@ -242,9 +240,9 @@ ReconstructionCellPolynomial::CellAdjCellsTwoLevels_(AmanziMesh::Entity_ID c,
   // neighboors of neighboors
   auto cells_copy(cells);
   for (int c1 : cells_copy) {
-    auto faces = mesh_->getCellFaces(c1);
-    for (int f : faces) {
-      auto fcells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto faces1 = mesh_->getCellFaces(c1);
+    for (int f : faces1) {
+      auto fcells = mesh_->getFaceCells(f);
       for (int c2 : fcells) {
         if (cells.find(c2) == cells.end() && c != c2) cells.insert(c2);
       }
@@ -262,7 +260,7 @@ ReconstructionCellPolynomial::CellAllAdjFaces_(AmanziMesh::Entity_ID c,
   for (int c1 : cells) {
     auto cfaces = mesh_->getCellFaces(c1);
     for (int f : cfaces) {
-      auto fcells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto fcells = mesh_->getFaceCells(f);
       if (fcells.size() == 1 && faces.find(f) == faces.end()) faces.insert(f);
     }
   }
@@ -353,11 +351,11 @@ ReconstructionCellPolynomial::ComputeReconstructionMap(int c,
   int ncells, nfaces(0);
   std::set<AmanziMesh::Entity_ID> cells, faces;
   try {
-    CellAllAdjCells_(c, AmanziMesh::Parallel_kind::ALL, cells);
+    CellAllAdjCells_(c, cells);
   } catch (...) {
     // some meshes have no nodes, so we try a different algorithm based on
     // cell->face->cell connectivities. It extract two level of cell neighboors
-    CellAdjCellsTwoLevels_(c, AmanziMesh::Parallel_kind::ALL, cells);
+    CellAdjCellsTwoLevels_(c, cells);
   }
   cells.insert(c);
   ncells = cells.size();

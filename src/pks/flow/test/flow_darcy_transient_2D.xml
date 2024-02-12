@@ -3,7 +3,7 @@
 
   <!--  REGIONS  -->
   <ParameterList name="regions">
-    <ParameterList name="Computational domain">
+    <ParameterList name="All">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0,-2.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{1.0,0.0}"/>
@@ -134,7 +134,7 @@
         <Parameter name="evaluator type" type="string" value="specific storage"/>
 	<ParameterList name="specific storage parameters">
           <ParameterList name="Material 1">
-            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="model" type="string" value="constant"/>
             <Parameter name="value" type="double" value="2.0"/>
           </ParameterList>
@@ -145,7 +145,7 @@
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -159,7 +159,7 @@
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="All">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -172,6 +172,9 @@
     </ParameterList>
 
     <ParameterList name="initial conditions">
+      <ParameterList name="const_fluid_density">
+        <Parameter name="value" type="double" value="1000.0"/>
+      </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="0.0"/>
       </ParameterList>
@@ -181,7 +184,7 @@
       <ParameterList name="pressure">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="components" type="Array(string)" value="{cell, face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">

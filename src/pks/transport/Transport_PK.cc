@@ -468,8 +468,8 @@ Transport_PK::Initialize()
         Teuchos::ParameterList::ConstIterator it1 = bc_list.begin();
         std::string specname = it1->first;
         Teuchos::ParameterList& spec = bc_list.sublist(specname);
-        Teuchos::RCP<TransportDomainFunction> bc =
-          factory.Create(spec, "boundary concentration", AmanziMesh::Entity_kind::FACE, Kxy);
+        Teuchos::RCP<TransportDomainFunction> bc = factory.Create(
+          spec, "boundary concentration", AmanziMesh::Entity_kind::FACE, Kxy, Tags::DEFAULT, true);
 
         for (int i = 0; i < component_names_.size(); i++) {
           bc->tcc_names().push_back(component_names_[i]);
@@ -484,8 +484,12 @@ Transport_PK::Initialize()
           for (auto it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
             std::string specname = it1->first;
             Teuchos::ParameterList& spec = bc_list.sublist(specname);
-            Teuchos::RCP<TransportDomainFunction> bc =
-              factory.Create(spec, "boundary concentration", AmanziMesh::Entity_kind::FACE, Kxy);
+            Teuchos::RCP<TransportDomainFunction> bc = factory.Create(spec,
+                                                                      "boundary concentration",
+                                                                      AmanziMesh::Entity_kind::FACE,
+                                                                      Kxy,
+                                                                      Tags::DEFAULT,
+                                                                      true);
 
             bc->tcc_names().push_back(name);
             bc->tcc_index().push_back(FindComponentNumber(name));
@@ -506,8 +510,8 @@ Transport_PK::Initialize()
         Teuchos::ParameterList& spec = cvlist.sublist(name);
         spec.set<Teuchos::RCP<AmanziChemistry::Chemistry_PK>>("chemical pk", chem_pk_);
 
-        Teuchos::RCP<TransportBoundaryFunction_Chemistry> bc =
-          factory2.Create(spec, "boundary constraints", AmanziMesh::Entity_kind::FACE, Kxy);
+        Teuchos::RCP<TransportBoundaryFunction_Chemistry> bc = factory2.Create(
+          spec, "boundary constraints", AmanziMesh::Entity_kind::FACE, Kxy, Tags::DEFAULT, true);
 
         for (int i = 0; i < component_names_.size(); i++) {
           bc->tcc_names().push_back(component_names_[i]);
@@ -623,7 +627,7 @@ Transport_PK::Initialize()
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Number of components: " << tcc->size() << std::endl
+    *vo_->os() << "Number of components: " << component_names_.size() << std::endl
                << "cfl=" << cfl_ << " spatial/temporal discretization: " << spatial_disc_order
                << " " << temporal_disc_order << std::endl
                << "using transport porosity: " << use_transport_porosity_ << std::endl;
@@ -943,7 +947,7 @@ Transport_PK::ComputeBCs_(std::vector<int>& bc_model, std::vector<double>& bc_va
   }
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     if (cells.size() == 1) bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
   }
 
@@ -1014,7 +1018,7 @@ Transport_PK::IdentifyUpwindCells()
 
       for (int i = 0; i < faces.size(); i++) {
         int f = faces[i];
-        auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
 
         int g = map->FirstPointInElement(f);
         int ndofs = map->ElementSize(f);

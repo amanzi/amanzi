@@ -45,7 +45,6 @@ MFD3D_Elasticity::H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMat
   double volume = mesh_->getCellVolume(c);
 
   int nrows = d_ * nnodes;
-  N.Reshape(nrows, d_ * (d_ + 1));
   Ac.Reshape(nrows, nrows);
 
   AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
@@ -71,17 +70,18 @@ MFD3D_Elasticity::H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMat
 
   // calculate exact integration matrix
   int modes = d_ * (d_ + 1) / 2;
-  DenseMatrix coefM(modes, modes);
+  coefM_.Reshape(modes, modes);
 
   for (int i = 0; i < modes; ++i) {
     for (int j = i; j < modes; ++j) {
-      coefM(i, j) = DotTensor(vE[i], vTE[j]) * volume;
-      coefM(j, i) = coefM(i, j);
+      coefM_(i, j) = DotTensor(vE[i], vTE[j]) * volume;
+      coefM_(j, i) = coefM_(i, j);
     }
   }
 
-  // to calculate matrix R, we use temporary matrix N
-  N.PutScalar(0.0);
+  // calculate matrix R
+  R_.Reshape(nrows, d_ * (d_ + 1));
+  R_.PutScalar(0.0);
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
@@ -118,26 +118,27 @@ MFD3D_Elasticity::H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMat
       int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
       for (int k = 0; k < modes; k++) {
         v1 = vTE[k] * normal;
-        for (int l = 0; l < d_; l++) N(d_ * pos + l, k) += v1[l] * u;
+        for (int l = 0; l < d_; l++) R_(d_ * pos + l, k) += v1[l] * u;
       }
     }
   }
 
   // calculate R coefM^{-1} R^T
   DenseVector a1(modes), a2(modes), a3(modes);
-  coefM.Inverse();
+  coefM_.Inverse();
 
   for (int i = 0; i < nrows; i++) {
-    for (int k = 0; k < modes; ++k) a1(k) = N(i, k);
-    coefM.Multiply(a1, a3, false);
+    for (int k = 0; k < modes; ++k) a1(k) = R_(i, k);
+    coefM_.Multiply(a1, a3, false);
 
     for (int j = i; j < nrows; j++) {
-      for (int k = 0; k < modes; ++k) a2(k) = N(j, k);
+      for (int k = 0; k < modes; ++k) a2(k) = R_(j, k);
       Ac(i, j) = a2 * a3;
     }
   }
 
   // calculate matrix N
+  N.Reshape(nrows, d_ * (d_ + 1));
   N.PutScalar(0.0);
   const AmanziGeometry::Point& cm = mesh_->getCellCentroid(c);
 
@@ -208,7 +209,7 @@ MFD3D_Elasticity::StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& 
 
 /* ******************************************************************
 * Lame stiffness matrix: a wrapper for other low-level routines
-* For education purpose only: ther are no M-matrices in elasticity.
+* For education purpose only: there are no M-matrices in elasticity.
 ****************************************************************** */
 int
 MFD3D_Elasticity::StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A)
@@ -221,6 +222,39 @@ MFD3D_Elasticity::StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A)
   int objective = WHETSTONE_SIMPLEX_FUNCTIONAL_TRACE;
   ok = StabilityMMatrix_(c, N, A, objective);
   return ok;
+}
+
+
+/* ******************************************************************
+* Stress recostruction from nodal values
+****************************************************************** */
+void
+MFD3D_Elasticity::H1Cell(int c, const DenseVector& dofs, Tensor& Tc)
+{
+  Tensor T(d_, 1);
+  T(0, 0) = 1.0;
+
+  DenseMatrix N, A;
+  H1consistency(c, T, N, A);
+
+  int nrows = A.NumCols();
+  int modes = d_ * (d_ + 1) / 2;
+  DenseVector v(modes), av(modes);
+
+  for (int i = 0; i < modes; ++i) {
+    double sum(0.0);
+    for (int k = 0; k < nrows; ++k) sum += R_(k, i) * dofs(k);
+    v(i) = sum;
+  }
+
+  coefM_.Multiply(v, av, false);
+
+  Tc.Init(d_, 2);
+  for (int k = 0; k < d_; k++) Tc(k, k) = av(k);
+
+  int n(d_);
+  for (int k = 0; k < d_; k++)
+    for (int l = k + 1; l < d_; l++) Tc(k, l) = Tc(l, k) = av(n++);
 }
 
 } // namespace WhetStone

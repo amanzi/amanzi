@@ -33,12 +33,6 @@ view(DualView& dv)
   }
 }
 
-template <typename View, typename T>
-KOKKOS_INLINE_FUNCTION void
-initView(View& v, const T& t)
-{
-  for (auto& vv : v) vv = t;
-}
 
 //
 // Conversion from view on host to vector
@@ -352,6 +346,21 @@ ThreadsPerTeams()
   {
     return 1;
   }
+}
+
+// Create a non-const view from a const view
+// In the old format, using vector, a copy was always created
+// and thus the cache was never directly modified.
+// Using the view interface, a const view is returned from the cache
+// and the behavior of using this view directly is made impossible.
+template <typename VT>
+auto
+alloc_and_deep_copy(const VT& const_view)
+{
+  auto non_const_view =
+    Kokkos::MeshView<typename VT::traits::non_const_data_type>("", const_view.size());
+  Kokkos::deep_copy(non_const_view, const_view);
+  return non_const_view;
 }
 
 

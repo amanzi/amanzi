@@ -76,7 +76,7 @@ RunTest(int icase, double gravity)
   auto surfmesh_fw =
     Teuchos::rcp(new MeshExtractedManifold(mesh, setname, AmanziMesh::FACE, comm, gm, plist));
   Teuchos::RCP<Mesh> surfmesh = Teuchos::rcp(
-    new Mesh(surfmesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+    new Mesh(surfmesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
 
   // modify diffusion coefficient
   int nfaces_owned = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);

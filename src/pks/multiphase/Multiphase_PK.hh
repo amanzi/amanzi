@@ -180,6 +180,9 @@ class Multiphase_PK : public PK_PhysicalBDF {
                                                   Teuchos::RCP<const TreeVector> u_new,
                                                   double eps);
 
+  // access methods for unit test
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae() { return bdf1_dae_; }
+
  protected:
   Teuchos::ParameterList MyRequire_(const Key& key, const std::string& owner);
 
@@ -224,7 +227,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
   Key permeability_key_, relperm_liquid_key_, relperm_gas_key_;
   Key advection_liquid_key_, advection_gas_key_;
   Key viscosity_liquid_key_, viscosity_gas_key_;
-  Key vol_flowrate_liquid_key_, vol_flowrate_gas_key_;
+  Key mol_flowrate_liquid_key_, mol_flowrate_gas_key_;
   Key mol_density_liquid_key_, mol_density_gas_key_;
   Key mass_density_liquid_key_, mass_density_gas_key_;
   Key tws_key_, tcs_key_, prev_tws_key_, prev_tcs_key_;
@@ -265,11 +268,14 @@ class Multiphase_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::Upwind> upwind_, upwind_new_;
 
   // time integration
-  std::vector<std::string> flux_names_;
+  std::vector<std::string> flux_names_, adv_names_, pressure_names_;
 
   // io
   Utils::Units units_;
   Teuchos::RCP<Teuchos::ParameterList> mp_list_;
+
+  // source terms
+  std::vector<Teuchos::RCP<MultiphaseBoundaryFunction>> srcs_;
 
  private:
   int missed_bc_faces_;

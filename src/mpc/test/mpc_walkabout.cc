@@ -81,8 +81,8 @@ TEST(MPC_WALKABOUT_2D)
   int ncells =
     mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-  std::string passwd("");
-  auto& flow = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
+  std::string passwd(""), key("volumetric_flow_rate");
+  auto& flow = *S->GetW<CompositeVector>(key, Tags::DEFAULT, key).ViewComponent("face");
   auto& pres = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   // -- overwite with constant velocity
@@ -162,8 +162,8 @@ TEST(MPC_WALKABOUT_3D)
   int nfaces =
     mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
-  std::string passwd("");
-  auto& flow = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
+  std::string passwd(""), key("volumetric_flow_rate");
+  auto& flow = *S->GetW<CompositeVector>(key, Tags::DEFAULT, key).ViewComponent("face");
   auto& pres = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   for (int f = 0; f < nfaces; ++f) { flow[0][f] = vel * mesh->getFaceNormal(f); }

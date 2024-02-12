@@ -169,7 +169,7 @@ TEST(ENERGY_2D_MATRIX)
     const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     q_l[0][f] = velocity * normal;
 
-    auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh->getFaceCells(f);
     int ncells = cells.size();
     double tmp(0.0);
     for (int i = 0; i < ncells; i++) {

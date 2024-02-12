@@ -22,7 +22,7 @@ TEST(SILO_STRUCTURED)
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MSTK> MeshFramework =
     Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, comm));
   auto Mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh(
-    MeshFramework, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+    MeshFramework, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), Teuchos::null));
   int ncells =
     Mesh->getNumEntities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   int nnodes =
@@ -96,7 +96,7 @@ TEST(SILO_POLYGONAL)
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MSTK> MeshFramework =
     Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK("./test/four_polygon.exo", comm));
   auto Mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh(
-    MeshFramework, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+    MeshFramework, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), Teuchos::null));
 
   Teuchos::RCP<Epetra_Vector> node_quantity;
   Teuchos::RCP<Epetra_Vector> cell_quantity;

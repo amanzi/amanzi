@@ -13,9 +13,11 @@
   Process kernel for coupling Flow PK with Energy PK.
 */
 
+#include "CommonDefs.hh"
+#include "Flow_PK.hh"
 #include "Energy_PK.hh"
 #include "OperatorDefs.hh"
-#include "Flow_PK.hh"
+#include "StateArchive.hh"
 
 #include "FlowEnergy_PK.hh"
 #include "PK_MPCStrong.hh"
@@ -109,40 +111,26 @@ FlowEnergy_PK::Setup()
 
   // Fields for liquid
   // -- internal energy
-  S_->Require<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT, ie_liquid_key_)
-    .SetMesh(mesh_)
-    ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
-    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(ie_liquid_key_, Tags::DEFAULT);
-
-
-  // -- molar and mass density
-  S_->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
-    .SetMesh(mesh_)
-    ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
-    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(mol_density_liquid_key_, Tags::DEFAULT);
-
-  S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
-  if (S_->GetEvaluator(mass_density_liquid_key_)
-        .IsDifferentiableWRT(*S_, pressure_key_, Tags::DEFAULT)) {
-    S_->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_,
-                                       Tags::DEFAULT,
-                                       pressure_key_,
-                                       Tags::DEFAULT,
-                                       mass_density_liquid_key_)
-      .SetGhosted();
+  if (!S_->HasRecord(ie_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT, ie_liquid_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
+    S_->RequireEvaluator(ie_liquid_key_, Tags::DEFAULT);
   }
 
-  // -- viscosity
-  S_->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, viscosity_liquid_key_)
-    .SetMesh(mesh_)
-    ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
-    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(viscosity_liquid_key_, Tags::DEFAULT);
+  // -- molar and mass density
+  if (!S_->HasRecord(mol_density_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
+    S_->RequireEvaluator(mol_density_liquid_key_, Tags::DEFAULT);
+  }
+
+  S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
 
   // inform other PKs about strong coupling
   // -- flow
@@ -160,15 +148,6 @@ FlowEnergy_PK::Setup()
 
   // process other PKs.
   PK_MPCStrong<PK_BDF>::Setup();
-
-  // copies of fields (must be called after PKs)
-  if (S_->HasRecord(prev_wc_key_)) {
-    S_->Require<CV_t, CVS_t>(prev_wc_key_, Tags::COPY, "flow");
-    S_->GetRecordW(prev_wc_key_, Tags::COPY, "flow").set_initialized();
-  }
-
-  // set units
-  S_->GetRecordSetW(viscosity_liquid_key_).set_units("Pa*s");
 }
 
 
@@ -226,49 +205,17 @@ FlowEnergy_PK::Initialize()
 bool
 FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
-  std::string passwd(""); // default treatment of ownership
+  // save a copy of conservative fields
+  std::vector<std::string> fields(
+    { pressure_key_, temperature_key_, sat_liquid_key_, energy_key_ });
+  if (S_->HasRecord(wc_key_)) fields.push_back(wc_key_);
 
-  // flow
-  // -- swap saturations (current and previous)
-  S_->GetEvaluator(sat_liquid_key_).Update(*S_, "flow");
-  const auto& sat = S_->Get<CV_t>(sat_liquid_key_);
-  auto& sat_prev = S_->GetW<CV_t>(prev_sat_liquid_key_, Tags::DEFAULT, passwd);
-
-  CompositeVector sat_prev_copy(sat_prev);
-  sat_prev = sat;
-
-  // -- swap water_contents (current and previous)
-  if (S_->HasRecord(wc_key_)) {
-    S_->Assign(prev_wc_key_, Tags::COPY, Tags::DEFAULT);
-
-    S_->GetEvaluator(wc_key_).Update(*S_, "flow");
-    const auto& wc = S_->Get<CV_t>(wc_key_);
-    auto& wc_prev = S_->GetW<CV_t>(prev_wc_key_, Tags::DEFAULT, passwd);
-    wc_prev = wc;
-  }
-
-  // energy
-  // -- swap conserved energies (current and previous)
-  S_->GetEvaluator(energy_key_).Update(*S_, "thermal");
-  const auto& e = S_->Get<CV_t>(energy_key_);
-  auto& e_prev = S_->GetW<CV_t>(prev_energy_key_, passwd);
-
-  CompositeVector e_prev_copy(e_prev);
-  e_prev = e;
+  StateArchive archive(S_, vo_);
+  archive.Add(fields, Tags::DEFAULT);
 
   // try time step
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
-
-  if (fail) {
-    // recover conserved quantaties at the beginning of time step
-    S_->GetW<CV_t>(prev_sat_liquid_key_, passwd) = sat_prev_copy;
-    S_->GetW<CV_t>(prev_energy_key_, passwd) = e_prev_copy;
-    if (S_->HasRecord(wc_key_)) { S_->Assign(prev_wc_key_, Tags::DEFAULT, Tags::COPY); }
-
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Step failed. Restored " << prev_sat_liquid_key_ << ", " << prev_wc_key_ << ", "
-               << prev_energy_key_ << std::endl;
-  }
+  if (fail) archive.Restore("");
 
   return fail;
 }
@@ -295,6 +242,9 @@ FlowEnergy_PK::FunctionalResidual(double t_old,
   auto mol_flowrate = S_->GetPtrW<CV_t>(key, Tags::DEFAULT, "");
   auto op0 = sub_pks_[0]->my_pde(Operators::PDEType::PDE_DIFFUSION);
   op0->UpdateFlux(u_new0->Data().ptr(), mol_flowrate.ptr());
+
+  if (Keys::getVarName(sub_pks_[0]->name()) == "darcy")
+    mol_flowrate->Scale(1.0 / CommonDefs::MOLAR_MASS_H2O);
 
   // energy
   auto u_old1 = u_old->SubVector(1);

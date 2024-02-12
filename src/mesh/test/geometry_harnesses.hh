@@ -14,8 +14,6 @@
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 
-using Entity_Direction_View = std::vector<int>;
-
 //
 // Helper functions for testing geometry
 //
@@ -101,18 +99,18 @@ testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
       if (lfound) found[j] = 1;
 
       // check that the outward normals sum to 0
-      cEntity_ID_View cfaces;
+      typename Mesh_type::cEntity_ID_View cfaces;
       mesh->getCellFaces(i, cfaces);
       AmanziGeometry::Point normal_sum(mesh->getSpaceDimension());
-      for (int j = 0; j < cfaces.size(); j++) {
-        auto normal = mesh->getFaceNormal(cfaces[j], i);
+      for (int k = 0; k < cfaces.size(); k++) {
+        auto normal = mesh->getFaceNormal(cfaces[k], i);
         normal_sum = normal_sum + normal;
       }
       double val = AmanziGeometry::norm(normal_sum);
       if (val > 1.e-10) {
-        for (int j = 0; j < cfaces.size(); j++) {
-          auto normal = mesh->getFaceNormal(cfaces[j], i);
-          std::cout << "fail cell " << i << " normal (" << j << ") " << cfaces[j] << " = " << normal
+        for (int k = 0; k < cfaces.size(); k++) {
+          auto normal = mesh->getFaceNormal(cfaces[k], i);
+          std::cout << "fail cell " << i << " normal (" << k << ") " << cfaces[k] << " = " << normal
                     << std::endl;
         }
       }
@@ -140,8 +138,8 @@ testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
 
           // Check the normal with respect to each connected cell is given as the
           // natural times the orientation.
-          cEntity_ID_View cellids;
-          mesh->getFaceCells(i, Parallel_kind::ALL, cellids);
+          typename Mesh_type::cEntity_ID_View cellids;
+          mesh->getFaceCells(i, cellids);
 
           for (int k = 0; k < cellids.size(); k++) {
             int orientation = 0;

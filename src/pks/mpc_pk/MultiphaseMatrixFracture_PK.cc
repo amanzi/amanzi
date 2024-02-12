@@ -20,12 +20,12 @@
 #include "Multiphase_PK.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
+#include "StateArchive.hh"
 #include "TreeOperator.hh"
 
 #include "FractureInsertion.hh"
 #include "MultiphaseMatrixFracture_PK.hh"
 #include "PK_MPCStrong.hh"
-#include "PK_Utils.hh"
 
 namespace Amanzi {
 
@@ -226,7 +226,7 @@ MultiphaseMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
 
   StateArchive archive(S_, vo_);
   archive.Add(fields, Tags::DEFAULT);
-  archive.CopyFieldsToPrevFields(fields, "");
+  archive.CopyFieldsToPrevFields(fields, "", true);
 
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
 

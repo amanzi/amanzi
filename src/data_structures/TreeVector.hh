@@ -32,7 +32,7 @@ assumed in several places.
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 
-#include "Iterators.hh"
+//#include "Iterators.hh"
 #include "data_structures_types.hh"
 
 #include "CompositeVector.hh"
@@ -68,14 +68,22 @@ class TreeVector {
   const Teuchos::RCP<TreeVectorSpace>& get_map() const { return map_; }
 
   // Access to SubVectors
-  typedef std::vector<Teuchos::RCP<TreeVector>> SubVectorsContainer;
-  typedef Utils::iterator<SubVectorsContainer, TreeVector> iterator;
-  typedef Utils::const_iterator<SubVectorsContainer, TreeVector> const_iterator;
+  using iterator = std::vector<Teuchos::RCP<TreeVector>>::iterator;
+  using const_iterator = Teuchos::RCP<const TreeVector> const* const;
+
+  // this is a very poor-man's hacky replacement for boost iterator_adaptor
+  // which aims to make const_iterators iterate over pointers to const objects.
+  const_iterator begin() const
+  {
+    return reinterpret_cast<const Teuchos::RCP<const TreeVector>*>(&*subvecs_.begin());
+  }
+  const_iterator end() const
+  {
+    return reinterpret_cast<const Teuchos::RCP<const TreeVector>*>(&*subvecs_.end());
+  }
 
   iterator begin() { return iterator(subvecs_.begin()); }
-  const_iterator begin() const { return const_iterator(subvecs_.begin()); }
   iterator end() { return iterator(subvecs_.end()); }
-  const_iterator end() const { return const_iterator(subvecs_.end()); }
   size_t size() const { return subvecs_.size(); }
 
   // Access to the sub-vector by index

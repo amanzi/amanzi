@@ -12,13 +12,11 @@
 
 */
 
+#include <filesystem>
 #include <iostream>
 #include <ostream>
 #include <string>
 
-#define BOOST_FILESYSTEM_NO_DEPRECATED
-#include "boost/filesystem.hpp"
-#include <boost/format.hpp>
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_Vector.h"
 #include "exodusII.h"
@@ -45,7 +43,7 @@ WriteVis(Visualization& vis, State& S)
 {
   if (!vis.is_disabled()) {
     // Create the new time step
-    const auto& tag = vis.get_tag();
+    Tag tag;
     vis.CreateTimestep(S.get_time(), S.get_cycle(), tag.get());
 
     for (auto r = S.data_begin(); r != S.data_end(); ++r) {
@@ -67,7 +65,6 @@ WriteVis(Visualization& vis, State& S)
 
           // -- write default tag if it exists, else write another tag with the
           // -- same time
-          Tag tag;
           if (r->second->HasRecord(tag)) {
             if (S.HasEvaluator(r->first, tag)) { S.GetEvaluator(r->first, tag).Update(S, "vis"); }
             r->second->WriteVis(vis, &tag);
@@ -146,7 +143,7 @@ ReadCheckpointInitialTime(const Comm_ptr_type& comm, std::string filename)
 {
   if (!Keys::ends_with(filename, ".h5")) {
     // new style checkpoint
-    boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
+    std::filesystem::path filepath = std::filesystem::path(filename) / "domain.h5";
     filename = filepath.string();
   }
   HDF5_MPI checkpoint(comm, filename);
@@ -168,7 +165,7 @@ ReadCheckpointPosition(const Comm_ptr_type& comm, std::string filename)
 {
   if (!Keys::ends_with(filename, ".h5")) {
     // new style checkpoint
-    boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
+    std::filesystem::path filepath = std::filesystem::path(filename) / "domain.h5";
     filename = filepath.string();
   }
   HDF5_MPI checkpoint(comm, filename);
@@ -192,7 +189,7 @@ ReadCheckpointObservations(const Comm_ptr_type& comm,
 {
   if (!Keys::ends_with(filename, ".h5")) {
     // new style checkpoint
-    boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
+    std::filesystem::path filepath = std::filesystem::path(filename) / "domain.h5";
     filename = filepath.string();
   }
 
@@ -277,9 +274,9 @@ DeformCheckpointMesh(State& S, Key domain)
 
     // deform the mesh
     if (Keys::starts_with(domain, "column"))
-      AmanziMesh::MeshAlgorithms::deform(*write_access_mesh, nodeids, new_pos);
+      AmanziMesh::deform(*write_access_mesh, nodeids, new_pos);
     else
-      AmanziMesh::MeshAlgorithms::deform(*write_access_mesh, nodeids, new_pos);
+      AmanziMesh::deform(*write_access_mesh, nodeids, new_pos);
   } else {
     Errors::Message msg;
     msg << "DeformCheckpointMesh: unable to deform mesh because field \"" << vc_key
@@ -308,8 +305,10 @@ ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& var)
 
   if (comm->NumProc() > 1) {
     int ndigits = (int)floor(log10(comm->NumProc())) + 1;
-    std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
-    file_name = boost::str(boost::format(fmt) % file_name % comm->NumProc() % comm->MyPID());
+    std::stringstream ss;
+    ss << file_name << "." << std::to_string(comm->NumProc()) << "." << std::setw(ndigits)
+       << std::setfill('0') << comm->MyPID();
+    file_name = ss.str();
   }
 
   int CPU_word_size(8), IO_word_size(0), ierr;

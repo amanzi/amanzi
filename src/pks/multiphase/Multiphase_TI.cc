@@ -41,7 +41,10 @@ Multiphase_PK::FunctionalResidual(double t_old,
                                   Teuchos::RCP<TreeVector> f)
 {
   double dtp = t_new - t_old;
-
+  // update to handle time dependent BCs
+  for (int i = 0; i < bcs_.size(); ++i) { bcs_[i]->Compute(t_new, t_new); }
+  // update source terms
+  for (int i = 0; i < srcs_.size(); ++i) { srcs_[i]->Compute(t_new, t_new); }
   // extract pointers to subvectors
   std::vector<Teuchos::RCP<CompositeVector>> up, fp;
   for (int i = 0; i < soln_names_.size(); ++i) {
@@ -172,6 +175,21 @@ Multiphase_PK::FunctionalResidual(double t_old,
       }
     }
 
+    // add source term
+
+    if (srcs_.size() > 0) {
+      int id = eqns_[n].component_id;
+      for (int j = 0; j < srcs_.size(); ++j) {
+        if (srcs_[j]->component_id() == id) {
+          for (auto it = srcs_[j]->begin(); it != srcs_[j]->end(); ++it) {
+            int c = it->first;
+            double factor = mesh_->getCellVolume(c);
+            fone_c[0][c] -= it->second[0] * factor;
+          }
+        }
+      }
+    }
+
     // copy temporary vector to residual
     auto& fc = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");
     for (int c = 0; c < ncells_owned_; ++c) fc[eqns_flattened_[n][1]][c] = fone_c[0][c];
@@ -226,7 +244,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
 
   // work memory for miscalleneous operator
   auto flux_tmp =
-    Teuchos::rcp(new CompositeVector(S_->Get<CompositeVector>(vol_flowrate_liquid_key_)));
+    Teuchos::rcp(new CompositeVector(S_->Get<CompositeVector>(mol_flowrate_liquid_key_)));
   auto flux_acc = Teuchos::rcp(new CompositeVector(*flux_tmp));
 
   auto kr = CreateCVforUpwind_();

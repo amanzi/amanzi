@@ -51,6 +51,7 @@
 #include "pks_flow_reg.hh"
 #include "pks_mpc_reg.hh"
 #include "pks_transport_reg.hh"
+#include "pks_mechanics_reg.hh"
 #include "pks_multiphase_reg.hh"
 #include "pks_shallow_water_reg.hh"
 

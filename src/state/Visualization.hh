@@ -85,9 +85,6 @@ class Visualization : public IOEvent {
   void AddDomain(const std::string& name);
   bool WritesDomain(const std::string& name) const;
 
-  Tag get_tag() const { return tag_; }
-  void set_tag(const Tag& tag) { tag_ = tag; }
-
   // public interface for coordinator clients
   void CreateFiles(bool include_io_set = true);
   void CreateTimestep(double time, int cycle, const std::string& tag);
@@ -97,9 +94,12 @@ class Visualization : public IOEvent {
   template <typename T>
   void Write(const std::string& name, const T& t) const;
 
-  virtual void
-  WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const;
-  virtual void WriteVector(const Epetra_Vector& vec, const std::string& name) const;
+  virtual void WriteVector(const Epetra_MultiVector& vec,
+                           const std::vector<std::string>& names,
+                           AmanziMesh::Entity_kind kind) const;
+  virtual void WriteVector(const Epetra_Vector& vec,
+                           const std::string& name,
+                           AmanziMesh::Entity_kind kind) const;
   virtual void WriteRegions();
   virtual void WritePartition();
 
@@ -109,7 +109,6 @@ class Visualization : public IOEvent {
   std::vector<std::string> domains_;
   std::string my_units_;
   std::string name_;
-  Tag tag_;
   bool time_unit_written_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -126,7 +125,7 @@ template <>
 inline void
 Visualization::Write<Epetra_Vector>(const std::string& name, const Epetra_Vector& t) const
 {
-  WriteVector(t, name);
+  WriteVector(t, name, AmanziMesh::Entity_kind::CELL);
 }
 
 template <>

@@ -87,7 +87,7 @@ TEST(MPC_DRIVER_FLOW)
   glist->sublist("cycle driver")
     .sublist("restart")
     .set<std::string>("file name", "chk_flow00010.h5");
-  avg2 = 0.;
+  avg2 = 0.0;
   S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
 

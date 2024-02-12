@@ -21,7 +21,7 @@ A new Framework really must supply only a handful of methods, but may choose to
 provide more, as long as they are consistent.
 
 Note that the framework is split into two classes, MeshFramework and
-MeshFrameworkAlgorithms, both of which must exist.  For many, the algorithms
+MeshAlgorithms, both of which must exist.  For many, the algorithms
 will be the default class.  But some "special" frameworks may implement special
 algorithms.  If they do so, the MeshCache object will need the algorithms even
 if the Framework itself is deleted (hence the split).
@@ -38,7 +38,6 @@ if the Framework itself is deleted (hence the split).
 #include "GeometryDefs.hh"
 #include "MeshDefs.hh"
 #include "AmanziComm.hh"
-#include "Mesh_Helpers.hh"
 
 namespace Amanzi {
 
@@ -50,8 +49,6 @@ class GeometricModel;
 } // namespace AmanziGeometry
 
 namespace AmanziMesh {
-
-class MeshFramework;
 
 //
 // The framework class itself provides setters/getters/attributes, all
@@ -65,6 +62,17 @@ class MeshFramework {
 
  public:
   virtual ~MeshFramework() = default;
+
+  using Entity_ID_View = View_type<Entity_ID, MemSpace_kind::HOST>;
+  using cEntity_ID_View = View_type<const Entity_ID, MemSpace_kind::HOST>;
+  using Entity_GID_View = View_type<Entity_GID, MemSpace_kind::HOST>;
+  using cEntity_GID_View = View_type<const Entity_GID, MemSpace_kind::HOST>;
+  using Direction_View = View_type<Direction_type, MemSpace_kind::HOST>;
+  using cDirection_View = View_type<const Direction_type, MemSpace_kind::HOST>;
+  using Point_View = View_type<AmanziGeometry::Point, MemSpace_kind::HOST>;
+  using cPoint_View = View_type<const AmanziGeometry::Point, MemSpace_kind::HOST>;
+  using Double_View = View_type<double, MemSpace_kind::HOST>;
+  using cDouble_View = View_type<const double, MemSpace_kind::HOST>;
 
   // ----------------------
   // Accessors and Mutators
@@ -260,23 +268,20 @@ class MeshFramework {
   // The cells are returned in no particular order. Also, the order of cells
   // is not guaranteed to be the same for corresponding faces on different
   // processors
-  virtual void getFaceCells(const Entity_ID f,
-                            const Parallel_kind ptype,
-                            View_type<const Entity_ID, MemSpace_kind::HOST>& cells) const = 0;
+  virtual void
+  getFaceCells(const Entity_ID f, View_type<const Entity_ID, MemSpace_kind::HOST>& cells) const = 0;
 
   // Cells of a given Parallel_kind connected to an edge
   //
   // The order of cells is not guaranteed to be the same for corresponding
   // edges on different processors
   virtual void getEdgeCells(const Entity_ID edgeid,
-                            const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const;
 
   // Faces of type 'ptype' connected to an edge
   // NOTE: The order of faces is not guaranteed to be the same for
   // corresponding edges on different processors
   virtual void getEdgeFaces(const Entity_ID edgeid,
-                            const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const;
 
   // Cells of type 'ptype' connected to a node
@@ -286,7 +291,6 @@ class MeshFramework {
   // This upward adjacency has a default algorithmic implementation based on
   // getNodeFaces and getFaceCells.
   virtual void getNodeCells(const Entity_ID nodeid,
-                            const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const;
 
   // Faces of type parallel 'ptype' connected to a node
@@ -295,7 +299,6 @@ class MeshFramework {
   //
   // This upward adjacency is required to be provided by the Framework.
   virtual void getNodeFaces(const Entity_ID nodeid,
-                            const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const = 0;
 
   // Edges of type 'ptype' connected to a node
@@ -307,7 +310,6 @@ class MeshFramework {
   // supports edges.  If it does not, then this default implementation simply
   // throws an error.
   virtual void getNodeEdges(const Entity_ID nodeid,
-                            const Parallel_kind ptype,
                             View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const;
 
   //--------------------------------------------------------------

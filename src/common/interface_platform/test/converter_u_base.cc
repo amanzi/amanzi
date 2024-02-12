@@ -117,9 +117,10 @@ TEST(CONVERTER_BASE)
   if (MyPID == 0) std::cout << "Test: convert transport test" << std::endl;
 
   // read parameter list
-  for (int i = 1; i < 10; i++) {
-    std::stringstream xmlFileName;
-    xmlFileName << "test/converter_u_test" << i << ".xml";
+  for (int i = 1; i < 11; i++) {
+    std::stringstream xmlFileName, id;
+    id << std::setw(2) << std::setfill('0') << i;
+    xmlFileName << "test/converter_u_test" << id.str() << ".xml";
 
     Amanzi::AmanziInput::InputConverterU converter(xmlFileName.str());
     Teuchos::ParameterList new_xml;
@@ -130,7 +131,7 @@ TEST(CONVERTER_BASE)
       Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_xml);
 
       std::stringstream ss;
-      ss << "test" << i << "_native.xml";
+      ss << "test" << id.str() << "_native.xml";
       std::ofstream xmlfile;
       xmlfile.open(ss.str().c_str());
       xmlfile << XMLobj;
@@ -140,7 +141,7 @@ TEST(CONVERTER_BASE)
       // development
       Teuchos::RCP<Teuchos::ParameterList> old_xml;
       xmlFileName.str("");
-      xmlFileName << "test/converter_u_validate" << i << ".xml";
+      xmlFileName << "test/converter_u_validate" << id.str() << ".xml";
       old_xml = Teuchos::getParametersFromXmlFile(xmlFileName.str());
       new_xml.validateParameters(*old_xml);
       old_xml->validateParameters(new_xml);

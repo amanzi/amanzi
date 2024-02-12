@@ -49,6 +49,7 @@ add_amanzi_library(atk
                            IOEvent.hh
                            Iterators.hh
                            Key.hh
+                           MeshView.hh
                            LeastSquare.hh
                            ObservationData.hh
                            Spline.hh
@@ -60,6 +61,7 @@ add_amanzi_library(atk
                            Utils.hh
                            VerboseObject.hh
                            VerboseObject_objs.hh
+                           ViewUtils.hh
                            XMLParameterListWriter.hh
                            StringReducer.hh
                     LINK_LIBS error_handling ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${HDF5_LIBRARIES})

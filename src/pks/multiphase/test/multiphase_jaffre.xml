@@ -1,7 +1,7 @@
 <ParameterList>
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="phase-transition-1d"/>
-    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 1.5768e11, -1.0}"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 3.1536e13, -1.0}"/>
   </ParameterList>
 
   <!--  REGIONS  -->
@@ -59,7 +59,7 @@
         <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
 
         <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_liquid, molar_density_liquid }"/>
-        <Parameter name="diffusion factors" type="Array(double)" value="{ -0.1111111111111111,  -0.1111111111111111 }"/>
+        <Parameter name="diffusion factors" type="Array(double)" value="{ -0.2, -0.2 }"/>
 
         <Parameter name="accumulation" type="string" value="total_water_storage"/>
       </ParameterList>
@@ -92,12 +92,12 @@
     <ParameterList name="molecular diffusion">
       <Parameter name="aqueous names" type="Array(string)" value="{SH4}"/>
       <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9}"/>
-      <Parameter name="gaseous values" type="Array(double)" value="{0.0e-9}"/>
+      <Parameter name="gaseous values" type="Array(double)" value="{0.0}"/>
       <Parameter name="molar masses" type="Array(double)" value="{2.0e-3}"/>
       <Parameter name="Henry dimensionless constants" type="Array(double)" value="{7.65e-6}"/>
     </ParameterList>
 
-    <Parameter name="molar mass of water" type="double" value="18.0e-3"/>
+    <Parameter name="molar mass of water" type="double" value="1.0e-2"/>
 
     <Parameter name="CPR enhancement" type="bool" value="false"/>
     <ParameterList name="CPR parameters">
@@ -147,6 +147,8 @@
           <Parameter name="monitor" type="string" value="monitor update"/>
           <Parameter name="make one iteration" type="bool" value="true"/>
         </ParameterList>
+       
+        <!-- 
         <ParameterList name="nka parameters">
           <Parameter name="nonlinear tolerance" type="double" value="1.0e-6"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
@@ -157,12 +159,15 @@
           <Parameter name="modify correction" type="bool" value="true"/>
           <Parameter name="monitor" type="string" value="monitor update"/>
         </ParameterList>
+        -->
+
+        <!--
         <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
         <Parameter name="extrapolate initial guess" type="bool" value="false"/>
         <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
         <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
         <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
-    
+        -->
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
@@ -197,8 +202,9 @@
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <Parameter name="name" type="string" value="SH4"/>
           <ParameterList name="outward mass flux">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="-8.831177067478435e-11"/>
+            <ParameterList name="function-exprtk">
+              <Parameter name="number of arguments" type="int" value="4"/>
+              <Parameter name="formula" type="string" value="((1 - sgn(t - 1.57e+13))/2)*(-8.8300e-11)"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -214,18 +220,48 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="concentration">
+        <ParameterList name="BC 5">
+          <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <Parameter name="name" type="string" value="SH4"/>
+          <ParameterList name="boundary concentration">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="source terms">
-      <ParameterList name="SRC 1">
-        <Parameter name="regions" type="Array(string)" value="{All}"/>
-        <Parameter name="spatial distribution method" type="string" value="none"/>
-        <Parameter name="submodel" type="string" value="intergrand"/>
-        <ParameterList name="sink">
-          <ParameterList name="function-constant">
-            <Parameter name="value" type="double" value="0.0"/>
+      <ParameterList name="mass rate">
+
+        <ParameterList name="SRC 0">
+          <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <Parameter name="name" type="string" value="SH4"/>
+          <ParameterList name="injector">
+            <ParameterList name="function-exprtk">
+              <Parameter name="number of arguments" type="int" value="4"/>
+              <Parameter name="formula" type="string" value="0.0"/>
+            </ParameterList>
           </ParameterList>
         </ParameterList>
+
+        <ParameterList name="SRC 1">
+          <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <Parameter name="name" type="string" value="water"/>
+          <ParameterList name="injector">
+            <ParameterList name="function-exprtk">
+              <Parameter name="number of arguments" type="int" value="4"/>
+              <Parameter name="formula" type="string" value="0.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+
       </ParameterList>
     </ParameterList>
 
@@ -385,7 +421,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="302.9998973209611"/>
+                <Parameter name="value" type="double" value="303"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -462,7 +498,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.15"/>
+                <Parameter name="value" type="double" value="0.30"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -507,7 +543,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="55408.51988"/>
+                <Parameter name="value" type="double" value="100000"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -572,6 +608,7 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
+   <!--
     <ParameterList name="AMESOS">
       <Parameter name="direct method" type="string" value="amesos"/>
       <ParameterList name="amesos parameters">
@@ -579,10 +616,14 @@
         <Parameter name="amesos version" type="int" value="2"/>
       </ParameterList>
     </ParameterList>
+    -->
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
+ 
   <ParameterList name="preconditioners">
+  
+     
     <ParameterList name="ILU">
       <Parameter name="preconditioning method" type="string" value="ILU"/>
       <ParameterList name="ILU parameters">
@@ -590,6 +631,8 @@
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
+  
+    <!--   
     <ParameterList name="SysTG">
       <Parameter name="preconditioning method" type="string" value="systg"/>
       <ParameterList name="systg parameters">
@@ -607,7 +650,10 @@
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Hypre AMG">  <!-- parent list -->
+   -->
+    
+    <!--
+    <ParameterList name="Hypre AMG">
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.0"/>
@@ -620,9 +666,11 @@
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
+    -->
+  
   </ParameterList>
 
   <ParameterList name="verbose object">
-    <Parameter name="verbosity level" type="string" value="high"/>
+    <Parameter name="verbosity level" type="string" value="extreme"/>
   </ParameterList>
 </ParameterList>

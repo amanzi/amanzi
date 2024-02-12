@@ -126,7 +126,7 @@ PK_DomainFunctionSubgrid<FunctionBase>::Compute(double t0, double t1)
   std::vector<double> val(num_vec);
 
   AmanziMesh::Entity_ID entity_lid_out =
-    vec_out.Mesh()->getMap(AmanziMesh::Entity_kind::CELL, "false").LID(entity_gid_out_);
+    vec_out.Mesh()->getMap(AmanziMesh::Entity_kind::CELL, false).LID(entity_gid_out_);
   AMANZI_ASSERT(entity_lid_out >= 0);
   for (int k = 0; k < num_vec; ++k) val[k] = field_out[k][entity_lid_out];
   value_[entity_lid_] = val;

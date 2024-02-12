@@ -74,7 +74,7 @@ class ReconstructionCellPolynomial : public Reconstruction {
                const Teuchos::RCP<const BCs>& bc = Teuchos::null);
 
   // A map (a rectangular matrix) from data, cell and boundary, to polynomial
-  // coefficients. NOTE: polynomial basis is natural
+  // coefficients.
   void ComputeReconstructionMap(int c,
                                 const Teuchos::RCP<const BCs>& bc,
                                 WhetStone::DenseMatrix& R,
@@ -90,13 +90,10 @@ class ReconstructionCellPolynomial : public Reconstruction {
 
   // On intersecting manifolds, we extract neighboors living in the same manifold
   // using a smoothness criterion.
-  void CellAllAdjCells_(AmanziMesh::Entity_ID c,
-                        AmanziMesh::Parallel_kind ptype,
-                        std::set<AmanziMesh::Entity_ID>& cells) const;
+  void CellAllAdjCells_(AmanziMesh::Entity_ID c, std::set<AmanziMesh::Entity_ID>& cells) const;
 
-  void CellAdjCellsTwoLevels_(AmanziMesh::Entity_ID c,
-                              AmanziMesh::Parallel_kind ptype,
-                              std::set<AmanziMesh::Entity_ID>& cells) const;
+  void
+  CellAdjCellsTwoLevels_(AmanziMesh::Entity_ID c, std::set<AmanziMesh::Entity_ID>& cells) const;
 
   void CellAllAdjFaces_(AmanziMesh::Entity_ID c,
                         const std::set<AmanziMesh::Entity_ID>& cells,

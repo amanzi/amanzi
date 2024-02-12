@@ -38,7 +38,8 @@ MeshMaps_VEM::VelocityCell(int c,
 {
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", method_).set<int>("method order", order_);
-  auto mfd = BilinearFormFactory::Create(plist, mesh0_);
+  auto form = BilinearFormFactory::Create(plist, mesh0_);
+  auto mfd = Teuchos::rcp_dynamic_cast<MFD3D>(form);
 
   vc.resize(d_);
 
@@ -75,8 +76,9 @@ MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
 
     Teuchos::ParameterList plist;
     plist.set<std::string>("method", method_).set<int>("method order", order_);
-    auto mfd = BilinearFormFactory::Create(plist, mesh0_);
-    mfd->set_order(order_);
+    auto form = BilinearFormFactory::Create(plist, mesh0_);
+    auto mfd = Teuchos::rcp_dynamic_cast<MFD3D>(form);
+    form->set_order(order_);
 
     vf.resize(d_);
     for (int i = 0; i < d_; ++i) {

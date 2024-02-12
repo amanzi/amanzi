@@ -64,7 +64,6 @@ class DarcyProblem {
 
     frameworks[0] = Framework::MSTK;
     framework_name.push_back("MSTK");
-    framework_name.push_back("stk:mesh");
   };
 
   ~DarcyProblem() { delete DPK; }
@@ -189,14 +188,15 @@ class DarcyProblem {
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
       error_L2 += std::pow(flowrate[0][f] - velocity_exact * normal, 2.0);
-      // if (MyPID == 0) std::cout << f << " " << flowrate[0][f] << " exact=" << velocity_exact * normal << std::endl;
+      // std::cout << f << " " << flowrate[0][f] << " exact=" << velocity_exact * normal << std::endl;
     }
     return sqrt(error_L2);
   }
 
   double calculateDarcyDivergenceError()
   {
-    auto& cv = S->GetW<CompositeVector>("volumetric_flow_rate", Tags::DEFAULT, passwd);
+    Key key("volumetric_flow_rate");
+    auto& cv = S->GetW<CompositeVector>(key, Tags::DEFAULT, key);
     cv.ScatterMasterToGhosted("face");
     Epetra_MultiVector& flux = *cv.ViewComponent("face", true);
 
