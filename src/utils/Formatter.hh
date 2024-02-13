@@ -11,6 +11,7 @@
 #include <string>
 #include <cstdarg>
 #include <vector>
+#include <cmath>
 
 namespace Amanzi {
 namespace Utils {
