@@ -19,7 +19,7 @@
 #include "SolverNox.hh"
 #include "SolverJFNK.hh"
 #include "SolverContinuation.hh"
-#include "SolverBT.hh"
+#include "SolverLS.hh"
 
 #include "Epetra_MultiVector.h"
 #include "CompositeVector.hh"
@@ -156,7 +156,7 @@ SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
       if (!ls_list.isSublist("verbose object"))
         ls_list.set("verbose object", slist.sublist("verbose object"));
       Teuchos::RCP<Solver<Vector, VectorSpace>> solver =
-        Teuchos::rcp(new SolverBT<Vector, VectorSpace>(ls_list));
+        Teuchos::rcp(new SolverLS<Vector, VectorSpace>(ls_list));
       return solver;
     } else if (type == "nox") {
       if (!slist.isSublist("nox parameters")) {

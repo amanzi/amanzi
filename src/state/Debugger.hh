@@ -39,6 +39,7 @@ from the `"Verbose Object`" spec is set to `"high`" or higher.
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_MultiVector.h"
 
+#include "Formatter.hh"
 #include "VerboseObject.hh"
 #include "Mesh.hh"
 
@@ -83,8 +84,8 @@ class Debugger {
   // write a line of ----
   void WriteDivider();
 
-  void SetPrecision(int prec) { precision_ = prec; }
-  void SetWidth(int width) { width_ = width; }
+  void SetPrecision(int prec) { formatter_.setPrecision(prec); }
+  void SetWidth(int width) { formatter_.setWidth(width); }
 
   // reverse order -- instead of passing in vector, do writing externally
   Teuchos::RCP<VerboseObject> GetVerboseObject(AmanziMesh::Entity_ID, int rank);
@@ -102,12 +103,8 @@ class Debugger {
   AmanziMesh::Entity_ID_View dc_gid_;
   std::vector<Teuchos::RCP<VerboseObject>> dcvo_;
 
-  int width_;
-  int header_width_;
-  int precision_;
-  int cellnum_width_;
-  int decimal_width_;
   std::string name_;
+  Utils::Formatter formatter_;
 };
 
 } // namespace Amanzi

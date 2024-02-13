@@ -16,8 +16,6 @@
 #ifndef AMANZI_NKA_LS_ATS_SOLVER_
 #define AMANZI_NKA_LS_ATS_SOLVER_
 
-#include "boost/math/tools/minima.hpp"
-
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
@@ -30,6 +28,8 @@
 #include "SolverFnBase.hh"
 #include "SolverDefs.hh"
 #include "NKA_Base.hh"
+#include "LineSearchFunctor.hh"
+#include "Brent.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -106,34 +106,6 @@ class SolverNKA_LS_ATS : public Solver<Vector, VectorSpace> {
   ConvergenceMonitor monitor_;
 
   std::vector<std::pair<double, double>> history_;
-
-  // functor for minimization in boost
-  struct Functor {
-    Functor(const Teuchos::RCP<SolverFnBase<Vector>>& my_fn) : fn(my_fn) {}
-
-    void setup(const Teuchos::RCP<Vector>& u_,
-               const Teuchos::RCP<Vector>& u0_,
-               const Teuchos::RCP<Vector>& du_)
-    {
-      u = u_;
-      du = du_;
-      u0 = u0_;
-      if (r == Teuchos::null) { r = Teuchos::rcp(new Vector(*u)); }
-      *u0 = *u;
-    }
-
-    double operator()(double x)
-    {
-      *u = *u0;
-      u->Update(-x, *du, 1.);
-      fn->ChangedSolution();
-      fn->Residual(u, r);
-      return fn->ErrorNorm(u, r);
-    }
-
-    Teuchos::RCP<Vector> u, r, u0, du;
-    Teuchos::RCP<SolverFnBase<Vector>> fn;
-  };
 };
 
 
@@ -280,8 +252,7 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
   }
 
   // set up the functor for minimization in line search
-  Functor linesearch_func(fn_);
-  linesearch_func.setup(u, u_precorr, du_pic);
+  LineSearchFunctor<Vector> linesearch_func(fn_, u_precorr, du_pic, u, res);
 
   // nonlinear solver main loop
   do {
@@ -431,40 +402,37 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
 
         // find an admissible endpoint, starting from ten times the full correction
         double endpoint = max_alpha_;
-        *u = *u_precorr;
-        u->Update(-endpoint, *du_pic, 1.0);
+        u->Update(-endpoint, *du_pic, 1.0, *u_precorr, 0.);
         fn_->ChangedSolution();
         while (!fn_->IsAdmissible(u)) {
           endpoint *= 0.3;
-          *u = *u_precorr;
-          u->Update(-endpoint, *du_pic, 1.);
+          u->Update(-endpoint, *du_pic, 1., *u_precorr, 0.);
           fn_->ChangedSolution();
         }
 
         // minimize along the search path from min_alpha to endpoint
         double left = min_alpha_;
-        std::uintmax_t ls_itrs(max_ls_itrs_);
-        std::pair<double, double> result =
-          boost::math::tools::brent_find_minima(linesearch_func, left, endpoint, bits_, ls_itrs);
-        fun_calls_ += ls_itrs;
+        int ls_itrs(max_ls_itrs_);
+        double eps = std::pow(2, -bits_);
+        double result = Utils::findMinimumBrent(linesearch_func, left, endpoint, eps, &ls_itrs);
+        fun_calls_ += linesearch_func.fun_calls;
 
         if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-          *vo_->os() << "  Brent algorithm converged: error = " << result.second << std::endl
-                     << "     alpha = " << result.first << " in " << ls_itrs << " itrs" << std::endl
+          *vo_->os() << "  Brent algorithm converged: error = " << linesearch_func.error << std::endl
+                     << "     alpha = " << result << " in " << ls_itrs << " itrs" << std::endl
                      << "     bracket: [ alpha=" << left << " , " << endpoint << "]" << std::endl
                      << "     errors(0) = " << previous_error << std::endl
                      << "     errors(1) = " << error << std::endl;
         }
 
         // update the correction
-        *u = *u_precorr;
-        u->Update(-result.first, *du_pic, 1.);
+        u->Update(-result, *du_pic, 1., *u_precorr, 0.);
         fn_->ChangedSolution();
         fn_->Residual(u, res);
         fun_calls_++;
 
         // Evalute error
-        error = result.second;
+        error = linesearch_func.error;
         db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
 
         residual_ = error;

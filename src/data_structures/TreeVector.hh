@@ -71,7 +71,7 @@ class TreeVector {
   using iterator = std::vector<Teuchos::RCP<TreeVector>>::iterator;
   using const_iterator = Teuchos::RCP<const TreeVector> const* const;
 
-  // this is a very poor-man's hacky replacement for boost iterator_adaptor
+  // this is a very poor-man's hacky replacement for an iterator_adaptor
   // which aims to make const_iterators iterate over pointers to const objects.
   const_iterator begin() const
   {
