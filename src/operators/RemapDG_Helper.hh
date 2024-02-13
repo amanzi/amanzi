@@ -90,7 +90,7 @@ class RemapDG_Helper {
   int dim_;
 
   Teuchos::ParameterList plist_;
-  std::shared_ptr<WhetStone::MeshMaps> maps_;
+  std::shared_ptr<WhetStone::MeshMapsBase> maps_;
   Teuchos::RCP<WhetStone::DG_Modal> dg_;
 
   // operators

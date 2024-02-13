@@ -60,6 +60,36 @@ void IndexToSubVector(int n, int nfaces, int ncells, int* i, std::string* kind, 
 }
 
 
+void ComputeEigenvalues(const Amanzi::WhetStone::DenseMatrix& matrix,
+                        Amanzi::WhetStone::DenseVector& real,
+                        Amanzi::WhetStone::DenseVector& imag)
+{
+  Amanzi::WhetStone::DenseMatrix A(matrix);
+  int n = A.NumRows();
+
+  int info, ldv(1), lwork = 4 * n;
+  double VL, VR, dwork[lwork];
+
+  real.Reshape(n);
+  imag.Reshape(n);
+
+  Amanzi::WhetStone::DGEEV_F77("N",
+                               "N",
+                               &n,
+                               A.Values(),
+                               &n,
+                               real.Values(),
+                               imag.Values(),
+                               &VL,
+                               &ldv,
+                               &VR,
+                               &ldv,
+                               dwork,
+                               &lwork,
+                               &info);
+}
+
+
 /* ****************************************************************
 * Analysis of Jacobian for the FEHM EOS.
 * ************************************************************** */
@@ -200,9 +230,25 @@ TEST(ENERGY_JACOBIAN)
                                              << ",  || Jpk || = " << jpk << std::endl;
   CHECK(jdiff / jfd < 4e-3);
 
+  WhetStone::DenseVector real, imag;
+  WhetStone::DenseMatrix J1(Jpk);
+  J1.Inverse();
+  auto J2 = J1 * Jfd;
+  ComputeEigenvalues(J2, real, imag);
+
+  double tmp, emin(1e+98), emax(0.0);
+  for (int n = 0; n < real.NumRows(); ++n) {
+    tmp = std::sqrt(real(n) * real(n) + imag(n) * imag(n)); 
+    emin = std::min(emin, tmp);
+    emax = std::max(emax, tmp);
+  }
+  std::cout << "cond(inv(Jpk) * Jfd) = " << emax / emin << std::endl;
+
   // dFlow / dT in Jacobian changes little in 2-norm but much in spectral norm.
-  for (int row = 0; row < nJ / 2; ++row)
+  for (int row = 0; row < nJ / 2; ++row) {
     for (int col = nJ / 2; col < nJ; ++col) Jpk(row, col) = Jfd(row, col);
+    for (int col = nJ / 2; col < nJ; ++col) Jpk(col, row) = Jfd(col, row);
+  }
 
   Jdiff = Jfd - Jpk;
   jdiff = Jdiff.Norm2();
@@ -211,4 +257,20 @@ TEST(ENERGY_JACOBIAN)
   std::cout << "|| Jfd - Jpk || = " << jdiff << ",  || Jfd || = " << jfd 
                                              << ",  || Jpk || = " << jpk << std::endl;
   CHECK(jdiff / jfd < 4e-3);
+
+  J1 = Jpk;
+  J1.Inverse();
+  J2 = J1 * Jfd;
+  ComputeEigenvalues(J2, real, imag);
+
+  emin = 1e+98;
+  emax = 0.0;
+  for (int n = 0; n < real.NumRows(); ++n) {
+    tmp = std::sqrt(real(n) * real(n) + imag(n) * imag(n)); 
+    emin = std::min(emin, tmp);
+    emax = std::max(emax, tmp);
+  }
+  std::cout << "cond(inv(Jpk) * Jfd) = " << emax / emin << std::endl;
 }
+
+
