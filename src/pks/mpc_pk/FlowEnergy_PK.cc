@@ -70,26 +70,18 @@ FlowEnergy_PK::Setup()
 
   // keys
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
-  ie_rock_key_ = Keys::getKey(domain_, "internal_energy_rock");
-  ie_gas_key_ = Keys::getKey(domain_, "internal_energy_gas");
   ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
 
   temperature_key_ = Keys::getKey(domain_, "temperature");
   energy_key_ = Keys::getKey(domain_, "energy");
-  prev_energy_key_ = Keys::getKey(domain_, "prev_energy");
 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
-  mol_density_gas_key_ = Keys::getKey(domain_, "molar_density_gas");
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
 
   pressure_key_ = Keys::getKey(domain_, "pressure");
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
-  prev_sat_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid");
 
   wc_key_ = Keys::getKey(domain_, "water_storage");
-  prev_wc_key_ = Keys::getKey(domain_, "prev_water_storage");
-
-  viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
 
   // Require primary field for this PK, which is pressure
   {

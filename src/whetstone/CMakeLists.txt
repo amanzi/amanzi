@@ -58,7 +58,7 @@ add_amanzi_library(whetstone
                           NumericalIntegration.cc
                           Tensor.cc DenseMatrix.cc DenseVector.cc
                           Polynomial.cc SpaceTimePolynomial.cc VectorObjects.cc
-                          MeshMaps.cc
+                          MeshMapsBase.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
                           SplinePolynomial.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
@@ -86,7 +86,7 @@ add_amanzi_library(whetstone
                            nlfv.hh
                            NumericalIntegration.hh
                            Quadrature1D.hh Quadrature2D.hh Quadrature3D.hh
-                           MeshMaps.hh MeshMapsFactory.hh
+                           MeshMapsBase.hh MeshMapsFactory.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh
                            Monomial.hh Polynomial.hh PolynomialIterator.hh PolynomialBase.hh
                            SpaceTimePolynomial.hh
