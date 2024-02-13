@@ -465,7 +465,6 @@ PDE_Elasticity::computeElasticityTensor_(int c)
     for (int j = 0; j < d; ++j) Kc(i, j) += lambda;
   }
   return Kc;
->>>>>>> master
 }
 
 } // namespace Operators
