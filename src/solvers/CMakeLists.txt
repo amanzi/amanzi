@@ -122,9 +122,9 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/solver_linear_nox_jfnk.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
-    add_amanzi_test(solver_nka solver_nka
+    add_amanzi_test(solver_nonlinear solver_nonlinear
                     KIND unit
-                    SOURCE test/Main.cc test/solver_nka.cc
+                    SOURCE test/Main.cc test/solver_nonlinear.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
     add_amanzi_test(solver_newton solver_newton
