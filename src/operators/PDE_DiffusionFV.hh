@@ -58,11 +58,15 @@ class BCs;
 class PDE_DiffusionFV : public virtual PDE_Diffusion {
  public:
   PDE_DiffusionFV(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
-    : PDE_Diffusion(plist, global_op), transmissibility_initialized_(false)
+    : PDE_Diffusion(plist, global_op),
+      transmissibility_initialized_(false),
+      bcs_applied_(false)
   {}
 
   PDE_DiffusionFV(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : PDE_Diffusion(plist, mesh), transmissibility_initialized_(false)
+    : PDE_Diffusion(plist, mesh),
+      transmissibility_initialized_(false),
+      bcs_applied_(false)
   {}
 
   virtual void Init() override;
@@ -132,6 +136,7 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
  protected:
   Teuchos::RCP<CompositeVector> transmissibility_;
   bool transmissibility_initialized_;
+  bool bcs_applied_;
 };
 
 } // namespace Operators

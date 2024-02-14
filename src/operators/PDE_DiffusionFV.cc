@@ -177,6 +177,7 @@ void
 PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                                 const Teuchos::Ptr<const CompositeVector>& u)
 {
+  bcs_applied_ = false;
   if (!transmissibility_initialized_) ComputeTransmissibility_();
 
   if (local_op_.get()) {
@@ -253,6 +254,8 @@ PDE_DiffusionFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const Composi
 void
 PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
+  if (bcs_applied_) return;
+  bcs_applied_ = true;
   auto rhs = global_op_->rhs()->viewComponent<DefaultDevice>("cell", true);
   AMANZI_ASSERT(bcs_trial_.size() > 0);
 
@@ -308,6 +311,8 @@ void
 PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
                             const Teuchos::Ptr<CompositeVector>& darcy_mass_flux)
 {
+  if (!bcs_applied_) ApplyBCs(true, false, true);
+
   // prep views
   auto trans_face = transmissibility_->viewComponent<DefaultDevice>("face", true);
   AMANZI_ASSERT(bcs_trial_.size() > 0);
