@@ -18,8 +18,6 @@
 #include <string>
 #include <algorithm>
 
-#define BOOST_FILESYTEM_NO_DEPRECATED
-
 // TPLs
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "xercesc/dom/DOM.hpp"

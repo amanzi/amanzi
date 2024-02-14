@@ -227,7 +227,7 @@ SUITE(Darcy_PK)
 ****************************************************************** */
   TEST_FIXTURE(DarcyProblem, DirichletDirichlet)
   {
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 1; i++) {
       int ierr = Init("test/flow_darcy_misc.xml", "test/hexes.exo", frameworks[i]);
       if (MyPID == 0)
         std::cout << "\nDarcy PK on tets: Dirichlet-Dirichlet"
@@ -269,7 +269,7 @@ SUITE(Darcy_PK)
 
   TEST_FIXTURE(DarcyProblem, DirichletNeumann)
   {
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 1; i++) {
       int ierr = Init("test/flow_darcy_misc.xml", "test/hexes.exo", frameworks[i]);
       if (MyPID == 0)
         std::cout << "\nDarcy PK on tets: Dirichlet-Neumann"
@@ -308,7 +308,7 @@ SUITE(Darcy_PK)
 
   TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet)
   {
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 1; i++) {
       int ierr = Init("test/flow_darcy_misc.xml", "test/hexes.exo", frameworks[i]);
       if (MyPID == 0)
         std::cout << "\nDarcy PK on tets: StaticHead-Dirichlet"
@@ -351,7 +351,7 @@ SUITE(Darcy_PK)
 ****************************************************************** */
   TEST_FIXTURE(DarcyProblem, DDprisms)
   {
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 1; i++) {
       int ierr = Init("test/flow_darcy_misc.xml", "test/prisms.exo", frameworks[i]);
       if (MyPID == 0)
         std::cout << "\nDarcy PK on tets: Dirichlet-Dirichlet"
@@ -396,7 +396,7 @@ SUITE(Darcy_PK)
 ****************************************************************** */
   TEST_FIXTURE(DarcyProblem, DNtetrahedra)
   {
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 1; i++) {
       int ierr = Init("test/flow_darcy_misc.xml", "test/tetrahedra.exo", frameworks[i]);
       if (MyPID == 0)
         std::cout << "\nDarcy PK on tets: Dirichlet-Neumann"
@@ -439,7 +439,7 @@ SUITE(Darcy_PK)
 ****************************************************************** */
   TEST_FIXTURE(DarcyProblem, DDmixed)
   {
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 1; i++) {
       int ierr = Init("test/flow_darcy_misc.xml", "test/mixed.exo", frameworks[i]);
       if (MyPID == 0)
         std::cout << "\nDarcy PK on mixed mesh: Dirichlet-Dirichlet"

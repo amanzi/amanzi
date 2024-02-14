@@ -38,7 +38,8 @@
 #include "State.hh"
 #include "VerboseObject.hh"
 
-void IndexToSubVector(int n, int nfaces, int ncells, int* i, std::string* kind, int* v)
+void
+IndexToSubVector(int n, int nfaces, int ncells, int* i, std::string* kind, int* v)
 {
   if (n < nfaces) {
     *i = 0;
@@ -60,9 +61,10 @@ void IndexToSubVector(int n, int nfaces, int ncells, int* i, std::string* kind, 
 }
 
 
-void ComputeEigenvalues(const Amanzi::WhetStone::DenseMatrix& matrix,
-                        Amanzi::WhetStone::DenseVector& real,
-                        Amanzi::WhetStone::DenseVector& imag)
+void
+ComputeEigenvalues(const Amanzi::WhetStone::DenseMatrix& matrix,
+                   Amanzi::WhetStone::DenseVector& real,
+                   Amanzi::WhetStone::DenseVector& imag)
 {
   Amanzi::WhetStone::DenseMatrix A(matrix);
   int n = A.NumRows();
@@ -226,8 +228,8 @@ TEST(ENERGY_JACOBIAN)
   double jfd = Jfd.Norm2();
   double jpk = Jpk.Norm2();
 
-  std::cout << "|| Jfd - Jpk || = " << jdiff << ",  || Jfd || = " << jfd 
-                                             << ",  || Jpk || = " << jpk << std::endl;
+  std::cout << "|| Jfd - Jpk || = " << jdiff << ",  || Jfd || = " << jfd << ",  || Jpk || = " << jpk
+            << std::endl;
   CHECK(jdiff / jfd < 4e-3);
 
   WhetStone::DenseVector real, imag;
@@ -238,7 +240,7 @@ TEST(ENERGY_JACOBIAN)
 
   double tmp, emin(1e+98), emax(0.0);
   for (int n = 0; n < real.NumRows(); ++n) {
-    tmp = std::sqrt(real(n) * real(n) + imag(n) * imag(n)); 
+    tmp = std::sqrt(real(n) * real(n) + imag(n) * imag(n));
     emin = std::min(emin, tmp);
     emax = std::max(emax, tmp);
   }
@@ -254,8 +256,8 @@ TEST(ENERGY_JACOBIAN)
   jdiff = Jdiff.Norm2();
   jpk = Jpk.Norm2();
 
-  std::cout << "|| Jfd - Jpk || = " << jdiff << ",  || Jfd || = " << jfd 
-                                             << ",  || Jpk || = " << jpk << std::endl;
+  std::cout << "|| Jfd - Jpk || = " << jdiff << ",  || Jfd || = " << jfd << ",  || Jpk || = " << jpk
+            << std::endl;
   CHECK(jdiff / jfd < 4e-3);
 
   J1 = Jpk;
@@ -266,11 +268,9 @@ TEST(ENERGY_JACOBIAN)
   emin = 1e+98;
   emax = 0.0;
   for (int n = 0; n < real.NumRows(); ++n) {
-    tmp = std::sqrt(real(n) * real(n) + imag(n) * imag(n)); 
+    tmp = std::sqrt(real(n) * real(n) + imag(n) * imag(n));
     emin = std::min(emin, tmp);
     emax = std::max(emax, tmp);
   }
   std::cout << "cond(inv(Jpk) * Jfd) = " << emax / emin << std::endl;
 }
-
-
