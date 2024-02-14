@@ -164,20 +164,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="temperature">
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="*"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="298.15"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
@@ -262,6 +248,19 @@
                 <Parameter name="y0" type="double" value="1.013250000e+05"/>
                 <Parameter name="x0" type="Array(double)" value="{0.0e+00, 0.0e+00, 0.0e+00}"/>
                 <Parameter name="gradient" type="Array(double)" value="{0.0e+00, 0.0e+00, -9.79351920000000064e+03}"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="temperature">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="298.15"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

@@ -69,27 +69,17 @@ FlowEnergy_PK::Setup()
   }
 
   // keys
-  particle_density_key_ = Keys::getKey(domain_, "particle_density");
-  ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
-
   temperature_key_ = Keys::getKey(domain_, "temperature");
   energy_key_ = Keys::getKey(domain_, "energy");
-
-  mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
-  mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
+  ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
+  particle_density_key_ = Keys::getKey(domain_, "particle_density");
 
   pressure_key_ = Keys::getKey(domain_, "pressure");
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
-
   wc_key_ = Keys::getKey(domain_, "water_storage");
 
-  // Require primary field for this PK, which is pressure
-  {
-    Teuchos::ParameterList tmp(temperature_key_);
-    tmp.set<std::string>("evaluator name", temperature_key_);
-    auto eval = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(tmp));
-    S_->SetEvaluator(temperature_key_, Tags::DEFAULT, eval);
-  }
+  mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
+  mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
 
   // Fields for solids
   // -- rock

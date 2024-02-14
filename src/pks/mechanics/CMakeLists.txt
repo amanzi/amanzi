@@ -45,7 +45,7 @@ set(mechanics_src_files MechanicsElasticity_PK.cc
                         HydrostaticStressEvaluator.cc
                         VolumetricStrainEvaluator.cc
    )
-set(mechanics_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
+set(mechanics_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${SEACAS_LIBRARIES})
 if (Ifpack_ENABLE_HYPRE)
   list(APPEND mechanics_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARY})
 endif()

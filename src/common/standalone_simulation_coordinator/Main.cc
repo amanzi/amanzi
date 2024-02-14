@@ -133,10 +133,6 @@ main(int argc, char* argv[])
         std::cout << "  ASCEMIO        " << XSTR(ASCEMIO_MAJOR) << "." << XSTR(ASCEMIO_MINOR) << "."
                   << XSTR(ASCEMIO_PATCH) << std::endl;
 #endif
-#ifdef Boost_MAJOR
-        std::cout << "  Boost          " << XSTR(Boost_MAJOR) << "." << XSTR(Boost_MINOR) << "."
-                  << XSTR(Boost_PATCH) << std::endl;
-#endif
 #ifdef CCSE_MAJOR
         std::cout << "  CCSE           " << XSTR(CCSE_MAJOR) << "." << XSTR(CCSE_MINOR) << "."
                   << XSTR(CCSE_PATCH) << std::endl;
