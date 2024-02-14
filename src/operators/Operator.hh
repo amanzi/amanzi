@@ -139,7 +139,7 @@ class Op_Cell_Cell;
 //class Op_Cell_Schema;
 //class Op_Diagonal;
 class Op_Face_Cell;
-class Op_Face_CellBndFace;
+// class Op_Face_CellBndFace;
 //class Op_Face_Schema;
 //class Op_Node_Node;
 //class Op_Edge_Edge;
@@ -315,9 +315,9 @@ class Operator : public Matrix<CompositeVector, CompositeSpace> {
 
   virtual int
   ApplyMatrixFreeOp(const Op_Face_Cell& op, const CompositeVector& X, CompositeVector& Y) const;
-  virtual int ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
-                                const CompositeVector& X,
-                                CompositeVector& Y) const;
+  // virtual int ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
+  //                               const CompositeVector& X,
+  //                               CompositeVector& Y) const;
   // virtual int
   // ApplyMatrixFreeOp(const Op_Face_Schema& op, const CompositeVector& X,
   //                   CompositeVector& Y) const;
@@ -381,11 +381,11 @@ class Operator : public Matrix<CompositeVector, CompositeSpace> {
                                         GraphFE& graph,
                                         int my_block_row,
                                         int my_block_col) const;
-  virtual void SymbolicAssembleMatrixOp(const Op_Face_CellBndFace& op,
-                                        const SuperMap& map,
-                                        GraphFE& graph,
-                                        int my_block_row,
-                                        int my_block_col) const;
+  // virtual void SymbolicAssembleMatrixOp(const Op_Face_CellBndFace& op,
+  //                                       const SuperMap& map,
+  //                                       GraphFE& graph,
+  //                                       int my_block_row,
+  //                                       int my_block_col) const;
   // virtual void
   // SymbolicAssembleMatrixOp(const Op_Face_Schema& op, const SuperMap& map,
   //                          GraphFE& graph, int my_block_row,
@@ -447,11 +447,11 @@ class Operator : public Matrix<CompositeVector, CompositeSpace> {
                                 MatrixFE& mat,
                                 int my_block_row,
                                 int my_block_col) const;
-  virtual void AssembleMatrixOp(const Op_Face_CellBndFace& op,
-                                const SuperMap& map,
-                                MatrixFE& mat,
-                                int my_block_row,
-                                int my_block_col) const;
+  // virtual void AssembleMatrixOp(const Op_Face_CellBndFace& op,
+  //                               const SuperMap& map,
+  //                               MatrixFE& mat,
+  //                               int my_block_row,
+  //                               int my_block_col) const;
   // virtual void
   // AssembleMatrixOp(const Op_Face_Schema& op, const SuperMap& map, MatrixFE& mat,
   //                  int my_block_row, int my_block_col) const;

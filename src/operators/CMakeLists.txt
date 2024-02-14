@@ -52,8 +52,8 @@ set(operators_inc_files
   Schema.hh
   Op.hh
   Op_Cell_Cell.hh
+  Op_Cell_FaceCell.hh
   Op_Face_Cell.hh
-#  Op_Face_CellBndFace.hh
   Op_SurfaceCell_SurfaceCell.hh  
   Op_SurfaceFace_SurfaceCell.hh
   OperatorUtils.hh
@@ -61,7 +61,6 @@ set(operators_inc_files
   Operator_Cell.hh
   Operator_FaceCell.hh
   Operator_FaceCellSff.hh
-#  Operator_CellBndFace.hh
   Operator_Factory.hh
   TreeOperator.hh
   PDE_HelperBCsList.hh
@@ -73,7 +72,8 @@ set(operators_inc_files
   PDE_DiffusionFactory.hh
   PDE_DiffusionMFD.hh
   PDE_DiffusionMFDwithGravity.hh
-  )
+  BCs_Factory.hh
+)
 
 set(operators_src_files
   Schema.cc
@@ -83,7 +83,6 @@ set(operators_src_files
   Operator_Cell.cc
   Operator_FaceCell.cc
   Operator_FaceCellSff.cc
-#  Operator_CellBndFace.cc
   Operator_Factory.cc
   TreeOperator.cc
   PDE_Accumulation.cc
@@ -104,116 +103,6 @@ set(operators_link_libs
   ${Tpetra_LIBRARIES}
   )
 
-# geometry  mesh_factory  solvers 
-
-#   BCs.hh
-#     LimiterCell.hh
-#     Mini_Diffusion1D.hh
-#     Mini_Operator1D.hh
-#     OperatorDefs.hh
-#     OperatorUtils.hh
-#     Op.hh
-#     Op_Cell_Cell.hh
-#     Op_Cell_Face.hh
-#     Op_Cell_FaceCell.hh
-#     Op_Cell_Node.hh
-#     Op_Cell_Edge.hh
-#     Op_Cell_Schema.hh
-#     Op_Diagonal.hh
-#     Op_Face_Cell.hh
-#     Op_Face_CellBndFace.hh
-#     Op_Face_Schema.hh
-#     Op_Node_Node.hh
-#     Operator.hh
-#     Operator_Cell.hh
-#     Operator_CellBndFace.hh
-#     Operator_ConsistentFace.hh
-#     Operator_Diagonal.hh
-#     Operator_Edge.hh
-#     Operator_FaceCell.hh
-#     Operator_FaceCellScc.hh
-#     Operator_FaceCellSff.hh
-#     Operator_Factory.hh
-#     Operator_Node.hh
-#     BoundaryFlux.hh
-#     PDE_Abstract.hh
-#     PDE_Accumulation.hh
-#     PDE_Advection.hh
-#     PDE_AdvectionUpwind.hh
-#     PDE_AdvectionRiemann.hh
-#     PDE_CouplingFlux.hh
-#     PDE_Diffusion.hh
-#     PDE_DiffusionWithGravity.hh
-#     PDE_DiffusionFactory.hh
-#     PDE_DiffusionMFD.hh
-#     PDE_DiffusionMFDwithGravity.hh
-#     PDE_DiffusionFV.hh
-#     PDE_DiffusionFVwithGravity.hh
-#     PDE_DiffusionNLFV.hh
-#     PDE_DiffusionNLFVwithBndFaces.hh
-#     PDE_DiffusionNLFVwithGravity.hh
-#     PDE_DiffusionDG.hh
-#     PDE_DiffusionFracturedMatrix.hh
-#     PDE_Elasticity.hh
-#     PDE_Electromagnetics.hh
-#     PDE_MagneticDiffusion.hh
-#     PDE_MagneticDiffusion_TM.hh
-#     PDE_HelperBCsList.hh
-#     PDE_HelperDiscretization.hh
-#     PDE_Reaction.hh
-#     RemapDG.hh
-#     RemapUtils.hh
-#     Schema.hh
-#     TreeOperator.hh
-#     Reconstruction.hh
-#     ReconstructionCell.hh
-#     Upwind.hh
-#     UpwindArithmeticAverage.hh
-#     UpwindDivK.hh
-#     UpwindFactory.hh
-#     UpwindFlux.hh
-#     UpwindGravity.hh
-#     UpwindSecondOrder.hh
-# )
-
-
-
-# LimiterCell.cc
-#                           Mini_Diffusion1D.cc
-#                           Mini_Operator1D.cc
-#                           OperatorUtils.cc
-#                           Operator.cc
-#                           Operator_ConsistentFace.cc
-#                           Operator_Edge.cc
-#                           Operator_Cell.cc Operator_CellBndFace.cc
-#                           Operator_Diagonal.cc
-#                           Operator_FaceCell.cc
-#                           Operator_FaceCellScc.cc Operator_FaceCellSff.cc
-#                           Operator_Factory.cc
-#                           Operator_Node.cc
-#                           Operator_Schema.cc
-#                           PDE_Accumulation.cc
-#                           PDE_Abstract.cc
-#                           PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc
-#                           PDE_CouplingFlux.cc
-#                           PDE_DiffusionMFD.cc PDE_DiffusionMFDwithGravity.cc
-#                           PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
-#                           PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
-#                           PDE_DiffusionNLFVwithBndFaces.cc PDE_DiffusionNLFVwithBndFacesGravity.cc
-#                           PDE_DiffusionDG.cc
-#                           PDE_DiffusionFracturedMatrix.cc
-#                           PDE_DiffusionFactory.cc                   
-#                           PDE_HelperDiscretization.cc
-#                           PDE_Elasticity.cc
-#                           PDE_Electromagnetics.cc
-#                           PDE_MagneticDiffusion.cc PDE_MagneticDiffusion_TM.cc
-#                           PDE_Reaction.cc
-#                           Schema.cc
-#                           TreeOperator.cc
-#                           ReconstructionCell.cc
-#                           RemapDG.cc RemapUtils.cc
-
-                          
 
 add_amanzi_library(operators 
   SOURCE ${operators_src_files}

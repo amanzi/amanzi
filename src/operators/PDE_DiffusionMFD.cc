@@ -32,7 +32,7 @@
 #include "Operator_FaceCellSff.hh"
 //#include "Operator_Node.hh"
 //#include "Operator_ConsistentFace.hh"
-#include "UniqueLocalIndex.hh"
+//#include "UniqueLocalIndex.hh"
 
 #include "PDE_DiffusionMFD.hh"
 

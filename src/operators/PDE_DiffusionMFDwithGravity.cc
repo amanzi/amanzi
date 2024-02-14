@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "OperatorDefs.hh"
-#include "UniqueLocalIndex.hh"
+//#include "UniqueLocalIndex.hh"
 
 #include "PDE_DiffusionMFDwithGravity.hh"
 
