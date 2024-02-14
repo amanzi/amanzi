@@ -80,11 +80,13 @@ MeshLogicalAudit::create_test_dependencies()
 
   auto test09 = AddVertex("cell_to_face_dirs", &MeshLogicalAudit::check_cell_to_face_dirs);
 
-  auto test08 = AddVertex("cell_to_face_consistency", &MeshLogicalAudit::check_faces_cell_consistency);
+  auto test08 =
+    AddVertex("cell_to_face_consistency", &MeshLogicalAudit::check_faces_cell_consistency);
   AddEdge(test05, test08);
 
   // cell degeneracy test
-  auto test10 = AddVertex("topological non-degeneracy of cells", &MeshLogicalAudit::check_cell_degeneracy);
+  auto test10 =
+    AddVertex("topological non-degeneracy of cells", &MeshLogicalAudit::check_cell_degeneracy);
   AddEdge(test04, test10);
 
   // cell topology/geometry test
@@ -94,12 +96,14 @@ MeshLogicalAudit::create_test_dependencies()
   auto test16 = AddVertex("face geometry", &MeshLogicalAudit::check_face_geometry);
   AddEdge(test09, test16);
 
-  auto test14 = AddVertex("face-cell-bisector geometry", &MeshLogicalAudit::check_cell_face_bisector_geometry);
+  auto test14 =
+    AddVertex("face-cell-bisector geometry", &MeshLogicalAudit::check_cell_face_bisector_geometry);
   AddEdge(test08, test14);
 
   auto test17 = AddVertex("owned and overlap face maps", &MeshLogicalAudit::check_face_maps);
   auto test18 = AddVertex("owned and overlap cell maps", &MeshLogicalAudit::check_cell_maps);
-  auto test22 = AddVertex("cell_to_faces ghost data", &MeshLogicalAudit::check_cell_to_faces_ghost_data);
+  auto test22 =
+    AddVertex("cell_to_faces ghost data", &MeshLogicalAudit::check_cell_to_faces_ghost_data);
   AddEdge(test04, test22);
   AddEdge(test17, test22);
   AddEdge(test18, test22);

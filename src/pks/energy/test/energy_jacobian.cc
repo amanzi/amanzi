@@ -161,13 +161,13 @@ TEST(ENERGY_JACOBIAN)
 
   // std::cout << Jfd << std::endl;
   // std::cout << Jpk << std::endl;
-  std::cout << umax << " " << Jfd(24, 24) << " " << Jpk(24,24) << std::endl;
+  std::cout << umax << " " << Jfd(24, 24) << " " << Jpk(24, 24) << std::endl;
   auto Jdiff = Jfd - Jpk;
   double jdiff = Jdiff.Norm2();
   double jfd = Jfd.Norm2();
   double jpk = Jpk.Norm2();
 
-  std::cout << "|| Jfd - Jpk || = " << jdiff << ",  || Jfd || = " << jfd 
-                                             << ",  || Jpk || = " << jpk << std::endl;
+  std::cout << "|| Jfd - Jpk || = " << jdiff << ",  || Jfd || = " << jfd << ",  || Jpk || = " << jpk
+            << std::endl;
   CHECK(jdiff / jfd < 1e-4);
 }
