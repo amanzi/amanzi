@@ -77,6 +77,8 @@ RunTest(const std::string& flow)
 
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   cycle_driver.Go();
+
+  CHECK(S->Get<double>("time") > 1.7e+6);
 }
 
 

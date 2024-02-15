@@ -144,7 +144,6 @@ class SolverNKA_LS : public Solver<Vector, VectorSpace> {
   int pc_updates_;
 
   std::vector<std::pair<double, double>> history_;
-
 };
 
 
@@ -380,9 +379,8 @@ SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u)
 
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
         *vo_->os() << "  Brent algorithm in: " << ls_itrs << " itrs (alpha=" << result
-                   << ") Error = " << linesearch_func.error
-                   << "(old error=" << previous_error << ")"
-                   << std::endl;
+                   << ") Error = " << linesearch_func.error << "(old error=" << previous_error
+                   << ")" << std::endl;
       }
       alpha = result;
 

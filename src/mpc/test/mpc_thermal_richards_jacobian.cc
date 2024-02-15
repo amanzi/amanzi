@@ -118,7 +118,7 @@ TEST(ENERGY_JACOBIAN)
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 8, 8);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 8, 9);
 
   // create a simple state and populate it
   Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
@@ -273,4 +273,14 @@ TEST(ENERGY_JACOBIAN)
     emax = std::max(emax, tmp);
   }
   std::cout << "cond(inv(Jpk) * Jfd) = " << emax / emin << std::endl;
+
+
+  // norm of submatrices
+  int mJ = nJ / 2;
+  WhetStone::DenseMatrix norm_fd(2, 2);
+  norm_fd(0, 0) = Jfd.SubMatrix(0, mJ, 0, mJ).Norm2();
+  norm_fd(0, 1) = Jfd.SubMatrix(0, mJ, mJ, nJ).Norm2();
+  norm_fd(1, 0) = Jfd.SubMatrix(mJ, nJ, 0, mJ).Norm2();
+  norm_fd(1, 1) = Jfd.SubMatrix(mJ, nJ, mJ, nJ).Norm2();
+  std::cout << "\nSubblocks of Jpk:\n" << norm_fd << std::endl;
 }

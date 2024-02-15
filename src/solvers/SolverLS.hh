@@ -266,13 +266,14 @@ SolverLS<Vector, VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
     // minimize
     double left = min_alpha_;
     int ls_itrs(max_ls_itrs_);
-    double eps = std::pow(2, -bits_-1);
+    double eps = std::pow(2, -bits_ - 1);
     double result = Utils::findMinimumBrent(linesearch_func, left, endpoint, eps, &ls_itrs);
     fun_calls_ += linesearch_func.fun_calls;
 
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "  Brent algorithm in: " << ls_itrs << " itrs (alpha=" << result
-                 << ") Error = " << linesearch_func.error << "(old error=" << error << ")" << std::endl;
+                 << ") Error = " << linesearch_func.error << "(old error=" << error << ")"
+                 << std::endl;
     }
 
     // check for a minimization value at the start
