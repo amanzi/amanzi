@@ -234,7 +234,6 @@ Multiphase_PK::PopulateSecondaryBCs_()
       bc_value_advl[f] =  wrm_->second[(*wrm_->first)[c]]->k_relative(bc_value_sl[f], MULTIPHASE_PHASE_LIQUID);
       bc_value_advl[f] *= bc_value_etal[f] * (1.0 / mu_l_);
 
-      bc_value_advg[f] = 0.0; // dummy value for now
 
       // need more info on the phase: for example, need to specify gas BC concentration, but currently bc->component_phase is either 1 or 2, for liquid or gas.  
       /*

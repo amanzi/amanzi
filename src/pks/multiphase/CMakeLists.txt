@@ -164,6 +164,11 @@ if (BUILD_TESTS)
                   KIND      int
                   SOURCE    test/Main.cc test/multiphase_source.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})  
+
+  add_amanzi_test(multiphase_advection multiphase_advection
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_advection.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})  
   
 
 endif()
