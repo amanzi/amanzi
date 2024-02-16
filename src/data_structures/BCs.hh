@@ -154,6 +154,8 @@ class BCs {
 
   Teuchos::RCP<CompositeVector_<int>> model() { return model_; };
   Teuchos::RCP<CompositeVector> value() { return value_; }
+  Teuchos::RCP<const CompositeVector_<int>> model() const { return model_; };
+  Teuchos::RCP<const CompositeVector> value() const { return value_; }
   Teuchos::RCP<CompositeVector> mixed()
   {
     if (!mixed_.get()) mixed_ = cvs_.Create();

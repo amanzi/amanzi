@@ -110,7 +110,7 @@ EvaluatorModelCV<Model, Device_type>::EvaluatorModelCV(
   const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
     model_(Teuchos::rcp(new Model_type(plist))),
-    name_(plist->name()),
+    name_(Keys::cleanPListName(plist->name())),
     tag_(plist->get<std::string>("tag"))
 {
   my_keys_.clear();
@@ -147,8 +147,9 @@ EvaluatorModelCV<Model, Device_type>::Evaluate_(const State& S,
     Kokkos::RangePolicy<typename Device_type::execution_space> range(0, result_views[0].extent(0));
     Kokkos::parallel_for(name_, range, *model_);
     Kokkos::fence();
+
     // Reset views
-    model_ = Teuchos::rcp<Model_type>(new Model_type(plist_));
+    // model_ = Teuchos::rcp<Model_type>(new Model_type(plist_));
   }
   //Debug_(S);
 }
@@ -175,11 +176,14 @@ EvaluatorModelCV<Model, Device_type>::EvaluatePartialDerivative_(
     // set up the model and range and then dispatch
     model_->setViews(dependency_views, result_views, S);
 
+    KeyTag wrt{wrt_key, wrt_tag};
     Impl::EvaluatorModelLauncher<Model_type::n_dependencies - 1, Model_type, Device_type> launcher(
-      name_, { wrt_key, wrt_tag }, dependencies_, *model_);
+      name_, wrt, dependencies_, *model_);
     launcher.launch(result_views[0].extent(0));
     Kokkos::fence();
-    model_ = Teuchos::rcp<Model_type>(new Model_type(plist_));
+
+    // Reset views
+    //model_ = Teuchos::rcp<Model_type>(new Model_type(plist_));
   }
 }
 

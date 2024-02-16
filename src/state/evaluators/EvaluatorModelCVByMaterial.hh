@@ -44,6 +44,8 @@
 #include "AmanziTypes.hh"
 #include "StateDefs.hh"
 #include "EvaluatorModelLauncher.hh"
+#include "EvaluatorSecondaryMonotype.hh"
+#include "Factory.hh"
 
 namespace Amanzi {
 
@@ -65,6 +67,8 @@ class EvaluatorModelCVByMaterial
   {
     return models_.front().second->name + " by material";
   }
+
+  decltype(auto) getModels() { return models_; }
 
   // This function needs to be public for Kokkos::CUDA backend
   // Function calling kernel cannot be protected/private
@@ -97,7 +101,7 @@ template <template <class, class> class Model, class Device_type>
 EvaluatorModelCVByMaterial<Model, Device_type>::EvaluatorModelCVByMaterial(
   const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
-    name_(plist->name()),
+    name_(Keys::cleanPListName(plist->name())),
     tag_(plist->get<std::string>("tag"))
 {
   const Teuchos::ParameterList& region_plist = plist->sublist("model parameters");
@@ -108,7 +112,7 @@ EvaluatorModelCVByMaterial<Model, Device_type>::EvaluatorModelCVByMaterial(
       // make a copy for use in the Model
       auto model_list = Teuchos::rcp(new Teuchos::ParameterList(*plist));
       model_list->set("model parameters", region_plist.sublist(region_name));
-      models_.push_back(std::make_pair(region_name, Teuchos::rcp(new Model_type(model_list))));
+      models_.emplace_back(std::make_pair(region_name, Teuchos::rcp(new Model_type(model_list))));
     } else {
       Errors::Message msg(
         "EvaluatorModelCVByMaterial: \"model parameters\" sublist should only contain "
