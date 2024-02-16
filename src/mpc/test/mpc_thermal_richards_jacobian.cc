@@ -118,7 +118,7 @@ TEST(ENERGY_JACOBIAN)
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 8, 9);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 8, 8);
 
   // create a simple state and populate it
   Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
@@ -128,6 +128,10 @@ TEST(ENERGY_JACOBIAN)
   Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("flow and energy");
   auto soln = Teuchos::rcp(new TreeVector());
   auto MPC = Teuchos::rcp(new FlowEnergy_PK(pk_tree, plist, S, soln));
+
+  Key ws_key("water_storage"), temperature_key("temperature");
+  S->RequireDerivative<CompositeVector, CompositeVectorSpace>(
+      ws_key, Tags::DEFAULT, temperature_key, Tags::DEFAULT, ws_key).SetGhosted();
 
   MPC->Setup();
   S->Setup();
@@ -154,13 +158,14 @@ TEST(ENERGY_JACOBIAN)
   auto f0 = Teuchos::rcp(new TreeVector(*u1));
   auto f1 = Teuchos::rcp(new TreeVector(*u1));
 
-  int ncells, nfaces, nJ, v, i;
-  double umax[2], factor, eps(1e-6), t_old(0.0), t_new(1.0);
+  int ncells, nfaces, nJ, mJ, v, i;
+  double umax[2], factor, eps(1e-6), t_old(0.0), t_new(1.0), dt(1.0);
   std::string kind;
 
   ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   nJ = 2 * (ncells + nfaces);
+  mJ = nJ / 2;
   WhetStone::DenseMatrix Jfd(nJ, nJ);
 
   u1->SubVector(0)->NormInf(&umax[0]);
@@ -188,6 +193,14 @@ TEST(ENERGY_JACOBIAN)
     }
   }
 
+  // norm of submatrices
+  WhetStone::DenseMatrix norm_fd(2, 2);
+  norm_fd(0, 0) = Jfd.SubMatrix(0, mJ, 0, mJ).Norm2();
+  norm_fd(0, 1) = Jfd.SubMatrix(0, mJ, mJ, nJ).Norm2();
+  norm_fd(1, 0) = Jfd.SubMatrix(mJ, nJ, 0, mJ).Norm2();
+  norm_fd(1, 1) = Jfd.SubMatrix(mJ, nJ, mJ, nJ).Norm2();
+  std::cout << "\nSubblocks of Jfd:\n" << norm_fd << std::endl;
+
   // numerical Jacobian
   MPC->UpdatePreconditioner(t_old, u1, t_new - t_old);
   auto it = MPC->begin();
@@ -205,7 +218,7 @@ TEST(ENERGY_JACOBIAN)
   WhetStone::DenseMatrix Jpk(nJ, nJ);
   Jpk.PutScalar(0.0);
 
-  for (int row = 0; row < nJ / 2; ++row) {
+  for (int row = 0; row < mJ; ++row) {
     A0->ExtractMyRowView(row, num_entries, values, indices);
     for (int n = 0; n < num_entries; ++n) {
       int col = indices[n];
@@ -213,16 +226,16 @@ TEST(ENERGY_JACOBIAN)
     }
   }
 
-  for (int row = 0; row < nJ / 2; ++row) {
+  for (int row = 0; row < mJ; ++row) {
     A1->ExtractMyRowView(row, num_entries, values, indices);
     for (int n = 0; n < num_entries; ++n) {
       int col = indices[n];
-      Jpk(nJ / 2 + row, nJ / 2 + col) = values[n];
+      Jpk(mJ + row, mJ + col) = values[n];
     }
   }
 
   // std::cout << Jfd << std::endl;
-  // std::cout << Jpk << std::endl;
+  // std::cout << Jpk << std::endl; exit(0);
   auto Jdiff = Jfd - Jpk;
   double jdiff = Jdiff.Norm2();
   double jfd = Jfd.Norm2();
@@ -247,10 +260,20 @@ TEST(ENERGY_JACOBIAN)
   std::cout << "cond(inv(Jpk) * Jfd) = " << emax / emin << std::endl;
 
   // dFlow / dT in Jacobian changes little in 2-norm but much in spectral norm.
-  for (int row = 0; row < nJ / 2; ++row) {
-    for (int col = nJ / 2; col < nJ; ++col) Jpk(row, col) = Jfd(row, col);
-    for (int col = nJ / 2; col < nJ; ++col) Jpk(col, row) = Jfd(col, row);
+  S->GetEvaluator(ws_key).UpdateDerivative(*S, "", temperature_key, Tags::DEFAULT);
+  auto dWSdT = *S->GetDerivative<CompositeVector>(
+    ws_key, Tags::DEFAULT, temperature_key, Tags::DEFAULT).ViewComponent("cell");
+
+  for (int c = 0; c < ncells; ++c) {
+    double factor = mesh->getCellVolume(c) / dt;
+    Jpk(nfaces + c, mJ + nfaces + c) = dWSdT[0][c] * factor;
   }
+  for (int row = 0; row < mJ; ++row) {
+    // for (int col = mJ; col < nJ; ++col) Jpk(row, col) = Jfd(row, col);
+    // for (int col = mJ; col < nJ; ++col) Jpk(col, row) = Jfd(col, row);
+  }
+  std::cout << Jfd << std::endl;
+  std::cout << Jpk << std::endl; exit(0);
 
   Jdiff = Jfd - Jpk;
   jdiff = Jdiff.Norm2();
@@ -274,13 +297,10 @@ TEST(ENERGY_JACOBIAN)
   }
   std::cout << "cond(inv(Jpk) * Jfd) = " << emax / emin << std::endl;
 
-
   // norm of submatrices
-  int mJ = nJ / 2;
-  WhetStone::DenseMatrix norm_fd(2, 2);
-  norm_fd(0, 0) = Jfd.SubMatrix(0, mJ, 0, mJ).Norm2();
-  norm_fd(0, 1) = Jfd.SubMatrix(0, mJ, mJ, nJ).Norm2();
-  norm_fd(1, 0) = Jfd.SubMatrix(mJ, nJ, 0, mJ).Norm2();
-  norm_fd(1, 1) = Jfd.SubMatrix(mJ, nJ, mJ, nJ).Norm2();
-  std::cout << "\nSubblocks of Jpk:\n" << norm_fd << std::endl;
+  norm_fd(0, 0) = Jpk.SubMatrix(0, mJ, 0, mJ).Norm2();
+  norm_fd(0, 1) = Jpk.SubMatrix(0, mJ, mJ, nJ).Norm2();
+  norm_fd(1, 0) = Jpk.SubMatrix(mJ, nJ, 0, mJ).Norm2();
+  norm_fd(1, 1) = Jpk.SubMatrix(mJ, nJ, mJ, nJ).Norm2();
+  std::cout << "\nSubblocks of modified Jpk:\n" << norm_fd << std::endl;
 }
