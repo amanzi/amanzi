@@ -497,21 +497,29 @@ Key
 readKey(Teuchos::ParameterList& list,
         const Key& domain,
         const Key& basename,
-        const Key& default_name)
+        const Key& default_name,
+        Tag* dependency_tag)
 {
   std::string basename_key_arg = basename + " key";
   std::string basename_key_suffix_arg = basename + " key suffix";
 
   Key default_key;
+  Key result;
   if (list.isParameter(basename_key_suffix_arg)) {
     default_key = getKey(domain, list.get<std::string>(basename_key_suffix_arg));
-    return list.get<std::string>(basename_key_arg, default_key);
+    result = list.get<std::string>(basename_key_arg, default_key);
   } else if (!default_name.empty()) {
     default_key = getKey(domain, default_name);
-    return list.get<std::string>(basename_key_arg, default_key);
+    result = list.get<std::string>(basename_key_arg, default_key);
   } else {
-    return list.get<std::string>(basename_key_arg);
+    result = list.get<std::string>(basename_key_arg);
   }
+
+  if (dependency_tag && list.isParameter(basename + " tag")) {
+    dependency_tag->set(list.get<std::string>(basename + " tag"));
+  }
+
+  return result;
 }
 
 Teuchos::Array<Key>
