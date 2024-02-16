@@ -34,10 +34,11 @@ class MechanicsFlow_PK : public PK_MPCWeak {
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override;
 
  private:
+  const Teuchos::RCP<Teuchos::ParameterList> glist_;
+
   Key hydrostatic_stress_key_, vol_strain_key_;
 
- private:
-  const Teuchos::RCP<Teuchos::ParameterList> glist_;
+  bool thermal_flow_;
 
   static RegisteredPKFactory<MechanicsFlow_PK> reg_;
 };

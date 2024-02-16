@@ -188,8 +188,9 @@ MechanicsElasticity_PK::Initialize()
   // -- control parameters
   auto physical_models = Teuchos::sublist(ec_list_, "physical models and assumptions");
   use_gravity_ = physical_models->get<bool>("use gravity");
-  biot_model_ = physical_models->get<bool>("biot scheme: undrained split", false) ||
-                physical_models->get<bool>("biot scheme: fixed stress split", false);
+  poroelasticity_ = physical_models->get<bool>("biot scheme: undrained split", false) ||
+                    physical_models->get<bool>("biot scheme: fixed stress split", false);
+  thermoelasticity_ = physical_models->get<bool>("thermoelasticity", false);
 
   // Create verbosity object to print out initialiation statistics.
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -391,7 +392,8 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // add external forces
   auto rhs = op_matrix_->rhs();
   if (use_gravity_) AddGravityTerm_(*rhs);
-  if (biot_model_) AddPressureGradient_(*rhs);
+  if (poroelasticity_) AddPressureGradient_(*rhs);
+  if (thermoelasticity_) AddTemperatureGradient_(*rhs);
 
   // update the matrix = preconditioner
   op_matrix_elas_->UpdateMatrices();
@@ -400,6 +402,13 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // solver the problem
   op->ComputeInverse();
   int ierr = op->ApplyInverse(*rhs, *solution_);
+
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "elasticity solver (PCG): ||r||_H=" << op->residual() << " itr=" << op->num_itrs()
+               << " code=" << op->returned_code() << std::endl;
+  }
+
   if (ierr != 0) {
     archive.Restore("");
     return true;

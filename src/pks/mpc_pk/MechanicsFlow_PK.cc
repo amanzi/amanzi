@@ -32,7 +32,7 @@ MechanicsFlow_PK::MechanicsFlow_PK(Teuchos::ParameterList& pk_tree,
                                    const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                    const Teuchos::RCP<State>& S,
                                    const Teuchos::RCP<TreeVector>& soln)
-  : PK_MPCWeak(pk_tree, glist, S, soln), glist_(glist)
+  : PK_MPCWeak(pk_tree, glist, S, soln), glist_(glist), thermal_flow_(false)
 {
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = my_list_->sublist("verbose object");
@@ -67,7 +67,8 @@ MechanicsFlow_PK::Setup()
       .sublist(pks[i])
       .sublist("physical models and assumptions")
       .set<bool>("biot scheme: undrained split", true)
-      .set<bool>("biot scheme: fixed stress split", false);
+      .set<bool>("biot scheme: fixed stress split", false)
+      .set<bool>("thermoelasticity", thermal_flow_);
   }
 
   PK_MPCWeak::Setup();

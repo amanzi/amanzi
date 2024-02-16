@@ -131,7 +131,8 @@ TEST(ENERGY_JACOBIAN)
 
   Key ws_key("water_storage"), temperature_key("temperature");
   S->RequireDerivative<CompositeVector, CompositeVectorSpace>(
-      ws_key, Tags::DEFAULT, temperature_key, Tags::DEFAULT, ws_key).SetGhosted();
+     ws_key, Tags::DEFAULT, temperature_key, Tags::DEFAULT, ws_key)
+    .SetGhosted();
 
   MPC->Setup();
   S->Setup();
@@ -261,8 +262,9 @@ TEST(ENERGY_JACOBIAN)
 
   // dFlow / dT in Jacobian changes little in 2-norm but much in spectral norm.
   S->GetEvaluator(ws_key).UpdateDerivative(*S, "", temperature_key, Tags::DEFAULT);
-  auto dWSdT = *S->GetDerivative<CompositeVector>(
-    ws_key, Tags::DEFAULT, temperature_key, Tags::DEFAULT).ViewComponent("cell");
+  auto dWSdT =
+    *S->GetDerivative<CompositeVector>(ws_key, Tags::DEFAULT, temperature_key, Tags::DEFAULT)
+       .ViewComponent("cell");
 
   for (int c = 0; c < ncells; ++c) {
     double factor = mesh->getCellVolume(c) / dt;
@@ -273,7 +275,8 @@ TEST(ENERGY_JACOBIAN)
     // for (int col = mJ; col < nJ; ++col) Jpk(col, row) = Jfd(col, row);
   }
   std::cout << Jfd << std::endl;
-  std::cout << Jpk << std::endl; exit(0);
+  std::cout << Jpk << std::endl;
+  exit(0);
 
   Jdiff = Jfd - Jpk;
   jdiff = Jdiff.Norm2();
