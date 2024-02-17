@@ -330,4 +330,11 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_mechanics_stress_split.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
+
+    add_amanzi_test(mpc_mechanics_thermal_flow mpc_mechanics_thermal_flow
+                    KIND      int
+                    NPROCS    3
+                    SOURCE    test/Main.cc test/mpc_mechanics_thermal_flow.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
 endif()
