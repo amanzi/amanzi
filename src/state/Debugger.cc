@@ -187,8 +187,7 @@ Debugger::WriteVector(const std::string& vname,
       if (dcvo_[i]->os_OK(verb_level_)) {
         *dcvo_[i]->os() << formatter_.formatHeader(vname, c0_gid);
 
-        if (vec_c != Teuchos::null)
-          *dcvo_[i]->os() << " " << formatter_.format((*vec_c)[j][c0]);
+        if (vec_c != Teuchos::null) *dcvo_[i]->os() << " " << formatter_.format((*vec_c)[j][c0]);
 
         if (include_faces && vec_f != Teuchos::null) {
           auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
@@ -229,8 +228,8 @@ Debugger::WriteCellVector(const std::string& name, const Epetra_MultiVector& vec
       Teuchos::OSTab tab = dcvo_[i]->getOSTab();
 
       if (dcvo_[i]->os_OK(verb_level_)) {
-        *dcvo_[i]->os() << formatter_.formatHeader(name, c0_gid)
-                        << formatter_.format(vec[j][c0]) << std::endl;
+        *dcvo_[i]->os() << formatter_.formatHeader(name, c0_gid) << formatter_.format(vec[j][c0])
+                        << std::endl;
       }
     }
   }
@@ -276,8 +275,7 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
 
         for (int j = 0; j != n_vec; ++j) {
           *dcvo_[i]->os() << formatter_.formatHeader(name, c0_gid);
-          if (vec_c != Teuchos::null)
-            *dcvo_[i]->os() << " " << formatter_.format((*vec_c)[j][c0]);
+          if (vec_c != Teuchos::null) *dcvo_[i]->os() << " " << formatter_.format((*vec_c)[j][c0]);
 
           if (include_faces && vec_f != Teuchos::null) {
             auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
@@ -294,8 +292,7 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
               AmanziMesh::Entity_ID bf =
                 mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true)
                   .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, true).GID(f));
-              if (bf >= 0)
-                *dcvo_[i]->os() << " " << formatter_.format((*vec_bf)[j][bf]);
+              if (bf >= 0) *dcvo_[i]->os() << " " << formatter_.format((*vec_bf)[j][bf]);
             }
           }
 
@@ -326,8 +323,7 @@ Debugger::WriteBoundaryConditions(const std::vector<int>& flag, const std::vecto
       auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
       for (unsigned int n = 0; n != fnums0.size(); ++n)
-        *dcvo_[i]->os() << flag[fnums0[n]] << "("
-                        << formatter_.format(data[fnums0[n]]) << ")";
+        *dcvo_[i]->os() << flag[fnums0[n]] << "(" << formatter_.format(data[fnums0[n]]) << ")";
       *dcvo_[i]->os() << std::endl;
     }
   }

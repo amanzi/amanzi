@@ -418,7 +418,8 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
         fun_calls_ += linesearch_func.fun_calls;
 
         if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-          *vo_->os() << "  Brent algorithm converged: error = " << linesearch_func.error << std::endl
+          *vo_->os() << "  Brent algorithm converged: error = " << linesearch_func.error
+                     << std::endl
                      << "     alpha = " << result << " in " << ls_itrs << " itrs" << std::endl
                      << "     bracket: [ alpha=" << left << " , " << endpoint << "]" << std::endl
                      << "     errors(0) = " << previous_error << std::endl

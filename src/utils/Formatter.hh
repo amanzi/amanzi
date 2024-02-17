@@ -21,7 +21,8 @@ namespace Utils {
 // https://stackoverflow.com/a/49812018/1322752
 // Licensed under CC BY-SA 3.0
 //
-inline const std::string vformat(const char * const zcFormat, ...)
+inline const std::string
+vformat(const char* const zcFormat, ...)
 {
   // initialize use of the variable argument array
   std::va_list vaArgs;
@@ -46,10 +47,7 @@ inline const std::string vformat(const char * const zcFormat, ...)
 
 class Formatter {
  public:
-  Formatter(int width,
-            int precision,
-            int header_width,
-            int cellnum_width);
+  Formatter(int width, int precision, int header_width, int cellnum_width);
 
   int getWidth() const { return width_; }
   // NOTE, this may also change precision
@@ -61,12 +59,12 @@ class Formatter {
   std::string format(double dat) const;
   std::string formatHeader(std::string header, int c) const;
 
-private:
+ private:
   int width_;
   int precision_;
   int header_width_;
   int cellnum_width_;
 };
 
-} // Utils
-} // Amanzi
+} // namespace Utils
+} // namespace Amanzi

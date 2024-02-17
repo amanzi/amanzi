@@ -88,8 +88,7 @@ MeshFrameworkFactory::create(const std::string& filename)
 
   if (fmt == FileFormat::UNKNOWN) {
     FileMessage e;
-    e << "MeshFrameworkFactory: unknown file format for file \""
-      << filename << "\"";
+    e << "MeshFrameworkFactory: unknown file format for file \"" << filename << "\"";
     Exceptions::amanzi_throw(e);
   }
 

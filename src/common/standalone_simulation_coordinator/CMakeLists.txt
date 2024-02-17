@@ -76,7 +76,6 @@ if ( ENABLE_Unstructured )
 endif()
 
 # External (TPL) include directories
-include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${XERCES_INCLUDE_DIRS})
@@ -119,7 +118,6 @@ set(ssc_libs ${ssc_structured_grid_libs}
 set(ssc_tpl_libs ${amanzi_mesh_libs}
                  ${Teuchos_LIBRARIES}
                  ${Epetra_LIBRARIES}
-                 ${Boost_LIBRARIES}
                  ${XERCES_LIBRARIES}
                  ${XERCES_ICU_LIBRARIES})
 

@@ -205,7 +205,7 @@ class Richards_PK : public Flow_PK {
 
   // miscaleneous models
   Key ppfactor_key_, vol_strain_key_;
-  bool use_strain_;
+  bool poroelasticity_, thermoelasticity_;
 
   // multiscale models
   Key pressure_msp_key_, porosity_msp_key_;

@@ -22,7 +22,6 @@ include_directories(${ATK_SOURCE_DIR})
 
 # External (TPL) directories
 include_directories(${Epetra_INCLUDE_DIRS})
-include_directories(${Boost_INCLUDE_DIRS})
 
 #
 # Set files

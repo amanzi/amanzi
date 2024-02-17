@@ -49,7 +49,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN_MONITOR_UPDATE)
   {
-    std::cout << std::endl << "NKA solver, exact Jacobian (monitor update)..." << std::endl
+    std::cout << std::endl
+              << "NKA solver, exact Jacobian (monitor update)..." << std::endl
               << "==============================================" << std::endl;
 
     // create the function class
@@ -81,7 +82,8 @@ SUITE(SOLVERS)
     CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
 
     // repeat solve with exact solution.
-    std::cout << std::endl << "NKA solver, repeat solver..." << std::endl
+    std::cout << std::endl
+              << "NKA solver, repeat solver..." << std::endl
               << "--------------------------------------------" << std::endl;
     nka->Solve(u);
     CHECK(nka->num_itrs() == 1);
@@ -91,7 +93,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN_MONITOR_RESIDUAL)
   {
-    std::cout << std::endl << "NKA solver, exact Jacobian (monitor residual)..." << std::endl
+    std::cout << std::endl
+              << "NKA solver, exact Jacobian (monitor residual)..." << std::endl
               << "==============================================" << std::endl;
 
     // create the function class
@@ -125,7 +128,8 @@ SUITE(SOLVERS)
     CHECK_CLOSE(0.0, (*u)[1], 1.0e-5);
 
     // repeat solve with eaxt solution
-    std::cout << std::endl << "NKA solver, repeat solver..." << std::endl
+    std::cout << std::endl
+              << "NKA solver, repeat solver..." << std::endl
               << "--------------------------------------------" << std::endl;
     nka->Solve(u);
     CHECK(nka->num_itrs() == 1);
@@ -135,7 +139,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN_GLOBALIZED)
   {
-    std::cout << std::endl << "NKA solver, exact Jacobian (globalized)..." << std::endl
+    std::cout << std::endl
+              << "NKA solver, exact Jacobian (globalized)..." << std::endl
               << "============================================" << std::endl;
 
     // create the function class
@@ -171,7 +176,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_SOLVER_INEXACT_JACOBIAN)
   {
-    std::cout << std::endl << "NKA solver, inexact Jacobian..." << std::endl
+    std::cout << std::endl
+              << "NKA solver, inexact Jacobian..." << std::endl
               << "==============================================" << std::endl;
 
     // create the function class
@@ -207,7 +213,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_SOLVER_INEXACT_JACOBIAN_GLOBALIZED)
   {
-    std::cout << std::endl << "NKA solver, inexact Jacobian (globalized)..." << std::endl
+    std::cout << std::endl
+              << "NKA solver, inexact Jacobian (globalized)..." << std::endl
               << "==============================================" << std::endl;
 
 
@@ -244,7 +251,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_LS_SOLVER)
   {
-    std::cout << std::endl << "NKA with line search..." << std::endl
+    std::cout << std::endl
+              << "NKA with line search..." << std::endl
               << "==============================================" << std::endl;
 
     // create the function class
@@ -278,7 +286,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_LS_SOLVER_GLOBALIZATION)
   {
-    std::cout << std::endl << "NKA with line search (globalized)..." << std::endl
+    std::cout << std::endl
+              << "NKA with line search (globalized)..." << std::endl
               << "==============================================" << std::endl;
 
     // create the function class
@@ -313,7 +322,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_BT_ATS_SOLVER)
   {
-    std::cout << std::endl << "NKA with backtracking, ATS custom..." << std::endl
+    std::cout << std::endl
+              << "NKA with backtracking, ATS custom..." << std::endl
               << "============================================" << std::endl;
 
     // create the function class
@@ -351,7 +361,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_BT_ATS_SOLVER_GLOBALIZED)
   {
-    std::cout << std::endl << "NKA with backtracking, ATS custom (globalized)..." << std::endl
+    std::cout << std::endl
+              << "NKA with backtracking, ATS custom (globalized)..." << std::endl
               << "============================================" << std::endl;
 
     // create the function class
@@ -389,7 +400,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_LS_ATS_SOLVER)
   {
-    std::cout << std::endl << "NKA with backtracking via line search, ATS custom..." << std::endl
+    std::cout << std::endl
+              << "NKA with backtracking via line search, ATS custom..." << std::endl
               << "============================================" << std::endl;
 
     // create the function class
@@ -427,7 +439,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_LS_ATS_SOLVER_GLOBALIZED)
   {
-    std::cout << std::endl << "NKA with backtracking via line search, ATS custom (globalized)..." << std::endl
+    std::cout << std::endl
+              << "NKA with backtracking via line search, ATS custom (globalized)..." << std::endl
               << "============================================" << std::endl;
 
     // create the function class
@@ -465,7 +478,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, BT_LS_SOLVER)
   {
-    std::cout << std::endl << "Line-search using Brent..." << std::endl
+    std::cout << std::endl
+              << "Line-search using Brent..." << std::endl
               << "============================================" << std::endl;
 
     // create the function class
@@ -503,7 +517,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, BT_LS_SOLVER_GLOBALIZED)
   {
-    std::cout << std::endl << "Line-search using Brent (globalized)..." << std::endl
+    std::cout << std::endl
+              << "Line-search using Brent (globalized)..." << std::endl
               << "============================================" << std::endl;
 
     // create the function class
@@ -541,7 +556,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, AA_SOLVER)
   {
-    std::cout << std::endl << "AA solver...." << std::endl
+    std::cout << std::endl
+              << "AA solver...." << std::endl
               << "============================================" << std::endl;
 
     // create the function class
@@ -581,7 +597,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, AA_SOLVER_GLOBALIZED)
   {
-    std::cout << std::endl << "AA solver (globalized)...." << std::endl
+    std::cout << std::endl
+              << "AA solver (globalized)...." << std::endl
               << "============================================" << std::endl;
 
     // create the function class
@@ -621,7 +638,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NOX_SOLVER)
   {
-    std::cout << std::endl << "NOX solver..." << std::endl
+    std::cout << std::endl
+              << "NOX solver..." << std::endl
               << "============================================" << std::endl;
 
     // create the function class

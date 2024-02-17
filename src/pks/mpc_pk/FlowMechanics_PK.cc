@@ -35,7 +35,7 @@ FlowMechanics_PK::FlowMechanics_PK(Teuchos::ParameterList& pk_tree,
                                    const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                    const Teuchos::RCP<State>& S,
                                    const Teuchos::RCP<TreeVector>& soln)
-  : PK_MPCSequential(pk_tree, glist, S, soln), glist_(glist)
+  : PK_MPCSequential(pk_tree, glist, S, soln), glist_(glist), thermal_flow_(false)
 {
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = my_list_->sublist("verbose object");
@@ -61,6 +61,8 @@ FlowMechanics_PK::Setup()
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
   water_storage_key_ = Keys::getKey(domain_, "water_storage");
 
+  thermal_flow_ = (Keys::getVarName(sub_pks_[0]->name()) == "thermal flow");
+
   // mechanics
   auto mesh = S_->GetMesh(domain_);
   S_->Require<CV_t, CVS_t>(hydrostatic_stress_key_, Tags::DEFAULT, passwd)
@@ -80,7 +82,8 @@ FlowMechanics_PK::Setup()
       .sublist(pks[i])
       .sublist("physical models and assumptions")
       .set<bool>("biot scheme: undrained split", false)
-      .set<bool>("biot scheme: fixed stress split", true);
+      .set<bool>("biot scheme: fixed stress split", true)
+      .set<bool>("thermoelasticity", thermal_flow_);
   }
 
   // flow
@@ -153,8 +156,16 @@ FlowMechanics_PK::CommitSequentialStep(Teuchos::RCP<const TreeVector> u_old,
 {
   Key prev = Keys::getKey(domain_, "prev_water_storage");
   auto& ws_c = *S_->GetW<CV_t>(prev, Tags::DEFAULT, "").ViewComponent("cell");
-  auto& u0_c = *u_old->SubVector(0)->Data()->ViewComponent("cell");
-  auto& u1_c = *u_new->SubVector(0)->Data()->ViewComponent("cell");
+
+  // access to pressures, depends on PK
+  Teuchos::RCP<const Epetra_MultiVector> u0_c, u1_c;
+  if (thermal_flow_) {
+    u0_c = u_old->SubVector(0)->SubVector(0)->Data()->ViewComponent("cell");
+    u1_c = u_new->SubVector(0)->SubVector(0)->Data()->ViewComponent("cell");
+  } else {
+    u0_c = u_old->SubVector(0)->Data()->ViewComponent("cell");
+    u1_c = u_new->SubVector(0)->Data()->ViewComponent("cell");
+  }
 
   const auto& E = *S_->Get<CompositeVector>("young_modulus").ViewComponent("cell");
   const auto& nu = *S_->Get<CompositeVector>("poisson_ratio").ViewComponent("cell");
@@ -167,7 +178,7 @@ FlowMechanics_PK::CommitSequentialStep(Teuchos::RCP<const TreeVector> u_old,
   for (int c = 0; c != ncells; ++c) {
     double b = eval->getBiotCoefficient(c);
     double stability = FixedStressStability(E[0][c], nu[0][c], b);
-    ws_c[0][c] += stability * n_l[0][c] * (u1_c[0][c] - u0_c[0][c]);
+    ws_c[0][c] += stability * n_l[0][c] * ((*u1_c)[0][c] - (*u0_c)[0][c]);
   }
 }
 

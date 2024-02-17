@@ -157,8 +157,9 @@ Richards_PK::Setup()
   std::string msm_name = physical_models->get<std::string>("multiscale model", "single continuum");
   std::string pom_name = physical_models->get<std::string>("porosity model", "constant");
   bool use_ppm = physical_models->get<bool>("permeability porosity model", false);
-  use_strain_ = physical_models->get<bool>("biot scheme: undrained split", false) ||
-                physical_models->get<bool>("biot scheme: fixed stress split", false);
+  poroelasticity_ = physical_models->get<bool>("biot scheme: undrained split", false) ||
+                    physical_models->get<bool>("biot scheme: fixed stress split", false);
+  thermoelasticity_ = physical_models->get<bool>("thermoelasticity", false);
 
   // primary field: pressure
   std::vector<std::string> names({ "cell" });
@@ -264,6 +265,7 @@ Richards_PK::Setup()
     Teuchos::ParameterList elist(porosity_msp_key_);
     elist.set<std::string>("porosity key", porosity_msp_key_)
       .set<std::string>("pressure key", pressure_msp_key_)
+      .set<bool>("thermoelasticity", false)
       .set<std::string>("tag", "");
 
     Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, msp_list);
@@ -287,9 +289,11 @@ Richards_PK::Setup()
       Teuchos::ParameterList elist(porosity_key_);
       elist.set<std::string>("porosity key", porosity_key_)
         .set<std::string>("pressure key", pressure_key_)
+        .set<bool>("thermoelasticity", thermoelasticity_)
         .set<std::string>("tag", "");
 
-      if (use_strain_) elist.set<std::string>("volumetric strain key", vol_strain_key_);
+      if (poroelasticity_) elist.set<std::string>("volumetric strain key", vol_strain_key_);
+      if (thermoelasticity_) elist.set<std::string>("temperature key", temperature_key_);
       // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
       S_->RequireDerivative<CV_t, CVS_t>(

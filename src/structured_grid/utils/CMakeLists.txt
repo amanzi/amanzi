@@ -73,8 +73,7 @@ if (BUILD_TESTS)
     endif()
   endif()
 
-  set(tpl_libs ${Teuchos_LIBRARIES} ${Boost_LIBRARIES} 
-               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES}
+  set(tpl_libs ${Teuchos_LIBRARIES} ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES}
                ${CCSE_LIBRARIES} ${PETSC_LIBRARIES} ${HDF5_LIBRARIES})
 
   if (BUILD_SHARED_LIBS)

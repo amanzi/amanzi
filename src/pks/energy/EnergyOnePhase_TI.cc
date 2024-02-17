@@ -125,8 +125,8 @@ EnergyOnePhase_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
   // update with accumulation terms
   // update the accumulation derivatives, dE/dT
   S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);
-  const auto& dEdT = S_->GetDerivative<CompositeVector>(
-    energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
+  const auto& dEdT =
+    S_->GetDerivative<CompositeVector>(energy_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
 
   if (dt > 0.0) { op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dEdT, dt, "cell"); }
 

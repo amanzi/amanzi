@@ -439,6 +439,18 @@ InputConverterU::TranslatePOM_(const std::string& domain)
     node = GetUniqueElementByTagsString_(inode, "mechanical_properties, biot_coefficient", flag);
     if (flag) biot = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0, "");
 
+    // get volumetric thermal dilation coefficients
+    double dilation_rock(0.0), dilation_liquid(0.0);
+    node =
+      GetUniqueElementByTagsString_(inode, "mechanical_properties, rock_thermal_dilation", flag);
+    if (flag)
+      dilation_rock = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
+
+    node =
+      GetUniqueElementByTagsString_(inode, "mechanical_properties, liquid_thermal_dilation", flag);
+    if (flag)
+      dilation_liquid = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
+
     std::stringstream ss;
     ss << "POM " << i;
 
@@ -454,7 +466,9 @@ InputConverterU::TranslatePOM_(const std::string& domain)
         .set<double>("undeformed soil porosity", phi)
         .set<double>("reference pressure", ref_pressure)
         .set<double>("pore compressibility", compres)
-        .set<double>("biot coefficient", biot);
+        .set<double>("biot coefficient", biot)
+        .set<double>("rock thermal dilation", dilation_rock)
+        .set<double>("liquid thermal dilation", dilation_liquid);
       compressibility_ = true;
     }
   }

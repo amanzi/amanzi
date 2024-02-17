@@ -33,7 +33,9 @@ namespace Flow {
 ****************************************************************** */
 PorosityEvaluator::PorosityEvaluator(Teuchos::ParameterList& plist,
                                      Teuchos::RCP<PorosityModelPartition> pom)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), pom_(pom)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
+    pom_(pom),
+    poroelasticity_(false)
 {
   InitializeFromPlist_();
 }
@@ -70,9 +72,15 @@ PorosityEvaluator::InitializeFromPlist_()
   dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
 
   if (plist_.isParameter("volumetric strain key")) {
-    use_strain_ = true;
+    poroelasticity_ = true;
     strain_key_ = plist_.get<std::string>("volumetric strain key");
     dependencies_.insert(std::make_pair(strain_key_, Tags::DEFAULT));
+  }
+
+  thermoelasticity_ = plist_.get<bool>("thermoelasticity");
+  if (thermoelasticity_) {
+    temperature_key_ = plist_.get<std::string>("temperature key");
+    dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
   }
 }
 
@@ -91,11 +99,19 @@ PorosityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>
     phi_c[0][c] = pom_->second[(*pom_->first)[c]]->PorosityValue(pres_c[0][c]);
   }
 
-  if (use_strain_) {
-    const auto& e_c = *S.Get<CompositeVector>("volumetric_strain").ViewComponent("cell");
+  if (poroelasticity_) {
+    const auto& e_c = *S.Get<CompositeVector>(strain_key_).ViewComponent("cell");
     for (int c = 0; c != ncells; ++c) {
       double b = pom_->second[(*pom_->first)[c]]->getBiotCoefficient();
       phi_c[0][c] += b * e_c[0][c]; // e0 = 0.0
+    }
+  }
+
+  if (thermoelasticity_) {
+    const auto& temp_c = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
+    for (int c = 0; c != ncells; ++c) {
+      double a = pom_->second[(*pom_->first)[c]]->getThermalCoefficients().first;
+      phi_c[0][c] += a * (temp_c[0][c] - 273.15);
     }
   }
 

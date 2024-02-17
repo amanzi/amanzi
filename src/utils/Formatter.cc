@@ -17,14 +17,8 @@
 namespace Amanzi {
 namespace Utils {
 
-Formatter::Formatter(int width,
-                     int precision,
-                     int header_width,
-                     int cellnum_width)
-  : width_(width),
-    precision_(precision),
-    header_width_(header_width),
-    cellnum_width_(cellnum_width)
+Formatter::Formatter(int width, int precision, int header_width, int cellnum_width)
+  : width_(width), precision_(precision), header_width_(header_width), cellnum_width_(cellnum_width)
 {
   AMANZI_ASSERT(width_ >= (precision_ + 7));
   AMANZI_ASSERT(header_width > (cellnum_width + 6));
@@ -32,7 +26,8 @@ Formatter::Formatter(int width,
 
 
 void
-Formatter::setWidth(int width) {
+Formatter::setWidth(int width)
+{
   width_ = width;
   if (width < (precision_ + 7)) setPrecision(width - 7);
 }
@@ -47,9 +42,7 @@ Formatter::format(double dat) const
     int left_spaces = width_ - precision_ - 2;
 
     // AMANZI_ASSERT(width >= precision_ + 2);
-    datastream << std::string(left_spaces, ' ')
-               << "0."
-               << std::string(precision_, ' ');
+    datastream << std::string(left_spaces, ' ') << "0." << std::string(precision_, ' ');
   } else {
     // can we fit in non-scientific notation?  How many digits to the left of
     // the dot?
@@ -63,7 +56,7 @@ Formatter::format(double dat) const
     // mag == 1 is 10, requires mag+1 slots
     //
     // also use fixed format if 0.01 or bigger
-    if ((mag+1) <= left_of_dot && mag >= -2) { // fixed format
+    if ((mag + 1) <= left_of_dot && mag >= -2) { // fixed format
       // how many spaces?
       int space_width = mag < 0 ? left_of_dot - 1 : left_of_dot - (mag + 1);
 
@@ -104,6 +97,5 @@ Formatter::formatHeader(std::string header, int c) const
   return headerstream.str();
 }
 
-} // Utils
-} // Amanzi
-
+} // namespace Utils
+} // namespace Amanzi

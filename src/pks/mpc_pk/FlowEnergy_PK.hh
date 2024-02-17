@@ -128,7 +128,6 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   Key ie_liquid_key_, energy_key_, particle_density_key_;
   Key mol_density_liquid_key_, mass_density_liquid_key_;
   Key sat_liquid_key_, wc_key_;
-  Key beta_key_;
 
   // eos
   std::string eos_table_;

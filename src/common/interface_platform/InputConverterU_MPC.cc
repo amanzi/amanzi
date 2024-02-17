@@ -354,6 +354,10 @@ InputConverterU::TranslateCycleDriverNew_()
       tmp = pks_weak_[0] + " and " + tmp + pks_weak_[1];
       PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
       break;
+    case 76:
+      tmp = tmp + "thermal flow and mechanics";
+      PopulatePKTree_(pk_tree_list, Keys::merge(mode, tmp, delimiter));
+      break;
     default:
       msg << "The model with id=" << transient_model << " is not supported by the MPC.\n";
       Exceptions::amanzi_throw(msg);
@@ -543,6 +547,10 @@ InputConverterU::PopulatePKTree_(Teuchos::ParameterList& pk_tree, const std::str
     tmp.set<std::string>("PK type", "mechanics and coupled flow");
     PopulatePKTree_(tmp, Keys::merge(prefix, "mechanics", delimiter));
     PopulatePKTree_(tmp, Keys::merge(prefix, "coupled flow", delimiter));
+  } else if (basename == "thermal flow and mechanics") {
+    tmp.set<std::string>("PK type", "flow and mechanics");
+    PopulatePKTree_(tmp, Keys::merge(prefix, "flow and energy", delimiter));
+    PopulatePKTree_(tmp, Keys::merge(prefix, "mechanics", delimiter));
   } else {
     Errors::Message msg;
     msg << "Internal error: cannot add \"" << pk_name << "\" to the PK tree.\n";
@@ -1036,6 +1044,17 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
         out_list.sublist(pk)
           .set<Teuchos::Array<std::string>>("PKs order", pk_names)
           .set<std::string>("domain name", pk_domain_["mechanics"]);
+      } else if (basename == "thermal flow and mechanics") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back(Keys::merge(prefix, "flow and energy", delimiter));
+        pk_names.push_back(Keys::merge(prefix, "mechanics", delimiter));
+        out_list.sublist(pk)
+          .set<Teuchos::Array<std::string>>("PKs order", pk_names)
+          .set<std::string>("domain name", pk_domain_["mechanics"]);
+      } else {
+        Errors::Message msg;
+        msg << "Internal error: cannot find PK \"" << pk << "\"\n";
+        Exceptions::amanzi_throw(msg);
       }
 
       // add time integrator to PKs that have no transport and chemistry sub-PKs.

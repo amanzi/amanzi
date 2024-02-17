@@ -39,7 +39,8 @@ MechanicsElasticity_PK::FunctionalResidual(double t_old,
   // Add external forces
   auto rhs = op_matrix_->rhs();
   if (use_gravity_) AddGravityTerm_(*rhs);
-  if (biot_model_) AddPressureGradient_(*rhs);
+  if (poroelasticity_) AddPressureGradient_(*rhs);
+  if (thermoelasticity_) AddTemperatureGradient_(*rhs);
 
   op_matrix_elas_->UpdateMatrices();
   op_matrix_elas_->ApplyBCs(true, true, true);
@@ -232,7 +233,7 @@ MechanicsElasticity_PK::AddGravityTerm_(CompositeVector& rhs)
 
 
 /* ******************************************************************
-* Add pressure gradient
+* Add pressure gradient in poroelasticity model
 ****************************************************************** */
 void
 MechanicsElasticity_PK::AddPressureGradient_(CompositeVector& rhs)
@@ -274,6 +275,62 @@ MechanicsElasticity_PK::AddPressureGradient_(CompositeVector& rhs)
 
       for (int i = 0; i < d; ++i) {
         double add = b * grad[i] * vol / nnodes;
+        for (int n = 0; n < nnodes; ++n) rhs_v[i][nodes[n]] -= add;
+      }
+    }
+  }
+
+  rhs.GatherGhostedToMaster("node");
+}
+
+
+/* ******************************************************************
+* Add temperature gradient in thermoelasticity model
+****************************************************************** */
+void
+MechanicsElasticity_PK::AddTemperatureGradient_(CompositeVector& rhs)
+{
+  int d = mesh_->getSpaceDimension();
+  const auto& temp = S_->Get<CV_t>("temperature", Tags::DEFAULT);
+
+  const auto& E = *S_->Get<CV_t>(young_modulus_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& nu = *S_->Get<CV_t>(poisson_ratio_key_, Tags::DEFAULT).ViewComponent("cell");
+
+  auto eval = Teuchos::rcp_dynamic_cast<Flow::PorosityEvaluator>(
+    S_->GetEvaluatorPtr("porosity", Tags::DEFAULT));
+
+  if (temp.HasComponent("face")) {
+    const auto& temp_f = *temp.ViewComponent("face", true);
+    auto& rhs_v = *rhs.ViewComponent("node");
+
+    temp.ScatterMasterToGhosted("face");
+    rhs.PutScalarGhosted(0.0);
+
+    for (int c = 0; c < ncells_owned_; ++c) {
+      // pressure gradient
+      double vol = mesh_->getCellVolume(c);
+      const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+      const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
+      int nfaces = faces.size();
+
+      AmanziGeometry::Point grad(d);
+      for (int i = 0; i < nfaces; ++i) {
+        int f = faces[i];
+        const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+        const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+        grad += normal * (temp_f[0][f] * dirs[i]);
+      }
+      grad /= vol;
+
+      double a = eval->getThermalCoefficients(c).second;
+      a *= (d == 3) ? E[0][c] / (1 + nu[0][c]) / (1 - 2 * nu[0][c]) : E[0][c] / (1 - nu[0][c]);
+
+      // temperature gradient
+      auto nodes = mesh_->getCellNodes(c);
+      int nnodes = nodes.size();
+
+      for (int i = 0; i < d; ++i) {
+        double add = a * grad[i] * vol / nnodes;
         for (int n = 0; n < nnodes; ++n) rhs_v[i][nodes[n]] -= add;
       }
     }

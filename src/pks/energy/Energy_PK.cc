@@ -482,7 +482,7 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
 
 
 /* ******************************************************************
-* Return a pointer to a local operator
+* Clip temperature changed
 ****************************************************************** */
 AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 Energy_PK::ModifyCorrection(double dt,

@@ -55,7 +55,6 @@ if(ENABLE_MESH_MSTK)
 endif()
 
 # External (TPL) include directories
-include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 if(ENABLE_MESH_MOAB)
@@ -77,7 +76,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 add_amanzi_executable(verify_mesh
                       SOURCE VerifyMesh.cc
                       LINK_LIBS mesh_factory mesh 
-                                ${Boost_LIBRARIES} ${Epetra_LIBRARIES} ${HDF5_LIBRARIES})
+                                ${Epetra_LIBRARIES} ${HDF5_LIBRARIES})
 
 #
 # Binary: verify_hex
@@ -87,9 +86,7 @@ add_amanzi_executable(verify_hex
                       SOURCE VerifyHex.cc
                       LINK_LIBS mesh_factory
                                 mesh
-                                output ${Boost_LIBRARIES} ${HDF5_LIBRARIES})
-set_target_properties(verify_hex PROPERTIES
-                      COMPILE_DEFINES "${Boost_FILESYSTEM_DEFINES}")
+                                output ${HDF5_LIBRARIES})
 
 #
 # Binary: concat

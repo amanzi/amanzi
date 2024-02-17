@@ -146,6 +146,7 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
   void UpdateSourceBoundaryData_(double t_old, double t_new);
   void AddGravityTerm_(CompositeVector& rhs);
   void AddPressureGradient_(CompositeVector& rhs);
+  void AddTemperatureGradient_(CompositeVector& rhs);
 
  public:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
@@ -160,7 +161,7 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
 
   double dt_, dt_next_, dt_desirable_;
 
-  bool use_gravity_, biot_model_;
+  bool use_gravity_, poroelasticity_, thermoelasticity_;
 
  protected:
   // pointers to primary fields and their evaluators

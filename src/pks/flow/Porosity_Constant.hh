@@ -15,6 +15,8 @@
 #ifndef AMANZI_FLOW_POROSITY_CONSTANT_HH_
 #define AMANZI_FLOW_POROSITY_CONSTANT_HH_
 
+#include <utility>
+
 #include "Teuchos_ParameterList.hpp"
 
 #include "Porosity.hh"
@@ -34,6 +36,10 @@ class Porosity_Constant : public Porosity {
   virtual double PorosityValue(double p) override { return porosity_; }
   virtual double dPorositydPressure(double p) override { return 0.0; }
   virtual double getBiotCoefficient() override { return 1.0; }
+  virtual std::pair<double, double> getThermalCoefficients() override
+  {
+    return std::make_pair(0.0, 0.0);
+  }
 
  private:
   double porosity_;

@@ -1,8 +1,5 @@
 # -*- mode: cmake -*-
 
-# Global definitions of standards
-# add_definitions(-DBOOST_NO_CXX11_VARIADIC_TEMPLATES)
-
 # Standard utilities
 add_subdirectory(error_handling)
 add_subdirectory(utils)
