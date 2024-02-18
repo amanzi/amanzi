@@ -23,7 +23,7 @@ struct LineSearchFunctor {
                     const Teuchos::RCP<const Vector>& du_,
                     const Teuchos::RCP<Vector>& u_,
                     const Teuchos::RCP<Vector>& r_)
-    : fn(my_fn), u(u_), u0(u0_), du(du_), r(r_), error(-1), fun_calls(0)
+    : error(-1.0), fun_calls(0), u0(u0_), du(du_), u(u_), r(r_), fn(my_fn)
   {}
 
   double operator()(double x) const

@@ -1262,7 +1262,8 @@ namespace Amanzi {
     {
       const ParameterList& rsslist = rslist.sublist(rlabel);
       std::string dir = rsslist.get<std::string>("Direction");
-      std::pair<bool,int> o = orient(dir); bool is_lo=o.first; int coord=o.second;
+      std::pair<bool,int> o = orient(dir); 
+      int coord = o.second;
 
       // FIXME: Ignores sign of direction
 

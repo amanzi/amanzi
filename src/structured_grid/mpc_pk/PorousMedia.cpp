@@ -4569,7 +4569,7 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
 {
   BL_PROFILE("PorousMedia::predictDT()");
 
-  const Real* dx       = geom.CellSize();
+  const Real* dx = geom.CellSize();
 
   dt_eig = 1.e20; // FIXME: Need more robust
 
@@ -4579,7 +4579,6 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
   get_fillpatched_rhosat(t_eval,RhoSat,nGrowEIGEST);
 
   int Ung = -1;
-  int Uidx = 0;
 
   for (MFIter mfi(RhoSat); mfi.isValid(); ++mfi) {
     const int i = mfi.index();
@@ -4945,7 +4944,6 @@ PorousMedia::post_init_estDT (Real&        dt_init_local,
                               Real         stop_time)
 {
   BL_PROFILE("PorousMedia::post_init_estDT()");
-  const Real strt_time    = parent->startTime();
   const Real cum_time     = parent->cumTime(); // Time evolved to so far
   const int  finest_level = parent->finestLevel();
 

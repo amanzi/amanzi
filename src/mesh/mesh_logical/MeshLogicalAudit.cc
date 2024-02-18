@@ -72,7 +72,7 @@ MeshLogicalAudit::Verify() const
 void
 MeshLogicalAudit::create_test_dependencies()
 {
-  auto test01 = AddVertex("entity_counts", &MeshLogicalAudit::check_entity_counts);
+  AddVertex("entity_counts", &MeshLogicalAudit::check_entity_counts); // test01
   auto test04 = AddVertex("cell_to_faces", &MeshLogicalAudit::check_cell_to_faces);
 
   auto test05 = AddVertex("face references by cells", &MeshLogicalAudit::check_face_refs_by_cells);

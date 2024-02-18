@@ -103,8 +103,8 @@ class Debugger {
   AmanziMesh::Entity_ID_View dc_gid_;
   std::vector<Teuchos::RCP<VerboseObject>> dcvo_;
 
-  std::string name_;
   Utils::Formatter formatter_;
+  std::string name_;
 };
 
 } // namespace Amanzi
