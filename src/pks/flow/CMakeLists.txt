@@ -269,7 +269,12 @@ if (BUILD_TESTS)
                       SOURCE test/Main.cc test/flow_darcy_fractures_source.cc
                       LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-      add_amanzi_test(flow_richards_fractures flow_richards_fractures 
+      add_amanzi_test(flow_richards_fractures_saturated flow_richards_fractures_saturated 
+                      KIND int
+                      SOURCE test/Main.cc test/flow_richards_fractures_saturated.cc
+                      LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+      add_amanzi_test(flow_richards_fractures flow_richards_fractures
                       KIND int
                       SOURCE test/Main.cc test/flow_richards_fractures.cc
                       LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})

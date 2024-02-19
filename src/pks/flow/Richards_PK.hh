@@ -68,7 +68,6 @@ class Richards_PK : public Flow_PK {
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
-  virtual void CalculateDiagnostics(const Tag& tag) override;
 
   virtual std::string name() override { return Keys::getKey(domain_, "richards"); }
 

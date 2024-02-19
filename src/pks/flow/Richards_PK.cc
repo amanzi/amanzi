@@ -1185,16 +1185,6 @@ Richards_PK::VV_ReportMultiscale()
 
 
 /* ******************************************************************
-* This is strange.
-****************************************************************** */
-void
-Richards_PK::CalculateDiagnostics(const Tag& tag)
-{
-  UpdateLocalFields_(S_.ptr());
-}
-
-
-/* ******************************************************************
 * Return a pointer to a local operator
 ****************************************************************** */
 Teuchos::RCP<Operators::Operator>

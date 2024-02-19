@@ -55,9 +55,10 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
   const auto& field_bf = *field.ViewComponent("boundary_face", true);
   auto& field_f = *field.ViewComponent("face", true);
 
-  double flxmin, flxmax;
+  double flxmin, flxmax, tol;
   flux_f.MinValue(&flxmin);
   flux_f.MaxValue(&flxmax);
+  tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
   int nfaces_wghost = mesh_->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
 
@@ -70,16 +71,28 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
 
     int g = fmap.FirstPointInElement(f);
 
-    // harmonic average over upwind cells
+    // volume-weigthed average over downwind cells
     if (ncells > 1) {
-      double mean(0.0);
+      int dir;
+      double tvol(0.0), mean(0.0), vol;
+      std::vector<int> out;
+
       for (int i = 0; i < ncells; ++i) {
         int c = cells[i];
-        mean += field_c[0][c];
-      }
-      mean /= ncells;
 
-      for (int i = 0; i < ncells; ++i) { field_f[0][g + i] = mean; }
+        mesh_->getFaceNormal(f, c, &dir);
+        if (flux_f[0][g + i] * dir > tol) {
+          vol = mesh_->getCellVolume(c);
+          tvol += vol;
+          mean += vol * field_c[0][c];
+          out.push_back(i);
+        } else {
+          field_f[0][g + i] = field_c[0][c];
+        }
+      }
+
+      if (tvol > 0.0) mean /= tvol;
+      for (int i : out) { field_f[0][g + i] = mean; }
 
       // upwind only on inflow Dirichlet faces
     } else {
