@@ -37,6 +37,7 @@ namespace Operators {
 //   special treatment of total flux conditions. Finally some essential
 //   boundary conditions may be imposed in a weak form which leads to
 //   type2 boundary conditions. See BCs.hh for more detail.
+const int OPERATOR_BC_CONDITIONAL = -1;
 const int OPERATOR_BC_NONE = 0;
 const int OPERATOR_BC_DIRICHLET = 1;
 const int OPERATOR_BC_NEUMANN = 2;

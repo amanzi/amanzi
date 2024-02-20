@@ -257,33 +257,6 @@ computeFunction(const MultiFunction& f, double time, const PatchSpace& ps, Compo
   f.apply(txyz, cv_v, &ids);
 }
 
-
-void
-copyFlags(const PatchSpace& ps, CompositeVector_<int>& flag_vec)
-{
-  AMANZI_ASSERT(ps.mesh == flag_vec.getMesh()); // precondition -- same mesh
-  auto ids = ps.getIDs();
-  auto flag_v = flag_vec.viewComponent(AmanziMesh::to_string(ps.entity_kind), ps.ghosted);
-
-  if (ps.flag_type == -1) {
-    Kokkos::parallel_for(
-      "MeshFunctions::copyFlags", ps.size(), KOKKOS_LAMBDA(const int& i) {
-        flag_v(ids(i), 0) = ps.flags(i);
-      });
-  } else {
-    Kokkos::parallel_for(
-      "MeshFunctions::copyFlags", ps.size(), KOKKOS_LAMBDA(const int& i) {
-        flag_v(ids(i), 0) = ps.flag_type;
-      });
-  }
-}
-
-void
-copyFlags(const MultiPatchSpace& mps, CompositeVector_<int>& flag_vec)
-{
-  for (auto& ps : mps) { copyFlags(*ps, flag_vec); }
-}
-
 } // namespace Impl
 } // namespace Functions
 } // namespace Amanzi

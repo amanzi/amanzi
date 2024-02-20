@@ -116,15 +116,6 @@ computeFunction(const MultiFunction& f, double time, Patch<double>& p);
 void
 computeFunction(const MultiFunction& f, double time, const PatchSpace& p, CompositeVector& cv);
 
-//
-// Computes function on a patch space, sticking the answer directly into a vector
-//
-void
-copyFlags(const PatchSpace& p, CompositeVector_<int>& flag_vec);
-
-void
-copyFlags(const MultiPatchSpace& mp, CompositeVector_<int>& flag_vec);
-
 void
 computeFunctionDepthCoordinate(const MultiFunction& f, double time, Patch<double>& p);
 

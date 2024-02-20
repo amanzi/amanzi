@@ -35,8 +35,6 @@ struct PatchSpace {
   AmanziMesh::Entity_kind entity_kind;
   int num_vectors;
   int flag_type;
-  Kokkos::View<int*> flags;
-
 
   PatchSpace() : ghosted(false) {}
   PatchSpace(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_,
@@ -44,16 +42,14 @@ struct PatchSpace {
              const std::string& region_,
              const AmanziMesh::Entity_kind& entity_kind_,
              const int& num_vectors_,
-             const int& flag_type_)
+             const int& flag_type_ = 0)
     : mesh(mesh_),
       ghosted(ghosted_),
       region(region_),
       entity_kind(entity_kind_),
       num_vectors(num_vectors_),
       flag_type(flag_type_)
-  {
-    if (flag_type == -1) Kokkos::resize(flags, size());
-  }
+  {}
   PatchSpace(const PatchSpace& other) = default;
   PatchSpace& operator=(const PatchSpace&) = default;
   ~PatchSpace() = default;
@@ -108,7 +104,7 @@ struct MultiPatchSpace {
   MultiPatchSpace(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_,
                   bool ghosted_,
                   AmanziMesh::Entity_kind entity_kind_ = AmanziMesh::Entity_kind::UNKNOWN,
-                  int flag_type_ = -1)
+                  int flag_type_ = 0)
     : mesh(mesh_), entity_kind(entity_kind_), ghosted(ghosted_), flag_type(flag_type_)
   {}
 

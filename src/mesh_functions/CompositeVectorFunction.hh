@@ -24,8 +24,6 @@ class CompositeVectorFunction : public MeshFunction {
  public:
   using MeshFunction::MeshFunction;
   void Compute(double time, CompositeVector& vec);
-
-  void FlagToVector(CompositeVector_<int>& flag_vec);
 };
 
 

@@ -48,6 +48,12 @@ EvaluatorAggregateBCs::EnsureCompatibility(State& S)
       fac.set_mesh(my_fac.mesh());
       fac.set_entity_kind(my_fac.entity_kind());
       eval.EnsureCompatibility(S);
+
+      if (fac.flag_type == -1) {
+        // also need a flag patch, but this is not in dependencies...
+        auto& flag_fac = S.Require<MultiPatch<int>, MultiPatchSpace>(dep.first+"_flags", dep.second);
+        flag_fac = fac;
+      }
     }
     inited_ = true;
   }
@@ -78,6 +84,11 @@ EvaluatorAggregateBCs::Update_(State& S)
     for (const auto& dep : dependencies_) {
       const auto& i_bcs = S.Get<MultiPatch<double>>(dep.first, dep.second);
       copyMultiPatchToCompositeVector(i_bcs, to_string(result.kind()), *value, *model);
+
+      if (i_bcs.space->flag_type == -1) {
+        const auto& i_bcs_flags = S.Get<MultiPatch<int>>(dep.first+"_flags", dep.second);
+        copyMultiPatchToCompositeVector(i_bcs_flags, to_string(result.kind()), *model);
+      }
     }
   }
 

@@ -84,29 +84,31 @@ TEST_FIXTURE(reference_mesh, MESH_FUNCTION)
 
   // finally, one for a seepage-like condition, which may switch dynamically in
   // time between DIRICHLET and NEUMANN, and needs a function
-  int OPERATOR_BC_VARIABLE = -1; // NOTE: -1 is necessary here to tell the
+  int OPERATOR_BC_CONDITIONAL = -1; // NOTE: -1 is necessary here to tell the
                                  // PatchSpace that it needs to store a VIEW of
                                  // flags, and not one flag
   MeshFunction mf_s(plist.sublist("seepage face"),
                     mesh,
                     "boundary pressure",
                     Entity_kind::FACE,
-                    OPERATOR_BC_VARIABLE);
+                    OPERATOR_BC_CONDITIONAL);
   MultiPatch<double> seepage(mf_s.createMPS(false));
+  MultiPatch<int> seepage_flags(mf_s.createMPS(false));
   mf_s.Compute(1.0, seepage);
 
   for (int i = 0; i != seepage.size(); ++i) {
     auto ps = (*seepage.space)[i];
     auto ids = ps->getIDs();
     auto& patch = seepage[i];
+    auto& flags = seepage_flags[i];
     Kokkos::parallel_for(
       "seepage", ids.extent(0), KOKKOS_LAMBDA(const int& i) {
         auto fc = mesh->getFaceCentroid(ids(i));
         if (fc[2] > 2.0) {
           patch.data(i, 0) = 0.0;
-          ps->flags(i) = OPERATOR_BC_NEUMANN;
+          flags.data(i, 0) = OPERATOR_BC_NEUMANN;
         } else {
-          ps->flags(i) = OPERATOR_BC_DIRICHLET;
+          flags.data(i, 0) = OPERATOR_BC_DIRICHLET;
         }
       });
   }
@@ -119,16 +121,13 @@ TEST_FIXTURE(reference_mesh, MESH_FUNCTION)
   CompositeVector bc_values(cspace);
 
   // copy in values
-  copyMultiPatchToCompositeVector(dirichlet, "face", bc_values);
-  copyMultiPatchToCompositeVector(neumann, "face", bc_values);
-  copyMultiPatchToCompositeVector(crit_depth, "face", bc_values);
-  copyMultiPatchToCompositeVector(seepage, "face", bc_values);
+  copyMultiPatchToCompositeVector(dirichlet, "face", bc_values, bc_markers);
+  copyMultiPatchToCompositeVector(neumann, "face", bc_values, bc_markers);
+  copyMultiPatchToCompositeVector(crit_depth, "face", bc_values, bc_markers);
+  copyMultiPatchToCompositeVector(seepage, "face", bc_values, bc_markers);
 
   // copy in flags
-  Functions::Impl::copyFlags(*dirichlet.space, bc_markers);
-  Functions::Impl::copyFlags(*neumann.space, bc_markers);
-  Functions::Impl::copyFlags(*crit_depth.space, bc_markers);
-  Functions::Impl::copyFlags(*seepage.space, bc_markers);
+  copyMultiPatchToCompositeVector(seepage_flags, "face", bc_markers);
 
   CHECK_EQUAL(4, mesh->getSetSize("RIGHT", Entity_kind::FACE, Parallel_kind::OWNED));
   CHECK_EQUAL(4, mesh->getSetSize("LEFT", Entity_kind::FACE, Parallel_kind::OWNED));

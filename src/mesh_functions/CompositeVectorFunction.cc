@@ -30,15 +30,5 @@ CompositeVectorFunction::Compute(double time, CompositeVector& vec)
   }
 }
 
-
-void
-CompositeVectorFunction::FlagToVector(CompositeVector_<int>& flag_vec)
-{
-  for (auto [compname, ps, functor] : *this) {
-    if (flag_vec.hasComponent(compname)) { Impl::copyFlags(*ps, flag_vec); }
-  }
-}
-
-
 } // namespace Functions
 } // namespace Amanzi
