@@ -18,7 +18,7 @@
 
 namespace Amanzi {
 
-const std::string EvaluatorAggregateBCs::name = "boundary condition aggregrator";
+const std::string EvaluatorAggregateBCs::eval_type = "boundary condition aggregrator";
 
 EvaluatorAggregateBCs::EvaluatorAggregateBCs(const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorSecondary(plist), inited_(false)

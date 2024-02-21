@@ -56,8 +56,8 @@ class EvaluatorIndependentFunction
 
   EvaluatorIndependentFunction& operator=(const EvaluatorIndependentFunction& other);
 
-  static const std::string name;
-  virtual std::string getType() const override { return name; }
+  static const std::string eval_type;
+  virtual std::string getType() const override { return eval_type; }
 
  protected:
   virtual void Update_(State& S) override;

@@ -146,7 +146,7 @@ template <class Vector>
 void
 BDF1_SolverFnBase<Vector>::ChangedSolution()
 {
-  bdf_fn_->ChangedSolution();
+  bdf_fn_->MarkChangedSolution();
 }
 
 } // namespace Amanzi

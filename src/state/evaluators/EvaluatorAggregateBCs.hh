@@ -42,8 +42,8 @@ class EvaluatorAggregateBCs : public EvaluatorSecondary {
     AMANZI_ASSERT(false); // never called
   }
 
-  virtual std::string getType() const override { return name; }
-  static const std::string name;
+  static const std::string eval_type;
+  virtual std::string getType() const override { return eval_type; }
 
  protected:
   bool inited_;

@@ -153,11 +153,7 @@ PKFactory::CreatePK(std::string pk_name,
   // construct the PK
   num_pks++;
   if (list_pks.size() < 1024) list_pks += "|" + pk_name;
-  Teuchos::RCP<PK> pk = Teuchos::rcp(iter->second(comm, pk_subtree, global_list, state));
-
-  // virtual constructor/parse parameters
-  pk->ParseParameterList_();
-  return pk;
+  return Teuchos::rcp(iter->second(comm, pk_subtree, global_list, state));
 }
 
 

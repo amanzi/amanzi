@@ -51,7 +51,9 @@ class EvaluatorIndependentTensorFunction
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
   virtual void EnsureCompatibility(State& S) override;
-  virtual std::string getType() const override { return "tensor independent variable"; }
+
+  static const std::string eval_type;
+  virtual std::string getType() const override { return eval_type; }
 
  protected:
   // ---------------------------------------------------------------------------
@@ -67,7 +69,7 @@ class EvaluatorIndependentTensorFunction
   double rescaling_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentTensorFunction> fac_;
+  static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentTensorFunction> reg_;
 };
 
 } // namespace Amanzi

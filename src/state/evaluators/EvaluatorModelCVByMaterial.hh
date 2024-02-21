@@ -65,7 +65,7 @@ class EvaluatorModelCVByMaterial
   virtual Teuchos::RCP<Evaluator> Clone() const override;
   virtual std::string getType() const override
   {
-    return models_.front().second->name + " by material";
+    return models_.front().second->eval_type + " by material";
   }
 
   decltype(auto) getModels() { return models_; }

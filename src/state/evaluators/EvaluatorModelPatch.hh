@@ -64,7 +64,7 @@ class EvaluatorModelPatch : public EvaluatorSecondary {
   EvaluatorModelPatch(const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
-  virtual std::string getType() const override { return model_->name + " on patch"; }
+  virtual std::string getType() const override { return model_->eval_type + " on patch"; }
 
   virtual bool
   IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override
@@ -103,7 +103,7 @@ EvaluatorModelPatch<Model, Device_type>::EvaluatorModelPatch(
   const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorSecondary(plist),
     model_(Teuchos::rcp(new Model_type(plist))),
-    name_(plist->name()),
+    name_(Keys::cleanPListName(plist->name())),
     tag_(plist->get<std::string>("tag"))
 {
   for (const auto& dep : model_->getDependencies()) dependencies_.insert(KeyTag(dep, tag_));

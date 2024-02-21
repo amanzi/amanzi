@@ -23,6 +23,8 @@
 
 namespace Amanzi {
 
+const std::string EvaluatorIndependentTensorFunction::eval_type = "tensor independent variable";
+
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------

@@ -40,8 +40,8 @@ class EvaluatorSecondaryMonotypeAdditive
   EvaluatorSecondaryMonotypeAdditive(const EvaluatorSecondaryMonotypeAdditive& other) = default;
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  static const std::string name;
-  virtual std::string getType() const override { return name; }
+  static const std::string eval_type;
+  virtual std::string getType() const override { return eval_type; }
 
  protected:
   virtual void Evaluate_(const State& S, const std::vector<Data_t*>& results) override;
@@ -125,7 +125,7 @@ EvaluatorSecondaryMonotypeAdditive<Data_t, DataFactory_t>::EvaluatePartialDeriva
 }
 
 template <>
-const std::string EvaluatorSecondaryMonotypeAdditive<CompositeVector, CompositeVectorSpace>::name =
+const std::string EvaluatorSecondaryMonotypeAdditive<CompositeVector, CompositeVectorSpace>::eval_type =
   "additive";
 
 using EvaluatorSecondaryMonotypeAdditiveCV =

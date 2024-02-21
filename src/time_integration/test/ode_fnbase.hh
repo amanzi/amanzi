@@ -109,8 +109,7 @@ class nonlinearODE : public Amanzi::BDFFnBase<Vector_type> {
   {
     return Amanzi::AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
-  void ChangedSolution() {}
-
+  void MarkChangedSolution() {}
 
   bool exact_jacobian_;
   double atol_, rtol_;

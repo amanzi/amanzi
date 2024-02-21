@@ -37,11 +37,31 @@ include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 
 #
-# Library: pks
+# header files
+#
+set(pks_inc_files
+  PK_Helpers.hh
+  PK.hh
+  PK_Default.hh
+  PK_BDF.hh
+  PK_BDF_Default.hh
+  PK_Physical_Default.hh
+  PK_Physical_Default_decl.hh
+  PK_Physical_Default_impl.hh
+  PK_PhysicalBDF_Default.hh
+  PKFactory.hh
+)
+
+
+#
+# implementation files
 #
 set(pks_src_files
-        PK_Physical.cc
-        PKFactory.cc)
+  PK_Helpers.cc
+  PK_BDF_Default.cc
+  PK_PhysicalBDF_Default.cc
+  PKFactory.cc
+)
 
 add_amanzi_library(pks
                    SOURCE ${pks_src_files}
@@ -49,19 +69,6 @@ add_amanzi_library(pks
 		   LINK_LIBS state data_structures error_handling atk
                              ${Tpetra_LIBRARIES})
 
-#
-# Install Targets
-#
-set(pks_inc_files 
-  PK.hh
-  PK_BDF.hh
-  PK_Implicit.hh
-  PK_Explicit.hh
-  PK_Physical.hh
-  PK_PhysicalExplicit.hh
-  PK_PhysicalBDF.hh
-  PKFactory.hh
-)
 
 add_install_include_file(${pks_inc_files})
 
