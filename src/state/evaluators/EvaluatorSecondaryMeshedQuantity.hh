@@ -46,8 +46,8 @@ class EvaluatorSecondaryMeshedQuantity : public EvaluatorSecondary {
     return Teuchos::rcp(new EvaluatorSecondaryMeshedQuantity(*this));
   }
 
-  static const std::string name;
-  virtual std::string getType() const override { return name; }
+  static const std::string eval_type;
+  virtual std::string getType() const override { return eval_type; }
 
   virtual void EnsureCompatibility(State& S) override
   {
@@ -196,15 +196,15 @@ struct SlopeMagnitude {
 
 using EvaluatorCellVolume = EvaluatorSecondaryMeshedQuantity<Impl::Extent>;
 template <>
-const std::string EvaluatorCellVolume::name = "cell volume";
+const std::string EvaluatorCellVolume::eval_type = "cell volume";
 
 using EvaluatorMeshElevation = EvaluatorSecondaryMeshedQuantity<Impl::Elevation>;
 template <>
-const std::string EvaluatorMeshElevation::name = "meshed elevation";
+const std::string EvaluatorMeshElevation::eval_type = "meshed elevation";
 
 using EvaluatorMeshSlopeMagnitude = EvaluatorSecondaryMeshedQuantity<Impl::SlopeMagnitude>;
 template <>
-const std::string EvaluatorMeshSlopeMagnitude::name = "meshed slope magnitude";
+const std::string EvaluatorMeshSlopeMagnitude::eval_type = "meshed slope magnitude";
 
 
 } // namespace Amanzi

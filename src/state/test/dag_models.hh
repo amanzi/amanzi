@@ -59,7 +59,7 @@ template <class cView_type, class View_type>
 class AModel {
  public:
   static const int n_dependencies = 4;
-  static const std::string name;
+  static const std::string eval_type;
 
   AModel(const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : alpha_(plist->sublist("model parameters").get<double>("alpha"))
@@ -137,7 +137,7 @@ template <class cView_type, class View_type>
 class CModel {
  public:
   static const int n_dependencies = 2;
-  static const std::string name;
+  static const std::string eval_type;
 
   CModel(const Teuchos::RCP<Teuchos::ParameterList>& plist) {}
 
@@ -180,7 +180,7 @@ template <class cView_type, class View_type, bool UseAccessor = false>
 class DModel_ {
  public:
   static const int n_dependencies = 1;
-  static const std::string name;
+  static const std::string eval_type;
   using Accessor_View_type = Kokkos::View<const int*, typename View_type::device_type>;
 
   DModel_(const Teuchos::RCP<Teuchos::ParameterList>& plist) {}
@@ -238,7 +238,7 @@ template <class cView_type, class View_type>
 class EModel {
  public:
   static const int n_dependencies = 2;
-  static const std::string name;
+  static const std::string eval_type;
 
   EModel(const Teuchos::RCP<Teuchos::ParameterList>& plist) {}
 
@@ -281,7 +281,7 @@ template <class cView_type, class View_type>
 class FModel {
  public:
   static const int n_dependencies = 1;
-  static const std::string name;
+  static const std::string eval_type;
 
   FModel(const Teuchos::RCP<Teuchos::ParameterList>& plist) {}
 
@@ -325,7 +325,7 @@ template <class cView_type, class View_type>
 class HModel {
  public:
   static const int n_dependencies = 1;
-  static const std::string name;
+  static const std::string eval_type;
 
   HModel(const Teuchos::RCP<Teuchos::ParameterList>& plist) {}
 
@@ -367,22 +367,22 @@ class HModel {
 
 
 template <class cView_type, class View_type>
-const std::string AModel<cView_type, View_type>::name("A");
+const std::string AModel<cView_type, View_type>::eval_type("A");
 
 template <class cView_type, class View_type>
-const std::string CModel<cView_type, View_type>::name("C");
+const std::string CModel<cView_type, View_type>::eval_type("C");
 
 template <class cView_type, class View_type, bool UseAccessor>
-const std::string DModel_<cView_type, View_type, UseAccessor>::name("D");
+const std::string DModel_<cView_type, View_type, UseAccessor>::eval_type("D");
 
 template <class cView_type, class View_type>
-const std::string EModel<cView_type, View_type>::name("E");
+const std::string EModel<cView_type, View_type>::eval_type("E");
 
 template <class cView_type, class View_type>
-const std::string FModel<cView_type, View_type>::name("F");
+const std::string FModel<cView_type, View_type>::eval_type("F");
 
 template <class cView_type, class View_type>
-const std::string HModel<cView_type, View_type>::name("H");
+const std::string HModel<cView_type, View_type>::eval_type("H");
 
 
 #endif

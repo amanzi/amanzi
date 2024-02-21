@@ -88,6 +88,7 @@ set(state_inc_files
   evaluators/EvaluatorModelCVByMaterial.hh
   evaluators/EvaluatorModelPatch.hh
   evaluators/EvaluatorAggregateBCs.hh
+  evaluators/EvaluatorSecondaryVectorAsPatch.hh
   State.hh
   Observable.hh
   UnstructuredObservations.hh
@@ -116,6 +117,7 @@ set(state_src_files
   evaluators/EvaluatorSecondaryMonotype.cc
   evaluators/EvaluatorSecondaryMonotypeFromFunction.cc
   evaluators/EvaluatorAggregateBCs.cc
+  evaluators/EvaluatorSecondaryVectorAsPatch.cc
   State.cc
   Observable.cc
   UnstructuredObservations.cc
@@ -209,7 +211,7 @@ if (BUILD_TESTS)
                     LINK_LIBS ${state_test_link_libs})
 
     # tests observations, observation evaluators, and parallel observations
-   add_amanzi_test(state_observations state_observations
+    add_amanzi_test(state_observations state_observations
                     KIND int
                     SOURCE test/Main.cc
          		   test/state_observations.cc

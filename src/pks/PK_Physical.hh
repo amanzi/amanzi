@@ -21,12 +21,18 @@
 #include "Teuchos_ParameterList.hpp"
 #include "VerboseObject.hh"
 
-#include "Debugger.hh"
 #include "Key.hh"
-#include "EvaluatorPrimary.hh"
 #include "PK.hh"
 
 namespace Amanzi {
+
+// forward declarations
+class Debugger;
+namespace Operators {
+class BCs;
+class PDE_HelperDiscretization;
+class PDE_kind;
+} // namespace Operators
 
 class PK_Physical : virtual public PK {
  public:
@@ -36,7 +42,7 @@ class PK_Physical : virtual public PK {
               Teuchos::ParameterList& pk_tree,
               const Teuchos::RCP<Teuchos::ParameterList>& glist,
               const Teuchos::RCP<State>& S)
-    : PK(comm, pk_tree, glist, S){};
+    : PK(comm, pk_tree, glist, S) {};
 
   // Virtual destructor
   virtual ~PK_Physical() = default;
@@ -44,31 +50,46 @@ class PK_Physical : virtual public PK {
   // Default implementations of PK methods.
   // -- transfer operators -- pointer copies only
   virtual Teuchos::RCP<TreeVectorSpace> getSolutionSpace() const override;
-
-  virtual void State_to_Solution(const Tag& tag, TreeVector& soln) override;
-  virtual void Solution_to_State(const TreeVector& soln, const Tag& tag) override;
+  virtual void moveStateToSolution(const Tag& tag, TreeVector& soln) override;
+  virtual void moveSolutionToState(const TreeVector& soln, const Tag& tag) override;
 
   // access
-  Key domain() { return domain_; }
-  Teuchos::RCP<Debugger> debugger() { return db_; }
+  Key getDomain() { return domain_; }
+  Teuchos::RCP<Debugger> getDebugger() { return db_; }
+  Teuchos::RCP<Operators::BCs> getBCs() { return bc_; }
 
- protected:
-  virtual void ParseParameterList_() override
-  {
-    domain_ = plist_->get<std::string>("domain name", "domain");
-    mesh_ = S_->GetMesh(domain_);
+  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization> getPDE(const Operators::PDE_kind& type) {
+    return Teuchos::null;
   }
+
+  virtual void parseParameterList() override;
+
+  virtual bool isValidStep() override;
+
+  // Tag the primary variable as changed in the DAG
+  virtual void markChangedSolution(const Tag& tag) override;
+
+  virtual void setup() override;
+  virtual void initialize() override;
+  virtual void commitStep(double t_old, double t_new, const Tag& tag) override;
+  virtual void failStep(double t_old, double t_new, const Tag& tag) override;
 
  protected:
   // name of domain, associated mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Key domain_;
 
-  // solution and evaluator
+  // primary variable
   std::string key_;
 
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> db_;
+
+  // step validity -- limit the max change of key_ in a given step
+  double max_valid_change_;
+
+  // boundary conditions
+  Teuchos::RCP<Operators::BCs> bc_;
 };
 
 } // namespace Amanzi
