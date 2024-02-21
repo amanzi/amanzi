@@ -12,7 +12,7 @@
 
 */
 
-#include "PK_Physical.hh"
+#include "PK_Physical_Default.hh"
 
 #include "State.hh"
 #include "TreeVector.hh"
@@ -26,7 +26,7 @@ namespace Amanzi {
 // Transfer operators -- copies ONLY pointers
 // -----------------------------------------------------------------------------
 Teuchos::RCP<TreeVectorSpace>
-PK_Physical::getSolutionSpace() const
+PK_Physical_Default::getSolutionSpace() const
 {
   CompositeVectorSpace& cvs = S_->Require<CompositeVector, CompositeVectorSpace>(key_, tag_next_);
   auto soln_space = Teuchos::rcp(new TreeVectorSpace(cvs.getComm()));
@@ -35,14 +35,14 @@ PK_Physical::getSolutionSpace() const
 }
 
 void
-PK_Physical::moveStateToSolution(const Tag& tag, TreeVector& solution)
+PK_Physical_Default::moveStateToSolution(const Tag& tag, TreeVector& solution)
 {
   solution.setData(S_->GetPtrW<CompositeVector>(key_, tag, getName()));
 }
 
 
 void
-PK_Physical::moveSolutionToState(const TreeVector& solution, const Tag& tag)
+PK_Physical_Default::moveSolutionToState(const TreeVector& solution, const Tag& tag)
 {
   AMANZI_ASSERT(solution.getData() == S_->GetPtr<CompositeVector>(key_, tag));
 }
@@ -52,13 +52,13 @@ PK_Physical::moveSolutionToState(const TreeVector& solution, const Tag& tag)
 // Construction -- parse the ParameterList
 // -----------------------------------------------------------------------------
 void
-PK_Physical::parseParameterList()
+PK_Physical_Default::parseParameterList()
 {
   domain_ = plist_->get<std::string>("domain name", "domain");
   mesh_ = S_->GetMesh(domain_);
   key_ = Keys::readKey(*plist_, domain_, "primary variable");
 
-  PK::parseParameterList();
+  PK_Default::parseParameterList();
 
   // primary variable max change
   max_valid_change_ = plist_->get<double>("max valid change", -1.0);
@@ -77,7 +77,7 @@ PK_Physical::parseParameterList()
 // Construction of data.
 // -----------------------------------------------------------------------------
 void
-PK_Physical::setup()
+PK_Physical_Default::setup()
 {
   // require primary variable evaluators
   PKHelpers::requireAtNext(key_, tag_next_, *S_, name_);
@@ -89,7 +89,7 @@ PK_Physical::setup()
 // Initialization of the PK data.
 // -----------------------------------------------------------------------------
 void
-PK_Physical::initialize()
+PK_Physical_Default::initialize()
 {
   // Get the record
   Record& record = S_->GetRecordW(key_, tag_next_, getName());
@@ -123,7 +123,7 @@ PK_Physical::initialize()
 // Called after all PKs have finished advancing a step successfully
 // -----------------------------------------------------------------------------
 void
-PK_Physical::commitStep(double t_old, double t_new, const Tag& tag_next)
+PK_Physical_Default::commitStep(double t_old, double t_new, const Tag& tag_next)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -139,7 +139,7 @@ PK_Physical::commitStep(double t_old, double t_new, const Tag& tag_next)
 // Called if any PKs have failed to advance a step successfully
 // -----------------------------------------------------------------------------
 void
-PK_Physical::failStep(double t_old, double t_new, const Tag& tag_next)
+PK_Physical_Default::failStep(double t_old, double t_new, const Tag& tag_next)
 {
   AMANZI_ASSERT(tag_next == tag_next_ || tag_next == Tags::NEXT);
   Tag tag_current = tag_next == tag_next_ ? tag_current_ : Tags::CURRENT;
@@ -151,7 +151,7 @@ PK_Physical::failStep(double t_old, double t_new, const Tag& tag_next)
 // Ensures the step size is smaller than max_valid_change
 // -----------------------------------------------------------------------------
 bool
-PK_Physical::isValidStep()
+PK_Physical_Default::isValidStep()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Validating time step." << std::endl;
@@ -177,7 +177,7 @@ PK_Physical::isValidStep()
 //  Marks as changed
 // -----------------------------------------------------------------------------
 void
-PK_Physical::markChangedSolution(const Tag& tag)
+PK_Physical_Default::markChangedSolution(const Tag& tag)
 {
   PKHelpers::changedEvaluatorPrimary(key_, tag, *S_);
 }

@@ -27,7 +27,7 @@
 
 namespace Amanzi {
 
-class PK_BDF_Default : public PK_BDF, public PK_Default {
+class PK_BDF_Default : public PK_BDF {
  public:
 
   PK_BDF_Default(const Comm_ptr_type& comm,
@@ -36,7 +36,9 @@ class PK_BDF_Default : public PK_BDF, public PK_Default {
                  const Teuchos::RCP<State>& S);
 
   // access to operators and PDEs in sub-PKs
-  virtual Teuchos::RCP<Operators::Operator> getOperator(const Operators::Operator_kind& type) override;
+  virtual Teuchos::RCP<Operators::Operator> getOperator(const Operators::Operator_kind& type) override {
+    return Teuchos::null;
+  }
 
   // -- Choose a time step compatible with physics.
   virtual double getDt() override;

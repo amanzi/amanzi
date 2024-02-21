@@ -13,8 +13,7 @@
   Default base with a few methods implemented in standard ways.
 */
 
-#ifndef AMANZI_PK_PHYSICAL_HH_
-#define AMANZI_PK_PHYSICAL_HH_
+#pragma once
 
 #include <string>
 
@@ -34,18 +33,15 @@ class PDE_HelperDiscretization;
 class PDE_kind;
 } // namespace Operators
 
-class PK_Physical : virtual public PK {
+class PK_Physical_Default : public PK {
  public:
-  PK_Physical() : PK(){};
+  PK_Physical_Default() : PK_Default() {};
 
-  PK_Physical(const Comm_ptr_type& comm,
+  PK_Physical_Default(const Comm_ptr_type& comm,
               Teuchos::ParameterList& pk_tree,
               const Teuchos::RCP<Teuchos::ParameterList>& glist,
               const Teuchos::RCP<State>& S)
     : PK(comm, pk_tree, glist, S) {};
-
-  // Virtual destructor
-  virtual ~PK_Physical() = default;
 
   // Default implementations of PK methods.
   // -- transfer operators -- pointer copies only
@@ -94,4 +90,3 @@ class PK_Physical : virtual public PK {
 
 } // namespace Amanzi
 
-#endif
