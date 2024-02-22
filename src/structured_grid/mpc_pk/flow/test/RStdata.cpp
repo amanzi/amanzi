@@ -10,7 +10,6 @@
 #include <RStdata.H>
 
 Real RStdata::Pa_per_ATM = 101325;
-static bool saturated = false;
 
 RStdata::RStdata(int slev, int nlevs, Layout& layout, NLScontrol& nlsc, RStstruct& _inputs, const RockManager* rm)
   : RSdata(slev,nlevs,layout,nlsc,rm), inputs(_inputs)

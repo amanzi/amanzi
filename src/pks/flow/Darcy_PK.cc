@@ -676,14 +676,5 @@ Darcy_PK::UpdateSpecificYield_()
 }
 
 
-/* ******************************************************************
-* This is strange.
-****************************************************************** */
-void
-Darcy_PK::CalculateDiagnostics(const Tag& tag)
-{
-  UpdateLocalFields_(S_.ptr());
-}
-
 } // namespace Flow
 } // namespace Amanzi

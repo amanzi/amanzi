@@ -440,7 +440,7 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
   for (int i = 0; i < bc_flux_.size(); ++i) {
     for (auto it = bc_flux_[i]->begin(); it != bc_flux_[i]->end(); ++it) {
       int f = it->first;
-      bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
+      bc_model[f] = Operators::OPERATOR_BC_TOTAL_FLUX;
       bc_value[f] = it->second[0];
     }
   }
@@ -476,6 +476,10 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       bc_model_enth_[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value_enth_[f] = enth[0][bf];
+    }
+    else if (bc_model[f] == Operators::OPERATOR_BC_TOTAL_FLUX) {
+      bc_model_enth_[f] = Operators::OPERATOR_BC_TOTAL_FLUX;
+      bc_value_enth_[f] = bc_value[f];
     }
   }
 }

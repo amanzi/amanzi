@@ -111,7 +111,7 @@ PorosityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>
     const auto& temp_c = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
     for (int c = 0; c != ncells; ++c) {
       double a = pom_->second[(*pom_->first)[c]]->getThermalCoefficients().first;
-      phi_c[0][c] += a * (temp_c[0][c] - 273.15);
+      phi_c[0][c] -= a * (temp_c[0][c] - 273.15);
     }
   }
 

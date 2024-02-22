@@ -27,9 +27,11 @@
 #include "evaluators_flow_reg.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "models_energy_reg.hh"
 #include "models_flow_reg.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
+#include "pks_energy_reg.hh"
 #include "pks_flow_reg.hh"
 #include "pks_mechanics_reg.hh"
 #include "pks_mpc_reg.hh"
@@ -53,25 +55,27 @@ RunTest(const std::string xmlInFileName)
   mesh_list->set<bool>("request faces", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create(0.0, 0.0, 11.0, 10.0, 55, 50);
+  auto mesh = factory.create("test/mpc_mechanics_thermal_flow.exo");
 
   Teuchos::ParameterList state_plist = plist->sublist("state");
-  Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
+  auto S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
 
   Amanzi::ObservationData obs_data;
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   S = cycle_driver.Go();
 
-  // verify Mandel-Cryer effect using observations at central region (5.5, 5.0)
+  // verify pressure dynamics
   std::string label = obs_data.observationLabels()[0];
   int nobs = obs_data[label].size();
 
-  CHECK(obs_data[label][1].value < obs_data[label][nobs - 1].value);
+  for (int i = 0; i < nobs; ++i) CHECK(obs_data[label][i].value > 1.0e+6);
+  CHECK(obs_data[label][0].value < obs_data[label][nobs / 2].value);
+  CHECK(obs_data[label][nobs - 1].value < obs_data[label][nobs / 2].value);
 }
 
 
-TEST(MPC_DRIVER_MECHANICS_MANDEL)
+TEST(MPC_DRIVER_THERMAL_ELASTICITY)
 {
-  RunTest("test/mpc_mechanics_stress_split.xml");
+  RunTest("test/mpc_mechanics_thermal_flow.xml");
 }

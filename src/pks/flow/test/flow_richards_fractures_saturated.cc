@@ -28,31 +28,12 @@
 #include "IO.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
-#include "OutputXDMF.hh"
 #include "State.hh"
 
 // Flow
 #include "Richards_PK.hh"
 
-/* *******************************************************************
-* Compute pressure.
-******************************************************************* */
-double MeanPressure(const Amanzi::State& S)
-{
-  const auto& p = *S.Get<Amanzi::CompositeVector>("pressure").ViewComponent("cell");
-  int ncells = p.MyLength();
-
-  double mean(0.0);
-  for (int c = 0; c < ncells; c++) {
-    mean += p[0][c];
-  }
-  return mean / ncells;
-}
-
-
-/* *******************************************************************
-* Run the model.
-******************************************************************* */
+/* **************************************************************** */
 TEST(RICHARDS_TWO_FRACTURES)
 {
   using namespace Teuchos;
@@ -66,7 +47,7 @@ TEST(RICHARDS_TWO_FRACTURES)
   int MyPID = comm->MyPID();
 
   // read parameter list
-  std::string xmlFileName = "test/flow_richards_fractures.xml";
+  std::string xmlFileName = "test/flow_richards_fractures_saturated.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a mesh framework
@@ -106,40 +87,19 @@ TEST(RICHARDS_TWO_FRACTURES)
   // initialize the Darcy process kernel
   RPK->Initialize();
   S->CheckAllFieldsInitialized();
-  WriteStateStatistics(*S);
-
-  // initialize io
-  Teuchos::ParameterList iolist;
-  iolist.get<std::string>("file name base", "plot");
-  auto io = Teuchos::rcp(new OutputXDMF(iolist, mesh, true, false));
 
   // transient solution
-  double t_old(0.0), t_new, dt(2.5);
-  for (int n = 0; n < 10; n++) {
+  double t_old(0.0), t_new, dt(0.5);
+  for (int n = 0; n < 2; n++) {
     t_new = t_old + dt;
 
     RPK->AdvanceStep(t_old, t_new);
     RPK->CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
-    dt *= 1.2;
- 
-    // measure of wetting front speed
-    double pmean = MeanPressure(*S);
-    CHECK(pmean > 80000 + (t_old - 2) * 160);
-
-    io->InitializeCycle(t_old, n, "");
-    const auto& u0 = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
-    const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
-    const auto& u2 = *S->Get<CompositeVector>("hydraulic_head").ViewComponent("cell");
-
-    io->WriteVector(*u0(0), "pressure", AmanziMesh::Entity_kind::CELL);
-    io->WriteVector(*u1(0), "saturation", AmanziMesh::Entity_kind::CELL);
-    io->WriteVector(*u2(0), "hydraulic head", AmanziMesh::Entity_kind::CELL);
-    io->FinalizeCycle();
   }
   WriteStateStatistics(*S);
 
   const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
-  for (int c = 0; c < p.MyLength(); c++) { CHECK(p[0][c] > 76000.0 && p[0][c] < 101000.0); }
+  for (int c = 0; c < p.MyLength(); c++) { CHECK(p[0][c] > -1.0 && p[0][c] < 2.0); }
 }

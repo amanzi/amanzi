@@ -178,6 +178,7 @@ MeshFrameworkFactory::create(const double x0,
 #ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = vo_->getOSTab();
         *vo_->os() << "Creating 3D block mesh using format \"MSTK\"" << std::endl;
       }
       auto mesh = Teuchos::rcp(new Mesh_MSTK(x0,
@@ -341,6 +342,7 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
 #ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = vo_->getOSTab();
         *vo_->os() << "Creating extracted mesh using format \"MSTK\" with " << setids.size()
                    << " local entities." << std::endl;
       }
