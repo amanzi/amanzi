@@ -124,6 +124,12 @@ InputConverterU::TranslateMesh_()
         mesh_list.set<Teuchos::Array<int>>("number of cells", ncells);
         mesh_list.set<Teuchos::Array<double>>("domain low coordinate", low);
         mesh_list.set<Teuchos::Array<double>>("domain high coordinate", high);
+
+        node = GetUniqueElementByTagsString_(inode, "submesh", flag);
+        if (flag) {
+          auto regions = GetAttributeVectorS_(node, "regions");
+          mesh_list.set<Teuchos::Array<std::string>>("regions", regions);
+        }
       }
 
       // Un unstructured mesh will be read from a file.

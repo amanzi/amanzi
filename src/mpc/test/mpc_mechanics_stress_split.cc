@@ -26,7 +26,6 @@
 #include "eos_reg.hh"
 #include "evaluators_flow_reg.hh"
 #include "Mesh.hh"
-#include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
 #include "models_flow_reg.hh"
 #include "PK_Factory.hh"

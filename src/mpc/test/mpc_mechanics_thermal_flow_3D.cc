@@ -26,6 +26,7 @@
 #include "eos_reg.hh"
 #include "evaluators_flow_reg.hh"
 #include "Mesh.hh"
+#include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
 #include "models_energy_reg.hh"
 #include "models_flow_reg.hh"
@@ -48,15 +49,19 @@ RunTest(const std::string xmlInFileName)
 
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   // create mesh
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
-  mesh_list->set<bool>("request faces", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create("test/mpc_mechanics_thermal_flow.exo");
+  auto mesh_parent = factory.create(-4.0, -4.0, -4.0, 4.0, 4.0, 4.0, 8, 8, 8);
 
+  std::vector<std::string> names;
+  names.push_back("DoughnutLogical");
+  auto mesh = factory.create(mesh_parent, names, AmanziMesh::Entity_kind::CELL);
+
+  // create state
   Teuchos::ParameterList state_plist = plist->sublist("state");
   auto S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
@@ -75,7 +80,7 @@ RunTest(const std::string xmlInFileName)
 }
 
 
-TEST(MPC_DRIVER_THERMAL_ELASTICITY)
+TEST(MPC_DRIVER_THERMAL_ELASTICITY_3D)
 {
-  RunTest("test/mpc_mechanics_thermal_flow.xml");
+  RunTest("test/mpc_mechanics_thermal_flow_3D.xml");
 }
