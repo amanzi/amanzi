@@ -66,6 +66,7 @@ The following parameter names were changed:
 #include "CommonDefs.hh"
 #include "DenseVector.hh"
 #include "Mesh.hh"
+#include "PKsDefs.hh"
 #include "State.hh"
 #include "UniqueLocalIndex.hh"
 
@@ -90,7 +91,7 @@ class PK_DomainFunctionCoupling : public FunctionBase {
 
   // required member functions
   virtual void Compute(double t0, double t1) override;
-  virtual std::string name() const override { return "domain coupling"; }
+  virtual DomainFunctionType getType() const override { return DomainFunctionType::COUPLING; }
 
  protected:
   using FunctionBase::value_;

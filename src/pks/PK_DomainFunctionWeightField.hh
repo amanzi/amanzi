@@ -48,8 +48,8 @@ class PK_DomainFunctionWeightField : public PK_DomainFunctionWeight<FunctionBase
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "weight by field"; }
+  virtual void Compute(double t0, double t1) override;
+  virtual DomainFunctionType getType() const override { return DomainFunctionType::WEIGHT_BY_FIELD; }
 
  protected:
   using FunctionBase::value_;

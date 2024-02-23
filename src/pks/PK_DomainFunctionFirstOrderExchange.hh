@@ -46,11 +46,11 @@ class PK_DomainFunctionFirstOrderExchange : public FunctionBase,
   // member functions
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
-  virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
+  virtual void set_state(const Teuchos::RCP<State>& S) final { S_ = S; }
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "first order exchange"; }
+  virtual void Compute(double t0, double t1) override;
+  virtual DomainFunctionType getType() const override { return DomainFunctionType::FIRST_ORDER_EXCHANGE; }
 
  protected:
   using FunctionBase::value_;

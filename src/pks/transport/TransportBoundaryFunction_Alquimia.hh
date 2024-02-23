@@ -42,11 +42,11 @@ class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
 
   void Compute(double t_old, double t_new);
 
-  // require by the case class
-  virtual std::string name() const { return "alquimia bc"; }
-
  private:
   void Init_(const std::vector<std::string>& regions);
+
+ protected:
+  std::string name_;
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

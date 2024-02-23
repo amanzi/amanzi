@@ -42,9 +42,10 @@ class PK_DomainFunctionSubgridReturn : public FunctionBase, public Functions::Un
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return dset_; }
-  virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
+  virtual void Compute(double t0, double t1) override;
+  virtual std::string getName() const override { return dset_; }
+  virtual DomainFunctionType getType() const override { return DomainFunctionType::SUBGRID_RETURN; }
+  virtual void set_state(const Teuchos::RCP<State>& S) final { S_ = S; }
 
  protected:
   using FunctionBase::value_;
@@ -157,7 +158,7 @@ PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
       // find the subgrid gid to be integrated
       auto gid = map.GID(*c);
 
-      Key domain = Keys::getDomainInSet(name(), gid);
+      Key domain = Keys::getDomainInSet(getName(), gid);
 
       Key var = Keys::getKey(domain, field_out_suffix_);
 

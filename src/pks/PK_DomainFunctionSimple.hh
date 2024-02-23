@@ -58,8 +58,8 @@ class PK_DomainFunctionSimple : public FunctionBase, public Functions::UniqueMes
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "simple"; }
+  virtual void Compute(double t0, double t1) override;
+  virtual DomainFunctionType getType() const override { return DomainFunctionType::SIMPLE; }
 
  protected:
   using FunctionBase::value_;

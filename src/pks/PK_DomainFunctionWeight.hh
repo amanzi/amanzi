@@ -46,8 +46,8 @@ class PK_DomainFunctionWeight : public FunctionBase, public Functions::UniqueMes
             Teuchos::RCP<const Epetra_MultiVector> weight);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "weight"; }
+  virtual void Compute(double t0, double t1) override;
+  virtual DomainFunctionType getType() const override { return DomainFunctionType::WEIGHT; }
 
  protected:
   using FunctionBase::value_;
