@@ -48,6 +48,8 @@ so if it was found useful.
 
 namespace Amanzi {
 
+const std::string EvaluatorSecondaryMonotypeFromFunction::eval_type = "secondary from function";
+
 EvaluatorSecondaryMonotypeFromFunction::EvaluatorSecondaryMonotypeFromFunction(
   const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)

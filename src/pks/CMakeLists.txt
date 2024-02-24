@@ -49,7 +49,11 @@ set(pks_inc_files
   PK_Physical_Default_decl.hh
   PK_Physical_Default_impl.hh
   PK_PhysicalBDF_Default.hh
+  MPC.hh
+  MPCWeak.hh
+  MPCStrong.hh
   PKFactory.hh
+  pks_registration.hh
 )
 
 
@@ -60,13 +64,14 @@ set(pks_src_files
   PK_Helpers.cc
   PK_BDF_Default.cc
   PK_PhysicalBDF_Default.cc
+  MPCWeak.cc
   PKFactory.cc
 )
 
 add_amanzi_library(pks
                    SOURCE ${pks_src_files}
                    HEADERS ${pks_inc_files}
-		   LINK_LIBS state data_structures error_handling atk
+		   LINK_LIBS time_integration solvers state data_structures error_handling atk
                              ${Tpetra_LIBRARIES})
 
 

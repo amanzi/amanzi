@@ -33,30 +33,18 @@ REGISTER(EvaluatorIndependentFunction);
 REGISTER(EvaluatorIndependentFromFile);
 REGISTER(EvaluatorIndependentConstant);
 REGISTER(EvaluatorIndependentTensorFunction);
+REGISTER(EvaluatorIndependentPatchFunction);
+REGISTER(EvaluatorSecondaryMonotypeFromFunction);
+template<> REGISTER(EvaluatorSecondaryMonotypeAdditiveCV);
 
-Utils::RegisteredFactory<Evaluator, EvaluatorIndependentPatchFunction>
-  EvaluatorIndependentPatchFunction::fac_("independent variable patch");
+const std::string EvaluatorPrimaryStaticMesh::eval_type = "static mesh";
+REGISTER(EvaluatorPrimaryStaticMesh);
 
-Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction>
-  EvaluatorSecondaryMonotypeFromFunction::fac_("secondary variable from function");
+template <> REGISTER(EvaluatorCellVolume);
+template <> REGISTER(EvaluatorMeshElevation);
+template <> REGISTER(EvaluatorMeshSlopeMagnitude);
 
-template <>
-REGISTER(EvaluatorSecondaryMonotypeAdditiveCV);
-
-Utils::RegisteredFactory<Evaluator, EvaluatorPrimaryStaticMesh>
-  EvaluatorPrimaryStaticMesh::fac_("static mesh");
-
-
-template <>
-REGISTER(EvaluatorCellVolume);
-template <>
-REGISTER(EvaluatorMeshElevation);
-template <>
-REGISTER(EvaluatorMeshSlopeMagnitude);
-
-Utils::RegisteredFactory<Evaluator, EvaluatorAggregateBCs>
-  EvaluatorAggregateBCs::fac_("boundary condition aggregator");
-
-
+REGISTER(EvaluatorAggregateBCs);
+REGISTER(EvaluatorSecondaryVectorAsPatch);
 
 } // namespace Amanzi

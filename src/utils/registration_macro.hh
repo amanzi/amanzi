@@ -13,4 +13,4 @@
                                                      " by material")
 
 
-#define REGISTER_PK(c) Utils::RegisteredPKFactory<c> c::reg_(c::pk_type_)
+#define REGISTER_PK(c) RegisteredPKFactory<c> c::reg_(c::pk_type_)

@@ -77,6 +77,10 @@ Developer's note:
   interface as well, and should add the private static member
   (following the Usage notes in src/pks/PK_Factory.hh) to register the
   derived PK with the PK factory.
+
+  PK_Default is a default implementation that also acts as a backstop, allowing
+  deriving PKs to know that all methods are implemented here and so they can
+  call this class's method.
 */
 
 #pragma once
@@ -102,37 +106,16 @@ class PK_Default : public PK_type {
   PK_Default(const Comm_ptr_type& comm,
              Teuchos::ParameterList& pk_tree,
              const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-             const Teuchos::RCP<State>& S)
-    : comm_(comm),
-      name_(Keys::cleanPListName(pk_tree)),
-      tag_current_(Tags::CURRENT),
-      tag_next_(Tags::NEXT),
-      S_(S)
-  {
-    Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(global_plist, "PKs", true);
-    if (pk_list->isSublist(name_)) {
-      plist_ = Teuchos::sublist(pk_list, name_);
-    } else {
-      Errors::Message msg;
-      msg << "There is no sublist for PK \"" << name_ << "\" in PKs list";
-      Exceptions::amanzi_throw(msg);
-    }
+             const Teuchos::RCP<State>& S);
 
-    // construct the VerboseObject
-    // Note, this allows for overriding the vo plist for individual PKs in a
-    // collection of PKs
-    Teuchos::RCP<Teuchos::ParameterList> vo_plist = plist_;
-    if (plist_->isSublist(name_ + " verbose object")) {
-      vo_plist = Teuchos::rcp(new Teuchos::ParameterList(*plist_));
-      vo_plist->set("verbose object", plist_->sublist(name_ + " verbose object"));
-    }
-
-    //  some tests provide nullptr
-    vo_ = Teuchos::rcp(new VerboseObject(comm_, name_, *vo_plist));
-  };
-
+  virtual void modifyParameterList() override {}
+  virtual void parseParameterList() override {}
   virtual void setup() override {}
   virtual void initialize() override {}
+  virtual void commitStep(double t_old, double t_new, const Tag& tag) override {}
+  virtual void failStep(double t_old, double t_new, const Tag& tag) override {}
+  virtual bool isValidStep() override { return true; }
+  virtual void calculateDiagnostics(const Tag& tag) override {}
 
   // Return PK's name
   virtual const std::string& getName() const { return name_; }
@@ -154,6 +137,43 @@ class PK_Default : public PK_type {
   Teuchos::RCP<State> S_;          // global data manager
   Teuchos::RCP<VerboseObject> vo_; // fancy IO
 };
+
+
+template<class PK_type>
+PK_Default<PK_type>::PK_Default(const Comm_ptr_type& comm,
+        Teuchos::ParameterList& pk_tree,
+        const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+        const Teuchos::RCP<State>& S)
+  : comm_(comm),
+    name_(Keys::cleanPListName(pk_tree)),
+    tag_current_(Tags::CURRENT),
+    tag_next_(Tags::NEXT),
+    S_(S)
+{
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(global_plist, "PKs", true);
+  if (pk_list->isSublist(name_)) {
+    plist_ = Teuchos::sublist(pk_list, name_);
+  } else {
+    Errors::Message msg;
+    msg << "There is no sublist for PK \"" << name_ << "\" in PKs list";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  // construct the VerboseObject
+  // Note, this allows for overriding the vo plist for individual PKs in a
+  // collection of PKs
+  Teuchos::RCP<Teuchos::ParameterList> vo_plist = plist_;
+  if (plist_->isSublist(name_ + " verbose object")) {
+    vo_plist = Teuchos::rcp(new Teuchos::ParameterList(*plist_));
+    vo_plist->set("verbose object", plist_->sublist(name_ + " verbose object"));
+  }
+
+  //  some tests provide nullptr
+  vo_ = Teuchos::rcp(new VerboseObject(comm_, name_, *vo_plist));
+};
+
+
+
 
 } // namespace Amanzi
 

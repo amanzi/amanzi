@@ -12,7 +12,9 @@
 
 */
 
-#include "PK_Physical_Default.hh"
+#pragma once
+
+#include "PK_Physical_Default_decl.hh"
 
 #include "CompositeVector.hh"
 #include "TreeVector.hh"
@@ -60,11 +62,11 @@ template<class PK_type>
 void
 PK_Physical_Default<PK_type>::parseParameterList()
 {
+  PK_type::parseParameterList();
+
   domain_ = plist_->template get<std::string>("domain name", "domain");
   mesh_ = S_->GetMesh(domain_);
   key_ = Keys::readKey(*plist_, domain_, "primary variable");
-
-  PK_type::parseParameterList();
 
   // primary variable max change
   max_valid_change_ = plist_->template get<double>("max valid change", -1.0);
@@ -146,6 +148,8 @@ PK_Physical_Default<PK_type>::commitStep(double t_old, double t_new, const Tag& 
   AMANZI_ASSERT(tag_next == tag_next_ || tag_next == Tags::NEXT);
   Tag tag_current = tag_next == tag_next_ ? tag_current_ : Tags::CURRENT;
   PKHelpers::assign(key_, tag_current, tag_next, *S_);
+
+  PK_type::commitStep(t_old, t_new, tag_next);
 }
 
 
@@ -159,6 +163,8 @@ PK_Physical_Default<PK_type>::failStep(double t_old, double t_new, const Tag& ta
   AMANZI_ASSERT(tag_next == tag_next_ || tag_next == Tags::NEXT);
   Tag tag_current = tag_next == tag_next_ ? tag_current_ : Tags::CURRENT;
   PKHelpers::assign(key_, tag_next, tag_current, *S_);
+
+  PK_type::failStep(t_old, t_new, tag_next);
 }
 
 
@@ -185,7 +191,7 @@ PK_Physical_Default<PK_type>::isValidStep()
       return false;
     }
   }
-  return true;
+  return PK_type::isValidStep();
 }
 
 

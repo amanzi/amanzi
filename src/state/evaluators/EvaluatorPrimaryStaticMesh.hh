@@ -39,13 +39,14 @@ class EvaluatorPrimaryStaticMesh : public EvaluatorPrimary<double> {
     return Teuchos::rcp(new EvaluatorPrimaryStaticMesh(*this));
   }
 
-  virtual std::string getType() const override { return "static mesh"; }
+  static const std::string eval_type;
+  virtual std::string getType() const override { return eval_type; }
 
  protected:
   std::string domain_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, EvaluatorPrimaryStaticMesh> fac_;
+  static Utils::RegisteredFactory<Evaluator, EvaluatorPrimaryStaticMesh> reg_;
 };
 
 } // namespace Amanzi

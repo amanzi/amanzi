@@ -68,7 +68,7 @@ class PK_BDF_Default : public PK_Default<PK_BDF> {
 
 
   virtual void MarkChangedSolution() override {
-    PK_Default<PK_BDF>::markChangedSolutionPK(tag_next_);
+    markChangedSolutionPK(tag_next_);
   }
 
   virtual void UpdateContinuationParameter(double lambda) override;

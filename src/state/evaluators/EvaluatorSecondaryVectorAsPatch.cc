@@ -14,6 +14,13 @@ namespace Amanzi {
 
 const std::string EvaluatorSecondaryVectorAsPatch::eval_type = "vector as patch";
 
+Teuchos::RCP<Evaluator>
+EvaluatorSecondaryVectorAsPatch::Clone() const
+{
+  return Teuchos::rcp(new EvaluatorSecondaryVectorAsPatch(*this));
+}
+
+
 void
 EvaluatorSecondaryVectorAsPatch::EnsureCompatibility(State& S)
 {
@@ -28,9 +35,16 @@ EvaluatorSecondaryVectorAsPatch::EnsureCompatibility(State& S)
 void
 EvaluatorSecondaryVectorAsPatch::Update_(State& S)
 {
-  S.GetW<MultiPatch<double>>(my_keys_.front().first, my_keys_.front().second, my_keys_.front().first)[0].data =
-    S.GetW<CompositeVector>(dependencies_.front().first, dependencies_.front().second, dependencies_.front().first)
-    .viewComponent("cell", false);
+  auto& multipatch = S.GetW<MultiPatch<double>>(my_keys_.front().first, my_keys_.front().second, my_keys_.front().first);
+  AMANZI_ASSERT(multipatch.size() == 1);
+  auto& patch = multipatch[0];
+
+  auto& cv = S.GetW<CompositeVector>(dependencies_.front().first, dependencies_.front().second, dependencies_.front().first);
+  AMANZI_ASSERT(cv.hasComponent("cell"));
+  auto cv_view = cv.viewComponent("cell", false);
+  AMANZI_ASSERT(patch.data.extent(0) == cv_view.extent(0));
+  AMANZI_ASSERT(patch.data.extent(1) == cv_view.extent(1));
+  patch.data = cv_view;
 }
 
 } // namespace Amanzi

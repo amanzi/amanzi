@@ -71,7 +71,6 @@ class PK_PhysicalBDF_Default : public PK_Physical_Default<PK_BDF_Default> {
 
   virtual void parseParameterList() override;
   virtual void setup() override;
-  virtual void initialize() override;
 
   // Default preconditioner is Picard
   virtual int

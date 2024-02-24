@@ -79,7 +79,8 @@ class EvaluatorSecondaryMonotypeFromFunction
   EvaluatorSecondaryMonotypeFromFunction(const EvaluatorSecondaryMonotypeFromFunction& other);
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  virtual std::string getType() const override { return "secondary from function"; }
+  static const std::string eval_type;
+  virtual std::string getType() const override { return eval_type; }
 
  protected:
   // These do the actual work
@@ -99,7 +100,7 @@ class EvaluatorSecondaryMonotypeFromFunction
   std::vector<Teuchos::RCP<const Function>> funcs_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction> fac_;
+  static Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction> reg_;
 };
 
 } // namespace Amanzi

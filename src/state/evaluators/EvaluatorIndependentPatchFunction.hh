@@ -57,7 +57,8 @@ class EvaluatorIndependentPatchFunction
 
   EvaluatorIndependentPatchFunction& operator=(const EvaluatorIndependentPatchFunction& other);
 
-  virtual std::string getType() const override { return "independent variable patch"; }
+  static const std::string eval_type;
+  virtual std::string getType() const override { return eval_type; }
 
   virtual void EnsureCompatibility(State& S) override;
 
@@ -70,7 +71,7 @@ class EvaluatorIndependentPatchFunction
   AmanziMesh::Entity_kind entity_kind_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentPatchFunction> fac_;
+  static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentPatchFunction> reg_;
 };
 
 } // namespace Amanzi

@@ -49,7 +49,7 @@ class EvaluatorAggregateBCs : public EvaluatorSecondary {
   bool inited_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, EvaluatorAggregateBCs> fac_;
+  static Utils::RegisteredFactory<Evaluator, EvaluatorAggregateBCs> reg_;
 };
 
 

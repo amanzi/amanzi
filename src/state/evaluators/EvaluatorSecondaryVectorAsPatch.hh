@@ -33,6 +33,9 @@ class EvaluatorSecondaryVectorAsPatch : public EvaluatorSecondary {
  public:
   using EvaluatorSecondary::EvaluatorSecondary;
 
+  EvaluatorSecondaryVectorAsPatch(const EvaluatorSecondaryVectorAsPatch& other) = default;
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
+
   virtual void EnsureCompatibility(State& S) override;
 
   static const std::string eval_type;

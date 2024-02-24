@@ -313,10 +313,11 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
       if (kind == AmanziMesh::CELL) {
         int old_schema = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;
         global_op_ = Teuchos::rcp(new Operator_Cell(cvs->CreateSpace(), plist_, old_schema));
-        std::string name("CELL_CELL");
         if (surf) {
+          std::string name("Accumulation: CELL_CELL surface");
           op = Teuchos::rcp(new Op_SurfaceCell_SurfaceCell(name, mesh_));
         } else {
+          std::string name("Accumulation: CELL_CELL");
           op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
         }
 

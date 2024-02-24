@@ -19,6 +19,8 @@
 
 namespace Amanzi {
 
+const std::string EvaluatorIndependentPatchFunction::eval_type = "independent variable patch";
+
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
