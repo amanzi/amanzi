@@ -152,7 +152,8 @@ class Darcy_PK : public Flow_PK {
   bool initialize_with_darcy_;
   int num_itrs_;
 
-  Key compliance_key_;
+  bool external_aperture_;
+  Key compliance_key_, ref_aperture_key_, ref_pressure_key_;
 
   Teuchos::RCP<CompositeVector> solution;      // next pressure state
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev; // time derivative of pressure

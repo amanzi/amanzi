@@ -90,7 +90,6 @@ Flow_PK::Setup()
   permeability_key_ = Keys::getKey(domain_, "permeability");
   permeability_eff_key_ = Keys::getKey(domain_, "permeability_effective");
   aperture_key_ = Keys::getKey(domain_, "aperture");
-  prev_aperture_key_ = Keys::getKey(domain_, "prev_aperture");
   bulk_modulus_key_ = Keys::getKey(domain_, "bulk_modulus");
 
   porosity_key_ = Keys::getKey(domain_, "porosity");
@@ -129,11 +128,6 @@ Flow_PK::Setup()
     }
 
     S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-
-    S_->Require<CV_t, CVS_t>(prev_aperture_key_, Tags::DEFAULT)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);

@@ -93,7 +93,6 @@ Energy_PK::Setup()
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
 
   aperture_key_ = Keys::getKey(domain_, "aperture");
-  prev_aperture_key_ = Keys::getKey(domain_, "prev_aperture");
   conductivity_eff_key_ = Keys::getKey(domain_, "thermal_conductivity_effective");
   conductivity_gen_key_ = (!flow_on_manifold_) ? conductivity_key_ : conductivity_eff_key_;
 
@@ -269,11 +268,6 @@ Energy_PK::Setup()
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
-
-    S_->Require<CV_t, CVS_t>(prev_aperture_key_, Tags::DEFAULT)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // set units

@@ -184,7 +184,7 @@ class Energy_PK : public PK_PhysicalBDF {
   // names of state fields
   Key temperature_key_;
   Key energy_key_, prev_energy_key_;
-  Key enthalpy_key_, aperture_key_, prev_aperture_key_;
+  Key enthalpy_key_, aperture_key_;
   Key ie_liquid_key_, ie_gas_key_, ie_rock_key_;
   Key mol_flowrate_key_, particle_density_key_, sat_liquid_key_;
   Key mol_density_liquid_key_, mass_density_liquid_key_;

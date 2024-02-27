@@ -100,6 +100,11 @@ InputConverterU::TranslateFlow_(const std::string& mode,
         .set<std::string>("multiscale model", "dual continuum discontinuous matrix");
     }
 
+    if (domain == "fracture" && compliance_) {
+      flow_list->sublist("physical models and assumptions")
+        .set<bool>("external aperture", compliance_);
+    }
+
   } else if (pk_model == "richards") {
     Teuchos::ParameterList& upw_list = out_list.sublist("relative permeability");
     upw_list.set<std::string>("upwind method", rel_perm_out);

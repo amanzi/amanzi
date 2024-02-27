@@ -43,6 +43,7 @@ set(flow_src_files Flow_PK.cc
                    Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
                    Richards_Picard.cc Richards_LinearOperator.cc Richards_CNLS.cc
+                   ApertureDarcyEvaluator.cc
                    ApertureModelPartition.cc ApertureModelEvaluator.cc
                    PorosityModelPartition.cc PorosityEvaluator.cc
                    PermeabilityModelPartition.cc PermeabilityEvaluator.cc

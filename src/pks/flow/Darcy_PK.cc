@@ -31,6 +31,7 @@
 #include "Tensor.hh"
 
 // Amanzi::Flow
+#include "ApertureDarcyEvaluator.hh"
 #include "Darcy_PK.hh"
 #include "FlowDefs.hh"
 #include "ModelEvaluator.hh"
@@ -115,6 +116,9 @@ Darcy_PK::Setup()
 
   specific_yield_key_ = Keys::getKey(domain_, "specific_yield");
   specific_storage_key_ = Keys::getKey(domain_, "specific_storage");
+
+  ref_aperture_key_ = Keys::getKey(domain_, "ref_aperture");
+  ref_pressure_key_ = Keys::getKey(domain_, "ref_pressure");
   compliance_key_ = Keys::getKey(domain_, "compliance");
 
   // optional keys
@@ -125,6 +129,7 @@ Darcy_PK::Setup()
 
   // Our decision can be affected by the list of models
   auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
+  external_aperture_ = physical_models->get<bool>("external aperture", false);
   std::string mu_model = physical_models->get<std::string>("viscosity model", "constant viscosity");
   use_bulk_modulus_ = physical_models->get<bool>("use bulk modulus", false);
   if (mu_model != "constant viscosity") {
@@ -220,7 +225,32 @@ Darcy_PK::Setup()
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S_->RequireEvaluator(compliance_key_, Tags::DEFAULT);
 
-    S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+    if (external_aperture_) {
+      S_->Require<CV_t, CVS_t>(ref_aperture_key_, Tags::DEFAULT, ref_aperture_key_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+      S_->GetRecordW(ref_aperture_key_, ref_aperture_key_).set_io_vis(false);
+      S_->RequireEvaluator(ref_aperture_key_, Tags::DEFAULT);
+
+      S_->Require<CV_t, CVS_t>(ref_pressure_key_, Tags::DEFAULT, passwd_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+      S_->GetRecordW(ref_pressure_key_, passwd_).set_io_vis(false);
+
+      Teuchos::ParameterList elist(aperture_key_);
+      elist.set<std::string>("reference aperture key", ref_aperture_key_)
+        .set<std::string>("reference pressure key", ref_pressure_key_)
+        .set<std::string>("pressure key", pressure_key_)
+        .set<std::string>("compliance key", compliance_key_)
+        .set<std::string>("tag", "");
+
+      auto eval = Teuchos::rcp(new ApertureDarcyEvaluator(elist));
+      S_->SetEvaluator(aperture_key_, Tags::DEFAULT, eval);
+    } else {
+      S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
+    }
   } else if (use_bulk_modulus_) {
     S_->Require<CV_t, CVS_t>(bulk_modulus_key_, Tags::DEFAULT)
       .SetMesh(mesh_)
@@ -447,7 +477,8 @@ Darcy_PK::InitializeFields_()
   if (flow_on_manifold_)
     InitializeCVField(S_, *vo_, compliance_key_, Tags::DEFAULT, compliance_key_, 0.0);
 
-  InitializeCVFieldFromCVField(S_, *vo_, prev_aperture_key_, aperture_key_, passwd_);
+  if (flow_on_manifold_ && external_aperture_)
+    InitializeCVFieldFromCVField(S_, *vo_, ref_pressure_key_, pressure_key_, passwd_);
 }
 
 
@@ -565,12 +596,6 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   op_->ApplyInverse(rhs, *solution);
-
-  // update some fields, we cannot move this to commit step due to "initialize"
-  if (flow_on_manifold_) {
-    S_->GetW<CV_t>(prev_aperture_key_, Tags::DEFAULT, passwd_) =
-      S_->Get<CV_t>(aperture_key_, Tags::DEFAULT);
-  }
 
   // statistics
   num_itrs_++;

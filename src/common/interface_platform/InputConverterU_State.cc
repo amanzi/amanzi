@@ -324,11 +324,26 @@ InputConverterU::TranslateState_()
       std::string reg_str = CreateNameFromVector_(regions);
 
       // material properties
+      // -- fracture compliance
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, compliance", flag);
+      if (flag) {
+        compliance_ = true;
+        TranslateFieldEvaluator_(node,
+                                 "fracture-compliance",
+                                 "m*Pa^-1",
+                                 reg_str,
+                                 regions,
+                                 out_ic,
+                                 out_ev,
+                                 "value",
+                                 "fracture");
+      }
+
       // -- aperture
       node = GetUniqueElementByTagsString_(inode, "aperture", flag);
       if (flag) {
-        TranslateFieldEvaluator_(
-          node, "fracture-aperture", "m", reg_str, regions, out_ic, out_ev, "value", "fracture");
+        std::string key = (compliance_) ? "fracture-ref_aperture": "fracture-aperture";
+        TranslateFieldEvaluator_(node, key, "m", reg_str, regions, out_ic, out_ev, "value", "fracture");
       } else {
         msg << "Element \"aperture\" must be specified for all materials.";
         Exceptions::amanzi_throw(msg);
@@ -405,20 +420,6 @@ InputConverterU::TranslateState_()
             .set<std::string>("thermal conductivity key", "fracture-thermal_conductivity")
             .set<std::string>("aperture key", "fracture-aperture");
         }
-      }
-
-      // -- fracture compliance
-      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, compliance", flag);
-      if (flag) {
-        TranslateFieldEvaluator_(node,
-                                 "fracture-compliance",
-                                 "m*Pa^-1",
-                                 reg_str,
-                                 regions,
-                                 out_ic,
-                                 out_ev,
-                                 "value",
-                                 "fracture");
       }
 
       // -- thermal conductivity
