@@ -344,6 +344,8 @@ InputConverterU::TranslateState_()
       if (flag) {
         std::string key = (compliance_) ? "fracture-ref_aperture": "fracture-aperture";
         TranslateFieldEvaluator_(node, key, "m", reg_str, regions, out_ic, out_ev, "value", "fracture");
+        if (out_ev.sublist(key).isParameter("variable name")) 
+          out_ev.sublist(key).set<std::string>("variable name", "fracture-aperture"); 
       } else {
         msg << "Element \"aperture\" must be specified for all materials.";
         Exceptions::amanzi_throw(msg);
