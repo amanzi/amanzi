@@ -424,9 +424,21 @@ class State {
 #endif
 
   template <typename T>
+  const T& Get(const KeyTag& keytag) const
+  {
+    return Get<T>(keytag.first, keytag.second);
+  }
+
+  template <typename T>
   T& GetW(const Key& fieldname, const Tag& tag, const Key& owner)
   {
     return GetRecordSetW(fieldname).GetW<T>(tag, owner);
+  }
+
+  template <typename T>
+  T& GetW(const KeyTag& keytag, const Key& owner)
+  {
+    return GetW<T>(keytag.first, keytag.second, owner);
   }
 
   template <typename T>

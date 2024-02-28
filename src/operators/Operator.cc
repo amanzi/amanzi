@@ -221,13 +221,13 @@ Operator::AssembleMatrix()
 
   compute_complete_ = false;
 
-  std::cout << "writing matrix with " << size() << " local ops" << std::endl
-            << "  with sparsity structures:" << std::endl;
-  for (auto& it : *this) {
-    std::cout << "  " << it->schema_string << std::endl;
-  }
-  WriteMatrix("assembled_matrix");
-  throw("assembed matrix written");
+  // std::cout << "writing matrix with " << size() << " local ops" << std::endl
+  //           << "  with sparsity structures:" << std::endl;
+  // for (auto& it : *this) {
+  //   std::cout << "  " << it->schema_string << std::endl;
+  // }
+  // WriteMatrix("assembled_matrix");
+  // throw("assembed matrix written");
 }
 
 /* ******************************************************************
@@ -1205,10 +1205,10 @@ Operator::WriteMatrix(const std::string& fname_base) const
 
       std::vector<std::string> compnames = { "cell", "face", "boundary_face", "edge", "node" };
       for (const auto& comp : compnames) {
-        auto mesh_map = mesh_->getMap(AmanziMesh::createEntityKind(comp), false);
         int lcv_block = 0;
         bool not_done_block = smap_->hasComponent(lcv_block, comp, 0);
         while (not_done_block) {
+          auto mesh_map = mesh_->getMap(AmanziMesh::createEntityKind(comp), false);
           int lcv_dof = 0;
           while (smap_->hasComponent(lcv_block, comp, lcv_dof)) {
             auto ids = smap_->viewIndices<Amanzi::MirrorHost>(lcv_block, comp, lcv_dof);

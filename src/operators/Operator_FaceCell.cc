@@ -389,7 +389,6 @@ Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
         }
         proc_mat.sumIntoValues(
           cell_row_inds[c], &cell_col_inds[c], 1, &A_c(nfaces, nfaces), true, true);
-        if (c == 99) std::cout << "Assembling op " << A_c << std::endl;
       } else {
         for (int m = 0; m != nfaces; ++m) {
           offproc_mat.sumIntoValues(cell_row_inds[c] - nrows_local,
@@ -479,7 +478,6 @@ Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
       auto lid_r = face_row_inds[f];
       auto lid_c = face_col_inds[f];
       proc_mat.sumIntoValues(lid_r, &lid_c, 1, &diag(sc, 0), true, false);
-      std::cout << "Assembling SurfCell_SurfCell into " << lid_r << "," << lid_c << " val = " << diag(sc,0) << std::endl;
     });
 }
 
@@ -521,7 +519,6 @@ Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
               &A_f(n, m),
               true,
               true);
-            std::cout << "Assembling SurfFace_SurfCell into " << face_row_inds(mesh->getEntityParent(AmanziMesh::CELL, cells(n))) << "," << face_col_inds(mesh->getEntityParent(AmanziMesh::CELL, cells(m))) << " val = " << A_f(n,m) << std::endl;
           }
         } else {
           for (int m = 0; m != cells.extent(0); ++m) {

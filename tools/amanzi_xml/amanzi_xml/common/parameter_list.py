@@ -184,6 +184,12 @@ class ParameterList(base.TeuchosBaseXML):
     def setName(self, name):
         self.set("name", name)
         
+    def hasParameter(self, name):
+        return self.isElement(name)
+
+    def getParameter(self, name):
+        return self.getElement(name)
+
     def setParameter(self, name, ptype, val):
         """Set parameter name of type ptype to value, creating a new Parameter if necessary."""
         try:

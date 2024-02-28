@@ -66,6 +66,8 @@ class EvaluatorSecondary : public Evaluator {
   virtual bool
   IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override;
 
+  const KeyTagSet& getDependencies() const { return dependencies_; }
+  const KeyTagVector& getMyKeys() const { return my_keys_; }
   virtual std::ostream& writeInfo(std::ostream& os) const override final;
 
  protected:

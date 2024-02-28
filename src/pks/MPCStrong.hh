@@ -369,5 +369,8 @@ MPCStrong<SubPK_type>::ModifyCorrection(double h,
   return modified;
 };
 
+template<> inline const std::string MPCStrong<PK_PhysicalBDF_Default>::pk_type_ = "NOT USED";
+template<> inline const std::string MPCStrong<PK_BDF_Default>::pk_type_ = "strong mpc";
+
 
 } // namespace Amanzi

@@ -75,7 +75,7 @@ class EvaluatorModelCV : public EvaluatorSecondaryMonotype<CompositeVector, Comp
   EvaluatorModelCV(const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
-  virtual std::string getType() const override { return model_->eval_type; }
+  virtual std::string getType() const override { return Model_type::eval_type; }
 
  protected:
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;

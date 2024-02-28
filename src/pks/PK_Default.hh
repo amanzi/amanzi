@@ -118,11 +118,11 @@ class PK_Default : public PK_type {
   virtual void calculateDiagnostics(const Tag& tag) override {}
 
   // Return PK's name
-  virtual const std::string& getName() const { return name_; }
+  virtual const std::string& getName() const override { return name_; }
 
   // Set a tag interval for advancing
   // Set the tags to integrate between
-  virtual void setTags(const Tag& current, const Tag& next)
+  virtual void setTags(const Tag& current, const Tag& next) override
   {
     tag_current_ = current;
     tag_next_ = next;

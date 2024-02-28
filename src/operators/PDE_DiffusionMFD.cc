@@ -184,11 +184,6 @@ PDE_DiffusionMFD::UpdateMatricesMixed_()
       }
       Acell(nfaces, nfaces) = matsum;
     });
-
-  if (A.size() == 100) {
-    auto Acell = A[99];
-    std::cout << "Acell[99] = " << Acell << std::endl;
-  }
 }
 
 
@@ -533,10 +528,6 @@ PDE_DiffusionMFD::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
     const auto rhs_face = global_op_->rhs()->viewComponent("face", true);
     const auto rhs_cell = global_op_->rhs()->viewComponent("cell");
 
-    std::cout << "bc model of 500 = " << bc_model_trial(500) << "," << bc_model_test(500) << " = " << bc_value(500) << std::endl;
-
-    std::cout << "pre-BCs, Acell = " << A[99] << std::endl;
-
     Kokkos::parallel_for(
       "PDE_DiffusionMFD::ApplyBCs_Mixed_", ncells_owned, KOKKOS_LAMBDA(const int& c) {
         auto faces = mesh->getCellFaces(c);
@@ -583,7 +574,6 @@ PDE_DiffusionMFD::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
           }
         }
       });
-    std::cout << "post-BCs, Acell = " << A[99] << std::endl;
   }
   global_op_->rhs()->gatherGhostedToMaster("face", Tpetra::ADD);
 }

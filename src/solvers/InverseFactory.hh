@@ -261,18 +261,9 @@ createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& in
   auto& method_list = Impl::getMethodSublist(inv_list, method_name);
 
   Teuchos::RCP<Inverse<Matrix, Matrix, Vector, VectorSpace>> inv = Teuchos::null;
-  if (Keys::starts_with(method_name, "amesos")) {
-    // int amesos_version = 0;
-    //  figure out the version
-    //  -- old style -- from a parameter
-    // if (method_list.isParameter("amesos version")) {
-    //   amesos_version = method_list.get<int>("amesos version");
-    // } else if (Keys::starts_with(method_name, "amesos2")) {
-    //   amesos_version = 2;
-    // } else {
-    //   assert(false && "Amesos is not supported");
-    //   amesos_version = 1;
-    // }
+  if (Keys::starts_with(method_name, "amesos2: ")) {
+    method_list.set<std::string>(
+      "method", method_name.substr(std::string("amesos2: ").length(), method_name.length()));
     inv = Teuchos::rcp(new DirectMethodAmesos2());
   } else if (method_name == "diagonal") {
     inv = Teuchos::rcp(new PreconditionerDiagonal());
