@@ -161,7 +161,8 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
 
   double dt_, dt_next_, dt_desirable_;
 
-  bool use_gravity_, poroelasticity_, thermoelasticity_;
+  bool use_gravity_, thermoelasticity_;
+  bool split_undrained_, split_fixed_stress_, poroelasticity_;
 
  protected:
   // pointers to primary fields and their evaluators
@@ -173,7 +174,7 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
 
   // solvers
   Teuchos::RCP<Operators::Operator> op_matrix_;
-  Teuchos::RCP<Operators::PDE_Elasticity> op_matrix_elas_;
+  Teuchos::RCP<Operators::PDE_Elasticity> op_matrix_elas_, op_matrix_graddiv_;
 
  private:
   std::string passwd_;
@@ -181,7 +182,7 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
 
   Key displacement_key_, hydrostatic_stress_key_, vol_strain_key_;
   Key young_modulus_key_, poisson_ratio_key_;
-  Key particle_density_key_;
+  Key particle_density_key_, undrained_split_coef_key_;
 
   // time integrators
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae_;

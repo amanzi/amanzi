@@ -448,8 +448,7 @@ InputConverterU::TranslatePOM_(const std::string& domain)
     double dilation_rock(0.0), dilation_liquid(0.0);
     node =
       GetUniqueElementByTagsString_(inode, "mechanical_properties, rock_thermal_dilation", flag);
-    if (flag)
-      dilation_rock = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
+    if (flag) dilation_rock = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
 
     node =
       GetUniqueElementByTagsString_(inode, "mechanical_properties, liquid_thermal_dilation", flag);

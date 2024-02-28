@@ -283,13 +283,13 @@ AmanziUnstructuredGridSimulationDriver::InitMesh(
     // replace mesh with a submesh
     if (gen_params.isParameter("regions")) {
       try {
-        auto regions = gen_params.get<Teuchos::Array<std::string>>("regions").toVector(); 
+        auto regions = gen_params.get<Teuchos::Array<std::string>>("regions").toVector();
         mesh = meshfactory->create(mesh, regions, Amanzi::AmanziMesh::Entity_kind::CELL);
       } catch (const std::exception& e) {
         std::cerr << rank << ": error: " << e.what() << std::endl;
         ierr++;
       }
-    } 
+    }
 
     comm_->SumAll(&ierr, &aerr, 1);
     if (aerr > 0) { return Amanzi::Simulator::FAIL; }

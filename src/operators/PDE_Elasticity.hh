@@ -70,12 +70,20 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
     Init_(plist);
   }
 
+  PDE_Elasticity(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
+    : PDE_HelperDiscretization(global_op)
+  {
+    pde_type_ = PDE_ELASTICITY;
+    Init_(plist);
+  }
+
   // main virtual members
   // -- setup
   void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K);
   void SetTensorCoefficient(const WhetStone::Tensor& K);
   void SetTensorCoefficient(const Teuchos::RCP<const CompositeVector>& E,
                             const Teuchos::RCP<const CompositeVector>& nu);
+  void SetScalarCoefficient(const CompositeVector& K);
 
   // -- creation of an operator
   using PDE_HelperDiscretization::UpdateMatrices;

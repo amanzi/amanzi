@@ -1,5 +1,3 @@
-# -*- mode: cmake -*-
-
 #
 #  Amanzi
 #    Mulitprocess Coordinator (MPC)
@@ -320,6 +318,7 @@ if (BUILD_TESTS)
 
     add_amanzi_test(mpc_mechanics_mandel mpc_mechanics_mandel
                     KIND      int
+                    NPROCS    3
                     SOURCE    test/Main.cc test/mpc_mechanics_mandel.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})

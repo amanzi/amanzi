@@ -58,7 +58,8 @@ using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Operators;
 
-void RunTest(double FunExact(const AmanziGeometry::Point& xp))
+void
+RunTest(double FunExact(const AmanziGeometry::Point& xp))
 {
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
@@ -194,7 +195,8 @@ void RunTest(double FunExact(const AmanziGeometry::Point& xp))
 }
 
 
-TEST(UPWIND_FLUX_MANIFOLDS) {
+TEST(UPWIND_FLUX_MANIFOLDS)
+{
   RunTest(FunLinear);
   RunTest(FunNonlinear);
 }

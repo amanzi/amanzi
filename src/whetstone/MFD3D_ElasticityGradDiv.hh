@@ -17,8 +17,8 @@
   The material properties are imbedded into the the matrix Mc.
 */
 
-#ifndef AMANZI_MFD3D_ELASTICITY_HH_
-#define AMANZI_MFD3D_ELASTICITY_HH_
+#ifndef AMANZI_MFD3D_ELASTICITY_GRAD_DIV_HH_
+#define AMANZI_MFD3D_ELASTICITY_GRAD_DIV_HH_
 
 #include "Teuchos_RCP.hpp"
 
@@ -35,10 +35,10 @@ namespace WhetStone {
 
 class Polynomial;
 
-class MFD3D_Elasticity : public MFD3D {
+class MFD3D_ElasticityGradDiv : public MFD3D {
  public:
-  MFD3D_Elasticity(const Teuchos::ParameterList& plist,
-                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  MFD3D_ElasticityGradDiv(const Teuchos::ParameterList& plist,
+                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh){};
 
   // required methods
@@ -53,23 +53,8 @@ class MFD3D_Elasticity : public MFD3D {
   int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
-  // optimization methods (mainly for research, since the maximum principle does not exists)
-  int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);
-  int StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A);
-
-  // projectors
-  virtual void H1Cell(int c, const DenseVector& dofs, Tensor& vc) override;
-
  private:
-  void MatrixMatrixProduct_(const DenseMatrix& A,
-                            const DenseMatrix& B,
-                            bool transposeB,
-                            DenseMatrix& AB);
-
- private:
-  DenseMatrix coefM_, R_;
-
-  static RegisteredFactory<MFD3D_Elasticity> reg_;
+  static RegisteredFactory<MFD3D_ElasticityGradDiv> reg_;
 };
 
 } // namespace WhetStone

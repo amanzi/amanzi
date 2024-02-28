@@ -43,7 +43,7 @@ add_amanzi_library(whetstone
                           MFD3D_CrouzeixRaviartSerendipity.cc
                           MFD3D_Diffusion.cc MFD3D_Diffusion_Surface.cc MFD3D_Diffusion_Other.cc 
                           MFD3D_Diffusion_CurvedFace.cc
-                          MFD3D_Elasticity.cc 
+                          MFD3D_Elasticity.cc MFD3D_ElasticityGradDiv.cc 
                           MFD3D_ElasticityWeakSymmetry.cc 
                           MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
                           MFD3D_GeneralizedDiffusion.cc

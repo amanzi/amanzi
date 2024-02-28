@@ -470,8 +470,7 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       bc_model_enth_[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value_enth_[f] = enth[0][bf];
-    }
-    else if (bc_model[f] == Operators::OPERATOR_BC_TOTAL_FLUX) {
+    } else if (bc_model[f] == Operators::OPERATOR_BC_TOTAL_FLUX) {
       bc_model_enth_[f] = Operators::OPERATOR_BC_TOTAL_FLUX;
       bc_value_enth_[f] = bc_value[f];
     }

@@ -71,10 +71,28 @@ PDE_Elasticity::SetTensorCoefficient(const Teuchos::RCP<const CompositeVector>& 
   K_default_.Init(1, 1);
 }
 
+void
+PDE_Elasticity::SetScalarCoefficient(const CompositeVector& K)
+{
+  const auto& K_c = *K.ViewComponent("cell");
+  int ncells = K_c.MyLength();
+
+  int d = K.Mesh()->getSpaceDimension();
+  WhetStone::Tensor T(d, 1);
+  K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(ncells));
+  for (int c = 0; c < ncells; ++c) {
+    T(0, 0) = K_c[0][c];
+    (*K_)[c] = T;
+  }
+
+  K_default_.Init(1, 1);
+  E_ = Teuchos::null;
+  nu_ = Teuchos::null;
+}
+
 
 /* ******************************************************************
 * Calculate elemental matrices.
-* NOTE: The input parameters are not yet used.
 ****************************************************************** */
 void
 PDE_Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
@@ -256,6 +274,8 @@ PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
   global_op_->OpPushBack(local_op_);
 
   K_ = Teuchos::null;
+  K_default_.Init(1, 1);
+  K_default_(0, 0) = 1.0; // to run the code without a tensor
 }
 
 
