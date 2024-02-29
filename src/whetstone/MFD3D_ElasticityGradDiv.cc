@@ -42,6 +42,7 @@ MFD3D_ElasticityGradDiv::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
 
   int nrows = d_ * nfaces;
   DenseVector div(nrows);
+  div.PutScalar(0.0);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
