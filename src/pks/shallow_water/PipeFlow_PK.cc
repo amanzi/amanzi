@@ -676,7 +676,6 @@ void PipeFlow_PK::InitializeFields(){
 
      for (int cell = 0; cell < ncells_owned; cell++) {
 
-        std::cout<<"AT INIT: " << PipeD_c[0][cell] << std::endl;
         double maxDepth = B_c[0][cell] + PipeD_c[0][cell];
         if (ht_c[0][cell] >= maxDepth){ // cell is pressurized
 
