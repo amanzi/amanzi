@@ -30,8 +30,6 @@ PipeFlow_PK::PipeFlow_PK(Teuchos::ParameterList& pk_tree,
                   : ShallowWater_PK(pk_tree, glist, S, soln), 
                   PK(pk_tree, glist, S, soln){
 
-  pipe_cross_section_ = Pi * 0.25 * pipe_diameter_ * pipe_diameter_;
-
   Manning_coeff_ = sw_list_->get<double>("Manning coefficient", 0.005);
 
   Teuchos::ParameterList vlist;
@@ -53,22 +51,15 @@ void PipeFlow_PK::Setup()
    if (!S_->HasRecord(water_depth_key_)) {
       S_->Require<CV_t, CVS_t>(water_depth_key_, Tags::DEFAULT, water_depth_key_)
          .SetMesh(mesh_) ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-
-      Teuchos::ParameterList elist(water_depth_key_);
-      elist.set<std::string>("my key", water_depth_key_).set<std::string>("tag", Tags::DEFAULT.get())
-         .set<double>("pipe diameter", pipe_diameter_);
-      auto eval = Teuchos::rcp(new WaterDepthEvaluator(elist));
-      S_->SetEvaluator(water_depth_key_, Tags::DEFAULT, eval);
+      AddDefaultPrimaryEvaluator_(water_depth_key_);
    }
 
    // -- pressure head
    if (!S_->HasRecord(pressure_head_key_)) {
       S_->Require<CV_t, CVS_t>(pressure_head_key_, Tags::DEFAULT, pressure_head_key_)
          .SetMesh(mesh_) ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-
       Teuchos::ParameterList elist(pressure_head_key_);
       elist.set<std::string>("my key", pressure_head_key_).set<std::string>("tag", Tags::DEFAULT.get())
-         .set<double>("pipe diameter", pipe_diameter_)
          .set<double>("celerity", celerity_);
       auto eval = Teuchos::rcp(new PressureHeadEvaluator(elist));
       S_->SetEvaluator(pressure_head_key_, Tags::DEFAULT, eval);
@@ -96,7 +87,7 @@ void PipeFlow_PK::Setup()
 //--------------------------------------------------------------------
 // Discretization of the friction source term
 //--------------------------------------------------------------------
-double PipeFlow_PK::NumericalSourceFriction(double h, double qx, double qy, double WettedAngle, int component)
+double PipeFlow_PK::NumericalSourceFriction(double h, double qx, double qy, double WettedAngle, int component, double PipeD)
 {
 
   double S1 = 0.0;
@@ -104,7 +95,7 @@ double PipeFlow_PK::NumericalSourceFriction(double h, double qx, double qy, doub
 
   if (std::fabs(h) > 1.e-10) { //we have to raise this to the power of 7/3 below so the tolerance needs to be stricter
      if (WettedAngle >= 0.0){  
-        double WettedPerimeter = 0.5 * pipe_diameter_ * WettedAngle;
+        double WettedPerimeter = 0.5 * PipeD * WettedAngle;
         num = - g_ * Manning_coeff_ * Manning_coeff_ * pow(WettedPerimeter, 4.0/3.0) * std::fabs(qx) * qx;
         double denom = pow( h, 7.0/3.0);
         S1 = num / denom;
@@ -128,13 +119,15 @@ double PipeFlow_PK::NumericalSourceFriction(double h, double qx, double qy, doub
 // Discretization of the bed slope source term
 //--------------------------------------------------------------------
 std::vector<double>
-PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n, 
+PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n, double PipeD, 
                                      std::vector<int> bc_model, std::vector<double> bc_value_h)
 {
 
   std::vector<double> S(3, 0.0);
   std::vector<double> V_rec(2, 0.0);
-  std::vector<double> UL(2), UR(2);
+  std::vector<double> UL(3), UR(3);
+  UL[2] = PipeD;
+  UR[2] = PipeD;
 
   if (std::fabs(htc - Bc) >= 1.e-15) { //cell is not dry
 
@@ -168,7 +161,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
            BGrad += BathymetryEdgeValue(f, B_n); //B_(j+1/2)
 
-           V_rec = ComputeFieldsOnEdge(c1, f, htc, Bc, Bmax, B_n);
+           V_rec = ComputeFieldsOnEdge(c1, f, htc, Bc, Bmax, B_n, PipeD);
 
            UL[0] = V_rec[0]; //wetted area
            UL[1] = V_rec[1]; //wetted angle
@@ -192,11 +185,11 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
            if (c2 == -1) {
                if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
                UR[0] = bc_value_h[f];                               
-               UR[1] = ComputeWettedAngleNewton(bc_value_h[f]);    
+               UR[1] = ComputeWettedAngleNewton(bc_value_h[f], PipeD);    
            } else {                                               
                                                                  
              // default outflow BC                              
-             V_rec = ComputeFieldsOnEdge(c1, f, htc, Bc, Bmax, B_n);
+             V_rec = ComputeFieldsOnEdge(c1, f, htc, Bc, Bmax, B_n, PipeD);
 
              UR[0] = V_rec[0]; //wetted area
              UR[1] = V_rec[1]; //wetted angle
@@ -206,7 +199,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
            } else {
 
-              V_rec = ComputeFieldsOnEdge(c2, f, htc, Bc, Bmax, B_n);
+              V_rec = ComputeFieldsOnEdge(c2, f, htc, Bc, Bmax, B_n, PipeD);
 
               UR[0] = V_rec[0];
               UR[1] = V_rec[1];
@@ -237,9 +230,10 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 //--------------------------------------------------------------------
 // Compute pressure head
 //--------------------------------------------------------------------
-double PipeFlow_PK::ComputePressureHead (double WettedArea){
+double PipeFlow_PK::ComputePressureHead (double WettedArea, double PipeD){
 
-   return (celerity_ * celerity_ * (WettedArea - pipe_cross_section_)) / (g_ * pipe_cross_section_);
+   double PipeCrossSection = Pi * 0.25 * PipeD * PipeD;
+   return (celerity_ * celerity_ * (WettedArea - PipeCrossSection)) / (g_ * PipeCrossSection);
 
 }
 
@@ -247,12 +241,14 @@ double PipeFlow_PK::ComputePressureHead (double WettedArea){
 // Discretization of the bed slope source term for junction
 //--------------------------------------------------------------------
 std::vector<double>
-PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n) 
+PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n, double PipeD) 
 {
 
   std::vector<double> S(3, 0.0);
   std::vector<double> V_rec(2, 0.0);
-  std::vector<double> UL(2), UR(2);
+  std::vector<double> UL(3), UR(3);
+  UL[2] = PipeD;
+  UR[2] = PipeD;
 
   if (std::fabs(htc - Bc) >= 1.e-15) { //cell is not dry
 
@@ -335,7 +331,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
            BGrad += BathymetryEdgeValue(f, B_n); //B_(j+1/2)
 
-           V_rec = ComputeFieldsOnEdge(c1, f, htc, Bc, Bmax, B_n);
+           V_rec = ComputeFieldsOnEdge(c1, f, htc, Bc, Bmax, B_n, PipeD);
 
            UL[0] = V_rec[0]; //wetted area
            UL[1] = V_rec[1]; //wetted angle
@@ -348,7 +344,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
            BGrad -= BathymetryEdgeValue(f, B_n); //B_(j+1/2) - //B_(j-1/2)
 
-           V_rec = ComputeFieldsOnEdge(c2, f, htc, Bc, Bmax, B_n);
+           V_rec = ComputeFieldsOnEdge(c2, f, htc, Bc, Bmax, B_n, PipeD);
 
            UR[0] = V_rec[0];
            UR[1] = V_rec[1];
@@ -387,7 +383,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
            BGrad += BathymetryEdgeValue(f, B_n); //B_(j+1/2)
 
-           V_rec = ComputeFieldsOnEdge(c1, f, htc, Bc, Bmax, B_n);
+           V_rec = ComputeFieldsOnEdge(c1, f, htc, Bc, Bmax, B_n, PipeD);
 
            UL[0] = V_rec[0]; //wetted area
            UL[1] = V_rec[1]; //wetted angle
@@ -400,7 +396,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
            BGrad -= BathymetryEdgeValue(f, B_n); //B_(j+1/2) - //B_(j-1/2)
 
-           V_rec = ComputeFieldsOnEdge(c2, f, htc, Bc, Bmax, B_n);
+           V_rec = ComputeFieldsOnEdge(c2, f, htc, Bc, Bmax, B_n, PipeD);
 
            UR[0] = V_rec[0];
            UR[1] = V_rec[1];
@@ -430,17 +426,18 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 double PipeFlow_PK::ComputeHydrostaticPressureForce (std::vector<double> SolArray){
 
       double I = 0.0;
+      double PipeCrossSection = Pi * 0.25 * SolArray[2] * SolArray[2];
 
-      if ((0.0 < SolArray[0] && SolArray[0] < pipe_cross_section_)){ //flow is ventilated (free-surface)
+      if ((0.0 < SolArray[0] && SolArray[0] < PipeCrossSection)){ //flow is ventilated (free-surface)
 
          I = 3.0 * sin(SolArray[1] * 0.5) - pow(sin(SolArray[1] * 0.5),3) - 3.0 * (SolArray[1] * 0.5) * cos(SolArray[1] * 0.5);
-         I = I * g_ * pow(pipe_diameter_,3) / 24.0;
+         I = I * g_ * pow(SolArray[2],3) / 24.0;
 
       }
 
-      else if (SolArray[0] >= pipe_cross_section_) { //flow is pressurized
+      else if (SolArray[0] >= PipeCrossSection) { //flow is pressurized
 
-         I = g_ * SolArray[0] * (ComputePressureHead(SolArray[0]) + sqrt(SolArray[0]/Pi));
+         I = g_ * SolArray[0] * (ComputePressureHead(SolArray[0], SolArray[2]) + sqrt(SolArray[0]/Pi));
 
       }
 
@@ -457,18 +454,19 @@ void PipeFlow_PK::UpdateSecondaryFields(){
    auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
    auto& TotalDepth_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
    auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+   auto& PipeD_c = *S_->GetW<CV_t>(pipe_diameter_key_, Tags::DEFAULT, pipe_diameter_key_).ViewComponent("cell", true);
 
    for (int c = 0; c < model_cells_owned_.size(); ++c) {
        int cell = model_cells_owned_[c];
-       WettedAngle_c[0][cell] = ComputeWettedAngleNewton(PrimaryVar_c[0][cell]);
-       TotalDepth_c[0][cell] = ComputeTotalDepth(PrimaryVar_c[0][cell], B_c[0][cell], WettedAngle_c[0][cell]);
+       WettedAngle_c[0][cell] = ComputeWettedAngleNewton(PrimaryVar_c[0][cell], PipeD_c[0][cell]);
+       TotalDepth_c[0][cell] = ComputeTotalDepth(PrimaryVar_c[0][cell], B_c[0][cell], WettedAngle_c[0][cell], PipeD_c[0][cell]);
    }
    for (int c = 0; c < junction_cells_owned_.size(); ++c) {
        int cell = junction_cells_owned_[c];
        WettedAngle_c[0][cell] = -1.0;
        // NOTE: the primary variable for junctions store the water depth
        TotalDepth_c[0][cell] = ShallowWater_PK::ComputeTotalDepth(PrimaryVar_c[0][cell], 
-                                                   B_c[0][cell], WettedAngle_c[0][cell]);
+                                                   B_c[0][cell], WettedAngle_c[0][cell], PipeD_c[0][cell]);
    }
 
    Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
@@ -480,19 +478,20 @@ void PipeFlow_PK::UpdateSecondaryFields(){
 //--------------------------------------------------------------------
 // Compute total depth
 //--------------------------------------------------------------------
-double PipeFlow_PK::ComputeTotalDepth(double PrimaryVar, double Bathymetry, double WettedAngle){
+double PipeFlow_PK::ComputeTotalDepth(double PrimaryVar, double Bathymetry, double WettedAngle, double PipeD){
 
    double TotalDepth = 0.0;
+   double PipeCrossSection = Pi * 0.25 * PipeD * PipeD;
 
-   if( PrimaryVar >= 0.0 && PrimaryVar < pipe_cross_section_){
+   if( PrimaryVar >= 0.0 && PrimaryVar < PipeCrossSection){
 
-      TotalDepth = ComputeWaterDepth(WettedAngle) + Bathymetry;
+      TotalDepth = ComputeWaterDepth(WettedAngle, PipeD) + Bathymetry;
 
    }
 
-   else if ( PrimaryVar >= pipe_cross_section_) {
+   else if ( PrimaryVar >= PipeCrossSection) {
 
-      TotalDepth = pipe_diameter_ + Bathymetry + ComputePressureHead(PrimaryVar);
+      TotalDepth = PipeD + Bathymetry + ComputePressureHead(PrimaryVar, PipeD);
 
    }
 
@@ -511,7 +510,8 @@ double PipeFlow_PK::ComputeTotalDepth(double PrimaryVar, double Bathymetry, doub
 //--------------------------------------------------------------------
 // Compute wetted area and wetted angle at edge location
 //--------------------------------------------------------------------
-std::vector<double> PipeFlow_PK::ComputeFieldsOnEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n)
+std::vector<double> PipeFlow_PK::ComputeFieldsOnEdge(int c, int e, double htc, double Bc, double Bmax, 
+                                                     const Epetra_MultiVector& B_n, double PipeD)
 {
 
   std::vector <double> V_rec(2,0.0); //vector to return
@@ -520,8 +520,8 @@ std::vector<double> PipeFlow_PK::ComputeFieldsOnEdge(int c, int e, double htc, d
   double B_edge = BathymetryEdgeValue(e, B_n);
   double h_edge = std::max( (ht_edge - B_edge), 0.0);
 
-  V_rec[1] = ComputeWettedAngle(h_edge);
-  V_rec[0] = ComputeWettedArea(V_rec[1]);
+  V_rec[1] = ComputeWettedAngle(h_edge, PipeD);
+  V_rec[0] = ComputeWettedArea(V_rec[1], PipeD);
 
   return V_rec;
 
@@ -531,45 +531,45 @@ std::vector<double> PipeFlow_PK::ComputeFieldsOnEdge(int c, int e, double htc, d
 //--------------------------------------------------------------------
 // Compute wetted angle given water depth
 //--------------------------------------------------------------------
-double PipeFlow_PK::ComputeWettedAngle(double WaterDepth){
+double PipeFlow_PK::ComputeWettedAngle(double WaterDepth, double PipeD){
 
-   if (WaterDepth >= pipe_diameter_) return TwoPi; //if pipe is filled wetted angle is TwoPi
+   if (WaterDepth >= PipeD) return TwoPi; //if pipe is filled wetted angle is TwoPi
 
-   else return 2.0 * acos(1.0 - 2.0 * WaterDepth / pipe_diameter_);
+   else return 2.0 * acos(1.0 - 2.0 * WaterDepth / PipeD);
 
 }
 
 //--------------------------------------------------------------------
 // Compute wetted area given wetted angle
 //--------------------------------------------------------------------
-double PipeFlow_PK::ComputeWettedArea(double WettedAngle){
+double PipeFlow_PK::ComputeWettedArea(double WettedAngle, double PipeD){
 
-   if (WettedAngle >= TwoPi) return Pi * 0.25 * pipe_diameter_ * pipe_diameter_; //if pipe is filled, wetted area is the full cross section
+   if (WettedAngle >= TwoPi) return Pi * 0.25 * PipeD * PipeD; //if pipe is filled, wetted area is the full cross section
 
-   else return pipe_diameter_ * pipe_diameter_ * 0.125 * (WettedAngle - sin(WettedAngle));
+   else return PipeD * PipeD * 0.125 * (WettedAngle - sin(WettedAngle));
 
 }
 
 //--------------------------------------------------------------------
 // Compute water depth given wetted angle
 //--------------------------------------------------------------------
-double PipeFlow_PK::ComputeWaterDepth(double WettedAngle){
+double PipeFlow_PK::ComputeWaterDepth(double WettedAngle, double PipeD){
 
-   if(WettedAngle >= TwoPi) return pipe_diameter_;
+   if(WettedAngle >= TwoPi) return PipeD;
    
-   else return pipe_diameter_ * 0.5 * (1.0 - cos(WettedAngle * 0.5)); 
+   else return PipeD * 0.5 * (1.0 - cos(WettedAngle * 0.5)); 
 
 }
 
 //--------------------------------------------------------------------
 // Compute wetted angle given wetted area with Newton's method
 //--------------------------------------------------------------------
-double PipeFlow_PK::ComputeWettedAngleNewton(double WettedArea){
+double PipeFlow_PK::ComputeWettedAngleNewton(double WettedArea, double PipeD){
 
    double tol = 1.e-15;
    unsigned max_iter = 10000;
    double WettedAngle;
-   double PipeCrossSection = Pi * 0.25 * pipe_diameter_ * pipe_diameter_;
+   double PipeCrossSection = Pi * 0.25 * PipeD * PipeD;
 
    if (std::fabs(WettedArea) < 1.e-15) { //cell is dry
       WettedAngle = 0.0;
@@ -580,10 +580,10 @@ double PipeFlow_PK::ComputeWettedAngleNewton(double WettedArea){
    else { //cell is partially flooded
       unsigned iter = 0;
       if (std::fabs(WettedAngle) < 1.e-15) WettedAngle = Pi; // change initial guess to pi if was zero
-       double err = WettedAngle - sin(WettedAngle) - 8.0 * WettedArea / (pipe_diameter_ * pipe_diameter_);
+       double err = WettedAngle - sin(WettedAngle) - 8.0 * WettedArea / (PipeD * PipeD);
        while(iter < max_iter && std::fabs(err) > tol){
           WettedAngle =  WettedAngle - err / (1.0 - cos(WettedAngle));
-          err = WettedAngle - sin(WettedAngle) - 8.0 * WettedArea / (pipe_diameter_ * pipe_diameter_);
+          err = WettedAngle - sin(WettedAngle) - 8.0 * WettedArea / (PipeD * PipeD);
           iter++;
        }
    }
@@ -666,19 +666,21 @@ void PipeFlow_PK::InitializeFields(){
      auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& WaterDepth_c = *S_->GetW<CV_t>(water_depth_key_, Tags::DEFAULT, water_depth_key_).ViewComponent("cell");
      auto& PressureHead_c = *S_->GetW<CV_t>(pressure_head_key_, Tags::DEFAULT, pressure_head_key_).ViewComponent("cell");
+     auto& PipeD_c = *S_->GetW<CV_t>(pipe_diameter_key_, Tags::DEFAULT, pipe_diameter_key_).ViewComponent("cell");
      auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
      for (int cell = 0; cell < ncells_owned; cell++) {
 
-        double maxDepth = B_c[0][cell] + pipe_diameter_;
+        std::cout<<"AT INIT: " << PipeD_c[0][cell] << std::endl;
+        double maxDepth = B_c[0][cell] + PipeD_c[0][cell];
         if (ht_c[0][cell] >= maxDepth){ // cell is pressurized
 
-            double PipeCrossSection = Pi * 0.25 * pipe_diameter_ * pipe_diameter_;
-            PressureHead_c[0][cell] = ht_c[0][cell] - pipe_diameter_ - B_c[0][cell];
+            double PipeCrossSection = Pi * 0.25 * PipeD_c[0][cell] * PipeD_c[0][cell] ; 
+            PressureHead_c[0][cell] = ht_c[0][cell] - PipeD_c[0][cell] - B_c[0][cell];
             PrimaryVar_c[0][cell] = (g_ * PipeCrossSection * PressureHead_c[0][cell]) / (celerity_ * celerity_) + PipeCrossSection;
             WettedAngle_c[0][cell] = TwoPi;
-            WaterDepth_c[0][cell] = pipe_diameter_;
+            WaterDepth_c[0][cell] = PipeD_c[0][cell];
         }
         else if ((std::fabs(ht_c[0][cell] - B_c[0][cell]) < 1.e-15) || (ht_c[0][cell] < B_c[0][cell])){ //cell is dry
 
@@ -691,8 +693,8 @@ void PipeFlow_PK::InitializeFields(){
         else if (ht_c[0][cell] < maxDepth && B_c[0][cell] < ht_c[0][cell]) { //cell is ventilated
 
            WaterDepth_c[0][cell] = ht_c[0][cell] - B_c[0][cell];
-           WettedAngle_c[0][cell] = ComputeWettedAngle(WaterDepth_c[0][cell]);
-           PrimaryVar_c[0][cell] = ComputeWettedArea(WettedAngle_c[0][cell]);
+           WettedAngle_c[0][cell] = ComputeWettedAngle(WaterDepth_c[0][cell], PipeD_c[0][cell]);
+           PrimaryVar_c[0][cell] = ComputeWettedArea(WettedAngle_c[0][cell], PipeD_c[0][cell]);
 
         }
 

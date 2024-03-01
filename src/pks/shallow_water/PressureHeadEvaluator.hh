@@ -38,12 +38,11 @@ class PressureHeadEvaluator : public EvaluatorSecondaryMonotype<CompositeVector,
 
 protected: 
   double celerity_;
-  double pipe_diameter_;
   double Pi = 3.14159265359;
   double TwoPi = 6.28318530718;
 
  private:
-  std::string wetted_angle_key_, wetted_area_key_;
+  std::string wetted_angle_key_, wetted_area_key_, pipe_diameter_key_;
 
 
 };

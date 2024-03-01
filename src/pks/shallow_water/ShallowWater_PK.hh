@@ -104,8 +104,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   double TotalDepthEdgeValue(int c, int e, double htc,
                              double Bc, double Bmax, const Epetra_MultiVector& B_n);
 
-  virtual std::vector<double> ComputeFieldsOnEdge(int c, int e, double htc, 
-                                                  double Bc, double Bmax, const Epetra_MultiVector& B_n); 
+  virtual std::vector<double> ComputeFieldsOnEdge(int c, int e, double htc, double Bc, 
+                                                  double Bmax, const Epetra_MultiVector& B_n, double PipeD); 
 
 
   // due to rotational invariance of SW equations, we need flux in the
@@ -120,25 +120,25 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   std::vector<double> NumericalSourceBedSlope(int c, double hc);
 
   virtual std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
-                                                      double Bmax, const Epetra_MultiVector& B_n,
+                                                      double Bmax, const Epetra_MultiVector& B_n, double PipeD,
                                                       std::vector<int> bc_model, std::vector<double> bc_value_h);
 
   virtual std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
-                                                      double Bmax, const Epetra_MultiVector& B_n);
+                                                      double Bmax, const Epetra_MultiVector& B_n, double PipeD);
 
-  virtual double NumericalSourceFriction(double h, double qx, double qy, double WettedAngle, int component){return 0.0;};
+  virtual double NumericalSourceFriction(double h, double qx, double qy, double WettedAngle, int component, double PipeD){return 0.0;};
 
-  virtual double ComputeWaterDepth(double WettedAngle){return 0.0;};
+  virtual double ComputeWaterDepth(double WettedAngle, double PipeD){return 0.0;};
 
-  virtual double ComputeWettedAngle(double WaterDepth){return -1.0;};
+  virtual double ComputeWettedAngle(double WaterDepth, double PipeD){return -1.0;};
 
-  virtual double ComputeWettedAngleNewton(double WettedArea){return -1.0;};
+  virtual double ComputeWettedAngleNewton(double WettedArea, double PipeD){return -1.0;};
 
-  virtual double ComputeWettedArea(double WettedAngle){return 0.0;};
+  virtual double ComputeWettedArea(double WettedAngle, double PipeD){return 0.0;};
 
-  virtual double ComputeTotalDepth(double PrimaryVar, double Bathymetry, double WettedAngle){return PrimaryVar + Bathymetry;};
+  virtual double ComputeTotalDepth(double PrimaryVar, double Bathymetry, double WettedAngle, double PipeD){return PrimaryVar + Bathymetry;};
 
-  virtual double ComputePressureHead(double WettedArea){return 0.0;};
+  virtual double ComputePressureHead(double WettedArea, double PipeD){return 0.0;};
 
   virtual void UpdateSecondaryFields();
 
@@ -182,6 +182,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   Key hydrostatic_pressure_key_;
   Key riemann_flux_key_;
   Key wetted_angle_key_;
+  Key pipe_diameter_key_;
   Key source_key_;
 
   std::string passwd_;
@@ -197,8 +198,6 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   double g_;
 
   int shallow_water_model_; 
-
-  double pipe_diameter_;
 
   double celerity_;
 

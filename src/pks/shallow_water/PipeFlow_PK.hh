@@ -31,30 +31,30 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual void Setup() override;
 
-  virtual double NumericalSourceFriction(double h, double qx, double qy, double WettedAngle, int component) override;
+  virtual double NumericalSourceFriction(double h, double qx, double qy, double WettedAngle, int component, double PipeD) override;
 
   virtual std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
-                                                      double Bmax, const Epetra_MultiVector& B_n,
+                                                      double Bmax, const Epetra_MultiVector& B_n, double PipeD,
                                                       std::vector<int> bc_model, std::vector<double> bc_value_h) override;
 
   virtual std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
-                                              double Bmax, const Epetra_MultiVector& B_n) override;
+                                                      double Bmax, const Epetra_MultiVector& B_n, double PipeD) override;
 
   virtual void UpdateSecondaryFields() override;
 
-  virtual double ComputeTotalDepth(double PrimaryVar, double Bathymetry, double WettedAngle) override;
+  virtual double ComputeTotalDepth(double PrimaryVar, double Bathymetry, double WettedAngle, double PipeD) override;
 
-  virtual double ComputeWaterDepth(double WettedAngle) override;
+  virtual double ComputeWaterDepth(double WettedAngle, double PipeD) override;
 
-  virtual double ComputeWettedAngle(double WaterDepth) override;
+  virtual double ComputeWettedAngle(double WaterDepth, double PipeD) override;
 
-  virtual double ComputeWettedArea(double WettedAngle) override;
+  virtual double ComputeWettedArea(double WettedAngle, double PipeD) override;
 
-  virtual double ComputeWettedAngleNewton(double WettedArea) override;
+  virtual double ComputeWettedAngleNewton(double WettedArea, double PipeD) override;
 
   virtual double ComputeHydrostaticPressureForce(std::vector<double> SolArray) override;
 
-  virtual double ComputePressureHead(double WettedAngle) override;
+  virtual double ComputePressureHead(double WettedAngle, double PipeD) override;
 
   virtual void SetupPrimaryVariableKeys() override;
 
@@ -82,12 +82,11 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   bool IsJunction(const int & cell);
 
-  virtual std::vector<double> ComputeFieldsOnEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n) override;
+  virtual std::vector<double> ComputeFieldsOnEdge(int c, int e, double htc, double Bc, double Bmax, 
+                                                  const Epetra_MultiVector& B_n, double PipeD) override;
 
  private:
   static RegisteredPKFactory<PipeFlow_PK> reg_;
-
-  double pipe_cross_section_;
 
   double Manning_coeff_;
 

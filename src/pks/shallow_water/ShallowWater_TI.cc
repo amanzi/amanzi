@@ -48,13 +48,14 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   auto& riemann_f = *S_->GetW<CompositeVector>(riemann_flux_key_, passwd_).ViewComponent("face", true);
 
   auto& WettedAngle_c = *S_->GetW<CompositeVector>(wetted_angle_key_, passwd_).ViewComponent("cell", true); 
+  auto& PipeD_c = *S_->GetW<CompositeVector>(pipe_diameter_key_, pipe_diameter_key_).ViewComponent("cell", true); 
 
   for (int c = 0; c < model_cells_wghost_.size(); ++c) {
     int cell = model_cells_wghost_[c];  
     double factor = inverse_with_tolerance(h_temp[0][cell], cell_area2_max_);
     vel_c[0][cell] = factor * q_temp[0][cell];
     vel_c[1][cell] = factor * q_temp[1][cell];
-    ht_c[0][cell] = ComputeTotalDepth(h_temp[0][cell], B_c[0][cell], WettedAngle_c[0][cell]);
+    ht_c[0][cell] = ComputeTotalDepth(h_temp[0][cell], B_c[0][cell], WettedAngle_c[0][cell], PipeD_c[0][cell]);
   }
 
   for (int c = 0; c < junction_cells_wghost_.size(); ++c) {
@@ -62,7 +63,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double factor = inverse_with_tolerance(h_temp[0][cell], cell_area2_max_);
     vel_c[0][cell] = factor * q_temp[0][cell];
     vel_c[1][cell] = factor * q_temp[1][cell];
-    ht_c[0][cell] = ShallowWater_PK::ComputeTotalDepth(h_temp[0][cell], B_c[0][cell], WettedAngle_c[0][cell]);
+    ht_c[0][cell] = ShallowWater_PK::ComputeTotalDepth(h_temp[0][cell], B_c[0][cell], WettedAngle_c[0][cell], PipeD_c[0][cell]);
   }
 
   // allocate memory for temporary fields
@@ -127,6 +128,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
              int f = it->first;
              bc_model_vector[f] = Operators::OPERATOR_BC_DIRICHLET; 
              AmanziMesh::Entity_ID_List nodes;
+             AmanziMesh::Entity_ID_List cells;
+             mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+             int cell = (cells[0] == -1) ? cells[1] : cells[0];
              mesh_->face_get_nodes(f, &nodes);
              int n0 = nodes[0], n1 = nodes[1];
              bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
@@ -134,8 +138,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
              bc_value_qy[f] = bc_value_h[f] * it->second[1];
              bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
              bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
-             double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
-             bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], bc_value_b[f], WettedAngle_f);
+             double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f], PipeD_c[0][cell]);
+             bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], bc_value_b[f], WettedAngle_f, PipeD_c[0][cell]);
           }
        } 
     }
@@ -147,13 +151,16 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
           bc_value_qy[f] = it->second[1];
           if (primary_variable_Dirichlet){
              AmanziMesh::Entity_ID_List nodes;
+             AmanziMesh::Entity_ID_List cells;
+             mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+             int cell = (cells[0] == -1) ? cells[1] : cells[0];
              mesh_->face_get_nodes(f, &nodes);
              int n0 = nodes[0], n1 = nodes[1];
              bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
              bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
              bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
-             double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
-             bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], bc_value_b[f], WettedAngle_f);
+             double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f], PipeD_c[0][cell]);
+             bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], bc_value_b[f], WettedAngle_f, PipeD_c[0][cell]);
           }
        }
     }
@@ -167,13 +174,16 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
           bc_value_qy[f] = it->second[1];
           if (primary_variable_Dirichlet){
              AmanziMesh::Entity_ID_List nodes;
+             AmanziMesh::Entity_ID_List cells;
+             mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+             int cell = (cells[0] == -1) ? cells[1] : cells[0];
              mesh_->face_get_nodes(f, &nodes);
              int n0 = nodes[0], n1 = nodes[1];
              bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
              bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
              bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
-             double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f]);
-             bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], bc_value_b[f], WettedAngle_f);
+             double WettedAngle_f = ComputeWettedAngleNewton(bc_value_h[f], PipeD_c[0][cell]);
+             bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], bc_value_b[f], WettedAngle_f, PipeD_c[0][cell]);
           }
        }
     }
@@ -259,7 +269,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   std::vector<double> FNum_rotTmp(3,0.0);        // fluxes
   std::vector<double> BedSlopeSource;  // bed slope source
   std::vector<double> FrictionSource(2, 0.0);   // friction source
-  std::vector<double> UL(4), UR(4);    // local state vectors and wetted angle
+  std::vector<double> UL(5), UR(5);    // local state vectors and wetted angle
 
   // Simplest flux form
   // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
@@ -330,7 +340,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     // V_rec[1]: wetted angle 
     std::vector<double> V_rec(2,0.0);
 
-    V_rec = ComputeFieldsOnEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n);
+    V_rec = ComputeFieldsOnEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n, PipeD_c[0][c1]);
     ierr = ErrorDiagnostics_(t, c1, V_rec[0]);
     if (ierr < 0) break;
 
@@ -361,17 +371,18 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     UL[1] = V_rec[0] * vn;
     UL[2] = V_rec[0] * vt;
     UL[3] = V_rec[1];
+    UL[4] = PipeD_c[0][c1];
 
   if (c2 == -1) {
      if (bc_model_scalar[f] == Operators::OPERATOR_BC_DIRICHLET) {
         UR[0] = bc_value_h[f];
-        UR[3] = ComputeWettedAngleNewton(bc_value_h[f]);
+        UR[3] = ComputeWettedAngleNewton(bc_value_h[f], PipeD_c[0][c1]);
         UL[0] = UR[0];
         UL[3] = UR[3];
      }
      else {
        UR[0] = UL[0];
-       UR[3] = ComputeWettedAngleNewton(UL[0]); 
+       UR[3] = ComputeWettedAngleNewton(UL[0], PipeD_c[0][c1]); 
      }
      if (bc_model_vector[f] == Operators::OPERATOR_BC_DIRICHLET) {
        if (outward_discharge_flag == true) { 
@@ -393,7 +404,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   } 
   else {
 
-     V_rec = ComputeFieldsOnEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n);
+     V_rec = ComputeFieldsOnEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n, PipeD_c[0][c2]);
      ierr = ErrorDiagnostics_(t, c2, V_rec[0]);
      if (ierr < 0) break;
 
@@ -442,6 +453,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
      UR[1] = V_rec[0] * vn;
      UR[2] = V_rec[0] * vt;
      UR[3] = V_rec[1];
+     UR[4] = PipeD_c[0][c2];
 
  }
 
@@ -524,8 +536,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double killer = 1.0;
     KillSecondComponent(killer);
 
-    BedSlopeSource = NumericalSourceBedSlope(cell, ht_c[0][cell], B_c[0][cell], B_max[0][cell], B_n, bc_model_scalar, bc_value_h);
-    FrictionSource[0] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 0); 
+    BedSlopeSource = NumericalSourceBedSlope(cell, ht_c[0][cell], B_c[0][cell], B_max[0][cell], B_n, PipeD_c[0][cell], bc_model_scalar, bc_value_h);
+    FrictionSource[0] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 0, PipeD_c[0][cell]); 
 
     h = h_c_tmp[0][cell] + BedSlopeSource[0] + ext_S_cell[cell];
     qx = q_c_tmp[0][cell] + BedSlopeSource[1] + FrictionSource[0];
@@ -542,10 +554,10 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   for (int c = 0; c < junction_cells_owned_.size(); ++c) {
     int cell = junction_cells_owned_[c];
 
-    BedSlopeSource = NumericalSourceBedSlope(cell, ht_c[0][cell], B_c[0][cell], B_max[0][cell], B_n);
+    BedSlopeSource = NumericalSourceBedSlope(cell, ht_c[0][cell], B_c[0][cell], B_max[0][cell], B_n, PipeD_c[0][cell]);
 
-    FrictionSource[0] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 0);
-    FrictionSource[1] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 1);
+    FrictionSource[0] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 0, PipeD_c[0][cell]);
+    FrictionSource[1] = NumericalSourceFriction(h_temp[0][cell], q_temp[0][cell], q_temp[1][cell], WettedAngle_c[0][cell], 1, PipeD_c[0][cell]);
 
     h = h_c_tmp[0][cell] + BedSlopeSource[0];
     qx = q_c_tmp[0][cell] + BedSlopeSource[1] + FrictionSource[0];

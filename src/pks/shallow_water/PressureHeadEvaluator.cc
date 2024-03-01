@@ -27,11 +27,11 @@ PressureHeadEvaluator::PressureHeadEvaluator(Teuchos::ParameterList& plist)
   }
   std::string domain = Keys::getDomain(my_keys_[0].first);
 
+  pipe_diameter_key_ = plist_.get<std::string>("pipe diameter key", Keys::getKey(domain, "diameter"));
   wetted_angle_key_ = plist_.get<std::string>("wetted angle key", Keys::getKey(domain, "wetted_angle"));
   wetted_area_key_ = plist_.get<std::string>("wetted area key", Keys::getKey(domain, "wetted_area"));
 
   celerity_ = plist_.get<double>("celerity", 2);
-  pipe_diameter_ = plist_.get<double>("pipe diameter", 1.0);
 
   dependencies_.insert(std::make_pair(wetted_area_key_, Tags::DEFAULT));
 }
@@ -53,13 +53,14 @@ void PressureHeadEvaluator::Evaluate_(
 {
   const auto& WettedAngle_c = *S.Get<CompositeVector>(wetted_angle_key_).ViewComponent("cell");
   const auto& WettedArea_c = *S.Get<CompositeVector>(wetted_area_key_).ViewComponent("cell");
+  const auto& PipeD_c = *S.Get<CompositeVector>(pipe_diameter_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
   double g = norm(S.Get<AmanziGeometry::Point>("gravity"));
-  double pipeCrossSection = Pi * 0.25 * pipe_diameter_ * pipe_diameter_;
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
+     double pipeCrossSection = Pi * 0.25 * PipeD_c[0][c] * PipeD_c[0][c];
      if(WettedAngle_c[0][c] >= TwoPi) {
          result_c[0][c] = (celerity_ * celerity_ * (WettedArea_c[0][c] - pipeCrossSection)) / (g * pipeCrossSection);
      }
@@ -78,14 +79,15 @@ void PressureHeadEvaluator::EvaluatePartialDerivative_(
     const std::vector<CompositeVector*>& results) 
 {
   const auto& WettedAngle_c = *S.Get<CompositeVector>(wetted_angle_key_).ViewComponent("cell");
+  const auto& PipeD_c = *S.Get<CompositeVector>(pipe_diameter_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
   double g = norm(S.Get<AmanziGeometry::Point>("gravity"));
-  double pipeCrossSection = Pi * 0.25 * pipe_diameter_ * pipe_diameter_;
 
   int ncells = result_c.MyLength();
   if (wrt_key == wetted_angle_key_) {
     for (int c = 0; c != ncells; ++c) {
+     double pipeCrossSection = Pi * 0.25 * PipeD_c[0][c] * PipeD_c[0][c];
      if(WettedAngle_c[0][c] >= TwoPi) {
          result_c[0][c] =  (celerity_ * celerity_) / (g * pipeCrossSection);;
      }

@@ -22,7 +22,7 @@ class NumericalFlux {
   virtual ~NumericalFlux() {};
 
   std::vector<double> PhysicalFlux(const std::vector<double>& U);
-  double HydrostaticPressureForce(const double & PrimaryVariable, const double & WettedAngle);
+  double HydrostaticPressureForce(const double & PrimaryVariable, const double & WettedAngle, const double & PipeD);
   double minmod(double a, double b);
 
   virtual std::vector<double> Compute(
@@ -34,14 +34,12 @@ class NumericalFlux {
  protected:
   double g_;
   double lambda_max_, lambda_min_;
-  double pipe_diameter_;
-  double pipe_cross_section_;
   double celerity_;
 
 };
 
 inline 
-double NumericalFlux::HydrostaticPressureForce(const double & PrimaryVariable, const double & WettedAngle)
+double NumericalFlux::HydrostaticPressureForce(const double & PrimaryVariable, const double & WettedAngle, const double & PipeD)
 {
 
   double HydroPressForce = 0.0;
@@ -54,17 +52,20 @@ double NumericalFlux::HydrostaticPressureForce(const double & PrimaryVariable, c
 
   else { // pipe flow
 
-     if ((0.0 < PrimaryVariable && PrimaryVariable < pipe_cross_section_)){ //flow is ventilated (free-surface)
+     double Pi = 3.14159265359;
+     double PipeCrossSection = Pi * 0.25 * PipeD * PipeD;
+
+     if ((0.0 < PrimaryVariable && PrimaryVariable < PipeCrossSection)){ //flow is ventilated (free-surface)
 
         HydroPressForce = 3.0 * sin(WettedAngle * 0.5) - pow(sin(WettedAngle * 0.5),3) - 3.0 * (WettedAngle * 0.5) * cos(WettedAngle * 0.5);
-        HydroPressForce = HydroPressForce * g_ * pow(pipe_diameter_,3) / 24.0;
+        HydroPressForce = HydroPressForce * g_ * pow(PipeD,3) / 24.0;
 
      }
 
-     else if (PrimaryVariable >= pipe_cross_section_) { //flow is pressurized
+     else if (PrimaryVariable >= PipeCrossSection) { //flow is pressurized
 
-         double PressureHead = (celerity_ * celerity_ * (PrimaryVariable - pipe_cross_section_)) / (g_ * pipe_cross_section_);
-         HydroPressForce = g_ * PrimaryVariable * (PressureHead + sqrt(PrimaryVariable / 3.14159265359));
+         double PressureHead = (celerity_ * celerity_ * (PrimaryVariable - PipeCrossSection)) / (g_ * PipeCrossSection);
+         HydroPressForce = g_ * PrimaryVariable * (PressureHead + sqrt(PrimaryVariable / Pi));
 
       }
 
@@ -91,11 +92,12 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U)
   // U[1] = U[0] * u
   // U[2] = U[0] * v
   // U[3] = wetted angle
+  // U[4] = pipe diameter
   h2 = U[0] * U[0];
   u = 2.0 * U[0] * U[1] / (h2 + std::fmax(h2, eps2));
 
   // hydrostatic pressure force
-  double HPF = HydrostaticPressureForce(U[0], U[3]);
+  double HPF = HydrostaticPressureForce(U[0], U[3], U[4]);
 
   F[0] = U[1];
   F[1] = U[1] * u + HPF;
