@@ -269,7 +269,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   std::vector<double> FNum_rotTmp(3,0.0);        // fluxes
   std::vector<double> BedSlopeSource;  // bed slope source
   std::vector<double> FrictionSource(2, 0.0);   // friction source
-  std::vector<double> UL(5), UR(5);    // local state vectors and wetted angle
+  std::vector<double> UL(3), UR(3);    // local state vectors
+  std::vector<double> DL(3), DR(3);    // arrays to compute the hydrostatic pressure forces 
 
   // Simplest flux form
   // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
@@ -370,19 +371,20 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     UL[0] = V_rec[0];
     UL[1] = V_rec[0] * vn;
     UL[2] = V_rec[0] * vt;
-    UL[3] = V_rec[1];
-    UL[4] = PipeD_c[0][c1];
+    DL[0] = V_rec[0];
+    DL[1] = V_rec[1];
+    DL[2] = PipeD_c[0][c1];
 
   if (c2 == -1) {
      if (bc_model_scalar[f] == Operators::OPERATOR_BC_DIRICHLET) {
         UR[0] = bc_value_h[f];
-        UR[3] = ComputeWettedAngleNewton(bc_value_h[f], PipeD_c[0][c1]);
+        DR[1] = ComputeWettedAngleNewton(bc_value_h[f], PipeD_c[0][c1]);
         UL[0] = UR[0];
-        UL[3] = UR[3];
+        DL[1] = DR[1];
      }
      else {
        UR[0] = UL[0];
-       UR[3] = ComputeWettedAngleNewton(UL[0], PipeD_c[0][c1]); 
+       DR[1] = ComputeWettedAngleNewton(UL[0], PipeD_c[0][c1]); 
      }
      if (bc_model_vector[f] == Operators::OPERATOR_BC_DIRICHLET) {
        if (outward_discharge_flag == true) { 
@@ -452,22 +454,26 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
      UR[0] = V_rec[0];
      UR[1] = V_rec[0] * vn;
      UR[2] = V_rec[0] * vt;
-     UR[3] = V_rec[1];
-     UR[4] = PipeD_c[0][c2];
+     DR[0] = V_rec[0];
+     DR[1] = V_rec[1];
+     DR[2] = PipeD_c[0][c2];
 
  }
+
+ double HPFL = ComputeHydrostaticPressureForce(DL);
+ double HPFR = ComputeHydrostaticPressureForce(DR);
 
  if (!c1IsJunction && !c2IsJunction){
-     FNum_rot = numerical_flux_->Compute(UL, UR);
+     FNum_rot = numerical_flux_->Compute(UL, UR, HPFL, HPFR);
  }
  if(c1IsJunction){
-     FNum_rotTmp = numerical_flux_->Compute(UL, UR);
+     FNum_rotTmp = numerical_flux_->Compute(UL, UR, HPFL, HPFR);
      FNum_rot[0] = FNum_rotTmp[0] / farea;
      FNum_rot[1] = FNum_rotTmp[1] / farea;
      FNum_rot[2] = FNum_rotTmp[2] / farea;
  }
  if(c2IsJunction){
-     FNum_rot = numerical_flux_->Compute(UL, UR);
+     FNum_rot = numerical_flux_->Compute(UL, UR, HPFL, HPFR);
      FNum_rotTmp[0] = FNum_rot[0] / farea;
      FNum_rotTmp[1] = FNum_rot[1] / farea;
      FNum_rotTmp[2] = FNum_rot[2] / farea;

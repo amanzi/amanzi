@@ -189,7 +189,7 @@ ShallowWater_PK::Setup()
       ->SetComponent("face", AmanziMesh::FACE, 1);
   }
 
-  // -- wetted angle 
+  // -- wetted angle
   if (!S_->HasRecord(wetted_angle_key_)) {
     S_->Require<CV_t, CVS_t>(wetted_angle_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
@@ -198,21 +198,21 @@ ShallowWater_PK::Setup()
       AddDefaultPrimaryEvaluator_(wetted_angle_key_);
   }
 
-   // -- pipe diameter
-   if (!S_->HasRecord(pipe_diameter_key_)) {
+  // -- pipe diameter
+  if (!S_->HasRecord(pipe_diameter_key_)) {
 
-      S_->Require<CV_t, CVS_t>(pipe_diameter_key_, Tags::DEFAULT, pipe_diameter_key_)
-         .SetMesh(mesh_)
-         ->SetGhosted(true)
-         ->SetComponent("cell", AmanziMesh::CELL, 1);
+     S_->Require<CV_t, CVS_t>(pipe_diameter_key_, Tags::DEFAULT, pipe_diameter_key_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-      if(!pipe_diameter_key_.empty()){
-        S_->RequireEvaluator(pipe_diameter_key_, Tags::DEFAULT);
-      }
+     if(!pipe_diameter_key_.empty()){
+       S_->RequireEvaluator(pipe_diameter_key_, Tags::DEFAULT);
+     }
 
-   }
+  }
 
-    // -- total depth
+  // -- total depth
   if (!S_->HasRecord(total_depth_key_)) {
     S_->Require<CV_t, CVS_t>(total_depth_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
@@ -325,8 +325,6 @@ ShallowWater_PK::Initialize()
   Teuchos::ParameterList model_list;
   model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
     .set<double>("gravity", g_);
-  model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
-    .set<double>("celerity", celerity_);
   NumericalFluxFactory nf_factory;
   numerical_flux_ = nf_factory.Create(model_list);
 

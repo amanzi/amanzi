@@ -423,21 +423,25 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 //--------------------------------------------------------------------
 // Compute hydrostatic pressure force
 //--------------------------------------------------------------------
-double PipeFlow_PK::ComputeHydrostaticPressureForce (std::vector<double> SolArray){
+double PipeFlow_PK::ComputeHydrostaticPressureForce (std::vector<double> Data){
+
+      //Data[0] = wetted area
+      //Data[1] = wetted angle
+      //Data[2] = pipe diameter
 
       double I = 0.0;
-      double PipeCrossSection = Pi * 0.25 * SolArray[2] * SolArray[2];
+      double PipeCrossSection = Pi * 0.25 * Data[2] * Data[2];
 
-      if ((0.0 < SolArray[0] && SolArray[0] < PipeCrossSection)){ //flow is ventilated (free-surface)
+      if ((0.0 < Data[0] && Data[0] < PipeCrossSection)){ //flow is ventilated (free-surface)
 
-         I = 3.0 * sin(SolArray[1] * 0.5) - pow(sin(SolArray[1] * 0.5),3) - 3.0 * (SolArray[1] * 0.5) * cos(SolArray[1] * 0.5);
-         I = I * g_ * pow(SolArray[2],3) / 24.0;
+         I = 3.0 * sin(Data[1] * 0.5) - pow(sin(Data[1] * 0.5),3) - 3.0 * (Data[1] * 0.5) * cos(Data[1] * 0.5);
+         I = I * g_ * pow(Data[2],3) / 24.0;
 
       }
 
-      else if (SolArray[0] >= PipeCrossSection) { //flow is pressurized
+      else if (Data[0] >= PipeCrossSection) { //flow is pressurized
 
-         I = g_ * SolArray[0] * (ComputePressureHead(SolArray[0], SolArray[2]) + sqrt(SolArray[0]/Pi));
+         I = g_ * Data[0] * (ComputePressureHead(Data[0], Data[2]) + sqrt(Data[0]/Pi));
 
       }
 

@@ -52,7 +52,7 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual double ComputeWettedAngleNewton(double WettedArea, double PipeD) override;
 
-  virtual double ComputeHydrostaticPressureForce(std::vector<double> SolArray) override;
+  virtual double ComputeHydrostaticPressureForce(std::vector<double> Data) override;
 
   virtual double ComputePressureHead(double WettedAngle, double PipeD) override;
 
