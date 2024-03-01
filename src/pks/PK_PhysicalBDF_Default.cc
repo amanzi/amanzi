@@ -50,6 +50,7 @@ PK_PhysicalBDF_Default::setup()
   // convergence criteria is based on a conserved quantity
   PKHelpers::requireAtNext(conserved_key_, tag_next_, *S_)
     .SetMesh(mesh_)
+    ->SetGhosted()
     ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, true);
 
   // we also use a copy of the conserved quantity, as this is a better choice
@@ -59,6 +60,7 @@ PK_PhysicalBDF_Default::setup()
   // cell volume used for ErrorNorm
   PKHelpers::requireAtNext(cell_vol_key_, tag_next_, *S_)
     .SetMesh(mesh_)
+    ->SetGhosted()
     ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, true);
 };
 

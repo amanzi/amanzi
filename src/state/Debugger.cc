@@ -297,12 +297,17 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
 
 // Write boundary condition data.
 void
-Debugger::WriteBoundaryConditions(const std::vector<int>& flag, const std::vector<double>& data)
+Debugger::WriteBoundaryConditions(const CompositeVector_<int>& flags,
+        const CompositeVector& values)
 {
   // bcs use 3 extra characters
   int width = formatter_.getWidth();
   int precision = formatter_.getPrecision();
   formatter_.setWidth(width - 2); // note, this may also change precision
+
+  // get views on host
+  auto flags_v = flags.viewComponent<Amanzi::DefaultHost>("face", false);
+  auto values_v = values.viewComponent<Amanzi::DefaultHost>("face", false);
 
   for (int i = 0; i != dc_.size(); ++i) {
     AmanziMesh::Entity_ID c0 = dc_[i];
@@ -314,8 +319,8 @@ Debugger::WriteBoundaryConditions(const std::vector<int>& flag, const std::vecto
       auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
       for (unsigned int n = 0; n != fnums0.size(); ++n)
-        *dcvo_[i]->os() << flag[fnums0[n]] << "("
-                        << formatter_.format(data[fnums0[n]]) << ")";
+        *dcvo_[i]->os() << flags_v(fnums0(n), 0) << "("
+                        << formatter_.format(values_v(fnums0(n), 0)) << ")";
       *dcvo_[i]->os() << std::endl;
     }
   }

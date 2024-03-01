@@ -918,15 +918,14 @@ void
 PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                              const Teuchos::Ptr<CompositeVector>& flux)
 {
-  // if (bcs_applied_) {
-  //   Errors::Message msg("PDE_DiffusionMFD::UpdateFlux: Developer Error -- UpdateFlux() cannot be called after BCs have been applied.");
-  //   Exceptions::amanzi_throw(msg);
-  // }
+  if (bcs_applied_) {
+    Errors::Message msg("PDE_DiffusionMFD::UpdateFlux: Developer Error -- UpdateFlux() cannot be called after BCs have been applied.");
+    Exceptions::amanzi_throw(msg);
+  }
 
-  flux->putScalar(0.0);
+  flux->putScalarMasterAndGhosted(0.0);
   u->scatterMasterToGhosted("face");
-  CompositeVector_<int> hits(flux->getMap());
-  hits.putScalar(0);
+  CompositeVector_<int> hits(flux->getMap(), InitMode::ZERO);
 
   if (k_ != Teuchos::null) {
     if (k_->hasComponent("face")) k_->scatterMasterToGhosted("face");

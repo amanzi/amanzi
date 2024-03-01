@@ -34,22 +34,23 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
 
   virtual void SumLocalDiag(CompositeVector& X) const
   {
-    AmanziMesh::Mesh const* mesh_ = mesh.get();
-    AmanziMesh::Mesh const* surf_mesh_ = surf_mesh.get();
-    auto Xv = X.viewComponent<Amanzi::MirrorHost>("face", true);
+    AMANZI_ASSERT(false);  // this is incorrectly implemented... --ETC
+    // AmanziMesh::Mesh const* mesh_ = mesh.get();
+    // AmanziMesh::Mesh const* surf_mesh_ = surf_mesh.get();
+    // auto Xv = X.viewComponent<Amanzi::MirrorHost>("face", true);
 
-    Kokkos::parallel_for(
-      "Op_SurfaceFace_SurfaceCell::SumLocalDiag", A.size(), KOKKOS_LAMBDA(const int& sf) {
-        auto cells = mesh_->getFaceCells(sf);
+    // Kokkos::parallel_for(
+    //   "Op_SurfaceFace_SurfaceCell::SumLocalDiag", A.size(), KOKKOS_LAMBDA(const int& sf) {
+    //     auto cells = mesh_->getFaceCells(sf);
 
-        auto lm = A[sf];
-        auto f0 = surf_mesh_->getEntityParent(AmanziMesh::CELL, cells(0));
-        Kokkos::atomic_add(&Xv(f0, 0), lm(0, 0));
-        if (cells.extent(0) > 1) {
-          auto f1 = surf_mesh_->getEntityParent(AmanziMesh::CELL, cells(1));
-          Kokkos::atomic_add(&Xv(f1, 0), lm(1, 1));
-        }
-      });
+    //     auto lm = A[sf];
+    //     auto f0 = surf_mesh_->getEntityParent(AmanziMesh::CELL, cells(0));
+    //     Kokkos::atomic_add(&Xv(f0, 0), lm(0, 0));
+    //     if (cells.extent(0) > 1) {
+    //       auto f1 = surf_mesh_->getEntityParent(AmanziMesh::CELL, cells(1));
+    //       Kokkos::atomic_add(&Xv(f1, 0), lm(1, 1));
+    //     }
+    //   });
   }
 
   virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
@@ -73,23 +74,20 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
   virtual void Rescale(const CompositeVector& scaling)
   {
     if (scaling.hasComponent("cell") &&
-        scaling.viewComponent("cell", false).extent(1) ==
-          mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED)) {
+        scaling.getComponent("cell", false)->getLocalLength() ==
+        mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED)) {
       // scaling's cell entry is defined on the surface mesh
       Op_Face_Cell::Rescale(scaling);
     }
 
-    if (scaling.hasComponent("face") && scaling.getComponent("face", false)->getLocalLength() ==
-                                          mesh->getParentMesh()->getNumEntities(
-                                            AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED)) {
+    if (scaling.hasComponent("face") &&
+        scaling.getComponent("face", false)->getLocalLength() ==
+        mesh->getParentMesh()->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED)) {
       Exceptions::amanzi_throw(
         "Scaling surface cell entities with subsurface face vector not yet implemented");
     }
   }
 
-
- public:
-  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh;
 };
 
 } // namespace Operators

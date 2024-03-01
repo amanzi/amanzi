@@ -434,11 +434,16 @@ struct MeshCache : public MeshCacheBase {
 
   Entity_GID getEntityGID(const Entity_kind kind, const Entity_ID lid) const
   {
-    return getMap(kind, false)->getGlobalElement(lid);
+    return getMap(kind, true)->getGlobalElement(lid);
   }
-  cEntity_GID_View getEntityGIDs(const Entity_kind kind, const Entity_ID lid) const
+  cEntity_GID_View getEntityGIDs(const Entity_kind kind, bool ghosted) const
   {
-    return getMap(kind, false)->getMyGlobalIndices();
+    return getMap(kind, ghosted)->getMyGlobalIndices();
+  }
+
+  Entity_ID getEntityLID(const Entity_kind kind, const Entity_GID gid, bool ghosted=true) const
+  {
+    return getMap(kind, ghosted)->getLocalElement(gid);
   }
 
   Teuchos::RCP<const MeshAlgorithms> getAlgorithms() const { return algorithms_; }

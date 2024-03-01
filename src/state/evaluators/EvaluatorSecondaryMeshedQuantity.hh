@@ -85,11 +85,15 @@ class EvaluatorSecondaryMeshedQuantity : public EvaluatorSecondary {
       } else if (comp == "face") {
         Function_type<AmanziMesh::Entity_kind::FACE> f(*mesh, v);
         f.Compute();
+      } else if (comp == "boundary_face") {
+        Function_type<AmanziMesh::Entity_kind::BOUNDARY_FACE> f(*mesh, v);
+        f.Compute();
       } else if (comp == "edge") {
         Function_type<AmanziMesh::Entity_kind::EDGE> f(*mesh, v);
         f.Compute();
       }
     }
+    v->scatterMasterToGhosted();
   }
 
   virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override

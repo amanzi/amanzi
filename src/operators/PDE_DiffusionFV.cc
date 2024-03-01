@@ -476,7 +476,7 @@ void PDE_DiffusionFV::ComputeJacobianLocal_(
 void
 PDE_DiffusionFV::ComputeTransmissibility_()
 {
-  transmissibility_->putScalar(0.);
+  transmissibility_->putScalarMasterAndGhosted(0.);
   if (!K_.get()) {
     CompositeVectorSpace cvs;
     cvs.SetMesh(mesh_)->SetGhosted(false)->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -494,7 +494,7 @@ PDE_DiffusionFV::ComputeTransmissibility_()
     K_ = K;
   }
   {
-    auto trans_face = transmissibility_->viewComponent<DefaultDevice>("face", true);
+    auto trans_face = transmissibility_->viewComponent("face", true);
     const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
     const int space_dimension = mesh_->getSpaceDimension();
 
@@ -519,6 +519,7 @@ PDE_DiffusionFV::ComputeTransmissibility_()
         }
       });
   }
+
   transmissibility_->gatherGhostedToMaster();
   transmissibility_->reciprocal(*transmissibility_);
   transmissibility_->scatterMasterToGhosted("face");

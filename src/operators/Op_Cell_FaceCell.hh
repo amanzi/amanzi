@@ -84,12 +84,11 @@ class Op_Cell_FaceCell : public Op {
   virtual void Rescale(const CompositeVector& scaling)
   {
     const Amanzi::AmanziMesh::Mesh* mesh_ = mesh.get();
-    std::cout << "Op_Cell_FaceCell::Rescale" << std::endl;
+
     if (scaling.hasComponent("face")) {
-      std::cout << "Op_Cell_FaceCell::Rescale(hascomponent(face))" << std::endl;
       const auto s_c = scaling.viewComponent("face", true);
       Kokkos::parallel_for(
-        "Op_Cell_FaceCell::Rescale", A.size(), KOKKOS_LAMBDA(const int& c) {
+        "Op_Cell_FaceCell::Rescale(face)", A.size(), KOKKOS_LAMBDA(const int& c) {
           auto faces = mesh_->getCellFaces(c);
           auto lA = A[c];
           for (int n = 0; n != faces.size(); ++n) {
@@ -99,10 +98,9 @@ class Op_Cell_FaceCell : public Op {
         });
     }
     if (scaling.hasComponent("cell")) {
-      std::cout << "Op_Cell_FaceCell::Rescale(hascomponent(cell))" << std::endl;
       const auto s_c = scaling.viewComponent("cell", true);
       Kokkos::parallel_for(
-        "Op_Cell_FaceCell::Rescale", A.size(), KOKKOS_LAMBDA(const int& c) {
+        "Op_Cell_FaceCell::Rescale(cell)", A.size(), KOKKOS_LAMBDA(const int& c) {
           auto lA = A[c];
           int nfaces = mesh_->getCellNumFaces(c);
           for (int m = 0; m != nfaces; ++m) { lA(nfaces, m) *= s_c(0, c); }

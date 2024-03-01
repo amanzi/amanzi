@@ -275,6 +275,8 @@ MeshCache<MEM>::getCentroid(const Entity_kind kind, const Entity_ID ent) const
     return getCellCentroid<AP>(ent);
   case (Entity_kind::FACE):
     return getFaceCentroid<AP>(ent);
+  case (Entity_kind::BOUNDARY_FACE):
+    return getFaceCentroid<AP>(getBoundaryFaceFace(*this, ent));
   case (Entity_kind::EDGE):
     return getEdgeCentroid<AP>(ent);
   case (Entity_kind::NODE):
@@ -295,6 +297,8 @@ MeshCache<MEM>::getCentroid(const Entity_ID ent) const
     return getCellCentroid<AP>(ent);
   } else if constexpr (EK == Entity_kind::FACE) {
     return getFaceCentroid<AP>(ent);
+  } else if constexpr (EK == Entity_kind::BOUNDARY_FACE) {
+    return getFaceCentroid<AP>(getBoundaryFaceFace(*this, ent));
   } else if constexpr (EK == Entity_kind::EDGE) {
     return getEdgeCentroid<AP>(ent);
   } else if constexpr (EK == Entity_kind::NODE) {

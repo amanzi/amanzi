@@ -181,8 +181,8 @@ PK_Physical_Default<PK_type>::isValidStep()
   if (max_valid_change_ > 0.0) {
     const CompositeVector& var_new = S_->template Get<CompositeVector>(key_, tag_next_);
     const CompositeVector& var_old = S_->template Get<CompositeVector>(key_, tag_current_);
-    CompositeVector dvar(var_new);
-    dvar.update(-1., var_old, 1.);
+    CompositeVector dvar(var_new.getMap());
+    dvar.update(-1., var_old, 1., var_new, 0.);
     double change = dvar.normInf();
     if (change > max_valid_change_) {
       if (vo_->os_OK(Teuchos::VERB_LOW))

@@ -20,6 +20,7 @@
 #include "EvaluatorIndependentPatchFunction.hh"
 #include "EvaluatorSecondaryMonotypeFromFunction.hh"
 #include "EvaluatorSecondaryMonotypeAdditive.hh"
+#include "EvaluatorSecondaryMonotypeMultiplicative.hh"
 #include "EvaluatorPrimaryStaticMesh.hh"
 #include "EvaluatorSecondaryMeshedQuantity.hh"
 #include "EvaluatorSecondaryVectorAsPatch.hh"
@@ -36,6 +37,7 @@ REGISTER(EvaluatorIndependentTensorFunction);
 REGISTER(EvaluatorIndependentPatchFunction);
 REGISTER(EvaluatorSecondaryMonotypeFromFunction);
 template<> REGISTER(EvaluatorSecondaryMonotypeAdditiveCV);
+template<> REGISTER(EvaluatorSecondaryMonotypeMultiplicativeCV);
 
 const std::string EvaluatorPrimaryStaticMesh::eval_type = "static mesh";
 REGISTER(EvaluatorPrimaryStaticMesh);

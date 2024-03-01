@@ -30,11 +30,10 @@
 
 namespace Amanzi {
 
-// By default, this class adds nothing on top of EvaluatorSecondary.
-// Specializations can do useful things though.
 template <typename Data_t, typename DataFactory_t = NullFactory>
 class EvaluatorSecondaryMonotypeAdditive
   : public EvaluatorSecondaryMonotype<Data_t, DataFactory_t> {
+
  public:
   EvaluatorSecondaryMonotypeAdditive(const Teuchos::RCP<Teuchos::ParameterList>& plist);
   EvaluatorSecondaryMonotypeAdditive(const EvaluatorSecondaryMonotypeAdditive& other) = default;
@@ -58,8 +57,7 @@ class EvaluatorSecondaryMonotypeAdditive
 
  private:
   static Utils::RegisteredFactory<Evaluator,
-                                  EvaluatorSecondaryMonotypeAdditive<Data_t, DataFactory_t>>
-    reg_;
+                                  EvaluatorSecondaryMonotypeAdditive<Data_t, DataFactory_t>> reg_;
 };
 
 
