@@ -48,17 +48,18 @@ PDE_Accumulation::AddAccumulationTerm(const CompositeVector& du,
                                       bool volume)
 {
   Teuchos::RCP<Op> op = FindOp_(name);
-  auto& diag = op->diag;
-  auto du_c = du.getComponent(name, false);
-
-  int n = du_c->getLocalLength();
-  int m = du_c->getNumVectors();
 
   if (volume) {
-    MultiVector_type vol(du_c->getMap(), 1);
-    assert(false);
-    //CalculateEntityVolume_(vol, name);
-    //op->diag->elementWiseMultiply(1.0/dT, vol, *du.getComponent(name, false), 1.0);
+    const AmanziMesh::Mesh& m = *du.getMesh();
+    AmanziMesh::Entity_kind ent_kind = AmanziMesh::createEntityKind(name);
+    auto diag_v = op->diag->getLocalViewDevice(Tpetra::Access::ReadWrite);
+    auto du_v = du.viewComponent(name, false);
+
+    Kokkos::parallel_for("PDE_Accumulation::AddAccumulationTerm(Volume)",
+                         diag_v.extent(0),
+                         KOKKOS_LAMBDA(const int i) {
+                           diag_v(i, 0) += du_v(i,0) * m.getExtent(ent_kind, i) / dT;
+                         });
 
   } else {
     op->diag->update(1.0 / dT, *du.getComponent(name, false), 1.0);
