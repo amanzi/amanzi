@@ -10,7 +10,7 @@
 /*
   MPC PK
 
-  Weak coupling of mechanics and flow PKs.
+  Iterative coupling of mechanics and flow PKs via undrained split.
 */
 
 #ifndef AMANZI_MECHANICS_FLOW_PK_HH_

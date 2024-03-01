@@ -104,8 +104,7 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 ****************************************************************** */
 void
 Darcy_PK::Setup()
-{
-  dt_ = -1.0;
+{ 
   mesh_ = S_->GetMesh(domain_);
   dim = mesh_->getSpaceDimension();
 
@@ -324,12 +323,6 @@ void
 Darcy_PK::Initialize()
 {
   // Initialize miscalleneous defaults.
-  // -- times
-  double t_ini = S_->get_time();
-  dt_next_ = dt_;
-  dt_desirable_ = dt_; // The minimum desirable time step from now on.
-  dt_history_.clear();
-
   // -- others
   initialize_with_darcy_ = true;
   num_itrs_ = 0;
@@ -344,6 +337,12 @@ Darcy_PK::Initialize()
 
   // Initilize various base class data.
   Flow_PK::Initialize();
+
+  // -- times
+  double t_ini = S_->get_time();
+  dt_next_ = dt_;
+  dt_desirable_ = dt_; // The minimum desirable time step from now on.
+  dt_history_.clear();
 
   // Initialize local fields and evaluators.
   InitializeFields_();

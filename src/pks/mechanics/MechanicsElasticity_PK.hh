@@ -79,7 +79,7 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
   virtual void CalculateDiagnostics(const Tag& tag) final{};
 
-  virtual std::string name() override { return passwd_; }
+  virtual std::string name() override { return "mechanics"; }
 
   // methods required for time integration interface
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
@@ -159,7 +159,7 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
   int nfaces_owned_, nfaces_wghost_;
   int nnodes_owned_, nnodes_wghost_;
 
-  double dt_, dt_next_, dt_desirable_;
+  double dt_;
 
   bool use_gravity_, thermoelasticity_;
   bool split_undrained_, split_fixed_stress_, poroelasticity_;

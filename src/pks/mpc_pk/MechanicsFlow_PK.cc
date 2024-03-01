@@ -10,7 +10,7 @@
 /*
   MPC PK
 
-  Weak coupling of mechanics and flow PKs.
+  Iterative coupling of mechanics and flow PKs via undrained split.
 */
 
 #include <string>
@@ -111,17 +111,20 @@ MechanicsFlow_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   std::vector<std::string> fields({ pressure_key_,
                                     saturation_liquid_key_,
-                                    water_storage_key_,
                                     displacement_key_,
                                     vol_strain_key_ });
+  if (S_->HasRecord(water_storage_key_)) fields.push_back(water_storage_key_);
+
   StateArchive archive(S_, vo_);
   archive.Add(fields, Tags::DEFAULT);
 
   // compute stability coefficient
-  if (Keys::getVarName(sub_pks_[0]->name()) == "darcy")
+  if (Keys::getVarName(sub_pks_[1]->name()) == "darcy") {
+    Exceptions::amanzi_throw("Saturated flow model is under development. Use Richards' model.");
     EvaluateForDarcy_();
-  else
+  } else {
     EvaluateForRichards_();
+  }
 
   bool fail = PK_MPCSequential::AdvanceStep(t_old, t_new, reinit);
   if (fail) archive.Restore("");
@@ -142,7 +145,7 @@ MechanicsFlow_PK::EvaluateForDarcy_()
   int d = S_->GetMesh(domain_)->getSpaceDimension();
   auto gravity = S_->Get<AmanziGeometry::Point>("gravity");
   double g = fabs(gravity[d - 1]);
-  double rho = S_->Get<double>("const_density");
+  double rho = S_->Get<double>("const_fluid_density");
 
   auto tmp = const_cast<Evaluator*>(&S_->GetEvaluator(porosity_key_));
   auto eval = dynamic_cast<Flow::PorosityEvaluator*>(tmp);
@@ -151,9 +154,16 @@ MechanicsFlow_PK::EvaluateForDarcy_()
     *S_->GetW<CompositeVector>(undrained_split_coef_key_, "").ViewComponent("cell");
   int ncells = stability_c.MyLength();
 
+  double stbmax(0.0);
   for (int c = 0; c != ncells; ++c) {
     double b = eval->getBiotCoefficient(c);
     stability_c[0][c] = rho * g * b * b / ss_c[0][c];
+    stbmax = std::max(stbmax, stability_c[0][c]);
+  }
+
+  if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "max of stabilization: " << stbmax << std::endl;
   }
 }
 
@@ -175,9 +185,16 @@ MechanicsFlow_PK::EvaluateForRichards_()
     *S_->GetW<CompositeVector>(undrained_split_coef_key_, "").ViewComponent("cell");
   int ncells = stability_c.MyLength();
 
+  double stbmax(0.0);
   for (int c = 0; c != ncells; ++c) {
     double b = eval->getBiotCoefficient(c);
-    stability_c[0][c] = eta_c[0][c] * b * b / dws_dp[0][c];
+    stability_c[0][c] = eta_c[0][c] * b * b / std::fabs(dws_dp[0][c]);
+    stbmax = std::max(stbmax, stability_c[0][c]);
+  }
+
+  if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "max of stabilization: " << stbmax << std::endl;
   }
 }
 

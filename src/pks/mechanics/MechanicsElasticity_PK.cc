@@ -168,8 +168,6 @@ MechanicsElasticity_PK::Initialize()
 
   // -- times
   double t_ini = S_->get_time();
-  dt_desirable_ = dt_;
-  dt_next_ = dt_;
 
   // -- mesh dimensions
   ncells_owned_ =
@@ -396,6 +394,8 @@ MechanicsElasticity_PK::Initialize()
 bool
 MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
+  dt_ = t_new - t_old;
+
   StateArchive archive(S_, vo_);
   archive.Add({ displacement_key_ }, Tags::DEFAULT);
 
@@ -420,8 +420,8 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     op_matrix_graddiv_->SetScalarCoefficient(
       S_->Get<CV_t>(undrained_split_coef_key_, Tags::DEFAULT));
     op_matrix_graddiv_->UpdateMatrices();
-    op_matrix_graddiv_->global_operator()->Apply(u, *rhs, 1.0);
     op_matrix_graddiv_->ApplyBCs(false, true, false);
+    op_matrix_graddiv_->global_operator()->Apply(u, *rhs, 1.0);
   }
 
   // solver the problem
@@ -436,9 +436,11 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   if (ierr != 0) {
     archive.Restore("");
+    dt_ /= 2;
     return true;
   }
 
+  dt_ *= 2;
   eval_->SetChanged();
   return false;
 }
