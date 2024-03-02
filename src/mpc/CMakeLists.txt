@@ -343,4 +343,10 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_mechanics_thermal_flow_3D.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
+
+    add_amanzi_test(mpc_biot_consolidation mpc_biot_consolidation
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_biot_consolidation.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
 endif()
