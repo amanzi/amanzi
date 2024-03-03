@@ -431,6 +431,7 @@ testColumnsUniformDz(const MeshCache<MEM>& mesh, double dz)
 {
   // tests the columnar structure of cells
   int n_columns = mesh.columns.num_columns_all;
+  CHECK(n_columns > 0);
 
   // also tests that cols with ghost entities are listed first
   int ncells_owned =

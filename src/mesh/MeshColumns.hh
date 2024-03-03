@@ -27,6 +27,7 @@ struct MeshColumns {
   // standard constructor
   //
   MeshColumns() : num_columns_owned(-1), num_columns_all(-1) {}
+  MeshColumns(const MeshColumns& other) = default;
 
   //
   // Constructor that guesses how to infer columnar structure.

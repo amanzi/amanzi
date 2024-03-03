@@ -362,6 +362,9 @@ struct MeshCacheBase {
   std::size_t getManifoldDimension() const { return manifold_dim_; }
   void setManifoldDimension(const unsigned int dim) { manifold_dim_ = dim; }
 
+  // column structure
+  MeshColumns columns;
+
  protected:
   // standard things
   Comm_ptr_type comm_;
@@ -939,11 +942,9 @@ struct MeshCache : public MeshCacheBase {
   //   Errors::Message msg("MeshCache::getNodeEdges not implemented");
   //   Exceptions::amanzi_throw(msg);
   // }
-
-  // column structure
-  MeshColumns columns;
-
-  inline void buildColumns() { columns.initialize(*this); }
+  inline void buildColumns() {
+    columns.initialize(*this);
+  }
   inline void buildColumns(const std::vector<std::string>& regions)
   {
     columns.initialize(*this, regions);

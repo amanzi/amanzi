@@ -486,6 +486,11 @@ class State {
   // managed in State, where each node is an Evaluator.
   //
   // -- allows PKs to add to this list to custom evaluators
+  Teuchos::ParameterList& ConstantsList()
+  {
+    return state_plist_->sublist("constants");
+  }
+
   Teuchos::ParameterList& FEList()
   {
     return state_plist_->sublist("evaluators");
