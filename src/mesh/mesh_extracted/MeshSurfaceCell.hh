@@ -22,9 +22,7 @@
 #include <algorithm>
 
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Map.h"
 #include "AmanziComm.hh"
-#include "Epetra_SerialComm.h"
 
 #include "VerboseObject.hh"
 #include "dbc.hh"

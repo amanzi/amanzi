@@ -10,9 +10,7 @@
 #ifndef AMANZI_EMBEDDED_LOGICAL_MESH_H_
 #define AMANZI_EMBEDDED_LOGICAL_MESH_H_
 
-#include <Epetra_Map.h>
 #include <AmanziComm.hh>
-#include <Epetra_SerialComm.h>
 
 #include <memory>
 #include <vector>

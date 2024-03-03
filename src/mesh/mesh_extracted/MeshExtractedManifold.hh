@@ -25,7 +25,6 @@
 #include <vector>
 
 // TPLs
-#include "Epetra_Map.h"
 #include "Teuchos_ParameterList.hpp"
 
 // Amanzi
