@@ -23,17 +23,30 @@
 #include "errors.hh"
 
 #include "DenseMatrix.hh"
-#include "MFD3D_ElasticityGradDiv.hh"
+#include "MFD3D_BernardiRaugelGradDiv.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
+* Schema.
+****************************************************************** */
+std::vector<SchemaItem>
+MFD3D_BernardiRaugelGradDiv::schema() const
+{
+  std::vector<SchemaItem> items;
+  items.push_back(std::make_tuple(AmanziMesh::Entity_kind::NODE, DOF_Type::POINT, d_));
+  items.push_back(std::make_tuple(AmanziMesh::Entity_kind::FACE, DOF_Type::NORMAL_COMPONENT, 1));
+  return items;
+}
+
+
+/* ******************************************************************
 * Stress recostruction from nodal values
 ****************************************************************** */
 int
-MFD3D_ElasticityGradDiv::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
+MFD3D_BernardiRaugelGradDiv::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
 {
   const auto& nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
@@ -41,33 +54,25 @@ MFD3D_ElasticityGradDiv::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
   const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
-  int nrows = d_ * nnodes;
-  DenseVector div(nrows);
+  DenseVector div(nfaces);
   div.PutScalar(0.0);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    const auto& fnodes = mesh_->getFaceNodes(f);
-    int mnodes = fnodes.size();
-
-    const auto& normal = mesh_->getFaceNormal(f);
-    double a = mesh_->getFaceArea(f) * dirs[n] / mnodes;
-
-    for (int m = 0; m < mnodes; ++m) {
-      int v = fnodes(m);
-      int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
-
-      for (int k = 0; k < d_; ++k) {
-        div(d_ * pos + k) += a * normal[k];
-      }
-    }
+    div(n) = mesh_->getFaceArea(f) * dirs[n];
   }
 
+  int nrows0 = d_ * nnodes;
+  int nrows = nrows0 + nfaces;
   A.Reshape(nrows, nrows);
 
   double coef = T(0, 0);
-  for (int m = 0; m < nrows; ++m) {
-    for (int n = m; n < nrows; ++n) { A(n, m) = A(m, n) = coef * div(m) * div(n); }
+  for (int m = 0; m < nfaces; ++m) {
+    int m0 = nrows0 + m;
+    for (int n = m; n < nfaces; ++n) {
+      int n0 = nrows0 + n;
+      A(n0, m0) = A(m0, n0) = coef * div(m) * div(n);
+    }
   }
 
   return 0;

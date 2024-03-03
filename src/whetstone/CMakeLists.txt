@@ -38,7 +38,7 @@ include_directories(${Epetra_INCLUDE_DIRS})
 add_amanzi_library(whetstone
                    SOURCE DeRham_Node.cc DeRham_Edge.cc DeRham_Face.cc
                           MFD3D.cc
-                          MFD3D_BernardiRaugel.cc
+                          MFD3D_BernardiRaugel.cc MFD3D_BernardiRaugelGradDiv.cc
                           MFD3D_CrouzeixRaviart.cc MFD3D_CrouzeixRaviartAnyOrder.cc
                           MFD3D_CrouzeixRaviartSerendipity.cc
                           MFD3D_Diffusion.cc MFD3D_Diffusion_Surface.cc MFD3D_Diffusion_Other.cc 

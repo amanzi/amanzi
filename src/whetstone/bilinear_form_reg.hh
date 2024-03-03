@@ -15,6 +15,7 @@
 
 #include "DG_Modal.hh"
 #include "MFD3D_BernardiRaugel.hh"
+#include "MFD3D_BernardiRaugelGradDiv.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_CrouzeixRaviartAnyOrder.hh"
 #include "MFD3D_CrouzeixRaviartSerendipity.hh"
@@ -33,6 +34,9 @@ namespace Amanzi {
 namespace WhetStone {
 
 RegisteredFactory<MFD3D_BernardiRaugel> MFD3D_BernardiRaugel::reg_("BernardiRaugel");
+RegisteredFactory<MFD3D_BernardiRaugelGradDiv>
+  MFD3D_BernardiRaugelGradDiv::reg_("BernardiRaugel graddiv");
+
 RegisteredFactory<MFD3D_CrouzeixRaviart> MFD3D_CrouzeixRaviart::reg_("CrouzeixRaviart");
 RegisteredFactory<MFD3D_CrouzeixRaviartAnyOrder>
   MFD3D_CrouzeixRaviartAnyOrder::reg_("CrouzeixRaviart high order");

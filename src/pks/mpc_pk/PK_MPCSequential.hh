@@ -9,7 +9,7 @@
 */
 
 /*
-  This is the mpc_pk component of the Amanzi code.
+  MPC PK
 
   Implementation for the derived PK_MPCSequential class. Provides only the
   AdvanceStep() method missing from MPC.hh. In sequential coupling, we
