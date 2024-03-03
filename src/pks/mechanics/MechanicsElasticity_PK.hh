@@ -9,19 +9,65 @@
 
 /*!
 
-The conceptual PDE model for elasticity is
+The conceptual PDE model for the quasi-static elastic deformation is
 
 .. math::
-  \frac{\partial (\rho \boldsymbol{u})}{\partial t} 
-  + \boldsymbol{\nabla} \cdot (C \boldsymbol{u} \nabla \boldsymbol{u})
+  \boldsymbol{\nabla} \cdot (C \varepsilon(\boldsymbol{d}))
   =
   \rho \boldsymbol{g}
 
 where 
-:math:`\rho` is the fluid density [kg/m^3],
-:math:`\boldsymbol{\sigma}` is the deviatoric stress tensor,
+:math:`\boldsymbol{\d}` is the displacement [m],
+:math:`\rho` is the rock density [kg/m^3],
+:math:`\boldsymbol{\varepsilon}` is the strain tensor,
 and
 :math:`\boldsymbol{g}` is the gravity vector [:math:`m/s^2`].
+
+
+Global parameters
+.................
+Global parameters are placed in the sublist `"mechanics`".
+The list of global parameters include:
+
+* `"domain name`" [string] specifies mesh name that defined domain of this PK.
+  Default is `"domain`".
+
+
+Physical models and assumptions
+...............................
+This list is used to summarize physical models and assumptions, such as
+coupling with other PKs.
+This list is often generated or extended by a high-level MPC PK.
+
+* `"use gravity`" [bool] defines non-zero source term. Default is *false*.
+
+* `"biot scheme: undrained split`" [bool] defines iterative coupling with 
+  a flow PK where mechanics is solved first.
+
+* `"biot scheme: fixed-stress split`" [bool] defines iterative coupling with 
+  a flow PK where flow is solved first.
+
+.. code-block:: xml
+
+  <ParameterList name="mechanics">  <!-- parent list -->
+  <ParameterList name="physical models and assumptions">
+    <Parameter name="use gravity" type="bool" value="false"/>
+    <Parameter name="biot scheme: undrained split" type="bool" value="false"/>
+    <Parameter name="biot scheme: fixed stress split" type="bool" value="false"/>
+  </ParameterList>
+
+
+Main sublists
+.............
+The following sublists are needed to create and control this PK:
+
+.. code-block:: xml
+
+  <ParameterList name="mechanics">  <!-- parent list -->
+    <ParameterList name="time integrator">
+    <ParameterList name="operators">
+    <ParameterList name="physical models and assumptions">
+    <ParameterList name="boundary conditions">
 
 */
 

@@ -815,6 +815,7 @@ Physical PKs are the physical capability implemented within Amanzi.
    - `"shallow water`" See `PK: Shallow Water`_
    - `"navier stokes`" See `PK: Navier-Stokes`_
    - `"multiphase`" See `PK: Multiphase`_
+   - `"mechanics`" See `PK: Mechanics`_
 
 PK_BDF
 ------
@@ -2041,6 +2042,63 @@ sublist, described in Reconstruction_. Here is the example:
     <Parameter name="limiter cfl" type="double" value="0.1"/>
   </ParameterList>
   </ParameterList>
+
+
+.. _`PK: Mechanics`:
+
+Mechanics PK
+------------
+{ MechanicsElasticity_PK }
+
+
+Boundary conditions
+...................
+Boundary conditions are defined in sublist *boundary conditions*. 
+Two types of boundary conditions are supported.
+Each type has a similar structure: a list of identical elements that contain
+information about a part of the boundary where it is prescribed and a function
+to calculate it.
+
+* `"displacement`" [list] is the Dirichlet boundary condition where the displacement 
+  is prescribed on a part of the boundary surface.
+
+* `"traction`" [list] is the Neumann boundary condition where an outward traction 
+  is prescribed on a part of the boundary surface.
+  This is the default boundary condition. 
+
+.. code-block:: xml
+
+  <ParameterList name="mechanics">  <!-- parent list -->
+  <ParameterList name="boundary conditions">
+    <ParameterList name="displacement">
+      <ParameterList name="BC_0">
+        <Parameter name="regions" type="Array(string)" value="{{_SURFACE_0}}"/>
+        <Parameter name="spatial distribution method" type="string" value="none"/>
+        <ParameterList name="no slip">
+          <Parameter name="number of dofs" type="int" value="2"/>
+          <Parameter name="function type" type="string" value="composite function"/>
+          <ParameterList name="dof 1 function">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.0"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="dof 2 function">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="traction">
+      <ParameterList name="BC_1">
+        <Parameter name="regions" type="Array(string)" value="{{_SURFACE_1}}"/>
+        <Parameter name="spatial distribution method" type="string" value="none"/>
+        <ParameterList name="traction">
+          <!-- similar to the dislacement boundary condition -->
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
 
 
 Coupled PKs (MPCs)

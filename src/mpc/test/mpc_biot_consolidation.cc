@@ -66,11 +66,12 @@ RunTest(const std::string xmlInFileName)
   S = cycle_driver.Go();
 
   // compute analytic solution
-  double g(10.0), p0(1e+7), rho(1e+3), mu(1e-3), k(6e-18), phi_cp(1e-11), E(3e+10), t(36000.0);
+  double g(10.0), p0(1e+7), rho(1e+3), mu(1e-3), k(6e-18), phi_cp(1e-11);
+  double E(3e+10), nu(0.0), t(36000.0);
   double Ss = rho * g * (phi_cp + 1.0 / E);
   double cv = rho * g / mu * k / Ss;  // effective consolidation coefficient
 
-  std::vector<double> pex(nx, 0.0);
+  std::vector<double> pex(nx, 0.0), eex(nx, 0.0);
   for (int n = 0; n < 100; ++n) {
     int k = 2 * n + 1;
     double factor = M_PI / 2 / L;
@@ -79,19 +80,27 @@ RunTest(const std::string xmlInFileName)
       pex[c] += (1.0 / k) * std::sin(k * factor * x) * std::exp(-k * k * factor * factor * cv * t);
     }
   }
-  for (int c = 0; c < nx; ++c) pex[c] *= 4 * p0 / M_PI;
+  for (int c = 0; c < nx; ++c) {
+    pex[c] *= 4 * p0 / M_PI;
+    eex[c] = (pex[c] - p0) * (1 + nu) / E;
+  }
 
   // compute error
-  double err(0.0), pnorm; 
+  double perr(0.0), eerr(0.0), pnorm, enorm; 
   const auto& p = *S->Get<CompositeVector>("pressure", Tags::DEFAULT).ViewComponent("cell");
+  const auto& e = *S->Get<CompositeVector>("volumetric_strain", Tags::DEFAULT).ViewComponent("cell");
   p.Norm2(&pnorm);
+  e.Norm2(&enorm);
 
   for (int c = 0; c < nx; ++c) {
-    // std::cout << c << " " << pex[c] << " " << p[0][ny * c] << std::endl;
-    err += std::pow(pex[c] - p[0][ny * c], 2);
+    perr += std::pow(pex[c] - p[0][ny * c], 2);
+    eerr += std::pow(eex[c] - e[0][ny * c], 2);
+    // std::cout << c << " " << pex[c] << " " << p[0][ny * c] << " " << eex[c] << " " << e[0][ny * c] << std::endl;
   }
-  err = std::sqrt(err) / pnorm;
-  CHECK(err < 0.0025);
+  perr = std::sqrt(perr) / pnorm;
+  eerr = std::sqrt(eerr) / enorm;
+  CHECK(perr < 0.0025);
+  CHECK(eerr < 0.005);
 }
 
 
