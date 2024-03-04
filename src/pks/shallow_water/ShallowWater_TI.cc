@@ -306,6 +306,13 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        // this also implies
        // c1 is next to the junction
        // not that junctions are asumed to NOT be boundary cells at the moment
+       if(c1IsJunction){
+          if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+             Teuchos::OSTab tab = vo_->getOSTab();
+             *vo_->os() << "The junction cell cannot abut other junction cells" << std::endl;
+          }
+          abort();
+       }
     }
 
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);

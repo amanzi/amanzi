@@ -74,7 +74,11 @@ void PipeFlow_PK::Setup()
          ->SetComponent("cell", AmanziMesh::CELL, 2);
 
       if(direction_key_.empty()){
-         AddDefaultPrimaryEvaluator_(direction_key_);
+          if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+             Teuchos::OSTab tab = vo_->getOSTab();
+             *vo_->os() << "Pipe direction needs to be specified" << std::endl;
+          }
+          abort();
       }
       else{
         S_->RequireEvaluator(direction_key_, Tags::DEFAULT);  
