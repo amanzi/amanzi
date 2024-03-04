@@ -728,15 +728,6 @@ void PipeFlow_PK::ComputeCellArrays(){
        auto& WaterDepth_c = *S_->GetW<CV_t>(water_depth_key_, Tags::DEFAULT, water_depth_key_).ViewComponent("cell");
        auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
        auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-       // write pipe direction if not
-       // specified from file
-       // default is positive x-axis
-       if(direction_key_.empty()){
-          for (int c = 0; c < ncells_wghost; c++) {
-             dir_c[0][c] = 1.0;
-             dir_c[1][c] = 0.0;
-          }
-       }
 
        junction_cells_owned_.resize(0);
        model_cells_owned_.resize(0);
