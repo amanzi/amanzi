@@ -170,7 +170,7 @@ SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec)
 
     // require time deltas
     for (int j = 0; j < mvec; j++) {
-      S_->Require<Vector>(initvec.Map(), name_, Tag(std::to_string(j)), name_);
+      S_->Require<Vector>(initvec.Map(), "solution_history_" + name_, Tag(std::to_string(j)), name_);
       S_->SetPtr<Vector>(name_, Tag(std::to_string(j)), name_, d_[j]);
       S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_initialized();
       S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_io_checkpoint();

@@ -400,9 +400,9 @@ cleanPListName(const std::string& name)
   if (pos == name.size()) {
     return "";
   } else if (pos == std::string::npos) {
-    return cleanName(name);
+    return name;
   } else {
-    return cleanName(name.substr(pos + 2, std::string::npos));
+    return name.substr(pos + 2, std::string::npos);
   }
 }
 
