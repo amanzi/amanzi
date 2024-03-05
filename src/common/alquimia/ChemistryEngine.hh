@@ -138,7 +138,7 @@ class ChemistryEngine {
                AlquimiaState& chem_state,
                AlquimiaAuxiliaryData& aux_data,
                AlquimiaAuxiliaryOutputData& aux_output,
-               int& num_iterations);
+               int& num_iterations, int natural_id);
 
  private:
   // Alquimia data structures.
