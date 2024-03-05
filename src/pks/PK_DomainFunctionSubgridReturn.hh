@@ -43,7 +43,10 @@ class PK_DomainFunctionSubgridReturn : public FunctionBase, public Functions::Un
 
   // required member functions
   virtual void Compute(double t0, double t1) override;
-  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::SUBGRID_RETURN; }
+  virtual DomainFunction_kind getType() const override
+  {
+    return DomainFunction_kind::SUBGRID_RETURN;
+  }
   virtual void set_state(const Teuchos::RCP<State>& S) final { S_ = S; }
 
  protected:

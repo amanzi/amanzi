@@ -49,7 +49,10 @@ class PK_DomainFunctionWeightField : public PK_DomainFunctionWeight<FunctionBase
 
   // required member functions
   virtual void Compute(double t0, double t1) override;
-  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::WEIGHT_BY_FIELD; }
+  virtual DomainFunction_kind getType() const override
+  {
+    return DomainFunction_kind::WEIGHT_BY_FIELD;
+  }
 
  protected:
   using FunctionBase::value_;

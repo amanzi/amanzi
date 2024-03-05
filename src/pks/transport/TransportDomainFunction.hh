@@ -34,17 +34,11 @@ namespace Transport {
 
 class TransportDomainFunction {
  public:
-  TransportDomainFunction()
-    : domain_volume_(-1.0),
-      location_("boundary"),
-      name_("undefined")
-    {};
+  TransportDomainFunction() : domain_volume_(-1.0), location_("boundary"), name_("undefined"){};
 
   TransportDomainFunction(const Teuchos::ParameterList& plist)
-    : domain_volume_(-1.0),
-      location_("boundary"),
-      name_(Keys::cleanPListName(plist))
-    {}
+    : domain_volume_(-1.0), location_("boundary"), name_(Keys::cleanPListName(plist))
+  {}
 
   virtual ~TransportDomainFunction(){};
 
