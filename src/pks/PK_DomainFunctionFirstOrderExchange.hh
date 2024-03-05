@@ -50,7 +50,7 @@ class PK_DomainFunctionFirstOrderExchange : public FunctionBase,
 
   // required member functions
   virtual void Compute(double t0, double t1) override;
-  virtual DomainFunctionType getType() const override { return DomainFunctionType::FIRST_ORDER_EXCHANGE; }
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::FIRST_ORDER_EXCHANGE; }
 
  protected:
   using FunctionBase::value_;

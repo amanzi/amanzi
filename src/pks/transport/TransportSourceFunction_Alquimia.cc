@@ -27,7 +27,7 @@ TransportSourceFunction_Alquimia::TransportSourceFunction_Alquimia(
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> alquimia_pk,
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
-  : mesh_(mesh), alquimia_pk_(alquimia_pk), chem_engine_(chem_engine), name_("alquimia source")
+  : mesh_(mesh), alquimia_pk_(alquimia_pk), chem_engine_(chem_engine)
 {
   // Check arguments.
   if (chem_engine_ != Teuchos::null) {

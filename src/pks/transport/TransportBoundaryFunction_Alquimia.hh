@@ -42,6 +42,8 @@ class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
 
   void Compute(double t_old, double t_new);
 
+  DomainFunction_kind getType() const override { return DomainFunction_kind::ALQUIMIA; }
+
  private:
   void Init_(const std::vector<std::string>& regions);
 

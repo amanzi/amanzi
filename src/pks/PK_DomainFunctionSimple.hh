@@ -59,7 +59,7 @@ class PK_DomainFunctionSimple : public FunctionBase, public Functions::UniqueMes
 
   // required member functions
   virtual void Compute(double t0, double t1) override;
-  virtual DomainFunctionType getType() const override { return DomainFunctionType::SIMPLE; }
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::SIMPLE; }
 
  protected:
   using FunctionBase::value_;

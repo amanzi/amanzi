@@ -917,12 +917,12 @@ Transport_PK::ComputeSources_(double tp,
         if (srcs_[m]->keyword() == "producer") {
           // correction for an extraction well
           value *= tcc_prev[imap][c];
-        } else if (srcs_[m]->getType() == DomainFunctionType::COUPLING) {
+        } else if (srcs_[m]->getType() == DomainFunction_kind::COUPLING) {
           value = values[k];
         } else {
           // correction for non-SI concentration units
-          if (srcs_[m]->getType() == DomainFunctionType::VOLUME ||
-              srcs_[m]->getType() == DomainFunctionType::WEIGHT)
+          if (srcs_[m]->getType() == DomainFunction_kind::VOLUME ||
+              srcs_[m]->getType() == DomainFunction_kind::WEIGHT)
             value /= units_.concentration_factor();
         }
 

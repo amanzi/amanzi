@@ -91,7 +91,7 @@ class PK_DomainFunctionCoupling : public FunctionBase {
 
   // required member functions
   virtual void Compute(double t0, double t1) override;
-  virtual DomainFunctionType getType() const override { return DomainFunctionType::COUPLING; }
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::COUPLING; }
 
  protected:
   using FunctionBase::value_;

@@ -17,7 +17,7 @@
 
 namespace Amanzi {
 
-typedef enum {
+enum class DomainFunction_kind {
   NONE,
   SIMPLE,
   SIMPLE_WELL,
@@ -29,8 +29,9 @@ typedef enum {
   SUBGRID,
   SUBGRID_RETURN,
   WEIGHT,
-  WEIGHT_BY_FIELD
-} DomainFunctionType;
+  WEIGHT_BY_FIELD,
+  ALQUIMIA
+};
 
 } // namespace Amanzi
 

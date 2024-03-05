@@ -50,7 +50,7 @@ class PK_DomainFunctionVolumeFraction : public FunctionBase,
 
   // required member functions
   virtual void Compute(double t0, double t1) override;
-  virtual DomainFunctionType getType() const override { return DomainFunctionType::VOLUME_FRACTION; }
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::VOLUME_FRACTION; }
 
  protected:
   using FunctionBase::value_;

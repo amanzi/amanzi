@@ -25,6 +25,7 @@ its functionality.
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "Key.hh"
 #include "PKsDefs.hh"
 
 namespace Amanzi {
@@ -33,7 +34,8 @@ class PK_DomainFunction {
  public:
   PK_DomainFunction() : domain_volume_(-1.0){};
 
-  PK_DomainFunction(const Teuchos::ParameterList& plist) : domain_volume_(-1.0), name_(plist.name()){};
+  PK_DomainFunction(const Teuchos::ParameterList& plist)
+    : domain_volume_(-1.0), name_(Keys::cleanPListName(plist)){};
 
   virtual ~PK_DomainFunction() = default;
 
@@ -42,7 +44,7 @@ class PK_DomainFunction {
 
   // model name and type
   virtual std::string getName() const { return name_; }
-  virtual DomainFunctionType getType() const { return DomainFunctionType::NONE; }
+  virtual DomainFunction_kind getType() const = 0;
 
   // access
   // -- volume of the regions

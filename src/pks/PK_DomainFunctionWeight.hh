@@ -47,7 +47,7 @@ class PK_DomainFunctionWeight : public FunctionBase, public Functions::UniqueMes
 
   // required member functions
   virtual void Compute(double t0, double t1) override;
-  virtual DomainFunctionType getType() const override { return DomainFunctionType::WEIGHT; }
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::WEIGHT; }
 
  protected:
   using FunctionBase::value_;

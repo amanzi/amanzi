@@ -46,7 +46,7 @@ class PK_DomainFunctionSimpleWell : public FunctionBase, public Functions::Uniqu
 
   // required member functions
   virtual void Compute(double t0, double t1) override;
-  virtual DomainFunctionType getType() const override { return DomainFunctionType::SIMPLE_WELL; }
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::SIMPLE_WELL; }
 
  protected:
   using FunctionBase::value_;

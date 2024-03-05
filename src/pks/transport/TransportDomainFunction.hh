@@ -34,9 +34,18 @@ namespace Transport {
 
 class TransportDomainFunction {
  public:
-  TransportDomainFunction() : domain_volume_(-1.0), location_("boundary"){};
+  TransportDomainFunction()
+    : domain_volume_(-1.0),
+      location_("boundary"),
+      name_("undefined")
+    {};
+
   TransportDomainFunction(const Teuchos::ParameterList& plist)
-    : domain_volume_(-1.0), location_("boundary"), name_("undefined"){};
+    : domain_volume_(-1.0),
+      location_("boundary"),
+      name_(Keys::cleanPListName(plist))
+    {}
+
   virtual ~TransportDomainFunction(){};
 
   // source term on time interval (t0, t1]
@@ -46,7 +55,7 @@ class TransportDomainFunction {
 
   // model name and type
   virtual std::string getName() const { return name_; }
-  virtual DomainFunctionType getType() const { return DomainFunctionType::NONE; }
+  virtual DomainFunction_kind getType() const = 0;
 
   // location where model is applied (boundary or interface)
   void set_location(const std::string& location) { location_ = location; }

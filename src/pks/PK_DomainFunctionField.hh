@@ -69,7 +69,7 @@ class PK_DomainFunctionField : public FunctionBase {
 
   // required member functions
   virtual void Compute(double t0, double t1) override;
-  virtual DomainFunctionType getType() const override { return DomainFunctionType::FIELD; }
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::FIELD; }
 
  protected:
   using FunctionBase::value_;
