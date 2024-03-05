@@ -178,13 +178,13 @@
 #   0.98.6       - update Alquimia to version 1.0.9
 #   0.98.7       - update Trilinos to fc55b9cd (Also 14.2.0)
 #                - update Hypre to 8f6bdc6a (Also 2.29.0)
-#   0.98.8a      - update ExprTk to 0.0.2
-#   0.98.8b      - update PETSc to 3.20.0
+#   0.98.8       - update ExprTk to 0.0.2
+#                - update PETSc to 3.20.0
 #                - update Sowing to 1.1.26-p8
 #                - update Alquimia 1.1.0
 #                - update PFLOTRAN 5.0.0
 #                - update superlu_dist v6.4.0 (minimum required by PETSc is 6.3.0, but maybe we should go newer).
-#   0.98.8c      - update CrunchTope to latest fix on master 
+#                - update CrunchTope to latest fix on master 
 
 include(CMakeParseArguments)
 
@@ -237,7 +237,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 8c)
+set(AMANZI_TPLS_VERSION_PATCH 8)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
