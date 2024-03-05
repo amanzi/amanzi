@@ -151,7 +151,7 @@ VerboseObject::getVerbLevelString() const
     level_str = "extreme";
     break;
   case Teuchos::VERB_DEFAULT:
-    level_str = "high";
+    level_str = "default";
     break;
   }
   return level_str;
