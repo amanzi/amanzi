@@ -51,7 +51,10 @@ void PipeFlow_PK::Setup()
    if (!S_->HasRecord(water_depth_key_)) {
       S_->Require<CV_t, CVS_t>(water_depth_key_, Tags::DEFAULT, water_depth_key_)
          .SetMesh(mesh_) ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-      AddDefaultPrimaryEvaluator_(water_depth_key_);
+      Teuchos::ParameterList elist(water_depth_key_);
+      elist.set<std::string>("my key", water_depth_key_).set<std::string>("tag", "");
+      auto eval = Teuchos::rcp(new WaterDepthEvaluator(elist));
+      S_->SetEvaluator(water_depth_key_, Tags::DEFAULT, eval);         
    }
 
    // -- pressure head
