@@ -31,6 +31,8 @@ PipeFlow_PK::PipeFlow_PK(Teuchos::ParameterList& pk_tree,
                   PK(pk_tree, glist, S, soln){
 
   Manning_coeff_ = sw_list_->get<double>("Manning coefficient", 0.005);
+  celerity_ = sw_list_->get<double>("celerity", 2); // m/s
+  pipe_diameter_key_ = sw_list_->get<std::string>("pipe diameter key", "");
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = sw_list_->sublist("verbose object");
@@ -46,6 +48,29 @@ void PipeFlow_PK::Setup()
 {
  
    ShallowWater_PK::Setup();
+
+  // -- wetted angle
+  if (!S_->HasRecord(wetted_angle_key_)) {
+    S_->Require<CV_t, CVS_t>(wetted_angle_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      AddDefaultPrimaryEvaluator_(wetted_angle_key_);
+  }
+
+  // -- pipe diameter
+  if (!S_->HasRecord(pipe_diameter_key_)) {
+
+     S_->Require<CV_t, CVS_t>(pipe_diameter_key_, Tags::DEFAULT, pipe_diameter_key_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+     if(!pipe_diameter_key_.empty()){
+       S_->RequireEvaluator(pipe_diameter_key_, Tags::DEFAULT);
+     }
+
+  }
 
    // -- water depth
    if (!S_->HasRecord(water_depth_key_)) {
@@ -427,6 +452,110 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
   return S;
 }
 
+
+//--------------------------------------------------------------
+// Calculation of time step limited by the CFL condition
+//--------------------------------------------------------------
+double PipeFlow_PK::get_dt()
+{
+
+  ComputeCellArrays();
+  int dir;
+  double d, d_min = 1.e10, vn, dt = 1.e10, dt_dry = 1.e-1;
+  double h, vx, vy;
+  double vnMax = 0.0;
+  double hMax = 0.0;
+
+  const auto& h_c = *S_->Get<CV_t>(primary_variable_key_).ViewComponent("cell", true);
+  const auto& vel_c = *S_->Get<CV_t>(velocity_key_).ViewComponent("cell", true);
+
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  AmanziMesh::Entity_ID_List cfaces;
+
+  for (int cell = 0; cell < model_cells_owned_.size(); cell++) {
+    int c = model_cells_owned_[cell];
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+
+    mesh_->cell_get_faces(c, &cfaces);
+
+    for (int n = 0; n < cfaces.size(); ++n) {
+      int f = cfaces[n];
+      bool skipFace = false;
+      double farea = mesh_->face_area(f);
+      const auto& xf = mesh_->face_centroid(f);
+      AmanziGeometry::Point normal = mesh_->face_normal(f, false, c, &dir);
+      normal /= farea;
+      ProjectNormalOntoMeshDirection(c, normal);
+      SkipFace(normal, skipFace);
+
+      if(!skipFace){
+         h = h_c[0][c];
+         vx = vel_c[0][c];
+         vy = vel_c[1][c];
+
+         // computing local (cell, face) time step using Kurganov's estimate d / (2a)
+         vn = (vx * normal[0] + vy * normal[1]);
+         d = norm(xc - xf);
+         d_min = std::min(d_min, d);
+
+         dt = std::min(d / std::max((2.0 * (std::abs(vn) + std::sqrt(g_ * h))), 1.e-12), dt);
+         vnMax = std::max(std::abs(vn), vnMax);
+         hMax = std::max(h, hMax);
+     }
+    }
+  }
+
+  for (int cell = 0; cell < junction_cells_owned_.size(); cell++) {
+    int c = model_cells_owned_[cell];
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+
+    mesh_->cell_get_faces(c, &cfaces);
+
+    for (int n = 0; n < cfaces.size(); ++n) {
+      int f = cfaces[n];
+      double farea = mesh_->face_area(f);
+      const auto& xf = mesh_->face_centroid(f);
+      AmanziGeometry::Point normal = mesh_->face_normal(f, false, c, &dir);
+      normal /= farea;
+
+      h = h_c[0][c];
+      vx = vel_c[0][c];
+      vy = vel_c[1][c];
+
+      // computing local (cell, face) time step using Kurganov's estimate d / (2a)
+      vn = (vx * normal[0] + vy * normal[1]);
+      d = norm(xc - xf);
+      d_min = std::min(d_min, d);
+
+      dt = std::min(d / std::max((2.0 * (std::abs(vn) + std::sqrt(g_ * h))), 1.e-12), dt);
+    }
+  }
+
+  // reduce dt_min when dt is too large for completely dry conditions (h = 0, qx = 0, qy = 0)
+  if (dt >= d_min * 1.e8) { dt = d_min * dt_dry; }
+
+  double dt_min;
+  mesh_->get_comm()->MinAll(&dt, &dt_min, 1);
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "stable dt = " << dt_min << ", cfl = " << cfl_ << std::endl;
+    *vo_->os() << "max abs vel normal to face = " << vnMax << ", max primary variable = " << hMax << std::endl;
+  }
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH && iters_ == max_iters_) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "switching from reduced to regular cfl=" << cfl_ << std::endl;
+  }
+
+  if (iters_ < max_iters_) {
+    return 0.1 * cfl_ * dt_min;
+  } else {
+    return cfl_ * dt_min;
+  }
+}
+
+
 //--------------------------------------------------------------------
 // Compute hydrostatic pressure force
 //--------------------------------------------------------------------
@@ -476,8 +605,7 @@ void PipeFlow_PK::UpdateSecondaryFields(){
        int cell = junction_cells_owned_[c];
        WettedAngle_c[0][cell] = -1.0;
        // NOTE: the primary variable for junctions store the water depth
-       TotalDepth_c[0][cell] = ShallowWater_PK::ComputeTotalDepth(PrimaryVar_c[0][cell], 
-                                                   B_c[0][cell], WettedAngle_c[0][cell], PipeD_c[0][cell]);
+       TotalDepth_c[0][cell] = ShallowWater_PK::ComputeTotalDepth(PrimaryVar_c[0][cell], B_c[0][cell]);
    }
 
    Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
@@ -609,6 +737,7 @@ void PipeFlow_PK::SetupPrimaryVariableKeys(){
 
   primary_variable_key_ = Keys::getKey(domain_, "wetted_area");
   prev_primary_variable_key_ = Keys::getKey(domain_, "prev_wetted_area");
+  wetted_angle_key_ = Keys::getKey(domain_, "wetted_angle");
   direction_key_ = sw_list_->get<std::string>("direction key", "");
 
 }
@@ -628,6 +757,7 @@ void PipeFlow_PK::SetupExtraEvaluatorsKeys(){
 //--------------------------------------------------------------
 void PipeFlow_PK::ScatterMasterToGhostedExtraEvaluators(){
 
+     S_->Get<CV_t>(wetted_angle_key_).ScatterMasterToGhosted("cell");
      S_->Get<CV_t>(water_depth_key_).ScatterMasterToGhosted("cell");
      S_->Get<CV_t>(pressure_head_key_).ScatterMasterToGhosted("cell");
 
@@ -671,6 +801,8 @@ void PipeFlow_PK::SetPrimaryVariableBC(Teuchos::RCP<Teuchos::ParameterList> &bc_
 // Initialize Variables
 //--------------------------------------------------------------
 void PipeFlow_PK::InitializeFields(){
+
+      S_->GetEvaluator(pipe_diameter_key_).Update(*S_, pipe_diameter_key_);
 
      int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
      auto& PrimaryVar_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
@@ -808,17 +940,6 @@ void PipeFlow_PK::SkipFace(AmanziGeometry::Point normal, bool &skipFace)
 }
 
 //--------------------------------------------------------------
-// The pipe is a 1D model so no fluxes along the second component
-// should exist
-//--------------------------------------------------------------
-void PipeFlow_PK::KillSecondComponent(double &killer)
-{
-
-   killer = 0.0;
-
-}
-
-//--------------------------------------------------------------
 // Compute dx
 //--------------------------------------------------------------
 void PipeFlow_PK::GetDx(const int &cell, double &dx)
@@ -861,6 +982,16 @@ void PipeFlow_PK::ComputeExternalForcingOnCells(std::vector<double> &forcing){
          }
      }
 
+}
+
+//--------------------------------------------------------------
+// Copy primary fields
+//--------------------------------------------------------------
+void PipeFlow_PK::CopyPrimaryFields( StateArchive & archive ){
+
+  archive.Add({ primary_variable_key_ }, { discharge_key_ },
+                 { primary_variable_key_, velocity_key_ },
+                 Tags::DEFAULT, "pipe_flow");
 }
 
 //--------------------------------------------------------------

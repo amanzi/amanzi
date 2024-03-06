@@ -41,6 +41,7 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 #
 set(sw_src_files ShallowWater_PK.cc
                  PipeFlow_PK.cc
+                 PipeFlow_TI.cc
                  ShallowWater_TI.cc
                  ShallowWaterBoundaryFunction.cc
                  DischargeEvaluator.cc

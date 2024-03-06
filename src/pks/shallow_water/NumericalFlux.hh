@@ -48,8 +48,6 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U, do
   // U[0] = primary variable (ponded depth or wetted area)
   // U[1] = U[0] * u
   // U[2] = U[0] * v
-  // U[3] = wetted angle
-  // U[4] = pipe diameter
   h2 = U[0] * U[0];
   u = 2.0 * U[0] * U[1] / (h2 + std::fmax(h2, eps2));
 
