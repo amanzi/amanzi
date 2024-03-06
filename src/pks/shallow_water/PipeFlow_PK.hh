@@ -31,30 +31,34 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual void Setup() override;
 
-  virtual double NumericalSourceFriction(double h, double qx, double qy, double WettedAngle, int component) override;
+  virtual double get_dt() override;
 
-  virtual std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
-                                                      double Bmax, const Epetra_MultiVector& B_n,
-                                                      std::vector<int> bc_model, std::vector<double> bc_value_h) override;
+  virtual void FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector& f) override;
 
-  virtual std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
-                                              double Bmax, const Epetra_MultiVector& B_n) override;
+  double NumericalSourceFriction(double h, double qx, double qy, double WettedAngle, int component, double PipeD);
+
+  std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
+                                              double Bmax, const Epetra_MultiVector& B_n, double PipeD,
+                                              std::vector<int> bc_model, std::vector<double> bc_value_h);
+
+  std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
+                                              double Bmax, const Epetra_MultiVector& B_n, double PipeD);
 
   virtual void UpdateSecondaryFields() override;
 
-  virtual double ComputeTotalDepth(double PrimaryVar, double Bathymetry, double WettedAngle) override;
+  double ComputeTotalDepth(double PrimaryVar, double Bathymetry, double WettedAngle, double PipeD);
 
-  virtual double ComputeWaterDepth(double WettedAngle) override;
+  double ComputeWaterDepth(double WettedAngle, double PipeD);
 
-  virtual double ComputeWettedAngle(double WaterDepth) override;
+  double ComputeWettedAngle(double WaterDepth, double PipeD);
 
-  virtual double ComputeWettedArea(double WettedAngle) override;
+  double ComputeWettedArea(double WettedAngle, double PipeD);
 
-  virtual double ComputeWettedAngleNewton(double WettedArea) override;
+  double ComputeWettedAngleNewton(double WettedArea, double PipeD);
 
-  virtual double ComputeHydrostaticPressureForce(std::vector<double> SolArray) override;
+  virtual double ComputeHydrostaticPressureForce(std::vector<double> Data) override;
 
-  virtual double ComputePressureHead(double WettedAngle) override;
+  double ComputePressureHead(double WettedAngle, double PipeD);
 
   virtual void SetupPrimaryVariableKeys() override;
 
@@ -70,32 +74,41 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual void ComputeExternalForcingOnCells(std::vector<double> &forcing) override;
 
-  virtual void SkipFace(AmanziGeometry::Point normal, bool &skipFace) override;
-
-  virtual void KillSecondComponent(double &killer) override;
+  void SkipFace(AmanziGeometry::Point normal, bool &skipFace);
 
   void GetDx(const int & cell, double & dx);
 
   virtual void ComputeCellArrays() override;
 
-  virtual void ProjectNormalOntoMeshDirection(int c, AmanziGeometry::Point &normal) override;
+  virtual void CopyPrimaryFields(StateArchive & archive) override;
+
+  void ProjectNormalOntoMeshDirection(int c, AmanziGeometry::Point &normal);
 
   bool IsJunction(const int & cell);
 
-  virtual std::vector<double> ComputeFieldsOnEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n) override;
+  std::vector<double> ComputeFieldsOnEdge(int c, int e, double htc, double Bc, double Bmax, 
+                                                  const Epetra_MultiVector& B_n, double PipeD) ;
 
  private:
   static RegisteredPKFactory<PipeFlow_PK> reg_;
 
-  double pipe_cross_section_;
-
   double Manning_coeff_;
+
+  double celerity_;
 
  protected:
  Key water_depth_key_, pressure_head_key_;
  // unit vector that defines the pipe direction
  // (both components are zero for junction cell)
  Key direction_key_;
+ Key wetted_angle_key_;
+ Key pipe_diameter_key_;
+
+ std::vector<int> model_cells_owned_;
+ std::vector<int> junction_cells_owned_;
+ std::vector<int> model_cells_wghost_;
+ std::vector<int> junction_cells_wghost_;
+ bool cellArraysInitDone_ = false;
 
 };
 

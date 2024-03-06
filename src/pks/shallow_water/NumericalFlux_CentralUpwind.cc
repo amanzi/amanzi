@@ -21,9 +21,6 @@ namespace ShallowWater {
 NumericalFlux_CentralUpwind::NumericalFlux_CentralUpwind(Teuchos::ParameterList& plist) 
 {
   g_ = plist.get<double>("gravity");
-  pipe_diameter_ = plist.get<double>("pipe diameter", 1.0);
-  pipe_cross_section_ = 3.14159265359 * 0.25 * pipe_diameter_ * pipe_diameter_;
-  celerity_ = plist.get<double>("celerity", 2);
 }
 
 
@@ -31,7 +28,7 @@ NumericalFlux_CentralUpwind::NumericalFlux_CentralUpwind(Teuchos::ParameterList&
 * Numerical flux
 ****************************************************************** */
 std::vector<double> NumericalFlux_CentralUpwind::Compute(
-    const std::vector<double>& UL, const std::vector<double>& UR)
+    const std::vector<double>& UL, const std::vector<double>& UR, const double & HPFL, const double & HPFR)
 {
   std::vector<double> FL, FR, F(3), U_star(3), dU(3);
 
@@ -63,8 +60,8 @@ std::vector<double> NumericalFlux_CentralUpwind::Compute(
   amx = std::min(std::min(uL - ghL, uR - ghR), 0.0);
   lambda_min_ = amx;
 
-  FL = PhysicalFlux(UL);
-  FR = PhysicalFlux(UR);
+  FL = PhysicalFlux(UL, HPFL);
+  FR = PhysicalFlux(UR, HPFR);
   
   for (int i = 0; i < 3; i++) {
     U_star[i] = (apx*UR[i] - amx*UL[i] - (FR[i] - FL[i])) / (apx - amx + eps1);

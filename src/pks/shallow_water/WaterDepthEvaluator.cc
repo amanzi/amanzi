@@ -27,11 +27,11 @@ WaterDepthEvaluator::WaterDepthEvaluator(Teuchos::ParameterList& plist)
   }
   std::string domain = Keys::getDomain(my_keys_[0].first);
 
+  pipe_diameter_key_ = plist_.get<std::string>("pipe diameter key", Keys::getKey(domain, "diameter"));
+
   wetted_angle_key_ = plist_.get<std::string>("wetted angle key", Keys::getKey(domain, "wetted_angle"));
 
   primary_variable_key_ = plist_.get<std::string>("wetted area key", Keys::getKey(domain, "wetted_area"));
-
-  pipe_diameter_ = plist_.get<double>("pipe diameter", 1.0);
 
   dependencies_.insert(std::make_pair(wetted_angle_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(primary_variable_key_, Tags::DEFAULT));
@@ -54,17 +54,18 @@ void WaterDepthEvaluator::Evaluate_(
 {
   const auto& WettedAngle_c = *S.Get<CompositeVector>(wetted_angle_key_).ViewComponent("cell");
   const auto& WettedArea_c = *S.Get<CompositeVector>(primary_variable_key_).ViewComponent("cell");
+  const auto& PipeD_c = *S.Get<CompositeVector>(pipe_diameter_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
      if(WettedAngle_c[0][c] >= TwoPi) {
          // this means the pipe flow is pressurized
-         result_c[0][c] =  pipe_diameter_;
+         result_c[0][c] =  PipeD_c[0][c];
      }
      else if (WettedAngle_c[0][c] < TwoPi && WettedAngle_c[0][c] >= 0.0){
          // this means the pipe flow is ventilated
-         result_c[0][c] = pipe_diameter_ * 0.5 * (1.0 - cos(WettedAngle_c[0][c] * 0.5));
+         result_c[0][c] = PipeD_c[0][c] * 0.5 * (1.0 - cos(WettedAngle_c[0][c] * 0.5));
      }
      else {
          // this means the cell is a SW model cell
@@ -82,6 +83,7 @@ void WaterDepthEvaluator::EvaluatePartialDerivative_(
     const std::vector<CompositeVector*>& results) 
 {
   const auto& WettedAngle_c = *S.Get<CompositeVector>(wetted_angle_key_).ViewComponent("cell");
+  const auto& PipeD_c = *S.Get<CompositeVector>(pipe_diameter_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
@@ -91,7 +93,7 @@ void WaterDepthEvaluator::EvaluatePartialDerivative_(
          result_c[0][c] =  0.0;
      }
      else{
-         result_c[0][c] = pipe_diameter_ * 0.25 * sin(WettedAngle_c[0][c] * 0.5);
+         result_c[0][c] = PipeD_c[0][c] * 0.25 * sin(WettedAngle_c[0][c] * 0.5);
      }
     }
   } else {

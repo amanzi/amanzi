@@ -31,6 +31,7 @@
 #include "LimiterCell.hh"
 #include "NumericalFlux.hh"
 #include "PK.hh"
+#include "PK_Utils.hh"
 #include "PK_Explicit.hh"
 #include "PK_Factory.hh"
 #include "PK_Physical.hh"
@@ -81,13 +82,11 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual void InitializeFields();
 
-  virtual void ComputeCellArrays();
+  virtual void ComputeCellArrays(){};
 
-  virtual void SkipFace(AmanziGeometry::Point normal, bool &skipFace) {};
+  virtual void ComputeExternalForcingOnCells(std::vector<double> &forcing);
 
-  virtual void KillSecondComponent(double &killSecondComponent) {};
-
-  virtual void ComputeExternalForcingOnCells(std::vector<double> &forcing); 
+  virtual void CopyPrimaryFields(StateArchive & archive);
 
   // Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
@@ -104,8 +103,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   double TotalDepthEdgeValue(int c, int e, double htc,
                              double Bc, double Bmax, const Epetra_MultiVector& B_n);
 
-  virtual std::vector<double> ComputeFieldsOnEdge(int c, int e, double htc, 
-                                                  double Bc, double Bmax, const Epetra_MultiVector& B_n); 
+  double ComputeFieldOnEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n); 
 
 
   // due to rotational invariance of SW equations, we need flux in the
@@ -117,34 +115,14 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   std::vector<double> NumericalFlux_x_Rusanov(const std::vector<double>&, const std::vector<double>&);
   std::vector<double> NumericalFlux_x_CentralUpwind(const std::vector<double>&, const std::vector<double>&);
 
-  std::vector<double> NumericalSourceBedSlope(int c, double hc);
+  std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
+                                              double Bmax, const Epetra_MultiVector& B_n);
 
-  virtual std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
-                                                      double Bmax, const Epetra_MultiVector& B_n,
-                                                      std::vector<int> bc_model, std::vector<double> bc_value_h);
-
-  virtual std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
-                                                      double Bmax, const Epetra_MultiVector& B_n);
-
-  virtual double NumericalSourceFriction(double h, double qx, double qy, double WettedAngle, int component){return 0.0;};
-
-  virtual double ComputeWaterDepth(double WettedAngle){return 0.0;};
-
-  virtual double ComputeWettedAngle(double WaterDepth){return -1.0;};
-
-  virtual double ComputeWettedAngleNewton(double WettedArea){return -1.0;};
-
-  virtual double ComputeWettedArea(double WettedAngle){return 0.0;};
-
-  virtual double ComputeTotalDepth(double PrimaryVar, double Bathymetry, double WettedAngle){return PrimaryVar + Bathymetry;};
-
-  virtual double ComputePressureHead(double WettedArea){return 0.0;};
+  double ComputeTotalDepth(double PrimaryVar, double Bathymetry){return PrimaryVar + Bathymetry;};
 
   virtual void UpdateSecondaryFields();
 
-  virtual void ProjectNormalOntoMeshDirection(int c, AmanziGeometry::Point &normal) {};
-
-  virtual double ComputeHydrostaticPressureForce (std::vector<double> SolArray){return g_ * 0.5 * SolArray[0] * SolArray[0];};
+  virtual double ComputeHydrostaticPressureForce (std::vector<double> Data){return g_ * 0.5 * Data[0] * Data[0];};
 
   void PushBackBC(Teuchos::RCP<ShallowWaterBoundaryFunction> bc){bcs_.push_back(bc);};
 
@@ -153,7 +131,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   // access
   double get_total_source() const { return total_source_; }
 
- private:
+ protected:
   void
   InitializeFieldFromField_(const std::string& field0,
                             const std::string& field1, bool call_evaluator);
@@ -161,7 +139,6 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   void VerifySolution_(TreeVector& A);
   int ErrorDiagnostics_(double t, int c, double h);
 
- protected:
   Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> sw_list_;
   Teuchos::RCP<TreeVector> soln_;
@@ -181,7 +158,6 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   Key total_depth_key_, bathymetry_key_;
   Key hydrostatic_pressure_key_;
   Key riemann_flux_key_;
-  Key wetted_angle_key_;
   Key source_key_;
 
   std::string passwd_;
@@ -196,24 +172,11 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   // gravity magnitude
   double g_;
 
-  int shallow_water_model_; 
-
-  double pipe_diameter_;
-
-  double celerity_;
-
   double velocity_desingularization_eps_;
 
   double Pi = 3.14159265359;
   double TwoPi = 6.28318530718;
 
-  std::vector<int> model_cells_owned_;
-  std::vector<int> junction_cells_owned_;
-  std::vector<int> model_cells_wghost_;
-  std::vector<int> junction_cells_wghost_;
-  bool cellArraysInitDone_ = false;
-
- private:
   // boundary conditions
   std::vector<Teuchos::RCP<ShallowWaterBoundaryFunction>> bcs_;
   std::vector<Teuchos::RCP<Operators::BCs>> op_bcs_;

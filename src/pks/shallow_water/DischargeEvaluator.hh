@@ -36,9 +36,6 @@ class DischargeEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Co
   virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
- protected:
-  int shallow_water_model_;
-
  private:
   std::string velocity_key_, primary_variable_key_;
 };

@@ -25,13 +25,14 @@ HydrostaticPressureEvaluator::HydrostaticPressureEvaluator(Teuchos::ParameterLis
   }
   std::string domain = Keys::getDomain(my_keys_[0].first);
 
-  shallow_water_model_ = plist.get<int>("use shallow water model", 1);
-
-  if (shallow_water_model_){
+  if (domain == "surface"){
      primary_variable_key_ = plist_.get<std::string>("ponded depth key", Keys::getKey(domain, "ponded_depth"));
-  } else {
+  } else if (domain == "pipe"){
      primary_variable_key_ = plist_.get<std::string>("water depth key", Keys::getKey(domain, "water_depth"));
-  }
+  } else{
+     std::cout<<"Unknown domain in hydrostatic pressure evaluator"<<std::endl;
+     AMANZI_ASSERT(false);
+  } 
 
   dependencies_.insert(std::make_pair(primary_variable_key_, Tags::DEFAULT));
 }
