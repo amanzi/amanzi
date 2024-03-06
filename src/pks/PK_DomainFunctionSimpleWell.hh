@@ -45,8 +45,8 @@ class PK_DomainFunctionSimpleWell : public FunctionBase, public Functions::Uniqu
             const Teuchos::RCP<const State>& S);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "simple well"; }
+  virtual void Compute(double t0, double t1) override;
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::SIMPLE_WELL; }
 
  protected:
   using FunctionBase::value_;

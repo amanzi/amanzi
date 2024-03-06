@@ -104,7 +104,7 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 ****************************************************************** */
 void
 Darcy_PK::Setup()
-{ 
+{
   mesh_ = S_->GetMesh(domain_);
   dim = mesh_->getSpaceDimension();
 

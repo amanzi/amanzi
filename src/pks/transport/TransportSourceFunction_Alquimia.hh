@@ -42,13 +42,12 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
 
   void Compute(double t_old, double t_new);
 
-  // require by the case class
-  virtual std::string name() const { return "alquimia source"; }
+  DomainFunction_kind getType() const override { return DomainFunction_kind::ALQUIMIA; }
 
- private:
+ protected:
   void Init_(const std::vector<std::string>& regions);
 
- private:
+ protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   // string function of geochemical conditions

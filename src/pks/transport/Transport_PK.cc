@@ -32,6 +32,7 @@
 #include "PDE_DiffusionFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
+#include "PKsDefs.hh"
 #include "ReconstructionCellLinear.hh"
 #include "UniqueLocalIndex.hh"
 #include "WhetStoneDefs.hh"
@@ -916,11 +917,12 @@ Transport_PK::ComputeSources_(double tp,
         if (srcs_[m]->keyword() == "producer") {
           // correction for an extraction well
           value *= tcc_prev[imap][c];
-        } else if (srcs_[m]->name() == "domain coupling") {
+        } else if (srcs_[m]->getType() == DomainFunction_kind::COUPLING) {
           value = values[k];
         } else {
           // correction for non-SI concentration units
-          if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight")
+          if (srcs_[m]->getType() == DomainFunction_kind::VOLUME ||
+              srcs_[m]->getType() == DomainFunction_kind::WEIGHT)
             value /= units_.concentration_factor();
         }
 

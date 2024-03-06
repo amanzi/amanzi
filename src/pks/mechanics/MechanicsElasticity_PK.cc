@@ -217,9 +217,9 @@ MechanicsElasticity_PK::Initialize()
   op_matrix_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
   op_matrix_ = op_matrix_elas_->global_operator();
 
-  // -- extensions: The undrained split method add anotehr operator which has 
-  //    the grad-div structure. It is critical that it uses a separate global 
-  //    operator pointer. Its local matrices are shared with the original 
+  // -- extensions: The undrained split method add anotehr operator which has
+  //    the grad-div structure. It is critical that it uses a separate global
+  //    operator pointer. Its local matrices are shared with the original
   //    physics operator.
   if (split_undrained_) {
     std::string method = tmp1.sublist("schema").get<std::string>("method");
