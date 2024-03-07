@@ -48,7 +48,7 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   auto& riemann_f = *S_->GetW<CompositeVector>(riemann_flux_key_, passwd_).ViewComponent("face", true);
 
   auto& WettedAngle_c = *S_->GetW<CompositeVector>(wetted_angle_key_, passwd_).ViewComponent("cell", true); 
-  auto& PipeD_c = *S_->GetW<CompositeVector>(pipe_diameter_key_, pipe_diameter_key_).ViewComponent("cell", true);
+  auto& PipeD_c = *S_->GetW<CompositeVector>(diameter_key_, diameter_key_).ViewComponent("cell", true);
   auto& dir_c = *S_->GetW<CompositeVector>(direction_key_, direction_key_).ViewComponent("cell", true);
 
   for (int c = 0; c < model_cells_wghost_.size(); ++c) {

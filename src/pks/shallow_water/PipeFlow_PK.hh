@@ -102,7 +102,7 @@ class PipeFlow_PK : public ShallowWater_PK {
  // (both components are zero for junction cell)
  Key direction_key_;
  Key wetted_angle_key_;
- Key pipe_diameter_key_;
+ Key diameter_key_;
 
  std::vector<int> model_cells_owned_;
  std::vector<int> junction_cells_owned_;

@@ -32,7 +32,7 @@ PipeFlow_PK::PipeFlow_PK(Teuchos::ParameterList& pk_tree,
 
   Manning_coeff_ = sw_list_->get<double>("Manning coefficient", 0.005);
   celerity_ = sw_list_->get<double>("celerity", 2); // m/s
-  pipe_diameter_key_ = sw_list_->get<std::string>("pipe diameter key", "");
+  diameter_key_ = sw_list_->get<std::string>("diameter key", "");
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = sw_list_->sublist("verbose object");
@@ -59,15 +59,15 @@ void PipeFlow_PK::Setup()
   }
 
   // -- pipe diameter
-  if (!S_->HasRecord(pipe_diameter_key_)) {
+  if (!S_->HasRecord(diameter_key_)) {
 
-     S_->Require<CV_t, CVS_t>(pipe_diameter_key_, Tags::DEFAULT, pipe_diameter_key_)
+     S_->Require<CV_t, CVS_t>(diameter_key_, Tags::DEFAULT, diameter_key_)
         .SetMesh(mesh_)
         ->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-     if(!pipe_diameter_key_.empty()){
-       S_->RequireEvaluator(pipe_diameter_key_, Tags::DEFAULT);
+     if(!diameter_key_.empty()){
+       S_->RequireEvaluator(diameter_key_, Tags::DEFAULT);
      }
 
   }
@@ -594,7 +594,7 @@ void PipeFlow_PK::UpdateSecondaryFields(){
    auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
    auto& TotalDepth_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
    auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-   auto& PipeD_c = *S_->GetW<CV_t>(pipe_diameter_key_, Tags::DEFAULT, pipe_diameter_key_).ViewComponent("cell", true);
+   auto& PipeD_c = *S_->GetW<CV_t>(diameter_key_, Tags::DEFAULT, diameter_key_).ViewComponent("cell", true);
 
    for (int c = 0; c < model_cells_owned_.size(); ++c) {
        int cell = model_cells_owned_[c];
@@ -802,14 +802,14 @@ void PipeFlow_PK::SetPrimaryVariableBC(Teuchos::RCP<Teuchos::ParameterList> &bc_
 //--------------------------------------------------------------
 void PipeFlow_PK::InitializeFields(){
 
-      S_->GetEvaluator(pipe_diameter_key_).Update(*S_, pipe_diameter_key_);
+      S_->GetEvaluator(diameter_key_).Update(*S_, diameter_key_);
 
      int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
      auto& PrimaryVar_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& WaterDepth_c = *S_->GetW<CV_t>(water_depth_key_, Tags::DEFAULT, water_depth_key_).ViewComponent("cell");
      auto& PressureHead_c = *S_->GetW<CV_t>(pressure_head_key_, Tags::DEFAULT, pressure_head_key_).ViewComponent("cell");
-     auto& PipeD_c = *S_->GetW<CV_t>(pipe_diameter_key_, Tags::DEFAULT, pipe_diameter_key_).ViewComponent("cell");
+     auto& PipeD_c = *S_->GetW<CV_t>(diameter_key_, Tags::DEFAULT, diameter_key_).ViewComponent("cell");
      auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 

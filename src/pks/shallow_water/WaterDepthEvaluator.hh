@@ -42,7 +42,7 @@ protected:
  private:
   std::string wetted_angle_key_;
   std::string primary_variable_key_;
-  std::string pipe_diameter_key_;
+  std::string diameter_key_;
 
 
 };

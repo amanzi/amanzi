@@ -27,7 +27,7 @@ WaterDepthEvaluator::WaterDepthEvaluator(Teuchos::ParameterList& plist)
   }
   std::string domain = Keys::getDomain(my_keys_[0].first);
 
-  pipe_diameter_key_ = plist_.get<std::string>("pipe diameter key", Keys::getKey(domain, "diameter"));
+  diameter_key_ = plist_.get<std::string>("diameter key", Keys::getKey(domain, "diameter"));
 
   wetted_angle_key_ = plist_.get<std::string>("wetted angle key", Keys::getKey(domain, "wetted_angle"));
 
@@ -54,7 +54,7 @@ void WaterDepthEvaluator::Evaluate_(
 {
   const auto& WettedAngle_c = *S.Get<CompositeVector>(wetted_angle_key_).ViewComponent("cell");
   const auto& WettedArea_c = *S.Get<CompositeVector>(primary_variable_key_).ViewComponent("cell");
-  const auto& PipeD_c = *S.Get<CompositeVector>(pipe_diameter_key_).ViewComponent("cell");
+  const auto& PipeD_c = *S.Get<CompositeVector>(diameter_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
@@ -83,7 +83,7 @@ void WaterDepthEvaluator::EvaluatePartialDerivative_(
     const std::vector<CompositeVector*>& results) 
 {
   const auto& WettedAngle_c = *S.Get<CompositeVector>(wetted_angle_key_).ViewComponent("cell");
-  const auto& PipeD_c = *S.Get<CompositeVector>(pipe_diameter_key_).ViewComponent("cell");
+  const auto& PipeD_c = *S.Get<CompositeVector>(diameter_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();

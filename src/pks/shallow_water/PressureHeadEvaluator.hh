@@ -42,7 +42,7 @@ protected:
   double TwoPi = 6.28318530718;
 
  private:
-  std::string wetted_angle_key_, wetted_area_key_, pipe_diameter_key_;
+  std::string wetted_angle_key_, wetted_area_key_, diameter_key_;
 
 
 };
