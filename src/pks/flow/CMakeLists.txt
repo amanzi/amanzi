@@ -50,7 +50,7 @@ set(flow_src_files Flow_PK.cc
                    RelPermEvaluator.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_linear.cc WRM_tabular.cc
                    WRMPartition.cc WRMFactory.cc WRMEvaluator.cc 
-                   WaterStorage.cc
+                   WaterStorage.cc WaterStorageDarcy.cc
                    DarcyVelocityEvaluator.cc
                    VolumetricFlowRateEvaluator.cc
                    MultiscaleFlowPorosityFactory.cc MultiscaleFlowPorosityPartition.cc

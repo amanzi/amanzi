@@ -15,8 +15,8 @@
 */
 
 
-#ifndef AMANZI_MPC_WATER_STORAGE_STRESS_SPLIT_HH_
-#define AMANZI_MPC_WATER_STORAGE_STRESS_SPLIT_HH_
+#ifndef AMANZI_MPC_WATER_STORAGE_STRESS_SPLIT_DARCY_HH_
+#define AMANZI_MPC_WATER_STORAGE_STRESS_SPLIT_DARCY_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -30,17 +30,17 @@ namespace Amanzi {
 // Convergence of iterative coupling for coupled flow and geomechanics.
 // Comput Geosci 2013.
 inline double
-FixedStressStability(double E, double nu, double b)
+FixedStressStabilityDarcy(double E, double nu, double b)
 {
   double mu = E / (2 * (1 + nu));
   return b * b / mu / 2;
 }
 
-class WaterStorageStressSplit
+class WaterStorageDarcyStressSplit
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  explicit WaterStorageStressSplit(Teuchos::ParameterList& plist);
-  WaterStorageStressSplit(const WaterStorageStressSplit& other);
+  explicit WaterStorageDarcyStressSplit(Teuchos::ParameterList& plist);
+  WaterStorageDarcyStressSplit(const WaterStorageDarcyStressSplit& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -53,11 +53,11 @@ class WaterStorageStressSplit
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
-  Key saturation_key_, porosity_key_, mol_density_liquid_key_, pressure_key_;
-  Key young_modulus_key_, poisson_ratio_key_, biot_key_;
+  Key pressure_key_, specific_storage_key_;
+  Key young_modulus_key_, poisson_ratio_key_, biot_key_, strain_key_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, WaterStorageStressSplit> reg_;
+  static Utils::RegisteredFactory<Evaluator, WaterStorageDarcyStressSplit> reg_;
 };
 
 } // namespace Amanzi
