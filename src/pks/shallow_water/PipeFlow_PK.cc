@@ -465,6 +465,8 @@ double PipeFlow_PK::get_dt()
   double h, vx, vy;
   double vnMax = 0.0;
   double hMax = 0.0;
+  double vnMin = 0.0;
+  double hMin= 0.0;
 
   const auto& h_c = *S_->Get<CV_t>(primary_variable_key_).ViewComponent("cell", true);
   const auto& vel_c = *S_->Get<CV_t>(velocity_key_).ViewComponent("cell", true);
@@ -501,6 +503,8 @@ double PipeFlow_PK::get_dt()
          dt = std::min(d / std::max((2.0 * (std::abs(vn) + std::sqrt(g_ * h))), 1.e-12), dt);
          vnMax = std::max(std::abs(vn), vnMax);
          hMax = std::max(h, hMax);
+         vnMin = std::min(std::abs(vn), vnMin);
+         hMin = std::min(h, hMin);
      }
     }
   }
@@ -528,6 +532,10 @@ double PipeFlow_PK::get_dt()
       d_min = std::min(d_min, d);
 
       dt = std::min(d / std::max((2.0 * (std::abs(vn) + std::sqrt(g_ * h))), 1.e-12), dt);
+      vnMax = std::max(std::abs(vn), vnMax);
+      hMax = std::max(h, hMax);
+      vnMin = std::min(std::abs(vn), vnMin);
+      hMin = std::min(h, hMin);
     }
   }
 
@@ -541,6 +549,7 @@ double PipeFlow_PK::get_dt()
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "stable dt = " << dt_min << ", cfl = " << cfl_ << std::endl;
     *vo_->os() << "max abs vel normal to face = " << vnMax << ", max primary variable = " << hMax << std::endl;
+    *vo_->os() << "min abs vel normal to face = " << vnMin << ", min primary variable = " << hMin << std::endl;
   }
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH && iters_ == max_iters_) {
