@@ -65,6 +65,7 @@ MFD3D_BernardiRaugelGradDiv::StiffnessMatrix(int c, const Tensor& T, DenseMatrix
   int nrows0 = d_ * nnodes;
   int nrows = nrows0 + nfaces;
   A.Reshape(nrows, nrows);
+  A.PutScalar(0.0);
 
   double coef = T(0, 0);
   for (int m = 0; m < nfaces; ++m) {

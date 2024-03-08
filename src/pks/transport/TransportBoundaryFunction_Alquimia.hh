@@ -40,7 +40,7 @@ class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
                                      Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
   ~TransportBoundaryFunction_Alquimia();
 
-  void Compute(double t_old, double t_new);
+  void Compute(double t_old, double t_new) override;
 
   DomainFunction_kind getType() const override { return DomainFunction_kind::ALQUIMIA; }
 
