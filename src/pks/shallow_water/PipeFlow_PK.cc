@@ -69,6 +69,13 @@ void PipeFlow_PK::Setup()
      if(!diameter_key_.empty()){
        S_->RequireEvaluator(diameter_key_, Tags::DEFAULT);
      }
+     else{
+        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+           Teuchos::OSTab tab = vo_->getOSTab();
+           *vo_->os() << "Pipe diameter needs to be specified" << std::endl;
+        }
+        abort();
+     }
 
   }
 
