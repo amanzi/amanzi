@@ -83,7 +83,8 @@ verification['index'] = {
   'index_list' : [ 'confined_flow',
                    'unconfined_flow',
                    'infiltration',
-                   'transport'
+                   'transport',
+                   'mechanics'
                  ],
 }
 
@@ -218,6 +219,20 @@ verification['transport'] = {
     'from_dir' : 'test_suites/verification/transport/saturated/transient/dual_porosity_1d',
     'dest_dir' : 'doc/user_guide/verification/transport/dual_porosity_1d',
     'index_entry' : 'dual_porosity_1d/amanzi_dual_porosity_1d.rst',
+  },
+}
+
+verification['mechanics'] = {
+  'index_entry': 'mechanics/index.rst',
+  'index' : {'index_title' : 'Mechanics',
+             'index_file' : 'doc/user_guide/verification/mechanics/index.rst',
+             'index_list' : [ 'consolidation_1d',
+                            ],
+            },
+  'consolidation_1d' : {
+    'from_dir' : 'test_suites/verification/mechanics/consolidation_1d',
+    'dest_dir' : 'doc/user_guide/verification/mechanics/consolidation_1d',
+    'index_entry' : 'consolidation_1d/amanzi_consolidation_1d.rst',
   },
 }
 
