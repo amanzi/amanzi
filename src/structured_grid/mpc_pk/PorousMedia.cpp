@@ -1013,7 +1013,6 @@ PorousMedia::initData ()
 
           // set pressure
           if (flow_model==PM_FLOW_MODEL_RICHARDS) {
-            const int idx = mfi.index();
             FArrayBox pc(vbox,1);
             FArrayBox s(vbox,1); s.copy(stmp);
             IArrayBox m(vbox,1); m.copy((*materialID)[mfi]);
@@ -1122,11 +1121,9 @@ PorousMedia::initData ()
             for (int i=0; i<rds.size(); ++i)
             {
               const IdxRegionData& tic = rds[i];
-              const Array<const Region*>& tic_regions = tic.Regions();
               const std::string& tic_type = tic.Type();
 
-              if (tic_type == "file")
-              {
+              if (tic_type == "file") {
                 std::cerr << "Initialization of initial condition based on "
                           << "a file has not been implemented yet.\n";
                 BoxLib::Abort("PorousMedia::initData()");
@@ -1333,12 +1330,10 @@ PorousMedia::solve_for_initial_flow_field()
     Real dt_init = initial_pressure_solve_init_dt;
     Real dt = dt_init;
     int k_max = initial_pressure_solve_max_cycles;
-    Real t_eps = 1.e-8*dt_init;
 
     MultiFab tmp(grids,1,1);
     MultiFab tmpP(grids,1,1);
     int nc = 0; // Component of water in state
-    PMAmr* p = dynamic_cast<PMAmr*>(parent); BL_ASSERT(p);
 
     bool solved = false;
     int total_num_Newton_iterations = 0;
@@ -1741,7 +1736,7 @@ PorousMedia::init (AmrLevel& old)
     }
   }
 
-  old_intersect_new          = BoxLib::intersect(grids,oldns->boxArray());
+  old_intersect_new = BoxLib::intersect(grids,oldns->boxArray());
   is_first_flow_step_after_regrid = true;
 }
 
@@ -2153,7 +2148,6 @@ PorousMedia::get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow)
     //  default the rest to somethign computable to silence runtime undefd data errors
     BoxList dbox(geom.Domain());
     for (OrientationIter oitr; oitr; ++oitr) {
-      Orientation face = oitr();
       dbox.push_back(BoxLib::adjCell(geom.Domain(),oitr(),1));
     }
 
@@ -2272,7 +2266,6 @@ PorousMedia::set_saturated_velocity()
 
   for (int i=0; i<ic_array.size(); ++i) {
     const RegionData& ic = ic_array[i];
-    const Array<const Region*>& ic_regions = ic.Regions();
     const std::string& type = ic.Type();
     if (type == "velocity") {
       Array<Real> vals = ic();
@@ -2775,13 +2768,11 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
     }
   }
 
-  int nc = 0; // Component of water in state
-
   // Save initial state, used in the native solver to build res_fix
   BL_ASSERT(richard_solver != 0);
   for (int lev=0;lev<nlevs;lev++)
   {
-    PorousMedia&    fine_lev   = getLevel(lev);
+    PorousMedia& fine_lev = getLevel(lev);
     MultiFab& P_lev = fine_lev.get_old_data(Press_Type);
     MFTower& IC = *(richard_solver->GetRSdata().InitialState);
     MultiFab::Copy(IC[lev],P_lev,0,0,1,1);
@@ -3369,7 +3360,6 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
     int Aidx = first_tracer;
     int Cidx, Sidx, SRCidx, Didx, DUidx;
     Cidx = Sidx = Didx = DUidx = 0;
-    int use_conserv_diff = true;
 
     PArray<FArrayBox> U(BL_SPACEDIM, PArrayNoManage), Area(BL_SPACEDIM, PArrayNoManage);
     PArray<FArrayBox> Flux(BL_SPACEDIM, PArrayNoManage);
@@ -3647,7 +3637,6 @@ PorousMedia::advance_chemistry (Real time,
 
   bool chem_ok = true;
 
-  int first_tracer = ncomps;
   std::set<int> types_advanced;
   types_advanced.insert(State_Type);
   types_advanced.insert(FuncCount_Type);

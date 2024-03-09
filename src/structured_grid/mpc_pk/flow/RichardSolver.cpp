@@ -422,7 +422,7 @@ PetscErrorCode
   nlsc->ls_reason = "In Progress";
 
   PetscErrorCode ierr;
-  PetscReal fnorm, xnorm, ynorm, gnorm;
+  PetscReal fnorm, gnorm;
 
   PetscErrorCode (*func)(SNES,Vec,Vec,void*);
   void *fctx;
@@ -527,8 +527,6 @@ PetscErrorCode
       nlsc->ls_reason = "Damped step successful";
     }
     nlsc->ls_success = true;
-
-    int iters = nlsc->NLIterationsTaken() + 1;
   }
 
   if (!(rs->GetRecordFile().empty())) {
@@ -656,7 +654,7 @@ PetscErrorCode
   nlsc->ls_reason = "In Progress";
 
   PetscErrorCode ierr;
-  PetscReal fnorm, xnorm, ynorm, gnorm;
+  PetscReal fnorm, gnorm;
   PetscErrorCode (*func)(SNES,Vec,Vec,void*);
   void *fctx;
 
@@ -755,8 +753,6 @@ PetscErrorCode
       nlsc->ls_reason = reason;
     }
     nlsc->ls_success = true;
-
-    int iters = nlsc->NLIterationsTaken() + 1;
   }
 
   if (!(rs->GetRecordFile().empty())) {
@@ -913,7 +909,6 @@ RichardSolver::BuildOpSkel(Mat& J, bool calcSpace)
   int nLevs = layout.NumLevels();
 
   PetscErrorCode ierr;
-  int num_nbrs_reg = 2*BL_SPACEDIM+1;
   Layout::IntFab reg_neighbors;
   std::set<int> neighbors;
   typedef BaseFab<std::set<int> > ISetFab;
@@ -1487,10 +1482,7 @@ RichardSolver::CalcResidual(MFTower& residual,
   DivRhoU(residual,pressure,t);
 
   if (dt>0) {
-    int sComp=0;
-    int dComp=0;
     int nComp=1;
-    int nGrow=0;
 
     Real gInv = 0;
     const Array<Real>& g = rs_data.GetGravity();
@@ -1833,10 +1825,10 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   BL_PROFILE("RichardSolver::RichardMatFDColoringApply()");
 
   PetscErrorCode ierr;
-  PetscInt       k,start,end,l,row,col,srow,m1,m2;
+  PetscInt       k,start,end,l,row,col;
   PetscScalar    *y,*w3_array;
   PetscScalar    *vscale_array, *solnTyp_array;
-  PetscReal      epsilon = coloring->error_rel,umin = coloring->umin,unorm;
+  PetscReal      epsilon = coloring->error_rel;
   Vec            w1=coloring->w1,w2=coloring->w2,w3;
   PetscBool      flg = PETSC_FALSE;
   PetscInt       ctype=coloring->ctype,N,col_start=0,col_end=0;
@@ -2090,14 +2082,14 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
 
   PetscErrorCode (*f)(void*,Vec,Vec,void*) = (PetscErrorCode (*)(void*,Vec,Vec,void *))coloring->f;
   PetscErrorCode ierr;
-  PetscInt       k,start,end,l,row,col,srow,m1,m2;
+  PetscInt       k,start,end,l,row,col;
   PetscScalar    *y,*w3_array;
-  PetscScalar    *solnTyp_array, *a_array;
-  PetscReal      epsilon = coloring->error_rel,umin = coloring->umin,unorm;
+  PetscScalar    *a_array;
+  PetscReal      epsilon = coloring->error_rel;
   Vec            w1=coloring->w1,w2=coloring->w2,w3;
   void           *fctx = coloring->fctx;
   PetscBool      flg = PETSC_FALSE;
-  PetscInt       ctype=coloring->ctype,N,col_start=0,col_end=0;
+  PetscInt       ctype=coloring->ctype,N;
   MatEntry       *Jentry=coloring->matentry;
   Vec            x1_tmp;
 
@@ -2359,8 +2351,7 @@ MatSqueeze(Mat& J,
 
   int rstart, rend;
   ierr = MatGetOwnershipRange(J,&rstart,&rend);CHKPETSC(ierr);
-  int nrows = 0;
-  int Jncols, Ancols;
+  int Jncols;
   const PetscInt *Jcols;
   const PetscScalar *Jvals;
   PetscReal dtol = 1.e-20;
