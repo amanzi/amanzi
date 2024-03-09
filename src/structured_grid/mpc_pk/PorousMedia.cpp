@@ -304,7 +304,6 @@ PorousMedia::setup_bound_desc()
 {
   BL_PROFILE("PorousMedia::setup_bound_desc()");
   bc_descriptor_map.clear();
-  const Real* dx   = geom.CellSize();
   const Box& domain = geom.Domain();
   int nGrowHYP = PorousMedia::NGrowHYP();
 
@@ -2947,7 +2946,6 @@ PorousMedia::get_inflow_velocity(const Orientation& face,
     {
         const Box domain = geom.Domain();
         const int* domhi = domain.hiVect();
-        const int* domlo = domain.loVect();
         const Real* dx   = geom.CellSize();
         Real t_eval = AdjustBCevalTime(State_Type,t,false);
 
@@ -4774,8 +4772,6 @@ PorousMedia::computeNewDt (int                   finest_level,
   Real dt_init_local = -1;
 
   Real dt_0;
-  int max_level = parent->maxLevel();
-
   Real cum_time = parent->cumTime(); // Time evolved to so far
   Real start_time = parent->startTime(); // Time simulation started from
 
@@ -5191,8 +5187,6 @@ PorousMedia::init_rock_properties (bool restart)
   bool ignore_mixed = true;
   rock_manager->GetMaterialID(level,*materialID,nGrow,ignore_mixed);
 
-  const Real* dx = geom.CellSize();
-  const int max_level = parent->maxLevel();
   Real cur_time = state[State_Type].curTime();
 
   MultiFab kappatmp(grids,BL_SPACEDIM,nGrowHYP);
@@ -5806,7 +5800,6 @@ PorousMedia::mac_sync ()
   const Real dt        = parent->dtLevel(level);
   MultiFab& S_new = get_new_data(State_Type);
 
-  bool any_diffusive = false;
   if (do_explicit_tracer_sync_only) {
     //
     // Here, the ONLY sync to compute is the time-explicit corrections from
@@ -5900,7 +5893,6 @@ PorousMedia::mac_sync ()
     MFVector new_state(*Ssync,first_tracer,1,1);
     MFVector Rhs(*Ssync,first_tracer,1,1);
     MultiFab& S_new = get_new_data(State_Type);
-    MultiFab& S_old = get_old_data(State_Type);
 
     for (int n=0; n<ntracers; ++n) {
       new_state.setVal(0);
@@ -6196,7 +6188,6 @@ PorousMedia::ComputeSourceVolume ()
       BL_ASSERT(pm != 0);
 
       const BoxArray& ba = pm->boxArray();
-      const Geometry& g = pm->Geom();
       const Real* dx = pm->Geom().CellSize();
 
       MultiFab mask(ba,source_array.size(),0); mask.setVal(0);
@@ -6500,8 +6491,6 @@ PorousMedia::calcDiffusivity (const Real time,
     }
 
     if (num_tracs>0) {
-      const Real* dx = geom.CellSize();
-
       int first_tracer = ncomps;
       int dComp_tracs = std::max(0,src_comp-ncomps) + first_tracer;
 
@@ -7128,8 +7117,7 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, const IArrayBox& matID, const FA
     int tracer_idx = sComp+n-ncomps;
     if (tbc_descriptor_map.size() > tracer_idx  && tbc_descriptor_map[tracer_idx].size())
     {
-      const Box domain = geom.Domain();
-      const Real* dx   = geom.CellSize();
+      const Real* dx = geom.CellSize();
 
       for (std::map<Orientation,BCDesc>::const_iterator
              it=tbc_descriptor_map[tracer_idx].begin(); it!=tbc_descriptor_map[tracer_idx].end(); ++it)
@@ -7171,10 +7159,7 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, const IArrayBox& matID, const FAr
   Array<int> bc(BL_SPACEDIM*2,0); // FIXME: Never set, why do we need this
   if (pbc_descriptor_map.size())
   {
-    const Box domain = geom.Domain();
-    const int* domhi = domain.hiVect();
-    const int* domlo = domain.loVect();
-    const Real* dx   = geom.CellSize();
+    const Real* dx = geom.CellSize();
     Real t_eval = AdjustBCevalTime(Press_Type,time,false);
 
     FArrayBox sdat, prdat, mask;
@@ -7280,9 +7265,6 @@ PorousMedia::dirichletDefaultBC (FArrayBox& fab, const IArrayBox& matID,  Real t
 
     if (tbc_descriptor_map.size())
       {
-	const Box domain = geom.Domain();
-	const Real* dx   = geom.CellSize();
-
 	for (std::map<Orientation,BCDesc>::const_iterator
 	       it=tbc_descriptor_map[0].begin(); it!=tbc_descriptor_map[0].end(); ++it)
             {

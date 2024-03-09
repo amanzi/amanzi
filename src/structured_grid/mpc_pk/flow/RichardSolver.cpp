@@ -1834,7 +1834,7 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
 
   PetscErrorCode ierr;
   PetscInt       k,start,end,l,row,col,srow,m1,m2;
-  PetscScalar    dx,*y,*w3_array;
+  PetscScalar    *y,*w3_array;
   PetscScalar    *vscale_array, *solnTyp_array;
   PetscReal      epsilon = coloring->error_rel,umin = coloring->umin,unorm;
   Vec            w1=coloring->w1,w2=coloring->w2,w3;
@@ -2091,7 +2091,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   PetscErrorCode (*f)(void*,Vec,Vec,void*) = (PetscErrorCode (*)(void*,Vec,Vec,void *))coloring->f;
   PetscErrorCode ierr;
   PetscInt       k,start,end,l,row,col,srow,m1,m2;
-  PetscScalar    dx,*y,*w3_array;
+  PetscScalar    *y,*w3_array;
   PetscScalar    *solnTyp_array, *a_array;
   PetscReal      epsilon = coloring->error_rel,umin = coloring->umin,unorm;
   Vec            w1=coloring->w1,w2=coloring->w2,w3;
