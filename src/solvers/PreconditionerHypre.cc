@@ -109,8 +109,8 @@ PreconditionerHypre::applyInverse(const Vector_type& v, Vector_type& hv) const
   HYPRE_ParVectorSetConstantValues(ParY_, 0.0);
   if (PrecondType == Boomer) {
     HYPRE_BoomerAMGSolve(HyprePrecond_, ParMatrix_, ParX_, ParY_);
-  } else if (PrecondType == Euclid) {
-    HYPRE_EuclidSolve(HyprePrecond_, ParMatrix_, ParX_, ParY_);
+  } else if (PrecondType == ILU) {
+    HYPRE_ILUSolve(HyprePrecond_, ParMatrix_, ParX_, ParY_);
   }
 
   XLocal_->data = XTemp;
@@ -288,33 +288,26 @@ PreconditionerHypre::InitBoomer_()
 
 
 /* ******************************************************************
- * Initialize the preconditioner.
- ****************************************************************** */
+* Initialize modified ILU preconditioner.
+****************************************************************** */
 void
-PreconditionerHypre::InitEuclid_()
+PreconditionerHypre::InitILU_()
 {
-  Init_();
-
 #ifdef HAVE_IFPACK2_HYPRE
 
-  HYPRE_EuclidSetStats(HyprePrecond_, plist_.get<int>("verbosity"));
+  if (plist_.isParameter("verbosity"))
+    HYPRE_ILUSetPrintLevel(HyprePrecond_, plist_.get<int>("verbosity"));
 
-  HYPRE_EuclidSetLevel(HyprePrecond_, plist_.get<int>("ilu(k) fill level"));
+  if (plist_.isParameter("ilu(k) fill level"))
+    HYPRE_ILUSetLevelOfFill(HyprePrecond_, plist_.get<int>("ilu(k) fill level"));
+  HYPRE_ILUSetTol(HyprePrecond_, 0.0);
 
-  if (plist_.isParameter("rescale rows")) {
-    bool rescale_rows = plist_.get<bool>("rescale rows");
-    HYPRE_EuclidSetRowScale(HyprePrecond_, rescale_rows ? 1 : 0);
-  }
-
-  if (plist_.isParameter("ilut drop tolerance"))
-    HYPRE_EuclidSetILUT(HyprePrecond_, plist_.get<double>("ilut drop tolerance"));
 #else
-  Errors::Message msg("Hypre (Euclid) is not available in this installation of "
-                      "Amanzi.  To use Hypre, please reconfigure.");
+  Errors::Message msg("Hypre (ILU) is not available in this installation of Amanzi.  To use "
+                      "Hypre, please reconfigure.");
   Exceptions::amanzi_throw(msg);
 #endif
 }
-
 
 void
 PreconditionerHypre::initializeInverse()
@@ -359,8 +352,8 @@ PreconditionerHypre::initializeInverse()
   std::string method_name = plist_.get<std::string>("method");
   if (method_name == "boomer amg") {
     PrecondType = Boomer;
-  } else if (method_name == "euclid") {
-    PrecondType = Euclid;
+  } else if (method_name == "ILU") {
+    PrecondType = ILU;
   } else {
     Errors::Message msg;
     msg << "PreconditionerHypre: unknown method name \"" << method_name << "\"";
@@ -414,10 +407,10 @@ PreconditionerHypre::computeInverse()
     InitBoomer_();
     // Hypre Setup must be called after matrix has values
     HYPRE_BoomerAMGSetup(HyprePrecond_, ParMatrix_, ParX_, ParY_);
-  } else if (PrecondType == Euclid) {
-    HYPRE_EuclidCreate(comm, &HyprePrecond_);
-    InitEuclid_();
-    HYPRE_EuclidSetup(HyprePrecond_, ParMatrix_, ParX_, ParY_);
+  } else if (PrecondType == ILU) {
+    HYPRE_ILUCreate(&HyprePrecond_);
+    InitILU_();
+    HYPRE_ILUSetup(HyprePrecond_, ParMatrix_, ParX_, ParY_);
   }
 #endif
   nvtxRangePop();

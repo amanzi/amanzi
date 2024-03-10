@@ -96,7 +96,7 @@ SUITE(SOLVERS)
         .set<int>("smoother sweeps", 3);
     }
 #endif
-    if (name == "hypre: euclid") { tmp.set<int>("verbosity", 1); }
+    if (name == "hypre: ILU") { tmp.set<int>("verbosity", 1); }
 
     // static_assert(Amanzi::AmanziSolvers::Impl::is_assembled<Matrix_type>::value,
     // "Matrix_type is assembled?");
@@ -151,7 +151,7 @@ SUITE(SOLVERS)
     };
 #else
     static std::vector<std::string> prec_name = {
-      "identity", "diagonal", "ifpack2: ILUT", "hypre: boomer amg", "muelu"
+      "identity", "diagonal", "ifpack2: ILUT", "hypre: boomer amg", "hypre: ILU", "muelu"
     };
 #endif
 

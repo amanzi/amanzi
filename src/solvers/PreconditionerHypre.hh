@@ -81,30 +81,8 @@ Example:
   </ParameterList>
 
 
-Euclid is a Parallel Incomplete LU, provided as part of the HYPRE project
-through the Ifpack interface.
-The algorithm was presented at SC99 and published in expanded 
-form in the SIAM Journal on Scientific Computing. 
-Scalability means that the factorization (setup) and application (triangular solve) timings remain
-nearly constant when the global problem size is scaled in proportion to the number of processors.
-As with all ILU preconditioning methods, the number of iterations is expected to increase with
-global problem size.
-
-This is provided when using the `"preconditioning method`"=`"euclid`" or
-=`"hypre: euclid`" in the `Preconditioner`_ spec.
-
-.. _preconditioner-euclid-spec:
-.. admonition:: preconditioner-euclid-spec:
-
-    * `"ilu(k) fill level`" ``[int]`` **1** The factorization level.
-    * `"ilut drop tolerance`" ``[double]`` **0** Defines a drop tolerance
-relative to the largest absolute value of any entry in the row being factored.
-    * `"rescale row`" ``[bool]`` **false** If true, values are scaled prior to
-factorization so that largest value in any row is +1 or -1. Note that this can
-destroy matrix symmetry.
-    * `"verbosity`" ``[int]`` **0** Prints a summary of runtime settings and
-timing information to stdout.
-
+todo: add description
+ILU Preconditioner: see https://hypre.readthedocs.io/en/latest/solvers-ilu.html#ilu
 
 */
 
@@ -149,7 +127,7 @@ class VerboseObject;
 namespace AmanziSolvers {
 
 class PreconditionerHypre : public Preconditioner {
-  enum HyprePreconditioners { Boomer, Euclid };
+  enum HyprePreconditioners { Boomer, ILU };
 
   using RowMatrix_type = Tpetra::RowMatrix<double_type, LO, GO>;
 
@@ -160,8 +138,8 @@ class PreconditionerHypre : public Preconditioner {
     HYPRE_IJVectorDestroy(YHypre_);
     if (PrecondType == Boomer) {
       HYPRE_BoomerAMGDestroy(HyprePrecond_);
-    } else if (PrecondType == Euclid) {
-      HYPRE_EuclidDestroy(HyprePrecond_);
+    } else if (PrecondType == ILU) {
+      HYPRE_ILUDestroy(HyprePrecond_);
     }
   }
 
@@ -215,7 +193,7 @@ class PreconditionerHypre : public Preconditioner {
  private:
   void Init_(){};
   void InitBoomer_();
-  void InitEuclid_();
+  void InitILU_();
 
   Teuchos::RCP<const Map_type> make_contiguous_(Teuchos::RCP<const RowMatrix_type>& Matrix);
 
