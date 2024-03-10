@@ -352,8 +352,12 @@ PreconditionerHypre::initializeInverse()
   std::string method_name = plist_.get<std::string>("method");
   if (method_name == "boomer amg") {
     PrecondType = Boomer;
+    HYPRE_BoomerAMGCreate(&HyprePrecond_);
+    InitBoomer_();
   } else if (method_name == "ILU") {
     PrecondType = ILU;
+    HYPRE_ILUCreate(&HyprePrecond_);
+    InitILU_();
   } else {
     Errors::Message msg;
     msg << "PreconditionerHypre: unknown method name \"" << method_name << "\"";
@@ -402,14 +406,9 @@ PreconditionerHypre::computeInverse()
   HYPRE_IJMatrixInitialize(HypreA_);
   copy_matrix_();
   if (PrecondType == Boomer) {
-    HYPRE_BoomerAMGCreate(&HyprePrecond_);
-    // can only set parameter when the preconditioner is created
-    InitBoomer_();
     // Hypre Setup must be called after matrix has values
     HYPRE_BoomerAMGSetup(HyprePrecond_, ParMatrix_, ParX_, ParY_);
   } else if (PrecondType == ILU) {
-    HYPRE_ILUCreate(&HyprePrecond_);
-    InitILU_();
     HYPRE_ILUSetup(HyprePrecond_, ParMatrix_, ParX_, ParY_);
   }
 #endif
