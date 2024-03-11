@@ -304,8 +304,17 @@ KeyTag
 readKeyTag(Teuchos::ParameterList& list,
            const Key& domain,
            const Key& basename,
-           const Key& default_name = "",
-           const Tag& tag_default = Tag(""));
+           const Key& default_name,
+           const Tag& tag_default = Tag{""});
+
+inline KeyTag
+readKeyTag(Teuchos::ParameterList& list,
+           const Key& domain,
+           const Key& basename,
+           const Tag& tag = Tag{""}) {
+  return readKeyTag(list, domain, basename, "", tag);
+}
+
 
 
 // Convenience function for requesting a list of names of Keys from an input

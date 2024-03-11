@@ -87,7 +87,6 @@ class EvaluatorModelPatch : public EvaluatorSecondary {
  protected:
   Teuchos::RCP<Model_type> model_;
   std::string name_;
-  Tag tag_;
 
  private:
   // registration in the evaluator factory
@@ -103,10 +102,9 @@ EvaluatorModelPatch<Model, Device_type>::EvaluatorModelPatch(
   const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorSecondary(plist),
     model_(Teuchos::rcp(new Model_type(plist))),
-    name_(Keys::cleanPListName(plist->name())),
-    tag_(plist->get<std::string>("tag"))
+    name_(Keys::cleanPListName(plist->name()))
 {
-  for (const auto& dep : model_->getDependencies()) dependencies_.insert(KeyTag(dep, tag_));
+  for (const KeyTag& dep : model_->getDependencies()) dependencies_.insert(dep);
 }
 
 template <template <class, class> class Model, class Device_type>

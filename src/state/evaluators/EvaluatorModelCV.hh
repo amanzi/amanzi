@@ -94,7 +94,6 @@ class EvaluatorModelCV : public EvaluatorSecondaryMonotype<CompositeVector, Comp
  protected:
   Teuchos::RCP<Model_type> model_;
   std::string name_;
-  Tag tag_;
 
  private:
   // registration in the evaluator factory
@@ -110,12 +109,11 @@ EvaluatorModelCV<Model, Device_type>::EvaluatorModelCV(
   const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
     model_(Teuchos::rcp(new Model_type(plist))),
-    name_(Keys::cleanPListName(plist->name())),
-    tag_(plist->get<std::string>("tag"))
+    name_(Keys::cleanPListName(plist->name()))
 {
   my_keys_.clear();
-  for (const auto& k : model_->getMyKeys()) my_keys_.emplace_back(KeyTag(k, tag_));
-  for (const auto& dep : model_->getDependencies()) dependencies_.insert(KeyTag(dep, tag_));
+  my_keys_ = model_->getMyKeys();
+  for (const KeyTag& dep : model_->getDependencies()) dependencies_.insert(dep);
 }
 
 template <template <class, class> class Model, class Device_type>

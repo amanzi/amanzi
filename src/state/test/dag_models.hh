@@ -79,18 +79,19 @@ class AModel {
     H_ = dependency_views[3];
   }
 
-  KeyVector getMyKeys()
+  KeyTagVector getMyKeys()
   {
     // NOTE, a real Model would parse the parameter list to get these
-    return {
-      "A",
-    };
+    return { {"A",Tags::DEFAULT}, };
   };
 
-  KeyVector getDependencies()
+  KeyTagVector getDependencies()
   {
     // NOTE, a real Model would parse the parameter list to get these
-    return { "B", "C", "E", "H" };
+    return { {"B",Tags::DEFAULT},
+             {"C",Tags::DEFAULT},
+             {"E",Tags::DEFAULT},
+             {"H",Tags::DEFAULT} };
   };
 
   // the model
@@ -152,14 +153,12 @@ class CModel {
     G_ = deps[1];
   }
 
-  KeyVector getMyKeys()
+  KeyTagVector getMyKeys()
   {
-    return {
-      "C",
-    };
+    return { {"C",Tags::DEFAULT} };
   };
 
-  KeyVector getDependencies() { return { "D", "G" }; }
+  KeyTagVector getDependencies() { return { {"D",Tags::DEFAULT}, { "G", Tags::DEFAULT} }; }
 
   KOKKOS_INLINE_FUNCTION void operator()(const int i) const { C_(i, 0) = 2 * D_(i, 0) + G_(i, 0); }
 
@@ -197,18 +196,14 @@ class DModel_ {
 
   void setAccessor(const Accessor_View_type& ids) { ids_ = ids; }
 
-  KeyVector getMyKeys()
+  KeyTagVector getMyKeys()
   {
-    return {
-      "D",
-    };
+    return { {"D",Tags::DEFAULT}, };
   };
 
-  KeyVector getDependencies()
+  KeyTagVector getDependencies()
   {
-    return {
-      "G",
-    };
+    return { {"G",Tags::DEFAULT}, };
   }
 
   KOKKOS_INLINE_FUNCTION void operator()(const int i) const
@@ -253,14 +248,12 @@ class EModel {
     F_ = deps[1];
   }
 
-  KeyVector getMyKeys()
+  KeyTagVector getMyKeys()
   {
-    return {
-      "E",
-    };
+    return { {"E",Tags::DEFAULT}, };
   };
 
-  KeyVector getDependencies() { return { "D", "F" }; }
+  KeyTagVector getDependencies() { return { {"D",Tags::DEFAULT}, {"F",Tags::DEFAULT}, }; }
 
   KOKKOS_INLINE_FUNCTION void operator()(const int i) const { E_(i, 0) = D_(i, 0) * F_(i, 0); }
 
@@ -295,18 +288,15 @@ class FModel {
     G_ = deps[0];
   }
 
-  KeyVector getMyKeys()
+  KeyTagVector getMyKeys()
   {
-    return {
-      "F",
-    };
+    return { {"F",Tags::DEFAULT},};
   };
 
-  KeyVector getDependencies()
+  KeyTagVector getDependencies()
   {
     return {
-      "G",
-    };
+      {"G",Tags::DEFAULT},};
   }
 
   KOKKOS_INLINE_FUNCTION void operator()(const int i) const { F_(i, 0) = 2 * G_(i, 0); }
@@ -339,18 +329,14 @@ class HModel {
     F_ = deps[0];
   }
 
-  KeyVector getMyKeys()
+  KeyTagVector getMyKeys()
   {
-    return {
-      "H",
-    };
+    return { {"H",Tags::DEFAULT}, };
   };
 
-  KeyVector getDependencies()
+  KeyTagVector getDependencies()
   {
-    return {
-      "F",
-    };
+    return { {"F",Tags::DEFAULT}, };
   }
 
 
