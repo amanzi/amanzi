@@ -89,7 +89,6 @@ class EvaluatorModelCVByMaterial
  protected:
   std::vector<std::pair<std::string, Teuchos::RCP<Model_type>>> models_;
   std::string name_;
-  Key tag_;
 
  private:
   // registration in the evaluator factory
@@ -101,8 +100,7 @@ template <template <class, class> class Model, class Device_type>
 EvaluatorModelCVByMaterial<Model, Device_type>::EvaluatorModelCVByMaterial(
   const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
-    name_(Keys::cleanPListName(plist->name())),
-    tag_(plist->get<std::string>("tag"))
+    name_(Keys::cleanPListName(plist->name()))
 {
   const Teuchos::ParameterList& region_plist = plist->sublist("model parameters");
 
@@ -131,9 +129,8 @@ EvaluatorModelCVByMaterial<Model, Device_type>::EvaluatorModelCVByMaterial(
   // are all the same?  Shouldn't be necessary since they all got constructed
   // from the same list.
   my_keys_.clear();
-  for (const auto& k : models_[0].second->getMyKeys()) my_keys_.emplace_back(KeyTag(k, tag_));
-  for (const auto& dep : models_[0].second->getDependencies())
-    dependencies_.insert(KeyTag(dep, tag_));
+  my_keys_ = models_[0].second->getMyKeys();
+  for (const KeyTag& dep : models_[0].second->getDependencies()) dependencies_.insert(dep);
 }
 
 
