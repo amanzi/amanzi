@@ -1548,8 +1548,7 @@ void  PorousMedia::read_comp()
       */
       if (bc_type == "uniform_pressure")
       {
-	int nPhase = pNames.size();
-	BL_ASSERT(nPhase==1); // FIXME
+	BL_ASSERT(nNames.size()==1); // FIXME
 	Array<Real> vals, times;
 	Array<std::string> forms;
 
@@ -1625,12 +1624,10 @@ void  PorousMedia::read_comp()
       else if (bc_type == "linear_pressure")
       {
 	Real val; ppr.get("val",val);
-	int ng = ppr.countval("grad");
-	BL_ASSERT(ng>=BL_SPACEDIM);
+	BL_ASSERT(ppr.countval("grad") >= BL_SPACEDIM);
 	Array<Real> grad(BL_SPACEDIM); ppr.getarr("grad",grad,0,BL_SPACEDIM);
 
-	int nl = ppr.countval("loc");
-	BL_ASSERT(nl>=BL_SPACEDIM);
+	BL_ASSERT(ppr.countval("loc") >= BL_SPACEDIM);
 	Array<Real> loc(BL_SPACEDIM); ppr.getarr("loc",loc,0,BL_SPACEDIM);
 
 	Array<Real> vals(2*BL_SPACEDIM+1);
@@ -2242,12 +2239,11 @@ void  PorousMedia::read_tracer()
           for (int j=0; j<tbc_regions.size(); ++j)
           {
             const std::string purpose = tbc_regions[j]->purpose;
-            int dir = -1, is_hi, k;
+            int dir = -1, k;
             for (int kt=0; kt<7 && dir<0; ++kt) {
               if (purpose == PMAMR::RpurposeDEF[kt]) {
                 BL_ASSERT(kt != 6);
                 dir = kt%3;
-                is_hi = kt>=3;
                 k = kt;
               }
             }

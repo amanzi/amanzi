@@ -25,6 +25,7 @@
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
 #include "State.hh"
+#include "StateHelpers.hh"
 #include "WhetStoneDefs.hh"
 
 #include "DarcyVelocityEvaluator.hh"
@@ -85,18 +86,24 @@ Flow_PK::Setup()
   // keys and tags
   Tag tag = Tags::DEFAULT;
 
+  pressure_key_ = Keys::getKey(domain_, "pressure");
+  hydraulic_head_key_ = Keys::getKey(domain_, "hydraulic_head");
+  darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity");
+
   vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate");
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
   permeability_key_ = Keys::getKey(domain_, "permeability");
   permeability_eff_key_ = Keys::getKey(domain_, "permeability_effective");
   aperture_key_ = Keys::getKey(domain_, "aperture");
-  prev_aperture_key_ = Keys::getKey(domain_, "prev_aperture");
   bulk_modulus_key_ = Keys::getKey(domain_, "bulk_modulus");
 
   porosity_key_ = Keys::getKey(domain_, "porosity");
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
   prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid");
+
   wc_key_ = Keys::getKey(domain_, "water_content");
+  water_storage_key_ = Keys::getKey(domain_, "water_storage");
+  prev_water_storage_key_ = Keys::getKey(domain_, "prev_water_storage");
 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
@@ -133,11 +140,6 @@ Flow_PK::Setup()
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
-    S_->Require<CV_t, CVS_t>(prev_aperture_key_, Tags::DEFAULT)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-
     {
       S_->Require<CV_t, CVS_t>(permeability_eff_key_, Tags::DEFAULT, permeability_eff_key_)
         .SetMesh(mesh_)
@@ -166,18 +168,13 @@ Flow_PK::Setup()
 
   // -- water content
   if (!S_->HasRecord(wc_key_)) {
-    S_->Require<CV_t, CVS_t>(wc_key_, Tags::DEFAULT, wc_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    auto elist = RequireFieldForEvaluator(*S_, wc_key_);
 
     std::vector<std::string> listm(
       { Keys::getVarName(porosity_key_), Keys::getVarName(saturation_liquid_key_) });
     if (flow_on_manifold_) listm.push_back(Keys::getVarName(aperture_key_));
 
-    Teuchos::ParameterList elist(wc_key_);
-    elist.set<std::string>("my key", wc_key_)
-      .set<Teuchos::Array<std::string>>("multiplicative dependencies", listm)
+    elist.set<Teuchos::Array<std::string>>("multiplicative dependencies", listm)
       .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
     S_->SetEvaluator(wc_key_, Tags::DEFAULT, eval);
@@ -213,10 +210,7 @@ Flow_PK::Setup()
         const Teuchos::ParameterList& spec = tmp_list.sublist(it->first).sublist("field");
         auto name = spec.get<std::string>("field key");
 
-        S_->Require<CV_t, CVS_t>(name, Tags::DEFAULT, passwd_)
-          .SetMesh(mesh_)
-          ->SetGhosted(true)
-          ->SetComponent("cell", AmanziMesh::CELL, 1);
+        RequireFieldForEvaluator(*S_, name);
         S_->RequireEvaluator(name, Tags::DEFAULT);
       }
     }

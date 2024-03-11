@@ -9,19 +9,65 @@
 
 /*!
 
-The conceptual PDE model for elasticity is
+The conceptual PDE model for the quasi-static elastic deformation is
 
 .. math::
-  \frac{\partial (\rho \boldsymbol{u})}{\partial t} 
-  + \boldsymbol{\nabla} \cdot (C \boldsymbol{u} \nabla \boldsymbol{u})
+  \boldsymbol{\nabla} \cdot (C \varepsilon(\boldsymbol{d}))
   =
   \rho \boldsymbol{g}
 
 where 
-:math:`\rho` is the fluid density [kg/m^3],
-:math:`\boldsymbol{\sigma}` is the deviatoric stress tensor,
+:math:`\boldsymbol{\d}` is the displacement [m],
+:math:`\rho` is the rock density [kg/m^3],
+:math:`\boldsymbol{\varepsilon}` is the strain tensor,
 and
 :math:`\boldsymbol{g}` is the gravity vector [:math:`m/s^2`].
+
+
+Global parameters
+.................
+Global parameters are placed in the sublist `"mechanics`".
+The list of global parameters include:
+
+* `"domain name`" [string] specifies mesh name that defined domain of this PK.
+  Default is `"domain`".
+
+
+Physical models and assumptions
+...............................
+This list is used to summarize physical models and assumptions, such as
+coupling with other PKs.
+This list is often generated or extended by a high-level MPC PK.
+
+* `"use gravity`" [bool] defines non-zero source term. Default is *false*.
+
+* `"biot scheme: undrained split`" [bool] defines iterative coupling with 
+  a flow PK where mechanics is solved first.
+
+* `"biot scheme: fixed-stress split`" [bool] defines iterative coupling with 
+  a flow PK where flow is solved first.
+
+.. code-block:: xml
+
+  <ParameterList name="mechanics">  <!-- parent list -->
+  <ParameterList name="physical models and assumptions">
+    <Parameter name="use gravity" type="bool" value="false"/>
+    <Parameter name="biot scheme: undrained split" type="bool" value="false"/>
+    <Parameter name="biot scheme: fixed stress split" type="bool" value="false"/>
+  </ParameterList>
+
+
+Main sublists
+.............
+The following sublists are needed to create and control this PK:
+
+.. code-block:: xml
+
+  <ParameterList name="mechanics">  <!-- parent list -->
+    <ParameterList name="time integrator">
+    <ParameterList name="operators">
+    <ParameterList name="physical models and assumptions">
+    <ParameterList name="boundary conditions">
 
 */
 
@@ -79,7 +125,7 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
   virtual void CalculateDiagnostics(const Tag& tag) final{};
 
-  virtual std::string name() override { return passwd_; }
+  virtual std::string name() override { return "mechanics"; }
 
   // methods required for time integration interface
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
@@ -159,9 +205,10 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
   int nfaces_owned_, nfaces_wghost_;
   int nnodes_owned_, nnodes_wghost_;
 
-  double dt_, dt_next_, dt_desirable_;
+  double dt_;
 
-  bool use_gravity_, poroelasticity_, thermoelasticity_;
+  bool use_gravity_, thermoelasticity_;
+  bool split_undrained_, split_fixed_stress_, poroelasticity_;
 
  protected:
   // pointers to primary fields and their evaluators
@@ -173,7 +220,7 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
 
   // solvers
   Teuchos::RCP<Operators::Operator> op_matrix_;
-  Teuchos::RCP<Operators::PDE_Elasticity> op_matrix_elas_;
+  Teuchos::RCP<Operators::PDE_Elasticity> op_matrix_elas_, op_matrix_graddiv_;
 
  private:
   std::string passwd_;
@@ -181,7 +228,7 @@ class MechanicsElasticity_PK : public PK_PhysicalBDF {
 
   Key displacement_key_, hydrostatic_stress_key_, vol_strain_key_;
   Key young_modulus_key_, poisson_ratio_key_;
-  Key particle_density_key_;
+  Key particle_density_key_, undrained_split_coef_key_;
 
   // time integrators
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae_;

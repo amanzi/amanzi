@@ -35,7 +35,6 @@ class Porosity_Constant : public Porosity {
   // required methods from the base class
   virtual double PorosityValue(double p) override { return porosity_; }
   virtual double dPorositydPressure(double p) override { return 0.0; }
-  virtual double getBiotCoefficient() override { return 1.0; }
   virtual std::pair<double, double> getThermalCoefficients() override
   {
     return std::make_pair(0.0, 0.0);

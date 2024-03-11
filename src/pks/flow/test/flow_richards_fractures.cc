@@ -37,15 +37,14 @@
 /* *******************************************************************
 * Compute pressure.
 ******************************************************************* */
-double MeanPressure(const Amanzi::State& S)
+double
+MeanPressure(const Amanzi::State& S)
 {
   const auto& p = *S.Get<Amanzi::CompositeVector>("pressure").ViewComponent("cell");
   int ncells = p.MyLength();
 
   double mean(0.0);
-  for (int c = 0; c < ncells; c++) {
-    mean += p[0][c];
-  }
+  for (int c = 0; c < ncells; c++) { mean += p[0][c]; }
   return mean / ncells;
 }
 
@@ -123,7 +122,7 @@ TEST(RICHARDS_TWO_FRACTURES)
 
     t_old = t_new;
     dt *= 1.2;
- 
+
     // measure of wetting front speed
     double pmean = MeanPressure(*S);
     CHECK(pmean > 80000 + (t_old - 2) * 160);

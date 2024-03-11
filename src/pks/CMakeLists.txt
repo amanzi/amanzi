@@ -77,6 +77,7 @@ set(pks_inc_files
   PK_DomainFunctionSimpleWell.hh
   PK_Factory.hh
   PK_Utils.hh
+  PKsDefs.hh
   StateArchive.hh)
 
 add_install_include_file(${pks_inc_files})

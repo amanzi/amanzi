@@ -9,7 +9,7 @@
 */
 
 /*
-  This is the mpc_pk component of the Amanzi code.
+  MPC PK
 
   Implementation for the derived PK_MPCSequential class. Provides only the
   AdvanceStep() method missing from MPC.hh. In sequential coupling, we
@@ -37,7 +37,7 @@ class PK_MPCSequential : public PK_MPC<PK> {
   // PK methods
   // -- dt is the minimum of the sub pks
   virtual double get_dt();
-  virtual void set_dt(double dt){};
+  virtual void set_dt(double dt);
 
   // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);

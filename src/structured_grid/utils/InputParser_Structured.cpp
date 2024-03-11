@@ -164,8 +164,6 @@ namespace Amanzi {
       // FIXME: This multiplier should be input
       geometry_eps = 1.e-6*max_size;
 
-      const ParameterList& eclist = parameter_list.sublist("Execution Control");
-
       ParameterList& alist = struc_list.sublist("amr");
       alist.set("n_cell",n_cell);
 
@@ -253,11 +251,8 @@ namespace Amanzi {
       ParameterList& prob_out_list    = struc_out_list.sublist("prob");
       ParameterList& cg_out_list      = struc_out_list.sublist("cg");
       ParameterList& mg_out_list      = struc_out_list.sublist("mg");
-      ParameterList& mac_out_list     = struc_out_list.sublist("mac");
-      ParameterList& diffuse_out_list = struc_out_list.sublist("diffuse");
       ParameterList& io_out_list      = struc_out_list.sublist("vismf");
       ParameterList& fabarr_out_list  = struc_out_list.sublist("fabarray");
-      ParameterList& fab_out_list     = struc_out_list.sublist("fab");
 
       bool echo_inputs = false;
       std::string echo_str = "Echo Inputs";
@@ -2622,7 +2617,6 @@ namespace Amanzi {
       for (int i=0; i<phaseLabels.size(); ++i) {
         const std::string& phaseLabel = phaseLabels[i];
         const ParameterList& pplist = plist.sublist(phaseLabel);
-        const ParameterList& psublist = plist.sublist(phaseLabel);
 
         if (phaseLabel=="Solid") {
           PLoptions optP1(pplist,nullList,nullList,true,false);
@@ -3829,7 +3823,6 @@ namespace Amanzi {
                                 bool&                do_chem)
     {
       ParameterList& phase_list  = struc_list.sublist("phase");
-      ParameterList& comp_list   = struc_list.sublist("comp");
       ParameterList& solute_list = struc_list.sublist("tracer");
 
       typedef StateDef::PhaseCompMap PhaseCompMap;

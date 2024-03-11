@@ -196,6 +196,19 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="biot_coefficient">
+        <ParameterList name="function">
+          <ParameterList name="EntireDomain">
+            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="permeability">
         <Parameter name="write checkpoint" type="bool" value="false"/>
         <ParameterList name="function">

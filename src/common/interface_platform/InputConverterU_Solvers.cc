@@ -360,12 +360,6 @@ InputConverterU::TranslateHypreAMG_()
   amg_list.set<int>("coarsen type", 0);
   if (block_indices) amg_list.set<bool>("use block indices", block_indices);
   amg_list.set<int>("verbosity", 0);
-  if (flow_single_phase_) {
-    amg_list.set<int>("relaxation type down", 13);
-    amg_list.set<int>("relaxation type up", 14);
-  } else {
-    amg_list.set<int>("relaxation type", 3);
-  }
 
   return out_list;
 }

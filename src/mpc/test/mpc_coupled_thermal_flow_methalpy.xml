@@ -550,18 +550,6 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="PCG with Hypre AMG">
-      <Parameter name="iterative method" type="string" value="gmres"/>
-      <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="9.99999999999999999e-15"/>
-        <Parameter name="maximum number of iterations" type="int" value="20"/>
-        <Parameter name="controller training start" type="int" value="0"/>
-        <Parameter name="controller training end" type="int" value="3"/>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="low"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="GMRES with Hypre AMG">
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">

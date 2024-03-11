@@ -16,6 +16,7 @@
 
 #include "InverseFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
+#include "PorosityEvaluator.hh"
 #include "StateArchive.hh"
 
 #include "HydrostaticStressEvaluator.hh"
@@ -80,6 +81,7 @@ MechanicsElasticity_PK::Setup()
   young_modulus_key_ = Keys::getKey(domain_, "young_modulus");
   poisson_ratio_key_ = Keys::getKey(domain_, "poisson_ratio");
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
+  undrained_split_coef_key_ = Keys::getKey(domain_, "undrained_split_coef");
 
   // constant fields
   S_->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT, "state");
@@ -166,8 +168,6 @@ MechanicsElasticity_PK::Initialize()
 
   // -- times
   double t_ini = S_->get_time();
-  dt_desirable_ = dt_;
-  dt_next_ = dt_;
 
   // -- mesh dimensions
   ncells_owned_ =
@@ -188,9 +188,11 @@ MechanicsElasticity_PK::Initialize()
   // -- control parameters
   auto physical_models = Teuchos::sublist(ec_list_, "physical models and assumptions");
   use_gravity_ = physical_models->get<bool>("use gravity");
-  poroelasticity_ = physical_models->get<bool>("biot scheme: undrained split", false) ||
-                    physical_models->get<bool>("biot scheme: fixed stress split", false);
   thermoelasticity_ = physical_models->get<bool>("thermoelasticity", false);
+
+  split_undrained_ = physical_models->get<bool>("biot scheme: undrained split", false);
+  split_fixed_stress_ = physical_models->get<bool>("biot scheme: fixed stress split", false);
+  poroelasticity_ = split_undrained_ || split_fixed_stress_;
 
   // Create verbosity object to print out initialiation statistics.
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -211,8 +213,20 @@ MechanicsElasticity_PK::Initialize()
 
   // Initialize matrix and preconditioner
   // -- create elastic block
-  Teuchos::ParameterList& tmp1 = ec_list_->sublist("operators").sublist("elasticity operator");
+  auto tmp1 = ec_list_->sublist("operators").sublist("elasticity operator");
   op_matrix_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
+  op_matrix_ = op_matrix_elas_->global_operator();
+
+  // -- extensions: The undrained split method add anotehr operator which has
+  //    the grad-div structure. It is critical that it uses a separate global
+  //    operator pointer. Its local matrices are shared with the original
+  //    physics operator.
+  if (split_undrained_) {
+    std::string method = tmp1.sublist("schema").get<std::string>("method");
+    tmp1.sublist("schema").set<std::string>("method", method + " graddiv");
+    op_matrix_graddiv_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
+    op_matrix_->OpPushBack(op_matrix_graddiv_->local_op());
+  }
 
   // Create BC objects
   Teuchos::RCP<Teuchos::ParameterList> bc_list =
@@ -311,7 +325,6 @@ MechanicsElasticity_PK::Initialize()
   const auto E = S_->GetPtr<CV_t>(young_modulus_key_, Tags::DEFAULT);
   const auto nu = S_->GetPtr<CV_t>(poisson_ratio_key_, Tags::DEFAULT);
 
-  op_matrix_ = op_matrix_elas_->global_operator();
   op_matrix_->Init();
   op_matrix_elas_->SetTensorCoefficient(E, nu);
 
@@ -381,6 +394,8 @@ MechanicsElasticity_PK::Initialize()
 bool
 MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
+  dt_ = t_new - t_old;
+
   StateArchive archive(S_, vo_);
   archive.Add({ displacement_key_ }, Tags::DEFAULT);
 
@@ -399,6 +414,16 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   op_matrix_elas_->UpdateMatrices();
   op_matrix_elas_->ApplyBCs(true, true, true);
 
+  // extensions
+  if (split_undrained_) {
+    auto u = S_->Get<CV_t>(displacement_key_, Tags::DEFAULT);
+    op_matrix_graddiv_->SetScalarCoefficient(
+      S_->Get<CV_t>(undrained_split_coef_key_, Tags::DEFAULT));
+    op_matrix_graddiv_->UpdateMatrices();
+    op_matrix_graddiv_->ApplyBCs(false, true, false);
+    op_matrix_graddiv_->global_operator()->Apply(u, *rhs, 1.0);
+  }
+
   // solver the problem
   op->ComputeInverse();
   int ierr = op->ApplyInverse(*rhs, *solution_);
@@ -411,9 +436,11 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   if (ierr != 0) {
     archive.Restore("");
+    dt_ /= 2;
     return true;
   }
 
+  dt_ *= 2;
   eval_->SetChanged();
   return false;
 }

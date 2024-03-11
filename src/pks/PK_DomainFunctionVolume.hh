@@ -47,8 +47,8 @@ class PK_DomainFunctionVolume : public FunctionBase, public Functions::UniqueMes
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "volume"; }
+  virtual void Compute(double t0, double t1) override;
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::VOLUME; }
 
  protected:
   using FunctionBase::value_;

@@ -9,7 +9,7 @@
 */
 
 /*
-  This is the mpc_pk component of the Amanzi code.
+  MPC PK
 
   Interface for the Base MPC class.  A multi process coordinator (MPC)
   is a PK which coordinates other PKs.  Each of these coordinated PKs

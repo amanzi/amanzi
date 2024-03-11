@@ -1964,7 +1964,7 @@ Thus, the ``vis`` element has the following requirements
 
   <vis>
       Required Elements: base_filename, num_digits 
-      Optional Elements: time_macros, cycle_macros
+      Optional Elements: time_macros, cycle_macros, time_units
   </vis>
 
 The ``base_filename`` element contains the text component of the how the visualization files will be named.
@@ -1982,6 +1982,8 @@ See the `Definitions`_ section for defining individual macros.
 The ``vis`` element also includes an optional subelement ``write_regions``.  This was primarily implemented for debugging purposes but is also useful for visualizing fields only on specific regions.  The subelement accepts an arbitrary number of subelements named ``field``, with attributes ``name`` (a string) and ``regions`` (a comma separated list of region names).  For each such subelement, a field will be created in the vis files using the name as a label.  The field will be initialized to 0, and then, for region list R1, R2, R3..., cells in R1 will be set to 1, cells in R2 will be set to 2, etc.  When regions in the list overlap, later ones in the list will take precedence.
 
 The ``vis`` element also includes an optional boolean subelement ``write_partition``.  This is useful for visualizing parallel mesh partition.
+
+The ``times_units`` indicates format of time units, e.g. ``y`` for years (default) or ``h`` for hours.
 
 The output is controlled by two parameters ``whitelist`` and ``blacklist``. 
 The latter denies output for the specified list of fields.

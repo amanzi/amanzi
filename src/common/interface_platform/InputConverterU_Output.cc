@@ -181,6 +181,9 @@ InputConverterU::TranslateOutput_()
       } else if (strcmp(tagname, "time_macros") == 0 || strcmp(tagname, "time_macro") == 0) {
         text = mm.transcode(jnode->getTextContent());
         ProcessMacros_("times", text, tmPL, visPL);
+      } else if (strcmp(tagname, "time_units") == 0) {
+        text = mm.transcode(jnode->getTextContent());
+        visPL.set<std::string>("time units", TrimString_(text));
       } else if (strcmp(tagname, "write_regions") == 0) {
         DOMNodeList* kids = jnode->getChildNodes();
         for (int k = 0; k < kids->getLength(); ++k) {

@@ -47,7 +47,6 @@ class PorosityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Com
                                           const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
-  double getBiotCoefficient(int c) { return pom_->second[(*pom_->first)[c]]->getBiotCoefficient(); }
   std::pair<double, double> getThermalCoefficients(int c)
   {
     return pom_->second[(*pom_->first)[c]]->getThermalCoefficients();
@@ -59,7 +58,7 @@ class PorosityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Com
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<PorosityModelPartition> pom_;
-  Key pressure_key_, temperature_key_, strain_key_;
+  Key pressure_key_, temperature_key_, strain_key_, biot_key_;
 
   bool poroelasticity_, thermoelasticity_;
 

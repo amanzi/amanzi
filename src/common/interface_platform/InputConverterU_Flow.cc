@@ -100,6 +100,11 @@ InputConverterU::TranslateFlow_(const std::string& mode,
         .set<std::string>("multiscale model", "dual continuum discontinuous matrix");
     }
 
+    if (domain == "fracture" && compliance_) {
+      flow_list->sublist("physical models and assumptions")
+        .set<bool>("external aperture", compliance_);
+    }
+
   } else if (pk_model == "richards") {
     Teuchos::ParameterList& upw_list = out_list.sublist("relative permeability");
     upw_list.set<std::string>("upwind method", rel_perm_out);
@@ -443,8 +448,7 @@ InputConverterU::TranslatePOM_(const std::string& domain)
     double dilation_rock(0.0), dilation_liquid(0.0);
     node =
       GetUniqueElementByTagsString_(inode, "mechanical_properties, rock_thermal_dilation", flag);
-    if (flag)
-      dilation_rock = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
+    if (flag) dilation_rock = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
 
     node =
       GetUniqueElementByTagsString_(inode, "mechanical_properties, liquid_thermal_dilation", flag);
