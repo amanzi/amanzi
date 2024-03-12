@@ -349,4 +349,10 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_biot_consolidation.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
+
+    add_amanzi_test(mpc_biot_schiffman mpc_biot_schiffman
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_biot_schiffman.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
 endif()
