@@ -83,11 +83,11 @@ class Op_Face_Cell : public Op {
         "Op_Face_Cell::Rescale", A.size(), KOKKOS_LAMBDA(const int& f) {
           auto cells = m->getFaceCells(f);
           auto lA = A[f];
-          lA(0, 0) *= s_c(0, cells(0));
+          lA(0, 0) *= s_c(cells(0),0);
           if (cells.size() > 1) {
-            lA(0, 1) *= s_c(0, cells(1));
-            lA(1, 0) *= s_c(0, cells(0));
-            lA(1, 1) *= s_c(0, cells(1));
+            lA(0, 1) *= s_c(cells(1), 0);
+            lA(1, 0) *= s_c(cells(0), 0);
+            lA(1, 1) *= s_c(cells(1), 0);
           }
         });
     }
