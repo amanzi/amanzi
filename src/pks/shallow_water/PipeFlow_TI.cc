@@ -282,6 +282,7 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     if (c2 > ncells_owned) std::swap(c1, c2);
     AmanziMesh::Entity_ID_List cellsAdj;
     discharge_x_grad_->GetCellFaceAdjCellsManifold_(c1, AmanziMesh::Parallel_type::ALL, cellsAdj);
+    int cDiamJnct = c1;
 
     if(IsJunction(c1)){
        c1IsJunction = true;
@@ -324,6 +325,7 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        if(c2 != -1){
           ProjectNormalOntoMeshDirection(c2, normalRotated);
           SkipFace(normalRotated, skipFace);
+          cDiamJnct = c2;
        }
     }
 
@@ -334,7 +336,7 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     // V_rec[1]: wetted angle 
     std::vector<double> V_rec(2,0.0);
 
-    V_rec = ComputeFieldsOnEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n, PipeD_c[0][c1]);
+    V_rec = ComputeFieldsOnEdge(c1, f, ht_c[0][c1], B_c[0][c1], B_max[0][c1], B_n, PipeD_c[0][cDiamJnct]);
     ierr = ErrorDiagnostics_(t, c1, V_rec[0]);
     if (ierr < 0) break;
 
@@ -365,7 +367,7 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     UL[2] = V_rec[0] * vt;
     DL[0] = V_rec[0];
     DL[1] = V_rec[1];
-    DL[2] = PipeD_c[0][c1];
+    DL[2] = PipeD_c[0][cDiamJnct];
 
   if (c2 == -1) {
      if (bc_model_scalar[f] == Operators::OPERATOR_BC_DIRICHLET) {
@@ -398,7 +400,8 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   } 
   else {
 
-     V_rec = ComputeFieldsOnEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n, PipeD_c[0][c2]);
+     cDiamJnct = (c2IsJunction) ? c1 : c2;
+     V_rec = ComputeFieldsOnEdge(c2, f, ht_c[0][c2], B_c[0][c2], B_max[0][c2], B_n, PipeD_c[0][cDiamJnct]);
      ierr = ErrorDiagnostics_(t, c2, V_rec[0]);
      if (ierr < 0) break;
 
@@ -448,7 +451,7 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
      UR[2] = V_rec[0] * vt;
      DR[0] = V_rec[0];
      DR[1] = V_rec[1];
-     DR[2] = PipeD_c[0][c2];
+     DR[2] = PipeD_c[0][cDiamJnct];
 
  }
 
@@ -537,7 +540,7 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     h = h_c_tmp[0][cell] + BedSlopeSource[0] + ext_S_cell[cell];
     qx = q_c_tmp[0][cell] + BedSlopeSource[1] + FrictionSource[0];
-    qy = 0.0; 
+    qy = 0.0;
 
     f_temp0[0][cell] = h;
     f_temp1[0][cell] = qx;
