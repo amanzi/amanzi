@@ -374,11 +374,13 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         UR[0] = bc_value_h[f];
         DR[1] = ComputeWettedAngleNewton(bc_value_h[f], PipeD_c[0][c1]);
         UL[0] = UR[0];
+        DL[0] = DR[0];
         DL[1] = DR[1];
      }
      else {
        UR[0] = UL[0];
-       DR[1] = ComputeWettedAngleNewton(UL[0], PipeD_c[0][c1]); 
+       DR[0] = DL[0];
+       DR[1] = DL[1];
      }
      if (bc_model_vector[f] == Operators::OPERATOR_BC_DIRICHLET) {
        if (outward_discharge_flag == true) { 
