@@ -1,19 +1,21 @@
 /*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
-  provided in the top-level COPYRIGHT file.
-
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  The package uses the formula M = Mc + Ms, where matrix Mc is build from a 
-  consistency condition (Mc N = R) and matrix Ms is build from a stability 
-  condition and Ms N = 0, to generate mass and stiffness matrices for 
-  a variety of physics packages: flow, transport, thermal, and geomechanics. 
-  The material properties are imbedded into the the matrix Mc. 
+  The package uses the formula M = Mc + Ms, where matrix Mc is build from a
+  consistency condition (Mc N = R) and matrix Ms is build from a stability
+  condition and Ms N = 0, to generate mass and stiffness matrices for
+  a variety of physics packages: flow, transport, thermal, and geomechanics.
+  The material properties are imbedded into the the matrix Mc.
 
   Notation used below: M (mass), W (inverse of M), A (stiffness).
 */
@@ -23,7 +25,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
@@ -36,19 +38,20 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_Diffusion : public DeRham_Face { 
+class MFD3D_Diffusion : public DeRham_Face {
  public:
   // constructor for backward compatibility
-  MFD3D_Diffusion(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
-    : DeRham_Face(mesh) {};
+  MFD3D_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : DeRham_Face(mesh){};
   MFD3D_Diffusion(const Teuchos::ParameterList& plist,
-                  const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
-    : DeRham_Face(mesh) {};
+                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : DeRham_Face(mesh){};
 
-  // main methods 
+  // main methods
   // -- schema
-  virtual std::vector<SchemaItem> schema() const override {
-    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, 1));
+  virtual std::vector<SchemaItem> schema() const override
+  {
+    return std::vector<SchemaItem>(
+      1, std::make_tuple(AmanziMesh::Entity_kind::FACE, DOF_Type::SCALAR, 1));
   }
 
   // -- default Derahm complex for the mass matrix is not used by Amanzi
@@ -56,7 +59,7 @@ class MFD3D_Diffusion : public DeRham_Face {
   using DeRham_Face::MassMatrix;
 
   // -- inverse mass matrix is modified to reflect scaling of fluxes by area
-  virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W) override; 
+  virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W) override;
 
   // -- stiffness matrix
   int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
@@ -67,8 +70,13 @@ class MFD3D_Diffusion : public DeRham_Face {
 
   // other mimetic methods
   // -- bad consistency conditions (flux is scaled by area)
-  int L2consistencyScaledArea(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-  int L2consistencyInverseScaledArea(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
+  int
+  L2consistencyScaledArea(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
+  int L2consistencyInverseScaledArea(int c,
+                                     const Tensor& K,
+                                     DenseMatrix& R,
+                                     DenseMatrix& Wc,
+                                     bool symmetry);
   int MassMatrixScaledArea(int c, const Tensor& K, DenseMatrix& M);
 
   // -- optimized stability
@@ -80,11 +88,17 @@ class MFD3D_Diffusion : public DeRham_Face {
   int StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix& A);
 
   // -- tensor is product k K
-  int L2consistencyInverseDivKScaled(int c, const Tensor& K,
-                                     double kmean, const AmanziGeometry::Point& kgrad,
-                                     DenseMatrix& R, DenseMatrix& Wc);
-  int MassMatrixInverseDivKScaled(int c, const Tensor& K,
-                                  double kmean, const AmanziGeometry::Point& kgrad, DenseMatrix& W);
+  int L2consistencyInverseDivKScaled(int c,
+                                     const Tensor& K,
+                                     double kmean,
+                                     const AmanziGeometry::Point& kgrad,
+                                     DenseMatrix& R,
+                                     DenseMatrix& Wc);
+  int MassMatrixInverseDivKScaled(int c,
+                                  const Tensor& K,
+                                  double kmean,
+                                  const AmanziGeometry::Point& kgrad,
+                                  DenseMatrix& W);
 
   // -- non-symmetric tensor K (consistency is not changed)
   int MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix& M);
@@ -104,32 +118,33 @@ class MFD3D_Diffusion : public DeRham_Face {
 
   // -- projectors
   //    we return linear polynomial instead of constant vector polynomial (FIXME)
-  virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
+  virtual void L2Cell(int c,
+                      const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
-                      const Polynomial* moments, Polynomial& vc) override;
+                      const Polynomial* moments,
+                      Polynomial& vc) override;
 
   // utils
   double Transmissibility(int f, int c, const Tensor& K);
 
- private:  
+ private:
   // stability methods (add stability matrix, M += Mstab)
   int StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M);
   void RescaleMassMatrixInverse_(int c, DenseMatrix& W);
 
-  // mesh extension methods 
+  // mesh extension methods
   // -- exterior normal
-  AmanziGeometry::Point mesh_face_normal(int f, int c);
+  AmanziGeometry::Point mesh_getFaceNormal(int f, int c);
 
  protected:
   using MFD3D::mesh_;
   using MFD3D::d_;
 
  private:
-  static RegisteredFactory<MFD3D_Diffusion> factory_;
+  static RegisteredFactory<MFD3D_Diffusion> reg_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

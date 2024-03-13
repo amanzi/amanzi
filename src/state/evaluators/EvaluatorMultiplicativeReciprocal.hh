@@ -1,21 +1,23 @@
 /*
-  State
-
-  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (coonet@ornl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
 
-  Secondary variable field evaluator computes product of fields 
+//! A generic evaluator for multiplying and dividing a collection of fields.
+/*
+  State
+
+  Secondary variable field evaluator computes product of fields
   or inverse of fields:
 
     eval = f1 * f2 * ... * fn) / (g1 * g2 * ... * gm)
 */
 
-//! A generic evaluator for multiplying and dividing a collection of fields.
 
 /*!
 
@@ -38,7 +40,8 @@
 
 namespace Amanzi {
 
-class EvaluatorMultiplicativeReciprocal : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class EvaluatorMultiplicativeReciprocal
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   EvaluatorMultiplicativeReciprocal(Teuchos::ParameterList& plist);
   EvaluatorMultiplicativeReciprocal(const EvaluatorMultiplicativeReciprocal& other);
@@ -48,8 +51,12 @@ class EvaluatorMultiplicativeReciprocal : public EvaluatorSecondaryMonotype<Comp
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
+
+  virtual void EnsureCompatibility_Units_(State& S) override;
 
  private:
   bool enforce_positivity_;
@@ -59,6 +66,6 @@ class EvaluatorMultiplicativeReciprocal : public EvaluatorSecondaryMonotype<Comp
   static Utils::RegisteredFactory<Evaluator, EvaluatorMultiplicativeReciprocal> fac_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

@@ -1,12 +1,14 @@
 /*
-  EOS
-   
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  EOS
 
   EOS for liquid water for T between 0 and 30 C. Need a reference.
 */
@@ -45,10 +47,10 @@ class H2O_Density : public EOS_Density {
   // -- pressure dependence of density
   const double kalpha_, kp0_;
 
-  static Utils::RegisteredFactory<EOS_Density, H2O_Density> factory_;
+  static Utils::RegisteredFactory<EOS_Density, H2O_Density> reg_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

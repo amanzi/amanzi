@@ -1,12 +1,14 @@
 /*
-  Shallow Water PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstanrtin Lipnikov
+  Authors: Konstanrtin Lipnikov
+*/
+
+/*
+  Shallow Water PK
 
   Self-registering factory for numerical flux implementations.
 */
@@ -26,13 +28,14 @@ namespace ShallowWater {
 
 class NumericalFluxFactory : public Utils::Factory<NumericalFlux> {
  public:
-  std::shared_ptr<NumericalFlux> Create(Teuchos::ParameterList& plist) {
+  std::shared_ptr<NumericalFlux> Create(Teuchos::ParameterList& plist)
+  {
     std::string model = plist.get<std::string>("numerical flux");
     return std::shared_ptr<NumericalFlux>(CreateInstance(model, plist));
   }
 };
 
-}  // namespace ShallowWater
-}  // namespace Amanzi
+} // namespace ShallowWater
+} // namespace Amanzi
 
 #endif

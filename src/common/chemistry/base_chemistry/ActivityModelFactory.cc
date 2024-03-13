@@ -1,13 +1,16 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ben Andre
            Sergio A Bea
+*/
+
+/*
+  Chemistry
+
 */
 
 #include <memory>
@@ -32,12 +35,12 @@ const std::string ActivityModelFactory::debye_huckel = "debye-huckel";
 const std::string ActivityModelFactory::pitzer_hwm = "pitzer-hwm";
 const std::string ActivityModelFactory::unit = "unit";
 
-std::shared_ptr<ActivityModel> ActivityModelFactory::Create(
-    const std::string& model,
-    const ActivityModel::ActivityModelParameters& parameters,
-    const std::vector<Species>& primary_species,
-    const std::vector<AqueousEquilibriumComplex>& secondary_species,
-    const Teuchos::Ptr<VerboseObject> vo)
+std::shared_ptr<ActivityModel>
+ActivityModelFactory::Create(const std::string& model,
+                             const ActivityModel::ActivityModelParameters& parameters,
+                             const std::vector<Species>& primary_species,
+                             const std::vector<AqueousEquilibriumComplex>& secondary_species,
+                             const Teuchos::Ptr<VerboseObject> vo)
 {
   std::shared_ptr<ActivityModel> activity_model = nullptr;
 
@@ -52,7 +55,7 @@ std::shared_ptr<ActivityModel> ActivityModelFactory::Create(
     oss << "Unknown activity model name: " << model << "\n"
         << "  valid names: " << unit << "\n"
         << "               " << debye_huckel << "\n"
-        << "               " << pitzer_hwm << "\n" ;
+        << "               " << pitzer_hwm << "\n";
     Exceptions::amanzi_throw(Errors::Message(oss.str()));
   }
 
@@ -63,5 +66,5 @@ std::shared_ptr<ActivityModel> ActivityModelFactory::Create(
   return activity_model;
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

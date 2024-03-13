@@ -1,12 +1,14 @@
 /*
-  Mesh Functions
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
+
+/*
+  Mesh Functions
 
   Function applied to a mesh component with at most one function
   application per entity. Domains of functions in different specs
@@ -21,10 +23,12 @@ namespace Amanzi {
 namespace Functions {
 
 // Overload the AddSpec method to check uniqueness.
-void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
-  // Ensure uniqueness of the spec and create the set of IDs contained in 
+void
+UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
+{
+  // Ensure uniqueness of the spec and create the set of IDs contained in
   // the domain of the spec.
-  
+
   Teuchos::RCP<Domain>& domain = spec->first;
   AmanziMesh::Entity_kind kind = domain->second;
 
@@ -32,9 +36,8 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
   Teuchos::RCP<MeshIDs> this_spec_ids = Teuchos::rcp(new MeshIDs());
   for (auto region = domain->first.begin(); region != domain->first.end(); ++region) {
     // Get all region IDs by the region name and entity kind.
-    if (mesh_->valid_set_name(*region, kind)) {
-      AmanziMesh::Entity_ID_List id_list;
-      mesh_->get_set_entities(*region, kind, AmanziMesh::Parallel_type::ALL, &id_list);
+    if (mesh_->isValidSetName(*region, kind)) {
+      auto id_list = mesh_->getSetEntities(*region, kind, parallel_kind_);
       this_spec_ids->insert(id_list.begin(), id_list.end());
     } else {
       std::stringstream m;
@@ -56,8 +59,10 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
       MeshIDs::iterator overlap_end;
       const MeshIDs& prev_spec_ids = *(*uspec)->second;
 
-      std::set_intersection(prev_spec_ids.begin(), prev_spec_ids.end(),
-                            this_spec_ids->begin(), this_spec_ids->end(),
+      std::set_intersection(prev_spec_ids.begin(),
+                            prev_spec_ids.end(),
+                            this_spec_ids->begin(),
+                            this_spec_ids->end(),
                             std::inserter(overlap, overlap.end()));
       if (overlap.size() != 0) {
         Errors::Message m;
@@ -74,4 +79,3 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
 
 } // namespace Functions
 } // namespace Amanzi
-

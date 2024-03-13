@@ -1,15 +1,14 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! Manages simulation output to disk.
 /*
-  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt
            Ethan Coon (ecoon@lanl.gov)
 */
 
+//! Manages simulation output to disk.
 /*!
 
 A user may request periodic writes of field data for the purposes of
@@ -69,6 +68,7 @@ Example:
 #include "IOEvent.hh"
 #include "Output.hh"
 #include "Tag.hh"
+#include "Key.hh"
 
 namespace Amanzi {
 
@@ -78,20 +78,15 @@ class Visualization : public IOEvent {
   Visualization();
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
-  void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh> mesh) {
-    mesh_ = mesh;
-  }
+  void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh> mesh) { mesh_ = mesh; }
 
   std::string get_name() const { return name_; }
   void set_name(const std::string& name);
   void AddDomain(const std::string& name);
   bool WritesDomain(const std::string& name) const;
 
-  Tag get_tag() const { return tag_; }
-  void set_tag(const Tag& tag) { tag_ = tag; }
-
   // public interface for coordinator clients
-  void CreateFiles(bool include_io_set=true);
+  void CreateFiles(bool include_io_set = true);
   void CreateTimestep(double time, int cycle, const std::string& tag);
   virtual void FinalizeTimestep() const;
 
@@ -99,8 +94,12 @@ class Visualization : public IOEvent {
   template <typename T>
   void Write(const std::string& name, const T& t) const;
 
-  virtual void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const;
-  virtual void WriteVector(const Epetra_Vector& vec, const std::string& name) const;
+  virtual void WriteVector(const Epetra_MultiVector& vec,
+                           const std::vector<std::string>& names,
+                           AmanziMesh::Entity_kind kind) const;
+  virtual void WriteVector(const Epetra_Vector& vec,
+                           const std::string& name,
+                           AmanziMesh::Entity_kind kind) const;
   virtual void WriteRegions();
   virtual void WritePartition();
 
@@ -110,13 +109,12 @@ class Visualization : public IOEvent {
   std::vector<std::string> domains_;
   std::string my_units_;
   std::string name_;
-  Tag tag_;
   bool time_unit_written_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<Output> visualization_output_;
 
-  std::map<std::string, Teuchos::Array<std::string> > regions_;
+  std::map<std::string, Teuchos::Array<std::string>> regions_;
   bool write_partition_;
   bool dynamic_mesh_;
   bool write_mesh_exo_;
@@ -124,20 +122,23 @@ class Visualization : public IOEvent {
 
 
 template <>
-inline void Visualization::Write<Epetra_Vector>(const std::string& name,
-                                                const Epetra_Vector& t) const {
-  WriteVector(t, name);
+inline void
+Visualization::Write<Epetra_Vector>(const std::string& name, const Epetra_Vector& t) const
+{
+  WriteVector(t, name, AmanziMesh::Entity_kind::CELL);
 }
 
 template <>
-inline void Visualization::Write<double>(const std::string& name,
-                                         const double& t) const {
+inline void
+Visualization::Write<double>(const std::string& name, const double& t) const
+{
   visualization_output_->WriteAttribute(t, name);
 }
 
 template <>
-inline void Visualization::Write<int>(const std::string& name,
-                                      const int& t) const {
+inline void
+Visualization::Write<int>(const std::string& name, const int& t) const
+{
   visualization_output_->WriteAttribute(t, name);
 }
 

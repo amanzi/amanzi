@@ -1,6 +1,14 @@
 /*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
   Transport PK
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cstdlib>
@@ -22,10 +30,11 @@
 #include "TransportExplicit_PK.hh"
 
 
-/* **************************************************************** 
+/* ****************************************************************
 * Test Init() procedure in the constructor.
 **************************************************************** */
-TEST(CONSTRUCTOR) {
+TEST(CONSTRUCTOR)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -42,20 +51,20 @@ TEST(CONSTRUCTOR) {
   // read parameter list
   std::string xmlFileName = "test/transport_mics.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
- 
+
   // create an MSTK mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   Preference pref;
   pref.clear();
   pref.push_back(Framework::SIMPLE);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
-  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 1.0,1.0,1.0, 1, 2, 1); 
- 
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1);
+
   // MeshAudit audit(mesh);
   // audit.Verify();
 
@@ -78,6 +87,3 @@ TEST(CONSTRUCTOR) {
   double cfl = TPK.cfl();
   CHECK(0 < cfl && cfl <= 1.0);
 }
-
-
-

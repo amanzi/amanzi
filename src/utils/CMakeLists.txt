@@ -20,14 +20,14 @@ include(LibraryManager)
 # through these variables.
 project(ATK)
 
-include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${DBC_SOURCE_DIR})
-
+include_directories(${EXPRTK_INLCUDE_DIR})
 
 add_amanzi_library(atk
                    SOURCE AmanziComm.cc
                           ExprTK.cc
+                          Formatter.cc
                           HDF5Reader.cc
                           IOEvent.cc
                           Key.cc
@@ -41,13 +41,16 @@ add_amanzi_library(atk
                    HEADERS Abbreviations.hh
                            AmanziComm.hh
                            AmanziTypes.hh
+                           Brent.hh
                            ExprTK.hh
                            Factory.hh
                            FIFO_Set.hh
+                           Formatter.hh
                            HDF5Reader.hh
                            IOEvent.hh
                            Iterators.hh
                            Key.hh
+                           MeshView.hh
                            LeastSquare.hh
                            ObservationData.hh
                            Spline.hh
@@ -59,6 +62,7 @@ add_amanzi_library(atk
                            Utils.hh
                            VerboseObject.hh
                            VerboseObject_objs.hh
+                           ViewUtils.hh
                            XMLParameterListWriter.hh
                            StringReducer.hh
                     LINK_LIBS error_handling ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${HDF5_LIBRARIES})
@@ -95,6 +99,11 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/utils_verboseobject.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
 
+    add_amanzi_test(utils_formatter utils_formatter
+                    KIND unit
+                    SOURCE test/Main.cc test/utils_formatter.cc
+                    LINK_LIBS atk ${UnitTest_LIBRARIES})
+
     add_amanzi_test(utils_units utils_units
                     KIND unit
                     SOURCE test/Main.cc test/utils_units.cc
@@ -121,6 +130,11 @@ if (BUILD_TESTS)
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
     add_amanzi_test(utils_reducer_np2 utils_reducer NPROCS 2 KIND unit)
     add_amanzi_test(utils_reducer_np5 utils_reducer NPROCS 5 KIND unit)
+
+    add_amanzi_test(utils_brent utils_brent
+                    KIND unit
+                    SOURCE test/Main.cc test/utils_brent.cc
+                    LINK_LIBS atk ${UnitTest_LIBRARIES})
 
 endif()
 

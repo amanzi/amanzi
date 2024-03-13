@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _Diffuser_H_
 #define _Diffuser_H_
 
@@ -87,7 +96,7 @@
           Y.MULTAY(Volume,dt);
         }
         Real scale = opNew->ScaleOperator(); // a,b <- a,b/scale
-        Y.SCALE(scale);                      // Rhs <- Rhs.scale 
+        Y.SCALE(scale);                      // Rhs <- Rhs.scale
         LinSolver<Vector, DiffuserOp<Vector, Op> > solver(*opNew);
         solver.Solve(Snew,Y,abs_tol,rel_tol);// Cnp1: phi.s.Cnp1.Vol + Lnp1(Cnp1) =  Ln(Cn) + (phi.s.Cn + dt * dRhs ) * Vol
         opNew->UnscaleOperator(scale);       // a,b <- a,b.scale

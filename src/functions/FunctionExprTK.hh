@@ -1,10 +1,15 @@
 /*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
   Functions
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
-  provided in the top-level COPYRIGHT file.
 */
 
 /*!
@@ -38,9 +43,7 @@ namespace Amanzi {
 class FunctionExprTK : public Function {
  public:
   FunctionExprTK(int n, const std::string& formula);
-  std::unique_ptr<Function> Clone() const {
-    return std::make_unique<FunctionExprTK>(*this);
-  }
+  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionExprTK>(*this); }
   double operator()(const std::vector<double>& x) const;
 
  private:

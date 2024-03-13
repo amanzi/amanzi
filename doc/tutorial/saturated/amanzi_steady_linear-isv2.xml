@@ -1,4 +1,4 @@
-<amanzi_input version="2.3.0" type="unstructured">
+<amanzi_input version="1.5-dev" type="unstructured">
 
   <model_description name="SR Test Problem">
     <comments>Steady-State Saturated: linear pressure profile</comments>
@@ -108,6 +108,7 @@
       <comments>Homogeneous material properties throughout the entire domain</comments>
       <mechanical_properties>
         <porosity value="0.25"/>
+        <specific_storage model="constant" value="0.0"/>
       </mechanical_properties>
       <permeability x="9.998680356931206e-13" y="9.998680356931206e-13" z="9.998680356931206e-13"/>
       <assigned_regions>Entire Domain</assigned_regions>

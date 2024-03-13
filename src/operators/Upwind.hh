@@ -1,12 +1,15 @@
 /*
-  Operators 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
+
 */
 
 #ifndef AMANZI_UPWIND_HH_
@@ -30,34 +33,32 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* The base class for all upwind methods. 
+* The base class for all upwind methods.
 * Currently only one use case is implemented. The input field
 * contains (up to) three components:
 *
 * "cell" - cell-centered values of the field.
-* "boundary_face" - field values evaluated on the boundary either 
+* "boundary_face" - field values evaluated on the boundary either
            from internal cell or as a function of Dirichlet data.
 * "grad" - (optional) eatimate of the gradient of the input field.
 *          It is used in the second-order upwind schemes.
 *
-* The output field contains one or two components depending on a 
+* The output field contains one or two components depending on a
 * numerical scheme:
 *
 *  "face" - upwinded value of the component "cell" on mesh faces.
 *  "twin" - second upwinded value on mesh faces. It may be useful
-*           when the input field has physical (not numerical) 
+*           when the input field has physical (not numerical)
 *           discontinuous, e.g. different permeability curves.
 *
 * Amanzi combines the input and output field in one variable.
-****************************************************************** */ 
+****************************************************************** */
 
 class Upwind {
  public:
-  Upwind() {};
-  Upwind(Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      mesh_(mesh),
-      face_comp_("face") {};
-  virtual ~Upwind() {};
+  Upwind(){};
+  Upwind(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh), face_comp_("face"){};
+  virtual ~Upwind(){};
 
   // main methods
   // -- initialization of control parameters
@@ -65,16 +66,19 @@ class Upwind {
 
   // -- upwind of a given cell-centered field on mesh faces
   // -- not all input parameters are use by some algorithms
-  virtual void Compute(const CompositeVector& flux, const CompositeVector& solution,
-                       const std::vector<int>& bc_model, CompositeVector& field) = 0;
+  virtual void Compute(const CompositeVector& flux,
+                       const std::vector<int>& bc_model,
+                       CompositeVector& field) = 0;
 
   // -- returns combined map for the original and upwinded fields.
-  // -- Currently, composite vector cannot be extended on a fly. 
-  virtual Teuchos::RCP<CompositeVectorSpace> Map() {
+  // -- Currently, composite vector cannot be extended on a fly.
+  virtual Teuchos::RCP<CompositeVectorSpace> Map()
+  {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh_)->SetGhosted(true)
-        ->AddComponent("cell", AmanziMesh::CELL, 1)
-        ->AddComponent("face", AmanziMesh::FACE, 1);
+    cvs->SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     return cvs;
   }
 
@@ -83,11 +87,10 @@ class Upwind {
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  std::string face_comp_;  // component where to write the upwinded field.
+  std::string face_comp_; // component where to write the upwinded field.
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

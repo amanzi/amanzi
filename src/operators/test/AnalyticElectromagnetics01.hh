@@ -1,12 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
 
   Linear vector field and constant tensor.
 */
@@ -18,11 +20,12 @@
 
 class AnalyticElectromagnetics01 : public AnalyticElectromagneticsBase {
  public:
-  AnalyticElectromagnetics01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
-      AnalyticElectromagneticsBase(mesh) {};
-  ~AnalyticElectromagnetics01() {};
+  AnalyticElectromagnetics01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : AnalyticElectromagneticsBase(mesh){};
+  ~AnalyticElectromagnetics01(){};
 
-  Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     Amanzi::WhetStone::Tensor K(3, 2);
     K(0, 0) = 1.0;
     K(1, 1) = 2.0;
@@ -33,18 +36,21 @@ class AnalyticElectromagnetics01 : public AnalyticElectromagneticsBase {
     return K;
   }
 
-  Amanzi::AmanziGeometry::Point electric_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point electric_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     double x = p[0];
     double y = p[1];
     double z = p[2];
     return Amanzi::AmanziGeometry::Point(z - y, x - z, y - x);
   }
 
-  Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     return Amanzi::AmanziGeometry::Point(0.0, 0.0, 0.0);
   }
 
-  Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     return Amanzi::AmanziGeometry::Point(0.0, 0.0, 0.0);
   }
 };

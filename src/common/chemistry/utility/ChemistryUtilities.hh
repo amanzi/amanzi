@@ -1,12 +1,14 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Jeffrey Johnson <jnjohnson@lbl.gov>
+*/
+
+/*
+  Chemistry
 
   Common stand alone utility functions
 */
@@ -26,20 +28,27 @@ namespace AmanziChemistry {
 
 namespace utilities {
 
-inline double log_to_ln(double d) { return d * 2.30258509299405; }
-inline double ln_to_log(double d) { return d * 0.434294481903252; }
+inline double
+log_to_ln(double d)
+{
+  return d * 2.30258509299405;
+}
+inline double
+ln_to_log(double d)
+{
+  return d * 0.434294481903252;
+}
 
 template <typename T>
-void PrintVector(const std::string& name, 
-                 const std::vector<T>& data,
-                 const Teuchos::RCP<VerboseObject>& vo,
-                 const int precision = -1,
-                 const bool comma_seperated = false)
+void
+PrintVector(const std::string& name,
+            const std::vector<T>& data,
+            const Teuchos::RCP<VerboseObject>& vo,
+            const int precision = -1,
+            const bool comma_seperated = false)
 {
   std::stringstream output;
-  if (precision > 0) {
-    output << std::setprecision(precision);
-  }
+  if (precision > 0) { output << std::setprecision(precision); }
   output << name << " : { ";
   for (auto i = data.begin(); i != data.end(); ++i) {
     output << *i;
@@ -55,7 +64,7 @@ void PrintVector(const std::string& name,
   vo->Write(Teuchos::VERB_HIGH, output.str());
 }
 
-}  // namespace utilities
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace utilities
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

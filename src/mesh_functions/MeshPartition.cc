@@ -1,14 +1,16 @@
 /*
-  Mesh Functions
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
 
-  A MeshPartition is a collection of non-overlapping regions which cover 
+/*
+  Mesh Functions
+
+  A MeshPartition is a collection of non-overlapping regions which cover
   (optionally) a mesh.
 */
 
@@ -21,33 +23,28 @@ namespace Functions {
 /* ******************************************************************
 * Simple constructor.
 ****************************************************************** */
-MeshPartition::MeshPartition(AmanziMesh::Entity_kind kind,
-                             const std::vector<std::string>& regions) :
-    kind_(kind),
-    regions_(regions),
-    initialized_(false) 
-{
-}
+MeshPartition::MeshPartition(AmanziMesh::Entity_kind kind, const std::vector<std::string>& regions)
+  : kind_(kind), regions_(regions), initialized_(false)
+{}
 
 
 /* ******************************************************************
 * Populate the map entity -> number in the list of names.
 ****************************************************************** */
-void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                               const int default_value) 
+void
+MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, const int default_value)
 {
   default_value_ = default_value;
 
-  const Epetra_BlockMap mmap(mesh->map(kind_, false));
-  const Epetra_BlockMap mmap_ghost(mesh->map(kind_, true));
+  const Epetra_BlockMap mmap(mesh->getMap(kind_, false));
+  const Epetra_BlockMap mmap_ghost(mesh->getMap(kind_, true));
 
   // Create and initialize the data
   map_ = Teuchos::rcp(new Epetra_IntVector(mmap_ghost, false));
   map_->PutValue(default_value);
 
   for (int lcv = 0; lcv != regions_.size(); ++lcv) {
-    AmanziMesh::Entity_ID_List block;
-    mesh->get_set_entities(regions_[lcv], kind_, AmanziMesh::Parallel_type::OWNED, &block);
+    auto block = mesh->getSetEntities(regions_[lcv], kind_, AmanziMesh::Parallel_kind::OWNED);
 
     for (auto id : block) {
       // Check regions are non-overlapping
@@ -77,26 +74,26 @@ void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 /* ******************************************************************
 * Populate the map entity -> number in the list of names.
 ****************************************************************** */
-void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                               AmanziMesh::Entity_kind kind,
-                               const std::vector<std::vector<std::string> >& regions,
-                               const int default_value) 
+void
+MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                          AmanziMesh::Entity_kind kind,
+                          const std::vector<std::vector<std::string>>& regions,
+                          const int default_value)
 {
   kind_ = kind;
   default_value_ = default_value;
 
-  const Epetra_BlockMap mmap(mesh->map(kind_, false));
-  const Epetra_BlockMap mmap_ghost(mesh->map(kind_, true));
+  const Epetra_BlockMap mmap(mesh->getMap(kind_, false));
+  const Epetra_BlockMap mmap_ghost(mesh->getMap(kind_, true));
 
   // Initialize the data
   map_ = Teuchos::rcp(new Epetra_IntVector(mmap_ghost, false));
   map_->PutValue(default_value);
 
   for (int lcv = 0; lcv != regions.size(); ++lcv) {
-    const std::vector<std::string>& regs = regions[lcv]; 
+    const std::vector<std::string>& regs = regions[lcv];
     for (int r = 0; r < regs.size(); ++r) {
-      AmanziMesh::Entity_ID_List block;
-      mesh->get_set_entities(regs[r], kind_, AmanziMesh::Parallel_type::OWNED, &block);
+      auto block = mesh->getSetEntities(regs[r], kind_, AmanziMesh::Parallel_kind::OWNED);
       regions_.push_back(regs[r]);
 
       for (auto id : block) {
@@ -125,10 +122,11 @@ void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 
 
 /* ******************************************************************
-* In general, we allow incomplete coverage of the mesh. This 
+* In general, we allow incomplete coverage of the mesh. This
 * routine verifies that ther are no wholes in the map.
 ****************************************************************** */
-void MeshPartition::Verify() const
+void
+MeshPartition::Verify() const
 {
   if (!initialized_) {
     Errors::Message msg("MeshPartition was not initialzied.");
@@ -144,5 +142,5 @@ void MeshPartition::Verify() const
   }
 }
 
-}  // namespace Functions
-}  // namespace Amanzi
+} // namespace Functions
+} // namespace Amanzi

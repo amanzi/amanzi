@@ -1,12 +1,18 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
 */
- 
+
+/*!
+
+The thermodynamic database has a few sections, some of them are optional.
+
+*/
+
 #ifndef AMANZI_CHEMISTRY_SIMPLETHERMODATABASE_HH_
 #define AMANZI_CHEMISTRY_SIMPLETHERMODATABASE_HH_
 
@@ -23,12 +29,10 @@ namespace AmanziChemistry {
 
 class SimpleThermoDatabase : public Beaker {
  public:
-  SimpleThermoDatabase(Teuchos::RCP<Teuchos::ParameterList> plist,
-                       Teuchos::RCP<VerboseObject> vo);
-  virtual ~SimpleThermoDatabase() {};
+  SimpleThermoDatabase(Teuchos::RCP<Teuchos::ParameterList> plist, Teuchos::RCP<VerboseObject> vo);
+  virtual ~SimpleThermoDatabase(){};
 
-  virtual void Initialize(BeakerState& state,
-                          const BeakerParameters& parameters);
+  virtual void Initialize(BeakerState& state, const BeakerParameters& parameters);
 
  private:
   Teuchos::ParameterList RebuildAqueousComplexes_(const Teuchos::ParameterList& aqlist);
@@ -37,7 +41,7 @@ class SimpleThermoDatabase : public Beaker {
   Teuchos::RCP<Teuchos::ParameterList> plist_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 
 #endif

@@ -1,12 +1,15 @@
 /*
-  Input Converter
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Input Converter
+
 */
 
 #include <algorithm>
@@ -32,7 +35,8 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Create energy list.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateShallowWater_(const std::string& domain)
+Teuchos::ParameterList
+InputConverterU::TranslateShallowWater_(const std::string& domain)
 {
   Teuchos::ParameterList out_list;
 
@@ -42,7 +46,7 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWater_(const std::string
   MemoryManager mm;
   DOMNode* node;
 
-  char *text;
+  char* text;
 
   // set up default values for some expert parameters
   double cfl(0.5), limiter_cfl(0.5);
@@ -50,35 +54,38 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWater_(const std::string
   // process expert parameters
   bool flag;
   std::string flux("Rusanov"), weight("constant");
-  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_shallow_water_controls, cfl", flag);
+  node =
+    GetUniqueElementByTagsString_("unstructured_controls, unstr_shallow_water_controls, cfl", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
     cfl = strtod(text, NULL);
   }
-  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_shallow_water_controls, limiter_cfl", flag);
+  node = GetUniqueElementByTagsString_(
+    "unstructured_controls, unstr_shallow_water_controls, limiter_cfl", flag);
   if (flag) {
     text = mm.transcode(node->getTextContent());
     limiter_cfl = strtod(text, NULL);
   }
 
-  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_shallow_water_controls, reconstruction_weight", flag);
+  node = GetUniqueElementByTagsString_(
+    "unstructured_controls, unstr_shallow_water_controls, reconstruction_weight", flag);
   if (flag) {
     weight = GetTextContentS_(node, "constant, inverse-distance");
     std::replace(weight.begin(), weight.end(), '-', ' ');
   }
 
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain)
-      .set<std::string>("numerical flux", pk_model_["shallow_water"])
-      .set<int>("number of reduced cfl cycles", 10)
-      .set<double>("cfl", cfl);
+    .set<std::string>("numerical flux", *pk_model_["shallow_water"].begin())
+    .set<int>("number of reduced cfl cycles", 10)
+    .set<double>("cfl", cfl);
 
   out_list.sublist("reconstruction")
-      .set<int>("polynomial order", 1)
-      .set<std::string>("weight", weight)
-      .set<std::string>("limiter", "Barth-Jespersen")
-      .set<std::string>("limiter stencil", "cell to closest cells")
-      .set<std::string>("limiter location", "face")
-      .set<double>("limiter cfl", limiter_cfl);
+    .set<int>("polynomial order", 1)
+    .set<std::string>("weight", weight)
+    .set<std::string>("limiter", "Barth-Jespersen")
+    .set<std::string>("limiter stencil", "cell to closest cells")
+    .set<std::string>("limiter location", "face")
+    .set<double>("limiter cfl", limiter_cfl);
 
   int nspace(1), ntime(1);
   std::string tags_default("unstructured_controls, unstr_shallow_water_controls");
@@ -108,16 +115,16 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWater_(const std::string
 /* ******************************************************************
 * Create list of BCs.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateShallowWaterBCs_()
+Teuchos::ParameterList
+InputConverterU::TranslateShallowWaterBCs_()
 {
   Teuchos::ParameterList out_list;
 
   MemoryManager mm;
 
-  char *text;
-  DOMNodeList *children;
-  DOMNode *node;
-  DOMElement *element;
+  char* text;
+  DOMNodeList* children;
+  DOMNode* node;
 
   // correct list of boundary conditions for given domain
   bool flag;
@@ -141,35 +148,14 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWaterBCs_()
     if (!flag) continue;
 
     // process a group of similar elements defined by the first element
-    std::string bctype;
+    std::string bctype, bcname;
     std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
     if (bctype != "ponded_depth") continue;
 
-    std::map<double, double> tp_values;
-    std::map<double, std::string> tp_forms, tp_formulas;
-
-    for (int j = 0; j < same_list.size(); ++j) {
-      DOMNode* jnode = same_list[j];
-      element = static_cast<DOMElement*>(jnode);
-      double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "y");
-
-      tp_forms[t0] = GetAttributeValueS_(element, "function");
-      tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, 0.0, 1000.0, "m", false, 0.0);
-      tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
-    }
-
     // create vectors of values and forms
-    std::vector<double> times, values;
-    std::vector<std::string> forms, formulas;
-    for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
-      times.push_back(it->first);
-      values.push_back(it->second);
-      forms.push_back(tp_forms[it->first]);
-      formulas.push_back(tp_formulas[it->first]);
-    }
+    auto bcs = ParseCondList_(node, 0.0, 1000.0, "m");
 
-    // create names, modify data
-    std::string bcname;
+    // .. modify data
     if (bctype == "ponded_depth") {
       bctype = "ponded depth";
       bcname = "ponded depth";
@@ -181,11 +167,11 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWaterBCs_()
     {
       Teuchos::ParameterList& tbc_list = out_list.sublist(bctype);
       Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
-      bc.set<Teuchos::Array<std::string> >("regions", regions)
+      bc.set<Teuchos::Array<std::string>>("regions", regions)
         .set<std::string>("spatial distribution method", "none");
 
       Teuchos::ParameterList& bcfn = bc.sublist(bcname);
-      TranslateGenericMath_(times, values, forms, formulas, bcfn);
+      TranslateGenericMath_(bcs, bcfn);
     }
 
     // velocity FIXME
@@ -194,12 +180,11 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWaterBCs_()
       bcname = "velocity";
       Teuchos::ParameterList& tbc_list = out_list.sublist(bctype);
       Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
-      bc.set<Teuchos::Array<std::string> >("regions", regions)
+      bc.set<Teuchos::Array<std::string>>("regions", regions)
         .set<std::string>("spatial distribution method", "none");
 
       Teuchos::ParameterList& bcfn = bc.sublist(bcname);
-      bcfn.set<int>("number of dofs", 2)
-          .set<std::string>("function type", "composite function");
+      bcfn.set<int>("number of dofs", 2).set<std::string>("function type", "composite function");
 
       bcfn.sublist("dof 1 function").sublist("function-constant").set<double>("value", 0.0);
       bcfn.sublist("dof 2 function").sublist("function-constant").set<double>("value", 0.0);
@@ -209,5 +194,5 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWaterBCs_()
   return out_list;
 }
 
-}  // namespace AmanziInpit
-}  // namespace Amanzi
+} // namespace AmanziInput
+} // namespace Amanzi

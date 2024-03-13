@@ -1,12 +1,14 @@
 /*
-  EOS
-   
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  EOS
 
   Determining the molar fraction of a gas component within a gas mixture.
 */
@@ -22,7 +24,8 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-class MolarFractionGasEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class MolarFractionGasEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   explicit MolarFractionGasEvaluator(Teuchos::ParameterList& plist);
   MolarFractionGasEvaluator(const MolarFractionGasEvaluator& other);
@@ -32,7 +35,9 @@ class MolarFractionGasEvaluator : public EvaluatorSecondaryMonotype<CompositeVec
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
   Teuchos::RCP<EOS_SaturatedVaporPressure> get_svp_model() { return svp_model_; }
@@ -44,10 +49,10 @@ class MolarFractionGasEvaluator : public EvaluatorSecondaryMonotype<CompositeVec
   Teuchos::RCP<EOS_SaturatedVaporPressure> svp_model_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, MolarFractionGasEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, MolarFractionGasEvaluator> reg_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

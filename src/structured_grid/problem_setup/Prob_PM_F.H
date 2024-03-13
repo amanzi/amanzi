@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _PROB_PM_F_H_
 #define _PROB_PM_F_H_
 
@@ -86,23 +95,23 @@
 
   extern "C" {
 
-     void FORT_INITPARAMS (int* ncomps, int* nphases, int* model_in, Real* rhoval, 
+     void FORT_INITPARAMS (int* ncomps, int* nphases, int* model_in, Real* rhoval,
 			   Real* muval, int* phaseidx,Real* gravity, int* gravity_dir);
-    
-     void FORT_TCRPARAMS (int* ntracers); 
+
+     void FORT_TCRPARAMS (int* ntracers);
 
      void FORT_AUXPARAMS (int* naux);
 
      void FORT_ONE_N_FILL (Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
 			   const int* dom_lo, const int* dom_hi,
 			   const Real* dx, const Real* grd_lo,
-			   const Real* time, const int* bc);     
+			   const Real* time, const int* bc);
 
      void FORT_ONE_A_FILL (Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
 			   const int* dom_lo, const int* dom_hi,
 			   const Real* dx, const Real* grd_lo,
 			   const Real* time, const int* bc);
-    
+
      void FORT_ALL_N_FILL (Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
 			   const int* dom_lo, const int* dom_hi,
 			   const Real* dx, const Real* grd_lo,
@@ -111,7 +120,7 @@
      void FORT_ALL_T_FILL (Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
 			   const int* dom_lo, const int* dom_hi,
 			   const Real* dx, const Real* grd_lo,
-			   const Real* time, const int* bc);     
+			   const Real* time, const int* bc);
 
      void FORT_ALL_A_FILL (Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
 			   const int* dom_lo, const int* dom_hi,
@@ -139,7 +148,7 @@
                          const Real* dx, const Real* grd_lo,
                          const Real* time, const int* bc);
 
-     void FORT_ENTHFILL (Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi), 
+     void FORT_ENTHFILL (Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
                          const int* dom_lo, const int* dom_hi,
                          const Real* dx, const Real* grd_lo,
                          const Real* time, const int* bc);
@@ -153,7 +162,7 @@
                           const Real* dx, const Real* xlo,
                           const Real* prob_lo, const Real* time,
                           const int* level, const Real* value);
-    
+
      void FORT_VALLTERROR(int* tag, ARLIM_P(tlo), ARLIM_P(thi),
                           const int* tagval, const int* clearval,
                           const Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
@@ -163,7 +172,7 @@
                           const Real* dx, const Real* xlo,
                           const Real* prob_lo, const Real* time,
                           const int* level, const Real* value);
-    
+
      void FORT_DIFFGTERROR(int* tag, ARLIM_P(tlo), ARLIM_P(thi),
                            const int* tagval, const int* clearval,
                            const Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
@@ -173,7 +182,7 @@
                            const Real* dx, const Real* xlo,
                            const Real* prob_lo, const Real* time,
                            const int* level, const Real* value);
-    
+
   }
 #endif
 #endif /*_PROB_PM_F_H_*/

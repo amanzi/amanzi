@@ -1,12 +1,14 @@
 /*
-  MPC PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov
+  Authors: Konstantin Lipnikov
+*/
+
+/*
+  MPC PK
 
   Sequential coupling of shallow water and solute transport.
 */
@@ -20,11 +22,10 @@ namespace Amanzi {
 
 class ShallowWaterTransport_PK : public PK_MPCWeak {
  public:
-  ShallowWaterTransport_PK(
-      Teuchos::ParameterList& pk_tree,
-      const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-      const Teuchos::RCP<State>& S,
-      const Teuchos::RCP<TreeVector>& soln);
+  ShallowWaterTransport_PK(Teuchos::ParameterList& pk_tree,
+                           const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                           const Teuchos::RCP<State>& S,
+                           const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
   virtual double get_dt() override;
@@ -40,6 +41,6 @@ class ShallowWaterTransport_PK : public PK_MPCWeak {
   static RegisteredPKFactory<ShallowWaterTransport_PK> reg_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

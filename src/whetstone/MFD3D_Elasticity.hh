@@ -1,18 +1,20 @@
 /*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
-  provided in the top-level COPYRIGHT file.
-
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  The package uses the formula M = Mc + Ms, where matrix Mc is build from a 
-  consistency condition (Mc N = R) and matrix Ms is build from a stability 
+  The package uses the formula M = Mc + Ms, where matrix Mc is build from a
+  consistency condition (Mc N = R) and matrix Ms is build from a stability
   condition  and Ms N = 0, to generate mass and stiffness matrices.
-  The material properties are imbedded into the the matrix Mc. 
+  The material properties are imbedded into the the matrix Mc.
 */
 
 #ifndef AMANZI_MFD3D_ELASTICITY_HH_
@@ -20,7 +22,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
@@ -31,22 +33,23 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_Elasticity : public MFD3D { 
+class Polynomial;
+
+class MFD3D_Elasticity : public MFD3D {
  public:
   MFD3D_Elasticity(const Teuchos::ParameterList& plist,
-                   const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
-    : MFD3D(mesh) {};
+                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : MFD3D(mesh){};
 
   // required methods
   // -- schema
-  virtual std::vector<SchemaItem> schema() const override {
-    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, d_));
+  virtual std::vector<SchemaItem> schema() const override
+  {
+    return std::vector<SchemaItem>(
+      1, std::make_tuple(AmanziMesh::Entity_kind::NODE, DOF_Type::POINT, d_));
   }
 
-  // -- mass matrices
-  int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-
-  // -- stiffness matrix
+  // -- stiffness matrices
   int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
@@ -54,16 +57,22 @@ class MFD3D_Elasticity : public MFD3D {
   int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);
   int StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A);
 
- private:
-  void MatrixMatrixProduct_(
-      const DenseMatrix& A, const DenseMatrix& B, bool transposeB, DenseMatrix& AB);
+  // projectors
+  virtual void H1Cell(int c, const DenseVector& dofs, Tensor& vc) override;
 
  private:
-  static RegisteredFactory<MFD3D_Elasticity> factory_;
+  void MatrixMatrixProduct_(const DenseMatrix& A,
+                            const DenseMatrix& B,
+                            bool transposeB,
+                            DenseMatrix& AB);
+
+ private:
+  DenseMatrix coefM_, R_;
+
+  static RegisteredFactory<MFD3D_Elasticity> reg_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

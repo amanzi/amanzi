@@ -1,12 +1,15 @@
 /*
-  Shallow water PK
- 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
- 
-  Author: Svetlana Tokareva (tokareva@lanl.gov)
+
+  Authors: Svetlana Tokareva (tokareva@lanl.gov)
+*/
+
+/*
+  Shallow water PK
+
 */
 
 // TPLs
@@ -26,7 +29,9 @@
 
 
 /* **************************************************************** */
-Epetra_MultiVector RunTest(int ntest) {
+Epetra_MultiVector
+RunTest(int ntest)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -35,24 +40,36 @@ Epetra_MultiVector RunTest(int ntest) {
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: 2D shallow water: equilibrium solution with a hump" << std::endl;
+  if (MyPID == 0)
+    std::cout << "Test: 2D shallow water: equilibrium solution with a hump" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/shallow_water_bathymetry.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-  // create a mesh
+  // create a gepmetric model and mesh
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
+  if (ntest == 2) {
+    regions_list.sublist("All")
+      .sublist("region: box")
+      .set<Teuchos::Array<double>>("low coordinate", std::vector({ 0.0, 0.0, 0.0 }))
+      .set<Teuchos::Array<double>>("high coordinate", std::vector({ 100.0, 100.0, 10.0 }));
+  }
+  auto gm =
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(ntest + 1, regions_list, *comm));
 
-  MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  auto plist_edges = Teuchos::rcp(new Teuchos::ParameterList());
+  plist_edges->set<bool>("request faces", true);
+  plist_edges->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, gm, plist_edges);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh;
   if (ntest == 1) {
-    mesh = meshfactory.create(0.0, 0.0, 100.0, 100.0, 20, 20, true, true);
+    mesh = meshfactory.create(0.0, 0.0, 100.0, 100.0, 20, 20);
   } else {
-    RCP<Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 100.0, 100.0, 10.0, 20, 20, 4, true, true);
-    mesh = meshfactory.create(mesh3D, { "TopSurface" }, AmanziMesh::FACE, true, true, true);
+    RCP<Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 100.0, 100.0, 10.0, 20, 20, 4);
+    std::vector<std::string> setnames({ "TopSurface" });
+    mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::Entity_kind::FACE);
   }
 
   // create a state
@@ -64,7 +81,7 @@ Epetra_MultiVector RunTest(int ntest) {
   Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("shallow water");
 
   // create a shallow water PK
-  ShallowWater_PK SWPK(pk_tree,plist,S,soln);
+  ShallowWater_PK SWPK(pk_tree, plist, S, soln);
   SWPK.Setup();
   S->Setup();
   S->InitializeFields();
@@ -99,11 +116,11 @@ Epetra_MultiVector RunTest(int ntest) {
 
     if (iter % 5 == 0) {
       io.InitializeCycle(t_out, iter, "");
-      io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
-      io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
-      io.WriteVector(*vel(0), "vx", AmanziMesh::CELL);
-      io.WriteVector(*vel(1), "vy", AmanziMesh::CELL);
-      io.WriteVector(*B(0), "B", AmanziMesh::CELL);
+      io.WriteVector(*hh(0), "depth", AmanziMesh::Entity_kind::CELL);
+      io.WriteVector(*ht(0), "total_depth", AmanziMesh::Entity_kind::CELL);
+      io.WriteVector(*vel(0), "vx", AmanziMesh::Entity_kind::CELL);
+      io.WriteVector(*vel(1), "vy", AmanziMesh::Entity_kind::CELL);
+      io.WriteVector(*B(0), "B", AmanziMesh::Entity_kind::CELL);
       io.FinalizeCycle();
     }
 
@@ -120,16 +137,17 @@ Epetra_MultiVector RunTest(int ntest) {
   }
 
   WriteStateStatistics(*S);
-  
+
   return hh;
 }
 
-TEST(SHALLOW_WATER_BATHYMETRY) {
+TEST(SHALLOW_WATER_BATHYMETRY)
+{
   auto fa = RunTest(1);
   auto fb = RunTest(2);
 
   double vala[1], valb[1];
   fa.MeanValue(vala);
   fb.MeanValue(valb);
-  CHECK_CLOSE(vala[0], valb[0], 1e-10); 
+  CHECK_CLOSE(vala[0], valb[0], 1e-10);
 }

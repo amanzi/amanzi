@@ -1,17 +1,21 @@
 /*
-  Energy
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  Energy
 
   Interface for a thermal conductivity model with one phase.
 */
 
 #include "dbc.hh"
+#include "EOSFactory.hh"
+#include "EOS_ThermalConductivity.hh"
 #include "EOS_Utils.hh"
 
 #include "TCMEvaluator_OnePhase.hh"
@@ -23,10 +27,11 @@ namespace Energy {
 * Constructor.
 ****************************************************************** */
 TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() == 0) {
-    my_keys_.push_back(make_pair(plist_.get<std::string>("thermal conductivity key"), Tags::DEFAULT));
+    my_keys_.push_back(
+      make_pair(plist_.get<std::string>("thermal conductivity key"), Tags::DEFAULT));
   }
   auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
 
@@ -36,9 +41,9 @@ TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist)
   porosity_key_ = plist_.get<std::string>("porosity key", prefix + "porosity");
   dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
 
-  AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));
-  Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
-  tc_ = Teuchos::rcp(new AmanziEOS::H2O_ThermalConductivity(sublist));
+  AmanziEOS::EOSFactory<AmanziEOS::EOS_ThermalConductivity> eos_fac;
+  auto& sublist = plist_.sublist("thermal conductivity parameters");
+  tc_ = eos_fac.Create(sublist);
 
   k_rock_ = sublist.get<double>("thermal conductivity of rock");
 }
@@ -48,15 +53,17 @@ TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist)
 * Copy constructor.
 ****************************************************************** */
 TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(const TCMEvaluator_OnePhase& other)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      tc_(other.tc_),
-      temperature_key_(other.temperature_key_) {};
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+    tc_(other.tc_),
+    temperature_key_(other.temperature_key_){};
 
 
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-Teuchos::RCP<Evaluator> TCMEvaluator_OnePhase::Clone() const {
+Teuchos::RCP<Evaluator>
+TCMEvaluator_OnePhase::Clone() const
+{
   return Teuchos::rcp(new TCMEvaluator_OnePhase(*this));
 }
 
@@ -64,8 +71,8 @@ Teuchos::RCP<Evaluator> TCMEvaluator_OnePhase::Clone() const {
 /* ******************************************************************
 * Evaluator body.
 ****************************************************************** */
-void TCMEvaluator_OnePhase::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+TCMEvaluator_OnePhase::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   // pull out the dependencies
   const auto& temp_c = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
@@ -75,7 +82,7 @@ void TCMEvaluator_OnePhase::Evaluate_(
   int ierr(0);
   int ncomp = results[0]->size("cell", false);
   for (int i = 0; i != ncomp; ++i) {
-    double k_liq = tc_->ThermalConductivity(temp_c[0][i]);
+    double k_liq = tc_->ThermalConductivity(temp_c[0][i], 0.0); // no models with pressure yet
     ierr = std::max(ierr, tc_->error_code());
 
     double phi = poro_c[0][i];
@@ -88,12 +95,42 @@ void TCMEvaluator_OnePhase::Evaluate_(
 /* ******************************************************************
 * Evaluator of derivarives.
 ****************************************************************** */
-void TCMEvaluator_OnePhase::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results) 
+void
+TCMEvaluator_OnePhase::EvaluatePartialDerivative_(const State& S,
+                                                  const Key& wrt_key,
+                                                  const Tag& wrt_tag,
+                                                  const std::vector<CompositeVector*>& results)
 {
-  AMANZI_ASSERT(0);
+  for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
+    const auto& temp_v = *S.Get<CompositeVector>(temperature_key_).ViewComponent(*comp);
+    const auto& poro_v = *S.Get<CompositeVector>(porosity_key_).ViewComponent(*comp);
+    Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
+    int ncells = results[0]->size(*comp);
+
+    if (wrt_key == porosity_key_) {
+      for (int i = 0; i != ncells; ++i) {
+        double k_liq = tc_->ThermalConductivity(temp_v[0][i], 0.0);
+        result_v[0][i] = k_liq - k_rock_;
+      }
+    } else if (wrt_key == temperature_key_) {
+      for (int i = 0; i != ncells; ++i) {
+        double k_liq = tc_->DThermalConductivityDT(temp_v[0][i], 0.0);
+        result_v[0][i] = poro_v[0][i] * k_liq;
+      }
+    }
+  }
 }
 
-}  // namespace Energy
-}  // namespace Amanzi
+
+/* ******************************************************************
+* Compatibility check is not needed at this level.
+****************************************************************** */
+void
+TCMEvaluator_OnePhase::EnsureCompatibility_Units_(State& S)
+{
+  S.GetRecordSetW(my_keys_[0].first).set_units("W/m/K");
+}
+
+
+} // namespace Energy
+} // namespace Amanzi

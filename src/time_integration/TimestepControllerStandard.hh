@@ -1,14 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
 */
 
 //! Simple timestep control based upon previous iteration count.
-
 /*!
 
 This is a simple timestep control mechanism
@@ -21,7 +20,7 @@ The timestep for step :math:`k+1`, :math:`\Delta t_{k+1}`, is given by:
 - if :math:`N_k < N^{min}` then :math:`\Delta t_{k+1} = f_{increase} * \Delta t_{k}`
 - otherwise :math:`\Delta t_{k+1} = \Delta t_{k}`
 
-where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of 
+where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of
 nonlinear iterations required to solve step :math:`k`:.
 
 .. _timestep-controller-standard-spec:
@@ -33,6 +32,26 @@ nonlinear iterations required to solve step :math:`k`:.
     * `"time step increase factor`" ``[double]`` :math:`f_{increase}`, increase the previous timestep by this multiple.
     * `"max time step`" ``[double]`` The max timestep size allowed.
     * `"min time step`" ``[double]`` The min timestep size allowed.  If the step has failed and the new step is below this cutoff, the simulation fails.
+
+.. code-block:: xml
+
+  <ParameterList name="BDF1"> <!-- parent list -->
+    <Parameter name="timestep controller type" type="string" value="standard"/>
+    <ParameterList name="timestep controller standard parameters">
+      <Parameter name="min iterations" type="int" value="10"/>
+      <Parameter name="max iterations" type="int" value="15"/>
+      <Parameter name="time step increase factor" type="double" value="1.2"/>
+      <Parameter name="time step reduction factor" type="double" value="0.5"/>
+      <Parameter name="max time step" type="double" value="1e+9"/>
+      <Parameter name="min time step" type="double" value="0.0"/>
+    </ParameterList>
+  </ParameterList>
+
+In this example, the time step is increased by factor 1.2 when the nonlinear
+solver converges in 10 or less iterations.
+The time step is not changed when the number of nonlinear iterations is
+between 11 and 15.
+The time step will be cut twice if the number of nonlinear iterations exceeds 15.
 
 */
 
@@ -47,7 +66,6 @@ nonlinear iterations required to solve step :math:`k`:.
 namespace Amanzi {
 
 class TimestepControllerStandard : public TimestepController {
-
  public:
   TimestepControllerStandard(Teuchos::ParameterList& plist);
 

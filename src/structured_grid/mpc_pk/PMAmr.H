@@ -1,11 +1,19 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
 
 #ifndef _PMAmr_H_
-#define _PMAmr_H_ 
+#define _PMAmr_H_
 
 #include <Amr.H>
 
-struct Layout; 
-class MFTGrowFill; 
+struct Layout;
+class MFTGrowFill;
 
 #include <Layout.H>
 #include <MatFiller.H>
@@ -52,7 +60,7 @@ public:
                       Real time,
                       int  iteration,
                       int  niter);
-        
+
 
     static EventCoord& eventCoord() {return event_coord;}
     Real process_events(bool& write_plotfile_after_step,

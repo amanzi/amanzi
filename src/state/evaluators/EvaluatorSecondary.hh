@@ -1,13 +1,15 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  State
-
   Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
+
+/*
+  State
+
 */
 
 /*!
@@ -33,8 +35,7 @@ a collection of things with arbitrary names, tags, and data types.
 namespace Amanzi {
 
 class EvaluatorSecondary : public Evaluator {
-
-public:
+ public:
   explicit EvaluatorSecondary(Teuchos::ParameterList& plist);
 
   EvaluatorSecondary(const EvaluatorSecondary& other) = default;
@@ -56,21 +57,18 @@ public:
   // wrt_key changed since it was last requested for Field Key reqest.
   // Updates the derivative if needed.
   // ---------------------------------------------------------------------------
-  virtual bool UpdateDerivative(State& S, const Key& request,
-                                const Key& wrt_key,
-                                const Tag& wrt_tag) override;
+  virtual bool
+  UpdateDerivative(State& S, const Key& request, const Key& wrt_key, const Tag& wrt_tag) override;
 
+  virtual bool IsDirectDependency(const Key& key, const Tag& tag) const;
   virtual bool IsDependency(const State& S, const Key& key, const Tag& tag) const override;
   virtual bool ProvidesKey(const Key& key, const Tag& tag) const override;
-  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
-          const Tag& wrt_tag) const override {
-    // note, provides key means the value is 1, and there may be times we have to use this value...
-    return ProvidesKey(wrt_key, wrt_tag) || IsDependency(S, wrt_key, wrt_tag);
-  }
+  virtual bool
+  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override;
 
   virtual std::string WriteToString() const override;
 
-protected:
+ protected:
   // These do the actual work
   virtual void Update_(State& S) = 0;
   virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) = 0;
@@ -81,7 +79,7 @@ protected:
   // some may override this to force checkpointing
   virtual void EnsureCompatibility_Flags_(State& S);
 
-protected:
+ protected:
   KeyTagVector my_keys_;
   KeyTagSet dependencies_;
   bool nonlocal_dependencies_;

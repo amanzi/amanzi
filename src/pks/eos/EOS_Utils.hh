@@ -1,12 +1,15 @@
 /*
-  EOS
-   
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov
+  Authors: Konstantin Lipnikov
+*/
+
+/*
+  EOS
+
 */
 
 #ifndef AMANZI_PK_EOS_UTILS_HH_
@@ -23,8 +26,8 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-inline
-void ErrorAnalysis(const Comm_ptr_type& comm, int ierr, const std::string& msg)
+inline void
+ErrorAnalysis(const Comm_ptr_type& comm, int ierr, const std::string& msg)
 {
   int ierr_glb;
   comm->MaxAll(&ierr, &ierr_glb, 1);
@@ -36,7 +39,7 @@ void ErrorAnalysis(const Comm_ptr_type& comm, int ierr, const std::string& msg)
   }
 }
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

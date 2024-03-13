@@ -51,7 +51,7 @@ set(sw_src_files ShallowWater_PK.cc
                  NumericalFlux_Rusanov.cc
                  NumericalFlux_CentralUpwind.cc
                  )
-set(sw_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
+set(sw_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${SEACAS_LIBRARIES})
 if (Ifpack_ENABLE_HYPRE)
   list(APPEND sw_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARY})
 endif()

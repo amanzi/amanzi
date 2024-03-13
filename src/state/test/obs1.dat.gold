@@ -4,7 +4,7 @@
 # -----------------------------------------------------------------------------
 # Observation Name: my obs
 # Region: all
-# Functional: average
+# Reduction: average
 # Variable: linear
 # Number of Vectors: 1
 # =============================================================================

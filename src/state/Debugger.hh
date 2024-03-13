@@ -1,13 +1,13 @@
 /*
-  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-//! A mesh and vector structure aware utility for printing info.
 
+//! A mesh and vector structure aware utility for printing info.
 /*!
 
 This is a utility that makes it easier for the user to control output written
@@ -39,6 +39,7 @@ from the `"Verbose Object`" spec is set to `"high`" or higher.
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_MultiVector.h"
 
+#include "Formatter.hh"
 #include "VerboseObject.hh"
 #include "Mesh.hh"
 
@@ -48,38 +49,34 @@ namespace Amanzi {
 class CompositeVector;
 
 class Debugger {
-
  public:
   // Constructor
   Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
            std::string name,
            Teuchos::ParameterList& plist,
-           Teuchos::EVerbosityLevel verb_level=Teuchos::VERB_HIGH
-           );
+           Teuchos::EVerbosityLevel verb_level = Teuchos::VERB_HIGH);
 
-  const AmanziMesh::Entity_ID_List& get_cells() const;
-  void set_cells(const AmanziMesh::Entity_ID_List& dc);
-  void add_cells(const AmanziMesh::Entity_ID_List& dc);
+  const AmanziMesh::Entity_ID_View& get_cells() const;
+  void set_cells(const AmanziMesh::Entity_ID_View& dc);
+  void add_cells(const AmanziMesh::Entity_ID_View& dc);
 
   // Write cell + face info
-  void WriteCellInfo(bool include_faces=false);
+  void WriteCellInfo(bool include_faces = false);
 
   // Write a vector individually.
   void WriteVector(const std::string& vname,
                    const Teuchos::Ptr<const CompositeVector>& vec,
-                   bool include_faces=false);
+                   bool include_faces = false);
 
-  void WriteCellVector(const std::string& name,
-                       const Epetra_MultiVector& vec);
+  void WriteCellVector(const std::string& name, const Epetra_MultiVector& vec);
 
   // Write boundary condition data.
-  void WriteBoundaryConditions(const std::vector<int>& flag,
-			       const std::vector<double>& data);
+  void WriteBoundaryConditions(const std::vector<int>& flag, const std::vector<double>& data);
 
   // Write list of vectors.
   void WriteVectors(const std::vector<std::string>& names,
-                    const std::vector<Teuchos::Ptr<const CompositeVector> >& vecs,
-                    bool include_faces=false);
+                    const std::vector<Teuchos::Ptr<const CompositeVector>>& vecs,
+                    bool include_faces = false);
 
   // call MPI_Comm_Barrier to sync between writing steps
   void Barrier();
@@ -87,8 +84,8 @@ class Debugger {
   // write a line of ----
   void WriteDivider();
 
-  void SetPrecision(int prec) { precision_ = prec; }
-  void SetWidth(int width) { width_ = width; }
+  void SetPrecision(int prec) { formatter_.setPrecision(prec); }
+  void SetWidth(int width) { formatter_.setWidth(width); }
 
   // reverse order -- instead of passing in vector, do writing externally
   Teuchos::RCP<VerboseObject> GetVerboseObject(AmanziMesh::Entity_ID, int rank);
@@ -103,14 +100,10 @@ class Debugger {
   Teuchos::RCP<VerboseObject> vo_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   std::vector<AmanziMesh::Entity_ID> dc_;
-  std::vector<AmanziMesh::Entity_ID> dc_gid_;
-  std::vector<Teuchos::RCP<VerboseObject> > dcvo_;
+  AmanziMesh::Entity_ID_View dc_gid_;
+  std::vector<Teuchos::RCP<VerboseObject>> dcvo_;
 
-  int width_;
-  int header_width_;
-  int precision_;
-  int cellnum_width_;
-  int decimal_width_;
+  Utils::Formatter formatter_;
   std::string name_;
 };
 

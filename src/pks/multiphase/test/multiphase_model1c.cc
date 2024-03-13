@@ -1,14 +1,16 @@
 /*
-  MultiPhase PK
-
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
 
-  Gas phase appearense in a two-component system (water + hydrogen) after 
+/*
+  MultiPhase PK
+
+  Gas phase appearense in a two-component system (water + hydrogen) after
   liquid hydrogen injection on the left side of the domain. The primary
   variables are pressure liquid, mole gas fraction, and saturation liquid.
 */
@@ -39,7 +41,9 @@
 
 
 /* **************************************************************** */
-void RunTest(const std::string& filename) {
+void
+RunTest(const std::string& filename)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -59,7 +63,7 @@ void RunTest(const std::string& filename) {
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 100, 3);
 
   // create screen io
@@ -112,9 +116,9 @@ void RunTest(const std::string& filename) {
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
       const auto& u2 = *S->Get<CompositeVector>("mole_fraction_gas").ViewComponent("cell");
 
-      io->WriteVector(*u0(0), "pressure", AmanziMesh::CELL);
-      io->WriteVector(*u1(0), "saturation", AmanziMesh::CELL);
-      io->WriteVector(*u2(0), "mole fraction gas", AmanziMesh::CELL);
+      io->WriteVector(*u0(0), "pressure", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u1(0), "saturation", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u2(0), "mole fraction gas", AmanziMesh::Entity_kind::CELL);
       io->FinalizeCycle();
 
       WriteStateStatistics(*S, *vo);
@@ -129,7 +133,7 @@ void RunTest(const std::string& filename) {
   sl.MinValue(&dmin);
   sl.MaxValue(&dmax);
   CHECK(dmin >= 0.0 && dmax <= 1.0);
-  
+
   S->Get<CompositeVector>("ncp_fg").NormInf(&dmax);
   CHECK(dmax <= 1.0e-13);
 
@@ -140,7 +144,8 @@ void RunTest(const std::string& filename) {
 }
 
 
-TEST(MULTIPHASE_MODEL_I_THERMAL) {
+TEST(MULTIPHASE_MODEL_I_THERMAL)
+{
   // RunTest("test/multiphase_model1c_well.xml");
   RunTest("test/multiphase_model1c.xml");
 }

@@ -1,14 +1,16 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
 
-  Magnetic diffusion exesices Amanzi's capability to discretize 
+/*
+  Operators
+
+  Magnetic diffusion exesices Amanzi's capability to discretize
   curl operators.
 */
 
@@ -36,11 +38,10 @@ namespace Operators {
 class PDE_MagneticDiffusion : public PDE_Electromagnetics {
  public:
   PDE_MagneticDiffusion(const Teuchos::RCP<Operator>& global_op)
-    : PDE_Electromagnetics(global_op)
-  {};
+    : PDE_Electromagnetics(global_op){};
 
   PDE_MagneticDiffusion(Teuchos::ParameterList& plist,
-                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : PDE_Electromagnetics(plist, mesh)
   {
     pde_type_ = PDE_MAGNETIC_DIFFUSION;
@@ -75,9 +76,7 @@ class PDE_MagneticDiffusion : public PDE_Electromagnetics {
   std::vector<WhetStone::DenseMatrix> curl_op_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-
-

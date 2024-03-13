@@ -1,10 +1,14 @@
 /*
- Shallow water PK
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
- Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
- Amanzi is released under the three-clause BSD License.
- The terms of use and "as is" disclaimer for this license are
- provided in the top-level COPYRIGHT file.
+  Authors: Svetlana Tokareva (tokareva@lanl.gov)
+*/
+
+/*
+ Shallow water PK
 
  Authors: Svetlana Tokareva (tokareva@lanl.gov)
           Giacomo Capodaglio (gcapodaglio@lanl.gov)
@@ -19,8 +23,7 @@ namespace Amanzi {
 namespace ShallowWater {
 
 void
-ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
-                                          TreeVector& fun)
+ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector& fun)
 {
 
   const auto& h_temp = *A.SubVector(0)->Data()->ViewComponent("cell", true);
@@ -29,10 +32,14 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   auto& f_temp0 = *fun.SubVector(0)->Data()->ViewComponent("cell");
   auto& f_temp1 = *fun.SubVector(1)->Data()->ViewComponent("cell");
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nnodes_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   // distribute data to ghost cells
   A.SubVector(0)->Data()->ScatterMasterToGhosted("cell");
@@ -157,7 +164,8 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   // limited reconstructions using boundary data
   // total depth
-  auto tmp1 = S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto tmp1 =
+    S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   total_depth_grad_->Compute(tmp1);
   if (use_limiter_)
     limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model_scalar, bc_value_ht);
@@ -166,30 +174,28 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // additional depth-positivity correction limiting for fully flooded cells
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
 
-  for (int c = 0; c < ncells_wghost; ++c ) {
-     Amanzi::AmanziMesh::Entity_ID_List cnodes, cfaces;
-     mesh_->cell_get_nodes(c, &cnodes);
-    
+  for (int c = 0; c < ncells_wghost; ++c) {
+    auto cnodes = mesh_->getCellNodes(c);
+
     // calculate maximum bathymetry value on cell nodes
     double Bmax = 0.0;
-    for (int i = 0; i < cnodes.size(); ++i) {
-      Bmax = std::max(B_n[0][cnodes[i]], Bmax);
-    }
-    
+    for (int i = 0; i < cnodes.size(); ++i) { Bmax = std::max(B_n[0][cnodes[i]], Bmax); }
+
     // check if cell is fully flooded and proceed with limiting
     if ((ht_c[0][c] > Bmax) && (ht_c[0][c] - B_c[0][c] > 0.0)) {
-      Amanzi::AmanziMesh::Entity_ID_List cfaces;
-      mesh_->cell_get_faces(c, &cfaces);
+      auto cfaces = mesh_->getCellFaces(c);
 
       double alpha = 1.0; // limiter value
       for (int f = 0; f < cfaces.size(); ++f) {
-        const auto& xf = mesh_->face_centroid(cfaces[f]);
+        const auto& xf = mesh_->getFaceCentroid(cfaces[f]);
         double ht_rec = total_depth_grad_->getValue(c, xf);
         if (ht_rec - BathymetryEdgeValue(cfaces[f], B_n) < 0.0) {
-          alpha = std::min(alpha, cfl_positivity_ * (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) / (ht_rec - ht_c[0][c]));
+          alpha = std::min(alpha,
+                           cfl_positivity_ * (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) /
+                             (ht_rec - ht_c[0][c]));
         }
       }
-      
+
       ht_grad[0][c] *= alpha;
       ht_grad[1][c] *= alpha;
     }
@@ -228,7 +234,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   int dir, c1, c2, ierr;
   double h, qx, qy, factor, dx;
-  AmanziMesh::Entity_ID_List cells;
 
   std::vector<double> FNum_rot(3,0.0);        // fluxes
   std::vector<double> BedSlopeSource;  // bed slope source
@@ -239,15 +244,16 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
 
   for (int f = 0; f < nfaces_wghost; ++f) {
-    double farea = mesh_->face_area(f);
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    double farea = mesh_->getFaceArea(f);
+    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh_->getFaceCells(f);
     c1 = cells[0];
     c2 = (cells.size() == 2) ? cells[1] : -1;
     if (c1 > ncells_owned && c2 == -1) continue;
     if (c2 > ncells_owned) std::swap(c1, c2);
-    AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
+
+    AmanziGeometry::Point normal = mesh_->getFaceNormal(f, c1, &dir);
     normal /= farea;
 
     // primary field at the edge
@@ -313,7 +319,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
      ierr = ErrorDiagnostics_(t, c2, V_rec);
      if (ierr < 0) break;
 
-
      qx_rec = discharge_x_grad_->getValue(c2, xf);
      qy_rec = discharge_y_grad_->getValue(c2, xf);
 
@@ -345,7 +350,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
  riemann_f[0][f] = FNum_rot[0] * farea * dir;
 
  // add fluxes to temporary fields 
- double vol = mesh_->cell_volume(c1);
+ double vol = mesh_->getCellVolume(c1);
  factor = farea / vol;
  h_c_tmp[0][c1] -= h * factor;
  q_c_tmp[0][c1] -= qx * factor;
@@ -353,7 +358,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
  if (c2 != -1) {
 
-   vol = mesh_->cell_volume(c2);
+   vol = mesh_->getCellVolume(c2);
    factor = farea / vol;
    h_c_tmp[0][c2] += h * factor;
    q_c_tmp[0][c2] += qx * factor;
@@ -361,13 +366,12 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
  }
 
-
 }
 
   // sync errors across processors, otherwise any MPI call
   // will lead to an error.
   int ierr_tmp(ierr);
-  mesh_->get_comm()->MinAll(&ierr_tmp, &ierr, 1);
+  mesh_->getComm()->MinAll(&ierr_tmp, &ierr, 1);
   if (ierr < 0) {
     Errors::Message msg;
     msg << "Negative primary variable.\n";
@@ -398,9 +402,7 @@ int
 ShallowWater_PK::ErrorDiagnostics_(double t, int c, double h)
 {
   if (h < 0.0) {
-
-    const auto& xc = mesh_->cell_centroid(c);
-
+    const auto& xc = mesh_->getCellCentroid(c);
     if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "negative primary variable in cell " << c << ", xc=(" << xc[0] << ", " << xc[1] << ")"

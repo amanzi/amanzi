@@ -1,15 +1,63 @@
 /*
-  Chemistry PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Base class for chemical process kernels. It should be never
-  instantiated.
+  Authors:
 */
- 
+
+/*!
+
+The chemistry header includes three parameters:
+
+* `"chemistry model`" [string] defines chemical model. The available options are `"Alquimia`"
+  and `"Amanzi`" (default).
+
+.. code-block:: xml
+
+  <ParameterList name="_CHEMISTRY">
+    <Parameter name="chemistry model" type="string" value="Amanzi"/>
+  </ParameterList>
+
+
+Geochemical engines
+...................
+Here we specify either the default or the third-party geochemical engine.
+
+Common parameters
+`````````````````
+The following parameters are common for all supported engines.
+
+* `"time step control method`" [string] specifies time step control method for chemistry subcycling.
+  Choose either "fixed" (default) or "simple".  For option "fixed", time step is fixed.
+  For option "simple", the time step is adjusted in response to stiffness of system of equations
+  based on a simple scheme. This option require the following parameters: `"time step cut threshold`",
+  `"time step cut factor`", `"time step increase threshold`", and `"time step increase factor`".
+
+* `"time step cut threshold`" [int] is the number of Newton iterations that if exceeded
+  will trigger a time step cut. Default is 8.
+
+* `"max time step (s)`" [double] is the maximum time step that chemistry will allow the MPC to take.
+
+* `"initial time step (s)`" [double] is the initial time step that chemistry will ask the MPC to take.
+
+* `"time step cut factor`" [double] is the factor by which the time step is cut. Default is 2.0
+
+* `"time step increase threshold`" [int] is the number of consecutive successful time steps that
+  will trigger a time step increase. Default is 4.
+
+* `"time step increase factor`" [double] is the factor by which the time step is increased. Default is 1.2
+
+* `"free ion initial guess`" [double] provides an estimate of the free ion concentration for solutes.
+  It used to help convergence of the initial solution of the chemistry. If this parameter is absent,
+  a fraction (10%) of the total component concentration is used.
+
+* `"initial conditions time`" [double] specifies time for applying initial conditions. This parameter
+  is useful for simulation restart. Default value is the state time when chemistry PK is instantiated.
+
+*/
+
 #ifndef AMANZI_CHEMISTRY_PK_HH_
 #define AMANZI_CHEMISTRY_PK_HH_
 
@@ -23,7 +71,7 @@
 
 // Amanzi
 #ifdef ALQUIMIA_ENABLED
-#include "ChemistryEngine.hh"
+#  include "ChemistryEngine.hh"
 #endif
 #include "Key.hh"
 #include "Mesh.hh"
@@ -46,7 +94,7 @@ class Chemistry_PK : public PK_Physical {
   virtual void Setup() override;
   virtual void Initialize() override;
 
-  virtual void set_dt(double dt) override {};
+  virtual void set_dt(double dt) override{};
   virtual double get_dt() override { return dt_next_; }
 
   // Required members for chemistry interface
@@ -55,7 +103,7 @@ class Chemistry_PK : public PK_Physical {
 
   // Basic capabilities
   // -- get/set auxiliary tcc vector that now contains only aqueous components.
-  Teuchos::RCP<Epetra_MultiVector> aqueous_components() { return aqueous_components_; } 
+  Teuchos::RCP<Epetra_MultiVector> aqueous_components() { return aqueous_components_; }
   void set_aqueous_components(Teuchos::RCP<Epetra_MultiVector> tcc) { aqueous_components_ = tcc; }
 
   // -- process various objects before/during setup phase
@@ -66,12 +114,18 @@ class Chemistry_PK : public PK_Physical {
   virtual void CopyFieldstoNewState(const Teuchos::RCP<State>& S_next);
   // -- access
 #ifdef ALQUIMIA_ENABLED
-  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine() { return chem_engine_; }
+  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine()
+  {
+    return chem_engine_;
+  }
 #endif
 
   // -- output of error messages.
   void ErrorAnalysis(int ierr, std::string& internal_msg);
-  int num_aqueous_components() {return number_aqueous_components_;}
+  int num_aqueous_components()
+  {
+    return number_aqueous_components_;
+  }
 
  protected:
   std::string passwd_;
@@ -86,7 +140,7 @@ class Chemistry_PK : public PK_Physical {
 
   int number_aqueous_kinetics_;
   std::vector<std::string> aqueous_kinetics_names_;
-  
+
   int number_sorption_sites_, number_total_sorbed_;
   std::vector<std::string> sorption_site_names_;
   bool using_sorption_, using_sorption_isotherms_;
@@ -94,7 +148,7 @@ class Chemistry_PK : public PK_Physical {
   int number_free_ion_, number_ion_exchange_sites_;
   double saturation_tolerance_;
 
-  // names of state fields 
+  // names of state fields
   Key tcc_key_;
   Key poro_key_, saturation_key_, temperature_key_;
   Key fluid_den_key_, molar_fluid_den_key_;
@@ -116,12 +170,12 @@ class Chemistry_PK : public PK_Physical {
 
   // time controls
   int dt_cut_threshold_, dt_increase_threshold_;
-  double dt_min_, dt_max_, dt_prev_, dt_next_, dt_cut_factor_, dt_increase_factor_;
+  double dt_, dt_min_, dt_max_, dt_prev_, dt_next_, dt_cut_factor_, dt_increase_factor_;
 
   int num_iterations_, num_successful_steps_;
   double initial_conditions_time_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

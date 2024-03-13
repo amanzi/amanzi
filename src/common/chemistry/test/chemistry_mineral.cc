@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
@@ -10,7 +19,8 @@
 #include "Mineral.hh"
 #include "Species.hh"
 
-SUITE(GeochemistryTestsMineral) {
+SUITE(GeochemistryTestsMineral)
+{
   namespace ac = Amanzi::AmanziChemistry;
 
   /*****************************************************************************
@@ -40,7 +50,7 @@ SUITE(GeochemistryTestsMineral) {
     ac::Mineral* mineral_;
 
     Teuchos::ParameterList plist_;
-  };  // end class MineralTest
+  }; // end class MineralTest
 
   MineralTest::MineralTest()
     : name_("Calcite"),
@@ -55,8 +65,8 @@ SUITE(GeochemistryTestsMineral) {
   {
     Teuchos::ParameterList plist;
     plist.set<int>("charge", 0)
-         .set<double>("gram molecular weight", 18.0)
-         .set<double>("ion size parameter", 0.0);
+      .set<double>("gram molecular weight", 18.0)
+      .set<double>("ion size parameter", 0.0);
     water_ = ac::Species(0, "H2O", plist);
 
     species_names_.clear();
@@ -76,8 +86,8 @@ SUITE(GeochemistryTestsMineral) {
     species_ids_.push_back(2);
 
     plist.set<int>("charge", 1)
-         .set<double>("gram molecular weight", 1.0079)
-         .set<double>("ion size parameter", 9.0);
+      .set<double>("gram molecular weight", 1.0079)
+      .set<double>("ion size parameter", 9.0);
     int id = 0;
     std::string name = "H+";
     ac::Species H_p = ac::Species(id, name, plist);
@@ -85,8 +95,8 @@ SUITE(GeochemistryTestsMineral) {
     H_p.update(2.74965e-9);
 
     plist.set<int>("charge", -1)
-         .set<double>("gram molecular weight", 61.0171)
-         .set<double>("ion size parameter", 4.0);
+      .set<double>("gram molecular weight", 61.0171)
+      .set<double>("ion size parameter", 4.0);
     id = 1;
     name = "HCO3-";
     ac::Species HCO3_m = ac::Species(id, name, plist);
@@ -94,8 +104,8 @@ SUITE(GeochemistryTestsMineral) {
     HCO3_m.update(9.71848e-4);
 
     plist.set<int>("charge", 2)
-         .set<double>("gram molecular weight", 40.0780)
-         .set<double>("ion size parameter", 6.0);
+      .set<double>("gram molecular weight", 40.0780)
+      .set<double>("ion size parameter", 6.0);
     id = 2;
     name = "Ca++";
     ac::Species Ca_pp = ac::Species(id, name, plist);
@@ -111,15 +121,18 @@ SUITE(GeochemistryTestsMineral) {
     primary_species_.push_back(Ca_pp);
 
     plist_.set<double>("gram molecular weight", gram_molecular_weight_)
-          .set<double>("equilibrium constant", logK_)
-          .set<std::string>("reaction", "-1.0 H+  1.0 HCO3-  1.0 Ca++")
-          .set<double>("specific surface area", specific_surface_area_)
-          .set<double>("molar volume", molar_volume_);
+      .set<double>("equilibrium constant", logK_)
+      .set<std::string>("reaction", "-1.0 H+  1.0 HCO3-  1.0 Ca++")
+      .set<double>("specific surface area", specific_surface_area_)
+      .set<double>("molar volume", molar_volume_);
 
     mineral_ = new ac::Mineral(id_, name_, plist_, primary_species_);
   }
 
-  MineralTest::~MineralTest() { delete mineral_; }
+  MineralTest::~MineralTest()
+  {
+    delete mineral_;
+  }
 
 
   class MineralTestHydrated {
@@ -146,7 +159,7 @@ SUITE(GeochemistryTestsMineral) {
     ac::Mineral* mineral_;
 
     Teuchos::ParameterList plist_;
-  };  // end class MineralTest
+  }; // end class MineralTest
 
 
   MineralTestHydrated::MineralTestHydrated()
@@ -162,8 +175,8 @@ SUITE(GeochemistryTestsMineral) {
   {
     Teuchos::ParameterList plist;
     plist.set<int>("charge", 0)
-         .set<double>("gram molecular weight", 18.0)
-         .set<double>("ion size parameter", 0.0);
+      .set<double>("gram molecular weight", 18.0)
+      .set<double>("ion size parameter", 0.0);
     water_ = ac::Species(0, "H2O", plist);
 
     species_names_.clear();
@@ -179,9 +192,9 @@ SUITE(GeochemistryTestsMineral) {
     species_ids_.push_back(1);
 
     plist.set<int>("charge", 3)
-         .set<double>("gram molecular weight", 0.0)
-         .set<double>("ion size parameter", 0.0);
-    water_ = ac::Species(0,"H2O", plist);
+      .set<double>("gram molecular weight", 0.0)
+      .set<double>("ion size parameter", 0.0);
+    water_ = ac::Species(0, "H2O", plist);
     int id = 0;
     std::string name = "Al+3";
     ac::Species Al = ac::Species(id, name, plist);
@@ -189,8 +202,8 @@ SUITE(GeochemistryTestsMineral) {
     Al.update(0.5);
 
     plist.set<int>("charge", -2)
-         .set<double>("gram molecular weight", 0.0)
-         .set<double>("ion size parameter", 0.0);
+      .set<double>("gram molecular weight", 0.0)
+      .set<double>("ion size parameter", 0.0);
     id = 1;
     name = "SO4-2";
     ac::Species SO4 = ac::Species(id, name, plist);
@@ -205,17 +218,20 @@ SUITE(GeochemistryTestsMineral) {
     primary_species_.push_back(SO4);
 
     plist_.set<int>("charge", charge_)
-          .set<double>("ion size parameter", ion_size_parameter_)
-          .set<double>("gram molecular weight", gram_molecular_weight_)
-          .set<double>("equilibrium constant", logK_)
-          .set<std::string>("reaction", "2.0 Al+3  3.0 SO4-2  17.0 H2O")
-          .set<double>("specific surface area", specific_surface_area_)
-          .set<double>("molar volume", molar_volume_);
+      .set<double>("ion size parameter", ion_size_parameter_)
+      .set<double>("gram molecular weight", gram_molecular_weight_)
+      .set<double>("equilibrium constant", logK_)
+      .set<std::string>("reaction", "2.0 Al+3  3.0 SO4-2  17.0 H2O")
+      .set<double>("specific surface area", specific_surface_area_)
+      .set<double>("molar volume", molar_volume_);
 
     mineral_ = new ac::Mineral(id_, name_, plist_, primary_species_);
   }
 
-  MineralTestHydrated::~MineralTestHydrated() { delete mineral_; }
+  MineralTestHydrated::~MineralTestHydrated()
+  {
+    delete mineral_;
+  }
 
   //
   // most of the basic functionality comes from the parent SecondarySpecies class.
@@ -223,14 +239,16 @@ SUITE(GeochemistryTestsMineral) {
   //
 
   // make sure we can create an object with the constructor
-  TEST_FIXTURE(MineralTest, Mineral_constructor) {
+  TEST_FIXTURE(MineralTest, Mineral_constructor)
+  {
     CHECK_EQUAL(id_, mineral_->identifier());
   }
 
   //
   // virtual public methods from parent class
   //
-  TEST_FIXTURE(MineralTest, Mineral_Update) {
+  TEST_FIXTURE(MineralTest, Mineral_Update)
+  {
     mineral_->Update(primary_species_, water_);
     CHECK_CLOSE(mineral_->lnQK(), -0.731390740816932, 1.0e-10);
   }
@@ -242,29 +260,34 @@ SUITE(GeochemistryTestsMineral) {
   //
   // local public methods
   //
-  TEST_FIXTURE(MineralTest, Mineral_QoverK) {
+  TEST_FIXTURE(MineralTest, Mineral_QoverK)
+  {
     mineral_->Update(primary_species_, water_);
     CHECK_CLOSE(mineral_->Q_over_K(), 0.481239245416214, 1.0e-10);
   }
 
-  TEST_FIXTURE(MineralTest, Mineral_saturation_index) {
-    mineral_->Update(primary_species_,water_);
+  TEST_FIXTURE(MineralTest, Mineral_saturation_index)
+  {
+    mineral_->Update(primary_species_, water_);
     CHECK_CLOSE(mineral_->saturation_index(), -0.317638962851925, 1.0e-10);
   }
 
-  TEST_FIXTURE(MineralTest, Mineral_molar_volume) {
+  TEST_FIXTURE(MineralTest, Mineral_molar_volume)
+  {
     CHECK_CLOSE(mineral_->molar_volume(), 36.9340, 1.0e-4);
   }
 
-  TEST_FIXTURE(MineralTest, Mineral_specific_surface_area) {
+  TEST_FIXTURE(MineralTest, Mineral_specific_surface_area)
+  {
     CHECK_CLOSE(mineral_->specific_surface_area(), 0.987654, 1.0e-6);
   }
-  TEST_FIXTURE(MineralTest, Mineral_volume_fraction) {
+  TEST_FIXTURE(MineralTest, Mineral_volume_fraction)
+  {
     mineral_->set_volume_fraction(0.23456);
     CHECK_CLOSE(mineral_->volume_fraction(), 0.23456, 1.0e-10);
   }
 
-/*
+  /*
   TEST_FIXTURE(MineralTest, Mineral_UpdateVolumeFraction) {
     double rate = 1.0;
     double delta_t = 1.0;
@@ -272,7 +295,7 @@ SUITE(GeochemistryTestsMineral) {
     CHECK_CLOSE(mineral_->volume_fraction(), 100.0, 1.0e-10);
   }
 */
-/*
+  /*
   TEST_FIXTURE(MineralTest, Mineral_UpdateSpecificSurfaceArea) {
     // code currently has a hard coded value of 100
     mineral_->set_volume_fraction(0.2);
@@ -284,8 +307,9 @@ SUITE(GeochemistryTestsMineral) {
   //---------------------------------------------------------------
   // Test the log10(IAP/K) for Alunogen
   //---------------------------------------------------------------
-  TEST_FIXTURE(MineralTestHydrated, Mineral_saturation_index) {
-      mineral_->Update(primary_species_, water_);
-      CHECK_CLOSE(mineral_->saturation_index(), -0.418659904607586, 1.0e-10);
+  TEST_FIXTURE(MineralTestHydrated, Mineral_saturation_index)
+  {
+    mineral_->Update(primary_species_, water_);
+    CHECK_CLOSE(mineral_->saturation_index(), -0.418659904607586, 1.0e-10);
   }
-}  // end SUITE(GeochemistryTestMineral)
+} // end SUITE(GeochemistryTestMineral)

@@ -1,113 +1,180 @@
 /*
-  Mesh
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
-
-  Authors: William A. Perkins
-           Rao Garimella
- 
- Various definitions needed by Mesh class.
 */
 
-#ifndef AMANZI_MESH_DEFS_HH_
-#define AMANZI_MESH_DEFS_HH_
+#pragma once
 
 #include <algorithm>
 #include <string>
 #include <vector>
 
+#include "Teuchos_RCP.hpp"
+
 #include "errors.hh"
+#include "AmanziTypes.hh"
+#include "Point.hh"
+
+#include "MeshView.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
 
-// Necessary typedefs and enumerations
-typedef int Set_ID;
-typedef int Entity_ID;
-typedef std::vector<Entity_ID> Entity_ID_List;
-  
-// Recongnize special meshes
-enum Mesh_type
-{
-  RECTANGULAR,   // Equivalent of structured but can't use i,j,k notation
-  GENERAL        // general unstructured
+//
+// Typedefs
+//
+using size_type = Kokkos::MeshView<int*, Kokkos::DefaultHostExecutionSpace>::size_type;
+using Entity_ID = int;
+using Entity_GID = int;
+using Set_ID = int;
+using Direction_type = int;
+
+namespace Impl {
+template <MemSpace_kind MEM>
+struct MemorySpace {
+  using space = Amanzi::DefaultMemorySpace;
 };
 
-// Cells (aka zones/elements) are the highest dimension entities in a mesh 
-// Nodes (aka vertices) are lowest dimension entities in a mesh 
-// Faces in a 3D mesh are 2D entities, in a 2D mesh are 1D entities
-// BOUNDARY_FACE is a special type of entity that is need so that process 
-// kernels can define composite vectors (see src/data_structures) on 
-// exterior boundary faces of the mesh only
-enum Entity_kind 
-{
-  NODE = 0,
-  EDGE,
-  FACE,
-  CELL,
-  BOUNDARY_FACE,
-  UNKNOWN
+template <>
+struct MemorySpace<MemSpace_kind::HOST> {
+  using space = Amanzi::DefaultHostMemorySpace;
 };
 
-// Check if Entity_kind is valid
-inline 
-bool entity_valid_kind (const Entity_kind kind) {
-  return (kind >= NODE && kind <= CELL);
+} // namespace Impl
+
+//
+// Views are on host or device
+//
+template <typename T, MemSpace_kind MEM = MemSpace_kind::HOST>
+using View_type = Kokkos::MeshView<T*, typename Impl::MemorySpace<MEM>::space>;
+
+//
+// Lists for host only
+//
+using Entity_ID_List = std::vector<Entity_ID>;
+using Entity_GID_List = std::vector<Entity_ID>;
+using Entity_Direction_List = std::vector<int>;
+using Point_List = std::vector<AmanziGeometry::Point>;
+using Double_List = std::vector<double>;
+template <typename T>
+using RaggedArray_List = std::vector<std::vector<T>>;
+
+
+template <typename T>
+using DualView_type = Kokkos::MeshDualView<T*, Kokkos::DefaultHostExecutionSpace>;
+using Entity_ID_DualView = DualView_type<Entity_ID>;
+using Entity_GID_DualView = DualView_type<Entity_GID>;
+using Entity_Direction_DualView = DualView_type<int>;
+using Point_DualView = DualView_type<AmanziGeometry::Point>;
+using Double_DualView = DualView_type<double>;
+
+
+inline std::string
+to_string(const MemSpace_kind mem)
+{
+  if (mem == MemSpace_kind::HOST)
+    return "host";
+  else
+    return "device";
 }
 
+
+// Cells (aka zones/elements) are the highest dimension entities in a mesh
+// Nodes (aka vertices) are lowest dimension entities in a mesh
+// Faces in a 3D mesh are 2D entities, in a 2D mesh are 1D entities
+// Entity_kind::BOUNDARY_FACE is a special type of entity that is need so that process
+// kernels can define composite vectors (see src/data_structures) on
+// exterior boundary faces of the mesh only
+enum Entity_kind : int {
+  UNKNOWN = 0,
+  NODE = 1,
+  EDGE = 2,
+  FACE = 3,
+  CELL = 4,
+  BOUNDARY_NODE = 11,
+  BOUNDARY_FACE = 13
+};
+
+
 // entity kind from string
-inline
-Entity_kind entity_kind(const std::string& instring)
+inline Entity_kind
+createEntityKind(const std::string& instring)
 {
   std::string estring = instring; // note not done in signature to throw a better error
   transform(estring.begin(), estring.end(), estring.begin(), ::tolower);
-  if (estring == "cell") return CELL;
-  else if (estring == "face") return FACE;
-  else if (estring == "boundary_face") return BOUNDARY_FACE;
-  else if (estring == "edge") return EDGE;
-  else if (estring == "node") return NODE;
+  if (estring == "cell")
+    return Entity_kind::CELL;
+  else if (estring == "face")
+    return Entity_kind::FACE;
+  else if (estring == "boundary_face")
+    return Entity_kind::BOUNDARY_FACE;
+  else if (estring == "boundary_node")
+    return Entity_kind::BOUNDARY_NODE;
+  else if (estring == "edge")
+    return Entity_kind::EDGE;
+  else if (estring == "node")
+    return Entity_kind::NODE;
   else {
     Errors::Message msg;
-    msg << "Unknown entity kind string: \"" << instring << "\", valid are \"cell\", \"face\", \"boundary_face\", \"edge\", and \"node\".";
+    msg << "Unknown entity kind string: \"" << instring
+        << "\", valid are \"cell\", \"face\", \"boundary_face\", \"edge\", and \"node\".";
     Exceptions::amanzi_throw(msg);
-    return NODE;
+    return Entity_kind::NODE;
   }
 }
 
 // string from entity kind
-inline
-std::string entity_kind_string(Entity_kind kind)
+inline std::string
+to_string(const Entity_kind kind)
 {
-  switch(kind) {
-    case(CELL): return "cell";
-    case(FACE): return "face";
-    case(BOUNDARY_FACE): return "boundary_face";
-    case(EDGE): return "edge";
-    case(NODE): return "node";
-    default: return "unknown";
+  switch (kind) {
+  case (Entity_kind::CELL):
+    return "cell";
+  case (Entity_kind::FACE):
+    return "face";
+  case (Entity_kind::BOUNDARY_FACE):
+    return "boundary_face";
+  case (Entity_kind::BOUNDARY_NODE):
+    return "boundary_node";
+  case (Entity_kind::EDGE):
+    return "edge";
+  case (Entity_kind::NODE):
+    return "node";
+  default:
+    return "unknown";
   }
 }
 
-// Parallel status of entity 
-enum class Parallel_type {
-  PTYPE_UNKNOWN = 0,
-  OWNED = 1,  // Owned by this processor
-  GHOST = 2,  // Owned by another processor
-  ALL = 3     // OWNED + GHOST 
+// Parallel status of entity
+enum class Parallel_kind {
+  UNKNOWN = 0,
+  OWNED = 1, // Owned by this processor
+  GHOST = 2, // Owned by another processor
+  ALL = 3    // OWNED + GHOST
 };
 
-// Check if Parallel_type is valid
-inline 
-bool entity_valid_ptype (const Parallel_type ptype) {
-  return (ptype >= Parallel_type::OWNED && ptype <= Parallel_type::ALL);
+inline std::string
+to_string(const Parallel_kind ptype)
+{
+  switch (ptype) {
+  case (Parallel_kind::UNKNOWN):
+    return "UNKNOWN";
+  case (Parallel_kind::OWNED):
+    return "OWNED";
+  case (Parallel_kind::GHOST):
+    return "GHOST";
+  case (Parallel_kind::ALL):
+    return "ALL";
+  default:
+    return "unknown";
+  }
 }
-    
+
 // Standard element types and catchall (POLYGON/POLYHED)
-enum Cell_type {
-  CELLTYPE_UNKNOWN = 0,
+enum class Cell_kind {
+  UNKNOWN = 0,
   TRI = 1,
   QUAD,
   POLYGON,
@@ -115,49 +182,83 @@ enum Cell_type {
   PRISM,
   PYRAMID,
   HEX,
-  POLYHED  // Polyhedron 
+  POLYHED // Polyhedron
 };
-    
-// Check if Cell_type is valid
-inline 
-bool cell_valid_type (const Cell_type type) {
-  return (type >= TRI && type <= POLYHED); 
+
+// string from entity kind
+inline std::string
+to_string(const Cell_kind ctype)
+{
+  switch (ctype) {
+  case (Cell_kind::TRI):
+    return "cell type: triangle";
+  case (Cell_kind::QUAD):
+    return "cell type: quadrilateral";
+  case (Cell_kind::POLYGON):
+    return "cell type: polygon";
+  case (Cell_kind::TET):
+    return "cell type: tetrahedron";
+  case (Cell_kind::PRISM):
+    return "cell type: prism";
+  case (Cell_kind::PYRAMID):
+    return "cell type: pyramid";
+  case (Cell_kind::HEX):
+    return "cell type: hexahedron";
+  case (Cell_kind::POLYHED):
+    return "cell type: polyhedron";
+  default:
+    return "cell type: unknown";
+  }
 }
 
+
 // Types of partitioners (partitioning scheme bundled into the name)
-enum class Partitioner_type : std::uint8_t {
-  METIS,
+enum class Partitioner_kind {
+  METIS = 0, // default
   ZOLTAN_GRAPH,
   ZOLTAN_RCB
 };
 
-constexpr int NUM_PARTITIONER_TYPES = 3;
-constexpr Partitioner_type PARTITIONER_DEFAULT = Partitioner_type::METIS;
-
 // Return an string description for each partitioner type
-inline
-std::string Partitioner_type_string(const Partitioner_type partitioner_type) {
-  static std::string partitioner_type_str[NUM_PARTITIONER_TYPES] =
-      {"Partitioner_type::METIS",
-       "Partitioner_type::ZOLTAN_GRAPH", "Partitioner_type::ZOLTAN_RCB"};
-
-  int iptype = static_cast<int>(partitioner_type);
-  return (iptype >= 0 && iptype < NUM_PARTITIONER_TYPES) ?
-      partitioner_type_str[iptype] : "";
+inline std::string
+to_string(const Partitioner_kind partitioner_type)
+{
+  switch (partitioner_type) {
+  case (Partitioner_kind::METIS):
+    return "Partitioner_kind::METIS";
+  case (Partitioner_kind::ZOLTAN_GRAPH):
+    return "Partitioner_kind::ZOLTAN_GRAPH";
+  case (Partitioner_kind::ZOLTAN_RCB):
+    return "Partitioner_kind::ZOLTAN_RCB";
+  default:
+    return "unknown";
+  }
 }
 
-// Output operator for Partitioner_type
-inline
-std::ostream& operator<<(std::ostream& os,
-                         const Partitioner_type& partitioner_type) {
-  os << " " << Partitioner_type_string(partitioner_type) << " ";
-  return os;
+inline Partitioner_kind
+createPartitionerType(const std::string& pstring)
+{
+  if (pstring == "metis" || pstring == "METIS") {
+    return Partitioner_kind::METIS;
+  } else if (pstring == "ZOLTAN_GRAPH" || pstring == "zoltan_graph") {
+    return Partitioner_kind::ZOLTAN_GRAPH;
+  } else if (pstring == "ZOLTAN_RCB" || pstring == "zoltan_rcb") {
+    return Partitioner_kind::ZOLTAN_RCB;
+  } else {
+    Errors::Message msg;
+    msg << "Unknown Partitioner_kind string: \"" << pstring
+        << "\", valid are \"metis\", \"zoltan_graph\", \"zoltan_rcb\"";
+    Exceptions::amanzi_throw(msg);
+  }
+  return Partitioner_kind::METIS;
 }
 
-// Types of partitioning algorithms - Add as needed in the format METIS_RCB etc.
-enum class Partitioning_scheme {DEFAULT};
-  
-}  // namespace AmanziMesh
-}  // namespace Amanzi 
+enum class AccessPattern_kind { DEFAULT, ANY, CACHE, COMPUTE, FRAMEWORK };
 
-#endif
+using MeshSets = std::map<std::tuple<std::string, Entity_kind, Parallel_kind>, Entity_ID_DualView>;
+using MeshSetVolumeFractions =
+  std::map<std::tuple<std::string, Entity_kind, Parallel_kind>, Double_DualView>;
+
+
+} // namespace AmanziMesh
+} // namespace Amanzi

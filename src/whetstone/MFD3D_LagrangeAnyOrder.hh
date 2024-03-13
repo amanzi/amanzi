@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   Lagrange-type element: degrees of freedom are ordered as follows:
     (1) nodal values in the natural order;
@@ -23,7 +25,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "Basis_Regularized.hh"
@@ -40,46 +42,53 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_LagrangeAnyOrder : public MFD3D { 
+class MFD3D_LagrangeAnyOrder : public MFD3D {
  public:
-  MFD3D_LagrangeAnyOrder(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
-    : MFD3D(mesh) {};
+  MFD3D_LagrangeAnyOrder(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : MFD3D(mesh){};
   MFD3D_LagrangeAnyOrder(const Teuchos::ParameterList& plist,
-                         const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
+                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   // required methods
   // -- schema
   virtual std::vector<SchemaItem> schema() const override;
 
   // -- stiffness matrix
-  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) {
+  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
+  {
     if (d_ == 2) return H1consistency2D_(mesh_, c, T, N, Ac);
     return H1consistency3D_(c, T, N, Ac, true);
   }
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // -- l2 projectors
-  virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
+  virtual void L2Cell(int c,
+                      const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
-                      const Polynomial* moments, Polynomial& uc) override {
+                      const Polynomial* moments,
+                      Polynomial& uc) override
+  {
     ProjectorCell_(c, ve, vf, ProjectorType::L2, moments, uc);
   }
 
   // -- h1 projectors
-  virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
+  virtual void H1Cell(int c,
+                      const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
-                      const Polynomial* moments, Polynomial& uc) override {
+                      const Polynomial* moments,
+                      Polynomial& uc) override
+  {
     ProjectorCell_(c, ve, vf, ProjectorType::H1, moments, uc);
   }
 
-  virtual void H1Cell(int c, const DenseVector& dofs, Polynomial& uc) override {
+  virtual void H1Cell(int c, const DenseVector& dofs, Polynomial& uc) override
+  {
     ProjectorCellFromDOFs_(c, dofs, ProjectorType::H1, uc);
   }
 
   // surface methods
   int StiffnessMatrixSurface(int c, const Tensor& T, DenseMatrix& A);
 
-  // access 
+  // access
   // -- integrals of monomials in high-order schemes could be reused
   const PolynomialOnMesh& integrals() const { return integrals_; }
   PolynomialOnMesh& integrals() { return integrals_; }
@@ -89,19 +98,24 @@ class MFD3D_LagrangeAnyOrder : public MFD3D {
   const DenseMatrix& R() const { return R_; }
 
  protected:
-  int H1consistency2D_(const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh,
-                       int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  int H1consistency2D_(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
+                       int c,
+                       const Tensor& T,
+                       DenseMatrix& N,
+                       DenseMatrix& Ac);
 
   int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac, bool doAc);
 
  private:
-  void ProjectorCell_(int c, const std::vector<Polynomial>& ve,
+  void ProjectorCell_(int c,
+                      const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
                       const ProjectorType type,
-                      const Polynomial* moments, Polynomial& uc);
+                      const Polynomial* moments,
+                      Polynomial& uc);
 
-  void ProjectorCellFromDOFs_(int c, const DenseVector& dofs,
-                              const ProjectorType type, Polynomial& uc);
+  void
+  ProjectorCellFromDOFs_(int c, const DenseVector& dofs, const ProjectorType type, Polynomial& uc);
 
   std::vector<Polynomial> ConvertMomentsToPolynomials_(int order);
 
@@ -110,11 +124,10 @@ class MFD3D_LagrangeAnyOrder : public MFD3D {
   DenseMatrix R_, G_;
 
  private:
-  static RegisteredFactory<MFD3D_LagrangeAnyOrder> factory_;
+  static RegisteredFactory<MFD3D_LagrangeAnyOrder> reg_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

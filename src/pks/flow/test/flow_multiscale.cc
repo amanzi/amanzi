@@ -1,12 +1,15 @@
 /*
-  Flow PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
+
 */
 
 #include <cstdlib>
@@ -29,12 +32,13 @@
 #include "State.hh"
 
 // Flow
-#include "multiscale_flow_registration.hh"
 #include "Richards_PK.hh"
 #include "Richards_SteadyState.hh"
 
 /* **************************************************************** */
-TEST(FLOW_2D_MULTISCALE) {
+void
+RunTest(const std::string& filename, double tol)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -45,19 +49,19 @@ TEST(FLOW_2D_MULTISCALE) {
   if (MyPID == 0) std::cout << "Test: 2D Richards, 2-layer model" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/flow_multiscale.xml";
+  std::string xmlFileName = filename;
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a mesh framework
   Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 6.0, 120.0, 3, 60);
 
@@ -79,15 +83,13 @@ TEST(FLOW_2D_MULTISCALE) {
   auto& pf = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
   auto& pm = *S->GetW<CompositeVector>("pressure_msp", passwd).ViewComponent("cell");
 
-  for (int c = 0; c < pf.MyLength(); c++) {
-    pm[0][c] = pf[0][c];
-  }
+  for (int c = 0; c < pf.MyLength(); c++) { pm[0][c] = pf[0][c]; }
 
   // initialize the Richards process kernel
   RPK->Initialize();
   S->CheckAllFieldsInitialized();
 
-  // solve the problem 
+  // solve the problem
   TI_Specs ti_specs;
   ti_specs.T0 = 0.0;
   ti_specs.dT0 = 2000.0;
@@ -95,10 +97,10 @@ TEST(FLOW_2D_MULTISCALE) {
   ti_specs.max_itrs = 1000;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times
+  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT); // dummy times
 
   if (MyPID == 0) {
-    GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+    GMV::open_data_file(*mesh, (std::string) "flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(pf, 0, "pressure");
     GMV::write_cell_data(pm, 0, "pressure_msp");
@@ -106,7 +108,18 @@ TEST(FLOW_2D_MULTISCALE) {
   }
 
   // check the pressure
-  for (int c = 0; c < 60; c++) CHECK_CLOSE(pm[0][c], pf[0][c], 0.2);
+  for (int c = 0; c < 60; c++) CHECK_CLOSE(pm[0][c], pf[0][c], tol);
 
   WriteStateStatistics(*S);
+}
+
+
+TEST(FLOW_2D_MULTISCALE_DPM)
+{
+  RunTest("test/flow_multiscale.xml", 0.2);
+}
+
+TEST(FLOW_2D_MULTISCALE_GDPM)
+{
+  RunTest("test/flow_multiscale_gdpm.xml", 0.8);
 }

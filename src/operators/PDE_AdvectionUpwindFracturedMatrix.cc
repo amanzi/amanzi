@@ -1,13 +1,16 @@
 /*
-  Operators 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-          Ethan Coon (ecoon@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+           Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  Operators
+
 */
 
 #include <vector>
@@ -26,23 +29,23 @@ namespace Operators {
 /* ******************************************************************
 * Advection requires a velocity field.
 ****************************************************************** */
-void PDE_AdvectionUpwindFracturedMatrix::Setup(const CompositeVector& u)
+void
+PDE_AdvectionUpwindFracturedMatrix::Setup(const CompositeVector& u)
 {
   IdentifyUpwindCells_(u);
 }
 
-  
+
 /* ******************************************************************
 * A simple first-order transport method.
 * Advection operator is of the form: div (u C), where u is the given
 * velocity field and C is the advected field.
 ****************************************************************** */
-void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
-    const Teuchos::Ptr<const CompositeVector>& u)
+void
+PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 
-  AmanziMesh::Entity_ID_List cells;
   const Epetra_MultiVector& uf = *u->ViewComponent("face");
   const auto& gmap = uf.Map();
 
@@ -50,7 +53,7 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
 
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
@@ -71,15 +74,11 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
   }
 
   // removed matrices on faces where fracture is located
-  AmanziMesh::Entity_ID_List block;
-  std::vector<double> vofs;
   for (int i = 0; i < fractures_.size(); ++i) {
-    mesh_->get_set_entities_and_vofs(fractures_[i], AmanziMesh::FACE, 
-                                     AmanziMesh::Parallel_type::OWNED, &block, &vofs);
+    auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
+      fractures_[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
-    for (int n = 0; n < block.size(); ++n) {
-      matrix[block[n]] *= 0.0;
-    }
+    for (int n = 0; n < block.size(); ++n) { matrix[block[n]] *= 0.0; }
   }
 }
 
@@ -91,13 +90,12 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
 *     q:    flux
 *     H(u): advected quantity (i.e. enthalpy)
 ****************************************************************** */
-void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
-    const Teuchos::Ptr<const CompositeVector>& u,
-    const Teuchos::Ptr<const CompositeVector>& dhdT)
+void
+PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                                                   const Teuchos::Ptr<const CompositeVector>& dhdT)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 
-  AmanziMesh::Entity_ID_List cells;
   const Epetra_MultiVector& uf = *u->ViewComponent("face");
   const auto& gmap = uf.Map();
 
@@ -108,7 +106,7 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
 
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
@@ -129,41 +127,37 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
   }
 
   // removed matrices fof faces where fracture is located
-  AmanziMesh::Entity_ID_List block;
-  std::vector<double> vofs;
   for (int i = 0; i < fractures_.size(); ++i) {
-    mesh_->get_set_entities_and_vofs(fractures_[i], AmanziMesh::FACE, 
-                                     AmanziMesh::Parallel_type::OWNED, &block, &vofs);
+    auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
+      fractures_[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
-    for (int n = 0; n < block.size(); ++n) {
-      matrix[block[n]] *= 0.0;
-    }
+    for (int n = 0; n < block.size(); ++n) { matrix[block[n]] *= 0.0; }
   }
 }
 
 
 /* *******************************************************************
-* Identify flux direction based on orientation of the face normal 
-* and sign of the  Darcy velocity.                               
+* Identify flux direction based on orientation of the face normal
+* and sign of the  Darcy velocity.
 ******************************************************************* */
-void PDE_AdvectionUpwindFracturedMatrix::IdentifyUpwindCells_(const CompositeVector& u)
+void
+PDE_AdvectionUpwindFracturedMatrix::IdentifyUpwindCells_(const CompositeVector& u)
 {
   u.ScatterMasterToGhosted("face");
   const Epetra_MultiVector& uf = *u.ViewComponent("face", true);
   const auto& gmap = uf.Map();
 
-  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
+  const Epetra_Map& fmap_wghost = mesh_->getMap(AmanziMesh::Entity_kind::FACE, true);
   upwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap_wghost));
   downwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap_wghost));
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    (*upwind_cell_)[f] = -1;  // negative value indicates boundary
+    (*upwind_cell_)[f] = -1; // negative value indicates boundary
     (*downwind_cell_)[f] = -1;
   }
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const auto& faces = mesh_->cell_get_faces(c);
-    const auto& fdirs = mesh_->cell_get_face_dirs(c);
+    const auto& [faces, fdirs] = mesh_->getCellFacesAndDirections(c);
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
@@ -182,10 +176,11 @@ void PDE_AdvectionUpwindFracturedMatrix::IdentifyUpwindCells_(const CompositeVec
 /* ******************************************************************
 * Initialize additional parameters
 ****************************************************************** */
-void PDE_AdvectionUpwindFracturedMatrix::InitAdvection_(Teuchos::ParameterList& plist)
+void
+PDE_AdvectionUpwindFracturedMatrix::InitAdvection_(Teuchos::ParameterList& plist)
 {
-  fractures_ = plist.get<Teuchos::Array<std::string> >("fracture").toVector();
+  fractures_ = plist.get<Teuchos::Array<std::string>>("fracture").toVector();
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi

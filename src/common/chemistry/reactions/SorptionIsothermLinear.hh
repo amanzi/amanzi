@@ -1,10 +1,14 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
+  Chemistry
 
   Class for linear isotherm
 */
@@ -21,7 +25,7 @@ class SorptionIsothermLinear : public SorptionIsotherm {
  public:
   SorptionIsothermLinear();
   SorptionIsothermLinear(double KD);
-  ~SorptionIsothermLinear() {};
+  ~SorptionIsothermLinear(){};
 
   void Init(double KD);
 
@@ -41,10 +45,10 @@ class SorptionIsothermLinear : public SorptionIsotherm {
  private:
   // distribution coefficient
   // (currently) units = kg water/m^3 bulk
-  double KD_; 
+  double KD_;
   std::vector<double> params_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

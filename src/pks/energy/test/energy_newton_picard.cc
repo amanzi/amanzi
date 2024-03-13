@@ -1,12 +1,15 @@
 /*
-  This is the energy component of the Amanzi code. 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  This is the energy component of the Amanzi code.
+
 */
 
 #include <iostream>
@@ -21,7 +24,7 @@
 // Amanzi
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "Operator.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_DiffusionMFD.hh"
@@ -33,9 +36,9 @@
 // Amanzi::Energy
 #include "Energy_PK.hh"
 
-const double TemperatureSource = 1.0; 
-const double TemperatureFloor = 0.02; 
-const std::string SOLVERS[3] = {"NKA", "Newton-Picard", "JFNK"};
+const double TemperatureSource = 1.0;
+const double TemperatureFloor = 0.02;
+const std::string SOLVERS[3] = { "NKA", "Newton-Picard", "JFNK" };
 
 namespace Amanzi {
 
@@ -43,7 +46,7 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
  public:
   HeatConduction() { op_name_ = "diffusion operator Newton-Picard"; }
   HeatConduction(std::string& op_name) { op_name_ = "diffusion operator " + op_name; }
-  ~HeatConduction() {};
+  ~HeatConduction(){};
 
   // EOS
   double Conduction(int c, double T) const;
@@ -54,18 +57,17 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
   void InitialGuess();
 
   // Virtual member functions for base class Solv erFnBase
-  void Residual(const Teuchos::RCP<CompositeVector>& u,
-                const Teuchos::RCP<CompositeVector>& f);
+  void Residual(const Teuchos::RCP<CompositeVector>& u, const Teuchos::RCP<CompositeVector>& f);
 
   void UpdatePreconditioner(const Teuchos::RCP<const Amanzi::CompositeVector>& up);
 
   int ApplyPreconditioner(const Teuchos::RCP<const CompositeVector>& u,
-                           const Teuchos::RCP<CompositeVector>& hu);
+                          const Teuchos::RCP<CompositeVector>& hu);
 
   double ErrorNorm(const Teuchos::RCP<const CompositeVector>& u,
                    const Teuchos::RCP<const CompositeVector>& du);
 
-  void ChangedSolution() {};
+  void ChangedSolution(){};
 
   // supporting members
   void UpdateValues(const CompositeVector& u);
@@ -84,7 +86,7 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
   Teuchos::RCP<Operators::PDE_DiffusionMFD> op_diff_;
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
 
-  Teuchos::RCP<Operators::BCs> bc_;  
+  Teuchos::RCP<Operators::BCs> bc_;
 
   std::vector<WhetStone::Tensor> K;
   Teuchos::RCP<CompositeVector> k, dkdT;
@@ -101,14 +103,16 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
 /* ******************************************************************
 * Equation of states.
 ****************************************************************** */
-double HeatConduction::Conduction(int c, double T) const
+double
+HeatConduction::Conduction(int c, double T) const
 {
   AMANZI_ASSERT(T > 0.0);
   return T * T * T;
 }
 
 
-double HeatConduction::ConductionDerivative(int c, double T) const
+double
+HeatConduction::ConductionDerivative(int c, double T) const
 {
   AMANZI_ASSERT(T > 0.0);
   return 3 * T * T;
@@ -118,8 +122,8 @@ double HeatConduction::ConductionDerivative(int c, double T) const
 /* ******************************************************************
 * Initialization requires global parameter list.
 ****************************************************************** */
-void HeatConduction::Init(
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::ParameterList& plist)
+void
+HeatConduction::Init(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::ParameterList& plist)
 {
   mesh_ = mesh;
   plist_ = plist;
@@ -128,27 +132,30 @@ void HeatConduction::Init(
   cvs_ = Teuchos::rcp(new CompositeVectorSpace());
   cvs_->SetMesh(mesh);
   cvs_->SetGhosted(true);
-  cvs_->SetComponent("cell", AmanziMesh::CELL, 1);
+  cvs_->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   cvs_->SetOwned(false);
-  cvs_->AddComponent("face", AmanziMesh::FACE, 1);
+  cvs_->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
   // solutions at T=T0 and T=T0+dT
-  solution_ = Teuchos::rcp(new CompositeVector(*cvs_)); 
-  solution0_ = Teuchos::rcp(new CompositeVector(*cvs_)); 
-  flux_ = Teuchos::rcp(new CompositeVector(*cvs_)); 
+  solution_ = Teuchos::rcp(new CompositeVector(*cvs_));
+  solution0_ = Teuchos::rcp(new CompositeVector(*cvs_));
+  flux_ = Teuchos::rcp(new CompositeVector(*cvs_));
 
   InitialGuess();
 
   // create BCs
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
-  bc_ = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  bc_ = Teuchos::rcp(
+    new Operators::BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc_->bc_model();
   std::vector<double>& bc_value = bc_->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+    const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
 
     if (fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -194,11 +201,11 @@ void HeatConduction::Init(
   op_diff_->SetBCs(bc_, bc_);
 
   op_ = op_diff_->global_operator();
-  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_));
+  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op_));
   op_->Init();
 
   // set up the local matrices
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> Kptr = Teuchos::rcpFromRef(K);
   op_diff_->Setup(Kptr, k, dkdT);
   op_diff_->UpdateMatrices(flux_.ptr(), solution_.ptr());
   op_diff_->UpdateMatricesNewtonCorrection(flux_.ptr(), solution_.ptr(), 1.0);
@@ -220,22 +227,25 @@ void HeatConduction::Init(
 /* ******************************************************************
 * Initialization for solution at time T=T0.
 ****************************************************************** */
-void HeatConduction::InitialGuess()
-{ 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+void
+HeatConduction::InitialGuess()
+{
+  int ncells_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   Epetra_MultiVector& sol_c = *solution_->ViewComponent("cell", true);
-  
+
   for (int c = 0; c < ncells_wghost; ++c) {
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     double a = TemperatureSource;
     sol_c[0][c] = a / 2 - a / M_PI * atan(20 * (xc[0] - 1.0));
   }
 
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
   Epetra_MultiVector& sol_f = *solution_->ViewComponent("face", true);
-  
+
   for (int f = 0; f < nfaces_wghost; ++f) {
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
     double a = TemperatureSource;
     sol_f[0][f] = a / 2 - a / M_PI * atan(100 * (xf[0] - 1.0));
   }
@@ -247,8 +257,9 @@ void HeatConduction::InitialGuess()
 /* ******************************************************************
 * Residual re-calculates the matrix.
 ****************************************************************** */
-void HeatConduction::Residual(const Teuchos::RCP<CompositeVector>& u,
-                              const Teuchos::RCP<CompositeVector>& f)
+void
+HeatConduction::Residual(const Teuchos::RCP<CompositeVector>& u,
+                         const Teuchos::RCP<CompositeVector>& f)
 {
   op_->Init();
   UpdateValues(*u);
@@ -262,7 +273,8 @@ void HeatConduction::Residual(const Teuchos::RCP<CompositeVector>& u,
 /* ******************************************************************
 * Precondtioner re-calculates the matrix.
 ****************************************************************** */
-void HeatConduction::UpdatePreconditioner(const Teuchos::RCP<const CompositeVector>& up)
+void
+HeatConduction::UpdatePreconditioner(const Teuchos::RCP<const CompositeVector>& up)
 {
   op_diff_->UpdateFlux(up.ptr(), flux_.ptr());
 
@@ -284,8 +296,9 @@ void HeatConduction::UpdatePreconditioner(const Teuchos::RCP<const CompositeVect
 }
 
 
-int HeatConduction::ApplyPreconditioner(const Teuchos::RCP<const CompositeVector>& u,
-                                         const Teuchos::RCP<CompositeVector>& hu)
+int
+HeatConduction::ApplyPreconditioner(const Teuchos::RCP<const CompositeVector>& u,
+                                    const Teuchos::RCP<CompositeVector>& hu)
 {
   int ierr = op_->ApplyInverse(*u, *hu);
   return (ierr > 0) ? 0 : 1;
@@ -296,8 +309,9 @@ int HeatConduction::ApplyPreconditioner(const Teuchos::RCP<const CompositeVector
 /* ******************************************************************
 * Definition of error in the nonlinear solver.
 ****************************************************************** */
-double HeatConduction::ErrorNorm(const Teuchos::RCP<const CompositeVector>& u,
-                                 const Teuchos::RCP<const CompositeVector>& du)
+double
+HeatConduction::ErrorNorm(const Teuchos::RCP<const CompositeVector>& u,
+                          const Teuchos::RCP<const CompositeVector>& du)
 {
   double norm_du;
   du->NormInf(&norm_du);
@@ -308,13 +322,15 @@ double HeatConduction::ErrorNorm(const Teuchos::RCP<const CompositeVector>& u,
 /* ******************************************************************
 * Recalculates conductivity in cells and on faces.
 ****************************************************************** */
-void HeatConduction::UpdateValues(const CompositeVector& u)
-{ 
-  const Epetra_MultiVector& uc = *u.ViewComponent("cell", true); 
-  Epetra_MultiVector& kc = *k->ViewComponent("cell", true); 
-  Epetra_MultiVector& dkdT_c = *dkdT->ViewComponent("cell", true); 
+void
+HeatConduction::UpdateValues(const CompositeVector& u)
+{
+  const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
+  Epetra_MultiVector& kc = *k->ViewComponent("cell", true);
+  Epetra_MultiVector& dkdT_c = *dkdT->ViewComponent("cell", true);
 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
     double temp = uc[0][c];
     kc[0][c] = Conduction(c, temp);
@@ -323,7 +339,7 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
 
   std::vector<int>& bc_model = bc_->bc_model();
   std::vector<double>& bc_value = bc_->bc_value();
-  
+
   // add boundary face component
   Epetra_MultiVector& k_f = *k->ViewComponent("face", true);
   Epetra_MultiVector& dkdT_f = *dkdT->ViewComponent("face", true);
@@ -335,18 +351,19 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
       dkdT_f[0][f] = ConductionDerivative(c, bc_value[f]);
     }
   }
-  
-  upwind_->Compute(*flux_, u, bc_model, *k);
-  upwind_->Compute(*flux_, u, bc_model, *dkdT);
+
+  upwind_->Compute(*flux_, bc_model, *k);
+  upwind_->Compute(*flux_, bc_model, *dkdT);
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 
 /* ******************************************************************
 * Comparison of various nonlinear solvers.
 ****************************************************************** */
-TEST(NKA) {
+TEST(NKA)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -356,22 +373,21 @@ TEST(NKA) {
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  // read parameter list 
+  // read parameter list
   std::string xmlFileName = "test/energy_newton_picard.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
   // create a mesh framework
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
- 
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 3.0, 1.0, 60, 10);
 
@@ -384,8 +400,8 @@ TEST(NKA) {
 
     // create the Solver
     AmanziSolvers::SolverFactory<CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::Solver<CompositeVector, CompositeVectorSpace> >
-        solver = factory.Create(SOLVERS[i], plist);
+    Teuchos::RCP<AmanziSolvers::Solver<CompositeVector, CompositeVectorSpace>> solver =
+      factory.Create(SOLVERS[i], plist);
     solver->Init(problem, problem->cvs());
 
     // solve
@@ -399,7 +415,7 @@ TEST(NKA) {
     Epetra_MultiVector p0(*problem->solution()->ViewComponent("cell"));
     Epetra_MultiVector& p1 = *problem->solution()->ViewComponent("cell");
     if (MyPID == 0) {
-      GMV::open_data_file(*mesh, (std::string)"energy.gmv");
+      GMV::open_data_file(*mesh, (std::string) "energy.gmv");
       GMV::start_data();
       GMV::write_cell_data(p0, 0, "p0");
       GMV::write_cell_data(p1, 0, "p1");
@@ -407,4 +423,3 @@ TEST(NKA) {
     }
   }
 }
-

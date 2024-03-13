@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   The mimetic finite difference method.
 */
@@ -31,7 +33,8 @@
 /* ****************************************************************
 * DeRham complex for nodes
 **************************************************************** */
-TEST(DERHAM_COMPLEX_NODE) {
+TEST(DERHAM_COMPLEX_NODE)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -40,9 +43,9 @@ TEST(DERHAM_COMPLEX_NODE) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.5, 1.0, 1, 1); 
- 
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.5, 1.0, 1, 1);
+
   DeRham_Node drc(mesh);
 
   int nnodes(4), cell(0);
@@ -60,16 +63,15 @@ TEST(DERHAM_COMPLEX_NODE) {
   for (int i = 0; i < nnodes; ++i) CHECK(M(i, i) > 0.0);
 
   // verify exact integration property
-  AmanziMesh::Entity_ID_List nodes;
-  mesh->cell_get_nodes(cell, &nodes);
-    
+  auto nodes = mesh->getCellNodes(cell);
+
   double xi, yi, xj;
-  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+  double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell);
   AmanziGeometry::Point p1(2), p2(2);
 
   for (int i = 0; i < nnodes; i++) {
     int v1 = nodes[i];
-    mesh->node_get_coordinates(v1, &p1);
+    p1 = mesh->getNodeCoordinate(v1);
     for (int j = 0; j < nnodes; j++) {
       xi = 1.0; // p1[0];
       yi = 1.0; // p1[1];
@@ -80,8 +82,6 @@ TEST(DERHAM_COMPLEX_NODE) {
     }
   }
 
-  CHECK_CLOSE(T(0,0) * volume, vxx, 1e-10);
-  CHECK_CLOSE(T(0,0) * volume, vxy, 1e-10);
+  CHECK_CLOSE(T(0, 0) * volume, vxx, 1e-10);
+  CHECK_CLOSE(T(0, 0) * volume, vxy, 1e-10);
 }
-
-

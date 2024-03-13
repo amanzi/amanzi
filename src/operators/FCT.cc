@@ -1,12 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Kontantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Kontantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
 
   Flux Corrected Transport.
 */
@@ -23,23 +25,24 @@ namespace Operators {
 /* ******************************************************************
 * Flux is from 1st to 2nd cell in the list face->cells
 ****************************************************************** */
-void FCT::Compute(const CompositeVector& flux_lo,
-                  const CompositeVector& flux_ho,
-                  const BCs& bc,
-                  CompositeVector& flux)
+void
+FCT::Compute(const CompositeVector& flux_lo,
+             const CompositeVector& flux_ho,
+             const BCs& bc,
+             CompositeVector& flux)
 {
-  int nfaces_owned = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int ncells_owned = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned =
+    mesh0_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_owned =
+    mesh0_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-  AmanziMesh::Entity_ID_List cells, faces;
-
-  const auto& flux_lo_f = *flux_lo.ViewComponent("face"); 
-  const auto& flux_ho_f = *flux_ho.ViewComponent("face"); 
-  auto& flux_f = *flux.ViewComponent("face"); 
+  const auto& flux_lo_f = *flux_lo.ViewComponent("face");
+  const auto& flux_ho_f = *flux_ho.ViewComponent("face");
+  auto& flux_f = *flux.ViewComponent("face");
 
   // allocate memory
   CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+  cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   CompositeVector dlo(cvs), pos(cvs), neg(cvs);
 
   auto& dlo_c = *dlo.ViewComponent("cell", true);
@@ -50,10 +53,10 @@ void FCT::Compute(const CompositeVector& flux_lo,
   int dir;
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    mesh0_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh0_->getFaceCells(f);
     int ncells = cells.size();
 
-    mesh0_->face_normal(f, false, cells[0], &dir);
+    mesh0_->getFaceNormal(f, cells[0], &dir);
     double tmp0 = -flux_lo_f[0][f];
     double dtmp = -flux_ho_f[0][f] + flux_lo_f[0][f];
 
@@ -79,28 +82,31 @@ void FCT::Compute(const CompositeVector& flux_lo,
   if (limiter_->get_external_bounds())
     bounds = limiter_->get_bounds();
   else
-    bounds = limiter_->BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_ALL);
+    bounds =
+      limiter_->BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_ALL);
   auto& bounds_c = *bounds->ViewComponent("cell");
 
   double Qmin, Qmax;
   std::vector<double> alpha(nfaces_owned, 1.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    double vol0 = mesh0_->cell_volume(c);
-    double vol1 = mesh1_->cell_volume(c);
+    double vol0 = mesh0_->getCellVolume(c);
+    double vol1 = mesh1_->getCellVolume(c);
 
     if (weight0_ != Teuchos::null) vol0 *= (*weight0_)[0][c];
     if (weight0_ != Teuchos::null) vol1 *= (*weight1_)[0][c];
 
     Qmin = Qmax = 1.0;
-    if (neg_c[0][c] != 0.0) 
-      Qmin = std::min(0.0, (vol1 * bounds_c[0][c] - vol0 * (*field_)[0][c] - dlo_c[0][c])) / neg_c[0][c];
+    if (neg_c[0][c] != 0.0)
+      Qmin =
+        std::min(0.0, (vol1 * bounds_c[0][c] - vol0 * (*field_)[0][c] - dlo_c[0][c])) / neg_c[0][c];
 
-    if (pos_c[0][c] != 0.0) 
-      Qmax = std::max(0.0, (vol1 * bounds_c[1][c] - vol0 * (*field_)[0][c] - dlo_c[0][c])) / pos_c[0][c];
+    if (pos_c[0][c] != 0.0)
+      Qmax =
+        std::max(0.0, (vol1 * bounds_c[1][c] - vol0 * (*field_)[0][c] - dlo_c[0][c])) / pos_c[0][c];
 
-    neg_c[0][c] = std::fabs(Qmin);  // re-using allocated memory
-    pos_c[0][c] = std::fabs(Qmax); 
+    neg_c[0][c] = std::fabs(Qmin); // re-using allocated memory
+    pos_c[0][c] = std::fabs(Qmax);
   }
 
   pos.ScatterMasterToGhosted();
@@ -108,11 +114,11 @@ void FCT::Compute(const CompositeVector& flux_lo,
 
   // move cell-limiters to face limiters
   for (int f = 0; f < nfaces_owned; ++f) {
-    mesh0_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh0_->getFaceCells(f);
 
     if (cells.size() == 2) {
       double tmp = -flux_ho_f[0][f] + flux_lo_f[0][f];
-    
+
       if (tmp > 0.0)
         alpha[f] = std::min({ alpha[f], pos_c[0][cells[0]], neg_c[0][cells[1]] });
       else
@@ -127,10 +133,9 @@ void FCT::Compute(const CompositeVector& flux_lo,
   }
 
   double tmp(alpha_mean_);
-  mesh0_->get_comm()->SumAll(&tmp, &alpha_mean_, 1);
+  mesh0_->getComm()->SumAll(&tmp, &alpha_mean_, 1);
   alpha_mean_ /= flux_f.GlobalLength();
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
+} // namespace Operators
+} // namespace Amanzi

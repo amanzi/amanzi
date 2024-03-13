@@ -1,14 +1,16 @@
 /*
-  This is the multiphase component of the Amanzi code. 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Quan Bui (mquanbui@math.umd.edu)
+*/
 
-  We use this class to set up simple water retention model 
+/*
+  This is the multiphase component of the Amanzi code.
+
+  We use this class to set up simple water retention model
   for decoupled multiphase flow
 */
 
@@ -30,8 +32,8 @@ namespace Multiphase {
 class WRMmp_vanGenuchten : public WRMmp {
  public:
   WRMmp_vanGenuchten(Teuchos::ParameterList& plist);
-  ~WRMmp_vanGenuchten() {};
-  
+  ~WRMmp_vanGenuchten(){};
+
   // required methods from the base class
   virtual double k_relative(double sl, int phase);
   virtual double capillaryPressure(double saturation);
@@ -57,12 +59,13 @@ class WRMmp_vanGenuchten : public WRMmp {
   WhetStone::SplineCubic spline_kl_;
 
   double reg_pc_;
-  WhetStone::SplineExteriorLinear spline_pc_;
+  WhetStone::SplineExteriorLinear spline_pc_left_;
+  WhetStone::SplineQuadratic spline_pc_right_;
 
-  static Utils::RegisteredFactory<WRMmp, WRMmp_vanGenuchten> factory_;
+  static Utils::RegisteredFactory<WRMmp, WRMmp_vanGenuchten> reg_;
 };
 
-}  // namespace Multiphase
-}  // namespace Amanzi
- 
+} // namespace Multiphase
+} // namespace Amanzi
+
 #endif

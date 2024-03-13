@@ -1,18 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! RegionBox: a rectangular region in space, defined by two corners
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: William Perkins
            Rao Garimella
            Ethan Coon (ecoon@lanl.gov)
-
 */
 
+//! RegionBox: a rectangular region in space, defined by two corners
 /*!
 
 List *region: box* defines a region bounded by coordinate-aligned
@@ -35,7 +32,7 @@ Example:
        <Parameter name="high coordinate" type="Array(double)" value="{5.0, 5.0,  5.0}"/>
      </ParameterList>
    </ParameterList>
-  
+
 */
 
 
@@ -54,9 +51,9 @@ class RegionBox : public Region {
   // Default constructor uses two corner points (order not important).
   RegionBox(const std::string& name,
             const int id,
-            const Point& p0, 
+            const Point& p0,
             const Point& p1,
-            const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
+            const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
 
   // Get the first point defining the region
   const Point& point0() const { return p0_; }
@@ -69,7 +66,7 @@ class RegionBox : public Region {
 
   // Is the box degenerate - zero length in one or more directions and
   // if so in how many directions?
-  bool is_degenerate(int *ndeg) const;
+  bool is_degenerate(int* ndeg) const;
 
  private:
   Point p0_; // lower corner of the box

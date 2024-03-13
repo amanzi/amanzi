@@ -1,12 +1,15 @@
 /*
-  MultiPhase
-
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  MultiPhase
+
 */
 
 #include <cstdlib>
@@ -36,7 +39,8 @@
 
 
 /* **************************************************************** */
-TEST(MULTIPHASE_SMILES) {
+TEST(MULTIPHASE_SMILES)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -57,7 +61,7 @@ TEST(MULTIPHASE_SMILES) {
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(d, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 51, 1);
 
   // create screen io
@@ -72,6 +76,13 @@ TEST(MULTIPHASE_SMILES) {
   ParameterList pk_tree = plist->sublist("PKs").sublist("multiphase");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   auto MPK = Teuchos::rcp(new Multiphase_PK(pk_tree, plist, S, soln));
+
+  // work-around
+  Key key("mass_density_gas");
+  S->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
+    .SetMesh(mesh)
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   MPK->Setup();
   S->Setup();
@@ -88,14 +99,16 @@ TEST(MULTIPHASE_SMILES) {
   iolist.get<std::string>("file name base", "plot");
   auto io = Teuchos::rcp(new OutputXDMF(iolist, mesh, true, false));
 
-  const auto& tccl = *S->Get<CompositeVector>("total_component_concentration_liquid", Tags::DEFAULT).ViewComponent("cell");
-  const auto& tccg = *S->Get<CompositeVector>("total_component_concentration_gas", Tags::DEFAULT).ViewComponent("cell");
+  const auto& tccl = *S->Get<CompositeVector>("total_component_concentration_liquid", Tags::DEFAULT)
+                        .ViewComponent("cell");
+  const auto& tccg = *S->Get<CompositeVector>("total_component_concentration_gas", Tags::DEFAULT)
+                        .ViewComponent("cell");
 
   // loop
   int iloop(0);
   double t(0.0), tend(3.1558e+8), dt(3.1558e+6), dt_max(2 * 3.1558e+6);
   while (t < tend) {
-    while(MPK->AdvanceStep(t, t + dt, false)) { dt /= 10; } 
+    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 10; }
 
     MPK->CommitStep(t, t + dt, Tags::DEFAULT);
     S->advance_cycle();
@@ -114,11 +127,16 @@ TEST(MULTIPHASE_SMILES) {
       const auto& u2 = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
       const auto& u3 = *S->Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
 
-      io->WriteVector(*u2(0), "liquid tritium", AmanziMesh::CELL);
-      io->WriteVector(*u3(0), "gas tritium", AmanziMesh::CELL);
+      io->WriteVector(*u2(0), "liquid tritium", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u3(0), "gas tritium", AmanziMesh::Entity_kind::CELL);
       io->FinalizeCycle();
     }
-    printf("AAA: %g %16.10g %16.10g ... %16.10g   %16.10g\n", t, tccl[0][0], tccl[0][1], tccl[0][25], tccg[0][25]);
+    printf("AAA: %g %16.10g %16.10g ... %16.10g   %16.10g\n",
+           t,
+           tccl[0][0],
+           tccl[0][1],
+           tccl[0][25],
+           tccg[0][25]);
   }
 
   WriteStateStatistics(*S, *vo);
@@ -128,5 +146,3 @@ TEST(MULTIPHASE_SMILES) {
   printf("Normalized effective liquid concentration: %g \n", tccl_eff * 1e+5);
   CHECK_CLOSE(0.14, tccl_eff / 1e-5, 0.002);
 }
-
-

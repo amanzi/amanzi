@@ -1,12 +1,15 @@
 /*
-  Utils
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Utils
+
 */
 
 #include <cmath>
@@ -18,9 +21,10 @@ namespace Amanzi {
 namespace Utils {
 
 /* *******************************************************************
-* Calculates best least square fit for data (h[i], error[i]).                       
+* Calculates best least square fit for data (h[i], error[i]).
 ******************************************************************* */
-double bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
+double
+bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
 {
   double a = 0.0, b = 0.0, c = 0.0, d = 0.0, tmp1, tmp2;
 
@@ -37,6 +41,5 @@ double bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
   return (a * b - n * d) / (a * a - n * c);
 }
 
-}  // namespace Utils
-}  // namespace Amanzi
-
+} // namespace Utils
+} // namespace Amanzi

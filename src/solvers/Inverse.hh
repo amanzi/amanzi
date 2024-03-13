@@ -1,5 +1,5 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -7,8 +7,8 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-//! Base class for providing ApplyInverse() methods on operators.
 
+//! Base class for providing ApplyInverse() methods on operators.
 /*!
 
 Matrix provides existing Operators with an inverse.  Note this may be
@@ -63,34 +63,33 @@ necessitates calling all stages after it.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Operator,
-         class Preconditioner=Operator,
-         class Vector=typename Operator::Vector_t,
-         class VectorSpace=typename Vector::VectorSpace_t>
-class Inverse : public Matrix<Vector,VectorSpace> {
+template <class Operator,
+          class Preconditioner = Operator,
+          class Vector = typename Operator::Vector_t,
+          class VectorSpace = typename Vector::VectorSpace_t>
+class Inverse : public Matrix<Vector, VectorSpace> {
  public:
   Inverse() = default;
   Inverse(const Inverse& other) = delete;
   virtual ~Inverse() = default;
 
-  virtual void set_matrices(const Teuchos::RCP<Operator>& m,
-                            const Teuchos::RCP<Preconditioner>& h) {
+  virtual void set_matrices(const Teuchos::RCP<Operator>& m, const Teuchos::RCP<Preconditioner>& h)
+  {
     m_ = m;
     h_ = h;
   }
 
-  template<typename T=Preconditioner>
-  typename std::enable_if<std::is_same<Operator,T>::value>::type
-  set_matrix(const Teuchos::RCP<Operator>& m) {
-    set_matrices(m,m);
+  template <typename T = Preconditioner>
+  typename std::enable_if<std::is_same<Operator, T>::value>::type
+  set_matrix(const Teuchos::RCP<Operator>& m)
+  {
+    set_matrices(m, m);
   }
 
   virtual const VectorSpace& DomainMap() const override { return m_->DomainMap(); }
   virtual const VectorSpace& RangeMap() const override { return m_->RangeMap(); }
 
-  virtual int Apply(const Vector& x, Vector& y) const override {
-    return m_->Apply(x,y);
-  }
+  virtual int Apply(const Vector& x, Vector& y) const override { return m_->Apply(x, y); }
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override = 0;
   virtual void InitializeInverse() override = 0;
   virtual void ComputeInverse() override = 0;
@@ -98,13 +97,12 @@ class Inverse : public Matrix<Vector,VectorSpace> {
 
   // This ensures that anything that is an Inverse can be used as a
   // preconditioner.
-  int ApplyInverseUserSupplied(const Vector& X, Vector& Y) const {
-    return ApplyInverse(X,Y);
-  }
+  int ApplyInverseUserSupplied(const Vector& X, Vector& Y) const { return ApplyInverse(X, Y); }
 
-  double TrueResidual(const Vector& x, const Vector& y) const {
+  double TrueResidual(const Vector& x, const Vector& y) const
+  {
     Vector r(y);
-    m_->Apply(x, r);  // r = y - M * x
+    m_->Apply(x, r); // r = y - M * x
     r.Update(1.0, y, -1.0);
 
     double true_residual;
@@ -130,9 +128,5 @@ class Inverse : public Matrix<Vector,VectorSpace> {
   std::string name_;
 };
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
-
-
-
-
+} // namespace AmanziSolvers
+} // namespace Amanzi

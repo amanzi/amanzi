@@ -1,12 +1,14 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ben Andre
+  Authors: Ben Andre
+*/
+
+/*
+  Chemistry
 
   Base class for ion exchange sites (e.g. X- in standard notation)
 */
@@ -29,7 +31,7 @@ class IonExchangeSite {
  public:
   IonExchangeSite();
   IonExchangeSite(const std::string& name, const Teuchos::ParameterList& plist);
-  virtual ~IonExchangeSite() {};
+  virtual ~IonExchangeSite(){};
 
   virtual void Display(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
@@ -47,10 +49,10 @@ class IonExchangeSite {
  protected:
   std::string name_;
   std::string mineral_name_;
-  double cation_exchange_capacity_;  // units...
+  double cation_exchange_capacity_; // units...
   double charge_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

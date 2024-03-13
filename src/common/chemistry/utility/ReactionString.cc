@@ -1,10 +1,14 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
+  Chemistry
 
   Class for general forward/reverse reaction
 */
@@ -20,16 +24,17 @@ namespace AmanziChemistry {
 * Reads in a reaction string of format: reactants -> products
 * Example:
 *   30 A(aq) + 2 B(aq) <-> C(aq) + .3 D(aq) + -4 E(aq)
-* returns 
+* returns
 *   species = [5]("A(aq)","B(aq)","C(aq)","D(aq)","E(aq)")
 *   stoichiometries = [5](-30.,-2.,1.,0.3,-4.)
-* NOTE: Reactants and products have negative and positive 
+* NOTE: Reactants and products have negative and positive
 * stoichiometries, respectively.
 ******************************************************************* */
-void ParseReaction(const std::string& reactants,
-                   const std::string& products,
-                   std::vector<std::string>* species,
-                   std::vector<double>* stoichiometries)
+void
+ParseReaction(const std::string& reactants,
+              const std::string& products,
+              std::vector<std::string>* species,
+              std::vector<double>* stoichiometries)
 {
   double coeff;
   std::string name;
@@ -64,16 +69,17 @@ void ParseReaction(const std::string& reactants,
 *
 *  SpeciesName = coeff PrimaryName coeff SurfaceSite ...
 ******************************************************************* */
-void ParseReaction(const std::string& reaction,
-                   const std::vector<Species>& primary_species,
-                   const std::vector<SurfaceSite>& surface_sites,
-                   std::vector<std::string>* primary_names,
-                   std::vector<double>* primary_stoichiometries,
-                   std::vector<int>* primary_ids,
-                   std::string* surface_site_name,
-                   double* surface_site_stoichiometry,
-                   int* surface_site_id,
-                   double* h2o_stoich)
+void
+ParseReaction(const std::string& reaction,
+              const std::vector<Species>& primary_species,
+              const std::vector<SurfaceSite>& surface_sites,
+              std::vector<std::string>* primary_names,
+              std::vector<double>* primary_stoichiometries,
+              std::vector<int>* primary_ids,
+              std::string* surface_site_name,
+              double* surface_site_stoichiometry,
+              int* surface_site_id,
+              double* h2o_stoich)
 {
   double coeff;
   std::string search_name;
@@ -123,5 +129,5 @@ void ParseReaction(const std::string& reaction,
   }
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

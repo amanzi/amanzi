@@ -1,14 +1,16 @@
 /*
-  EOS
-   
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
 
-  EOSFieldEvaluator is the interface between state/data and the 
+/*
+  EOS
+
+  EOSFieldEvaluator is the interface between state/data and the
   model, an EOS.
 */
 
@@ -25,7 +27,7 @@ namespace AmanziEOS {
 * Constructor
 ****************************************************************** */
 EOSDensityEvaluator::EOSDensityEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   // Process the list for my provided field.
   std::string mode = plist_.get<std::string>("eos basis", "molar");
@@ -81,17 +83,20 @@ EOSDensityEvaluator::EOSDensityEvaluator(Teuchos::ParameterList& plist)
 * Copy constructor.
 ****************************************************************** */
 EOSDensityEvaluator::EOSDensityEvaluator(const EOSDensityEvaluator& other)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      eos_(other.eos_),
-      mode_(other.mode_),
-      temp_key_(other.temp_key_),
-      pres_key_(other.pres_key_) {}
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+    eos_(other.eos_),
+    mode_(other.mode_),
+    temp_key_(other.temp_key_),
+    pres_key_(other.pres_key_)
+{}
 
 
 /* ******************************************************************
 * Clone.
 ****************************************************************** */
-Teuchos::RCP<Evaluator> EOSDensityEvaluator::Clone() const {
+Teuchos::RCP<Evaluator>
+EOSDensityEvaluator::Clone() const
+{
   return Teuchos::rcp(new EOSDensityEvaluator(*this));
 }
 
@@ -99,8 +104,8 @@ Teuchos::RCP<Evaluator> EOSDensityEvaluator::Clone() const {
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-void EOSDensityEvaluator::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results) 
+void
+EOSDensityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   double p_atm = S.Get<double>("atmospheric_pressure");
   auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
@@ -124,7 +129,7 @@ void EOSDensityEvaluator::Evaluate_(
       const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
       Epetra_MultiVector& dens_v = *molar_dens->ViewComponent(*comp);
 
-      int ierr(0); 
+      int ierr(0);
       int count = dens_v.MyLength();
       for (int i = 0; i != count; ++i) {
         double tmp = std::max<double>(pres_v[0][i], p_atm);
@@ -142,7 +147,7 @@ void EOSDensityEvaluator::Evaluate_(
       const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
       Epetra_MultiVector& dens_v = *mass_dens->ViewComponent(*comp);
 
-      int ierr(0); 
+      int ierr(0);
       int count = dens_v.MyLength();
       for (int i = 0; i != count; ++i) {
         double tmp = std::max<double>(pres_v[0][i], p_atm);
@@ -159,9 +164,11 @@ void EOSDensityEvaluator::Evaluate_(
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-void EOSDensityEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+EOSDensityEvaluator::EvaluatePartialDerivative_(const State& S,
+                                                const Key& wrt_key,
+                                                const Tag& wrt_tag,
+                                                const std::vector<CompositeVector*>& results)
 {
   double p_atm = S.Get<double>("atmospheric_pressure");
   auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
@@ -188,7 +195,8 @@ void EOSDensityEvaluator::EvaluatePartialDerivative_(
 
         int count = dens_v.MyLength();
         for (int i = 0; i != count; ++i) {
-          dens_v[0][i] = (pres_v[0][i] > p_atm) ? eos_->DMolarDensityDp(temp_v[0][i], pres_v[0][i]) : 0.0;
+          dens_v[0][i] =
+            (pres_v[0][i] > p_atm) ? eos_->DMolarDensityDp(temp_v[0][i], pres_v[0][i]) : 0.0;
         }
       }
     }
@@ -201,7 +209,9 @@ void EOSDensityEvaluator::EvaluatePartialDerivative_(
 
         int count = dens_v.MyLength();
         for (int i = 0; i != count; ++i) {
-          dens_v[0][i] = (pres_v[0][i] > p_atm) ? dens_v[0][i] = eos_->DDensityDp(temp_v[0][i], pres_v[0][i]) : 0.0;
+          dens_v[0][i] = (pres_v[0][i] > p_atm) ?
+                           dens_v[0][i] = eos_->DDensityDp(temp_v[0][i], pres_v[0][i]) :
+                           0.0;
         }
       }
     }
@@ -238,6 +248,5 @@ void EOSDensityEvaluator::EvaluatePartialDerivative_(
   }
 }
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
-
+} // namespace AmanziEOS
+} // namespace Amanzi

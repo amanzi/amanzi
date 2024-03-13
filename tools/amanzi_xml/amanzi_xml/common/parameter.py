@@ -163,8 +163,8 @@ class Parameter(base.TeuchosBaseXML):
             self.set("value", self._checkSingleValueFromType(self.value))
 
     def getValue(self):
-        """Gets the value, cast to the correct type."""
-        return self._checkSingleValueFromString(self.get('value'))
+        """Gets the value, cast to the correct type. Note this is here for API consistency only."""
+        return self.value
 
     def _checkSingleValueFromString(self, value):
         retval = _valid_parameter_from_string(self._basetype, value)
@@ -176,6 +176,13 @@ class Parameter(base.TeuchosBaseXML):
         assert retval is not None
         return retval
 
+    def __copy__(self):
+        return Parameter(self.getName(), self.getType(), self.getValue())
+
+    def __deepcopy__(self, memo):
+        cp = self.__copy__()
+        memo[id(self)] = cp
+        return cp
 
 from amanzi_xml.utils import parser
 def make_class(typename, array=False):

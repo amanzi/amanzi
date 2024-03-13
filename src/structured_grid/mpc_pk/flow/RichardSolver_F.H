@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _RichardSolver_F_H
 #define _RichardSolver_F_H
 
@@ -39,7 +48,7 @@ extern "C"
   void FORT_RS_GXPA(Real* y,       ARLIM_P(ylo), ARLIM_P(yhi),
 		    const Real* x, ARLIM_P(xlo), ARLIM_P(xhi),
 		    const int*  ccvlo, const int*  ccvhi,
-		    const Real* dx, const Real* a, 
+		    const Real* dx, const Real* a,
 		    const int* dir,const int* nc);
 
   void FORT_RS_XMULTYZ(Real*       Xfab, ARLIM_P(Xlo), ARLIM_P(Xhi),
@@ -50,7 +59,7 @@ extern "C"
   void FORT_RS_CTE_UPW (Real* ec,        ARLIM_P(elo), ARLIM_P(ehi),
 			const Real* cc,  ARLIM_P(clo), ARLIM_P(chi),
 			const Real* sgn, ARLIM_P(slo), ARLIM_P(shi),
-			const int*  ccvlo, const int*  ccvhi, 
+			const int*  ccvlo, const int*  ccvhi,
 			const int* dir, const int* nc,
                         const int* bclo, const int* bchi, const int* do_upwind);
 
@@ -61,7 +70,7 @@ extern "C"
 			     const Real* phi, ARLIM_P(philo), ARLIM_P(phihi),
 			     const Real* src, ARLIM_P(srclo), ARLIM_P(srchi),
 			     const Real* dt, const int*  lo, const int*  hi, const int* nc);
-  
+
   void FORT_RS_RICHARDRES (Real* res,       ARLIM_P(reslo), ARLIM_P(reshi),
 			   const Real* rso, ARLIM_P(rsolo), ARLIM_P(rsohi),
 			   const Real* rsn, ARLIM_P(rsnlo), ARLIM_P(rsnhi),

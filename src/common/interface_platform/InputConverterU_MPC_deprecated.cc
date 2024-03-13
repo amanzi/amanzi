@@ -1,13 +1,16 @@
 /*
-  Input Converter
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Daniil Svyatskiy (original version)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Input Converter
+
 */
 
 #include <algorithm>
@@ -35,7 +38,8 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Create MPC list, version 2, dubbed cycle driver.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
+Teuchos::ParameterList
+InputConverterU::TranslateCycleDriver_()
 {
   Teuchos::ParameterList out_list;
 
@@ -55,14 +59,14 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   children = element->getElementsByTagName(mm.transcode("pk"));
   if (children->getLength() > 0) return TranslateCycleDriverNew_();
 
-  // parse defaults of execution_controls 
+  // parse defaults of execution_controls
   node_list = doc_->getElementsByTagName(mm.transcode("execution_controls"));
   node = GetUniqueElementByTagsString_(node_list->item(0), "execution_control_defaults", flag);
 
   int max_cycles, max_cycles_steady;
   double t0, t1, dt0, t0_steady, t1_steady, dt0_steady, dt_max, dt_max_steady;
-  char *tagname;
-  bool flag_steady(false); 
+  char* tagname;
+  bool flag_steady(false);
   std::string mode_d, method_d, dt0_d, dt_cut_d, dt_inc_d, dt_max_d;
 
   mode_d = GetAttributeValueS_(node, "mode", TYPE_NONE, false, "");
@@ -94,12 +98,12 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     if (mode != "steady" && mode != "transient") {
       msg << "\"execution_controls\" has incorrect mode=" << mode << ".\n";
       Exceptions::amanzi_throw(msg);
-    }  
+    }
 
-    dt_cut_[mode] = ConvertUnits_(GetAttributeValueS_(
-        inode, "reduction_factor", TYPE_TIME, false, dt_cut_d), unit);
-    dt_inc_[mode] = ConvertUnits_(GetAttributeValueS_(
-        inode, "increase_factor", TYPE_TIME, false, dt_inc_d), unit);
+    dt_cut_[mode] = ConvertUnits_(
+      GetAttributeValueS_(inode, "reduction_factor", TYPE_TIME, false, dt_cut_d), unit);
+    dt_inc_[mode] = ConvertUnits_(
+      GetAttributeValueS_(inode, "increase_factor", TYPE_TIME, false, dt_inc_d), unit);
 
     if (mode == "steady") {
       t0_steady = t0;
@@ -112,7 +116,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       if (tp_mode.find(t0) != tp_mode.end()) {
         msg << "Transient \"execution_controls\" cannot have the same start time.\n";
         Exceptions::amanzi_throw(msg);
-      }  
+      }
 
       tp_mode[t0] = mode;
       tp_t1[t0] = t1;
@@ -132,7 +136,8 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   node = GetUniqueElementByTagsString_("execution_controls, initialize", flag);
   if (flag) {
     init_filename_ = GetTextContentS_(node, "", false);
-    if (init_filename_.size() == 0) ThrowErrorIllformed_("execution_controls", "initialize", "filename");
+    if (init_filename_.size() == 0)
+      ThrowErrorIllformed_("execution_controls", "initialize", "filename");
   }
 
   // time for initial conditions
@@ -145,11 +150,11 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     ic_time_ = ic_time_flow_;
   }
 
-  // populate optional end-times 
+  // populate optional end-times
   flag = true;
   std::map<double, double>::iterator it1, it2;
   it1 = tp_t1.begin();
-  if (flag_steady && t1_steady < t0_steady) { 
+  if (flag_steady && t1_steady < t0_steady) {
     if (it1 != tp_t1.end())
       t1_steady = it1->first;
     else
@@ -169,7 +174,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     Exceptions::amanzi_throw(msg);
   }
 
-  // old version 
+  // old version
   // -- parse available PKs
   int transient_model(0);
   std::map<std::string, bool> pk_state;
@@ -188,18 +193,18 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
     if (strcmp(tagname, "flow") == 0) {
       flow_model_ = GetAttributeValueS_(inode, "model", "richards, saturated, constant");
-      pk_model_["flow"] = (flow_model_ == "richards") ? "richards" : "darcy";
+      pk_model_["flow"].push_back((flow_model_ == "richards") ? "richards" : "darcy");
       pk_master_["flow"] = true;
       if (flow_model_ != "constant") transient_model += 4 * pk_state[tagname];
 
     } else if (strcmp(tagname, "chemistry") == 0) {
       std::string model = GetAttributeValueS_(inode, "engine", TYPE_NONE, false, "none");
-      pk_model_["chemistry"] = model;
+      pk_model_["chemistry"].push_back(model);
       transient_model += pk_state[tagname];
 
     } else if (strcmp(tagname, "transport") == 0) {
       transient_model += 2 * pk_state[tagname];
-      pk_model_["transport"] = "transport";
+      pk_model_["transport"].push_back("transport");
       pk_domain_["transport"] = "domain";
     }
   }
@@ -217,17 +222,21 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
         msg << "Constant flow must have end time = start time.\n";
         Exceptions::amanzi_throw(msg);
       }
-      node = GetUniqueElementByTagsString_(
-          "numerical_controls, unstructured_controls, unstr_steady-state_controls, unstr_initialization", flag);
+      node = GetUniqueElementByTagsString_("numerical_controls, unstructured_controls, "
+                                           "unstr_steady-state_controls, unstr_initialization",
+                                           flag);
       if (!flag) {
-        msg << "Constant flow must have unstr_steady-state_controls->unstr_initialization list, unless state=off.\n";
+        msg << "Constant flow must have unstr_steady-state_controls->unstr_initialization list, "
+               "unless state=off.\n";
         Exceptions::amanzi_throw(msg);
       }
     }
 
     Teuchos::ParameterList& tmp_list = out_list.sublist("time periods").sublist("TP 0");
     if (!coupled_flow_) {
-      tmp_list.sublist("PK tree").sublist("steady:flow").set<std::string>("PK type", pk_model_["flow"]);
+      tmp_list.sublist("PK tree")
+        .sublist("steady:flow")
+        .set<std::string>("PK type", *pk_model_["flow"].rbegin());
     } else {
       Teuchos::ParameterList& aux_list = tmp_list.sublist("PK tree").sublist("steady:coupled flow");
       aux_list.set<std::string>("PK type", "darcy matrix fracture");
@@ -245,7 +254,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
   // -- create PK tree for transient TP
   node = GetUniqueElementByTagsString_(
-      "numerical_controls, unstructured_controls, unstr_transport_controls, algorithm", flag);
+    "numerical_controls, unstructured_controls, unstr_transport_controls, algorithm", flag);
   if (flag) {
     std::string algorithm = TrimString_(mm.transcode(node->getTextContent()));
     transport_implicit_ = (algorithm == "implicit" || algorithm == "implicit second-order");
@@ -313,8 +322,8 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
   if (transient_model & 2 || transient_model & 1) {
     // names
-    out_list.set<Teuchos::Array<std::string> >("component names", comp_names_all_);
-    out_list.set<int>("number of liquid components", phases_["water"].size());
+    out_list.set<Teuchos::Array<std::string>>("component names", comp_names_all_);
+    out_list.set<int>("number of liquid components", phases_[LIQUID].dissolved.size());
 
     // available molar masses
     std::string name;
@@ -322,9 +331,10 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
     for (int i = 0; i < comp_names_all_.size(); ++i) {
       name = comp_names_all_[i];
-      if (solute_molar_mass_.find(name) != solute_molar_mass_.end()) tmp[i] = solute_molar_mass_[name];
+      if (solute_molar_mass_.find(name) != solute_molar_mass_.end())
+        tmp[i] = solute_molar_mass_[name];
     }
-    out_list.set<Teuchos::Array<double> >("component molar masses", tmp);
+    out_list.set<Teuchos::Array<double>>("component molar masses", tmp);
   }
 
   out_list.sublist("time period control") = TranslateTimePeriodControls_();
@@ -337,5 +347,5 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   return out_list;
 }
 
-}  // namespace AmanziInput
-}  // namespace Amanzi
+} // namespace AmanziInput
+} // namespace Amanzi

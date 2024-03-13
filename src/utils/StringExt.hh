@@ -1,11 +1,13 @@
 /*
-   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
-   Amanzi is released under the three-clause BSD License.
-   The terms of use and "as is" disclaimer for this license are
-   provided in the top-level COPYRIGHT file.
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-   Author: Konstantin Lipnikov
+  Authors: Konstantin Lipnikov
+*/
 
+/*
    Useful non-member functions.
 */
 
@@ -16,8 +18,8 @@
 namespace Amanzi {
 
 // remove leading and trailing spaces.
-inline 
-void trim(std::string& str)
+inline void
+trim(std::string& str)
 {
   size_t first = str.find_first_not_of("\n ");
   if (first != std::string::npos) {
@@ -28,9 +30,8 @@ void trim(std::string& str)
 
 
 // out
-inline 
-void replace_all(std::string& str,
-                 const std::string& sub_old, const std::string& sub_new)
+inline void
+replace_all(std::string& str, const std::string& sub_old, const std::string& sub_new)
 {
   size_t pos(0);
   int n0 = sub_old.size();
@@ -54,9 +55,8 @@ void replace_all(std::string& str,
 
 
 // split string using multiple delimeters and ignoring empty strings
-inline
-std::vector<std::string> split(const std::string& str,
-                         const std::string& delimiters)
+inline std::vector<std::string>
+split(const std::string& str, const std::string& delimiters)
 {
   std::vector<std::string> result;
   size_t current, next(-1);
@@ -68,11 +68,9 @@ std::vector<std::string> split(const std::string& str,
     current = next + 1;
     next = str.find_first_of(delimiters, current);
     result.push_back(str.substr(current, next - current));
-  }
-  while (next != std::string::npos);
+  } while (next != std::string::npos);
 
   return result;
 }
 
-}  // namespace Amanzi
-
+} // namespace Amanzi

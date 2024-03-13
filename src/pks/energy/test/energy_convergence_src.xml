@@ -85,6 +85,7 @@
 	  <Parameter name="thermal conductivity of liquid" type="double" value="4.0"/>
 	  <Parameter name="reference temperature" type="double" value="1.0"/>
 	  <Parameter name="polynomial expansion" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
+	  <Parameter name="eos type" type="string" value="liquid water"/>
 	</ParameterList>
 	<ParameterList name="verbose object">
 	  <Parameter name="verbosity level" type="string" value="high"/>
@@ -189,7 +190,7 @@
 	    <Parameter name="spatial distribution method" type="string" value="none"/>
 	    <ParameterList name="outward energy flux">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="-16.0"/>
+                <Parameter name="value" type="double" value="-12.0"/>
               </ParameterList>                            
             </ParameterList>
           </ParameterList>
@@ -208,8 +209,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
-      
     </ParameterList>
   </ParameterList>
 
@@ -368,13 +367,16 @@
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="molar_flow_rate">
+        <Parameter name="evaluator type" type="string" value="independent variable constant"/>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
-      <ParameterList name="fluid_density">
+      <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1000.0"/>
       </ParameterList>
-      <ParameterList name="fluid_viscosity">
+      <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="0.001"/>
       </ParameterList>
       <ParameterList name="gravity">
@@ -396,7 +398,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="volumetric_flow_rate">
+      <ParameterList name="molar_flow_rate">
         <Parameter name="dot with normal" type="bool" value="true"/>
         <ParameterList name="function">
           <ParameterList name="domain">

@@ -49,10 +49,12 @@ endif ()
 #
 # Library: mesh_mstk
 #
-set(mesh_mstk_files Mesh_MSTK.cc Mesh_MSTK_deform.cc) 
-file(GLOB mesh_mstk_inc_files "*.hh")
+set(mesh_mstk_inc_files Mesh_MSTK.hh) 
+set(mesh_mstk_src_files Mesh_MSTK.cc) 
+
+add_install_include_file(${mesh_mstk_inc_files})
 add_amanzi_library(mesh_mstk
-                   SOURCE ${mesh_mstk_files} HEADERS ${mesh_mstk_inc_files}
+                   SOURCE ${mesh_mstk_src_files} HEADERS ${mesh_mstk_inc_files}
                    LINK_LIBS geometry mesh atk ${MSTK_LIBRARIES} ${Epetra_LIBRARIES}
 		             ${Teuchos_LIBRARIES} ${Zoltan_LIBRARIES} ${HDF5_LIBRARIES})
 

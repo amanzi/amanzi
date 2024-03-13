@@ -11,8 +11,8 @@ The Amanzi code is built using several required and optional Third Party Librari
 
 The following pacakges are required before executing ``bootstrap.sh``
 
-    * A recent and stable GCC or Intel compiler. We have successfully built with
-      GNU versions 4.x to 9.x,Apple LLVM version 10.0.1 and Intel versions 11 to 17.
+    * A recent and stable GCC, Clang, or Intel compiler. We have successfully built with
+      GNU versions >= 7.5, Clang >= 5, and Intel >= 19.
     * Git version 1.8 or higher.
     * OpenSSL (required to build CURL) installation. This is available on
       most UNIX flavored systems and Macs.
@@ -25,10 +25,10 @@ The following pacakges are required before executing ``bootstrap.sh``
     * The build directory will need approximately 2.1 Gb of space (for staticlly linked build)
       and the install directory tree requires 300 Mb.
 
-The Amanzi build system utilizes CMake (version 3.11.4 or higher). 
-If ``boostrap.sh`` does not find the cmake executable, it will download and install CMake 3.11.4.
+The Amanzi build system utilizes CMake (version 3.17.0 or higher). 
+If ``boostrap.sh`` does not find the cmake executable, it will download and install CMake 3.17.0.
 
-Amanzi is a parallel project; therefore, a working MPI installation is required.  MPI installation directory and compiler wrapper locations can be specified through ``bootstrap.sh`` options.  If the MPI location is not specified the script will search common locations.  If working mpi wrappers are not found, the script will download and install OpenMPI 1.4.4.  See the :ref:`MPI` section on how to obtain and install other mpi implementations.
+Amanzi is a parallel project; therefore, a working MPI installation is required.  MPI installation directory and compiler wrapper locations can be specified through ``bootstrap.sh`` options.  If the MPI location is not specified the script will search common locations.  If working mpi wrappers are not found, the script will download and install OpenMPI 3.1.4.  See the :ref:`MPI` section on how to obtain and install other mpi implementations.
 
 At this time, the script does not build compilers, ``LAPACK``, or ``BLAS``.  See the :ref:`compilers` section on how to obtaion a supported compiler and the :ref:`LAPACK` section for ``LAPACK`` and ``BLAS`` suggestions.
 

@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _TensorOp_H_
 #define _TensorOp_H_
 
@@ -119,7 +128,7 @@ public:
   virtual void compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
                          MultiFab& in, const MCBC_Mode& bc_mode=MCInhomogeneous_BC,
                          int src_comp=0, int dst_comp=0, int num_comp=1, int bnd_comp=-1);
-  
+
   void compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
                  MultiFab& in, bool do_ApplyBC, const MCBC_Mode& bc_mode=MCInhomogeneous_BC,
                  int src_comp=0, int dst_comp=0, int num_comp=1, int bnd_comp=-1);
@@ -146,7 +155,7 @@ public:
                const MultiFab& rhsL,
                int             level = 0,
                MCBC_Mode       bc_mode = MCInhomogeneous_BC);
-  
+
   //
   // Fills level boundary cells using BC_mode flag, int. BC data if reqd.
   //

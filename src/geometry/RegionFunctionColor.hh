@@ -1,15 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! RegionFunctionColor: A region defined by the value of an indicator function in a file.
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella
 */
 
+//! RegionFunctionColor: A region defined by the value of an indicator function in a file.
 /*!
 
 The list *region: color function* defines a region based a specified integer
@@ -42,7 +40,7 @@ Example:
    </ParameterList>
 
 */
-  
+
 #ifndef AMANZI_REGION_COLOR_FUNCTION_HH_
 #define AMANZI_REGION_COLOR_FUNCTION_HH_
 
@@ -52,25 +50,24 @@ Example:
 
 namespace Amanzi {
 
-class FunctionColor;  
-  
+class FunctionColor;
+
 namespace AmanziGeometry {
 
 class RegionFunctionColor : public Region {
  public:
-
-  // Constructor 
-  RegionFunctionColor(const std::string& name, 
-                      const int id, 
+  // Constructor
+  RegionFunctionColor(const std::string& name,
+                      const int id,
                       const std::string& file,
                       const int value,
                       const Comm_type& comm,
-                      const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
+                      const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
 
   // Is the the specified point inside this region
   bool inside(const Point& p) const;
 
-protected:  
+ protected:
   std::string file_; // which file are we supposed to read it from
   const int value_;
   Teuchos::RCP<FunctionColor> colorfunc_; // indicator func created from file

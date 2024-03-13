@@ -10,15 +10,14 @@
   </ParameterList>
 
   <ParameterList name="mesh">
+    <Parameter name="framework" type="string" value="MSTK"/>
+    <Parameter name="partitioner" type="string" value="zoltan_rcb"/>
+
     <ParameterList name="unstructured">
       <ParameterList name="generate mesh">
         <Parameter name="number of cells" type="Array(int)" value="{9, 2, 20}"/>
         <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
         <Parameter name="domain high coordinate" type="Array(double)" value="{216.0, 10.0, 120.0}"/>
-      </ParameterList>
-      <ParameterList name="expert">
-        <Parameter name="framework" type="string" value="MSTK"/>
-        <Parameter name="partitioner" type="string" value="zoltan_rcb"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -131,34 +130,35 @@
         <Parameter name="eos basis" type="string" value="both"/>
         <Parameter name="mass density key" type="string" value="fracture-mass_density_liquid"/>
       </ParameterList>
-      <!--ParameterList name="molar_density_liquid">
+
+      <ParameterList name="viscosity_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="All"/>
-            <Parameter name="components" type="Array(string)" value="{cell, boundary_face}"/>
+            <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="55408.35584512343"/>
+                <Parameter name="value" type="double" value="1.002e-03"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
-      <ParameterList name="fracture-molar_density_liquid">
+      <ParameterList name="fracture-viscosity_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="fracture"/>
-            <Parameter name="components" type="Array(string)" value="{cell, boundary_face}"/>
+            <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="55408.35584512343"/>
+                <Parameter name="value" type="double" value="1.002e-03"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-      </ParameterList-->
+      </ParameterList>
 
       <ParameterList name="fracture-aperture">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
@@ -271,7 +271,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="fracture-normal_permeability">
+      <ParameterList name="fracture-diffusion_to_matrix">
         <ParameterList name="function">
           <ParameterList name="fracture">
             <Parameter name="regions" type="Array(string)" value="{fracture}"/>

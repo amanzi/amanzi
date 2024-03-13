@@ -1,12 +1,29 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Class for ion exchange reaction
+  Authors:
+*/
+
+/*!
+
+The `"ion exchange sites`" section is the list of ion exchange reactions.
+Each sublist is named after the exchanger site and has the following parameters:
+
+* `"location`" [string] is the mineral name.
+
+* `"charge`" [int] is the exchanger charge.
+
+.. code-block:: xml
+
+  <ParameterList name="ion exchange sites">
+    <ParameterList name="X-">
+      <Parameter name="location" type="string" value="Bulk"/>
+      <Parameter name="charge" type="int" value="-1"/>
+    </ParameterList>
+  </ParameterList>
 */
 
 #ifndef AMANZI_CHEMISTRY_IONEXCHANGERXN_HH_
@@ -30,7 +47,7 @@ class IonExchangeRxn {
   IonExchangeRxn(IonExchangeSite* ionx_sites,
                  const std::vector<IonExchangeComplex>& ionx_complexes);
   explicit IonExchangeRxn(IonExchangeSite ionx_sites);
-  ~IonExchangeRxn() {};
+  ~IonExchangeRxn(){};
 
   // add complexes to the reaction
   void AddIonExchangeComplex(const IonExchangeComplex& complex);
@@ -40,10 +57,9 @@ class IonExchangeRxn {
   void Update(const std::vector<Species>& primary_species);
 
   // add stoichiometric contribution of complex to sorbed total
-  void AddContributionToTotal(std::vector<double> *total);
+  void AddContributionToTotal(std::vector<double>* total);
   // add derivative of total with respect to free-ion to sorbed dtotal
-  void AddContributionToDTotal(const std::vector<Species>& primary_species,
-                               MatrixBlock* dtotal);
+  void AddContributionToDTotal(const std::vector<Species>& primary_species, MatrixBlock* dtotal);
 
   void CheckUniformZ(const std::vector<Species>& primary_species);
 
@@ -68,6 +84,6 @@ class IonExchangeRxn {
   double ref_cation_sorbed_conc_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

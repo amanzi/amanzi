@@ -1,12 +1,14 @@
 /*
-  State
-
   Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
+
+/*
+  State
 
   A field evaluator with no dependencies specified by a constant value.
 */
@@ -18,8 +20,7 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
-EvaluatorIndependentConstant::EvaluatorIndependentConstant(
-    Teuchos::ParameterList& plist)
+EvaluatorIndependentConstant::EvaluatorIndependentConstant(Teuchos::ParameterList& plist)
   : EvaluatorIndependent<CompositeVector, CompositeVectorSpace>(plist)
 {
   temporally_variable_ = false;
@@ -29,7 +30,9 @@ EvaluatorIndependentConstant::EvaluatorIndependentConstant(
 // ---------------------------------------------------------------------------
 // Virtual Copy constructor
 // ---------------------------------------------------------------------------
-Teuchos::RCP<Evaluator> EvaluatorIndependentConstant::Clone() const {
+Teuchos::RCP<Evaluator>
+EvaluatorIndependentConstant::Clone() const
+{
   return Teuchos::rcp(new EvaluatorIndependentConstant(*this));
 }
 
@@ -37,7 +40,9 @@ Teuchos::RCP<Evaluator> EvaluatorIndependentConstant::Clone() const {
 // ---------------------------------------------------------------------------
 // Update the value in the state.
 // ---------------------------------------------------------------------------
-void EvaluatorIndependentConstant::Update_(State& S) {
+void
+EvaluatorIndependentConstant::Update_(State& S)
+{
   S.GetRecordW(my_key_, my_tag_, my_key_).Initialize(plist_);
 }
 

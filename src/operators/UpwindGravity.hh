@@ -1,14 +1,16 @@
 /*
-  Operators 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
 
-  Upwind a cell-centered field (e.g. rel perm) using a given 
+/*
+  Operators
+
+  Upwind a cell-centered field (e.g. rel perm) using a given
   constant velocity (e.g. gravity).
 */
 
@@ -36,15 +38,14 @@ namespace Operators {
 class UpwindGravity : public Upwind {
  public:
   UpwindGravity(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : Upwind(mesh),
-      g_(mesh->space_dimension()) {};
-  ~UpwindGravity() {};
+    : Upwind(mesh), g_(mesh->getSpaceDimension()){};
+  ~UpwindGravity(){};
 
   // main methods
   void Init(Teuchos::ParameterList& plist);
 
-  void Compute(const CompositeVector& flux, const CompositeVector& solution,
-               const std::vector<int>& bc_model, CompositeVector& field);
+  void
+  Compute(const CompositeVector& flux, const std::vector<int>& bc_model, CompositeVector& field);
 
  private:
   int method_, order_;
@@ -52,8 +53,7 @@ class UpwindGravity : public Upwind {
   AmanziGeometry::Point g_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

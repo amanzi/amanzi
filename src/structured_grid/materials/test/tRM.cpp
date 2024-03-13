@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -24,7 +33,7 @@ EnsureFolderExists(const std::string& full_path)
     dir += tokens[i];
     if (i<tokens.size()-2) dir += "/";
   }
-  
+
   if(!BoxLib::FileExists(dir)) {
     if ( ! BoxLib::UtilCreateDirectory(dir, 0755)) {
       BoxLib::CreateDirectoryFailed(dir);
@@ -109,7 +118,7 @@ main (int   argc,
   BoxArray ba(geomArray[level].Domain());
   int maxSize=ba[0].length(0);  pp.query("maxSize",maxSize);
   ba.maxSize(maxSize);
-  
+
   iMultiFab matID(ba,1,0);
   rockManager.GetMaterialID(level,matID,nGrow,ignore_mixed);
 
@@ -162,7 +171,7 @@ main (int   argc,
     MultiFab pc2(ba,1,nGrow);
     MultiFab::Copy(pc2,pc,0,0,1,nGrow);
     MultiFab::Subtract(pc2,pc1,0,0,1,nGrow);
-    
+
     VisMF::Write(sat,dumpDir+"s");
     VisMF::Write(pc,dumpDir+"p");
     VisMF::Write(pc1,dumpDir+"p1");

@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   Discontinuous Galerkin modal method. Efficient implementation
   requires to cache various data for all mesh cells.
@@ -21,7 +23,7 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 // WhetStone
@@ -46,8 +48,7 @@ class Polynomial;
 
 class DG_Modal : public BilinearForm {
  public:
-  DG_Modal(const Teuchos::ParameterList& plist,
-           const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
+  DG_Modal(const Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   // basic member functions
   // -- schema
@@ -64,20 +65,33 @@ class DG_Modal : public BilinearForm {
   virtual int StiffnessMatrix(int c, const MatrixPolynomial& K, DenseMatrix& A) override;
 
   // -- advection matrices
-  virtual int AdvectionMatrix(int c, const VectorPolynomial& uc,
-                              DenseMatrix& A, bool grad_on_test) override;
+  virtual int
+  AdvectionMatrix(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test) override;
 
   // -- flux matrices
   //    returns point flux value (u.n) in the last parameter
-  int FluxMatrix(int f, const Polynomial& uf, DenseMatrix& A, bool upwind, bool jump_on_test, double* flux);
-  int FluxMatrixRusanov(int f, const VectorPolynomial& uc1, const VectorPolynomial& uc2,
-                        const Polynomial& uf, DenseMatrix& A);
-  int FluxMatrixGaussPoints(int f, const Polynomial& uf, DenseMatrix& A, bool upwind, bool jump_on_test);
+  int FluxMatrix(int f,
+                 const Polynomial& uf,
+                 DenseMatrix& A,
+                 bool upwind,
+                 bool jump_on_test,
+                 double* flux);
+  int FluxMatrixRusanov(int f,
+                        const VectorPolynomial& uc1,
+                        const VectorPolynomial& uc2,
+                        const Polynomial& uf,
+                        DenseMatrix& A);
+  int FluxMatrixGaussPoints(int f,
+                            const Polynomial& uf,
+                            DenseMatrix& A,
+                            bool upwind,
+                            bool jump_on_test);
 
   // -- interface matrices: jumps and penalty
-  template<typename Coef, typename std::enable_if<!std::is_pointer<Coef>::value>::type* = nullptr>
+  template <typename Coef, typename std::enable_if<!std::is_pointer<Coef>::value>::type* = nullptr>
   int FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A);
-  int FaceMatrixJump(int f, const WhetStoneFunction* K1, const WhetStoneFunction* K2, DenseMatrix& A);
+  int
+  FaceMatrixJump(int f, const WhetStoneFunction* K1, const WhetStoneFunction* K2, DenseMatrix& A);
 
   int FaceMatrixPenalty(int f, double Kf, DenseMatrix& A);
 
@@ -94,10 +108,10 @@ class DG_Modal : public BilinearForm {
   int numi_order_;
   NumericalIntegration numi_;
 
-  std::vector<Polynomial> monomial_integrals_;  // integrals of non-normalized monomials
-  std::vector<std::shared_ptr<Basis> > basis_;
+  std::vector<Polynomial> monomial_integrals_; // integrals of non-normalized monomials
+  std::vector<std::shared_ptr<Basis>> basis_;
 
-  static RegisteredFactory<DG_Modal> factory_;
+  static RegisteredFactory<DG_Modal> reg_;
 };
 
 
@@ -105,11 +119,11 @@ class DG_Modal : public BilinearForm {
 * Jump matrix for Taylor basis using tensors:
 *   \Int_f ( {K \grad \rho} [\psi] ) dS
 ****************************************************************** */
-template<typename Coef, typename std::enable_if<!std::is_pointer<Coef>::value>::type*>
-int DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A)
+template <typename Coef, typename std::enable_if<!std::is_pointer<Coef>::value>::type*>
+int
+DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix& A)
 {
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, Parallel_type::ALL, &cells);
+  auto cells = mesh_->getFaceCells(f);
   int ncells = cells.size();
 
   Polynomial poly(d_, order_);
@@ -123,8 +137,7 @@ int DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix&
   int c2 = (ncells > 1) ? cells[1] : -1;
 
   // Calculate co-normals
-  int dir;
-  AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
+  auto normal = mesh_->getFaceNormal(f, c1);
 
   normal /= norm(normal);
   auto conormal1 = K1 * normal;
@@ -140,7 +153,7 @@ int DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix&
     int k = PolynomialPosition(d_, idx0);
 
     Polynomial p0(d_, idx0, 1.0);
-    p0.set_origin(mesh_->cell_centroid(c1));
+    p0.set_origin(mesh_->getCellCentroid(c1));
 
     pgrad = Gradient(p0);
     p0 = pgrad * conormal1;
@@ -150,7 +163,7 @@ int DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix&
       int l = PolynomialPosition(d_, idx1);
 
       Polynomial q0(d_, idx1, 1.0);
-      q0.set_origin(mesh_->cell_centroid(c1));
+      q0.set_origin(mesh_->getCellCentroid(c1));
 
       polys[0] = &p0;
       polys[1] = &q0;
@@ -160,13 +173,13 @@ int DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix&
 
       if (c2 >= 0) {
         Polynomial p1(d_, idx0, 1.0);
-        p1.set_origin(mesh_->cell_centroid(c2));
+        p1.set_origin(mesh_->getCellCentroid(c2));
 
         pgrad = Gradient(p1);
         p1 = pgrad * conormal2;
 
         Polynomial q1(d_, idx1, 1.0);
-        q1.set_origin(mesh_->cell_centroid(c2));
+        q1.set_origin(mesh_->getCellCentroid(c2));
 
         polys[1] = &q1;
         coef01 = numi_.IntegratePolynomialsFace(f, polys);
@@ -193,8 +206,7 @@ int DG_Modal::FaceMatrixJump(int f, const Coef& K1, const Coef& K2, DenseMatrix&
   return 0;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

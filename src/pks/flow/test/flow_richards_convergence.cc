@@ -1,12 +1,15 @@
 /*
-  Flow PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
+
 */
 
 #include <cmath>
@@ -38,10 +41,13 @@ using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Flow;
 
-void RunTestConvergence(std::string input_xml) {
+void
+RunTestConvergence(std::string input_xml)
+{
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout <<"\nSteady-state Richards: convergence analysis: " << input_xml << std::endl;
+  if (MyPID == 0)
+    std::cout << "\nSteady-state Richards: convergence analysis: " << input_xml << std::endl;
 
   std::string xmlFileName = input_xml;
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
@@ -49,17 +55,16 @@ void RunTestConvergence(std::string input_xml) {
   // convergence estimate
   std::vector<double> h, p_error, v_error;
 
-  for (int n = 40; n < 161; n*=2) {
+  for (int n = 40; n < 161; n *= 2) {
     Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
-    
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
+
     Preference pref;
     pref.clear();
     pref.push_back(Framework::MSTK);
-    pref.push_back(Framework::STK);
 
-    MeshFactory meshfactory(comm,gm);
+    MeshFactory meshfactory(comm, gm);
     meshfactory.set_preference(pref);
     Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, -10.0, 1.0, 1.0, 0.0, 1, 1, n);
 
@@ -89,12 +94,12 @@ void RunTestConvergence(std::string input_xml) {
     ti_specs.max_itrs = 2000;
 
     AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-    RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times
+    RPK->CommitStep(0.0, 1.0, Tags::DEFAULT); // dummy times
 
-    std::string passwd("");
-    double pressure_err, flux_err, div_err;  // error checks
+    std::string passwd(""), key("volumetric_flow_rate");
+    double pressure_err, flux_err, div_err; // error checks
     const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
-    const auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face", true);
+    const auto& flux = *S->Get<CompositeVector>(key, Tags::DEFAULT).ViewComponent("face", true);
 
     pressure_err = CalculatePressureCellError(mesh, p);
     flux_err = CalculateDarcyFluxError(mesh, flux);
@@ -103,7 +108,11 @@ void RunTestConvergence(std::string input_xml) {
     if (n == 80) CHECK(pressure_err < 5.0e-2 && flux_err < 5.0e-2);
     int num_nonlinear_steps = ti_specs.num_itrs;
     printf("n=%3d itrs=%4d  L2_pressure_err=%7.3e  l2_flux_err=%7.3e  L2_div_err=%7.3e\n",
-        n, num_nonlinear_steps, pressure_err, flux_err, div_err);
+           n,
+           num_nonlinear_steps,
+           pressure_err,
+           flux_err,
+           div_err);
 
     delete RPK;
 
@@ -119,18 +128,17 @@ void RunTestConvergence(std::string input_xml) {
 
   CHECK_CLOSE(1.9, p_rate, 0.2);
   CHECK(v_rate > 1.8);
-
-  
 }
 
 /* *****************************************************************
 * Run with various discretization methods
 * **************************************************************** */
-TEST(FLOW_RICHARDS_CONVERGENCE_MFD) {
+TEST(FLOW_RICHARDS_CONVERGENCE_MFD)
+{
   RunTestConvergence("test/flow_richards_convergence.xml");
 }
 
-TEST(FLOW_RICHARDS_CONVERGENCE_NLFV) {
+TEST(FLOW_RICHARDS_CONVERGENCE_NLFV)
+{
   RunTestConvergence("test/flow_richards_convergence_nlfv.xml");
 }
-

@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.3.0">
+<amanzi_input type="unstructured" version="1.5-dev">
     <model_description name="linear_head_head_1d">
       <comments>Steady-State Saturated: prescribed flux and head BCs, linear pressure profile</comments>
       <model_id>1SSConFlow2</model_id>
@@ -86,6 +86,7 @@
         <comments>Homogeneous material properties throughout the entire domain</comments>
         <mechanical_properties>
           <porosity value="0.25" />
+          <specific_storage model="constant" value="0.0" />
         </mechanical_properties>
         <permeability x="1.1847e-12" y="1.1847e-12" z="1.1847e-12" />
         <assigned_regions>Entire Domain</assigned_regions>

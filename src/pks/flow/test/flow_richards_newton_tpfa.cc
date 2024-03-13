@@ -1,12 +1,15 @@
 /*
-  Flow PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
+
 */
 
 #include <cstdlib>
@@ -32,7 +35,8 @@
 #include "Richards_SteadyState.hh"
 
 /* **************************************************************** */
-TEST(FLOW_3D_RICHARDS) {
+TEST(FLOW_3D_RICHARDS)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -43,21 +47,20 @@ TEST(FLOW_3D_RICHARDS) {
   int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "Test: 3D Richards, 2-layer model" << std::endl;
 
-  // read parameter list 
+  // read parameter list
   std::string xmlFileName = "test/flow_richards_newton_tpfa.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create an SIMPLE mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
   Preference pref;
   pref.clear();
-  pref.push_back(Framework::STK);
   pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, -2.0, 1.0, 1.0, 0.0, 18, 1, 18);
 
@@ -78,24 +81,29 @@ TEST(FLOW_3D_RICHARDS) {
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd(""); 
+  std::string passwd("");
   auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
-  
-  AmanziMesh::Entity_ID_List block;
-  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.1;
-    K[1][c] = 0.1;
-    K[2][c] = 2.0;
+
+  {
+    auto block = mesh->getSetEntities(
+      "Material 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K[0][c] = 0.1;
+      K[1][c] = 0.1;
+      K[2][c] = 2.0;
+    }
   }
 
-  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.5;
-    K[1][c] = 0.5;
-    K[2][c] = 0.5;
+  {
+    auto block = mesh->getSetEntities(
+      "Material 2", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    for (int i = 0; i != block.size(); ++i) {
+      int c = block[i];
+      K[0][c] = 0.5;
+      K[1][c] = 0.5;
+      K[2][c] = 0.5;
+    }
   }
   S->GetRecordW("permeability", "permeability").set_initialized();
 
@@ -114,7 +122,7 @@ TEST(FLOW_3D_RICHARDS) {
   auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     p[0][c] = xc[2] * (xc[2] + 2.0);
   }
 
@@ -130,17 +138,18 @@ TEST(FLOW_3D_RICHARDS) {
   ti_specs.max_itrs = 400;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times
+  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT); // dummy times
 
   if (MyPID == 0) {
-    GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+    GMV::open_data_file(*mesh, (std::string) "flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "pressure");
     GMV::close_data_file();
   }
 
   /* check the pressure */
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells; c++) CHECK(p[0][c] > 0.0 && p[0][c] < 2.0);
 
   delete RPK;

@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   Lagrange-type element: degrees of freedom are nodal values.
 */
@@ -17,7 +19,7 @@
 #include <vector>
 
 // Amanzi
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -33,7 +35,7 @@ namespace WhetStone {
 * Constructor parses the parameter list
 ****************************************************************** */
 MFD3D_Lagrange::MFD3D_Lagrange(const Teuchos::ParameterList& plist,
-                               const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
+                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   : MFD3D(mesh)
 {
   order_ = plist.get<int>("method order");
@@ -41,22 +43,20 @@ MFD3D_Lagrange::MFD3D_Lagrange(const Teuchos::ParameterList& plist,
 
 
 /* ******************************************************************
-* High-order consistency condition for the stiffness matrix. 
+* High-order consistency condition for the stiffness matrix.
 ****************************************************************** */
-int MFD3D_Lagrange::H1consistency(
-    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
+int
+MFD3D_Lagrange::H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes;
-  mesh_->cell_get_nodes(c, &nodes);
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   N.Reshape(nnodes, d_ + 1);
   Ac.Reshape(nnodes, nnodes);
 
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
 
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->getCellVolume(c);
   AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
 
   // calculate matrix R. We temporaryly reuse matrix N
@@ -65,12 +65,11 @@ int MFD3D_Lagrange::H1consistency(
   int num_faces = faces.size();
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-    double area = mesh_->face_area(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+    const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
+    double area = mesh_->getFaceArea(f);
 
-    Entity_ID_List face_nodes;
-    mesh_->face_get_nodes(f, &face_nodes);
+    auto face_nodes = mesh_->getFaceNodes(f);
     int num_face_nodes = face_nodes.size();
 
     for (int j = 0; j < num_face_nodes; j++) {
@@ -78,7 +77,7 @@ int MFD3D_Lagrange::H1consistency(
       double u(0.5);
 
       if (d_ == 2) {
-        u = 0.5 * dirs[i]; 
+        u = 0.5 * dirs[i];
       } else {
         int jnext = (j + 1) % num_face_nodes;
         int jprev = (j + num_face_nodes - 1) % num_face_nodes;
@@ -86,13 +85,13 @@ int MFD3D_Lagrange::H1consistency(
         int vnext = face_nodes[jnext];
         int vprev = face_nodes[jprev];
 
-        mesh_->node_get_coordinates(v, &p);
-        mesh_->node_get_coordinates(vnext, &pnext);
-        mesh_->node_get_coordinates(vprev, &pprev);
+        p = mesh_->getNodeCoordinate(v);
+        pnext = mesh_->getNodeCoordinate(vnext);
+        pprev = mesh_->getNodeCoordinate(vprev);
 
         v1 = pprev - pnext;
         v2 = p - fm;
-        v3 = v1^v2;
+        v3 = v1 ^ v2;
         u = dirs[i] * norm(v3) / (4 * area);
       }
 
@@ -102,7 +101,7 @@ int MFD3D_Lagrange::H1consistency(
   }
 
   // calculate upper part of R K R^T / volume
-  for (int i = 0; i < nnodes; i++) { 
+  for (int i = 0; i < nnodes; i++) {
     for (int k = 0; k < d_; k++) v1[k] = N(i, k);
     v2 = K * v1;
 
@@ -112,12 +111,12 @@ int MFD3D_Lagrange::H1consistency(
     }
   }
 
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& cm = mesh_->getCellCentroid(c);
   for (int i = 0; i < nnodes; i++) {
     int v = nodes[i];
-    mesh_->node_get_coordinates(v, &p);
+    p = mesh_->getNodeCoordinate(v);
     for (int k = 0; k < d_; k++) N(i, k) = p[k] - cm[k];
-    N(i, d_) = 1.0;  // additional column is added to the consistency condition
+    N(i, d_) = 1.0; // additional column is added to the consistency condition
   }
 
   return 0;
@@ -127,8 +126,8 @@ int MFD3D_Lagrange::H1consistency(
 /* ******************************************************************
 * Stiffness matrix for a high-order scheme.
 ****************************************************************** */
-int MFD3D_Lagrange::StiffnessMatrix(
-    int c, const Tensor& K, DenseMatrix& A)
+int
+MFD3D_Lagrange::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -143,16 +142,16 @@ int MFD3D_Lagrange::StiffnessMatrix(
 /* *****************************************************************
 * N and R are used. Here we use simplified versions.
 ***************************************************************** */
-void MFD3D_Lagrange::ProjectorCell_(
-    int c, const std::vector<Polynomial>& ve,
-    const std::vector<Polynomial>& vf, Polynomial& uc)
+void
+MFD3D_Lagrange::ProjectorCell_(int c,
+                               const std::vector<Polynomial>& ve,
+                               const std::vector<Polynomial>& vf,
+                               Polynomial& uc)
 {
-  Entity_ID_List nodes;
-  mesh_->cell_get_nodes(c, &nodes);
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int num_faces = faces.size();
 
   // populate matrix R (should be a separate routine lipnikov@lanl.gv)
@@ -162,12 +161,11 @@ void MFD3D_Lagrange::ProjectorCell_(
   R.PutScalar(0.0);
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-    double area = mesh_->face_area(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+    const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
+    double area = mesh_->getFaceArea(f);
 
-    Entity_ID_List face_nodes;
-    mesh_->face_get_nodes(f, &face_nodes);
+    auto face_nodes = mesh_->getFaceNodes(f);
     int num_face_nodes = face_nodes.size();
 
     for (int j = 0; j < num_face_nodes; j++) {
@@ -175,7 +173,7 @@ void MFD3D_Lagrange::ProjectorCell_(
       double u(0.5);
 
       if (d_ == 2) {
-        u = 0.5 * dirs[i]; 
+        u = 0.5 * dirs[i];
       } else {
         int jnext = (j + 1) % num_face_nodes;
         int jprev = (j + num_face_nodes - 1) % num_face_nodes;
@@ -183,13 +181,13 @@ void MFD3D_Lagrange::ProjectorCell_(
         int vnext = face_nodes[jnext];
         int vprev = face_nodes[jprev];
 
-        mesh_->node_get_coordinates(v, &p);
-        mesh_->node_get_coordinates(vnext, &pnext);
-        mesh_->node_get_coordinates(vprev, &pprev);
+        p = mesh_->getNodeCoordinate(v);
+        pnext = mesh_->getNodeCoordinate(vnext);
+        pprev = mesh_->getNodeCoordinate(vprev);
 
         v1 = pprev - pnext;
         v2 = p - fm;
-        v3 = v1^v2;
+        v3 = v1 ^ v2;
         u = dirs[i] * norm(v3) / (4 * area);
       }
 
@@ -200,13 +198,10 @@ void MFD3D_Lagrange::ProjectorCell_(
 
   uc.Reshape(d_, 1, true);
   for (int i = 0; i < nnodes; i++) {
-    for (int k = 0; k < d_; k++) {
-      uc(k + 1) += R(i, k) * vf[i](0);
-    }
+    for (int k = 0; k < d_; k++) { uc(k + 1) += R(i, k) * vf[i](0); }
   }
-  uc *= 1.0 / mesh_->cell_volume(c);
+  uc *= 1.0 / mesh_->getCellVolume(c);
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
+} // namespace WhetStone
+} // namespace Amanzi

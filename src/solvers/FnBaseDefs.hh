@@ -1,12 +1,15 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  Solvers
+
 */
 
 #ifndef AMANZI_FNBASE_DEFS_HH_
@@ -24,8 +27,8 @@ enum ModifyCorrectionResult {
   CORRECTION_MODIFIED_LAG_BACKTRACKING
 };
 
-}  // namespace FnBaseDefs
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace FnBaseDefs
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif

@@ -1,13 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-//! Identity as a preconditioner.
 
+//! Identity as a preconditioner.
 /*!
 
 Simply copies the input vector to the output -- uses the Identity matrix as a
@@ -35,34 +35,34 @@ No parameters are required.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Matrix,
-         class Preconditioner=Matrix,
-         class Vector=typename Matrix::Vector_t,
-         class VectorSpace=typename Vector::VectorSpace_t>
-class PreconditionerIdentity :
-      public Inverse<Matrix,Preconditioner,Vector,VectorSpace> {
+template <class Matrix,
+          class Preconditioner = Matrix,
+          class Vector = typename Matrix::Vector_t,
+          class VectorSpace = typename Vector::VectorSpace_t>
+class PreconditionerIdentity : public Inverse<Matrix, Preconditioner, Vector, VectorSpace> {
  public:
-  PreconditionerIdentity() {};
-  ~PreconditionerIdentity() {};
+  PreconditionerIdentity(){};
+  ~PreconditionerIdentity(){};
 
-  virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final {};
-  virtual void InitializeInverse() override final {};
-  virtual void ComputeInverse() override final {};
+  virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final{};
+  virtual void InitializeInverse() override final{};
+  virtual void ComputeInverse() override final{};
 
-  virtual int ApplyInverse(const Vector& v, Vector& hv) const override final {
+  virtual int ApplyInverse(const Vector& v, Vector& hv) const override final
+  {
     hv = v;
     return 0;
   }
 
   virtual int returned_code() const override final { return 0; }
-  virtual std::string returned_code_string() const override {
+  virtual std::string returned_code_string() const override
+  {
     return "PreconditionerIdentity was applied.";
   }
 };
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
-
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 
 #endif

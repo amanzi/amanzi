@@ -1,19 +1,23 @@
 /*
-  Energy
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  Energy
 
   Field evaluator for the total internal energy:
 
-    IE = phi * s_liquid * n_liquid * u_liquid 
+    IE = phi * s_liquid * n_liquid * u_liquid
        + phi * s_gas * n_gas * u_gas
        + (1 - phi) * rho_rock * u_rock
 */
+
+#include "CommonDefs.hh"
 
 #include "TotalEnergyEvaluator.hh"
 
@@ -24,15 +28,13 @@ namespace Energy {
 * Constructor from ParameterList
 ****************************************************************** */
 TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
-      aperture_(false)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), aperture_(false)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("energy key"), Tags::DEFAULT));
   }
   auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
 
-  vapor_diffusion_ = plist_.get<bool>("vapor diffusion");
   ie_rock_key_ = plist_.get<std::string>("internal energy rock key");
   ie_liquid_key_ = prefix + "internal_energy_liquid";
   ie_gas_key_ = prefix + "internal_energy_gas";
@@ -43,6 +45,9 @@ TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist)
   particle_density_key_ = plist_.get<std::string>("particle density key");
   porosity_key_ = prefix + "porosity";
   sat_liquid_key_ = prefix + "saturation_liquid";
+
+  vapor_diffusion_ = plist_.get<bool>("vapor diffusion");
+  include_potential_ = plist_.get<bool>("include potential term", false);
 
   dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(sat_liquid_key_, Tags::DEFAULT));
@@ -68,22 +73,24 @@ TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist)
 * Copy constructor.
 ****************************************************************** */
 TotalEnergyEvaluator::TotalEnergyEvaluator(const TotalEnergyEvaluator& other)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      vapor_diffusion_(other.vapor_diffusion_),
-      particle_density_key_(other.particle_density_key_),
-      porosity_key_(other.porosity_key_),
-      sat_liquid_key_(other.sat_liquid_key_),
-      ie_rock_key_(other.ie_rock_key_),
-      ie_liquid_key_(other.ie_liquid_key_),
-      ie_gas_key_(other.ie_gas_key_),
-      mol_density_liquid_key_(other.mol_density_liquid_key_),
-      mol_density_gas_key_(other.mol_density_gas_key_) {};
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+    vapor_diffusion_(other.vapor_diffusion_),
+    particle_density_key_(other.particle_density_key_),
+    porosity_key_(other.porosity_key_),
+    sat_liquid_key_(other.sat_liquid_key_),
+    ie_rock_key_(other.ie_rock_key_),
+    ie_liquid_key_(other.ie_liquid_key_),
+    ie_gas_key_(other.ie_gas_key_),
+    mol_density_liquid_key_(other.mol_density_liquid_key_),
+    mol_density_gas_key_(other.mol_density_gas_key_){};
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<Evaluator> TotalEnergyEvaluator::Clone() const {
+Teuchos::RCP<Evaluator>
+TotalEnergyEvaluator::Clone() const
+{
   return Teuchos::rcp(new TotalEnergyEvaluator(*this));
 }
 
@@ -91,8 +98,8 @@ Teuchos::RCP<Evaluator> TotalEnergyEvaluator::Clone() const {
 /* ******************************************************************
 * Field evaluator.
 ****************************************************************** */
-void TotalEnergyEvaluator::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+TotalEnergyEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& s_l = *S.Get<CompositeVector>(sat_liquid_key_).ViewComponent("cell");
   const auto& n_l = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
@@ -102,7 +109,7 @@ void TotalEnergyEvaluator::Evaluate_(
   if (vapor_diffusion_) {
     n_g = S.Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
     u_g = S.Get<CompositeVector>(ie_gas_key_).ViewComponent("cell");
-  } 
+  }
 
   const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   const auto& u_rock = *S.Get<CompositeVector>(ie_rock_key_).ViewComponent("cell");
@@ -112,19 +119,31 @@ void TotalEnergyEvaluator::Evaluate_(
   int ncells = results[0]->size("cell");
 
   for (int c = 0; c != ncells; ++c) {
-    result_v[0][c] = phi[0][c] * s_l[0][c] * n_l[0][c] * u_l[0][c]
-                   + (1.0 - phi[0][c]) * u_rock[0][c] * rho_rock[0][c];
+    result_v[0][c] = phi[0][c] * s_l[0][c] * n_l[0][c] * u_l[0][c] +
+                     (1.0 - phi[0][c]) * u_rock[0][c] * rho_rock[0][c];
     if (vapor_diffusion_) {
       double s_g = 1.0 - s_l[0][c];
       result_v[0][c] += phi[0][c] * s_g * (*n_g)[0][c] * (*u_g)[0][c];
     }
   }
-     
+
+  if (include_potential_) {
+    Key domain = Keys::getDomain(ie_rock_key_);
+    const auto mesh = S.GetMesh(domain);
+
+    int d = mesh->getSpaceDimension();
+    double g = std::fabs(std::fabs((S.Get<AmanziGeometry::Point>("gravity"))[d - 1]));
+    g *= CommonDefs::MOLAR_MASS_H2O;
+
+    for (int c = 0; c != ncells; ++c) {
+      const auto& xc = mesh->getCellCentroid(c);
+      result_v[0][c] += g * phi[0][c] * xc[d - 1];
+    }
+  }
+
   if (aperture_) {
     const auto& aperture = *S.Get<CompositeVector>(aperture_key_).ViewComponent("cell");
-    for (int c = 0; c != ncells; ++c) {
-      result_v[0][c] *= aperture[0][c];
-    }
+    for (int c = 0; c != ncells; ++c) { result_v[0][c] *= aperture[0][c]; }
   }
 }
 
@@ -132,9 +151,11 @@ void TotalEnergyEvaluator::Evaluate_(
 /* ******************************************************************
 * Field derivative evaluator.
 ****************************************************************** */
-void TotalEnergyEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+TotalEnergyEvaluator::EvaluatePartialDerivative_(const State& S,
+                                                 const Key& wrt_key,
+                                                 const Tag& wrt_tag,
+                                                 const std::vector<CompositeVector*>& results)
 {
   const auto& s_l = *S.Get<CompositeVector>(sat_liquid_key_).ViewComponent("cell");
   const auto& n_l = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
@@ -155,8 +176,7 @@ void TotalEnergyEvaluator::EvaluatePartialDerivative_(
 
   if (wrt_key == porosity_key_) {
     for (int c = 0; c != ncells; ++c) {
-      result_v[0][c] = s_l[0][c] * n_l[0][c] * u_l[0][c]
-                     - rho_rock[0][c] * u_rock[0][c];
+      result_v[0][c] = s_l[0][c] * n_l[0][c] * u_l[0][c] - rho_rock[0][c] * u_rock[0][c];
       if (vapor_diffusion_) {
         double s_g = 1.0 - s_l[0][c];
         result_v[0][c] += s_g * (*n_g)[0][c] * (*u_g)[0][c];
@@ -165,18 +185,12 @@ void TotalEnergyEvaluator::EvaluatePartialDerivative_(
   } else if (wrt_key == sat_liquid_key_) {
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] = phi[0][c] * n_l[0][c] * u_l[0][c];
-      if (vapor_diffusion_) {
-        result_v[0][c] -= (*n_g)[0][c] * (*u_g)[0][c];
-      }
+      if (vapor_diffusion_) { result_v[0][c] -= (*n_g)[0][c] * (*u_g)[0][c]; }
     }
   } else if (wrt_key == mol_density_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_v[0][c] = phi[0][c] * s_l[0][c] * u_l[0][c];
-    }
+    for (int c = 0; c != ncells; ++c) { result_v[0][c] = phi[0][c] * s_l[0][c] * u_l[0][c]; }
   } else if (wrt_key == ie_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_v[0][c] = phi[0][c] * s_l[0][c] * n_l[0][c];
-    }
+    for (int c = 0; c != ncells; ++c) { result_v[0][c] = phi[0][c] * s_l[0][c] * n_l[0][c]; }
 
   } else if (wrt_key == mol_density_gas_key_) {
     for (int c = 0; c != ncells; ++c) {
@@ -190,24 +204,18 @@ void TotalEnergyEvaluator::EvaluatePartialDerivative_(
     }
 
   } else if (wrt_key == ie_rock_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_v[0][c] = (1.0 - phi[0][c]) * rho_rock[0][c];
-    }
+    for (int c = 0; c != ncells; ++c) { result_v[0][c] = (1.0 - phi[0][c]) * rho_rock[0][c]; }
   } else if (wrt_key == particle_density_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_v[0][c] = (1.0 - phi[0][c]) * u_rock[0][c];
-    }
+    for (int c = 0; c != ncells; ++c) { result_v[0][c] = (1.0 - phi[0][c]) * u_rock[0][c]; }
   } else {
     AMANZI_ASSERT(0);
   }
 
   if (aperture_) {
     const auto& aperture = *S.Get<CompositeVector>(aperture_key_).ViewComponent("cell");
-    for (int c = 0; c != ncells; ++c) {
-      result_v[0][c] *= aperture[0][c];
-    }
+    for (int c = 0; c != ncells; ++c) { result_v[0][c] *= aperture[0][c]; }
   }
 }
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi

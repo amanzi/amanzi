@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef ENABLE_Structured
 #define ENABLE_Structured
 #endif
@@ -34,7 +43,7 @@ EnsureFolderExists(const std::string& full_path)
     dir += tokens[i];
     if (i<tokens.size()-2) dir += "/";
   }
-  
+
   if(!BoxLib::FileExists(dir)) {
     if ( ! BoxLib::UtilCreateDirectory(dir, 0755)) {
       BoxLib::CreateDirectoryFailed(dir);
@@ -61,8 +70,8 @@ Structured_observations(const PArray<Observation>& observation_array,
         dt[j].is_valid = true;
       }
       observation_data[label] = dt;
-    }	
-}  
+    }
+}
 
 std::pair<bool,std::string>
 InputVersionOK(const std::string& version)
@@ -104,7 +113,7 @@ InputVersionOK(const std::string& version)
 
 static
 bool ConfirmFileExists(const std::string& name) {
-  std::ifstream ifs;  
+  std::ifstream ifs;
   ifs.open(name.c_str(), std::ios::in);
   bool ok = ifs.good();
   ifs.close();
@@ -196,8 +205,8 @@ AmanziStructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
     Real strt_time;
     Real stop_time;
 
-    max_step  = -1;    
-    strt_time =  0.0;  
+    max_step  = -1;
+    strt_time =  0.0;
     stop_time = -1.0;
 
     pp.query("max_step",max_step);
@@ -216,10 +225,10 @@ AmanziStructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
     PMAmr* amrptr = new PMAmr;
 
     amrptr->init(strt_time,stop_time);
-    
+
     // If we set the regrid_on_restart flag and if we are *not* going to take
     //    a time step then we want to go ahead and regrid here.
-    if ( amrptr->RegridOnRestart() && 
+    if ( amrptr->RegridOnRestart() &&
          ( (amrptr->levelSteps(0) >= max_step) ||
            (amrptr->cumTime() >= stop_time) ) )
     {
@@ -228,7 +237,7 @@ AmanziStructuredGridSimulationDriver::Run(const Amanzi::Comm_ptr_type& comm,
         //
         amrptr->RegridOnly(amrptr->cumTime());
     }
-    
+
     while ( amrptr->okToContinue() )
     {
         amrptr->coarseTimeStep(stop_time);

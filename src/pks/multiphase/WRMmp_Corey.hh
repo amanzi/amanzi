@@ -1,12 +1,14 @@
 /*
-  This is the multiphase component of the Amanzi code. 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Quan Bui (mquanbui@math.umd.edu)
+*/
+
+/*
+  This is the multiphase component of the Amanzi code.
 
   We use this class to remove effective water retention model.
 */
@@ -26,21 +28,21 @@ namespace Multiphase {
 class WRMmp_Corey : public WRMmp {
  public:
   WRMmp_Corey(Teuchos::ParameterList& plist);
-  ~WRMmp_Corey() {};
-  
+  ~WRMmp_Corey(){};
+
   // required methods from the base class
   virtual double k_relative(double sl, int phase);
   virtual double capillaryPressure(double saturation);
   virtual double dPc_dS(double sl);
-  virtual double dKdS(double sl, int phase) ;
+  virtual double dKdS(double sl, int phase);
 
  private:
   double srl_, srg_, pcap_;
 
-  static Utils::RegisteredFactory<WRMmp, WRMmp_Corey> factory_;
+  static Utils::RegisteredFactory<WRMmp, WRMmp_Corey> reg_;
 };
 
-}  // namespace Multiphase
-}  // namespace Amanzi
- 
+} // namespace Multiphase
+} // namespace Amanzi
+
 #endif

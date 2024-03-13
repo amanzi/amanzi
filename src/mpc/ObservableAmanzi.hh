@@ -1,15 +1,17 @@
 /*
-  Multi-Process Coordinator
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt
            Ethan Coon
            Konstantin Lipnikov
            Daniil Svyatsky
+*/
+
+/*
+  Multi-Process Coordinator
 
   Virtual base class.
 */
@@ -26,16 +28,16 @@
 #include "Units.hh"
 #include "Key.hh"
 
-namespace Amanzi{
+namespace Amanzi {
 
 class Observable : public IOEvent {
  public:
   Observable(std::string variable,
-	     std::string region,
-	     std::string functional,
-	     Teuchos::ParameterList& plist,
-	     Teuchos::ParameterList& units_plist,
-	     Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+             std::string region,
+             std::string functional,
+             Teuchos::ParameterList& plist,
+             Teuchos::ParameterList& units_plist,
+             Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : IOEvent(plist),
       variable_(variable),
       functional_(functional),
@@ -44,14 +46,13 @@ class Observable : public IOEvent {
       region_(region)
   {
     ReadParameters_();
-    
+
     units_.Init(units_plist);
 
     domain_ = plist.get<std::string>("domain name", "domain");
 
     // for now we can only observe Integrals and Values
-    if (functional_ != "observation data: integral"  &&
-        functional_ != "observation data: point" )  {
+    if (functional_ != "observation data: integral" && functional_ != "observation data: point") {
       Errors::Message msg;
       msg << "FlexibleObservations: can only handle Functional == observation data:"
           << " integral, or functional == observation data: point";
@@ -59,7 +60,8 @@ class Observable : public IOEvent {
     }
   }
 
-  virtual void ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt) = 0;
+  virtual void
+  ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt) = 0;
   virtual int ComputeRegionSize() { return region_size_; }
 
  public:
@@ -67,10 +69,10 @@ class Observable : public IOEvent {
   std::string functional_;
   double sum_;
 
- protected:    
+ protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  AmanziMesh::Entity_ID_List entity_ids_;
+  AmanziMesh::cEntity_ID_View entity_ids_;
   int region_size_;
 
   std::string region_;

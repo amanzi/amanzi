@@ -1,13 +1,16 @@
 /*
-  MultiPhase PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Quan Bui (mquanbui@math.umd.edu)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  MultiPhase PK
+
 */
 
 #ifndef AMANZI_MULTIPHASE_PRESSURE_GAS_EVALUATOR_HH_
@@ -29,7 +32,8 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class PressureGasEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class PressureGasEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   PressureGasEvaluator(Teuchos::ParameterList& plist, Teuchos::RCP<WRMmpPartition> wrm);
 
@@ -38,7 +42,9 @@ class PressureGasEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, 
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
@@ -47,8 +53,7 @@ class PressureGasEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, 
   std::string pressure_liquid_key_, saturation_liquid_key_;
 };
 
-}  // namespace Multiphase
-}  // namespace Amanzi
+} // namespace Multiphase
+} // namespace Amanzi
 
 #endif
-

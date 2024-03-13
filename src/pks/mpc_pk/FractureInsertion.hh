@@ -1,12 +1,14 @@
 /*
-  MPC PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov
+*/
+
+/*
+  MPC PK
 
   Insertion of fracture into a model changes mesh topology, mesh maps, etc.
   This class provides supporting tools and data structures that can be
@@ -40,6 +42,8 @@ class FractureInsertion {
   void InitMatrixCellToFractureCell();
 
   // -- compute coupling coefficients
+  //    values may have two columns for two fracture sides unless they
+  //    are iquel and only one number is needed
   void SetValues(const Epetra_MultiVector& values, double scale);
   void SetValues(const CompositeVector& flux);
 
@@ -47,11 +51,14 @@ class FractureInsertion {
   const Teuchos::RCP<CompositeVectorSpace>& get_cvs_matrix() { return cvs_matrix_; }
   const Teuchos::RCP<CompositeVectorSpace>& get_cvs_fracture() { return cvs_fracture_; }
 
-  const std::shared_ptr<std::vector<std::vector<int> > >& get_inds_matrix() { return inds_matrix_; }
-  const std::shared_ptr<std::vector<std::vector<int> > >& get_inds_fracture() { return inds_fracture_; }
+  const std::shared_ptr<std::vector<std::vector<int>>>& get_inds_matrix() { return inds_matrix_; }
+  const std::shared_ptr<std::vector<std::vector<int>>>& get_inds_fracture()
+  {
+    return inds_fracture_;
+  }
 
-  const std::shared_ptr<std::vector<double> >& get_values() { return values_; }
-  const std::shared_ptr<std::vector<double> >& get_values2() { return values2_; }
+  const std::shared_ptr<std::vector<double>>& get_values() { return values_; }
+  const std::shared_ptr<std::vector<double>>& get_values2() { return values2_; }
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_matrix_, mesh_fracture_;
@@ -59,9 +66,9 @@ class FractureInsertion {
   Teuchos::RCP<CompositeVectorSpace> cvs_matrix_, cvs_fracture_;
   Teuchos::RCP<const Epetra_BlockMap> mmap_;
 
-  std::shared_ptr<std::vector<std::vector<int> > > inds_matrix_, inds_fracture_;
-  std::shared_ptr<std::vector<double> > values_, values2_;
+  std::shared_ptr<std::vector<std::vector<int>>> inds_matrix_, inds_fracture_;
+  std::shared_ptr<std::vector<double>> values_, values2_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 #endif

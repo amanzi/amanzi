@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   Crouzeix-Raviart element: degrees of freedom are mean values on faces.
 */
@@ -17,7 +19,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
@@ -30,15 +32,17 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_CrouzeixRaviart : public MFD3D { 
+class MFD3D_CrouzeixRaviart : public MFD3D {
  public:
   MFD3D_CrouzeixRaviart(const Teuchos::ParameterList& plist,
-                        const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
+                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   // required methods
   // -- schema
-  virtual std::vector<SchemaItem> schema() const override {
-    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, 1));
+  virtual std::vector<SchemaItem> schema() const override
+  {
+    return std::vector<SchemaItem>(
+      1, std::make_tuple(AmanziMesh::Entity_kind::FACE, DOF_Type::SCALAR, 1));
   }
 
   // -- stiffness matrix
@@ -46,21 +50,29 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // -- l2 projectors
-  virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
+  virtual void L2Cell(int c,
+                      const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
-                      const Polynomial* moments, Polynomial& uc) override {
+                      const Polynomial* moments,
+                      Polynomial& uc) override
+  {
     ProjectorCell_(mesh_, c, ve, vf, uc);
   }
 
   // -- h1 projectors
-  virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
+  virtual void H1Cell(int c,
+                      const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
-                      const Polynomial* moments, Polynomial& uc) override {
+                      const Polynomial* moments,
+                      Polynomial& uc) override
+  {
     ProjectorCell_(mesh_, c, ve, vf, uc);
   }
 
-  virtual void H1Face(int f, const std::vector<Polynomial>& ve,
-                      const Polynomial* moments, Polynomial& vf) override;
+  virtual void H1Face(int f,
+                      const std::vector<Polynomial>& ve,
+                      const Polynomial* moments,
+                      Polynomial& vf) override;
 
   // access / setup
   // -- integrals of monomials in high-order schemes could be reused
@@ -69,19 +81,20 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
 
  private:
   // efficient implementation of low-order elliptic projectors
-  void ProjectorCell_(const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh, 
-                      int c, const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf, Polynomial& uc);
+  void ProjectorCell_(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
+                      int c,
+                      const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
+                      Polynomial& uc);
 
  protected:
   DenseMatrix R_, G_;
 
  private:
-  static RegisteredFactory<MFD3D_CrouzeixRaviart> factory_;
+  static RegisteredFactory<MFD3D_CrouzeixRaviart> reg_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

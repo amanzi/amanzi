@@ -1,4 +1,12 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Rao Garimella
+*/
+
 /*
   A region defined by a logical operation on one or two other regions
 
@@ -7,12 +15,6 @@
   Operations supported on a pair of regions are UNION, SUBTRACT and
   INTERSECT
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
-  provided in the top-level COPYRIGHT file.
-
-  Authors: Rao Garimella
 */
 
 #include "dbc.hh"
@@ -60,7 +62,8 @@ RegionLogical::RegionLogical(const std::string& name,
 bool
 RegionLogical::inside(const Point& p) const
 {
-  Errors::Message mesg("In/out check not implemented for logical regions because the check may not be implemented for one of its component regions");
+  Errors::Message mesg("In/out check not implemented for logical regions because the check may not "
+                       "be implemented for one of its component regions");
   Exceptions::amanzi_throw(mesg);
   return false;
 }

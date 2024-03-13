@@ -1,13 +1,15 @@
 /*
-  Flow PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
 
   The WRM Evaluator simply calls the WRM with the correct arguments.
 */
@@ -22,25 +24,25 @@ namespace Flow {
 /* ******************************************************************
 * Two constructors.
 ****************************************************************** */
-WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist,
-                           const Teuchos::RCP<WRMPartition>& wrm)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
-      wrm_(wrm)
+WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist, const Teuchos::RCP<WRMPartition>& wrm)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), wrm_(wrm)
 {
   InitializeFromPlist_();
 }
 
 
 WRMEvaluator::WRMEvaluator(const WRMEvaluator& other)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      wrm_(other.wrm_),
-      pressure_key_(other.pressure_key_) {};
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+    wrm_(other.wrm_),
+    pressure_key_(other.pressure_key_){};
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<Evaluator> WRMEvaluator::Clone() const {
+Teuchos::RCP<Evaluator>
+WRMEvaluator::Clone() const
+{
   return Teuchos::rcp(new WRMEvaluator(*this));
 }
 
@@ -48,9 +50,12 @@ Teuchos::RCP<Evaluator> WRMEvaluator::Clone() const {
 /* ******************************************************************
 * Initialization.
 ****************************************************************** */
-void WRMEvaluator::InitializeFromPlist_() {
+void
+WRMEvaluator::InitializeFromPlist_()
+{
   if (my_keys_.size() == 0) {
-    my_keys_.push_back(std::make_pair(plist_.get<std::string>("saturation key", "saturation_liquid"), Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(
+      plist_.get<std::string>("saturation key", "saturation_liquid"), Tags::DEFAULT));
   }
 
   // my dependency is pressure.
@@ -62,8 +67,8 @@ void WRMEvaluator::InitializeFromPlist_() {
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void WRMEvaluator::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+WRMEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   auto& sat_c = *results[0]->ViewComponent("cell");
   const auto& pres_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
@@ -79,9 +84,11 @@ void WRMEvaluator::Evaluate_(
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void WRMEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+WRMEvaluator::EvaluatePartialDerivative_(const State& S,
+                                         const Key& wrt_key,
+                                         const Tag& wrt_tag,
+                                         const std::vector<CompositeVector*>& results)
 {
   auto& sat_c = *results[0]->ViewComponent("cell");
   const auto& pres_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
@@ -94,5 +101,5 @@ void WRMEvaluator::EvaluatePartialDerivative_(
   }
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi

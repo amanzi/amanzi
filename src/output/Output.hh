@@ -1,12 +1,14 @@
 /*
-  Output
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
+
+/*
+  Output
 
   Interface for Output wrappers.
   Defines an interface for vis and checkpoint read and writing.
@@ -27,7 +29,6 @@ namespace Amanzi {
 
 class Output {
  public:
-
   virtual ~Output() {}
 
   // open and close files
@@ -35,9 +36,11 @@ class Output {
   virtual void FinalizeCycle() = 0;
 
   // write data to file
-  virtual void WriteVector(const Epetra_Vector& vec, const std::string& name,
+  virtual void WriteVector(const Epetra_Vector& vec,
+                           const std::string& name,
                            const AmanziMesh::Entity_kind& kind) const = 0;
-  virtual void WriteMultiVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names,
+  virtual void WriteMultiVector(const Epetra_MultiVector& vec,
+                                const std::vector<std::string>& names,
                                 const AmanziMesh::Entity_kind& kind) const = 0;
 
   // can we template this?
@@ -47,13 +50,14 @@ class Output {
 
   // read data from file
   virtual void ReadVector(Epetra_Vector& vec, const std::string& name) const = 0;
-  virtual void ReadMultiVector(Epetra_MultiVector& vec, const std::vector<std::string>& names) const = 0;
+  virtual void
+  ReadMultiVector(Epetra_MultiVector& vec, const std::vector<std::string>& names) const = 0;
 
   virtual void ReadAttribute(double& val, const std::string& name) const = 0;
   virtual void ReadAttribute(int& val, const std::string& name) const = 0;
   virtual void ReadAttribute(std::string& val, const std::string& name) const = 0;
 };
-  
+
 } // namespace Amanzi
 
 #endif

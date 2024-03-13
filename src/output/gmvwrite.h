@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _GMVWRITEH_
 #define _GMVWRITEH_
 #endif
@@ -50,21 +59,21 @@ void gmvwrite_faces_fromfile(char *filename, long nclls);
 
 void gmvwrite_face_header(void *nfaces, void *ncells);
 
-void gmvwrite_face_data(int nverts, void *nodeids, void *cellid1, 
+void gmvwrite_face_data(int nverts, void *nodeids, void *cellid1,
                    void *cellid2);
 
 void gmvwrite_vfaces_fromfile(char *filename, long nclls);
 
 void gmvwrite_vface_header(void *nfaces);
 
-void gmvwrite_vface_data(int nverts, int facepe, void *oppface, 
+void gmvwrite_vface_data(int nverts, int facepe, void *oppface,
                          int oppfacepe, void *cellid, void *nodeids);
 
 void gmvwrite_xfaces_fromfile(char *filename, long nfces, long nclls);
 
 void gmvwrite_xface_header(void *nfaces);
 
-void gmvwrite_xface_data(long totverts, void *nverts, void *nodeids, 
+void gmvwrite_xface_data(long totverts, void *nverts, void *nodeids,
                          void *cellid, void *oppface, void *facepe,
                          void *oppfacepe);
 
@@ -176,7 +185,7 @@ void gmvwrite_group_fromfile(char *filename);
 
 void gmvwrite_group_header(void);
 
-void gmvwrite_group_data(char groupname[], int data_type, int numgrp, 
+void gmvwrite_group_data(char groupname[], int data_type, int numgrp,
      void *group_data);
 
 void gmvwrite_group_endgroup(void);
@@ -191,10 +200,9 @@ void gmvwrite_simdate(char simdate[]);
 
 void gmvwrite_subvars_header(void);
 
-void gmvwrite_suvvars_name_data(int data_type, int numelem, char varname[], 
+void gmvwrite_suvvars_name_data(int data_type, int numelem, char varname[],
                               void *vids, void *vdata);
 
 void gmvwrite_subvars_endsubv(void);
 
 void gmvwrite_ghosts(int data_type, int numghst, void *ghost_data);
-

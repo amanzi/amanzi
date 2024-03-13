@@ -1,15 +1,17 @@
 /*
-  Data structures
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov
+  Authors: Konstantin Lipnikov
+*/
 
-  Supports parallel communications for integer arrays. Eventually this 
-  functionality should be absorbed in CompositeVector. But currently, 
+/*
+  Data structures
+
+  Supports parallel communications for integer arrays. Eventually this
+  functionality should be absorbed in CompositeVector. But currently,
   CV supports only double.
 */
 
@@ -21,11 +23,12 @@ namespace Amanzi {
 * Copy cell-based data from master to ghost positions.
 * WARNING: vector vghost must contain ghost cells.
 ******************************************************************* */
-void ParallelCommunication::CopyMasterCell2GhostCell(Epetra_IntVector& vghost)
+void
+ParallelCommunication::CopyMasterCell2GhostCell(Epetra_IntVector& vghost)
 {
 #ifdef HAVE_MPI
-  const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
-  const Epetra_BlockMap& target_cmap = mesh_->cell_map(true);
+  const Epetra_BlockMap& source_cmap = mesh_->getMap(AmanziMesh::Entity_kind::CELL, false);
+  const Epetra_BlockMap& target_cmap = mesh_->getMap(AmanziMesh::Entity_kind::CELL, true);
 
   if (!importer_cell_initialized_) {
     importer_cell_ = Teuchos::rcp(new Epetra_Import(target_cmap, source_cmap));
@@ -42,14 +45,15 @@ void ParallelCommunication::CopyMasterCell2GhostCell(Epetra_IntVector& vghost)
 
 
 /* *******************************************************************
-* Copy face-based data from master to ghost positions.              
-* WARNING: vector vghost must contain ghost cells.              
+* Copy face-based data from master to ghost positions.
+* WARNING: vector vghost must contain ghost cells.
 ******************************************************************* */
-void ParallelCommunication::CopyMasterCell2GhostCell(const Epetra_IntVector& v, Epetra_IntVector& vghost)
+void
+ParallelCommunication::CopyMasterCell2GhostCell(const Epetra_IntVector& v, Epetra_IntVector& vghost)
 {
 #ifdef HAVE_MPI
-  const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
-  const Epetra_BlockMap& target_cmap = mesh_->cell_map(true);
+  const Epetra_BlockMap& source_cmap = mesh_->getMap(AmanziMesh::Entity_kind::CELL, false);
+  const Epetra_BlockMap& target_cmap = mesh_->getMap(AmanziMesh::Entity_kind::CELL, true);
 
   if (!importer_cell_initialized_) {
     importer_cell_ = Teuchos::rcp(new Epetra_Import(target_cmap, source_cmap));
@@ -64,14 +68,15 @@ void ParallelCommunication::CopyMasterCell2GhostCell(const Epetra_IntVector& v, 
 
 
 /* *******************************************************************
-* Copy face-based data from master to ghost positions.              
-* WARNING: vector vghost must contain ghost cells.              
+* Copy face-based data from master to ghost positions.
+* WARNING: vector vghost must contain ghost cells.
 ******************************************************************* */
-void ParallelCommunication::CopyMasterFace2GhostFace(Epetra_IntVector& vghost)
+void
+ParallelCommunication::CopyMasterFace2GhostFace(Epetra_IntVector& vghost)
 {
 #ifdef HAVE_MPI
-  const Epetra_BlockMap& source_fmap = mesh_->face_map(false);
-  const Epetra_BlockMap& target_fmap = mesh_->face_map(true);
+  const Epetra_BlockMap& source_fmap = mesh_->getMap(AmanziMesh::Entity_kind::FACE, false);
+  const Epetra_BlockMap& target_fmap = mesh_->getMap(AmanziMesh::Entity_kind::FACE, true);
 
   if (!importer_face_initialized_) {
     importer_face_ = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
@@ -88,14 +93,15 @@ void ParallelCommunication::CopyMasterFace2GhostFace(Epetra_IntVector& vghost)
 
 
 /* *******************************************************************
-* Copy face-based data from master to ghost positions.              
-* WARNING: vector vghost must contain ghost cells.              
+* Copy face-based data from master to ghost positions.
+* WARNING: vector vghost must contain ghost cells.
 ******************************************************************* */
-void ParallelCommunication::CopyMasterFace2GhostFace(const Epetra_IntVector& v, Epetra_IntVector& vghost)
+void
+ParallelCommunication::CopyMasterFace2GhostFace(const Epetra_IntVector& v, Epetra_IntVector& vghost)
 {
 #ifdef HAVE_MPI
-  const Epetra_BlockMap& source_fmap = mesh_->face_map(false);
-  const Epetra_BlockMap& target_fmap = mesh_->face_map(true);
+  const Epetra_BlockMap& source_fmap = mesh_->getMap(AmanziMesh::Entity_kind::FACE, false);
+  const Epetra_BlockMap& target_fmap = mesh_->getMap(AmanziMesh::Entity_kind::FACE, true);
 
   if (!importer_face_initialized_) {
     importer_face_ = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
@@ -110,15 +116,17 @@ void ParallelCommunication::CopyMasterFace2GhostFace(const Epetra_IntVector& v, 
 
 
 /* *******************************************************************
-* Transfers face-based data from ghost to master positions and 
-* performs the operation 'mode' there. 
-* WARNING: Vector vghost must contain ghost faces.              
+* Transfers face-based data from ghost to master positions and
+* performs the operation 'mode' there.
+* WARNING: Vector vghost must contain ghost faces.
 ******************************************************************* */
-void ParallelCommunication::CombineGhostFace2MasterFace(Epetra_IntVector& vghost, Epetra_CombineMode mode)
+void
+ParallelCommunication::CombineGhostFace2MasterFace(Epetra_IntVector& vghost,
+                                                   Epetra_CombineMode mode)
 {
 #ifdef HAVE_MPI
-  const Epetra_BlockMap& source_fmap = mesh_->face_map(false);
-  const Epetra_BlockMap& target_fmap = mesh_->face_map(true);
+  const Epetra_BlockMap& source_fmap = mesh_->getMap(AmanziMesh::Entity_kind::FACE, false);
+  const Epetra_BlockMap& target_fmap = mesh_->getMap(AmanziMesh::Entity_kind::FACE, true);
 
   if (!importer_face_initialized_) {
     importer_face_ = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
@@ -135,15 +143,17 @@ void ParallelCommunication::CombineGhostFace2MasterFace(Epetra_IntVector& vghost
 
 
 /* *******************************************************************
-* Transfers cell-based data from ghost to master positions and 
-* performs the operation 'mode' there. 
-* WARNING: Vector vghost must contain ghost cells.              
+* Transfers cell-based data from ghost to master positions and
+* performs the operation 'mode' there.
+* WARNING: Vector vghost must contain ghost cells.
 ******************************************************************* */
-void ParallelCommunication::CombineGhostCell2MasterCell(Epetra_IntVector& vghost, Epetra_CombineMode mode)
+void
+ParallelCommunication::CombineGhostCell2MasterCell(Epetra_IntVector& vghost,
+                                                   Epetra_CombineMode mode)
 {
 #ifdef HAVE_MPI
-  const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
-  const Epetra_BlockMap& target_cmap = mesh_->cell_map(true);
+  const Epetra_BlockMap& source_cmap = mesh_->getMap(AmanziMesh::Entity_kind::CELL, false);
+  const Epetra_BlockMap& target_cmap = mesh_->getMap(AmanziMesh::Entity_kind::CELL, true);
 
   if (!importer_face_initialized_) {
     importer_cell_ = Teuchos::rcp(new Epetra_Import(target_cmap, source_cmap));
@@ -158,4 +168,4 @@ void ParallelCommunication::CombineGhostCell2MasterCell(Epetra_IntVector& vghost
 #endif
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

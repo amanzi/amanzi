@@ -1,12 +1,14 @@
 /*
-   State
-
-  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
+
+/*
+   State
 
   Some basic typedefs for State and company.
 */
@@ -25,7 +27,7 @@
 
 namespace Amanzi {
 
-typedef bool NullFactory;  // placeholder object for no factory required
+typedef bool NullFactory; // placeholder object for no factory required
 
 namespace Tags {
 static const Tag DEFAULT("");
@@ -33,15 +35,10 @@ static const Tag CURRENT("current");
 static const Tag INTER("inter");
 static const Tag NEXT(""); // an alias used by ATS
 static const Tag COPY("copy");
-}
+} // namespace Tags
 
-enum class EvaluatorType {
-  PRIMARY,
-  SECONDARY,
-  INDEPENDENT,
-  OTHER
-};
+enum class EvaluatorType { PRIMARY, SECONDARY, INDEPENDENT, OTHER };
 
-} // namespace
+} // namespace Amanzi
 
 #endif

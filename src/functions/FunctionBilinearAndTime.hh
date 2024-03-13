@@ -1,28 +1,27 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! FunctionNDLinear: a piecewise ND-linear function.
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (coonet@ornl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
+//! FunctionNDLinear: a piecewise ND-linear function.
 /*!
 
 A piecewise bilinear function that is additionally linear interpolated in time.
 
-Define :math:`i(x) = i : x_i < x <= x_{{i+1}}` and similarly :math:`j(y) = j : y_j < y <= y_{{j+1}}` for monotonically increasing :math:`x_i` and :math:`y_j`.
+Define :math:`i(x) = i : x_i < x <= x_{{i+1}}` and similarly :math:`j(y) = j : y_j < y <= y_{{j+1}}`
+for monotonically increasing :math:`x_i` and :math:`y_j`.
 
 Given a two-dimensional array :math:`u_{{i,j}}`, :math:`f` is then defined by
-bilinear interpolation on :math:`u_{{i(x),j(y)}}, u_{{i(x)+1,j(y)}},
-u_{{i(x),j(y)+1}}, u_{{i(x)+1,j(y)+1}}, if :math:`(x,y)` is in
+bilinear interpolation on
+:math:`u_{i(x),j(y)}, u_{i(x)+1,j(y)}, u_{i(x),j(y)+1}, u_{i(x)+1,j(y)+1}`, if :math:`(x,y)` is in
 :math:`[x_0,x_n] \times [y_0,y_m]`, linear interpolation if one of :math:`x,y`
 are out of those bounds, and constant at the corner value if both are out of
 bounds.
- 
+
 * `"file`" ``[string]`` HDF5 filename of the data
 * `"time header`" ``[string]`` **time** Name of the temporal dimension indices, the :math:`t_i`.
 * `"row header`" ``[string]`` **x** name of the row dataset, the :math:`x_i`
@@ -30,6 +29,10 @@ bounds.
 * `"column header`" ``[string]`` **y** name of the column dataset, the :math:`y_i`
 * `"column coordinate`" ``[string]`` **y** one of `"x`",`"y`",`"z`"
 * `"value header`" ``[string]`` name of the values dataset, the :math:`u_{{i,j}}`
+* `"forms`" ``[string]`` **linear** Describes the temporal interpolant, one
+  of `"linear`" or `"constant`", where `"linear`" is therefore trilinear
+  interpolation (2x space and time) and `"constant`" indicates that the value
+  on an interval is provided by the left point's (earlier in time) value.
 
 Example1:
 
@@ -74,12 +77,14 @@ class FunctionBilinearAndTime : public Function {
                           const std::string& row_coordinate,
                           const std::string& column_header,
                           const std::string& column_coordinate,
-                          const std::string& val_header);
+                          const std::string& val_header,
+                          Form_kind form);
 
   FunctionBilinearAndTime(const FunctionBilinearAndTime& other);
 
-  ~FunctionBilinearAndTime() {};
-  std::unique_ptr<Function> Clone() const {
+  ~FunctionBilinearAndTime(){};
+  std::unique_ptr<Function> Clone() const
+  {
     return std::make_unique<FunctionBilinearAndTime>(*this);
   }
 
@@ -93,15 +98,16 @@ class FunctionBilinearAndTime : public Function {
   int row_index_, col_index_;
   std::vector<double> times_;
   std::string filename_;
+  Form_kind form_;
+
   mutable double t_before_;
   mutable double t_after_;
   mutable int current_interval_;
 
   mutable std::unique_ptr<Function> val_before_;
   mutable std::unique_ptr<Function> val_after_;
-
 };
 
 } // namespace Amanzi
 
-#endif  // AMANZI_BILINEAR_FUNCTION_HH_
+#endif // AMANZI_BILINEAR_FUNCTION_HH_

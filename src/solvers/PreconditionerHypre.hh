@@ -1,11 +1,11 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-          Ethan Coon (coonet@ornl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+           Ethan Coon (coonet@ornl.gov)
 */
 
 //! Hypre based preconditioners include Algebraic MultiGrid and global ILU
@@ -76,18 +76,17 @@ Example:
   </ParameterList>
 
 
-Euclid is a Parallel Incomplete LU, provided as part of the HYPRE project
+ILU is a Parallel Incomplete LU, provided as part of the HYPRE project
 through the Ifpack interface.
 
-This is provided when using the `"preconditioning method`"=`"euclid`" or
-=`"hypre: euclid`" in the `Preconditioner`_ spec.
+This is provided when using the `"preconditioning method`"=`"ILU`" or
+=`"hypre: ILU`" in the `Preconditioner`_ spec.
 
-.. _preconditioner-euclid-spec:
-.. admonition:: preconditioner-euclid-spec:
+.. _preconditioner-ILU-spec:
+.. admonition:: preconditioner-ILU-spec:
 
     * `"ilu(k) fill level`" ``[int]`` **1** The factorization level.
     * `"ilut drop tolerance`" ``[double]`` **0** Defines a drop tolerance relative to the largest absolute value of any entry in the row being factored.
-    * `"rescale row`" ``[bool]`` **false** If true, values are scaled prior to factorization so that largest value in any row is +1 or -1. Note that this can destroy matrix symmetry.
     * `"verbosity`" ``[int]`` **0** Prints a summary of runtime settings and timing information to stdout.
 
 
@@ -114,8 +113,8 @@ namespace AmanziSolvers {
 
 class PreconditionerHypre : public AmanziSolvers::Preconditioner {
  public:
-  PreconditionerHypre() :
-      AmanziSolvers::Preconditioner(),
+  PreconditionerHypre()
+    : AmanziSolvers::Preconditioner(),
       block_indices_(Teuchos::null),
       num_blocks_(0),
       returned_code_(0),
@@ -128,20 +127,18 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
   virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final;
 
   virtual int returned_code() const override final { return returned_code_; }
-  virtual std::string returned_code_string() const override final {
-    return "success";
-  }
+  virtual std::string returned_code_string() const override final { return "success"; }
 
  private:
   void InitBoomer_();
-  void InitEuclid_();
+  void InitILU_();
   void InitAMS_();
 
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
 
   Hypre_Solver method_;
-  Teuchos::RCP<std::vector<int> > block_indices_;
+  Teuchos::RCP<std::vector<int>> block_indices_;
   int num_blocks_;
 
   mutable int returned_code_;
@@ -149,9 +146,8 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
   Teuchos::RCP<Epetra_RowMatrix> A_;
 };
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
-
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 
 #endif

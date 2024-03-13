@@ -1,12 +1,15 @@
 /*
-  Transport
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Transport
+
 */
 
 #include <iostream>
@@ -29,14 +32,15 @@
 #include "TransportExplicit_PK.hh"
 
 /* **************************************************************** */
-TEST(ADVANCE_WITH_SUBCYCLING) {
+TEST(ADVANCE_WITH_SUBCYCLING)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
+  std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
 #ifdef HAVE_MPI
   Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
@@ -50,17 +54,16 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   /* create a mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   RCP<const Mesh> mesh = meshfactory.create("test/rect2D_10x10_ss.exo");
-  
+
   /* create a simple state and populate it */
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
@@ -79,13 +82,14 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   S->set_intermediate_time(0.0);
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state"); 
+  std::string passwd("state");
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 1.0);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     flux[0][f] = velocity * normal;
   }
 
@@ -93,7 +97,8 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   TPK.Initialize();
 
   /* advance the state */
-  auto tcc = S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
+  auto tcc =
+    S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   double t_old(0.0), t_new(0.0), dt;
   int iter = 0;
@@ -112,8 +117,8 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
     if (iter < 5) {
       printf("T=%8.4f  C_0(x):", t_new);
       for (int k = 0; k < 9; k++) {
-        int k1 = 9 - k;  // reflects cell numbering in the exodus file
-        printf("%7.4f", (*tcc)[0][k1]); 
+        int k1 = 9 - k; // reflects cell numbering in the exodus file
+        printf("%7.4f", (*tcc)[0][k1]);
       }
       printf("\n");
     }
@@ -121,7 +126,7 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
     // for (int k = 0; k < 8; k++)
     //   CHECK( ((*tcc)[0][k+1] - (*tcc)[0][k]) > -1e-15 );
     if (iter == 5) {
-      GMV::open_data_file(*mesh, (std::string)"transport.gmv");
+      GMV::open_data_file(*mesh, (std::string) "transport.gmv");
       GMV::start_data();
       GMV::write_cell_data(*tcc, 0, "component0");
       GMV::write_cell_data(*tcc, 1, "component1");
@@ -130,13 +135,5 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   }
 
   /* check that the final state is constant */
-  for (int k = 0; k < 10; k++) 
-    CHECK_CLOSE(1.0, (*tcc)[0][k], 1e-6);
-
-  
+  for (int k = 0; k < 10; k++) CHECK_CLOSE(1.0, (*tcc)[0][k], 1e-6);
 }
-
-
-
-
-

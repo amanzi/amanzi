@@ -1,7 +1,10 @@
 /*
-  The transport component of the Amanzi code, serial unit tests.
-  License: BSD
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <iostream>
@@ -24,28 +27,27 @@
 #include "TransportExplicit_PK.hh"
 
 
-TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
+TEST(ADVANCE_WITH_MESH_FRAMEWORK)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::vector<std::string> framework_name = {"Simple"};
-  std::vector<Framework> framework = {Framework::SIMPLE};
+  std::vector<std::string> framework_name = { "Simple" };
+  std::vector<Framework> framework = { Framework::SIMPLE };
 
-  if (Amanzi::AmanziMesh::framework_enabled(
-          Amanzi::AmanziMesh::Framework::MSTK)) {
+  if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::MSTK)) {
     framework_name.push_back("MSTK");
     framework.push_back(Framework::MSTK);
   }
-  
-  if (Amanzi::AmanziMesh::framework_enabled(
-          Amanzi::AmanziMesh::Framework::MOAB)) {
+
+  if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::MOAB)) {
     framework_name.push_back("MOAB");
     framework.push_back(Framework::MOAB);
   }
-  
+
   for (int frm = 0; frm < framework.size(); frm++) {
     std::cout << "Test: advance with framework " << framework_name[frm] << std::endl;
     if (!framework_enabled(framework[frm])) continue;
@@ -72,11 +74,11 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     meshfactory.set_preference(pref);
     RCP<const Mesh> mesh;
     if (framework[frm] == Framework::SIMPLE) {
-      mesh = meshfactory.create(0.0,0.0,0.0,1.0,1.0,1.0, 20, 1, 1); 
+      mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 20, 1, 1);
     } else {
       mesh = meshfactory.create("test/hex_3x3x3_ss.exo");
     }
-  
+
     // create a simple state and populate it
     Amanzi::VerboseObject::global_hide_line_prefix = false;
 
@@ -97,13 +99,14 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     S->set_intermediate_time(0.0);
 
     // modify the default state for the problem at hand
-    std::string passwd("state"); 
+    std::string passwd("state");
     auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
     AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
-    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    int nfaces_owned =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     for (int f = 0; f < nfaces_owned; f++) {
-      const AmanziGeometry::Point& normal = mesh->face_normal(f);
+      const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
       flux[0][f] = velocity * normal;
     }
 
@@ -117,9 +120,10 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     TPK.AdvanceStep(t_old, t_new);
 
     // printing cell concentration
-    auto tcc = S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
+    auto tcc =
+      S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
-    while(t_new < 1.2) {
+    while (t_new < 1.2) {
       dt = TPK.StableTimeStep(-1);
       t_new = t_old + dt;
 
@@ -127,24 +131,19 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
       TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
       t_old = t_new;
- 
+
       if (t_new < 0.4) {
         printf("T=%6.2f  C_0(x):", t_new);
-        for (int k = 0; k < 9; k++) printf("%7.4f", (*tcc)[0][k]); std::cout << std::endl;
+        for (int k = 0; k < 9; k++) printf("%7.4f", (*tcc)[0][k]);
+        std::cout << std::endl;
       }
     }
 
     // check that the final state is constant
-    for (int k = 0; k < 4; k++) 
-      CHECK_CLOSE((*tcc)[0][k], 1.0, 1e-6);
+    for (int k = 0; k < 4; k++) CHECK_CLOSE((*tcc)[0][k], 1.0, 1e-6);
 
     if (framework[frm] == Framework::SIMPLE) {
-      for (int k = 0; k < 19; k++) {
-         CHECK(((*tcc)[0][k] - (*tcc)[0][k+1]) > -1e-15);
-      }
+      for (int k = 0; k < 19; k++) { CHECK(((*tcc)[0][k] - (*tcc)[0][k + 1]) > -1e-15); }
     }
   }
 }
- 
-
-

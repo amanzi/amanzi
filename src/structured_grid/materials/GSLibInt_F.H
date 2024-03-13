@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _GSLibInt_F_H_
 #define _GSLibInt_F_H_
 
@@ -117,25 +126,25 @@
 
 #if (BL_SPACEDIM == 3)
 
-    void FORT_INTERP_LAYER (const Real* zl_dat,   ARLIM_P(zl_lo), ARLIM_P(zl_hi), 
-			    const Real* xs, const Real* ys, const Real* zs, 
-			    const int* ns, const int* nl, 
+    void FORT_INTERP_LAYER (const Real* zl_dat,   ARLIM_P(zl_lo), ARLIM_P(zl_hi),
+			    const Real* xs, const Real* ys, const Real* zs,
+			    const int* ns, const int* nl,
 			    const Real* dx, const Real* problo, const Real* probhi);
 
 #else
 
-    void FORT_INTERP_LAYER (const Real* zl_dat,   ARLIM_P(zl_lo), ARLIM_P(zl_hi), 
-			    const Real* xs, const Real* zs, const int*  ns, const int* nl, 
+    void FORT_INTERP_LAYER (const Real* zl_dat,   ARLIM_P(zl_lo), ARLIM_P(zl_hi),
+			    const Real* xs, const Real* zs, const int*  ns, const int* nl,
 			    const Real* dx, const Real* problo, const Real* probhi);
 
 #endif
 
-    void FORT_ASSIGN_LAYER (const Real* kp_dat,   ARLIM_P(kp_lo), ARLIM_P(kp_hi), 
+    void FORT_ASSIGN_LAYER (const Real* kp_dat,   ARLIM_P(kp_lo), ARLIM_P(kp_hi),
 			    const Real* zl_dat,   ARLIM_P(zl_lo), ARLIM_P(zl_hi),
 			    const Real* kappaval, const int* nkpval, const Real* dkappa,
 			    const Real* dx, const Real* problo, const Real* probhi);
 
-  void FORT_PHIRAND (const Real* kp_dat,   ARLIM_P(kp_lo), ARLIM_P(kp_hi), 
+  void FORT_PHIRAND (const Real* kp_dat,   ARLIM_P(kp_lo), ARLIM_P(kp_hi),
 		     const Real* kappaval, const int* nkpval, const Real* dkappa,
 		     const int*  domlo,    const int* domhi, const int* iuc);
 

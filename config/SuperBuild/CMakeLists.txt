@@ -8,13 +8,18 @@
 # Set minimum required version of CMake
 # NB: Must go before project() call.
 # KL: Version used to build Amanzi must be the same!
-cmake_minimum_required(VERSION 3.17.0)
+cmake_minimum_required(VERSION 3.23.0)
+
+# Download timestamp policy
+if(POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+endif()
 
 #
 # Language standard
 # NB: Seems like a good idea to have this before project() call.
 #
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ############################################################################ #

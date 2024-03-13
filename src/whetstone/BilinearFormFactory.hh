@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   Factory of mimetic methods.
 */
@@ -21,7 +23,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 
 #include "BilinearForm.hh"
 
@@ -33,14 +35,16 @@ typedef std::string BFKey;
 class BilinearFormFactory {
   typedef std::map<BFKey,
                    BilinearForm* (*)(const Teuchos::ParameterList&,
-                                     const Teuchos::RCP<const AmanziMesh::MeshLight>&)> map_type;
+                                     const Teuchos::RCP<const AmanziMesh::Mesh>&)>
+    map_type;
 
  public:
-  static Teuchos::RCP<BilinearForm> Create(const Teuchos::ParameterList& plist,
-                                           const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
+  static Teuchos::RCP<BilinearForm>
+  Create(const Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
  protected:
-  static map_type* GetMap() {
+  static map_type* GetMap()
+  {
     if (!map_) map_ = new map_type;
     return map_;
   }
@@ -50,24 +54,33 @@ class BilinearFormFactory {
 };
 
 
-template<typename TDerived> BilinearForm* CreateT(
-    const Teuchos::ParameterList& plist,
-    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh) { return new TDerived(plist, mesh); }
+template <typename TDerived>
+BilinearForm*
+CreateT(const Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+{
+  return new TDerived(plist, mesh);
+}
 
-template<typename TDerived>
+template <typename TDerived>
 class RegisteredFactory : public BilinearFormFactory {
-public:
-  RegisteredFactory(const std::string& s) {
-    for (auto it = BilinearFormFactory::GetMap()->begin(); it != BilinearFormFactory::GetMap()->end(); ++it) {}
-    BilinearFormFactory::GetMap()->insert(std::pair<BFKey,
-                                          BilinearForm* (*)(const Teuchos::ParameterList&,
-                                                            const Teuchos::RCP<const AmanziMesh::MeshLight>&)>(s, &CreateT<TDerived>));
-    for (auto it = BilinearFormFactory::GetMap()->begin(); it != BilinearFormFactory::GetMap()->end(); ++it) {}
+ public:
+  RegisteredFactory(const std::string& s)
+  {
+    for (auto it = BilinearFormFactory::GetMap()->begin();
+         it != BilinearFormFactory::GetMap()->end();
+         ++it) {}
+    BilinearFormFactory::GetMap()->insert(
+      std::pair<BFKey,
+                BilinearForm* (*)(const Teuchos::ParameterList&,
+                                  const Teuchos::RCP<const AmanziMesh::Mesh>&)>(
+        s, &CreateT<TDerived>));
+    for (auto it = BilinearFormFactory::GetMap()->begin();
+         it != BilinearFormFactory::GetMap()->end();
+         ++it) {}
   }
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   The regularized basis for dG methods with monomials of the form
   (x - x0)^m / h^m. The transformation matrix R is diagonal with
@@ -16,7 +18,7 @@
 
 #include <vector>
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 
 #include "Basis_Regularized.hh"
 #include "WhetStoneDefs.hh"
@@ -27,17 +29,19 @@ namespace WhetStone {
 /* ******************************************************************
 * Prepare scaling data for the regularized basis.
 ****************************************************************** */
-void Basis_Regularized::Init(
-    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
-    int c, int order, Polynomial& integrals)
+void
+Basis_Regularized::Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                        int c,
+                        int order,
+                        Polynomial& integrals)
 {
   int k0 = monomial_scales_.size();
   double volume;
 
   if (k0 < order + 1) {
     order_ = order;
-    d_ = mesh->space_dimension();
-    volume = mesh->cell_volume(c);
+    d_ = mesh->getSpaceDimension();
+    volume = mesh->getCellVolume(c);
 
     monomial_scales_.resize(order + 1);
     for (int k = k0; k < order + 1; ++k) {
@@ -50,7 +54,8 @@ void Basis_Regularized::Init(
 /* ******************************************************************
 * Transformation from natural basis to my basis: A_new = R^T A_old R.
 ****************************************************************** */
-void Basis_Regularized::BilinearFormNaturalToMy(DenseMatrix& A) const
+void
+Basis_Regularized::BilinearFormNaturalToMy(DenseMatrix& A) const
 {
   int nrows = A.NumRows();
   std::vector<double> a(nrows);
@@ -64,9 +69,7 @@ void Basis_Regularized::BilinearFormNaturalToMy(DenseMatrix& A) const
 
   // calculate R^T * A * R
   for (int k = 0; k < nrows; ++k) {
-    for (int i = 0; i < nrows; ++i) {
-      A(i, k) = A(i, k) * a[k] * a[i];
-    }
+    for (int i = 0; i < nrows; ++i) { A(i, k) = A(i, k) * a[k] * a[i]; }
   }
 }
 
@@ -74,7 +77,8 @@ void Basis_Regularized::BilinearFormNaturalToMy(DenseMatrix& A) const
 /* ******************************************************************
 * Transformation from natural basis to my basis: f_new = R^T f_old.
 ****************************************************************** */
-void Basis_Regularized::LinearFormNaturalToMy(DenseVector& f) const
+void
+Basis_Regularized::LinearFormNaturalToMy(DenseVector& f) const
 {
   PolynomialIterator it(d_);
   for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
@@ -88,9 +92,10 @@ void Basis_Regularized::LinearFormNaturalToMy(DenseVector& f) const
 /* ******************************************************************
 * Transformation of interface matrix from natural to my bases.
 ****************************************************************** */
-void Basis_Regularized::BilinearFormNaturalToMy(
-    std::shared_ptr<Basis> bl,
-    std::shared_ptr<Basis> br, DenseMatrix& A) const
+void
+Basis_Regularized::BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
+                                           std::shared_ptr<Basis> br,
+                                           DenseMatrix& A) const
 {
   int nrows = A.NumRows();
   int m(nrows / 2);
@@ -124,7 +129,8 @@ void Basis_Regularized::BilinearFormNaturalToMy(
 /* ******************************************************************
 * Transformation from my to natural bases: v_old = R * v_new.
 ****************************************************************** */
-void Basis_Regularized::ChangeBasisMyToNatural(DenseVector& v) const
+void
+Basis_Regularized::ChangeBasisMyToNatural(DenseVector& v) const
 {
   PolynomialIterator it(d_);
   for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
@@ -138,7 +144,8 @@ void Basis_Regularized::ChangeBasisMyToNatural(DenseVector& v) const
 /* ******************************************************************
 * Transformation from natural to my bases: v_new = inv(R) * v_old.
 ****************************************************************** */
-void Basis_Regularized::ChangeBasisNaturalToMy(DenseVector& v) const
+void
+Basis_Regularized::ChangeBasisNaturalToMy(DenseVector& v) const
 {
   PolynomialIterator it(d_);
   for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
@@ -150,16 +157,18 @@ void Basis_Regularized::ChangeBasisNaturalToMy(DenseVector& v) const
 
 
 /* ******************************************************************
-* Recover polynomial in the natural basis from vector coefs of 
-* coefficients in the regularized basis. 
+* Recover polynomial in the natural basis from vector coefs of
+* coefficients in the regularized basis.
 ****************************************************************** */
-Polynomial Basis_Regularized::CalculatePolynomial(
-    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
-    int c, int order, DenseVector& coefs) const
+Polynomial
+Basis_Regularized::CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                       int c,
+                                       int order,
+                                       DenseVector& coefs) const
 {
-  int d = mesh->space_dimension();
+  int d = mesh->getSpaceDimension();
   Polynomial poly(d, order, coefs);
-  poly.set_origin(mesh->cell_centroid(c));
+  poly.set_origin(mesh->getCellCentroid(c));
 
   int n(0);
   for (int k = 0; k < order + 1; ++k) {
@@ -171,6 +180,5 @@ Polynomial Basis_Regularized::CalculatePolynomial(
   return poly;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
+} // namespace WhetStone
+} // namespace Amanzi

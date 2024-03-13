@@ -102,6 +102,7 @@
       <Parameter name="initial time step (s)" type="double" value="20.0"/>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="50"/>
+      <Parameter name="log formulation" type="bool" value="true"/>
       <ParameterList name="initial conditions">
 	<ParameterList name="mineral_volume_fractions">
           <Parameter name="function" type="string" value="list was moved to state"/>
@@ -729,7 +730,6 @@
 	</ParameterList>
 	<Parameter name="max preconditioner lag iterations" type="int" value="4"/>
 	<Parameter name="extrapolate initial guess" type="bool" value="true"/>
-	<Parameter name="nonlinear iteration damping factor" type="double" value="1.0e+00"/>
 	<Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
 	<Parameter name="restart tolerance relaxation factor" type="double" value="1.0e+00"/>
 	<Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>

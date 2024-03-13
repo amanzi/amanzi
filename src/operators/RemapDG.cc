@@ -1,12 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
 
   The helper advection-based base class for various remap methods.
 */
@@ -27,9 +29,11 @@ namespace Operators {
 /* *****************************************************************
 * Specialization for CompositeVector: Functional evaluation
 ***************************************************************** */
-template<>
-void RemapDG<CompositeVector>::FunctionalTimeDerivative(
-    double t, const CompositeVector& u, CompositeVector& f)
+template <>
+void
+RemapDG<CompositeVector>::FunctionalTimeDerivative(double t,
+                                                   const CompositeVector& u,
+                                                   CompositeVector& f)
 {
   // -- populate operators
   op_adv_->Setup(velc_, false);
@@ -49,8 +53,9 @@ void RemapDG<CompositeVector>::FunctionalTimeDerivative(
 /* *****************************************************************
 * Limiting the non-conservative field at time t
 ***************************************************************** */
-template<>
-void RemapDG<CompositeVector>::ModifySolution(double t, CompositeVector& u)
+template <>
+void
+RemapDG<CompositeVector>::ModifySolution(double t, CompositeVector& u)
 {
   // populate operators
   op_reac_->Setup(det_, false);
@@ -81,9 +86,7 @@ void RemapDG<CompositeVector>::ModifySolution(double t, CompositeVector& u)
       double a = climiter[c];
       if (a < 1.0) {
         double mass(0.0);
-        for (int i = 0; i < nk; ++i) {
-          mass += matrices[c](i, 0) * orig_c[i][c];
-        }
+        for (int i = 0; i < nk; ++i) { mass += matrices[c](i, 0) * orig_c[i][c]; }
 
         field_c[0][c] = a * orig_c[0][c] + (1.0 - a) * mass / matrices[c](0, 0);
       }
@@ -98,9 +101,11 @@ void RemapDG<CompositeVector>::ModifySolution(double t, CompositeVector& u)
 /* *****************************************************************
 * Change between conservative and non-conservative variables.
 ***************************************************************** */
-template<>
-void RemapDG<CompositeVector>::NonConservativeToConservative(
-    double t, const CompositeVector& u, CompositeVector& v)
+template <>
+void
+RemapDG<CompositeVector>::NonConservativeToConservative(double t,
+                                                        const CompositeVector& u,
+                                                        CompositeVector& v)
 {
   op_reac_->Setup(det_, false);
   op_reac_->UpdateMatrices(t);
@@ -108,9 +113,11 @@ void RemapDG<CompositeVector>::NonConservativeToConservative(
 }
 
 
-template<>
-void RemapDG<CompositeVector>::ConservativeToNonConservative(
-    double t, const CompositeVector& u, CompositeVector& v)
+template <>
+void
+RemapDG<CompositeVector>::ConservativeToNonConservative(double t,
+                                                        const CompositeVector& u,
+                                                        CompositeVector& v)
 {
   op_reac_->Setup(det_, false);
   op_reac_->UpdateMatrices(t);
@@ -125,9 +132,9 @@ void RemapDG<CompositeVector>::ConservativeToNonConservative(
 /* *****************************************************************
 * Specialization for TreeVector: functional evaluation
 ***************************************************************** */
-template<>
-void RemapDG<TreeVector>::FunctionalTimeDerivative(
-    double t, const TreeVector& u, TreeVector& f)
+template <>
+void
+RemapDG<TreeVector>::FunctionalTimeDerivative(double t, const TreeVector& u, TreeVector& f)
 {
   // mass conservation equation
   // -- populate operators
@@ -165,8 +172,9 @@ void RemapDG<TreeVector>::FunctionalTimeDerivative(
 /* *****************************************************************
 * Limiting the non-conservative field at time t
 ***************************************************************** */
-template<>
-void RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
+template <>
+void
+RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
 {
   // populate operators
   auto detc = *u.SubVector(1)->Data()->ViewComponent("cell");
@@ -211,9 +219,7 @@ void RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
       double a = climiter[c];
       if (a < 1.0) {
         double mass(0.0);
-        for (int i = 0; i < mk; ++i) {
-          mass += matrices[c](i, 0) * orig_c[i][c];
-        }
+        for (int i = 0; i < mk; ++i) { mass += matrices[c](i, 0) * orig_c[i][c]; }
 
         field_c[0][c] = a * orig_c[0][c] + (1.0 - a) * mass / matrices[c](0, 0);
       }
@@ -228,9 +234,9 @@ void RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
 /* *****************************************************************
 * Change between conservative and non-conservative variables.
 ***************************************************************** */
-template<>
-void RemapDG<TreeVector>::NonConservativeToConservative(
-    double t, const TreeVector& u, TreeVector& v)
+template <>
+void
+RemapDG<TreeVector>::NonConservativeToConservative(double t, const TreeVector& u, TreeVector& v)
 {
   // create a polynomial for determinant of Jacobian
   auto detc = *u.SubVector(1)->Data()->ViewComponent("cell");
@@ -250,9 +256,9 @@ void RemapDG<TreeVector>::NonConservativeToConservative(
 }
 
 
-template<>
-void RemapDG<TreeVector>::ConservativeToNonConservative(
-    double t, const TreeVector& u, TreeVector& v)
+template <>
+void
+RemapDG<TreeVector>::ConservativeToNonConservative(double t, const TreeVector& u, TreeVector& v)
 {
   // create a polynomial for determinant of Jacobian
   auto detc = *u.SubVector(1)->Data()->ViewComponent("cell");
@@ -274,6 +280,5 @@ void RemapDG<TreeVector>::ConservativeToNonConservative(
   op_reac_->global_operator()->Apply(*u.SubVector(0)->Data(), *v.SubVector(0)->Data());
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
+} // namespace Operators
+} // namespace Amanzi

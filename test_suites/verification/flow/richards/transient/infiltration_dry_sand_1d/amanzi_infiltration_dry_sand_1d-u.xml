@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<amanzi_input type="unstructured" version="2.3.0">
+<amanzi_input type="unstructured" version="1.5-dev">
     <misc>
         <echo_translated_input format="unstructured_native"/>
     </misc>
@@ -128,6 +128,7 @@
                     <uniform_pressure value="62169"/>
                 </liquid_component>
             </liquid_phase>
+            <uniform_temperature value="298.0"/>
         </initial_condition>
     </initial_conditions>
     <boundary_conditions>

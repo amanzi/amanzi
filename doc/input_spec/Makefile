@@ -7,10 +7,18 @@ CBpath =./code-block
 PY_CSS = --stylesheet=$(CBpath)/pygments-default.css
 PY_STY = --stylesheet=$(CBpath)/pygments-default.sty
 
+SPHINXOPTS  =
+SPHINXBUILD = sphinx-build
+SOURCEDIR   = ./
+BUILDDIR    = build
+
 SRC = \
-	AmanziNativeSpecV9.rst \
-	AmanziInputSpec-v2.3.2-u.rst \
-	AmanziInputSpec-v2.3.2-s.rst
+	AmanziInputSpec-u.rst \
+	AmanziInputSpec-s.rst \
+        AmanziNativeSpec_dev.rst.pre \
+        AmanziNativeSpec_dev.rst
+
+RST = $(SRC:%.rst.pre=%.rst)
 
 HTML = $(SRC:%.rst=%.html)
 
@@ -29,11 +37,29 @@ PDF = $(SRC:%.rst=%.pdf)
 	pdflatex $<
 	pdflatex $<
 
+%.rst:
+	@./AmanziNativeSpec.py $< $@
+
+help:
+	@echo '-------------------------------------------------------'
+	@echo 'Available options:'
+	@echo '   rst    - converts file.pre to file.rst'
+	@echo '   sphinx - converts file.rst to file.html'
+	@echo '-------------------------------------------------------'
+
+sphinx:
+	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+rst : $(RST)
+
 html : $(HTML)
 
-all : html pdf
+all : rst sphinx
 
 pdf : $(PDF)
+
+clean-rst : 
+	-/bin/rm -f AmanziNativeSpec_dev.rst
 
 clean-html : 
 	-/bin/rm -f *.html
@@ -42,7 +68,11 @@ clean-pdf :
 	-/bin/rm -f *.tex *.pdf
 	-/bin/rm -f *.aux *.toc *.log *.out
 
-clean : clean-html clean-pdf
+clean-sphinx : 
+	-/bin/rm -rf build
+
+clean : clean-html clean-pdf clean-rst clean-sphinx
 	-/bin/rm -f *~
 
 distclean : clean
+

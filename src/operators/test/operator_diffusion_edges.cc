@@ -1,12 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
+
 */
 
 #include <cstdlib>
@@ -38,8 +41,9 @@
 * This test diffusion solver with full tensor and source term.
 * The degrees of freedom are on mesh edges.
 * **************************************************************** */
-template<class Analytic>
-void TestDiffusionEdges(int dim, double tol, std::string filename)
+template <class Analytic>
+void
+TestDiffusionEdges(int dim, double tol, std::string filename)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -50,8 +54,9 @@ void TestDiffusionEdges(int dim, double tol, std::string filename)
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: elliptic solver, edge discretization, d=" << dim 
-                            << ", file: " << filename << std::endl;
+  if (MyPID == 0)
+    std::cout << "\nTest: elliptic solver, edge discretization, d=" << dim << ", file: " << filename
+              << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -60,46 +65,51 @@ void TestDiffusionEdges(int dim, double tol, std::string filename)
 
   // create an SIMPLE mesh framework
   Teuchos::RCP<GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  auto fac_list = Teuchos::rcp(new Teuchos::ParameterList());
+  fac_list->set<bool>("request edges", true);
+  fac_list->set<bool>("request faces", true);
+  MeshFactory meshfactory(comm, gm, fac_list);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh;
-  if (dim == 2)
-    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 6, 7, true, true);
-    // mesh = meshfactory.create("test/median32x33.exo", true, true);
-  else 
-    mesh = meshfactory.create(filename, true, true);
-    // mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 1, 1, true, true);
-  
+  if (dim == 2) mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 6, 7);
+  // mesh = meshfactory.create("test/median32x33.exo", true, true);
+  else
+    mesh = meshfactory.create(filename);
+  // mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 1, 1, true, true);
+
   // modify diffusion coefficient
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
+    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  int ncells =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nedges_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic ana(mesh);
 
   for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::EDGE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   int d = dim - 1;
   for (int e = 0; e < nedges_wghost; ++e) {
-    const Point& xe = mesh->edge_centroid(e);
-    if (fabs(xe[0]) < 1e-6 || fabs(xe[0] - 1.0) < 1e-6 ||
-        fabs(xe[1]) < 1e-6 || fabs(xe[1] - 1.0) < 1e-6 ||
-        fabs(xe[d]) < 1e-6 || fabs(xe[d] - 1.0) < 1e-6) {
+    const Point& xe = mesh->getEdgeCentroid(e);
+    if (fabs(xe[0]) < 1e-6 || fabs(xe[0] - 1.0) < 1e-6 || fabs(xe[1]) < 1e-6 ||
+        fabs(xe[1] - 1.0) < 1e-6 || fabs(xe[d]) < 1e-6 || fabs(xe[d] - 1.0) < 1e-6) {
       bc_model[e] = OPERATOR_BC_DIRICHLET;
       bc_value[e] = ana.pressure_exact(xe, 0.0);
     }
   }
 
-  // create diffusion operator 
+  // create diffusion operator
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator edge");
   auto op = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
   op->SetBCs(bc, bc);
@@ -111,11 +121,10 @@ void TestDiffusionEdges(int dim, double tol, std::string filename)
   src.PutScalar(0.0);
 
   for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->cell_centroid(c);
-    double volume = mesh->cell_volume(c);
+    const Point& xc = mesh->getCellCentroid(c);
+    double volume = mesh->getCellVolume(c);
 
-    AmanziMesh::Entity_ID_List edges;
-    mesh->cell_get_edges(c, &edges);
+    auto edges = mesh->getCellEdges(c);
     int nedges = edges.size();
 
     for (int k = 0; k < nedges; k++) {
@@ -137,7 +146,8 @@ void TestDiffusionEdges(int dim, double tol, std::string filename)
   op->ApplyBCs(true, true, true);
 
   // create preconditoner using the base operator class
-  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
+  global_op->set_inverse_parameters(
+    "Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
 
@@ -152,9 +162,9 @@ void TestDiffusionEdges(int dim, double tol, std::string filename)
   global_op->ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual() 
-              << " itr=" << global_op->num_itrs()
-              << " code=" << global_op->returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual()
+              << " itr=" << global_op->num_itrs() << " code=" << global_op->returned_code()
+              << std::endl;
   }
   CHECK(global_op->num_itrs() < 10);
 
@@ -175,7 +185,8 @@ void TestDiffusionEdges(int dim, double tol, std::string filename)
 }
 
 
-TEST(OPERATOR_DIFFUSION_EDGES) {
+TEST(OPERATOR_DIFFUSION_EDGES)
+{
   TestDiffusionEdges<Analytic02>(2, 1e-12, "");
   TestDiffusionEdges<Analytic02>(3, 1e-12, "test/tetrahedra.exo");
   TestDiffusionEdges<Analytic02>(3, 1e-12, "test/hexes.exo");

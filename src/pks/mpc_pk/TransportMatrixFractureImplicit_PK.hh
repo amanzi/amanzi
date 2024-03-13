@@ -1,12 +1,14 @@
 /*
-  MPC PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov
+*/
+
+/*
+  MPC PK
 
   Process kernel that couples transport in matrix and fracture
   using implicit scheme.
@@ -43,22 +45,22 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
 
   // -- advance each sub pk from t_old to t_new.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
-  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
 
   // -- miscaleneous methods
-  virtual std::string name() override { return "coupled transport implicit"; } 
+  virtual std::string name() override { return "coupled transport implicit"; }
   virtual void CalculateDiagnostics(const Tag& tag) override;
 
   // interface to time integrator
-  virtual void FunctionalResidual(double t_old, double t_new,
+  virtual void FunctionalResidual(double t_old,
+                                  double t_new,
                                   Teuchos::RCP<TreeVector> u_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
 
-  virtual void UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
-                                    double dtp) override;
-  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
-                                  Teuchos::RCP<TreeVector> Y) override;
+  virtual void
+  UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp) override;
+  virtual int
+  ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, Teuchos::RCP<TreeVector> Y) override;
 
  private:
   bool AdvanceStepLO_(double t_old, double t_new, int* tot_itrs);
@@ -71,7 +73,7 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
 
   int num_aqueous_;
   int nspace_m_, nspace_f_;
-  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae_;
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae_;
   Teuchos::RCP<Matrix<TreeVector, TreeVectorSpace>> op_pc_solver_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
@@ -94,5 +96,5 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
   static RegisteredPKFactory<TransportMatrixFractureImplicit_PK> reg_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 #endif

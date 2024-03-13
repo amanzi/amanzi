@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
@@ -20,7 +29,8 @@
 #include "TransportExplicit_PK.hh"
 
 /* **************************************************************** */
-TEST(DIFFUSION_GAS_SMILES) {
+TEST(DIFFUSION_GAS_SMILES)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -39,7 +49,7 @@ TEST(DIFFUSION_GAS_SMILES) {
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0, 10.0,1.0, 51, 1); 
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 51, 1);
 
   // create a simple state and populate it
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -63,11 +73,12 @@ TEST(DIFFUSION_GAS_SMILES) {
   S->set_final_time(0.0);
 
   // modify the default state for the problem at hand
-  std::string passwd("state"); 
+  std::string passwd("state");
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
   flux.PutScalar(0.0);
 
-  auto& tcc = *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
+  auto& tcc =
+    *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   // initialize a transport process kernel
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -75,7 +86,6 @@ TEST(DIFFUSION_GAS_SMILES) {
   WriteStateStatistics(*S);
 
   // advance the state
-  int iter = 0;
   double dt0(2 * 3.1558e+6), t_old(0.0), t_new(0.0), dt, T1(3.1558e+8);
   while (t_new < T1) {
     dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
@@ -86,8 +96,12 @@ TEST(DIFFUSION_GAS_SMILES) {
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
-    iter++;
-    printf("AAA: %g %16.10g %16.10g ... %16.10g   %16.10g\n", t_new, tcc[0][0], tcc[0][1], tcc[0][25], tcc[1][25]);
+    printf("AAA: %g %16.10g %16.10g ... %16.10g   %16.10g\n",
+           t_new,
+           tcc[0][0],
+           tcc[0][1],
+           tcc[0][25],
+           tcc[1][25]);
   }
 
   WriteStateStatistics(*S);
@@ -99,12 +113,10 @@ TEST(DIFFUSION_GAS_SMILES) {
   CHECK_CLOSE(0.14, tcc_eff, 0.002);
 
   // check for bounds
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells_owned; ++c) {
     CHECK(tcc[0][c] >= 0.0 && tcc[0][c] <= 1.0);
     CHECK(tcc[1][c] >= 0.0 && tcc[1][c] <= 1.0);
   }
 }
-
-
-

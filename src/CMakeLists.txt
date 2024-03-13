@@ -1,8 +1,5 @@
 # -*- mode: cmake -*-
 
-# Global definitions of standards
-# add_definitions(-DBOOST_NO_CXX11_VARIADIC_TEMPLATES)
-
 # Standard utilities
 add_subdirectory(error_handling)
 add_subdirectory(utils)
@@ -67,6 +64,7 @@ if (ENABLE_Unstructured)
      add_subdirectory(mpc)
 
      # unstructured grid simulation driver, and Amanzi binaries
+     add_subdirectory(driver)
      add_subdirectory(executables)
    endif()
 

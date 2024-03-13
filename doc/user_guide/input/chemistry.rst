@@ -11,7 +11,7 @@ for a PFLOTRAN input file are available in the PFLOTRAN User Manual
 (https://documentation.pflotran.org).
 
 The geochemical capabilities of the reactive transport code CRUNCHFLOW
-(https://bitbucket.org/crunchflow/crunchtope/downloads) are available through the 
+(https://github.com/cisteefel/crunchtope) are available through the 
 Alquimia interface. The User Manual for CRUNCHFLOW can be found here: 
 https://www.netl.doe.gov/sites/default/files/netl-file/CrunchFlow-Manual.pdf.
 
@@ -28,6 +28,6 @@ reactive transport simulators such as PFLOTRAN or CrunchFlow,
 allowing any subsurface flow and transport simulator to access a range of functionality.
 
 The official repository for Alquimia API documentation and reference API is 
-https://bitbucket.org/berkeleylab/alquimia. The alquimia API is intended to be open and implemented 
+https://github.com/LBL-EESA/alquimia-dev. The alquimia API is intended to be open and implemented 
 by anyone. The reference implementation developed by Lawrence Berkeley National Laboratory is open
 source, licensed under a BSD License.

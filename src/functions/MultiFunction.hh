@@ -1,8 +1,14 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 /* -------------------------------------------------------------------------
 ATS & Amanzi
-
-License: see $AMANZI_DIR/COPYRIGHT
-Author Ethan Coon
 
 Function from R^d to R^n.
 ------------------------------------------------------------------------- */
@@ -18,9 +24,8 @@ Function from R^d to R^n.
 namespace Amanzi {
 
 class MultiFunction {
-
-public:
-  MultiFunction(const std::vector<Teuchos::RCP<const Function> >& functions);
+ public:
+  MultiFunction(const std::vector<Teuchos::RCP<const Function>>& functions);
   MultiFunction(const Teuchos::RCP<const Function>& function);
   MultiFunction(Teuchos::ParameterList& plist);
 
@@ -30,10 +35,10 @@ public:
   double* operator()(const std::vector<double>& xt) const;
 
  private:
-  std::vector<Teuchos::RCP<const Function> > functions_;
+  std::vector<Teuchos::RCP<const Function>> functions_;
   double* values_;
 };
 
-} // namespace
+} // namespace Amanzi
 
 #endif

@@ -1,14 +1,49 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Class for ion exchange complexation reaction
+  Authors:
+*/
+
+/*!
+
+The class for ion exchange complexation reaction
 
   NaX <===> Na+ + X-
+
+The `"ion exchange complexes`" is the list of ion exchange complexation reactions.
+We assume that the reactions are always written as one complex equals one primary
+species plus one exchange site.
+Each complex is defined by the following parameters:
+
+* `"reaction`" [string] is the exchange reaction.
+
+* `"equilibrium constant`" [double] is the logarithm of the equilibrium constant.
+
+.. code-block:: xml
+
+  <ParameterList name="ion exchange complexes">
+    <ParameterList name="Na+X">
+      <Parameter name="reaction" type="string" value="1.0 Na+  1.0 X-"/>
+      <Parameter name="equilibrium constant" type="double" value="1.0"/>
+    </ParameterList>
+    <ParameterList name="Ca++X">
+      <Parameter name="reaction" type="string" value="1.0 Ca++  2.0 X-"/>
+      <Parameter name="equilibrium constant" type="double" value="0.316228"/>
+    </ParameterList>
+  </ParameterList>
+
+A few additional examples, reaction equation and the equilibrium coefficient:
+
+.. code-block:: txt
+
+   Al+++X = 1.0 Al+++ 3.0 X-    1.71133
+   Ca0.5X = 0.5 Ca++  1.0 X-   -0.99
+   H+X    = 1.0 H+    1.0 X-    0.0251189
+   Mg++X  = 1.0 Mg++  2.0 X-    0.1666
+
 */
 
 #ifndef AMANZI_CHEMISTRY_IONEXCHANGECOMPLEX_HH_
@@ -23,12 +58,12 @@ namespace AmanziChemistry {
 
 class IonExchangeComplex {
  public:
-  IonExchangeComplex() {};
+  IonExchangeComplex(){};
   IonExchangeComplex(const std::string& complex_name,
                      int complex_id,
                      const Teuchos::ParameterList& plist,
                      const std::vector<Species>& primary_species);
-  virtual ~IonExchangeComplex() {};
+  virtual ~IonExchangeComplex(){};
 
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const;
@@ -54,7 +89,7 @@ class IonExchangeComplex {
   double concentration_, K_, X_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 
 #endif

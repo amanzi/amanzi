@@ -86,8 +86,8 @@ Libraries that it uses, so to make the build process easier Amanzi's
 build system will download and build all the TPLs for you.  To get
 started you will need a modern Linux/Unix/OSX system with
 
- * CMake (version >= 3.13.3), 
- * A recent GNU or Intel compiler suporting the C++11 standard
+ * CMake (version >= 3.17.0), 
+ * A recent GNU >= 7.5, Clang >=5, or Intel compiler >= 19, suporting the C++14 standard.
  * MPI (e.g., OpenMPI version > 3.1)
 
 Details are provided in the Installation Instructions in the User Guide.

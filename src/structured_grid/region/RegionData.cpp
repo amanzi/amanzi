@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <RegionData.H>
 
 RegionData::RegionData(const std::string&    label,
@@ -24,7 +33,7 @@ RegionData::setRegions(const Array<const Region*>& regions_)
 {
     int nregions=regions_.size();
 
-    // Get a copy of the pointers to regions in a structure that wont 
+    // Get a copy of the pointers to regions in a structure that wont
     //   remove them when it leaves scope
     regions.resize(nregions);
     for (int i=0; i<nregions; ++i) {
@@ -33,8 +42,8 @@ RegionData::setRegions(const Array<const Region*>& regions_)
 }
 
 void
-RegionData::apply(FArrayBox&  fab, 
-                  const Real* dx, 
+RegionData::apply(FArrayBox&  fab,
+                  const Real* dx,
                   int         scomp,
                   int         ncomp,
                   Real        t) const
@@ -43,7 +52,7 @@ RegionData::apply(FArrayBox&  fab,
     const Box& box = fab.box();
     FArrayBox mask(box,1); mask.setVal(-1);
     for (int j=0; j<regions.size(); ++j)
-    { 
+    {
         regions[j]->setVal(mask,1,0,dx,0);
     }
     for (IntVect iv=box.smallEnd(); iv<=box.bigEnd(); box.next(iv)) {

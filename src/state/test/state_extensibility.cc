@@ -1,10 +1,14 @@
 /*
-  State
-
-  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
+  State
 
   Tests for state as a container of data
   NOTE: this test passes if it compiles!
@@ -34,30 +38,40 @@ struct MyPoint {
 
 using MyPointList = std::vector<MyPoint>;
 
-bool inline UserInitialize(Teuchos::ParameterList& plist, MyPointList& t,
+bool inline UserInitialize(Teuchos::ParameterList& plist,
+                           MyPointList& t,
                            const Amanzi::Key& fieldname,
-                           const std::vector<std::string>* subfieldnames) {
+                           const std::vector<std::string>* subfieldnames)
+{
   std::cout << "found it!" << std::endl;
   return true;
 }
 
-void UserWriteVis(const Amanzi::Visualization& vis,
-                  const Amanzi::Key& fieldname,
-                  const std::vector<std::string>* subfieldnames,
-                  const MyPointList& vec) {}
+void
+UserWriteVis(const Amanzi::Visualization& vis,
+             const Amanzi::Key& fieldname,
+             const std::vector<std::string>* subfieldnames,
+             const MyPointList& vec)
+{}
 
-void UserWriteCheckpoint(const Amanzi::Checkpoint& chkp,
-                         const Amanzi::Key& fieldname,
-                         const std::vector<std::string>* subfieldnames,
-                         const MyPointList& vec) {
+void
+UserWriteCheckpoint(const Amanzi::Checkpoint& chkp,
+                    const Amanzi::Key& fieldname,
+                    const std::vector<std::string>* subfieldnames,
+                    const MyPointList& vec)
+{}
+bool
+UserReadCheckpoint(const Amanzi::Checkpoint& chkp,
+                   const Amanzi::Key& fieldname,
+                   const std::vector<std::string>* subfieldnames,
+                   MyPointList& vec)
+{
+  return true;
 }
-bool UserReadCheckpoint(const Amanzi::Checkpoint& chkp,
-                        const Amanzi::Key& fieldname,
-                        const std::vector<std::string>* subfieldnames,
-                        MyPointList& vec) { return true; }
 
 
-TEST(STATE_EXTENSIBILITY_CREATION) {
+TEST(STATE_EXTENSIBILITY_CREATION)
+{
   using namespace Amanzi;
 
   auto comm = Amanzi::getDefaultComm();
@@ -70,7 +84,8 @@ TEST(STATE_EXTENSIBILITY_CREATION) {
 
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> m = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> m =
+    meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1);
 
   std::string xmlFileName = "test/state_extensibility.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
@@ -91,4 +106,3 @@ TEST(STATE_EXTENSIBILITY_CREATION) {
   Checkpoint chkp(plist->sublist("checkpoint"), s);
   chkp.Write(s);
 }
-

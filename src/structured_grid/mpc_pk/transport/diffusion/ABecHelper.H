@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _ABecHelper_H_
 #define _ABecHelper_H_
 
@@ -21,7 +30,7 @@ public:
   virtual void compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
                          MultiFab& in, const BC_Mode& bc_mode=LinOp::Inhomogeneous_BC,
                          int src_comp=0, int dst_comp=0, int num_comp=1, int bnd_comp=-1);
-  
+
   void compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
                  MultiFab& in, bool do_ApplyBC, const BC_Mode& bc_mode=LinOp::Inhomogeneous_BC,
                  int src_comp=0, int dst_comp=0, int num_comp=1, int bnd_comp=-1);
@@ -109,4 +118,3 @@ protected:
 };
 
 #endif
-

@@ -1,13 +1,16 @@
 /*
-  Flow PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Neil Carlson (version 1) 
+  Authors: Neil Carlson (version 1)
            Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
+
 */
 
 #include <string>
@@ -17,7 +20,7 @@
 
 #include "GMVMesh.hh"
 #include "Mesh.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
 #include "State.hh"
 
@@ -29,9 +32,11 @@ namespace Flow {
 /* ******************************************************************
 * Due to round-off errors, we have to use tolerances.
 ****************************************************************** */
-void Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, double* area_seepage)
+void
+Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, double* area_seepage)
 {
-  const auto& flux = *S_->Get<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT).ViewComponent("face", true);
+  const auto& flux =
+    *S_->Get<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT).ViewComponent("face", true);
   const auto& u_cell = *u.ViewComponent("cell");
 
   std::vector<int>& bc_model = op_bc_->bc_model();
@@ -39,8 +44,7 @@ void Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
   // std::vector<double>& bc_mixed = op_bc_->bc_mixed();
 
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->get_bc_name() == "seepage" && 
-        bcs_[i]->seepage_model() == "PFloTran") {
+    if (bcs_[i]->get_bc_name() == "seepage" && bcs_[i]->seepage_model() == "PFloTran") {
       double ref_pressure = bcs_[i]->ref_pressure();
       double tol = ref_pressure * 1e-14;
       double flux_threshold = bcs_[i]->seepage_flux_threshold();
@@ -80,7 +84,7 @@ void Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
         int f = it->first;
         if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
           (*nseepage)++;
-          (*area_seepage) += mesh_->face_area(f);
+          (*area_seepage) += mesh_->getFaceArea(f);
         }
       }
     }
@@ -91,7 +95,8 @@ void Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
 /* ******************************************************************
 * Model II.
 ****************************************************************** */
-void Flow_PK::SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* area_seepage)
+void
+Flow_PK::SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* area_seepage)
 {
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
@@ -101,8 +106,7 @@ void Flow_PK::SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* a
   *area_seepage = 0.0;
 
   for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->get_bc_name() == "seepage" && 
-        bcs_[i]->seepage_model() == "FACT") {
+    if (bcs_[i]->get_bc_name() == "seepage" && bcs_[i]->seepage_model() == "FACT") {
       double ref_pressure = bcs_[i]->ref_pressure();
 
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
@@ -122,20 +126,19 @@ void Flow_PK::SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* a
           bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
           double a = 2 * (pcreg - pc) / pcreg;
           double q = (7 - 2 * a - a * a) / 8;
-          bc_value[f] = q * influx; 
+          bc_value[f] = q * influx;
         } else {
           double I = influx / pcreg;
           bc_model[f] = Operators::OPERATOR_BC_MIXED;
           bc_value[f] = -I * ref_pressure;
-          bc_mixed[f] = I;  // Impedance I should be positive.
+          bc_mixed[f] = I; // Impedance I should be positive.
           (*nseepage)++;
-          (*area_seepage) += mesh_->face_area(f);
+          (*area_seepage) += mesh_->getFaceArea(f);
         }
       }
     }
   }
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
-
+} // namespace Flow
+} // namespace Amanzi

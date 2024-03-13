@@ -1,13 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! FunctionTabular: Piecewise-defined function.
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
 */
 
+//! FunctionTabular: Piecewise-defined function.
 /*!
 
 A piecewise function of one variable.
@@ -116,35 +116,34 @@ namespace Amanzi {
 
 class FunctionTabular : public Function {
  public:
-  enum Form { LINEAR, CONSTANT, FUNCTION };
-
- public:
-  FunctionTabular(const std::vector<double>& x, const std::vector<double>& y,
-                  const int xi);
-  FunctionTabular(const std::vector<double>& x, const std::vector<double>& y,
-                  const int xi, const std::vector<Form>& form);
-  FunctionTabular(const std::vector<double>& x, const std::vector<double>& y,
-                  const int xi, const std::vector<Form>& form,
+  FunctionTabular(const std::vector<double>& x, const std::vector<double>& y, const int xi);
+  FunctionTabular(const std::vector<double>& x,
+                  const std::vector<double>& y,
+                  const int xi,
+                  const std::vector<Form_kind>& form);
+  FunctionTabular(const std::vector<double>& x,
+                  const std::vector<double>& y,
+                  const int xi,
+                  const std::vector<Form_kind>& form,
                   std::vector<std::unique_ptr<Function>> func);
   FunctionTabular(const FunctionTabular& other);
-  ~FunctionTabular() {};
+  ~FunctionTabular(){};
 
-  std::unique_ptr<Function> Clone() const {
-    return std::make_unique<FunctionTabular>(*this);
-  }
+  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionTabular>(*this); }
   double operator()(const std::vector<double>& x) const;
 
  private:
   std::vector<double> x_, y_;
   int xi_;
-  std::vector<Form> form_;
+  std::vector<Form_kind> form_;
   std::vector<std::unique_ptr<Function>> func_;
 
  private: // helper functions
-  void check_args(const std::vector<double>&, const std::vector<double>&,
-     const std::vector<Form>&) const;
+  void check_args(const std::vector<double>&,
+                  const std::vector<double>&,
+                  const std::vector<Form_kind>&) const;
 };
 
 } // namespace Amanzi
 
-#endif  // AMANZI_TABULAR_FUNCTION_HH_
+#endif // AMANZI_TABULAR_FUNCTION_HH_

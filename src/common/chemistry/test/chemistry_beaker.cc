@@ -1,4 +1,12 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <cstdlib>
 #include <cmath>
 
@@ -17,14 +25,16 @@
 #include "BeakerState.hh"
 #include "SimpleThermoDatabase.hh"
 
-SUITE(BeakerTests) {
+SUITE(BeakerTests)
+{
   using Amanzi::AmanziChemistry::Beaker;
   using Amanzi::AmanziChemistry::BeakerState;
   using Amanzi::AmanziChemistry::BeakerParameters;
   using Amanzi::AmanziChemistry::SimpleThermoDatabase;
   using Amanzi::AmanziChemistry::ActivityModelFactory;
 
-  TEST(CheckBadActivityModel) {
+  TEST(CheckBadActivityModel)
+  {
     Teuchos::ParameterList plist;
     auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry PK", plist));
 
@@ -38,8 +48,8 @@ SUITE(BeakerTests) {
     state.total.clear();
     state.total_sorbed.clear();
 
-    state.total.push_back(1.0e-3);  // H+
-    state.total.push_back(1.0e-3);  // HCO3-
+    state.total.push_back(1.0e-3); // H+
+    state.total.push_back(1.0e-3); // HCO3-
 
     BeakerParameters parameters;
 
@@ -53,10 +63,8 @@ SUITE(BeakerTests) {
       chem.Initialize(state, parameters);
     } catch (Exceptions::Amanzi_exception& e) {
       correct_exception = true;
-    } catch (std::exception& e) {
-    }
+    } catch (std::exception& e) {}
 
     CHECK(correct_exception);
   }
 }
-

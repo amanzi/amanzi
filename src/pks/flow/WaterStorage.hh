@@ -1,17 +1,19 @@
 /*
-  Flow PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
+*/
 
-  Field evaluator for water storage which is the conserved quantity 
+/*
+  Flow PK
+
+  Field evaluator for water storage which is the conserved quantity
   in the Richards equation.
 
-  Wrapping this conserved quantity water storage (WS) as a field evaluator 
+  Wrapping this conserved quantity water storage (WS) as a field evaluator
   makes it easier to take derivatives, keep updated, and the like.
   The equation for this is simply:
 
@@ -45,7 +47,9 @@ class WaterStorage : public EvaluatorSecondaryMonotype<CompositeVector, Composit
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
@@ -54,12 +58,12 @@ class WaterStorage : public EvaluatorSecondaryMonotype<CompositeVector, Composit
  protected:
   bool water_vapor_, aperture_;
   Key saturation_key_, porosity_key_, mol_density_liquid_key_, aperture_key_;
-  
+
  private:
   static Utils::RegisteredFactory<Evaluator, WaterStorage> reg_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
 
 #endif

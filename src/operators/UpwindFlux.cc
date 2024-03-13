@@ -1,14 +1,16 @@
 /*
-  Operators 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
 
-  Upwind a cell-centered field (e.g. rel perm) using a given 
+/*
+  Operators
+
+  Upwind a cell-centered field (e.g. rel perm) using a given
   face-based flux (e.g. Darcy flux).
 */
 
@@ -26,7 +28,8 @@ namespace Operators {
 /* ******************************************************************
 * Public init method. It is not yet used.
 ****************************************************************** */
-void UpwindFlux::Init(Teuchos::ParameterList& plist)
+void
+UpwindFlux::Init(Teuchos::ParameterList& plist)
 {
   method_ = Operators::OPERATOR_UPWIND_FLUX;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
@@ -38,9 +41,10 @@ void UpwindFlux::Init(Teuchos::ParameterList& plist)
 * Upwind field uses flux. The result is placed in field.
 * Upwinded field must be calculated on all faces of the owned cells.
 ****************************************************************** */
-void UpwindFlux::Compute(
-    const CompositeVector& flux, const CompositeVector& solution,
-    const std::vector<int>& bc_model, CompositeVector& field)
+void
+UpwindFlux::Compute(const CompositeVector& flux,
+                    const std::vector<int>& bc_model,
+                    CompositeVector& field)
 {
   AMANZI_ASSERT(field.HasComponent("cell"));
   AMANZI_ASSERT(field.HasComponent(face_comp_));
@@ -59,8 +63,8 @@ void UpwindFlux::Compute(
   flux_f.MaxValue(&flxmax);
   tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  AmanziMesh::Entity_ID_List cells;
+  int nfaces_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // multiple DOFs on faces require usage of block map
   const auto& fmap = *flux.ComponentMap("face", true);
@@ -68,7 +72,7 @@ void UpwindFlux::Compute(
   int c1, c2, dir;
   double kc1, kc2;
   for (int f = 0; f < nfaces_wghost; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     int g = fmap.FirstPointInElement(f);
@@ -77,34 +81,34 @@ void UpwindFlux::Compute(
     c1 = cells[0];
     kc1 = field_c[0][c1];
 
-    mesh_->face_normal(f, false, c1, &dir);
-    bool flag = (flux_f[0][g] * dir <= -tol);  // upwind flag
+    mesh_->getFaceNormal(f, c1, &dir);
+    bool flag = (flux_f[0][g] * dir <= -tol); // upwind flag
 
     // average field on almost vertical faces
-    if (ncells == 2 && ndofs == 1) { 
+    if (ncells == 2 && ndofs == 1) {
       c2 = cells[1];
       kc2 = field_c[0][c2];
 
-      if (fabs(flux_f[0][g]) <= tol) { 
-        double v1 = mesh_->cell_volume(c1);
-        double v2 = mesh_->cell_volume(c2);
+      if (fabs(flux_f[0][g]) <= tol) {
+        double v1 = mesh_->getCellVolume(c1);
+        double v2 = mesh_->getCellVolume(c2);
 
         double tmp = v2 / (v1 + v2);
-        field_f[0][g] = kc1 * tmp + kc2 * (1.0 - tmp); 
+        field_f[0][g] = kc1 * tmp + kc2 * (1.0 - tmp);
       } else {
-        field_f[0][g] = (flag) ? kc2 : kc1; 
+        field_f[0][g] = (flag) ? kc2 : kc1;
       }
 
-    // copy cell value on fractures
-    } else if (ncells == 2 && ndofs == 2) { 
+      // copy cell value on fractures (matrix only)
+    } else if (ncells == 2 && ndofs == 2) {
       c2 = cells[1];
       kc2 = field_c[0][c2];
 
-      int k = UniqueIndexFaceToCells(*mesh_, f, c1); 
-      field_f[0][g + k] = kc1; 
+      int k = UniqueIndexFaceToCells(*mesh_, f, c1);
+      field_f[0][g + k] = kc1;
       field_f[0][g + 1 - k] = kc2;
 
-    // upwind only on inflow dirichlet faces
+      // upwind only on inflow dirichlet faces
     } else {
       field_f[0][g] = kc1;
       if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
@@ -115,7 +119,5 @@ void UpwindFlux::Compute(
   }
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
-
+} // namespace Operators
+} // namespace Amanzi

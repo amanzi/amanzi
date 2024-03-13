@@ -1,12 +1,14 @@
 /*
-  Transport PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Transport PK
 
   A collection of MDMs along with a mesh partition.
 */
@@ -21,24 +23,25 @@ namespace Transport {
 /* ******************************************************************
 * Non-member factory.
 ****************************************************************** */
-Teuchos::RCP<MDMPartition> CreateMDMPartition(
-    Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    Teuchos::RCP<Teuchos::ParameterList> plist, bool& flag)
+Teuchos::RCP<MDMPartition>
+CreateMDMPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                   Teuchos::RCP<Teuchos::ParameterList> plist,
+                   bool& flag)
 {
   MDMFactory factory;
   Teuchos::RCP<MDM> mdm;
-  std::vector<Teuchos::RCP<MDM> > mdm_list;
-  std::vector<std::vector<std::string> > regions;
+  std::vector<Teuchos::RCP<MDM>> mdm_list;
+  std::vector<std::vector<std::string>> regions;
 
   flag = false;
   for (auto lcv = plist->begin(); lcv != plist->end(); ++lcv) {
     std::string name = lcv->first;
     if (plist->isSublist(name)) {
       Teuchos::ParameterList sublist = plist->sublist(name);
-      regions.push_back(sublist.get<Teuchos::Array<std::string> >("regions").toVector());
+      regions.push_back(sublist.get<Teuchos::Array<std::string>>("regions").toVector());
 
       mdm = factory.Create(sublist);
-      mdm->set_dim(mesh->space_dimension());
+      mdm->set_dim(mesh->getSpaceDimension());
       flag |= mdm->is_valid();
       mdm_list.push_back(mdm);
     } else {
@@ -47,12 +50,11 @@ Teuchos::RCP<MDMPartition> CreateMDMPartition(
   }
 
   auto partition = Teuchos::rcp(new Functions::MeshPartition());
-  partition->Initialize(mesh, AmanziMesh::CELL, regions, -1);
+  partition->Initialize(mesh, AmanziMesh::Entity_kind::CELL, regions, -1);
   partition->Verify();
 
   return Teuchos::rcp(new MDMPartition(partition, mdm_list));
 }
 
-}  // namespace Transport
-}  // namespace Amanzi
-
+} // namespace Transport
+} // namespace Amanzi

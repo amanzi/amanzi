@@ -1,14 +1,16 @@
 /*
-  EOS
-   
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
 
-  ViscosityEvaluator is the interface between state/data and the 
+/*
+  EOS
+
+  ViscosityEvaluator is the interface between state/data and the
   model, a VPM.
 */
 
@@ -20,11 +22,12 @@ namespace Amanzi {
 namespace AmanziEOS {
 
 EOSViscosityEvaluator::EOSViscosityEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   // my keys
   if (my_keys_.size() == 0)
-    my_keys_.push_back(std::make_pair(plist_.get<std::string>("viscosity key", "viscosity_liquid"), Tags::DEFAULT));
+    my_keys_.push_back(
+      std::make_pair(plist_.get<std::string>("viscosity key", "viscosity_liquid"), Tags::DEFAULT));
 
   // set up my dependencies
   Key domain = Keys::getDomain(my_keys_[0].first);
@@ -43,18 +46,20 @@ EOSViscosityEvaluator::EOSViscosityEvaluator(Teuchos::ParameterList& plist)
 
 
 EOSViscosityEvaluator::EOSViscosityEvaluator(const EOSViscosityEvaluator& other)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      visc_(other.visc_),
-      temp_key_(other.temp_key_) {};
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+    visc_(other.visc_),
+    temp_key_(other.temp_key_){};
 
 
-Teuchos::RCP<Evaluator> EOSViscosityEvaluator::Clone() const {
+Teuchos::RCP<Evaluator>
+EOSViscosityEvaluator::Clone() const
+{
   return Teuchos::rcp(new EOSViscosityEvaluator(*this));
 }
 
 
-void EOSViscosityEvaluator::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results) 
+void
+EOSViscosityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
   auto pres = S.GetPtr<CompositeVector>(pres_key_, tag_);
@@ -71,14 +76,16 @@ void EOSViscosityEvaluator::Evaluate_(
       result_v[0][i] = visc_->Viscosity(temp_v[0][i], pres_v[0][i]);
       ierr = std::max(ierr, visc_->error_code());
     }
-    ErrorAnalysis(temp->Comm(), ierr, visc_->error_msg()); 
+    ErrorAnalysis(temp->Comm(), ierr, visc_->error_msg());
   }
 }
 
 
-void EOSViscosityEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+EOSViscosityEvaluator::EvaluatePartialDerivative_(const State& S,
+                                                  const Key& wrt_key,
+                                                  const Tag& wrt_tag,
+                                                  const std::vector<CompositeVector*>& results)
 {
   auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
   auto pres = S.GetPtr<CompositeVector>(pres_key_, tag_);
@@ -90,11 +97,17 @@ void EOSViscosityEvaluator::EvaluatePartialDerivative_(
     Epetra_MultiVector& result_v = *(results[0]->ViewComponent(*comp));
 
     int count = results[0]->size(*comp);
-    for (int i = 0; i != count; ++i) {
-      result_v[0][i] = visc_->DViscosityDT(temp_v[0][i], pres_v[0][i]);
+    if (wrt_key == "temperature") {
+      for (int i = 0; i != count; ++i) {
+        result_v[0][i] = visc_->DViscosityDT(temp_v[0][i], pres_v[0][i]);
+      }
+    } else if (wrt_key == "pressure") {
+      for (int i = 0; i != count; ++i) {
+        result_v[0][i] = visc_->DViscosityDp(temp_v[0][i], pres_v[0][i]);
+      }
     }
   }
 }
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi

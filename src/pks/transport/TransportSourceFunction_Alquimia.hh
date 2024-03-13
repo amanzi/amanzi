@@ -1,12 +1,15 @@
 /*
-  Transport PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Transport PK
+
 */
 
 #ifndef AMANZI_TRANSPORT_SOURCE_FUNCTION_ALQUIMIA_HH_
@@ -23,8 +26,8 @@
 #include "TransportDomainFunction.hh"
 
 #ifdef ALQUIMIA_ENABLED
-#include "Alquimia_PK.hh"
-#include "ChemistryEngine.hh"
+#  include "Alquimia_PK.hh"
+#  include "ChemistryEngine.hh"
 
 namespace Amanzi {
 namespace Transport {
@@ -36,16 +39,15 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
                                    Teuchos::RCP<AmanziChemistry::Alquimia_PK> alquimia_pk,
                                    Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
   ~TransportSourceFunction_Alquimia();
-  
-  void Compute(double t_old, double t_new);
 
-  // require by the case class
-  virtual std::string name() const { return "alquimia source"; } 
+  virtual void Compute(double t_old, double t_new) override;
 
- private:
-  void Init_(const std::vector<std::string> &regions);
+  DomainFunction_kind getType() const override { return DomainFunction_kind::ALQUIMIA; }
 
- private:
+ protected:
+  void Init_(const std::vector<std::string>& regions);
+
+ protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   // string function of geochemical conditions
@@ -62,8 +64,8 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
   AlquimiaAuxiliaryOutputData alq_aux_output_;
 };
 
-}  // namespace Transport
-}  // namespace Amanzi
+} // namespace Transport
+} // namespace Amanzi
 
 #endif
 

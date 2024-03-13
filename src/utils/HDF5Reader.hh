@@ -1,14 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
-
 */
-//! HDF5Reader: simple reader for serial reads of HDF5 files.
 
+//! HDF5Reader: simple reader for serial reads of HDF5 files.
 #pragma once
 
 #include <vector>
@@ -29,14 +28,15 @@ class HDF5Reader {
   explicit HDF5Reader(const std::string& filename);
   ~HDF5Reader();
 
+  bool CheckVariableName(const std::string& varname);
+
   void ReadData(std::string varname, std::vector<double>& vec);
   void ReadData(std::string varname, std::vector<int>& vec);
-  void ReadMatData(std::string varname, Epetra_SerialDenseMatrix &mat);
+  void ReadMatData(std::string varname, Epetra_SerialDenseMatrix& mat);
 
  protected:
   std::string filename_;
   hid_t file_;
-
 };
 
 } // namespace Amanzi

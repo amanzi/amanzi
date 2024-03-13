@@ -1,10 +1,14 @@
 /*
-  Multiphase PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
+  Multiphase PK
 
   Field evaluator for noninear complimentary problem, function G.
 */
@@ -17,8 +21,7 @@ namespace Multiphase {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-NCP_MolarDensities::NCP_MolarDensities(Teuchos::ParameterList& plist)
-  : MultiphaseBaseEvaluator(plist)
+NCP_MolarDensities::NCP_MolarDensities(Teuchos::ParameterList& plist) : MultiphaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -37,10 +40,12 @@ NCP_MolarDensities::NCP_MolarDensities(Teuchos::ParameterList& plist)
 * Copy constructors.
 ****************************************************************** */
 NCP_MolarDensities::NCP_MolarDensities(const NCP_MolarDensities& other)
-  : MultiphaseBaseEvaluator(other) {};
+  : MultiphaseEvaluator(other){};
 
 
-Teuchos::RCP<Evaluator> NCP_MolarDensities::Clone() const {
+Teuchos::RCP<Evaluator>
+NCP_MolarDensities::Clone() const
+{
   return Teuchos::rcp(new NCP_MolarDensities(*this));
 }
 
@@ -48,8 +53,8 @@ Teuchos::RCP<Evaluator> NCP_MolarDensities::Clone() const {
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void NCP_MolarDensities::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+NCP_MolarDensities::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& xg = *S.Get<CompositeVector>(x_vapor_key_).ViewComponent("cell");
   const auto& ng = *S.Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
@@ -62,16 +67,18 @@ void NCP_MolarDensities::Evaluate_(
     double sum = ng[0][c] * xg[0][c];
     for (int i = 0; i < tcc.NumVectors(); ++i) sum += tcc[i][c];
     result_c[0][c] = ng[0][c] - sum;
-  }      
+  }
 }
 
 
 /* ******************************************************************
 * Required member: field derivative calculation.
 ****************************************************************** */
-void NCP_MolarDensities::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+NCP_MolarDensities::EvaluatePartialDerivative_(const State& S,
+                                               const Key& wrt_key,
+                                               const Tag& wrt_tag,
+                                               const std::vector<CompositeVector*>& results)
 {
   const auto& xg = *S.Get<CompositeVector>(x_vapor_key_).ViewComponent("cell");
   const auto& ng = *S.Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
@@ -81,15 +88,12 @@ void NCP_MolarDensities::EvaluatePartialDerivative_(
 
   if (wrt_key == x_vapor_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = -ng[0][c];
-  }
-  else if (wrt_key == mol_density_gas_key_) {
+  } else if (wrt_key == mol_density_gas_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = 1.0 - xg[0][c];
-  }
-  else if (wrt_key == tcc_gas_key_) {
+  } else if (wrt_key == tcc_gas_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = -1.0;
   }
 }
 
-}  // namespace Multiphase
-}  // namespace Amanzi
-
+} // namespace Multiphase
+} // namespace Amanzi

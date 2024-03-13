@@ -1,10 +1,14 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
+  Chemistry
 
   Class for linear isotherm
 */
@@ -21,46 +25,50 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 SorptionIsothermLinear::SorptionIsothermLinear()
-  : SorptionIsotherm("linear", SorptionIsotherm::LINEAR),
-    KD_(0.0),
-    params_(1, 0.0) {
-}
+  : SorptionIsotherm("linear", SorptionIsotherm::LINEAR), KD_(0.0), params_(1, 0.0)
+{}
 
 
 SorptionIsothermLinear::SorptionIsothermLinear(double KD)
-  : SorptionIsotherm("linear", SorptionIsotherm::LINEAR),
-    KD_(KD),
-    params_(1, 0.0) {
-}
+  : SorptionIsotherm("linear", SorptionIsotherm::LINEAR), KD_(KD), params_(1, 0.0)
+{}
 
 
-void SorptionIsothermLinear::Init(double KD) {
+void
+SorptionIsothermLinear::Init(double KD)
+{
   set_KD(KD);
 }
 
 
-const std::vector<double>& SorptionIsothermLinear::GetParameters() {
+const std::vector<double>&
+SorptionIsothermLinear::GetParameters()
+{
   params_.at(0) = KD_;
   return params_;
 }
 
 
-void SorptionIsothermLinear::SetParameters(const std::vector<double>& params) {
+void
+SorptionIsothermLinear::SetParameters(const std::vector<double>& params)
+{
   set_KD(params.at(0));
 }
 
 
-double SorptionIsothermLinear::Evaluate(const Species& primary_species)
+/* *******************************************************************
+* Csorb = KD * activity
+* Csorb [mol/m^3 bulk] = KD [kg water/m^3 bulk] * activity [mol/kg water]
+******************************************************************* */
+double
+SorptionIsothermLinear::Evaluate(const Species& primary_species)
 {
-  // Csorb = KD * activity
-  // Units:
-  // sorbed_concentration [mol/m^3 bulk] = KD [kg water/m^3 bulk] * 
-  //   activity [mol/kg water]
   return KD_ * primary_species.activity();
 }
 
 
-double SorptionIsothermLinear::EvaluateDerivative(const Species& primary_species)
+double
+SorptionIsothermLinear::EvaluateDerivative(const Species& primary_species)
 {
   // Csorb = KD * activity
   // dCsorb/dCaq = KD * activity_coef
@@ -70,14 +78,14 @@ double SorptionIsothermLinear::EvaluateDerivative(const Species& primary_species
 }
 
 
-void SorptionIsothermLinear::Display(const Teuchos::Ptr<VerboseObject> vo) const
+void
+SorptionIsothermLinear::Display(const Teuchos::Ptr<VerboseObject> vo) const
 {
   std::stringstream message;
-  message << std::setw(5) << "KD:"
-          << std::scientific << std::setprecision(5)
-          << std::setw(15) << KD_ << std::endl;
+  message << std::setw(5) << "KD:" << std::scientific << std::setprecision(5) << std::setw(15)
+          << KD_ << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

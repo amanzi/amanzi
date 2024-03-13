@@ -1,12 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
+
 */
 
 #include <cstdlib>
@@ -39,8 +42,9 @@
 /* *****************************************************************
 * Verify convergence of advection-diffusion solver for various BCs.
 * **************************************************************** */
-template<class Analytic>
-void AdvectionDiffusionStatic(int nx, double* error) 
+template <class Analytic>
+void
+AdvectionDiffusionStatic(int nx, double* error)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -61,77 +65,81 @@ void AdvectionDiffusionStatic(int nx, double* error)
   ParameterList region_list = plist.sublist("regions");
   auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, nx);
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // populate diffusion coefficient
   AmanziGeometry::Point vel(1.0, 1.0);
   Analytic ana(mesh, 2, 0.0, vel);
 
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
+    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells_owned; c++) {
-    const auto& xc = mesh->cell_centroid(c);
+    const auto& xc = mesh->getCellCentroid(c);
     auto Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
 
   // create discretization space
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(mesh)->SetGhosted(true)
-     ->AddComponent("cell", AmanziMesh::CELL, 1)
-     ->AddComponent("face", AmanziMesh::FACE, 1);
+  cvs->SetMesh(mesh)
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+    ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
   CompositeVector solution(*cvs);
   solution.PutScalar(0.0);
 
-  // create source 
+  // create source
   CompositeVector source(*cvs);
   Epetra_MultiVector& src = *source.ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; c++) {
-    const auto& xc = mesh->cell_centroid(c);
-    src[0][c] = ana.source_exact(xc, 0.0) * mesh->cell_volume(c);
+    const auto& xc = mesh->getCellCentroid(c);
+    src[0][c] = ana.source_exact(xc, 0.0) * mesh->getCellVolume(c);
   }
 
   // create flux field
   auto u = Teuchos::rcp(new CompositeVector(*cvs));
   Epetra_MultiVector& uf = *u->ViewComponent("face");
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    auto tmp = ana.advection_exact(mesh->face_centroid(f), 0.0);
-    uf[0][f] = tmp * mesh->face_normal(f);
+    auto tmp = ana.advection_exact(mesh->getFaceCentroid(f), 0.0);
+    uf[0][f] = tmp * mesh->getFaceNormal(f);
   }
 
   // create boundary data for diffusion and
   // Neumann on outflow boundary is needed for operator's positive-definitness
   bool flag;
   double diff_flux, adv_flux;
-  auto bcd = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bcd =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   {
     std::vector<int>& bc_model = bcd->bc_model();
     std::vector<double>& bc_value = bcd->bc_value();
 
     for (int f = 0; f < nfaces_wghost; f++) {
-      const auto& xf = mesh->face_centroid(f);
+      const auto& xf = mesh->getFaceCentroid(f);
       if (fabs(xf[0]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
         bc_model[f] = OPERATOR_BC_DIRICHLET;
         bc_value[f] = ana.pressure_exact(xf, 0.0);
-      }
-      else if (fabs(xf[1]) < 1e-6) {  // inflow bottom boundary 
-        double area = mesh->face_area(f);
+      } else if (fabs(xf[1]) < 1e-6) { // inflow bottom boundary
+        double area = mesh->getFaceArea(f);
         auto normal = ana.face_normal_exterior(f, &flag) / area;
 
         bc_model[f] = OPERATOR_BC_TOTAL_FLUX;
         diff_flux = ana.velocity_exact(xf, 0.0) * normal;
         adv_flux = (ana.advection_exact(xf, 0.0) * normal) * ana.pressure_exact(xf, 0.0);
         bc_value[f] = diff_flux + adv_flux;
-      }
-      else if (fabs(xf[0] - 1.0) < 1e-6) {  // outflow right boundary
-        double area = mesh->face_area(f);
+      } else if (fabs(xf[0] - 1.0) < 1e-6) { // outflow right boundary
+        double area = mesh->getFaceArea(f);
         auto normal = ana.face_normal_exterior(f, &flag);
 
         bc_model[f] = OPERATOR_BC_NEUMANN;
@@ -143,24 +151,23 @@ void AdvectionDiffusionStatic(int nx, double* error)
   // This split of BCs was designed for testing purposes only!
   // we need to specify only the Dirichlet boundary condition on inflow boundary
   // Dirichlet on the outlow boundary is ignored by upwind operator
-  // Neumann condition on inflow violates monotonicity; it generates negative 
+  // Neumann condition on inflow violates monotonicity; it generates negative
   //   contribution to diagonal
-  auto bca = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bca =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   {
     std::vector<int>& bc_model = bca->bc_model();
     std::vector<double>& bc_value = bca->bc_value();
 
     for (int f = 0; f < nfaces_wghost; f++) {
-      const auto& xf = mesh->face_centroid(f);
+      const auto& xf = mesh->getFaceCentroid(f);
       if (fabs(xf[0]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
         bc_model[f] = OPERATOR_BC_DIRICHLET;
         bc_value[f] = ana.pressure_exact(xf, 0.0);
-      }
-      else if (fabs(xf[1]) < 1e-6) {  // inflow bottom boundary 
+      } else if (fabs(xf[1]) < 1e-6) { // inflow bottom boundary
         bc_model[f] = OPERATOR_BC_TOTAL_FLUX;
         // bc_value[f] = not used
-      }
-      else if (fabs(xf[0] - 1.0) < 1e-6) {  // outflow right boundary
+      } else if (fabs(xf[0] - 1.0) < 1e-6) { // outflow right boundary
         bc_model[f] = OPERATOR_BC_NEUMANN;
         // bc_value[f] = not used
       }
@@ -178,7 +185,7 @@ void AdvectionDiffusionStatic(int nx, double* error)
   op_diff->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_diff->ApplyBCs(true, true, true);
 
-  // create an advection operator  
+  // create an advection operator
   // this is minor op for advection-mdiffusion pair; hence, BCs are secondary
   auto global_op = op_diff->global_operator();
   olist = plist.sublist("PK operator").sublist("advection operator");
@@ -189,14 +196,14 @@ void AdvectionDiffusionStatic(int nx, double* error)
   op_adv->UpdateMatrices(u.ptr());
   op_adv->ApplyBCs(false, true, false);
 
-  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"),
-          "NKA", plist.sublist("solvers"));
+  global_op->set_inverse_parameters(
+    "Hypre AMG", plist.sublist("preconditioners"), "NKA", plist.sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
 
   CompositeVector& rhs = *global_op->rhs();
   rhs.Update(1.0, source, 1.0);
-  
+
   global_op->ApplyInverse(rhs, solution);
 
   // compute pressure error
@@ -206,7 +213,7 @@ void AdvectionDiffusionStatic(int nx, double* error)
   *error = pl2_err;
 
   if (MyPID == 0) {
-    pl2_err /= pnorm; 
+    pl2_err /= pnorm;
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, global_op->num_itrs());
 
     CHECK(pl2_err < 3e-2);
@@ -215,20 +222,21 @@ void AdvectionDiffusionStatic(int nx, double* error)
 
   // visualization
   if (MyPID == 0) {
-    std::cout << "pressure solver (gmres): ||r||=" << global_op->residual() 
-              << " itr=" << global_op->num_itrs()
-              << " code=" << global_op->returned_code() << std::endl;
+    std::cout << "pressure solver (gmres): ||r||=" << global_op->residual()
+              << " itr=" << global_op->num_itrs() << " code=" << global_op->returned_code()
+              << std::endl;
 
     // visualization
     const Epetra_MultiVector& pc = *solution.ViewComponent("cell");
-    GMV::open_data_file(*mesh, (std::string)"operators.gmv");
+    GMV::open_data_file(*mesh, (std::string) "operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(pc, 0, "solution");
     GMV::close_data_file();
   }
 }
 
-TEST(ADVECTION_DIFFUSION_STATIC) {
+TEST(ADVECTION_DIFFUSION_STATIC)
+{
   double err1, err2;
   AdvectionDiffusionStatic<Analytic00>(10, &err1);
   AdvectionDiffusionStatic<Analytic00>(20, &err2);
@@ -239,8 +247,9 @@ TEST(ADVECTION_DIFFUSION_STATIC) {
 /* *****************************************************************
 * Verify convergence of advection-diffusion solver for various BCs.
 * **************************************************************** */
-template<class Analytic>
-void AdvectionDiffusionTransient(int nx, int nloops, double* error) 
+template <class Analytic>
+void
+AdvectionDiffusionTransient(int nx, int nloops, double* error)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -261,71 +270,73 @@ void AdvectionDiffusionTransient(int nx, int nloops, double* error)
   ParameterList region_list = plist.sublist("regions");
   auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, nx);
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // populate diffusion coefficient
   AmanziGeometry::Point vel(10.0, 0.0);
   Analytic ana(mesh, 1, 0.0, vel);
 
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
+    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells_owned; c++) {
-    const auto& xc = mesh->cell_centroid(c);
+    const auto& xc = mesh->getCellCentroid(c);
     auto Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
 
   // create discretization space
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(mesh)->SetGhosted(true)
-     ->AddComponent("cell", AmanziMesh::CELL, 1);
+  cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
   CompositeVector solution(*cvs);
   solution.PutScalar(0.0);
 
-  // create source 
+  // create source
   CompositeVector source(*cvs);
   Epetra_MultiVector& src = *source.ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; c++) {
-    const auto& xc = mesh->cell_centroid(c);
-    src[0][c] = ana.source_exact(xc, 0.0) * mesh->cell_volume(c);
+    const auto& xc = mesh->getCellCentroid(c);
+    src[0][c] = ana.source_exact(xc, 0.0) * mesh->getCellVolume(c);
   }
 
   // create flux field
   auto cvs_u = Teuchos::rcp(new CompositeVectorSpace());
-  cvs_u->SetMesh(mesh)->SetGhosted(true)
-       ->AddComponent("face", AmanziMesh::FACE, 1);
+  cvs_u->SetMesh(mesh)->SetGhosted(true)->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
   auto u = Teuchos::rcp(new CompositeVector(*cvs_u));
   Epetra_MultiVector& uf = *u->ViewComponent("face");
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    auto tmp = ana.advection_exact(mesh->face_centroid(f), 0.0);
-    uf[0][f] = tmp * mesh->face_normal(f);
+    auto tmp = ana.advection_exact(mesh->getFaceCentroid(f), 0.0);
+    uf[0][f] = tmp * mesh->getFaceNormal(f);
   }
 
   // create boundary data for diffusion and
   // Neumann on outflow boundary is needed for operator's positive-definitness
   bool flag;
-  auto bcd = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bcd =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   {
     std::vector<int>& bc_model = bcd->bc_model();
     std::vector<double>& bc_value = bcd->bc_value();
 
     for (int f = 0; f < nfaces_wghost; f++) {
-      const auto& xf = mesh->face_centroid(f);
+      const auto& xf = mesh->getFaceCentroid(f);
       if (fabs(xf[0]) < 1e-6) {
         bc_model[f] = OPERATOR_BC_DIRICHLET;
         bc_value[f] = ana.pressure_exact(xf, 0.0);
       }
       // else {
-      else if (fabs(xf[0] - 1.0) < 1e-6 ||
-               fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
-        double area = mesh->face_area(f);
+      else if (fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+        double area = mesh->getFaceArea(f);
         auto normal = ana.face_normal_exterior(f, &flag);
 
         bc_model[f] = OPERATOR_BC_NEUMANN;
@@ -337,21 +348,22 @@ void AdvectionDiffusionTransient(int nx, int nloops, double* error)
   // This split of BCs was designed for testing purposes only!
   // we need to specify only the Dirichlet boundary condition on inflow boundary
   // Dirichlet on the outlow boundary is ignored by upwind operator
-  // Neumann condition on inflow violates monotonicity; it generates negative 
+  // Neumann condition on inflow violates monotonicity; it generates negative
   //   contribution to diagonal
-  auto bca = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bca =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   {
     std::vector<int>& bc_model = bca->bc_model();
     std::vector<double>& bc_value = bca->bc_value();
 
     for (int f = 0; f < nfaces_wghost; f++) {
-      const auto& xf = mesh->face_centroid(f);
+      const auto& xf = mesh->getFaceCentroid(f);
       if (fabs(xf[0]) < 1e-6) {
         bc_model[f] = OPERATOR_BC_DIRICHLET;
         bc_value[f] = ana.pressure_exact(xf, 0.0);
       }
       // else {
-      else if (fabs(xf[0] - 1.0) < 1e-6 ||  // outflow right boundary
+      else if (fabs(xf[0] - 1.0) < 1e-6 || // outflow right boundary
                fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
         bc_model[f] = OPERATOR_BC_NEUMANN;
         // bc_value[f] = not used
@@ -362,7 +374,6 @@ void AdvectionDiffusionTransient(int nx, int nloops, double* error)
   // loop until convergence
   Teuchos::RCP<Operator> global_op;
   for (int loop = 0; loop < nloops; ++loop) {
-
     // create diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator fv");
     auto op_diff = Teuchos::rcp(new PDE_DiffusionFV(olist, mesh));
@@ -373,7 +384,7 @@ void AdvectionDiffusionTransient(int nx, int nloops, double* error)
     op_diff->UpdateMatrices(Teuchos::null, Teuchos::null);
     op_diff->ApplyBCs(true, true, true);
 
-    // create an advection operator  
+    // create an advection operator
     // this is minor op for advection-mdiffusion pair; hence, BCs are secondary
     global_op = op_diff->global_operator();
     olist = plist.sublist("PK operator").sublist("advection operator");
@@ -390,18 +401,18 @@ void AdvectionDiffusionTransient(int nx, int nloops, double* error)
       CompositeVector phi(*cvs);
       phi.PutScalar(0.2);
 
-      PDE_Accumulation op_acc(AmanziMesh::CELL, global_op);
+      PDE_Accumulation op_acc(AmanziMesh::Entity_kind::CELL, global_op);
       op_acc.AddAccumulationDelta(solution, phi, phi, dT, "cell");
     }
 
-    global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"),
-            "AztecOO CG", plist.sublist("solvers"));
+    global_op->set_inverse_parameters(
+      "Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
     global_op->InitializeInverse();
     global_op->ComputeInverse();
 
     CompositeVector& rhs = *global_op->rhs();
     rhs.Update(1.0, source, 1.0);
-  
+
     global_op->ApplyInverse(rhs, solution);
 
     // compute pressure error
@@ -411,7 +422,7 @@ void AdvectionDiffusionTransient(int nx, int nloops, double* error)
     *error = pl2_err;
 
     if (MyPID == 0) {
-      pl2_err /= pnorm; 
+      pl2_err /= pnorm;
       printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, global_op->num_itrs());
 
       if (loop == nloops - 1) {
@@ -423,7 +434,8 @@ void AdvectionDiffusionTransient(int nx, int nloops, double* error)
 }
 
 
-TEST(ADVECTION_DIFFUSION_TRANSIENT) {
+TEST(ADVECTION_DIFFUSION_TRANSIENT)
+{
   double err1;
   AdvectionDiffusionTransient<Analytic00>(40, 5, &err1);
 }

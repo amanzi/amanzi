@@ -1,12 +1,14 @@
 /*
-  MultiPhase PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  MultiPhase PK
 
   Calculates liquid mole fraction from partial gas pressure.
 */
@@ -14,6 +16,7 @@
 #ifndef AMANZI_MULTIPHASE_MOLAR_FRACTION_LIQUID_HH_
 #define AMANZI_MULTIPHASE_MOLAR_FRACTION_LIQUID_HH_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -24,13 +27,13 @@
 #include "Factory.hh"
 
 // Multiphase
-#include "MultiphaseBaseEvaluator.hh"
+#include "MultiphaseEvaluator.hh"
 #include "MultiphaseTypeDefs.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class MoleFractionLiquid : public MultiphaseBaseEvaluator {
+class MoleFractionLiquid : public MultiphaseEvaluator {
  public:
   MoleFractionLiquid(Teuchos::ParameterList& plist);
 
@@ -39,17 +42,18 @@ class MoleFractionLiquid : public MultiphaseBaseEvaluator {
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
-  std::string x_gas_key_, pressure_gas_key_;
+  std::string x_gas_key_, pressure_gas_key_, temperature_key_;
 
   static Utils::RegisteredFactory<Evaluator, MoleFractionLiquid> fac_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Multiphase
+} // namespace Amanzi
 
 #endif
-

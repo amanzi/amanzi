@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _MATFILLER_F_H_
 #define _MATFILLER_F_H_
 
@@ -51,8 +60,8 @@ extern "C" {
   void FORT_REFINEPC (const Real* cdat,ARLIM_P(c_lo), ARLIM_P(c_hi),
                       Real*       fdat, ARLIM_P(f_lo), ARLIM_P(f_hi),
                       const int* clo, const int* chi, const int* cratio, const int* nc);
-    
+
 }
-    
+
 #endif
 #endif /*_MATFILLER_F_H_*/

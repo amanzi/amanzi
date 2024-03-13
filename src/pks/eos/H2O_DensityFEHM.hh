@@ -1,12 +1,14 @@
 /*
-  EOS
-   
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  EOS
 
   EOS for liquid water for T between 0.001 and 360 C from FEHM manual
 */
@@ -43,10 +45,10 @@ class H2O_DensityFEHM : public EOS_Density {
   double y5_, z5_, y6_, z6_, y7_, z7_, y8_, z8_, y9_, z9_;
   double T0_;
 
-  static Utils::RegisteredFactory<EOS_Density, H2O_DensityFEHM> factory_;
+  static Utils::RegisteredFactory<EOS_Density, H2O_DensityFEHM> reg_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

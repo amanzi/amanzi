@@ -1,0 +1,25 @@
+#!/bin/bash
+
+#
+#  Run ATS Short Course docker container
+#
+#  Customize as you like, this is a simple example and assumes you want to run
+#  in your current / present working directory:
+#
+#  --mount provides the mount type,source, and target, e.g.,
+#          --mount type=bind,source=mount_point_on_host,target=mount_point_on_container
+#  -w      sets current working directory on the container
+#  -it     -i and -t together provide an interactive terminal (a tty) for the container
+#  --rm    deletes the container on exit
+#
+
+#  We recommend that the current pwd is a clone of the ats-short-course repository or the top-level of your desired workspace.
+#
+HOST_MNT=`pwd -P`
+
+#  On the container, we recommend your mount point is the short-course directory and that is also your PWD on startup.
+#
+CONT_MNT=/home/ats_sc_user/short-course
+CONT_PWD=/home/ats_sc_user/short-course
+
+docker run -it --mount type=bind,source=$HOST_MNT,target=$CONT_MNT -w $CONT_PWD -p 8899:8899 metsi/ats-short-course:latest

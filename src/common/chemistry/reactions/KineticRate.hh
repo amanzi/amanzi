@@ -1,10 +1,14 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
+  Chemistry
 
   Abstract base class for all kinetic rates
 */
@@ -28,14 +32,14 @@ class MatrixBlock;
 
 class KineticRate {
  public:
-  virtual ~KineticRate() {};
+  virtual ~KineticRate(){};
 
-  virtual void Update(const SpeciesArray& primary_species,
-                      const std::vector<Mineral>& minerals) = 0;
+  virtual void
+  Update(const SpeciesArray& primary_species, const std::vector<Mineral>& minerals) = 0;
 
   virtual void AddContributionToResidual(const std::vector<Mineral>& minerals,
                                          const double bulk_volume,
-                                         std::vector<double> *residual) = 0;
+                                         std::vector<double>* residual) = 0;
 
   virtual void AddContributionToJacobian(const SpeciesArray& primary_species,
                                          const std::vector<Mineral>& minerals,
@@ -70,12 +74,11 @@ class KineticRate {
 
  private:
   std::string name_;
-  int identifier_;  // the index identifier of the associated mineral!
-  double reaction_rate_;  // volumetric rate: [moles/sec/m^3 bulk]
+  int identifier_;       // the index identifier of the associated mineral!
+  double reaction_rate_; // volumetric rate: [moles/sec/m^3 bulk]
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 
 #endif
-

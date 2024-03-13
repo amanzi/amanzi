@@ -131,6 +131,17 @@ endif()
 
 
 ##############################################################################
+# EXPRTK
+##############################################################################
+option(EXPRTK_INCLUDE_DIR "Path to EXPRTK include directory")
+if(ENABLE_SPACK_BUILD)
+  message(STATUS "EXPRTK Package")
+  message(STATUS "\tEXPRTK_INCLUDE_DIR = ${EXPRTK_INLCUDE_DIR}")
+  message(STATUS "")
+endif()
+
+
+##############################################################################
 # HDF5 - http://www.hdfgroup.org/HDF5/
 ##############################################################################
 if (BUILD_SHARED_LIBS)
@@ -177,7 +188,7 @@ if ( NOT Trilinos_INSTALL_PREFIX )
                   " to define the Trilinos installation location"
 		  "\n-DTrilinos_INSTALL_PREFIX:PATH=<trilinos directory>\n")
 endif()
-set(Trilinos_MINIMUM_VERSION 13.0.0)
+set(Trilinos_MINIMUM_VERSION 14.2.0)
 message(STATUS "Searching for Trilinos at: ${Trilinos_INSTALL_PREFIX}")
 find_package(Trilinos ${Trilinos_MINIMUM_VERSION} REQUIRED
              PATHS ${Trilinos_INSTALL_PREFIX}
@@ -266,7 +277,7 @@ if (Trilinos_FOUND)
   endforeach()
        
   # Now update the Trilinos_LIBRARIES and INCLUDE_DIRS
-  foreach( _inc "${Trilinos_TPL_INCLUDE_DIRS}")
+  foreach(_inc ${Trilinos_TPL_INCLUDE_DIRS})
     list(APPEND Trilinos_INCLUDE_DIRS "${_inc}")
     list(REMOVE_DUPLICATES Trilinos_INCLUDE_DIRS)
   endforeach()

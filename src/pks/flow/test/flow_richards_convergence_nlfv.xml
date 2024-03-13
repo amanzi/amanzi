@@ -270,15 +270,15 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="temperature">
+      <ParameterList name="viscosity_liquid">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="All"/>
+          <ParameterList name="DOMAIN">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="components" type="Array(string)" value="{cell, boundary_face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="298.15"/>
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -331,20 +331,6 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="prev_saturation_liquid">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant"> <!-- time component -->
-                <Parameter name="value" type="double" value="1."/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      
       <ParameterList name="saturation_liquid">
         <ParameterList name="function">
           <ParameterList name="domain">
@@ -395,25 +381,21 @@
             <ParameterList name="function">
               <Parameter name="function type" type="string" value="composite function"/>
               <Parameter name="number of dofs" type="int" value="3"/>
-
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.5"/>
                 </ParameterList>
               </ParameterList>
-
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.5"/>
                 </ParameterList>
               </ParameterList>
-
               <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.5"/>
                 </ParameterList>
               </ParameterList>
-
             </ParameterList>
           </ParameterList>
 
@@ -423,30 +405,39 @@
             <ParameterList name="function">
               <Parameter name="function type" type="string" value="composite function"/>
               <Parameter name="number of dofs" type="int" value="3"/>
-
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.0"/>
                 </ParameterList>
               </ParameterList>
-
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.0"/>
                 </ParameterList>
               </ParameterList>
-
               <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.0"/>
                 </ParameterList>
               </ParameterList>
-
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
 
+      <ParameterList name="temperature">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="components" type="Array(string)" value="{cell, boundary_face}"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="298.15"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 </ParameterList>

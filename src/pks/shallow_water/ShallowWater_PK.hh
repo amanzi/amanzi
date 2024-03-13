@@ -1,14 +1,47 @@
 /*
- Shallow Water PK
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
- Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
- Amanzi is released under the three-clause BSD License.
- The terms of use and "as is" disclaimer for this license are
- provided in the top-level COPYRIGHT file.
 
  Authors: Svetlana Tokareva (tokareva@lanl.gov)
           Giacomo Capodaglio (gcapodaglio@lanl.gov)
- */
+          Naren Vohra (vohra@lanl.gov)
+
+The mathematical model describing two-dimensional shallow water flow is
+
+.. math::
+  \begin{align*}
+  & h_t + (hu)_x + (hv)_y = 0, \\
+  & (hu)_t + (hu^2 + \frac{1}{2} gh^2)_x + (huv)_y = -ghB_x \\
+  & (hv)_t + (huv)_x + (hv^2 + \frac{1}{2} gh^2)_y = -ghB_y
+  \end{align*}
+
+Here
+:math:`h` [m] is water depth,
+:math:`g` [m/s^2] is gravity acceleration,
+:math:`u` [m/s] is depth averaged velocity in x direction,
+:math:`v` [m/s] is depth averaged velocity in y direction,
+:math:`B` [m] is bottom elevation (bathymetry),
+:math:`H = h + B` [m] is water surface elevation.
+
+
+Global parameters
+.................
+Global parameters are placed in the sublist `"shallow water`".
+The list of global parameters include:
+
+* `"domain name`" [string] specifies mesh name that defined domain of this PK.
+  Default is `"domain`".
+
+* `"cfl`" [double] is a safety factor (less than 1) applied to a stable
+  time step estimate. Default value is 1.
+
+* `"use limiter`" [bool] turns on/off limiters on all linear constructions.
+  Default value is *false*.
+
+*/
 
 #ifndef AMANZI_SHALLOW_WATER_PK_HH_
 #define AMANZI_SHALLOW_WATER_PK_HH_
@@ -63,8 +96,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   virtual void set_dt(double dt) override{};
 
   // Advance PK by step size dt.
-  virtual bool
-  AdvanceStep(double t_old, double t_new, bool reinit = false) override;
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
 
   virtual void FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector& f) override;
 
@@ -100,8 +132,12 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   double BathymetryEdgeValue(int e, const Epetra_MultiVector& Bn);
 
   // Recalculate total depth for positivity of ponded depth
-  double TotalDepthEdgeValue(int c, int e, double htc,
-                             double Bc, double Bmax, const Epetra_MultiVector& B_n);
+  double TotalDepthEdgeValue(int c,
+                             int e,
+                             double htc,
+                             double Bc,
+                             double Bmax,
+                             const Epetra_MultiVector& B_n);
 
   double ComputeFieldOnEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n); 
 
@@ -110,10 +146,11 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   // x-direction only.
   std::vector<double> PhysicalFlux_x(const std::vector<double>&);
 
+  std::vector<double> NumericalFlux_x(std::vector<double>&, std::vector<double>&);
   std::vector<double>
-  NumericalFlux_x(std::vector<double>&, std::vector<double>&);
-  std::vector<double> NumericalFlux_x_Rusanov(const std::vector<double>&, const std::vector<double>&);
-  std::vector<double> NumericalFlux_x_CentralUpwind(const std::vector<double>&, const std::vector<double>&);
+  NumericalFlux_x_Rusanov(const std::vector<double>&, const std::vector<double>&);
+  std::vector<double>
+  NumericalFlux_x_CentralUpwind(const std::vector<double>&, const std::vector<double>&);
 
   std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
                                               double Bmax, const Epetra_MultiVector& B_n);
@@ -164,7 +201,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim_;
-  
+
   // source terms
   std::vector<Teuchos::RCP<PK_DomainFunction>> srcs_;
   double total_source_;

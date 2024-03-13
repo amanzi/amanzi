@@ -1,12 +1,14 @@
 /*
-  EOS
-   
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  EOS
 
   EOSFieldEvaluator is the interface between state/data and the model, an EOS.
 */
@@ -22,7 +24,8 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-class EOSDensityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class EOSDensityEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   enum EOSMode { EOS_MODE_MASS, EOS_MODE_MOLAR, EOS_MODE_BOTH };
 
@@ -34,7 +37,9 @@ class EOSDensityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, C
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
   Teuchos::RCP<EOS_Density> get_EOS() { return eos_; }
@@ -50,10 +55,10 @@ class EOSDensityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, C
   Tag tag_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, EOSDensityEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, EOSDensityEvaluator> reg_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

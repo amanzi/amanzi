@@ -1,6 +1,15 @@
-// This is needed to define some external symbols for linking. 
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+// This is needed to define some external symbols for linking.
 // It's kind of silly to do things this way. -JNJ
-#include <VerboseObject_objs.hh> 
+#include <VerboseObject_objs.hh>
 
 #include <RichardSolver.H>
 #include <RStdata.H>
@@ -160,7 +169,7 @@ main (int   argc,
   int coord = 0; // Cartesian
   Array<int> is_per(BL_SPACEDIM,0); // Not periodic
   geom_array[0] = Geometry(domain,&rb,coord,is_per.dataPtr());
-  
+
   Layout layout(refRatio_array,grid_array,geom_array,nLevs);
 
   NLScontrol nlsc;
@@ -294,7 +303,7 @@ main (int   argc,
           std::cout << "................ SUCCEEDED dt = " << dt << std::endl;
         }
         ret = NLSstatus::NLS_SUCCESS;
-      } 
+      }
       else {
         if (verbose && ParallelDescriptor::IOProcessor()) {
           std::cout << "................ FAILED dt = " << dt
@@ -326,11 +335,11 @@ main (int   argc,
     }
 
     CopyMFT(Pold,Pnew);
-  } 
+  }
 
   delete rs;
 
-  // Must clear prior to PetscFinalize to explicitly delete petsc data structures, or 
+  // Must clear prior to PetscFinalize to explicitly delete petsc data structures, or
   // the PetscFinalize will do it, and the Layout destructor will then generate a seg fault.
   layout.Clear();
 

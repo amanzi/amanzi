@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _PorousMedia_F_H_
 #define _PorousMedia_F_H_
 
@@ -112,13 +121,13 @@ extern "C" {
 
     void FORT_FILCC (const Real * q, ARLIM_P(q_lo), ARLIM_P(q_hi),
                      const int * domlo, const int * domhi,
-                     const Real * dx_crse, const Real * xlo, 
+                     const Real * dx_crse, const Real * xlo,
                      const int * bc);
-    
+
     void FORT_AVGDOWN (const Real* crse, ARLIM_P(clo),     ARLIM_P(chi),
                        const int* nvar,
                        const Real* fine, ARLIM_P(fine_lo), ARLIM_P(fine_hi),
-                       const Real* cvol, ARLIM_P(cv_lo),   ARLIM_P(cv_hi), 
+                       const Real* cvol, ARLIM_P(cv_lo),   ARLIM_P(cv_hi),
                        const Real* fvol, ARLIM_P(fv_lo),   ARLIM_P(fv_hi),
 		       const int* lo, const int* hi, const int* ratio);
 
@@ -140,7 +149,7 @@ extern "C" {
 			     const Real* crse, ARLIM_P(clo), ARLIM_P(chi),
 			     Real*       fine, ARLIM_P(flo), ARLIM_P(fhi));
 
-    void FORT_MAX_TRACDIFF_DT(const int* lo, const int* hi, 
+    void FORT_MAX_TRACDIFF_DT(const int* lo, const int* hi,
                               const Real* psv,  ARLIM_P(psv),   ARLIM_P(psv),
                               const Real* psadx,ARLIM_P(psadx), ARLIM_P(psadx),
                               const Real* psady,ARLIM_P(psady), ARLIM_P(psady),
@@ -150,17 +159,17 @@ extern "C" {
                               const Real* delta, Real* max_dt);
    void FORT_MK_CPL (const Real* pc,  ARLIM_P(pclo),  ARLIM_P(pchi),
 		     const Real* s,   ARLIM_P(slo),   ARLIM_P(shi),
-		     const Real* phi, ARLIM_P(philo), ARLIM_P(phihi), 
+		     const Real* phi, ARLIM_P(philo), ARLIM_P(phihi),
 		     const Real* kp,  ARLIM_P(kplo),  ARLIM_P(kphi),
 		     const Real* cf,  ARLIM_P(cflo),  ARLIM_P(cfhi),
-		     const int* ncf, const int* lo, const int* hi, const int* bc);   
+		     const int* ncf, const int* lo, const int* hi, const int* bc);
 
    void FORT_MK_INV_CPL (const Real* pc,  ARLIM_P(pclo),  ARLIM_P(pchi),
 			 const Real* s,   ARLIM_P(slo),   ARLIM_P(shi),
-			 const Real* phi, ARLIM_P(philo), ARLIM_P(phihi), 
+			 const Real* phi, ARLIM_P(philo), ARLIM_P(phihi),
 			 const Real* kp,  ARLIM_P(kplo),  ARLIM_P(kphi),
 			 const Real* cf,  ARLIM_P(cflo),  ARLIM_P(cfhi), const int* ncf);
-   
+
   void FORT_MK_LAMBDA (const Real* lbd, ARLIM_P(lbdlo), ARLIM_P(lbdhi),
 		       const Real* s,   ARLIM_P(slo),   ARLIM_P(shi),
 		       const Real* kr,  ARLIM_P(krlo),  ARLIM_P(krhi),
@@ -182,7 +191,7 @@ extern "C" {
 			 const Real* uy, ARLIM_P(uylo), ARLIM_P(uyhi),
 #if (BL_SPACEDIM==3)
 			 const Real* uz, ARLIM_P(uzlo), ARLIM_P(uzhi),
-#endif 
+#endif
 			 const Real* kpx, ARLIM_P(kpxlo), ARLIM_P(kpxhi),
 			 const Real* kpy, ARLIM_P(kpylo), ARLIM_P(kpyhi),
 #if (BL_SPACEDIM==3)
@@ -190,14 +199,14 @@ extern "C" {
 #endif
 			 const Real* lbd, ARLIM_P(lbdlo), ARLIM_P(lbdhi),
 			 const Real* pc, ARLIM_P(pclo), ARLIM_P(pchi),
-			 const Real* P, ARLIM_P(plo), ARLIM_P(phi), 
+			 const Real* P, ARLIM_P(plo), ARLIM_P(phi),
 			 const Real* K, ARLIM_P(klo), ARLIM_P(khi),
 			 const Real* kr,  ARLIM_P(krlo),  ARLIM_P(krhi),
 			 const int* nkr,
 			 const Real* cf,  ARLIM_P(cflo),  ARLIM_P(cfhi),
 			 const int* ncf,
 			 const int* lo, const int* hi,
-			 const int* domlo, const int* domhi, 
+			 const int* domlo, const int* domhi,
 			 const Real* dx, const int* bc,
 			 const int* inflow_bc_lo, const int* inflow_bc_hi,
 			 const int* do_upwind);
@@ -221,14 +230,14 @@ extern "C" {
 #endif
 			 const Real* lbd, ARLIM_P(lbdlo), ARLIM_P(lbdhi),
 			 const Real* pc, ARLIM_P(pclo), ARLIM_P(pchi),
-			 const Real* P, ARLIM_P(plo), ARLIM_P(phi), 
+			 const Real* P, ARLIM_P(plo), ARLIM_P(phi),
 			 const Real* K, ARLIM_P(klo), ARLIM_P(khi),
 			 const Real* kr,  ARLIM_P(krlo),  ARLIM_P(krhi),
 			 const int* nkr,
 			 const Real* cf,  ARLIM_P(cflo),  ARLIM_P(cfhi),
 			 const int* ncf,
 			 const int* lo, const int* hi,
-			 const int* domlo, const int* domhi, 
+			 const int* domlo, const int* domhi,
 			 const Real* dx, const int* bc,
 			 const int* inflow_bc_lo, const int* inflow_bc_hi,
 			 const Real* deps, const int* do_upwind);
@@ -242,7 +251,7 @@ extern "C" {
 			  const Real* uy, ARLIM_P(uylo), ARLIM_P(uyhi),
 #if (BL_SPACEDIM==3)
 			  const Real* uz, ARLIM_P(uzlo), ARLIM_P(uzhi),
-#endif			 
+#endif
 			  const Real* kpx, ARLIM_P(kpxlo), ARLIM_P(kpxhi),
 			  const Real* kpy, ARLIM_P(kpylo), ARLIM_P(kpyhi),
 #if (BL_SPACEDIM==3)
@@ -250,21 +259,21 @@ extern "C" {
 #endif
 			  const Real* lbd, ARLIM_P(lbdlo), ARLIM_P(lbdhi),
 			  const Real* pc, ARLIM_P(pclo), ARLIM_P(pchi),
-			  const Real* P, ARLIM_P(plo), ARLIM_P(phi), 
+			  const Real* P, ARLIM_P(plo), ARLIM_P(phi),
 			  const Real* K, ARLIM_P(klo), ARLIM_P(khi),
 			  const Real* kr,  ARLIM_P(krlo),  ARLIM_P(krhi),
 			  const int* nkr,
 			  const Real* cf,  ARLIM_P(cflo),  ARLIM_P(cfhi),
 			  const int* ncf,
 			  const int* lo, const int* hi,
-			  const int* domlo, const int* domhi, 
+			  const int* domlo, const int* domhi,
 			  const Real* dx, const int* bc,
 			  const int* inflow_bc_lo, const int* inflow_bc_hi,
 			  const Real* deps, const int* do_upwind);
-  
+
     void FORT_RICHARD_ALPHA (const Real* alpha,  ARLIM_P(alo),  ARLIM_P(ahi),
 			     const Real* s,   ARLIM_P(slo),   ARLIM_P(shi),
-			     const Real* phi, ARLIM_P(philo), ARLIM_P(phihi), 
+			     const Real* phi, ARLIM_P(philo), ARLIM_P(phihi),
 			     const Real* kp,  ARLIM_P(kplo),  ARLIM_P(kphi),
 			     const Real* cf,  ARLIM_P(cflo),  ARLIM_P(cfhi),
 			     const int* ncf, const int* lo, const int* hi);
@@ -307,13 +316,13 @@ extern "C" {
                      const Real* rhog, const int* gdir, const Real* dx, const Real* plo,
                      const int* ncomps);
 
-  void FORT_STEADYSTATE(Real* rho, ARLIM_P(rlo), ARLIM_P(rhi), 
+  void FORT_STEADYSTATE(Real* rho, ARLIM_P(rlo), ARLIM_P(rhi),
 			const Real* rhoval, const Real* muval, const int* ncomps,
 			const Real* kappa, ARLIM_P(klo), ARLIM_P(khi),
 			const int*  mid,   ARLIM_P(mlo), ARLIM_P(mhi),
-			const int* rmID, const Real* time, 
+			const int* rmID, const Real* time,
 			const Real* inflow_vel, const int* nc, const Real* grav,
-			const int* lo, const int* hi);  
+			const int* lo, const int* hi);
 
   void FORT_TENSORDIFF(const int* lo, const int* hi,
                        const Real* a, ARLIM_P(alo), ARLIM_P(ahi),
@@ -342,6 +351,6 @@ extern "C" {
                        Real*       edat,ARLIM_P(e_lo), ARLIM_P(e_hi),
                        const int* lo, const int* hi, const int* dir);
 }
-    
+
 #endif
 #endif /*_PorousMedia_F_H_*/

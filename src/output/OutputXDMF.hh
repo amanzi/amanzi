@@ -1,12 +1,14 @@
 /*
-  Output
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
+
+/*
+  Output
 
   XDMF implementation of an Output object.
 */
@@ -32,22 +34,23 @@ namespace Amanzi {
 class HDF5_MPI;
 
 class OutputXDMF : public Output {
-
  public:
   OutputXDMF(Teuchos::ParameterList& plist,
              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
              bool is_vis,
              bool is_dynamic,
-             bool include_io_set=true);
+             bool include_io_set = true);
 
   // open and close files
   virtual void InitializeCycle(double time, int cycle, const std::string& tag);
   virtual void FinalizeCycle();
 
   // write data to file
-  virtual void WriteVector(const Epetra_Vector& vec, const std::string& name,
+  virtual void WriteVector(const Epetra_Vector& vec,
+                           const std::string& name,
                            const AmanziMesh::Entity_kind& kind) const;
-  virtual void WriteMultiVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names,
+  virtual void WriteMultiVector(const Epetra_MultiVector& vec,
+                                const std::vector<std::string>& names,
                                 const AmanziMesh::Entity_kind& kind) const;
 
   // can we template this?
@@ -57,7 +60,8 @@ class OutputXDMF : public Output {
 
   // read data from file
   virtual void ReadVector(Epetra_Vector& vec, const std::string& name) const;
-  virtual void ReadMultiVector(Epetra_MultiVector& vec, const std::vector<std::string>& names) const;
+  virtual void
+  ReadMultiVector(Epetra_MultiVector& vec, const std::vector<std::string>& names) const;
 
   virtual void ReadAttribute(double& val, const std::string& name) const;
   virtual void ReadAttribute(int& val, const std::string& name) const;
@@ -78,4 +82,4 @@ class OutputXDMF : public Output {
 
 } // namespace Amanzi
 
-#endif  // OUTPUT_XDMF_HH_
+#endif // OUTPUT_XDMF_HH_

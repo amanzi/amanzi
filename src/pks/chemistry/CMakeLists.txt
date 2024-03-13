@@ -49,7 +49,7 @@ set(chem_inc_files
                    Alquimia_PK.hh
                    Amanzi_PK.hh
                    Chemistry_PK.hh
-                   pks_chemistry_registration.hh
+                   pks_chemistry_reg.hh
 )
 
 #

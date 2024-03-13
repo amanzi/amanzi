@@ -65,7 +65,8 @@ set(transport_inc_files
   TransportDefs.hh
   Transport_PK.hh
   TransportImplicit_PK.hh
-  TransportExplicit_PK.hh)
+  TransportExplicit_PK.hh
+  models_transport_reg.hh)
 
 set(transport_src_files Transport_PK.cc Transport_TI.cc
                         TransportImplicit_PK.cc TransportImplicit_TI.cc 
@@ -105,10 +106,9 @@ if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
     endif()
 
     include_directories(${TRANSPORT_SOURCE_DIR})
-    include_directories(${Boost_INCLUDE_DIRS})
 
     set(amanzi_libs transport pks state operators mesh_functions data_structures functions 
-                    whetstone mesh_factory mesh_audit mesh geometry)
+                    whetstone mesh_factory mesh geometry)
 
     # Test: miscaleneous transport routines
     add_amanzi_test(transport_mics transport_mics
@@ -120,11 +120,6 @@ if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
                     KIND unit
                     SOURCE test/Main.cc test/transport_advance.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    # add_amanzi_test(transport_limiters transport_limiters
-    #                KIND unit
-    #                SOURCE test/Main.cc test/transport_limiters.cc
-    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(transport_convergence transport_convergence
                     KIND unit

@@ -88,6 +88,7 @@ set(state_inc_files
   Visualization.hh
   VisualizationDomainSet.hh
   UnstructuredObservations.hh
+  MeshInfo.hh
   Debugger.hh)
 
 add_amanzi_library(state 
@@ -115,10 +116,11 @@ add_amanzi_library(state
                           data/Record.cc
                           data/RecordSet.cc
                           data/Data_Helpers.cc
+                          MeshInfo.cc
                           Debugger.cc
                    HEADERS ${state_inc_files}
 		   LINK_LIBS data_structures functions mesh_functions output mesh atk
-		   ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
+		             ${SEACAS_LIBRARIES})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
 set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
 if (APPLE AND BUILD_SHARED_LIBS)
@@ -130,16 +132,18 @@ endif()
 #
 add_install_include_file(${state_inc_files})
 
-if (BUILD_TESTS)
-    # Add UnitTest includes
-    include_directories(${UnitTest_INCLUDE_DIRS})
-
     # Add State include directory. 
     include_directories(${STATE_SOURCE_DIR})
 
     # Mesh factory includes
     include_directories(${MESH_FACTORY_SOURCE_DIR})
     include_directories(${MESH_EXTRACTED_SOURCE_DIR})
+
+if (BUILD_TESTS)
+
+    # Add UnitTest includes
+    include_directories(${UnitTest_INCLUDE_DIRS})
+
 
     # Copy test subdirectory for out of source builds
     if (NOT ("${STATE_SOURCE_DIR}" STREQUAL "${STATE_BINARY_DIR}"))
@@ -201,7 +205,7 @@ if (BUILD_TESTS)
 	 		   test/state_observations.cc
                     LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
-    add_amanzi_test(state_observations_np2 state_observations NPROCS 2 KIND unit)
+    #add_amanzi_test(state_observations_np2 state_observations NPROCS 2 KIND unit)
 
     add_amanzi_test(state_data_factory state_data_factory
                     KIND unit

@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <BoxLib.H>
 #include <ParmParseHelpers.H>
 #include <ParallelDescriptor.H>
@@ -29,7 +38,7 @@ build_prefixed_name(const std::string& name)
 void
 bldTable (Teuchos::ParameterList& params,
 	  std::list<ParmParse::PP_entry>& tab)
-{    
+{
   for (Teuchos::ParameterList::ConstIterator i=params.begin(); i!=params.end(); ++i)
     {
       const std::string& name = params.name(i);
@@ -38,12 +47,12 @@ bldTable (Teuchos::ParameterList& params,
       if (entry.isList() )
         {
           prefix.push(name);
-          bldTable(params.sublist(name), tab);          
+          bldTable(params.sublist(name), tab);
         }
       else
         {
             // FIXME: It is unfortunate that Teuchos only stores the converted
-            //  data, and this the Teuchos::toString methods apply an arbitrary 
+            //  data, and this the Teuchos::toString methods apply an arbitrary
             //  formatting rules buried in the bowels of trilinos...
 
             std::stringstream ppStr;
@@ -57,7 +66,7 @@ bldTable (Teuchos::ParameterList& params,
             Teuchos::ParameterEntry* entry = params.getEntryPtr(name);
             if (entry->isType<double>()) {
                 double val = entry->getValue<double>(&val);
-                ppStr << val; 
+                ppStr << val;
                 ppStrList.push_back(ppStr.str());
             }
             else if (entry->isType<float>()) {
@@ -157,7 +166,7 @@ print_table (const std::string& pfx, const ParmParse::Table& table)
               if ( i < n-1 ) std::cout << ", ";
             }
           std::cout << "]" << '\n';
-          
+
 	}
     }
 }
@@ -170,5 +179,3 @@ BoxLib::Initialize_ParmParse(Teuchos::ParameterList& params)
   bldTable(params,table);
   ParmParse::appendTable(table);
 }
-
-

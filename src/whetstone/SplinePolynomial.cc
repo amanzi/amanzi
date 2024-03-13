@@ -1,13 +1,17 @@
 /*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
-  provided in the top-level COPYRIGHT file.
-
-  Spline function is based on a one-dimensional polynomial which 
+  Spline function is based on a one-dimensional polynomial which
   provides easy derivatives and possiblity for generalization to
   multiple dimensions.
 */
@@ -23,8 +27,8 @@ namespace WhetStone {
 /* ******************************************************************
 * Setup cubic polynomial
 ****************************************************************** */
-void SplineCubic::Setup(double x0, double f0, double df0,
-                        double x1, double f1, double df1)
+void
+SplineCubic::Setup(double x0, double f0, double df0, double x1, double f1, double df1)
 {
   double dx = x1 - x0;
   double df = f1 - f0;
@@ -47,7 +51,8 @@ void SplineCubic::Setup(double x0, double f0, double df0,
 /* ******************************************************************
 * Calculate value
 ****************************************************************** */
-double SplineCubic::Value(double x) const
+double
+SplineCubic::Value(double x) const
 {
   AmanziGeometry::Point xp(1);
   xp[0] = x;
@@ -58,7 +63,55 @@ double SplineCubic::Value(double x) const
 /* ******************************************************************
 * Calculate value of the gradient
 ****************************************************************** */
-double SplineCubic::GradientValue(double x) const
+double
+SplineCubic::GradientValue(double x) const
+{
+  AmanziGeometry::Point xp(1);
+  xp[0] = x;
+  return grad_.Value(xp);
+}
+
+
+/* ******************************************************************
+* Setup quadratic polynomial
+****************************************************************** */
+void
+SplineQuadratic::Setup(double x0, double f0, double df0, double x1, double f1)
+{
+  double dx = x1 - x0;
+  double df = f1 - f0;
+
+  AmanziGeometry::Point p0(1);
+  p0[0] = x0;
+
+  poly_.Reshape(1, 2);
+  poly_.set_origin(p0);
+
+  poly_(0) = f0;
+  poly_(1) = df0;
+  poly_(2) = (df - dx * df0) / (dx * dx);
+
+  grad_ = (Gradient(poly_))[0];
+};
+
+
+/* ******************************************************************
+* Calculate value
+****************************************************************** */
+double
+SplineQuadratic::Value(double x) const
+{
+  AmanziGeometry::Point xp(1);
+  xp[0] = x;
+  return poly_.Value(xp);
+}
+
+
+/* ******************************************************************
+* Calculate value of the gradient
+****************************************************************** */
+double
+SplineQuadratic::GradientValue(double x) const
 {
   AmanziGeometry::Point xp(1);
   xp[0] = x;
@@ -69,8 +122,8 @@ double SplineCubic::GradientValue(double x) const
 /* ******************************************************************
 * Setup of linear exterior interpolants
 ****************************************************************** */
-void SplineExteriorLinear::Setup(double x0, double f0, double df0,
-                                 double x1, double f1, double df1)
+void
+SplineExteriorLinear::Setup(double x0, double f0, double df0, double x1, double f1, double df1)
 {
   x0_ = x0;
   f0_ = f0;
@@ -85,7 +138,8 @@ void SplineExteriorLinear::Setup(double x0, double f0, double df0,
 /* ******************************************************************
 * Calculate value
 ****************************************************************** */
-double SplineExteriorLinear::Value(double x) const
+double
+SplineExteriorLinear::Value(double x) const
 {
   if (x <= x0_) return f0_ + df0_ * (x - x0_);
   if (x >= x1_) return f1_ + df1_ * (x - x1_);
@@ -99,7 +153,8 @@ double SplineExteriorLinear::Value(double x) const
 /* ******************************************************************
 * Calculate gradient value
 ****************************************************************** */
-double SplineExteriorLinear::GradientValue(double x) const
+double
+SplineExteriorLinear::GradientValue(double x) const
 {
   if (x <= x0_) return df0_;
   if (x >= x1_) return df1_;
@@ -109,6 +164,5 @@ double SplineExteriorLinear::GradientValue(double x) const
   return 0.0;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
+} // namespace WhetStone
+} // namespace Amanzi

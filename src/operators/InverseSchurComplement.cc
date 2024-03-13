@@ -1,12 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
 //! Provides ApplyInverse() using a Schur complement.
 #include "MeshDefs.hh"
 #include "Op.hh"
@@ -26,7 +27,7 @@ InverseSchurComplement::set_inverse_parameters(Teuchos::ParameterList& plist)
 void
 InverseSchurComplement::InitializeInverse()
 {
-  AMANZI_ASSERT(h_.get()); // set_matrices was called
+  AMANZI_ASSERT(h_.get());      // set_matrices was called
   AMANZI_ASSERT(solver_.get()); // set_inverse_parameters was called
   solver_->set_matrix(Teuchos::null);
   h_->SymbolicAssembleMatrix();
@@ -40,7 +41,7 @@ InverseSchurComplement::ComputeInverse()
   h_->AssembleMatrix();
   solver_->ComputeInverse();
 }
-  
+
 int
 InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
@@ -48,24 +49,20 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
   // schema which connects cells to faces, and no other CELL schemas that are
   // not simply diagonal CELL_CELL.  Additionally, collect the diagonal for
   // inversion.
-  Epetra_MultiVector D_c(h_->Mesh()->cell_map(false),1);
+  Epetra_MultiVector D_c(h_->Mesh()->getMap(AmanziMesh::Entity_kind::CELL, false), 1);
   int ncells_owned = D_c.MyLength();
-  int nfaces_owned = h_->Mesh()->num_entities(AmanziMesh::FACE,
-          AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned =
+    h_->Mesh()->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
   int nschema_coupling = 0;
   for (const auto& op : *h_) {
-    if (op->Matches(Operators::OPERATOR_SCHEMA_DOFS_CELL,
-                    Operators::OPERATOR_SCHEMA_RULE_SUBSET)) {
+    if (op->Matches(Operators::OPERATOR_SCHEMA_DOFS_CELL, Operators::OPERATOR_SCHEMA_RULE_SUBSET)) {
       // HAS CELLS
-      if (op->Matches(Operators::OPERATOR_SCHEMA_BASE_CELL |
-                      Operators::OPERATOR_SCHEMA_DOFS_CELL,
-                      Operators::OPERATOR_SCHEMA_RULE_EXACT)
-          && (op->diag->MyLength() == ncells_owned)) {
+      if (op->Matches(Operators::OPERATOR_SCHEMA_BASE_CELL | Operators::OPERATOR_SCHEMA_DOFS_CELL,
+                      Operators::OPERATOR_SCHEMA_RULE_EXACT) &&
+          (op->diag->MyLength() == ncells_owned)) {
         // diagonal schema
-        for (int c = 0; c != ncells_owned; ++c) {
-          D_c[0][c] += (*op->diag)[0][c];
-        }
+        for (int c = 0; c != ncells_owned; ++c) { D_c[0][c] += (*op->diag)[0][c]; }
       } else if (op->Matches(Operators::OPERATOR_SCHEMA_BASE_FACE,
                              Operators::OPERATOR_SCHEMA_RULE_SUBSET) &&
                  op->matrices.size() == nfaces_owned) {
@@ -73,10 +70,10 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
         msg << "Schema " << op->schema_string << " cannot be Schur complemented.";
         Exceptions::amanzi_throw(msg);
       } else if (op->Matches(Operators::OPERATOR_SCHEMA_BASE_CELL |
-                             Operators::OPERATOR_SCHEMA_DOFS_CELL |
-                             Operators::OPERATOR_SCHEMA_DOFS_FACE,
-                             Operators::OPERATOR_SCHEMA_RULE_EXACT)
-                 && (op->matrices.size() == ncells_owned)) {
+                               Operators::OPERATOR_SCHEMA_DOFS_CELL |
+                               Operators::OPERATOR_SCHEMA_DOFS_FACE,
+                             Operators::OPERATOR_SCHEMA_RULE_EXACT) &&
+                 (op->matrices.size() == ncells_owned)) {
         nschema_coupling++;
       }
     }
@@ -88,7 +85,7 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
     Errors::Message msg("Schur complement has multiple FACE+CELL schema.");
     Exceptions::amanzi_throw(msg);
   }
-  
+
   int ierr(0);
   Y.PutScalarGhosted(0.0);
 
@@ -100,16 +97,15 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
   T.PutScalarGhosted(0.0);
 
   for (const auto& op : *h_) {
-    if (op->Matches(Operators::OPERATOR_SCHEMA_BASE_CELL |
-                    Operators::OPERATOR_SCHEMA_DOFS_CELL |
-                    Operators::OPERATOR_SCHEMA_DOFS_FACE,
-                    Operators::OPERATOR_SCHEMA_RULE_EXACT)
-        && op->matrices.size() == ncells_owned) {
+    if (op->Matches(Operators::OPERATOR_SCHEMA_BASE_CELL | Operators::OPERATOR_SCHEMA_DOFS_CELL |
+                      Operators::OPERATOR_SCHEMA_DOFS_FACE,
+                    Operators::OPERATOR_SCHEMA_RULE_EXACT) &&
+        op->matrices.size() == ncells_owned) {
       // FORWARD ELIMINATION:  Tf = Xf - Afc inv(Acc) Xc
       {
         Epetra_MultiVector& Tf = *T.ViewComponent("face", true);
         for (int c = 0; c < ncells_owned; c++) {
-          const auto& faces = h_->Mesh()->cell_get_faces(c);
+          const auto& faces = h_->Mesh()->getCellFaces(c);
           int nfaces = faces.size();
 
           WhetStone::DenseMatrix& Acell = op->matrices[c];
@@ -139,11 +135,11 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
         Epetra_MultiVector& Yc = *Y.ViewComponent("cell", false);
         // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
         for (int c = 0; c < ncells_owned; c++) {
-          const auto& faces = h_->Mesh()->cell_get_faces(c);
+          const auto& faces = h_->Mesh()->getCellFaces(c);
           int nfaces = faces.size();
-          
+
           WhetStone::DenseMatrix& Acell = op->matrices[c];
-          
+
           double tmp = Xc[0][c];
           for (int n = 0; n < nfaces; n++) {
             int f = faces[n];
@@ -157,6 +153,6 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
   return ierr;
 }
 
-    
+
 } // namespace AmanziSolvers
 } // namespace Amanzi

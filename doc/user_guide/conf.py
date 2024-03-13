@@ -42,8 +42,8 @@ ext_sphinx = ['sphinx.ext.todo',
               'sphinx.ext.ifconfig',
               'sphinx.ext.autodoc',
               'sphinx.ext.doctest',
-              'sphinxcontrib.tikz',
-              'sphinxcontrib.bibtex',
+              #'sphinxcontrib.tikz',
+              #'sphinxcontrib.bibtex',
 ]
 
 ext_matplotlib = ['matplotlib.sphinxext.plot_directive']

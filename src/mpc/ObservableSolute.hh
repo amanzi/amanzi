@@ -1,14 +1,17 @@
 /*
-  Multi-Process Coordinator
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt
            Konstantin Lipnikov
            Daniil Svyatsky
+*/
+
+/*
+  Multi-Process Coordinator
+
 */
 
 #ifndef AMANZI_OBSERVABLE_SOLUTE_HH
@@ -28,9 +31,11 @@ class ObservableSolute : public virtual Observable {
                    Teuchos::ParameterList& units_plist,
                    Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
-  virtual void ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt);
+  virtual void
+  ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt);
   virtual int ComputeRegionSize();
-  void RegisterComponentNames(std::vector<std::string> comp_names, int num_liquid, int tcc_index) {
+  void RegisterComponentNames(std::vector<std::string> comp_names, int num_liquid, int tcc_index)
+  {
     comp_names_ = comp_names;
     num_liquid_ = num_liquid;
     tcc_index_ = tcc_index;
@@ -38,12 +43,12 @@ class ObservableSolute : public virtual Observable {
 
  protected:
   bool obs_boundary_, obs_planar_;
-  std::vector<double> vofs_;
+  AmanziMesh::cDouble_View vofs_;
   AmanziGeometry::Point reg_normal_;
   Teuchos::Array<std::string> comp_names_;
   int num_liquid_, tcc_index_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

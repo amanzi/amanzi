@@ -1,12 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
+
 */
 
 #include <cstdlib>
@@ -39,7 +42,9 @@
 /* *****************************************************************
 * This test diffusion solver with full tensor and source term.
 * **************************************************************** */
-void TestDiffusionFracturedMatrix(double gravity) {
+void
+TestDiffusionFracturedMatrix(double gravity)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -61,12 +66,15 @@ void TestDiffusionFracturedMatrix(double gravity) {
 
   // create a mesh framework
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // modify diffusion coefficient
   WhetStone::Tensor Knull;
@@ -75,7 +83,7 @@ void TestDiffusionFracturedMatrix(double gravity) {
   Analytic02 ana(mesh, Point(1.0, 2.0, 0.0), gravity, Knull);
 
   for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     const WhetStone::Tensor& Ktmp = ana.TensorDiffusivity(xc, 0.0);
     Kc->push_back(Ktmp);
   }
@@ -83,17 +91,17 @@ void TestDiffusionFracturedMatrix(double gravity) {
   // create boundary data.
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator");
 
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; ++f) {
-    const Point& xf = mesh->face_centroid(f);
+    const Point& xf = mesh->getFaceCentroid(f);
 
     // external boundary
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
-        fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
+        fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
@@ -129,7 +137,8 @@ void TestDiffusionFracturedMatrix(double gravity) {
   // create preconditoner using the base operator class
   ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
   // ParameterList slist = plist.sublist("preconditioners").sublist("identity");
-  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
+  global_op->set_inverse_parameters(
+    "Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
 
@@ -142,13 +151,13 @@ void TestDiffusionFracturedMatrix(double gravity) {
   global_op->ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual() 
-              << " itr=" << global_op->num_itrs()
-              << " code=" << global_op->returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << global_op->residual()
+              << " itr=" << global_op->num_itrs() << " code=" << global_op->returned_code()
+              << std::endl;
 
     // visualization
     const Epetra_MultiVector& p = *solution->ViewComponent("cell");
-    GMV::open_data_file(*mesh, (std::string)"operators.gmv");
+    GMV::open_data_file(*mesh, (std::string) "operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
     GMV::close_data_file();
@@ -164,7 +173,7 @@ void TestDiffusionFracturedMatrix(double gravity) {
   // calculate flux error. To reuse the standard tools, we need to
   // collapse flux on fracture interface
   Epetra_MultiVector& flx_long = *flux->ViewComponent("face", true);
-  Epetra_MultiVector flx_short(mesh->face_map(false), 1);
+  Epetra_MultiVector flx_short(mesh->getMap(AmanziMesh::Entity_kind::FACE, false), 1);
   double unorm, ul2_err, uinf_err;
 
   op->UpdateFlux(solution.ptr(), flux.ptr());
@@ -179,14 +188,19 @@ void TestDiffusionFracturedMatrix(double gravity) {
 
   if (MyPID == 0) {
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
-        pl2_err, pinf_err, ul2_err, uinf_err, global_op->num_itrs());
+           pl2_err,
+           pinf_err,
+           ul2_err,
+           uinf_err,
+           global_op->num_itrs());
 
     CHECK(pl2_err < 1e-10);
     CHECK(ul2_err < 1e-10);
   }
 }
 
-TEST(OPERATOR_DIFFUSION_FRACTURED_MATRIX) {
+TEST(OPERATOR_DIFFUSION_FRACTURED_MATRIX)
+{
   TestDiffusionFracturedMatrix(0.0);
   TestDiffusionFracturedMatrix(9.8);
 }

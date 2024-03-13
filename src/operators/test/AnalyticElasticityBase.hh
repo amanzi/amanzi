@@ -1,12 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
 
   Base class for testing elasticity and Stokes-type problems.
 */
@@ -20,23 +22,35 @@
 
 class AnalyticElasticityBase {
  public:
-  AnalyticElasticityBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh) {
-    nnodes_owned = mesh_->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
-    ncells_owned = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  AnalyticElasticityBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh)
+  {
+    nnodes_owned = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
+                                         Amanzi::AmanziMesh::Parallel_kind::OWNED);
+    ncells_owned = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
+                                         Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
-    nnodes_wghost = mesh_->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
-    ncells_wghost = mesh_->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
+    nnodes_wghost = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
+                                          Amanzi::AmanziMesh::Parallel_kind::ALL);
+    ncells_wghost = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
+                                          Amanzi::AmanziMesh::Parallel_kind::ALL);
   };
-  ~AnalyticElasticityBase() {};
+  ~AnalyticElasticityBase(){};
 
   // analytic solution for elasticity-type problem
   // -- stiffness/elasticity tensor T
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+
   // -- analytic solution
-  virtual Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point
+  velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::WhetStone::Tensor
+  stress_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual double volumetric_strain_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+
   // -- source term
-  virtual Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point
+  source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   void VectorNodeSolution(Amanzi::CompositeVector& u, double t);
   void VectorCellSolution(Amanzi::CompositeVector& u, double t);
@@ -45,10 +59,22 @@ class AnalyticElasticityBase {
 
   // error calculation
   // -- velocity or displacement
-  void VectorNodeError(Amanzi::CompositeVector& u, double t, double& unorm, double& l2_err, double& inf_err);
-  void VectorCellError(Amanzi::CompositeVector& u, double t, double& unorm, double& l2_err, double& inf_err);
+  void VectorNodeError(Amanzi::CompositeVector& u,
+                       double t,
+                       double& unorm,
+                       double& l2_err,
+                       double& inf_err);
+  void VectorCellError(Amanzi::CompositeVector& u,
+                       double t,
+                       double& unorm,
+                       double& l2_err,
+                       double& inf_err);
   // -- pressure
-  void ScalarCellError(Amanzi::CompositeVector& p, double t, double& pnorm, double& l2_err, double& inf_err);
+  void ScalarCellError(Amanzi::CompositeVector& p,
+                       double t,
+                       double& pnorm,
+                       double& l2_err,
+                       double& inf_err);
 
   // communications
   void GlobalOp(std::string op, double* val, int n);
@@ -63,14 +89,15 @@ class AnalyticElasticityBase {
 /* ******************************************************************
 * Solution in displacement
 ****************************************************************** */
-void AnalyticElasticityBase::VectorNodeSolution(Amanzi::CompositeVector& u, double t)
+void
+AnalyticElasticityBase::VectorNodeSolution(Amanzi::CompositeVector& u, double t)
 {
-  int d = mesh_->space_dimension();
+  int d = mesh_->getSpaceDimension();
   Amanzi::AmanziGeometry::Point p(d), ucalc(d);
   Epetra_MultiVector& u_node = *u.ViewComponent("node");
 
   for (int v = 0; v < nnodes_owned; ++v) {
-    mesh_->node_get_coordinates(v, &p);
+    p = mesh_->getNodeCoordinate(v);
 
     const Amanzi::AmanziGeometry::Point& uexact = velocity_exact(p, t);
     for (int i = 0; i < d; ++i) u_node[i][v] = uexact[i];
@@ -81,15 +108,15 @@ void AnalyticElasticityBase::VectorNodeSolution(Amanzi::CompositeVector& u, doub
 /* ******************************************************************
 * Solution in velocity or displacement
 ****************************************************************** */
-inline
-void AnalyticElasticityBase::VectorCellSolution(Amanzi::CompositeVector& u, double t)
+inline void
+AnalyticElasticityBase::VectorCellSolution(Amanzi::CompositeVector& u, double t)
 {
-  int d = mesh_->space_dimension();
+  int d = mesh_->getSpaceDimension();
   Amanzi::AmanziGeometry::Point ucalc(d);
   Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     const Amanzi::AmanziGeometry::Point& uexact = velocity_exact(xc, t);
     for (int i = 0; i < d; ++i) u_cell[i][c] = uexact[i];
   }
@@ -99,13 +126,13 @@ void AnalyticElasticityBase::VectorCellSolution(Amanzi::CompositeVector& u, doub
 /* ******************************************************************
 * Solution in pressure
 ****************************************************************** */
-inline
-void AnalyticElasticityBase::ScalarCellSolution(Amanzi::CompositeVector& p, double t)
+inline void
+AnalyticElasticityBase::ScalarCellSolution(Amanzi::CompositeVector& p, double t)
 {
   Epetra_MultiVector& p_cell = *p.ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const Amanzi::AmanziGeometry::Point& xm = mesh_->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& xm = mesh_->getCellCentroid(c);
     p_cell[0][c] = pressure_exact(xm, t);
   }
 }
@@ -113,17 +140,17 @@ void AnalyticElasticityBase::ScalarCellSolution(Amanzi::CompositeVector& p, doub
 /* ******************************************************************
 * Solution for normal flux
 ****************************************************************** */
-inline
-void AnalyticElasticityBase::ScalarFaceSolution(
-    Amanzi::CompositeVector& un, double t)
+inline void
+AnalyticElasticityBase::ScalarFaceSolution(Amanzi::CompositeVector& un, double t)
 {
   Epetra_MultiVector& un_face = *un.ViewComponent("face");
 
-  int nfaces_owned = mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,
+                                           Amanzi::AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    const Amanzi::AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-    const Amanzi::AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    double area = mesh_->face_area(f);
+    const Amanzi::AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+    const Amanzi::AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+    double area = mesh_->getFaceArea(f);
     un_face[0][f] = (velocity_exact(xf, t) * normal) / area;
   }
 }
@@ -132,42 +159,41 @@ void AnalyticElasticityBase::ScalarFaceSolution(
 /* ******************************************************************
 * Error in displacement.
 ****************************************************************** */
-inline
-void AnalyticElasticityBase::VectorNodeError(
-    Amanzi::CompositeVector& u, double t, double& unorm,
-    double& l2_err, double& inf_err)
+inline void
+AnalyticElasticityBase::VectorNodeError(Amanzi::CompositeVector& u,
+                                        double t,
+                                        double& unorm,
+                                        double& l2_err,
+                                        double& inf_err)
 {
   unorm = 0.0;
   l2_err = 0.0;
   inf_err = 0.0;
 
   // calculate nodal volumes
-  Amanzi::AmanziMesh::Entity_ID_List nodes;
-
   Teuchos::RCP<Amanzi::CompositeVectorSpace> cvs = Teuchos::rcp(new Amanzi::CompositeVectorSpace());
-  cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent("node", Amanzi::AmanziMesh::NODE, 1);
+  cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent(
+    "node", Amanzi::AmanziMesh::Entity_kind::NODE, 1);
 
   Amanzi::CompositeVector vol(*cvs);
   Epetra_MultiVector& vol_node = *vol.ViewComponent("node", true);
   vol.PutScalar(0.0);
 
   for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_nodes(c, &nodes);
+    auto nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
 
-    for (int i = 0; i < nnodes; i++) {
-      vol_node[0][nodes[i]] += mesh_->cell_volume(c) / nnodes;
-    }
+    for (int i = 0; i < nnodes; i++) { vol_node[0][nodes[i]] += mesh_->getCellVolume(c) / nnodes; }
   }
   vol.GatherGhostedToMaster("node");
 
   // calculate errors
-  int d = mesh_->space_dimension();
+  int d = mesh_->getSpaceDimension();
   Amanzi::AmanziGeometry::Point p(d), ucalc(d);
   Epetra_MultiVector& u_node = *u.ViewComponent("node");
 
   for (int v = 0; v < nnodes_owned; ++v) {
-    mesh_->node_get_coordinates(v, &p);
+    p = mesh_->getNodeCoordinate(v);
 
     const Amanzi::AmanziGeometry::Point& uexact = velocity_exact(p, t);
     for (int i = 0; i < d; ++i) ucalc[i] = u_node[i][v];
@@ -191,22 +217,24 @@ void AnalyticElasticityBase::VectorNodeError(
 /* ******************************************************************
 * Error in velocity or displacement
 ****************************************************************** */
-inline
-void AnalyticElasticityBase::VectorCellError(
-    Amanzi::CompositeVector& u, double t, double& unorm,
-    double& l2_err, double& inf_err)
+inline void
+AnalyticElasticityBase::VectorCellError(Amanzi::CompositeVector& u,
+                                        double t,
+                                        double& unorm,
+                                        double& l2_err,
+                                        double& inf_err)
 {
   unorm = 0.0;
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int d = mesh_->space_dimension();
+  int d = mesh_->getSpaceDimension();
   Amanzi::AmanziGeometry::Point ucalc(d);
   Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    double vol = mesh_->cell_volume(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+    double vol = mesh_->getCellVolume(c);
 
     const Amanzi::AmanziGeometry::Point& uexact = velocity_exact(xc, t);
     for (int i = 0; i < d; ++i) ucalc[i] = u_cell[i][c];
@@ -230,10 +258,12 @@ void AnalyticElasticityBase::VectorCellError(
 /* ******************************************************************
 * Error in pressure
 ****************************************************************** */
-inline
-void AnalyticElasticityBase::ScalarCellError(
-    Amanzi::CompositeVector& p, double t, double& pnorm,
-    double& l2_err, double& inf_err)
+inline void
+AnalyticElasticityBase::ScalarCellError(Amanzi::CompositeVector& p,
+                                        double t,
+                                        double& pnorm,
+                                        double& l2_err,
+                                        double& inf_err)
 {
   pnorm = 0.0;
   l2_err = 0.0;
@@ -242,8 +272,8 @@ void AnalyticElasticityBase::ScalarCellError(
   Epetra_MultiVector& p_cell = *p.ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const Amanzi::AmanziGeometry::Point& xm = mesh_->cell_centroid(c);
-    double area = mesh_->cell_volume(c);
+    const Amanzi::AmanziGeometry::Point& xm = mesh_->getCellCentroid(c);
+    double area = mesh_->getCellVolume(c);
 
     double pexact = pressure_exact(xm, t);
     double tmp = fabs(p_cell[0][c] - pexact);
@@ -266,19 +296,18 @@ void AnalyticElasticityBase::ScalarCellError(
 /* ******************************************************************
 * Collective communications.
 ****************************************************************** */
-inline
-void AnalyticElasticityBase::GlobalOp(std::string op, double* val, int n)
+inline void
+AnalyticElasticityBase::GlobalOp(std::string op, double* val, int n)
 {
   double* val_tmp = new double[n];
   for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
 
   if (op == "sum")
-    mesh_->get_comm()->SumAll(val_tmp, val, n);
+    mesh_->getComm()->SumAll(val_tmp, val, n);
   else if (op == "max")
-    mesh_->get_comm()->MaxAll(val_tmp, val, n);
+    mesh_->getComm()->MaxAll(val_tmp, val, n);
 
   delete[] val_tmp;
 }
 
 #endif
-

@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _OBSERVATION_H_
 #define _OBSERVATION_H_
 
@@ -22,7 +31,7 @@ class PMAmr;
 */
 class Observation
 {
-public: 
+public:
   typedef std::pair<std::ostream&,std::ostream&> ostream; // first:text, second:binary
   typedef std::pair<std::istream&,std::istream&> istream;
 
@@ -34,7 +43,7 @@ public:
   */
   std::string field;
 
-  /* This specifies the name of the region in which the observation is applied. 
+  /* This specifies the name of the region in which the observation is applied.
    */
   std::string region_name;
 
@@ -59,7 +68,7 @@ public:
 
   void process(Real t_old, Real t_new, int iter, int verbose);
   static void setPMAmrPtr(PMAmr* amr) {amrp = amr;}
-  static PMAmr* PMAmrPtr() {return amrp;} 
+  static PMAmr* PMAmrPtr() {return amrp;}
 
   static void Cleanup ();
   static void Initialize ();
@@ -70,12 +79,12 @@ protected:
   std::pair<Real,Real> integral_and_volume (Real time);
   static PMAmr* amrp; // Should be const, but cannot be
   Real average(Real time);
-  Real volume_integral(Real time);  
+  Real volume_integral(Real time);
   Real volume_time_integral(Real t_old, Real t_new);
   Real point_sample (Real time);
   Real peak_sample (Real time);
 
-  Real val_old, val_new;  
+  Real val_old, val_new;
   bool obs_data_initialized;
 };
 #endif /*_OBSERVATION_H_*/

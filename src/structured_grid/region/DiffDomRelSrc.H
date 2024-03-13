@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _DiffDomRelSrc_H
 #define _DiffDomRelSrc_H
 
@@ -21,7 +30,7 @@
   There are (at least) two potential problems that arise when a volumetric source term takes
   this (nonlinear) form:
 
-  (1) If a first-order time integration is used, a pointwise evaluation of Q will lead to an 
+  (1) If a first-order time integration is used, a pointwise evaluation of Q will lead to an
   integral of the source term != M, where the discrepancy is a function of the time stepsize.
   Thus, if used with temporal subcycling, we must formulate to guarantee consistent sources.
 
@@ -60,13 +69,13 @@ public:
   virtual ~DiffDomRelSrc() {}
   virtual Array<Real> operator() (Real time = 0) const;
   virtual Array<Real> operator() (Real t1, Real t2) const;
-  virtual void apply(FArrayBox&  fab, 
-                     const Real* dx, 
+  virtual void apply(FArrayBox&  fab,
+                     const Real* dx,
                      int         scomp,
                      int         ncomp,
                      Real        time = 0) const;
-  virtual void apply(FArrayBox&  fab, 
-                     const Real* dx, 
+  virtual void apply(FArrayBox&  fab,
+                     const Real* dx,
                      int         scomp,
                      int         ncomp,
                      Real        t1,

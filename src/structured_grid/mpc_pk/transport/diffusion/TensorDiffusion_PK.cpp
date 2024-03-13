@@ -1,3 +1,11 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
 
 #include <TensorDiffusion_PK.H>
 
@@ -29,7 +37,7 @@ namespace Amanzi {
       int nComp = 1;
       const Real* dx = bd.getGeom().CellSize();
       TensorOp* op = new TensorOp(bd,dx,nComp);
-      int nComp_alpha = (W_flag > 1 || alpha_in!=0 ?  nComp_W  :  1); 
+      int nComp_alpha = (W_flag > 1 || alpha_in!=0 ?  nComp_W  :  1);
       const BoxArray& grids = volume.boxArray();
       if (a!=0) {
         MultiFab alpha(grids,nComp_alpha,Geom_Grow);
@@ -65,7 +73,7 @@ namespace Amanzi {
           bcoeffs[mfi].mult(dx[d]);
         }
         op->bCoefficients(bcoeffs,d);
-    
+
         for (int n=0; n<nComp_beta1; ++n) {
           MultiFab::Copy(bcoeffs,area[d],0,n,1,0);
         }
@@ -93,7 +101,7 @@ namespace Amanzi {
     {
       const Real* dx = bd.getGeom().CellSize();
       ABecHelper* op = new ABecHelper(bd,dx);
-      int nComp_alpha = (W_flag > 1 || alpha_in!=0 ?  nComp_W  :  1); 
+      int nComp_alpha = (W_flag > 1 || alpha_in!=0 ?  nComp_W  :  1);
       const BoxArray& grids = volume.boxArray();
       if (a!=0) {
         MultiFab alpha(grids,nComp_alpha,Geom_Grow);

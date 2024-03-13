@@ -1,12 +1,15 @@
 /*
-  Navier Stokes PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Navier Stokes PK
+
 */
 
 // TPLs
@@ -16,6 +19,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "IO.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "OutputXDMF.hh"
@@ -23,7 +27,8 @@
 #include "NavierStokes_PK.hh"
 
 /* **************************************************************** */
-TEST(NAVIER_STOKES_2D) {
+TEST(NAVIER_STOKES_2D)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -45,7 +50,7 @@ TEST(NAVIER_STOKES_2D) {
   pref.clear();
   pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   int nx = plist->get<int>("mesh resolution", 20);
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, nx);
@@ -56,7 +61,8 @@ TEST(NAVIER_STOKES_2D) {
   S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<NavierStokes_PK> NSPK = Teuchos::rcp(new NavierStokes_PK(plist, "navier stokes", S, soln));
+  Teuchos::RCP<NavierStokes_PK> NSPK =
+    Teuchos::rcp(new NavierStokes_PK(plist, "navier stokes", S, soln));
 
   NSPK->Setup();
   S->Setup();
@@ -66,8 +72,8 @@ TEST(NAVIER_STOKES_2D) {
   // initialize the Navier Stokes process kernel
   NSPK->Initialize();
   S->CheckAllFieldsInitialized();
- 
-  // solve the problem 
+
+  // solve the problem
   int itrs(0);
   int max_itrs = plist->get<int>("max iterations", 50);
   double T1 = plist->get<double>("end time", 100.0);
@@ -84,9 +90,7 @@ TEST(NAVIER_STOKES_2D) {
       NSPK->UpdatePreconditioner(T0, soln, dT0);
     }
 
-    while (NSPK->bdf1_dae()->TimeStep(dT, dTnext, soln)) {
-      dT = dTnext;
-    }
+    while (NSPK->bdf1_dae()->TimeStep(dT, dTnext, soln)) { dT = dTnext; }
     NSPK->bdf1_dae()->CommitSolution(dT, soln);
 
     T = NSPK->bdf1_dae()->time();
@@ -94,14 +98,18 @@ TEST(NAVIER_STOKES_2D) {
     itrs++;
 
     // reset primary fields
-    auto fluid_velocity_eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
-        S->GetEvaluatorPtr("pressure", Tags::DEFAULT));
-    S->GetW<CompositeVector>("fluid_velocity", Tags::DEFAULT, "navier stokes") = *soln->SubVector(0)->Data();
+    auto fluid_velocity_eval =
+      Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
+        S->GetEvaluatorPtr("fluid_velocity", Tags::DEFAULT));
+    S->GetW<CompositeVector>("fluid_velocity", Tags::DEFAULT, "navier stokes") =
+      *soln->SubVector(0)->Data();
     fluid_velocity_eval->SetChanged();
 
-    auto pressure_eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
+    auto pressure_eval =
+      Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
         S->GetEvaluatorPtr("pressure", Tags::DEFAULT));
-    S->GetW<CompositeVector>("pressure", Tags::DEFAULT, "navier stokes") = *soln->SubVector(1)->Data();
+    S->GetW<CompositeVector>("pressure", Tags::DEFAULT, "navier stokes") =
+      *soln->SubVector(1)->Data();
     pressure_eval->SetChanged();
 
     // commit step
@@ -116,8 +124,13 @@ TEST(NAVIER_STOKES_2D) {
   io.InitializeCycle(T, 1, "");
   const auto& u = *S->Get<CompositeVector>("fluid_velocity").ViewComponent("node");
   const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
-  io.WriteVector(*u(0), "velocity_x", AmanziMesh::NODE);
-  io.WriteVector(*u(1), "velocity_y", AmanziMesh::NODE);
-  io.WriteVector(*p(0), "pressure", AmanziMesh::CELL);
+  io.WriteVector(*u(0), "velocity_x", AmanziMesh::Entity_kind::NODE);
+  io.WriteVector(*u(1), "velocity_y", AmanziMesh::Entity_kind::NODE);
+  io.WriteVector(*p(0), "pressure", AmanziMesh::Entity_kind::CELL);
   io.FinalizeCycle();
+
+  // summary
+  WriteStateStatistics(*S);
+
+  AMANZI_ASSERT(itrs < 10);
 }

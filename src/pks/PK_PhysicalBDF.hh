@@ -1,12 +1,14 @@
 /*
-  Process Kernels
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
+
+/*
+  Process Kernels
 
   Default base with a few methods implemented in standard ways.
 */
@@ -21,10 +23,7 @@ namespace Amanzi {
 
 class PK_PhysicalBDF : public PK_Physical, public PK_BDF {
  public:
-  PK_PhysicalBDF()
-    : PK(),
-      PK_Physical(),
-      PK_BDF() {};
+  PK_PhysicalBDF() : PK(), PK_Physical(), PK_BDF(){};
 
   PK_PhysicalBDF(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -32,13 +31,12 @@ class PK_PhysicalBDF : public PK_Physical, public PK_BDF {
                  const Teuchos::RCP<TreeVector>& soln)
     : PK(pk_tree, glist, S, soln),
       PK_Physical(pk_tree, glist, S, soln),
-      PK_BDF(pk_tree, glist, S, soln) {};
+      PK_BDF(pk_tree, glist, S, soln){};
 
   // Virtual destructor
-  virtual ~PK_PhysicalBDF() {};
+  virtual ~PK_PhysicalBDF(){};
 };
 
 } // namespace Amanzi
 
 #endif
-

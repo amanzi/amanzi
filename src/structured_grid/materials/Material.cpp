@@ -1,6 +1,15 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <Material.H>
 
-Material::Material(const std::string&    _name, 
+Material::Material(const std::string&    _name,
 		   const Array<const Region*>& _regions,
 		   const std::vector<Property*>& _properties)
   : name(_name)
@@ -17,8 +26,8 @@ Material::Material(const std::string&    _name,
   }
 }
 
-const Property* 
-Material::Prop(const std::string& pname) const 
+const Property*
+Material::Prop(const std::string& pname) const
 {
   int ip=-1;
   for (int i=0; i<properties.size()&&ip<0; ++i) {
@@ -31,7 +40,7 @@ Material::Prop(const std::string& pname) const
   return 0;
 }
 
-Array<std::string> 
+Array<std::string>
 Material::PropertyNames() const
 {
   int nprop = properties.size();
@@ -51,7 +60,7 @@ Material::ClearProperties()
   properties.clear();
 }
 
-Material::Material(const Material& rhs) 
+Material::Material(const Material& rhs)
 {
   name = rhs.name;
   if (rhs.regions.size()>0) {
@@ -72,4 +81,3 @@ Material::~Material()
 {
   ClearProperties();
 }
-

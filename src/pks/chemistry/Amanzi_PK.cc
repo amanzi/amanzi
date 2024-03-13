@@ -1,21 +1,23 @@
 /*
-  Chemistry PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors:
+*/
+
+/*
+  Chemistry PK
 
   Trilinos based process kernel for chemistry. Geochemistry
-  calculations live in the chemistry library. The PK stores the 
-  instance of the chemistry object and drives the chemistry 
+  calculations live in the chemistry library. The PK stores the
+  instance of the chemistry object and drives the chemistry
   calculations on a cell by cell basis. It handles the movement of
-  data back and forth between the State and the chemistry library 
+  data back and forth between the State and the chemistry library
   data structures.
 */
- 
+
 #include <string>
 #include <algorithm>
 
@@ -37,9 +39,13 @@
 
 // Chemistry
 #include "Amanzi_PK.hh"
+#include "ChemistryDefs.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
+
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
 
 /* ******************************************************************
 * Constructor
@@ -48,17 +54,15 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
                      const Teuchos::RCP<Teuchos::ParameterList>& glist,
                      const Teuchos::RCP<State>& S,
                      const Teuchos::RCP<TreeVector>& soln)
-  : PK(pk_tree, glist, S, soln),
-    Chemistry_PK(pk_tree, glist, S, soln),
-    chem_(NULL),
-    current_time_(0.0),
-    saved_time_(0.0)
+  : PK(pk_tree, glist, S, soln), Chemistry_PK(pk_tree, glist, S, soln), chem_(NULL), dt_global_(0.0)
 {
   // obtain key of fields
-  tcc_key_ = Keys::getKey(domain_, "total_component_concentration"); 
+  tcc_key_ = Keys::getKey(domain_, "total_component_concentration");
   poro_key_ = plist_->get<std::string>("porosity key", Keys::getKey(domain_, "porosity"));
-  saturation_key_ = plist_->get<std::string>("saturation key", Keys::getKey(domain_, "saturation_liquid"));
-  fluid_den_key_ = plist_->get<std::string>("fluid density key", Keys::getKey(domain_, "mass_density_liquid"));
+  saturation_key_ =
+    plist_->get<std::string>("saturation key", Keys::getKey(domain_, "saturation_liquid"));
+  fluid_den_key_ =
+    plist_->get<std::string>("fluid density key", Keys::getKey(domain_, "mass_density_liquid"));
 
   temperature_key_ = Keys::getKey(domain_, "temperature");
   min_vol_frac_key_ = Keys::getKey(domain_, "mineral_volume_fractions");
@@ -77,8 +81,11 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   secondary_activity_coeff_key_ = Keys::getKey(domain_, "secondary_activity_coeff");
   alquimia_aux_data_key_ = Keys::getKey(domain_, "alquimia_aux_data");
   mineral_rate_constant_key_ = Keys::getKey(domain_, "mineral_rate_constant");
-  first_order_decay_constant_key_ = Keys::getKey(domain_, "first_order_decay_constant");  
-  
+  first_order_decay_constant_key_ = Keys::getKey(domain_, "first_order_decay_constant");
+
+  // -- Amanzi specific keys
+  prev_saturation_key_ = Keys::getKey(domain_, "prev_saturation_liquid");
+
   // collect high-level information about the problem
   InitializeMinerals(plist_);
   InitializeSorptionSites(plist_, S_->ICList());
@@ -87,8 +94,8 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   comp_names_.clear();
   Teuchos::RCP<Teuchos::ParameterList> cd_list = Teuchos::sublist(glist, "cycle driver", true);
   if (cd_list->isParameter("component names")) {
-    comp_names_ = cd_list->get<Teuchos::Array<std::string> >("component names").toVector();
-  } else{
+    comp_names_ = cd_list->get<Teuchos::Array<std::string>>("component names").toVector();
+  } else {
     Errors::Message msg("Amanzi_PK: Cycle Driver has no input parameter component names.");
     Exceptions::amanzi_throw(msg);
   }
@@ -109,34 +116,47 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
 
   //  some tests provide nullptr
   name_ = "Amanzi_PK:" + domain_;
-  if (solution_.get()) vo_ = Teuchos::rcp(new VerboseObject(solution_->Comm(), name_, *vo_plist));
-  else vo_ = Teuchos::rcp(new VerboseObject(getDefaultComm(), name_, *vo_plist));
+  if (solution_.get())
+    vo_ = Teuchos::rcp(new VerboseObject(solution_->Comm(), name_, *vo_plist));
+  else
+    vo_ = Teuchos::rcp(new VerboseObject(getDefaultComm(), name_, *vo_plist));
 }
 
 
 /* ******************************************************************
 * Register fields and evaluators with the State
 ******************************************************************* */
-void Amanzi_PK::Setup() {
+void
+Amanzi_PK::Setup()
+{
   Chemistry_PK::Setup();
+
+  if (!S_->HasRecord(prev_saturation_key_)) {
+    S_->Require<CV_t, CVS_t>(prev_saturation_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S_->GetRecordW(prev_saturation_key_, passwd_).set_io_vis(false);
+  }
 }
 
 
 /* ******************************************************************
 * Can this be done during Setup phase?
 ******************************************************************* */
-void Amanzi_PK::AllocateAdditionalChemistryStorage_()
+void
+Amanzi_PK::AllocateAdditionalChemistryStorage_()
 {
   int n_secondary_comps = chem_->secondary_species().size();
   if (n_secondary_comps > 0) {
-    S_->Require<CompositeVector, CompositeVectorSpace>(
-      secondary_activity_coeff_key_, Tags::DEFAULT, passwd_).SetMesh(mesh_)
+    S_->Require<CV_t, CVS_t>(secondary_activity_coeff_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, n_secondary_comps);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, n_secondary_comps);
 
     S_->GetRecordSetW(secondary_activity_coeff_key_).CreateData();
 
-    S_->GetW<CompositeVector>(secondary_activity_coeff_key_, passwd_).PutScalar(1.0);
+    S_->GetW<CV_t>(secondary_activity_coeff_key_, passwd_).PutScalar(1.0);
     S_->GetRecordW(secondary_activity_coeff_key_, Tags::DEFAULT, passwd_).set_initialized();
   }
 }
@@ -145,14 +165,18 @@ void Amanzi_PK::AllocateAdditionalChemistryStorage_()
 /* *******************************************************************
 * Initialization
 ******************************************************************* */
-void Amanzi_PK::Initialize()
+void
+Amanzi_PK::Initialize()
 {
-  ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  ncells_owned_ =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // initialization using base class
   Chemistry_PK::Initialize();
 
-  auto tcc = S_->GetPtrW<CompositeVector>(tcc_key_, Tags::DEFAULT, passwd_)->ViewComponent("cell", true);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_saturation_key_, saturation_key_, passwd_);
+
+  auto tcc = S_->GetPtrW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_)->ViewComponent("cell", true);
 
   XMLParameters();
 
@@ -169,7 +193,7 @@ void Amanzi_PK::Initialize()
   AllocateAdditionalChemistryStorage_();
   SetupAuxiliaryOutput();
 
-  // populate list of beaker fields 
+  // populate list of beaker fields
   InitializeBeakerFields_();
 
   if (ncells_owned_ > 0) {
@@ -179,14 +203,14 @@ void Amanzi_PK::Initialize()
   }
 
   // check names of primary species
-  int nprimary = chem_->primary_species().size(); 
+  int nprimary = chem_->primary_species().size();
   if (nprimary == comp_names_.size()) {
     for (int i = 0; i < nprimary; ++i) {
       std::string species_name = chem_->primary_species().at(i).name();
       if (comp_names_[i] != species_name) {
         Errors::Message msg;
-        msg << "Amanzi PK: mismatch of name: \"" << comp_names_[i] << "\" and \"" 
-            << species_name << "\". Compare XML and BGD lists.";
+        msg << "Amanzi PK: mismatch of name: \"" << comp_names_[i] << "\" and \"" << species_name
+            << "\". Compare XML and BGD lists.";
         Exceptions::amanzi_throw(msg);
       }
     }
@@ -206,7 +230,7 @@ void Amanzi_PK::Initialize()
   const auto& iclist = glist_->sublist("state").sublist("initial conditions").sublist(tcc_key_);
   std::vector<std::string> constraints;
   if (iclist.isParameter("names")) {
-    constraints = iclist.get<Teuchos::Array<std::string> >("names").toVector();
+    constraints = iclist.get<Teuchos::Array<std::string>>("names").toVector();
   } else {
     for (int i = 0; i < nprimary; ++i) constraints.push_back("total");
   }
@@ -232,7 +256,8 @@ void Amanzi_PK::Initialize()
   ErrorAnalysis(ierr, internal_msg);
 
   // compute the equilibrium state
-  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int num_cells =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   ierr = 0;
   if (fabs(initial_conditions_time_ - S_->get_time()) <= 1e-8 * fabs(S_->get_time())) {
     for (int c = 0; c < num_cells; ++c) {
@@ -242,8 +267,7 @@ void Amanzi_PK::Initialize()
         for (int i = 0; i < nprimary; ++i) values[i] = (*tcc)[i][c];
         chem_->EnforceConstraint(&beaker_state_, beaker_parameters_, constraints, values);
         CopyBeakerStructuresToCellState(c, tcc);
-      } 
-      catch (Exceptions::Amanzi_exception& geochem_err) {
+      } catch (Exceptions::Amanzi_exception& geochem_err) {
         ierr = 1;
         internal_msg = geochem_err.what();
       }
@@ -260,8 +284,9 @@ void Amanzi_PK::Initialize()
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << vo_->color("green") << "Initialization of PK was successful, T=" 
-        << S_->get_time() << vo_->reset() << std::endl << std::endl;
+    *vo_->os() << vo_->color("green") << "Initialization of PK was successful, T=" << S_->get_time()
+               << vo_->reset() << std::endl
+               << std::endl;
   }
 }
 
@@ -269,7 +294,8 @@ void Amanzi_PK::Initialize()
 /* *******************************************************************
 * Initialization helper functions
 ******************************************************************* */
-void Amanzi_PK::XMLParameters()
+void
+Amanzi_PK::XMLParameters()
 {
   // search for thermodynamic database
   Teuchos::RCP<Teuchos::ParameterList> tdb_list;
@@ -289,6 +315,14 @@ void Amanzi_PK::XMLParameters()
 
   // currently we only support the simple format.
   chem_ = std::make_shared<SimpleThermoDatabase>(tdb_list, vo_);
+
+  bool flag = plist_->get<bool>("log formulation");
+  std::string criterion = plist_->get<std::string>("convergence criterion", "pflotran");
+  chem_->set_use_log_formulation(flag);
+  chem_->set_convergence_criterion((criterion == "pflotran") ?
+                                     Beaker::ConvergenceType::PFLOTRAN :
+                                     Beaker::ConvergenceType::LINEAR_ALGEBRA_MAX_NORM);
+
   beaker_parameters_.tolerance = 1e-12;
   beaker_parameters_.max_iterations = 250;
   beaker_parameters_.activity_model_name = "unit";
@@ -296,7 +330,7 @@ void Amanzi_PK::XMLParameters()
   if (tdb_list == Teuchos::null) {
     std::ostringstream msg;
     msg << "Amanzi_PK: 'thermodynamic database' sublist must be specified.\n";
-    Exceptions::amanzi_throw(Errors::Message(msg.str()));    
+    Exceptions::amanzi_throw(Errors::Message(msg.str()));
   }
 
   // activity model
@@ -307,7 +341,8 @@ void Amanzi_PK::XMLParameters()
       beaker_parameters_.pitzer_database = plist_->get<std::string>("Pitzer database file");
     } else {
       std::ostringstream msg;
-      msg << "Amanzi_PK: parameter 'Pitzer database file' must be specified if activity model=pitzer-hwm'.\n";
+      msg << "Amanzi_PK: parameter 'Pitzer database file' must be specified if activity "
+             "model=pitzer-hwm'.\n";
       Exceptions::amanzi_throw(Errors::Message(msg.str()));
     }
   }
@@ -319,14 +354,14 @@ void Amanzi_PK::XMLParameters()
   // auxiliary data
   aux_names_.clear();
   if (plist_->isParameter("auxiliary data")) {
-    Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string> >("auxiliary data");
+    Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string>>("auxiliary data");
     for (auto name = names.begin(); name != names.end(); ++name) {
       if (*name == "pH") {
         aux_names_.push_back(*name);
       } else {
         std::stringstream message;
-        message << "XMLParameters(): unknown value in 'auxiliary data' list: " 
-                << *name << std::endl;
+        message << "XMLParameters(): unknown value in 'auxiliary data' list: " << *name
+                << std::endl;
         vo_->WriteWarning(Teuchos::VERB_LOW, message);
       }
     }
@@ -349,7 +384,8 @@ void Amanzi_PK::XMLParameters()
 /* *******************************************************************
 * Requires that Beaker::Setup() has already been called!
 ******************************************************************* */
-void Amanzi_PK::SetupAuxiliaryOutput()
+void
+Amanzi_PK::SetupAuxiliaryOutput()
 {
   // TODO: this indexing scheme will not be appropriate when
   // additional types of aux data are requested, e.g. mineral SI.....
@@ -366,8 +402,7 @@ void Amanzi_PK::SetupAuxiliaryOutput()
     if (index == -1) {
       // check to make sure it is not -1, an invalid name/index
       std::stringstream message;
-      message << "ChemistryPK: Output was requested for '" << aux_names_.at(i) 
-              << "' (" << name 
+      message << "ChemistryPK: Output was requested for '" << aux_names_.at(i) << "' (" << name
               << ") but no chemistry varibles of this name were found.\n";
       Exceptions::amanzi_throw(Errors::Message(message.str()));
     } else {
@@ -377,7 +412,8 @@ void Amanzi_PK::SetupAuxiliaryOutput()
 
   // create the Epetra_MultiVector that will hold the data
   if (nvars > 0) {
-    aux_data_ = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(false), nvars));
+    aux_data_ = Teuchos::rcp(
+      new Epetra_MultiVector(mesh_->getMap(AmanziMesh::Entity_kind::CELL, false), nvars));
   } else {
     aux_data_ = Teuchos::null;
   }
@@ -388,8 +424,8 @@ void Amanzi_PK::SetupAuxiliaryOutput()
 * We must use the aqueous totals value calculated from transport
 * (aqueous_components), not the value stored in state!
 ******************************************************************* */
-void Amanzi_PK::CopyCellStateToBeakerState(
-    int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components)
+void
+Amanzi_PK::CopyCellStateToBeakerState(int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components)
 {
   for (unsigned int i = 0; i < number_aqueous_components_; i++) {
     beaker_state_.total.at(i) = (*aqueous_components)[i][c];
@@ -449,7 +485,7 @@ void Amanzi_PK::CopyCellStateToBeakerState(
     }
   }
 
-  // sorption isotherms provided as material-based property must be copied to 
+  // sorption isotherms provided as material-based property must be copied to
   if (using_sorption_isotherms_) {
     for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
       beaker_state_.isotherm_kd.at(i) = (*bf_.isotherm_kd)[i][c];
@@ -459,31 +495,29 @@ void Amanzi_PK::CopyCellStateToBeakerState(
   }
 
   // copy data from state arrays into the beaker parameters
+  double a = (dt_global_ == 0.0) ? 1.0 : dt_int_ / dt_global_;
   beaker_state_.water_density = (*bf_.density)[0][c];
   beaker_state_.porosity = (*bf_.porosity)[0][c];
-  beaker_state_.saturation = (*bf_.saturation)[0][c];
-  beaker_state_.volume = mesh_->cell_volume(c);
+  beaker_state_.saturation = (1.0 - a) * (*bf_.prev_saturation)[0][c] + a * (*bf_.saturation)[0][c];
+  beaker_state_.volume = mesh_->getCellVolume(c);
 
-  if (S_->HasRecord(temperature_key_)) {
-    beaker_state_.temperature = (*bf_.temperature)[0][c];
-  }
+  if (S_->HasRecord(temperature_key_)) { beaker_state_.temperature = (*bf_.temperature)[0][c]; }
 }
 
 
 /* *******************************************************************
 * Copy data from the beaker back into the state arrays.
 ******************************************************************* */
-void Amanzi_PK::CopyBeakerStructuresToCellState(
-    int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components)
+void
+Amanzi_PK::CopyBeakerStructuresToCellState(int c,
+                                           Teuchos::RCP<Epetra_MultiVector> aqueous_components)
 {
   for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
-    (*aqueous_components)[i][c] = beaker_state_.total.at(i);
-    // (*aqueous_components)[i][c] = std::max(beaker_state_.total.at(i), 1e-200);
+    (*aqueous_components)[i][c] = std::max(beaker_state_.total.at(i), TCC_MIN_VALUE);
   }
 
   for (int i = 0; i < number_aqueous_components_; ++i) {
-    (*bf_.free_ion)[i][c] = beaker_state_.free_ion.at(i);
-    // (*bf_.free_ion)[i][c] = std::max(beaker_state_.free_ion.at(i), 1e-200);
+    (*bf_.free_ion)[i][c] = std::max(beaker_state_.free_ion.at(i), TCC_MIN_VALUE);
   }
 
   // activity coefficients
@@ -550,18 +584,22 @@ void Amanzi_PK::CopyBeakerStructuresToCellState(
 
 
 /* ******************************************************************
-* This function advances concentrations in the auxialiry vector 
-* aqueous_components_ (defined in the base class). This vector must 
-* be set up using routine set_aqueous_components(). Tipically, it 
+* This function advances concentrations in the auxialiry vector
+* aqueous_components_ (defined in the base class). This vector must
+* be set up using routine set_aqueous_components(). Tipically, it
 * contains values advected by the transport PK.
 ******************************************************************* */
-bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+bool
+Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   bool failed(false);
   std::string internal_msg;
 
-  double dt = t_new - t_old;
-  current_time_ = saved_time_ + dt;
+  dt_ = t_new - t_old;
+
+  // this assumes that initial and final are flow times FIXME
+  dt_global_ = S_->final_time() - S_->initial_time();
+  dt_int_ = t_new - S_->initial_time();
 
   int num_itrs, max_itrs(0), min_itrs(10000000), avg_itrs(0);
   int cmax(-1), ierr(0);
@@ -571,7 +609,7 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   S_->GetEvaluator(fluid_den_key_).Update(*S_, name_);
   S_->GetEvaluator(saturation_key_).Update(*S_, name_);
 
-  const auto& sat_vec = *S_->Get<CompositeVector>(saturation_key_).ViewComponent("cell");
+  const auto& sat_vec = *S_->Get<CV_t>(saturation_key_).ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned_; ++c) {
     if (sat_vec[0][c] > saturation_tolerance_) {
@@ -581,20 +619,22 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         chem_->CopyState(beaker_state_, &beaker_state_copy_);
 
         // chemistry computations for this cell
-        num_itrs = chem_->ReactionStep(&beaker_state_, beaker_parameters_, dt);
+        num_itrs = chem_->ReactionStep(&beaker_state_, beaker_parameters_, dt_);
 
         if (max_itrs < num_itrs) {
           max_itrs = num_itrs;
           cmax = c;
         }
-        if (min_itrs > num_itrs) {
-          min_itrs = num_itrs;
-        }
+        if (min_itrs > num_itrs) { min_itrs = num_itrs; }
         avg_itrs += num_itrs;
       } catch (Exceptions::Amanzi_exception& geochem_err) {
         ierr = 1;
         internal_msg = geochem_err.what();
         // chem_->DisplayComponents(beaker_state_);
+        break;
+      } catch (...) {
+        ierr = 1;
+        internal_msg = "unknown error";
         break;
       }
 
@@ -604,101 +644,130 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   ErrorAnalysis(ierr, internal_msg);
-  
-  int tmp(max_itrs);
-  mesh_->get_comm()->MaxAll(&tmp, &max_itrs, 1);
 
-  if (ncells_owned_ > 0) {
-    std::stringstream ss;
-    ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/" 
-       << avg_itrs / ncells_owned_ << ", maximum in gid=" << mesh_->GID(cmax, AmanziMesh::CELL) << std::endl;
-    vo_->Write(Teuchos::VERB_HIGH, ss.str());
-  }
+  int tmp0(min_itrs), tmp1(max_itrs), tmp2(avg_itrs), tmp3(ncells_owned_), ncells_total;
+  mesh_->getComm()->MinAll(&tmp0, &min_itrs, 1);
+  mesh_->getComm()->MaxAll(&tmp1, &max_itrs, 1);
+  mesh_->getComm()->SumAll(&tmp2, &avg_itrs, 1);
+  mesh_->getComm()->SumAll(&tmp3, &ncells_total, 1);
+
+  std::stringstream ss;
+  ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/"
+     << avg_itrs / std::max(ncells_owned_, 1)
+     << ", maximum in gid=" << mesh_->getEntityGID(AmanziMesh::CELL, cmax) << std::endl;
+  vo_->Write(Teuchos::VERB_HIGH, ss.str());
 
   // update time control parameters
   num_successful_steps_++;
   num_iterations_ = max_itrs;
 
+  if (!failed) EstimateNextTimeStep_(t_old, t_new);
   return failed;
 }
 
 
 /* ******************************************************************
-* The MPC will call this function to signal to the process kernel 
+* The MPC will call this function to signal to the process kernel
 * that it has accepted the state update, thus, the PK should update
 * possible auxilary state variables here
 ******************************************************************* */
-void Amanzi_PK::CommitStep(double t_old, double t_new, const Tag& tag)
+void
+Amanzi_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
-  saved_time_ = t_new;
-
-  // we keep own estimate of stable time step and report it to CD via get_dt()
-  if (dt_control_method_ == "simple") {
-    if ((num_successful_steps_ == 0) || (num_iterations_ >= dt_cut_threshold_)) {
-      dt_next_ /= dt_cut_factor_;
-    }
-    else if (num_successful_steps_ >= dt_increase_threshold_) {
-      dt_next_ *= dt_increase_factor_;
-      num_successful_steps_ = 0;
-    }
-
-    dt_next_ = std::min(dt_next_, dt_max_);
-
-    // synchronize processors since update of control parameters was 
-    // made in many places.
-    double tmp(dt_next_);
-    mesh_->get_comm()->MinAll(&tmp, &dt_next_, 1);
-  }
+  EstimateNextTimeStep_(t_old, t_new);
 }
 
 
 /* ******************************************************************
 * Extract poiters to state fields and place them in a simple struct.
 ******************************************************************* */
-void Amanzi_PK::InitializeBeakerFields_()
+void
+Amanzi_PK::InitializeBeakerFields_()
 {
   Tag tag(Tags::DEFAULT);
 
   // constant (tmeporarily) fields
-  bf_.porosity = S_->Get<CompositeVector>(poro_key_).ViewComponent("cell");
-  bf_.density = S_->Get<CompositeVector>(fluid_den_key_).ViewComponent("cell");
-  bf_.saturation = S_->Get<CompositeVector>(saturation_key_).ViewComponent("cell");
+  bf_.porosity = S_->Get<CV_t>(poro_key_).ViewComponent("cell");
+  bf_.density = S_->Get<CV_t>(fluid_den_key_).ViewComponent("cell");
+  bf_.saturation = S_->Get<CV_t>(saturation_key_).ViewComponent("cell");
   if (S_->HasRecord(temperature_key_))
-    bf_.temperature = S_->Get<CompositeVector>(temperature_key_).ViewComponent("cell");
+    bf_.temperature = S_->Get<CV_t>(temperature_key_).ViewComponent("cell");
 
-  bf_.free_ion = S_->GetW<CompositeVector>(free_ion_species_key_, tag, passwd_).ViewComponent("cell");
-  bf_.activity = S_->GetW<CompositeVector>(primary_activity_coeff_key_, tag, passwd_).ViewComponent("cell");
+  bf_.prev_saturation = S_->Get<CV_t>(prev_saturation_key_).ViewComponent("cell");
+
+  bf_.free_ion = S_->GetW<CV_t>(free_ion_species_key_, tag, passwd_).ViewComponent("cell");
+  bf_.activity = S_->GetW<CV_t>(primary_activity_coeff_key_, tag, passwd_).ViewComponent("cell");
 
   if (chem_->secondary_species().size() > 0) {
-    bf_.secondary_activity = S_->GetW<CompositeVector>(secondary_activity_coeff_key_, tag, passwd_).ViewComponent("cell");
+    bf_.secondary_activity =
+      S_->GetW<CV_t>(secondary_activity_coeff_key_, tag, passwd_).ViewComponent("cell");
   }
 
   if (number_ion_exchange_sites_ > 0) {
-    bf_.ion_exchange_sites = S_->GetW<CompositeVector>(ion_exchange_sites_key_, tag, passwd_).ViewComponent("cell");
-    bf_.ion_exchange_ref_cation_conc = S_->GetW<CompositeVector>(ion_exchange_ref_cation_conc_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+    bf_.ion_exchange_sites =
+      S_->GetW<CV_t>(ion_exchange_sites_key_, tag, passwd_).ViewComponent("cell");
+    bf_.ion_exchange_ref_cation_conc =
+      S_->GetW<CV_t>(ion_exchange_ref_cation_conc_key_, tag, passwd_).ViewComponent("cell");
   }
 
   if (number_minerals_ > 0) {
-    bf_.mineral_vf = S_->GetW<CompositeVector>(min_vol_frac_key_, tag, passwd_).ViewComponent("cell");
-    bf_.mineral_ssa = S_->GetW<CompositeVector>(min_ssa_key_, tag, passwd_).ViewComponent("cell");
+    bf_.mineral_vf = S_->GetW<CV_t>(min_vol_frac_key_, tag, passwd_).ViewComponent("cell");
+    bf_.mineral_ssa = S_->GetW<CV_t>(min_ssa_key_, tag, passwd_).ViewComponent("cell");
   }
 
   if (using_sorption_) {
-    bf_.sorbed = S_->GetW<CompositeVector>(total_sorbed_key_, tag, passwd_).ViewComponent("cell");
+    bf_.sorbed = S_->GetW<CV_t>(total_sorbed_key_, tag, passwd_).ViewComponent("cell");
   }
 
   if (using_sorption_isotherms_) {
-    bf_.isotherm_kd = S_->GetW<CompositeVector>(isotherm_kd_key_, tag, passwd_).ViewComponent("cell");
-    bf_.isotherm_freundlich_n = S_->GetW<CompositeVector>(isotherm_freundlich_n_key_, tag, passwd_).ViewComponent("cell");
-    bf_.isotherm_langmuir_b = S_->GetW<CompositeVector>(isotherm_langmuir_b_key_, tag, passwd_).ViewComponent("cell");
+    bf_.isotherm_kd = S_->GetW<CV_t>(isotherm_kd_key_, tag, passwd_).ViewComponent("cell");
+    bf_.isotherm_freundlich_n =
+      S_->GetW<CV_t>(isotherm_freundlich_n_key_, tag, passwd_).ViewComponent("cell");
+    bf_.isotherm_langmuir_b =
+      S_->GetW<CV_t>(isotherm_langmuir_b_key_, tag, passwd_).ViewComponent("cell");
   }
 
   if (number_sorption_sites_ > 0) {
-    bf_.sorption_sites = S_->GetW<CompositeVector>(sorp_sites_key_, tag, passwd_).ViewComponent("cell");
+    bf_.sorption_sites = S_->GetW<CV_t>(sorp_sites_key_, tag, passwd_).ViewComponent("cell");
   }
 
   if (beaker_state_.surface_complex_free_site_conc.size() > 0) {
-    bf_.surface_complex = S_->GetW<CompositeVector>(surf_cfsc_key_, tag, passwd_).ViewComponent("cell");
+    bf_.surface_complex = S_->GetW<CV_t>(surf_cfsc_key_, tag, passwd_).ViewComponent("cell");
+  }
+}
+
+
+/* ******************************************************************
+* We estimate stable time step and report it to CD via get_dt()
+******************************************************************* */
+void
+Amanzi_PK::EstimateNextTimeStep_(double t_old, double t_new)
+{
+  if (dt_control_method_ == "simple") {
+    double dt_next_tmp(dt_next_);
+
+    if ((num_successful_steps_ == 0) || (num_iterations_ >= dt_cut_threshold_)) {
+      dt_next_ /= dt_cut_factor_;
+    } else if (num_successful_steps_ >= dt_increase_threshold_) {
+      dt_next_ *= dt_increase_factor_;
+      num_successful_steps_ = 1;
+    }
+
+    dt_next_ = std::min(dt_next_, dt_max_);
+
+    // synchronize processors since update of control parameters was
+    // made in many places.
+    double tmp(dt_next_);
+    mesh_->getComm()->MinAll(&tmp, &dt_next_, 1);
+
+    if (dt_next_tmp != dt_next_ && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "controller changed dt_next to " << dt_next_ << std::endl;
+    }
+  } else if (dt_control_method_ == "fixed") {
+    // dt_next could be reduced by the base PK. To avoid small time step, we reset it here.
+    dt_next_ = std::max(dt_, t_new - t_old); // due to subcycling
+    dt_next_ = std::min(dt_next_, dt_max_);
   }
 }
 
@@ -706,10 +775,12 @@ void Amanzi_PK::InitializeBeakerFields_()
 /* ******************************************************************
 *
 ******************************************************************* */
-Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::extra_chemistry_output_data() {
+Teuchos::RCP<Epetra_MultiVector>
+Amanzi_PK::extra_chemistry_output_data()
+{
   if (aux_data_ != Teuchos::null) {
-    const auto& free_ion = *S_->Get<CompositeVector>(free_ion_species_key_).ViewComponent("cell");
-    const auto& activity = *S_->Get<CompositeVector>(primary_activity_coeff_key_).ViewComponent("cell");
+    const auto& free_ion = *S_->Get<CV_t>(free_ion_species_key_).ViewComponent("cell");
+    const auto& activity = *S_->Get<CV_t>(primary_activity_coeff_key_).ViewComponent("cell");
 
     for (int c = 0; c < ncells_owned_; ++c) {
       // populate aux_data_ by copying from the appropriate internal storage
@@ -730,13 +801,15 @@ Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::extra_chemistry_output_data() {
 /* ******************************************************************
 *
 ******************************************************************* */
-void Amanzi_PK::set_chemistry_output_names(std::vector<std::string>* names) {
+void
+Amanzi_PK::set_chemistry_output_names(std::vector<std::string>* names)
+{
   names->clear();
-  
+
   for (auto name = aux_names_.begin(); name != aux_names_.end(); name++) {
     names->push_back(*name);
   }
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

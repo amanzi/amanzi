@@ -1,12 +1,15 @@
 /*
-  Transport PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Transport PK
+
 */
 
 #ifndef AMANZI_DIFFUSION_PHASE_HH_
@@ -22,18 +25,19 @@ namespace Transport {
 
 class DiffusionPhase {
  public:
-  DiffusionPhase() {};
-  ~DiffusionPhase() {};
+  DiffusionPhase(){};
+  ~DiffusionPhase(){};
 
-  int FindDiffusionValue(const std::string& tcc_name, double* md) {
+  int FindDiffusionValue(const std::string& tcc_name, double* md)
+  {
     for (int i = 0; i < names_.size(); ++i) {
-      if (names_[i] == tcc_name) { 
+      if (names_[i] == tcc_name) {
         *md = values_[i];
         return 0;
       }
     }
 
-    *md = 0.0; 
+    *md = 0.0;
     return -1;
   }
 
@@ -46,8 +50,7 @@ class DiffusionPhase {
   std::vector<double> values_;
 };
 
-}  // namespace Transport
-}  // namespace Amanzi
+} // namespace Transport
+} // namespace Amanzi
 
 #endif
-

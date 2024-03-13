@@ -1,12 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
 
   Riemann flux-based advection operator for a scalar field.
   The family will include DG and CG methods for linear and nonlinear
@@ -35,32 +37,30 @@ struct SurfaceFluxData {
 
 class PDE_AdvectionRiemann : public PDE_Advection {
  public:
-  PDE_AdvectionRiemann(Teuchos::ParameterList& plist,
-                       Teuchos::RCP<Operator> global_op) :
-      PDE_Advection(plist, global_op),
-      static_matrices_initialized_(false)
+  PDE_AdvectionRiemann(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op)
+    : PDE_Advection(plist, global_op), static_matrices_initialized_(false)
   {
     InitAdvection_(plist);
   }
 
-  PDE_AdvectionRiemann(Teuchos::ParameterList& plist,
-                       Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      PDE_Advection(plist, mesh),
-      static_matrices_initialized_(false)
+  PDE_AdvectionRiemann(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : PDE_Advection(plist, mesh), static_matrices_initialized_(false)
   {
     InitAdvection_(plist);
   }
 
-  // main members 
+  // main members
   // -- setup for various flux algorithms
-  virtual void Setup(const CompositeVector& u) final {};
+  virtual void Setup(const CompositeVector& u) final{};
 
-  void Setup(const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& Kc,
-             const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& Kf) {
+  void Setup(const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>>& Kc,
+             const Teuchos::RCP<std::vector<WhetStone::Polynomial>>& Kf)
+  {
     Kc_ = Kc;
     Kf_ = Kf;
   }
-  void Setup(const Teuchos::Ptr<const std::vector<WhetStone::SpaceTimePolynomial> >& uc, bool reset) {
+  void Setup(const Teuchos::Ptr<const std::vector<WhetStone::SpaceTimePolynomial>>& uc, bool reset)
+  {
     uc_ = uc;
     if (!static_matrices_initialized_ || reset) CreateStaticMatrices_();
   }
@@ -68,7 +68,10 @@ class PDE_AdvectionRiemann : public PDE_Advection {
   // -- generate linearized operator: standard interface
   using PDE_Advection::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) final {};
+                              const Teuchos::Ptr<const CompositeVector>& p) final{};
+
+  virtual void
+  UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u, double (*)(double)) final{};
 
   // -- generate linearized operator: new interface
   void UpdateMatrices(const std::vector<WhetStone::Polynomial>& u);
@@ -97,17 +100,16 @@ class PDE_AdvectionRiemann : public PDE_Advection {
   Teuchos::RCP<WhetStone::DG_Modal> dg_;
 
   // support of Rusanov flux
-  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > Kc_;
-  Teuchos::RCP<std::vector<WhetStone::Polynomial> > Kf_;
+  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial>> Kc_;
+  Teuchos::RCP<std::vector<WhetStone::Polynomial>> Kf_;
 
   // support of space-time polynomial velocity
   bool static_matrices_initialized_;
-  Teuchos::Ptr<const std::vector<WhetStone::SpaceTimePolynomial> > uc_;
-  std::vector<std::vector<SurfaceFluxData> > static_matrices_;
+  Teuchos::Ptr<const std::vector<WhetStone::SpaceTimePolynomial>> uc_;
+  std::vector<std::vector<SurfaceFluxData>> static_matrices_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

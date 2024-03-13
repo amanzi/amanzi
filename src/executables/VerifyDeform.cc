@@ -1,13 +1,21 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 // -------------------------------------------------------------
 /**
  * @file   verify_deform.cc
  * @author Rao V. Garimella
  * @date   Thu Apr 12, 2012
- * 
- * @brief  
- * 
- * 
+ *
+ * @brief
+ *
+ *
  */
 // -------------------------------------------------------------
 // -------------------------------------------------------------
@@ -27,7 +35,9 @@
 #include "GMVMesh.hh"
 // #include "Vis.hh"
 
-int main(int argc, char *argv[]) {
+int
+main(int argc, char* argv[])
+{
   int ierr(0), aerr(0);
 
   MPI_Init(&argc, &argv);
@@ -40,34 +50,29 @@ int main(int argc, char *argv[]) {
   std::cerr << "Testing deformation code " << std::endl;
 
 
- 
-
   Teuchos::CommandLineProcessor CLP;
-  CLP.setDocString("Reads a serial exodus mesh file and a deformation file and writes out a deformed mesh");
+  CLP.setDocString(
+    "Reads a serial exodus mesh file and a deformation file and writes out a deformed mesh");
 
 
   if (nproc > 1) {
     std::cerr << "Parallel deformation not implemented" << std::endl;
-    assert (nproc == 1);
+    assert(nproc == 1);
   }
 
 
-  const Amanzi::AmanziMesh::Framework frameworks[] = {  
-    Amanzi::AmanziMesh::Framework::STK, 
-    Amanzi::AmanziMesh::Framework::MSTK, 
+  const Amanzi::AmanziMesh::Framework frameworks[] = {
+    Amanzi::AmanziMesh::Framework::STK,
+    Amanzi::AmanziMesh::Framework::MSTK,
   };
-  const char *framework_names[] = {
-    "stk::mesh", "MSTK"
-  };
+  const char* framework_names[] = { "stk::mesh", "MSTK" };
 
-  const int numframeworks = sizeof(frameworks)/sizeof(Amanzi::AmanziMesh::Framework);
+  const int numframeworks = sizeof(frameworks) / sizeof(Amanzi::AmanziMesh::Framework);
 
   Amanzi::AmanziMesh::Framework the_framework(Amanzi::AmanziMesh::Framework::MSTK);
 
 
-
-
-  // Setup the argument lists with the documentation and whether they are 
+  // Setup the argument lists with the documentation and whether they are
   // necessary or not
 
   std::string mesh_filename;
@@ -76,11 +81,14 @@ int main(int argc, char *argv[]) {
   std::string def_filename;
   CLP.setOption("deffile", &def_filename, "Name of deformation file", true);
 
-  
-  CLP.setOption("framework", &the_framework, numframeworks, frameworks, 
-                framework_names, "mesh framework preference", false);
-  
 
+  CLP.setOption("framework",
+                &the_framework,
+                numframeworks,
+                frameworks,
+                framework_names,
+                "mesh framework preference",
+                false);
 
 
   // Parse the command line
@@ -88,18 +96,15 @@ int main(int argc, char *argv[]) {
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn;
   try {
     parseReturn = CLP.parse(argc, argv);
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     std::cerr << "error: " << e.what() << std::endl;
     ierr++;
   }
   comm->SumAll(&ierr, &aerr, 1);
   if (aerr > 0) return 1;
-  
-  if (parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED)
-    return 0;
-  if (parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL)
-    return 1;
 
+  if (parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return 0;
+  if (parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) return 1;
 
 
   // Create the mesh
@@ -114,7 +119,7 @@ int main(int argc, char *argv[]) {
 
   try {
     Amanzi::AmanziMesh::Preference prefs(meshfactory.get_preference());
-    prefs.clear(); 
+    prefs.clear();
     prefs.push_back(the_framework);
     meshfactory.set_preference(prefs);
 
@@ -142,12 +147,11 @@ int main(int argc, char *argv[]) {
 
   deffile.open(def_filename.c_str());
   if (deffile.is_open()) {
-
-    int spdim = mesh->space_dimension();
+    int spdim = mesh->getSpaceDimension();
 
     int nnodes, nnodes_in;
-    nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
-                                Amanzi::AmanziMesh::Parallel_type::OWNED);
+    nnodes = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
+                                  Amanzi::AmanziMesh::Parallel_type::OWNED);
 
     Amanzi::AmanziMesh::Entity_ID nodeid;
 
@@ -159,53 +163,46 @@ int main(int argc, char *argv[]) {
 
       double defarr[nnodes][3];
 
-      for (int i = 0; i < nnodes; i++)
-        defarr[i][0] = defarr[i][1] = defarr[i][2] = 0.0;
+      for (int i = 0; i < nnodes; i++) defarr[i][0] = defarr[i][1] = defarr[i][2] = 0.0;
 
       if (spdim == 2) {
-
         for (int i = 0; i < nnodes_in; i++) {
           double def[2];
-          deffile >> nodeid >> def[0] >> def[1];          
-          defarr[nodeid-1][0] = def[0];
-          defarr[nodeid-1][1] = def[1];
+          deffile >> nodeid >> def[0] >> def[1];
+          defarr[nodeid - 1][0] = def[0];
+          defarr[nodeid - 1][1] = def[1];
           std::cerr << nodeid << " " << def[0] << " " << def[1] << std::endl;
         }
 
-      }
-      else if (spdim == 3) {
-
+      } else if (spdim == 3) {
         for (int i = 0; i < nnodes_in; i++) {
           double def[3];
-          deffile >> nodeid >> def[0] >> def[1] >> def[2];          
-          defarr[nodeid-1][0] = def[0];
-          defarr[nodeid-1][1] = def[1];
-          defarr[nodeid-1][2] = def[2];
+          deffile >> nodeid >> def[0] >> def[1] >> def[2];
+          defarr[nodeid - 1][0] = def[0];
+          defarr[nodeid - 1][1] = def[1];
+          defarr[nodeid - 1][2] = def[2];
           std::cerr << nodeid << " " << def[0] << " " << def[1] << " " << def[2] << std::endl;
         }
-        
       }
 
       for (int j = 0; j < nnodes; j++) {
-        Amanzi::AmanziGeometry::Point oldcoord(spdim),newcoord(spdim);
+        Amanzi::AmanziGeometry::Point oldcoord(spdim), newcoord(spdim);
         Amanzi::AmanziGeometry::Point defvec(spdim);
-        
-        mesh->node_get_coordinates(j,&oldcoord); 
+
+        oldcoord = mesh->getNodeCoordinate(j);
 
         defvec.set(defarr[j]);
         newcoord = oldcoord + defvec;
-        
-        nodeids.push_back(j);    
+
+        nodeids.push_back(j);
         newpos.push_back(newcoord);
       }
-  
-    }
-    catch (const std::exception &e) {
+
+    } catch (const std::exception& e) {
       std::cerr << "Error reading deformations" << std::endl;
       exit(-1);
     }
-  }
-  else {
+  } else {
     std::cerr << "Cannot open deformations file " << def_filename << std::endl;
     exit(-1);
   }
@@ -214,28 +211,22 @@ int main(int argc, char *argv[]) {
 
 
   // Deform the mesh
-  
+
   int status;
 
   try {
-    status = mesh->deform(nodeids,newpos,true,&finpos);
+    status = mesh->deform(nodeids, newpos, true, &finpos);
 
-    if (status == 0)
-      std::cerr << "Could not deform the mesh as much as requested" << std::endl;
-  }
-  catch (const std::exception &e) {
+    if (status == 0) std::cerr << "Could not deform the mesh as much as requested" << std::endl;
+  } catch (const std::exception& e) {
     std::cerr << "Error deforming the mesh" << std::endl;
     exit(-1);
   }
 
 
-  
   std::string viz_filename("deform.gmv");
-  Amanzi::GMV::create_mesh_file(*mesh,viz_filename);
+  Amanzi::GMV::create_mesh_file(*mesh, viz_filename);
 
 
   MPI_Finalize();
 }
-
-
-

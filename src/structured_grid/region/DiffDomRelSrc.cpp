@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <DiffDomRelSrc.H>
 
 static Real Pi = 2 * std::asin(1.0);
@@ -23,8 +32,8 @@ DiffDomRelSrc::DiffDomRelSrc(const std::string&          label,
 }
 
 void
-DiffDomRelSrc::apply(FArrayBox&  fab, 
-                     const Real* dx, 
+DiffDomRelSrc::apply(FArrayBox&  fab,
+                     const Real* dx,
                      int         scomp,
                      int         ncomp,
                      Real        time) const
@@ -61,8 +70,8 @@ DiffDomRelSrc::operator() (Real t1, Real t2) const
 }
 
 void
-DiffDomRelSrc::apply(FArrayBox&  fab, 
-                     const Real* dx, 
+DiffDomRelSrc::apply(FArrayBox&  fab,
+                     const Real* dx,
                      int         scomp,
                      int         ncomp,
                      Real        t1,
@@ -72,7 +81,7 @@ DiffDomRelSrc::apply(FArrayBox&  fab,
   const Box& box = fab.box();
   FArrayBox mask(box,1); mask.setVal(-1);
 
-  for (int j=0; j<regions.size(); ++j) { 
+  for (int j=0; j<regions.size(); ++j) {
     regions[j]->setVal(mask,1,0,dx,0);
   }
 

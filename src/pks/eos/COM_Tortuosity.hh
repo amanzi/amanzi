@@ -1,12 +1,14 @@
 /*
-  EOS
-   
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  EOS
 
   Constitutive model for tortuosity \tau(\phi, s) as the function
   of porosity and liquid saturation.
@@ -22,9 +24,8 @@ namespace AmanziEOS {
 
 class COM_Tortuosity {
  public:
-  COM_Tortuosity(Teuchos::ParameterList& plist)
-    : plist_(plist) {};
-  virtual ~COM_Tortuosity() {};
+  COM_Tortuosity(Teuchos::ParameterList& plist) : plist_(plist){};
+  virtual ~COM_Tortuosity(){};
 
   virtual double Tortuosity(double phi, double s) = 0;
   virtual double DTortuosityDphi(double phi, double s) = 0;
@@ -34,7 +35,7 @@ class COM_Tortuosity {
   Teuchos::ParameterList plist_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

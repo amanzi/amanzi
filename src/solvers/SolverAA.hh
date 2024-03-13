@@ -1,13 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Daniil Svyatskiy
+  Authors: Daniil Svyatskiy
 */
-//! Anderson acceleration as a nonlinear solver.
 
+//! Anderson acceleration as a nonlinear solver.
 /*!
 
 This is a variation of the GMRES solver for nonlinear problems.
@@ -39,7 +39,7 @@ This is a variation of the GMRES solver for nonlinear problems.
       identify divergence pattern on earlier iterations. If the maximum norm of
       the solution increment grows on too many consecutive iterations, the
       solver is terminated.
-      
+
     * `"max aa vectors`" ``[int]`` **10** Defines the maximum number of
       consecutive vectors used for a local space.
 
@@ -68,23 +68,23 @@ This is a variation of the GMRES solver for nonlinear problems.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Vector, class VectorSpace>
-class SolverAA : public Solver<Vector,VectorSpace> {
+template <class Vector, class VectorSpace>
+class SolverAA : public Solver<Vector, VectorSpace> {
  public:
-  SolverAA(Teuchos::ParameterList& plist) :
-      plist_(plist) {};
+  SolverAA(Teuchos::ParameterList& plist) : plist_(plist){};
 
   SolverAA(Teuchos::ParameterList& plist,
-            const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-            const VectorSpace& map) :
-      plist_(plist) {
+           const Teuchos::RCP<SolverFnBase<Vector>>& fn,
+           const VectorSpace& map)
+    : plist_(plist)
+  {
     Init(fn, map);
   }
 
-  void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-            const VectorSpace& map);
+  void Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const VectorSpace& map);
 
-  int Solve(const Teuchos::RCP<Vector>& u) {
+  int Solve(const Teuchos::RCP<Vector>& u)
+  {
     returned_code_ = AA_(u);
     return (returned_code_ >= 0) ? 0 : 1;
   }
@@ -101,6 +101,9 @@ class SolverAA : public Solver<Vector,VectorSpace> {
   int pc_updates() { return pc_updates_; }
   int returned_code() { return returned_code_; }
 
+  // statistics
+  std::vector<std::pair<double, double>>& history() { return history_; }
+
  private:
   void Init_();
   int AA_(const Teuchos::RCP<Vector>& u);
@@ -108,8 +111,8 @@ class SolverAA : public Solver<Vector,VectorSpace> {
 
  protected:
   Teuchos::ParameterList plist_;
-  Teuchos::RCP<SolverFnBase<Vector> > fn_;
-  Teuchos::RCP<AA_Base<Vector, VectorSpace> > aa_;
+  Teuchos::RCP<SolverFnBase<Vector>> fn_;
+  Teuchos::RCP<AA_Base<Vector, VectorSpace>> aa_;
 
   Teuchos::RCP<VerboseObject> vo_;
 
@@ -128,20 +131,21 @@ class SolverAA : public Solver<Vector,VectorSpace> {
   int max_divergence_count_;
 
   bool modify_correction_;
-  double residual_;  // defined by convergence criterion
+  double residual_; // defined by convergence criterion
   ConvergenceMonitor monitor_;
   int norm_type_;
-};
 
+  std::vector<std::pair<double, double>> history_;
+};
 
 
 /* ******************************************************************
 * Public Init method.
 ****************************************************************** */
-template<class Vector, class VectorSpace>
+template <class Vector, class VectorSpace>
 void
-SolverAA<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-        const VectorSpace& map)
+SolverAA<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
+                                    const VectorSpace& map)
 {
   fn_ = fn;
   Init_();
@@ -155,8 +159,9 @@ SolverAA<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn
 /* ******************************************************************
 * Initialization of the AA solver.
 ****************************************************************** */
-template<class Vector, class VectorSpace>
-void SolverAA<Vector, VectorSpace>::Init_()
+template <class Vector, class VectorSpace>
+void
+SolverAA<Vector, VectorSpace>::Init_()
 {
   tol_ = plist_.get<double>("nonlinear tolerance", 1.e-6);
   overflow_tol_ = plist_.get<double>("diverged tolerance", 1.e10);
@@ -192,8 +197,10 @@ void SolverAA<Vector, VectorSpace>::Init_()
 /* ******************************************************************
 * The body of AA solver
 ****************************************************************** */
-template<class Vector, class VectorSpace>
-int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
+template <class Vector, class VectorSpace>
+int
+SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u)
+{
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // restart the nonlinear solver (flush its history)
@@ -219,8 +226,8 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
     // Check for too many nonlinear iterations.
     if (num_itrs_ >= max_itrs_) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-        *vo_->os() << "Solve reached maximum of iterations (" << num_itrs_ 
-                   << ")  error=" << error << " terminating..." << std::endl;
+        *vo_->os() << "Solve reached maximum of iterations (" << num_itrs_ << ")  error=" << error
+                   << " terminating..." << std::endl;
       return SOLVER_MAX_ITERATIONS;
     }
 
@@ -240,9 +247,9 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
         l2_error_initial = l2_error;
       } else if (num_itrs_ > 7) {
         if (l2_error > l2_error_initial) {
-          if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
-            *vo_->os() << "Solver stagnating, L2-error=" << l2_error
-                       << " > " << l2_error_initial << " (initial L2-error)" << std::endl;
+          if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+            *vo_->os() << "Solver stagnating, L2-error=" << l2_error << " > " << l2_error_initial
+                       << " (initial L2-error)" << std::endl;
           return SOLVER_STAGNATING;
         }
       }
@@ -257,7 +264,7 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
       pc_updates_++;
       fn_->UpdatePreconditioner(u);
     }
-    
+
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
     fn_->ApplyPreconditioner(r, du_tmp);
@@ -298,16 +305,17 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
       u->Norm2(&u_norm2);
       du->Norm2(&du_norm2);
       if (overflow_l2_tol_ > 0 && u_norm2 > 0 && du_norm2 > overflow_l2_tol_ * u_norm2) {
-        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
-           *vo_->os() << "terminating due to L2-norm overflow ||du||=" << du_norm2
-                      << ", ||u||=" << u_norm2 << std::endl;
+        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "terminating due to L2-norm overflow ||du||=" << du_norm2
+                     << ", ||u||=" << u_norm2 << std::endl;
         return SOLVER_OVERFLOW;
       }
     }
 
     if ((num_itrs_ > 0) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
-      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
-        *vo_->os() << "overflow: ||du||=" << du_norm << ", ||du_prev||=" << previous_du_norm << std::endl
+      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+        *vo_->os() << "overflow: ||du||=" << du_norm << ", ||du_prev||=" << previous_du_norm
+                   << std::endl
                    << "trying to restart AA..." << std::endl;
 
       // Try to recover by restarting AA.
@@ -323,9 +331,9 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
       du->NormInf(&du_norm);
 
       if (du_norm > max_du_growth_factor_ * previous_du_norm) {
-        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
-           *vo_->os() << "terminating due to overflow ||du||=" << du_norm 
-                      << ", ||du_prev||=" << previous_du_norm << std::endl;
+        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "terminating due to overflow ||du||=" << du_norm
+                     << ", ||du_prev||=" << previous_du_norm << std::endl;
         return SOLVER_OVERFLOW;
       }
     }
@@ -381,32 +389,36 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
 /* ******************************************************************
 * Internal convergence control.
 ****************************************************************** */
-template<class Vector, class VectorSpace>
-int SolverAA<Vector, VectorSpace>::AA_ErrorControl_(
-   double error, double previous_error, double l2_error)
+template <class Vector, class VectorSpace>
+int
+SolverAA<Vector, VectorSpace>::AA_ErrorControl_(double error,
+                                                double previous_error,
+                                                double l2_error)
 {
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
+  history_.push_back(std::make_pair(error, l2_error));
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << num_itrs_ << ": error=" << error << "  L2-error=" << l2_error << std::endl;
 
   if (error < tol_) {
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
       *vo_->os() << "Solver converged: " << num_itrs_ << " itrs, error=" << error << std::endl;
     return SOLVER_CONVERGED;
   } else if (overflow_tol_ > 0 && error > overflow_tol_) {
-    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
-      *vo_->os() << "Solve failed, error " << error << " > "
-                 << overflow_tol_ << " (overflow)" << std::endl;
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+      *vo_->os() << "Solve failed, error " << error << " > " << overflow_tol_ << " (overflow)"
+                 << std::endl;
     return SOLVER_OVERFLOW;
   } else if ((num_itrs_ > 1) && (error > max_error_growth_factor_ * previous_error)) {
-    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
-      *vo_->os() << "Solver threatens to overflow, error " << error << " > "
-                 << previous_error << " (previous error)" << std::endl;
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+      *vo_->os() << "Solver threatens to overflow, error " << error << " > " << previous_error
+                 << " (previous error)" << std::endl;
     return SOLVER_OVERFLOW;
   }
   return SOLVER_CONTINUE;
 }
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif

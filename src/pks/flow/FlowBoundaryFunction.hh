@@ -1,16 +1,18 @@
 /*
-  Flow PK
- 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Neil Carlson (version 1)
            Ethan Coon (version 2)
            Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+*/
 
-  Function applied to a mesh component with at most one function 
+/*
+  Flow PK
+
+  Function applied to a mesh component with at most one function
   application per entity.
 */
 
@@ -36,13 +38,14 @@ namespace Flow {
 class FlowBoundaryFunction : public PK_DomainFunction {
  public:
   FlowBoundaryFunction()
-      : rainfall_(false),
-        relative_to_top_(false),
-        relative_to_bottom_(false),
-        no_flow_above_water_table_(false),
-        seepage_flux_threshold_(0.0),
-        bc_name_("underfined"),
-        seepage_model_("") {}
+    : rainfall_(false),
+      relative_to_top_(false),
+      relative_to_bottom_(false),
+      no_flow_above_water_table_(false),
+      seepage_flux_threshold_(0.0),
+      bc_name_("underfined"),
+      seepage_model_("")
+  {}
 
   FlowBoundaryFunction(const Teuchos::ParameterList& plist);
   void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
@@ -60,9 +63,9 @@ class FlowBoundaryFunction : public PK_DomainFunction {
   void CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                  const std::string& region);
 
-  void set_intersection_(const std::vector<AmanziMesh::Entity_ID>& v1,
-                         const std::vector<AmanziMesh::Entity_ID>& v2, 
-                         std::vector<AmanziMesh::Entity_ID>* vv);
+  void set_intersection_(const AmanziMesh::cEntity_ID_View& v1,
+                         const AmanziMesh::cEntity_ID_View& v2,
+                         std::vector<AmanziMesh::Entity_ID>& vv);
 
  private:
   bool rainfall_;
@@ -79,7 +82,7 @@ class FlowBoundaryFunction : public PK_DomainFunction {
   int nedges_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
 
 #endif

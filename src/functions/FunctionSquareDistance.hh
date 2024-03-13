@@ -1,15 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! FunctionDistance: distance from a reference point.
-
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+//! FunctionDistance: distance from a reference point.
 /*!
 
 A distance function calculates distance from reference point :math:`x_0`
@@ -30,7 +28,7 @@ Example:
   </ParameterList>
 
 */
-  
+
 #ifndef AMANZI_SQUAREDISTANCE_FUNCTION_HH_
 #define AMANZI_SQUAREDISTANCE_FUNCTION_HH_
 
@@ -44,7 +42,8 @@ class FunctionSquareDistance : public Function {
  public:
   FunctionSquareDistance(const std::vector<double>& x0, const std::vector<double>& metric);
   ~FunctionSquareDistance() {}
-  std::unique_ptr<Function> Clone() const {
+  std::unique_ptr<Function> Clone() const
+  {
     return std::make_unique<FunctionSquareDistance>(*this);
   }
   double operator()(const std::vector<double>& x) const;

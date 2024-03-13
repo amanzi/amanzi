@@ -1,11 +1,24 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include "CompositeVector.hh"
 #include "OutputXDMF.hh"
 #include "State.hh"
 
-void IO_Fields(double t_out, int iter, int MyPID,
-               Amanzi::OutputXDMF& io, const Amanzi::State& S,
-               Epetra_MultiVector* hh_ex,
-               Epetra_MultiVector* vel_ex)
+void
+IO_Fields(double t_out,
+          int iter,
+          int MyPID,
+          Amanzi::OutputXDMF& io,
+          const Amanzi::State& S,
+          Epetra_MultiVector* hh_ex,
+          Epetra_MultiVector* vel_ex)
 {
   const auto& hh = *S.Get<Amanzi::CompositeVector>("surface-ponded_depth").ViewComponent("cell");
   const auto& ht = *S.Get<Amanzi::CompositeVector>("surface-total_depth").ViewComponent("cell");
@@ -17,7 +30,7 @@ void IO_Fields(double t_out, int iter, int MyPID,
   Epetra_MultiVector pid(hh);
   for (int c = 0; c < pid.MyLength(); c++) pid[0][c] = MyPID;
 
-  auto comp = Amanzi::AmanziMesh::CELL;
+  auto comp = Amanzi::AmanziMesh::Entity_kind::CELL;
   io.InitializeCycle(t_out, iter, "");
   io.WriteVector(*hh(0), "depth", comp);
   io.WriteVector(*ht(0), "total_depth", comp);

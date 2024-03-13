@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <fstream>
 
 #include <Advection.H>
@@ -98,7 +107,7 @@ Advection::FluxDivergence(const FArrayBox& CoCC, FArrayBox& CnCC,       int Ccom
 #endif
 
   BDS_EDGE_STATES(co_dat, &Cng, ci_dat, &nGrowF, D_DECL(cex_dat, cey_dat, cez_dat), &Flng,
-                  D_DECL(u_dat, v_dat, w_dat), &Ung, F_dat, &Fcng, 
+                  D_DECL(u_dat, v_dat, w_dat), &Ung, F_dat, &Fcng,
                   slope_dat, &nGrowF, &NWORK, dx, &dt, &nc, &is_cons, vbox.loVect(), vbox.hiVect(), bc);
 
   ADV_FDIV(aofs_dat, &FDivng, D_DECL(cex_dat, cey_dat, cez_dat), &Flng,
@@ -111,7 +120,7 @@ Advection::AdvUpdate(const FArrayBox& CoCC, FArrayBox& CnCC,       int Ccomp,   
                      const FArrayBox& SoCC, const FArrayBox& SnCC, int Scomp,    int Sng,
                      FArrayBox& FDivCC,                            int FDivcomp, int FDivng,
                      PArray<FArrayBox>& FluxEC,                    int Flcomp,   int Flng,
-                     const FArrayBox& PhiCC,                                     int Phing, 
+                     const FArrayBox& PhiCC,                                     int Phing,
                      const Box& vbox, Real dt, int nc)
 {
   BL_ASSERT(CoCC.nComp()>=Ccomp+nc);

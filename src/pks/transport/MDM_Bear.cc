@@ -1,12 +1,15 @@
 /*
-  Transport PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Transport PK
+
 */
 
 #include <cmath>
@@ -22,7 +25,7 @@ namespace Amanzi {
 namespace Transport {
 
 /* ******************************************************************
-* Setup fundamental parameters for this model.                                            
+* Setup fundamental parameters for this model.
 ****************************************************************** */
 MDM_Bear::MDM_Bear(Teuchos::ParameterList& plist)
 {
@@ -34,8 +37,13 @@ MDM_Bear::MDM_Bear(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Anisotropic tensor defined by two parameters.
 ****************************************************************** */
-WhetStone::Tensor MDM_Bear::mech_dispersion(
-    const AmanziGeometry::Point& u, int axi_symmetry, double wc, double phi) const
+WhetStone::Tensor
+MDM_Bear::mech_dispersion(double t,
+                          const AmanziGeometry::Point& xc,
+                          const AmanziGeometry::Point& u,
+                          int axi_symmetry,
+                          double wc,
+                          double phi) const
 {
   WhetStone::Tensor D(dim_, 2);
   D.PutScalar(0.0);
@@ -49,9 +57,7 @@ WhetStone::Tensor MDM_Bear::mech_dispersion(
     double anisotropy = (alphaL_ - alphaT_) / vnorm;
     for (int i = 0; i < dim_; i++) {
       D(i, i) = alphaT_ * vnorm;
-      for (int j = i; j < dim_; j++) {
-        D(j, i) = D(i, j) += anisotropy * v[i] * v[j];
-      }
+      for (int j = i; j < dim_; j++) { D(j, i) = D(i, j) += anisotropy * v[i] * v[j]; }
     }
 
     D *= wc;
@@ -60,6 +66,5 @@ WhetStone::Tensor MDM_Bear::mech_dispersion(
   return D;
 }
 
-}  // namespace Transport
-}  // namespace Amanzi
-
+} // namespace Transport
+} // namespace Amanzi

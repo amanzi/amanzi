@@ -1,14 +1,18 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
+  Chemistry
 
   Factory class for building a mineral kinetic rate object
 */
- 
+
 #ifndef AMANZI_CHEMISTRY_KINETIC_RATE_FACTORY_HH_
 #define AMANZI_CHEMISTRY_KINETIC_RATE_FACTORY_HH_
 
@@ -25,15 +29,15 @@ class KineticRate;
 
 class KineticRateFactory {
  public:
-  KineticRateFactory() {};
-  ~KineticRateFactory() {};
+  KineticRateFactory(){};
+  ~KineticRateFactory(){};
 
   KineticRate* Create(const Teuchos::ParameterList& plist,
                       const Mineral& mineral,
                       const SpeciesArray& primary_species);
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 
 #endif

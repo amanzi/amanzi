@@ -1,14 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
 */
 
-//!  Slightly smarter timestep controller based upon a history of previous timesteps.
-
+//! Slightly smarter timestep controller based upon a history of previous timesteps.
 /*!
 
 This is based on `Timestep Controller Standard`_, but also tries to be a bit
@@ -45,7 +44,6 @@ namespace Amanzi {
 class State;
 
 class TimestepControllerSmarter : public TimestepController {
-
  public:
   TimestepControllerSmarter(const std::string& name,
                             Teuchos::ParameterList& plist,
@@ -80,6 +78,6 @@ class TimestepControllerSmarter : public TimestepController {
   Teuchos::RCP<int> growth_wait_after_fail_;
 };
 
-} // namespace
+} // namespace Amanzi
 
 #endif

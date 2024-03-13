@@ -131,7 +131,7 @@
             <mechanical_properties>
                 <porosity value="0.35"/>
                 <tortuosity value="0.0"/>
-                <dispersion_tensor alpha_l="21.3" alpha_t="4.3" type="uniform_isotropic"/>
+                <dispersion_tensor alpha_l="21.3" alpha_t="4.3" type="bear"/>
             </mechanical_properties>
             <cap_pressure model="not_set"/>
             <rel_perm model="not_set"/>

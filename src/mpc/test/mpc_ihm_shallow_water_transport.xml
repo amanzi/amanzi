@@ -29,16 +29,10 @@
         <Parameter name="high coordinate" type="Array(double)" value="{9.99999999999999967e+98, 9.99999999999999967e+98}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="LeftEdge">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{0.0, 5.0e+02}"/>
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="LeftEdgeMiddle">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 2.0e+02}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{0.0, 3.0e+02}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 2.0e+01}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.0, 3.0e+01}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

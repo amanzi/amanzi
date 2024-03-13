@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef BCDATA_H_
 #define BCDATA_H_
 
@@ -25,12 +34,12 @@ public:
     virtual Array<Real> operator() (Real time=0) const {return vals;}
     virtual Array<Real> time() const {return Array<Real>(vals.size(),0);}
 
-    virtual void apply(FArrayBox&  fab, 
-                       const Real* dx, 
+    virtual void apply(FArrayBox&  fab,
+                       const Real* dx,
                        int         scomp,
                        int         ncomp,
                        Real        time = 0) const;
-    
+
 
 protected:
     void setRegions(const Array<const Region*>& regions_);
@@ -58,7 +67,7 @@ public:
                     const std::string&          typeStr,
                     int                         nComp);
     virtual ~ArrayRegionData() {}
-    
+
     virtual Array<Real> time() const;
 
     virtual Array<Real> operator() (Real time=0) const;

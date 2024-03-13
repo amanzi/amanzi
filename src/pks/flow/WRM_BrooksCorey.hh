@@ -1,12 +1,15 @@
 /*
-  Flow PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
+
 */
 
 #ifndef AMANZI_BROOKS_COREY_MODEL_HH_
@@ -24,31 +27,31 @@ namespace Flow {
 class WRM_BrooksCorey : public WRM {
  public:
   explicit WRM_BrooksCorey(Teuchos::ParameterList& plist);
-  ~WRM_BrooksCorey() {};
-  
+  ~WRM_BrooksCorey(){};
+
   // required methods from the base class
   double k_relative(double pc) const;
   double saturation(double pc) const;
-  double dSdPc(double pc) const;  
+  double dSdPc(double pc) const;
   double capillaryPressure(double saturation) const;
   double residualSaturation() const { return sr_; }
   double dKdPc(double pc) const;
 
  private:
-  void Init_(double lambda, double l, double alpha, 
-             double sr, std::string& krel_function, double pc0);
+  void
+  Init_(double lambda, double l, double alpha, double sr, std::string& krel_function, double pc0);
 
  private:
-  double lambda_, l_, alpha_;  // Brooks and Corey parameters: lambda, alpha
-  double sr_;  // residual saturation
+  double lambda_, l_, alpha_; // Brooks and Corey parameters: lambda, alpha
+  double sr_;                 // residual saturation
 
-  double pc0_;  // regularization threshold (usually 0 to 500 Pa)
-  double a_, b_, factor_, pc_bubble_;  // frequently used constant
+  double pc0_;                        // regularization threshold (usually 0 to 500 Pa)
+  double a_, b_, factor_, pc_bubble_; // frequently used constant
 
-  static Utils::RegisteredFactory<WRM, WRM_BrooksCorey> factory_;
+  static Utils::RegisteredFactory<WRM, WRM_BrooksCorey> reg_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
- 
+} // namespace Flow
+} // namespace Amanzi
+
 #endif

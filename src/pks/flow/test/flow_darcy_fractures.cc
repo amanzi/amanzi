@@ -1,13 +1,15 @@
 /*
-  Transport PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  License: BSD
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Transport PK
+
 */
 
 #include <iostream>
@@ -33,7 +35,8 @@
 #include "Darcy_PK.hh"
 
 /* **************************************************************** */
-TEST(DARCY_TWO_FRACTURES) {
+TEST(DARCY_TWO_FRACTURES)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -53,7 +56,7 @@ TEST(DARCY_TWO_FRACTURES) {
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
   // extract fractures mesh
@@ -61,13 +64,15 @@ TEST(DARCY_TWO_FRACTURES) {
   setnames.push_back("fracture 1");
   setnames.push_back("fracture 2");
 
-  RCP<Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
+  RCP<Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::Entity_kind::FACE);
 
   int ncells_owned = 0;
   int ncells_wghost = 0;
   if (mesh.get()) {
-    ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    ncells_owned =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    ncells_wghost =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   }
 
   std::cout << "pid=" << MyPID << " cells: " << ncells_owned << " " << ncells_wghost << std::endl;
@@ -85,16 +90,11 @@ TEST(DARCY_TWO_FRACTURES) {
   S->InitializeFields();
   S->InitializeEvaluators();
 
-  // modify the default state
-  // -- storativity
-  S->GetW<CompositeVector>("specific_storage", Tags::DEFAULT, passwd).PutScalar(2.0);
-  S->GetRecordW("specific_storage", Tags::DEFAULT, passwd).set_initialized();
-
   // create the initial pressure function
   auto& p = *S->GetW<CompositeVector>("pressure", Tags::DEFAULT, passwd).ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     p[0][c] = xc[0] * (xc[1] + 2.0);
   }
   S->GetRecordW("pressure", passwd).set_initialized();
@@ -114,21 +114,14 @@ TEST(DARCY_TWO_FRACTURES) {
     t_old = t_new;
   }
 
-  for (int c = 0; c < p.MyLength(); c++) {
-    CHECK(p[0][c] > -1.0 && p[0][c] < 2.0);
-  }
+  for (int c = 0; c < p.MyLength(); c++) { CHECK(p[0][c] > -1.0 && p[0][c] < 2.0); }
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Darcy", *plist));
   WriteStateStatistics(*S, *vo);
 
   if (MyPID == 0) {
-    GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+    GMV::open_data_file(*mesh, (std::string) "flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "pressure");
     GMV::close_data_file();
   }
 }
-
-
-
-
-

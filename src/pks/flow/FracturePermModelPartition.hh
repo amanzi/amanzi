@@ -1,12 +1,14 @@
 /*
-  Flow PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  Flow PK
 
   A collection of fracture permeability models along with a mesh partition.
 */
@@ -21,15 +23,16 @@
 namespace Amanzi {
 namespace Flow {
 
-typedef std::vector<Teuchos::RCP<FracturePermModel> > FracturePermModelList;
-typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, FracturePermModelList> FracturePermModelPartition;
+typedef std::vector<Teuchos::RCP<FracturePermModel>> FracturePermModelList;
+typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, FracturePermModelList>
+  FracturePermModelPartition;
 
 // Non-member factory
-Teuchos::RCP<FracturePermModelPartition> CreateFracturePermModelPartition(
-    Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    Teuchos::RCP<Teuchos::ParameterList> plist);
+Teuchos::RCP<FracturePermModelPartition>
+CreateFracturePermModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                 Teuchos::RCP<Teuchos::ParameterList> plist);
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
 
 #endif

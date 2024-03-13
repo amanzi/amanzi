@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _MFVector_H_
 #define _MFVector_H_
 
@@ -24,6 +33,6 @@ namespace Amanzi {
   protected:
     int srccomp,numcomp,numgrow;
   };
-  
+
 } /* namespace Amanzi */
 #endif /* _MFVector_H_ */

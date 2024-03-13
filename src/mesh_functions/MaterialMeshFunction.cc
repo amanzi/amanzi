@@ -1,12 +1,14 @@
 /*
-  Mesh Functions
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov
+  Authors: Konstantin Lipnikov
+*/
+
+/*
+  Mesh Functions
 
   Function applied to a mesh component defined on a material region
   with at most one function application per entity.
@@ -20,10 +22,11 @@ namespace Amanzi {
 namespace Functions {
 
 /* ******************************************************************
-* Ensure uniqueness of the spec and create the set of IDs contained 
+* Ensure uniqueness of the spec and create the set of IDs contained
 * in the Domain of the spec togher with volume fractions.
 ****************************************************************** */
-void MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
+void
+MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
 {
   Teuchos::RCP<Domain> domain = spec->first;
   AmanziMesh::Entity_kind kind = domain->second;
@@ -31,17 +34,20 @@ void MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
 
   // Loop over regions in the spec, getting their ids and adding to the set.
   Teuchos::RCP<MaterialMesh> mat_mesh = Teuchos::rcp(new MaterialMesh());
-  for (RegionList::const_iterator region = domain->first.begin();
-      region != domain->first.end(); ++region) {
-
+  for (RegionList::const_iterator region = domain->first.begin(); region != domain->first.end();
+       ++region) {
     // Get the ids from the mesh by region name and entity kind.
-    if (mesh_->valid_set_name(*region, kind)) {
-      AmanziMesh::Entity_ID_List ids;
-      std::vector<double> vofs;
-      mesh_->get_set_entities_and_vofs(*region, kind, AmanziMesh::Parallel_type::ALL, &ids, &vofs);
+    if (mesh_->isValidSetName(*region, kind)) {
+      auto [ids, cvofs] =
+        mesh_->getSetEntitiesAndVolumeFractions(*region, kind, AmanziMesh::Parallel_kind::ALL);
+
+      auto vofs = alloc_and_deep_copy(cvofs);
 
       // populating default volume fractions (move this to mesh framework?)
-      if (vofs.size() == 0) vofs.resize(ids.size(), 1.0);
+      if (vofs.size() == 0) {
+        Kokkos::resize(vofs, ids.size());
+        Kokkos::deep_copy(vofs, 1.0);
+      }
 
       for (int i = 0; i < ids.size(); ++i) {
         AmanziMesh::Entity_ID id = ids[i];
@@ -54,7 +60,8 @@ void MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
       }
     } else {
       Errors::Message msg;
-      msg << "Unknown region in processing mesh function spec: \"" << *region << "\", kind=" << kind;
+      msg << "Unknown region in processing mesh function spec: \"" << *region
+          << "\", kind=" << kind;
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -66,8 +73,8 @@ void MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
     other_specs = Teuchos::rcp(new MaterialSpecList());
     material_specs_[kind] = other_specs;
   } else {
-    for (MaterialSpecList::const_iterator us = other_specs->begin(); us != other_specs->end(); ++us) {
-
+    for (MaterialSpecList::const_iterator us = other_specs->begin(); us != other_specs->end();
+         ++us) {
       const MaterialMesh& tmp = *(*us)->second;
 
       for (it = mat_mesh->begin(); it != mat_mesh->end(); ++it) {
@@ -84,6 +91,5 @@ void MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
   other_specs->push_back(Teuchos::rcp(new MaterialSpec(spec, mat_mesh)));
 };
 
-}  // namespace Functions
-}  // namespace Amanzi
-
+} // namespace Functions
+} // namespace Amanzi

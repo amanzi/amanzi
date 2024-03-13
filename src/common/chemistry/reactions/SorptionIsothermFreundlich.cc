@@ -1,10 +1,14 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
+  Chemistry
 
   Class for Freundlich isotherm
 */
@@ -21,42 +25,44 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 SorptionIsothermFreundlich::SorptionIsothermFreundlich()
-  : SorptionIsotherm("freundlich", SorptionIsotherm::FREUNDLICH),
-    KD_(0.0), 
-    n_(0.0),
-    params_(2, 0.0) {
-}
+  : SorptionIsotherm("freundlich", SorptionIsotherm::FREUNDLICH), KD_(0.0), n_(0.0), params_(2, 0.0)
+{}
 
 
 SorptionIsothermFreundlich::SorptionIsothermFreundlich(double KD, double n)
-  : SorptionIsotherm("freundlich", SorptionIsotherm::FREUNDLICH),
-    KD_(KD), 
-    n_(n),
-    params_(2, 0.0) {
-}
+  : SorptionIsotherm("freundlich", SorptionIsotherm::FREUNDLICH), KD_(KD), n_(n), params_(2, 0.0)
+{}
 
 
-double SorptionIsothermFreundlich::Evaluate(const Species& primary_species) {
+double
+SorptionIsothermFreundlich::Evaluate(const Species& primary_species)
+{
   // Csorb = KD * activity^(n)
   // Units: The units don't make a whole lot of sense.
   return KD_ * std::pow(primary_species.activity(), n_);
 }
 
 
-const std::vector<double>& SorptionIsothermFreundlich::GetParameters() {
+const std::vector<double>&
+SorptionIsothermFreundlich::GetParameters()
+{
   params_[0] = KD_;
   params_[1] = n_;
   return params_;
 }
 
 
-void SorptionIsothermFreundlich::SetParameters(const std::vector<double>& params) {
+void
+SorptionIsothermFreundlich::SetParameters(const std::vector<double>& params)
+{
   KD_ = params.at(0);
   n_ = params.at(1);
 }
 
 
-double SorptionIsothermFreundlich::EvaluateDerivative(const Species& primary_species) {
+double
+SorptionIsothermFreundlich::EvaluateDerivative(const Species& primary_species)
+{
   // Csorb = KD * activity^n
   // dCsorb/dCaq = KD * n * activity^(n-1) * activity_coef
   //             = Csorb * n / molality
@@ -66,5 +72,5 @@ double SorptionIsothermFreundlich::EvaluateDerivative(const Species& primary_spe
   return C_sorb * n_ / primary_species.molality();
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

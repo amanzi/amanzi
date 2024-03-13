@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <iostream>
 #include "stdlib.h"
 #include "math.h"
@@ -14,17 +23,17 @@
 #include "IO.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "mpc_pks_registration.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
+#include "pks_mpc_reg.hh"
 #include "State.hh"
 #include "Tag.hh"
 
 #include "ats_flow_pks_registration.hh"
 #include "ats_flow_relations_registration.hh"
 #include "ats_relations_registration.hh"
-#include "pks_transport_registration.hh"
-#include "pks_chemistry_registration.hh"
+#include "pks_transport_reg.hh"
+#include "pks_chemistry_reg.hh"
 
 // Temporarily
 namespace Amanzi {
@@ -36,28 +45,31 @@ class ATS_Richards : public Richards {
                const Teuchos::RCP<Teuchos::ParameterList>& glist,
                const Teuchos::RCP<State>& S,
                const Teuchos::RCP<TreeVector>& soln)
-    : PK(pk_tree, glist, S, soln),
-      Richards(pk_tree, glist, S, soln) {};
+    : PK(pk_tree, glist, S, soln), Richards(pk_tree, glist, S, soln){};
 
-  virtual void Setup() override {
+  virtual void Setup() override
+  {
     Richards::Setup();
 
     auto owner = S_->GetRecord("saturation_liquid", Tags::DEFAULT).owner();
     S_->GetRecordW("saturation_liquid", Tags::DEFAULT, owner).set_owner("saturation_liquid");
-    S_->RequireEvaluator("saturation_liquid", Tags::DEFAULT); 
+    S_->RequireEvaluator("saturation_liquid", Tags::DEFAULT);
 
     S_->Require<double>("time", Tags::CURRENT, "time");
+
     S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "coordinator");
     S_->Require<Amanzi::AmanziGeometry::Point>("gravity", Tags::DEFAULT, "coordinator");
   }
 
-  virtual void Initialize() override {
+  virtual void Initialize() override
+  {
     Richards::Initialize();
 
-    S_->GetRecordW("darcy_flux", Tags::DEFAULT, "state").set_initialized();
+    S_->GetRecordW("volumetric_flow_rate", Tags::DEFAULT, "state").set_initialized();
   }
 
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override {
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override
+  {
     S_->GetW<double>("time", Tags::CURRENT, "time") = t_old;
     S_->GetW<double>("time", Tags::NEXT, "time") = t_new;
 
@@ -72,17 +84,19 @@ class ATS_Richards : public Richards {
     return false;
   }
 
-  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override {
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override
+  {
     Richards::CommitStep(t_old, t_new, Tags::NEXT);
 
-    S_->GetW<CompositeVector>("darcy_flux", Tags::DEFAULT, "state") =
+    S_->GetW<CompositeVector>("volumetric_flow_rate", Tags::DEFAULT, "state") =
       S_->Get<CompositeVector>("water_flux", Tags::NEXT);
 
     // reset time to beginning of time step as expected by Amanzi FIXME
     S_->GetW<double>("time", Tags::NEXT, "time") = t_old;
   }
 
-  virtual void CalculateDiagnostics(const Tag& tag) override {
+  virtual void CalculateDiagnostics(const Tag& tag) override
+  {
     Richards::CalculateDiagnostics(Tags::NEXT);
   }
 
@@ -92,28 +106,28 @@ class ATS_Richards : public Richards {
 
 RegisteredPKFactory<ATS_Richards> ATS_Richards::reg_("ats richards flow");
 
-}  // namespace Flow
-}  // namespace Amanzi
+} // namespace Flow
+} // namespace Amanzi
 
 
-TEST(INTEROPERABILITY_FLOW_TRANSPORT) {
-
-using namespace Amanzi;
-using namespace Amanzi::AmanziMesh;
-using namespace Amanzi::AmanziGeometry;
+TEST(INTEROPERABILITY_FLOW_TRANSPORT)
+{
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
 
   auto comm = Amanzi::getDefaultComm();
-  
+
   // read the main parameter list
   std::string xmlInFileName = "test/interoperability_flow_transport.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  
+
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
-   
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
+
   // create mesh
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
@@ -122,7 +136,7 @@ using namespace Amanzi::AmanziGeometry;
 
   // create dummy observation data object
   double avg1;
-  Amanzi::ObservationData obs_data;    
+  Amanzi::ObservationData obs_data;
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(plist));
 
   Teuchos::ParameterList state_plist = glist->sublist("state");
@@ -140,5 +154,6 @@ using namespace Amanzi::AmanziGeometry;
       CHECK(false);
     }
   }
-}
 
+  WriteStateStatistics(*S);
+}

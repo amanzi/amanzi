@@ -1,12 +1,15 @@
 /*
-  Flow PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
+
 */
 
 #include <iostream>
@@ -50,37 +53,32 @@ class DarcyProblem {
   Comm_ptr_type comm;
   int MyPID;
 
-  Framework frameworks[2];
+  Framework frameworks[1];
   std::vector<std::string> framework_name;
 
-  DarcyProblem() {
-    passwd = ""; 
+  DarcyProblem()
+  {
+    passwd = "";
     comm = Amanzi::getDefaultComm();
-    MyPID = comm->MyPID();    
+    MyPID = comm->MyPID();
 
     frameworks[0] = Framework::MSTK;
-    frameworks[1] = Framework::STK;
     framework_name.push_back("MSTK");
-    framework_name.push_back("stk:mesh");
   };
 
-  ~DarcyProblem() {
-    delete DPK;
-    
-  }
+  ~DarcyProblem() { delete DPK; }
 
-  int Init(const std::string xmlFileName, const char* meshExodus, const Framework& framework) {
-    if (framework == Framework::STK && comm->NumProc() > 1) return 1;    
-
+  int Init(const std::string xmlFileName, const char* meshExodus, const Framework& framework)
+  {
     // create a MSTK mesh framework
     plist = Teuchos::getParametersFromXmlFile(xmlFileName);
     Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
-    Preference pref({framework});
+    Preference pref({ framework });
 
-    MeshFactory meshfactory(comm,gm);
+    MeshFactory meshfactory(comm, gm);
     try {
       meshfactory.set_preference(pref);
     } catch (Message& e) {
@@ -110,8 +108,11 @@ class DarcyProblem {
     return 0;
   }
 
-  void createBClist(const char* type, const char* bc_x, 
-                    Teuchos::Array<std::string>& regions, double value) {
+  void createBClist(const char* type,
+                    const char* bc_x,
+                    Teuchos::Array<std::string>& regions,
+                    double value)
+  {
     std::string func_list_name;
     if (!strcmp(type, "pressure")) {
       func_list_name = "boundary pressure";
@@ -126,15 +127,16 @@ class DarcyProblem {
     Teuchos::ParameterList& type_list = bc_list.get<Teuchos::ParameterList>(type);
 
     Teuchos::ParameterList& bc_sublist = type_list.sublist(bc_x);
-    bc_sublist.set("regions", regions)
-              .set("spatial distribution method", "none");
+    bc_sublist.set("regions", regions).set("spatial distribution method", "none");
 
     if (!strcmp(type, "static head")) {
       Teuchos::ParameterList& bc_sublist_named = bc_sublist.sublist("static head")
-          .sublist("function-static-head")
-          .set("p0", 1.0).set("density", 2.0)
-          .set("gravity", 2.0).set("space dimension", 3)
-          .sublist(func_list_name);
+                                                   .sublist("function-static-head")
+                                                   .set("p0", 1.0)
+                                                   .set("density", 2.0)
+                                                   .set("gravity", 2.0)
+                                                   .set("space dimension", 3)
+                                                   .sublist(func_list_name);
       Teuchos::ParameterList& function_list = bc_sublist_named.sublist("function-constant");
       function_list.set("value", value);
     } else {
@@ -144,13 +146,15 @@ class DarcyProblem {
     }
   }
 
-  double calculatePressureCellError(double p0, AmanziGeometry::Point& pressure_gradient) {
+  double calculatePressureCellError(double p0, AmanziGeometry::Point& pressure_gradient)
+  {
     const auto& pressure = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
 
     double error_L2 = 0.0;
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    int ncells =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     for (int c = 0; c < ncells; c++) {
-      const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+      const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
       double pressure_exact = p0 + pressure_gradient * xc;
       // if (MyPID==0) std::cout << c << " " << pressure[0][c] << " exact=" <<  pressure_exact << std::endl;
       error_L2 += std::pow(pressure[0][c] - pressure_exact, 2.0);
@@ -158,13 +162,15 @@ class DarcyProblem {
     return sqrt(error_L2);
   }
 
-  double calculatePressureFaceError(double p0, AmanziGeometry::Point& pressure_gradient) {
+  double calculatePressureFaceError(double p0, AmanziGeometry::Point& pressure_gradient)
+  {
     const auto& lambda = *S->Get<CompositeVector>("pressure").ViewComponent("face");
 
     double error_L2 = 0.0;
-    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    int nfaces =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     for (int f = 0; f < nfaces; f++) {
-      const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+      const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
       double pressure_exact = p0 + pressure_gradient * xf;
       // std::cout << f << " " << lambda[0][f] << " exact=" << pressure_exact << std::endl;
       error_L2 += std::pow(lambda[0][f] - pressure_exact, 2.0);
@@ -172,32 +178,34 @@ class DarcyProblem {
     return sqrt(error_L2);
   }
 
-  double calculateDarcyFluxError(AmanziGeometry::Point& velocity_exact) {
+  double calculateDarcyFluxError(AmanziGeometry::Point& velocity_exact)
+  {
     auto& flowrate = *S->Get<CompositeVector>("volumetric_flow_rate").ViewComponent("face");
 
     double error_L2 = 0.0;
-    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    int nfaces =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     for (int f = 0; f < nfaces; f++) {
-      const AmanziGeometry::Point& normal = mesh->face_normal(f);
+      const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
       error_L2 += std::pow(flowrate[0][f] - velocity_exact * normal, 2.0);
-      // if (MyPID == 0) std::cout << f << " " << flowrate[0][f] << " exact=" << velocity_exact * normal << std::endl;
+      // std::cout << f << " " << flowrate[0][f] << " exact=" << velocity_exact * normal << std::endl;
     }
     return sqrt(error_L2);
   }
 
-  double calculateDarcyDivergenceError() {
-    auto& cv = S->GetW<CompositeVector>("volumetric_flow_rate", Tags::DEFAULT, passwd);
+  double calculateDarcyDivergenceError()
+  {
+    Key key("volumetric_flow_rate");
+    auto& cv = S->GetW<CompositeVector>(key, Tags::DEFAULT, key);
     cv.ScatterMasterToGhosted("face");
     Epetra_MultiVector& flux = *cv.ViewComponent("face", true);
 
     double error_L2 = 0.0;
-    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    int ncells_owned =
+      mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
     for (int c = 0; c < ncells_owned; c++) {
-      AmanziMesh::Entity_ID_List faces;
-      std::vector<int> dirs;
-
-      mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
+      auto [faces, dirs] = mesh->getCellFacesAndDirections(c);
       int nfaces = faces.size();
 
       double div = 0.0;
@@ -205,256 +213,269 @@ class DarcyProblem {
         int f = faces[i];
         div += flux[0][f] * dirs[i];
       }
-      error_L2 += div*div / mesh->cell_volume(c);
+      error_L2 += div * div / mesh->getCellVolume(c);
     }
     return sqrt(error_L2);
   }
 };
 
 
-SUITE(Darcy_PK) {
-/* ******************************************************************
+SUITE(Darcy_PK)
+{
+  /* ******************************************************************
 * Testing the mesh of hexahedra.
 ****************************************************************** */
-TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
-  for (int i = 0; i < 2; i++) {
-    int ierr = Init("test/flow_darcy_misc.xml", "test/hexes.exo", frameworks[i]);
-    if (MyPID == 0) std::cout << "\nDarcy PK on tets: Dirichlet-Dirichlet"
-                              << ", mesh framework: " << framework_name[i] << std::endl;
-    if (ierr == 1) continue;
+  TEST_FIXTURE(DarcyProblem, DirichletDirichlet)
+  {
+    for (int i = 0; i < 1; i++) {
+      int ierr = Init("test/flow_darcy_misc.xml", "test/hexes.exo", frameworks[i]);
+      if (MyPID == 0)
+        std::cout << "\nDarcy PK on tets: Dirichlet-Dirichlet"
+                  << ", mesh framework: " << framework_name[i] << std::endl;
+      if (ierr == 1) continue;
 
-    Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = std::string("Top");
-    createBClist("pressure", "BC 1", regions, 0.0);
+      Teuchos::Array<std::string> regions(1); // modify boundary conditions
+      regions[0] = std::string("Top");
+      createBClist("pressure", "BC 1", regions, 0.0);
 
-    regions[0] = std::string("Bottom");
-    createBClist("pressure", "BC 2", regions, 1.0);
-    // DPK->ResetParameterList(dp_list);
- 
-    DPK->Initialize();
-    S->CheckAllFieldsInitialized();
+      regions[0] = std::string("Bottom");
+      createBClist("pressure", "BC 2", regions, 1.0);
+      // DPK->ResetParameterList(dp_list);
 
-    DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
-    DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
+      DPK->Initialize();
+      S->CheckAllFieldsInitialized();
 
-    // calculate errors
-    double p0 = 1.0;
-    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
-    AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - rho * gravity) / mu;
+      DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
+      DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
-    double errorP = calculatePressureCellError(p0, pressure_gradient);
-    CHECK(errorP < 1.0e-8);
-    double errorL = calculatePressureFaceError(p0, pressure_gradient);
-    CHECK(errorL < 1.0e-8);
-    double errorU = calculateDarcyFluxError(velocity);
-    CHECK(errorU < 1.0e-8);
-    double errorDiv = calculateDarcyDivergenceError();
-    if (MyPID == 0)
-        std::cout << "Error: " << errorP << " " << errorL << " " << errorU << " " << errorDiv << std::endl;
+      // calculate errors
+      double p0 = 1.0;
+      AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+      AmanziGeometry::Point velocity(3);
+      velocity = -(pressure_gradient - rho * gravity) / mu;
+
+      double errorP = calculatePressureCellError(p0, pressure_gradient);
+      CHECK(errorP < 1.0e-8);
+      double errorL = calculatePressureFaceError(p0, pressure_gradient);
+      CHECK(errorL < 1.0e-8);
+      double errorU = calculateDarcyFluxError(velocity);
+      CHECK(errorU < 1.0e-8);
+      double errorDiv = calculateDarcyDivergenceError();
+      if (MyPID == 0)
+        std::cout << "Error: " << errorP << " " << errorL << " " << errorU << " " << errorDiv
+                  << std::endl;
+    }
   }
-}
 
-TEST_FIXTURE(DarcyProblem, DirichletNeumann) {
-  for (int i = 0; i < 2; i++) {
-    int ierr = Init("test/flow_darcy_misc.xml", "test/hexes.exo", frameworks[i]);
-    if (MyPID == 0) std::cout << "\nDarcy PK on tets: Dirichlet-Neumann"
-                              << ", mesh framework: " << framework_name[i] << std::endl;
-    if (ierr == 1) continue;
+  TEST_FIXTURE(DarcyProblem, DirichletNeumann)
+  {
+    for (int i = 0; i < 1; i++) {
+      int ierr = Init("test/flow_darcy_misc.xml", "test/hexes.exo", frameworks[i]);
+      if (MyPID == 0)
+        std::cout << "\nDarcy PK on tets: Dirichlet-Neumann"
+                  << ", mesh framework: " << framework_name[i] << std::endl;
+      if (ierr == 1) continue;
 
-    Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = std::string("Top");
-    createBClist("mass flux", "BC 1", regions, -20.0);
+      Teuchos::Array<std::string> regions(1); // modify boundary conditions
+      regions[0] = std::string("Top");
+      createBClist("mass flux", "BC 1", regions, -20.0);
 
-    regions[0] = std::string("Bottom");
-    createBClist("pressure", "BC 2", regions, 1.0);
+      regions[0] = std::string("Bottom");
+      createBClist("pressure", "BC 2", regions, 1.0);
 
-    DPK->Initialize();
-    S->CheckAllFieldsInitialized();
+      DPK->Initialize();
+      S->CheckAllFieldsInitialized();
 
-    DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
-    DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
+      DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
+      DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
-    // calculate errors
-    double p0 = 1.0;
-    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
-    AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - rho * gravity) / mu;
+      // calculate errors
+      double p0 = 1.0;
+      AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+      AmanziGeometry::Point velocity(3);
+      velocity = -(pressure_gradient - rho * gravity) / mu;
 
-    double errorP = calculatePressureCellError(p0, pressure_gradient);
-    CHECK(errorP < 1.0e-8);
-    double errorL = calculatePressureFaceError(p0, pressure_gradient);
-    CHECK(errorL < 1.0e-8);
-    double errorU = calculateDarcyFluxError(velocity);
-    CHECK(errorU < 1.0e-8);
-    if (MyPID == 0)
+      double errorP = calculatePressureCellError(p0, pressure_gradient);
+      CHECK(errorP < 1.0e-8);
+      double errorL = calculatePressureFaceError(p0, pressure_gradient);
+      CHECK(errorL < 1.0e-8);
+      double errorU = calculateDarcyFluxError(velocity);
+      CHECK(errorU < 1.0e-8);
+      if (MyPID == 0)
         std::cout << "Error: " << errorP << " " << errorL << " " << errorU << std::endl;
+    }
   }
-}
 
-TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
-  for (int i = 0; i < 2; i++) {
-    int ierr = Init("test/flow_darcy_misc.xml", "test/hexes.exo", frameworks[i]);
-    if (MyPID == 0) std::cout << "\nDarcy PK on tets: StaticHead-Dirichlet"
-                              << ", mesh framework: " << framework_name[i] << std::endl;
-    if (ierr == 1) continue;
+  TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet)
+  {
+    for (int i = 0; i < 1; i++) {
+      int ierr = Init("test/flow_darcy_misc.xml", "test/hexes.exo", frameworks[i]);
+      if (MyPID == 0)
+        std::cout << "\nDarcy PK on tets: StaticHead-Dirichlet"
+                  << ", mesh framework: " << framework_name[i] << std::endl;
+      if (ierr == 1) continue;
 
-    Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = std::string("Top");
-    createBClist("pressure", "BC 1", regions, 1.0);
+      Teuchos::Array<std::string> regions(1); // modify boundary conditions
+      regions[0] = std::string("Top");
+      createBClist("pressure", "BC 1", regions, 1.0);
 
-    regions[0] = std::string("Bottom");
-    createBClist("static head", "BC 2", regions, 0.25);
-    // DPK->ResetParameterList(dp_list);
+      regions[0] = std::string("Bottom");
+      createBClist("static head", "BC 2", regions, 0.25);
+      // DPK->ResetParameterList(dp_list);
 
-    DPK->Initialize();
-    S->CheckAllFieldsInitialized();
+      DPK->Initialize();
+      S->CheckAllFieldsInitialized();
 
-    DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
-    DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
+      DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
+      DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
-    // calculate errors
-    double p0 = 2.0;
-    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
-    AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - rho * gravity) / mu;
+      // calculate errors
+      double p0 = 2.0;
+      AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+      AmanziGeometry::Point velocity(3);
+      velocity = -(pressure_gradient - rho * gravity) / mu;
 
-    double errorP = calculatePressureCellError(p0, pressure_gradient);
-    CHECK(errorP < 1.0e-8);
-    double errorL = calculatePressureFaceError(p0, pressure_gradient);
-    CHECK(errorL < 1.0e-8);
-    double errorU = calculateDarcyFluxError(velocity);
-    CHECK(errorU < 1.0e-8);
-    if (MyPID == 0)
+      double errorP = calculatePressureCellError(p0, pressure_gradient);
+      CHECK(errorP < 1.0e-8);
+      double errorL = calculatePressureFaceError(p0, pressure_gradient);
+      CHECK(errorL < 1.0e-8);
+      double errorU = calculateDarcyFluxError(velocity);
+      CHECK(errorU < 1.0e-8);
+      if (MyPID == 0)
         std::cout << "Error: " << errorP << " " << errorL << " " << errorU << std::endl;
+    }
   }
-}
 
-/* ******************************************************************
+  /* ******************************************************************
 * Testing the mesh of prisms.
 ****************************************************************** */
-TEST_FIXTURE(DarcyProblem, DDprisms) {
-  for (int i = 0; i < 2; i++) {
-    int ierr = Init("test/flow_darcy_misc.xml", "test/prisms.exo", frameworks[i]);
-    if (MyPID == 0) std::cout << "\nDarcy PK on tets: Dirichlet-Dirichlet"
-                              << ", mesh framework: " << framework_name[i] << std::endl;
-    if (ierr == 1) continue;
+  TEST_FIXTURE(DarcyProblem, DDprisms)
+  {
+    for (int i = 0; i < 1; i++) {
+      int ierr = Init("test/flow_darcy_misc.xml", "test/prisms.exo", frameworks[i]);
+      if (MyPID == 0)
+        std::cout << "\nDarcy PK on tets: Dirichlet-Dirichlet"
+                  << ", mesh framework: " << framework_name[i] << std::endl;
+      if (ierr == 1) continue;
 
-    Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = std::string("Top");
-    createBClist("pressure", "BC 1", regions, 0.0);
+      Teuchos::Array<std::string> regions(1); // modify boundary conditions
+      regions[0] = std::string("Top");
+      createBClist("pressure", "BC 1", regions, 0.0);
 
-    regions[0] = std::string("Bottom");
-    createBClist("pressure", "BC 2", regions, 1.0);
-    // DPK->ResetParameterList(dp_list);
+      regions[0] = std::string("Bottom");
+      createBClist("pressure", "BC 2", regions, 1.0);
+      // DPK->ResetParameterList(dp_list);
 
-    DPK->Initialize();
-    S->CheckAllFieldsInitialized();
+      DPK->Initialize();
+      S->CheckAllFieldsInitialized();
 
-    DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
-    DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
+      DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
+      DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
-    // calculate errors
-    double p0 = 1.0;
-    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
-    AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - rho * gravity) / mu;
+      // calculate errors
+      double p0 = 1.0;
+      AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+      AmanziGeometry::Point velocity(3);
+      velocity = -(pressure_gradient - rho * gravity) / mu;
 
-    double errorP = calculatePressureCellError(p0, pressure_gradient);
-    CHECK(errorP < 1.0e-8);
-    double errorL = calculatePressureFaceError(p0, pressure_gradient);
-    CHECK(errorL < 1.0e-8);
-    double errorU = calculateDarcyFluxError(velocity);
-    CHECK(errorU < 1.0e-8);
-    double errorDiv = calculateDarcyDivergenceError();
-    if (MyPID == 0)
-        std::cout << "Error: " << errorP << " " << errorL << " " << errorU << " " << errorDiv << std::endl;
+      double errorP = calculatePressureCellError(p0, pressure_gradient);
+      CHECK(errorP < 1.0e-8);
+      double errorL = calculatePressureFaceError(p0, pressure_gradient);
+      CHECK(errorL < 1.0e-8);
+      double errorU = calculateDarcyFluxError(velocity);
+      CHECK(errorU < 1.0e-8);
+      double errorDiv = calculateDarcyDivergenceError();
+      if (MyPID == 0)
+        std::cout << "Error: " << errorP << " " << errorL << " " << errorU << " " << errorDiv
+                  << std::endl;
+    }
   }
-}
 
-/* ******************************************************************
+  /* ******************************************************************
 * Testing the mesh of tetrahedra.
 ****************************************************************** */
-TEST_FIXTURE(DarcyProblem, DNtetrahedra) {
-  for (int i = 0; i < 2; i++) {
-    int ierr = Init("test/flow_darcy_misc.xml", "test/tetrahedra.exo", frameworks[i]);
-    if (MyPID == 0) std::cout << "\nDarcy PK on tets: Dirichlet-Neumann"
-                              << ", mesh framework: " << framework_name[i] << std::endl;
-    if (ierr == 1) continue;
+  TEST_FIXTURE(DarcyProblem, DNtetrahedra)
+  {
+    for (int i = 0; i < 1; i++) {
+      int ierr = Init("test/flow_darcy_misc.xml", "test/tetrahedra.exo", frameworks[i]);
+      if (MyPID == 0)
+        std::cout << "\nDarcy PK on tets: Dirichlet-Neumann"
+                  << ", mesh framework: " << framework_name[i] << std::endl;
+      if (ierr == 1) continue;
 
-    Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = std::string("Top");
-    createBClist("mass flux", "BC 1", regions, -20.0);
+      Teuchos::Array<std::string> regions(1); // modify boundary conditions
+      regions[0] = std::string("Top");
+      createBClist("mass flux", "BC 1", regions, -20.0);
 
-    regions[0] = std::string("Bottom");
-    createBClist("pressure", "BC 2", regions, 1.0);
-    // DPK->ResetParameterList(dp_list);
+      regions[0] = std::string("Bottom");
+      createBClist("pressure", "BC 2", regions, 1.0);
+      // DPK->ResetParameterList(dp_list);
 
-    DPK->Initialize();
-    S->CheckAllFieldsInitialized();
+      DPK->Initialize();
+      S->CheckAllFieldsInitialized();
 
-    DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
-    DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
+      DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
+      DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
-    // calculate errors
-    double p0 = 1.0;
-    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
-    AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - rho * gravity) / mu;
+      // calculate errors
+      double p0 = 1.0;
+      AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+      AmanziGeometry::Point velocity(3);
+      velocity = -(pressure_gradient - rho * gravity) / mu;
 
-    double errorP = calculatePressureCellError(p0, pressure_gradient);
-    CHECK(errorP < 1.0e-8);
-    double errorL = calculatePressureFaceError(p0, pressure_gradient);
-    CHECK(errorL < 1.0e-8);
-    double errorU = calculateDarcyFluxError(velocity);
-    CHECK(errorU < 1.0e-8);
-    if (MyPID == 0)
+      double errorP = calculatePressureCellError(p0, pressure_gradient);
+      CHECK(errorP < 1.0e-8);
+      double errorL = calculatePressureFaceError(p0, pressure_gradient);
+      CHECK(errorL < 1.0e-8);
+      double errorU = calculateDarcyFluxError(velocity);
+      CHECK(errorU < 1.0e-8);
+      if (MyPID == 0)
         std::cout << "Error: " << errorP << " " << errorL << " " << errorU << std::endl;
+    }
   }
-}
 
-/* ******************************************************************
+  /* ******************************************************************
 * Testing the mesh of prisms and hexahedra.
 ****************************************************************** */
-TEST_FIXTURE(DarcyProblem, DDmixed) {
-  for (int i = 0; i < 2; i++) {
-    int ierr = Init("test/flow_darcy_misc.xml", "test/mixed.exo", frameworks[i]); 
-    if (MyPID == 0) std::cout << "\nDarcy PK on mixed mesh: Dirichlet-Dirichlet" 
-                              << ", mesh framework: " << framework_name[i] << std::endl;
-    if (ierr == 1) continue;
+  TEST_FIXTURE(DarcyProblem, DDmixed)
+  {
+    for (int i = 0; i < 1; i++) {
+      int ierr = Init("test/flow_darcy_misc.xml", "test/mixed.exo", frameworks[i]);
+      if (MyPID == 0)
+        std::cout << "\nDarcy PK on mixed mesh: Dirichlet-Dirichlet"
+                  << ", mesh framework: " << framework_name[i] << std::endl;
+      if (ierr == 1) continue;
 
-    Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = std::string("Top");
-    createBClist("pressure", "BC 1", regions, 0.0);
+      Teuchos::Array<std::string> regions(1); // modify boundary conditions
+      regions[0] = std::string("Top");
+      createBClist("pressure", "BC 1", regions, 0.0);
 
-    regions[0] = std::string("Bottom");
-    createBClist("pressure", "BC 2", regions, 1.0);
-    // DPK->ResetParameterList(dp_list);
+      regions[0] = std::string("Bottom");
+      createBClist("pressure", "BC 2", regions, 1.0);
+      // DPK->ResetParameterList(dp_list);
 
-    DPK->Initialize();
-    S->CheckAllFieldsInitialized();
+      DPK->Initialize();
+      S->CheckAllFieldsInitialized();
 
-    DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
-    DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
+      DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
+      DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
-    // calculate errors
-    double p0 = 1.0;
-    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
-    AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - rho * gravity) / mu;
+      // calculate errors
+      double p0 = 1.0;
+      AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+      AmanziGeometry::Point velocity(3);
+      velocity = -(pressure_gradient - rho * gravity) / mu;
 
-    double errorP = calculatePressureCellError(p0, pressure_gradient);
-    CHECK(errorP < 1.0e-8);
-    double errorL = calculatePressureFaceError(p0, pressure_gradient);
-    CHECK(errorL < 1.0e-8);
-    double errorU = calculateDarcyFluxError(velocity);
-    CHECK(errorU < 1.0e-8);
-    double errorDiv = calculateDarcyDivergenceError();
-    if (MyPID == 0)
-        std::cout << "Error: " << errorP << " " << errorL << " " << errorU << " " << errorDiv << std::endl;
+      double errorP = calculatePressureCellError(p0, pressure_gradient);
+      CHECK(errorP < 1.0e-8);
+      double errorL = calculatePressureFaceError(p0, pressure_gradient);
+      CHECK(errorL < 1.0e-8);
+      double errorU = calculateDarcyFluxError(velocity);
+      CHECK(errorU < 1.0e-8);
+      double errorDiv = calculateDarcyDivergenceError();
+      if (MyPID == 0)
+        std::cout << "Error: " << errorP << " " << errorL << " " << errorU << " " << errorDiv
+                  << std::endl;
+    }
   }
-}
-}  // SUITE
-
-
-
+} // SUITE

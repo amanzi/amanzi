@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include "FunctionExprTK.hh"
 #include "errors.hh"
 
@@ -20,9 +29,10 @@ FunctionExprTK::FunctionExprTK(int n, const std::string& formula)
 }
 
 
-double FunctionExprTK::operator()(const std::vector<double>& args) const
+double
+FunctionExprTK::operator()(const std::vector<double>& args) const
 {
   return (*exprtk_)(args);
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

@@ -1,12 +1,15 @@
 /*
-  Transport PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Jeffrey Johnson (jnjohnson@lbl.gov)
+  Authors: Jeffrey Johnson (jnjohnson@lbl.gov)
+*/
+
+/*
+  Transport PK
+
 */
 
 #ifndef AMANZI_TRANSPORT_BOUNDARY_FUNCTION_ALQUIMIA_HH_
@@ -23,8 +26,8 @@
 #include "TransportDomainFunction.hh"
 
 #ifdef ALQUIMIA_ENABLED
-#include "Alquimia_PK.hh"
-#include "ChemistryEngine.hh"
+#  include "Alquimia_PK.hh"
+#  include "ChemistryEngine.hh"
 
 namespace Amanzi {
 namespace Transport {
@@ -37,13 +40,15 @@ class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
                                      Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
   ~TransportBoundaryFunction_Alquimia();
 
-  void Compute(double t_old, double t_new);
-  
-  // require by the case class
-  virtual std::string name() const { return "alquimia bc"; } 
-  
+  void Compute(double t_old, double t_new) override;
+
+  DomainFunction_kind getType() const override { return DomainFunction_kind::ALQUIMIA; }
+
  private:
-  void Init_(const std::vector<std::string> &regions);
+  void Init_(const std::vector<std::string>& regions);
+
+ protected:
+  std::string name_;
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -65,8 +70,8 @@ class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
   std::map<int, int> cell_for_face_;
 };
 
-}  // namespace Transport
-}  // namespace Amanzi
+} // namespace Transport
+} // namespace Amanzi
 
 #endif
 

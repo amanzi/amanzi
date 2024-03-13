@@ -1,10 +1,15 @@
 /*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
   Chemistry PK
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
-  provided in the top-level COPYRIGHT file.
 */
 
 #include <cstdlib>
@@ -25,7 +30,6 @@
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
-#include "GenerationSpec.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
 
@@ -39,7 +43,8 @@
  **
  *****************************************************************************/
 
-SUITE(GeochemistryTestsChemistryPK) {
+SUITE(GeochemistryTestsChemistryPK)
+{
   namespace ac = Amanzi::AmanziChemistry;
   namespace ag = Amanzi::AmanziGeometry;
   namespace am = Amanzi::AmanziMesh;
@@ -51,7 +56,7 @@ SUITE(GeochemistryTestsChemistryPK) {
    public:
     ChemistryPKTest();
     ~ChemistryPKTest();
- 
+
     void RunTest(const std::string name, double* gamma);
 
    protected:
@@ -64,13 +69,14 @@ SUITE(GeochemistryTestsChemistryPK) {
    private:
     Amanzi::Comm_ptr_type comm_;
     Teuchos::RCP<ag::GeometricModel> gm_;
-  };  // end class SpeciationTest
+  }; // end class SpeciationTest
 
 
-  ChemistryPKTest::ChemistryPKTest() {
+  ChemistryPKTest::ChemistryPKTest()
+  {
     // assume that no errors or exceptions will occur in the
     // mesh/state related code....
-    
+
     // get the parameter list from the input file.
     std::string xml_input_filename("test/chemistry_amanzi_pk.xml");
     glist_ = Teuchos::getParametersFromXmlFile(xml_input_filename);
@@ -80,15 +86,13 @@ SUITE(GeochemistryTestsChemistryPK) {
     Teuchos::ParameterList mesh_parameter_list =
       glist_->sublist("mesh").sublist("unstructured").sublist("generate mesh");
 
-    am::GenerationSpec g(mesh_parameter_list);
-    
     Teuchos::ParameterList region_parameter_list = glist_->sublist("regions");
     gm_ = Teuchos::rcp(new ag::GeometricModel(3, region_parameter_list, *comm_));
-  
-    am::MeshFactory meshfactory(comm_, gm_);
-    meshfactory.set_preference(am::Preference({am::Framework::SIMPLE}));
 
-    mesh_ = meshfactory.create(0.,0.,0.,1.,1.,1.,1,1,10);
+    am::MeshFactory meshfactory(comm_, gm_);
+    meshfactory.set_preference(am::Preference({ am::Framework::SIMPLE }));
+
+    mesh_ = meshfactory.create(0., 0., 0., 1., 1., 1., 1, 1, 10);
 
     // get the state parameter list and create the state object
     Teuchos::ParameterList state_parameter_list = glist_->sublist("state");
@@ -111,26 +115,28 @@ SUITE(GeochemistryTestsChemistryPK) {
 
   ChemistryPKTest::~ChemistryPKTest() {}
 
-  void ChemistryPKTest::RunTest(const std::string name, double * gamma) {};
+  void ChemistryPKTest::RunTest(const std::string name, double* gamma){};
 
 
   /* ***************************************************************************
    * Individual tests
    * **************************************************************************/
-  TEST_FIXTURE(ChemistryPKTest, ChemistryPK_constructor) {
+  TEST_FIXTURE(ChemistryPKTest, ChemistryPK_constructor)
+  {
     // just make sure that we can have all the pieces together to set
     // up a chemistry process kernel....
     try {
       cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
     } catch (Exceptions::Amanzi_exception chem_error) {
-      std::cout << "ERROR test1 "<< chem_error.what() << std::endl;
+      std::cout << "ERROR test1 " << chem_error.what() << std::endl;
     } catch (std::exception e) {
       std::cout << "ERROR test1a " << e.what() << std::endl;
     }
-  }  
+  }
 
 
-  TEST_FIXTURE(ChemistryPKTest, ChemistryPK_initialize) {
+  TEST_FIXTURE(ChemistryPKTest, ChemistryPK_initialize)
+  {
     // make sure that we can initialize the pk and internal chemistry
     // object correctly based on the xml input....
     try {
@@ -141,7 +147,7 @@ SUITE(GeochemistryTestsChemistryPK) {
       state_->InitializeEvaluators();
       cpk_->Initialize();
     } catch (std::exception e) {
-      std::cout << "ERROR test2 "<<e.what() << std::endl;
+      std::cout << "ERROR test2 " << e.what() << std::endl;
       throw e;
     }
     // assume all is right with the world if we exited w/o an error
@@ -149,7 +155,8 @@ SUITE(GeochemistryTestsChemistryPK) {
   }
 
 
-  TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names) {
+  TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names)
+  {
     try {
       cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
       cpk_->Setup();
@@ -158,12 +165,12 @@ SUITE(GeochemistryTestsChemistryPK) {
       state_->InitializeEvaluators();
       cpk_->Initialize();
     } catch (std::exception e) {
-      std::cout << "ERROR test3 "<<e.what() << std::endl;
+      std::cout << "ERROR test3 " << e.what() << std::endl;
       throw e;
     }
     std::vector<std::string> names;
     cpk_->set_chemistry_output_names(&names);
-    std::cout<<names.at(0)<<"\n";
+    std::cout << names.at(0) << "\n";
     CHECK_EQUAL(names.at(0), "pH");
   }
 }

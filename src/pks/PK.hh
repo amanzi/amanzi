@@ -1,13 +1,13 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
 */
-//! The interface for a Process Kernel, an equation or system of equations.
 
+//! The interface for a Process Kernel, an equation or system of equations.
 /*!
 
 A process kernel represents a single or system of partial/ordinary
@@ -20,15 +20,33 @@ other PKs and represent the system of equations, or a Physical PK,
 which represents a single equation.
 
 Note there are two PK specs -- the first is the "typed" spec, which appears in
-the "cycle driver" list in the PK tree.  The second is the spec for the base
-class PK, which is inherited and included by each actual PK, and lives in the
-"PKs" sublist of "main".
+the "cycle driver" list in the PK tree and has no other parameters other than
+its type and its children.  The second is the spec for the base class PK, which
+is inherited and included by each actual PK, lives in the "PKs" sublist of
+"main", and has all needed parameters.
 
 .. _pk-typed-spec:
 .. admonition:: pk-typed-spec
 
     * `"PK type`" ``[string]`` One of the registered PK types
-    * `"verbose object`" ``[verbose-object-spec]`` **optional** See `Verbose Object`_
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="PK tree">
+    <ParameterList name="Top level MPC">
+      <Parameter name="PK type" type="string" value="strong MPC"/>
+      <ParameterList name="sub PK 1">
+        ...
+      </ParameterList>
+      <ParameterList name="sub PK 2">
+        ...
+      </ParameterList>
+      ...
+    </ParameterList>
+  </ParameterList>
+
 
 .. _pk-spec:
 .. admonition:: pk-spec
@@ -45,17 +63,6 @@ Example:
     <ParameterList name="my cool PK">
       <Parameter name="PK type" type="string" value="my cool PK"/>
        ...
-    </ParameterList>
-  </ParameterList>
-
-.. code-block:: xml
-
-  <ParameterList name="PKs">
-    <ParameterList name="Top level MPC">
-      <Parameter name="PK type" type="string" value="strong MPC"/>
-      <ParameterList name="sub PKs">
-        ...
-      </ParameterList>
     </ParameterList>
   </ParameterList>
 
@@ -89,7 +96,7 @@ class State;
 
 class PK {
  public:
-  PK() {};
+  PK(){};
   // Required constructor of the form:
   PK(Teuchos::ParameterList& pk_tree,
      const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
@@ -120,8 +127,10 @@ class PK {
     }
 
     //  some tests provide nullptr
-    if (solution.get()) vo_ = Teuchos::rcp(new VerboseObject(solution->Comm(), name_, *vo_plist));
-    else vo_ = Teuchos::rcp(new VerboseObject(getDefaultComm(), name_, *vo_plist));
+    if (solution.get())
+      vo_ = Teuchos::rcp(new VerboseObject(solution->Comm(), name_, *vo_plist));
+    else
+      vo_ = Teuchos::rcp(new VerboseObject(getDefaultComm(), name_, *vo_plist));
   };
 
   // Virtual destructor
@@ -144,8 +153,10 @@ class PK {
 
   // Set a tag interval for advancing
   // Set the tags to integrate between
-  virtual void set_tags(const Tag& current, const Tag& next) {
-    tag_current_ = current; tag_next_ = next;
+  virtual void set_tags(const Tag& current, const Tag& next)
+  {
+    tag_current_ = current;
+    tag_next_ = next;
   }
 
   // Advance PK from time t_old to time t_new. True value of the last
@@ -170,9 +181,7 @@ class PK {
   virtual void Solution_to_State(const TreeVector& soln, const Tag& tag) = 0;
 
   // Tag the primary variable as changed in the DAG
-  virtual void ChangedSolutionPK(const Tag& tag) {
-    AMANZI_ASSERT(false);
-  }
+  virtual void ChangedSolutionPK(const Tag& tag) { AMANZI_ASSERT(false); }
 
   // When including ValidStep() in Advance(), make this protected!  refs
   // amanzi/ats#110
@@ -184,12 +193,12 @@ class PK {
   std::string name_;
   Tag tag_current_, tag_next_; // tags for time integration
 
-  Teuchos::RCP<TreeVector> solution_;  // single vector for the global problem
-  Teuchos::RCP<State> S_; // global data manager
+  Teuchos::RCP<TreeVector> solution_; // single vector for the global problem
+  Teuchos::RCP<State> S_;             // global data manager
 
-  Teuchos::RCP<VerboseObject> vo_;  // fancy IO
+  Teuchos::RCP<VerboseObject> vo_; // fancy IO
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

@@ -1,13 +1,15 @@
 /*
-  Flow PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
 
   A collection of fracture permeability models along with a mesh partition.
 */
@@ -25,11 +27,11 @@ namespace Flow {
 /* ******************************************************************
 * Non-member factory.
 ****************************************************************** */
-Teuchos::RCP<FracturePermModelPartition> CreateFracturePermModelPartition(
-    Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    Teuchos::RCP<Teuchos::ParameterList> plist)
+Teuchos::RCP<FracturePermModelPartition>
+CreateFracturePermModelPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                 Teuchos::RCP<Teuchos::ParameterList> plist)
 {
-  std::vector<Teuchos::RCP<FracturePermModel> > fpm_list;
+  std::vector<Teuchos::RCP<FracturePermModel>> fpm_list;
   std::vector<std::string> region_list;
 
   for (auto lcv = plist->begin(); lcv != plist->end(); ++lcv) {
@@ -53,13 +55,13 @@ Teuchos::RCP<FracturePermModelPartition> CreateFracturePermModelPartition(
     }
   }
 
-  auto partition = Teuchos::rcp(new Functions::MeshPartition(AmanziMesh::CELL, region_list));
+  auto partition =
+    Teuchos::rcp(new Functions::MeshPartition(AmanziMesh::Entity_kind::CELL, region_list));
   partition->Initialize(mesh, -1);
   partition->Verify();
 
   return Teuchos::rcp(new FracturePermModelPartition(partition, fpm_list));
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
-
+} // namespace Flow
+} // namespace Amanzi

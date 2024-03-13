@@ -1,12 +1,14 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
 
   Linear solution for problem with constant tensorial coefficient
   working in 2D and 3D
@@ -24,21 +26,25 @@
 
 class Analytic02 : public AnalyticBase {
  public:
-  Analytic02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
-      AnalyticBase(mesh),
-      g_(0.0), v_(d_) { v_[0] = 1.0, v_[1] = 2.0; }
-  Analytic02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double g) :
-      AnalyticBase(mesh),
-      g_(g), v_(d_) { v_[0] = 1.0, v_[1] = 2.0; }
-  Analytic02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, 
-      const Amanzi::AmanziGeometry::Point& v, double g, const Amanzi::WhetStone::Tensor& K) :
-      AnalyticBase(mesh),
-      g_(g),
-      K_(K),
-      v_(v) {};
-  ~Analytic02() {};
+  Analytic02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : AnalyticBase(mesh), g_(0.0), v_(d_)
+  {
+    v_[0] = 1.0, v_[1] = 2.0;
+  }
+  Analytic02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double g)
+    : AnalyticBase(mesh), g_(g), v_(d_)
+  {
+    v_[0] = 1.0, v_[1] = 2.0;
+  }
+  Analytic02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+             const Amanzi::AmanziGeometry::Point& v,
+             double g,
+             const Amanzi::WhetStone::Tensor& K)
+    : AnalyticBase(mesh), g_(g), K_(K), v_(v){};
+  ~Analytic02(){};
 
-  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     Amanzi::WhetStone::Tensor K(d_, 2);
     if (K_.size() == 0) {
       K(0, 0) = 1.0;
@@ -51,16 +57,19 @@ class Analytic02 : public AnalyticBase {
     return K_;
   }
 
-  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
+  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const
+  {
     return p * v_ - g_ * p[d_ - 1];
   }
 
-  // Gradient of potential, since the base class does not handle gravity. 
-  Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  // Gradient of potential, since the base class does not handle gravity.
+  Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     return v_;
   }
 
-  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t)
+  {
     return Amanzi::AmanziGeometry::Point(d_);
   }
 
@@ -73,4 +82,3 @@ class Analytic02 : public AnalyticBase {
 };
 
 #endif
-

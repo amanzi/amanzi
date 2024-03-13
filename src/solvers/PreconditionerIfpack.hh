@@ -1,13 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-//! Ifpack suite of preconditioners, including block ILU.
 
+//! Ifpack suite of preconditioners, including block ILU.
 /*!
 
 The Ifpack (Incomplete Factorization Package) from Trilinos provides
@@ -31,9 +31,9 @@ Valid methods include:
 Note that all of these can be used without Additive Schwarz by appending
 "stand-alone".
 
-The full list of relevant parameters is somewhat method-dependent, and is documented extensively at
-
-.. url:: https://docs.trilinos.org/dev/packages/ifpack/doc/html/index.html
+The full list of relevant parameters is somewhat method-dependent, and is
+documented extensively in the `Trilinos Documentation
+<https://docs.trilinos.org/dev/packages/ifpack/doc/html/index.html>`_.
 
 Here we document a subset of the most frequently used parameters -- advanced
 users should read the Ifpack User Guide above to see all options.
@@ -69,7 +69,7 @@ users should read the Ifpack User Guide above to see all options.
       perform better for nonsymmetric cases.
     * `"overlap`" ``[int]`` **0** overlap of the Additive Schwarz
     * `"amesos: solver type`" ``[string]`` **Amesos_Klu**
-    
+
 Example:
 
 .. code-block:: xml
@@ -104,20 +104,17 @@ namespace AmanziSolvers {
 
 class PreconditionerIfpack : public Preconditioner {
  public:
-  PreconditionerIfpack() :
-      Preconditioner(),
-      initialized_(false) {};
+  PreconditionerIfpack() : Preconditioner(), initialized_(false){};
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final;
   virtual void InitializeInverse() override final;
   virtual void ComputeInverse() override final;
 
-  virtual int ApplyInverse(const Epetra_Vector& v,
-                             Epetra_Vector& hv) const override final;
+  virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final;
 
   virtual int returned_code() const override final { return returned_code_; }
   virtual std::string returned_code_string() const override final;
-  
+
  private:
   Teuchos::ParameterList plist_;
   Teuchos::RCP<Ifpack_Preconditioner> IfpILU_;
@@ -127,9 +124,8 @@ class PreconditionerIfpack : public Preconditioner {
   mutable int returned_code_;
 };
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
-
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 
 #endif

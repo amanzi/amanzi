@@ -1,12 +1,15 @@
 /*
-  Multiphase PK
-
-  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Multiphase PK
+
 */
 
 #include "GraphFE.hh"
@@ -20,7 +23,7 @@
 namespace Amanzi {
 namespace Operators {
 
-FlattenedTreeOperator::FlattenedTreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) 
+FlattenedTreeOperator::FlattenedTreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs)
 {
   row_map_ = tvs;
   col_map_ = tvs;
@@ -56,7 +59,7 @@ FlattenedTreeOperator::FlattenedTreeOperator(Teuchos::RCP<const TreeVectorSpace>
   }
 
   // resize the blocks
-  blocks_.resize(n_blocks, Teuchos::Array<Teuchos::RCP<TreeOperator> >(n_blocks, Teuchos::null));
+  blocks_.resize(n_blocks, Teuchos::Array<Teuchos::RCP<TreeOperator>>(n_blocks, Teuchos::null));
   row_size_ = n_blocks;
   col_size_ = n_blocks;
 
@@ -64,7 +67,7 @@ FlattenedTreeOperator::FlattenedTreeOperator(Teuchos::RCP<const TreeVectorSpace>
   // second map helps matrix assembly from smaller-size blocks
   row_supermap_ = createSuperMap(*row_map_);
   col_supermap_ = row_supermap_;
-  if (flag) 
+  if (flag)
     smap_flat_ = createSuperMap(*tvs_flat_);
   else
     smap_flat_ = row_supermap_;
@@ -72,9 +75,10 @@ FlattenedTreeOperator::FlattenedTreeOperator(Teuchos::RCP<const TreeVectorSpace>
 
 
 /* ******************************************************************
-* Symbolic assemble global matrix from matrices of block operators. 
+* Symbolic assemble global matrix from matrices of block operators.
 ****************************************************************** */
-void FlattenedTreeOperator::SymbolicAssembleMatrix()
+void
+FlattenedTreeOperator::SymbolicAssembleMatrix()
 {
   int n_blocks = blocks_.size();
 
@@ -101,8 +105,8 @@ void FlattenedTreeOperator::SymbolicAssembleMatrix()
 
   // NOTE: this probably needs to be fixed for differing meshes. -etc
   int row_size = MaxRowSize(*an_op->DomainMap().Mesh(), schema, n_blocks);
-  auto graph = Teuchos::rcp(new GraphFE(smap_flat_->Map(), 
-      smap_flat_->GhostedMap(), smap_flat_->GhostedMap(), row_size));
+  auto graph = Teuchos::rcp(
+    new GraphFE(smap_flat_->Map(), smap_flat_->GhostedMap(), smap_flat_->GhostedMap(), row_size));
 
   // fill the graph
   for (int row = 0; row != n_blocks; ++row) {
@@ -128,7 +132,8 @@ void FlattenedTreeOperator::SymbolicAssembleMatrix()
 /* ******************************************************************
 * Assemble global matrix from elemental matrices of block operators.
 ****************************************************************** */
-void FlattenedTreeOperator::AssembleMatrix()
+void
+FlattenedTreeOperator::AssembleMatrix()
 {
   int n_blocks = blocks_.size();
   Amat_->Zero();
@@ -152,8 +157,10 @@ void FlattenedTreeOperator::AssembleMatrix()
 /* ******************************************************************
 * Calculate Y = A * X using matrix-free matvec on blocks of operators.
 ****************************************************************** */
-void FlattenedTreeOperator::set_operator_block(
-   std::size_t i, std::size_t j, const Teuchos::RCP<Operator>& op)
+void
+FlattenedTreeOperator::set_operator_block(std::size_t i,
+                                          std::size_t j,
+                                          const Teuchos::RCP<Operator>& op)
 {
   auto row_cvs = op->get_row_map();
   auto col_cvs = op->get_col_map();
@@ -178,7 +185,9 @@ void FlattenedTreeOperator::set_operator_block(
 /* ******************************************************************
 * Calculate Y = A * X using matrix-free matvec on blocks of operators.
 ****************************************************************** */
-int FlattenedTreeOperator::Apply(const TreeVector& X, TreeVector& Y) const {
+int
+FlattenedTreeOperator::Apply(const TreeVector& X, TreeVector& Y) const
+{
   return ApplyAssembled(X, Y);
 }
 
@@ -186,13 +195,13 @@ int FlattenedTreeOperator::Apply(const TreeVector& X, TreeVector& Y) const {
 /* ******************************************************************
 * Calculate Y = A * X using matrix-free matvec on blocks of operators.
 ****************************************************************** */
-void FlattenedTreeOperator::AddColoring(Teuchos::ParameterList& plist)
+void
+FlattenedTreeOperator::AddColoring(Teuchos::ParameterList& plist)
 {
   if (plist.isParameter("preconditioning method") &&
       plist.get<std::string>("preconditioning method") == "boomer amg" &&
       plist.isSublist("boomer amg parameters") &&
       plist.sublist("boomer amg parameters").get<bool>("use block indices", false)) {
-
     AMANZI_ASSERT(smap_flat_.get());
 
     if (coloring_ == Teuchos::null || num_colors_ == 0) {
@@ -204,5 +213,5 @@ void FlattenedTreeOperator::AddColoring(Teuchos::ParameterList& plist)
   }
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi

@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   Operations with space-time polynomials of special structure.
 */
@@ -52,7 +54,8 @@ SpaceTimePolynomial::SpaceTimePolynomial(const SpaceTimePolynomial& poly)
 * Re-shape polynomial
 * NOTE: case d > d_ can be treated more intelligently.
 ****************************************************************** */
-void SpaceTimePolynomial::Reshape(int d, int order, bool reset)
+void
+SpaceTimePolynomial::Reshape(int d, int order, bool reset)
 {
   if (d_ != d) {
     d_ = d;
@@ -68,7 +71,7 @@ void SpaceTimePolynomial::Reshape(int d, int order, bool reset)
 
     coefs_.resize(size_);
 
-    if (reset) { 
+    if (reset) {
       Polynomial tmp(d, 0);
       for (int i = 0; i < size_; ++i) coefs_[i] = tmp;
     } else {
@@ -85,7 +88,8 @@ void SpaceTimePolynomial::Reshape(int d, int order, bool reset)
 /* ******************************************************************
 * Implemented ring algebra operations.
 ****************************************************************** */
-SpaceTimePolynomial& SpaceTimePolynomial::operator+=(const SpaceTimePolynomial& poly)
+SpaceTimePolynomial&
+SpaceTimePolynomial::operator+=(const SpaceTimePolynomial& poly)
 {
   AMANZI_ASSERT(d_ == poly.dimension());
 
@@ -97,7 +101,8 @@ SpaceTimePolynomial& SpaceTimePolynomial::operator+=(const SpaceTimePolynomial& 
 }
 
 
-SpaceTimePolynomial& SpaceTimePolynomial::operator-=(const SpaceTimePolynomial& poly)
+SpaceTimePolynomial&
+SpaceTimePolynomial::operator-=(const SpaceTimePolynomial& poly)
 {
   AMANZI_ASSERT(d_ == poly.dimension());
 
@@ -109,7 +114,8 @@ SpaceTimePolynomial& SpaceTimePolynomial::operator-=(const SpaceTimePolynomial& 
 }
 
 
-SpaceTimePolynomial& SpaceTimePolynomial::operator*=(const SpaceTimePolynomial& poly)
+SpaceTimePolynomial&
+SpaceTimePolynomial::operator*=(const SpaceTimePolynomial& poly)
 {
   AMANZI_ASSERT(d_ == poly.dimension());
 
@@ -119,9 +125,7 @@ SpaceTimePolynomial& SpaceTimePolynomial::operator*=(const SpaceTimePolynomial& 
   product.set_origin(poly[0].get_origin());
 
   for (int i = 0; i < size_; ++i) {
-    for (int j = 0; j < poly.size(); ++j) {
-      product[i + j] += coefs_[i] * poly[j];
-    }
+    for (int j = 0; j < poly.size(); ++j) { product[i + j] += coefs_[i] * poly[j]; }
   }
 
   *this = product;
@@ -129,23 +133,26 @@ SpaceTimePolynomial& SpaceTimePolynomial::operator*=(const SpaceTimePolynomial& 
 }
 
 
-SpaceTimePolynomial& SpaceTimePolynomial::operator*=(double val) {
+SpaceTimePolynomial&
+SpaceTimePolynomial::operator*=(double val)
+{
   for (int i = 0; i < size_; ++i) coefs_[i] *= val;
   return *this;
 }
 
 
 /* ******************************************************************
-* Calculate polynomial value at a given point. 
+* Calculate polynomial value at a given point.
 ****************************************************************** */
-double SpaceTimePolynomial::Value(const AmanziGeometry::Point& xp, double t) const
+double
+SpaceTimePolynomial::Value(const AmanziGeometry::Point& xp, double t) const
 {
   double sum(coefs_[0](0)), tmp(t);
   for (int i = 1; i < size_; ++i) {
     sum += coefs_[i].Value(xp) * tmp;
     tmp *= t;
   }
-  
+
   return sum;
 }
 
@@ -153,7 +160,8 @@ double SpaceTimePolynomial::Value(const AmanziGeometry::Point& xp, double t) con
 /* ******************************************************************
 * Calculate polynomial value at a given time point.
 ****************************************************************** */
-Polynomial SpaceTimePolynomial::Value(double t) const
+Polynomial
+SpaceTimePolynomial::Value(double t) const
 {
   double tmp(t);
   auto poly = coefs_[0];
@@ -161,7 +169,7 @@ Polynomial SpaceTimePolynomial::Value(double t) const
   for (int i = 1; i < size_; ++i) {
     poly += coefs_[i] * tmp;
     tmp *= t;
- }
+  }
 
   return poly;
 }
@@ -170,18 +178,15 @@ Polynomial SpaceTimePolynomial::Value(double t) const
 /* ******************************************************************
 * Fancy I/O
 ****************************************************************** */
-std::ostream& operator << (std::ostream& os, const SpaceTimePolynomial& p)
+std::ostream&
+operator<<(std::ostream& os, const SpaceTimePolynomial& p)
 {
   int d = p.dimension();
-  os << "space-time polynomial: order=" << p.order() << " d=" << d
-     << " time_terms=" << p.size() << std::endl;
-  for (int i = 0; i < p.size(); ++i) {
-    os << "t^" << i << " * " << p[i];
-  } 
+  os << "space-time polynomial: order=" << p.order() << " d=" << d << " time_terms=" << p.size()
+     << std::endl;
+  for (int i = 0; i < p.size(); ++i) { os << "t^" << i << " * " << p[i]; }
   return os;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
-
+} // namespace WhetStone
+} // namespace Amanzi

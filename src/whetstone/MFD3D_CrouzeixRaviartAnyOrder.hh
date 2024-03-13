@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   Crouzeix-Raviart element: degrees of freedom are moments on faces
   and inside cell.
@@ -18,7 +20,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "Basis_Regularized.hh"
@@ -35,10 +37,10 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_CrouzeixRaviartAnyOrder : public MFD3D { 
+class MFD3D_CrouzeixRaviartAnyOrder : public MFD3D {
  public:
   MFD3D_CrouzeixRaviartAnyOrder(const Teuchos::ParameterList& plist,
-                                const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
+                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   // required methods
   // -- schema
@@ -49,21 +51,30 @@ class MFD3D_CrouzeixRaviartAnyOrder : public MFD3D {
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // -- l2 projectors
-  virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
+  virtual void L2Cell(int c,
+                      const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
-                      const Polynomial* moments, Polynomial& uc) override {
+                      const Polynomial* moments,
+                      Polynomial& uc) override
+  {
     ProjectorCell_(mesh_, c, ve, vf, ProjectorType::L2, moments, uc);
   }
 
-  void L2GradientCell(int c, const std::vector<VectorPolynomial>& vf,
-                      const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc) {
+  void L2GradientCell(int c,
+                      const std::vector<VectorPolynomial>& vf,
+                      const std::shared_ptr<DenseVector>& moments,
+                      MatrixPolynomial& uc)
+  {
     ProjectorGradientCell_(c, vf, ProjectorType::L2, moments, uc);
   }
 
   // -- h1 projectors
-  virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
+  virtual void H1Cell(int c,
+                      const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
-                      const Polynomial* moments, Polynomial& uc) override {
+                      const Polynomial* moments,
+                      Polynomial& uc) override
+  {
     ProjectorCell_(mesh_, c, ve, vf, ProjectorType::H1, moments, uc);
   }
 
@@ -75,30 +86,36 @@ class MFD3D_CrouzeixRaviartAnyOrder : public MFD3D {
 
  private:
   // generic code for multiple projectors
-  void ProjectorCell_(const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh, 
-                      int c, const std::vector<Polynomial>& ve,
+  void ProjectorCell_(const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
+                      int c,
+                      const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
-                      const ProjectorType type, 
-                      const Polynomial* moments, Polynomial& uc);
+                      const ProjectorType type,
+                      const Polynomial* moments,
+                      Polynomial& uc);
 
-  void ProjectorGradientCell_(int c, const std::vector<VectorPolynomial>& vf,
-                              const ProjectorType type, 
-                              const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc);
+  void ProjectorGradientCell_(int c,
+                              const std::vector<VectorPolynomial>& vf,
+                              const ProjectorType type,
+                              const std::shared_ptr<DenseVector>& moments,
+                              MatrixPolynomial& uc);
 
   // supporting routines
-  void CalculateFaceDOFs_(int f, const Polynomial& vf, const Polynomial& pf,
-                          DenseVector& vdof, int& row);
+  void CalculateFaceDOFs_(int f,
+                          const Polynomial& vf,
+                          const Polynomial& pf,
+                          DenseVector& vdof,
+                          int& row);
 
  protected:
   PolynomialOnMesh integrals_;
   DenseMatrix R_, G_;
 
  private:
-  static RegisteredFactory<MFD3D_CrouzeixRaviartAnyOrder> factory_;
+  static RegisteredFactory<MFD3D_CrouzeixRaviartAnyOrder> reg_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

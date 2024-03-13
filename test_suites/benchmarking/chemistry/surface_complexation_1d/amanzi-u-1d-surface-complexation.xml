@@ -1,4 +1,4 @@
-<amanzi_input version="2.3.0" type="unstructured">
+<amanzi_input version="1.5-dev" type="unstructured">
   <model_description name="1D Flow and Transport w/ ion exchange">
     <units>
       <length_unit>m</length_unit>
@@ -134,6 +134,7 @@
     <material name="soil">
       <mechanical_properties>
         <porosity value="0.25"/>
+        <specific_storage value="0.0" model="constant"/>
       </mechanical_properties>
       <permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"/>
       <assigned_regions>All</assigned_regions>

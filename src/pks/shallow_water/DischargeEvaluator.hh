@@ -1,12 +1,15 @@
 /*
-  Shallow Water PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Shallow Water PK
+
 */
 
 #ifndef AMANZI_DISCHARGE_EVALUATOR_HH_
@@ -24,7 +27,8 @@
 namespace Amanzi {
 namespace ShallowWater {
 
-class DischargeEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class DischargeEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   DischargeEvaluator(Teuchos::ParameterList& plist);
 
@@ -33,15 +37,16 @@ class DischargeEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Co
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
   std::string velocity_key_, primary_variable_key_;
 };
 
-}  // namespace ShallowWater
-}  // namespace Amanzi
+} // namespace ShallowWater
+} // namespace Amanzi
 
 #endif
-

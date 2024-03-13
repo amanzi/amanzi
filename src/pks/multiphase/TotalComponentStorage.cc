@@ -1,12 +1,14 @@
 /*
-  Multiphase PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  Multiphase PK
 
   Field evaluator for a total component stirage (water, hydrogen,
   etc) storage, the conserved quantity:
@@ -24,8 +26,8 @@ namespace Multiphase {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-TotalComponentStorage::TotalComponentStorage(Teuchos::ParameterList& plist) :
-    MultiphaseBaseEvaluator(plist)
+TotalComponentStorage::TotalComponentStorage(Teuchos::ParameterList& plist)
+  : MultiphaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -50,11 +52,13 @@ TotalComponentStorage::TotalComponentStorage(Teuchos::ParameterList& plist) :
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-TotalComponentStorage::TotalComponentStorage(const TotalComponentStorage& other) :
-    MultiphaseBaseEvaluator(other) {};
+TotalComponentStorage::TotalComponentStorage(const TotalComponentStorage& other)
+  : MultiphaseEvaluator(other){};
 
 
-Teuchos::RCP<Evaluator> TotalComponentStorage::Clone() const {
+Teuchos::RCP<Evaluator>
+TotalComponentStorage::Clone() const
+{
   return Teuchos::rcp(new TotalComponentStorage(*this));
 }
 
@@ -62,8 +66,8 @@ Teuchos::RCP<Evaluator> TotalComponentStorage::Clone() const {
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void TotalComponentStorage::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+TotalComponentStorage::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
@@ -86,9 +90,11 @@ void TotalComponentStorage::Evaluate_(
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void TotalComponentStorage::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+TotalComponentStorage::EvaluatePartialDerivative_(const State& S,
+                                                  const Key& wrt_key,
+                                                  const Tag& wrt_tag,
+                                                  const std::vector<CompositeVector*>& results)
 {
   const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
@@ -104,34 +110,24 @@ void TotalComponentStorage::EvaluatePartialDerivative_(
     for (int c = 0; c != ncells; ++c) {
       result_c[0][c] = sl[0][c] * nl[0][c] * xl[0][c] + (1.0 - sl[0][c]) * ng[0][c] * xg[n_][c];
     }
-  }
-  else if (wrt_key == saturation_liquid_key_) {
+  } else if (wrt_key == saturation_liquid_key_) {
     for (int c = 0; c != ncells; ++c) {
       result_c[0][c] = phi[0][c] * (nl[0][c] * xl[0][c] - ng[0][c] * xg[n_][c]);
     }
   }
 
   else if (wrt_key == mol_density_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = phi[0][c] * sl[0][c] * xl[0][c];
-    }
+    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * sl[0][c] * xl[0][c]; }
   } else if (wrt_key == mol_density_gas_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]) * xg[n_][c];
-    }
+    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]) * xg[n_][c]; }
   }
 
   else if (wrt_key == x_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = phi[0][c] * sl[0][c] * nl[0][c];
-    }
-  }
-  else if (wrt_key == x_gas_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]) * ng[0][c];
-    }
+    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * sl[0][c] * nl[0][c]; }
+  } else if (wrt_key == x_gas_key_) {
+    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]) * ng[0][c]; }
   }
 }
 
-}  // namespace Multiphase
-}  // namespace Amanzi
+} // namespace Multiphase
+} // namespace Amanzi

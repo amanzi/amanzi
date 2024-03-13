@@ -1,12 +1,14 @@
 /*
-  This is the mpc_pk component of the Amanzi code. 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Daniil Svyatskiy
+*/
+
+/*
+  This is the mpc_pk component of the Amanzi code.
 
   Process kernel for coupling of Transport PK and Chemistry PK.
 */
@@ -21,8 +23,8 @@ namespace Amanzi {
 ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
                                            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                                            const Teuchos::RCP<State>& S,
-                                           const Teuchos::RCP<TreeVector>& soln) :
-  Amanzi::PK_MPCAdditive<PK>(pk_tree, global_list, S, soln)
+                                           const Teuchos::RCP<TreeVector>& soln)
+  : Amanzi::PK_MPCAdditive<PK>(pk_tree, global_list, S, soln)
 {
   storage_created = false;
   chem_step_succeeded = true;
@@ -42,15 +44,16 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
 
 
 // -----------------------------------------------------------------------------
-// 
+//
 // -----------------------------------------------------------------------------
-void ReactiveTransport_PK::Initialize()
+void
+ReactiveTransport_PK::Initialize()
 {
   Amanzi::PK_MPCAdditive<PK>::Initialize();
 
   if (S_->HasRecord("total_component_concentration")) {
     total_component_concentration_stor = Teuchos::rcp(new Epetra_MultiVector(
-        *S_->Get<CompositeVector>("total_component_concentration").ViewComponent("cell", true)));
+      *S_->Get<CompositeVector>("total_component_concentration").ViewComponent("cell", true)));
     storage_created = true;
   }
 }
@@ -59,31 +62,31 @@ void ReactiveTransport_PK::Initialize()
 // -----------------------------------------------------------------------------
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
-double ReactiveTransport_PK::get_dt()
+double
+ReactiveTransport_PK::get_dt()
 {
   dTtran_ = transport_pk_->get_dt();
   dTchem_ = chemistry_pk_->get_dt();
 
-  if (!chem_step_succeeded && (dTchem_/dTtran_ > 0.99)) {
-     dTchem_ *= 0.5;
-  } 
+  if (!chem_step_succeeded && (dTchem_ / dTtran_ > 0.99)) { dTchem_ *= 0.5; }
 
-  if (dTtran_ > dTchem_) dTtran_= dTchem_; 
-  
+  if (dTtran_ > dTchem_) dTtran_ = dTchem_;
+
   return dTchem_;
 }
 
 
 // -----------------------------------------------------------------------------
-// 
+//
 // -----------------------------------------------------------------------------
-void ReactiveTransport_PK::set_dt(double dt)
+void
+ReactiveTransport_PK::set_dt(double dt)
 {
   dTtran_ = dt;
   dTchem_ = dt;
   //dTchem_ = chemistry_pk_->get_dt();
   //if (dTchem_ > dTtran_) dTchem_ = dTtran_;
-  //if (dTtran_ > dTchem_) dTtran_= dTchem_; 
+  //if (dTtran_ > dTchem_) dTtran_= dTchem_;
   chemistry_pk_->set_dt(dTchem_);
   transport_pk_->set_dt(dTtran_);
 }
@@ -92,7 +95,9 @@ void ReactiveTransport_PK::set_dt(double dt)
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
-bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
+bool
+ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+{
   bool fail = false;
   chem_step_succeeded = false;
 
@@ -101,7 +106,8 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
 
   // Right now transport step is always succeeded.
   if (!pk_fail) {
-    *total_component_concentration_stor = *transport_pk_->total_component_concentration()->ViewComponent("cell", true);
+    *total_component_concentration_stor =
+      *transport_pk_->total_component_concentration()->ViewComponent("cell", true);
   } else {
     Errors::Message message("MPC: Transport PK returned an unexpected error.");
     Exceptions::amanzi_throw(message);
@@ -113,24 +119,24 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
 
     pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
     chem_step_succeeded = true;
- 
+
     *S_->GetW<CompositeVector>("total_component_concentration", "state")
-      .ViewComponent("cell", true) = *chemistry_pk_->aqueous_components();
-  }
-  catch (const Errors::Message& chem_error) {
+       .ViewComponent("cell", true) = *chemistry_pk_->aqueous_components();
+  } catch (const Errors::Message& chem_error) {
     fail = true;
   }
-    
+
   return fail;
 };
 
 
 // -----------------------------------------------------------------------------
-// 
+//
 // -----------------------------------------------------------------------------
-void ReactiveTransport_PK::CommitStep(double t_old, double t_new, const Tag& tag) {
+void
+ReactiveTransport_PK::CommitStep(double t_old, double t_new, const Tag& tag)
+{
   chemistry_pk_->CommitStep(t_old, t_new, tag);
 }
 
-}  // namespace Amanzi
-
+} // namespace Amanzi

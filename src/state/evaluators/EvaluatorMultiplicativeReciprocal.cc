@@ -1,14 +1,16 @@
 /*
-  Multiphase PK 
-
-  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
 
-  Secondary variable field evaluator computes product of fields 
+/*
+  Multiphase PK
+
+  Secondary variable field evaluator computes product of fields
   or inverse of fields:
 
     eval = (f1 * f2 * ... * fn) / (g1 * g2 * ... * gm)
@@ -36,14 +38,14 @@ EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::Pa
 
   if (plist_.isParameter("evaluator dependencies")) {
     Errors::Message msg;
-    msg << "EvaluatorMultiplicativeReciprocal: \"" << my_keys_[0].first 
+    msg << "EvaluatorMultiplicativeReciprocal: \"" << my_keys_[0].first
         << "\" must have separate (optional) lists for multiplicative and reciprocal dependencies.";
     Exceptions::amanzi_throw(msg);
   }
 
   if (plist_.isParameter("multiplicative dependencies")) {
     // since dependensies is a map, we need separate maps for numerator and denominator
-    const auto& names = plist_.get<Teuchos::Array<std::string> >("multiplicative dependencies");
+    const auto& names = plist_.get<Teuchos::Array<std::string>>("multiplicative dependencies");
     for (const auto& name : names) {
       Key full_name = Keys::getKey(domain, name);
       dependencies_.insert(std::make_pair(full_name, Tags::DEFAULT));
@@ -52,7 +54,7 @@ EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::Pa
   }
 
   if (plist_.isParameter("reciprocal dependencies")) {
-    const auto& names = plist_.get<Teuchos::Array<std::string> >("reciprocal dependencies");
+    const auto& names = plist_.get<Teuchos::Array<std::string>>("reciprocal dependencies");
     for (const auto& name : names) {
       Key full_name = Keys::getKey(domain, name);
       dependencies_.insert(std::make_pair(full_name, Tags::DEFAULT));
@@ -62,7 +64,8 @@ EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::Pa
 
   if (list0_.size() + list1_.size() == 0) {
     Errors::Message msg;
-    msg << "EvaluatorMultiplicativeReciprocal for: \"" << my_keys_[0].first << "\" has no dependencies.";
+    msg << "EvaluatorMultiplicativeReciprocal for: \"" << my_keys_[0].first
+        << "\" has no dependencies.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -71,14 +74,17 @@ EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::Pa
 }
 
 
-EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(const EvaluatorMultiplicativeReciprocal& other)
-  : EvaluatorSecondaryMonotype(other) {};
+EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(
+  const EvaluatorMultiplicativeReciprocal& other)
+  : EvaluatorSecondaryMonotype(other){};
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<Evaluator> EvaluatorMultiplicativeReciprocal::Clone() const {
+Teuchos::RCP<Evaluator>
+EvaluatorMultiplicativeReciprocal::Clone() const
+{
   return Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(*this));
 }
 
@@ -86,8 +92,9 @@ Teuchos::RCP<Evaluator> EvaluatorMultiplicativeReciprocal::Clone() const {
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void EvaluatorMultiplicativeReciprocal::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results) 
+void
+EvaluatorMultiplicativeReciprocal::Evaluate_(const State& S,
+                                             const std::vector<CompositeVector*>& results)
 {
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
     auto& result_c = *results[0]->ViewComponent(*comp);
@@ -106,9 +113,7 @@ void EvaluatorMultiplicativeReciprocal::Evaluate_(
     }
 
     if (enforce_positivity_) {
-      for (int c = 0; c != ndofs; ++c) {
-        result_c[0][c] = std::max(result_c[0][c], 0.0);
-      }
+      for (int c = 0; c != ndofs; ++c) { result_c[0][c] = std::max(result_c[0][c], 0.0); }
     }
   }
 }
@@ -117,9 +122,12 @@ void EvaluatorMultiplicativeReciprocal::Evaluate_(
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void EvaluatorMultiplicativeReciprocal::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results) 
+void
+EvaluatorMultiplicativeReciprocal::EvaluatePartialDerivative_(
+  const State& S,
+  const Key& wrt_key,
+  const Tag& wrt_tag,
+  const std::vector<CompositeVector*>& results)
 {
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
     auto& result_c = *results[0]->ViewComponent(*comp);
@@ -136,10 +144,37 @@ void EvaluatorMultiplicativeReciprocal::EvaluatePartialDerivative_(
       const auto& factor_c = *S.Get<CompositeVector>(*it, Tags::DEFAULT).ViewComponent(*comp);
       if (*it == wrt_key)
         for (int c = 0; c != ncells; ++c) result_c[0][c] /= -factor_c[0][c] * factor_c[0][c];
-      else 
+      else
         for (int c = 0; c != ncells; ++c) result_c[0][c] /= factor_c[0][c];
     }
   }
 }
 
-}  // namespace Amanzi
+
+/* ******************************************************************
+* Units are calculated if field has none. Otherwise, units are compared.
+****************************************************************** */
+void
+EvaluatorMultiplicativeReciprocal::EnsureCompatibility_Units_(State& S)
+{
+  std::string data("-");
+  Utils::Units system;
+  auto& r = S.GetRecordSetW(my_keys_[0].first);
+
+  for (auto it = list0_.begin(); it != list0_.end(); ++it) {
+    auto tmp = S.GetRecordSet(*it).units();
+    data = system.MultiplyUnits(data, tmp);
+  }
+  for (auto it = list1_.begin(); it != list1_.end(); ++it) {
+    auto tmp = S.GetRecordSet(*it).units();
+    data = system.DivideUnits(data, tmp);
+  }
+
+  auto tmp = r.units();
+  if (tmp != "")
+    AMANZI_ASSERT(system.CompareUnits(tmp, data));
+  else
+    r.set_units(data);
+}
+
+} // namespace Amanzi

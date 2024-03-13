@@ -1,10 +1,14 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
+  Chemistry
 
   Class for Langmuir isotherm
 */
@@ -23,7 +27,7 @@ class SorptionIsothermLangmuir : public SorptionIsotherm {
  public:
   SorptionIsothermLangmuir();
   SorptionIsothermLangmuir(double K, double b);
-  ~SorptionIsothermLangmuir() {};
+  ~SorptionIsothermLangmuir(){};
 
   void Init(double K, double b);
 
@@ -37,12 +41,12 @@ class SorptionIsothermLangmuir : public SorptionIsotherm {
 
  private:
   // equilibrium constant or Langmuir adsorption constant [L water/mol]
-  double K_; 
+  double K_;
   // number of sorption sites (max sorbed concentration) [mol/m^3 bulk]
   double b_;
   std::vector<double> params_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

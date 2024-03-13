@@ -1,10 +1,14 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
+  Chemistry
 
   Base class for sorption isotherms
 */
@@ -24,8 +28,9 @@ class SorptionIsotherm {
   enum SorptionIsothermType { FREUNDLICH, LANGMUIR, LINEAR };
 
   SorptionIsotherm(const std::string& name, const SorptionIsothermType type);
-  virtual ~SorptionIsotherm() {};
+  virtual ~SorptionIsotherm(){};
 
+  // returns sorbed concentration
   virtual double Evaluate(const Species& primary_species) = 0;
   virtual double EvaluateDerivative(const Species& primary_species) = 0;
 
@@ -42,6 +47,6 @@ class SorptionIsotherm {
   SorptionIsothermType isotherm_type_;
 };
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif

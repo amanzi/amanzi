@@ -1,12 +1,14 @@
 /*
-  Energy
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  Energy
 
   The internal energy model (IEM) evaluator simply calls the
   IEM with the correct arguments.
@@ -26,14 +28,13 @@
 namespace Amanzi {
 namespace Energy {
 
-typedef std::vector<Teuchos::RCP<IEM> > IEMList;
+typedef std::vector<Teuchos::RCP<IEM>> IEMList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, IEMList> IEMPartition;
 
 class IEMEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   // constructor format for all derived classes
-  explicit
-  IEMEvaluator(Teuchos::ParameterList& plist);
+  explicit IEMEvaluator(Teuchos::ParameterList& plist);
   IEMEvaluator(const IEMEvaluator& other);
 
   // required inteface functions
@@ -41,8 +42,12 @@ class IEMEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Composit
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
+
+  virtual void EnsureCompatibility_Units_(State& S) override;
 
   Teuchos::RCP<IEMPartition> iem_partition() { return iem_; }
 
@@ -66,10 +71,10 @@ class IEMEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Composit
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  static Utils::RegisteredFactory<Evaluator, IEMEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, IEMEvaluator> reg_;
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi
 
 #endif

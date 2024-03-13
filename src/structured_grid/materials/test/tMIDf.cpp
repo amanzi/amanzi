@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -222,7 +231,7 @@ main (int   argc,
   ParmParse pp;
 
   int nLevs = 3;
-  Array<int> n_cells(BL_SPACEDIM); 
+  Array<int> n_cells(BL_SPACEDIM);
   n_cells[0] = 40; n_cells[1] = 24;
 
   Array<int> rRatio(nLevs-1,4);
@@ -287,7 +296,7 @@ main (int   argc,
           {
             maxVal = std::max(maxVal,fab.max(isects[ii].second,0));
           }
-        }        
+        }
         ParallelDescriptor::ReduceIntMax(maxVal);
         fail = (maxVal>-1);
       }
@@ -301,7 +310,7 @@ main (int   argc,
         if (val>0) {
           bins[val]++;
         }
-      }    
+      }
     }
   }
 

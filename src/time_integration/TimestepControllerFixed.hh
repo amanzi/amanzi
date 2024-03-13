@@ -1,15 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
 */
 
-
-//!  Timestep controller providing constant timestep size.
-
+//! Timestep controller providing constant timestep size.
 /*!
 
 ``TimestepControllerFixed`` is a simple timestep control mechanism which sets
@@ -33,13 +31,13 @@ No parameters are required.
 namespace Amanzi {
 
 class TimestepControllerFixed : public TimestepController {
-
  public:
-  TimestepControllerFixed(Teuchos::ParameterList& plist)
-    : TimestepController(plist), plist_(plist) {}
+  TimestepControllerFixed(Teuchos::ParameterList& plist) : TimestepController(plist), plist_(plist)
+  {}
 
   // single method for timestep control
-  double get_timestep(double dt, int iterations) {
+  double get_timestep(double dt, int iterations)
+  {
     if (iterations < 0) {
       Errors::TimeStepCrash msg("Timestep failed: fixed time step size failed.");
       Exceptions::amanzi_throw(msg);

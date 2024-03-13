@@ -1,16 +1,18 @@
 /*
-  EOS
-   
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  EOS
 
   EOS for a combination of air and vapor pressure. Mass density is not
-  available, not because it can't be calculated, but because it depends 
-  upon omega. It's not really needed, and if it were, would not fit the 
+  available, not because it can't be calculated, but because it depends
+  upon omega. It's not really needed, and if it were, would not fit the
   EOS interface without serious work.
 */
 
@@ -32,9 +34,21 @@ class VaporInGas_Density : public EOS_Density {
  public:
   VaporInGas_Density(Teuchos::ParameterList& eos_plist);
 
-  double Density(double T, double p) { AMANZI_ASSERT(0); return 0.0; }
-  double DDensityDT(double T, double p)  { AMANZI_ASSERT(0); return 0.0; }
-  double DDensityDp(double T, double p)  { AMANZI_ASSERT(0); return 0.0; }
+  double Density(double T, double p)
+  {
+    AMANZI_ASSERT(0);
+    return 0.0;
+  }
+  double DDensityDT(double T, double p)
+  {
+    AMANZI_ASSERT(0);
+    return 0.0;
+  }
+  double DDensityDp(double T, double p)
+  {
+    AMANZI_ASSERT(0);
+    return 0.0;
+  }
 
   double MolarDensity(double T, double p) { return gas_eos_->MolarDensity(T, p); }
   double DMolarDensityDT(double T, double p) { return gas_eos_->DMolarDensityDT(T, p); }
@@ -47,10 +61,10 @@ class VaporInGas_Density : public EOS_Density {
   Teuchos::RCP<EOS_Density> gas_eos_;
 
  private:
-  static Utils::RegisteredFactory<EOS_Density, VaporInGas_Density> factory_;
+  static Utils::RegisteredFactory<EOS_Density, VaporInGas_Density> reg_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

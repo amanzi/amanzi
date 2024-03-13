@@ -1,10 +1,14 @@
 /*
-  Shallow Water PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
+  Shallow Water PK
 
   Rusanov model for numerical flux.
 */
@@ -27,11 +31,12 @@ class NumericalFlux_Rusanov : public NumericalFlux {
   virtual std::vector<double> Compute(
           const std::vector<double>& UL, const std::vector<double>& UR, const double & HPFL, const double & HPFR);
 
+
  private:
-  static Utils::RegisteredFactory<NumericalFlux, NumericalFlux_Rusanov> factory_;
+  static Utils::RegisteredFactory<NumericalFlux, NumericalFlux_Rusanov> reg_;
 };
 
-}  // namespace ShallowWater
-}  // namespace Amanzi
- 
+} // namespace ShallowWater
+} // namespace Amanzi
+
 #endif

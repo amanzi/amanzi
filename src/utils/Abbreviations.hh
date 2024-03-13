@@ -1,11 +1,10 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
-   Amanzi is released under the three-clause BSD License.
-   The terms of use and "as is" disclaimer for this license are
-   provided in the top-level COPYRIGHT file.
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-   Author: Ethan Coon
+  Authors: Ethan Coon
 */
 
 /*
@@ -23,7 +22,7 @@ namespace Amanzi {
 namespace Keys {
 
 // note, this is a vector and not a map to keep the order as provided here
-static std::vector<std::pair<std::string, std::string> > abbreviations = {
+static std::vector<std::pair<std::string, std::string>> abbreviations = {
   { "surface_star", "ss" },
   { "surface_column", "surf_col" },
   { "column", "col" },

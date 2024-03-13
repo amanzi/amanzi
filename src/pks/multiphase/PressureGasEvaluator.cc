@@ -1,13 +1,16 @@
 /*
-  MultiPhase PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Quan Bui (mquanbui@math.umd.edu)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  MultiPhase PK
+
 */
 
 #include "errors.hh"
@@ -22,10 +25,9 @@ namespace Multiphase {
 /* ******************************************************************
 * Simple constructor
 ****************************************************************** */
-PressureGasEvaluator::PressureGasEvaluator(
-    Teuchos::ParameterList& plist, Teuchos::RCP<WRMmpPartition> wrm)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
-      wrm_(wrm)
+PressureGasEvaluator::PressureGasEvaluator(Teuchos::ParameterList& plist,
+                                           Teuchos::RCP<WRMmpPartition> wrm)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), wrm_(wrm)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -41,7 +43,9 @@ PressureGasEvaluator::PressureGasEvaluator(
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<Evaluator> PressureGasEvaluator::Clone() const {
+Teuchos::RCP<Evaluator>
+PressureGasEvaluator::Clone() const
+{
   return Teuchos::rcp(new PressureGasEvaluator(*this));
 }
 
@@ -49,8 +53,8 @@ Teuchos::RCP<Evaluator> PressureGasEvaluator::Clone() const {
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void PressureGasEvaluator::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+PressureGasEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& p_c = *S.Get<CompositeVector>(pressure_liquid_key_).ViewComponent("cell");
   const auto& sat_c = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
@@ -66,18 +70,18 @@ void PressureGasEvaluator::Evaluate_(
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void PressureGasEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+PressureGasEvaluator::EvaluatePartialDerivative_(const State& S,
+                                                 const Key& wrt_key,
+                                                 const Tag& wrt_tag,
+                                                 const std::vector<CompositeVector*>& results)
 {
   const auto& sat_c = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
   if (wrt_key == pressure_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = 1.0;
-    }
+    for (int c = 0; c != ncells; ++c) { result_c[0][c] = 1.0; }
   } else if (wrt_key == saturation_liquid_key_) {
     for (int c = 0; c != ncells; ++c) {
       result_c[0][c] = wrm_->second[(*wrm_->first)[c]]->dPc_dS(sat_c[0][c]);
@@ -85,6 +89,5 @@ void PressureGasEvaluator::EvaluatePartialDerivative_(
   }
 }
 
-}  // namespace Multiphase
-}  // namespace Amanzi
-
+} // namespace Multiphase
+} // namespace Amanzi

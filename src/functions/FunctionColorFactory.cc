@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -11,7 +20,7 @@
 namespace Amanzi {
 
 std::unique_ptr<FunctionColor>
-FunctionColorFactory::Create(std::string &filename, const Comm_type &comm) const
+FunctionColorFactory::Create(std::string& filename, const Comm_type& comm) const
 {
   int error;
   std::unique_ptr<FunctionColor> f;
@@ -66,15 +75,15 @@ FunctionColorFactory::Create(std::string &filename, const Comm_type &comm) const
   // Broadcast gridtype; this is painful.
   int n = gridtype.size();
   comm.Broadcast(&n, 1, 0);
-  char *data = new char[n];
+  char* data = new char[n];
   if (comm.MyPID() == 0) gridtype.copy(data, n);
-  comm.Broadcast(data, (int) n, 0);
+  comm.Broadcast(data, (int)n, 0);
   if (comm.MyPID() != 0) gridtype.assign(data, n);
-  delete [] data;
+  delete[] data;
 
   // Proceed with the rest of the file based on the value of gridtype.
   if (gridtype == "1DCoRectMesh" || gridtype == "2DCoRectMesh" || gridtype == "3DCoRectMesh") {
-    std::stringstream ss(gridtype.substr(0,1));
+    std::stringstream ss(gridtype.substr(0, 1));
     int dim;
     ss >> dim;
     f = create_grid_color_function(dim, infile, comm);
@@ -90,7 +99,9 @@ FunctionColorFactory::Create(std::string &filename, const Comm_type &comm) const
 }
 
 std::unique_ptr<FunctionColor>
-FunctionColorFactory::create_grid_color_function(int dim, std::fstream &infile, const Comm_type& comm) const
+FunctionColorFactory::create_grid_color_function(int dim,
+                                                 std::fstream& infile,
+                                                 const Comm_type& comm) const
 {
   int error;
 
@@ -223,7 +234,7 @@ FunctionColorFactory::create_grid_color_function(int dim, std::fstream &infile, 
   if (comm.MyPID() == 0) {
     for (int i = 0; i < n; ++i) {
       infile >> array[i];
-      if (i == n-1) { // okay to see an EOF on the last value
+      if (i == n - 1) { // okay to see an EOF on the last value
         if ((error = infile.fail())) break;
       } else {
         if ((error = !infile.good())) break;

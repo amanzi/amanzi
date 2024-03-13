@@ -1,9 +1,14 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Ethan Coon
+*/
+
 /* -------------------------------------------------------------------------
    ATS
-
-   License: see $ATS_DIR/COPYRIGHT
-   Author: Ethan Coon
 
    Space for a TreeVector on an Amanzi mesh.
    ------------------------------------------------------------------------- */
@@ -13,7 +18,6 @@
 
 #include <vector>
 #include "Teuchos_RCP.hpp"
-#include "Iterators.hh"
 #include "Mesh.hh"
 
 namespace Amanzi {
@@ -23,11 +27,11 @@ class CompositeVectorSpace;
 class TreeVectorSpace {
  public:
   // Constructor
-  TreeVectorSpace() : comm_(Amanzi::getDefaultComm()) {};
-  TreeVectorSpace(const Comm_ptr_type& comm) : comm_(comm) {};
-  TreeVectorSpace(const Teuchos::RCP<const CompositeVectorSpace>& cvfac) :
-      data_(cvfac),
-      comm_(cvfac->Comm()) {}
+  TreeVectorSpace() : comm_(Amanzi::getDefaultComm()){};
+  TreeVectorSpace(const Comm_ptr_type& comm) : comm_(comm){};
+  TreeVectorSpace(const Teuchos::RCP<const CompositeVectorSpace>& cvfac)
+    : data_(cvfac), comm_(cvfac->Comm())
+  {}
   TreeVectorSpace(const TreeVectorSpace& other);
 
   // Comparators
@@ -42,12 +46,19 @@ class TreeVectorSpace {
   Comm_ptr_type Comm() const { return comm_; }
 
   // Access to SubVectors
-  typedef std::vector<Teuchos::RCP<TreeVectorSpace> > SubVectorsContainer;
-  typedef Utils::iterator<SubVectorsContainer, TreeVectorSpace> iterator;
-  typedef Utils::const_iterator<SubVectorsContainer, const TreeVectorSpace> const_iterator;
+  using iterator = std::vector<Teuchos::RCP<TreeVectorSpace>>::iterator;
+  using const_iterator = Teuchos::RCP<const TreeVectorSpace> const* const;
 
-  const_iterator begin() const { return const_iterator(subvecs_.begin()); }
-  const_iterator end() const { return const_iterator(subvecs_.end()); }
+  // this is a very poor-man's hacky replacement for an iterator_adaptor
+  // which aims to make const_iterators iterate over pointers to const objects.
+  const_iterator begin() const
+  {
+    return reinterpret_cast<const Teuchos::RCP<const TreeVectorSpace>*>(&*subvecs_.begin());
+  }
+  const_iterator end() const
+  {
+    return reinterpret_cast<const Teuchos::RCP<const TreeVectorSpace>*>(&*subvecs_.end());
+  }
 
   iterator begin() { return iterator(subvecs_.begin()); }
   iterator end() { return iterator(subvecs_.end()); }
@@ -68,14 +79,15 @@ class TreeVectorSpace {
 
  private:
   Teuchos::RCP<const CompositeVectorSpace> data_;
-  std::vector<Teuchos::RCP<TreeVectorSpace> > subvecs_;
+  std::vector<Teuchos::RCP<TreeVectorSpace>> subvecs_;
   Comm_ptr_type comm_;
 };
 
 
 // non-member functions
-inline
-Teuchos::RCP<TreeVectorSpace> CreateTVSwithOneLeaf(const CompositeVectorSpace& cvs) {
+inline Teuchos::RCP<TreeVectorSpace>
+CreateTVSwithOneLeaf(const CompositeVectorSpace& cvs)
+{
   auto tvs = Teuchos::rcp(new TreeVectorSpace());
   tvs->SetData(Teuchos::rcpFromRef(cvs));
   return tvs;

@@ -1,18 +1,20 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   Derham complex: mimetic inner products for nodal DOFs.
 */
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 
 #include "DeRham_Node.hh"
 #include "WhetStoneDefs.hh"
@@ -24,30 +26,28 @@ namespace WhetStone {
 * Efficient implementation is possible in 2D. Hence, we fork the code.
 * Non-symmetric tensor is not yet used.
 ****************************************************************** */
-int DeRham_Node::L2consistency(int c, const Tensor& T,
-                               DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
+int
+DeRham_Node::L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc)
 {
-  Entity_ID_List nodes, face_nodes;
-
-  mesh_->cell_get_nodes(c, &nodes);
+  auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 
   N.Reshape(nnodes, 1);
   Mc.Reshape(nnodes, nnodes);
 
-  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
-  double volume = mesh_->cell_volume(c);
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  double volume = mesh_->getCellVolume(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
   // to calculate matrix R, we use temporary matrix N
   N.PutScalar(0.0);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
     double tmp = (xf - xc) * normal;
 
@@ -59,17 +59,13 @@ int DeRham_Node::L2consistency(int c, const Tensor& T,
   }
 
   // calculate upper part of R T R^T / volume
-  for (int i = 0; i < nnodes; i++) { 
+  for (int i = 0; i < nnodes; i++) {
     double a = N(i, 0) * T(0, 0) / volume;
-    for (int j = i; j < nnodes; j++) {
-      Mc(i, j) = a * N(j, 0);
-    }
+    for (int j = i; j < nnodes; j++) { Mc(i, j) = a * N(j, 0); }
   }
 
   // populate matrix N
-  for (int i = 0; i < nnodes; i++) {
-    N(i, 0) = 1.0;
-  }
+  for (int i = 0; i < nnodes; i++) { N(i, 0) = 1.0; }
 
   return 0;
 }
@@ -78,11 +74,12 @@ int DeRham_Node::L2consistency(int c, const Tensor& T,
 /* ******************************************************************
 * Mass matrix: adding stability matrix to the consistency matrix.
 ****************************************************************** */
-int DeRham_Node::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
+int
+DeRham_Node::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
 {
   DenseMatrix N;
 
-  int ok = L2consistency(c, T, N, M, true);
+  int ok = L2consistency(c, T, N, M);
   if (ok) return ok;
 
   // StabilityScalar_(N, M);
@@ -90,6 +87,5 @@ int DeRham_Node::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
   return 0;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
-
+} // namespace WhetStone
+} // namespace Amanzi

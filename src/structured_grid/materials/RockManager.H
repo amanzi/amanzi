@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _RockManager_H_
 #define _RockManager_H_
 
@@ -22,7 +31,7 @@
   object requires a description of the computational domain (including AMR refinement
   layout, and a description of the regions that define material boundaries (via
   a RegionManager object). In the constructor, "materials" are defined over subsets of
-  the regions, via domain-specific parameterizations documented elsewhere.  The 
+  the regions, via domain-specific parameterizations documented elsewhere.  The
   parameters of each thusly-defined property are available via the "GetProperty"
   memebers.  The set of derived properties (ones that require additonal data for
   evaluation) currently include:
@@ -40,7 +49,7 @@
   to be filled.
 
   Also, the class returns the material ID in structures associated with the AMR
-  hierarchy.  The intention is that the work to assign a material index to a large 
+  hierarchy.  The intention is that the work to assign a material index to a large
   set of cells can be done infrequently and reused.  It also provides a mechanism for
   use of this structure in multi-language (e.g. C++/Fortran) situations.
  */
@@ -50,7 +59,7 @@ class RockManager
 public:
   typedef std::map<std::string,Real> ICParmPair; // ic parameter and value
   typedef std::map<std::string, ICParmPair > ICLabelParmPair; // ic parameter and value associated with a labeled entity
-  typedef std::map<std::string, ICLabelParmPair> ChemICMap; // 
+  typedef std::map<std::string, ICLabelParmPair> ChemICMap; //
   typedef std::map<std::string, std::map<std::string,int> > LabelIdx;
 
   RockManager(const RegionManager*      _region_manager,
@@ -208,11 +217,11 @@ protected:
   int rock_mgr_ID;
 
   // Minerals/chemistry
-  int nminerals; 
+  int nminerals;
   Array<std::string> minerals;
-  int nsorption_sites; 
+  int nsorption_sites;
   Array<std::string> sorption_sites;
-  int ncation_exchange; 
+  int ncation_exchange;
   int nsorption_isotherms;
   std::map<std::string,int> aux_chem_variables;
   bool using_sorption;

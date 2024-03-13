@@ -1,10 +1,15 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
+  Chemistry
+
 */
 
 #include <cstdlib>
@@ -27,12 +32,12 @@ const std::string SorptionIsothermFactory::linear = "linear";
 const std::string SorptionIsothermFactory::langmuir = "langmuir";
 const std::string SorptionIsothermFactory::freundlich = "freundlich";
 
-std::shared_ptr<SorptionIsotherm> SorptionIsothermFactory::Create( 
-    const Teuchos::ParameterList& plist)
+std::shared_ptr<SorptionIsotherm>
+SorptionIsothermFactory::Create(const Teuchos::ParameterList& plist)
 {
   std::string isotherm_type = plist.get<std::string>("model");
-  std::vector<double> parameters = plist.get<Teuchos::Array<double> >("parameters").toVector();
-      
+  std::vector<double> parameters = plist.get<Teuchos::Array<double>>("parameters").toVector();
+
   std::shared_ptr<SorptionIsotherm> sorption_isotherm = nullptr;
 
   if (isotherm_type == linear) {
@@ -42,9 +47,9 @@ std::shared_ptr<SorptionIsotherm> SorptionIsothermFactory::Create(
     if (parameters.size() != 2) {
       std::ostringstream oss;
       oss << "SorptionIsothermFactory::Create(): \n"
-          << "  Langmuir isotherm requires exactly two parameters, received "
-          << parameters.size() << ".\n"
-          << "    param_1 == Kd, param_2 == b  .\n"; 
+          << "  Langmuir isotherm requires exactly two parameters, received " << parameters.size()
+          << ".\n"
+          << "    param_1 == Kd, param_2 == b  .\n";
       Exceptions::amanzi_throw(Errors::Message(oss.str()));
     }
     sorption_isotherm = std::make_shared<SorptionIsothermLangmuir>(parameters[0], parameters[1]);
@@ -56,7 +61,7 @@ std::shared_ptr<SorptionIsotherm> SorptionIsothermFactory::Create(
                    << "  Freundlich isotherm: C_sorb = Kd * C^n"
                    << "  Freundlich isotherm requires exactly two parameters, received "
                    << parameters.size() << ".\n"
-                   << "    param_1 == Kd, param_2 == n  .\n"; 
+                   << "    param_1 == Kd, param_2 == n  .\n";
       Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
     }
     sorption_isotherm = std::make_shared<SorptionIsothermFreundlich>(parameters[0], parameters[1]);
@@ -78,9 +83,9 @@ std::shared_ptr<SorptionIsotherm> SorptionIsothermFactory::Create(
 }
 
 
-int SorptionIsothermFactory::VerifySpeciesName(
-    const std::string& species_name,
-    const std::vector<Species>& species) const
+int
+SorptionIsothermFactory::VerifySpeciesName(const std::string& species_name,
+                                           const std::vector<Species>& species) const
 {
   int species_id = -1;
   for (auto it = species.begin(); it != species.end(); ++it) {
@@ -102,5 +107,5 @@ int SorptionIsothermFactory::VerifySpeciesName(
   return species_id;
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi

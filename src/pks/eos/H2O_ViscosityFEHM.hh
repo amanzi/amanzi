@@ -1,12 +1,14 @@
 /*
-  EOS
-   
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  EOS
 
   Viscosity for liquid water for T between 0.001 and 360 C from FEHM manual
 */
@@ -27,8 +29,7 @@ namespace AmanziEOS {
 // Equation of state for water viscosity
 class H2O_ViscosityFEHM : public EOS_Viscosity {
  public:
-  explicit
-  H2O_ViscosityFEHM(Teuchos::ParameterList& eos_plist);
+  explicit H2O_ViscosityFEHM(Teuchos::ParameterList& eos_plist);
 
   virtual double Viscosity(double T, double p);
   virtual double DViscosityDT(double T, double p);
@@ -40,10 +41,10 @@ class H2O_ViscosityFEHM : public EOS_Viscosity {
   double T0_;
 
  private:
-  static Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM> factory_;
+  static Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM> reg_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

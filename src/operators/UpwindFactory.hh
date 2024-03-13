@@ -1,12 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Operators
+
 */
 
 #ifndef AMANZI_OPERATOR_UPWIND_FACTORY_HH_
@@ -25,6 +28,7 @@
 #include "UpwindDivK.hh"
 #include "UpwindFlux.hh"
 #include "UpwindFluxAndGravity.hh"
+#include "UpwindFluxManifolds.hh"
 #include "UpwindGravity.hh"
 #include "UpwindSecondOrder.hh"
 
@@ -33,28 +37,33 @@ namespace Operators {
 
 class UpwindFactory {
  public:
-  Teuchos::RCP<Upwind> Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                              Teuchos::ParameterList& plist);
+  Teuchos::RCP<Upwind>
+  Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::ParameterList& plist);
 };
 
 
 /* ******************************************************************
-* The base class for all upwind methods. 
-****************************************************************** */ 
-inline
-Teuchos::RCP<Upwind> UpwindFactory::Create(
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-    Teuchos::ParameterList& plist)
+* The base class for all upwind methods.
+****************************************************************** */
+inline Teuchos::RCP<Upwind>
+UpwindFactory::Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::ParameterList& plist)
 {
   if (!plist.isParameter("upwind method")) {
     Errors::Message msg("UpwindFactory: parameter \"upwind method\" is missing");
     Exceptions::amanzi_throw(msg);
   }
   std::string name = plist.get<std::string>("upwind method");
-
   Teuchos::ParameterList sublist = plist.sublist("upwind parameters");
-  if (name == "upwind: darcy velocity") {
+
+  bool manifolds = (mesh->getSpaceDimension() != mesh->getManifoldDimension()) &&
+                   sublist.get<bool>("manifolds", true);
+
+  if (name == "upwind: darcy velocity" && !manifolds) {
     Teuchos::RCP<UpwindFlux> upwind = Teuchos::rcp(new UpwindFlux(mesh));
+    upwind->Init(sublist);
+    return upwind;
+  } else if (name == "upwind: darcy velocity" && manifolds) {
+    Teuchos::RCP<UpwindFluxManifolds> upwind = Teuchos::rcp(new UpwindFluxManifolds(mesh));
     upwind->Init(sublist);
     return upwind;
   } else if (name == "upwind: gravity") {
@@ -87,7 +96,7 @@ Teuchos::RCP<Upwind> UpwindFactory::Create(
   return Teuchos::null;
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif

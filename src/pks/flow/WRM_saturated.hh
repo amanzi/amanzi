@@ -1,12 +1,14 @@
 /*
-  Flow PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
 
   We use this class for saturated flow, k_rel = 1.
 */
@@ -23,22 +25,22 @@ namespace Flow {
 
 class WRM_saturated : public WRM {
  public:
-  explicit WRM_saturated(Teuchos::ParameterList& plist) {};
-  ~WRM_saturated() {};
-  
+  explicit WRM_saturated(Teuchos::ParameterList& plist){};
+  ~WRM_saturated(){};
+
   // required methods from the base class
   double k_relative(double pc) const { return 1.0; }
   double saturation(double pc) const { return 1.0; }
-  double dSdPc(double pc) const { return 0.0; }  
+  double dSdPc(double pc) const { return 0.0; }
   double capillaryPressure(double saturation) const { return 0.0; }
   double residualSaturation() const { return 0.0; }
   double dKdPc(double pc) const { return 0.0; }
 
  private:
-  static Utils::RegisteredFactory<WRM, WRM_saturated> factory_;
+  static Utils::RegisteredFactory<WRM, WRM_saturated> reg_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
- 
+} // namespace Flow
+} // namespace Amanzi
+
 #endif

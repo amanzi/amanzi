@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<amanzi_input type="structured" version="2.3.0">
+<amanzi_input type="structured" version="1.5-dev">
     <model_description name="linear_head_head-S">
         <comments>linear_head_head-S	Tue Sep 22 15:57:05 PDT 2015</comments>
     </model_description>

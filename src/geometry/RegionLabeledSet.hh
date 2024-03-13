@@ -1,16 +1,14 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! RegionLabeledSet: A region defined by a set of mesh entities in a mesh file
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella
            Ethan Coon (ecoon@lanl.gov)
 */
 
+//! RegionLabeledSet: A region defined by a set of mesh entities in a mesh file
 /*!
 
 The list *region: labeled set* defines a named set of mesh entities
@@ -26,8 +24,8 @@ Amanzi-supported mesh format (the mesh format is specified in the
 parameters for this option).  The *entity* parameter may be
 necessary to specify a unique set.  For example, an Exodus file
 requires *cell*, *face* or *node* as well as a label (which is
-an integer).  The resulting region will have the dimensionality 
-associated with the entities in the indicated set. 
+an integer).  The resulting region will have the dimensionality
+associated with the entities in the indicated set.
 
 .. _region-labeled-set-spec:
 .. admonition:: region-labeled-set-spec
@@ -53,13 +51,13 @@ Example:
 */
 
 
-/*   
+/*
   Strictly speaking, we should tie this region class to a particular
   mesh or mesh file but that cause a circular dependency of meshes
-  on regions and of labeled set regions on meshes. We will rely on the 
+  on regions and of labeled set regions on meshes. We will rely on the
   fact that when a mesh is created specifying a geometric model, it
-  will create mesh entity sets based on the labeled sets in that 
-  geometric model. 
+  will create mesh entity sets based on the labeled sets in that
+  geometric model.
 
   If we need to change this behavior, then we can make a forward
   declaration of AmanziMesh::Mesh, make the Mesh class a friend, add
@@ -77,15 +75,15 @@ namespace AmanziGeometry {
 
 class RegionLabeledSet : public Region {
  public:
-  // constructor 
-  RegionLabeledSet(const std::string& name, 
-                   const int id, 
+  // constructor
+  RegionLabeledSet(const std::string& name,
+                   const int id,
                    const std::string& entity_str,
                    const std::string& file,
                    const std::string& format,
                    const std::string& label,
-                   const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
-  
+                   const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
+
   // Label in the file
   const std::string& label() const { return label_; }
 
@@ -94,10 +92,10 @@ class RegionLabeledSet : public Region {
 
   const std::string& entity_str() const { return entity_str_; }
 
-protected:  
+ protected:
   const std::string entity_str_; // what kind of entities make up this set
-  const std::string file_; // which file are we supposed to read it from
-  const std::string format_; // format of the file
+  const std::string file_;       // which file are we supposed to read it from
+  const std::string format_;     // format of the file
   const std::string label_; // Label used to identify set in the file (may be different from name)
 };
 

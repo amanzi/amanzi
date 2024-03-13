@@ -1,12 +1,15 @@
 /*
-  Functions
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov
+  Authors: Konstantin Lipnikov
+*/
+
+/*
+  Functions
+
 */
 
 #include "FunctionTabularString.hh"
@@ -14,16 +17,17 @@
 
 namespace Amanzi {
 
-FunctionTabularString::FunctionTabularString(
-    const std::vector<double>& x, const std::vector<std::string>& y)
+FunctionTabularString::FunctionTabularString(const std::vector<double>& x,
+                                             const std::vector<std::string>& y)
   : x_(x), y_(y)
 {
   CheckArgs_(x, y);
 }
 
 
-void FunctionTabularString::CheckArgs_(
-    const std::vector<double>& x, const std::vector<std::string>& y) const
+void
+FunctionTabularString::CheckArgs_(const std::vector<double>& x,
+                                  const std::vector<std::string>& y) const
 {
   if (x.size() != y.size()) {
     Errors::Message m;
@@ -36,7 +40,7 @@ void FunctionTabularString::CheckArgs_(
     Exceptions::amanzi_throw(m);
   }
   for (int j = 1; j < x.size(); ++j) {
-    if (x[j] <= x[j-1]) {
+    if (x[j] <= x[j - 1]) {
       Errors::Message m;
       m << "x values are not strictly increasing";
       Exceptions::amanzi_throw(m);
@@ -45,7 +49,8 @@ void FunctionTabularString::CheckArgs_(
 }
 
 
-std::string FunctionTabularString::operator()(double xv) const
+std::string
+FunctionTabularString::operator()(double xv) const
 {
   int n = x_.size();
   std::string y;
@@ -76,4 +81,4 @@ std::string FunctionTabularString::operator()(double xv) const
   return y;
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

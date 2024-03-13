@@ -1,12 +1,15 @@
 /*
-  Flow PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
+
 */
 
 #include <vector>
@@ -20,15 +23,16 @@ namespace Amanzi {
 namespace Flow {
 
 /* ******************************************************************
-* Calculates steady-state solution assuming that absolute permeability 
+* Calculates steady-state solution assuming that absolute permeability
 * does not depend on time. The boundary conditions are calculated
-* only once, during the initialization step.                                                
+* only once, during the initialization step.
 ****************************************************************** */
-void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u, bool wells_on)
+void
+Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u, bool wells_on)
 {
   // add diffusion operator
   op_->RestoreCheckPoint();
- 
+
   if (wells_on && S_->HasRecord("well_index")) {
     const auto& wi = S_->Get<CompositeVector>("well_index");
     op_acc_->AddAccumulationTerm(wi, "cell");
@@ -40,14 +44,14 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u, bool wells_on)
 
   op_->ComputeInverse();
   int ierr = op_->ApplyInverse(rhs, *solution);
+  pressure_eval_->SetChanged();
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     int num_itrs = op_->num_itrs();
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "pressure solver (" << solver_name_
-               << "): ||r||_H=" << op_->residual() << " itr=" << num_itrs
-               << " code=" << op_->returned_code() << std::endl;
+    *vo_->os() << "pressure solver (" << solver_name_ << "): ||r||_H=" << op_->residual()
+               << " itr=" << num_itrs << " code=" << op_->returned_code() << std::endl;
 
     // verify true resdual if the convergence was too slow
     if (num_itrs > 10) {
@@ -61,14 +65,12 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u, bool wells_on)
   }
 
   // catastrophic failure.
-  if (ierr < 0) {
-    Errors::Message msg("Transport_PK solver failed with message: \"");
+  if (ierr != 0) {
+    Errors::Message msg("Flow solver failed with message: \"");
     msg << op_->returned_code_string() << "\"";
     Exceptions::amanzi_throw(msg);
   }
 }
 
-}  // namespace Flow
-}  // namespace Amanzi
-
-
+} // namespace Flow
+} // namespace Amanzi

@@ -1,4 +1,4 @@
-<amanzi_input type="structured" version="2.3.0">
+<amanzi_input type="structured" version="1.5-dev">
     <model_description name="linear_head_head_1d">
       <comments>Steady-State Saturated: prescribed head BCs, materials in parallel</comments>
       <model_id>1SSConFlow4</model_id>

@@ -1,12 +1,14 @@
 /*
-  State
-
-  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
+
+/*
+  State
 
   A field evaluator for an changing cell volume.
 */
@@ -25,19 +27,21 @@ class EvaluatorDeformingCellVolume : public EvaluatorSecondary {
   explicit EvaluatorDeformingCellVolume(Teuchos::ParameterList& plist);
 
   // copy constructors
-  EvaluatorDeformingCellVolume(const EvaluatorDeformingCellVolume &other) = default;
+  EvaluatorDeformingCellVolume(const EvaluatorDeformingCellVolume& other) = default;
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
   // not differentiable WRT to anything
-  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
-          const Tag& wrt_tag) const override { return false; }
+  virtual bool
+  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override
+  {
+    return false;
+  }
 
   virtual void EnsureCompatibility(State& S) override;
 
  protected:
-
-  virtual void Update_(State &S) override;
-  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override {};
+  virtual void Update_(State& S) override;
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override{};
 
  protected:
   Key domain_;

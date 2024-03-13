@@ -1,39 +1,39 @@
-diff -ruNbB BoxLib-17.05.1/Src/C_BaseLib/FPC.cpp ccse-17.05.1-source/Src/C_BaseLib/FPC.cpp
---- BoxLib-17.05.1/Src/C_BaseLib/FPC.cpp	2017-07-27 10:50:29.000000000 -0600
-+++ ccse-17.05.1-source/Src/C_BaseLib/FPC.cpp	2022-09-14 18:31:04.000000000 -0600
-@@ -29,6 +29,7 @@
+diff -Naur ccse-17.05.1-old/Src/C_BaseLib/FPC.cpp ccse-17.05.1-new/Src/C_BaseLib/FPC.cpp
+--- ccse-17.05.1-old/Src/C_BaseLib/FPC.cpp	2017-07-27 16:50:29.000000000 +0000
++++ ccse-17.05.1-new/Src/C_BaseLib/FPC.cpp	2023-07-19 16:23:32.519424010 +0000
+@@ -29,6 +29,8 @@
      defined(__i386__) || \
      defined(__x86_64) || \
      defined(__amd64__) || \
-+    defined(__arm64) || \
++    defined(__arm64__) || \
++    defined(__aarch64__) || \
      defined(powerpc)
      static const IntDescriptor nld(sizeof(long), IntDescriptor::ReverseOrder);
  #endif
-@@ -55,7 +56,8 @@
+@@ -55,6 +57,8 @@
      defined(i386) || \
      defined(__i386__) || \
      defined(__amd64__) || \
--    defined(__x86_64)
-+    defined(__x86_64) || \
-+    defined(__arm64)
++    defined(__arm64__) || \
++    defined(__aarch64__) || \
+     defined(__x86_64)
  #ifdef BL_USE_FLOAT
      static const RealDescriptor nrd(ieee_float, reverse_float_order, 4);
- #else
-@@ -90,7 +92,8 @@
+@@ -90,6 +94,8 @@
      defined(i386) || \
      defined(__i386__) || \
      defined(__amd64__) || \
--    defined(__x86_64)
-+    defined(__x86_64) || \
-+    defined(__arm64)
++    defined(__arm64__) || \
++    defined(__aarch64__) || \
+     defined(__x86_64)
      static const RealDescriptor n32rd(ieee_float, reverse_float_order, 4);
  #endif
- 
-@@ -135,6 +138,7 @@
+@@ -134,6 +140,8 @@
+       defined(__ppc64__) || \
        defined(__i386__) || \
        defined(__amd64__) || \
++      defined(__arm64__) || \
++      defined(__aarch64__) || \
        defined(__x86_64) || \
-+      defined(__arm64) || \
        defined(__hpux)   || \
        defined(powerpc)  || \
-       defined(_MSC_VER) || \

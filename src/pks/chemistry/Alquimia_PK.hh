@@ -1,14 +1,47 @@
 /*
-  Chemistry PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Trilinos based chemistry process kernel for the unstructured mesh.
+  Authors:
 */
- 
+
+/*!
+
+The Alquimia chemistry process kernel only requires the *Engine* and *Engine Input File*
+entries, but will also accept and respect the value given for *max time step (s)*.
+Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
+
+* `"minerals`" [Array(string)] is the list of mineral names.
+
+* `"sorption sites`" [Array(string)] is the list of sorption sites.
+
+* `"auxiliary data`" [Array(string)] defines additional chemistry related data that the user
+  can request be saved to vis files.
+
+* `"min time step (s)`" [double] is the minimum time step that chemistry will allow the MPC to take.
+
+.. code-block:: xml
+
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="_CHEMISTRY">
+    <Parameter name="engine" type="string" value="PFloTran"/>
+    <Parameter name="engine input file" type="string" value="_TRITIUM.in"/>
+    <Parameter name="minerals" type="Array(string)" value="{quartz, kaolinite, goethite, opal}"/>
+    <Parameter name="min time step (s)" type="double" value="1.5778463e-07"/>
+    <Parameter name="max time step (s)" type="double" value="1.5778463e+07"/>
+    <Parameter name="initial time step (s)" type="double" value="1.0e-02"/>
+    <Parameter name="time step control method" type="string" value="simple"/>
+    <Parameter name="time step cut threshold" type="int" value="8"/>
+    <Parameter name="time step cut factor" type="double" value="2.0"/>
+    <Parameter name="time step increase threshold" type="int" value="4"/>
+    <Parameter name="time step increase factor" type="double" value="1.2"/>
+  </ParameterList>
+  </ParameterList>
+
+*/
+
 #ifndef AMANZI_CHEMISTRY_ALQUIMIA_PK_HH_
 #define AMANZI_CHEMISTRY_ALQUIMIA_PK_HH_
 
@@ -33,7 +66,7 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 #ifdef ALQUIMIA_ENABLED
-class Alquimia_PK: public Chemistry_PK {
+class Alquimia_PK : public Chemistry_PK {
  public:
   Alquimia_PK(Teuchos::ParameterList& pk_tree,
               const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -59,17 +92,17 @@ class Alquimia_PK: public Chemistry_PK {
                       AlquimiaProperties& mat_props,
                       AlquimiaState& state,
                       AlquimiaAuxiliaryData& aux_data,
-                      const Tag& water_tag=Tags::DEFAULT);
-  
+                      const Tag& water_tag = Tags::DEFAULT);
+
  private:
-  // Copy cell state to the given Alquimia containers taking 
+  // Copy cell state to the given Alquimia containers taking
   // the aqueous components from the given multivector.
   void CopyToAlquimia(int cell_id,
                       Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
                       AlquimiaProperties& mat_props,
                       AlquimiaState& state,
                       AlquimiaAuxiliaryData& aux_data,
-                      const Tag& water_tag=Tags::DEFAULT);
+                      const Tag& water_tag = Tags::DEFAULT);
 
   // Copy the data in the given Alquimia containers to the given cell state.
   // The aqueous components are placed into the given multivector.
@@ -81,8 +114,7 @@ class Alquimia_PK: public Chemistry_PK {
                         Teuchos::RCP<Epetra_MultiVector> aqueous_components);
 
   int InitializeSingleCell(int cell, const std::string& condition);
-  int AdvanceSingleCell(double dt, Teuchos::RCP<Epetra_MultiVector>& aquesous_components,
-                        int cell);
+  int AdvanceSingleCell(double dt, Teuchos::RCP<Epetra_MultiVector>& aquesous_components, int cell);
 
   void ParseChemicalConditionRegions(const Teuchos::ParameterList& param_list,
                                      std::map<std::string, std::string>& conditions);
@@ -112,11 +144,11 @@ class Alquimia_PK: public Chemistry_PK {
   AlquimiaAuxiliaryData alq_aux_data_;
   AlquimiaAuxiliaryOutputData alq_aux_output_;
 
-  // Mapping of region names to geochemical condition names. A region is identified 
-  // by a string, and all cells within a region will have all geochemical 
-  // conditions in the corresponding condition vector applied to them. 
+  // Mapping of region names to geochemical condition names. A region is identified
+  // by a string, and all cells within a region will have all geochemical
+  // conditions in the corresponding condition vector applied to them.
   std::map<std::string, std::string> chem_initial_conditions_;
-  
+
   double current_time_;
   double saved_time_;
 
@@ -126,7 +158,7 @@ class Alquimia_PK: public Chemistry_PK {
   Teuchos::RCP<Epetra_MultiVector> aux_output_;
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
 
-  std::vector<std::vector<int> > map_;
+  std::vector<std::vector<int>> map_;
   std::vector<std::string> mineral_names_, primary_names_;
 
  private:
@@ -135,7 +167,6 @@ class Alquimia_PK: public Chemistry_PK {
 };
 #endif
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 #endif
-

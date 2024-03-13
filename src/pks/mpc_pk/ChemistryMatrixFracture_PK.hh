@@ -1,13 +1,15 @@
 /*
-  MPC PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov
            Daniil Svyatskiy
+*/
+
+/*
+  MPC PK
 
   Process kernel that couples chemistry PKs in matrix and fracture.
 */
@@ -34,7 +36,7 @@ class ChemistryMatrixFracture_PK : public PK_MPCWeak {
   virtual void Setup() override;
 
   // -- miscaleneous methods
-  virtual std::string name() override { return "coupled chemistry"; } 
+  virtual std::string name() override { return "coupled chemistry"; }
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
@@ -43,5 +45,5 @@ class ChemistryMatrixFracture_PK : public PK_MPCWeak {
   static RegisteredPKFactory<ChemistryMatrixFracture_PK> reg_;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 #endif

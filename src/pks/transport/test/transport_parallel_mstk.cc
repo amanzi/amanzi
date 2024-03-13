@@ -1,7 +1,10 @@
 /*
-  The transport component of the Amanzi code, serial unit tests.
-  License: BSD
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <iostream>
@@ -23,13 +26,16 @@
 #include "TransportExplicit_PK.hh"
 
 
-double f_step(const Amanzi::AmanziGeometry::Point& x, double t) { 
+double
+f_step(const Amanzi::AmanziGeometry::Point& x, double t)
+{
   if (x[0] <= t) return 1;
   return 0;
 }
 
 
-TEST(ADVANCE_WITH_MSTK_PARALLEL) {
+TEST(ADVANCE_WITH_MSTK_PARALLEL)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -46,12 +52,12 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   /* create an MSTK mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh = meshfactory.create("test/hex_3x3x3_ss.exo");
-  
+
   /* create a simple state and populate it */
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
@@ -71,21 +77,24 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   S->set_intermediate_time(0.0);
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state"); 
+  std::string passwd("state");
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     flux[0][f] = velocity * normal;
   }
 
-  auto& tcc = *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
+  auto& tcc =
+    *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     tcc[0][c] = f_step(xc, 0.0);
   }
 
@@ -100,7 +109,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
 
   // print cell concentrations
   int iter = 0;
-  while(t_new < 1.0) {
+  while (t_new < 1.0) {
     dt = TPK.StableTimeStep(-1);
     t_new = t_old + dt;
 
@@ -112,17 +121,12 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
 
     if (iter < 10 && TPK.MyPID == 3) {
       printf("T=%7.2f  C_0(x):", t_new);
-      for (int k = 0; k < 2; k++) printf("%7.4f", tcc[0][k]); std::cout << std::endl;
+      for (int k = 0; k < 2; k++) printf("%7.4f", tcc[0][k]);
+      std::cout << std::endl;
     }
 
-    for (int k = 0; k < ncells_owned; ++k) 
-      CHECK(tcc[0][k] >= 0.0 && tcc[0][k] <= 1.0);
+    for (int k = 0; k < ncells_owned; ++k) CHECK(tcc[0][k] >= 0.0 && tcc[0][k] <= 1.0);
   }
 
-  for (int k = 0; k < ncells_owned; ++k) 
-    CHECK_CLOSE(tcc[0][k], 1.0, 1e-6);
+  for (int k = 0; k < ncells_owned; ++k) CHECK_CLOSE(tcc[0][k], 1.0, 1e-6);
 }
- 
- 
-
-

@@ -1,12 +1,14 @@
 /*
-  Energy
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
+
+/*
+  Energy
 
   Linear internal energy model is function of cv and temperature.
   UNITS: J/{mol/kg}
@@ -36,15 +38,14 @@ class IEM_Linear : public IEM {
 
   Teuchos::ParameterList plist_;
 
-  double cv_;  // units: J/({mol/kg}-K)
-  double Tref_;  // units: K
+  double cv_;   // units: J/({mol/kg}-K)
+  double Tref_; // units: K
 
  private:
-  // iem factor registration
-  static Utils::RegisteredFactory<IEM,IEM_Linear> factory_;
+  static Utils::RegisteredFactory<IEM, IEM_Linear> reg_;
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi
 
 #endif

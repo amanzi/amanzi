@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include "UnitTest++.h"
 
 #include "Units.hh"
@@ -5,7 +14,23 @@
 using namespace Amanzi;
 using namespace Amanzi::Utils;
 
-TEST(UNITS_TIME) 
+TEST(UNITS_NONE)
+{
+  Units units("molar");
+  UnitsSystem system("h", "kg", "m", "molar", "mol", "K");
+
+  std::string in_unit("-"), out_unit;
+  out_unit = units.ConvertUnitS(in_unit, system);
+  std::cout << "Unitless:\n  [-] -> [" << out_unit << "]" << std::endl;
+  CHECK(out_unit == "-");
+
+  in_unit = "";
+  out_unit = units.ConvertUnitS(in_unit, system);
+  CHECK(out_unit == "");
+}
+
+
+TEST(UNITS_TIME)
 {
   Units units("molar");
   bool flag;
@@ -25,7 +50,7 @@ TEST(UNITS_TIME)
   t = units.ConvertTime(1.0, "noleap", "d", flag);
   std::cout << "  1 noleap = " << t << " d, flag=" << flag << std::endl;
   CHECK_CLOSE(t, 365., 1e-3);
-  
+
   CHECK(units.IsValidTime("y"));
   CHECK(units.IsValidTime("noleap"));
   CHECK(!units.IsValidTime("yr"));
@@ -34,7 +59,7 @@ TEST(UNITS_TIME)
 }
 
 
-TEST(UNITS_LENGTH) 
+TEST(UNITS_LENGTH)
 {
   Units units("molar");
   bool flag;
@@ -55,17 +80,17 @@ TEST(UNITS_LENGTH)
   CHECK(units.IsValidLength("m"));
   CHECK(!units.IsValidLength("meter"));
   std::cout << "Valid lengths are: " << units.ValidLengthStrings() << std::endl;
-  
 }
 
 
-TEST(UNITS_CONCENTRATION) 
+TEST(UNITS_CONCENTRATION)
 {
   Units units("molar");
   bool flag;
 
   double conc = units.ConvertConcentration(1.0, "SI", "molar", 1.0, flag);
-  std::cout << "Concentration tests:\n  1 mol/m^3 = " << conc << " molar, flag=" << flag << std::endl;
+  std::cout << "Concentration tests:\n  1 mol/m^3 = " << conc << " molar, flag=" << flag
+            << std::endl;
   CHECK_CLOSE(conc, 1e-3, 1e-4);
 
   conc = units.ConvertConcentration(1.0, "molar", "SI", 1.0, flag);
@@ -84,11 +109,10 @@ TEST(UNITS_CONCENTRATION)
   CHECK(units.IsValidConcentration("SI"));
   CHECK(!units.IsValidConcentration("y"));
   std::cout << "Valid concentrations are: " << units.ValidConcentrationStrings() << std::endl;
-  
 }
 
 
-TEST(UNITS_DERIVED_DOUBLE) 
+TEST(UNITS_DERIVED_DOUBLE)
 {
   Units units("molar");
   bool flag;
@@ -128,7 +152,7 @@ TEST(UNITS_DERIVED_DOUBLE)
 }
 
 
-TEST(UNITS_DERIVED_STRING) 
+TEST(UNITS_DERIVED_STRING)
 {
   Units units("molar");
   std::string out_unit;
@@ -151,12 +175,11 @@ TEST(UNITS_DERIVED_STRING)
 }
 
 
-TEST(UNITS_FANCY_OUTPUT) 
+TEST(UNITS_FANCY_OUTPUT)
 {
   Units units("molar");
 
-  for (double val = 1e-3; val < 1e+8; val*=4) {
+  for (double val = 1e-3; val < 1e+8; val *= 4) {
     std::cout << val << " res=" << units.OutputTime(val) << std::endl;
   }
 }
-

@@ -1,12 +1,15 @@
 /*
-  Utils
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Rao Garimella (raovgarimella@lanl.gov)
+  Authors: Rao Garimella (raovgarimella@lanl.gov)
+*/
+
+/*
+  Utils
+
 */
 
 #ifndef AMANZI_EXPRTK_HH_
@@ -19,7 +22,7 @@ namespace Utils {
 
 class ExprTK {
  public:
-  ExprTK() : n_(0) {};
+  ExprTK() : n_(0){};
   bool Initialize(int n, const std::string& formula);
 
   double operator()(const std::vector<double>& txyz);
@@ -32,7 +35,7 @@ class ExprTK {
   exprtk::parser<double> parser_;
 };
 
-}  // namespace Utils
-}  // namespace Amanzi
+} // namespace Utils
+} // namespace Amanzi
 
 #endif

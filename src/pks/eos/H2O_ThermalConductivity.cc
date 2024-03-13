@@ -1,12 +1,14 @@
 /*
-  EOS
-   
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  EOS
 
   Thermal conductivity for ordinary liquid water.
 */
@@ -23,8 +25,8 @@ namespace AmanziEOS {
 * Constructor takes a parameter list to override defaulr values. This
 * may be useful for unit tests.
 ******************************************************************* */
-H2O_ThermalConductivity::H2O_ThermalConductivity(Teuchos::ParameterList& eos_plist) :
-    eos_plist_(eos_plist),
+H2O_ThermalConductivity::H2O_ThermalConductivity(Teuchos::ParameterList& plist)
+  : EOS_ThermalConductivity(plist),
     ka0_(-1.48445),
     ka1_(4.12292),
     ka2_(-1.63866),
@@ -42,7 +44,8 @@ H2O_ThermalConductivity::H2O_ThermalConductivity(Teuchos::ParameterList& eos_pli
 /* *******************************************************************
 * Main routine uses pre-computed coefficients.
 ******************************************************************* */
-double H2O_ThermalConductivity::ThermalConductivity(double T)
+double
+H2O_ThermalConductivity::ThermalConductivity(double T, double p)
 {
   double Ts = T / Tref_;
   double k = ka0_ + (ka1_ + ka2_ * Ts) * Ts;
@@ -61,7 +64,8 @@ double H2O_ThermalConductivity::ThermalConductivity(double T)
 /* *******************************************************************
 * Main routine uses pre-computed coefficients.
 ******************************************************************* */
-double H2O_ThermalConductivity::DThermalConductivityDT(double T)
+double
+H2O_ThermalConductivity::DThermalConductivityDT(double T, double p)
 {
   double Ts = T / Tref_;
   double dkdT = (ka1_ + 2 * ka2_ * Ts) / Tref_;
@@ -73,20 +77,21 @@ double H2O_ThermalConductivity::DThermalConductivityDT(double T)
 /* *******************************************************************
 * Here we can override some parameters.
 ******************************************************************* */
-void H2O_ThermalConductivity::InitializeFromPlist_()
+void
+H2O_ThermalConductivity::InitializeFromPlist_()
 {
-  kref_ = eos_plist_.get<double>("thermal conductivity of liquid", kref_);
-  Tref_ = eos_plist_.get<double>("reference temperature", Tref_);
+  kref_ = plist_.get<double>("thermal conductivity of liquid", kref_);
+  Tref_ = plist_.get<double>("reference temperature", Tref_);
 
-  if (eos_plist_.isParameter("polynomial expansion")) {
-    Teuchos::Array<double> kai = eos_plist_.get<Teuchos::Array<double> >("polynomial expansion");
+  if (plist_.isParameter("polynomial expansion")) {
+    Teuchos::Array<double> kai = plist_.get<Teuchos::Array<double>>("polynomial expansion");
     AMANZI_ASSERT(kai.size() == 3);
 
-    ka0_ = kai[0]; 
-    ka1_ = kai[1]; 
-    ka2_ = kai[2]; 
+    ka0_ = kai[0];
+    ka1_ = kai[1];
+    ka2_ = kai[2];
   }
 }
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi

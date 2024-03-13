@@ -1,10 +1,14 @@
 /*
-  Chemistry 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
+  Chemistry
 
   Driver class for evaluating geochemical related processes at a
   single computational node
@@ -28,6 +32,7 @@
 #include "BeakerState.hh"
 #include "BeakerParameters.hh"
 #include "ChemistryUtilities.hh"
+#include "Colloid.hh"
 #include "GeneralRxn.hh"
 #include "IonExchangeRxn.hh"
 #include "KineticRate.hh"
@@ -56,9 +61,10 @@ class Beaker {
     bool converged;
   };
 
+  typedef enum { PFLOTRAN, LINEAR_ALGEBRA_MAX_NORM } ConvergenceType;
+
   // inheriting classes setup the species, etc
-  virtual void Initialize(BeakerState& state,
-                          const BeakerParameters& parameters);
+  virtual void Initialize(BeakerState& state, const BeakerParameters& parameters);
 
   // we only copy data allocate by Amanzi state
   void CopyStateToBeaker(const BeakerState& state);
@@ -72,36 +78,46 @@ class Beaker {
   int Speciate(BeakerState* state);
 
   // solve a chemistry step
-  int ReactionStep(BeakerState* state,
-                   const BeakerParameters& parameters, double dt);
+  int ReactionStep(BeakerState* state, const BeakerParameters& parameters, double dt);
 
   // enforce constraint
-  int EnforceConstraint(BeakerState* state, const BeakerParameters& parameters,
+  int EnforceConstraint(BeakerState* state,
+                        const BeakerParameters& parameters,
                         const std::vector<std::string>& names,
                         const std::vector<double>& values);
 
   // i/o
   void Display() const;
   void DisplayComponents(const BeakerState& state) const;
-  void DisplayTotalColumns(const double time, 
-                           const BeakerState& total,
-                           const bool display_free) const;
+  void
+  DisplayTotalColumns(const double time, const BeakerState& total, const bool display_free) const;
   void DisplayResults() const;
 
-  // access
+  // accessors and modifiers
   SolverStatus status() const { return status_; }
+  void set_use_log_formulation(bool flag) { use_log_formulation_ = flag; }
+  void set_convergence_criterion(const ConvergenceType& i) { convergence_criterion_ = i; }
 
   const std::vector<Mineral>& minerals() const { return minerals_; }
   const std::vector<Species>& primary_species() const { return primary_species_; }
-  const std::vector<AqueousEquilibriumComplex>& secondary_species() const { return aq_complex_rxns_; }
+  const std::vector<AqueousEquilibriumComplex>& secondary_species() const
+  {
+    return aq_complex_rxns_;
+  }
   const std::vector<IonExchangeRxn>& ion_exchange_rxns() const { return ion_exchange_rxns_; }
 
   const std::vector<double>& total() const { return total_; }
   const std::vector<double>& total_sorbed() const { return total_sorbed_; }
-  std::vector<SorptionIsothermRxn> sorption_isotherm_rxns() const { return sorption_isotherm_rxns_; }
+  std::vector<SorptionIsothermRxn> sorption_isotherm_rxns() const
+  {
+    return sorption_isotherm_rxns_;
+  }
+
+  const std::vector<Colloid>& colloids() const { return colloids_; }
 
  protected:
-  void SetupActivityModel(std::string model, std::string pitzer_database, std::string pitzer_jfunction);
+  void
+  SetupActivityModel(std::string model, std::string pitzer_database, std::string pitzer_jfunction);
   void VerifyState(const BeakerState& state) const;
 
   void AddIonExchangeRxn(const IonExchangeRxn& ionx_rxn);
@@ -127,8 +143,8 @@ class Beaker {
 
   // equilibrium chemistry
   // update activities, equilibrium complex concentrations, etc.
-  void UpdateEquilibriumChemistry();
-  void CalculateTotal();
+  void UpdateEquilibriumChemistry(const BeakerState& state);
+  void CalculateTotal(const BeakerState& state);
 
   // calculate block of Jacobian corresponding to derivatives of total with
   // respect to free-ion
@@ -142,11 +158,11 @@ class Beaker {
   // accumulation terms
   void AddAccumulation(const std::vector<double>& total,
                        const std::vector<double>& total_sorbed,
-                       std::vector<double> *residual);
+                       std::vector<double>* residual);
   void AddAccumulationDerivative(MatrixBlock* J, MatrixBlock* dtotal, MatrixBlock* dtotal_sorbed);
   void CalculateFixedAccumulation(const std::vector<double>& total,
                                   const std::vector<double>& total_sorbed,
-                                  std::vector<double> *fixed_accumulation);
+                                  std::vector<double>* fixed_accumulation);
   // residual and Jacobian
   void CalculateResidual();
   void CalculateJacobian();
@@ -180,58 +196,65 @@ class Beaker {
   Teuchos::Ptr<VerboseObject> vo_;
 
   Species water_;
-  std::vector<Species> primary_species_; 
+  std::vector<Species> primary_species_;
   std::vector<Mineral> minerals_;
+  std::vector<Colloid> colloids_;
 
  private:
   double tolerance_;
   unsigned int max_iterations_;
-  int ncomp_;  // numabe of primaryspecies
+  int ncomp_; // numabe of primaryspecies
 
-  std::vector<double> total_;  // aqueous tcc for primaries [mol/L]
-  MatrixBlock dtotal_;  // derivaties wrt free-ion [kg water/sec]
+  std::vector<double> total_; // aqueous tcc for primaries [mol/L]
+  MatrixBlock dtotal_;        // derivaties wrt free-ion [kg water/sec]
 
   // Sorbed phase total component concentrations for basis species
-  std::vector<double> total_sorbed_;  // [mol/m^3 bulk]
-  MatrixBlock dtotal_sorbed_;  // derivaties wrt free-ion [kg water/sec]
+  std::vector<double> total_sorbed_; // [mol/m^3 bulk]
+  MatrixBlock dtotal_sorbed_;        // derivaties wrt free-ion [kg water/sec]
+
+  // Colloids
+  std::vector<double> total_sorbed_colloid_mobile_;   // [mol/m^3 bulk]
+  std::vector<double> total_sorbed_colloid_immobile_; // [mol/m^3 bulk]
 
   // common parameters among reactions
-  double temperature_;  // constant for the Newton solver [K]
-  double porosity_;  // [m^3 pore / m^3 bulk]
-  double saturation_;  // [m^3 water / m^3 pore]
-  double water_density_kg_m3_;  // [kg water / m^3 water]
+  double temperature_;         // constant for the Newton solver [K]
+  double porosity_;            // [m^3 pore / m^3 bulk]
+  double saturation_;          // [m^3 water / m^3 pore]
+  double water_density_kg_m3_; // [kg water / m^3 water]
   double water_density_kg_L_;  // [kg water / L water]
-  double volume_;  // cell volume [m^3 bulk]
-  double dt_; 
+  double volume_;              // cell volume [m^3 bulk]
+  double dt_;
 
   // aqueous_accumulation_coef_ = porosity * saturation * volume * 1000 / dt [L water/sec]
   // units = (m^3 por/m^3 bulk)*(m^3 water/m^3 por)*
   //         (m^3 bulk)*(1000L water/m^3 water)/(sec) = (L water/sec)
   double aqueous_accumulation_coef_;
-  double sorbed_accumulation_coef_;  // [m^3 bulk/sec]
+  double sorbed_accumulation_coef_; // [m^3 bulk/sec]
   double por_sat_den_vol_;
 
   std::shared_ptr<ActivityModel> activity_model_;
   std::vector<KineticRate*> mineral_rates_;
 
-  std::vector<AqueousEquilibriumComplex> aq_complex_rxns_;  // aqueous equilibrium complexation reactions
+  std::vector<AqueousEquilibriumComplex>
+    aq_complex_rxns_; // aqueous equilibrium complexation reactions
   std::vector<GeneralRxn> general_kinetic_rxns_;
-  std::vector<RadioactiveDecay> radioactive_decay_rxns_; 
+  std::vector<RadioactiveDecay> radioactive_decay_rxns_;
   // vector<GasExchange*> gas_rxns_;
   std::vector<IonExchangeRxn> ion_exchange_rxns_;
   std::vector<SurfaceComplexationRxn> surface_complexation_rxns_;
   std::vector<SorptionIsothermRxn> sorption_isotherm_rxns_;
 
   // solver data structures
-  std::vector<double> fixed_accumulation_;  // fixed (time t) portion of accumulation term
-  std::vector<double> residual_;  // entire residual [mol/sec]
-  std::vector<double> prev_molal_;  // previous molality of primary species
+  std::vector<double> fixed_accumulation_; // fixed (time t) portion of accumulation term
+  std::vector<double> residual_;           // entire residual [mol/sec]
+  std::vector<double> prev_molal_;         // previous molality of primary species
 
   std::vector<double> rhs_;
-  MatrixBlock jacobian_;  // Jacobian [kg water/sec]
+  MatrixBlock jacobian_; // Jacobian [kg water/sec]
 
   SolverStatus status_;
   LUSolver lu_solver_;
+  ConvergenceType convergence_criterion_;
 
   bool use_log_formulation_;
 
@@ -240,10 +263,9 @@ class Beaker {
 
 
 // non-member functions
-inline
-void Display(const BeakerState& state,
-             const std::string& message,
-             const Teuchos::RCP<VerboseObject>& vo) {
+inline void
+Display(const BeakerState& state, const std::string& message, const Teuchos::RCP<VerboseObject>& vo)
+{
   vo->Write(Teuchos::VERB_HIGH, message);
   utilities::PrintVector("Totals", state.total, vo, 16, true);
   utilities::PrintVector("Total sorbed", state.total_sorbed, vo, 16, true);
@@ -253,15 +275,17 @@ void Display(const BeakerState& state,
   utilities::PrintVector("Mineral VF", state.mineral_volume_fraction, vo, 16, true);
   utilities::PrintVector("Mineral SSA", state.mineral_specific_surface_area, vo, 16, true);
   utilities::PrintVector("Ion Exchange Sites", state.ion_exchange_sites, vo, 16, true);
-  utilities::PrintVector("Ion Exchange ref cation conc", state.ion_exchange_ref_cation_conc, vo, 16, true);
+  utilities::PrintVector(
+    "Ion Exchange ref cation conc", state.ion_exchange_ref_cation_conc, vo, 16, true);
   utilities::PrintVector("Surface Site Density", state.surface_site_density, vo, 16, true);
-  utilities::PrintVector("Surface Complex free site conc", state.surface_complex_free_site_conc, vo, 16, true);
+  utilities::PrintVector(
+    "Surface Complex free site conc", state.surface_complex_free_site_conc, vo, 16, true);
   utilities::PrintVector("Kd", state.isotherm_kd, vo, 16, true);
   utilities::PrintVector("Freundlich n", state.isotherm_freundlich_n, vo, 16, true);
   utilities::PrintVector("Langmuir b", state.isotherm_langmuir_b, vo, 16, true);
 }
 
-}  // namespace AmanziChemistry
-}  // namespace Amanzi
+} // namespace AmanziChemistry
+} // namespace Amanzi
 
 #endif

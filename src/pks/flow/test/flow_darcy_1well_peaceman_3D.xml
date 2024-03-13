@@ -39,41 +39,43 @@
       </ParameterList>
 
       <ParameterList name="source terms">
-	<ParameterList name="SRC 0">
-	  <Parameter name="regions" type="Array(string)" value="{WellCenter}"/>
-	  <Parameter name="spatial distribution method" type="string" value="simple well"/>
-	  <ParameterList name="well">
-	    <Parameter name="submodel" type="string" value="bhp"/>
-	    <Parameter name="depth" type="double" value="-1.75"/>
-	    <Parameter name="well radius" type="double" value="0.1"/>
-	    <ParameterList name="bhp">
-	      <ParameterList name="function-constant">
-		<Parameter name="value" type="double" value="10.0"/>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
-	<!--ParameterList name="SRC 1">
-	  <Parameter name="regions" type="Array(string)" value="{WellCenter}"/>
-	  <Parameter name="spatial distribution method" type="string" value="simple well"/> 
-	  <ParameterList name="well">
-	    <Parameter name="submodel" type="string" value="rate"/>
-	    <ParameterList name="rate">
-	      <ParameterList name="function-constant">
-		<Parameter name="value" type="double" value="100.0"/>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList-->
-	<!--ParameterList name="SRC 2">
-	  <Parameter name="regions" type="Array(string)" value="{WellCenter}"/>
-	  <Parameter name="spatial distribution method" type="string" value="volume"/>
-	  <ParameterList name="well">
-	    <ParameterList name="function-constant">
-	      <Parameter name="value" type="double" value="100"/>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList-->
+        <ParameterList name="wells">
+          <ParameterList name="SRC 0">
+            <Parameter name="regions" type="Array(string)" value="{WellCenter}"/>
+            <Parameter name="spatial distribution method" type="string" value="simple well"/>
+            <ParameterList name="well">
+              <Parameter name="submodel" type="string" value="bhp"/>
+              <Parameter name="depth" type="double" value="-1.75"/>
+              <Parameter name="well radius" type="double" value="0.1"/>
+              <ParameterList name="bhp">
+                <ParameterList name="function-constant">
+                    <Parameter name="value" type="double" value="10.0"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <!--ParameterList name="SRC 1">
+            <Parameter name="regions" type="Array(string)" value="{WellCenter}"/>
+            <Parameter name="spatial distribution method" type="string" value="simple well"/> 
+            <ParameterList name="well">
+              <Parameter name="submodel" type="string" value="rate"/>
+              <ParameterList name="rate">
+                <ParameterList name="function-constant">
+                    <Parameter name="value" type="double" value="100.0"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList-->
+          <!--ParameterList name="SRC 2">
+            <Parameter name="regions" type="Array(string)" value="{WellCenter}"/>
+            <Parameter name="spatial distribution method" type="string" value="volume"/>
+            <ParameterList name="well">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="100"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList-->
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
@@ -167,11 +169,21 @@
   <!--  STATE  -->
   <ParameterList name="state">
     <ParameterList name="evaluators">
+      <ParameterList name="specific_storage">
+        <Parameter name="evaluator type" type="string" value="specific storage"/>
+	<ParameterList name="specific storage parameters">
+          <ParameterList name="Material 1">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="model" type="string" value="constant"/>
+            <Parameter name="value" type="double" value="0.0"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="porosity">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -185,7 +197,7 @@
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="All">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -198,6 +210,9 @@
     </ParameterList>
 
     <ParameterList name="initial conditions">
+      <ParameterList name="const_fluid_density">
+        <Parameter name="value" type="double" value="1000.0"/>
+      </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="0.0"/>
       </ParameterList>
@@ -238,7 +253,7 @@
 
   <!--  REGIONS  -->
   <ParameterList name="regions">
-    <ParameterList name="Computational domain">
+    <ParameterList name="All">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-55,-55.0,-5.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{55, 55.0, 0.0}"/>
@@ -276,7 +291,7 @@
     </ParameterList>
     <ParameterList name="Bottom side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{-0.,-0.,-5.0}"/>
+        <Parameter name="point" type="Array(double)" value="{-0.,-0.,-2.0}"/>
         <Parameter name="normal" type="Array(double)" value="{ 0.0, 0.0,-1.0}"/>
       </ParameterList>
     </ParameterList>

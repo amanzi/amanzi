@@ -1,12 +1,15 @@
 /*
-  Transport PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Transport PK
+
 */
 
 #include "Teuchos_RCP.hpp"
@@ -31,9 +34,12 @@ namespace Transport {
 /* *******************************************************************
 * Calculate diffusion tensor and add it to the dispersion tensor.
 ******************************************************************* */
-void Transport_PK::CalculateDiffusionTensorEffective_(
-    double mdl, double mdg, double kH, 
-    const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
+void
+Transport_PK::CalculateDiffusionTensorEffective_(double mdl,
+                                                 double mdg,
+                                                 double kH,
+                                                 const Epetra_MultiVector& porosity,
+                                                 const Epetra_MultiVector& saturation)
 {
   if (D_.size() == 0) {
     D_.resize(ncells_owned);
@@ -41,17 +47,17 @@ void Transport_PK::CalculateDiffusionTensorEffective_(
   }
 
   for (int mb = 0; mb < mat_properties_.size(); mb++) {
-    Teuchos::RCP<MaterialProperties> spec = mat_properties_[mb]; 
+    Teuchos::RCP<MaterialProperties> spec = mat_properties_[mb];
 
-    std::vector<AmanziMesh::Entity_ID> block;
     for (int r = 0; r < (spec->regions).size(); r++) {
       std::string region = (spec->regions)[r];
-      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
+      auto block = mesh_->getSetEntities(
+        region, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-      AmanziMesh::Entity_ID_List::iterator c;
-      for (c = block.begin(); c != block.end(); c++) {
+      for (auto c = block.begin(); c != block.end(); c++) {
         double sl = saturation[0][*c];
-        D_[*c](0, 0) = (mdl * sl * spec->tau[0] + kH * mdg * (1.0 - sl) * spec->tau[1]) * porosity[0][*c];
+        D_[*c](0, 0) =
+          (mdl * sl * spec->tau[0] + kH * mdg * (1.0 - sl) * spec->tau[1]) * porosity[0][*c];
       }
     }
   }
@@ -61,20 +67,21 @@ void Transport_PK::CalculateDiffusionTensorEffective_(
 /* ******************************************************************
 * One-phase solver based on effective diffusion
 ****************************************************************** */
-void Transport_PK::DiffusionSolverEffective(
-    Epetra_MultiVector& tcc_next,
-    double t_old, double t_new)
+void
+Transport_PK::DiffusionSolverEffective(Epetra_MultiVector& tcc_next, double t_old, double t_new)
 {
   double dt_MPC = t_new - t_old;
 
   const auto& wc = S_->Get<CompositeVector>(wc_key_, Tags::DEFAULT);
-  const auto& sat_c = *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& sat_c =
+    *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
-  Teuchos::ParameterList& op_list = 
-      tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
+  Teuchos::ParameterList& op_list =
+    tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
 
   // default boundary conditions (none inside domain and Neumann on its boundary)
-  auto bc_dummy = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc_dummy = Teuchos::rcp(
+    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
 
   std::vector<int>& bc_model = bc_dummy->bc_model();
   std::vector<double>& bc_value = bc_dummy->bc_value();
@@ -84,12 +91,14 @@ void Transport_PK::DiffusionSolverEffective(
   Teuchos::RCP<Operators::PDE_Diffusion> op1 = opfactory.Create(op_list, mesh_, bc_dummy);
   op1->SetBCs(bc_dummy, bc_dummy);
   auto op = op1->global_operator();
-  auto op2 = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op));
+  auto op2 = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op));
 
   // Create the preconditioner and solver.
-  auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(
-      dispersion_preconditioner, *preconditioner_list_,
-      dispersion_solver, *linear_solver_list_, true);
+  auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(dispersion_preconditioner,
+                                                                *preconditioner_list_,
+                                                                dispersion_solver,
+                                                                *linear_solver_list_,
+                                                                true);
   inv_list.setName(dispersion_preconditioner);
   op->set_inverse_parameters(inv_list);
   op->InitializeInverse();
@@ -120,41 +129,32 @@ void Transport_PK::DiffusionSolverEffective(
 
     // set the initial guess
     auto& sol_cell = *sol.ViewComponent("cell");
-    for (int c = 0; c < ncells_owned; c++) {
-      sol_cell[0][c] = tcc_next[i][c];
-    }
-    if (sol.HasComponent("face")) {
-      sol.ViewComponent("face")->PutScalar(0.0);
-    }
+    for (int c = 0; c < ncells_owned; c++) { sol_cell[0][c] = tcc_next[i][c]; }
+    if (sol.HasComponent("face")) { sol.ViewComponent("face")->PutScalar(0.0); }
 
     op->Init();
-    Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D_);
+    Teuchos::RCP<std::vector<WhetStone::Tensor>> Dptr = Teuchos::rcpFromRef(D_);
     op1->Setup(Dptr, Teuchos::null, Teuchos::null);
     op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
     // add accumulation term
     op2->AddAccumulationDelta(sol, wc, wc, dt_MPC, "cell");
- 
+
     op1->ApplyBCs(true, true, true);
     op->ComputeInverse();
-  
+
     CompositeVector& rhs = *op->rhs();
     int ierr = op->ApplyInverse(rhs, sol);
 
-    if (ierr < 0) {
-      Errors::Message msg("TransportExplicit_PK solver failed with message: \"");
+    if (ierr != 0) {
+      Errors::Message msg("Transport solver failed with message: \"");
       msg << op->returned_code_string() << "\"";
       Exceptions::amanzi_throw(msg);
     }
 
-    for (int c = 0; c < ncells_owned; c++) {
-      tcc_next[i][c] = sol_cell[0][c];
-    }
+    for (int c = 0; c < ncells_owned; c++) { tcc_next[i][c] = sol_cell[0][c]; }
   }
 }
 
-}  // namespace Transport
-}  // namespace Amanzi
-
-
-
+} // namespace Transport
+} // namespace Amanzi

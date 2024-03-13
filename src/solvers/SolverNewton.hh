@@ -1,13 +1,13 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
-//! Straightforward Newton/Inexact Newton solver.
 
+//! Straightforward Newton/Inexact Newton solver.
 /*!
 
 The classical Newton method works well for cases where Jacobian is available
@@ -24,7 +24,7 @@ method is Newton.  If it applies an appoximation, it is inexact Newton.
 
     * `"nonlinear tolerance`" ``[double]`` **1.e-6** defines the required error
       tolerance. The error is calculated by a PK.
-    
+
     * `"monitor`" ``[string]`` **monitor update** specifies control of the
       nonlinear residual. The available options are `"monitor update`" and
       `"monitor residual`".
@@ -50,13 +50,17 @@ method is Newton.  If it applies an appoximation, it is inexact Newton.
       the solution increment grows on too many consecutive iterations, the
       solver is terminated.
 
+    * `"make one iteration`" ``[bool]`` **false** require at least one iteration
+      to be performed before declaring success. This options makes any effect
+      only when `"monitor residual`" is choose.
+
     * `"modify correction`" ``[bool]`` **true** allows a PK to modify the
       solution increment. One example is a physics-based clipping of extreme
       solution values.
 
     * `"stagnation iteration check`" ``[int]`` **8** determines the number of
       iterations before the stagnation check is turned on. The stagnation
-      happens when the current L2-error exceeds the initial L2-error.
+      happens when the current l2-error exceeds the initial l2-error.
 
  */
 
@@ -75,30 +79,30 @@ method is Newton.  If it applies an appoximation, it is inexact Newton.
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Vector, class VectorSpace>
-class SolverNewton : public Solver<Vector,VectorSpace> {
+template <class Vector, class VectorSpace>
+class SolverNewton : public Solver<Vector, VectorSpace> {
  public:
-  SolverNewton(Teuchos::ParameterList& plist) :
-      plist_(plist) {};
+  SolverNewton(Teuchos::ParameterList& plist) : plist_(plist){};
 
   SolverNewton(Teuchos::ParameterList& plist,
-            const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-            const VectorSpace& map) :
-      plist_(plist) {
+               const Teuchos::RCP<SolverFnBase<Vector>>& fn,
+               const VectorSpace& map)
+    : plist_(plist)
+  {
     Init(fn, map);
   }
 
-  void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-       const VectorSpace& map);
+  void Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const VectorSpace& map);
 
-  virtual int Solve(const Teuchos::RCP<Vector>& u) {
+  virtual int Solve(const Teuchos::RCP<Vector>& u)
+  {
     returned_code_ = Newton_(u);
     return (returned_code_ >= 0) ? 0 : 1;
   }
 
   // mutators
   void set_tolerance(double tol) { tol_ = tol; }
-  void set_pc_lag(int pc_lag) {};  // Newton does not need it
+  void set_pc_lag(int pc_lag){}; // Newton does not need it
 
   // access
   double tolerance() { return tol_; }
@@ -107,18 +111,22 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
   int pc_calls() { return pc_calls_; }
   int pc_updates() { return pc_calls_; }
   int returned_code() { return returned_code_; }
+  std::vector<std::pair<double, double>>& history() { return history_; }
 
  private:
   void Init_();
 
  protected:
   int Newton_(const Teuchos::RCP<Vector>& u);
-  int Newton_ErrorControl_(double error, double previous_error, double l2_error,
-                           double previous_du_norm, double du_norm);
+  int Newton_ErrorControl_(double error,
+                           double previous_error,
+                           double l2_error,
+                           double previous_du_norm,
+                           double du_norm);
 
  protected:
   Teuchos::ParameterList plist_;
-  Teuchos::RCP<SolverFnBase<Vector> > fn_;
+  Teuchos::RCP<SolverFnBase<Vector>> fn_;
 
   Teuchos::RCP<VerboseObject> vo_;
 
@@ -135,17 +143,19 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
   double residual_;
   ConvergenceMonitor monitor_;
   int norm_type_;
+
+  std::vector<std::pair<double, double>> history_;
 };
 
 
 /* ******************************************************************
 * Public Init method.
 ****************************************************************** */
-template<class Vector, class VectorSpace>
+template <class Vector, class VectorSpace>
 void
-SolverNewton<Vector, VectorSpace>::Init(
-    const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-    const VectorSpace& map) {
+SolverNewton<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
+                                        const VectorSpace& map)
+{
   fn_ = fn;
   Init_();
 }
@@ -154,8 +164,9 @@ SolverNewton<Vector, VectorSpace>::Init(
 /* ******************************************************************
 * Initialization of the Newton solver
 ****************************************************************** */
-template<class Vector, class VectorSpace>
-void SolverNewton<Vector, VectorSpace>::Init_()
+template <class Vector, class VectorSpace>
+void
+SolverNewton<Vector, VectorSpace>::Init_()
 {
   tol_ = plist_.get<double>("nonlinear tolerance", 1.0e-6);
   overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);
@@ -183,13 +194,16 @@ void SolverNewton<Vector, VectorSpace>::Init_()
 /* ******************************************************************
 * Base Newton solver
 ****************************************************************** */
-template<class Vector, class VectorSpace>
-int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
+template <class Vector, class VectorSpace>
+int
+SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
+{
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // initialize the iteration and pc counters
   num_itrs_ = 0;
   pc_calls_ = 0;
+  history_.clear();
 
   // create storage
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
@@ -207,21 +221,19 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     // Check for too many nonlinear iterations.
     if (num_itrs_ > max_itrs_) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-        *vo_->os() << "Solve reached maximum of iterations " << num_itrs_ 
-                   << "  error=" << error << std::endl;
+        *vo_->os() << "Solve reached maximum of iterations " << num_itrs_ << "  error=" << error
+                   << std::endl;
       return SOLVER_MAX_ITERATIONS;
     }
 
     // Evaluate the nonlinear function.
-    if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *vo_->os() << "Calling residual function" << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Calling residual function" << std::endl;
     fun_calls_++;
     fn_->Residual(u, r);
 
     // If monitoring the residual, check for convergence.
     if (monitor_ == SOLVER_MONITOR_RESIDUAL) {
-      if (vo_->os_OK(Teuchos::VERB_EXTREME))
-        *vo_->os() << "Monitoring residual" << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Monitoring residual" << std::endl;
       previous_error = error;
       error = fn_->ErrorNorm(u, r);
       residual_ = error;
@@ -229,7 +241,8 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
       r->Norm2(&l2_error);
       u->Norm2(&u_norm);
       if (vo_->os_OK(Teuchos::VERB_HIGH))
-        *vo_->os() << "||u||=" << u_norm << " ||r||=" << l2_error << " error=" << error << std::endl;
+        *vo_->os() << "||u||=" << u_norm << " ||r||=" << l2_error << " error=" << error
+                   << std::endl;
 
       // attempt to catch non-convergence early
       if (num_itrs_ == 0) {
@@ -237,8 +250,8 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
       } else if (num_itrs_ > stagnation_itr_check_) {
         if (l2_error > l2_error_initial) {
           if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-            *vo_->os() << "Solver stagnating, L2-error=" << l2_error
-                       << " > " << l2_error_initial << " (initial L2-error)" << std::endl;
+            *vo_->os() << "Solver stagnating, l2-error=" << l2_error << " > " << l2_error_initial
+                       << " (initial l2-error)" << std::endl;
           return SOLVER_STAGNATING;
         }
       }
@@ -252,18 +265,15 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     }
 
     // Update the preconditioner.
-    if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *vo_->os() << "Updating preconditioner" << std::endl;
-    pc_calls_++;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Updating preconditioner" << std::endl;
     fn_->UpdatePreconditioner(u);
-    
+
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
     r->Norm2(&res_l2);
     r->NormInf(&res_inf);
 
-    if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *vo_->os() << "Applying preconditioner" << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Applying preconditioner" << std::endl;
     int pc_error = fn_->ApplyPreconditioner(r, du);
     if (pc_error < 0) return SOLVER_LINEAR_SOLVER_ERROR;
 
@@ -272,8 +282,7 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
 
     // Hack the correction
     if (modify_correction_) {
-      if (vo_->os_OK(Teuchos::VERB_EXTREME))
-        *vo_->os() << "Modifying correction" << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Modifying correction" << std::endl;
       fn_->ModifyCorrection(r, u, du);
     }
 
@@ -283,14 +292,14 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
 
     if ((num_itrs_ > 0) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
       if (vo_->os_OK(Teuchos::VERB_HIGH))
-        *vo_->os() << "Solver threatens to overflow: " << "  ||du||=" 
-                   << du_norm << ", ||du_prev||=" << previous_du_norm << std::endl;
+        *vo_->os() << "Solver threatens to overflow: "
+                   << "  ||du||=" << du_norm << ", ||du_prev||=" << previous_du_norm << std::endl;
 
       // If it fails again, give up.
       if ((num_itrs_ > 0) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-           *vo_->os() << "Solver threatens to overflow: FAIL." << std::endl
-                      << "||du||=" << du_norm << ", ||du_prev||=" << previous_du_norm << std::endl;
+          *vo_->os() << "Solver threatens to overflow: FAIL." << std::endl
+                     << "||du||=" << du_norm << ", ||du_prev||=" << previous_du_norm << std::endl;
         return SOLVER_OVERFLOW;
       }
     }
@@ -303,7 +312,8 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
       // If it does not recover quickly, abort.
       if (divergence_count == max_divergence_count_) {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-          *vo_->os() << "Solver is diverging repeatedly, FAIL." << std::endl;
+          *vo_->os() << "Solver is diverging repeatedly: ||du||=" << du_norm
+                     << ", ||du_prev||=" << previous_du_norm << std::endl;
         return SOLVER_DIVERGING;
       }
     } else {
@@ -313,17 +323,17 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     // Next solution iterate and error estimate: u  = u - du
     u->Update(-1.0, *du, 1.0);
     fn_->ChangedSolution();
-    
+
     // Increment iteration counter.
     num_itrs_++;
 
     // If we monitor the update...
     if (monitor_ == SOLVER_MONITOR_UPDATE) {
-      if (vo_->os_OK(Teuchos::VERB_EXTREME))
-        *vo_->os() << "Monitoring Update" << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Monitoring Update" << std::endl;
       previous_error = error;
       error = fn_->ErrorNorm(u, du);
       residual_ = error;
+
       du->Norm2(&l2_error);
 
       int ierr = Newton_ErrorControl_(error, previous_error, l2_error, previous_du_norm, du_norm);
@@ -337,16 +347,19 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
 /* ******************************************************************
 * Internal error control
 ****************************************************************** */
-template<class Vector, class VectorSpace>
-int SolverNewton<Vector, VectorSpace>::Newton_ErrorControl_(double error, 
-                                                            double previous_error, 
-                                                            double l2_error, 
-                                                            double previous_du_norm, 
-                                                            double du_norm)
+template <class Vector, class VectorSpace>
+int
+SolverNewton<Vector, VectorSpace>::Newton_ErrorControl_(double error,
+                                                        double previous_error,
+                                                        double l2_error,
+                                                        double previous_du_norm,
+                                                        double du_norm)
 {
+  history_.push_back(std::make_pair(error, l2_error));
+
   if (vo_->os_OK(Teuchos::VERB_HIGH))
-    *vo_->os() << num_itrs_ << ": error=" << error << "  L2-error=" << l2_error 
-               << " contr. factor=" << du_norm/previous_du_norm << std::endl;
+    *vo_->os() << num_itrs_ << ": error=" << error << "  l2-error=" << l2_error
+               << " contr. factor=" << du_norm / previous_du_norm << std::endl;
 
   if (error < tol_) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
@@ -354,19 +367,19 @@ int SolverNewton<Vector, VectorSpace>::Newton_ErrorControl_(double error,
     return SOLVER_CONVERGED;
   } else if (error > overflow_tol_) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-      *vo_->os() << "Solve failed, error " << error << " > "
-                 << overflow_tol_ << " (overflow)" << std::endl;
+      *vo_->os() << "Solve failed, error " << error << " > " << overflow_tol_ << " (overflow)"
+                 << std::endl;
     return SOLVER_OVERFLOW;
   } else if ((num_itrs_ > 1) && (error > max_error_growth_factor_ * previous_error)) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-      *vo_->os() << "Solver threatens to overflow, error " << error << " > "
-                 << previous_error << " (previous error)" << std::endl;
+      *vo_->os() << "Solver threatens to overflow, error " << error << " > " << previous_error
+                 << " (previous error)" << std::endl;
     return SOLVER_OVERFLOW;
   }
   return SOLVER_CONTINUE;
 }
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif

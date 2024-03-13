@@ -1,15 +1,14 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: William Perkins
            Ethan Coon (ecoon@lanl.gov)
 */
-//!  A geometric or discrete subdomain of the full domain.
 
+//! A geometric or discrete subdomain of the full domain.
 /*!
 
 Regions are geometrical constructs used to define subsets of
@@ -19,11 +18,6 @@ subsets of physical space.  For a three-dimensional problem, the simulation
 domain will be a three-dimensional region bounded by a set of two-dimensional
 regions.  If the simulation domain is N-dimensional, the boundary conditions
 must be specified over a set of regions are (N-1)-dimensional.
-
-Region specs are **not** denoted by a "type" parameter for legacy reasons.
-Instead, they take a single sublist whose name defines the type.
-
-``[region-typedsublist-spec]``
 
 
 .. warning:: Surface files contain labeled triangulated face sets.  The user is
@@ -84,7 +78,7 @@ Example:
        <ParameterList name="FLUX PLANE">
          <ParameterList name="region: polygon">
            <Parameter name="number of points" type="int" value="5"/>
-           <Parameter name="points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
+           <Parameter name="points" type="Array(double)" value="{-0.5, -0.5, -0.5,
                                                                   0.5, -0.5, -0.5,
                                                                   0.8, 0.0, 0.0,
                                                                   0.5,  0.5, 0.5,
@@ -117,53 +111,33 @@ class Point;
 
 class Region {
  public:
-  virtual ~Region() {};
+  virtual ~Region(){};
 
   // Dimension of the subdomain
-  unsigned int get_manifold_dimension() const {
-    return manifold_dimension_;
-  }
-  void set_manifold_dimension(unsigned int dimension) {
-    manifold_dimension_ = dimension;
-  }
+  unsigned int get_manifold_dimension() const { return manifold_dimension_; }
+  void set_manifold_dimension(unsigned int dimension) { manifold_dimension_ = dimension; }
 
   // Dimension of points in the subdomain
-  unsigned int get_space_dimension() const {
-    return space_dimension_;
-  }
-  void set_space_dimension(unsigned int dimension) {
-    space_dimension_ = dimension;
-  }
+  unsigned int get_space_dimension() const { return space_dimension_; }
+  void set_space_dimension(unsigned int dimension) { space_dimension_ = dimension; }
 
   // Name of the region -- no setter (set by constructor)
-  std::string get_name() const {
-    return name_;
-  }
+  std::string get_name() const { return name_; }
 
   // Integer identifier of the region
-  int get_id() const {
-    return id_;
-  }
-  void set_id(int id) {
-    id_ = id;
-  }
+  int get_id() const { return id_; }
+  void set_id(int id) { id_ = id; }
 
   // Geometric/enumerated
-  bool is_geometric() const {
-    return geometric_;
-  }
+  bool is_geometric() const { return geometric_; }
 
   // Type of the region
-  RegionType get_type() const {
-    return type_;
-  }
+  RegionType get_type() const { return type_; }
 
   // Get the Lifecycle of this region - Do mesh entity sets derived from
   // it have to be kept around or are they temporary and can be destroyed
   // as soon as they are used?
-  LifeCycleType get_lifecycle() const {
-    return lifecycle_;
-  }
+  LifeCycleType get_lifecycle() const { return lifecycle_; }
 
   // Tolerance for geometic operations
   void set_tolerance(double tol) { tol_ = tol; }
@@ -175,14 +149,16 @@ class Region {
   // is defined when the object and Region have same dimensionality.
   //
   // -- counter clockwise ordered polygon does not require faces
-  double intersect(const Point_View& polytope) const {
-    const std::vector<Entity_ID_View> faces;
+  double intersect(const Point_List& polytope) const
+  {
+    const std::vector<Entity_ID_List> faces;
     return intersect(polytope, faces);
   }
 
   // Polyhedron with counter clockwise ordered faces (wrt normals)
-  virtual double intersect(const Point_View& polytope,
-                           const std::vector<Entity_ID_View>& faces) const {
+  virtual double
+  intersect(const Point_List& polytope, const std::vector<Entity_ID_List>& faces) const
+  {
     return -1.0;
   }
 
@@ -194,14 +170,14 @@ class Region {
          RegionType type,
          unsigned int dim,
          unsigned int geom_dim,
-         LifeCycleType lifecycle=LifeCycleType::PERMANENT)
+         LifeCycleType lifecycle = LifeCycleType::PERMANENT)
     : name_(name),
       id_(id),
       type_(type),
       manifold_dimension_(dim),
       space_dimension_(geom_dim),
       geometric_(geometric),
-      lifecycle_(lifecycle) {};
+      lifecycle_(lifecycle){};
 
  protected:
   // Name of identifier
@@ -232,10 +208,9 @@ class Region {
 };
 
 
-typedef std::vector<Teuchos::RCP<Region> > RegionVector;
+typedef std::vector<Teuchos::RCP<Region>> RegionVector;
 
-}  // namespace AmanziGeometry
-}  // namespace Amanzi
+} // namespace AmanziGeometry
+} // namespace Amanzi
 
 #endif
-

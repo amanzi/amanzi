@@ -1,13 +1,16 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Solvers
+
 */
 
 #ifndef AMANZI_SOLVER_DEFS_HH_
@@ -17,15 +20,15 @@ namespace Amanzi {
 namespace AmanziSolvers {
 
 enum ConvergenceMonitor {
-     SOLVER_MONITOR_UPDATE = 0,
-     SOLVER_MONITOR_PCED_RESIDUAL = 1,
-     SOLVER_MONITOR_RESIDUAL = 2
+  SOLVER_MONITOR_UPDATE = 0,
+  SOLVER_MONITOR_PCED_RESIDUAL = 1,
+  SOLVER_MONITOR_RESIDUAL = 2
 };
 
 enum BacktrackMonitor {
-  BT_MONITOR_ENORM,   // accept decrease in the ENORM
-  BT_MONITOR_L2,      // accept decrease in the Linf of the ConvergenceMonitor (residual)
-  BT_MONITOR_EITHER   // accept decrease in either of the above
+  BT_MONITOR_ENORM, // accept decrease in the ENORM
+  BT_MONITOR_L2,    // accept decrease in the Linf of the ConvergenceMonitor (residual)
+  BT_MONITOR_EITHER // accept decrease in either of the above
 };
 
 const int SOLVER_NORM_LINF = 0;
@@ -48,8 +51,7 @@ const int BACKTRACKING_USED = 1;
 const int BACKTRACKING_MAX_ITERATIONS = 4;
 const int BACKTRACKING_ROUNDOFF_PROBLEM = 8;
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
- 
-#endif
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
+#endif

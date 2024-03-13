@@ -1,12 +1,14 @@
 /*
-  Time Integration
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
+
+/*
+  Time Integration
 
   Slightly smarter timestep control based upon a history of previous timesteps.
 */
@@ -19,11 +21,11 @@
 namespace Amanzi {
 
 TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
-        Teuchos::ParameterList& plist,
-        const Teuchos::RCP<State>& S)
+                                                     Teuchos::ParameterList& plist,
+                                                     const Teuchos::RCP<State>& S)
   : TimestepController(plist),
     plist_(plist),
-    name_(name),
+    name_(Keys::cleanName(name)),
     count_increased_before_increase_(0),
     S_(S),
     successive_increases_(0),
@@ -31,7 +33,7 @@ TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
 {
   // allocate space for state -- done manually because Setup() has already been called
   if (S_ != Teuchos::null) {
-    std::string varname = name_+"_increase_factor";
+    std::string varname = name_ + "_increase_factor";
     S_->Require<double>(varname, Tags::DEFAULT, name_);
     S_->SetPtr<double>(varname, Tags::DEFAULT, name_, Teuchos::rcp(new double(0)));
     S_->GetRecordW(varname, Tags::DEFAULT, name_).set_initialized();
@@ -39,7 +41,7 @@ TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
     S_->GetRecordW(varname, Tags::DEFAULT, name_).set_io_vis(false);
     increase_factor_ = S_->GetPtrW<double>(varname, Tags::DEFAULT, name_);
 
-    varname = name_+"_successive_increases";
+    varname = name_ + "_successive_increases";
     S_->Require<int>(varname, Tags::DEFAULT, name_);
     S_->SetPtr<int>(varname, Tags::DEFAULT, name_, Teuchos::rcp(new int(0)));
     S_->GetRecordW(varname, Tags::DEFAULT, name_).set_initialized();
@@ -47,7 +49,7 @@ TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
     S_->GetRecordW(varname, Tags::DEFAULT, name_).set_io_vis(false);
     successive_increases_ = S_->GetPtrW<int>(varname, Tags::DEFAULT, name_);
 
-    varname = name_+"_last_fail";
+    varname = name_ + "_last_fail";
     S_->Require<int>(varname, Tags::DEFAULT, name_);
     S_->SetPtr<int>(varname, Tags::DEFAULT, name_, Teuchos::rcp(new int(0)));
     S_->GetRecordW(varname, Tags::DEFAULT, name_).set_initialized();
@@ -55,7 +57,7 @@ TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
     S_->GetRecordW(varname, Tags::DEFAULT, name_).set_io_vis(false);
     last_fail_ = S_->GetPtrW<int>(varname, Tags::DEFAULT, name_);
 
-    varname = name_+"_growth_wait_after_fail";
+    varname = name_ + "_growth_wait_after_fail";
     S_->Require<int>(varname, Tags::DEFAULT, name_);
     S_->SetPtr<int>(varname, Tags::DEFAULT, name_, Teuchos::rcp(new int(0)));
     S_->GetRecordW(varname, Tags::DEFAULT, name_).set_initialized();
@@ -101,7 +103,8 @@ TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
 
 
 double
-TimestepControllerSmarter::get_timestep(double dt, int iterations) {
+TimestepControllerSmarter::get_timestep(double dt, int iterations)
+{
   double dt_next(dt);
 
   // iterations < 0 implies failed timestep
@@ -133,7 +136,8 @@ TimestepControllerSmarter::get_timestep(double dt, int iterations) {
 
         // increase faster than geometric if we are growing the timestep repeatedly
         if ((*successive_increases_) > count_increased_before_increase_) {
-          (*increase_factor_) = std::min((*increase_factor_) * increase_factor0_, max_increase_factor_);
+          (*increase_factor_) =
+            std::min((*increase_factor_) * increase_factor0_, max_increase_factor_);
         }
 
         dt_next = dt * (*increase_factor_);
@@ -166,7 +170,8 @@ TimestepControllerSmarter::get_timestep(double dt, int iterations) {
   // check that if we have failed, our step size has decreased.
   if (iterations < 0) {
     if (dt - dt_next < 1.e-10) {
-      Errors::TimeStepCrash msg("Timestep failed: dT change is too small (check reduction_factor).");
+      Errors::TimeStepCrash msg(
+        "Timestep failed: dT change is too small (check reduction_factor).");
       Exceptions::amanzi_throw(msg);
     }
   }

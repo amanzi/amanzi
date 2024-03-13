@@ -1,8 +1,5 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! RegionLogical: A region defined by a logical operation on one or two other regions
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -10,6 +7,7 @@
   Authors: Rao Garimella
 */
 
+//! RegionLogical: A region defined by a logical operation on one or two other regions
 /*!
 
 The list *region: logical* defines logical operations on regions allow for
@@ -51,13 +49,12 @@ namespace AmanziGeometry {
 
 class RegionLogical : public Region {
  public:
-
   // constructor
   RegionLogical(const std::string& name,
                 const int id,
                 const std::string& operation_str,
                 const std::vector<std::string>& component_regions,
-                const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
+                const LifeCycleType lifecycle = LifeCycleType::PERMANENT);
 
   // Label in the file
   BoolOpType get_operation() const { return operation_; }
@@ -67,9 +64,9 @@ class RegionLogical : public Region {
 
   const std::vector<std::string>& get_component_regions() const { return component_regions_; }
 
-protected:
-  BoolOpType operation_;  // what logical operation should be performed
-  std::vector<std::string> component_regions_;  // names of regions in operation
+ protected:
+  BoolOpType operation_;                       // what logical operation should be performed
+  std::vector<std::string> component_regions_; // names of regions in operation
 };
 
 } // namespace AmanziGeometry

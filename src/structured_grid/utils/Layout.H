@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _Layout_H_
 #define _Layout_H_
 
@@ -68,9 +77,9 @@ const Stencil operator-(const Stencil& lhs, const Stencil& rhs);
 struct Layout
 {
   typedef BaseFab<Node> NodeFab;
-  typedef FabArray<NodeFab> MultiNodeFab; 
+  typedef FabArray<NodeFab> MultiNodeFab;
   typedef BaseFab<int> IntFab;
-  typedef FabArray<IntFab> MultiIntFab; 
+  typedef FabArray<IntFab> MultiIntFab;
 
   Layout(Amr* parent = 0,
          int  nLevs = -1);
@@ -100,7 +109,7 @@ struct Layout
   static BoxArray GetBndryCells (const BoxArray& ba,
                                  const IntVect&  ngrow,
                                  const Geometry& geom);
-        
+
 
 #ifdef BL_USE_PETSC
   Mat& Jacobian();
@@ -113,7 +122,7 @@ struct Layout
                               const Vec& V,
                               int        comp) const;
 #endif
-    
+
   const Array<IntVect>& RefRatio() const {return refRatio;}
 
   bool IsCompatible(const MFTower& mft) const;

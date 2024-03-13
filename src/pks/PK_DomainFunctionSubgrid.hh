@@ -1,12 +1,15 @@
 /*
-  Process Kernels
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (coonet@ornl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
+*/
+
+/*
+  Process Kernels
+
 */
 
 #ifndef AMANZI_PK_DOMAIN_FUNCTION_SUBGRID_HH_
@@ -30,19 +33,19 @@ namespace Amanzi {
 template <class FunctionBase>
 class PK_DomainFunctionSubgrid : public FunctionBase {
  public:
-  PK_DomainFunctionSubgrid(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      mesh_(mesh) {};
+  PK_DomainFunctionSubgrid(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : mesh_(mesh){};
   virtual ~PK_DomainFunctionSubgrid() = default;
 
   // member functions
-  void Init(const Teuchos::ParameterList& plist, const std::string& keyword,
+  void Init(const Teuchos::ParameterList& plist,
+            const std::string& keyword,
             AmanziMesh::Entity_kind kind);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "hyporheic exchange"; }
+  virtual void Compute(double t0, double t1) override;
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::SUBGRID; }
 
-  virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
+  virtual void set_state(const Teuchos::RCP<State>& S) final { S_ = S; }
 
  protected:
   using FunctionBase::value_;
@@ -64,9 +67,10 @@ class PK_DomainFunctionSubgrid : public FunctionBase {
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionSubgrid<FunctionBase>::Init(
-    const Teuchos::ParameterList& plist, const std::string& keyword,
-    AmanziMesh::Entity_kind region_kind)
+void
+PK_DomainFunctionSubgrid<FunctionBase>::Init(const Teuchos::ParameterList& plist,
+                                             const std::string& keyword,
+                                             AmanziMesh::Entity_kind region_kind)
 {
   keyword_ = keyword;
 
@@ -80,20 +84,20 @@ void PK_DomainFunctionSubgrid<FunctionBase>::Init(
     Exceptions::amanzi_throw(m);
   }
 
-  auto regions = plist.get<Teuchos::Array<std::string> >("regions");
+  auto regions = plist.get<Teuchos::Array<std::string>>("regions");
   if (regions.size() != 1) {
     Errors::Message m;
     m << "Invalid \"regions\" list in processing subgrid source spec (must be of length 1).";
     Exceptions::amanzi_throw(m);
   }
   std::string region = regions[0];
-  if (mesh_->valid_set_name(region, region_kind)) {
-    AmanziMesh::Entity_ID_List id_list;
-    mesh_->get_set_entities(region, region_kind, AmanziMesh::Parallel_type::ALL, &id_list);
+  if (mesh_->isValidSetName(region, region_kind)) {
+    auto id_list = mesh_->getSetEntities(region, region_kind, AmanziMesh::Parallel_kind::ALL);
 
     if (id_list.size() != 1) {
       Errors::Message m;
-      m << "Invalid region in processing subgrid source spec (must be of length 1): \"" << region << "\"";
+      m << "Invalid region in processing subgrid source spec (must be of length 1): \"" << region
+        << "\"";
       Exceptions::amanzi_throw(m);
     }
     entity_lid_ = id_list[0];
@@ -112,7 +116,8 @@ void PK_DomainFunctionSubgrid<FunctionBase>::Init(
 * Compute and distribute the result by Subgrid.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionSubgrid<FunctionBase>::Compute(double t0, double t1)
+void
+PK_DomainFunctionSubgrid<FunctionBase>::Compute(double t0, double t1)
 {
   auto& vec_out = S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_);
   const auto& field_out = *vec_out.ViewComponent("cell", true);
@@ -120,12 +125,13 @@ void PK_DomainFunctionSubgrid<FunctionBase>::Compute(double t0, double t1)
   int num_vec = field_out.NumVectors();
   std::vector<double> val(num_vec);
 
-  AmanziMesh::Entity_ID entity_lid_out = vec_out.Mesh()->cell_map("false").LID(entity_gid_out_);
+  AmanziMesh::Entity_ID entity_lid_out =
+    vec_out.Mesh()->getMap(AmanziMesh::Entity_kind::CELL, false).LID(entity_gid_out_);
   AMANZI_ASSERT(entity_lid_out >= 0);
-  for (int k=0; k<num_vec; ++k) val[k] = field_out[k][entity_lid_out];
+  for (int k = 0; k < num_vec; ++k) val[k] = field_out[k][entity_lid_out];
   value_[entity_lid_] = val;
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

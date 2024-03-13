@@ -1,12 +1,15 @@
 /*
-  Flow PK
- 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
- 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Flow PK
+
 */
 
 #ifndef AMANZI_FAKE_MODEL_HH_
@@ -21,18 +24,17 @@ namespace Flow {
 
 class WRM_fake : public WRM {
  public:
-  explicit WRM_fake(Teuchos::ParameterList& plist) {
+  explicit WRM_fake(Teuchos::ParameterList& plist)
+  {
     alpha = 1.0;
     n = 2.0;
     m = 1.0;
   }
-  ~WRM_fake() {};
-  
+  ~WRM_fake(){};
+
   // required methods from the base class
   // -- relative permeability formula
-  double k_relative(double pc) const {
-    return 1.0;
-  }
+  double k_relative(double pc) const { return 1.0; }
 
   // -- analytic solution was designed for stationary PDE
   double saturation(double pc) const { return -pc; }
@@ -42,17 +44,15 @@ class WRM_fake : public WRM {
   double residualSaturation() const { return 0.0; }
 
   // -- derivative of rel_perm  w.r.t. capillary pressure.
-  double dKdPc(double pc) const {
-    return 0.0;
-  }
+  double dKdPc(double pc) const { return 0.0; }
 
  private:
   double m, n, alpha;
 
-  static Utils::RegisteredFactory<WRM, WRM_fake> factory_;
+  static Utils::RegisteredFactory<WRM, WRM_fake> reg_;
 };
 
-}  // namespace Flow
-}  // namespace Amanzi
- 
+} // namespace Flow
+} // namespace Amanzi
+
 #endif

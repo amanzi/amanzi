@@ -36,10 +36,10 @@ the domain function.
 
 #include "CommonDefs.hh"
 #include "Mesh.hh"
-#include "UniqueMeshFunction.hh"
 #include "Evaluator.hh"
 
 #include "PK_Utils.hh"
+#include "PKsDefs.hh"
 
 namespace Amanzi {
 
@@ -68,8 +68,8 @@ class PK_DomainFunctionField : public FunctionBase {
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "field"; }
+  virtual void Compute(double t0, double t1) override;
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::FIELD; }
 
  protected:
   using FunctionBase::value_;
@@ -121,9 +121,8 @@ PK_DomainFunctionField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
   AmanziMesh::Entity_kind kind = domain->second;
 
   for (auto region = domain->first.begin(); region != domain->first.end(); ++region) {
-    if (mesh_->valid_set_name(*region, kind)) {
-      AmanziMesh::Entity_ID_List id_list;
-      mesh_->get_set_entities(*region, kind, AmanziMesh::Parallel_type::OWNED, &id_list);
+    if (mesh_->isValidSetName(*region, kind)) {
+      auto id_list = mesh_->getSetEntities(*region, kind, AmanziMesh::Parallel_kind::OWNED);
       entity_ids_->insert(id_list.begin(), id_list.end());
     } else {
       msg << "Unknown region in processing coupling source: name=" << *region << ", kind=" << kind

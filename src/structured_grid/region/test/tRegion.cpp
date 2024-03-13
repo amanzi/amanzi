@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <Utility.H>
 #include <ccse-mpi.H>
 #include <Region.H>
@@ -16,7 +25,7 @@ static double sum_eps = 1.e-20;
 int main(int argc, char* argv[])
 {
   BoxLib::Initialize(argc,argv);
-  
+
   Array<Real> problo(BL_SPACEDIM,0), probhi(BL_SPACEDIM,30);
 
   Region::geometry_eps = geom_eps;
@@ -46,16 +55,12 @@ int main(int argc, char* argv[])
   Array<Real> blo3(BL_SPACEDIM); D_EXPR(blo3[0]=20, blo3[1]=0,  blo3[2]=0);
   Array<Real> bhi3(BL_SPACEDIM); D_EXPR(bhi3[0]=30, bhi3[1]=10, bhi3[2]=10);
   BoxRegion region3(name3,purpose3,blo3,bhi3);
-  Real vol3=1;
-  for (int i=0; i<BL_SPACEDIM; ++i) vol3 *= bhi3[i] - blo3[i];
 
   std::string name4 = "Bob";
   std::string purpose4 = "Test";
   Array<Real> blo4(BL_SPACEDIM); D_EXPR(blo4[0]=7,  blo4[1]=0,  blo4[2]=0);
   Array<Real> bhi4(BL_SPACEDIM); D_EXPR(bhi4[0]=12, bhi4[1]=10, bhi4[2]=10);
   BoxRegion region4(name4,purpose4,blo4,bhi4);
-  Real vol4=1;
-  for (int i=0; i<BL_SPACEDIM; ++i) vol4 *= bhi4[i] - blo4[i];
 
   AllRegion regionA;
   Real volA=1;
@@ -134,6 +139,6 @@ int main(int argc, char* argv[])
     std::cout << "Test 8 fail" << std::endl;
   }
 
-  BoxLib::Finalize();  
+  BoxLib::Finalize();
   return 0;
 }

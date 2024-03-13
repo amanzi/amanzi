@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <NLScontrol.H>
 
 // Solver parameter defaults
@@ -20,7 +29,7 @@ static bool centered_diff_J_DEF                       = false;
 static bool ls_success_DEF                            = false;
 static std::string ls_reason_DEF                      = "Invalid";
 static int max_nl_iterations_DEF                      = 20;
-static Real max_nl_residual_norm_DEF                  = -1; 
+static Real max_nl_residual_norm_DEF                  = -1;
 static int max_num_consecutive_success_DEF            = 0;
 static int max_num_consecutive_failures_1_DEF         = 3;
 static int max_num_consecutive_failures_2_DEF         = 4;

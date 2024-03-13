@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.3.0">
+<amanzi_input type="unstructured" version="1.5-dev">
   <model_description name="1D Flow and Transport w/ calcite dissolution">
     <units>
       <length_unit>m</length_unit>
@@ -74,7 +74,6 @@
         <limit_iterations>20</limit_iterations>
         <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
         <nonlinear_tolerance>1.0e-12</nonlinear_tolerance>
-        <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
         <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
         <max_divergent_iterations>3</max_divergent_iterations>
       </unstr_steady-state_controls>
@@ -85,7 +84,6 @@
         <limit_iterations>20</limit_iterations>
         <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
         <nonlinear_tolerance>1.0e-12</nonlinear_tolerance>
-        <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
         <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
         <max_divergent_iterations>3</max_divergent_iterations>
       </unstr_transient_controls>
@@ -136,6 +134,7 @@
     <material name="Soil">
       <mechanical_properties>
         <porosity value="0.25"/>
+        <specific_storage model="constant" value="0.0"/>
       </mechanical_properties>
       <permeability x="1.E-12" y="1.E-12" z="1.E-12" />
       <assigned_regions>All</assigned_regions>
@@ -245,10 +244,18 @@
 
       <mineral_kinetics>
         <mineral name="Calcite">
-          <species_data weight="100.08720"/>
-          <kinetics_data model="TST" rate="-1.30000E+01" modifiers="" molar_volume="3.69340e+01 cm^3/mol" specific_surface_area="1.0 cm^-1"/>
-          <reaction>-1.0 H+  1.0 HCO3-  1.0 Ca++</reaction>
-          <equilibrium_constant>1.84870e+00</equilibrium_constant>
+          <kinetics>
+            <model>TST</model>
+            <rate>-1.30000E+01</rate>
+            <modifiers></modifiers>
+            <molar_volume>3.69340e+01 cm^3/mol</molar_volume>
+            <specific_surface_area>1.0 cm^-1</specific_surface_area>
+          </kinetics>
+          <complex>
+            <species_data weight="100.08720"/>
+            <reaction>-1.0 H+  1.0 HCO3-  1.0 Ca++</reaction>
+            <equilibrium_constant>1.84870e+00</equilibrium_constant>
+          </complex>
         </mineral>
       </mineral_kinetics>
     </thermodynamic_database>

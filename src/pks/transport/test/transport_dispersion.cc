@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
@@ -20,25 +29,32 @@
 #include "TransportExplicit_PK.hh"
 
 
-double f_step(const Amanzi::AmanziGeometry::Point& x, double t) { 
+double
+f_step(const Amanzi::AmanziGeometry::Point& x, double t)
+{
   if (x[0] <= 1 + t) return 1;
   return 0;
 }
 
-double f_smooth(const Amanzi::AmanziGeometry::Point& x, double t) { 
-  return 0.5 - atan(50*(x[0]-5-t)) / M_PI;
+double
+f_smooth(const Amanzi::AmanziGeometry::Point& x, double t)
+{
+  return 0.5 - atan(50 * (x[0] - 5 - t)) / M_PI;
 }
 
-double f_cubic(const Amanzi::AmanziGeometry::Point& x, double t) {
+double
+f_cubic(const Amanzi::AmanziGeometry::Point& x, double t)
+{
   if (x[0] < 1 + t) return 1;
   if (x[0] > 3 + t) return 0;
-  double z = (x[0]-1-t) / 2;
-  return 2*z*z*z - 3*z*z + 1;
+  double z = (x[0] - 1 - t) / 2;
+  return 2 * z * z * z - 3 * z * z + 1;
 }
 
 
 /* **************************************************************** */
-TEST(DISPERSION) {
+TEST(DISPERSION)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -59,16 +75,16 @@ TEST(DISPERSION) {
   /* create an MSTK mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   int nx = 20;
-  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 10, 1); 
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 5.0, 1.0, 1.0, nx, 10, 1);
 
   /* create a simple state and populate it */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -91,21 +107,24 @@ TEST(DISPERSION) {
   S->set_final_time(0.0);
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state"); 
+  std::string passwd("state");
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     flux[0][f] = velocity * normal;
   }
 
-  auto tcc = S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
+  auto tcc =
+    S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     (*tcc)[0][c] = f_step(xc, 0.0);
   }
 
@@ -119,20 +138,18 @@ TEST(DISPERSION) {
   double dt0;
   dt0 = TPK.StableTimeStep(-1);
 
-  int iter = 0;
   double t_old(0.0), t_new(0.0), dt, T1(1.0);
   while (t_new < T1) {
     dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
     dt = std::min(dt, dt0);
     t_new = t_old + dt;
-    // for (int k = 0; k < nx; k++) printf("%10.8f\n", (*tcc)[0][k]); 
+    // for (int k = 0; k < nx; k++) printf("%10.8f\n", (*tcc)[0][k]);
     // printf("\n");
 
     TPK.AdvanceStep(t_old, t_new);
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
-    iter++;
 
     TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
   }
@@ -140,7 +157,8 @@ TEST(DISPERSION) {
 
 
 /* **************************************************************** */
-TEST(DIFFUSION) {
+TEST(DIFFUSION)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -161,15 +179,15 @@ TEST(DIFFUSION) {
   /* create an MSTK mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
-  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0, 1.0,1.0, 20, 20); 
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 20, 20);
 
   /* create a simple state and populate it */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -192,17 +210,19 @@ TEST(DIFFUSION) {
   S->set_final_time(0.0);
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state"); 
+  std::string passwd("state");
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(0.5, 0.0);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     flux[0][f] = velocity * normal;
   }
 
-  auto tcc = S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
+  auto tcc =
+    S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   S->GetW<double>("const_fluid_density", passwd) = 1.0;
 
@@ -214,25 +234,23 @@ TEST(DIFFUSION) {
   double dt0;
   dt0 = TPK.StableTimeStep(-1);
 
-  int iter = 0;
   double t_old(0.0), t_new(0.0), dt, T1(1.0);
   while (t_new < T1) {
     dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
     dt = std::min(dt, dt0);
     t_new = t_old + dt;
-    // for (int k = 0; k < nx; k++) printf("%10.8f\n", (*tcc)[0][k]); 
+    // for (int k = 0; k < nx; k++) printf("%10.8f\n", (*tcc)[0][k]);
     // printf("\n");
 
     TPK.AdvanceStep(t_old, t_new);
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
-    iter++;
 
     TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
   }
- 
-  GMV::open_data_file(*mesh, (std::string)"transport.gmv");
+
+  GMV::open_data_file(*mesh, (std::string) "transport.gmv");
   GMV::start_data();
   GMV::write_cell_data(*tcc, 0, "Component_0");
   GMV::close_data_file();
@@ -240,7 +258,8 @@ TEST(DIFFUSION) {
 
 
 /* **************************************************************** */
-TEST(GAS_DIFFUSION) {
+TEST(GAS_DIFFUSION)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -261,15 +280,15 @@ TEST(GAS_DIFFUSION) {
   /* create an MSTK mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
-  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0, 1.0,1.0, 21, 21); 
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 21, 21);
 
   /* create a simple state and populate it */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -293,17 +312,19 @@ TEST(GAS_DIFFUSION) {
   S->set_final_time(0.0);
 
   /* modify the default state for the problem at hand */
-  std::string passwd("state"); 
+  std::string passwd("state");
   auto& flux = *S->GetW<CompositeVector>("volumetric_flow_rate", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(0.1, 0.0);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     flux[0][f] = velocity * normal;
   }
 
-  auto& tcc = *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
+  auto& tcc =
+    *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   S->GetW<double>("const_fluid_density", passwd) = 1.0;
 
@@ -315,7 +336,6 @@ TEST(GAS_DIFFUSION) {
   double dt0;
   dt0 = TPK.StableTimeStep(-1);
 
-  int iter = 0;
   double t_old(0.0), t_new(0.0), dt, T1(0.99);
   while (t_new < T1) {
     dt = std::min(TPK.StableTimeStep(-1), T1 - t_old);
@@ -326,7 +346,6 @@ TEST(GAS_DIFFUSION) {
     TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
-    iter++;
 
     TPK.VV_CheckTracerBounds(tcc, 0, 0.0, 1.0, 1e-12);
     TPK.VV_CheckTracerBounds(tcc, 1, 0.0, 1.0, 1e-12);
@@ -337,18 +356,16 @@ TEST(GAS_DIFFUSION) {
   CHECK_CLOSE(tcc[1][218], tcc[1][222], 1e-12);
 
   // check for bounds
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells_owned; ++c) {
     CHECK(tcc[0][c] >= 0.0 && tcc[0][c] <= 1.0);
     CHECK(tcc[1][c] >= 0.0 && tcc[1][c] <= 1.0);
   }
- 
-  GMV::open_data_file(*mesh, (std::string)"transport.gmv");
+
+  GMV::open_data_file(*mesh, (std::string) "transport.gmv");
   GMV::start_data();
   GMV::write_cell_data(tcc, 0, "Component_0");
   GMV::write_cell_data(tcc, 1, "Component_1");
   GMV::close_data_file();
 }
-
-
-

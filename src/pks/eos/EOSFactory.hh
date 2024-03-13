@@ -1,12 +1,14 @@
 /*
-  EOS
-   
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
+
+/*
+  EOS
 
   Self-registering factory for EOS implementations.
 */
@@ -22,18 +24,18 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-template<typename EOS>
+template <typename EOS>
 class EOSFactory : public Utils::Factory<EOS> {
  public:
   using Utils::Factory<EOS>::CreateInstance;
 
-  Teuchos::RCP<EOS> Create(Teuchos::ParameterList& plist) {
+  Teuchos::RCP<EOS> Create(Teuchos::ParameterList& plist)
+  {
     std::string name;
 
     if (plist.isParameter("eos type")) {
       name = plist.get<std::string>("eos type");
-    }
-    else if (plist.isParameter("com type")) {
+    } else if (plist.isParameter("com type")) {
       name = plist.get<std::string>("com type");
     }
 
@@ -41,7 +43,7 @@ class EOSFactory : public Utils::Factory<EOS> {
   }
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

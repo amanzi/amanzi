@@ -1,12 +1,15 @@
 /*
-  Utils
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Rao Garimella (raovgarimella@lanl.gov)
+  Authors: Rao Garimella (raovgarimella@lanl.gov)
+*/
+
+/*
+  Utils
+
 */
 
 #include "ExprTK.hh"
@@ -14,7 +17,8 @@
 namespace Amanzi {
 namespace Utils {
 
-bool ExprTK::Initialize(int n, const std::string& formula)
+bool
+ExprTK::Initialize(int n, const std::string& formula)
 {
   n_ = n;
   symbol_table_.add_variable("t", t);
@@ -31,7 +35,8 @@ bool ExprTK::Initialize(int n, const std::string& formula)
 }
 
 
-double ExprTK::operator()(const std::vector<double>& txyz)
+double
+ExprTK::operator()(const std::vector<double>& txyz)
 {
   t = txyz[0];
   if (n_ > 1) x = txyz[1];
@@ -40,6 +45,5 @@ double ExprTK::operator()(const std::vector<double>& txyz)
   return expression_.value();
 }
 
-}  // namespace Utils
-}  // namespace Amanzi
-
+} // namespace Utils
+} // namespace Amanzi

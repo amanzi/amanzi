@@ -1,16 +1,25 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef Input_Parser_Structured_H_
 #define Input_Parser_Structured_H_
 #include "Teuchos_ParameterList.hpp"
 
 namespace Amanzi {
   namespace AmanziInput {
-    
+
     using Teuchos::ParameterList;
     using Teuchos::Array;
 
     static int ndim;
     static double simulation_time;
-    static Array<double> domlo,domhi;      
+    static Array<double> domlo,domhi;
     static double geometry_eps;
 
     static Array<std::string> user_derive_list;
@@ -26,12 +35,12 @@ namespace Amanzi {
                    const std::string& label)
               : Amanzi_type(Amanzi_type),
                 label(label),
-                plist(plist) {} 
-          
+                plist(plist) {}
+
           const ParameterList& PList() const {return plist;}
           const std::string& Amanzi_Type() const {return Amanzi_type;}
           const std::string& Label() const {return label;}
-          
+
       protected:
           std::string Amanzi_type, label;
           ParameterList plist;
@@ -55,10 +64,10 @@ namespace Amanzi {
           CompFuncMap& getCompFuncMap() {return compFunc_map;}
           CompFunc& operator [] (const std::string& compName) {return compFunc_map[compName];}
           int size() const {return compFunc_map.size();}
-          
+
           CompFuncMap compFunc_map;
       };
-      
+
       struct StateFunc
       {
           StateFunc() {}
@@ -88,7 +97,7 @@ namespace Amanzi {
           PhaseFuncMap phaseFunc_map;
           Array<std::string> regions;
       };
-      
+
       struct TRACER
       {
         TRACER(const std::string& _name)
@@ -118,11 +127,11 @@ namespace Amanzi {
               {
                 tracers.push_back(TRACER(str));
               }
-          
+
       protected:
           Array<TRACER> tracers;
       };
-      
+
       struct PHASE
       {
           PHASE() {}
@@ -144,7 +153,7 @@ namespace Amanzi {
           double viscosity;
           double diffusivity;
       };
-      
+
 
       struct SolidChem
       {
@@ -163,7 +172,7 @@ namespace Amanzi {
           };
           struct SorptionSiteData
           {
-              SorptionSiteData() 
+              SorptionSiteData()
                   : site_density(0) {}
               double site_density;
               ParameterList BuildPL() const {
@@ -174,7 +183,7 @@ namespace Amanzi {
           };
           struct SorptionIsothermData
           {
-              SorptionIsothermData() 
+              SorptionIsothermData()
                   : Kd(0), Langmuir_b(-1.0), Freundlich_n(-1.0) {}
               bool IsFreundlich() const {return Freundlich_n>0;}
               bool IsLangmuir() const {return Langmuir_b>0;}
@@ -222,7 +231,7 @@ namespace Amanzi {
               }
           }
           SolidChem::SorptionIsothermData& SorptionIsotherm(const std::string& solute_name) {return sorption_isotherms[solute_name];}
-          const std::map<std::string,SorptionIsothermData>& SorptionIsotherm() const {return sorption_isotherms;}          
+          const std::map<std::string,SorptionIsothermData>& SorptionIsotherm() const {return sorption_isotherms;}
           bool HasSorptionIsotherm(const std::string& solute)  const
 	      {
 		return sorption_isotherms.find(solute) != sorption_isotherms.end();
@@ -236,11 +245,11 @@ namespace Amanzi {
               }
               return true;
           }
-	
+
       protected:
           std::map<std::string,MineralData> minerals;
           std::map<std::string,SorptionSiteData> sorption_sites;
-          std::map<std::string,SorptionIsothermData> sorption_isotherms; 
+          std::map<std::string,SorptionIsothermData> sorption_isotherms;
       };
 
 
@@ -366,7 +375,7 @@ namespace Amanzi {
                                   found = true;
                               }
                           }
-                          
+
                           if (!found) {
                               optParms.push_back(name);
                           }
@@ -378,9 +387,9 @@ namespace Amanzi {
                   if (reqParmsOnly && optParms.size()) {
                       bailParms(p);
                   }
-              }   
+              }
 
-          void bailParms(const ParameterList& p) 
+          void bailParms(const ParameterList& p)
               {
 		  std::cerr << "Unsupported option parameters(s) in ParameterList: " << p.name() << std::endl;
                   for (int i=0; i<optParms.size(); ++i) {
@@ -398,7 +407,7 @@ namespace Amanzi {
                   std::cerr << '\n';
                   throw std::exception();
               }
-          void bailLists(const ParameterList& p) 
+          void bailLists(const ParameterList& p)
               {
 		  std::cerr << "Unsupported option list(s) in ParameterList: " << p.name() << std::endl;
                   for (int i=0; i<optLists.size(); ++i) {

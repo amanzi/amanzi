@@ -1,5 +1,5 @@
 /*
-  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -7,6 +7,7 @@
   Authors: Markus Berndt
            Ethan Coon (ecoon@lanl.gov)
 */
+
 //! Visualizes a lifted domain set on the parent mesh.
 /*!
 
@@ -58,26 +59,33 @@ class DomainSet;
 
 class VisualizationDomainSet : public Visualization {
  public:
-  VisualizationDomainSet(Teuchos::ParameterList& plist) : Visualization(plist) {
+  VisualizationDomainSet(Teuchos::ParameterList& plist) : Visualization(plist)
+  {
     write_partition_ = false; // doesn't work yet
   }
 
   void set_domain_set(const Teuchos::RCP<const AmanziMesh::DomainSet>& ds) { ds_ = ds; }
 
   // public interface for data clients
-  virtual void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const override;
-  virtual void WriteVector(const Epetra_Vector& vec, const std::string& name ) const override;
+  virtual void WriteVector(const Epetra_MultiVector& vec,
+                           const std::vector<std::string>& names,
+                           AmanziMesh::Entity_kind kind) const override;
+  virtual void WriteVector(const Epetra_Vector& vec,
+                           const std::string& name,
+                           AmanziMesh::Entity_kind kind) const override;
 
   virtual void FinalizeTimestep() const override;
 
  protected:
   // note this is lazily constructed, so must be mutable
   // Note that this relies on map being ORDERED!
-  mutable std::map<std::string, std::pair<Teuchos::RCP<Epetra_MultiVector>, std::vector<std::string>>> lifted_vectors_;
+  mutable std::map<
+    std::string,
+    std::tuple<Teuchos::RCP<Epetra_MultiVector>, std::vector<std::string>, AmanziMesh::Entity_kind>>
+    lifted_vectors_;
   mutable std::vector<std::string> lifted_vector_names_;
   Teuchos::RCP<const AmanziMesh::DomainSet> ds_;
   std::string dset_name_;
 };
 
-} // Amanzi namespace
-
+} // namespace Amanzi

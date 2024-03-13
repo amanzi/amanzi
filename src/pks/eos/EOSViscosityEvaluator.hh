@@ -1,12 +1,14 @@
 /*
-  EOS
-   
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  EOS
 
   EOSFieldEvaluator is the interface between state/data and the model, an EOS.
 */
@@ -20,7 +22,8 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-class EOSViscosityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class EOSViscosityEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   explicit EOSViscosityEvaluator(Teuchos::ParameterList& plist);
   EOSViscosityEvaluator(const EOSViscosityEvaluator& other);
@@ -30,23 +33,24 @@ class EOSViscosityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector,
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
   // the actual model
   Teuchos::RCP<EOS_Viscosity> visc_;
 
-  // Keys for fields
   // dependencies
   Key temp_key_, pres_key_;
   Tag tag_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, EOSViscosityEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, EOSViscosityEvaluator> reg_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

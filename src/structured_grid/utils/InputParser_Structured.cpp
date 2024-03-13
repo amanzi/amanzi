@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_StrUtils.hpp"
@@ -95,7 +104,7 @@ namespace Amanzi {
     ParameterList
     setup_structured()
     {
-      ParameterList struc_list, empty_list;      
+      ParameterList struc_list, empty_list;
       struc_list.set("Mesh", empty_list);
       struc_list.set("amr" , empty_list);
       struc_list.set("cg"  , empty_list);
@@ -104,12 +113,12 @@ namespace Amanzi {
       struc_list.set("comp", empty_list);
       struc_list.set("phase", empty_list);
       struc_list.set("press", empty_list);
-      struc_list.set("prob" , empty_list); 
+      struc_list.set("prob" , empty_list);
       struc_list.set("rock" , empty_list);
       struc_list.set("diffuse" , empty_list);
       struc_list.set("geometry", empty_list);
       struc_list.set("source"  , empty_list);
-      struc_list.set("tracer"  , empty_list); 
+      struc_list.set("tracer"  , empty_list);
       struc_list.set("observation", empty_list);
 
       return struc_list;
@@ -120,17 +129,17 @@ namespace Amanzi {
     // convert mesh to structured format
     //
     void
-    convert_to_structured_mesh (const ParameterList& parameter_list, 
+    convert_to_structured_mesh (const ParameterList& parameter_list,
                                 ParameterList&       struc_list)
     {
       Array<std::string> reqP, reqL;
 
       // Mesh
       std::string mesh_str = "Mesh"; reqL.push_back(mesh_str);
-      PLoptions Mopt(parameter_list,reqL,reqP,false,false); 
+      PLoptions Mopt(parameter_list,reqL,reqP,false,false);
 
       std::string struc_str = "Structured"; reqL.clear(); reqL.push_back(struc_str);
-      PLoptions MSopt(parameter_list.sublist(mesh_str),reqL,reqP,true,true); 
+      PLoptions MSopt(parameter_list.sublist(mesh_str),reqL,reqP,true,true);
 
       struc_list.sublist("Mesh").set("Framework","Structured");
       const ParameterList& st_list = parameter_list.sublist(mesh_str).sublist(struc_str);
@@ -139,7 +148,7 @@ namespace Amanzi {
       std::string NCells_str = "Number of Cells"; reqP.push_back(NCells_str);
       std::string ProbLo_str = "Domain Low Coordinate"; reqP.push_back(ProbLo_str);
       std::string ProbHi_str = "Domain High Coordinate"; reqP.push_back(ProbHi_str);
-      PLoptions MSOopt(st_list,reqL,reqP,true,true); 
+      PLoptions MSOopt(st_list,reqL,reqP,true,true);
 
       Array<int> n_cell = st_list.get<Array<int> >(NCells_str);
       domlo = st_list.get<Array<double> >(ProbLo_str);
@@ -154,8 +163,6 @@ namespace Amanzi {
       }
       // FIXME: This multiplier should be input
       geometry_eps = 1.e-6*max_size;
-
-      const ParameterList& eclist = parameter_list.sublist("Execution Control");
 
       ParameterList& alist = struc_list.sublist("amr");
       alist.set("n_cell",n_cell);
@@ -206,7 +213,7 @@ namespace Amanzi {
     // convert execution control to structured format
     //
     void
-    convert_to_structured_control(const ParameterList& parameter_list, 
+    convert_to_structured_control(const ParameterList& parameter_list,
                                   ParameterList&       struc_out_list,
                                   bool&                do_tracer_advection,
                                   bool&                do_tracer_diffusion,
@@ -238,17 +245,14 @@ namespace Amanzi {
       std::string tim_str = "Time Integration Mode"; reqL.push_back(tim_str);
       std::string v_str = "Verbosity";
       std::string num_str = "Numerical Control Parameters";
-      PLoptions ECopt(ec_list,reqL,reqP,false,false); 
+      PLoptions ECopt(ec_list,reqL,reqP,false,false);
 
       ParameterList& amr_out_list     = struc_out_list.sublist("amr");
       ParameterList& prob_out_list    = struc_out_list.sublist("prob");
       ParameterList& cg_out_list      = struc_out_list.sublist("cg");
       ParameterList& mg_out_list      = struc_out_list.sublist("mg");
-      ParameterList& mac_out_list     = struc_out_list.sublist("mac");
-      ParameterList& diffuse_out_list = struc_out_list.sublist("diffuse");
       ParameterList& io_out_list      = struc_out_list.sublist("vismf");
       ParameterList& fabarr_out_list  = struc_out_list.sublist("fabarray");
-      ParameterList& fab_out_list     = struc_out_list.sublist("fab");
 
       bool echo_inputs = false;
       std::string echo_str = "Echo Inputs";
@@ -296,7 +300,7 @@ namespace Amanzi {
       else {
         MyAbort("\"" + trans_str + "\" = \"" + transport_mode + "\" not supported");
       }
-      do_tracer_diffusion = false; 
+      do_tracer_diffusion = false;
 
       //
       // Set chemistry model
@@ -338,7 +342,7 @@ namespace Amanzi {
         reqP.push_back(Chemistry_Newton_str);
         reqP.push_back(Chemistry_Max_Step_str);
 
-        PLoptions CHopt(chem_list,reqL,reqP,true,false); 
+        PLoptions CHopt(chem_list,reqL,reqP,true,false);
         const Array<std::string>& CHoptP = CHopt.OptParms();
 
         if (chem_list.isSublist(ThermoDB_str)) {
@@ -346,7 +350,7 @@ namespace Amanzi {
           Array<std::string> treqL, treqP;
           treqP.push_back(ThermoDB_Fmt_str);
           treqP.push_back(ThermoDB_File_str);
-          PLoptions ThDBopt(thermoPL,treqL,treqP,true,true); 
+          PLoptions ThDBopt(thermoPL,treqL,treqP,true,true);
           chem_out_list.set<std::string>(underscore(ThermoDB_str)+"_"+underscore(ThermoDB_Fmt_str), underscore(thermoPL.get<std::string>(ThermoDB_Fmt_str)));
           chem_out_list.set<std::string>(underscore(ThermoDB_str)+"_"+underscore(ThermoDB_File_str), thermoPL.get<std::string>(ThermoDB_File_str));
         }
@@ -463,20 +467,20 @@ namespace Amanzi {
 
         if (dt_init_mult > 0) {
           prob_out_list.set<double>("init_shrink", dt_init_mult);
-        } 
+        }
 
-        if (dt_shrink_max > 0) {                        
+        if (dt_shrink_max > 0) {
           prob_out_list.set<double>("dt_shrink_max", dt_shrink_max);
         }
 
-        if (dt_grow_max > 0) {                        
+        if (dt_grow_max > 0) {
           prob_out_list.set<double>("dt_grow_max", dt_grow_max);
         }
 
         if (step_max>=0) {
           struc_out_list.set<int>("max_step", step_max);
         }
-                
+
         if (dt_max > 0) {
           prob_out_list.set<double>("transient_max_dt", dt_max);
         }
@@ -525,7 +529,7 @@ namespace Amanzi {
         struc_out_list.set<std::string>("execution_mode", "init_to_steady");
 
         // Extract optional parameters
-        PLoptions Topt(tran_list,reqL,reqP,true,false); 
+        PLoptions Topt(tran_list,reqL,reqP,true,false);
         const Array<std::string> ToptP = Topt.OptParms();
         for (int i=0; i<ToptP.size(); ++i) {
           if (optPd.find(ToptP[i]) != optPd.end()) {
@@ -581,14 +585,14 @@ namespace Amanzi {
         std::string End_str = "End"; reqP.push_back(End_str);
         std::string Init_Time_Step_str = "Initial Time Step"; reqP.push_back(Init_Time_Step_str);
 
-        PLoptions Sopt(steady_list,reqL,reqP,true,false); 
+        PLoptions Sopt(steady_list,reqL,reqP,true,false);
         struc_out_list.set<double>("strt_time", steady_list.get<double>(Start_str));
         struc_out_list.set<double>("stop_time", steady_list.get<double>(End_str));
         prob_out_list.set<double>(underscore("steady_init_time_step"),steady_list.get<double>(Init_Time_Step_str));
 
         struc_out_list.set<std::string>("execution_mode", "steady");
 
- 
+
         // Set defaults for optional parameters
         std::map<std::string,double> optPd;
         std::map<std::string,int> optPi;
@@ -640,7 +644,7 @@ namespace Amanzi {
       prob_out_list.set("model_name",model_name);
 
       // Generate a useful warning
-      
+
       double start_time = struc_out_list.get<double>("strt_time");
       double stop_time = struc_out_list.get<double>("stop_time");
       if (stop_time <= start_time) {
@@ -667,7 +671,7 @@ namespace Amanzi {
       //
       int num_levels = 1;
       int max_level = num_levels-1;
-      bool do_amr_subcycling = true;                            
+      bool do_amr_subcycling = true;
       int ref_ratio_DEF = 2;
       Array<int> ref_ratio(max_level,ref_ratio_DEF);
       int regrid_int_DEF = 2;
@@ -679,7 +683,7 @@ namespace Amanzi {
       int max_grid_DEF = (ndim==2 ? 128  :  32);
       Array<int> max_grid(num_levels,max_grid_DEF);
 
-      // 
+      //
       // Optional parameters
       //
       for (int i=0; i<optP.size(); ++i) {
@@ -712,13 +716,13 @@ namespace Amanzi {
       else if (lc(v_val) == "extreme") {
         prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1; io_v = 1; fab_v = 1;
       }
-      // 
+      //
       // Optional lists
       //
       const std::string restart_str = "Restart";
 
       for (int i=0; i<optL.size(); ++i)
-      {                
+      {
 
         if (optL[i] == restart_str) {
 
@@ -738,7 +742,7 @@ namespace Amanzi {
           const std::string tpc_maximum_time_steps_str = "Maximum Time Step";
           const ParameterList& tpc_list = ec_list.sublist(tpc_str);
           Array<std::string> nL, nP;
-          PLoptions TPCopt(tpc_list,nL,nP,true,false); 
+          PLoptions TPCopt(tpc_list,nL,nP,true,false);
           const Array<std::string> TPCoptP = TPCopt.OptParms();
 
           Array<double> tpc_start_times, tpc_initial_time_steps, tpc_initial_time_step_multipliers, tpc_maximum_time_steps;
@@ -796,7 +800,7 @@ namespace Amanzi {
         {
 	  const ParameterList& num_list = ec_list.sublist(num_str);
           Array<std::string> nL, nP;
-          PLoptions NUMopt(num_list,nL,nP,false,true); 
+          PLoptions NUMopt(num_list,nL,nP,false,true);
           const Array<std::string> NUMoptL = NUMopt.OptLists();
 
 	  std::set<std::string> ncp_allowed_lists;
@@ -816,8 +820,8 @@ namespace Amanzi {
 
 	      Array<std::string> sL, sP;
 	      const ParameterList& str_list = num_list.sublist(str_str);
-	      PLoptions STRopt(str_list,sL,sP,false,true); 
-		
+	      PLoptions STRopt(str_list,sL,sP,false,true);
+
 	      std::set<std::string> str_allowed_lists;
 	      str_allowed_lists.insert(amr_str);
 	      str_allowed_lists.insert(it_str);
@@ -885,7 +889,7 @@ namespace Amanzi {
 		    else {
 		      if (regrid_int.size() != 1) {
 			MyAbort("Subcycling is disabled, only a single regridding interval is supported");
-		      }                                
+		      }
 		    }
 
 		    for (int kk=0; kk<regrid_int.size(); ++kk) {
@@ -896,7 +900,7 @@ namespace Amanzi {
 		    }
 		  }
 
-                            
+
 		  std::string blocking_factor_str = "Blocking Factor";
 		  blocking_factor.resize(max_level+1,blocking_factor_DEF);
 		  if (amr_list.isParameter(blocking_factor_str)) {
@@ -929,7 +933,7 @@ namespace Amanzi {
 		    }
 		  }
 
-                            
+
 		  std::string max_grid_str = "Maximum Grid Size";
 		  max_grid.resize(max_level+1,max_grid_DEF);
 		  if (amr_list.isParameter(max_grid_str)) {
@@ -948,7 +952,7 @@ namespace Amanzi {
 
 		  std::string refineNames_str = "Refinement Indicators";
 		  if (amr_list.isParameter(refineNames_str)) {
-		    const Array<std::string>& refineNames = 
+		    const Array<std::string>& refineNames =
 		      amr_list.get<Array<std::string> >(refineNames_str);
 		    Array<std::string> names(refineNames.size());
 		    for (int k=0; k<refineNames.size(); ++k) {
@@ -984,7 +988,7 @@ namespace Amanzi {
 				+ "\"" + diff_greater_str + "\", "
 				+ "\"" + in_region_str + "\"" );
 		      }
-                                    
+
 		      std::string fieldName_str = "Field Name";
 		      std::string regName_str = "Regions";
 
@@ -1020,7 +1024,7 @@ namespace Amanzi {
 
 		      ref_out_list.set<Array<std::string> >(
 			"regions",underscore(ref_list.get<Array<std::string> >(regName_str)));
-                                    
+
 		      std::string start_str = "Start Time";
 		      std::string end_str = "End Time";
 		      if (ref_list.isParameter(start_str)) {
@@ -1056,7 +1060,7 @@ namespace Amanzi {
           }
         }
       }
-                            
+
       amr_out_list.set<int>("max_level",max_level);
       amr_out_list.set<Array<int> >("ref_ratio",ref_ratio);
       amr_out_list.set<Array<int> >("regrid_int",regrid_int);
@@ -1072,14 +1076,14 @@ namespace Amanzi {
       prob_out_list.set("v",prob_v);
       io_out_list.set("v",io_v);
       fabarr_out_list.set("verbose",fab_v);
-            
+
       for (int i=0; i<optL.size(); ++i)
       {
         if (optL[i] == num_str)
         {
           const ParameterList& num_list = ec_list.sublist(num_str);
           Array<std::string> nL, nP;
-          PLoptions NUMopt(num_list,nL,nP,false,true); 
+          PLoptions NUMopt(num_list,nL,nP,false,true);
           const Array<std::string> NUMoptL = NUMopt.OptLists();
 
 	  std::set<std::string> ncp_allowed_lists;
@@ -1102,8 +1106,8 @@ namespace Amanzi {
 
 	      Array<std::string> sL, sP;
 	      const ParameterList& str_list = num_list.sublist(str_str);
-	      PLoptions STRopt(str_list,sL,sP,false,true); 
-		
+	      PLoptions STRopt(str_list,sL,sP,false,true);
+
 	      std::set<std::string> str_allowed_lists;
 	      str_allowed_lists.insert(amr_str);
 	      str_allowed_lists.insert(it_str);
@@ -1137,8 +1141,8 @@ namespace Amanzi {
 		{
 		  const ParameterList& it_list = str_list.sublist(it_str);
 		  Array<std::string> iL, iP;
-		  PLoptions ITopt(it_list,iL,iP,false,true); 
-		
+		  PLoptions ITopt(it_list,iL,iP,false,true);
+
 		  std::set<std::string> it_allowed_lists;
 		  it_allowed_lists.insert(mg_str);
 		  it_allowed_lists.insert(cg_str);
@@ -1173,7 +1177,7 @@ namespace Amanzi {
 	} // End processing Numerical Control Parameters parameter list
       } // End of Execution Controls optional lists processing
     }
-      
+
     static std::string dirStr[6] = {"-X", "-Y", "-Z", "+X", "+Y", "+Z"};
     std::pair<bool,int>orient(const std::string& dir)
     {
@@ -1230,7 +1234,7 @@ namespace Amanzi {
           lo[d] = hi[d];
           type = "surface";
           purpose = "all";
-                    
+
           // Is this on the domain boundary?
           if (lo[d] == domlo[d]) {
             purpose = PMAMR::RpurposeDEF[d];
@@ -1253,17 +1257,18 @@ namespace Amanzi {
     {
       const ParameterList& rsslist = rslist.sublist(rlabel);
       std::string dir = rsslist.get<std::string>("Direction");
-      std::pair<bool,int> o = orient(dir); bool is_lo=o.first; int coord=o.second;
+      std::pair<bool,int> o = orient(dir); 
+      int coord = o.second;
 
       // FIXME: Ignores sign of direction
 
       double loc = rsslist.get<double>("Location");
-          
+
       Array<double> lo(domlo);
       Array<double> hi(domhi);
       lo[coord] = loc;
       hi[coord] = loc;
-          
+
       rsublist.set("lo_coordinate",lo);
       rsublist.set("hi_coordinate",hi);
       rsublist.set("type", "surface");
@@ -1367,7 +1372,7 @@ namespace Amanzi {
         MyAbort("\""+V1_str+"\", and \""+V2_str+"\" must have same number of points"+
                 "for \""+Reg_str+"\" region \"" + rlabel);
       }
-          
+
       rsublist.set<Array<double> >("v1",verticesV1);
       rsublist.set<Array<double> >("v2",verticesV2);
       rsublist.set("type", "polygon");
@@ -1389,7 +1394,7 @@ namespace Amanzi {
         MyAbort("\""+C_str+"\" length must match problem dimensions "+
                 "for \""+Reg_str+"\" region \"" + rlabel);
       }
-          
+
       rsublist.set<Array<double> >("center",c);
 
       const Array<double>& r = rsslist.get<Array<double> >(R_str);
@@ -1397,7 +1402,7 @@ namespace Amanzi {
         MyAbort("\""+R_str+"\" length must match problem dimensions "+
                 "for \""+Reg_str+"\" region \"" + rlabel);
       }
-          
+
       rsublist.set<Array<double> >("radius",r);
       rsublist.set("type", "ellipse");
       int iPurpose = 6;
@@ -1517,7 +1522,7 @@ namespace Amanzi {
           rsublist.set(PMAMR::RlabelDEF[i],tmp);
           def_regionNames.push_back(PMAMR::RlabelDEF[i]);
         }
-      }   
+      }
       return def_regionNames;
     }
 
@@ -1526,7 +1531,7 @@ namespace Amanzi {
     // convert region to structured format
     //
     void
-    convert_to_structured_region(const ParameterList& parameter_list, 
+    convert_to_structured_region(const ParameterList& parameter_list,
                                  ParameterList&       struc_list)
     {
       ParameterList& geom_list = struc_list.sublist("geometry");
@@ -1536,34 +1541,34 @@ namespace Amanzi {
 
       const ParameterList& rlist = parameter_list.sublist("Regions");
       for (ParameterList::ConstIterator i=rlist.begin(); i!=rlist.end(); ++i) {
-        
+
         std::string label = rlist.name(i);
         std::string _label = underscore(label);
         const ParameterEntry& entry = rlist.getEntry(label);
-        
+
         if ( !entry.isList() ) {
           if (Teuchos::GlobalMPISession::getRank() == 0) {
-            std::cerr << "Region section must define only regions. \"" 
+            std::cerr << "Region section must define only regions. \""
                       << label << "\" is not a valid region definition." << std::endl;
           }
           throw std::exception();
         }
-        
+
         ParameterList rsublist;
         const ParameterList& rslist = rlist.sublist(label);
 
         // Add user-defined regions
         for (ParameterList::ConstIterator j=rslist.begin(); j!=rslist.end(); ++j) {
-          
+
           const std::string& rlabel = rslist.name(j);
           const ParameterEntry& rentry = rslist.getEntry(rlabel);
-      
+
           bool fail = false;
           if (rentry.isList()) {
             if (rlabel=="Region: Color Function") {
               convert_Region_ColorFunction(rslist,rlabel,rsublist);
             }
-            else if (rlabel=="Region: Point") {	      
+            else if (rlabel=="Region: Point") {
               convert_Region_Point(rslist,rlabel,rsublist);
             }
             else if (rlabel=="Region: Box") {
@@ -1605,14 +1610,14 @@ namespace Amanzi {
 
           geom_list.set(_label,rsublist);
           // need to remove empty spaces
-          arrayregions.push_back(_label); 
+          arrayregions.push_back(_label);
         }
       }
       geom_list.set("regions",arrayregions);
     }
 
     typedef std::map<std::string,bool> MTEST;
-    std::vector<std::string> remaining_false(const MTEST& p) 
+    std::vector<std::string> remaining_false(const MTEST& p)
     {
       std::vector<std::string> ret;
       for (MTEST::const_iterator it=p.begin(); it!=p.end(); ++it) {
@@ -1632,7 +1637,7 @@ namespace Amanzi {
         const std::string val_name="Values"; reqP.push_back(val_name);
         const std::string time_name="Times"; reqP.push_back(time_name);
         const std::string form_name="Time Functions"; reqP.push_back(form_name);
-        PLoptions opt(fPLin,nullList,reqP,true,true); 
+        PLoptions opt(fPLin,nullList,reqP,true,true);
         const Array<double>& vals = fPLin.get<Array<double> >(val_name);
         fPLout.set<Array<double> >("vals",vals);
         if (vals.size()>1) {
@@ -1642,7 +1647,7 @@ namespace Amanzi {
       }
       else if (fPLin.isParameter("Value")) {
         const std::string val_name="Value"; reqP.push_back(val_name);
-        PLoptions opt(fPLin,nullList,reqP,true,true); 
+        PLoptions opt(fPLin,nullList,reqP,true,true);
         double val = fPLin.get<double>(val_name);
         fPLout.set<double>("vals",val);
       }
@@ -1990,14 +1995,14 @@ namespace Amanzi {
     // convert material to structured format
     //
     void
-    convert_to_structured_material(const ParameterList& parameter_list, 
+    convert_to_structured_material(const ParameterList& parameter_list,
                                    ParameterList&       struc_list,
                                    StateDef&            state,
                                    bool&                do_tracer_advection,
                                    bool&                do_tracer_diffusion)
     {
       ParameterList& rock_list = struc_list.sublist("rock");
-        
+
       const ParameterList& rlist = parameter_list.sublist("Material Properties");
 
       const std::string mineralogy_str = "Mineralogy";
@@ -2045,10 +2050,10 @@ namespace Amanzi {
         mtest.insert(MTEST::value_type("Capillary_Pressure",false));
         mtest.insert(MTEST::value_type("Relative_Permeability",false));
         mtest.insert(MTEST::value_type("Regions_Assigned",false));
-        
+
         std::string label = rlist.name(i);
         const ParameterEntry& entry = rlist.getEntry(label);
-            
+
         std::string _label = underscore(label);
         if (entry.isList())
         {
@@ -2058,11 +2063,11 @@ namespace Amanzi {
           ParameterList& rsublist = rsublist_mat[label];
 
           const ParameterList& rslist = rlist.sublist(label);
-          for (ParameterList::ConstIterator j=rslist.begin(); j!=rslist.end(); ++j) 
+          for (ParameterList::ConstIterator j=rslist.begin(); j!=rslist.end(); ++j)
           {
             const std::string& rlabel = rslist.name(j);
             const ParameterEntry& rentry = rslist.getEntry(rlabel);
-                    
+
             if (rentry.isList())
             {
               const ParameterList& rsslist = rslist.sublist(rlabel);
@@ -2113,7 +2118,7 @@ namespace Amanzi {
                 if (state.getPhases().count(aq) == 0) {
                   std::string str = "Hydraulic conductivity specified for material \""+label
                     +"\" but phase \""+aq+"\" does not exist";
-                  BoxLib::Abort(str.c_str());       
+                  BoxLib::Abort(str.c_str());
                 }
                 double density = state.getPhases()[aq].Density();
                 if (density == 0) {
@@ -2150,7 +2155,7 @@ namespace Amanzi {
                 bool is_nonzero = convert_DispersionTensorUniform(rsslist,dsublist);
                 if (is_nonzero) {
                   rsublist.set("dispersivity",dsublist);
-                  do_tracer_diffusion = do_tracer_advection; 
+                  do_tracer_diffusion = do_tracer_advection;
                 }
               }
               else if (rlabel==specific_storage_uniform_str) {
@@ -2182,7 +2187,7 @@ namespace Amanzi {
                   ell = 2;
                 }
                 cpl_pl.set("Sr",rsslist.get<double>("Sr"));
-                cpl_pl.set("alpha",alpha*1.01325e5); // convert Pa^-1 to atm^-1 
+                cpl_pl.set("alpha",alpha*1.01325e5); // convert Pa^-1 to atm^-1
                 if (rsslist.isParameter("ell")) {
                   ell = rsslist.get<double>("ell");
                 }
@@ -2267,7 +2272,7 @@ namespace Amanzi {
                   }
                   else {
                     std::cerr << "Unknown mineral in " << rlabel << ": " << minLabel << std::endl;
-                    throw std::exception();                                                
+                    throw std::exception();
                   }
                 }
               }
@@ -2297,7 +2302,7 @@ namespace Amanzi {
                   }
                   else {
                     std::cerr << "Unknown Sorption Site in " << rlabel << ": " << scsLabel << std::endl;
-                    throw std::exception();                                                
+                    throw std::exception();
                   }
                 }
               }
@@ -2306,7 +2311,7 @@ namespace Amanzi {
                 add_chemistry_properties = true;
 
 		// FIXME: Short-circuit all this stuff, since the powers that
-		//        be decided to special-case all this for Aqueous Water 
+		//        be decided to special-case all this for Aqueous Water
                 //PLoptions sipP(rsslist,nullList,nullList,false,true); // each optional list is a phase
                 //const Array<std::string>& sipLabels = sipP.OptLists();
 		Array<std::string> sipLabels; sipLabels.push_back("Aqueous");
@@ -2317,29 +2322,29 @@ namespace Amanzi {
                   StateDef::PhaseCompMap& pc_map = state.getPhaseCompMap();
                   if (pc_map.find(sipLabel)==pc_map.end()) {
                     std::cerr << "Unknown phase " << sipLabel << " in " << rlabel << " for " << label << std::endl;
-                    throw std::exception();                                                
+                    throw std::exception();
                   }
                   //const ParameterList& sipSL = rsslist.sublist(sipLabel);
 
 		  // FIXME: Short-circuit all this stuff, since the powers that
-		  //        be decided to special-case all this for Aqueous Water 
+		  //        be decided to special-case all this for Aqueous Water
                   //PLoptions sipcP(sipSL,nullList,nullList,false,true); // each optional list is a component
                   //const Array<std::string>& sipcLabels = sipcP.OptLists();
 		  Array<std::string> sipcLabels; sipcLabels.push_back("Water");
                   for (int L=0; L<sipcLabels.size(); ++L) {
                     const std::string& sipcLabel = sipcLabels[L];
                     std::string _sipcLabel = underscore(sipcLabel);
-                                        
+
                     PHASE::CompMap& c_map = pc_map[sipLabel];
                     if (c_map.find(sipcLabel)==c_map.end()) {
                       std::cerr << "Unknown component " << sipcLabel
                                 << " in phase " << sipLabel << " for " <<
                         rlabel << " in " << label << std::endl;
-                      throw std::exception();                                                
+                      throw std::exception();
                     }
-                                        
+
 		    // FIXME: Short-circuit all this stuff, since the powers that
-		    //        be decided to special-case all this for Aqueous Water 
+		    //        be decided to special-case all this for Aqueous Water
                     //PLoptions sipcsP(sipcSL,nullList,nullList,false,true); // each optional list is a solute
                     //const ParameterList& sipcSL = sipSL.sublist(sipcLabel);
 
@@ -2351,14 +2356,14 @@ namespace Amanzi {
                       std::string _sipcsLabel = underscore(sipcsLabel);
                       //const ParameterList& sipcsSL = sipcSL.sublist(sipcsLabel);
                       const ParameterList& sipcsSL = rsslist.sublist(sipcsLabel);
-                                            
+
                       if ( !(c_map[sipcLabel].HasTracer(sipcsLabel)) ) {
                         std::cerr << "Unknown solute " << sipcsLabel << " in component "
                                   << sipcLabel << " in phase " << sipLabel << " for " <<
                           rlabel << " in " << label << std::endl;
                         throw std::exception();
                       }
-                                            
+
 
                       //SolidChem::SorptionIsothermData& iso = solid_chem[label].sorption_isotherms(sipcsLabel);
 
@@ -2385,15 +2390,15 @@ namespace Amanzi {
                           b_found = true;
                         }
                         else {
-                          std::cerr << "Unknown parameter for \"" << rlabel << "\": \"" << siLabels[N] 
+                          std::cerr << "Unknown parameter for \"" << rlabel << "\": \"" << siLabels[N]
                                     << "\" in solute \"" << sipcsLabel << "\" of component \""
                                     << sipcLabel << "\" in phase \"" << sipLabel << "\"." << std::endl;
                           throw std::exception();
                         }
                       }
                       if (b_found && n_found) {
-                        std::cerr << "Only one \"" << Lb_str << "\" and \"" << Fn_str 
-                                  << "\" may be specified for each solute.  Both given for \"" 
+                        std::cerr << "Only one \"" << Lb_str << "\" and \"" << Fn_str
+                                  << "\" may be specified for each solute.  Both given for \""
                                   << sipcsLabel << "\" of component \""
                                   << sipcLabel << "\" in phase \"" << sipLabel << "\"." << std::endl;
                         throw std::exception();
@@ -2404,8 +2409,8 @@ namespace Amanzi {
                       //if (!successfully_inserted) {
                       //    bool compatible = iso.IsFreundlich() ^ SolidChem::SorptionIsotherm(sipcsLabel).IsFreundlich();
                       //    if (!compatible) {
-                      //        std::cerr << "Only one \"" << Lb_str << "\" and \"" << Fn_str 
-                      //                  << "\" may be specified for each solute.  Both given for \"" 
+                      //        std::cerr << "Only one \"" << Lb_str << "\" and \"" << Fn_str
+                      //                  << "\" may be specified for each solute.  Both given for \""
                       //                  << sipcsLabel << "\" in different materials." << std::endl;
                       //        throw std::exception();
                       //    }
@@ -2432,7 +2437,7 @@ namespace Amanzi {
               mtest["Density"] = true;
             }
             else if (rlabel==cation_exchange_str) {
-              add_chemistry_properties = true;                                
+              add_chemistry_properties = true;
               cation_exchange_capacity[label] = rslist.get<double>(rlabel);
               state.getSolid().has_cation_exchange = true;
             }
@@ -2444,7 +2449,7 @@ namespace Amanzi {
           }
 
           // check for complete
-          std::vector<std::string> region_check = remaining_false(mtest); 
+          std::vector<std::string> region_check = remaining_false(mtest);
           if (region_check.size()) {
             for (int i=0; i<region_check.size(); ++i) {
               if (region_check[i]=="Capillary_Pressure") {
@@ -2456,7 +2461,7 @@ namespace Amanzi {
                 rsublist.set("kr_type",0);
               }
             }
-            region_check = remaining_false(mtest); 
+            region_check = remaining_false(mtest);
             if (region_check.size()) {
               std::cerr << "Material not completely defined: " << label << std::endl;
               std::cerr << "   unfilled: ";
@@ -2501,20 +2506,20 @@ namespace Amanzi {
             ParameterList sPL;
             for (int i=0; i<sorption_sites.size(); ++i) {
               const std::string& name = sorption_sites[i];
-              SolidChem::SorptionSiteData ssd = solid_chem[label].SorptionSite(name); 
+              SolidChem::SorptionSiteData ssd = solid_chem[label].SorptionSite(name);
               ParameterList ssdPL = ssd.BuildPL();
               sPL.set(underscore(name),ssdPL);
             }
             rsublist.set(underscore(complexation_str),sPL);
           }
-                        
+
           if (cation_exchange_capacity.count(label)) {
             rsublist.set(underscore(cation_exchange_str),cation_exchange_capacity[label]);
           }
 
           // if ntracers>0...
           //
-          // Must "flatten" hierarchy of phases/comps to be compatible with current Amanzi-S 
+          // Must "flatten" hierarchy of phases/comps to be compatible with current Amanzi-S
           // in fact, tracers are listed flat requiring that there be no name clashes across phase/comp
           ParameterList siPL;
           StateDef::Phases& phases = state.getPhases();
@@ -2539,7 +2544,7 @@ namespace Amanzi {
           if (solutes_with_isotherms.size()>0) {
             rsublist.set("sorption_isotherms",siPL);
             state.getSolid().sorption_isotherm_names.resize(solutes_with_isotherms.size());
-            for (std::set<std::string>::const_iterator it=solutes_with_isotherms.begin(),                                    
+            for (std::set<std::string>::const_iterator it=solutes_with_isotherms.begin(),
                    End=solutes_with_isotherms.end(); it!=End; ++it) {
               state.getSolid().sorption_isotherm_names.push_back(*it);
             }
@@ -2554,7 +2559,7 @@ namespace Amanzi {
         const std::string& label = AMR_to_Amanzi_label_map[_label];
         rock_list.set(_label,rsublist_mat[label]);
       }
-            
+
       rock_list.set("rocks",arrayrock);
       if (kp_file_out_set) {
         rock_list.set("permeability_output_file",kp_file_out);
@@ -2580,8 +2585,8 @@ namespace Amanzi {
       if (kp_plotfile_out_set) {
         rock_list.set("permeability_plotfile_out",permeability_plotfile_out);
       }
-    } 
-      
+    }
+
     StateDef::StateDef(const ParameterList& parameter_list)
       : parameter_list(parameter_list)
     {
@@ -2606,13 +2611,12 @@ namespace Amanzi {
       PLoptions opt(parameter_list,reqL,nullList,false,false);
       const ParameterList& plist = parameter_list.sublist(reqL[0]);
 
-      PLoptions optP(plist,nullList,nullList,false,false); // each optional list is a phase 
+      PLoptions optP(plist,nullList,nullList,false,false); // each optional list is a phase
       const Array<std::string>& phaseLabels = optP.OptLists();
 
       for (int i=0; i<phaseLabels.size(); ++i) {
         const std::string& phaseLabel = phaseLabels[i];
         const ParameterList& pplist = plist.sublist(phaseLabel);
-        const ParameterList& psublist = plist.sublist(phaseLabel);
 
         if (phaseLabel=="Solid") {
           PLoptions optP1(pplist,nullList,nullList,true,false);
@@ -2636,7 +2640,7 @@ namespace Amanzi {
           reqLp.push_back("Phase Properties");
           reqLp.push_back("Phase Components");
           PLoptions optP1(pplist,reqLp,nullList,true,true);
-                    
+
           // Start with a phase def and then add components
           const ParameterList& ppsublist = pplist.sublist(reqLp[0]);
 
@@ -2651,24 +2655,24 @@ namespace Amanzi {
             const std::string& propLabel = optLpp[j];
 
             const ParameterList& ppolist = ppsublist.sublist(propLabel);
-                        
+
             if (propLabel == "Density: Uniform") {
               Array<std::string> reqP;
               reqP.push_back("Density");
-              PLoptions optPD(ppolist,nullList,reqP,true,true); 
+              PLoptions optPD(ppolist,nullList,reqP,true,true);
               density = ppolist.get<double>(reqP[0]);
             }
             else if (propLabel == "Viscosity: Uniform") {
               Array<std::string> reqP;
               reqP.push_back("Viscosity");
-              PLoptions optPD(ppolist,nullList,reqP,true,true); 
+              PLoptions optPD(ppolist,nullList,reqP,true,true);
               viscosity= ppolist.get<double>(reqP[0]);
             }
             else {
               std::cerr << "Unrecognized phase property parameter: " << propLabel << std::endl;
               throw std::exception();
             }
-                        
+
           }
           if (density<0 || viscosity<0) {
             std::cerr << "Must define density and viscosity for each phase present" << std::endl;
@@ -2677,10 +2681,10 @@ namespace Amanzi {
           getPhases().insert(std::pair<std::string,PHASE>
                              (phaseLabel,
                               PHASE(density,viscosity,diffusivity)));
-                    
-                    
+
+
           const ParameterList& pclist = plist.sublist(phaseLabel).sublist(reqLp[1]);
-                    
+
           PLoptions optC(pclist,nullList,nullList,false,true);
           const Array<std::string>& cLabels = optC.OptLists(); // each optional list names a component
           for (int j=0; j<cLabels.size(); ++j) {
@@ -2753,10 +2757,10 @@ namespace Amanzi {
       Array<std::string> reqL, reqP;
       reqL.push_back(top_level_label);
 
-      PLoptions optBC(parameter_list,reqL,nullList,false,false); 
+      PLoptions optBC(parameter_list,reqL,nullList,false,false);
       const ParameterList& plist = parameter_list.sublist(reqL[0]);
 
-      PLoptions BCs(plist,nullList,nullList,false,true);  
+      PLoptions BCs(plist,nullList,nullList,false,true);
       const Array<std::string>& bcLabels = BCs.OptLists();
 
       for (int i=0; i<bcLabels.size(); ++i)
@@ -2764,7 +2768,7 @@ namespace Amanzi {
         //
         // Under BC:
         //  (1) Region assignment
-        //  (2) Solute BC 
+        //  (2) Solute BC
         //  (3) Phase/comp BC
         //
         const std::string& BClabel = bcLabels[i];
@@ -2772,7 +2776,7 @@ namespace Amanzi {
 
         Array<std::string> reqPbc, reqLbc;
         reqPbc.push_back("Assigned Regions");
-        PLoptions BCs(bc_plist,reqLbc,reqPbc,false,false);  
+        PLoptions BCs(bc_plist,reqLbc,reqPbc,false,false);
 
         // The optional list is for the phase/comp func
         Array<std::string> phaseBCfuncs;
@@ -2799,7 +2803,7 @@ namespace Amanzi {
         }
 
 
-        const std::string& Amanzi_type = phaseBCfuncs[0];              
+        const std::string& Amanzi_type = phaseBCfuncs[0];
 
         s[BClabel] = StateFunc(BClabel, Amanzi_type, func_plist, assigned_regions);
 
@@ -2814,7 +2818,7 @@ namespace Amanzi {
             const ParameterList& phasePL = solute_plist.sublist(phaseNames[icp]);
             PLoptions soluteOPTc(phasePL,nullList,nullList,false,true);  // Expect only comp names here
             const Array<std::string>& compNames = soluteOPTc.OptLists();
-                  
+
             for (int icc=0; icc<compNames.size(); ++icc) {
               const ParameterList& compPL = phasePL.sublist(compNames[icc]);
               PLoptions soluteOPTs(compPL,nullList,nullList,false,true); // Expect only solute names here
@@ -2823,7 +2827,7 @@ namespace Amanzi {
                 const ParameterList& solutePL = compPL.sublist(soluteNames[ics]);
                 Array<std::string> funcL, funcP;
                 PLoptions soluteOPTf(solutePL,nullList,funcP,false,true);
-                          
+
                 // Get function name/list
                 const Array<std::string>& funcNames = soluteOPTf.OptLists();
                 if (funcNames.size()!=1) {
@@ -2857,7 +2861,7 @@ namespace Amanzi {
                 std::cerr << "function: phase/comp/solute not in Phase Definition: "
                           << fit->second.Amanzi_Type() << std::endl;
                 throw std::exception();
-              }                          
+              }
             }
           }
         }
@@ -2877,7 +2881,7 @@ namespace Amanzi {
       }
       Array<std::string> nullList, reqP;
       const std::string val_name="Value"; reqP.push_back(val_name);
-      PLoptions opt(fPLin,nullList,reqP,true,true); 
+      PLoptions opt(fPLin,nullList,reqP,true,true);
       // FIXME: Assumes Water exists, and that this is what was intended....
       std::string _name = underscore("Water");
       fPLout.set<double>(_name,fPLin.get<double>(val_name));
@@ -2892,7 +2896,7 @@ namespace Amanzi {
       Array<std::string> nullList, reqP;
       //const std::string phase_name="Phase";reqP.push_back(phase_name);
       const std::string val_name="Value";reqP.push_back(val_name);
-      PLoptions opt(fPLin,nullList,reqP,true,true);      
+      PLoptions opt(fPLin,nullList,reqP,true,true);
       fPLout.set<std::string>("type","pressure");
       fPLout.set<double>("val",fPLin.get<double>(val_name));
       //fPLout.set<std::string>("phase",fPLin.get<std::string>(phase_name));
@@ -2907,8 +2911,8 @@ namespace Amanzi {
       const std::string rval_name="Reference Value";reqP.push_back(rval_name);
       const std::string grad_name="Gradient Value";reqP.push_back(grad_name);
       const std::string ref_name="Reference Point";reqP.push_back(ref_name);
-      PLoptions opt(fPLin,nullList,reqP,true,true);  
-    
+      PLoptions opt(fPLin,nullList,reqP,true,true);
+
       fPLout.set<std::string>("type","linear_pressure");
       fPLout.set<double>("val",fPLin.get<double>(rval_name));
       fPLout.set<Array<double> >("grad",fPLin.get<Array<double> >(grad_name));
@@ -2933,8 +2937,8 @@ namespace Amanzi {
         reqP.push_back(ref_name);
         reqP.push_back(vel_name);
       }
-      PLoptions opt(fPLin,nullList,reqP,true,true);  
-    
+      PLoptions opt(fPLin,nullList,reqP,true,true);
+
       fPLout.set<std::string>("type","zero_total_velocity");
       fPLout.set<double>("val",fPLin.get<double>(val_name));
       if (Amanzi_type == "IC: Flow") {
@@ -2942,9 +2946,9 @@ namespace Amanzi {
         const Array<double>& water_table = fPLin.get<Array<double> >(ref_name);
         double AqVolFlux = fPLin.get<double>(vel_name);
         int coord = water_table.size()-1;
-        fPLout.set<double>("water_table_height",water_table[coord]); 
+        fPLout.set<double>("water_table_height",water_table[coord]);
         fPLout.set<double>("grad",grad[coord]);
-        fPLout.set<double>("aqueous_vol_flux",AqVolFlux); 
+        fPLout.set<double>("aqueous_vol_flux",AqVolFlux);
       }
     }
 
@@ -2958,7 +2962,7 @@ namespace Amanzi {
 
       Array<std::string> reqP, nullList;
       const std::string wth_name="Water Table Height";reqP.push_back(wth_name);
-      PLoptions opt(fPLin,nullList,reqP,true,true);  
+      PLoptions opt(fPLin,nullList,reqP,true,true);
       double wth = fPLin.get<double>(wth_name);
 
       Array<double> pgrad(BL_SPACEDIM,0);
@@ -2994,8 +2998,8 @@ namespace Amanzi {
     {
       Array<std::string> reqP, nullList;
       const std::string vel_name="Velocity Vector"; reqP.push_back(vel_name);
-      PLoptions opt(fPLin,nullList,reqP,true,true);  
-            
+      PLoptions opt(fPLin,nullList,reqP,true,true);
+
       fPLout.set<Array<double> >(underscore(vel_name),fPLin.get<Array<double> >(vel_name));
       fPLout.set<std::string>("type","constant_velocity");
     }
@@ -3032,11 +3036,11 @@ namespace Amanzi {
     }
 
     void
-    convert_ics(const ParameterList& parameter_list, 
+    convert_ics(const ParameterList& parameter_list,
                 ParameterList&       struc_list,
                 StateDef&            stateDef)
     {
-      ParameterList& comp_list  = struc_list.sublist("comp"); 
+      ParameterList& comp_list  = struc_list.sublist("comp");
 
       Array<std::string> ic_label_list;
       Array<std::string> reqL, reqP, nullList;
@@ -3049,7 +3053,7 @@ namespace Amanzi {
         const std::string& IClabel = ic_it->first;
         ic_label_list.push_back(underscore(IClabel));
         StateFunc& state_ic = ic_it->second;
-        
+
         const Array<std::string>& regions = state_ic.Regions();
         Array<std::string> _regions;
         for (int i=0; i<regions.size(); ++i) {
@@ -3057,7 +3061,7 @@ namespace Amanzi {
         }
         ParameterList fPLout;
         fPLout.set("regions",_regions);
-        
+
         // Phase/comp ICs
         const ParameterList& fPLin= state_ic.FuncPList();
         //const std::string& units = state_ic.units();
@@ -3120,7 +3124,7 @@ namespace Amanzi {
                           ParameterList&       fPLout)
     {
       Array<std::string> nullList;
-      PLoptions opt(fPLin,nullList,nullList,true,true); 
+      PLoptions opt(fPLin,nullList,nullList,true,true);
       fPLout.set<std::string>("type","noflow");
     }
 
@@ -3134,7 +3138,7 @@ namespace Amanzi {
       const std::string val_name="Values"; reqP.push_back(val_name);
       const std::string time_name="Times"; reqP.push_back(time_name);
       const std::string form_name="Time Functions"; reqP.push_back(form_name);
-      PLoptions opt(fPLin,nullList,reqP,true,true); 
+      PLoptions opt(fPLin,nullList,reqP,true,true);
       const Array<double>& vals = fPLin.get<Array<double> >(val_name);
       fPLout.set<Array<double> >("vals",vals);
       if (vals.size()>1) {
@@ -3237,7 +3241,7 @@ namespace Amanzi {
         const std::string val_name="Values"; reqP.push_back(val_name);
         const std::string time_name="Times"; reqP.push_back(time_name);
         const std::string form_name="Time Functions"; reqP.push_back(form_name);
-        PLoptions opt(fPLin,nullList,reqP,true,true);  
+        PLoptions opt(fPLin,nullList,reqP,true,true);
 
         Array<double> vals = fPLin.get<Array<double> >(val_name);
         fPLout.set<Array<double> >("vals",vals);
@@ -3259,10 +3263,10 @@ namespace Amanzi {
       bool is_in_mass = fPLin.isParameter("Inward Mass Flux");
       bool is_out_vol = fPLin.isParameter("Outward Volumetric Flux");
       bool is_out_mass = fPLin.isParameter("Outward Mass Flux");
-    
+
       bool is_mass = is_in_mass || is_out_mass;
       bool is_out = is_out_vol || is_out_mass;
-    
+
       Array<std::string> reqL, reqP;
       std::string val_name;
       if (is_in_vol) {
@@ -3281,19 +3285,19 @@ namespace Amanzi {
         std::cerr << "Flux not specified in recognized form" << std::endl;
         throw std::exception();
       }
-    
+
       reqP.clear(); reqP.push_back(val_name);
       const std::string time_name="Times"; reqP.push_back(time_name);
       const std::string form_name="Time Functions"; reqP.push_back(form_name);
       PLoptions opt(fPLin,reqL,reqP,false,true);
-    
+
       Array<double> times, fluxvals = fPLin.get<Array<double> >(val_name);
       Array<std::string> forms;
       if (fluxvals.size()>1) {
         times = fPLin.get<Array<double> >(time_name);
         forms = fPLin.get<Array<std::string> >(form_name);
       }
-    
+
       // Convert mass flux to volumetric flux
       if (is_mass) {
         double density = stateDef.getPhases()["Aqueous"].Density();
@@ -3311,7 +3315,7 @@ namespace Amanzi {
 
       const Array<std::string>& optional_lists = opt.OptLists();
       if (optional_lists.size() > 0) {
-	      
+
         if (optional_lists.size()!=1) {
           std::cerr << "BC: Flux - invalid optional arg(s): ";
           for (int i=0; i<optional_lists.size(); ++i) {
@@ -3320,7 +3324,7 @@ namespace Amanzi {
           std::cerr << std::endl;
         }
       }
-    
+
       fPLout.set<Array<double> >("aqueous_vol_flux",fluxvals);
       if (fluxvals.size() > 1) {
         fPLout.set<Array<double> >("inflowtimes",fPLin.get<Array<double> >(time_name));
@@ -3375,7 +3379,7 @@ namespace Amanzi {
     {
       Array<std::string> nullList;
       const ParameterList& fPLin = solute_bc.PList();
-      PLoptions opt(fPLin,nullList,nullList,true,true);  
+      PLoptions opt(fPLin,nullList,nullList,true,true);
       fPLout.set<std::string>("type","outflow");
     }
 
@@ -3384,17 +3388,17 @@ namespace Amanzi {
     {
       Array<std::string> nullList;
       const ParameterList& fPLin = solute_bc.PList();
-      PLoptions opt(fPLin,nullList,nullList,true,true);  
+      PLoptions opt(fPLin,nullList,nullList,true,true);
       fPLout.set<std::string>("type","noflow");
     }
 
     void
-    convert_bcs(const ParameterList& parameter_list, 
+    convert_bcs(const ParameterList& parameter_list,
                 ParameterList&       struc_list,
                 StateDef&            stateDef)
     {
-      ParameterList& comp_list  = struc_list.sublist("comp"); 
-      ParameterList& press_list  = struc_list.sublist("press"); 
+      ParameterList& comp_list  = struc_list.sublist("comp");
+      ParameterList& press_list  = struc_list.sublist("press");
 
       Array<std::string> bc_label_list;
       Array<std::string> reqL, reqP, nullList;
@@ -3406,7 +3410,7 @@ namespace Amanzi {
         const std::string& BClabel = bc_it->first;
         bc_label_list.push_back(underscore(BClabel));
         StateFunc& state_bc = bc_it->second;
-        
+
         const Array<std::string>& regions = state_bc.Regions();
         Array<std::string> _regions;
         for (int i=0; i<regions.size(); ++i) {
@@ -3414,7 +3418,7 @@ namespace Amanzi {
         }
         ParameterList fPLout;
         fPLout.set("regions",_regions);
-        
+
         // Phase/comp BCs
         const ParameterList& fPLin= state_bc.FuncPList();
         //const std::string& units = state_bc.units();
@@ -3443,7 +3447,7 @@ namespace Amanzi {
         else {
           std::cerr << "Unsupported BC: \"" << Amanzi_type << "\"" << std::endl;
           throw std::exception();
-        }           
+        }
 
         bcPLout_master.set(underscore(BClabel),fPLout);
 
@@ -3454,7 +3458,7 @@ namespace Amanzi {
       // After all bcs set, scan through to check that each orientation has only a single "type" of bc
       // and then set this type into the translated PL
 
-    
+
       ParameterList& geom_list = struc_list.sublist("geometry");
       typedef std::pair<std::string,std::string> Spair;
       std::map<std::string,Array<Spair> > orient_RT_map;
@@ -3472,10 +3476,10 @@ namespace Amanzi {
             orient_RT_map[purpose].push_back(Spair(regionName,bc_type));
           }
           else {
-            std::cerr << "BC: \"" << AMR_to_Amanzi_label_map[bc_label] 
+            std::cerr << "BC: \"" << AMR_to_Amanzi_label_map[bc_label]
                       << "\" refers to undefined region \""
                       << AMR_to_Amanzi_label_map[regionName] << "\"" << std::endl;
-            throw std::exception();                        
+            throw std::exception();
           }
         }
       }
@@ -3510,13 +3514,13 @@ namespace Amanzi {
                      || orient_type == "hydraulic_head"
                      || orient_type == "linear_pressure"
                      || orient_type == "hydrostatic") {
-              // Must set components by name, and phase press set by press_XX(scalar) or hydro 
+              // Must set components by name, and phase press set by press_XX(scalar) or hydro
               sat_bc      = 1; // Dirichlet for saturation,
               pressure_bc = 2; // Dirichlet for p
               inflow_bc   = 0; // Unused
             }
             else if (orient_type == "saturation") {
-              // Must set components by name, and phase press set by press_XX(scalar) or hydro 
+              // Must set components by name, and phase press set by press_XX(scalar) or hydro
               sat_bc      = 1; // Dirichlet for saturation,
               pressure_bc = 2; // Dirichlet for p
               inflow_bc   = 0; // Unused
@@ -3539,7 +3543,7 @@ namespace Amanzi {
           }
         }
       }
-		
+
       comp_list.set("lo_bc",lo_bc);
       comp_list.set("hi_bc",hi_bc);
       press_list.set("lo_bc",plo_bc);
@@ -3556,7 +3560,7 @@ namespace Amanzi {
                        StateDef&      stateDef)
     {
       SolutePLMMap solute_to_BClabel;
-      StateFuncMap& state_bcs = stateDef.BC();    
+      StateFuncMap& state_bcs = stateDef.BC();
       for (StateFuncMap::iterator bc_it = state_bcs.begin(); bc_it!=state_bcs.end(); ++bc_it)
       {
         const std::string& BClabel = bc_it->first;
@@ -3567,7 +3571,7 @@ namespace Amanzi {
           _regions.push_back(underscore(regions[i]));
         }
         const std::string& Amanzi_type = state_bc.Amanzi_Type();
-        
+
         //
         // Scan through all phases, comps to find solute BCs organized by solute
         //
@@ -3580,31 +3584,31 @@ namespace Amanzi {
             CompFunc::ICBCFuncMap& fm = cit->second.getICBCFuncMap();
             for (CompFunc::ICBCFuncMap::iterator fit=fm.begin(); fit!=fm.end(); ++fit) {
               const std::string& soluteName = fit->first;
-                    
+
               ICBCFunc& solute_bc = state_bc[phaseName][compName][soluteName];
-                    
+
               const ParameterList& fPLin = solute_bc.PList();
               const std::string& solute_bc_Amanzi_type = solute_bc.Amanzi_Type();
               const std::string& solute_bc_label = solute_bc.Label();
               //const std::string& solute_bc_units = solute_bc.Units();
-                    
+
               ParameterList fPL;
               if (solute_bc_Amanzi_type == "BC: Uniform Concentration")
               {
                 convert_solute_BCConcentration(solute_bc,fPL);
               }
               else if (solute_bc_Amanzi_type == "BC: Zero Gradient"
-                       || solute_bc_Amanzi_type == "BC: Outflow") 
+                       || solute_bc_Amanzi_type == "BC: Outflow")
               {
                 convert_solute_BCOutflow(solute_bc,fPL);
               }
-              else if (solute_bc_Amanzi_type == "BC: No Flow") 
+              else if (solute_bc_Amanzi_type == "BC: No Flow")
               {
                 convert_solute_BCNoflow(solute_bc,fPL);
               }
               else
               {
-                std::cerr << "Unsupported Solute BC function: \"" 
+                std::cerr << "Unsupported Solute BC function: \""
                           << solute_bc_Amanzi_type << "\"" << std::endl;
                 throw std::exception();
               }
@@ -3660,7 +3664,7 @@ namespace Amanzi {
     convert_solute_ics(StateDef& stateDef, int do_chem)
     {
       SolutePLMMap solute_to_IClabel;
-      StateFuncMap& state_ics = stateDef.IC();    
+      StateFuncMap& state_ics = stateDef.IC();
       for (StateFuncMap::iterator ic_it = state_ics.begin(); ic_it!=state_ics.end(); ++ic_it)
       {
         const std::string& IClabel = ic_it->first;
@@ -3683,23 +3687,23 @@ namespace Amanzi {
             CompFunc::ICBCFuncMap& fm = cit->second.getICBCFuncMap();
             for (CompFunc::ICBCFuncMap::iterator fit=fm.begin(); fit!=fm.end(); ++fit) {
               const std::string& soluteName = fit->first;
-                    
+
               ICBCFunc& solute_ic = state_ic[phaseName][compName][soluteName];
               const std::string& solute_ic_Amanzi_type = solute_ic.Amanzi_Type();
               const std::string& solute_ic_label= solute_ic.Label();
-                    
+
               ParameterList fPL;
-              if (solute_ic_Amanzi_type == "IC: Uniform Concentration") 
+              if (solute_ic_Amanzi_type == "IC: Uniform Concentration")
               {
                 convert_solute_ICConcentration(solute_ic,fPL,do_chem);
               }
               else
               {
-                std::cerr << "Unsuppoprted Solute IC function: \"" 
+                std::cerr << "Unsuppoprted Solute IC function: \""
                           << solute_ic_Amanzi_type << "\"" << std::endl;
                 throw std::exception();
               }
-                    
+
               fPL.set("regions",_regions);
               ParameterList icPL;
               icPL.set(underscore(solute_ic_label),fPL);
@@ -3769,7 +3773,7 @@ namespace Amanzi {
       const std::string Forms_str="Time Functions";
 
       Array<std::string> nullList, reqP;
-      if (Amanzi_type == Source_Uniform_str 
+      if (Amanzi_type == Source_Uniform_str
 	  || Amanzi_type == Source_Flow_Weighted_str
 	  || Amanzi_type == Source_Point_str) {
         reqP.push_back(Values_str);
@@ -3811,7 +3815,7 @@ namespace Amanzi {
     }
 
     void
-    convert_to_structured_state(const ParameterList& parameter_list, 
+    convert_to_structured_state(const ParameterList& parameter_list,
                                 ParameterList&       struc_list,
                                 StateDef&            stateDef,
                                 bool&                do_tracer_advection,
@@ -3819,25 +3823,24 @@ namespace Amanzi {
                                 bool&                do_chem)
     {
       ParameterList& phase_list  = struc_list.sublist("phase");
-      ParameterList& comp_list   = struc_list.sublist("comp"); 
-      ParameterList& solute_list = struc_list.sublist("tracer"); 
-    
+      ParameterList& solute_list = struc_list.sublist("tracer");
+
       typedef StateDef::PhaseCompMap PhaseCompMap;
       typedef StateDef::CompMap  CompMap;
-    
+
       // FIXME: Flattens the hierarchy, as expected for PMAMR
       Array<std::string> arrayphase;
-      Array<std::string> arraysolute;  
-      Array<double> arraydensity;  
-      Array<double> arrayviscosity;  
+      Array<std::string> arraysolute;
+      Array<double> arraydensity;
+      Array<double> arrayviscosity;
       Array<double> arraydiffusivity;  // FIXME: Not in current spec
-    
+
       const PhaseCompMap phase_map = stateDef.getPhaseCompMap();
       if (phase_map.size() != 1) {
         std::cerr << "Only single-phase currently supported" << std::endl;
         throw std::exception();
       }
-    
+
       StateDef::Phases& phases = stateDef.getPhases();
       for (StateDef::Phases::const_iterator pit = phases.begin(); pit!=phases.end(); ++pit)
       {
@@ -3849,8 +3852,8 @@ namespace Amanzi {
         arraydensity.push_back(phase.Density());
         arrayviscosity.push_back(phase.Viscosity());
         arraydiffusivity.push_back(phase.Diffusivity());
-        
-        Array<std::string> arraycomp;  
+
+        Array<std::string> arraycomp;
         const CompMap comp_map = stateDef[phaseLabel];
         for (CompMap::const_iterator cit = comp_map.begin(); cit!=comp_map.end(); ++cit)
         {
@@ -3873,13 +3876,13 @@ namespace Amanzi {
         phasePLtr.set("diffusivity",arraydiffusivity);
         phase_list.set(_phaseLabel,phasePLtr);
       }
-    
+
       phase_list.set("phases",arrayphase);
       solute_list.set("tracers",arraysolute);
 
       // Convert ICs, BCs for phase/comp
-      convert_ics(parameter_list,struc_list,stateDef);    
-      convert_bcs(parameter_list,struc_list,stateDef);    
+      convert_ics(parameter_list,struc_list,stateDef);
+      convert_bcs(parameter_list,struc_list,stateDef);
 
       std::map<std::string,ParameterList> solutePLs;
 
@@ -3889,7 +3892,7 @@ namespace Amanzi {
 
       for (int i=0; i<arraysolute.size(); ++i) {
         const std::string& soluteName = arraysolute[i];
-                
+
         Array<std::string> icLabels;
         std::pair<SPLit,SPLit> retIC = solute_to_ictype.equal_range(soluteName);
         for (it=retIC.first; it!=retIC.second; ++it) {
@@ -3900,19 +3903,19 @@ namespace Amanzi {
           }
           icLabels.push_back(it->second.name());
         }
-     
+
         Array<std::string> regions;
         solutePLs[soluteName].set<Array<std::string> >("regions",regions);
         solutePLs[soluteName].set<Array<std::string> >("tinits",icLabels);
 
         // Find solute in phase defs in order to extract solute-specific properties
         bool found_solute = false;
-        for (StateDef::Phases::const_iterator pit = phases.begin(); pit!=phases.end() && !found_solute; ++pit) 
+        for (StateDef::Phases::const_iterator pit = phases.begin(); pit!=phases.end() && !found_solute; ++pit)
         {
-          const std::string& phaseLabel = pit->first;                
+          const std::string& phaseLabel = pit->first;
           PHASE& phase = stateDef.getPhases()[phaseLabel];
           const CompMap comp_map = stateDef[phaseLabel];
-          for (CompMap::const_iterator cit = comp_map.begin(); cit!=comp_map.end() && !found_solute; ++cit) 
+          for (CompMap::const_iterator cit = comp_map.begin(); cit!=comp_map.end() && !found_solute; ++cit)
           {
             const Array<TRACER>& solutes = cit->second.getTracerArray();
             for (int i=0; i<solutes.size(); ++i)
@@ -3950,7 +3953,7 @@ namespace Amanzi {
             solutePLs[soluteName].set(it->second.name(),it->second);
             bcLabels.push_back(it->second.name());
           }
-          solutePLs[soluteName].set<Array<std::string> >("tbcs",bcLabels);                    
+          solutePLs[soluteName].set<Array<std::string> >("tbcs",bcLabels);
         }
       }
 
@@ -4013,12 +4016,10 @@ namespace Amanzi {
           PLoptions sl_opt(src_label_pl,nullList,src_label_reqd_params,false,true);
           const Array<std::string>& regions = src_label_pl.get<Array<std::string> >(Assigned_Regions_str);
           struct_src_label_list.set("regions",underscore(regions));
-          bool function_set = false;
           const Array<std::string>& src_f_or_s_labels = sl_opt.OptLists(); // must be a known src func or "Solute SOURCE"
           for (int j=0; j<src_f_or_s_labels.size(); ++j) {
             const std::string& src_f_or_s_label = src_f_or_s_labels[j];
 
-            function_set = false;
             if (src_f_or_s_label == Solute_Source_str) {
               // Do solute sources
 
@@ -4085,7 +4086,6 @@ namespace Amanzi {
               const std::string& Amanzi_type = src_f_or_s_label;
               const ParameterList& src_func_pl = src_label_pl.sublist(Amanzi_type);
               convert_Sources(src_func_pl,Amanzi_type,struct_src_label_list);
-	      function_set = true;
             }
           }
           struct_src_list.set(underscore(src_label),struct_src_label_list);
@@ -4095,14 +4095,14 @@ namespace Amanzi {
       }
       struc_list.sublist("prob").set<bool>("do_source_term",do_source_term);
 
-      if (do_chem) 
+      if (do_chem)
       {
         if (stateDef.HasSolidChem()) {
           const Array<std::string>& mineral_names = stateDef.getSolid().mineral_names;
           if (mineral_names.size() > 0) {
             struc_list.sublist("mineral").set("minerals",underscore(mineral_names));
           }
-                    
+
           const Array<std::string>& sorption_site_names = stateDef.getSolid().sorption_site_names;
           if (sorption_site_names.size() > 0) {
             struc_list.sublist("sorption_site").set("sorption_sites",underscore(sorption_site_names));
@@ -4115,7 +4115,7 @@ namespace Amanzi {
     // convert output to structured format
     //
     void
-    convert_to_structured_output(const ParameterList& parameter_list, 
+    convert_to_structured_output(const ParameterList& parameter_list,
                                  ParameterList&       struc_list,
                                  StateDef&            state,
                                  bool                 do_chem)
@@ -4167,7 +4167,7 @@ namespace Amanzi {
           user_derive_list.push_back(underscore("Volumetric_" + name + "_Content"));
         }
       }
-            
+
       if (1 && do_chem && state.HasSolidChem()) { // FIXME: All this data currently managed by Alquimia, work interface later...
         if (struc_list.isSublist("tracer")) {
           const Array<std::string>& solute_names = struc_list.sublist("tracer").get<Array<std::string> >("tracers");
@@ -4184,7 +4184,7 @@ namespace Amanzi {
               if (state.getSolid().SorptionIsotherm(name).IsFreundlich()) {
                 user_derive_list.push_back(underscore(name + "Isotherm Freundlich n "));
               }
-              else if (state.getSolid().SorptionIsotherm(name).IsLangmuir()) 
+              else if (state.getSolid().SorptionIsotherm(name).IsLangmuir())
               {
                 user_derive_list.push_back(underscore(name + " Isotherm Langmuir b "));
               }
@@ -4218,7 +4218,7 @@ namespace Amanzi {
         MyAbort("Must have an \""+output_str+"\" section in the XML input file");
       }
       const ParameterList& rlist = parameter_list.sublist("Output");
-      
+
       // time macros
       std::set<std::string> time_macros;
       std::string time_macros_str = "Time Macros";
@@ -4233,11 +4233,11 @@ namespace Amanzi {
           }
           const ParameterList& rslist = tlist.sublist(label);
           Array<double> times, vals;
-                    
+
           ParameterList tPL;
           for (ParameterList::ConstIterator ii=rslist.begin(); ii!=rslist.end(); ++ii) {
             const std::string& name = underscore(rslist.name(ii));
-                        
+
             if (name == "Values") {
               times = rslist.get<Array<double> >("Values");
             }
@@ -4249,7 +4249,7 @@ namespace Amanzi {
                         << "\""  << std::endl;
               throw std::exception();
             }
-                        
+
             std::string type;
             if (times.size()) {
               if (vals.size()) {
@@ -4285,7 +4285,7 @@ namespace Amanzi {
         tma[cnt++] = *it;
       }
       amr_list.set<Array<std::string> >("time_macros",tma);
-            
+
       // cycle macros
       std::set<std::string> cycle_macros;
       Array<std::string> cma;
@@ -4296,11 +4296,11 @@ namespace Amanzi {
           std::string label = underscore(clist.name(i));
           const ParameterList& rslist = clist.sublist(clist.name(i));
           Array<int> cycles, vals;
-                
+
           ParameterList cPL;
           for (ParameterList::ConstIterator ii=rslist.begin(); ii!=rslist.end(); ++ii) {
             const std::string& name = rslist.name(ii);
-                  
+
             if (name == "Values") {
               cycles = rslist.get<Array<int> >(name);
             }
@@ -4312,7 +4312,7 @@ namespace Amanzi {
                         << "\""  << std::endl;
               throw std::exception();
             }
-		  
+
             if (cycles.size()) {
               if (vals.size()) {
                 std::cerr << "Cannot specify both cycle values and periods for cycle macro  \"" << name
@@ -4338,7 +4338,7 @@ namespace Amanzi {
           cycle_macros.insert(label);
         }
         amr_list.set("cycle_macro",cmPL);
-	      
+
         for (std::set<std::string>::const_iterator it=cycle_macros.begin(); it!=cycle_macros.end(); ++it) {
           cma.push_back(*it);
         }
@@ -4371,7 +4371,7 @@ namespace Amanzi {
             vis_file = vlist.get<std::string>(vis_file_str);
           }
           else if (name == vis_var_str)
-          {                        
+          {
             visNames = vlist.get<Array<std::string> >(vis_var_str);
             for (int i=0; i<visNames.size(); ++i) {
               std::string _visName = underscore(visNames[i]);
@@ -4413,7 +4413,7 @@ namespace Amanzi {
                 if (Teuchos::GlobalMPISession::getRank() == 0) {
                   std::cerr << "Unrecognized cycle macro in \""+vis_data_str+"\": \""
                             << vcMacros[i] << "\"" << std::endl;
-                                    
+
                   for (std::set<std::string>::const_iterator it=cycle_macros.begin();
                        it!=cycle_macros.end(); ++it) {
                     std::cerr << *it << " " << std::endl;
@@ -4446,7 +4446,7 @@ namespace Amanzi {
                 if (Teuchos::GlobalMPISession::getRank() == 0) {
                   std::cerr << "Unrecognized time macro in \""+vis_data_str+"\": \""
                             << vtMacros[i] << "\"" << std::endl;
-                                    
+
                   std::cerr << "Known macros: ";
                   for (std::set<std::string>::const_iterator it=time_macros.begin();
                        it!=time_macros.end(); ++it) {
@@ -4499,7 +4499,7 @@ namespace Amanzi {
       amr_list.set<Array<std::string> >("user_derive_list",user_derive_list);
       if (!vis_vars_set) {
         for (int j=0; j<user_derive_list.size(); ++j) {
-          visNames.push_back(underscore(user_derive_list[j])); 
+          visNames.push_back(underscore(user_derive_list[j]));
         }
       }
       amr_list.set<Array<std::string> >("derive_plot_vars",visNames);
@@ -4513,7 +4513,7 @@ namespace Amanzi {
       std::string chk_file = "chk";
       int check_digits = 5;
       Array<std::string> chk_cMacroNames;
-      if (rlist.isSublist(chk_data_str)) {                
+      if (rlist.isSublist(chk_data_str)) {
         const ParameterList& clist = rlist.sublist(chk_data_str);
         for (ParameterList::ConstIterator i=clist.begin(); i!=clist.end(); ++i)
         {
@@ -4544,7 +4544,7 @@ namespace Amanzi {
                 if (Teuchos::GlobalMPISession::getRank() == 0) {
                   std::cerr << "Unrecognized cycle macro in \""+chk_data_str+"\": \""
                             << ccMacros[i] << "\"" << std::endl;
-                                    
+
                   for (std::set<std::string>::const_iterator it=cycle_macros.begin();
                        it!=cycle_macros.end(); ++it) {
                     std::cerr << *it << " " << std::endl;
@@ -4569,7 +4569,7 @@ namespace Amanzi {
       amr_list.set<std::string>("check_file",chk_file);
       amr_list.set<int>("chk_file_digits",check_digits);
 
-        
+
       // observation
       Array<std::string> arrayobs;
       std::string obs_str = "Observation Data";
@@ -4578,7 +4578,7 @@ namespace Amanzi {
         ParameterList sublist;
         std::string obs_file_str = "Observation Output Filename";
         std::string obs_file="observation.out";
-        for (ParameterList::ConstIterator i=olist.begin(); i!=olist.end(); ++i) {                
+        for (ParameterList::ConstIterator i=olist.begin(); i!=olist.end(); ++i) {
           std::string label = olist.name(i);
           const ParameterEntry& entry = olist.getEntry(label);
 
@@ -4601,7 +4601,7 @@ namespace Amanzi {
               sublist.set("obs_type","point_sample");
 
               // Check our list of regions to ensure it exists and is the correct type
-              const ParameterList& lregion = 
+              const ParameterList& lregion =
                 parameter_list.sublist("Regions").sublist(region_name);
 
               if (!lregion.isSublist("Region: Point")) {
@@ -4628,7 +4628,7 @@ namespace Amanzi {
 		  std::cerr << "Unrecognized time macro: \"" << AMR_to_Amanzi_label_map[_timeMacro]
 			    << "\" for observation data: \"" << label << "\"" << std::endl;
 		  throw std::exception();
-		} 
+		}
               }
               sublist.set("time_macros",_timeMacros);
             }
@@ -4645,11 +4645,11 @@ namespace Amanzi {
               sublist.set("cycle_macros",_cycleMacros);
             }
             else {
-              std::cerr << "Must specify either time or cycle macro for observation data: \"" 
+              std::cerr << "Must specify either time or cycle macro for observation data: \""
                         << label << "\"" << std::endl;
-              throw std::exception();                 
+              throw std::exception();
             }
-	  
+
             bool found = false;
             for (int k=0; k<user_derive_list.size() && !found; ++k) {
               if (_variable == user_derive_list[k]) {
@@ -4699,7 +4699,7 @@ namespace Amanzi {
       bool do_tracer_advection, do_tracer_diffusion, do_chem;
       //
       // determine spatial dimension of the problem
-      // 
+      //
       ndim = parameter_list.sublist("Domain").get<int>("Spatial Dimension");
       //
       // Mesh
@@ -4714,7 +4714,7 @@ namespace Amanzi {
       //
       convert_to_structured_region(parameter_list, struc_list);
       //
-      // State 
+      // State
       //
       StateDef stateDef(parameter_list);
       convert_to_structured_state(parameter_list, struc_list, stateDef,
@@ -4726,7 +4726,7 @@ namespace Amanzi {
                                      do_tracer_advection, do_tracer_diffusion);
       //
       // Output
-      // 
+      //
       convert_to_structured_output(parameter_list,struc_list,stateDef,do_chem);
 
       ParameterList& prob_out_list = struc_list.sublist("prob");

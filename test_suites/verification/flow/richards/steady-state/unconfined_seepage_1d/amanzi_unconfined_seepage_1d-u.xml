@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.3.0">
+<amanzi_input type="unstructured" version="1.5-dev">
     <model_description name="unconfined_seepaged_2d">
       <comments>Steady-State Richards: unconfined seepage_2d</comments>
       <model_id>??</model_id>
@@ -66,7 +66,8 @@
       <comments />
       <region name="Aquifer">
         <comments>One region comprising the entire domain</comments>
-        <region_file entity="cell" format="exodus ii" label="1" name="porflow4_4.exo" type="labeled set" />
+        <!--region_file entity="cell" format="exodus ii" label="1" name="porflow4_4.exo" type="labeled set" /-->
+        <box high_coordinates="1000.0, 1000.0" low_coordinates="0.0, 0.0"/>
       </region>
       <region name="Left side">
         <comments>left side</comments>
@@ -119,6 +120,7 @@
             <linear_pressure gradient="0.0,-9793.52" reference_coord="0.0, 20.0" value="101325.0" />
           </liquid_component>
         </liquid_phase>
+        <uniform_temperature value="298.0"/>
       </initial_condition>
     </initial_conditions>
     <boundary_conditions>

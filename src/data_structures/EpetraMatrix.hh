@@ -1,10 +1,15 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
 /* -------------------------------------------------------------------------
 
 ATS
-
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon (ecoon@lanl.gov)
 
 Interface for a Matrix that acts on Epetra_Vector.
 
@@ -29,12 +34,10 @@ class EpetraMatrix {
   virtual const Epetra_BlockMap& RangeMap() const = 0;
 
   // Apply matrix, b <-- Ax, returns ierr
-  virtual int Apply(const Epetra_Vector& x,
-                     Epetra_Vector& b) const = 0;
+  virtual int Apply(const Epetra_Vector& x, Epetra_Vector& b) const = 0;
 
   // Apply the inverse, x <-- A^-1 b, returns ierr
-  virtual int ApplyInverse(const Epetra_Vector& b,
-                            Epetra_Vector& x) const = 0;
+  virtual int ApplyInverse(const Epetra_Vector& b, Epetra_Vector& x) const = 0;
 };
 
 } // namespace Amanzi

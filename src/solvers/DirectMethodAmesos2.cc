@@ -1,5 +1,5 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -7,7 +7,8 @@
   Authors: Konstantin Lipnikov (amklinv@sandia.gov)
            Ethan Coon (coonet@ornl.gov)
 */
-//!  Direct solvers via Trilinos.
+
+//! Direct solvers via Trilinos.
 /*!
 
 .. warning:: undocumented
@@ -29,31 +30,31 @@ namespace AmanziSolvers {
 /* ******************************************************************
 * Initialization from a parameter list.
 ****************************************************************** */
-void DirectMethodAmesos2::set_inverse_parameters(Teuchos::ParameterList& plist)
+void
+DirectMethodAmesos2::set_inverse_parameters(Teuchos::ParameterList& plist)
 {
   plist_ = plist;
 
   this->set_name(plist.get<std::string>("method"));
   solver_name_ = plist.get<std::string>("solver name", "Klu2");
 
-  std::string vo_name = this->name()+" (Amesos " + solver_name_ + ")";
+  std::string vo_name = this->name() + " (Amesos " + solver_name_ + ")";
   vo_ = Teuchos::rcp(new VerboseObject(vo_name, plist));
 
   inited_ = true;
 }
 
 
-
-
 /* ******************************************************************
 * Update sets symbolic structure
 ****************************************************************** */
-void DirectMethodAmesos2::InitializeInverse() {
+void
+DirectMethodAmesos2::InitializeInverse()
+{
   AMANZI_ASSERT(inited_);
   AMANZI_ASSERT(h_.get());
 
-  solver_ = Amesos2::create<Epetra_CrsMatrix, Epetra_MultiVector>(
-      solver_name_, h_);
+  solver_ = Amesos2::create<Epetra_CrsMatrix, Epetra_MultiVector>(solver_name_, h_);
 
   if (!solver_.get()) {
     Errors::Message msg;
@@ -70,14 +71,17 @@ void DirectMethodAmesos2::InitializeInverse() {
 /* ******************************************************************
 * Compute sets symbolic structure
 ****************************************************************** */
-void DirectMethodAmesos2::ComputeInverse() {
+void
+DirectMethodAmesos2::ComputeInverse()
+{
   AMANZI_ASSERT(updated_);
   solver_->numericFactorization();
   computed_ = true;
 }
 
 
-int DirectMethodAmesos2::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
+int
+DirectMethodAmesos2::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
 {
   AMANZI_ASSERT(computed_);
 
@@ -90,5 +94,5 @@ int DirectMethodAmesos2::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv)
 }
 
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi

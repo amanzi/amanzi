@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef _RichardSolver_H_
 #define _RichardSolver_H_
 
@@ -89,7 +98,7 @@ public:
 		    Real     t,
 		    Real     dt);
 
-  void CreateJac(Mat& J, 
+  void CreateJac(Mat& J,
 		 MFTower& pressure,
                  Real t,
 		 Real dt);
@@ -114,18 +123,18 @@ public:
 	      int                dComp,
 	      int                nComp,
 	      int                nGrow) const;
-  
+
   void FillPatch(MFTower& mft,
 		 int sComp,
 		 int nComp,
 		 bool do_piecewise_constant=false);
-  
+
   void CenterToEdgeUpwind(PArray<MFTower>&       mfte,
 			  MFTower&               mftc,
 			  const PArray<MFTower>& sgn,
 			  int                    nComp,
                           const BCRec&           bc) const;
-  
+
   void XmultYZ(MFTower&           X,
 	       const MFTower&     Y,
 	       const MFTower&     Z,
@@ -134,7 +143,7 @@ public:
 	       int                dComp=0,
 	       int                nComp=1,
 	       int                nGrow=0);
-  
+
   void CCtoECgradAdd(PArray<MFTower>&            mfte,
 		     const MFTower&              mftc,
 		     const Array<Array<Real> >&  a,
@@ -142,7 +151,7 @@ public:
 		     int                         dComp=0,
 		     int                         nComp=1) const;
 protected:
-  
+
   MFTFillPatch* mftfp;
   RSdata& rs_data;
   NLScontrol& nlsc;

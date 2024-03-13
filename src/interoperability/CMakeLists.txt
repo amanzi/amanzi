@@ -51,7 +51,6 @@ get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
 include_directories(${CHEM_INCLUDES_DIR})
 
 # External (TPL) include directories
-include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_C_INCLUDE_DIR})
@@ -94,7 +93,7 @@ if (BUILD_TESTS)
     endif()
 
     set(amanzi_libs mpc pks mpc_tree transport  
-                    pks eos state operators mesh_extracted mesh_factory mesh_audit 
+                    pks eos state operators mesh_extracted mesh_factory 
                     geometry whetstone mesh_functions functions)
 
     set(ats_libs ats_flow ats_eos ats_column_integrator ats_generic_evals ats_surf_subsurf)

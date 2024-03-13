@@ -1,12 +1,15 @@
 /*
-  Functions
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Functions
+
 */
 
 #include "FunctionDistance.hh"
@@ -27,14 +30,15 @@ FunctionDistance::FunctionDistance(const std::vector<double>& x0, const std::vec
 }
 
 
-double FunctionDistance::operator()(const std::vector<double>& x) const
+double
+FunctionDistance::operator()(const std::vector<double>& x) const
 {
   double tmp(0.0), y(0.0);
   if (x.size() < x0_.size()) {
     Errors::Message m;
     m << "FunctionDistance expects higher-dimensional argument.";
     Exceptions::amanzi_throw(m);
-  }    
+  }
   for (int j = 0; j < x0_.size(); ++j) {
     tmp = x[j] - x0_[j];
     y += metric_[j] * tmp * tmp;
@@ -44,4 +48,4 @@ double FunctionDistance::operator()(const std::vector<double>& x) const
   return y;
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

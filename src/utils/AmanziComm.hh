@@ -1,14 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
-//! Includes and a few helper functions to make it easier to work with Comms.
 
+//! Includes and a few helper functions to make it easier to work with Comms.
 /*!
 
   Basic functionality that standardizes Epetra_Comm and Teuchos::Comm
@@ -24,19 +23,19 @@
 
 #ifdef TRILINOS_TPETRA_STACK
 
-#ifdef HAVE_MPI
-#include "Teuchos_MpiComm.hpp"
-#else
-#include "Teuchos_SerialComm.hpp"
-#endif
+#  ifdef HAVE_MPI
+#    include "Teuchos_MpiComm.hpp"
+#  else
+#    include "Teuchos_SerialComm.hpp"
+#  endif
 
 #else // Epetra stack
 
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
+#  ifdef HAVE_MPI
+#    include "Epetra_MpiComm.h"
+#  else
+#    include "Epetra_SerialComm.h"
+#  endif
 
 #endif // trilinos stack
 
@@ -49,84 +48,87 @@ namespace Amanzi {
 //
 // Get a default communicator, based on MPI_COMM_WORLD if possible.
 // -----------------------------------------------------------------------------
-inline
-Comm_ptr_type getDefaultComm() {
+inline Comm_ptr_type
+getDefaultComm()
+{
 #ifdef TRILINOS_TPETRA_STACK
-#ifdef HAVE_MPI
+#  ifdef HAVE_MPI
   return Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-#else
+#  else
   return Teuchos::rcp(new Teuchos::SerialComm<int>());
-#endif
+#  endif
 #else
-#ifdef HAVE_MPI
+#  ifdef HAVE_MPI
   return Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
+#  else
   return Teuchos::rcp(new Epetra_SerialComm());
-#endif
+#  endif
 #endif
 }
 
 //
 // Get a serial communicator, based on MPI_COMM_SELF if possible.
 // -----------------------------------------------------------------------------
-inline
-Comm_ptr_type getCommSelf() {
+inline Comm_ptr_type
+getCommSelf()
+{
 #ifdef TRILINOS_TPETRA_STACK
-#ifdef HAVE_MPI
+#  ifdef HAVE_MPI
   return Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_SELF));
-#else
+#  else
   return Teuchos::rcp(new Teuchos::SerialComm<int>());
-#endif
+#  endif
 #else
-#ifdef HAVE_MPI
+#  ifdef HAVE_MPI
   return Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_SELF));
-#else
+#  else
   return Teuchos::rcp(new Epetra_SerialComm());
-#endif
+#  endif
 #endif
 }
 
 //
 // Get a communicator, based on MPI_Comm
 // -----------------------------------------------------------------------------
-inline
-Comm_ptr_type getComm(MPI_Comm comm) {
+inline Comm_ptr_type
+getComm(MPI_Comm comm)
+{
 #ifdef TRILINOS_TPETRA_STACK
-#ifdef HAVE_MPI
+#  ifdef HAVE_MPI
   return Teuchos::rcp(new Teuchos::MpiComm<int>(comm));
-#else
+#  else
   return Teuchos::rcp(new Teuchos::SerialComm<int>());
-#endif
+#  endif
 #else
-#ifdef HAVE_MPI
+#  ifdef HAVE_MPI
   return Teuchos::rcp(new Epetra_MpiComm(comm));
-#else
+#  else
   return Teuchos::rcp(new Epetra_SerialComm());
-#endif
+#  endif
 #endif
 }
-
 
 
 //
 // Wraps a communicator for providing MinAll and MaxAll, as needed in Amesos2
 // solvers.
 // -----------------------------------------------------------------------------
-template<typename Comm>
+template <typename Comm>
 class CommWrapper {
  public:
-  CommWrapper(const Comm& comm)
-      : comm_(comm.Clone()) {}
+  CommWrapper(const Comm& comm) : comm_(comm.Clone()) {}
 
   // hacks required to allow Epetra and Tpetra to coexist
-  template<typename Return_type>
-  void MinAll(Return_type* local, Return_type* reduced, size_t count) {
+  template <typename Return_type>
+  void MinAll(Return_type* local, Return_type* reduced, size_t count)
+  {
     comm_->MinAll(local, reduced, count);
   }
 
   // hacks required to allow Epetra and Tpetra to coexist
-  template<typename Return_type>
-  void MaxAll(Return_type* local, Return_type* reduced, size_t count) {
+  template <typename Return_type>
+  void MaxAll(Return_type* local, Return_type* reduced, size_t count)
+  {
     comm_->MaxAll(local, reduced, count);
   }
 
@@ -135,22 +137,22 @@ class CommWrapper {
 };
 
 
-template<>
+template <>
 class CommWrapper<Comm_ptr_type> {
  public:
-  inline
-  CommWrapper(const Comm_ptr_type& comm)
-      : comm_(comm) {}
+  inline CommWrapper(const Comm_ptr_type& comm) : comm_(comm) {}
 
   // hacks required to allow Epetra and Tpetra to coexist
-  template<typename Return_type>
-  void MinAll(Return_type* local, Return_type* reduced, size_t count) {
+  template <typename Return_type>
+  void MinAll(Return_type* local, Return_type* reduced, size_t count)
+  {
     comm_->MinAll(local, reduced, count);
   }
 
   // hacks required to allow Epetra and Tpetra to coexist
-  template<typename Return_type>
-  void MaxAll(Return_type* local, Return_type* reduced, size_t count) {
+  template <typename Return_type>
+  void MaxAll(Return_type* local, Return_type* reduced, size_t count)
+  {
     comm_->MaxAll(local, reduced, count);
   }
 
@@ -158,14 +160,16 @@ class CommWrapper<Comm_ptr_type> {
   Comm_ptr_type comm_;
 };
 
-template<typename Comm>
-Teuchos::RCP<CommWrapper<Comm> >
-getCommWrapper(const Comm& comm) {
+template <typename Comm>
+Teuchos::RCP<CommWrapper<Comm>>
+getCommWrapper(const Comm& comm)
+{
   return Teuchos::rcp(new CommWrapper<Comm>(comm));
 }
 
 
-bool sameComm(const Comm_type& c1, const Comm_type& c2);
+bool
+sameComm(const Comm_type& c1, const Comm_type& c2);
 
 
 } // namespace Amanzi

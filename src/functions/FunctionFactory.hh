@@ -1,8 +1,10 @@
 /*
-  Copyright 2010-201x held jointly by LANL, ORNL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+
+  Authors:
 */
 
 #pragma once
@@ -10,13 +12,19 @@
 
 namespace Amanzi {
 
-class Function;  // forward declaration
+class Function; // forward declaration
 
 class FunctionFactory {
  public:
   FunctionFactory() {}
   ~FunctionFactory() {}
-  std::unique_ptr<Function> Create(Teuchos::ParameterList&) const;
+
+  // parse the list and create a function
+  std::unique_ptr<Function> Create(Teuchos::ParameterList& plist) const;
+
+  // create a function of a given type
+  std::unique_ptr<Function>
+  Create(const std::string& func_type, Teuchos::ParameterList& func_params) const;
 
  private:
   std::unique_ptr<Function> create_constant(Teuchos::ParameterList&) const;
@@ -40,4 +48,3 @@ class FunctionFactory {
 
 
 } // namespace Amanzi
-

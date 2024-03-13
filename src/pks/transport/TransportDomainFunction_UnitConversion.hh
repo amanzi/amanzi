@@ -1,14 +1,17 @@
 /*
-  Transport PK
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (coonet@ornl.gov)
 */
+
 //! Simple adapter that changes units.
+/*
+  Transport PK
+
+*/
 
 /*
 
@@ -47,12 +50,13 @@ _vector_ coefficient, but not the scalar one.
 namespace Amanzi {
 namespace Transport {
 
-template<class T>
+template <class T>
 class TransportDomainFunction_UnitConversion : public T {
  public:
   using T::T;
 
-  void Compute(double t_old, double t_new) {
+  void Compute(double t_old, double t_new)
+  {
     T::Compute(t_old, t_new);
 
     AMANZI_ASSERT(vector_ != Teuchos::null);
@@ -60,31 +64,30 @@ class TransportDomainFunction_UnitConversion : public T {
 
     if (reciprocal_) {
       for (auto& it : *this) {
-        for (auto& val : it.second) {
-          val *= scalar_ / vector[0][it.first];
-        }
+        for (auto& val : it.second) { val *= scalar_ / vector[0][it.first]; }
       }
     } else {
       for (auto& it : *this) {
-        for (auto& val : it.second) {
-          val *= scalar_ * vector[0][it.first];
-        }
+        for (auto& val : it.second) { val *= scalar_ * vector[0][it.first]; }
       }
     }
   }
 
   void set_conversion(double scalar,
                       const Teuchos::RCP<const Epetra_MultiVector>& vector,
-                      bool reciprocal) {
+                      bool reciprocal)
+  {
     scalar_ = scalar;
     vector_ = vector;
     reciprocal_ = reciprocal;
   }
 
-protected:
+
+ protected:
   double scalar_;
   Teuchos::RCP<const Epetra_MultiVector> vector_;
   bool reciprocal_;
+  std::string name_;
 };
 
 #ifdef ALQUIMIA_ENABLED
@@ -92,6 +95,8 @@ using TransportBoundaryFunction_Alquimia_Units =
   TransportDomainFunction_UnitConversion<TransportBoundaryFunction_Alquimia>;
 using TransportSourceFunction_Alquimia_Units =
   TransportDomainFunction_UnitConversion<TransportSourceFunction_Alquimia>;
+using TransportSourceFunction_Concentrations =
+  TransportDomainFunction_UnitConversion<TransportDomainFunction>;
 #endif
 
 } // namespace Transport

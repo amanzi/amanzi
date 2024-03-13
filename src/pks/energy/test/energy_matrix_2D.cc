@@ -1,12 +1,15 @@
 /*
-  Energy
-
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Energy
+
 */
 
 #include <cstdlib>
@@ -33,11 +36,12 @@
 #include "State.hh"
 #include "WhetStoneDefs.hh"
 
-/* **************************************************************** 
+/* ****************************************************************
 * Generates a preconditioner for the implicit discretization of
 * the thermal operator.
 * ************************************************************** */
-TEST(ENERGY_2D_MATRIX) {
+TEST(ENERGY_2D_MATRIX)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -49,23 +53,22 @@ TEST(ENERGY_2D_MATRIX) {
 
   if (MyPID == 0) std::cout << "Test: 2D homogeneous medium, preconditioner" << std::endl;
 
-  // read parameter list 
+  // read parameter list
   std::string xmlFileName = "test/energy_matrix_2D.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-  const Teuchos::RCP<Teuchos::ParameterList> plist = 
-      Teuchos::rcp(new Teuchos::ParameterList(xmlreader.getParameters()));
+  const Teuchos::RCP<Teuchos::ParameterList> plist =
+    Teuchos::rcp(new Teuchos::ParameterList(xmlreader.getParameters()));
 
   // create a mesh framework
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 17, 17);
 
@@ -76,92 +79,97 @@ TEST(ENERGY_2D_MATRIX) {
   Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
   S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
-  // initialize the Energy process kernel 
+  // initialize the Energy process kernel
   Teuchos::ParameterList pk_tree = plist->sublist("PKs").sublist("energy");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   EnergyTwoPhase_PK* EPK = new EnergyTwoPhase_PK(pk_tree, plist, S, soln);
   EPK->Setup();
-std::cout << "Passes EPK.Setup()" << std::endl;
+  std::cout << "Passes EPK.Setup()" << std::endl;
   S->Setup();
-std::cout << "Passed S.Setup()" << std::endl;
+  std::cout << "Passed S.Setup()" << std::endl;
   S->InitializeFields();
-std::cout << "Passed S.InitilizeFields()" << std::endl;
+  std::cout << "Passed S.InitilizeFields()" << std::endl;
   S->InitializeEvaluators();
-std::cout << "Passed S.InitilizeEvaluators()" << std::endl;
+  std::cout << "Passed S.InitilizeEvaluators()" << std::endl;
   EPK->Initialize();
-std::cout << "Passed EPK.Initilize()" << std::endl;
+  std::cout << "Passed EPK.Initilize()" << std::endl;
   S->WriteDependencyGraph();
   S->CheckAllFieldsInitialized();
 
-  // modify the default state for the problem at hand 
-  // create the initial temperature function 
+  // modify the default state for the problem at hand
+  // create the initial temperature function
   std::string passwd("");
-  auto& temperature = *S->GetW<CompositeVector>("temperature", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& temperature =
+    *S->GetW<CompositeVector>("temperature", Tags::DEFAULT, passwd).ViewComponent("cell");
   temperature.PutScalar(273.0);
-  Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
-      S->GetEvaluatorPtr("temperature", Tags::DEFAULT))->SetChanged();
+  Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
+    S->GetEvaluatorPtr("temperature", Tags::DEFAULT))
+    ->SetChanged();
 
   // compute conductivity
   EPK->UpdateConductivityData(S.ptr());
 
   // create boundary data
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  int nfaces_wghost =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  Teuchos::RCP<BCs> bc =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
-  
+
   for (int f = 0; f < nfaces_wghost; f++) {
-    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+    const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
+        fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value[f] = 200.0;
     }
   }
-  
-  // create diffusion operator 
+
+  // create diffusion operator
   const Teuchos::ParameterList& elist = plist->sublist("PKs").sublist("energy");
-  Teuchos::ParameterList oplist = elist.sublist("operators")
-                                       .sublist("diffusion operator")
-                                       .sublist("preconditioner");
+  Teuchos::ParameterList oplist =
+    elist.sublist("operators").sublist("diffusion operator").sublist("preconditioner");
   PDE_DiffusionFactory opfactory;
   Teuchos::RCP<PDE_Diffusion> op1 = opfactory.Create(oplist, mesh, bc);
   op1->SetBCs(bc, bc);
 
   // populate the diffusion operator
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(EPK->get_K());
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> Kptr = Teuchos::rcpFromRef(EPK->get_K());
   op1->Setup(Kptr, Teuchos::null, Teuchos::null);
   op1->UpdateMatrices(Teuchos::null, Teuchos::null);
   Teuchos::RCP<Operator> op = op1->global_operator();
 
   // add accumulation term
-  Teuchos::RCP<PDE_Accumulation> op2 = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::CELL, op));
+  Teuchos::RCP<PDE_Accumulation> op2 =
+    Teuchos::rcp(new PDE_Accumulation(AmanziMesh::Entity_kind::CELL, op));
   double dT = 1.0;
   CompositeVector solution(op->DomainMap());
 
   S->GetEvaluator("energy").UpdateDerivative(*S, passwd, "temperature", Tags::DEFAULT);
-  const auto& dEdT = S->GetDerivative<CompositeVector>("energy", Tags::DEFAULT, "temperature", Tags::DEFAULT);
+  const auto& dEdT =
+    S->GetDerivative<CompositeVector>("energy", Tags::DEFAULT, "temperature", Tags::DEFAULT);
 
   op2->AddAccumulationDelta(solution, dEdT, dEdT, dT, "cell");
 
   // add advection term: u = q_l n_l c_v
   // we do not upwind n_l c_v  in this test.
-  S->GetEvaluator("internal_energy_liquid").UpdateDerivative(*S, passwd, "temperature", Tags::DEFAULT);
+  S->GetEvaluator("internal_energy_liquid")
+    .UpdateDerivative(*S, passwd, "temperature", Tags::DEFAULT);
   const auto& c_v = *S->GetDerivative<CompositeVector>(
-      "internal_energy_liquid", Tags::DEFAULT, "temperature", Tags::DEFAULT).ViewComponent("cell", true);
+                        "internal_energy_liquid", Tags::DEFAULT, "temperature", Tags::DEFAULT)
+                       .ViewComponent("cell", true);
   const auto& n_l = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell", true);
 
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(op->DomainMap()));
   Epetra_MultiVector& q_l = *flux->ViewComponent("face");
 
-  AmanziMesh::Entity_ID_List cells;
-
   AmanziGeometry::Point velocity(1e-4, 1e-4);
   for (int f = 0; f < nfaces_wghost; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
     q_l[0][f] = velocity * normal;
-    
-    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+
+    auto cells = mesh->getFaceCells(f);
     int ncells = cells.size();
     double tmp(0.0);
     for (int i = 0; i < ncells; i++) {
@@ -192,7 +200,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   op->ComputeInverse();
 
   if (MyPID == 0) {
-    GMV::open_data_file(*mesh, (std::string)"energy.gmv");
+    GMV::open_data_file(*mesh, (std::string) "energy.gmv");
     GMV::start_data();
     GMV::write_cell_data(temperature, 0, "temperature");
     GMV::close_data_file();

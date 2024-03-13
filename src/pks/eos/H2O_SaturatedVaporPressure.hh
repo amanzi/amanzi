@@ -1,12 +1,14 @@
 /*
-  EOS
-   
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  EOS
 
   Saturated vapor pressure for vapor over water or ice, Sonntag (1990)
 */
@@ -35,10 +37,10 @@ class H2O_SaturatedVaporPressure : public EOS_SaturatedVaporPressure {
   const double ka0_;
   const double ka_, kb_, kc_, kd_;
 
-  static Utils::RegisteredFactory<EOS_SaturatedVaporPressure, H2O_SaturatedVaporPressure> factory_;
+  static Utils::RegisteredFactory<EOS_SaturatedVaporPressure, H2O_SaturatedVaporPressure> reg_;
 };
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
 
 #endif

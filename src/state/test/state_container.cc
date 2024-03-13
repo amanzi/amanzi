@@ -1,4 +1,13 @@
 /*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
  State
 
  Tests for state as a container of data
@@ -16,7 +25,8 @@
 #include "Data_Helpers.hh"
 #include "Vec.hh"
 
-TEST(STATE_CREATION) {
+TEST(STATE_CREATION)
+{
   using namespace Amanzi;
 
   State s;
@@ -31,7 +41,8 @@ TEST(STATE_CREATION) {
 }
 
 
-TEST(STATE_ASSIGNMENT) {
+TEST(STATE_ASSIGNMENT)
+{
   using namespace Amanzi;
 
   State s;
@@ -42,7 +53,8 @@ TEST(STATE_ASSIGNMENT) {
 }
 
 
-TEST(STATE_FACTORIES_WITH_CREATE) {
+TEST(STATE_FACTORIES_WITH_CREATE)
+{
   using namespace Amanzi;
 
   // create a mesh
@@ -56,14 +68,15 @@ TEST(STATE_FACTORIES_WITH_CREATE) {
 
   // require data with factory
   s.Require<CompositeVector, CompositeVectorSpace>("my_vec", Tags::DEFAULT, "my_vec_owner")
-      .SetMesh(s.GetMesh())
-      ->SetGhosted();
+    .SetMesh(s.GetMesh())
+    ->SetGhosted();
 
-  s.Require<CompositeVector, CompositeVectorSpace>("my_vec", Tags::DEFAULT).SetComponent(
-      "cell", AmanziMesh::CELL, 1);
+  s.Require<CompositeVector, CompositeVectorSpace>("my_vec", Tags::DEFAULT)
+    .SetComponent("cell", AmanziMesh::CELL, 1);
 
   s.Setup();
-  Teuchos::RCP<CompositeVector> cv = s.GetPtrW<CompositeVector>("my_vec", Tags::DEFAULT, "my_vec_owner");
+  Teuchos::RCP<CompositeVector> cv =
+    s.GetPtrW<CompositeVector>("my_vec", Tags::DEFAULT, "my_vec_owner");
   // putting TreeVectors into state is a little tricky because they are
   // typically created from existing CompositeVectors.  We setup first, then
   // Require and stuff the pointer in.
@@ -74,7 +87,8 @@ TEST(STATE_FACTORIES_WITH_CREATE) {
 }
 
 
-TEST(STATE_FACTORIES_WITH_CONSTRUCTOR) {
+TEST(STATE_FACTORIES_WITH_CONSTRUCTOR)
+{
   using namespace Amanzi;
   auto comm = Amanzi::getDefaultComm();
   State s;
@@ -101,7 +115,8 @@ TEST(STATE_FACTORIES_WITH_CONSTRUCTOR) {
 // }
 
 
-TEST(STATE_HETEROGENEOUS_DATA) {
+TEST(STATE_HETEROGENEOUS_DATA)
+{
   using namespace Amanzi;
 
   // create a mesh
@@ -122,7 +137,9 @@ TEST(STATE_HETEROGENEOUS_DATA) {
 
   // require data with factory
   s.Require<CompositeVector, CompositeVectorSpace>("my_vec", Tags::DEFAULT, "my_vec_owner")
-      .SetMesh(s.GetMesh())->SetComponent("cell", AmanziMesh::CELL, 1)->SetGhosted();
+    .SetMesh(s.GetMesh())
+    ->SetComponent("cell", AmanziMesh::CELL, 1)
+    ->SetGhosted();
 
   s.Setup();
 

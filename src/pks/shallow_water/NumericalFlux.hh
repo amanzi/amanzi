@@ -1,12 +1,15 @@
 /*
-  Shallow Water PK 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Shallow Water PK
+
 */
 
 #ifndef SHALLOW_WATER_NUMERICAL_FLUX_HH_
@@ -19,7 +22,7 @@ namespace ShallowWater {
 
 class NumericalFlux {
  public:
-  virtual ~NumericalFlux() {};
+  virtual ~NumericalFlux(){};
 
   std::vector<double> PhysicalFlux(const std::vector<double>& U, double HydrostaticPressureForce);
   double minmod(double a, double b);
@@ -62,12 +65,12 @@ std::vector<double> NumericalFlux::PhysicalFlux(const std::vector<double>& U, do
 //--------------------------------------------------------------
 // minmod function
 //--------------------------------------------------------------
-inline
-double NumericalFlux::minmod(double a, double b)
+inline double
+NumericalFlux::minmod(double a, double b)
 {
   double m;
 
-  if (a*b > 0) {
+  if (a * b > 0) {
     if (std::fabs(a) < std::fabs(b)) {
       m = a;
     } else {
@@ -81,8 +84,7 @@ double NumericalFlux::minmod(double a, double b)
 }
 
 
-}  // namespace ShallowWater
-}  // namespace Amanzi
-  
+} // namespace ShallowWater
+} // namespace Amanzi
+
 #endif
-  

@@ -1,3 +1,12 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
 #ifndef AMANZI_OBSERVABLE_LINE_SEGMENT_SOLUTE_HH
 #define AMANZI_OBSERVABLE_LINE_SEGMENT_SOLUTE_HH
 
@@ -5,10 +14,9 @@
 #include "ObservableSolute.hh"
 #include "ObservableLineSegment.hh"
 
-namespace Amanzi{
+namespace Amanzi {
 
-class ObservableLineSegmentSolute : public ObservableSolute,
-                                    public ObservableLineSegment {
+class ObservableLineSegmentSolute : public ObservableSolute, public ObservableLineSegment {
  public:
   ObservableLineSegmentSolute(std::string variable,
                               std::string region,
@@ -17,12 +25,13 @@ class ObservableLineSegmentSolute : public ObservableSolute,
                               Teuchos::ParameterList& units_plist,
                               Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
-  virtual void ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt);
+  virtual void
+  ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt);
   virtual int ComputeRegionSize();
   void InterpolatedValues(State& S,
                           std::string var,
                           std::string interpolation,
-                          AmanziMesh::Entity_ID_List& ids,
+                          AmanziMesh::cEntity_ID_View& ids,
                           std::vector<AmanziGeometry::Point>& line_pnts,
                           std::vector<double>& values);
 };
@@ -33,22 +42,29 @@ ObservableLineSegmentSolute::ObservableLineSegmentSolute(std::string variable,
                                                          std::string functional,
                                                          Teuchos::ParameterList& plist,
                                                          Teuchos::ParameterList& units_plist,
-                                                         Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-    Observable(variable, region, functional, plist, units_plist, mesh),
+                                                         Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+  : Observable(variable, region, functional, plist, units_plist, mesh),
     ObservableSolute(variable, region, functional, plist, units_plist, mesh),
-    ObservableLineSegment(variable, region, functional, plist, units_plist, mesh) {};
+    ObservableLineSegment(variable, region, functional, plist, units_plist, mesh){};
 
 
-int ObservableLineSegmentSolute::ComputeRegionSize() {
+int
+ObservableLineSegmentSolute::ComputeRegionSize()
+{
   return ObservableLineSegment::ComputeRegionSize();
 }
 
 
-void ObservableLineSegmentSolute::ComputeObservation(
-    State& S, double* value, double* volume, std::string& unit, double dt) {
+void
+ObservableLineSegmentSolute::ComputeObservation(State& S,
+                                                double* value,
+                                                double* volume,
+                                                std::string& unit,
+                                                double dt)
+{
   Errors::Message msg;
-  int dim = mesh_->space_dimension();
-  
+  int dim = mesh_->getSpaceDimension();
+
   std::vector<double> values(region_size_);
   double weight_corr = 1e-15;
 
@@ -61,12 +77,12 @@ void ObservableLineSegmentSolute::ComputeObservation(
 
   if (weighting_ == "none") {
     for (int i = 0; i < region_size_; i++) {
-      *value += values[i]*lofs_[i];
+      *value += values[i] * lofs_[i];
       *volume += lofs_[i];
     }
   } else if (weighting_ == "flux norm") {
     if (S.HasRecord("darcy_velocity")) {
-      const auto& darcy_vel =  *S.Get<CompositeVector>("darcy_velocity").ViewComponent("cell");
+      const auto& darcy_vel = *S.Get<CompositeVector>("darcy_velocity").ViewComponent("cell");
       for (int i = 0; i < region_size_; i++) {
         int c = entity_ids_[i];
         double norm = 0.0;
@@ -80,20 +96,21 @@ void ObservableLineSegmentSolute::ComputeObservation(
 }
 
 
-void ObservableLineSegmentSolute::InterpolatedValues(State& S,
-                                                     std::string var,
-                                                     std::string interpolation,
-                                                     AmanziMesh::Entity_ID_List& ids,
-                                                     std::vector<AmanziGeometry::Point>& line_pnts,
-                                                     std::vector<double>& values)
+void
+ObservableLineSegmentSolute::InterpolatedValues(State& S,
+                                                std::string var,
+                                                std::string interpolation,
+                                                AmanziMesh::cEntity_ID_View& ids,
+                                                std::vector<AmanziGeometry::Point>& line_pnts,
+                                                std::vector<double>& values)
 {
   Teuchos::RCP<const Epetra_MultiVector> vector;
   Teuchos::RCP<const CompositeVector> cv;
-    
+
   if (var == comp_names_[tcc_index_] + " aqueous concentration") {
     if (!S.HasRecord("total_component_concentration")) {
       Errors::Message msg;
-      msg <<"InterpolatedValue: field \"total_component_concentration\" doesn't exist in state";
+      msg << "InterpolatedValue: field \"total_component_concentration\" doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
     cv = S.GetPtr<CompositeVector>("total_component_concentration", Tags::DEFAULT);
@@ -101,7 +118,7 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
   } else {
     if (!S.HasRecord(var)) {
       Errors::Message msg;
-      msg <<"InterpolatedValue: field " << var << " doesn't exist in state";
+      msg << "InterpolatedValue: field " << var << " doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
     cv = S.GetPtr<CompositeVector>(var, Tags::DEFAULT);
@@ -111,7 +128,7 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
   if (interpolation == "linear") {
     Teuchos::ParameterList plist;
     auto lifting = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-      
+
     cv->ScatterMasterToGhosted();
 
     lifting->Init(plist);
@@ -122,17 +139,17 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
       std::vector<int> bc_model;
       std::vector<double> bc_value;
 
-      Operators::LimiterCell limiter(mesh_); 
+      Operators::LimiterCell limiter(mesh_);
       limiter.Init(plist);
       limiter.ApplyLimiter(ids, vector, 0, lifting, bc_model, bc_value);
     }
-    
+
     for (int i = 0; i < ids.size(); i++) {
       int c = ids[i];
       values[i] = lifting->getValue(c, line_pnts[i]);
     }
 
-  } else if (interpolation == "constant") {    
+  } else if (interpolation == "constant") {
     for (int i = 0; i < ids.size(); i++) {
       int c = ids[i];
       values[i] = (*vector)[tcc_index_][c];
@@ -144,6 +161,6 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
   }
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

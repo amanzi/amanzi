@@ -1,12 +1,15 @@
 /*
-  State
-
-  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  State
+
 */
 
 // TPLs
@@ -24,7 +27,8 @@
 // State
 #include "State.hh"
 
-TEST(FIELD_INITIALIZATION) {
+TEST(FIELD_INITIALIZATION)
+{
   using namespace Amanzi;
 
   auto comm = Amanzi::getDefaultComm();
@@ -53,12 +57,14 @@ TEST(FIELD_INITIALIZATION) {
   // populate state
   S.RegisterMesh("domain", mesh);
   S.Require<CompositeVector, CompositeVectorSpace>("porosity", Tags::DEFAULT)
-    .SetMesh(mesh)->SetGhosted(false)
-                  ->SetComponent("cell", AmanziMesh::CELL, 1);
+    .SetMesh(mesh)
+    ->SetGhosted(false)
+    ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   S.RequireEvaluator("porosity", Tags::DEFAULT);
   S.Require<CompositeVector, CompositeVectorSpace>("permeability", Tags::DEFAULT)
-    .SetMesh(mesh)->SetGhosted(false)
-                  ->SetComponent("cell", AmanziMesh::CELL, 3);
+    .SetMesh(mesh)
+    ->SetGhosted(false)
+    ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 3);
 
   // setup creates data
   S.Setup();
@@ -68,11 +74,10 @@ TEST(FIELD_INITIALIZATION) {
 
   // check state's fields
   // -- porosity (simple field)
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   const auto& phi = *S.Get<CompositeVector>("porosity").ViewComponent("cell");
-  for (int c = 0; c < ncells; ++c) {
-    CHECK_EQUAL(0.25, phi[0][c]);
-  }
+  for (int c = 0; c < ncells; ++c) { CHECK_EQUAL(0.25, phi[0][c]); }
 
   // from exo currently not supported in new state
   // // -- scalar field from a file

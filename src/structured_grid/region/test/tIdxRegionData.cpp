@@ -1,9 +1,18 @@
 /*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+*/
+
+/*
   A test driver for IdxRegionData
 
   A specialized evaluator is defined for this test, defining three materials "brown", "red" and "green",
   and evaluates to 1, 2, or 3 in each material, respectively.  The input file must define at least two
-  regions named "SoilLeft" and "SoilBottom"; the union of all defined regions must cover the physical 
+  regions named "SoilLeft" and "SoilBottom"; the union of all defined regions must cover the physical
   space from (0,0) to (31,31).
 
   The first test defines the two named regions above as a combination of "brown" and "red".  A fab covering
@@ -141,7 +150,7 @@ main (int   argc,
 
   /*
     Build a IdxRegionData that will fill only regions listed above, based on
-    a idx array that identifies the 'material' at each cell, which is then 
+    a idx array that identifies the 'material' at each cell, which is then
     unmapped by the evaluator.  So, e.g. wherever idx=0, the 'material' is
     brown, and all brown material in the regions above will get set to a value
     of 1, based on the innerds of the evaluator.

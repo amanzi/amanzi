@@ -34,7 +34,7 @@ include_directories(${GEOCHEM_SOURCE_DIR})
 include_directories(${Alquimia_INCLUDE_DIRS})
 
 # External (TPL) include directories
-include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Trilinos_INCLUDE_DIRS})
 
 include_directories(${PMAMR_INCLUDE_DIRS})
 
@@ -55,7 +55,7 @@ add_library(sflow OBJECT ${FPP_out_files}
 if (BUILD_TESTS)
   link_directories(${CCSE_LIBRARY_DIR})
   if (ENABLE_Unstructured)
-    set(unstructured_grid_libs udriv mpc state transport flow whetstone)
+    set(unstructured_grid_libs udriver mpc state transport flow whetstone)
   else()
     set(unstructured_grid_libs)
   endif()
@@ -77,8 +77,7 @@ if (BUILD_TESTS)
 
   set(tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
                ${CCSE_EXT_LIBRARIES} ${PETSc_LIBRARIES}
-               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES}
-               ${Boost_LIBRARIES})
+               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
 
   if (BUILD_SHARED_LIBS)
     set(closing_dso ../../shared_dso.f90)

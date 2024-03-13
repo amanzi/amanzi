@@ -1,9 +1,10 @@
 /*
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@ornl.gov)
+  Authors: Ethan Coon (ecoon@ornl.gov)
 */
 
 /*!
@@ -151,9 +152,8 @@ class CompositeVector {
   CompositeVector(const CompositeVectorSpace& space, bool ghosted);
 
   // Copy constructor.
-  CompositeVector(const CompositeVector& other, InitMode mode=INIT_MODE_COPY);
-  CompositeVector(const CompositeVector& other, bool ghosted,
-                  InitMode mode=INIT_MODE_COPY);
+  CompositeVector(const CompositeVector& other, InitMode mode = INIT_MODE_COPY);
+  CompositeVector(const CompositeVector& other, bool ghosted, InitMode mode = INIT_MODE_COPY);
 
   // Assignment operator.
   CompositeVector& operator=(const CompositeVector& other);
@@ -176,19 +176,22 @@ class CompositeVector {
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return map_->Mesh(); }
   bool HasComponent(const std::string& name) const { return map_->HasComponent(name); }
   int NumComponents() const { return size(); }
-  AmanziMesh::Entity_kind Location(std::string name) const { return map_->Location(name); }
+  AmanziMesh::Entity_kind Location(const std::string& name) const { return map_->Location(name); }
 
   int NumVectors(const std::string& name) const { return map_->NumVectors(name); }
   int GlobalLength() const { return mastervec_->GlobalLength(); }
   long int GetLocalElementCount() const { return mastervec_->GetLocalElementCount(); }
 
   // Provides the size of each component's vector, either ghosted or non-ghosted.
-  unsigned int size(std::string name, bool ghosted=false) const {
-    return ghosted ? ghostvec_->size(name) : mastervec_->size(name); }
+  unsigned int size(const std::string& name, bool ghosted = false) const
+  {
+    return ghosted ? ghostvec_->size(name) : mastervec_->size(name);
+  }
 
   // Access the VectorSpace for each component.
-  Teuchos::RCP<const Epetra_BlockMap> ComponentMap(std::string name,
-          bool ghosted=false) const {
+  Teuchos::RCP<const Epetra_BlockMap>
+  ComponentMap(const std::string& name, bool ghosted = false) const
+  {
     return ghosted ? ghostvec_->ComponentMap(name) : mastervec_->ComponentMap(name);
   }
 
@@ -198,25 +201,23 @@ class CompositeVector {
   //
   // Const access -- this does not tag as changed.
   Teuchos::RCP<const Epetra_MultiVector>
-  ViewComponent(std::string name, bool ghosted=false) const;
+  ViewComponent(const std::string& name, bool ghosted = false) const;
 
   // View entries in the vectors
   //
   // Return-by-value, this does not tag as changed.
-  double operator()(std::string name, int i, int j) const {
-    return (*ghostvec_)(name,i,j);
+  double operator()(const std::string& name, int i, int j) const
+  {
+    return (*ghostvec_)(name, i, j);
   }
-  double operator()(std::string name, int j) const {
-    return (*ghostvec_)(name,0,j);
-  }
+  double operator()(const std::string& name, int j) const { return (*ghostvec_)(name, 0, j); }
 
   // -- Set data. --
 
   // Access a view of a single component's data.
   //
   // Non-const access -- tags changed.
-  Teuchos::RCP<Epetra_MultiVector>
-  ViewComponent(std::string name, bool ghosted=false);
+  Teuchos::RCP<Epetra_MultiVector> ViewComponent(const std::string& name, bool ghosted = false);
 
 #if CV_ENABLE_SET_FROM_OPERATOR
   // Set entries in the vectors.
@@ -224,9 +225,10 @@ class CompositeVector {
   // Using these is VERY STRONGLY DISCOURAGED.  Instead, call ViewComponent()
   // and set entries in the MultiVector.  THESE ARE VERY VERY SLOW (But they
   // can be handy in debugging.)  Tags changed.
-  double& operator()(std::string name, int i, int j) {
+  double& operator()(const std::string& name, int i, int j)
+  {
     ChangedValue(name);
-    return (*ghostvec_)(name,i,j);
+    return (*ghostvec_)(name, i, j);
   }
 
   // Set entries in the 0th vector.
@@ -234,15 +236,16 @@ class CompositeVector {
   // Using these is VERY STRONGLY DISCOURAGED.  Instead, call ViewComponent()
   // and set entries in the MultiVector.  THESE ARE VERY VERY SLOW (But they
   // can be handy in debugging.)  Tags changed.
-  double& operator()(std::string name, int j) {
+  double& operator()(const std::string& name, int j)
+  {
     ChangedValue(name);
-    return (*ghostvec_)(name,0,j);
+    return (*ghostvec_)(name, 0, j);
   }
 #endif
 
 
   // Set block by pointer if possible, copy if not?????? FIX ME --etc
-  void SetComponent(std::string name, const Teuchos::RCP<Epetra_MultiVector>& data);
+  void SetComponent(const std::string& name, const Teuchos::RCP<Epetra_MultiVector>& data);
 
   // -- Communicate data and communication management. --
 
@@ -250,7 +253,7 @@ class CompositeVector {
   void ChangedValue() const;
 
   // Mark a single component as changed.
-  void ChangedValue(std::string name) const;
+  void ChangedValue(const std::string& name) const;
 
   // Scatter master values to ghosted values, on all components (INSERT mode).
   //
@@ -259,7 +262,7 @@ class CompositeVector {
   // non-owning PK to communicate a non-owned vector.
   //
   // Note that the scatter is ifneeded, unless force=true.
-  void ScatterMasterToGhosted(bool force=false) const;
+  void ScatterMasterToGhosted(bool force = false) const;
 
   // Scatter master values to ghosted values, on one components (INSERT mode).
   //
@@ -271,9 +274,7 @@ class CompositeVector {
   // non-owning PK to communicate a non-owned vector.
   //
   // Note that the scatter is ifneeded, unless force=true.
-  void ScatterMasterToGhosted(std::string name, bool force=false) const;
-  void ScatterMasterToGhosted(const char* name, bool force=false) const {
-    ScatterMasterToGhosted(std::string(name), force); }
+  void ScatterMasterToGhosted(const std::string& name, bool force = false) const;
 
   // Scatter master values to ghosted values, on all components, in a mode.
   //
@@ -297,7 +298,7 @@ class CompositeVector {
   // non-owning PK to communicate a non-owned vector.
   //
   // This Scatter() is not managed, and is always done.  Tags changed.
-  void ScatterMasterToGhosted(std::string name, Epetra_CombineMode mode) const;
+  void ScatterMasterToGhosted(const std::string& name, Epetra_CombineMode mode) const;
 
   // Combine ghosted values back to master values.
   //
@@ -305,11 +306,11 @@ class CompositeVector {
   // where off-process values are first summed into the on-process value.
   //
   // This Scatter() is not managed, and is always done.  Tags changed.
-  void GatherGhostedToMaster(Epetra_CombineMode mode=Add);
-  void GatherGhostedToMaster(std::string name, Epetra_CombineMode mode=Add);
+  void GatherGhostedToMaster(Epetra_CombineMode mode = Add);
+  void GatherGhostedToMaster(const std::string& name, Epetra_CombineMode mode = Add);
 
   // returns non-empty importer
-  const Epetra_Import& importer(std::string name) const;
+  const Epetra_Import& importer(const std::string& name) const;
 
   // -- Assorted vector operations, this implements a Vec --
 
@@ -325,10 +326,10 @@ class CompositeVector {
   int PutScalarGhosted(double scalar);
 
   // v(name,:,:) = scalar
-  int PutScalar(std::string name, double scalar);
+  int PutScalar(const std::string& name, double scalar);
 
   // v(name,i,:) = scalar[i]
-  int PutScalar(std::string name, std::vector<double> scalar);
+  int PutScalar(const std::string& name, const std::vector<double>& scalar);
 
   // this <- scalar*this
   int Scale(double scalar);
@@ -338,13 +339,13 @@ class CompositeVector {
   int Abs(const CompositeVector& other);
 
   // this(name,:,:) <- scalar*this(name,:,:)
-  int Scale(std::string name, double scalar);
+  int Scale(const std::string& name, double scalar);
 
   // this <- this + scalar
   int Shift(double scalar);
 
   // this(name,:,:) <- scalar + this(name,:,:)
-  int Shift(std::string name, double scalar);
+  int Shift(const std::string& name, double scalar);
 
   // this <- element wise reciprocal(this)
   int Reciprocal(const CompositeVector& other);
@@ -356,16 +357,21 @@ class CompositeVector {
   CompositeVector& Update(double scalarA, const CompositeVector& A, double scalarThis);
 
   // this <- scalarA*A + scalarB*B + scalarThis*this
-  CompositeVector& Update(double scalarA, const CompositeVector& A,
-                          double scalarB, const CompositeVector& B, double scalarThis);
+  CompositeVector& Update(double scalarA,
+                          const CompositeVector& A,
+                          double scalarB,
+                          const CompositeVector& B,
+                          double scalarThis);
 
   // this <- scalarAB * A@B + scalarThis*this  (@ is the elementwise product
-  int Multiply(double scalarAB, const CompositeVector& A, const CompositeVector& B,
-               double scalarThis);
+  int
+  Multiply(double scalarAB, const CompositeVector& A, const CompositeVector& B, double scalarThis);
 
   // this <- scalarAB * A^-1@B + scalarThis*this  (@ is the elementwise product
-  int ReciprocalMultiply(double scalarAB, const CompositeVector& A,
-                         const CompositeVector& B, double scalarThis);
+  int ReciprocalMultiply(double scalarAB,
+                         const CompositeVector& A,
+                         const CompositeVector& B,
+                         double scalarThis);
 
   // -- norms --
   int NormInf(double* norm) const;
@@ -393,12 +399,7 @@ class CompositeVector {
   void InitData_(const CompositeVector& other, InitMode mode);
   void CreateData_();
 
-  int Index_(std::string name) const {
-    std::map<std::string, int>::const_iterator item = indexmap_.find(name);
-    AMANZI_ASSERT(item != indexmap_.end());
-    return item->second;
-  }
-
+  int Index_(const std::string& name) const { return indexmap_.at(name); }
 
   // The Vandelay is an Importer/Exporter which allows face unknowns
   // to be spoofed as boundary face unknowns.
@@ -411,7 +412,7 @@ class CompositeVector {
   bool ghosted_;
 
   // data enumerating the blocks
-  std::map< std::string, int > indexmap_;
+  std::map<std::string, int> indexmap_;
   std::vector<std::string> names_;
   mutable std::vector<bool> ghost_are_current_;
 
@@ -421,35 +422,43 @@ class CompositeVector {
 
   // vector for boundary data
   mutable Teuchos::RCP<Epetra_MultiVector> vandelay_vector_;
+  mutable Teuchos::RCP<Epetra_Import> vandelay_import_;
 };
 
 
 inline void
-CompositeVector::ChangedValue() const {
-  for (std::vector<bool>::iterator lcv=ghost_are_current_.begin();
-       lcv!=ghost_are_current_.end(); ++lcv) *lcv = false;
+CompositeVector::ChangedValue() const
+{
+  for (std::vector<bool>::iterator lcv = ghost_are_current_.begin();
+       lcv != ghost_are_current_.end();
+       ++lcv)
+    *lcv = false;
 }
 
 inline void
-CompositeVector::ChangedValue(std::string name) const {
+CompositeVector::ChangedValue(const std::string& name) const
+{
   ghost_are_current_[Index_(name)] = false;
 }
 
 
 inline int
-CompositeVector::PutScalar(double scalar) {
+CompositeVector::PutScalar(double scalar)
+{
   ChangedValue();
   return mastervec_->PutScalar(scalar);
 }
 
 inline int
-CompositeVector::PutScalarMasterAndGhosted(double scalar) {
+CompositeVector::PutScalarMasterAndGhosted(double scalar)
+{
   ChangedValue();
   return ghostvec_->PutScalar(scalar);
 }
 
 inline int
-CompositeVector::PutScalarGhosted(double scalar) {
+CompositeVector::PutScalarGhosted(double scalar)
+{
   ChangedValue();
   for (int lcv_comp = 0; lcv_comp != NumComponents(); ++lcv_comp) {
     int size_owned = mastervec_->size(names_[lcv_comp]);
@@ -460,9 +469,7 @@ CompositeVector::PutScalarGhosted(double scalar) {
       for (int i = size_owned; i != size_ghosted; ++i) {
         int first = vec.Map().FirstPointInElement(i);
         int ndofs = vec.Map().ElementSize(i);
-        for (int k = 0; k < ndofs; ++k) {
-          vec[j][first + k] = scalar;
-        }
+        for (int k = 0; k < ndofs; ++k) { vec[j][first + k] = scalar; }
       }
     }
   }
@@ -470,96 +477,113 @@ CompositeVector::PutScalarGhosted(double scalar) {
 }
 
 inline int
-CompositeVector::PutScalar(std::string name, double scalar) {
+CompositeVector::PutScalar(const std::string& name, double scalar)
+{
   ChangedValue(name);
   return mastervec_->PutScalar(name, scalar);
 }
 
 inline int
-CompositeVector::PutScalar(std::string name, std::vector<double> scalar) {
+CompositeVector::PutScalar(const std::string& name, const std::vector<double>& scalar)
+{
   ChangedValue(name);
   return mastervec_->PutScalar(name, scalar);
 }
 
 inline int
-CompositeVector::Abs(const CompositeVector& other) {
+CompositeVector::Abs(const CompositeVector& other)
+{
   ChangedValue();
   return mastervec_->Abs(*other.mastervec_);
 }
 
 inline int
-CompositeVector::Scale(double scalar) {
+CompositeVector::Scale(double scalar)
+{
   ChangedValue();
   return mastervec_->Scale(scalar);
 }
 
 inline int
-CompositeVector::ScaleMasterAndGhosted(double scalar) {
+CompositeVector::ScaleMasterAndGhosted(double scalar)
+{
   ChangedValue();
   return ghostvec_->Scale(scalar);
 }
 
 inline int
-CompositeVector::Scale(std::string name, double scalar) {
+CompositeVector::Scale(const std::string& name, double scalar)
+{
   ChangedValue(name);
   return mastervec_->Scale(name, scalar);
 }
 
 inline int
-CompositeVector::Shift(double scalar) {
+CompositeVector::Shift(double scalar)
+{
   ChangedValue();
   return mastervec_->Shift(scalar);
 }
 
 inline int
-CompositeVector::Shift(std::string name, double scalar) {
+CompositeVector::Shift(const std::string& name, double scalar)
+{
   ChangedValue(name);
   return mastervec_->Shift(name, scalar);
 }
 
 inline int
-CompositeVector::Reciprocal(const CompositeVector& other) {
+CompositeVector::Reciprocal(const CompositeVector& other)
+{
   ChangedValue();
   return mastervec_->Reciprocal(*other.mastervec_);
 }
 
 inline int
-CompositeVector::NormInf(double* norm) const {
+CompositeVector::NormInf(double* norm) const
+{
   return mastervec_->NormInf(norm);
 }
 
 inline int
-CompositeVector::Norm1(double* norm) const {
+CompositeVector::Norm1(double* norm) const
+{
   return mastervec_->Norm1(norm);
 }
 
 inline int
-CompositeVector::Norm2(double* norm) const {
+CompositeVector::Norm2(double* norm) const
+{
   return mastervec_->Norm2(norm);
 }
 
 inline int
-CompositeVector::MinValue(double* value) const {
+CompositeVector::MinValue(double* value) const
+{
   return mastervec_->MinValue(value);
 }
 
 inline int
-CompositeVector::MaxValue(double* value) const {
+CompositeVector::MaxValue(double* value) const
+{
   return mastervec_->MaxValue(value);
 }
 
 inline int
-CompositeVector::MeanValue(double* value) const {
+CompositeVector::MeanValue(double* value) const
+{
   return mastervec_->MeanValue(value);
 }
 
 inline void
-CompositeVector::Print(std::ostream &os, bool data_io) const {
+CompositeVector::Print(std::ostream& os, bool data_io) const
+{
   return mastervec_->Print(os, data_io);
 }
 
 inline int
-CompositeVector::Random() {
+CompositeVector::Random()
+{
   ChangedValue();
   return mastervec_->Random();
 }
@@ -568,11 +592,15 @@ CompositeVector::Random() {
 // -----------------------------------------------------------------------------
 // Non-member functions.
 // -----------------------------------------------------------------------------
-void DeriveFaceValuesFromCellValues(CompositeVector&);
+void
+DeriveFaceValuesFromCellValues(CompositeVector&);
 
-void AddComponent(Teuchos::RCP<CompositeVector>& cv,
-                  const std::string& name, AmanziMesh::Entity_kind kind, int dim);
+void
+AddComponent(Teuchos::RCP<CompositeVector>& cv,
+             const std::string& name,
+             AmanziMesh::Entity_kind kind,
+             int dim);
 
-} // namespace
+} // namespace Amanzi
 
 #endif

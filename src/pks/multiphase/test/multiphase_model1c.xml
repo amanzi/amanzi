@@ -1,3 +1,4 @@
+
 <ParameterList>
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="phase-transition-1d"/>
@@ -102,11 +103,11 @@
 
     <Parameter name="Jacobian type" type="string" value="analytic"/>
     <Parameter name="linear solver" type="string" value="GMRES"/>
-    <Parameter name="preconditioner" type="string" value="Euclid"/>
+    <Parameter name="preconditioner" type="string" value="ILU"/>
     <Parameter name="error control options" type="Array(string)" value="{residual}"/>
 
     <ParameterList name="molecular diffusion">
-      <Parameter name="aqueous names" type="Array(string)" value="{H2}"/>
+      <Parameter name="aqueous names" type="Array(string)" value="{SH4}"/>
       <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9}"/>
       <Parameter name="gaseous values" type="Array(double)" value="{3.0e-5}"/>
       <Parameter name="molar masses" type="Array(double)" value="{2.0e-3}"/>
@@ -192,7 +193,6 @@
         </ParameterList>
         <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
         <Parameter name="extrapolate initial guess" type="bool" value="false"/>
-        <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
         <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
         <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
         <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
@@ -229,7 +229,7 @@
         <ParameterList name="BC 3">
           <Parameter name="regions" type="Array(string)" value="{Inflow}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
-          <Parameter name="name" type="string" value="H2"/>
+          <Parameter name="name" type="string" value="SH4"/>
           <ParameterList name="outward mass flux">
             <ParameterList name="function-constant">
               <Parameter name="value" type="double" value="-4.4155885e-09"/>
@@ -257,7 +257,7 @@
       </ParameterList>
       <ParameterList name="diffusion operator">
         <ParameterList name="upwind">
-          <Parameter name="upwind method" type="string" value="standard"/>
+          <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
           <ParameterList name="upwind standard parameters">
              <Parameter name="tolerance" type="double" value="1e-12"/>
           </ParameterList>
@@ -498,6 +498,7 @@
         <Parameter name="evaluator type" type="string" value="mole fraction liquid"/>
         <Parameter name="pressure gas key" type="string" value="pressure_gas"/>
         <Parameter name="mole fraction gas key" type="string" value="mole_fraction_gas"/>
+        <Parameter name="temperature key" type="string" value="temperature"/>
         <Parameter name="tag" type="string" value=""/>
       </ParameterList>
       <ParameterList name="mole_fraction_vapor">
@@ -728,11 +729,10 @@
       <ParameterList name="block ilu parameters">
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Euclid">
-      <Parameter name="preconditioning method" type="string" value="euclid"/>
-      <ParameterList name="euclid parameters">
+    <ParameterList name="ILU">
+      <Parameter name="preconditioning method" type="string" value="ILU"/>
+      <ParameterList name="ILU parameters">
         <Parameter name="ilu(k) fill level" type="int" value="5"/>
-        <!--Parameter name="ilut drop tolerance" type="double" value="0.01"/-->
         <Parameter name="rescale rows" type="bool" value="true"/>
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>

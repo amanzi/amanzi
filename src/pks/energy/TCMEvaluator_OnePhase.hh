@@ -1,12 +1,14 @@
 /*
-  Energy
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  Energy
 
   Thermal conductivity evaluator with one liquid (water) phase.
 */
@@ -21,7 +23,8 @@ namespace Amanzi {
 namespace Energy {
 
 // Equation of State model
-class TCMEvaluator_OnePhase : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class TCMEvaluator_OnePhase
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   // constructor format for all derived classes
   TCMEvaluator_OnePhase(Teuchos::ParameterList& plist);
@@ -32,19 +35,23 @@ class TCMEvaluator_OnePhase : public EvaluatorSecondaryMonotype<CompositeVector,
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
+
+  virtual void EnsureCompatibility_Units_(State& S) override;
 
  protected:
   // We have one model so far; hence, no factory is needed.
-  Teuchos::RCP<AmanziEOS::H2O_ThermalConductivity> tc_;
+  Teuchos::RCP<AmanziEOS::EOS_ThermalConductivity> tc_;
   double k_rock_;
 
   // Keys for fields dependencies
   Key temperature_key_, porosity_key_;
 };
 
-}  // namespace Energy
-}  // namespace Amanzi
+} // namespace Energy
+} // namespace Amanzi
 
 #endif

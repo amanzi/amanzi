@@ -1,14 +1,16 @@
+/*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
 // PDE_DiffusionFactory constructs objects which implement the interface for a PDE_Diffusion.
 
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
-  provided in the top-level COPYRIGHT file.
-
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  This documentation is for the entire Diffusion concept, which is maintained 
+  This documentation is for the entire Diffusion concept, which is maintained
   here because the input spec for Diffusion objects is defined/used here.
 */
 
@@ -30,8 +32,8 @@
 .. math::
   \nabla \cdot k \nabla u
 
-with a variety of discretizations. Note also, for reasons that are one part historical 
-and potentially not that valid, this also supports and implementation with an advective 
+with a variety of discretizations. Note also, for reasons that are one part historical
+and potentially not that valid, this also supports and implementation with an advective
 source, i.e.:
 
 .. math::
@@ -62,8 +64,8 @@ The input spec for a diffusion operator consists of:
 
 * `"gravity`" ``[bool]`` **false** specifies if the gravitational flow term is included
 
-* `"Newton correction`" ``[string]`` specifies a model for non-physical terms 
-  that must be added to the matrix. These terms represent Jacobian and are needed 
+* `"Newton correction`" ``[string]`` specifies a model for non-physical terms
+  that must be added to the matrix. These terms represent Jacobian and are needed
   for the preconditioner. Available options are `"true Jacobian`" and `"approximate Jacobian`".
   The FV scheme accepts only the first options. The other schemes accept only the second option.
 
@@ -85,7 +87,7 @@ class BCs;
 
 class PDE_DiffusionFactory {
  public:
-  PDE_DiffusionFactory() {};
+  PDE_DiffusionFactory(){};
   PDE_DiffusionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   PDE_DiffusionFactory(Teuchos::ParameterList& oplist,
                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
@@ -94,11 +96,15 @@ class PDE_DiffusionFactory {
   // Multiple operator can be generated using a common setup
   void SetPList(const Teuchos::ParameterList& oplist) { oplist_ = oplist; }
   void SetConstantTensorCoefficient(const WhetStone::Tensor& K);
-  void SetVariableTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K) { K_ = K; }
+  void SetVariableTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K)
+  {
+    K_ = K;
+  }
 
   void SetConstantScalarCoefficient(double k);
   void SetVariableScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
-                                    const Teuchos::RCP<const CompositeVector>& dkdu = Teuchos::null) {
+                                    const Teuchos::RCP<const CompositeVector>& dkdu = Teuchos::null)
+  {
     k_ = k;
     dkdu_ = dkdu;
   }
@@ -106,63 +112,58 @@ class PDE_DiffusionFactory {
   void SetConstantGravitationalTerm(const AmanziGeometry::Point& g, double b = 1.0);
   void SetVariableGravitationalTerm(const AmanziGeometry::Point& g,
                                     const Teuchos::RCP<const CompositeVector>& b,
-                                    const Teuchos::RCP<const CompositeVector>& dbdu = Teuchos::null) {
+                                    const Teuchos::RCP<const CompositeVector>& dbdu = Teuchos::null)
+  {
     g_ = g;
     b_ = b;
     dbdu_ = dbdu;
   }
 
-  Teuchos::RCP<PDE_Diffusion> Create();
+  // This does all work as a single call
+  Teuchos::RCP<PDE_Diffusion> Create(const Teuchos::RCP<Operator>& global_op = Teuchos::null);
 
   // Backward compatibility
   // -- Diffusion-type PDEs with optional gravity.
   //    Decision is made based on data in the parameter list.
-  Teuchos::RCP<PDE_Diffusion>
-  Create(Teuchos::ParameterList& oplist,
-         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-         const Teuchos::RCP<BCs>& bc,
-         double rho,
-         const AmanziGeometry::Point& g);
+  Teuchos::RCP<PDE_Diffusion> Create(Teuchos::ParameterList& oplist,
+                                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                     const Teuchos::RCP<BCs>& bc,
+                                     double rho,
+                                     const AmanziGeometry::Point& g);
 
-  Teuchos::RCP<PDE_Diffusion>
-  Create(Teuchos::ParameterList& oplist,
-         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-         const Teuchos::RCP<BCs>& bc,
-         const Teuchos::RCP<const CompositeVector>& rho,
-         const AmanziGeometry::Point& g);
+  Teuchos::RCP<PDE_Diffusion> Create(Teuchos::ParameterList& oplist,
+                                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                     const Teuchos::RCP<BCs>& bc,
+                                     const Teuchos::RCP<const CompositeVector>& rho,
+                                     const AmanziGeometry::Point& g);
 
   // -- Diffusion operators without gravity.
-  Teuchos::RCP<PDE_Diffusion>
-  Create(Teuchos::ParameterList& oplist,
-         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-         const Teuchos::RCP<BCs>& bc);
+  Teuchos::RCP<PDE_Diffusion> Create(Teuchos::ParameterList& oplist,
+                                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                     const Teuchos::RCP<BCs>& bc);
 
   Teuchos::RCP<PDE_Diffusion>
-  Create(Teuchos::ParameterList& oplist,
-         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-  
+  Create(Teuchos::ParameterList& oplist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+
   Teuchos::RCP<PDE_Diffusion>
-  Create(Teuchos::ParameterList& oplist,
-         const Teuchos::RCP<Operator>& global_op);
+  Create(Teuchos::ParameterList& oplist, const Teuchos::RCP<Operator>& global_op);
 
   // Diffusion operators with gravity.
   Teuchos::RCP<PDE_DiffusionWithGravity>
   CreateWithGravity(Teuchos::ParameterList& oplist,
                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                     const Teuchos::RCP<BCs>& bc);
-                    
-  Teuchos::RCP<PDE_DiffusionWithGravity>
-  CreateWithGravity(Teuchos::ParameterList& oplist,
-                    const Teuchos::RCP<Operator>& global_op,
-                    const Teuchos::RCP<BCs>& bc);
+
+  Teuchos::RCP<PDE_DiffusionWithGravity> CreateWithGravity(Teuchos::ParameterList& oplist,
+                                                           const Teuchos::RCP<Operator>& global_op,
+                                                           const Teuchos::RCP<BCs>& bc);
 
   Teuchos::RCP<PDE_DiffusionWithGravity>
   CreateWithGravity(Teuchos::ParameterList& oplist,
                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-                    
+
   Teuchos::RCP<PDE_DiffusionWithGravity>
-  CreateWithGravity(Teuchos::ParameterList& oplist,
-                    const Teuchos::RCP<Operator>& global_op);
+  CreateWithGravity(Teuchos::ParameterList& oplist, const Teuchos::RCP<Operator>& global_op);
 
  private:
   Teuchos::ParameterList oplist_;
@@ -170,19 +171,19 @@ class PDE_DiffusionFactory {
 
   // diffusivity
   WhetStone::Tensor const_K_;
-  Teuchos::RCP<const std::vector<WhetStone::Tensor> > K_;
+  Teuchos::RCP<const std::vector<WhetStone::Tensor>> K_;
 
   double const_k_;
   Teuchos::RCP<const CompositeVector> k_, dkdu_;
 
   // gravity
-  bool gravity_;
+  bool gravity_, manifolds_;
   AmanziGeometry::Point g_;
   double const_b_;
   Teuchos::RCP<const CompositeVector> b_, dbdu_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif

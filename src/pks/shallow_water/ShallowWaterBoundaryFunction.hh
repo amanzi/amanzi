@@ -1,12 +1,15 @@
 /*
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Svetlana Tokareva (tokareva@lanl.gov)
+*/
+
+/*
  Shallow water PK
- 
- Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
- Amanzi is released under the three-clause BSD License.
- The terms of use and "as is" disclaimer for this license are
- provided in the top-level COPYRIGHT file.
- 
- Author: Svetlana Tokareva (tokareva@lanl.gov)
+
 */
 
 #ifndef AMANZI_SHALLOW_WATER_BOUNDARY_FUNCTION_HH_
@@ -26,10 +29,10 @@
 
 namespace Amanzi {
 namespace ShallowWater {
-        
+
 class ShallowWaterBoundaryFunction : public PK_DomainFunction {
  public:
-  ShallowWaterBoundaryFunction() : bc_name_("undefined") {};
+  ShallowWaterBoundaryFunction() : bc_name_("undefined"){};
   ShallowWaterBoundaryFunction(const Teuchos::ParameterList& plist);
 
   // modifiers and access
@@ -44,13 +47,12 @@ class ShallowWaterBoundaryFunction : public PK_DomainFunction {
 
  private:
   std::string bc_name_;
-  WhetStone::DOF_Type type_;  // type of dofs related to this bc
+  WhetStone::DOF_Type type_; // type of dofs related to this bc
 
   std::vector<std::string> regions_;
 };
-        
-}  // namespace ShallowWater
-}  // namespace Amanzi
+
+} // namespace ShallowWater
+} // namespace Amanzi
 
 #endif
-

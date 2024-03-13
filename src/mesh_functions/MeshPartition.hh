@@ -1,14 +1,16 @@
 /*
-  Mesh Functions
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon
+*/
 
-  A MeshPartition is a collection of non-overlapping regions which cover 
+/*
+  Mesh Functions
+
+  A MeshPartition is a collection of non-overlapping regions which cover
   (optionally) a mesh.
 */
 
@@ -25,19 +27,17 @@ namespace Functions {
 
 class MeshPartition {
  public:
-  MeshPartition() : initialized_(false) {};
+  MeshPartition() : initialized_(false){};
 
-  MeshPartition(AmanziMesh::Entity_kind kind,
-                const std::vector<std::string>& regions);
+  MeshPartition(AmanziMesh::Entity_kind kind, const std::vector<std::string>& regions);
 
   // this routine could be used to optimize mesh coloring
   void Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                   AmanziMesh::Entity_kind kind,
-                  const std::vector<std::vector<std::string> >& regions,
+                  const std::vector<std::vector<std::string>>& regions,
                   const int default_value);
 
-  void Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                  const int default_value);
+  void Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, const int default_value);
 
   void Verify() const;
 
@@ -54,7 +54,7 @@ class MeshPartition {
   Teuchos::RCP<Epetra_IntVector> map_;
 };
 
-}  // namespace Functions
-}  // namespace Amanzi
+} // namespace Functions
+} // namespace Amanzi
 
 #endif

@@ -23,15 +23,17 @@ get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
 
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${CHEM_INCLUDES_DIR})
+include_directories(${CHEMPK_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
 include_directories(${ENERGY_SOURCE_DIR})
-include_directories(${CHEM_INCLUDES_DIR})
-include_directories(${GEOCHEM_SOURCE_DIR})
-include_directories(${CHEMPK_SOURCE_DIR})
+include_directories(${EOS_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
+include_directories(${GEOCHEM_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+include_directories(${MULTIPHASE_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
@@ -62,35 +64,51 @@ if (ENABLE_AmanziPhysicsModule)
       PK_MPC.hh
       PK_MPCAdditive.hh
       ChemistryMatrixFracture_PK.hh    
+      EnergyMatrixFracture_PK.hh
       FlowEnergy_PK.hh
       FlowEnergyMatrixFracture_PK.hh
       FlowMatrixFracture_PK.hh
+      FlowMechanics_PK.hh
+      MechanicsFlow_PK.hh
+      MechanicsFlowMatrixFracture_PK.hh
+      MultiphaseMatrixFracture_PK.hh
       TransportMatrixFracture_PK.hh    
       TransportMatrixFractureImplicit_PK.hh
       FlowReactiveTransport_PK.hh
       ReactiveTransport_PK.hh
       ReactiveTransportMatrixFracture_PK.hh
       ShallowWaterTransport_PK.hh
-      SurfaceSubsurface_PK.hh)
+      SurfaceSubsurface_PK.hh
+      WaterStorageStressSplit.hh)
 
   set(mpc_tree_src_files 
       FractureInsertion.cc
+      FractureInsertion_Helper.cc
       PK_MPCWeak.cc 
       PK_MPCSequential.cc 
       PK_MPCSubcycled.cc 
       ChemistryMatrixFracture_PK.cc   
+      EnergyMatrixFracture_PK.cc
       FlowEnergy_PK.cc
       FlowEnergyMatrixFracture_PK.cc
       FlowMatrixFracture_PK.cc
+      FlowMechanics_PK.cc
+      HeatDiffusionMatrixFracture.cc
+      MechanicsFlow_PK.cc
+      MechanicsFlowMatrixFracture_PK.cc
+      MultiphaseMatrixFracture_PK.cc
       TransportMatrixFracture_PK.cc        
       TransportMatrixFractureImplicit_PK.cc
       FlowReactiveTransport_PK.cc
       ReactiveTransport_PK.cc
       ReactiveTransportMatrixFracture_PK.cc
       ShallowWaterTransport_PK.cc
-      SurfaceSubsurface_PK.cc)
+      SoluteDiffusionMatrixFracture.cc
+      SurfaceSubsurface_PK.cc
+      WaterStorageDarcyStressSplit.cc
+      WaterStorageStressSplit.cc)
 
-  set(mpc_tree_link_libs pks flow transport shallow_water time_integration data_structures state)
+  set(mpc_tree_link_libs pks flow transport multiphase shallow_water time_integration data_structures state)
 
 else()
 
@@ -120,7 +138,7 @@ add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
                    LINK_LIBS ${mpc_tree_link_libs} ${mpc_tree_tpl_libs})
 
 
-add_install_include_file(${mpc_tree_inc_files} mpc_pks_registration.hh)
+add_install_include_file(${mpc_tree_inc_files} pks_mpc_reg.hh)
 
 
 if (BUILD_TESTS) 
@@ -136,7 +154,7 @@ if (BUILD_TESTS)
     # Add the flow directory to the include paths
     include_directories(${MPC_TREE_SOURCE_DIR})
 
-    set(amanzi_libs geometry mesh mesh_audit mesh_factory state energy operators whetstone data_structures)
+    set(amanzi_libs geometry mesh mesh_factory state energy operators whetstone data_structures)
 
     # Test: 1
     #if (ENABLE_AmanziPhysicsModule) 

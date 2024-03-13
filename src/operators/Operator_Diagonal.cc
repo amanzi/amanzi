@@ -1,15 +1,17 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
+*/
 
-  Operator whose unknowns are gives by the list of 
+/*
+  Operators
+
+  Operator whose unknowns are gives by the list of
 */
 
 #include "DenseMatrix.hh"
@@ -28,12 +30,14 @@ namespace Operators {
 /* ******************************************************************
 * Apply the local matrices directly as schemas match.
 ****************************************************************** */
-int Operator_Diagonal::ApplyMatrixFreeOp(
-    const Op_Diagonal& op, const CompositeVector& X, CompositeVector& Y) const
+int
+Operator_Diagonal::ApplyMatrixFreeOp(const Op_Diagonal& op,
+                                     const CompositeVector& X,
+                                     CompositeVector& Y) const
 {
   const Epetra_MultiVector& Xi = *X.ViewComponent(op.col_compname(), true);
   Epetra_MultiVector& Yi = *Y.ViewComponent(op.row_compname(), true);
- 
+
   const auto& col_lids = op.col_inds();
   const auto& row_lids = op.row_inds();
   AMANZI_ASSERT(row_lids.size() == op.matrices.size());
@@ -70,9 +74,12 @@ int Operator_Diagonal::ApplyMatrixFreeOp(
 /* ******************************************************************
 * Visit methods for symbolic assemble.
 ****************************************************************** */
-void Operator_Diagonal::SymbolicAssembleMatrixOp(
-    const Op_Diagonal& op, const SuperMap& map, GraphFE& graph,
-    int my_block_row, int my_block_col) const
+void
+Operator_Diagonal::SymbolicAssembleMatrixOp(const Op_Diagonal& op,
+                                            const SuperMap& map,
+                                            GraphFE& graph,
+                                            int my_block_row,
+                                            int my_block_col) const
 {
   const std::vector<int>& row_gids = map.GhostIndices(my_block_row, op.row_compname(), 0);
   const std::vector<int>& col_gids = map.GhostIndices(my_block_col, op.col_compname(), 0);
@@ -84,16 +91,16 @@ void Operator_Diagonal::SymbolicAssembleMatrixOp(
 
   int ierr(0);
   for (int n = 0; n != col_lids.size(); ++n) {
-    int ndofs = col_lids[n].size();
+    int ncols = col_lids[n].size();
+    int nrows = row_lids[n].size();
 
     lid_r.clear();
     lid_c.clear();
 
-    for (int i = 0; i != ndofs; ++i) {
-      lid_r.push_back(row_gids[row_lids[n][i]]);
-      lid_c.push_back(col_gids[col_lids[n][i]]);
-    }
-    ierr |= graph.InsertMyIndices(ndofs, lid_r.data(), ndofs, lid_c.data());
+    for (int i = 0; i != ncols; ++i) lid_c.push_back(col_gids[col_lids[n][i]]);
+    for (int i = 0; i != nrows; ++i) lid_r.push_back(row_gids[row_lids[n][i]]);
+
+    ierr |= graph.InsertMyIndices(nrows, lid_r.data(), ncols, lid_c.data());
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -102,9 +109,12 @@ void Operator_Diagonal::SymbolicAssembleMatrixOp(
 /* ******************************************************************
 * Visit methods for assemble
 ****************************************************************** */
-void Operator_Diagonal::AssembleMatrixOp(
-    const Op_Diagonal& op, const SuperMap& map, MatrixFE& mat,
-    int my_block_row, int my_block_col) const
+void
+Operator_Diagonal::AssembleMatrixOp(const Op_Diagonal& op,
+                                    const SuperMap& map,
+                                    MatrixFE& mat,
+                                    int my_block_row,
+                                    int my_block_col) const
 {
   const std::vector<int>& row_gids = map.GhostIndices(my_block_row, op.row_compname(), 0);
   const std::vector<int>& col_gids = map.GhostIndices(my_block_col, op.col_compname(), 0);
@@ -116,15 +126,14 @@ void Operator_Diagonal::AssembleMatrixOp(
 
   int ierr(0);
   for (int n = 0; n != col_lids.size(); ++n) {
-    int ndofs = col_lids[n].size();
+    int ncols = col_lids[n].size();
+    int nrows = row_lids[n].size();
 
     lid_r.clear();
     lid_c.clear();
 
-    for (int i = 0; i != ndofs; ++i) {
-      lid_r.push_back(row_gids[row_lids[n][i]]);
-      lid_c.push_back(col_gids[col_lids[n][i]]);
-    }
+    for (int i = 0; i != ncols; ++i) lid_c.push_back(col_gids[col_lids[n][i]]);
+    for (int i = 0; i != nrows; ++i) lid_r.push_back(row_gids[row_lids[n][i]]);
 
     ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[n]);
   }
@@ -135,12 +144,11 @@ void Operator_Diagonal::AssembleMatrixOp(
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<Operator> Operator_Diagonal::Clone() const {
+Teuchos::RCP<Operator>
+Operator_Diagonal::Clone() const
+{
   return Teuchos::rcp(new Operator_Diagonal(*this));
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
-
-
+} // namespace Operators
+} // namespace Amanzi

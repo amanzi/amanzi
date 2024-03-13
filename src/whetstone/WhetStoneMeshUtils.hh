@@ -1,13 +1,15 @@
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*
+  WhetStone, Version 2.2
+  Release name: naka-to.
 
   Additional mesh routines.
 */
@@ -19,7 +21,7 @@
 
 // Amanzi
 #include "MeshDefs.hh"
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 
 #include "WhetStoneDefs.hh"
@@ -28,17 +30,17 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Return centroid weights for 2D and 3D polygons. We take list of 
+* Return centroid weights for 2D and 3D polygons. We take list of
 * nodes as input since it is not cached by the mesh.
 * NOTE: polygon must be star-shaped w.r.t. its geometric center.
 ****************************************************************** */
-inline
-void PolygonCentroidWeights(
-    const AmanziMesh::MeshLight& mesh, 
-    const AmanziMesh::Entity_ID_List& nodes,
-    double area, std::vector<double>& weights)
+inline void
+PolygonCentroidWeights(const AmanziMesh::Mesh& mesh,
+                       const AmanziMesh::cEntity_ID_View& nodes,
+                       double area,
+                       std::vector<double>& weights)
 {
-  int d = mesh.space_dimension();
+  int d = mesh.getSpaceDimension();
   int nnodes = nodes.size();
 
   weights.assign(nnodes, 1.0 / (3 * nnodes));
@@ -46,18 +48,18 @@ void PolygonCentroidWeights(
 
   // geometric center
   for (int i = 0; i < nnodes; ++i) {
-    mesh.node_get_coordinates(nodes[i], &p1);
+    p1 = mesh.getNodeCoordinate(nodes[i]);
     xg += p1;
   }
   xg /= nnodes;
 
   // corner volume contributions
   for (int i1 = 0; i1 < nnodes; ++i1) {
-    int i2 = (i1 + 1) % nnodes;  
-    mesh.node_get_coordinates(nodes[i1], &p1);
-    mesh.node_get_coordinates(nodes[i2], &p2);
+    int i2 = (i1 + 1) % nnodes;
+    p1 = mesh.getNodeCoordinate(nodes[i1]);
+    p2 = mesh.getNodeCoordinate(nodes[i2]);
 
-    p3 = (p1 - xg)^(p2 - xg);
+    p3 = (p1 - xg) ^ (p2 - xg);
     double tmp = norm(p3) / (6 * area);
 
     weights[i1] += tmp;
@@ -69,33 +71,60 @@ void PolygonCentroidWeights(
 /* ******************************************************************
 // Faces of ptype of cell c that are connected to node v.
 ****************************************************************** */
-inline
-void node_get_cell_faces(const AmanziMesh::MeshLight& mesh,
-                         const AmanziMesh::Entity_ID v, 
-                         const AmanziMesh::Entity_ID c,
-                         const AmanziMesh::Parallel_type ptype,
-                         AmanziMesh::Entity_ID_List *faces) 
+inline void
+node_get_cell_faces(const AmanziMesh::Mesh& mesh,
+                    const AmanziMesh::Entity_ID v,
+                    const AmanziMesh::Entity_ID c,
+                    const AmanziMesh::Parallel_kind ptype,
+                    AmanziMesh::Entity_ID_View* faces)
 {
-  Entity_ID_List nodes;
+  AmanziMesh::Entity_ID_List vfaces;
+  int nfaces_owned =
+    mesh.getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
-  faces->clear();  
-  int nfaces_owned = mesh.num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-
-  const auto& faces_tmp = mesh.cell_get_faces(c);
+  const auto& faces_tmp = mesh.getCellFaces(c);
   int nfaces = faces_tmp.size();
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces_tmp[i];
-    if (ptype == AmanziMesh::Parallel_type::OWNED && f >= nfaces_owned) continue;
+    if (ptype == AmanziMesh::Parallel_kind::OWNED && f >= nfaces_owned) continue;
 
-    mesh.face_get_nodes(f, &nodes);
+    auto nodes = mesh.getFaceNodes(f);
     int nnodes = nodes.size();
     for (int k = 0; k < nnodes; ++k) {
       if (nodes[k] == v) {
-        faces->push_back(f);
+        vfaces.push_back(f);
         break;
       }
     }
+  }
+  vectorToView(*faces, vfaces);
+}
+
+
+/* ******************************************************************
+* Extension of Mesh API: entities in cell
+****************************************************************** */
+inline void
+cell_get_entities(const AmanziMesh::Mesh& mesh,
+                  int c,
+                  const AmanziMesh::Entity_kind kind,
+                  AmanziMesh::cEntity_ID_View* entities)
+{
+  if (kind == AmanziMesh::Entity_kind::FACE) {
+    *entities = mesh.getCellFaces(c);
+  } else if (kind == AmanziMesh::Entity_kind::EDGE) {
+    *entities = mesh.getCellEdges(c);
+  } else if (kind == AmanziMesh::Entity_kind::NODE) {
+    *entities = mesh.getCellNodes(c);
+  } else if (kind == AmanziMesh::Entity_kind::CELL) {
+    AmanziMesh::Entity_ID_View lentities;
+    Kokkos::resize(lentities, 1);
+    lentities[0] = c;
+    *entities = lentities;
+  } else {
+    AmanziMesh::Entity_ID_View lentities;
+    *entities = lentities;
   }
 }
 
@@ -103,28 +132,24 @@ void node_get_cell_faces(const AmanziMesh::MeshLight& mesh,
 /* ******************************************************************
 * Extension of Mesh API: entities in cell
 ****************************************************************** */
-inline
-void cell_get_entities(const AmanziMesh::Mesh& mesh, int c, 
-                       const AmanziMesh::Entity_kind kind, 
-                       AmanziMesh::Entity_ID_List* entities)
+inline AmanziGeometry::Point
+getNodeUnitNormal(const AmanziMesh::Mesh& mesh, int v)
 {
-  if (kind == AmanziMesh::FACE) {
-    mesh.cell_get_faces(c, entities);
-  } else if (kind == AmanziMesh::EDGE) {
-    mesh.cell_get_edges(c, entities);
-  } else if (kind == AmanziMesh::NODE) {
-    mesh.cell_get_nodes(c, entities);
-  } else if (kind == AmanziMesh::CELL) {
-    entities->clear();
-    entities->push_back(c);
-  } else {
-    entities->clear();
+  auto faces = mesh.getNodeFaces(v);
+  int nfaces = faces.size();
+
+  int d = mesh.getSpaceDimension();
+  AmanziGeometry::Point normal(d);
+
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces[n];
+    auto cells = mesh.getFaceCells(f);
+    if (cells.size() == 1) normal += mesh.getFaceNormal(faces[n]);
   }
+  return normal / norm(normal);
 }
 
-
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

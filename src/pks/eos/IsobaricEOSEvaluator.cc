@@ -1,12 +1,14 @@
 /*
-  EOS
-   
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
+  EOS
 
   The interface between state/data and the model, an EOS.
 */
@@ -20,8 +22,8 @@ namespace AmanziEOS {
 /* *******************************************************************
 * Constructor takes a parameter list.
 ******************************************************************* */
-IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
-    EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   // Process the list for my provided field.
   std::string mode = plist_.get<std::string>("eos basis", "molar");
@@ -65,21 +67,23 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
 };
 
 
-IsobaricEOSEvaluator::IsobaricEOSEvaluator(const IsobaricEOSEvaluator& other) :
-    EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+IsobaricEOSEvaluator::IsobaricEOSEvaluator(const IsobaricEOSEvaluator& other)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     eos_(other.eos_),
     mode_(other.mode_),
     temp_key_(other.temp_key_),
-    pres_key_(other.pres_key_) {};
+    pres_key_(other.pres_key_){};
 
 
-Teuchos::RCP<Evaluator> IsobaricEOSEvaluator::Clone() const {
+Teuchos::RCP<Evaluator>
+IsobaricEOSEvaluator::Clone() const
+{
   return Teuchos::rcp(new IsobaricEOSEvaluator(*this));
 }
 
 
-void IsobaricEOSEvaluator::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+IsobaricEOSEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
   auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
   double pres = S.Get<double>(pres_key_);
@@ -110,23 +114,22 @@ void IsobaricEOSEvaluator::Evaluate_(
       Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
 
       int count = result->size(*comp);
-      for (int id = 0; id != count; ++id) {
-        result_v[0][id] = eos_->Density(temp_v[0][id], pres);
-      }
+      for (int id = 0; id != count; ++id) { result_v[0][id] = eos_->Density(temp_v[0][id], pres); }
     }
   }
 }
 
 
-void IsobaricEOSEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results) 
+void
+IsobaricEOSEvaluator::EvaluatePartialDerivative_(const State& S,
+                                                 const Key& wrt_key,
+                                                 const Tag& wrt_tag,
+                                                 const std::vector<CompositeVector*>& results)
 {
   auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
   double pres = S.Get<double>(pres_key_, tag_);
 
   if (wrt_key == temp_key_) {
-
     int index = 0; // index to the results list
     if (mode_ == EOS_MODE_MOLAR || mode_ == EOS_MODE_BOTH) {
       // evaluate DMolarDensityDT()
@@ -136,7 +139,7 @@ void IsobaricEOSEvaluator::EvaluatePartialDerivative_(
         Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
 
         int count = result->size(*comp);
-        for (int id=0; id!=count; ++id) {
+        for (int id = 0; id != count; ++id) {
           result_v[0][id] = eos_->DMolarDensityDT(temp_v[0][id], pres);
         }
       }
@@ -161,5 +164,5 @@ void IsobaricEOSEvaluator::EvaluatePartialDerivative_(
   }
 }
 
-}  // namespace AmanziEOS
-}  // namespace Amanzi
+} // namespace AmanziEOS
+} // namespace Amanzi
