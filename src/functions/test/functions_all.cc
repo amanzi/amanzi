@@ -22,6 +22,7 @@
 #include "FunctionSeparable.hh"
 #include "FunctionStaticHead.hh"
 #include "FunctionBilinear.hh"
+#include "FunctionComposition.hh"
 #include "errors.hh"
 #include "HDF5Reader.hh"
 
@@ -62,7 +63,7 @@ test_values_multi(Function& f, std::vector<std::vector<double>>& values, std::ve
       x(j) = values[i][j];
       x_d.view_host()(j, i) = values[i][j];
     }
-    CHECK_EQUAL(f(x), res[i]);
+    CHECK_EQUAL(res[i], f(x));
   }
   // GPU
   Kokkos::deep_copy(x_d.view_device(), x_d.view_host());
@@ -70,7 +71,7 @@ test_values_multi(Function& f, std::vector<std::vector<double>>& values, std::ve
   f.apply(x_d.view_device(), res_d);
   Kokkos::View<double*, Kokkos::HostSpace> res_h("res_h", s0);
   Kokkos::deep_copy(res_h, res_d);
-  for (int i = 0; i < s0; ++i) CHECK_EQUAL(res_h[i], res[i]);
+  for (int i = 0; i < s0; ++i) CHECK_EQUAL(res[i], res_h[i]);
 }
 
 
@@ -447,4 +448,35 @@ f_using_params(const Kokkos::View<double*, Kokkos::HostSpace>& x,
                const Kokkos::View<double*, Kokkos::HostSpace>& p)
 {
   return p[1] * x[1] - p[0] * x[0];
+}
+
+
+TEST(composition_test)
+{
+  double y0 = 1.0;
+  Kokkos::View<double*, Kokkos::HostSpace> grad("grad", 3);
+  grad(0) = 1.0;
+  grad(1) = 2.0;
+  grad(2) = -3.0;
+  Kokkos::View<double*, Kokkos::HostSpace> gradvec = Kokkos::subview(grad, Kokkos::make_pair(0, 3));
+  // Three variable linear function.
+  auto f2 = std::make_unique<FunctionLinear>(y0, gradvec);
+
+
+  Kokkos::View<double*, Kokkos::HostSpace> x("x", 3);
+  x(0) = -3.0;
+  x(1) = 0.0;
+  x(2) = 5.0;
+  Kokkos::View<double*, Kokkos::HostSpace> y("y", 3);
+  y(0) = 1.0;
+  y(1) = 3.0;
+  y(2) = 2.0;
+  int xi = 0;
+  auto f1 = std::make_unique<FunctionTabular>(x, y, xi);
+
+  FunctionComposition f(std::move(f1),std::move(f2));
+
+  std::vector<std::vector<double>> val = { { 3., 2., 1. }, { 1., -1., 1. } };
+  std::vector<double> res = { 2., 1. };
+  test_values_multi(f, val, res);
 }

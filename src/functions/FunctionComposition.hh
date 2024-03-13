@@ -66,17 +66,11 @@ class FunctionComposition : public Function {
              Kokkos::View<double*>& out,
              const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
   {
-    Kokkos::View<double*> out_1("out", in.extent(1));
-    Kokkos::View<double**> tmpin("tmpin", in.extent(0), in.extent(1));
-    Kokkos::deep_copy(tmpin, in);
-    f2_->apply(tmpin, out_1);
+    f2_->apply(in, out, ids);
 
-    // Change all first value
-    Kokkos::parallel_for(
-      "FunctionComposition::apply", in.extent(1), KOKKOS_LAMBDA(const int& j) {
-        for (int i = 0; i < in.extent(0); ++i) tmpin(i, j) = out_1(i);
-      });
-    f1_->apply(tmpin, out, ids);
+    Kokkos::View<double**> in_1("in", 1, in.extent(1));
+    Kokkos::deep_copy(Kokkos::subview(in_1, 0, Kokkos::ALL), out);
+    f1_->apply(in_1, out, ids);
   }
 
  private:

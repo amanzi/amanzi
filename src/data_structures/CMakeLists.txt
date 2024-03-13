@@ -78,6 +78,7 @@ set(data_structures_inc_files
   MatrixFE.hh
   SuperMapLumped.hh
   SuperMap.hh
+  BCs.hh
   DataStructuresHelpers.hh
   )
 

@@ -75,7 +75,16 @@ class EvaluatorModelCV : public EvaluatorSecondaryMonotype<CompositeVector, Comp
   EvaluatorModelCV(const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
-  virtual std::string getType() const override { return Model_type::eval_type; }
+  virtual std::string getType() const override { return eval_type; }
+
+  // some models may not implement partial derivatives, even if they are
+  // differentiable.  Allow the model to turn off _all_ derivatives.
+  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override {
+    if constexpr (!Model_type::provides_derivatives) {
+      return false;
+    }
+    return EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::IsDifferentiableWRT(S, wrt_key, wrt_tag);
+  }
 
  protected:
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
@@ -92,6 +101,7 @@ class EvaluatorModelCV : public EvaluatorSecondaryMonotype<CompositeVector, Comp
   }
 
  protected:
+  static const std::string eval_type;
   Teuchos::RCP<Model_type> model_;
   std::string name_;
 
@@ -146,10 +156,10 @@ EvaluatorModelCV<Model, Device_type>::Evaluate_(const State& S,
     Kokkos::parallel_for(name_, range, *model_);
     Kokkos::fence();
 
-    // Reset views
-    // model_ = Teuchos::rcp<Model_type>(new Model_type(plist_));
+    // must clear the views -- this tells tpetra's dual view that it can sync
+    // if needed.
+    model_->freeViews();
   }
-  //Debug_(S);
 }
 
 template <template <class, class> class Model, class Device_type>
@@ -160,6 +170,10 @@ EvaluatorModelCV<Model, Device_type>::EvaluatePartialDerivative_(
   const Tag& wrt_tag,
   const std::vector<CompositeVector*>& results)
 {
+  if constexpr (!Model_type::provides_derivatives) {
+    AMANZI_ASSERT(false);
+  }
+
   AMANZI_ASSERT(results.size() > 0);
   for (const auto& comp : *results[0]) {
     std::vector<cView_type> dependency_views;
@@ -181,9 +195,14 @@ EvaluatorModelCV<Model, Device_type>::EvaluatePartialDerivative_(
     Kokkos::fence();
 
     // Reset views
-    //model_ = Teuchos::rcp<Model_type>(new Model_type(plist_));
+    model_->freeViews();
   }
 }
+
+
+template <template <class, class> class Model, class Device_type>
+const std::string EvaluatorModelCV<Model, Device_type>::eval_type =
+  EvaluatorModelCV<Model, Device_type>::Model_type::eval_type;
 
 } // namespace Amanzi
 

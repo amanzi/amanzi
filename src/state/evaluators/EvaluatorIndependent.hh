@@ -102,6 +102,8 @@ class EvaluatorIndependent : public EvaluatorIndependent_ {
 
   virtual void EnsureCompatibility(State& S) override
   {
+    S.CheckIsDebugEval(my_key_, my_tag_, "ensure compatibilitied");
+
     // Require the field and claim ownership.
     S.Require<Data_t, DataFactory_t>(my_key_, my_tag_, my_key_);
 

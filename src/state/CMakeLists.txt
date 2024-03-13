@@ -86,6 +86,7 @@ set(state_inc_files
   evaluators/EvaluatorModelLauncher.hh
   evaluators/EvaluatorModelCV.hh
   evaluators/EvaluatorModelCVByMaterial.hh
+  evaluators/EvaluatorMultiDOFModelCVByMaterial.hh
   evaluators/EvaluatorModelPatch.hh
   evaluators/EvaluatorAggregateBCs.hh
   evaluators/EvaluatorSecondaryVectorAsPatch.hh

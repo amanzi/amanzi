@@ -182,12 +182,80 @@ struct SlopeMagnitude {
 
     Kokkos::parallel_for(
       "EvaluatorMeshedCellSlopeMagnitude", vv.extent(0), KOKKOS_LAMBDA(const int& c) {
-        // Now slope.
+        // face normal
         auto f = mesh.getEntityParent(AmanziMesh::Entity_kind::CELL, c);
         AmanziGeometry::Point n = parent.getFaceNormal(f);
 
         // -- S = || n - (n dot z) z || / | n dot z |
         vv(c, 0) = sqrt(pow(n[0], 2) + pow(n[1], 2)) / fabs(n[2]);
+      });
+  }
+
+  const AmanziMesh::Mesh& mesh;
+  Teuchos::RCP<CompositeVector> v;
+};
+
+
+template <AmanziMesh::Entity_kind EK>
+struct Aspect {
+  static const AmanziMesh::Entity_kind EntityKind = EK;
+  static const bool needs_3d = false;
+
+  Aspect(const AmanziMesh::Mesh& mesh_, Teuchos::RCP<CompositeVector>& v_)
+    : mesh(mesh_), v(v_)
+  {}
+
+  void Compute()
+  {
+    AMANZI_ASSERT(EntityKind == AmanziMesh::Entity_kind::CELL);
+    AMANZI_ASSERT(mesh.getParentMesh() != Teuchos::null);
+
+    const AmanziMesh::Mesh& parent = *mesh.getParentMesh();
+    auto vv = v->viewComponent("cell", false);
+
+    Kokkos::parallel_for(
+      "EvaluatorMeshedCellAspect", vv.extent(0), KOKKOS_LAMBDA(const int& c) {
+        // compute the normal
+        auto f = mesh.getEntityParent(AmanziMesh::Entity_kind::CELL, c);
+        AmanziGeometry::Point n = parent.getFaceNormal(f);
+
+        // and aspect
+        if (n[0] > 0.0) {
+          // right half
+          if (n[1] > 0.0) {
+            // upper right quadrant
+            vv(c,0) = std::atan(n[0] / n[1]);
+          } else if (n[1] < 0.0) {
+            // lower right quadrant
+            vv(c,0) = M_PI - std::atan(n[0] / -n[1]);
+          } else {
+            // due east
+            vv(c,0) = M_PI_2;
+          }
+        } else if (n[0] < 0.0) {
+          // left half
+          if (n[1] > 0.0) {
+            // upper left quadrant
+            vv(c,0) = 2 * M_PI - std::atan(-n[0] / n[1]);
+          } else if (n[1] < 0.0) {
+            // lower left quadrant
+            vv(c,0) = M_PI + std::atan(n[0] / -n[1]);
+          } else {
+            // due west
+            vv(c,0) = 3 * M_PI_2;
+          }
+        } else {
+          // north or south
+          if (n[1] > 0.0) {
+            vv(c,0) = 0.0;
+          } else if (n[1] < 0.0) {
+            vv(c,0) = M_PI;
+          } else {
+            // n is (0,0,1)
+            vv(c,0) = 0.;
+          }
+        }
+
       });
   }
 
@@ -204,11 +272,15 @@ const std::string EvaluatorCellVolume::eval_type = "cell volume";
 
 using EvaluatorMeshElevation = EvaluatorSecondaryMeshedQuantity<Impl::Elevation>;
 template <>
-const std::string EvaluatorMeshElevation::eval_type = "meshed elevation";
+const std::string EvaluatorMeshElevation::eval_type = "elevation";
 
 using EvaluatorMeshSlopeMagnitude = EvaluatorSecondaryMeshedQuantity<Impl::SlopeMagnitude>;
 template <>
-const std::string EvaluatorMeshSlopeMagnitude::eval_type = "meshed slope magnitude";
+const std::string EvaluatorMeshSlopeMagnitude::eval_type = "slope magnitude";
+
+using EvaluatorMeshAspect = EvaluatorSecondaryMeshedQuantity<Impl::Aspect>;
+template <>
+const std::string EvaluatorMeshAspect::eval_type = "aspect";
 
 
 } // namespace Amanzi

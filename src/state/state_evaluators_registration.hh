@@ -45,6 +45,7 @@ REGISTER(EvaluatorPrimaryStaticMesh);
 template <> REGISTER(EvaluatorCellVolume);
 template <> REGISTER(EvaluatorMeshElevation);
 template <> REGISTER(EvaluatorMeshSlopeMagnitude);
+template <> REGISTER(EvaluatorMeshAspect);
 
 REGISTER(EvaluatorAggregateBCs);
 REGISTER(EvaluatorSecondaryVectorAsPatch);

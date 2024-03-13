@@ -52,6 +52,7 @@ class EvaluatorSecondaryMonotypeAdditive
 
  protected:
   std::map<Key, double> coefs_;
+  double shift_;
   using EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::dependencies_;
   using EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::my_keys_;
 
@@ -85,6 +86,8 @@ EvaluatorSecondaryMonotypeAdditive<Data_t, DataFactory_t>::EvaluatorSecondaryMon
     else
       coefs_[coef_name] = 1.0;
   }
+
+  shift_ = plist->get<double>("constant shift", 0.);
 }
 
 
@@ -101,7 +104,7 @@ EvaluatorSecondaryMonotypeAdditive<Data_t, DataFactory_t>::Evaluate_(
   const State& S,
   const std::vector<Data_t*>& results)
 {
-  results[0]->putScalar(0.);
+  results[0]->putScalar(shift_);
   for (const auto& dep : dependencies_) {
     const auto& term = S.Get<Data_t>(dep.first, dep.second);
     std::string coef_name = Keys::getKey(dep.first, dep.second);

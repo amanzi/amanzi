@@ -54,21 +54,31 @@ namespace Amanzi {
 //
 template <template <class, class> class Model, class Device_type = DefaultDevice>
 class EvaluatorModelCVByMaterial
-  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+  : public EvaluatorSecondaryMonotypeCV {
  public:
   using cView_type = cMultiVectorView_type<Device_type>;
   using View_type = MultiVectorView_type<Device_type>;
   using Model_type = Model<cView_type, View_type>;
+  static const std::string eval_type;
 
   EvaluatorModelCVByMaterial(const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
   virtual std::string getType() const override
   {
-    return models_.front().second->eval_type + " by material";
+    return eval_type;
   }
 
-  decltype(auto) getModels() { return models_; }
+  // some models may not implement partial derivatives, even if they are
+  // differentiable.  Allow the model to turn off _all_ derivatives.
+  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override {
+    if constexpr (!Model_type::provides_derivatives) {
+      return false;
+    }
+    return EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::IsDifferentiableWRT(S, wrt_key, wrt_tag);
+  }
+
+  std::vector<std::pair<std::string, Teuchos::RCP<Model_type>>>& getModels() { return models_; }
 
   // This function needs to be public for Kokkos::CUDA backend
   // Function calling kernel cannot be protected/private
@@ -110,6 +120,7 @@ EvaluatorModelCVByMaterial<Model, Device_type>::EvaluatorModelCVByMaterial(
       // make a copy for use in the Model
       auto model_list = Teuchos::rcp(new Teuchos::ParameterList(*plist));
       model_list->set("model parameters", region_plist.sublist(region_name));
+      model_list->sublist("model parameters").set<std::string>("region", region_name);
       models_.emplace_back(std::make_pair(region_name, Teuchos::rcp(new Model_type(model_list))));
     } else {
       Errors::Message msg(
@@ -181,6 +192,10 @@ EvaluatorModelCVByMaterial<Model, Device_type>::Evaluate_(
 
       Kokkos::parallel_for(
         name_, range, KOKKOS_LAMBDA(const int& i) { f(mat_ids(i)); });
+
+      // must clear the views -- this tells tpetra's dual view that it can sync
+      // if needed.
+      region_model.second->freeViews();
     }
   }
   //  Debug_(S);
@@ -234,11 +249,16 @@ EvaluatorModelCVByMaterial<Model, Device_type>::EvaluatePartialDerivative_(
       Impl::EvaluatorModelLauncher<Model_type::n_dependencies - 1, Model_type, Device_type>
         launcher(name_, wrt, dependencies_, *region_model.second);
       launcher.launch(mat_ids);
+
+      region_model.second->freeViews();
     }
   }
 }
 
 
+template <template <class, class> class Model, class Device_type>
+const std::string EvaluatorModelCVByMaterial<Model, Device_type>::eval_type =
+  EvaluatorModelCVByMaterial<Model, Device_type>::Model_type::eval_type + " by region";
 } // namespace Amanzi
 
 

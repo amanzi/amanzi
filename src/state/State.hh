@@ -198,7 +198,7 @@ class State {
   template <typename T, typename F>
   F& Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = true)
   {
-    CheckIsDebugData_(fieldname, tag);
+    CheckIsDebugData(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
@@ -215,7 +215,7 @@ class State {
              const Key& owner = "",
              bool alias_ok = true)
   {
-    CheckIsDebugData_(fieldname, tag);
+    CheckIsDebugData(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
@@ -228,7 +228,7 @@ class State {
   template <typename T>
   void Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = true)
   {
-    CheckIsDebugData_(fieldname, tag);
+    CheckIsDebugData(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
@@ -486,10 +486,63 @@ class State {
   // managed in State, where each node is an Evaluator.
   //
   // -- allows PKs to add to this list to custom evaluators
-  Teuchos::ParameterList& ConstantsList()
+  Teuchos::ParameterList& ConstantsList() const
   {
     return state_plist_->sublist("constants");
   }
+
+
+  //
+  // Get a constant value from the constants list
+  //
+  template<typename T>
+  T GetConstant(const std::string& name) const
+  {
+    T t;
+    bool inited = Helpers::Initialize<T>(ConstantsList().sublist(name), t);
+    if (!inited) {
+      Errors::Message msg;
+      msg << "Unable to initialize constant \"" << name << "\".";
+      Exceptions::amanzi_throw(msg);
+    }
+    return t;
+  }
+
+  //
+  // Get a map of region to constant value from the constants list
+  //
+  template<typename T>
+  std::map<std::string, T> GetConstantByRegion(const std::string& name) const
+  {
+    std::map<std::string, T> result;
+    const Teuchos::ParameterList& plist = ConstantsList().sublist(name);
+    for (const auto& element : plist) {
+      bool inited = Helpers::Initialize<T>(plist.sublist(element.first), result[element.first]);
+      if (!inited) {
+        Errors::Message msg;
+        msg << "Unable to initialize constant \"" << name << "\".";
+        Exceptions::amanzi_throw(msg);
+      }
+    }
+    return result;
+  }
+
+  //
+  // Get a constant on a region
+  //
+  template<typename T>
+  T GetConstantByRegion(const std::string& name, const std::string& region) const
+  {
+    T t;
+    bool inited = Helpers::Initialize<T>(ConstantsList().sublist(name).sublist(region), t);
+    if (!inited) {
+      Errors::Message msg;
+      msg << "Unable to initialize constant \"" << name << "\" on region \"" << region << "\".";
+      Exceptions::amanzi_throw(msg);
+    }
+    return t;
+  }
+
 
   Teuchos::ParameterList& FEList()
   {
@@ -642,14 +695,14 @@ class State {
   // Utility for setting vis flags using blacklist and whitelist
   void InitializeIOFlags();
 
+  // a hook to allow debuggers to connect
+  void CheckIsDebugEval(const Key& key, const Tag& tag, const std::string& message="");
+  void CheckIsDebugData(const Key& key, const Tag& tag, const std::string& message="");
+
  private:
   // Accessors that return null if the Key does not exist.
   Teuchos::RCP<AmanziMesh::Mesh> GetMesh_(const Key& key) const;
   Teuchos::RCP<Teuchos::ParameterList> GetEvaluatorListPtr_(const Key& key);
-
-  // a hook to allow debuggers to connect
-  void CheckIsDebugEval_(const Key& key, const Tag& tag);
-  void CheckIsDebugData_(const Key& key, const Tag& tag);
 
  private:
   Teuchos::RCP<VerboseObject> vo_;
@@ -669,6 +722,7 @@ class State {
   // parameter list
   Teuchos::RCP<Teuchos::ParameterList> state_plist_;
 };
+
 
 } // namespace Amanzi
 

@@ -35,7 +35,7 @@ RecordSet::attributes(Tag const* const tag = nullptr) const
   // attrs.set("units", units());
   attrs.set("location", location());
   auto names = subfieldnames();
-  if (names) attrs.set("subfieldnames", names);
+  if (names) attrs.set("subfieldnames", *names);
   return attrs;
 }
 
