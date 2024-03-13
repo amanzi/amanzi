@@ -289,6 +289,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
      if (bc_model_scalar[f] == Operators::OPERATOR_BC_DIRICHLET) {
         UR[0] = bc_value_h[f];
         UL[0] = UR[0];
+        DR[0] = bc_value_h[f];
         DL[0] = DR[0];
      }
      else {
