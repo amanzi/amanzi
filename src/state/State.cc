@@ -359,6 +359,9 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
       std::string modelname = sublist->get<std::string>("model parameters");
       sublist->remove("model parameters");
       sublist->set("model parameters", GetModelParameters(modelname));
+    } else if (sublist->isParameter("additional model parameters")) {
+      std::string modelname = sublist->get<std::string>("additional model parameters");
+      sublist->sublist(modelname).setParametersNotAlreadySet(GetModelParameters(modelname));
     }
 
     // -- Create and set the evaluator.
@@ -381,11 +384,15 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
     return RequireEvaluator(key, tag);
   } else if (Keys::getVarName(key) == "elevation") {
     auto& cv_list = GetEvaluatorList(key);
-    cv_list.set("evaluator type", "meshed elevation");
+    cv_list.set("evaluator type", "elevation");
     return RequireEvaluator(key, tag);
   } else if (Keys::getVarName(key) == "slope_magnitude") {
     auto& cv_list = GetEvaluatorList(key);
-    cv_list.set("evaluator type", "meshed slope magnitude");
+    cv_list.set("evaluator type", "slope magnitude");
+    return RequireEvaluator(key, tag);
+  } else if (Keys::getVarName(key) == "aspect") {
+    auto& cv_list = GetEvaluatorList(key);
+    cv_list.set("evaluator type", "aspect");
     return RequireEvaluator(key, tag);
   } else if (Keys::getVarName(key) == "mesh") {
     auto& cv_list = GetEvaluatorList(key);

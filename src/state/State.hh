@@ -486,10 +486,63 @@ class State {
   // managed in State, where each node is an Evaluator.
   //
   // -- allows PKs to add to this list to custom evaluators
-  Teuchos::ParameterList& ConstantsList()
+  Teuchos::ParameterList& ConstantsList() const
   {
     return state_plist_->sublist("constants");
   }
+
+
+  //
+  // Get a constant value from the constants list
+  //
+  template<typename T>
+  T GetConstant(const std::string& name) const
+  {
+    T t;
+    bool inited = Helpers::Initialize<T>(ConstantsList().sublist(name), t);
+    if (!inited) {
+      Errors::Message msg;
+      msg << "Unable to initialize constant \"" << name << "\".";
+      Exceptions::amanzi_throw(msg);
+    }
+    return t;
+  }
+
+  //
+  // Get a map of region to constant value from the constants list
+  //
+  template<typename T>
+  std::map<std::string, T> GetConstantByRegion(const std::string& name) const
+  {
+    std::map<std::string, T> result;
+    const Teuchos::ParameterList& plist = ConstantsList().sublist(name);
+    for (const auto& element : plist) {
+      bool inited = Helpers::Initialize<T>(plist.sublist(element.first), result[element.first]);
+      if (!inited) {
+        Errors::Message msg;
+        msg << "Unable to initialize constant \"" << name << "\".";
+        Exceptions::amanzi_throw(msg);
+      }
+    }
+    return result;
+  }
+
+  //
+  // Get a constant on a region
+  //
+  template<typename T>
+  T GetConstantByRegion(const std::string& name, const std::string& region) const
+  {
+    T t;
+    bool inited = Helpers::Initialize<T>(ConstantsList().sublist(name).sublist(region), t);
+    if (!inited) {
+      Errors::Message msg;
+      msg << "Unable to initialize constant \"" << name << "\" on region \"" << region << "\".";
+      Exceptions::amanzi_throw(msg);
+    }
+    return t;
+  }
+
 
   Teuchos::ParameterList& FEList()
   {
@@ -669,6 +722,7 @@ class State {
   // parameter list
   Teuchos::RCP<Teuchos::ParameterList> state_plist_;
 };
+
 
 } // namespace Amanzi
 

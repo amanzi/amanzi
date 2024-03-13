@@ -360,6 +360,9 @@ Initialize<MultiPatch<int>>(Teuchos::ParameterList& plist, MultiPatch<int>& t)
 }
 
 
+// ======================================================================
+// Specializations for BCs
+// ======================================================================
 template <>
 inline void
 WriteVis<Operators::BCs>(const Visualization& vis,

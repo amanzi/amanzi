@@ -59,6 +59,7 @@ template <class cView_type, class View_type>
 class AModel {
  public:
   static const int n_dependencies = 4;
+  static const bool provides_derivatives = true;
   static const std::string eval_type;
 
   AModel(const Teuchos::RCP<Teuchos::ParameterList>& plist)
@@ -77,6 +78,15 @@ class AModel {
     C_ = dependency_views[1];
     E_ = dependency_views[2];
     H_ = dependency_views[3];
+  }
+
+  void freeViews()
+  {
+    A_ = View_type();
+    B_ = cView_type();
+    C_ = cView_type();
+    E_ = cView_type();
+    H_ = cView_type();
   }
 
   KeyTagVector getMyKeys()
@@ -138,6 +148,7 @@ template <class cView_type, class View_type>
 class CModel {
  public:
   static const int n_dependencies = 2;
+  static const bool provides_derivatives = true;
   static const std::string eval_type;
 
   CModel(const Teuchos::RCP<Teuchos::ParameterList>& plist) {}
@@ -151,6 +162,13 @@ class CModel {
     C_ = res[0];
     D_ = deps[0];
     G_ = deps[1];
+  }
+
+  void freeViews()
+  {
+    C_ = View_type();
+    D_ = cView_type();
+    G_ = cView_type();
   }
 
   KeyTagVector getMyKeys()
@@ -179,6 +197,7 @@ template <class cView_type, class View_type, bool UseAccessor = false>
 class DModel_ {
  public:
   static const int n_dependencies = 1;
+  static const bool provides_derivatives = true;
   static const std::string eval_type;
   using Accessor_View_type = Kokkos::View<const int*, typename View_type::device_type>;
 
@@ -192,6 +211,11 @@ class DModel_ {
 
     D_ = res[0];
     G_ = deps[0];
+  }
+  void freeViews()
+  {
+    D_ = View_type();
+    G_ = cView_type();
   }
 
   void setAccessor(const Accessor_View_type& ids) { ids_ = ids; }
@@ -233,6 +257,7 @@ template <class cView_type, class View_type>
 class EModel {
  public:
   static const int n_dependencies = 2;
+  static const bool provides_derivatives = true;
   static const std::string eval_type;
 
   EModel(const Teuchos::RCP<Teuchos::ParameterList>& plist) {}
@@ -246,6 +271,12 @@ class EModel {
     E_ = res[0];
     D_ = deps[0];
     F_ = deps[1];
+  }
+  void freeViews()
+  {
+    E_ = View_type();
+    D_ = cView_type();
+    F_ = cView_type();
   }
 
   KeyTagVector getMyKeys()
@@ -274,6 +305,7 @@ template <class cView_type, class View_type>
 class FModel {
  public:
   static const int n_dependencies = 1;
+  static const bool provides_derivatives = true;
   static const std::string eval_type;
 
   FModel(const Teuchos::RCP<Teuchos::ParameterList>& plist) {}
@@ -286,6 +318,11 @@ class FModel {
 
     F_ = res[0];
     G_ = deps[0];
+  }
+  void freeViews()
+  {
+    F_ = View_type();
+    G_ = cView_type();
   }
 
   KeyTagVector getMyKeys()
@@ -315,6 +352,7 @@ template <class cView_type, class View_type>
 class HModel {
  public:
   static const int n_dependencies = 1;
+  static const bool provides_derivatives = true;
   static const std::string eval_type;
 
   HModel(const Teuchos::RCP<Teuchos::ParameterList>& plist) {}
@@ -327,6 +365,11 @@ class HModel {
 
     H_ = res[0];
     F_ = deps[0];
+  }
+  void freeViews()
+  {
+    H_ = View_type();
+    F_ = cView_type();
   }
 
   KeyTagVector getMyKeys()
