@@ -10,7 +10,7 @@
   template <>                                                                                      \
   Utils::RegisteredFactory<Evaluator, EvaluatorModelCVByMaterial<c, DefaultDevice>>                \
   EvaluatorModelCVByMaterial<c, DefaultDevice>::reg_(c<cView_type, View_type>::eval_type +              \
-                                                     " by material")
+                                                     " by region")
 
 
 #define REGISTER_PK(c) RegisteredPKFactory<c> c::reg_(c::pk_type_)

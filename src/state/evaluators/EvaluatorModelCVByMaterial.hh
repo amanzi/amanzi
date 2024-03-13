@@ -249,7 +249,7 @@ EvaluatorModelCVByMaterial<Model, Device_type>::EvaluatePartialDerivative_(
 
 template <template <class, class> class Model, class Device_type>
 const std::string EvaluatorModelCVByMaterial<Model, Device_type>::eval_type =
-  EvaluatorModelCVByMaterial<Model, Device_type>::Model_type::eval_type + " by material";
+  EvaluatorModelCVByMaterial<Model, Device_type>::Model_type::eval_type + " by region";
 } // namespace Amanzi
 
 

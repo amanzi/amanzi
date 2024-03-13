@@ -134,6 +134,10 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/utils_brent.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
+    add_amanzi_test(utils_set_pars utils_set_pars
+                    KIND unit
+                    SOURCE test/Main.cc test/utils_set_pars.cc
+                    LINK_LIBS atk ${UnitTest_LIBRARIES})
 
 endif()
 

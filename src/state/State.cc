@@ -352,16 +352,97 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
   if (HasEvaluatorList(key)) {
     // -- Get this evaluator's plist.
     auto sublist = GetEvaluatorListPtr_(key);
+    std::string evaluator_type = sublist->get<std::string>("evaluator type");
+    bool by_region = Keys::ends_with(evaluator_type, "by region");
+    bool initial_by_region = by_region;
 
-    // -- Insert any model parameters.
+    // -- move any model pars strings into additional model pars
     if (sublist->isParameter("model parameters") &&
         sublist->isType<std::string>("model parameters")) {
-      std::string modelname = sublist->get<std::string>("model parameters");
+      if (sublist->isParameter("additional model parameters")) {
+        if (sublist->isType<std::string>("additional model parameters")) {
+          std::string add_par = sublist->get<std::string>("additional model parameters");
+          sublist->remove("additional model parameters");
+          sublist->set<Teuchos::Array<std::string>>("additional model parameters", std::vector<std::string>{add_par,});
+        }
+
+        auto add_pars = sublist->get<Teuchos::Array<std::string>>("additional model parameters");
+        add_pars.push_back(sublist->get<std::string>("model parameters"));
+        sublist->remove("additional model parameters");
+        sublist->set<Teuchos::Array<std::string>>("additional model parameters", add_pars);
+      } else {
+        sublist->set<Teuchos::Array<std::string>>("additional model parameters",
+                std::vector<std::string>{sublist->get<std::string>("model parameters")});
+      }
       sublist->remove("model parameters");
-      sublist->set("model parameters", GetModelParameters(modelname));
-    } else if (sublist->isParameter("additional model parameters")) {
-      std::string modelname = sublist->get<std::string>("additional model parameters");
-      sublist->sublist(modelname).setParametersNotAlreadySet(GetModelParameters(modelname));
+
+    } else if (sublist->isParameter("model parameters") &&
+               sublist->isType<Teuchos::Array<std::string>>("model parameters")) {
+      if (sublist->isParameter("additional model parameters")) {
+        if (sublist->isType<std::string>("additional model parameters")) {
+          std::string add_par = sublist->get<std::string>("additional model parameters");
+          sublist->remove("additional model parameters");
+          sublist->set<Teuchos::Array<std::string>>("additional model parameters", std::vector<std::string>{add_par,});
+        }
+
+        auto add_pars = sublist->get<Teuchos::Array<std::string>>("additional model parameters");
+        for (const auto& par : sublist->get<Teuchos::Array<std::string>>("model parameters")) {
+          add_pars.push_back(par);
+        }
+        sublist->remove("additional model parameters");
+        sublist->set<Teuchos::Array<std::string>>("additional model parameters", add_pars);
+      } else {
+        sublist->set<Teuchos::Array<std::string>>("additional model parameters",
+                sublist->get<Teuchos::Array<std::string>>("model parameters"));
+      }
+      sublist->remove("model parameters");
+    }
+
+    // update model parameters with additional model parameters
+    if (sublist->isParameter("additional model parameters")) {
+      if (sublist->isType<std::string>("additional model parameters")) {
+        std::string add_par = sublist->get<std::string>("additional model parameters");
+        sublist->remove("additional model parameters");
+        sublist->set<Teuchos::Array<std::string>>("additional model parameters", std::vector<std::string>{add_par,});
+      }
+
+      auto add_pars = sublist->get<Teuchos::Array<std::string>>("additional model parameters");
+      for (const auto& add_par : add_pars) {
+        sublist->sublist("model parameters").setParametersNotAlreadySet(GetModelParameters(add_par));
+      }
+      sublist->remove("additional model parameters");
+    }
+
+    if (sublist->isSublist("model parameters")) {
+      Teuchos::ParameterList& model_pars = sublist->sublist("model parameters");
+
+      // are we by region?
+      for (const auto& p : model_pars) {
+        if (model_pars.isSublist(p.first)) {
+          by_region = true;
+          break;
+        }
+      }
+
+      if (by_region) {
+        // explode the list, putting parameters in each region
+        for (const auto& entry : model_pars) {
+          if (!model_pars.isSublist(entry.first)) {
+            for (auto& region_list : model_pars) {
+              if (model_pars.isSublist(region_list.first)) {
+                model_pars.sublist(region_list.first).setEntry(entry.first, entry.second);
+              }
+            }
+            model_pars.remove(entry.first);
+          }
+        }
+
+        Evaluator_Factory eval_fac;
+        if (!initial_by_region &&
+            eval_fac.HasEntry(evaluator_type+" by region")) {
+          sublist->set<std::string>("evaluator type", evaluator_type+" by region");
+        }
+      }
     }
 
     // -- Create and set the evaluator.
