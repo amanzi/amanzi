@@ -245,8 +245,6 @@ EvaluatorSecondary::UpdateDerivative(State& S,
                                      const Key& wrt_key,
                                      const Tag& wrt_tag)
 {
-  AMANZI_ASSERT(IsDependency(S, wrt_key, wrt_tag));
-
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
     *vo_.os() << "Algebraic Variable d" << my_keys_[0].first << "_d" << wrt_key << " requested by "
@@ -254,10 +252,11 @@ EvaluatorSecondary::UpdateDerivative(State& S,
   }
 
   // If wrt_key is not a dependency, no need to differentiate.
-  if (!IsDependency(S, wrt_key, wrt_tag)) {
+  if (!IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
       *vo_.os() << wrt_key << " is not a dependency... " << std::endl;
     }
+    AMANZI_ASSERT(IsDifferentiableWRT(S, wrt_key, wrt_tag));
     return false;
   }
 
@@ -272,7 +271,9 @@ EvaluatorSecondary::UpdateDerivative(State& S,
 
   // -- must update if any of our dependencies' derivatives have changed
   for (auto& dep : dependencies_) {
-    if (S.GetEvaluator(dep.first, dep.second).IsDependency(S, wrt_key, wrt_tag)) {
+    const auto& dep_evaluator = S.GetEvaluator(dep.first, dep.second);
+    if (dep_evaluator.IsDifferentiableWRT(S, wrt_key, wrt_tag) &&
+        !dep_evaluator.ProvidesKey(wrt_key, wrt_tag)) {
       update |=
         S.GetEvaluator(dep.first, dep.second).UpdateDerivative(S, my_request, wrt_key, wrt_tag);
     }

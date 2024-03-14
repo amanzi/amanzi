@@ -316,7 +316,7 @@ State::HasDerivative(const Key& key, const Key& wrt_key) const
 Evaluator&
 State::RequireEvaluator(const Key& key, const Tag& tag)
 {
-  CheckIsDebugEval_(key, tag);
+  CheckIsDebugEval(key, tag);
 
   // does it already exist?
   if (HasEvaluator(key, tag)) return GetEvaluator(key, tag);
@@ -928,7 +928,7 @@ State::GetEvaluatorPtr(const Key& key, const Tag& tag)
 void
 State::SetEvaluator(const Key& key, const Tag& tag, const Teuchos::RCP<Evaluator>& evaluator)
 {
-  CheckIsDebugEval_(key, tag);
+  CheckIsDebugEval(key, tag);
   evaluators_[key][tag] = evaluator;
 }
 
@@ -991,7 +991,7 @@ State::GetEvaluatorListPtr_(const Key& key)
 
 
 void
-State::CheckIsDebugEval_(const Key& key, const Tag& tag)
+State::CheckIsDebugEval(const Key& key, const Tag& tag, const std::string& msg)
 {
   // check for debugging.  This provides a line for setting breakpoints for
   // debugging PK and Evaluator dependencies.
@@ -1000,7 +1000,8 @@ State::CheckIsDebugEval_(const Key& key, const Tag& tag)
     "evaluators", Teuchos::Array<Key>());
   if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *vo_->os() << "State: Evaluator for debug field \"" << key << "@" << tag << "\" was required."
+      std::string lmsg = msg.empty() ? "required" : msg;
+      *vo_->os() << "State: Evaluator for debug field \"" << key << "@" << tag << "\" was " << lmsg << "."
                  << std::endl;
     }
     if (tag == Tags::DEFAULT) {
@@ -1011,7 +1012,7 @@ State::CheckIsDebugEval_(const Key& key, const Tag& tag)
 }
 
 void
-State::CheckIsDebugData_(const Key& key, const Tag& tag)
+State::CheckIsDebugData(const Key& key, const Tag& tag, const std::string& msg)
 {
   // check for debugging.  This provides a line for setting breakpoints for
   // debugging PK and Evaluator dependencies.
@@ -1020,7 +1021,8 @@ State::CheckIsDebugData_(const Key& key, const Tag& tag)
     state_plist_->sublist("debug").get<Teuchos::Array<std::string>>("data", Teuchos::Array<Key>());
   if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *vo_->os() << "State: data for debug field \"" << key << "@" << tag << "\" was required."
+      std::string lmsg = msg.empty() ? "required" : msg;
+      *vo_->os() << "State: data for debug field \"" << key << "@" << tag << "\" was " << lmsg << "."
                  << std::endl;
     }
     if (tag == Tags::DEFAULT) {

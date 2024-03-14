@@ -178,7 +178,7 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
     reader.ReadData(x, vec_x);
     reader.ReadData(y, vec_y);
     if (params.isParameter("forms")) {
-      Kokkos::View<Form_kind*, Kokkos::HostSpace> form("forms");
+      Kokkos::View<Form_kind*, Kokkos::HostSpace> form("forms", 0);
 
       if (params.isType<Teuchos::Array<std::string>>("forms")) {
         Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string>>("forms"));

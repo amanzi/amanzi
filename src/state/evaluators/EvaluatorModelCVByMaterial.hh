@@ -69,6 +69,15 @@ class EvaluatorModelCVByMaterial
     return eval_type;
   }
 
+  // some models may not implement partial derivatives, even if they are
+  // differentiable.  Allow the model to turn off _all_ derivatives.
+  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override {
+    if constexpr (!Model_type::provides_derivatives) {
+      return false;
+    }
+    return EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::IsDifferentiableWRT(S, wrt_key, wrt_tag);
+  }
+
   std::vector<std::pair<std::string, Teuchos::RCP<Model_type>>>& getModels() { return models_; }
 
   // This function needs to be public for Kokkos::CUDA backend

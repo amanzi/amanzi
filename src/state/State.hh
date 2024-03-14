@@ -198,7 +198,7 @@ class State {
   template <typename T, typename F>
   F& Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = true)
   {
-    CheckIsDebugData_(fieldname, tag);
+    CheckIsDebugData(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
@@ -215,7 +215,7 @@ class State {
              const Key& owner = "",
              bool alias_ok = true)
   {
-    CheckIsDebugData_(fieldname, tag);
+    CheckIsDebugData(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
@@ -228,7 +228,7 @@ class State {
   template <typename T>
   void Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = true)
   {
-    CheckIsDebugData_(fieldname, tag);
+    CheckIsDebugData(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
@@ -695,14 +695,14 @@ class State {
   // Utility for setting vis flags using blacklist and whitelist
   void InitializeIOFlags();
 
+  // a hook to allow debuggers to connect
+  void CheckIsDebugEval(const Key& key, const Tag& tag, const std::string& message="");
+  void CheckIsDebugData(const Key& key, const Tag& tag, const std::string& message="");
+
  private:
   // Accessors that return null if the Key does not exist.
   Teuchos::RCP<AmanziMesh::Mesh> GetMesh_(const Key& key) const;
   Teuchos::RCP<Teuchos::ParameterList> GetEvaluatorListPtr_(const Key& key);
-
-  // a hook to allow debuggers to connect
-  void CheckIsDebugEval_(const Key& key, const Tag& tag);
-  void CheckIsDebugData_(const Key& key, const Tag& tag);
 
  private:
   Teuchos::RCP<VerboseObject> vo_;

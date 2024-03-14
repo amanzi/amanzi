@@ -152,6 +152,10 @@ template <typename Data_t, typename DataFactory_t>
 inline void
 EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility(State& S)
 {
+  for (const auto& key_tag : my_keys_) {
+    S.CheckIsDebugEval(key_tag.first, key_tag.second, "ensure compatibilitied");
+  }
+
   // Calls Require, setting the data type
   // (e.g. CompositeVector) and claiming ownership of all of my_keys_.
   //

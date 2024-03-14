@@ -75,7 +75,7 @@ class EvaluatorModelCV : public EvaluatorSecondaryMonotype<CompositeVector, Comp
   EvaluatorModelCV(const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
-  virtual std::string getType() const override { return Model_type::eval_type; }
+  virtual std::string getType() const override { return eval_type; }
 
   // some models may not implement partial derivatives, even if they are
   // differentiable.  Allow the model to turn off _all_ derivatives.
@@ -101,6 +101,7 @@ class EvaluatorModelCV : public EvaluatorSecondaryMonotype<CompositeVector, Comp
   }
 
  protected:
+  static const std::string eval_type;
   Teuchos::RCP<Model_type> model_;
   std::string name_;
 
@@ -197,6 +198,11 @@ EvaluatorModelCV<Model, Device_type>::EvaluatePartialDerivative_(
     model_->freeViews();
   }
 }
+
+
+template <template <class, class> class Model, class Device_type>
+const std::string EvaluatorModelCV<Model, Device_type>::eval_type =
+  EvaluatorModelCV<Model, Device_type>::Model_type::eval_type;
 
 } // namespace Amanzi
 

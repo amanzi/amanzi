@@ -62,7 +62,7 @@ EvaluatorSecondaryMonotype<double>::UpdateDerivative_(State& S,
       EvaluatePartialDerivative_(S, wrt_key, wrt_tag, tmp);
       for (int i = 0; i != my_keys_.size(); ++i) (*results[i]) += tmp_data[i];
 
-    } else if (S.GetEvaluator(dep.first, dep.second).IsDependency(S, wrt_key, wrt_tag)) {
+    } else if (S.GetEvaluator(dep.first, dep.second).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
       // partial F / partial dep * ddep/dx
       // note this has already been Updated in the public version of this
       // function

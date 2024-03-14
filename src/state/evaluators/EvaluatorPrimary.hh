@@ -128,6 +128,8 @@ class EvaluatorPrimary : public EvaluatorPrimary_ {
 
   virtual void EnsureCompatibility(State& S) override final
   {
+    S.CheckIsDebugEval(my_key_, my_tag_, "ensure compatibilitied");
+
     S.Require<Data_t, DataFactory_t>(my_key_, my_tag_, my_key_);
     if (S.HasDerivativeSet(my_key_, my_tag_)) {
       for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {

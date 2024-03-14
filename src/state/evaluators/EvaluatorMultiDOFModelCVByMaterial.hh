@@ -49,7 +49,7 @@ class EvaluatorMultiDOFModelCVByMaterial
       S.Require<CompositeVector, CompositeVectorSpace>(dep.first, dep.second)
         .SetMesh(S.GetMesh(Keys::getDomain(dep.first)))
         ->SetGhosted()
-        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+        ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     }
   }
 
