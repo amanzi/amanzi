@@ -118,8 +118,6 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual void ComputeExternalForcingOnCells(std::vector<double> &forcing);
 
-  virtual void CopyPrimaryFields(StateArchive & archive);
-
   // Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
 

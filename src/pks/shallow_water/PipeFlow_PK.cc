@@ -55,7 +55,7 @@ void PipeFlow_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-      AddDefaultPrimaryEvaluator_(wetted_angle_key_);
+      AddDefaultPrimaryEvaluator(S_, wetted_angle_key_);
   }
 
   // -- pipe diameter
@@ -170,9 +170,8 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
   if (std::fabs(htc - Bc) >= 1.e-15) { //cell is not dry
 
-     int orientation;
-     AmanziMesh::Entity_ID_List cfaces;
-     mesh_->cell_get_faces(c, &cfaces);
+     int dir; 
+     auto cfaces = mesh_->getCellFaces(c);
      double vol = mesh_->getCellVolume(c);
      int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED); 
 
@@ -186,13 +185,12 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
      for (int n = 0; n < cfaces.size(); ++n) {
         int f = cfaces[n];
-        AmanziGeometry::Point normal = mesh_->face_normal(f, false, c, &orientation);
+        AmanziGeometry::Point normal = mesh_->getFaceNormal(f, c, &dir);
         ProjectNormalOntoMeshDirection(c, normal);
 
         if (normal[0] > 1.e-08){ //this identifies the j+1/2 face
 
-           AmanziMesh::Entity_ID_List cells;
-           mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+           auto cells = mesh_->getFaceCells(f);
            int c1 = cells[0];
            int c2 = (cells.size() == 2) ? cells[1] : -1;
            if (c1 > ncells_owned && c2 == -1) continue;
@@ -205,7 +203,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
            UL[0] = V_rec[0]; //wetted area
            UL[1] = V_rec[1]; //wetted angle
 
-           FaceAreaL = mesh_->face_area(f);
+           FaceAreaL = mesh_->getFaceArea(f);
            denomL = TotalDepthEdgeValue(c1, f, htc, Bc, Bmax, B_n) - BathymetryEdgeValue(f, B_n);
 
         }
@@ -214,8 +212,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
            BGrad -= BathymetryEdgeValue(f, B_n); //B_(j+1/2) - //B_(j-1/2)
 
-           AmanziMesh::Entity_ID_List cells;
-           mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+           auto cells = mesh_->getFaceCells(f);
            int c1 = cells[0];
            int c2 = (cells.size() == 2) ? cells[1] : -1;
            if (c1 > ncells_owned && c2 == -1) continue;
@@ -247,7 +244,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
            }
 
-           FaceAreaR = mesh_->face_area(f);
+           FaceAreaR = mesh_->getFaceArea(f);
 
         }
 
@@ -291,8 +288,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
   if (std::fabs(htc - Bc) >= 1.e-15) { //cell is not dry
 
-     AmanziMesh::Entity_ID_List cfaces;
-     mesh_->cell_get_faces(c, &cfaces);
+     auto cfaces = mesh_->getCellFaces(c);
      double vol = mesh_->getCellVolume(c); 
      int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
@@ -304,7 +300,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
      double tmp = -1.0e+10;
      int indexToSave = 0;
      for (int n = 0; n < cfaces.size(); ++n) {
-        const auto& xf = mesh_->face_centroid(cfaces[n]);
+        const auto& xf = mesh_->getFaceCentroid(cfaces[n]);
         if(xf[0] >= tmp) {
             tmp=xf[0];
             indexToSave=n;
@@ -315,7 +311,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
      tmp = 1.e+10;
      indexToSave = 0;
      for (int n = 0; n < cfaces.size(); ++n) {
-        const auto& xf = mesh_->face_centroid(cfaces[n]);
+        const auto& xf = mesh_->getFaceCentroid(cfaces[n]);
         if(xf[0] <= tmp) {
             tmp=xf[0];
             indexToSave=n;
@@ -326,7 +322,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
      tmp = -1.0e+10;
      indexToSave = 0;
      for (int n = 0; n < cfaces.size(); ++n) {
-        const auto& xf = mesh_->face_centroid(cfaces[n]);
+        const auto& xf = mesh_->getFaceCentroid(cfaces[n]);
         if(xf[1] >= tmp) {
             tmp=xf[1];
             indexToSave=n;
@@ -337,7 +333,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
      tmp = 1.e+10;
      indexToSave = 0;
      for (int n = 0; n < cfaces.size(); ++n) {
-        const auto& xf = mesh_->face_centroid(cfaces[n]);
+        const auto& xf = mesh_->getFaceCentroid(cfaces[n]);
         if(xf[1] <= tmp) {
             tmp=xf[1];
             indexToSave=n;
@@ -353,9 +349,8 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
      int c1, c2;
      for (int n = 0; n < cfaces.size(); ++n) {
         int f = cfaces[n];
-        const auto& xf = mesh_->face_centroid(f);
-        AmanziMesh::Entity_ID_List cells;
-        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        const auto& xf = mesh_->getFaceCentroid(f);
+        auto cells = mesh_->getFaceCells(f);
         c1 = cells[0];
         c2 = (cells.size() == 2) ? cells[1] : -1;
         if (c1 > ncells_owned && c2 == -1) continue;
@@ -410,9 +405,8 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
      for (int n = 0; n < cfaces.size(); ++n) {
         int f = cfaces[n];
-        const auto& xf = mesh_->face_centroid(f);
-        AmanziMesh::Entity_ID_List cells;
-        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        const auto& xf = mesh_->getFaceCentroid(f);
+        auto cells = mesh_->getFaceCells(f);
         c1 = cells[0];
         c2 = (cells.size() == 2) ? cells[1] : -1;
         if (c1 > ncells_owned && c2 == -1) continue;
@@ -479,20 +473,19 @@ double PipeFlow_PK::get_dt()
   const auto& vel_c = *S_->Get<CV_t>(velocity_key_).ViewComponent("cell", true);
 
   int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED); 
-  AmanziMesh::Entity_ID_List cfaces;
 
   for (int cell = 0; cell < model_cells_owned_.size(); cell++) {
     int c = model_cells_owned_[cell];
-    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
-    mesh_->cell_get_faces(c, &cfaces);
+    auto cfaces = mesh_->getCellFaces(c);
 
     for (int n = 0; n < cfaces.size(); ++n) {
       int f = cfaces[n];
       bool skipFace = false;
-      double farea = mesh_->face_area(f);
-      const auto& xf = mesh_->face_centroid(f);
-      AmanziGeometry::Point normal = mesh_->face_normal(f, false, c, &dir);
+      double farea = mesh_->getFaceArea(f);
+      const auto& xf = mesh_->getFaceCentroid(f);;
+      AmanziGeometry::Point normal = mesh_->getFaceNormal(f, c, &dir);
       normal /= farea;
       ProjectNormalOntoMeshDirection(c, normal);
       SkipFace(normal, skipFace);
@@ -518,15 +511,15 @@ double PipeFlow_PK::get_dt()
 
   for (int cell = 0; cell < junction_cells_owned_.size(); cell++) {
     int c = model_cells_owned_[cell];
-    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
 
-    mesh_->cell_get_faces(c, &cfaces);
+    auto cfaces = mesh_->getCellFaces(c);
 
     for (int n = 0; n < cfaces.size(); ++n) {
       int f = cfaces[n];
-      double farea = mesh_->face_area(f);
-      const auto& xf = mesh_->face_centroid(f);
-      AmanziGeometry::Point normal = mesh_->face_normal(f, false, c, &dir);
+      double farea = mesh_->getFaceArea(f);
+      const auto& xf = mesh_->getFaceCentroid(f);
+      AmanziGeometry::Point normal = mesh_->getFaceNormal(f, c, &dir);
       normal /= farea;
 
       h = h_c[0][c];
@@ -550,7 +543,7 @@ double PipeFlow_PK::get_dt()
   if (dt >= d_min * 1.e8) { dt = d_min * dt_dry; }
 
   double dt_min;
-  mesh_->get_comm()->MinAll(&dt, &dt_min, 1);
+  mesh_->getComm()->MinAll(&dt, &dt_min, 1);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -961,20 +954,19 @@ void PipeFlow_PK::SkipFace(AmanziGeometry::Point normal, bool &skipFace)
 void PipeFlow_PK::GetDx(const int &cell, double &dx)
 {
   dx = 0.0;
-  AmanziMesh::Entity_ID_List cell_faces;
-  mesh_->cell_get_faces(cell, &cell_faces);
+  auto cfaces = mesh_->getCellFaces(cell);
   AmanziGeometry::Point x1;
   AmanziGeometry::Point x2;
-  for (int n = 0; n < cell_faces.size(); ++n) {
-     int f = cell_faces[n];
-     int orient;
-     AmanziGeometry::Point f_normal = mesh_->face_normal(f, false, cell, &orient);
+  for (int n = 0; n < cfaces.size(); ++n) {
+     int f = cfaces[n];
+     int dir;
+     AmanziGeometry::Point f_normal = mesh_->getFaceNormal(f, cell, &dir);
      ProjectNormalOntoMeshDirection(cell, f_normal);
      if (f_normal[0] > 1.e-08){
-        x1 = mesh_->face_centroid(f);
+        x1 = mesh_->getFaceCentroid(f);
      }
      else if (f_normal[0] < -1.e-08){
-        x2 = mesh_->face_centroid(f);
+        x2 = mesh_->getFaceCentroid(f);;
      }
   }
   for (int iSize =0; iSize < x1.dim(); iSize++){
@@ -998,16 +990,6 @@ void PipeFlow_PK::ComputeExternalForcingOnCells(std::vector<double> &forcing){
          }
      }
 
-}
-
-//--------------------------------------------------------------
-// Copy primary fields
-//--------------------------------------------------------------
-void PipeFlow_PK::CopyPrimaryFields( StateArchive & archive ){
-
-  archive.Add({ primary_variable_key_ }, { discharge_key_ },
-                 { primary_variable_key_, velocity_key_ },
-                 Tags::DEFAULT, "pipe_flow");
 }
 
 //--------------------------------------------------------------

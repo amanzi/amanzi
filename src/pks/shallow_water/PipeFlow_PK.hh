@@ -80,8 +80,6 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual void ComputeCellArrays() override;
 
-  virtual void CopyPrimaryFields(StateArchive & archive) override;
-
   void ProjectNormalOntoMeshDirection(int c, AmanziGeometry::Point &normal);
 
   bool IsJunction(const int & cell);

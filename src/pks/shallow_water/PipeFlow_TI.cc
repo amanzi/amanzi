@@ -124,11 +124,9 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
           for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
              int f = it->first;
              bc_model_vector[f] = Operators::OPERATOR_BC_DIRICHLET; 
-             AmanziMesh::Entity_ID_List nodes;
-             AmanziMesh::Entity_ID_List cells;
-             mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+             auto cells = mesh_->getFaceCells(f);
+             auto nodes = mesh_->getFaceNodes(f);
              int cell = (cells[0] == -1) ? cells[1] : cells[0];
-             mesh_->face_get_nodes(f, &nodes);
              int n0 = nodes[0], n1 = nodes[1];
              bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
              bc_value_qx[f] = bc_value_h[f] * it->second[0];
@@ -147,11 +145,9 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
           bc_value_qx[f] = it->second[0];
           bc_value_qy[f] = it->second[1];
           if (primary_variable_Dirichlet){
-             AmanziMesh::Entity_ID_List nodes;
-             AmanziMesh::Entity_ID_List cells;
-             mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+             auto cells = mesh_->getFaceCells(f);
+             auto nodes = mesh_->getFaceNodes(f);
              int cell = (cells[0] == -1) ? cells[1] : cells[0];
-             mesh_->face_get_nodes(f, &nodes);
              int n0 = nodes[0], n1 = nodes[1];
              bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
              bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
@@ -170,11 +166,9 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
           bc_value_qx[f] = it->second[0];
           bc_value_qy[f] = it->second[1];
           if (primary_variable_Dirichlet){
-             AmanziMesh::Entity_ID_List nodes;
-             AmanziMesh::Entity_ID_List cells;
-             mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+             auto cells = mesh_->getFaceCells(f);
+             auto nodes = mesh_->getFaceNodes(f);
              int cell = (cells[0] == -1) ? cells[1] : cells[0];
-             mesh_->face_get_nodes(f, &nodes);
              int n0 = nodes[0], n1 = nodes[1];
              bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
              bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
@@ -199,8 +193,7 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
 
   for (int c = 0; c < ncells_wghost; ++c ) {
-     Amanzi::AmanziMesh::Entity_ID_List cnodes, cfaces;
-     mesh_->cell_get_nodes(c, &cnodes);
+     auto cnodes = mesh_->getCellNodes(c);
     
     // calculate maximum bathymetry value on cell nodes
     double Bmax = 0.0;
@@ -210,12 +203,11 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     
     // check if cell is fully flooded and proceed with limiting
     if ((ht_c[0][c] > Bmax) && (ht_c[0][c] - B_c[0][c] > 0.0)) {
-      Amanzi::AmanziMesh::Entity_ID_List cfaces;
-      mesh_->cell_get_faces(c, &cfaces);
+      auto cfaces = mesh_->getCellFaces(c);
 
       double alpha = 1.0; // limiter value
       for (int f = 0; f < cfaces.size(); ++f) {
-        const auto& xf = mesh_->face_centroid(cfaces[f]);
+        const auto& xf = mesh_->getFaceCentroid(cfaces[f]);
         double ht_rec = total_depth_grad_->getValue(c, xf);
         if (ht_rec - BathymetryEdgeValue(cfaces[f], B_n) < 0.0) {
           alpha = std::min(alpha, cfl_positivity_ * (BathymetryEdgeValue(cfaces[f], B_n) - ht_c[0][c]) / (ht_rec - ht_c[0][c]));
@@ -260,7 +252,6 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   int dir, c1, c2, ierr;
   double h, qx, qy, factor, dx;
-  AmanziMesh::Entity_ID_List cells;
 
   std::vector<double> FNum_rot(3,0.0);        // fluxes
   std::vector<double> FNum_rotTmp(3,0.0);        // fluxes
@@ -273,19 +264,17 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
 
   for (int f = 0; f < nfaces_wghost; ++f) {
-    double farea = mesh_->face_area(f);
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    double farea = mesh_->getFaceArea(f);
+    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
     bool c1IsJunction = false;
     bool c2IsJunction = false;
     bool skipFace = false;
 
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    auto cells = mesh_->getFaceCells(f);
     c1 = cells[0];
     c2 = (cells.size() == 2) ? cells[1] : -1;
     if (c1 > ncells_owned && c2 == -1) continue;
     if (c2 > ncells_owned) std::swap(c1, c2);
-    AmanziMesh::Entity_ID_List cellsAdj;
-    discharge_x_grad_->GetCellFaceAdjCellsManifold_(c1, AmanziMesh::Parallel_type::ALL, cellsAdj);
     int cDiamJnct = c1;
 
     if(IsJunction(c1)){
@@ -308,9 +297,9 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        }
     }
 
-    AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
-    AmanziGeometry::Point normalNotRotated = mesh_->face_normal(f, false, c1, &dir);
-    AmanziGeometry::Point normalRotated = mesh_->face_normal(f, false, c1, &dir);
+    AmanziGeometry::Point normal = mesh_->getFaceNormal(f, c1, &dir);
+    AmanziGeometry::Point normalNotRotated = mesh_->getFaceNormal(f, c1, &dir);
+    AmanziGeometry::Point normalRotated = mesh_->getFaceNormal(f, c1, &dir);
     normal /= farea;
     normalNotRotated /= farea;
     normalRotated /= farea;
@@ -531,7 +520,7 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // sync errors across processors, otherwise any MPI call
   // will lead to an error.
   int ierr_tmp(ierr);
-  mesh_->get_comm()->MinAll(&ierr_tmp, &ierr, 1);
+  mesh_->getComm()->MinAll(&ierr_tmp, &ierr, 1);
   if (ierr < 0) {
     Errors::Message msg;
     msg << "Negative primary variable.\n";

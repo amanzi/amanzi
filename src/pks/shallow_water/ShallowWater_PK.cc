@@ -389,7 +389,7 @@ ShallowWater_PK::Initialize()
   S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
 
   InitializeCVField(S_, *vo_, riemann_flux_key_, Tags::DEFAULT, passwd_, 0.0);
-  InitializeFieldFromField_(prev_primary_variable_key_, primary_variable_key_, false);
+  InitializeCVFieldFromCVField(S_, *vo_, prev_primary_variable_key_, primary_variable_key_, passwd_);
 
   // soln_ is the TreeVector of conservative variables [h hu hv]
   Teuchos::RCP<TreeVector> tmp_h = Teuchos::rcp(new TreeVector());
@@ -452,8 +452,9 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
 
   // create copies of primary fields
+  std::vector<std::string> fields({ primary_variable_key_, velocity_key_, discharge_key_});
   StateArchive archive(S_, vo_);
-  CopyPrimaryFields(archive);
+  archive.Add(fields, Tags::DEFAULT);
 
   Epetra_MultiVector& h_old = *soln_->SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_old = *soln_->SubVector(1)->Data()->ViewComponent("cell");
@@ -758,14 +759,13 @@ ShallowWater_PK::get_dt()
       double farea = mesh_->getFaceArea(f);
       const auto& xf = mesh_->getFaceCentroid(f);
       const auto& normal = mesh_->getFaceNormal(f);
-      normal /= farea;
 
       h = h_c[0][c];
       vx = vel_c[0][c];
       vy = vel_c[1][c];
 
       // computing local (cell, face) time step using Kurganov's estimate d / (2a)
-      vn = (vx * normal[0] + vy * normal[1]);
+      vn = (vx * normal[0] + vy * normal[1]) / farea;
       d = norm(xc - xf);
       d_min = std::min(d_min, d);
 
@@ -925,7 +925,7 @@ void ShallowWater_PK::ComputeExternalForcingOnCells(std::vector<double> &forcing
      for (int i = 0; i < srcs_.size(); ++i) {
          for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
              int c = it->first;
-             forcing[c] = it->second[0] / mesh_->cell_volume(c); // [m/s] for SW
+             forcing[c] = it->second[0] / mesh_->getCellVolume(c); // [m/s] for SW
          }
      }
 
@@ -943,17 +943,6 @@ double ShallowWater_PK::ComputeFieldOnEdge(int c, int e, double htc, double Bc, 
 
   return V_rec;
 
-}
-
-
-//--------------------------------------------------------------
-// Copy primary fields
-//--------------------------------------------------------------
-void ShallowWater_PK::CopyPrimaryFields( StateArchive & archive ){
-
-  archive.Add({ primary_variable_key_ }, { discharge_key_ },
-                 { primary_variable_key_, velocity_key_ },
-                 Tags::DEFAULT, "shallow_water");
 }
 
 //--------------------------------------------------------------

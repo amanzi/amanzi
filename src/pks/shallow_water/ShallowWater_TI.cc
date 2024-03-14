@@ -111,8 +111,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
           for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
              int f = it->first;
              bc_model_vector[f] = Operators::OPERATOR_BC_DIRICHLET; 
-             AmanziMesh::Entity_ID_List nodes;
-             mesh_->face_get_nodes(f, &nodes);
+             auto nodes = mesh_->getFaceNodes(f);
              int n0 = nodes[0], n1 = nodes[1];
              bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
              bc_value_qx[f] = bc_value_h[f] * it->second[0];
@@ -130,8 +129,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
           bc_value_qx[f] = it->second[0];
           bc_value_qy[f] = it->second[1];
           if (primary_variable_Dirichlet){
-             AmanziMesh::Entity_ID_List nodes;
-             mesh_->face_get_nodes(f, &nodes);
+             auto nodes = mesh_->getFaceNodes(f);
              int n0 = nodes[0], n1 = nodes[1];
              bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
              bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
@@ -149,8 +147,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
           bc_value_qx[f] = it->second[0];
           bc_value_qy[f] = it->second[1];
           if (primary_variable_Dirichlet){
-             AmanziMesh::Entity_ID_List nodes;
-             mesh_->face_get_nodes(f, &nodes);
+             auto nodes = mesh_->getFaceNodes(f);
              int n0 = nodes[0], n1 = nodes[1];
              bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
              bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
