@@ -110,20 +110,6 @@ ReconstructionCellLinear::Compute(const AmanziMesh::cEntity_ID_View& ids,
 
 
 /* ******************************************************************
-* Returns the neighbors living in the same manifold
-****************************************************************** */
- AmanziMesh::Entity_ID_List ReconstructionCellLinear::GetCellFaceAdjCellsManifold_(
-                                 AmanziMesh::Entity_ID c,
-                                 AmanziMesh::Parallel_type ptype,
-                                 std::vector<AmanziMesh::Entity_ID>& cells)
-{
-
-   CellFaceAdjCellsManifold_(c, ptype, cells);   
-   return cells;
-}
-
-
-/* ******************************************************************
 * Assemble a SPD least square matrix
 ****************************************************************** */
 void

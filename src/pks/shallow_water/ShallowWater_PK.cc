@@ -114,7 +114,7 @@ ShallowWater_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    AddDefaultPrimaryEvaluator_(primary_variable_key_);
+    AddDefaultPrimaryEvaluator(S_, primary_variable_key_);
   }
 
   // -- velocity
@@ -452,7 +452,6 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
 
   // create copies of primary fields
-  std::vector<std::string> fields({ ponded_depth_key_, velocity_key_ });
   StateArchive archive(S_, vo_);
   CopyPrimaryFields(archive);
 
@@ -533,8 +532,8 @@ void
 ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED); 
+  int nfaces_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED); 
 
   auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   auto& h_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
@@ -807,8 +806,7 @@ ShallowWater_PK::get_dt()
 void
 ShallowWater_PK::VerifySolution_(TreeVector& u)
 {
-  int ncells_owned =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   const auto& h_c = *u.SubVector(0)->Data()->ViewComponent("cell");
 
   int ierr(0);
@@ -883,7 +881,7 @@ void ShallowWater_PK::UpdateSecondaryFields(){
    auto& h_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
    auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
    auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+   int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED); 
 
    for (int c = 0; c < ncells_owned; ++c) {
        ht_c[0][c] = ComputeTotalDepth(h_c[0][c], B_c[0][c]);
@@ -896,7 +894,7 @@ void ShallowWater_PK::UpdateSecondaryFields(){
 //--------------------------------------------------------------
 void ShallowWater_PK::InitializeFields(){
 
-     int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+     int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED); 
      auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
      if (!S_->GetRecord(primary_variable_key_, Tags::DEFAULT).initialized()) {

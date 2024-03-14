@@ -29,10 +29,14 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   auto& f_temp0 = *fun.SubVector(0)->Data()->ViewComponent("cell");
   auto& f_temp1 = *fun.SubVector(1)->Data()->ViewComponent("cell");
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nnodes_wghost =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   // distribute data to ghost cells
   A.SubVector(0)->Data()->ScatterMasterToGhosted("cell");
@@ -485,7 +489,7 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
  riemann_f[0][f] = FNum_rot[0] * farea * dir;
 
  // add fluxes to temporary fields 
- double vol = mesh_->cell_volume(c1);
+ double vol = mesh_->getCellVolume(c1); 
  factor = farea / vol;
  h_c_tmp[0][c1] -= h * factor;
  q_c_tmp[0][c1] -= qx * factor;
@@ -494,7 +498,7 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
  if (c2 != -1) {
 
    if(!c1IsJunction && !c2IsJunction){  
-      vol = mesh_->cell_volume(c2);
+      vol = mesh_->getCellVolume(c2); 
       factor = farea / vol;
       h_c_tmp[0][c2] += h * factor;
       q_c_tmp[0][c2] += qx * factor;
@@ -511,7 +515,7 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        qx = FNum_rotTmp[1] * normalRotated[0] - FNum_rotTmp[2] * normalRotated[1];
        qy = FNum_rotTmp[1] * normalRotated[1] + FNum_rotTmp[2] * normalRotated[0];
      }
-     vol = mesh_->cell_volume(c2);
+     vol = mesh_->getCellVolume(c2); 
      factor = farea / vol;
      h_c_tmp[0][c2] += h * factor;
      q_c_tmp[0][c2] += qx * factor;

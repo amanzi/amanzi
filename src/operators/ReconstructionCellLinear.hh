@@ -85,10 +85,6 @@ class ReconstructionCellLinear : public Reconstruction {
                int component,
                const Teuchos::RCP<const BCs>& bc = Teuchos::null);
 
-  AmanziMesh::Entity_ID_List GetCellFaceAdjCellsManifold_(AmanziMesh::Entity_ID c,
-                                 AmanziMesh::Parallel_type ptype,
-                                 std::vector<AmanziMesh::Entity_ID>& cells);
-
  private:
   void PopulateLeastSquareSystem_(AmanziGeometry::Point& centroid,
                                   double field_value,

@@ -173,8 +173,8 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
      int orientation;
      AmanziMesh::Entity_ID_List cfaces;
      mesh_->cell_get_faces(c, &cfaces);
-     double vol = mesh_->cell_volume(c);
-     int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+     double vol = mesh_->getCellVolume(c);
+     int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED); 
 
      double BGrad = 0.0;
      double OtherTermLeft = 0.0;
@@ -293,8 +293,8 @@ PipeFlow_PK::NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, 
 
      AmanziMesh::Entity_ID_List cfaces;
      mesh_->cell_get_faces(c, &cfaces);
-     double vol = mesh_->cell_volume(c);
-     int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+     double vol = mesh_->getCellVolume(c); 
+     int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
      std::vector<int> xMaxFace(cfaces.size(),0);
      std::vector<int> xMinFace(cfaces.size(),0);
@@ -478,7 +478,7 @@ double PipeFlow_PK::get_dt()
   const auto& h_c = *S_->Get<CV_t>(primary_variable_key_).ViewComponent("cell", true);
   const auto& vel_c = *S_->Get<CV_t>(velocity_key_).ViewComponent("cell", true);
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED); 
   AmanziMesh::Entity_ID_List cfaces;
 
   for (int cell = 0; cell < model_cells_owned_.size(); cell++) {
@@ -820,7 +820,7 @@ void PipeFlow_PK::InitializeFields(){
 
       S_->GetEvaluator(diameter_key_).Update(*S_, diameter_key_);
 
-     int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+     int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED); 
      auto& PrimaryVar_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
      auto& WaterDepth_c = *S_->GetW<CV_t>(water_depth_key_, Tags::DEFAULT, water_depth_key_).ViewComponent("cell");
@@ -871,8 +871,8 @@ void PipeFlow_PK::InitializeFields(){
 void PipeFlow_PK::ComputeCellArrays(){
 
     if(!cellArraysInitDone_){
-       int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-       int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+       int ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED); 
+       int ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL); 
        auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, direction_key_).ViewComponent("cell", true);
        auto& PrimaryVar_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
        auto& WettedAngle_c = *S_->GetW<CV_t>(wetted_angle_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
