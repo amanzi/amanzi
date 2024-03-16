@@ -42,10 +42,10 @@ class PK_DomainFunctionSubgrid : public FunctionBase {
             AmanziMesh::Entity_kind kind);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "hyporheic exchange"; }
+  virtual void Compute(double t0, double t1) override;
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::SUBGRID; }
 
-  virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
+  virtual void set_state(const Teuchos::RCP<State>& S) final { S_ = S; }
 
  protected:
   using FunctionBase::value_;

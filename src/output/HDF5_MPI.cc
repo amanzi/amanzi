@@ -754,7 +754,7 @@ HDF5_MPI::close_h5file()
 void
 HDF5_MPI::createTimestep(double time, int iteration, const std::string& tag)
 {
-  std::string tag_tmp = (iteration == Iteration() && tag == "") ? "ic" : "";
+  std::string tag_tmp = (iteration == Iteration() && tag == "" && iteration > 0) ? "ic" : "";
   setIteration(iteration);
   setTime(time);
   set_tag(tag_tmp);

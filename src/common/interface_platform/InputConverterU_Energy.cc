@@ -55,7 +55,7 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
 
   // expert parameters
-  bool include_work(true), include_potential(false);
+  bool include_potential(false);
   std::string pc_method("linearized_operator");
   std::string root("unstructured_controls, unstr_energy_controls");
 

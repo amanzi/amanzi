@@ -300,6 +300,13 @@ readKey(Teuchos::ParameterList& list,
         const Key& basename,
         const Key& default_name = "");
 
+KeyTag
+readKeyTag(Teuchos::ParameterList& list,
+           const Key& domain,
+           const Key& basename,
+           const Key& default_name = "",
+           const Tag& tag_default = Tag(""));
+
 // Convenience function for requesting a list of names of Keys from an input
 // spec.
 Teuchos::Array<Key>

@@ -240,9 +240,7 @@ MechanicsElasticity_PK::AddPressureGradient_(CompositeVector& rhs)
 {
   int d = mesh_->getSpaceDimension();
   const auto& p = S_->Get<CV_t>("pressure", Tags::DEFAULT);
-
-  auto eval = Teuchos::rcp_dynamic_cast<Flow::PorosityEvaluator>(
-    S_->GetEvaluatorPtr("porosity", Tags::DEFAULT));
+  const auto& b_c = *S_->Get<CV_t>("biot_coefficient", Tags::DEFAULT).ViewComponent("cell");
 
   if (p.HasComponent("face")) {
     const auto& p_f = *p.ViewComponent("face", true);
@@ -267,14 +265,12 @@ MechanicsElasticity_PK::AddPressureGradient_(CompositeVector& rhs)
       }
       grad /= vol;
 
-      double b = eval->getBiotCoefficient(c);
-
       // pressure gradient
       auto nodes = mesh_->getCellNodes(c);
       int nnodes = nodes.size();
 
       for (int i = 0; i < d; ++i) {
-        double add = b * grad[i] * vol / nnodes;
+        double add = b_c[0][c] * grad[i] * vol / nnodes;
         for (int n = 0; n < nnodes; ++n) rhs_v[i][nodes[n]] -= add;
       }
     }

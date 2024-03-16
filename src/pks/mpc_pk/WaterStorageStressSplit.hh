@@ -54,7 +54,7 @@ class WaterStorageStressSplit
 
  private:
   Key saturation_key_, porosity_key_, mol_density_liquid_key_, pressure_key_;
-  Key young_modulus_key_, poisson_ratio_key_;
+  Key young_modulus_key_, poisson_ratio_key_, biot_key_;
 
  private:
   static Utils::RegisteredFactory<Evaluator, WaterStorageStressSplit> reg_;

@@ -34,6 +34,7 @@
 #include "PDE_DiffusionFactory.hh"
 #include "Point.hh"
 #include "StateArchive.hh"
+#include "StateHelpers.hh"
 #include "VolumetricFlowRateEvaluator.hh"
 #include "UpwindFactory.hh"
 #include "XMLParameterListWriter.hh"
@@ -125,14 +126,7 @@ Richards_PK::Setup()
   mesh_ = S_->GetMesh(domain_);
   dim = mesh_->getSpaceDimension();
 
-  // generate keys here to be available for setup of the base class
-  pressure_key_ = Keys::getKey(domain_, "pressure");
-  hydraulic_head_key_ = Keys::getKey(domain_, "hydraulic_head");
-  darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity");
-
-  water_storage_key_ = Keys::getKey(domain_, "water_storage");
-  prev_water_storage_key_ = Keys::getKey(domain_, "prev_water_storage");
-
+  // generate keys used by Richards PK only
   pressure_msp_key_ = Keys::getKey(domain_, "pressure_msp");
   porosity_msp_key_ = Keys::getKey(domain_, "porosity_msp");
   water_storage_msp_key_ = Keys::getKey(domain_, "water_storage_msp");
@@ -148,8 +142,8 @@ Richards_PK::Setup()
   vol_strain_key_ = Keys::getKey(domain_, "volumetric_strain");
 
   // set up the base class
-  key_ = pressure_key_;
   Flow_PK::Setup();
+  key_ = pressure_key_;
 
   // Our decision can be affected by the list of models
   auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
@@ -192,15 +186,9 @@ Richards_PK::Setup()
   // Require conserved quantity.
   // -- water storage
   if (!S_->HasRecord(water_storage_key_)) {
-    S_->Require<CV_t, CVS_t>(water_storage_key_, Tags::DEFAULT, water_storage_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    auto elist = RequireFieldForEvaluator(*S_, water_storage_key_);
 
-    Teuchos::ParameterList elist(water_storage_key_);
-    elist.set<std::string>("water storage key", water_storage_key_)
-      .set<std::string>("tag", "")
-      .set<std::string>("pressure key", pressure_key_)
+    elist.set<std::string>("pressure key", pressure_key_)
       .set<std::string>("saturation key", saturation_liquid_key_)
       .set<std::string>("porosity key", porosity_key_)
       .set<bool>("water vapor", vapor_diffusion_);
@@ -354,15 +342,8 @@ Richards_PK::Setup()
   wrm_ = CreateWRMPartition(mesh_, wrm_list);
 
   if (!S_->HasRecord(saturation_liquid_key_)) {
-    S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-
-    Teuchos::ParameterList elist(saturation_liquid_key_);
-    elist.set<std::string>("saturation key", saturation_liquid_key_)
-      .set<std::string>("pressure key", pressure_key_)
-      .set<std::string>("tag", "");
+    auto elist = RequireFieldForEvaluator(*S_, saturation_liquid_key_);
+    elist.set<std::string>("pressure key", pressure_key_);
 
     auto eval = Teuchos::rcp(new WRMEvaluator(elist, wrm_));
     S_->SetEvaluator(saturation_liquid_key_, Tags::DEFAULT, eval);

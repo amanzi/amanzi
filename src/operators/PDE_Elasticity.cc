@@ -341,7 +341,7 @@ PDE_Elasticity::ApplyBCs_ShearStress_(const BCs& bc,
     for (int n = 0; n != nfaces; ++n) {
       int f = faces[n];
 
-      if (bc_model[f] == OPERATOR_BC_SHEAR_STRESS) {
+      if (bc_model[f] == OPERATOR_BC_SHEAR_STRESS && primary) {
         double area = mesh_->getFaceArea(f);
         const auto& tau = mesh_->getEdgeVector(f);
         auto lnodes = mesh_->getEdgeNodes(f);
@@ -386,7 +386,7 @@ PDE_Elasticity::ApplyBCs_Traction_(const BCs& bc, bool primary, bool eliminate, 
     for (int n = 0; n != nfaces; ++n) {
       int f = faces[n];
 
-      if (bc_model[f] == OPERATOR_BC_NORMAL_STRESS) {
+      if (bc_model[f] == OPERATOR_BC_NORMAL_STRESS && primary) {
         double area = mesh_->getFaceArea(f);
         auto lnodes = mesh_->getFaceNodes(f);
         int nlnodes = lnodes.size();

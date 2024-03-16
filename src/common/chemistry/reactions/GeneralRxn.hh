@@ -16,6 +16,11 @@ The `"general kinetics`" section describes kinetic (slow) reactions in the form
   3 A(aq) + 2 B(aq) <-> C(aq) + 3 D(aq) + 4 E(aq)
 
 where a number (stoichiometic coefficient) is followed by a species name.
+Implementation of the generalized kinetic formulation is based of publication
+"Multicomponent reactive transport modeling in variably saturated porous media 
+using a generalized formulation for kinetically controlled reactions" by K. Ulrich 
+Mayer (Water Res. Research, Vol.38:9, 1174, doi:10.1029/2001WR000862, 2002).
+
 The list of parameters for each reaction includes
 
 * `"reactants`" [string] is the left-hand side of the above equation.

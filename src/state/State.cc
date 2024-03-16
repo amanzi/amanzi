@@ -860,7 +860,7 @@ State::GetEvaluator(const Key& key, const Tag& tag) const
 {
   try {
     return *evaluators_.at(key).at(tag);
-  } catch (std::out_of_range) {
+  } catch (const std::out_of_range&) {
     std::stringstream ss;
     ss << "Evaluator for field \"" << key << "\" at tag \"" << tag
        << "\" does not exist in the state.";
@@ -875,7 +875,7 @@ State::GetEvaluatorPtr(const Key& key, const Tag& tag)
 {
   try {
     return evaluators_.at(key).at(tag);
-  } catch (std::out_of_range) {
+  } catch (const std::out_of_range&) {
     std::stringstream ss;
     ss << "Evaluator for field \"" << key << "\" at tag \"" << tag
        << "\" does not exist in the state.";

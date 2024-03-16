@@ -105,6 +105,7 @@ if (ENABLE_AmanziPhysicsModule)
       ShallowWaterTransport_PK.cc
       SoluteDiffusionMatrixFracture.cc
       SurfaceSubsurface_PK.cc
+      WaterStorageDarcyStressSplit.cc
       WaterStorageStressSplit.cc)
 
   set(mpc_tree_link_libs pks flow transport multiphase shallow_water time_integration data_structures state)

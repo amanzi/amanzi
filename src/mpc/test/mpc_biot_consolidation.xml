@@ -191,6 +191,19 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="biot_coefficient">
+        <ParameterList name="function">
+          <ParameterList name="EntireDomain">
+            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="permeability">
         <Parameter name="write checkpoint" type="bool" value="false"/>
         <ParameterList name="function">
@@ -315,11 +328,6 @@
         <Parameter name="error control options" type="Array(string)" value="{residual}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
-          <Parameter name="method" type="string" value="projection"/>
-          <Parameter name="inflow krel correction" type="bool" value="true"/>
-          <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
-        </ParameterList>
         <Parameter name="time integration method" type="string" value="BDF1"/>
         <ParameterList name="BDF1">
           <Parameter name="timestep controller type" type="string" value="standard"/>
@@ -453,7 +461,6 @@
             <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
-        <Parameter name="maximum number of iterations" type="int" value="200"/>
       </ParameterList>
       <ParameterList name="boundary conditions">
         <ParameterList name="pressure">
@@ -480,11 +487,6 @@
         <Parameter name="error control options" type="Array(string)" value="{displacement}"/>
         <Parameter name="linear solver" type="string" value="PCG for elasticity"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
-          <Parameter name="method" type="string" value="projection"/>
-          <Parameter name="inflow krel correction" type="bool" value="true"/>
-          <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
-        </ParameterList>
         <Parameter name="time integration method" type="string" value="BDF1"/>
         <ParameterList name="BDF1">
           <Parameter name="timestep controller type" type="string" value="standard"/>
@@ -516,7 +518,6 @@
             <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
-        <Parameter name="maximum number of iterations" type="int" value="200"/>
       </ParameterList>
       <ParameterList name="operators">
         <ParameterList name="elasticity operator">
@@ -594,18 +595,6 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="PCG with Hypre AMG">
-      <Parameter name="iterative method" type="string" value="gmres"/>
-      <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="1.0e-12"/>
-        <Parameter name="maximum number of iterations" type="int" value="20"/>
-        <Parameter name="controller training start" type="int" value="0"/>
-        <Parameter name="controller training end" type="int" value="3"/>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="low"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="GMRES with Hypre AMG">
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
@@ -636,8 +625,8 @@
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.0"/>
-        <Parameter name="smoother sweeps" type="int" value="2"/>
-        <Parameter name="cycle applications" type="int" value="2"/>
+        <Parameter name="smoother sweeps" type="int" value="1"/>
+        <Parameter name="cycle applications" type="int" value="1"/>
         <Parameter name="strong threshold" type="double" value="0.5"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>

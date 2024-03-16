@@ -1046,6 +1046,10 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, young_modulus", flag);
       if (flag) { TranslateFieldIC_(node, "young_modulus", "-", reg_str, regions, out_ic); }
 
+      // Biot coefficient
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, biot_coefficient", flag);
+      if (flag) { TranslateFieldIC_(node, "biot_coefficient", "-", reg_str, regions, out_ic); }
+
       // internal energy for liquid
       node = GetUniqueElementByTagsString_(inode, "thermal_properties, liquid_heat_capacity", flag);
       if (flag) {

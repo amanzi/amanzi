@@ -36,7 +36,9 @@
 #include "FlowDefs.hh"
 #include "ModelEvaluator.hh"
 #include "SpecificStorage.hh"
+#include "StateHelpers.hh"
 #include "VolumetricFlowRateEvaluator.hh"
+#include "WaterStorageDarcy.hh"
 #include "WRM.hh"
 
 namespace Amanzi {
@@ -104,15 +106,11 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 ****************************************************************** */
 void
 Darcy_PK::Setup()
-{ 
+{
   mesh_ = S_->GetMesh(domain_);
   dim = mesh_->getSpaceDimension();
 
-  // generate keys here to be available for setup of the base class
-  pressure_key_ = Keys::getKey(domain_, "pressure");
-  hydraulic_head_key_ = Keys::getKey(domain_, "hydraulic_head");
-  darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity");
-
+  // generate keys used by Darcy PK only
   specific_yield_key_ = Keys::getKey(domain_, "specific_yield");
   specific_storage_key_ = Keys::getKey(domain_, "specific_storage");
 
@@ -165,12 +163,39 @@ Darcy_PK::Setup()
     AddDefaultPrimaryEvaluator(S_, pressure_key_);
   }
 
-  // require additional fields for this PK
-  if (!S_->HasRecord(specific_storage_key_)) {
-    S_->Require<CV_t, CVS_t>(specific_storage_key_, Tags::DEFAULT, specific_storage_key_)
+  // require additional fields and evaluators
+  // Many fields/evaluators have a simple struncture. They are ghosted
+  //   cell-based fields. We use a helper function that reruires a field
+  //   and returns a parameter list populated with standard values.
+  // -- water storage
+  if (!S_->HasRecord(water_storage_key_)) {
+    auto elist = RequireFieldForEvaluator(*S_, water_storage_key_);
+    S_->GetRecordW(water_storage_key_, water_storage_key_).set_io_vis(false);
+
+    elist.set<std::string>("pressure key", pressure_key_)
+      .set<std::string>("specific storage key", specific_storage_key_);
+    if (flow_on_manifold_) elist.set<std::string>("aperture key", aperture_key_);
+
+    S_->RequireDerivative<CV_t, CVS_t>(
+        water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, water_storage_key_)
+      .SetGhosted();
+
+    auto eval = Teuchos::rcp(new WaterStorageDarcy(elist));
+    S_->SetEvaluator(water_storage_key_, Tags::DEFAULT, eval);
+  }
+
+  // -- water storage from the previous time step
+  if (!S_->HasRecord(prev_water_storage_key_)) {
+    S_->Require<CV_t, CVS_t>(prev_water_storage_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    S_->GetRecordW(prev_water_storage_key_, passwd_).set_io_vis(false);
+  }
+
+  // -- specific storage
+  if (!S_->HasRecord(specific_storage_key_)) {
+    RequireFieldForEvaluator(*S_, specific_storage_key_);
     S_->RequireEvaluator(specific_storage_key_, Tags::DEFAULT);
   }
 
@@ -181,11 +206,9 @@ Darcy_PK::Setup()
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
+  // -- saturation
   if (!S_->HasRecord(saturation_liquid_key_)) {
-    S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    RequireFieldForEvaluator(*S_, saturation_liquid_key_);
     S_->RequireEvaluator(saturation_liquid_key_, Tags::DEFAULT);
   }
 
@@ -196,13 +219,9 @@ Darcy_PK::Setup()
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
-  // Require additional fields and evaluators for this PK.
   // -- porosity
   if (!S_->HasRecord(porosity_key_)) {
-    S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    RequireFieldForEvaluator(*S_, porosity_key_);
     S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
@@ -225,10 +244,7 @@ Darcy_PK::Setup()
     S_->RequireEvaluator(compliance_key_, Tags::DEFAULT);
 
     if (external_aperture_) {
-      S_->Require<CV_t, CVS_t>(ref_aperture_key_, Tags::DEFAULT, ref_aperture_key_)
-        .SetMesh(mesh_)
-        ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+      RequireFieldForEvaluator(*S_, ref_aperture_key_);
       S_->GetRecordW(ref_aperture_key_, ref_aperture_key_).set_io_vis(false);
       S_->RequireEvaluator(ref_aperture_key_, Tags::DEFAULT);
 
@@ -478,6 +494,8 @@ Darcy_PK::InitializeFields_()
 
   if (flow_on_manifold_ && external_aperture_)
     InitializeCVFieldFromCVField(S_, *vo_, ref_pressure_key_, pressure_key_, passwd_);
+
+  InitializeCVFieldFromCVField(S_, *vo_, prev_water_storage_key_, water_storage_key_, passwd_);
 }
 
 
@@ -548,25 +566,26 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // refresh data
   UpdateSourceBoundaryData(t_old, t_new, *solution);
 
-  // calculate and assemble elemental stiffness matrices
-  double factor = 1.0 / g_;
-  const auto& ss = S_->Get<CV_t>(specific_storage_key_, Tags::DEFAULT);
-  CompositeVector ss_g(ss);
-  ss_g.Update(0.0, ss, factor);
+  // add accumulation term: specific storage
+  op_->RestoreCheckPoint();
 
-  factor = 1.0 / (g_ * dt_);
+  const auto& ws_prev = S_->Get<CV_t>(prev_water_storage_key_, Tags::DEFAULT);
+  S_->GetEvaluator(water_storage_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
+  const auto& dws_dp = S_->GetDerivative<CV_t>(water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
+  op_acc_->AddAccumulationRhs(dws_dp, ws_prev, 1.0 / dt_, "cell", true);
+  // op_acc_->AddAccumulationDelta(*solution, dws_dp, dws_dp, dt_, "cell");
+
+  // add accumulation term: specific yield
+  double factor = 1.0 / (g_ * dt_);
   CompositeVector sy_g(*specific_yield_copy_);
   sy_g.Scale(factor);
 
   if (flow_on_manifold_) {
     S_->GetEvaluator(aperture_key_).Update(*S_, aperture_key_);
     const auto& aperture = S_->Get<CV_t>(aperture_key_, Tags::DEFAULT);
-    ss_g.Multiply(1.0, ss_g, aperture, 0.0);
     sy_g.Multiply(1.0, sy_g, aperture, 0.0);
   }
 
-  op_->RestoreCheckPoint();
-  op_acc_->AddAccumulationDelta(*solution, ss_g, ss_g, dt_, "cell");
   op_acc_->AddAccumulationDeltaNoVolume(*solution, sy_g, "cell");
 
   // Peaceman model
@@ -575,7 +594,7 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
-  // Update fields due to fracture dynamics or other dynamics
+  // add diffusion matrices
   if (flow_on_manifold_) {
     S_->GetEvaluator(permeability_eff_key_).Update(*S_, "flow");
     op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -595,6 +614,7 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   op_->ApplyInverse(rhs, *solution);
+  pressure_eval_->SetChanged();
 
   // statistics
   num_itrs_++;
@@ -639,6 +659,9 @@ Darcy_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   ComputeMolarFlowRate_(true);
   S_->GetEvaluator(vol_flowrate_key_).Update(*S_, passwd_);
+
+  S_->GetEvaluator(water_storage_key_).Update(*S_, "flow");
+  S_->GetW<CV_t>(prev_water_storage_key_, Tags::DEFAULT, passwd_) = S_->Get<CV_t>(water_storage_key_, Tags::DEFAULT);
 
   if (coupled_to_matrix_ || flow_on_manifold_) VV_FractureConservationLaw();
 

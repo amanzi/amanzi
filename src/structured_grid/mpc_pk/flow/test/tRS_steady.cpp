@@ -82,8 +82,7 @@ MultMFT (MFTower&           mft,
   nLevs = (nLevs==-1 ? mft.NumLevels() : std::max(nLevs,mft.NumLevels()));
   nComp = (nComp==-1 ? mft.NComp() : std::max(nComp,mft.NComp()));
   for (int lev=0; lev<nLevs; ++lev) {
-    int nGrow = mft.NGrow();
-    BL_ASSERT(mft[lev].nGrow()>=nGrow);
+    BL_ASSERT(mft[lev].nGrow()>=mft.NGrow());
     mft[lev].mult(a,sComp,nComp);
   }
 }
@@ -98,8 +97,7 @@ PlusMFT (MFTower&           mft,
   nLevs = (nLevs==-1 ? mft.NumLevels() : std::max(nLevs,mft.NumLevels()));
   nComp = (nComp==-1 ? mft.NComp() : std::max(nComp,mft.NComp()));
   for (int lev=0; lev<nLevs; ++lev) {
-    int nGrow = mft.NGrow();
-    BL_ASSERT(mft[lev].nGrow()>=nGrow);
+    BL_ASSERT(mft[lev].nGrow()>=mft.NGrow());
     mft[lev].plus(a,sComp,nComp);
   }
 }

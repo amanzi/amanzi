@@ -11,7 +11,7 @@
 /*
   Flow PK
 
-  Th elinearized fracture aperture evaluator for Darcy model.
+  The linearized fracture aperture evaluator for Darcy model.
 */
 
 #ifndef AMANZI_APERTURE_EVALUATOR_DARCY_HH_

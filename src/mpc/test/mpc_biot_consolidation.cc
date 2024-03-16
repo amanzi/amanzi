@@ -108,3 +108,8 @@ TEST(MPC_DRIVER_BIOT_CONSOLIDATION)
 {
   RunTest("test/mpc_biot_consolidation.xml");
 }
+
+TEST(MPC_DRIVER_BIOT_CONSOLIDATION_DARCY)
+{
+  RunTest("test/mpc_biot_consolidation_darcy.xml");
+}

@@ -35,7 +35,7 @@
 namespace Amanzi {
 
 template <class FunctionBase>
-class PK_DomainFunctionFactory : public FunctionBase {
+class PK_DomainFunctionFactory {
  public:
   PK_DomainFunctionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                            const Teuchos::RCP<State>& S)
