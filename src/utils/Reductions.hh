@@ -12,6 +12,10 @@
 
 #pragma once
 
+#ifdef KOKKOS_ENABLE_CUDA
+#include <cuda/std/limits>
+#endif
+
 #include "Teuchos_ReductionOp.hpp"
 #include "AmanziVector.hh"
 
@@ -38,7 +42,11 @@ struct MinLoc {
   KOKKOS_INLINE_FUNCTION
   void init()
   {
+#ifdef __CUDA_ARCH__
+    val = cuda::std::numeric_limits<Scalar>::max();
+#else
     val = std::numeric_limits<Scalar>::max();
+#endif
     loc = -1;
   }
 
@@ -83,7 +91,11 @@ struct MaxLoc {
   KOKKOS_INLINE_FUNCTION
   void init()
   {
+#ifdef __CUDA_ARCH__
+    val = cuda::std::numeric_limits<Scalar>::min();
+#else
     val = std::numeric_limits<Scalar>::min();
+#endif
     loc = -1;
   }
 
