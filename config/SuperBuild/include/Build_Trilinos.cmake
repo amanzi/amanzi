@@ -270,18 +270,22 @@ set(Trilinos_CXX_COMPILER ${CMAKE_CXX_COMPILER})
 if (ENABLE_CUDA)
   if(NOT DEFINED ENV{CUDA_LAUNCH_BLOCKING}) 
     message(FATAL_ERROR "Environment variable CUDA_LAUNCH_BLOCKING has to be set to 1 to continue") 
-  endif() 
+  endif()
+
   set(NVCC_WRAPPER_PATH "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
+  set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
+
   set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} \
   -Wno-deprecated-declarations -lineinfo \
   -Xcudafe --diag_suppress=conversion_function_not_usable \
   -Xcudafe --diag_suppress=cc_clobber_ignored \
   -Xcudafe --diag_suppress=code_is_unreachable")
-  list(APPEND Trilinos_CMAKE_ARCH_ARGS
-    "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON"
-    "-DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON") 
-  # Change the default compiler for Trilinos to use nvcc_wrapper
-  set(MPICH_CXX ${NVCC_WRAPPER_PATH})
+
+  list(APPEND "${Trilinos_CMAKE_ARCH_ARGS} \
+    -DMPI_USE_COMPILER_WRAPPERS=ON \
+    -DKokkos_ENABLE_CUDA_UVM:BOOL=ON \
+    -DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON")
+
 endif()
 
 # Set ARCH-specific options
@@ -290,6 +294,28 @@ if ( "${AMANZI_ARCH}" STREQUAL "Summit" )
     list(APPEND Trilinos_CMAKE_ARCH_ARGS
       "-DKOKKOS_ARCH:STRING=Power9;Volta70") 
   endif()
+elseif( NOT "${CUDA_ARCH}" STREQUAL "" )
+  set(sm_30 "Kepler30")
+  set(sm_32 "Kepler32")
+  set(sm_35 "Kepler35")
+  set(sm_37 "Kepler37")
+  set(sm_50 "Maxwell50")
+  set(sm_52 "Maxwell52")
+  set(sm_53 "Maxwell53")
+  set(sm_60 "Pascal60")
+  set(sm_61 "Pascal61")
+  set(sm_70 "Volta70")
+  set(sm_72 "Volta72")
+  set(sm_75 "Turing75")
+  set(sm_80 "Ampere80")
+  set(sm_86 "Ampere86")
+  set(sm_89 "Ada89")
+  set(sm_90 "Hopper90")
+  set(KOKKOS_ARCH "${sm_${CUDA_ARCH}}")
+  message(STATUS "KOKKOS_ARCH ${KOKKOS_ARCH}")
+
+  list(APPEND Trilinos_CMAKE_ARCH_ARGS
+      "-DKOKKOS_ARCH:STRING=${KOKKOS_ARCH}")
 endif()
 
 message(STATUS "Trilinos_CXX_COMPILER ${Trilinos_CXX_COMPILER}")

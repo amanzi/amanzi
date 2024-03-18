@@ -1668,7 +1668,7 @@ function define_chicoma_options
     exec_static=$FALSE
     prg_env="gnu"
     
-    arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
+    arch_tpl_opts="-DAMANZI_ARCH:STRING=sm_${amanzi_arch} \
                    -DMPI_EXEC:STRING=srun \
                    -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
                    -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
@@ -1679,8 +1679,10 @@ function define_chicoma_options
 
   fi
 
+  cuda_arch="70"
    echo ""
    echo "Setting ARCH:        Chicoma"
+   echo "CUDA arch            = " "sm_"${cuda_arch}
    echo "ARCH TPL OPTIONS     = " ${arch_tpl_opts}
    echo "ARCH AMANZI OPTIONS  = " ${arch_amanzi_opts}
    echo ""
@@ -1706,7 +1708,31 @@ function define_summit_options
   echo "Setting ARCH for: Summit"
   echo "ARCH TPL OPTS = " ${arch_tpl_opts}
   echo "ARCH AMANZI OPTS = " ${arch_amanzi_opts}
+}
+
+function define_cuda_options
+{
+  if [ "${cuda}" -eq "${TRUE}" ]; then
+      mpi_exec_args="-a 1 -c 1 -g 1" # 1 gpu per mpi rank, max 6 ranks
+  else
+      error_message "CUDA arch is only supported when compiling with CUDA support"
+  fi
+
+  arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
+                 -DMPI_EXEC:STRING=srun \
+                 -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
+                 -DMPI_EXEC_MAX_NUMPROCS:INT=6"
+  arch_amanzi_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
+                 -DMPI_EXEC:STRING=jsrun \
+                 -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
+                 -DMPI_EXEC_MAX_NUMPROCS:INT=6"
+  cuda_arch="${1}"
+  echo "Setting ARCH for: CUDA"
+  echo "CUDA arch        =  sm_"${cuda_arch}
+  echo "ARCH TPL OPTS    = " ${arch_tpl_opts}
+  echo "ARCH AMANZI OPTS = " ${arch_amanzi_opts}
 }    
+
 
 
 # ---------------------------------------------------------------------------- #
@@ -1741,8 +1767,12 @@ elif [ "${amanzi_arch}" = "NERSC" ]; then
 elif [ "${amanzi_arch}" = "Chicoma" ]; then
   define_chicoma_options
 elif [ "${amanzi_arch}" != "" ]; then
-  error_message "ARCH ${amanzi_arch} not supported -- valid are Summit, NERSC, and Chicoma"
-  exit_now 10
+  if [[ "${amanzi_arch}" =~ ^[0-9]+$ ]]; then
+      define_cuda_options ${amanzi_arch}
+  else
+      error_message "ARCH ${amanzi_arch} not supported -- valid are Summit, NERSC, Chicoma, and integer for CUDA SM"
+      exit_now 10
+  fi
 fi
     
 
@@ -1852,6 +1882,9 @@ if [ -z "${tpl_config_file}" ]; then
     status_message "Only building TPLs, stopping before building Amanzi itself"
   fi
  
+  if [ "${cuda}" -eq "${TRUE}" ]; then
+      export NVCC_WRAPPER_DEFAULT_COMPILER=mpicxx
+  fi
  
   # Configure the TPL build
   cmd_configure="${cmake_binary} \
@@ -1893,6 +1926,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
       -DDISABLE_EXTERNAL_DOWNLOAD=${disable_external_downloads} \
       -DPYTHON_EXECUTABLE:STRING=${python_exec} \
+      -DCUDA_ARCH="${cuda_arch}" \
       ${blas_lapack_opts} \
       ${arch_tpl_opts} \
       ${tpl_build_src_dir}"

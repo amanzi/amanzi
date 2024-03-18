@@ -188,7 +188,7 @@ if ( NOT Trilinos_INSTALL_PREFIX )
                   " to define the Trilinos installation location"
 		  "\n-DTrilinos_INSTALL_PREFIX:PATH=<trilinos directory>\n")
 endif()
-set(Trilinos_MINIMUM_VERSION 14.2.0)
+set(Trilinos_MINIMUM_VERSION 15.1.0)
 message(STATUS "Searching for Trilinos at: ${Trilinos_INSTALL_PREFIX}")
 find_package(Trilinos ${Trilinos_MINIMUM_VERSION} REQUIRED
              PATHS ${Trilinos_INSTALL_PREFIX}

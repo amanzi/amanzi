@@ -178,6 +178,7 @@
 #   0.98.6       - update Alquimia to version 1.0.9
 #   0.98.7       - Update Trilinos to fc55b9cd (Also 14.2.0)
 #                - Update Hypre to 8f6bdc6a (Also 2.29.0)
+#   0.98.8       - Update Trilinos to 15.1.0
 
 include(CMakeParseArguments)
 
@@ -494,15 +495,15 @@ set(PETSc_MD5_SUM        b231f5dcb7ecbb11c6ccf4caa2472fee)
 #
 # TPL: Trilinos
 #
-set(Trilinos_VERSION_MAJOR 14)
-set(Trilinos_VERSION_MINOR 2)
-set(Trilinos_VERSION_PATCH fc55b9cd)
+set(Trilinos_VERSION_MAJOR 15)
+set(Trilinos_VERSION_MINOR 1)
+set(Trilinos_VERSION_PATCH 6af5f44)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
 set(Trilinos_GIT_REPOSITORY "https://github.com/trilinos/Trilinos")
-set(Trilinos_GIT_TAG        "fc55b9cd3703754ec187d7e7e5220f3116d4f523")
+set(Trilinos_GIT_TAG        "6af5f44df4eb9be0799961afcdbcbf2c2ea3f5ca")
 
 #
 # TPL: SEACAS
