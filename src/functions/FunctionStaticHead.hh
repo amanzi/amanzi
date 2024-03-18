@@ -73,12 +73,12 @@ class FunctionStaticHead : public Function {
     if (ids) {
       auto ids_loc = *ids;
       Kokkos::parallel_for(
-        "FunctionStaticHead::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+        "FunctionStaticHead::apply", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
           out(ids_loc(i)) = patm_ + rho_g_ * (out(ids_loc(i)) - in(dim_, i));
         });
     } else {
       Kokkos::parallel_for(
-        "FunctionStaticHead::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+        "FunctionStaticHead::apply", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
           out(i) = patm_ + rho_g_ * (out(i) - in(dim_, i));
         });
     }

@@ -205,7 +205,7 @@ if (Trilinos_FOUND)
       # Ifpack2 - wrappers to external solvers (Hypre) and also block
       #           solvers (block ILU, additive Schwarz, etc)
       # NOTE: Basker is intentionally excluded here -- it does not create CMake targets (Trilinos problem?)
-      list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Ifpack2 Amesos2 MueLu ShyLU ShyLU_Node)
+      list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Ifpack2 Amesos2 MueLu)
       # Xpetra?
     endif()
   endif()

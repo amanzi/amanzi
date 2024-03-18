@@ -49,7 +49,7 @@ struct MeshLogicalAlgorithms : public MeshAlgorithms {
   computeCellGeometry(const MeshHost& mesh, const Entity_ID c) const override;
 
 
-  virtual std::tuple<double, AmanziGeometry::Point, Mesh::cPoint_View>
+  virtual std::tuple<double, AmanziGeometry::Point, MeshHost::cPoint_View>
   computeFaceGeometry(const MeshHost& mesh, const Entity_ID f) const override;
 
 
@@ -60,8 +60,8 @@ struct MeshLogicalAlgorithms : public MeshAlgorithms {
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
   virtual void computeCellFacesAndBisectors(const MeshHost& mesh,
                                             const Entity_ID cellid,
-                                            Mesh::cEntity_ID_View& faceids,
-                                            Mesh::cPoint_View* const bisectors) const override;
+                                            MeshHost::cEntity_ID_View& faceids,
+                                            MeshHost::cPoint_View* const bisectors) const override;
 
   virtual double computeCellVolume(const MeshHost& mesh, const Entity_ID c) const override;
   virtual AmanziGeometry::Point

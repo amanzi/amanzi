@@ -34,7 +34,7 @@ namespace AmanziMesh {
 * Light-weigthed constructor
 ****************************************************************** */
 MeshExtractedManifold::MeshExtractedManifold(
-  const Teuchos::RCP<const Mesh>& parent_mesh,
+  const Teuchos::RCP<const MeshHost>& parent_mesh,
   const std::string& setname,
   const Entity_kind entity_kind,
   const Comm_ptr_type& comm,
@@ -82,10 +82,14 @@ MeshExtractedManifold::InitMaps()
       int id = entid_to_parent_[kind_d][n];
       gids(n) = parent_map_wghost->getGlobalElement(id);
     }
-    auto subset_map_wghost = Teuchos::rcp(new Map_type(-1, gids, 0, comm_));
+
+    Kokkos::View<int*, Amanzi::DefaultMemorySpace> gids_d("gids", nents_wghost);
+    Kokkos::deep_copy(gids, gids_d);
+
+    auto subset_map_wghost = Teuchos::rcp(new Map_type(-1, gids_d, 0, comm_));
 
     Kokkos::resize(gids, nents);
-    auto subset_map = Teuchos::rcp(new Map_type(-1, gids, 0, comm_));
+    auto subset_map = Teuchos::rcp(new Map_type(-1, gids_d, 0, comm_));
 
     // create continuous maps
     auto tmp = createContiguousMaps(subset_map_wghost, subset_map);
@@ -115,10 +119,10 @@ MeshExtractedManifold::getNumEntities(const Entity_kind kind, const Parallel_kin
 ****************************************************************** */
 void
 MeshExtractedManifold::getCellFacesAndDirs(const Entity_ID c,
-                                           cEntity_ID_View& faces,
-                                           cDirection_View* fdirs) const
+                                           MeshFramework::cEntity_ID_View& faces,
+                                           MeshFramework::cDirection_View* fdirs) const
 {
-  Entity_ID_View lfaces;
+  MeshFramework::Entity_ID_View lfaces;
   int fp = entid_to_parent_[Entity_kind::CELL][c];
   parent_mesh_->getFaceEdgesAndDirs(fp, faces, fdirs);
   lfaces.fromConst(faces);
@@ -135,7 +139,7 @@ MeshExtractedManifold::getCellFacesAndDirs(const Entity_ID c,
   // orientation. In this case, the result is correct iff the 3D face normal
   // is exterior.
   if (!flattened_ && fdirs) {
-    Direction_View lfdirs;
+    MeshFramework::Direction_View lfdirs;
     lfdirs.fromConst(*fdirs);
     for (int i = 0; i < nfaces; ++i) { (lfdirs)[i] = 1; }
     *fdirs = lfdirs;

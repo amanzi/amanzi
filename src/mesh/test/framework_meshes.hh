@@ -42,7 +42,7 @@ createFrameworkStructuredUnitQuad(
   return fac.create(0.0, 0.0, dx, dy, nx, ny);
 }
 
-inline Teuchos::RCP<AmanziMesh::Mesh>
+inline Teuchos::RCP<AmanziMesh::MeshHost>
 createStructuredUnitQuad(const AmanziMesh::Preference& pref,
                          int nx,
                          int ny,
@@ -54,7 +54,7 @@ createStructuredUnitQuad(const AmanziMesh::Preference& pref,
 {
   auto mesh_fw = createFrameworkStructuredUnitQuad(pref, nx, ny, comm, gm, plist, dx, dy);
   auto mesh = Teuchos::rcp(
-    new AmanziMesh::Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+    new AmanziMesh::MeshHost(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
   return mesh;
 }
 
@@ -78,7 +78,7 @@ createFrameworkStructuredUnitHex(
   return fac.create(0.0, 0.0, 0.0, dx, dy, dz, nx, ny, nz);
 }
 
-inline Teuchos::RCP<AmanziMesh::Mesh>
+inline Teuchos::RCP<AmanziMesh::MeshHost>
 createStructuredUnitHex(const AmanziMesh::Preference& pref,
                         int nx,
                         int ny,
@@ -92,7 +92,7 @@ createStructuredUnitHex(const AmanziMesh::Preference& pref,
 {
   auto mesh_fw = createFrameworkStructuredUnitHex(pref, nx, ny, nz, comm, gm, plist, dx, dy, dz);
   auto mesh = Teuchos::rcp(
-    new AmanziMesh::Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+    new AmanziMesh::MeshHost(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
   return mesh;
 }
 
@@ -110,7 +110,7 @@ createFrameworkUnstructured(const AmanziMesh::Preference& pref,
   return fac.create(filename);
 }
 
-inline Teuchos::RCP<AmanziMesh::Mesh>
+inline Teuchos::RCP<AmanziMesh::MeshHost>
 createUnstructured(const AmanziMesh::Preference& pref,
                    const std::string& filename,
                    Comm_ptr_type comm = Teuchos::null,
@@ -121,6 +121,6 @@ createUnstructured(const AmanziMesh::Preference& pref,
   fac.set_preference(pref);
   auto mesh_fw = createFrameworkUnstructured(pref, filename, comm, gm, plist);
   auto mesh = Teuchos::rcp(
-    new AmanziMesh::Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+    new AmanziMesh::MeshHost(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
   return mesh;
 }

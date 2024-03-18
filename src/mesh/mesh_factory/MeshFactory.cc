@@ -21,8 +21,8 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-Teuchos::RCP<Mesh>
-MeshFactory::create(const Teuchos::RCP<const Mesh>& parent_mesh,
+Teuchos::RCP<MeshHost>
+MeshFactory::create(const Teuchos::RCP<const MeshHost>& parent_mesh,
                     const MeshFramework::cEntity_ID_View& setids,
                     const Entity_kind setkind,
                     const bool flatten)
@@ -33,14 +33,14 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& parent_mesh,
   }
   Teuchos::RCP<MeshFramework> mesh_fw =
     MeshFrameworkFactory::create(parent_mesh, setids, setkind, flatten);
-  auto mesh = Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
+  auto mesh = Teuchos::rcp(new MeshHost(mesh_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
   mesh->setParentMesh(parent_mesh);
   return mesh;
 }
 
 
-Teuchos::RCP<Mesh>
-MeshFactory::create(const Teuchos::RCP<const Mesh>& parent_mesh,
+Teuchos::RCP<MeshHost>
+MeshFactory::create(const Teuchos::RCP<const MeshHost>& parent_mesh,
                     const std::vector<std::string>& setnames,
                     const Entity_kind setkind,
                     const bool flatten)
@@ -52,30 +52,30 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& parent_mesh,
   Teuchos::RCP<MeshFramework> mesh_fw =
     MeshFrameworkFactory::create(parent_mesh, setnames, setkind, flatten);
 
-  Teuchos::RCP<Mesh> mesh = Teuchos::null; // could be null if "create subcommunicator"
+  Teuchos::RCP<MeshHost> mesh = Teuchos::null; // could be null if "create subcommunicator"
   if (mesh_fw != Teuchos::null) {
-    mesh = Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
+    mesh = Teuchos::rcp(new MeshHost(mesh_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
     mesh->setParentMesh(parent_mesh);
   }
   return mesh;
 }
 
 
-Teuchos::RCP<Mesh>
+Teuchos::RCP<MeshHost>
 MeshFactory::createLogical(Teuchos::ParameterList& log_plist)
 {
   MeshLogicalFactory log_fac(comm_, gm_);
   Teuchos::RCP<MeshFramework> mesh_fw = log_fac.Create(log_plist);
   auto mesh =
-    Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new MeshLogicalAlgorithms()), Teuchos::null));
+    Teuchos::rcp(new MeshHost(mesh_fw, Teuchos::rcp(new MeshLogicalAlgorithms()), Teuchos::null));
   return mesh;
 }
 
 
 // Create a 1D Column Mesh from a columnar structured volume mesh.
 //
-Teuchos::RCP<Mesh>
-MeshFactory::createColumn(const Teuchos::RCP<Mesh>& parent,
+Teuchos::RCP<MeshHost>
+MeshFactory::createColumn(const Teuchos::RCP<MeshHost>& parent,
                           int col_id,
                           const Teuchos::RCP<Teuchos::ParameterList>& plist)
 {
@@ -93,14 +93,14 @@ MeshFactory::createColumn(const Teuchos::RCP<Mesh>& parent,
     Teuchos::rcp(new MeshFrameworkColumn(column_extracted_3D, plist_));
 
   // create and return the Mesh
-  auto mesh = Teuchos::rcp(new Mesh(column_1D, Teuchos::rcp(new MeshColumnAlgorithms()), plist));
+  auto mesh = Teuchos::rcp(new MeshHost(column_1D, Teuchos::rcp(new MeshColumnAlgorithms()), plist));
   mesh->setParentMesh(parent);
   return mesh;
 }
 
 // Create a MeshSurfaceCell from a MeshFrameworkColumn
-Teuchos::RCP<Mesh>
-MeshFactory::createSurfaceCell(const Teuchos::RCP<const Mesh>& parent)
+Teuchos::RCP<MeshHost>
+MeshFactory::createSurfaceCell(const Teuchos::RCP<const MeshHost>& parent)
 {
   if (parent->getMeshFramework() == Teuchos::null) {
     Errors::Message msg(
@@ -109,7 +109,7 @@ MeshFactory::createSurfaceCell(const Teuchos::RCP<const Mesh>& parent)
   Teuchos::RCP<MeshFramework> mesh_surf_cell_fw =
     Teuchos::rcp(new MeshSurfaceCell(parent->getMeshFramework()));
   auto mesh =
-    Teuchos::rcp(new Mesh(mesh_surf_cell_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
+    Teuchos::rcp(new MeshHost(mesh_surf_cell_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
   mesh->setParentMesh(parent);
   return mesh;
 }

@@ -44,7 +44,7 @@ class FunctionConstant : public Function {
     if (ids) {
       auto ids_loc = *ids;
       Kokkos::parallel_for(
-        "FunctionConstant::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+        "FunctionConstant::apply", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
           out(ids_loc(i)) = c_;
         });
     } else {

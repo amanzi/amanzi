@@ -68,7 +68,7 @@ class FunctionExprTK : public Function {
 
       auto ids_loc = *ids;
       Kokkos::parallel_for(
-        "ExpTK copy to out", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+        "ExpTK copy to out", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
           out(ids_loc(i)) = out_dev(i);
         });
     } else {

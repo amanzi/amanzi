@@ -70,8 +70,8 @@ class MeshEmbeddedLogical : public MeshFramework {
   //                              face_cell_list topology, magnitude
   //                              is area
   MeshEmbeddedLogical(const Comm_ptr_type& comm,
-                      Teuchos::RCP<Mesh> bg_mesh,
-                      Teuchos::RCP<Mesh> log_mesh,
+                      Teuchos::RCP<MeshHost> bg_mesh,
+                      Teuchos::RCP<MeshHost> log_mesh,
                       const std::vector<std::vector<int>>& face_cell_list,
                       const std::vector<Double_List>& face_cell_lengths,
                       const Point_List& face_area_normals,
@@ -106,22 +106,22 @@ class MeshEmbeddedLogical : public MeshFramework {
   // All nodal methods throw -- there are no nodes in MeshLogical
   virtual AmanziGeometry::Point getNodeCoordinate(const Entity_ID node) const override;
 
-  virtual void getFaceNodes(const Entity_ID f, cEntity_ID_View& nodes) const override;
+  virtual void getFaceNodes(const Entity_ID f, MeshHost::cEntity_ID_View& nodes) const override;
 
-  virtual void getNodeFaces(const Entity_ID nodeid, cEntity_ID_View& faceids) const override;
+  virtual void getNodeFaces(const Entity_ID nodeid, MeshHost::cEntity_ID_View& faceids) const override;
 
 
   //
   // These are the important ones -- MeshLogical defines cell quantities
   //
   virtual void getCellFacesAndDirs(const Entity_ID c,
-                                   cEntity_ID_View& faces,
-                                   cDirection_View* const dirs) const override;
+                                   MeshHost::cEntity_ID_View& faces,
+                                   MeshHost::cDirection_View* const dirs) const override;
 
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
   void getCellFacesAndBisectors(const Entity_ID cellid,
-                                cEntity_ID_View& faceids,
-                                cPoint_View* const bisectors) const;
+                                MeshHost::cEntity_ID_View& faceids,
+                                MeshHost::cPoint_View* const bisectors) const;
 
   double getCellVolume(const Entity_ID c) const;
   AmanziGeometry::Point getCellCentroid(const Entity_ID c) const;
@@ -129,7 +129,7 @@ class MeshEmbeddedLogical : public MeshFramework {
   //
   // MeshLogical defines face quantities
   //
-  virtual void getFaceCells(const Entity_ID f, cEntity_ID_View& cells) const override;
+  virtual void getFaceCells(const Entity_ID f, MeshHost::cEntity_ID_View& cells) const override;
   double getFaceArea(const Entity_ID f) const;
   AmanziGeometry::Point getFaceCentroid(const Entity_ID f) const;
   AmanziGeometry::Point
@@ -137,12 +137,12 @@ class MeshEmbeddedLogical : public MeshFramework {
 
  protected:
   RaggedArray_DualView<Entity_ID> extra_face_cell_ids_;
-  Point_View extra_face_area_normals_;
+  MeshHost::Point_View extra_face_area_normals_;
   RaggedArray_DualView<double> extra_face_cell_lengths_;
   RaggedArray_DualView<AmanziGeometry::Point> extra_face_cell_bisectors_;
 
-  Teuchos::RCP<Mesh> bg_mesh_;  // background mesh, typically a Mesh_MSTK
-  Teuchos::RCP<Mesh> log_mesh_; // embedded mesh, typically a MeshLogical
+  Teuchos::RCP<MeshHost> bg_mesh_;  // background mesh, typically a Mesh_MSTK
+  Teuchos::RCP<MeshHost> log_mesh_; // embedded mesh, typically a MeshLogical
 
   Teuchos::RCP<Map_type> cell_map_;
   Teuchos::RCP<Map_type> face_map_;

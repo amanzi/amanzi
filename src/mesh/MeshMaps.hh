@@ -181,13 +181,21 @@ template <class Mesh_type>
 std::pair<Map_ptr_type, Map_ptr_type>
 createMapsFromMeshGIDs(const Mesh_type& mesh, const Entity_kind kind)
 {
-  Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
-  auto gids = mesh.getEntityGIDs(kind, true);
-  auto gids_owned =
-    Kokkos::subview(gids, Kokkos::make_pair((std::size_t)0, (std::size_t)num_owned));
+  // this could be done on device, but is currently only called with a
+  // MeshFramework as argument?  Therefore must deep copy to device to
+  // construct the map?
+  static_assert(std::is_base_of_v<MeshFramework, Mesh_type>);
 
-  return std::make_pair(Teuchos::rcp(new Map_type(-1, gids, 0, mesh.getComm())),
-                        Teuchos::rcp(new Map_type(-1, gids_owned, 0, mesh.getComm())));
+  Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
+  Kokkos::View<const GO*, Amanzi::HostSpace> gids = mesh.getEntityGIDs(kind, true);
+
+  Kokkos::View<GO*, Amanzi::DefaultMemorySpace> gids_d("gids on device", gids.extent(0));
+
+  Kokkos::deep_copy(gids_d, gids);
+  auto gids_d_owned = Kokkos::subview(gids_d, Kokkos::make_pair((std::size_t)0, (std::size_t)num_owned));
+
+  return std::make_pair(Teuchos::rcp(new Map_type(-1, gids_d, 0, mesh.getComm())),
+                        Teuchos::rcp(new Map_type(-1, gids_d_owned, 0, mesh.getComm())));
 }
 
 

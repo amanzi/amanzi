@@ -300,7 +300,7 @@ MeshFrameworkFactory::create(const Teuchos::ParameterList& parameter_list)
 // dimension or (in the future) extruding it when it makes sense
 // -------------------------------------------------------------
 Teuchos::RCP<MeshFramework>
-MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
+MeshFrameworkFactory::create(const Teuchos::RCP<const MeshHost>& inmesh,
                              const MeshFramework::cEntity_ID_View& setids,
                              const Entity_kind setkind,
                              const bool flatten)
@@ -370,7 +370,7 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
 // future) extruding it when it makes sense
 // -------------------------------------------------------------
 Teuchos::RCP<MeshFramework>
-MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
+MeshFrameworkFactory::create(const Teuchos::RCP<const MeshHost>& inmesh,
                              const std::vector<std::string>& setnames,
                              const Entity_kind setkind,
                              const bool flatten)

@@ -81,13 +81,13 @@ class FunctionPolynomial : public Function {
     if (ids) {
       auto ids_loc = *ids;
       Kokkos::parallel_for(
-        "FunctionPolynomial::apply1", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+        "FunctionPolynomial::apply1", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
           out(ids_loc(i)) = apply_gpu(in, i);
         });
     } else {
       assert(in.extent(1) == out.extent(0));
       Kokkos::parallel_for(
-        "FunctionPolynomial::apply2", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+        "FunctionPolynomial::apply2", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
           out(i) = apply_gpu(in, i);
         });
     }

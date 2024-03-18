@@ -83,13 +83,13 @@ class FunctionLinear : public Function {
     if (ids) {
       auto ids_loc = *ids;
       Kokkos::parallel_for(
-        "FunctionBilinear::apply1", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+        "FunctionBilinear::apply1", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
           out(ids_loc(i)) = apply_gpu(in, i);
         });
     } else {
       assert(in.extent(1) == out.extent(0));
       Kokkos::parallel_for(
-        "FunctionBilinear::apply2", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+        "FunctionBilinear::apply2", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
           out(i) = apply_gpu(in, i);
         });
     }

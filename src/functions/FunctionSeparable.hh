@@ -81,12 +81,12 @@ class FunctionSeparable : public Function {
     if (ids) {
       auto ids_loc = *ids;
       Kokkos::parallel_for(
-        "FunctionSeparable::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+        "FunctionSeparable::apply", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
           out(ids_loc(i)) *= out_1(i);
         });
     } else {
       Kokkos::parallel_for(
-        "FunctionSeparable::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+        "FunctionSeparable::apply", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
           out(i) *= out_1(i);
         });
     }

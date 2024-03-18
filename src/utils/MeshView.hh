@@ -29,16 +29,16 @@ struct MeshView : public Kokkos::View<DataType, Properties...> {
                               typename traits::memory_traits>;
   using const_iterator = Impl::View_iter<const_type>;
 
-  MeshView(const baseView& bv) : baseView(bv) {}
-  MeshView(const MeshView& bv) : baseView(bv) {}
+  KOKKOS_INLINE_FUNCTION MeshView(const baseView& bv) : baseView(bv) {}
+  KOKKOS_INLINE_FUNCTION MeshView(const MeshView& bv) : baseView(bv) {}
 
-  KOKKOS_FUNCTION MeshView& operator=(const MeshView& other)
+  KOKKOS_INLINE_FUNCTION MeshView& operator=(const MeshView& other)
   {
     baseView::operator=(other);
     return *this;
   }
 
-  KOKKOS_FUNCTION MeshView& operator=(const MeshView&& other)
+  KOKKOS_INLINE_FUNCTION MeshView& operator=(const MeshView&& other)
   {
     baseView::operator=(other);
     return *this;
@@ -68,7 +68,7 @@ struct MeshView : public Kokkos::View<DataType, Properties...> {
   }
 
   template <typename MV>
-  KOKKOS_INLINE_FUNCTION void fromConst(const MV& cmv)
+  void fromConst(const MV& cmv)
   {
     Kokkos::resize(*this, cmv.size());
     Kokkos::deep_copy(*this, cmv);

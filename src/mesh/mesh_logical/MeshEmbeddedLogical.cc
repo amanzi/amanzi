@@ -85,8 +85,8 @@ Note that entities are ordered in the following way:
 
 */
 MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
-                                         Teuchos::RCP<Mesh> bg_mesh,
-                                         Teuchos::RCP<Mesh> log_mesh,
+                                         Teuchos::RCP<MeshHost> bg_mesh,
+                                         Teuchos::RCP<MeshHost> log_mesh,
                                          const std::vector<Entity_ID_List>& face_cell_ids,
                                          const std::vector<Double_List>& face_cell_lengths,
                                          const Point_List& face_area_normals,
@@ -155,8 +155,11 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
       cell_gids[c] = bg_cell_all_vec_data[c - ncells_log + ncells_bg_owned];
   }
 
+  Kokkos::View<GO*, Amanzi::DefaultExecutionSpace> cell_gids_d("cell_gids on device", cell_gids.size());
+  Kokkos::deep_copy(cell_gids_d, cell_gids);
+
   // -- create the map
-  cell_map_ = Teuchos::rcp(new Map_type(-1, cell_gids, 0, getComm()));
+  cell_map_ = Teuchos::rcp(new Map_type(-1, cell_gids_d, 0, getComm()));
 
   // Next faces
   // -- create a map of owned FACES
@@ -183,8 +186,11 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
       face_gids[f] = bg_face_all_vec_data[f - nfaces_log - nfaces_extra + nfaces_bg_owned];
   }
 
+  Kokkos::View<GO*, Amanzi::DefaultExecutionSpace> face_gids_d("face_gids on device", face_gids.size());
+  Kokkos::deep_copy(face_gids_d, face_gids);
+
   // -- create the map
-  face_map_ = Teuchos::rcp(new Map_type(-1, face_gids, 0, getComm()));
+  face_map_ = Teuchos::rcp(new Map_type(-1, face_gids_d, 0, getComm()));
 }
 
 
@@ -260,14 +266,14 @@ MeshEmbeddedLogical::getNodeCoordinate(const Entity_ID node) const
 }
 
 void
-MeshEmbeddedLogical::getFaceNodes(const Entity_ID f, cEntity_ID_View& nodes) const
+MeshEmbeddedLogical::getFaceNodes(const Entity_ID f, MeshHost::cEntity_ID_View& nodes) const
 {
   Errors::Message mesg("There are no nodes in a MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
 }
 
 void
-MeshEmbeddedLogical::getNodeFaces(const Entity_ID nodeid, cEntity_ID_View& faceids) const
+MeshEmbeddedLogical::getNodeFaces(const Entity_ID nodeid, MeshHost::cEntity_ID_View& faceids) const
 {
   Errors::Message mesg("There are no nodes in a MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
@@ -279,11 +285,11 @@ MeshEmbeddedLogical::getNodeFaces(const Entity_ID nodeid, cEntity_ID_View& facei
 //
 void
 MeshEmbeddedLogical::getCellFacesAndDirs(const Entity_ID c,
-                                         cEntity_ID_View& faces,
-                                         cDirection_View* const dirs) const
+                                         MeshHost::cEntity_ID_View& faces,
+                                         MeshHost::cDirection_View* const dirs) const
 {
-  Entity_ID_View lfaces;
-  Direction_View ldirs;
+  MeshHost::Entity_ID_View lfaces;
+  MeshHost::Direction_View ldirs;
   Entity_ID_List vfaces;
   std::vector<int> vdirs;
   auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
@@ -340,11 +346,11 @@ MeshEmbeddedLogical::getCellFacesAndDirs(const Entity_ID c,
 // Get the bisectors, i.e. vectors from cell centroid to face centroids.
 void
 MeshEmbeddedLogical::getCellFacesAndBisectors(const Entity_ID c,
-                                              cEntity_ID_View& faces,
-                                              cPoint_View* const bisectors) const
+                                              MeshHost::cEntity_ID_View& faces,
+                                              MeshHost::cPoint_View* const bisectors) const
 {
-  Entity_ID_View lfaces;
-  Point_View lbis;
+  MeshHost::Entity_ID_View lfaces;
+  MeshHost::Point_View lbis;
 
   Entity_ID_List vfaces;
   Point_List vbisectors;
@@ -423,9 +429,9 @@ MeshEmbeddedLogical::getCellCentroid(const Entity_ID c) const
 
 
 void
-MeshEmbeddedLogical::getFaceCells(const Entity_ID f, cEntity_ID_View& cells) const
+MeshEmbeddedLogical::getFaceCells(const Entity_ID f, MeshHost::cEntity_ID_View& cells) const
 {
-  Entity_ID_View lcells;
+  MeshHost::Entity_ID_View lcells;
   auto ncells_log = log_mesh_->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   auto nfaces_log = log_mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   auto nfaces_extra = extra_face_cell_ids_.size<MemSpace_kind::HOST>();

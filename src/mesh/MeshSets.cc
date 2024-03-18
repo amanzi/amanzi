@@ -529,8 +529,8 @@ resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
 
     // note that we have to sort these by owned, then ghosted
     std::size_t cpt = 0, cpt_g = 0;
-    Entity_ID_View result("SetEnumerated", mesh_map->getLocalNumElements());
-    Entity_ID_View result_g("ghosted SetEnumerated", mesh_map->getLocalNumElements());
+    MeshCache<MemSpace_kind::HOST>::Entity_ID_View result("SetEnumerated", mesh_map->getLocalNumElements());
+    MeshCache<MemSpace_kind::HOST>::Entity_ID_View result_g("ghosted SetEnumerated", mesh_map->getLocalNumElements());
     Entity_ID nowned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
     for (Entity_GID gid : region_entities) {
       Entity_ID lid = mesh_map->getLocalElement(gid);
@@ -549,7 +549,7 @@ resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
     Kokkos::resize(result, cpt);
     return result;
   } else {
-    return Entity_ID_View();
+    return MeshCache<MemSpace_kind::HOST>::Entity_ID_View();
   }
 }
 

@@ -37,9 +37,8 @@ TEST(MESH_GEOMETRY_PLANAR)
               << "Testing 2D geometry with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
 
-    auto mesh_on_device = createStructuredUnitQuad(Preference{ frm }, 2, 2);
-    auto mesh = onMemSpace<MemSpace_kind::HOST>(mesh_on_device);
-    testMeshAudit<MeshAuditHost, MeshHost>(mesh);
+    auto mesh = createStructuredUnitQuad(Preference{ frm }, 2, 2);
+    testMeshAudit<MeshAuditHost>(mesh);
     testGeometryQuad(mesh, 2, 2);
     testExteriorMapsUnitBox(mesh, 2, 2);
   }
@@ -61,9 +60,8 @@ TEST(MESH_GEOMETRY_1CUBE_GENERATED)
     std::cout << std::endl
               << "Testing 3D geometry with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh_on_device = createStructuredUnitHex(Preference{ frm }, 1, 1, 1);
-    auto mesh = onMemSpace<MemSpace_kind::HOST>(mesh_on_device);
-    testMeshAudit<MeshAuditHost, MeshHost>(mesh);
+    auto mesh = createStructuredUnitHex(Preference{ frm }, 1, 1, 1);
+    testMeshAudit<MeshAuditHost>(mesh);
     testGeometryCube(mesh, 1, 1, 1);
 
     // Exterior maps not supported by SIMPLE
@@ -88,9 +86,8 @@ TEST(MESH_GEOMETRY_1CUBE_EXO)
               << "Testing 3D Box 1x1x1 Exo geometry with " << AmanziMesh::to_string(frm)
               << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh_on_device = createUnstructured(Preference{ frm }, "test/hex_1x1x1_sets.exo");
-    auto mesh = onMemSpace<MemSpace_kind::HOST>(mesh_on_device);
-    testMeshAudit<MeshAuditHost, MeshHost>(mesh);
+    auto mesh = createUnstructured(Preference{ frm }, "test/hex_1x1x1_sets.exo");
+    testMeshAudit<MeshAuditHost>(mesh);
     testGeometryCube(mesh, 1, 1, 1);
     if (frm == Framework::MSTK) testExteriorMapsUnitBox(mesh, 1, 1, 1);
   }
@@ -109,9 +106,8 @@ TEST(MESH_GEOMETRY_3CUBE)
     std::cout << std::endl
               << "Testing 3D Box 3x3x3 with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh_on_device = createStructuredUnitHex(Preference{ frm }, 3, 3, 3);
-    auto mesh = onMemSpace<MemSpace_kind::HOST>(mesh_on_device);
-    testMeshAudit<MeshAuditHost, MeshHost>(mesh);
+    auto mesh = createStructuredUnitHex(Preference{ frm }, 3, 3, 3);
+    testMeshAudit<MeshAuditHost>(mesh);
     testGeometryCube(mesh, 3, 3, 3);
     if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh, 3, 3, 3); }
   }
@@ -133,9 +129,8 @@ TEST(MESH_GEOMETRY_3CUBE_EXO)
     std::cout << std::endl
               << "Testing 3D Box 3x3x3 Exo with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh_on_device = createUnstructured(Preference{ frm }, "test/hex_3x3x3_sets.exo");
-    auto mesh = onMemSpace<MemSpace_kind::HOST>(mesh_on_device);
-    testMeshAudit<MeshAuditHost, MeshHost>(mesh);
+    auto mesh = createUnstructured(Preference{ frm }, "test/hex_3x3x3_sets.exo");
+    testMeshAudit<MeshAuditHost>(mesh);
     testGeometryCube(mesh, 3, 3, 3);
     if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh, 3, 3, 3); }
   }
@@ -248,7 +243,7 @@ TEST(MESH_CONST_DANGER)
               << "Testing const correctness of mesh views" << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createStructuredUnitQuad(Preference{ frm }, 2, 2);
-    Mesh::Entity_ID_View cfaces2;
+    MeshHost::Entity_ID_View cfaces2;
     {
       auto cfaces = mesh->getCellFaces<AccessPattern_kind::CACHE>(0);
       Kokkos::resize(cfaces2, cfaces.size());
