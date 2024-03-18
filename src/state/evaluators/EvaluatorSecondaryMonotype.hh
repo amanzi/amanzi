@@ -37,6 +37,7 @@ implementing the missing Update_() and UpdateFieldDerivative_() methods.
 #include "Teuchos_RCP.hpp"
 
 #include "exceptions.hh"
+#include "Debugger.hh"
 
 #include "EvaluatorSecondary.hh"
 
@@ -138,6 +139,10 @@ class EvaluatorSecondaryMonotype : public EvaluatorSecondary {
 
   // optional, anything for units
   virtual void EnsureCompatibility_Units_(State& S){};
+
+ protected:
+  Teuchos::RCP<Debugger> db_;
+  Teuchos::RCP<const AmanziMesh::Mesh> db_mesh_;
 };
 
 
@@ -152,6 +157,13 @@ template <typename Data_t, typename DataFactory_t>
 inline void
 EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility(State& S)
 {
+  if (db_ == Teuchos::null &&
+      (plist_.isParameter("debug cells") || plist_.isParameter("debug faces"))) {
+    Key name = my_keys_.front().first + "evaluator";
+    db_mesh_ = S.GetMesh(Keys::getDomain(my_keys_.front().first));
+    db_ = Teuchos::rcp(new Debugger(db_mesh_, name, plist_));
+  }
+
   // Calls Require, setting the data type
   // (e.g. CompositeVector) and claiming ownership of all of my_keys_.
   //
@@ -382,6 +394,37 @@ EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::Update_(State& S)
 
   // call the evaluate method
   Evaluate_(S, results);
+
+  // debug
+  if constexpr(std::is_same_v<Data_t, CompositeVector>) {
+    if (db_ != Teuchos::null) {
+      std::vector<std::string> names;
+      std::vector<Teuchos::Ptr<const CompositeVector>> vecs;
+
+      for (const auto& dep : dependencies_) {
+        auto dep_ptr = S.GetPtr<Data_t>(dep.first, dep.second);
+        if (dep_ptr->Mesh() == db_mesh_) {
+          names.emplace_back(dep.first);
+          vecs.emplace_back(dep_ptr.ptr());
+        }
+      }
+      db_->WriteVectors(names, vecs);
+      db_->WriteDivider();
+
+      names.clear();
+      vecs.clear();
+
+      for (const auto& mykey : my_keys_) {
+        auto my_ptr = S.GetPtr<Data_t>(mykey.first, mykey.second);
+        if (my_ptr->Mesh() == db_mesh_) {
+          names.emplace_back(mykey.first);
+          vecs.emplace_back(my_ptr.ptr());
+        }
+      }
+      db_->WriteVectors(names, vecs);
+      db_->WriteDivider();
+    }
+  }
 }
 
 
