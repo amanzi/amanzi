@@ -105,7 +105,7 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
   if (ProvidesKey(wrt_key, wrt_tag)) {
     auto keytag = std::make_pair(wrt_key, wrt_tag);
     int i = std::find(my_keys_.begin(), my_keys_.end(), keytag) - my_keys_.begin();
-    AMANZI_ASSERT(i < my_keys_.size()); // ensured by IsDifferentiableWRT() check previously
+    AMANZI_ASSERT(i < my_keys_.size()); // ensured by ProvidesKey check
     results[i]->PutScalar(1.);
     return;
   }
@@ -120,7 +120,8 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
       EvaluatePartialDerivative_(S, wrt_key, wrt_tag, tmp);
       for (int i = 0; i != my_keys_.size(); ++i) results[i]->Update(1., tmp_data[i], 1.);
 
-    } else if (S.GetEvaluator(dep.first, dep.second).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+    } else if (!S.GetEvaluator(dep.first, dep.second).ProvidesKey(wrt_key, wrt_tag) &&
+               S.GetEvaluator(dep.first, dep.second).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
       // partial F / partial dep * ddep/dx
       // note this has already been Updated in the public version of this
       // function
@@ -137,6 +138,22 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
       // sum
       for (int i = 0; i != my_keys_.size(); ++i) results[i]->Multiply(1., ddep, tmp_data[i], 1.);
     }
+  }
+
+  // debug
+  if (db_ != Teuchos::null) {
+    std::vector<std::string> names;
+    std::vector<Teuchos::Ptr<const CompositeVector>> vecs;
+
+    for (const auto& keytag : my_keys_) {
+      auto my_ptr = S.GetDerivativePtr<CompositeVector>(keytag.first, keytag.second, wrt_key, wrt_tag);
+      if (my_ptr->Mesh() == db_mesh_) {
+        names.emplace_back(Keys::getDerivKey(keytag.first, wrt_key));
+        vecs.emplace_back(my_ptr.ptr());
+      }
+    }
+    db_->WriteVectors(names, vecs);
+    db_->WriteDivider();
   }
 }
 
