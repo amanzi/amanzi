@@ -641,10 +641,12 @@ struct MeshCache : public MeshCacheBase {
 
   // at run-time, calls one of getCellVolume, getFaceArea, or getEdgeLength
   template <Entity_kind EK, AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   double getExtent(const Entity_ID e) const;
 
   // at compile-time, calls one of getCellVolume, getFaceArea, or getEdgeLength
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
+  KOKKOS_INLINE_FUNCTION
   double getExtent(const Entity_kind kind, const Entity_ID e) const;
 
   // // Normal vector of a face
@@ -984,7 +986,7 @@ onMemSpace(const Teuchos::RCP<MeshCache<IN>>& mc_in);
 // -----------------------------------------------------------------------------
 // Default Mesh types
 // -----------------------------------------------------------------------------
-using Mesh = MeshCache<MemSpace_kind::HOST>;
+using Mesh = MeshCache<MemSpace_kind::DEVICE>;
 using MeshHost = MeshCache<MemSpace_kind::HOST>;
 
 // may remove these eventually, but putting these in the AmanziMesh namespace

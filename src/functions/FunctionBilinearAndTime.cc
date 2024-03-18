@@ -102,13 +102,15 @@ FunctionBilinearAndTime::apply(
   } else {
     Kokkos::View<double*> out2("FunctionBilinearAndTime workspace", in.extent(1));
     val_before_->apply(in, out, ids);
-    val_after_->apply(in, out2);
+    val_after_->apply(in, out2, ids);
 
     if (ids) {
       auto ids_loc = *ids;
+      Kokkos::View<double*> out_copy(out);
       Kokkos::parallel_for(
         "FunctionBilinearAndTime::apply", out2.extent(0), KOKKOS_LAMBDA(const int& i) {
-          out(ids_loc(i)) = (1 - s) * out(ids_loc(i)) + s * out2(i);
+          int j = ids_loc(i);
+          out_copy(j) *= (1 - s) * out(j) + s * out2(j);
         });
     } else {
       Kokkos::parallel_for(
