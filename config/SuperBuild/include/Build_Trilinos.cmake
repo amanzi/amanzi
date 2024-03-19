@@ -55,7 +55,7 @@ if (ENABLE_Unstructured)
     # MueLu   - multilevel preconditioner
     # Ifpack2 - wrappers to external solvers (Hypre) and also block
     #           solvers (block ILU, additive Schwarz, etc)
-    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Ifpack2 Amesos2 Basker MueLu ShyLU ShyLU_Node ShyLU_NodeFastILU)
+    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Ifpack2 Amesos2 Basker MueLu)
     # Xpetra?
   endif()
 endif()
