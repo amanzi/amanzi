@@ -355,4 +355,11 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_biot_schiffman.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
+
+    add_amanzi_test(mpc_biot_mcnamee_gibson mpc_biot_mcnamee_gibson
+                    KIND      int
+                    NPROCS    3
+                    SOURCE    test/Main.cc test/mpc_biot_mcnamee_gibson.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
 endif()

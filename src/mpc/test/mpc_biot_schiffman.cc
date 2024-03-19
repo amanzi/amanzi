@@ -126,7 +126,7 @@ RunTest(const std::string xmlInFileName)
 }
 
 
-TEST(MPC_DRIVER_BIOT_CONSOLIDATION)
+TEST(MPC_DRIVER_BIOT_SCHIFFMAN)
 {
   RunTest("test/mpc_biot_schiffman.xml");
 }

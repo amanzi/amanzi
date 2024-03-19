@@ -109,6 +109,7 @@ FlowMechanics_PK::Setup()
     elist.set<std::string>("pressure key", pressure_key_)
       .set<std::string>("saturation key", saturation_liquid_key_)
       .set<std::string>("porosity key", porosity_key_);
+    // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
     auto eval = Teuchos::rcp(new WaterStorageStressSplit(elist));
     S_->SetEvaluator(water_storage_key_, Tags::DEFAULT, eval);
@@ -119,6 +120,25 @@ FlowMechanics_PK::Setup()
     .SetGhosted();
 
   PK_MPCSequential::Setup();
+}
+
+
+/* ******************************************************************
+* Process additional parameter
+****************************************************************** */
+void
+FlowMechanics_PK::Initialize()
+{
+  PK_MPCSequential::Initialize();
+
+  if (my_list_->isParameter("initialize displacement")) {
+    bool fail = sub_pks_[1]->AdvanceStep(0.0, 0.0, false);
+    if (fail) Exceptions::amanzi_throw("Initialization of displacement has failed.");
+    Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(S_->GetEvaluatorPtr(displacement_key_, Tags::DEFAULT))->SetChanged();
+
+    S_->GetEvaluator(water_storage_key_).Update(*S_, "mpc");
+    S_->GetW<CV_t>("prev_water_storage", Tags::DEFAULT, "") = S_->Get<CV_t>(water_storage_key_, Tags::DEFAULT);
+  }
 }
 
 

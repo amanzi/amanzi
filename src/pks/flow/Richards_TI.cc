@@ -97,15 +97,15 @@ Richards_PK::FunctionalResidual(double t_old,
   const auto& phi_c = *S_->Get<CV_t>(porosity_key_).ViewComponent("cell");
 
   S_->GetEvaluator(water_storage_key_).Update(*S_, "flow");
-  const auto& wc_c = *S_->Get<CV_t>(water_storage_key_).ViewComponent("cell");
-  const auto& wc_prev_c = *S_->Get<CV_t>(prev_water_storage_key_).ViewComponent("cell");
+  const auto& ws_c = *S_->Get<CV_t>(water_storage_key_).ViewComponent("cell");
+  const auto& ws_prev_c = *S_->Get<CV_t>(prev_water_storage_key_).ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
-    double wc1 = wc_c[0][c];
-    double wc2 = wc_prev_c[0][c];
+    double ws1 = ws_c[0][c];
+    double ws2 = ws_prev_c[0][c];
 
     double factor = mesh_->getCellVolume(c) / dt_;
-    f_cell[0][c] += (wc1 - wc2) * factor;
+    f_cell[0][c] += (ws1 - ws2) * factor;
   }
 
   // add vapor diffusion
