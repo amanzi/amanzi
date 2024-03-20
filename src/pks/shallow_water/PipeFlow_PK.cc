@@ -32,7 +32,7 @@ PipeFlow_PK::PipeFlow_PK(Teuchos::ParameterList& pk_tree,
 
   Manning_coeff_ = sw_list_->get<double>("Manning coefficient", 0.005);
   celerity_ = sw_list_->get<double>("celerity", 2); // m/s
-  diameter_key_ = sw_list_->get<std::string>("diameter key", "");
+  diameter_key_ = Keys::readKey(*sw_list_, domain_, "diameter", "diameter");
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = sw_list_->sublist("verbose object");
