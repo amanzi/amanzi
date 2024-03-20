@@ -16,9 +16,10 @@
 #ifndef AMANZI_OPERATOR_DEFORM_MESH_HH_
 #define AMANZI_OPERATOR_DEFORM_MESH_HH_
 
-#include "Mesh.hh"
-// #include "MeshCurved.hh"
 #include "CompositeVector.hh"
+#include "Mesh.hh"
+#include "MeshHelpers.hh"
+// #include "MeshCurved.hh"
 
 #include "OperatorDefs.hh"
 
@@ -72,7 +73,7 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
   int d = mesh1->getSpaceDimension();
 
   // consistent parallel data are needed for the random mesh deformation
-  AmanziMesh::Entity_ID_View bnd_ids;
+  AmanziMesh::cEntity_ID_View bnd_ids;
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh1)->SetGhosted(true)->AddComponent("node", AmanziMesh::Entity_kind::NODE, d);
   CompositeVector random(cvs);
@@ -92,11 +93,10 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
   }
 
   // relocate mesh nodes
-  AmanziGeometry::Point xv(d), yv(d), uv(d);
-  AmanziMesh::Entity_ID_View nodeids;
-  AmanziGeometry::Point_View new_positions, final_positions;
-
   int nnodes = mesh1->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
+  AmanziGeometry::Point xv(d), yv(d), uv(d);
+  AmanziMesh::Entity_ID_View nodeids("nodeids", nnodes);
+  AmanziMesh::Point_View new_positions("newpos", nnodes);
 
   for (int v = 0; v < nnodes; ++v) {
     if (mesh0.get())
@@ -104,7 +104,7 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
     else
       xv = mesh1->getNodeCoordinate(v);
 
-    nodeids.push_back(v);
+    nodeids[v] = v;
 
     if (deform == 7) {
       yv = xv;
@@ -115,9 +115,9 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
       yv = MovePoint(t, xv, deform);
     }
 
-    new_positions.push_back(yv);
+    new_positions[v] = yv;
   }
-  mesh1->deform(nodeids, new_positions, false, &final_positions);
+  AmanziMesh::deform(*mesh1, nodeids, new_positions);
 }
 
 
