@@ -160,8 +160,7 @@ MechanicsElasticity_PK::ComputeOperatorBCs()
       }
     }
 
-    if (bcs_[i]->get_bc_name() == "no slip" && 
-        bcs_[i]->type() == WhetStone::DOF_Type::POINT &&
+    if (bcs_[i]->get_bc_name() == "no slip" && bcs_[i]->type() == WhetStone::DOF_Type::POINT &&
         bcs_[i]->kind() == AmanziMesh::Entity_kind::FACE) {
       std::vector<int>& bc_model = op_bcs_[3]->bc_model();
       std::vector<double>& bc_value = op_bcs_[3]->bc_value();

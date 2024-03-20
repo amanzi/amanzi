@@ -396,7 +396,7 @@ EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::Update_(State& S)
   Evaluate_(S, results);
 
   // debug
-  if constexpr(std::is_same_v<Data_t, CompositeVector>) {
+  if constexpr (std::is_same_v<Data_t, CompositeVector>) {
     if (db_ != Teuchos::null) {
       std::vector<std::string> names;
       std::vector<Teuchos::Ptr<const CompositeVector>> vecs;

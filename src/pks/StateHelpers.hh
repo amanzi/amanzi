@@ -27,8 +27,7 @@
 
 namespace Amanzi {
 
-inline
-Teuchos::ParameterList
+inline Teuchos::ParameterList
 RequireFieldForEvaluator(State& S, const Key& key)
 {
   Key domain = Keys::getDomain(key);
@@ -46,4 +45,3 @@ RequireFieldForEvaluator(State& S, const Key& key)
 } // namespace Amanzi
 
 #endif
-

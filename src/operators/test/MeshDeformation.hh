@@ -17,7 +17,7 @@
 #define AMANZI_OPERATOR_DEFORM_MESH_HH_
 
 #include "Mesh.hh"
-#include "MeshCurved.hh"
+// #include "MeshCurved.hh"
 #include "CompositeVector.hh"
 
 #include "OperatorDefs.hh"
@@ -31,12 +31,14 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
            double t,
            const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0 = Teuchos::null);
 
+/*
 void
 DeformMeshCurved(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
                  int deform,
                  double t,
                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0,
                  int order);
+*/
 
 AmanziGeometry::Point
 MovePoint(double t, const AmanziGeometry::Point& xv, int deform);
@@ -84,9 +86,9 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
     random_n.Scale(scale);
     random.ScatterMasterToGhosted();
 
-    std::vector<double> vofs;
-    mesh1->getSetEntitiesAndVolumeFractions(
-      "Boundary", AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL, &bnd_ids, &vofs);
+    AmanziMesh::cDouble_View vofs;
+    Kokkos::tie(bnd_ids, vofs) = mesh1->getSetEntitiesAndVolumeFractions(
+      "Boundary", AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
   }
 
   // relocate mesh nodes
@@ -122,6 +124,7 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
 /* *****************************************************************
 * Deform high-order (curved) mesh1
 ***************************************************************** */
+/*
 inline void
 DeformMeshCurved(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
                  int deform,
@@ -167,6 +170,7 @@ DeformMeshCurved(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
     }
   }
 }
+*/
 
 
 /* *****************************************************************

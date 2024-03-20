@@ -146,7 +146,8 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
     std::vector<Teuchos::Ptr<const CompositeVector>> vecs;
 
     for (const auto& keytag : my_keys_) {
-      auto my_ptr = S.GetDerivativePtr<CompositeVector>(keytag.first, keytag.second, wrt_key, wrt_tag);
+      auto my_ptr =
+        S.GetDerivativePtr<CompositeVector>(keytag.first, keytag.second, wrt_key, wrt_tag);
       if (my_ptr->Mesh() == db_mesh_) {
         names.emplace_back(Keys::getDerivKey(keytag.first, wrt_key));
         vecs.emplace_back(my_ptr.ptr());

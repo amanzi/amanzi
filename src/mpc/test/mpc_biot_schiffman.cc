@@ -85,7 +85,7 @@ RunTest(const std::string xmlInFileName)
   double g(10.0), p0(1e+7), rho(1e+3), mu(1e-3), k(3e-15), phi_cp(1e-11);
   double E(3e+10), nu(0.0), t(50.0), t0(100.0), biot(0.9);
   double Ss = rho * g * (phi_cp + biot * biot / E);
-  double cv = rho * g / mu * k / Ss;  // effective consolidation coefficient
+  double cv = rho * g / mu * k / Ss; // effective consolidation coefficient
   double p0eff = biot * p0 / (phi_cp * E + biot * biot);
   double p0t = (p0 / t0) * t;
 
@@ -97,8 +97,9 @@ RunTest(const std::string xmlInFileName)
       double x = (mesh->getCellCentroid(ny * c))[0];
       double a = k * k * factor * factor * cv;
       if (t > t0)
-        pex[c] += (1.0 / k / k / k) * (1.0 - std::exp(-a * t0)) * std::sin(k * factor * x) * std::exp(-a * (t - t0));
-      else 
+        pex[c] += (1.0 / k / k / k) * (1.0 - std::exp(-a * t0)) * std::sin(k * factor * x) *
+                  std::exp(-a * (t - t0));
+      else
         pex[c] += (1.0 / k / k / k) * (1.0 - std::exp(-a * t)) * std::sin(k * factor * x);
     }
   }
@@ -108,9 +109,10 @@ RunTest(const std::string xmlInFileName)
   }
 
   // compute error
-  double perr(0.0), eerr(0.0), pnorm, enorm; 
+  double perr(0.0), eerr(0.0), pnorm, enorm;
   const auto& p = *S->Get<CompositeVector>("pressure", Tags::DEFAULT).ViewComponent("cell");
-  const auto& e = *S->Get<CompositeVector>("volumetric_strain", Tags::DEFAULT).ViewComponent("cell");
+  const auto& e =
+    *S->Get<CompositeVector>("volumetric_strain", Tags::DEFAULT).ViewComponent("cell");
   p.Norm2(&pnorm);
   e.Norm2(&enorm);
 
@@ -130,4 +132,3 @@ TEST(MPC_DRIVER_BIOT_SCHIFFMAN)
 {
   RunTest("test/mpc_biot_schiffman.xml");
 }
-
