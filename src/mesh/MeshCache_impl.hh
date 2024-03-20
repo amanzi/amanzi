@@ -959,7 +959,7 @@ MeshCache<MEM>::getCellCoordinates(const Entity_ID c) const
   }
 
   return Impl::RaggedGetter<MEM, AP>::get(
-    data_.cell_coordinates_cached, data_.cell_coordinates, framework_mesh_, cf, nullptr, c);
+    data_.cell_coordinates_cached, data_.cell_coordinates, framework_mesh_, nullptr, cf, c);
 }
 
 
@@ -1360,6 +1360,7 @@ template <MemSpace_kind MEM>
 void
 MeshCache<MEM>::cacheCellGeometry()
 {
+  static_assert(MEM == MemSpace_kind::HOST);
   assert(framework_mesh_.get());
   if (data_.cell_geometry_cached) return;
   auto lambda = [this](Entity_ID c, Double_View cvol, Point_View ccent) {
@@ -1374,6 +1375,7 @@ template <MemSpace_kind MEM>
 void
 MeshCache<MEM>::cacheCellFaces()
 {
+  static_assert(MEM == MemSpace_kind::HOST);
   assert(framework_mesh_.get());
   if (data_.cell_faces_cached) return;
   int num_cells =

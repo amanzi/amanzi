@@ -49,7 +49,7 @@ struct MeshAlgorithms {
   // virtual std::tuple<double, AmanziGeometry::Point, typename Mesh::cPoint_View>
   // computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const;
 
-  virtual std::tuple<double, AmanziGeometry::Point, typename Mesh::cPoint_View>
+  virtual std::tuple<double, AmanziGeometry::Point, typename MeshHost::cPoint_View>
   computeFaceGeometry(const MeshHost& mesh, const Entity_ID f) const
   {
     return Impl::computeFaceGeometry(mesh, f);

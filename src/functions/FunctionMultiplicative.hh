@@ -76,12 +76,12 @@ class FunctionMultiplicative : public Function {
     if (ids) {
       auto ids_loc = *ids;
       Kokkos::parallel_for(
-        "FunctionAdditive::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+        "FunctionAdditive::apply", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
           out(ids_loc(i)) = out_1(i) * out_2(i);
         });
     } else {
       Kokkos::parallel_for(
-        "FunctionAdditive::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+        "FunctionAdditive::apply", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
           out(i) = out_1(i) * out_2(i);
         });
     }
