@@ -221,7 +221,7 @@ CurlCurl(double c_t,
   ver.CheckResidual(solution, 1.0e-10);
 
   int num_itrs = global_op->num_itrs();
-  CHECK(num_itrs < 150);
+  CHECK(num_itrs < 100);
 
   if (MyPID == 0) {
     std::cout << "electric solver (" << iter_solver << "): ||r||=" << global_op->residual()
@@ -249,23 +249,17 @@ CurlCurl(double c_t,
 
 TEST(CURL_CURL_LINEAR)
 {
-  // AMS support is borken
-  // CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false, "electromagnetics", "Hypre AMS");
-  CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false, "electromagnetics", "Hypre AMG");
+  CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false, "electromagnetics", "Hypre AMS");
 }
 
 TEST(CURL_CURL_NONLINEAR)
 {
-  // AMS support is borken
-  // CurlCurl<AnalyticElectromagnetics02>(1.0e-1, 0, 2e-1, false, "electromagnetics", "Hypre AMS");
-  CurlCurl<AnalyticElectromagnetics02>(
-    1.0e-1, 0, 2e-1, false, "electromagnetics", "Hypre AMG", "silent");
+  CurlCurl<AnalyticElectromagnetics02>(1.0e-1, 0, 2e-1, false, "electromagnetics", "Hypre AMS");
+  // CurlCurl<AnalyticElectromagnetics02>(1.0e-1, 0, 2e-1, false, "electromagnetics", "Hypre AMG", "silent");
 }
 
 TEST(CURL_CURL_TIME_DEPENDENT)
 {
-  // AMS support is borken
-  // CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true, "electromagnetics", "Hypre AMS");
-  CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true, "electromagnetics", "Hypre AMG");
+  CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true, "electromagnetics", "Hypre AMS");
   // CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true, "mfd: generalized");
 }
