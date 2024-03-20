@@ -382,6 +382,7 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
        UR[0] = UL[0];
        DR[0] = DL[0];
        DR[1] = DL[1];
+       DR[2] = DL[2];
      }
      if (bc_model_vector[f] == Operators::OPERATOR_BC_DIRICHLET) {
        if (outward_discharge_flag == true) { 
