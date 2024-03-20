@@ -487,7 +487,7 @@ MagneticDiffusion3D(double dt,
 
     // Solve the problem.
     global_op->set_inverse_parameters(
-      // "Hypre AMS", plist.sublist("preconditioners"), "GMRES", plist.sublist("solvers"));
+      // "Hypre AMS",
       "Hypre AMG",
       plist.sublist("preconditioners"),
       "GMRES",

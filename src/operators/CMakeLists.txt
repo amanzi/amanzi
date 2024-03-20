@@ -311,15 +311,15 @@ if (ENABLE_TESTS)
                         KIND unit
                         NPROCS 2
                         SOURCE test/Main.cc test/operator_remap.cc
-                                            # test/operator_remap_curved.cc
+                                            test/operator_remap_curved.cc
                         LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-        # add_amanzi_test(operators_remap_gcl operators_remap_gcl
-        #                 KIND unit
-        #                 NPROCS 3
-        #                 SOURCE test/Main.cc test/operator_remap_gcl.cc
-        #                                     test/operator_remap_gcl_reinit.cc
-        #                                     LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+        add_amanzi_test(operators_remap_gcl operators_remap_gcl
+                        KIND unit
+                        NPROCS 3
+                        SOURCE test/Main.cc test/operator_remap_gcl.cc
+                                            test/operator_remap_gcl_reinit.cc
+                                            LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
         # DG advection test
         add_amanzi_test(operators_advection_dg operators_advection_dg

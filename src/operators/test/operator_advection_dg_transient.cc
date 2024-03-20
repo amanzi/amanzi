@@ -745,8 +745,8 @@ InterpolateCellToNode(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
   int nnodes_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
                                           Amanzi::AmanziMesh::Parallel_kind::OWNED);
-  auto un =
-    Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(Amanzi::AmanziMesh::Entity_kind::NODE, false), 1));
+  auto un = Teuchos::rcp(
+    new Epetra_MultiVector(mesh->getMap(Amanzi::AmanziMesh::Entity_kind::NODE, false), 1));
 
   for (int v = 0; v < nnodes_owned; ++v) {
     xv = mesh->getNodeCoordinate(v);
