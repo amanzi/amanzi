@@ -162,7 +162,7 @@ createMapsFromMeshGIDs(const Mesh_type& mesh, const Entity_kind kind)
   // this could be done on device, but is currently only called with a
   // MeshFramework as argument?  Therefore must deep copy to device to
   // construct the map?
-  static_assert(std::is_same_v<Mesh_type, MeshFramework>);
+  static_assert(std::is_base_of_v<MeshFramework, Mesh_type>);
 
   Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
   Kokkos::View<const GO*, Amanzi::HostSpace> gids = mesh.getEntityGIDs(kind, true);

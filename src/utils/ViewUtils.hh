@@ -68,7 +68,9 @@ template <typename V, typename T>
 void
 vectorToConstView(V& view, const std::vector<T> vec)
 {
-  Kokkos::MeshView<T*> lview;
+  static_assert(Kokkos::SpaceAccessibility<typename V::execution_space,
+                                           typename Kokkos::HostSpace>::accessible);
+  Kokkos::MeshView<T*, typename V::execution_space> lview;
   Kokkos::resize(lview, vec.size());
   for (int i = 0; i < lview.size(); ++i) lview[i] = vec[i];
   view = lview;
@@ -78,6 +80,8 @@ template <typename V, typename T>
 void
 vectorToView(V& view, const std::vector<T> vec)
 {
+  static_assert(Kokkos::SpaceAccessibility<typename V::execution_space,
+                                           typename Kokkos::HostSpace>::accessible);
   Kokkos::resize(view, vec.size());
   for (int i = 0; i < view.size(); ++i) view[i] = vec[i];
 }
@@ -86,6 +90,9 @@ template <typename V, typename T>
 void
 setToView(V& view, const std::set<T> vec)
 {
+  static_assert(Kokkos::SpaceAccessibility<typename V::execution_space,
+                                           typename Kokkos::HostSpace>::accessible);
+
   Kokkos::resize(view, vec.size());
   int i = 0;
   for (const auto& v : vec) view[i++] = v;
