@@ -1712,20 +1712,10 @@ function define_summit_options
 
 function define_cuda_options
 {
-  if [ "${cuda}" -eq "${TRUE}" ]; then
-      mpi_exec_args="-a 1 -c 1 -g 1" # 1 gpu per mpi rank, max 6 ranks
-  else
+  if ! [ "${cuda}" -eq "${TRUE}" ]; then
       error_message "CUDA arch is only supported when compiling with CUDA support"
   fi
 
-  arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
-                 -DMPI_EXEC:STRING=srun \
-                 -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
-                 -DMPI_EXEC_MAX_NUMPROCS:INT=6"
-  arch_amanzi_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
-                 -DMPI_EXEC:STRING=jsrun \
-                 -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
-                 -DMPI_EXEC_MAX_NUMPROCS:INT=6"
   cuda_arch="${1}"
   echo "Setting ARCH for: CUDA"
   echo "CUDA arch        =  sm_"${cuda_arch}
@@ -1884,6 +1874,7 @@ if [ -z "${tpl_config_file}" ]; then
  
   if [ "${cuda}" -eq "${TRUE}" ]; then
       export NVCC_WRAPPER_DEFAULT_COMPILER=mpicxx
+      export CUDA_LAUNCH_BLOCKING=1
   fi
  
   # Configure the TPL build
