@@ -178,9 +178,10 @@ MechanicsElasticity_PK::ComputeOperatorBCs()
     }
 
     if (bcs_[i]->get_bc_name() == "kinematic" &&
-        bcs_[i]->type() == WhetStone::DOF_Type::NORMAL_COMPONENT) {
-      std::vector<int>& bc_model = op_bcs_[3]->bc_model();
-      std::vector<double>& bc_value = op_bcs_[3]->bc_value();
+        bcs_[i]->type() == WhetStone::DOF_Type::NORMAL_COMPONENT &&
+        bcs_[i]->kind() == AmanziMesh::Entity_kind::NODE) {
+      std::vector<int>& bc_model = op_bcs_[1]->bc_model();
+      std::vector<double>& bc_value = op_bcs_[1]->bc_value();
 
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;

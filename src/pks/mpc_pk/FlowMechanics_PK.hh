@@ -32,6 +32,7 @@ class FlowMechanics_PK : public PK_MPCSequential {
 
   // PK methods
   virtual void Setup() override;
+  virtual void Initialize() override;
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override;
   virtual double
   ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;

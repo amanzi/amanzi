@@ -77,7 +77,7 @@ class MyRemapDGc : public Operators::RemapDG<CompositeVector> {
 
   // access
   const std::vector<WhetStone::SpaceTimePolynomial> det() const { return *det_; }
-  const std::shared_ptr<WhetStone::MeshMaps> maps() const { return maps_; }
+  const std::shared_ptr<WhetStone::MeshMapsBase> maps() const { return maps_; }
 
  public:
   double tprint_, dt_output_, l2norm_;
@@ -372,21 +372,26 @@ RemapTestsCurved(std::string file_name,
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(dim, region_list, *comm));
 
   auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
-  Teuchos::RCP<MeshCurved> mesh0, mesh1;
+  mlist->set<bool>("request faces", true);
+  mlist->set<bool>("request edges", (dim == 3));
+  Teuchos::RCP<MeshCurved> mesh0_fw, mesh1_fw;
 
   if (file_name != "") {
-    bool request_edges = (dim == 3);
-    mesh0 = Teuchos::rcp(new MeshCurved(file_name, comm, gm, mlist, true, request_edges));
-    mesh1 = Teuchos::rcp(new MeshCurved(file_name, comm, gm, mlist, true, request_edges));
+    mesh0_fw = Teuchos::rcp(new MeshCurved(file_name, comm, gm, mlist));
+    mesh1_fw = Teuchos::rcp(new MeshCurved(file_name, comm, gm, mlist));
   } else if (dim == 2) {
-    mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, gm, mlist));
-    mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, gm, mlist));
+    mesh0_fw = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, gm, mlist));
+    mesh1_fw = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, gm, mlist));
   } else {
-    mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
-    mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
+    mesh0_fw =
+      Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
+    mesh1_fw =
+      Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
   }
-  mesh0->BuildCache();
-  mesh1->BuildCache();
+  auto mesh0 = Teuchos::rcp(new AmanziMesh::MeshCache<MemSpace_kind::HOST>(
+    mesh0_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
+  auto mesh1 = Teuchos::rcp(new AmanziMesh::MeshCache<MemSpace_kind::HOST>(
+    mesh1_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
 
   int ncells_owned =
     mesh0->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
@@ -527,8 +532,8 @@ RemapTestsCurved(std::string file_name,
     double vol2 = mesh1->getCellVolume(c);
 
     area += vol1;
-    area0 += mesh0->getCellVolume_linear(c);
-    area1 += mesh1->getCellVolume_linear(c);
+    area0 += mesh0->getAlgorithms()->computeCellVolume(*mesh0, c);
+    area1 += mesh1->getAlgorithms()->computeCellVolume(*mesh1, c);
 
     double err = std::fabs(vol1 - vol2);
     gcl_inf = std::max(gcl_inf, err / vol1);

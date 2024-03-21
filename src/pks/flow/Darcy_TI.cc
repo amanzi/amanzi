@@ -59,7 +59,8 @@ Darcy_PK::FunctionalResidual(double t_old,
   }
 
   S_->GetEvaluator(water_storage_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
-  const auto& dws_dp = S_->GetDerivative<CV_t>(water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
+  const auto& dws_dp =
+    S_->GetDerivative<CV_t>(water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
   op_acc_->AddAccumulationDelta(*u_old->Data(), dws_dp, dws_dp, dt_, "cell");
   op_acc_->AddAccumulationDeltaNoVolume(*u_old->Data(), sy_g, "cell");
 

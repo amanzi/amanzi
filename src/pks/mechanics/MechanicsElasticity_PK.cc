@@ -126,6 +126,7 @@ MechanicsElasticity_PK::Setup()
   {
     Teuchos::ParameterList elist(vol_strain_key_);
     elist.set<std::string>("tag", "");
+    // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     eval_vol_strain_ = Teuchos::rcp(new VolumetricStrainEvaluator(elist));
     S_->SetEvaluator(vol_strain_key_, Tags::DEFAULT, eval_vol_strain_);
   }
@@ -272,12 +273,21 @@ MechanicsElasticity_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
+        // nodal dofs
         auto bc = bc_factory.Create(
-          spec, "kinematic", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
+          spec, "kinematic", AmanziMesh::NODE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("kinematic");
         bc->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
-        bc->set_kind(AmanziMesh::FACE);
+        bc->set_kind(AmanziMesh::NODE);
         bcs_.push_back(bc);
+
+        // bubble dofs
+        auto bc2 = bc_factory.Create(
+          spec, "kinematic", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
+        bc2->set_bc_name("kinematic");
+        bc2->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
+        bc2->set_kind(AmanziMesh::FACE);
+        bcs_.push_back(bc2);
       }
     }
   }
