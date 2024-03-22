@@ -352,9 +352,8 @@ MeshAudit_Geometry<Mesh_type>::check_entity_counts() const
 
 
 // Check that cell_to_nodes successfully returns valid references to local
-// nodes.  Here the std::vector accessor is used.  The consistency of
-// the alternative accessors is checked elsewhere.  A nonzero return value
-// signals an error, and further tests using its data should be avoided.
+// nodes.  A nonzero return value signals an error, and further tests using its
+// data should be avoided.
 template <class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::checkCellToNodes() const
@@ -417,8 +416,7 @@ MeshAudit_Geometry<Mesh_type>::checkNodeRefsByCells() const
 
 
 // Check that cell_to_faces successfully returns valid references to local
-// faces.  Here the std::vector accessor is used.  The consistency of
-// the alternative accessors is checked elsewhere.  A nonzero return value
+// faces.  A nonzero return value
 // signals an error, and further tests using its data should be avoided.
 template <class Mesh_type>
 bool
@@ -429,7 +427,7 @@ MeshAudit_Geometry<Mesh_type>::checkCellToFaces() const
 
   using Range_type = typename Kokkos::RangePolicy<LO, typename Mesh_type::cEntity_ID_View::execution_space>;
   if constexpr(std::is_same_v<Mesh_type, Mesh>) {
-    Kokkos::parallel_for("MeshAudut::checkCellToFaces", Range_type(0, ncells_all_),
+    Kokkos::parallel_for("MeshAudit::checkCellToFaces", Range_type(0, ncells_all_),
                          KOKKOS_LAMBDA(const Entity_ID c) {
                            auto cface = mesh_->getCellFaces(c);
                            for (auto& f : cface) {
@@ -437,7 +435,7 @@ MeshAudit_Geometry<Mesh_type>::checkCellToFaces() const
                            }
                          });
   } else {
-    Kokkos::parallel_for("MeshAudut::checkCellToNodes", Range_type(0, ncells_all_),
+    Kokkos::parallel_for("MeshAudit::checkCellToFaces_host", Range_type(0, ncells_all_),
                          KOKKOS_LAMBDA(const Entity_ID c) {
                            try {
                              Mesh_type::Entity_ID_View cface;
@@ -494,31 +492,42 @@ MeshAudit_Geometry<Mesh_type>::checkFaceRefsByCells() const
 
 
 // Check that face_to_nodes successfully returns valid references to local
-// nodes.  Here the std::vector accessor is used.  The consistency of
-// the alternative accessors is checked elsewhere.  A nonzero return value
-// signals an error, and further tests using its data should be avoided.
+// nodes.  A nonzero return value signals an error, and further tests using its
+// data should be avoided.
 template <class Mesh_type>
 bool
-MeshAudit_Geometry<Mesh_type>::check_face_to_nodes() const
+MeshAudit_Geometry<Mesh_type>::checkFaceToNodes() const
 {
-  Entity_ID_List bad_faces, bad_faces1;
-  Mesh_type::cEntity_ID_View fnode;
+  Mesh_type::Entity_ID_View bad_faces("bad faces", nfaces_all_);
+  Mesh_type::Entity_ID_View bad_faces1("bad faces1", nfaces_all_);
 
-  for (Entity_ID j = 0; j < nfaces_all_; ++j) {
-    try {
-      mesh_->getFaceNodes(j, fnode); // this may fail
-      bool invalid_refs = false;
-      for (int k = 0; k < fnode.size(); ++k) {
-        if (fnode[k] >= nnodes_all_) invalid_refs = true;
-      }
-      if (invalid_refs) bad_faces.push_back(j);
-    } catch (...) {
-      bad_faces1.push_back(j);
-    }
+  using Range_type = typename Kokkos::RangePolicy<LO, typename Mesh_type::cEntity_ID_View::execution_space>;
+  if constexpr(std::is_same_v<Mesh_type, Mesh>) {
+    Kokkos::parallel_for("MeshAudit::checkFaceToNodes", Range_type(0, nfaces_all_),
+                         KOKKOS_LAMBDA(const LO c) {
+                           auto cnode = mesh_->getFaceNodes(c);
+                           for (auto& n : cnode) {
+                             if (n >= nnodes_all_) bad_faces(c) = 1;
+                           }
+                         });
+  } else {
+    Kokkos::parallel_for("MeshAudit::checkFaceToNodes_host", Range_type(0, nfaces_all_),
+                         KOKKOS_LAMBDA(const LO c) {
+                           try {
+                             Mesh_type::cEntity_ID_View cnode;
+                             mesh_->getFaceNodes(c, cnode); // this may fail
+                             bool invalid_refs = false;
+                             for (auto& n : cnode) {
+                               if (n >= nnodes_all_) bad_faces(c) = 1;
+                             }
+                           } catch (...) {
+                             bad_faces1(c) = 1;
+                           }
+                         });
   }
 
   bool error = checkList_(bad_faces, "invalid nodes referenced by faces");
-  error |= checkList_(bad_faces1, "caught exception for faces");
+  error |= checkList_(bad_faces1, "caught exception for getFaceNodes() with faces");
   return globalAny_(error);
 }
 
@@ -528,53 +537,60 @@ MeshAudit_Geometry<Mesh_type>::check_face_to_nodes() const
 // return value indicates that one or more nodes are not attached to any face.
 template <class Mesh_type>
 bool
-MeshAudit_Geometry<Mesh_type>::check_node_refs_by_faces() const
+MeshAudit_Geometry<Mesh_type>::checkNodeRefsByFaces() const
 {
-  Mesh_type::cEntity_ID_View fnode;
-  std::vector<bool> ref(nnodes_all_, false);
+  Mesh_type::cEntity_ID_View free_nodes("MeshAudit::checkNodeRefsByFaces", nnodes_all_);
+  Kokkos::deep_copy(free_nodes, 1);
 
-  for (Entity_ID j = 0; j < nfaces_all_; ++j) {
-    mesh_->getFaceNodes(j, fnode);
-    for (int k = 0; k < fnode.size(); ++k) ref[fnode[k]] = true;
-  }
+  using Range_type = typename Kokkos::RangePolicy<LO, typename Mesh_type::cEntity_ID_View::execution_space>;
+  Kokkos::parallel_for("MeshAudit::checkNodeRefsByFaces", Range_type(0, nfaces_all_),
+                       KOKKOS_LAMBDA(const Entity_ID c) {
+                         Mesh_type::cEntity_ID_View cnode;
+                         mesh_->getFaceNodes(c, cnode);
+                         for (auto& n : cnode) Kokkos::atomic_store(&free_nodes(n), 0);
+                       });
 
-  Entity_ID_List free_nodes;
-  for (int j = 0; j < nnodes_all_; ++j) {
-    if (!ref[j]) free_nodes.push_back(j);
-  }
-
-  bool error = checkList_(free_nodes "found unreferenced nodes");
+  bool error = checkList_(free_nodes, "found unreferenced nodes");
   return globalAny_(error);
 }
 
 // Check that cell_to_face_dirs successfully returns data for all cells and
-// that the values are either +1 or -1. The std::vector-based method is used;
-// the consistency of the alternative methods is checked elsewhere.  If this
-// test fails, further tests using this data should be avoided.
+// that the values are either +1 or -1. If this test fails, further tests using
+// this data should be avoided.
 template <class Mesh_type>
 bool
-MeshAudit_Geometry<Mesh_type>::check_cell_to_face_dirs() const
+MeshAudit_Geometry<Mesh_type>::checkCellToFaceDirs() const
 {
-  Mesh_type::cEntity_ID_View faces;
-  View_type<const Direction_type, MemSpace_kind::HOST> fdirs;
-  Entity_ID_List bad_cells, bad_cells_exc;
+  Mesh_type::Entity_ID_View bad_cells("bad cells", ncells_all_);
+  Mesh_type::Entity_ID_View bad_cells1("bad cells1", ncells_all_);
 
-  for (Entity_ID j = 0; j < ncells_all_; ++j) {
-    //Kokkos::resize(fdirs, 6);
-    //initView(fdirs, std::numeric_limits<int>::max());
-    try {
-      mesh_->getCellFacesAndDirs(j, faces, &fdirs); // this may fail
-      bool bad_data = false;
-      for (int k = 0; k < fdirs.size(); ++k)
-        if (fdirs[k] != -1 && fdirs[k] != 1) bad_data = true;
-      if (bad_data) bad_cells(j) = 1;
-    } catch (...) {
-      bad_cells_exc.push_back(j);
-    }
+  using Range_type = typename Kokkos::RangePolicy<LO, typename Mesh_type::cEntity_ID_View::execution_space>;
+  if constexpr(std::is_same_v<Mesh_type, Mesh>) {
+    Kokkos::parallel_for("MeshAudit::checkCellToFaces", Range_type(0, ncells_all_),
+                         KOKKOS_LAMBDA(const Entity_ID c) {
+                           auto [cface,fdirs] = mesh_->getCellFacesAndDirs(c);
+                           for (auto& fd : fdirs) {
+                             if (fd != 1 && fd != -1) bad_cells(c) = 1;
+                           }
+                         });
+  } else {
+    Kokkos::parallel_for("MeshAudit::checkCellToFaces_host", Range_type(0, ncells_all_),
+                         KOKKOS_LAMBDA(const Entity_ID c) {
+                           try {
+                             Mesh_type::cEntity_ID_View cface;
+                             Mesh_type::cDirection_View fdirs;
+                             mesh_->getCellFacesAndDirs(c, cface, fdirs); // this may fail
+                             for (auto& fd : fdirs) {
+                               if (fd != 1 && fd != -1) bad_cells(c) = 1;
+                             }
+                           } catch (...) {
+                             bad_cells1(c) = 1;
+                           }
+                         });
   }
 
   bool error = checkList_(bad_cells, "inadmissable or no data for cells");
-  error |= checkList_(bad_cells_exc, "caught exception for cells");
+  error |= checkList_(bad_cells1, "caught exception for cells");
   return globalAny_(error);
 }
 
@@ -585,16 +601,17 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_face_dirs() const
 //
 template <class Mesh_type>
 bool
-MeshAudit_Geometry<Mesh_type>::check_cell_degeneracy() const
+MeshAudit_Geometry<Mesh_type>::checkCellDegeneracy() const
 {
   os_ << "Checking cells for topological degeneracy ..." << std::endl;
 
-  Entity_ID_List bad_cells;
-
-  for (Entity_ID j = 0; j < ncells_all_; ++j) {
-    auto cnodes = mesh_->getCellNodes(j); // should not fail
-    if (!this->areDistinctValues_(cnodes)) bad_cells(j) = 1;
-  }
+  Mesh_type::Entity_ID_View bad_cells("bad cells", ncells_all_);
+  using Range_type = typename Kokkos::RangePolicy<LO, typename Mesh_type::cEntity_ID_View::execution_space>;
+  Kokkos::parallel_for("MeshAudit::checkCellToFaces", Range_type(0, ncells_all_),
+                       KOKKOS_LAMBDA(const Entity_ID c) {
+                         auto cnodes = mesh_->getCellNodes(j); // should not fail
+                         if (!this->areDistinctValues_(cnodes)) bad_cells(j) = 1;
+                       });
 
   bool error = checkList_(bad_cells, "found topologically degenerate cells");
   return globalAny_(error);
@@ -610,68 +627,69 @@ MeshAudit_Geometry<Mesh_type>::check_cell_degeneracy() const
 // using their values should be avoided.
 template <class Mesh_type>
 bool
-MeshAudit_Geometry<Mesh_type>::check_cell_to_faces_to_nodes() const
+MeshAudit_Geometry<Mesh_type>::checkCellToFacesToNodes() const
 {
-  Mesh_type::cEntity_ID_View cnode;
-  Mesh_type::cEntity_ID_View cface;
-  View_type<Entity_ID, MemSpace_kind::HOST> fnode_ref;
-  Mesh_type::cEntity_ID_View fnode;
-  View_type<const Direction_type, MemSpace_kind::HOST> fdirs;
-  Entity_ID_List bad_cells0;
-  Entity_ID_List bad_cells1;
-
   // unordered meshes cannot pass this test.
   if (!mesh_->isOrdered()) {
     os_ << "  Skipped (unordered mesh)" << std::endl;
     return false;
   }
 
-  for (Entity_ID j = 0; j < ncells_all_; ++j) {
-    Cell_kind ctype_enum = mesh_->getCellType(j);
+  Mesh_type::Entity_ID_View bad_cells("bad cells", ncells_all_);
+  Mesh_type::Entity_ID_View bad_cells1("bad cells1", ncells_all_);
 
-    // If this is a general, non-standard element there is nothing to
-    // to check against
-    if (ctype_enum == Cell_kind::UNKNOWN || ctype_enum == Cell_kind::POLYGON ||
-        ctype_enum == Cell_kind::POLYHED)
-      continue;
+ // 4 == max nodes per face in non-polygonal face
+  Kokkos:View<Entity_ID**, typename Mesh_type::cEntity_ID_View::execution_space> workspace("work", ncells_all_, 4);
 
-    int ctype = (int)ctype_enum;
-    auto cnode = mesh_->getCellNodes(j);                       // this should not fail
-    auto [cface, fdirs] = mesh_->getCellFacesAndDirections(j); // this should not fail
-    bool bad_face = false;
-    bool bad_dir = false;
+  using Range_type = typename Kokkos::RangePolicy<LO, typename Mesh_type::cEntity_ID_View::execution_space>;
+  Kokkos::parallel_for("MeshAudit::checkCellToFacesToNodes", Range_type(0, ncells_all_),
+                       KOKKOS_LAMBDA(const LO c) {
+                         Cell_kind ctype_enum = mesh_->getCellType(j);
 
-    if (cface.size() != Topology::nface_std[ctype]) {
-      bad_face = true;
-    } else {
-      for (int k = 0; k < cface.size(); ++k) {
-        auto fnode = mesh_->getFaceNodes(cface[k]); // this should not fail
-        int nfn = Topology::nfnodes_std[ctype][k];
+                         // If this is a general, non-standard element there is nothing to
+                         // to check against
+                         if (ctype_enum == Cell_kind::UNKNOWN || ctype_enum == Cell_kind::POLYGON ||
+                             ctype_enum == Cell_kind::POLYHED)
+                           return;
 
-        if (fnode.size() != nfn) {
-          bad_face = true;
-          break;
-        }
+                         int ctype = (int)ctype_enum;
+                         auto cnode = mesh_->getCellNodes(j);
+                         auto [cface, fdirs] = mesh_->getCellFacesAndDirections(j);
 
-        MeshHost::Entity_ID_View fnode_ref("fnode_red", nfn);
-        for (int i = 0; i < nfn; ++i) {
-          int nodenum = Topology::fnodes_std[ctype][k][i];
-          fnode_ref[i] = cnode[nodenum];
-        }
+                         bool bad_face = false;
+                         bool bad_dir = false;
 
-        int dir = this->isSameFace_(fnode, fnode_ref); // should be the same face
-        if (dir == 0) {                                // wrong face
-          bad_face = true;
-          break;
-        } else if (dir != fdirs[k]) { // right face but wrong dir value
-          bad_dir = true;
-          break;
-        }
-      }
-    }
-    if (bad_face) bad_cells0(i) = 1;
-    if (bad_dir) bad_cells1(i) = 1;
-  }
+                         if (cface.size() != Topology::nface_std[ctype]) {
+                           bad_face = true;
+                         } else {
+                           for (int k = 0; k < cface.size(); ++k) {
+                             auto fnode = mesh_->getFaceNodes(cface(k)); // this should not fail
+                             int nfn = Topology::nfnodes_std[ctype][k];
+
+                             if (fnode.size() != nfn) {
+                               bad_face = true;
+                               break;
+                             }
+
+                             auto fnode_ref = Kokkos::subview(workspace, c, Kokkos::ALL);
+                             for (int i = 0; i < nfn; ++i) {
+                               int nodenum = Topology::fnodes_std[ctype][k][i];
+                               fnode_ref[i] = cnode(nodenum);
+                             }
+
+                             int dir = this->isSameFace_(fnode, fnode_ref); // should be the same face
+                             if (dir == 0) {                                // wrong face
+                               bad_face = true;
+                               break;
+                             } else if (dir != fdirs(k)) { // right face but wrong dir value
+                               bad_dir = true;
+                               break;
+                             }
+                           }
+                         }
+                         if (bad_face) bad_cells(i) = 1;
+                         if (bad_dir) bad_cells1(i) = 1;
+                       });
 
   bool error = checkList_(bad_cells0, "bad getCellFaces values for cells");
 
@@ -1852,10 +1870,11 @@ MeshAudit_Base<Mesh_type>::areDistinctValues_(const Mesh_type::cEntity_ID_View& 
 // faces.  Implicitly assumes non-degenerate faces; the results are not
 // reliable otherwise.
 template <class Mesh_type>
+template <class View1_type, class View2_type>
 int
 MeshAudit_Base<Mesh_type>::isSameFace_(
-  const Mesh_type::cEntity_ID_View& fnode1,
-  const Mesh_type::cEntity_ID_View& fnode2) const
+  const View1_type& fnode1,
+  const View2_type& fnode2) const
 {
   int nn = fnode1.size();
   if (nn != fnode2.size()) return 0;
