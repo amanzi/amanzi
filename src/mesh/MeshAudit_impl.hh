@@ -359,11 +359,13 @@ template <class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_cell_to_nodes() const
 {
-  Entity_ID_List bad_cells, bad_cells1;
-  View_type<const Entity_ID, MemSpace_kind::HOST> cnode;
+  Mesh_type::Entity_ID_View bad_cells("bad cells", ncells_all_);
+  Mesh_type::Entity_ID_View bad_cells1("bad cells1", ncells_all_);
 
+  size_t count;
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
     try {
+      Mesh_type::cEntity_ID_View cnode;
       mesh_->getCellNodes(j, cnode); // this may fail
       bool invalid_refs = false;
       for (int k = 0; k < cnode.size(); ++k) {
@@ -375,21 +377,11 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_nodes() const
     }
   }
 
-  bool error = false;
-
-  if (!bad_cells.empty()) {
-    os_ << "ERROR: invalid nodes referenced by cells:";
-    writeList_(bad_cells);
-    error = true;
-  }
-
-  if (!bad_cells1.empty()) {
-    os_ << "ERROR: caught exception for cells:";
-    writeList_(bad_cells1);
-    error = true;
-  }
+  bool error = checkList_(bad_cells, "invalid nodes referenced by cells");
+  error |= checkList_(bad_cells1, "caught exception for getCellNodes() with cells");
   return globalAny_(error);
 }
+
 
 // Check that every node is referenced by at least one cell.  This assumes
 // that cell_to_nodes have been verified to return valid data.  A nonzero
@@ -398,7 +390,7 @@ template <class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_node_refs_by_cells() const
 {
-  View_type<const Entity_ID, MemSpace_kind::HOST> cnode;
+  Mesh_type::cEntity_ID_View cnode;
   std::vector<bool> ref(nnodes_all_, false);
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
@@ -411,16 +403,10 @@ MeshAudit_Geometry<Mesh_type>::check_node_refs_by_cells() const
     if (!ref[j]) free_nodes.push_back(j);
   }
 
-  bool error = false;
-
-  if (!free_nodes.empty()) {
-    os_ << "ERROR: found unreferenced nodes:";
-    writeList_(free_nodes);
-    error = true;
-  }
-
+  bool error = checkList_(free_nodes, "found unreferenced nodes");
   return globalAny_(error);
 }
+
 
 // Check that cell_to_faces successfully returns valid references to local
 // faces.  Here the std::vector accessor is used.  The consistency of
@@ -431,7 +417,7 @@ bool
 MeshAudit_Geometry<Mesh_type>::check_cell_to_faces() const
 {
   Entity_ID_List bad_cells, bad_cells1;
-  View_type<const Entity_ID, MemSpace_kind::HOST> cface;
+  Mesh_type::cEntity_ID_View cface;
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
     try {
@@ -446,22 +432,11 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_faces() const
     }
   }
 
-  bool error = false;
-
-  if (!bad_cells.empty()) {
-    os_ << "ERROR: invalid faces referenced by cells:";
-    writeList_(bad_cells);
-    error = true;
-  }
-
-  if (!bad_cells1.empty()) {
-    os_ << "ERROR: caught exception for cells:";
-    writeList_(bad_cells1);
-    error = true;
-  }
-
+  bool error = checkList_(bad_cells, "invalid faces referenced by cells");
+  error |= checkList_(bad_cells1, "caught exception for cells");
   return globalAny_(error);
 }
+
 
 // Check that every face is referenced by exactly one or two cells.  This
 // assumes that cell_to_faces have been verified to return valid data.  A
@@ -471,7 +446,7 @@ template <class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_face_refs_by_cells() const
 {
-  View_type<const Entity_ID, MemSpace_kind::HOST> cface;
+  Mesh_type::cEntity_ID_View cface;
   std::vector<unsigned int> refs(nfaces_all_, 0);
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
@@ -489,23 +464,15 @@ MeshAudit_Geometry<Mesh_type>::check_face_refs_by_cells() const
       bad_faces.push_back(j);
   }
 
-  bool error = false;
-
-  if (!free_faces.empty()) {
-    os_ << "ERROR: found unreferenced faces:";
-    writeList_(free_faces);
-    error = true;
-  }
+  bool error = checkList_(free_faces, "found unreferenced faces");
 
   // note that 3D space meshes of 2D manifolds may allow for more than 2 cells on a face
-  if (!bad_faces.empty() && mesh_->getSpaceDimension() == mesh_->getManifoldDimension()) {
-    os_ << "ERROR: found faces shared by more than two cells:";
-    writeList_(bad_faces);
-    error = true;
+  if (mesh_->getSpaceDimension() == mesh_->getManifoldDimension()) {
+    error |= checkList_(bad_faces, "found faces shared by more than two cells");
   }
-
   return globalAny_(error);
 }
+
 
 // Check that face_to_nodes successfully returns valid references to local
 // nodes.  Here the std::vector accessor is used.  The consistency of
@@ -516,7 +483,7 @@ bool
 MeshAudit_Geometry<Mesh_type>::check_face_to_nodes() const
 {
   Entity_ID_List bad_faces, bad_faces1;
-  View_type<const Entity_ID, MemSpace_kind::HOST> fnode;
+  Mesh_type::cEntity_ID_View fnode;
 
   for (Entity_ID j = 0; j < nfaces_all_; ++j) {
     try {
@@ -531,21 +498,11 @@ MeshAudit_Geometry<Mesh_type>::check_face_to_nodes() const
     }
   }
 
-  bool error = false;
-
-  if (!bad_faces.empty()) {
-    os_ << "ERROR: invalid nodes referenced by faces:";
-    writeList_(bad_faces);
-    error = true;
-  }
-
-  if (!bad_faces1.empty()) {
-    os_ << "ERROR: caught exception for faces:";
-    writeList_(bad_faces1);
-    error = true;
-  }
+  bool error = checkList_(bad_faces, "invalid nodes referenced by faces");
+  error |= checkList_(bad_faces1, "caught exception for faces");
   return globalAny_(error);
 }
+
 
 // Check that every node is referenced by at least one face.  This assumes
 // that face_to_nodes has been verified to return valid data.  A nonzero
@@ -554,7 +511,7 @@ template <class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_node_refs_by_faces() const
 {
-  View_type<const Entity_ID, MemSpace_kind::HOST> fnode;
+  Mesh_type::cEntity_ID_View fnode;
   std::vector<bool> ref(nnodes_all_, false);
 
   for (Entity_ID j = 0; j < nfaces_all_; ++j) {
@@ -567,14 +524,7 @@ MeshAudit_Geometry<Mesh_type>::check_node_refs_by_faces() const
     if (!ref[j]) free_nodes.push_back(j);
   }
 
-  bool error = false;
-
-  if (!free_nodes.empty()) {
-    os_ << "ERROR: found unreferenced nodes:";
-    writeList_(free_nodes);
-    error = true;
-  }
-
+  bool error = checkList_(free_nodes "found unreferenced nodes");
   return globalAny_(error);
 }
 
@@ -586,7 +536,7 @@ template <class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_cell_to_face_dirs() const
 {
-  View_type<const Entity_ID, MemSpace_kind::HOST> faces;
+  Mesh_type::cEntity_ID_View faces;
   View_type<const Direction_type, MemSpace_kind::HOST> fdirs;
   Entity_ID_List bad_cells, bad_cells_exc;
 
@@ -604,20 +554,8 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_face_dirs() const
     }
   }
 
-  bool error = false;
-
-  if (!bad_cells.empty()) {
-    os_ << "ERROR: inadmissable or no data for cells:";
-    writeList_(bad_cells);
-    error = true;
-  }
-
-  if (!bad_cells_exc.empty()) {
-    os_ << "ERROR: caught exception for cells:";
-    writeList_(bad_cells_exc);
-    error = true;
-  }
-
+  bool error = checkList_(bad_cells, "inadmissable or no data for cells");
+  error |= checkList_(bad_cells_exc, "caught exception for cells");
   return globalAny_(error);
 }
 
@@ -639,14 +577,7 @@ MeshAudit_Geometry<Mesh_type>::check_cell_degeneracy() const
     if (!this->areDistinctValues_(cnodes)) bad_cells.push_back(j);
   }
 
-  bool error = false;
-
-  if (!bad_cells.empty()) {
-    os_ << "ERROR: found topologically degenerate cells:";
-    writeList_(bad_cells);
-    error = true;
-  }
-
+  bool error = checkList_(bad_cells, "found topologically degenerate cells");
   return globalAny_(error);
 }
 
@@ -662,10 +593,10 @@ template <class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::check_cell_to_faces_to_nodes() const
 {
-  View_type<const Entity_ID, MemSpace_kind::HOST> cnode;
-  View_type<const Entity_ID, MemSpace_kind::HOST> cface;
+  Mesh_type::cEntity_ID_View cnode;
+  Mesh_type::cEntity_ID_View cface;
   View_type<Entity_ID, MemSpace_kind::HOST> fnode_ref;
-  View_type<const Entity_ID, MemSpace_kind::HOST> fnode;
+  Mesh_type::cEntity_ID_View fnode;
   View_type<const Direction_type, MemSpace_kind::HOST> fdirs;
   Entity_ID_List bad_cells0;
   Entity_ID_List bad_cells1;
@@ -723,22 +654,13 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_faces_to_nodes() const
     if (bad_dir) bad_cells1.push_back(j);
   }
 
-  bool error = false;
-
-  if (!bad_cells0.empty()) {
-    os_ << "ERROR: bad getCellFaces values for cells:";
-    writeList_(bad_cells0);
-    error = true;
-  }
+  bool error = checkList_(bad_cells0, "bad getCellFaces values for cells");
 
   // algorithms on a non-manifold use multiple normals and special continuity equations
   // for fluxes, so that orientation does not play role. This may change in the future.
-  if (!bad_cells1.empty() && mesh_->getSpaceDimension() == mesh_->getManifoldDimension()) {
-    os_ << "ERROR: bad cell_get_face_dirs values for cells:";
-    writeList_(bad_cells1);
-    error = true;
+  if (mesh_->getSpaceDimension() == mesh_->getManifoldDimension()) {
+    error |= checkList_(bad_cells1, "bad cell_get_face_dirs values for cells");
   }
-
   return globalAny_(error);
 }
 
@@ -768,20 +690,8 @@ MeshAudit_Geometry<Mesh_type>::check_node_to_coordinates() const
     }
   }
 
-  bool error = false;
-
-  if (!bad_nodes.empty()) {
-    os_ << "ERROR: missing coordinate data for nodes:";
-    writeList_(bad_nodes);
-    error = true;
-  }
-
-  if (!bad_nodes_exc.empty()) {
-    os_ << "ERROR: caught exception for nodes:";
-    writeList_(bad_nodes_exc);
-    error = true;
-  }
-
+  bool error = checkList_(bad_nodes, "missing coordinate data for nodes");
+  error |= checkList_(bad_nodes_exc, "caught exception for nodes");
   return globalAny_(error);
 }
 
@@ -796,7 +706,7 @@ bool
 MeshAudit_Geometry<Mesh_type>::check_cell_to_coordinates() const
 {
   int spdim = mesh_->getSpaceDimension();
-  View_type<const Entity_ID, MemSpace_kind::HOST> cnode;
+  Mesh_type::cEntity_ID_View cnode;
   Entity_ID_List bad_cells, bad_cells_exc;
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
@@ -819,20 +729,8 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_coordinates() const
     }
   }
 
-  bool error = false;
-
-  if (!bad_cells.empty()) {
-    os_ << "ERROR: bad cell_to_coordinates data for cells:";
-    writeList_(bad_cells);
-    error = true;
-  }
-
-  if (!bad_cells_exc.empty()) {
-    os_ << "ERROR: caught exception for cells:";
-    writeList_(bad_cells_exc);
-    error = true;
-  }
-
+  bool error = checkList_(bad_cells, "bad cell_to_coordinates data for cells");
+  error |= checkList_(bad_cells_exc, "caught exception for cells");
   return globalAny_(error);
 }
 
@@ -849,7 +747,7 @@ bool
 MeshAudit_Geometry<Mesh_type>::check_face_to_coordinates() const
 {
   int spdim = mesh_->getSpaceDimension();
-  View_type<const Entity_ID, MemSpace_kind::HOST> fnode;
+  Mesh_type::cEntity_ID_View fnode;
   Entity_ID_List bad_faces, bad_faces_exc;
 
   for (Entity_ID j = 0; j < nfaces_all_; ++j) {
@@ -873,20 +771,8 @@ MeshAudit_Geometry<Mesh_type>::check_face_to_coordinates() const
     }
   }
 
-  bool error = false;
-
-  if (!bad_faces.empty()) {
-    os_ << "ERROR: bad face_to_coordinates data for faces:";
-    writeList_(bad_faces);
-    error = true;
-  }
-
-  if (!bad_faces_exc.empty()) {
-    os_ << "ERROR: caught exception for faces:";
-    writeList_(bad_faces_exc);
-    error = true;
-  }
-
+  bool error = checkList_(bad_faces, "bad face_to_coordinates data for faces");
+  error |= checkList_(bad_faces_exc, "caught exception for faces");
   return globalAny_(error);
 }
 
@@ -904,10 +790,10 @@ MeshAudit_Geometry<Mesh_type>::check_face_cell_adjacency_consistency() const
     try {
       bool bad_data = false;
 
-      View_type<const Entity_ID, MemSpace_kind::HOST> fcells;
+      Mesh_type::cEntity_ID_View fcells;
       mesh_->getFaceCells(f, fcells);
       for (const auto& c : fcells) {
-        View_type<const Entity_ID, MemSpace_kind::HOST> cfaces;
+        Mesh_type::cEntity_ID_View cfaces;
         View_type<const Direction_type, MemSpace_kind::HOST> cfdirs;
         mesh_->getCellFacesAndDirs(c, cfaces, &cfdirs);
 
@@ -946,22 +832,9 @@ MeshAudit_Geometry<Mesh_type>::check_face_cell_adjacency_consistency() const
     }
   }
 
-  bool error = false;
-  if (!bad_faces1.empty()) {
-    os_ << "ERROR: , inconsistent adjacencies:";
-    writeList_(bad_faces1);
-    error = true;
-  }
-  if (!bad_faces2.empty()) {
-    os_ << "ERROR: , inconsistent orientations:";
-    writeList_(bad_faces2);
-    error = true;
-  }
-  if (!bad_faces_exc.empty()) {
-    os_ << "ERROR: caught exception:";
-    writeList_(bad_faces_exc);
-    error = true;
-  }
+  bool error = checkList_(bad_faces1, "inconsistent adjacencies");
+  error |= checkList_(bad_faces2, "inconsistent orientations");
+  error |= checkList_(bad_faces_exc, "caught exception");
   return globalAny_(error);
 }
 
@@ -980,7 +853,7 @@ MeshAudit_Geometry<Mesh_type>::check_face_normal_relto_cell() const
     try {
       auto fc = mesh_->getFaceCentroid(j);
 
-      View_type<const Entity_ID, MemSpace_kind::HOST> fcells;
+      Mesh_type::cEntity_ID_View fcells;
       mesh_->getFaceCells(j, fcells);
       for (int k = 0; k < fcells.size(); ++k) {
         AmanziGeometry::Point cc = mesh_->getCellCentroid(fcells[k]);
@@ -995,17 +868,8 @@ MeshAudit_Geometry<Mesh_type>::check_face_normal_relto_cell() const
     }
   }
 
-  bool error = false;
-  if (!bad_faces.empty()) {
-    os_ << "ERROR: bad face_normal, not outward:";
-    writeList_(bad_faces);
-    error = true;
-  }
-  if (!bad_faces_exc.empty()) {
-    os_ << "ERROR: caught exception for getFaceNormal:";
-    writeList_(bad_faces_exc);
-    error = true;
-  }
+  bool error = checkList_(bad_faces, "bad face_normal, not outward");
+  error |= checkList_(bad_faces_exc, "caught exception for getFaceNormal");
   return globalAny_(error);
 }
 
@@ -1025,7 +889,7 @@ MeshAudit_Geometry<Mesh_type>::check_face_normal_orientation() const
     try {
       AmanziGeometry::Point fnormal = mesh_->getFaceNormal(j);
 
-      View_type<const Entity_ID, MemSpace_kind::HOST> fcells;
+      Mesh_type::cEntity_ID_View fcells;
       mesh_->getFaceCells(j, fcells);
       for (int k = 0; k < fcells.size(); ++k) {
         int orientation = 0;
@@ -1042,17 +906,8 @@ MeshAudit_Geometry<Mesh_type>::check_face_normal_orientation() const
     }
   }
 
-  bool error = false;
-  if (!bad_faces.empty()) {
-    os_ << "ERROR: bad face_normal, inconsistent orientation:";
-    writeList_(bad_faces);
-    error = true;
-  }
-  if (!bad_faces_exc.empty()) {
-    os_ << "ERROR: caught exception for getFaceNormal with orientation:";
-    writeList_(bad_faces_exc);
-    error = true;
-  }
+  bool error = checkList_(bad_faces, "bad face_normal, inconsistent orientation");
+  error |= checkList_(bad_faces_exc, "caught exception for getFaceNormal with orientation");
   return globalAny_(error);
 }
 
@@ -1072,13 +927,7 @@ MeshAudit_Geometry<Mesh_type>::check_cell_geometry() const
     if (hvol <= 0.0) bad_cells.push_back(c);
   }
 
-  bool error = false;
-  if (!bad_cells.empty()) {
-    os_ << "ERROR: found cells with non-positive volumes:";
-    writeList_(bad_cells);
-    os_ << "       Cells either geometrically degenerate or have bad topology.";
-    error = true;
-  }
+  bool error = checkList_(bad_cells, "found cells with non-positive volumes");
   return globalAny_(error);
 }
 
@@ -1098,7 +947,7 @@ template <class Mesh_type>
 bool
 MeshAudit_Maps<Mesh_type>::check_node_maps() const
 {
-  return check_maps(*mesh_->getMap(AmanziMesh::Entity_kind::NODE, false),
+  return checkMaps_(*mesh_->getMap(AmanziMesh::Entity_kind::NODE, false),
                     *mesh_->getMap(AmanziMesh::Entity_kind::NODE, true));
 }
 
@@ -1106,7 +955,7 @@ template <class Mesh_type>
 bool
 MeshAudit_Maps<Mesh_type>::check_face_maps() const
 {
-  return check_maps(*mesh_->getMap(AmanziMesh::Entity_kind::FACE, false),
+  return checkMaps_(*mesh_->getMap(AmanziMesh::Entity_kind::FACE, false),
                     *mesh_->getMap(AmanziMesh::Entity_kind::FACE, true));
 }
 
@@ -1114,13 +963,13 @@ template <class Mesh_type>
 bool
 MeshAudit_Maps<Mesh_type>::check_cell_maps() const
 {
-  return check_maps(*mesh_->getMap(AmanziMesh::Entity_kind::CELL, false),
+  return checkMaps_(*mesh_->getMap(AmanziMesh::Entity_kind::CELL, false),
                     *mesh_->getMap(AmanziMesh::Entity_kind::CELL, true));
 }
 
 template <class Mesh_type>
 bool
-MeshAudit_Maps<Mesh_type>::check_maps(const Map_type& map_own, const Map_type& map_use) const
+MeshAudit_Maps<Mesh_type>::checkMaps_(const Map_type& map_own, const Map_type& map_use) const
 {
   bool error = false;
 
@@ -1266,7 +1115,7 @@ MeshAudit_Maps<Mesh_type>::check_node_to_coordinates_ghost_data() const
 
   // if (bad > 0) {
   //   os_ << "ERROR: found ghost nodes with incorrect coordinates:";
-  //   // writeList_(bad_nodes);
+  //   // checkList_(bad_nodes);
   //   error = true;
   // }
 
@@ -1384,13 +1233,13 @@ MeshAudit_Maps<Mesh_type>::check_face_to_nodes_ghost_data() const
 
   // if (!bad_faces.empty()) {
   //   os_ << "ERROR: found bad data for ghost faces:";
-  //   writeList_(bad_faces);
+  //   checkList_(bad_faces);
   //   error = true;
   // }
 
   // if (!bad_faces1.empty()) {
   //   os_ << "ERROR: found mis-oriented ghost faces:";
-  //   writeList_(bad_faces1);
+  //   checkList_(bad_faces1);
   //   error = true;
   // }
 
@@ -1472,7 +1321,7 @@ MeshAudit_Maps<Mesh_type>::check_cell_to_nodes_ghost_data() const
 
   // if (!bad_cells.empty()) {
   //   os_ << "ERROR: found bad data for ghost cells:";
-  //   writeList_(bad_cells);
+  //   checkList_(bad_cells);
   //   os_ << "       The ghost cells don't have the same nodes as their respective masters." << std::endl;
   //   error = true;
   // }
@@ -1548,7 +1397,7 @@ MeshAudit_Maps<Mesh_type>::check_cell_to_faces_ghost_data() const
 
   // if (!bad_cells.empty()) {
   //   os_ << "ERROR: found bad data for ghost cells:";
-  //   writeList_(bad_cells);
+  //   checkList_(bad_cells);
   //   os_ << "       The ghost cells are not exact copies of their master." << std::endl;
   //   error = true;
   // }
@@ -1730,12 +1579,12 @@ MeshAudit_Sets<Mesh_type>::check_valid_set_id(Entity_kind kind) const
   // bool error = false;
   // if (!bad_sids1.empty()) {
   //   os_ << "ERROR: valid_set_id() returned false for valid set IDs:";
-  //   writeList_(bad_sids1);
+  //   checkList_(bad_sids1);
   //   error = true;
   // }
   // if (!bad_sids2.empty()) {
   //   os_ << "ERROR: valid_set_id() returned true for invalid set IDs:";
-  //   writeList_(bad_sids2);
+  //   checkList_(bad_sids2);
   //   error = true;
   // }
   // return globalAny_(error);
@@ -1858,7 +1707,7 @@ MeshAudit_Sets<Mesh_type>::check_get_set(Set_ID sid,
   //   if (!map.MyLID(set[j])) bad_LIDs.push_back(set[j]);
   // if (!bad_LIDs.empty()) {
   //   os_ << "  ERROR: set contains invalid LIDs:";
-  //   writeList_(bad_LIDs);
+  //   checkList_(bad_LIDs);
   //   return true;
   // }
 
@@ -1946,7 +1795,7 @@ MeshAudit_Sets<Mesh_type>::check_used_set(Set_ID sid,
   //     if (tag_use[j] < 0) bad_LIDs.push_back(j);
   //   if (!bad_LIDs.empty()) {
   //     os_ << "  ERROR: found used LIDs that belong to the set but shouldn't:";
-  //     writeList_(bad_LIDs);
+  //     checkList_(bad_LIDs);
   //     error = true;
   //   }
 
@@ -1957,7 +1806,7 @@ MeshAudit_Sets<Mesh_type>::check_used_set(Set_ID sid,
   //     if (tag_use[j] > 0) bad_LIDs.push_back(j);
   //   if (!bad_LIDs.empty()) {
   //     os_ << "  ERROR: found used LIDs that should belong to set but don't:";
-  //     writeList_(bad_LIDs);
+  //     checkList_(bad_LIDs);
   //     error = true;
   //   }
 
@@ -1982,7 +1831,7 @@ MeshAudit_Maps<Mesh_type>::check_face_partition() const
   // Mark all the faces contained by owned cells.
   bool owned[nfaces_all_];
   for (int j = 0; j < nfaces_all_; ++j) owned[j] = false;
-  View_type<const Entity_ID, MemSpace_kind::HOST> cface;
+  Mesh_type::cEntity_ID_View cface;
   for (Entity_ID j = 0;
        j < mesh_->getMap(AmanziMesh::Entity_kind::CELL, false)->getLocalNumElements();
        ++j) {
@@ -1999,7 +1848,7 @@ MeshAudit_Maps<Mesh_type>::check_face_partition() const
 
   if (!bad_faces.empty()) {
     os_ << "ERROR: found orphaned owned faces:";
-    writeList_(bad_faces);
+    checkList_(bad_faces);
     os_ << "       Process doesn't own either of the cells sharing the face." << std::endl;
     return true;
   }
@@ -2015,7 +1864,7 @@ MeshAudit_Maps<Mesh_type>::check_node_partition() const
   // Mark all the nodes contained by owned cells.
   bool owned[nnodes_all_];
   for (int j = 0; j < nnodes_all_; ++j) owned[j] = false;
-  View_type<const Entity_ID, MemSpace_kind::HOST> cnode;
+  Mesh_type::cEntity_ID_View cnode;
   for (Entity_ID j = 0;
        j < mesh_->getMap(AmanziMesh::Entity_kind::CELL, false)->getLocalNumElements();
        ++j) {
@@ -2032,7 +1881,7 @@ MeshAudit_Maps<Mesh_type>::check_node_partition() const
 
   if (!bad_nodes.empty()) {
     os_ << "ERROR: found orphaned owned nodes:";
-    writeList_(bad_nodes);
+    checkList_(bad_nodes);
     os_ << "       Process doesn't own any of the cells containing the node." << std::endl;
     return true;
   }
@@ -2044,12 +1893,14 @@ MeshAudit_Maps<Mesh_type>::check_node_partition() const
 // Returns true if the values in the list are distinct -- no repeats.
 template <class Mesh_type>
 bool
-MeshAudit_Base<Mesh_type>::areDistinctValues_(
-  const View_type<const Entity_ID, MemSpace_kind::HOST>& list) const
+MeshAudit_Base<Mesh_type>::areDistinctValues_(const Mesh_type::cEntity_ID_View& list)
 {
-  Entity_ID_List copy(list.data(), list.data() + list.size());
-  sort(copy.begin(), copy.end());
-  return (adjacent_find(copy.begin(), copy.end()) == copy.end());
+  for (size_t i=0; i!=list.extent(0); ++i) {
+    for (size_t j=0; j!=list.extent(0); ++j) {
+      if (i == j) return false;
+    }
+  }
+  return true;
 }
 
 
@@ -2061,17 +1912,16 @@ MeshAudit_Base<Mesh_type>::areDistinctValues_(
 template <class Mesh_type>
 int
 MeshAudit_Base<Mesh_type>::isSameFace_(
-  const View_type<const Entity_ID, MemSpace_kind::HOST> fnode1,
-  const View_type<const Entity_ID, MemSpace_kind::HOST> fnode2) const
+  const Mesh_type::cEntity_ID_View& fnode1,
+  const Mesh_type::cEntity_ID_View& fnode2) const
 {
   int nn = fnode1.size();
-
   if (nn != fnode2.size()) return 0;
 
-  // Locate position in fnode1 of fnode2[0].
+  // Locate position in fnode1 of fnode2(0).
   int i, n;
   for (i = 0, n = -1; i < nn; ++i)
-    if (fnode1[i] == fnode2[0]) {
+    if (fnode1(i) == fnode2(0)) {
       n = i;
       break;
     }
@@ -2080,34 +1930,50 @@ MeshAudit_Base<Mesh_type>::isSameFace_(
   if (nn == 2) {
     // These are edges in a 2D mesh
 
-    if (n == 0 && fnode1[1] == fnode2[1]) return 1;
-    if (n == 1 && fnode1[0] == fnode2[1]) return -1;
+    if (n == 0 && fnode1(1) == fnode2(1)) return 1;
+    if (n == 1 && fnode1(0) == fnode2(1)) return -1;
 
-    if (n == 0 && fnode1[1] == fnode2[1]) return 1;
-    if (n == 1 && fnode1[0] == fnode2[1]) return -1;
+    if (n == 0 && fnode1(1) == fnode2(1)) return 1;
+    if (n == 1 && fnode1(0) == fnode2(1)) return -1;
 
   } else {
     for (i = 1; i < nn; ++i)
-      if (fnode1[(n + i) % nn] != fnode2[i]) break;
+      if (fnode1[(n + i) % nn] != fnode2(i)) break;
     if (i == nn) return 1; // they match
 
     // Modify the permutation to reverse the orientation of fnode1.
     for (i = 1; i < nn; ++i)
-      if (fnode1[(n - i + nn) % nn] != fnode2[i]) break;
+      if (fnode1[(n - i + nn) % nn] != fnode2(i)) break;
     if (i == nn) return -1; // matched nodes but orientation is reversed
   }
   return 0; // different faces
 }
 
+
 template <class Mesh_type>
-void
-MeshAudit_Base<Mesh_type>::writeList_(const Entity_ID_List& list) const
+bool
+MeshAudit_Base<Mesh_type>::checkList_(const Mesh_type::cEntity_ID_View& view,
+        const std::string& msg) const
 {
-  int num_out = std::min((unsigned int)list.size(), this->MAX_OUT);
-  for (int i = 0; i < num_out; ++i) os_ << " " << list[i];
-  if (num_out < list.size()) os_ << " [" << list.size() - num_out << " items omitted]";
-  os_ << std::endl;
+  using Range_type = Kokkos::RangePolicy<LO, Mesh_type::cEntity_ID_View::execution_space> range_type;
+  int count = 0;
+  Kokkos::parallel_reduce("MeshAudit::checkList_()", Range_type(0, view.extent(0)),
+                          KOKKOS_LAMBDA(const Entity_ID i, int& lcount) {
+                            lcount += view(i);
+                          }, count);
+  if (count > 0) {
+    os_ << "ERROR: " << msg << ":";
+    auto list = vectorFromView(view);
+    int num_out = std::min((unsigned int)list.size(), this->MAX_OUT);
+    for (int i = 0; i < num_out; ++i) os_ << " " << list[i];
+    if (num_out < list.size()) os_ << " [" << list.size() - num_out << " items omitted]";
+    os_ << std::endl;
+    return true;
+  } else {
+    return false;
+  }
 }
+
 
 template <class Mesh_type>
 bool

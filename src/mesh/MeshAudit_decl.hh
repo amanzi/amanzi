@@ -26,12 +26,16 @@ class MeshAudit_Base {
 
  protected:
   // helpers for doing the testing
-  bool
-  areDistinctValues_(const AmanziMesh::View_type<const Entity_ID, MemSpace_kind::HOST>& list) const;
-  void writeList_(const Entity_ID_List&) const;
+  KOKKOS_INLINE_FUNCTION
+  bool areDistinctValues_(const Mesh_type::cEntity_ID_View& list) const;
+
+  KOKKOS_INLINE_FUNCTION
+  int isSameFace_(const Mesh_type::cEntity_ID_View& l1,
+                  const Mesh_type::cEntity_ID_View& l2) const;
+
   bool globalAny_(bool) const;
-  int isSameFace_(const AmanziMesh::View_type<const Entity_ID, MemSpace_kind::HOST>,
-                  const AmanziMesh::View_type<const Entity_ID, MemSpace_kind::HOST>) const;
+  bool checkList_(const Mesh_type::cEntity_ID_View& list,
+                  const std::string& msg) const;
 
  protected:
   Teuchos::RCP<const Mesh_type> mesh_;
@@ -104,11 +108,13 @@ class MeshAudit_Maps : public MeshAudit_Geometry<Mesh_type> {
   bool check_cell_to_nodes_ghost_data() const;
   bool check_cell_to_faces_ghost_data() const;
 
-  bool check_maps(const Map_type&, const Map_type&) const;
   bool check_node_partition() const;
   bool check_face_partition() const;
 
  protected:
+  bool checkMaps_(const Map_type&, const Map_type&) const;
+
+
   using MeshAudit_Base<Mesh_type>::mesh_;
   using MeshAudit_Base<Mesh_type>::os_;
   using MeshAudit_Base<Mesh_type>::writeList_;

@@ -156,7 +156,7 @@ class MeshFramework {
 
   // DEVELOPER NOTE: serial meshes need not provide this method -- the default
   // returns a list of LIDs.
-  virtual View_type<const Entity_GID, MemSpace_kind::HOST>
+  virtual cEntity_GID_View
   getEntityGIDs(const Entity_kind kind, bool ghosted) const;
 
   // corresponding entity in the parent mesh
@@ -195,15 +195,15 @@ class MeshFramework {
   // send-receive protocols and mesh query operators are designed, a side
   // effect of this is that master and ghost entities will have the same
   // hierarchical topology.
-  void getCellFaces(const Entity_ID c, View_type<const Entity_ID, MemSpace_kind::HOST>& faces) const
+  void getCellFaces(const Entity_ID c, cEntity_ID_View& faces) const
   {
     getCellFacesAndDirs(c, faces, nullptr);
   }
 
   void getCellFaceDirs(const Entity_ID c,
-                       View_type<const Direction_type, MemSpace_kind::HOST>& dirs) const
+                       cDirection_View& dirs) const
   {
-    View_type<const Entity_ID, MemSpace_kind::HOST> faces;
+    cEntity_ID_View faces;
     getCellFacesAndDirs(c, faces, &dirs);
   }
 
@@ -220,15 +220,15 @@ class MeshFramework {
   // direction as the cell polygon, and -1 otherwise
   virtual void
   getCellFacesAndDirs(const Entity_ID c,
-                      View_type<const Entity_ID, MemSpace_kind::HOST>& faces,
-                      View_type<const Direction_type, MemSpace_kind::HOST>* const dirs) const = 0;
+                      cEntity_ID_View& faces,
+                      cDirection_View* const dirs) const = 0;
 
   virtual void
-  getCellEdges(const Entity_ID c, View_type<const Entity_ID, MemSpace_kind::HOST>& edges) const;
+  getCellEdges(const Entity_ID c, cEntity_ID_View& edges) const;
   virtual void
-  getCellNodes(const Entity_ID c, View_type<const Entity_ID, MemSpace_kind::HOST>& nodes) const;
+  getCellNodes(const Entity_ID c, cEntity_ID_View& nodes) const;
 
-  void getFaceEdges(const Entity_ID f, View_type<const Entity_ID, MemSpace_kind::HOST>& edges) const
+  void getFaceEdges(const Entity_ID f, cEntity_ID_View& edges) const
   {
     getFaceEdgesAndDirs(f, edges);
   }
@@ -249,18 +249,18 @@ class MeshFramework {
   // integral around the 2D cell.
   virtual void getFaceEdgesAndDirs(
     const Entity_ID f,
-    View_type<const Entity_ID, MemSpace_kind::HOST>& edges,
-    View_type<const Direction_type, MemSpace_kind::HOST>* const dirs = nullptr) const;
+    cEntity_ID_View& edges,
+    cDirection_View* const dirs = nullptr) const;
 
   // Get nodes of face
   //
   // In 3D, the nodes of the face are returned in ccw order consistent
   // with the face normal.
   virtual void
-  getFaceNodes(const Entity_ID f, View_type<const Entity_ID, MemSpace_kind::HOST>& nodes) const = 0;
+  getFaceNodes(const Entity_ID f, cEntity_ID_View& nodes) const = 0;
 
   virtual void
-  getEdgeNodes(const Entity_ID e, View_type<const Entity_ID, MemSpace_kind::HOST>& nodes) const;
+  getEdgeNodes(const Entity_ID e, cEntity_ID_View& nodes) const;
 
   //-------------------
   // Upward adjacencies
@@ -269,20 +269,20 @@ class MeshFramework {
   // is not guaranteed to be the same for corresponding faces on different
   // processors
   virtual void
-  getFaceCells(const Entity_ID f, View_type<const Entity_ID, MemSpace_kind::HOST>& cells) const = 0;
+  getFaceCells(const Entity_ID f, cEntity_ID_View& cells) const = 0;
 
   // Cells of a given Parallel_kind connected to an edge
   //
   // The order of cells is not guaranteed to be the same for corresponding
   // edges on different processors
   virtual void getEdgeCells(const Entity_ID edgeid,
-                            View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const;
+                            cEntity_ID_View& cellids) const;
 
   // Faces of type 'ptype' connected to an edge
   // NOTE: The order of faces is not guaranteed to be the same for
   // corresponding edges on different processors
   virtual void getEdgeFaces(const Entity_ID edgeid,
-                            View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const;
+                            cEntity_ID_View& faceids) const;
 
   // Cells of type 'ptype' connected to a node
   // NOTE: The order of cells is not guaranteed to be the same for
@@ -291,7 +291,7 @@ class MeshFramework {
   // This upward adjacency has a default algorithmic implementation based on
   // getNodeFaces and getFaceCells.
   virtual void getNodeCells(const Entity_ID nodeid,
-                            View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const;
+                            cEntity_ID_View& cellids) const;
 
   // Faces of type parallel 'ptype' connected to a node
   // NOTE: The order of faces is not guarnateed to be the same for
@@ -299,7 +299,7 @@ class MeshFramework {
   //
   // This upward adjacency is required to be provided by the Framework.
   virtual void getNodeFaces(const Entity_ID nodeid,
-                            View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const = 0;
+                            cEntity_ID_View& faceids) const = 0;
 
   // Edges of type 'ptype' connected to a node
   //
@@ -310,7 +310,7 @@ class MeshFramework {
   // supports edges.  If it does not, then this default implementation simply
   // throws an error.
   virtual void getNodeEdges(const Entity_ID nodeid,
-                            View_type<const Entity_ID, MemSpace_kind::HOST>& edgeids) const;
+                            cEntity_ID_View& edgeids) const;
 
   //--------------------------------------------------------------
   // Mesh Sets for ICs, BCs, Material Properties and whatever else
@@ -326,14 +326,14 @@ class MeshFramework {
   virtual void getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
                               const Entity_kind kind,
                               const Parallel_kind ptype,
-                              View_type<const Entity_ID, MemSpace_kind::HOST>& entids) const;
+                              cEntity_ID_View& entids) const;
 
   void hasEdgesOrThrow() const;
 
  protected:
   void throwNotImplemented_(const std::string& fname) const;
   Cell_kind getCellType_(const Entity_ID c,
-                         const View_type<const Entity_ID, MemSpace_kind::HOST>& faces) const;
+                         const cEntity_ID_View& faces) const;
 
  protected:
   Comm_ptr_type comm_;
