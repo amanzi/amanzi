@@ -21,33 +21,48 @@ namespace Impl {
 // base class for MeshAudit mixins
 template <class Mesh_type>
 class MeshAudit_Base {
+ protected:
+  using cEntity_ID_View = typename Mesh_type::cEntity_ID_View;
+  using Entity_ID_View = typename Mesh_type::Entity_ID_View;
+
  public:
   MeshAudit_Base(const Teuchos::RCP<const Mesh_type>& mesh, std::ostream& os);
 
- protected:
-  // helpers for doing the testing
-  bool
-  areDistinctValues_(const AmanziMesh::View_type<const Entity_ID, MemSpace_kind::HOST>& list) const;
-  void writeList_(const Entity_ID_List&) const;
-  bool globalAny_(bool) const;
-  int isSameFace_(const AmanziMesh::View_type<const Entity_ID, MemSpace_kind::HOST>,
-                  const AmanziMesh::View_type<const Entity_ID, MemSpace_kind::HOST>) const;
+  bool checkList_(const cEntity_ID_View& list,
+                  const std::string& msg) const;
 
  protected:
+  // helpers for doing the testing
+  KOKKOS_INLINE_FUNCTION
+  bool areDistinctValues_(const cEntity_ID_View& list) const;
+
+  template <class View1_type, class View2_type>
+  KOKKOS_INLINE_FUNCTION
+  int isSameFace_(const View1_type& l1,
+                  const View2_type& l2) const;
+
+  bool globalAny_(bool) const;
+
+protected:
   Teuchos::RCP<const Mesh_type> mesh_;
   Comm_ptr_type comm_;
 
   const int nnodes_all_;
   const int nfaces_all_;
   const int ncells_all_;
+  const int nnodes_owned_;
+  const int nfaces_owned_;
+  const int ncells_owned_;
 
   std::ostream& os_;
-  unsigned int MAX_OUT;
 };
 
 
 template <class Mesh_type>
 class MeshAudit_Geometry : public MeshAudit_Base<Mesh_type> {
+  using cEntity_ID_View = typename Mesh_type::cEntity_ID_View;
+  using Entity_ID_View = typename Mesh_type::Entity_ID_View;
+
  public:
   MeshAudit_Geometry(const Teuchos::RCP<const Mesh_type>& mesh, std::ostream& os = std::cout)
     : MeshAudit_Base<Mesh_type>(mesh, os)
@@ -57,37 +72,44 @@ class MeshAudit_Geometry : public MeshAudit_Base<Mesh_type> {
   // independent, there is an implicit order dependence of the tests in that a
   // test may assume certain mesh data has been verified, and that verification
   // is done by other tests.
-  bool check_entity_counts() const;
-  bool check_cell_to_nodes() const;
-  bool check_cell_to_faces() const;
-  bool check_face_to_nodes() const;
-  bool check_cell_to_face_dirs() const;
-  bool check_node_refs_by_cells() const;
-  bool check_face_refs_by_cells() const;
-  bool check_node_refs_by_faces() const;
-  bool check_cell_degeneracy() const;
-  bool check_cell_geometry() const;
-  bool check_cell_to_faces_to_nodes() const;
-  bool check_node_to_coordinates() const;
-  bool check_cell_to_coordinates() const;
-  bool check_face_to_coordinates() const;
-  bool check_face_cell_adjacency_consistency() const;
-  bool check_face_normal_relto_cell() const;
-  bool check_face_normal_orientation() const;
+  bool checkEntityCounts() const;
+  bool checkCellToNodes() const;
+  bool checkCellToFaces() const;
+  bool checkFaceToNodes() const;
+  bool checkCellToFaceDirs() const;
+  bool checkNodeRefsByCells() const;
+  bool checkFaceRefsByCells() const;
+  bool checkNodeRefsByFaces() const;
+  bool checkCellDegeneracy() const;
+  bool checkCellGeometry() const;
+  bool checkCellToFacesToNodes() const;
+  bool checkNodeToCoordinates() const;
+  bool checkCellToCoordinates() const;
+  bool checkFaceToCoordinates() const;
+  bool checkFaceCellAdjacencyConsistency() const;
+  bool checkFaceNormalReltoCell() const;
+  bool checkFaceNormalOrientation() const;
 
  protected:
   using MeshAudit_Base<Mesh_type>::mesh_;
   using MeshAudit_Base<Mesh_type>::os_;
-  using MeshAudit_Base<Mesh_type>::writeList_;
+  using MeshAudit_Base<Mesh_type>::checkList_;
   using MeshAudit_Base<Mesh_type>::globalAny_;
   using MeshAudit_Base<Mesh_type>::ncells_all_;
   using MeshAudit_Base<Mesh_type>::nfaces_all_;
   using MeshAudit_Base<Mesh_type>::nnodes_all_;
+  using MeshAudit_Base<Mesh_type>::ncells_owned_;
+  using MeshAudit_Base<Mesh_type>::nfaces_owned_;
+  using MeshAudit_Base<Mesh_type>::nnodes_owned_;
 };
 
 
 template <class Mesh_type>
 class MeshAudit_Maps : public MeshAudit_Geometry<Mesh_type> {
+ protected:
+  using cEntity_ID_View = typename Mesh_type::cEntity_ID_View;
+  using Entity_ID_View = typename Mesh_type::Entity_ID_View;
+
  public:
   MeshAudit_Maps(const Teuchos::RCP<const Mesh_type>& mesh, std::ostream& os = std::cout)
     : MeshAudit_Geometry<Mesh_type>(mesh, os)
@@ -96,56 +118,67 @@ class MeshAudit_Maps : public MeshAudit_Geometry<Mesh_type> {
   // This is the main method.
   void create_test_dependencies();
 
-  bool check_node_maps() const;
-  bool check_face_maps() const;
-  bool check_cell_maps() const;
-  bool check_node_to_coordinates_ghost_data() const;
-  bool check_face_to_nodes_ghost_data() const;
-  bool check_cell_to_nodes_ghost_data() const;
-  bool check_cell_to_faces_ghost_data() const;
+  bool checkNodeMaps() const;
+  bool checkFaceMaps() const;
+  bool checkCellMaps() const;
+  bool checkNodeToCoordinatesGhostData() const;
+  bool checkFaceToNodesGhostData() const;
+  bool checkCellToNodesGhostData() const;
+  bool checkCellToFacesGhostData() const;
 
-  bool check_maps(const Map_type&, const Map_type&) const;
-  bool check_node_partition() const;
-  bool check_face_partition() const;
+  bool checkNodePartition() const;
+  bool checkFacePartition() const;
 
  protected:
+  bool checkMaps_(const Map_type&, const Map_type&) const;
+
+
   using MeshAudit_Base<Mesh_type>::mesh_;
   using MeshAudit_Base<Mesh_type>::os_;
-  using MeshAudit_Base<Mesh_type>::writeList_;
+  using MeshAudit_Base<Mesh_type>::checkList_;
   using MeshAudit_Base<Mesh_type>::globalAny_;
   using MeshAudit_Base<Mesh_type>::ncells_all_;
   using MeshAudit_Base<Mesh_type>::nfaces_all_;
   using MeshAudit_Base<Mesh_type>::nnodes_all_;
+  using MeshAudit_Base<Mesh_type>::ncells_owned_;
+  using MeshAudit_Base<Mesh_type>::nfaces_owned_;
+  using MeshAudit_Base<Mesh_type>::nnodes_owned_;
 };
 
 
 template <class Mesh_type>
 class MeshAudit_Sets : public MeshAudit_Maps<Mesh_type> {
+ protected:
+  using cEntity_ID_View = typename Mesh_type::cEntity_ID_View;
+  using Entity_ID_View = typename Mesh_type::Entity_ID_View;
+
  public:
   MeshAudit_Sets(const Teuchos::RCP<const Mesh_type>& mesh, std::ostream& os = std::cout)
     : MeshAudit_Maps<Mesh_type>(mesh, os)
   {}
 
-  bool check_node_set_ids() const;
-  bool check_face_set_ids() const;
-  bool check_cell_set_ids() const;
+  bool checkNodeSetIDs() const;
+  bool checkFaceSetIDs() const;
+  bool checkCellSetIDs() const;
 
-  bool check_valid_node_set_id() const;
-  bool check_valid_face_set_id() const;
-  bool check_valid_cell_set_id() const;
+  bool checkValidNodeSetID() const;
+  bool checkValidFaceSetID() const;
+  bool checkValidCellSetID() const;
 
-  bool check_node_sets() const;
-  bool check_face_sets() const;
-  bool check_cell_sets() const;
+  bool checkNodeSets() const;
+  bool checkFaceSets() const;
+  bool checkCellSets() const;
 
-  bool check_get_set_ids(AmanziMesh::Entity_kind) const;
-  bool check_valid_set_id(AmanziMesh::Entity_kind) const;
-  bool check_sets(AmanziMesh::Entity_kind, const Map_type&, const Map_type&) const;
-  bool check_get_set(AmanziMesh::Set_ID,
+ protected:
+  bool checkGetSetIDs_(AmanziMesh::Entity_kind) const;
+  bool checkValidSetID_(AmanziMesh::Entity_kind) const;
+
+  bool checkSets_(AmanziMesh::Entity_kind, const Map_type&, const Map_type&) const;
+  bool checkGetSet_(AmanziMesh::Set_ID,
                      AmanziMesh::Entity_kind,
                      AmanziMesh::Parallel_kind,
                      const Map_type&) const;
-  bool check_used_set(AmanziMesh::Set_ID,
+  bool checkUsedSet_(AmanziMesh::Set_ID,
                       AmanziMesh::Entity_kind,
                       const Map_type&,
                       const Map_type&) const;
@@ -153,11 +186,14 @@ class MeshAudit_Sets : public MeshAudit_Maps<Mesh_type> {
  protected:
   using MeshAudit_Base<Mesh_type>::mesh_;
   using MeshAudit_Base<Mesh_type>::os_;
-  using MeshAudit_Base<Mesh_type>::writeList_;
+  using MeshAudit_Base<Mesh_type>::checkList_;
   using MeshAudit_Base<Mesh_type>::globalAny_;
   using MeshAudit_Base<Mesh_type>::ncells_all_;
   using MeshAudit_Base<Mesh_type>::nfaces_all_;
   using MeshAudit_Base<Mesh_type>::nnodes_all_;
+  using MeshAudit_Base<Mesh_type>::ncells_owned_;
+  using MeshAudit_Base<Mesh_type>::nfaces_owned_;
+  using MeshAudit_Base<Mesh_type>::nnodes_owned_;
 };
 
 
@@ -300,6 +336,13 @@ createTestDependencies(MeshAudit_Sets<Mesh_type>& audit,
 {
   createTestDependencies_Sets(audit, graph);
 }
+
+// helper functions
+template <class View_type>
+bool checkErrorList(const View_type& view, const std::string& msg, std::ostream& os);
+
+template <class View_type>
+void printErrorList(const View_type& view, const std::string& msg, int count, std::ostream& os);
 
 } // namespace Impl
 
