@@ -183,6 +183,9 @@ namespace AmanziMesh {
 class MeshFramework;
 struct MeshAlgorithms;
 
+// forward declaration of MeshAudit to friend
+template <class Mesh_type> class MeshAudit_Sets;
+
 struct MeshCacheData {
   // flags
   bool cell_geometry_cached = false;
@@ -961,6 +964,9 @@ struct MeshCache : public MeshCacheBase {
   // these are kept here, not in base, because they are device-specific
   Teuchos::RCP<const MeshCache> parent_;
   Teuchos::RCP<const MeshCache> vis_mesh_;
+
+  // friend MeshAudit_Sets so it can check any existing MeshSets
+  friend MeshAudit_Sets<MeshCache<MEM>>;
 };
 
 
@@ -997,20 +1003,6 @@ onMemSpace(const Teuchos::RCP<MeshCache<IN>>& mc_in);
 // -----------------------------------------------------------------------------
 using Mesh = MeshCache<MemSpace_kind::DEVICE>;
 using MeshHost = MeshCache<MemSpace_kind::HOST>;
-
-// may remove these eventually, but putting these in the AmanziMesh namespace
-// for backwards compatibility now.
-using Entity_ID_View = Mesh::Entity_ID_View;
-using cEntity_ID_View = Mesh::cEntity_ID_View;
-using Entity_GID_View = Mesh::Entity_GID_View;
-using cEntity_GID_View = Mesh::cEntity_GID_View;
-using Direction_View = Mesh::Direction_View;
-using cDirection_View = Mesh::cDirection_View;
-using Point_View = Mesh::Point_View;
-using cPoint_View = Mesh::cPoint_View;
-using Double_View = Mesh::Double_View;
-using cDouble_View = Mesh::cDouble_View;
-
 
 } // namespace AmanziMesh
 } // namespace Amanzi

@@ -357,24 +357,34 @@ MeshAudit_Geometry<Mesh_type>::check_entity_counts() const
 // signals an error, and further tests using its data should be avoided.
 template <class Mesh_type>
 bool
-MeshAudit_Geometry<Mesh_type>::check_cell_to_nodes() const
+MeshAudit_Geometry<Mesh_type>::checkCellToNodes() const
 {
   Mesh_type::Entity_ID_View bad_cells("bad cells", ncells_all_);
   Mesh_type::Entity_ID_View bad_cells1("bad cells1", ncells_all_);
 
-  size_t count;
-  for (Entity_ID j = 0; j < ncells_all_; ++j) {
-    try {
-      Mesh_type::cEntity_ID_View cnode;
-      mesh_->getCellNodes(j, cnode); // this may fail
-      bool invalid_refs = false;
-      for (int k = 0; k < cnode.size(); ++k) {
-        if (cnode[k] >= nnodes_all_) invalid_refs = true;
-      }
-      if (invalid_refs) bad_cells.push_back(j);
-    } catch (...) {
-      bad_cells1.push_back(j);
-    }
+  using Range_type = typename Kokkos::RangePolicy<LO, typename Mesh_type::cEntity_ID_View::execution_space>;
+  if constexpr(std::is_same_v<Mesh_type, Mesh>) {
+    Kokkos::parallel_for("MeshAudit::checkCellToNodes", Range_type(0, ncells_all_),
+                         KOKKOS_LAMBDA(const LO c) {
+                           auto cnode = mesh_->getCellNodes(c);
+                           for (auto& n : cnode) {
+                             if (n >= nnodes_all_) bad_cells(c) = 1;
+                           }
+                         });
+  } else {
+    Kokkos::parallel_for("MeshAudit::checkCellToNodes_host", Range_type(0, ncells_all_),
+                         KOKKOS_LAMBDA(const LO c) {
+                           try {
+                             Mesh_type::cEntity_ID_View cnode;
+                             mesh_->getCellNodes(c, cnode); // this may fail
+                             bool invalid_refs = false;
+                             for (auto& n : cnode) {
+                               if (n >= nnodes_all_) bad_cells(c) = 1;
+                             }
+                           } catch (...) {
+                             bad_cells1(c) = 1;
+                           }
+                         });
   }
 
   bool error = checkList_(bad_cells, "invalid nodes referenced by cells");
@@ -388,20 +398,18 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_nodes() const
 // return value indicates that one or more nodes are not attached to any cell.
 template <class Mesh_type>
 bool
-MeshAudit_Geometry<Mesh_type>::check_node_refs_by_cells() const
+MeshAudit_Geometry<Mesh_type>::checkNodeRefsByCells() const
 {
-  Mesh_type::cEntity_ID_View cnode;
-  std::vector<bool> ref(nnodes_all_, false);
+  Mesh_type::cEntity_ID_View free_nodes("MeshAudit::checkNodeRefsByCells", nnodes_all_);
+  Kokkos::deep_copy(free_nodes, 1);
 
-  for (Entity_ID j = 0; j < ncells_all_; ++j) {
-    mesh_->getCellNodes(j, cnode); // this should not fail
-    for (int k = 0; k < cnode.size(); ++k) ref[cnode[k]] = true;
-  }
-
-  Entity_ID_List free_nodes;
-  for (int j = 0; j < nnodes_all_; ++j) {
-    if (!ref[j]) free_nodes.push_back(j);
-  }
+  using Range_type = typename Kokkos::RangePolicy<LO, typename Mesh_type::cEntity_ID_View::execution_space>;
+  Kokkos::parallel_for("MeshAudit::checkNodeRefsByCells", Range_type(0, ncells_all_),
+                       KOKKOS_LAMBDA(const Entity_ID c) {
+                         Mesh_type::cEntity_ID_View cnode;
+                         mesh_->getCellNodes(c, cnode);
+                         for (auto& n : cnode) Kokkos::atomic_store(&free_nodes(n), 0);
+                       });
 
   bool error = checkList_(free_nodes, "found unreferenced nodes");
   return globalAny_(error);
@@ -414,22 +422,33 @@ MeshAudit_Geometry<Mesh_type>::check_node_refs_by_cells() const
 // signals an error, and further tests using its data should be avoided.
 template <class Mesh_type>
 bool
-MeshAudit_Geometry<Mesh_type>::check_cell_to_faces() const
+MeshAudit_Geometry<Mesh_type>::checkCellToFaces() const
 {
-  Entity_ID_List bad_cells, bad_cells1;
-  Mesh_type::cEntity_ID_View cface;
+  Mesh_type::Entity_ID_View bad_cells("bad cells", ncells_all_);
+  Mesh_type::Entity_ID_View bad_cells1("bad cells1", ncells_all_);
 
-  for (Entity_ID j = 0; j < ncells_all_; ++j) {
-    try {
-      mesh_->getCellFaces(j, cface); // this may fail
-      bool invalid_refs = false;
-      for (int k = 0; k < cface.size(); ++k) {
-        if (cface[k] >= nfaces_all_) invalid_refs = true;
-      }
-      if (invalid_refs) bad_cells.push_back(j);
-    } catch (...) {
-      bad_cells1.push_back(j);
-    }
+  using Range_type = typename Kokkos::RangePolicy<LO, typename Mesh_type::cEntity_ID_View::execution_space>;
+  if constexpr(std::is_same_v<Mesh_type, Mesh>) {
+    Kokkos::parallel_for("MeshAudut::checkCellToFaces", Range_type(0, ncells_all_),
+                         KOKKOS_LAMBDA(const Entity_ID c) {
+                           auto cface = mesh_->getCellFaces(c);
+                           for (auto& f : cface) {
+                             if (f >= nfaces_all_) bad_cells(c) = 1;
+                           }
+                         });
+  } else {
+    Kokkos::parallel_for("MeshAudut::checkCellToNodes", Range_type(0, ncells_all_),
+                         KOKKOS_LAMBDA(const Entity_ID c) {
+                           try {
+                             Mesh_type::Entity_ID_View cface;
+                             mesh_->getCellFaces(j, cface); // this may fail
+                             for (auto& f : cface) {
+                               if (f >= nfaces_all_) bad_cells(c) = 1;
+                             }
+                           } catch (...) {
+                             bad_cells1(c) = 1;
+                           }
+                         });
   }
 
   bool error = checkList_(bad_cells, "invalid faces referenced by cells");
@@ -444,25 +463,25 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_faces() const
 // to any cell or belong to more than two cells (bad topology).
 template <class Mesh_type>
 bool
-MeshAudit_Geometry<Mesh_type>::check_face_refs_by_cells() const
+MeshAudit_Geometry<Mesh_type>::checkFaceRefsByCells() const
 {
-  Mesh_type::cEntity_ID_View cface;
-  std::vector<unsigned int> refs(nfaces_all_, 0);
+  Mesh_type::cEntity_ID_View face_counts("MeshAudit::checkFaceRefsByCells", nfaces_all_);
 
-  for (Entity_ID j = 0; j < ncells_all_; ++j) {
-    mesh_->getCellFaces(j, cface);
-    for (int k = 0; k < cface.size(); ++k) (refs[cface[k]])++;
-  }
+  using Range_type = typename Kokkos::RangePolicy<LO, typename Mesh_type::cEntity_ID_View::execution_space>;
+  Kokkos::parallel_for("MeshAudit::checkNodeRefsByCells", Range_type(0, ncells_all_),
+                       KOKKOS_LAMBDA(const Entity_ID c) {
+                         Mesh_type::cEntity_ID_View cface;
+                         mesh_->getCellFaces(c, cface);
+                         for (auto& n : cface) Kokkos::atomic_add(&face_counts(n), 1);
+                       });
 
-  Entity_ID_List free_faces;
-  Entity_ID_List bad_faces;
 
-  for (int j = 0; j < nfaces_all_; ++j) {
-    if (refs[j] == 0)
-      free_faces.push_back(j);
-    else if (refs[j] > 2)
-      bad_faces.push_back(j);
-  }
+  Mesh_type::cEntity_ID_View free_faces("MeshAudit::checkFaceRefsByCells", nfaces_all_);
+  Kokkos::parallel_for("MeshAudit::checkNodeRefsByCells2", Range_type(0, nfaces_all_),
+                       KOKKOS_LAMBDA(const Entity_ID f) {
+                         if (face_counts(f) == 0) free_faces(f) = 1;
+                         if (face_counts(f) <= 2) face_counts(f) = 0;
+                       });
 
   bool error = checkList_(free_faces, "found unreferenced faces");
 
@@ -548,7 +567,7 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_face_dirs() const
       bool bad_data = false;
       for (int k = 0; k < fdirs.size(); ++k)
         if (fdirs[k] != -1 && fdirs[k] != 1) bad_data = true;
-      if (bad_data) bad_cells.push_back(j);
+      if (bad_data) bad_cells(j) = 1;
     } catch (...) {
       bad_cells_exc.push_back(j);
     }
@@ -574,7 +593,7 @@ MeshAudit_Geometry<Mesh_type>::check_cell_degeneracy() const
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
     auto cnodes = mesh_->getCellNodes(j); // should not fail
-    if (!this->areDistinctValues_(cnodes)) bad_cells.push_back(j);
+    if (!this->areDistinctValues_(cnodes)) bad_cells(j) = 1;
   }
 
   bool error = checkList_(bad_cells, "found topologically degenerate cells");
@@ -650,8 +669,8 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_faces_to_nodes() const
         }
       }
     }
-    if (bad_face) bad_cells0.push_back(j);
-    if (bad_dir) bad_cells1.push_back(j);
+    if (bad_face) bad_cells0(i) = 1;
+    if (bad_dir) bad_cells1(i) = 1;
   }
 
   bool error = checkList_(bad_cells0, "bad getCellFaces values for cells");
@@ -719,7 +738,7 @@ MeshAudit_Geometry<Mesh_type>::check_cell_to_coordinates() const
         for (int i = 0; i < spdim; i++)
           if (x0[k][i] != xref[i]) {
             bad_data = true;
-            bad_cells.push_back(j);
+            bad_cells(j) = 1;
             break;
           }
         if (bad_data) break;
@@ -1310,7 +1329,7 @@ MeshAudit_Maps<Mesh_type>::check_cell_to_nodes_ghost_data() const
   //           break;
   //         }
   //       if (!found) {
-  //         bad_cells.push_back(j);
+  //         bad_cells(j) = 1;
   //         break;
   //       }
   //     }
@@ -1390,7 +1409,7 @@ MeshAudit_Maps<Mesh_type>::check_cell_to_faces_ghost_data() const
   //   bool bad_data = false;
   //   for (int k = 0; k < cface.size(); ++k)
   //     if (face_map.getGlobalElement(cface[k]) != gids(j,k)) bad_data = true;
-  //   if (bad_data) bad_cells.push_back(j);
+  //   if (bad_data) bad_cells(j) = 1;
   // }
 
   // bool error = false;
@@ -1418,7 +1437,7 @@ MeshAudit_Maps<Mesh_type>::check_cell_to_faces_ghost_data() const
 //
 template <class Mesh_type>
 bool
-MeshAudit_Sets<Mesh_type>::check_node_set_ids() const
+ MeshAudit_Sets<Mesh_type>::check_node_set_ids() const
 {
   return check_get_set_ids(Entity_kind::NODE);
 }
@@ -1441,88 +1460,11 @@ template <class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::check_get_set_ids(Entity_kind kind) const
 {
-  // This needs some work.  Since we lazily resolve sets on demand, there is no
-  // real way to know what sets the user actually intends to use.
+  // Previously we checked if set entities were valid, with no duplicate entries.
+  //
+  // Since we lazily resolve sets on demand, there is no real way to know what
+  // combination of region and mesh the user actually intends to use as a set.
   return false;
-
-  // bool error = false;
-
-  // // Get the number of sets.
-  // int nset;
-  // try {
-  //   nset = mesh_->num_sets(kind); // this may fail
-  // } catch (...) {
-  //   os_ << "ERROR: caught exception from num_sets()" << std::endl;
-  //   error = true;
-  // }
-  // error = globalAny_(error);
-  // if (error) return error;
-
-  // // Get the vector of set IDs.
-  // std::vector<Set_ID> sids(nset, std::numeric_limits<unsigned int>::max());
-  // try {
-  //   mesh_->get_set_ids(kind, &sids); // this may fail
-  // } catch (...) {
-  //   os_ << "ERROR: caught exception from get_set_ids()" << std::endl;
-  //   error = true;
-  // }
-  // error = globalAny_(error);
-  // if (error) return error;
-
-  // // Check to see that set ID values were actually assigned.  This assumes
-  // // UINT_MAX is not a valid set ID.  This is a little iffy; perhaps 0 should
-  // // be declared as an invalid set ID instead (the case for ExodusII), or
-  // // perhaps we should just skip this check.
-  // bool bad_data = false;
-  // for (int j = 0; j < nset; ++j)
-  //   if (sids[j] == std::numeric_limits<unsigned int>::max()) bad_data = true;
-  // if (bad_data) {
-  //   os_ << "ERROR: get_set_ids() failed to set all values" << std::endl;
-  //   error = true;
-  // }
-  // error = globalAny_(error);
-  // if (error) return error;
-
-  // // Verify that the vector of set IDs contains no duplicates.
-  // if (!this->areDistinctValues_(sids)) {
-  //   os_ << "ERROR: get_set_ids() returned duplicate IDs" << std::endl;
-  //   // it would be nice to output the duplicates
-  //   error = true;
-  // }
-  // error = globalAny_(error);
-  // if (error) return error;
-
-  // // In parallel, verify that each process returns the exact same result.
-  // if (this->comm_->getSize() > 1) {
-  //   // Check the number of sets are the same.
-  //   this->comm_->Broadcast(&nset, 1, 0);
-  //   if (nset != mesh_->num_sets(kind)) {
-  //     os_ << "ERROR: inconsistent num_sets() value" << std::endl;
-  //     error = true;
-  //   }
-  //   error = globalAny_(error);
-
-  //   if (!error) {
-  //     // Broadcast the set IDs on processor 0.
-  //   std::vector<Set_ID> sids(nset, std::numeric_limits<unsigned int>::max());
-  //   mesh_->get_set_ids(kind, &sids);
-  //     int *sids0 = new int[nset];
-  //     for (int j = 0; j < nset; ++j) sids0[j] = sids[j];
-  //     this->comm_->Broadcast(sids0, nset, 0);
-
-  //     // Check the set IDs, using the vector on process 0 as the reference.
-  //     bool bad_data = false;
-  //     for (int j = 0; j < nset; ++j)
-  //       if (sids[j] != sids0[j]) bad_data = true;
-  //     if (bad_data) {
-  //       os_ << "ERROR: get_set_ids() returned inconsistent values" << std::endl;
-  //       error = true;
-  //     }
-  //     delete [] sids0;
-  //   }
-  // }
-
-  // return globalAny_(error);
 }
 
 // Check that valid_set_id() returns the correct results.
@@ -1959,14 +1901,22 @@ MeshAudit_Base<Mesh_type>::checkList_(const Mesh_type::cEntity_ID_View& view,
   int count = 0;
   Kokkos::parallel_reduce("MeshAudit::checkList_()", Range_type(0, view.extent(0)),
                           KOKKOS_LAMBDA(const Entity_ID i, int& lcount) {
-                            lcount += view(i);
+                            lcount += view(i) > 0 ? 1 : 0;
                           }, count);
+
   if (count > 0) {
     os_ << "ERROR: " << msg << ":";
     auto list = vectorFromView(view);
-    int num_out = std::min((unsigned int)list.size(), this->MAX_OUT);
-    for (int i = 0; i < num_out; ++i) os_ << " " << list[i];
-    if (num_out < list.size()) os_ << " [" << list.size() - num_out << " items omitted]";
+
+    size_t lcount = 0;
+    for (auto& err : list) {
+      if (err > 0) {
+        os_ << " " << err;
+        ++lcount;
+        if (lcount >= this->MAX_OUT) break;
+      }
+    }
+    if (count > this->MAX_OUT) os_ << " [" << count - lcount << " items omitted]";
     os_ << std::endl;
     return true;
   } else {
