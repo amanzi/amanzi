@@ -553,7 +553,7 @@ MeshAudit_Geometry<Mesh_type>::checkCellDegeneracy() const
 
   const Mesh_type& m = *mesh_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for("MeshAudit::checkCellToFaces", Range_type(0, ncells_all_),
+  Kokkos::parallel_for("MeshAudit::checkCellDegeneracy", Range_type(0, ncells_all_),
                        KOKKOS_CLASS_LAMBDA(const Entity_ID c) {
                          auto cnodes = m.getCellNodes(c); // should not fail
                          if (!this->areDistinctValues_(cnodes)) bad_cells(c) = 1;
@@ -1770,9 +1770,9 @@ template <class Mesh_type>
 bool
 MeshAudit_Base<Mesh_type>::areDistinctValues_(const cEntity_ID_View& list) const
 {
-  for (size_t i=0; i!=list.extent(0); ++i) {
-    for (size_t j=0; j!=list.extent(0); ++j) {
-      if (i == j) return false;
+  for (size_t i=0; i!=(list.extent(0)-1); ++i) {
+    for (size_t j=(i+1); j!=list.extent(0); ++j) {
+      if (list(i) == list(j)) return false;
     }
   }
   return true;
@@ -1864,9 +1864,9 @@ printErrorList(const View_type& list,
                                            typename Kokkos::HostSpace>::accessible);
   os << "ERROR: " << msg << ":";
   size_t lcount = 0;
-  for (auto& err : list) {
-    if (err > 0) {
-      os << " " << err;
+  for (size_t i=0; i!=list.size(); ++i) {
+    if (list[i] > 0) {
+      os << " " << i;
       ++lcount;
       if (lcount >= MAX_OUT) break;
     }

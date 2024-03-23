@@ -133,25 +133,28 @@ MeshMaps::initialize(const MeshFramework& mesh, bool renumber)
   int nbf_notowned = nbf_all - nbf_owned;
 
   Teuchos::Array<int> pr_id(nbf_notowned), lc_id(nbf_notowned);
-  Teuchos::ArrayView<int> bf_gids_notowned(&boundary_face_GIDs[nbf_owned], nbf_notowned);
+  Teuchos::ArrayView<int> bf_gids_notowned(&boundary_face_GIDs_h[nbf_owned], nbf_notowned);
   owned_[Entity_kind::BOUNDARY_FACE]->getRemoteIndexList(bf_gids_notowned, pr_id, lc_id);
 
   int nbf_notowned_tight = 0;
   for (int i = 0; i != nbf_notowned; ++i) {
     if (pr_id[i] >= 0) {
       boundary_faces[nbf_owned + nbf_notowned_tight] = boundary_faces[nbf_owned + i];
-      boundary_face_GIDs[nbf_owned + nbf_notowned_tight] = boundary_face_GIDs[nbf_owned + i];
+      boundary_face_GIDs_h[nbf_owned + nbf_notowned_tight] = boundary_face_GIDs_h[nbf_owned + i];
       ++nbf_notowned_tight;
     }
   }
   nbf_all = nbf_owned + nbf_notowned_tight;
   Kokkos::resize(boundary_faces, nbf_all);
+  Kokkos::resize(boundary_face_GIDs_h, nbf_all);
   Kokkos::resize(boundary_face_GIDs, nbf_all);
+  Kokkos::deep_copy(boundary_face_GIDs, boundary_face_GIDs_h);
 
   // create the dual view
   boundary_faces_ = asDualView(boundary_faces);
 
   // -- construct the all map
+
   all_[Entity_kind::BOUNDARY_FACE] =
     Teuchos::rcp(new Map_type(-1, boundary_face_GIDs, 0, mesh.getComm()));
   // NOTE: Tpetra swapped order!

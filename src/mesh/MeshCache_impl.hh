@@ -955,12 +955,16 @@ MeshCache<MEM>::getCellCoordinates(const Entity_ID c) const
   auto cf = Impl::ComputeFunction<MEM>::template hostOnly<
     std::function<MeshCache<MEM>::cPoint_View(const Entity_ID)>>();
   if constexpr (MEM == MemSpace_kind::HOST) {
-    AMANZI_ASSERT(false); // fix this! wrong algorithm!
-    cf = [&](const int i) { return framework_mesh_->getCellCoordinates(i); };
+    cf = [&](const int i) { return Impl::computeCellCoordinates(*this, c); };
   }
 
   return Impl::RaggedGetter<MEM, AP>::get(
-    data_.cell_coordinates_cached, data_.cell_coordinates, framework_mesh_, nullptr, cf, c);
+    data_.cell_coordinates_cached,
+    data_.cell_coordinates,
+    framework_mesh_,
+    [&](const int i) { return framework_mesh_->getCellCoordinates(i); },
+    cf,
+    c);
 }
 
 
