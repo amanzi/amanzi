@@ -973,13 +973,39 @@ struct MeshCache : public MeshCacheBase {
 // -----------------------------------------------------------------------------
 // Caching algorithms
 // -----------------------------------------------------------------------------
-template <MemSpace_kind MEM>
-void
-cacheDefault(MeshCache<MEM>& mesh);
+inline void
+cacheDefault(MeshCache<MemSpace_kind::HOST>& mesh)
+{
+  if (mesh.hasNodes()) { mesh.cacheNodeCoordinates(); }
+  mesh.cacheCellFaces();
+  mesh.cacheFaceCells();
+  if (mesh.hasNodes()) { mesh.cacheFaceNodes(); }
+  mesh.cacheCellGeometry();
+  mesh.cacheFaceGeometry();
+  if (mesh.hasEdges()) {
+    mesh.cacheFaceEdges();
+    mesh.cacheEdgeFaces();
+    mesh.cacheEdgeGeometry();
+  }
+}
 
-template <MemSpace_kind MEM>
-void
-cacheAll(MeshCache<MEM>& mesh);
+
+inline void
+cacheAll(MeshCache<MemSpace_kind::HOST>& mesh)
+{
+  mesh.cacheCellNodes();
+  mesh.cacheCellCoordinates();
+  mesh.cacheFaceCoordinates();
+  mesh.cacheNodeCells();
+  mesh.cacheNodeFaces();
+  if (mesh.hasEdges()) {
+    mesh.cacheCellEdges();
+    mesh.cacheEdgeCells();
+    mesh.cacheNodeEdges();
+    mesh.cacheEdgeNodes();
+    mesh.cacheEdgeCoordinates();
+  }
+}
 
 
 // -----------------------------------------------------------------------------
