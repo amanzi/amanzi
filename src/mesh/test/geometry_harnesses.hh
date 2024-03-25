@@ -22,13 +22,14 @@ using namespace Amanzi::AmanziMesh;
 // This is a helper function -- simply runs MeshAudit
 //
 template <class MeshAudit_type, class Mesh_type>
-void
+bool
 testMeshAudit(const Teuchos::RCP<Mesh_type>& mesh)
 {
   // run MeshAudit
   MeshAudit_type audit(mesh);
   int status = audit.Verify();
   CHECK_EQUAL(0, status);
+  return status;
 }
 
 //
@@ -50,25 +51,178 @@ CHECK_CLOSE_SUMALL(T exp, T contrib, const Amanzi::Comm_type& comm, T tol = 0)
   }
 }
 
-//
-// Checks that contrib has a nonzero entry in every i of the array on at least
-// one proc.  Used in parallel tests to ensure that the (globally expected
-// array) is found and checked on at least one owning rank.
-//
-void
-CHECK_MPI_ALL(std::vector<int>& contrib, const Amanzi::Comm_type& comm)
-{
-  // MPI-based, confirms that all entries of contrib are true on some process.
-  std::vector<int> global(contrib.size());
-  Teuchos::reduceAll(comm, Teuchos::REDUCE_MAX, (int)contrib.size(), contrib.data(), global.data());
-  CHECK(std::all_of(global.begin(), global.end(), [](bool cond) { return cond; }));
-}
 
 //
 // Tests geometry given expected values
 //
 template <class Mesh_type>
-void
+bool
+testMeshGeometry_(const Teuchos::RCP<Mesh_type>& mesh,
+                 const typename Mesh_type::cPoint_View& exp_cell_centroids,
+                 const typename Mesh_type::cDouble_View& exp_cell_volumes,
+                 const typename Mesh_type::cPoint_View& exp_face_centroids,
+                 const typename Mesh_type::cDouble_View& exp_face_areas,
+                 const typename Mesh_type::cPoint_View& exp_face_normals,
+                 const typename Mesh_type::cPoint_View& exp_node_coordinates)
+{
+  bool test_error = false;
+  const Mesh_type& m = *mesh;
+
+  // test cell-based quantities
+  {
+    std::cout << "Checking cell geometry ..." << std::endl;
+    int ncells = mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+    typename Mesh_type::Entity_ID_View test1("testMeshGeometry cells 1", ncells);
+    typename Mesh_type::Entity_ID_View test2("testMeshGeometry cells 2", ncells);
+    typename Mesh_type::Entity_ID_View test3("testMeshGeometry cells 3", ncells);
+
+    using Range_type = Kokkos::RangePolicy<LO, typename Mesh_type::cEntity_ID_View::execution_space>;
+
+    Kokkos::parallel_for("GeometryHarnesses::testMeshGeometry", Range_type{0, ncells},
+                         KOKKOS_LAMBDA(const LO c) {
+                           test1(c) = 1;
+                           auto centroid = m.getCellCentroid(c);
+
+                           // Search for a cell with the same centroid in the expected list of centroids
+                           int j = 0;
+                           for (; j != ncells; ++j) {
+                             auto diff = exp_cell_centroids[j] - centroid;
+                             if (AmanziGeometry::norm(diff) < 1.0e-10) {
+                               test1(c) = 0;
+                               break;
+                             }
+                           }
+
+                           // check cell volume matches
+                           if (fabs(exp_cell_volumes[j] -  m.getCellVolume(c)) > 1e-10) {
+                             test2(c) = 1;
+                           }
+
+                           // check that the outward normals sum to 0
+                           typename Mesh_type::cEntity_ID_View cfaces;
+                           m.getCellFaces(c, cfaces);
+                           AmanziGeometry::Point normal_sum(m.getSpaceDimension());
+                           for (int k = 0; k < cfaces.size(); k++) {
+                             auto normal = m.getFaceNormal(cfaces[k], c);
+                             normal_sum = normal_sum + normal;
+                           }
+                           double val = AmanziGeometry::norm(normal_sum);
+                           if (val > 1.e-10) {
+                             test3(c) = 1;
+                             // for (int k = 0; k < cfaces.size(); k++) {
+                             //   auto normal = m.getFaceNormal(cfaces[k], c);
+                             //   std::cout << "fail cell " << i << " normal (" << k << ") " << cfaces[k] << " = " << normal
+                             //             << std::endl;
+                             // }
+                           }
+                         });
+
+    bool error = AmanziMesh::Impl::checkErrorList(test1, "GeometryHarnesses::testMeshGeometry cannot find matching cell centroid", std::cerr);
+    error |= AmanziMesh::Impl::checkErrorList(test2, "GeometryHarnesses::testMeshGeometry bad cell volume", std::cerr);
+    error |= AmanziMesh::Impl::checkErrorList(test3, "GeometryHarnesses::testMeshGeometry cell normals don't sum to 0", std::cerr);
+    test_error = AmanziMesh::Impl::globalAny(*m.getComm(), error);
+  }
+
+  // test face-based quantities
+  {
+    std::cout << "Checking face geometry ..." << std::endl;
+    int nfaces = mesh->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+    typename Mesh_type::Entity_ID_View test1("testMeshGeometry faces 1", nfaces);
+    typename Mesh_type::Entity_ID_View test2("testMeshGeometry faces 2", nfaces);
+    typename Mesh_type::Entity_ID_View test3("testMeshGeometry faces 3", nfaces);
+    typename Mesh_type::Entity_ID_View test4("testMeshGeometry faces 4", nfaces);
+
+    using Range_type = Kokkos::RangePolicy<LO, typename Mesh_type::cEntity_ID_View::execution_space>;
+    Kokkos::parallel_for("GeometryHarnesses::testMeshGeometry", Range_type{0, nfaces},
+                         KOKKOS_LAMBDA(const LO f) {
+                           test1(f) = 1;
+                           AmanziGeometry::Point centroid = m.getFaceCentroid(f);
+
+                           int j = 0;
+                           for (; j < nfaces; ++j) {
+                             auto diff = exp_face_centroids[j] - centroid;
+                             if (AmanziGeometry::norm(diff) < 1.0e-10) {
+                               test1(f) = 0;
+                               break;
+                             }
+                           }
+
+                           // compare face areas
+                           if (fabs(exp_face_areas[j] - m.getFaceArea(f)) > 1.e-10) {
+                             test2(f) = 1;
+                           }
+
+                           // Natural normal is well-posed
+                           AmanziGeometry::Point natural_normal = m.getFaceNormal(f);
+
+                           // Check the normal with respect to each connected cell is given as the
+                           // natural times the orientation.
+                           typename Mesh_type::cEntity_ID_View cellids;
+                           m.getFaceCells(f, cellids);
+
+                           for (int k = 0; k < cellids.size(); k++) {
+                             int orientation = 0;
+                             auto normal_wrt_cell = m.getFaceNormal(f, cellids[k], &orientation);
+                             if (natural_normal * orientation != normal_wrt_cell) {
+                               test3(f) = 1;
+                               //   std::cout << "Fail face: " << i << " wrt cell " << cellids[k] << std::endl
+                               //             << "  nat_normal = " << natural_normal << std::endl
+                               //             << "  normal_wrt = " << normal_wrt_cell << std::endl
+                               //             << "  orientation = " << orientation << std::endl;
+                             }
+
+                             // check the cell's outward normal is indeed outward (assumes star-convex)
+                             AmanziGeometry::Point cellcentroid = m.getCellCentroid(cellids[k]);
+                             AmanziGeometry::Point facecentroid = m.getFaceCentroid(f);
+                             AmanziGeometry::Point outvec = facecentroid - cellcentroid;
+
+                             double dp = outvec * normal_wrt_cell;
+                             dp /= (AmanziGeometry::norm(outvec) * AmanziGeometry::norm(normal_wrt_cell));
+                             if (fabs(dp - 1) > 1.e-10) {
+                               test4(f) = 1;
+                             }
+                           }
+                         });
+
+
+    bool error = AmanziMesh::Impl::checkErrorList(test1, "GeometryHarnesses::testMeshGeometry cannot find matching face centroid", std::cerr);
+    error |= AmanziMesh::Impl::checkErrorList(test2, "GeometryHarnesses::testMeshGeometry bad face area", std::cerr);
+    error |= AmanziMesh::Impl::checkErrorList(test3, "GeometryHarnesses::testMeshGeometry face normals wrt cell not consistent with orientation", std::cerr);
+    error |= AmanziMesh::Impl::checkErrorList(test4, "GeometryHarnesses::testMeshGeometry face normal wrt cell not outward", std::cerr);
+    test_error |= AmanziMesh::Impl::globalAny(*m.getComm(), error);
+  }
+
+  // test the node-based quantities
+  {
+    std::cout << "Checking node geometry ..." << std::endl;
+    int nnodes = mesh->getNumEntities(Entity_kind::NODE, Parallel_kind::OWNED);
+    typename Mesh_type::Entity_ID_View test1("testMeshGeometry nodes 1", nnodes);
+
+    using Range_type = Kokkos::RangePolicy<LO, typename Mesh_type::cEntity_ID_View::execution_space>;
+    Kokkos::parallel_for("GeometryHarnesses::testMeshGeometry", Range_type{0, nnodes},
+                         KOKKOS_LAMBDA(const LO n) {
+                           test1(n) = 1;
+
+                           AmanziGeometry::Point centroid = m.getNodeCoordinate(n);
+                           int j = 0;
+                           for (; j < nnodes; ++j) {
+                             auto diff = exp_node_coordinates[j] - centroid;
+                             if (AmanziGeometry::norm(diff) < 1.0e-10) {
+                               test1(n) = 0;
+                               break;
+                             }
+                           }
+                         });
+
+    bool error = AmanziMesh::Impl::checkErrorList(test1, "GeometryHarnesses::testMeshGeometry cannot find matching node coordinate", std::cerr);
+    test_error |= AmanziMesh::Impl::globalAny(*m.getComm(), error);
+  }
+  return test_error;
+}
+
+
+template <class Mesh_type>
+bool
 testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
                  const Point_List& exp_cell_centroids,
                  const Double_List& exp_cell_volumes,
@@ -77,120 +231,48 @@ testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
                  const Point_List& exp_face_normals,
                  const Point_List& exp_node_coordinates)
 {
-  // test cell-based quantities
-  {
-    std::vector<int> found(exp_cell_centroids.size(), false);
-    int ncells = mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
-    for (int i = 0; i < ncells; i++) {
-      auto centroid = mesh->getCellCentroid(i);
-
-      // Search for a cell with the same centroid in the
-      // expected list of centroid, check volume
-      int j = 0;
-      for (; j != exp_cell_centroids.size(); ++j) {
-        auto diff = exp_cell_centroids[j] - centroid;
-        if (AmanziGeometry::norm(diff) < 1.0e-10) {
-          CHECK_CLOSE(exp_cell_volumes[j], mesh->getCellVolume(i), 1e-10);
-          break;
-        }
-      }
-      bool lfound = (j < exp_cell_volumes.size());
-      CHECK(lfound);
-      if (lfound) found[j] = 1;
-
-      // check that the outward normals sum to 0
-      typename Mesh_type::cEntity_ID_View cfaces;
-      mesh->getCellFaces(i, cfaces);
-      AmanziGeometry::Point normal_sum(mesh->getSpaceDimension());
-      for (int k = 0; k < cfaces.size(); k++) {
-        auto normal = mesh->getFaceNormal(cfaces[k], i);
-        normal_sum = normal_sum + normal;
-      }
-      double val = AmanziGeometry::norm(normal_sum);
-      if (val > 1.e-10) {
-        for (int k = 0; k < cfaces.size(); k++) {
-          auto normal = mesh->getFaceNormal(cfaces[k], i);
-          std::cout << "fail cell " << i << " normal (" << k << ") " << cfaces[k] << " = " << normal
-                    << std::endl;
-        }
-      }
-      CHECK_CLOSE(0., val, 1.0e-10);
-    }
-    CHECK_MPI_ALL(found, *mesh->getComm());
-  }
-
-  // test face-based quantities
-  {
-    std::vector<int> found(exp_face_normals.size(), false);
-
-    int nfaces = mesh->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
-    for (int i = 0; i < nfaces; i++) {
-      AmanziGeometry::Point centroid = mesh->getFaceCentroid(i);
-
-      int j = 0;
-      for (; j < found.size(); ++j) {
-        auto diff = exp_face_centroids[j] - centroid;
-        if (AmanziGeometry::norm(diff) < 1.0e-10) {
-          CHECK_CLOSE(exp_face_areas[j], mesh->getFaceArea(i), 1.e-10);
-
-          // Natural normal is well-posed
-          AmanziGeometry::Point natural_normal = mesh->getFaceNormal(i);
-
-          // Check the normal with respect to each connected cell is given as the
-          // natural times the orientation.
-          typename Mesh_type::cEntity_ID_View cellids;
-          mesh->getFaceCells(i, cellids);
-
-          for (int k = 0; k < cellids.size(); k++) {
-            int orientation = 0;
-            auto normal_wrt_cell = mesh->getFaceNormal(i, cellids[k], &orientation);
-            if (natural_normal * orientation != normal_wrt_cell) {
-              std::cout << "Fail face: " << i << " wrt cell " << cellids[k] << std::endl
-                        << "  nat_normal = " << natural_normal << std::endl
-                        << "  normal_wrt = " << normal_wrt_cell << std::endl
-                        << "  orientation = " << orientation << std::endl;
-            }
-            CHECK(natural_normal * orientation == normal_wrt_cell);
-
-            // check the cell's outward normal is indeed outward (assumes star-convex)
-            AmanziGeometry::Point cellcentroid = mesh->getCellCentroid(cellids[k]);
-            AmanziGeometry::Point facecentroid = mesh->getFaceCentroid(i);
-            AmanziGeometry::Point outvec = facecentroid - cellcentroid;
-
-            double dp = outvec * normal_wrt_cell;
-            dp /= (AmanziGeometry::norm(outvec) * AmanziGeometry::norm(normal_wrt_cell));
-            CHECK_CLOSE(1., dp, 1e-10);
-          }
-          break;
-        }
-      }
-      bool lfound = (j < exp_face_areas.size());
-      CHECK(lfound);
-      if (lfound) found[j] = 1;
-    }
-    CHECK_MPI_ALL(found, *mesh->getComm());
-  }
-
-  // test the node-based quantities
-  {
-    std::vector<int> found(exp_node_coordinates.size(), false);
-    int nnodes = mesh->getNumEntities(Entity_kind::NODE, Parallel_kind::OWNED);
-    for (int i = 0; i < nnodes; i++) {
-      AmanziGeometry::Point centroid;
-      centroid = mesh->getNodeCoordinate(i);
-      int j = 0;
-      for (; j < found.size(); ++j) {
-        auto diff = exp_node_coordinates[j] - centroid;
-        if (AmanziGeometry::norm(diff) < 1.0e-10) break;
-      }
-
-      bool lfound = (j < exp_node_coordinates.size());
-      CHECK(lfound);
-      if (lfound) found[j] = 1;
-    }
-    CHECK_MPI_ALL(found, *mesh->getComm());
-  }
+  // run the testing
+  return testMeshGeometry_(mesh,
+                          toNonOwningView(exp_cell_centroids),
+                          toNonOwningView(exp_cell_volumes),
+                          toNonOwningView(exp_face_centroids),
+                          toNonOwningView(exp_face_areas),
+                          toNonOwningView(exp_face_normals),
+                          toNonOwningView(exp_node_coordinates));
 }
+
+template<>
+inline bool
+testMeshGeometry<AmanziMesh::Mesh>(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
+                 const Point_List& exp_cell_centroids,
+                 const Double_List& exp_cell_volumes,
+                 const Point_List& exp_face_centroids,
+                 const Double_List& exp_face_areas,
+                 const Point_List& exp_face_normals,
+                 const Point_List& exp_node_coordinates)
+{
+    AmanziMesh::Mesh::Point_View exp_cell_centroids_d("expected cell centroids", exp_cell_centroids.size());
+    Kokkos::deep_copy(exp_cell_centroids_d, toNonOwningView(exp_cell_centroids));
+    AmanziMesh::Mesh::Double_View exp_cell_volumes_d("expected cell volumes", exp_cell_volumes.size());
+    Kokkos::deep_copy(exp_cell_volumes_d, toNonOwningView(exp_cell_volumes));
+    AmanziMesh::Mesh::Point_View exp_face_centroids_d("expected face centroids", exp_face_centroids.size());
+    Kokkos::deep_copy(exp_face_centroids_d, toNonOwningView(exp_face_centroids));
+    AmanziMesh::Mesh::Double_View exp_face_areas_d("expected face areas", exp_face_areas.size());
+    Kokkos::deep_copy(exp_face_areas_d, toNonOwningView(exp_face_areas));
+    AmanziMesh::Mesh::Point_View exp_face_normals_d("expected face normals", exp_face_normals.size());
+    Kokkos::deep_copy(exp_face_normals_d, toNonOwningView(exp_face_normals));
+    AmanziMesh::Mesh::Point_View exp_node_coordinates_d("expected node coordinates", exp_node_coordinates.size());
+    Kokkos::deep_copy(exp_node_coordinates_d, toNonOwningView(exp_node_coordinates));
+
+    return testMeshGeometry_(mesh,
+                            exp_cell_centroids_d,
+                            exp_cell_volumes_d,
+                            exp_face_centroids_d,
+                            exp_face_areas_d,
+                            exp_face_normals_d,
+                            exp_node_coordinates_d);
+}
+
 
 //
 // Form the expected values and call testGeometry for a 2D box
@@ -249,14 +331,14 @@ testGeometryQuad(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny)
     }
   }
 
-  // run the testing
-  testMeshGeometry(mesh,
-                   exp_cell_centroids,
-                   exp_cell_volumes,
-                   exp_face_centroids,
-                   exp_face_areas,
-                   exp_face_normals,
-                   exp_node_coordinates);
+  bool result = testMeshGeometry(mesh,
+          exp_cell_centroids,
+          exp_cell_volumes,
+          exp_face_centroids,
+          exp_face_areas,
+          exp_face_normals,
+          exp_node_coordinates);
+  CHECK(!result);
 }
 
 
@@ -338,13 +420,14 @@ testGeometryCube(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz)
   }
 
   // run the testing
-  testMeshGeometry(mesh,
-                   exp_cell_centroids,
-                   exp_cell_volumes,
-                   exp_face_centroids,
-                   exp_face_areas,
-                   exp_face_normals,
-                   exp_node_coordinates);
+  bool res = testMeshGeometry(mesh,
+          exp_cell_centroids,
+          exp_cell_volumes,
+          exp_face_centroids,
+          exp_face_areas,
+          exp_face_normals,
+          exp_node_coordinates);
+  CHECK(!res);
 }
 
 

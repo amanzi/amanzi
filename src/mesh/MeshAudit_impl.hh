@@ -769,8 +769,11 @@ MeshAudit_Geometry<Mesh_type>::checkFaceCellAdjacencyConsistency() const
 
                            // find the match
                            int i = 0;
-                           for (; i != cfaces.size(); ++i)
-                             if (f == cfaces[i]) break;
+                           for (; i != cfaces.size(); ++i) {
+                             if (f == cfaces[i]) {
+                               break;
+                             }
+                           }
                            if (i == cfaces.size()) {
                              bad_faces[f] = 1;
                              break;
@@ -1841,7 +1844,7 @@ checkErrorList(const View_type& list,
                  typename Kokkos::HostSpace>::accessible) {
       printErrorList(list, msg, count, os);
     } else {
-      Kokkos::View<typename View_type::data_type, Amanzi::DefaultHost> list_host;
+      Kokkos::View<typename View_type::data_type, Amanzi::DefaultHost> list_host(list.label()+"_h", list.extent(0));
       Kokkos::deep_copy(list_host, list);
       printErrorList(list_host, msg, count, os);
     }
@@ -1877,9 +1880,7 @@ template <class Mesh_type>
 bool
 MeshAudit_Base<Mesh_type>::globalAny_(bool value) const
 {
-  int lval = value, gval;
-  Teuchos::reduceAll(*this->comm_, Teuchos::REDUCE_MAX, 1, &lval, &gval);
-  return gval;
+  return Impl::globalAny(*this->comm_, value);
 }
 
 

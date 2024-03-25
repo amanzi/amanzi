@@ -28,9 +28,6 @@ class MeshAudit_Base {
  public:
   MeshAudit_Base(const Teuchos::RCP<const Mesh_type>& mesh, std::ostream& os);
 
-  bool checkList_(const cEntity_ID_View& list,
-                  const std::string& msg) const;
-
  protected:
   // helpers for doing the testing
   KOKKOS_INLINE_FUNCTION
@@ -93,7 +90,6 @@ class MeshAudit_Geometry : public MeshAudit_Base<Mesh_type> {
  protected:
   using MeshAudit_Base<Mesh_type>::mesh_;
   using MeshAudit_Base<Mesh_type>::os_;
-  using MeshAudit_Base<Mesh_type>::checkList_;
   using MeshAudit_Base<Mesh_type>::globalAny_;
   using MeshAudit_Base<Mesh_type>::ncells_all_;
   using MeshAudit_Base<Mesh_type>::nfaces_all_;
@@ -135,7 +131,6 @@ class MeshAudit_Maps : public MeshAudit_Geometry<Mesh_type> {
 
   using MeshAudit_Base<Mesh_type>::mesh_;
   using MeshAudit_Base<Mesh_type>::os_;
-  using MeshAudit_Base<Mesh_type>::checkList_;
   using MeshAudit_Base<Mesh_type>::globalAny_;
   using MeshAudit_Base<Mesh_type>::ncells_all_;
   using MeshAudit_Base<Mesh_type>::nfaces_all_;
@@ -186,7 +181,6 @@ class MeshAudit_Sets : public MeshAudit_Maps<Mesh_type> {
  protected:
   using MeshAudit_Base<Mesh_type>::mesh_;
   using MeshAudit_Base<Mesh_type>::os_;
-  using MeshAudit_Base<Mesh_type>::checkList_;
   using MeshAudit_Base<Mesh_type>::globalAny_;
   using MeshAudit_Base<Mesh_type>::ncells_all_;
   using MeshAudit_Base<Mesh_type>::nfaces_all_;
@@ -343,6 +337,12 @@ bool checkErrorList(const View_type& view, const std::string& msg, std::ostream&
 
 template <class View_type>
 void printErrorList(const View_type& view, const std::string& msg, int count, std::ostream& os);
+
+inline bool globalAny(const Comm_type& comm, bool value) {
+  int lval = value, gval;
+  Teuchos::reduceAll(comm, Teuchos::REDUCE_MAX, 1, &lval, &gval);
+  return (bool) gval;
+}
 
 } // namespace Impl
 

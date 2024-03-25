@@ -49,9 +49,8 @@ TEST(MESH_CACHE_GEOMETRY_PLANAR)
     auto mesh_dev = AmanziMesh::onMemSpace<MemSpace_kind::DEVICE>(mesh);
     testMeshAudit<MeshAudit>(mesh_dev);
 
-    // testGeometryQuad(mesh_dev, 2, 2);
-    // testExteriorMapsUnitBox(mesh_dev, 2, 2);
-
+    testGeometryQuad(mesh_dev, 2, 2);
+    testExteriorMapsUnitBox(mesh_dev, 2, 2);
   }
 }
 
@@ -80,8 +79,8 @@ TEST(MESH_CACHE_GEOMETRY_1CUBE_GENERATED)
 
     auto mesh_dev = AmanziMesh::onMemSpace<MemSpace_kind::DEVICE>(mesh);
     testMeshAudit<MeshAudit>(mesh_dev);
-    // testGeometryCube(mesh, 1, 1, 1);
-    // if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(mesh, 1, 1, 1);
+    testGeometryCube(mesh, 1, 1, 1);
+    if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(mesh, 1, 1, 1);
   }
 }
 
@@ -111,8 +110,8 @@ TEST(MESH_CACHE_GEOMETRY_1CUBE_EXO)
 
     auto mesh_dev = AmanziMesh::onMemSpace<MemSpace_kind::DEVICE>(mesh);
     testMeshAudit<MeshAudit>(mesh_dev);
-    // testGeometryCube(mesh_dev, 1, 1, 1);
-    // if (frm == Framework::MSTK) testExteriorMapsUnitBox(mesh_dev, 1, 1, 1);
+    testGeometryCube(mesh_dev, 1, 1, 1);
+    if (frm == Framework::MSTK) testExteriorMapsUnitBox(mesh_dev, 1, 1, 1);
   }
 }
 
@@ -140,8 +139,8 @@ TEST(MESH_CACHE_GEOMETRY_3CUBE)
 
     auto mesh_dev = AmanziMesh::onMemSpace<MemSpace_kind::DEVICE>(mesh);
     testMeshAudit<MeshAudit>(mesh_dev);
-    // testGeometryCube(mesh_dev, 3, 3, 3);
-    // if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh_dev, 3, 3, 3); }
+    testGeometryCube(mesh_dev, 3, 3, 3);
+    if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh_dev, 3, 3, 3); }
   }
 }
 
@@ -172,8 +171,8 @@ TEST(MESH_CACHE_GEOMETRY_3CUBE_EXO)
 
     auto mesh_dev = AmanziMesh::onMemSpace<MemSpace_kind::DEVICE>(mesh);
     testMeshAudit<MeshAudit>(mesh_dev);
-    // testGeometryCube(mesh_dev, 3, 3, 3);
-    // if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh_dev, 3, 3, 3); }
+    testGeometryCube(mesh_dev, 3, 3, 3);
+    if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh_dev, 3, 3, 3); }
   }
 }
 
