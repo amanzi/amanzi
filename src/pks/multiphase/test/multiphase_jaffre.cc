@@ -64,7 +64,7 @@ run_test(const std::string& domain, const std::string& filename)
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh;
-  mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 100, 1);
+  mesh = meshfactory.create(0.0, 0.0, 10.0, 5.0, 100, 1);
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -104,8 +104,8 @@ run_test(const std::string& domain, const std::string& filename)
 
   // loop
   int iloop(0);
-  double t(0.0), tend(3.14e+13), dt(1.57e+11),
-    dt_max(1.57e+11); // Tend = 1000,000 years, dt = 5000 years
+  double t(0.0), tend(6.28e+11), dt(1.57e+8),
+    dt_max(1.57e+8); // Tend = 1000,000 years, dt = 5000 years
   // store Newton iterations and time step size (after successful iteration)
   std::vector<int> newton_iterations_per_step;
   std::vector<double> time_step_size;
