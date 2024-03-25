@@ -20,6 +20,7 @@
 #include "EvaluatorIndependentConstant.hh"
 #include "EvaluatorMultiplicativeReciprocal.hh"
 #include "EvaluatorSecondaryMonotypeFromFunction.hh"
+#include "EvaluatorTemporalInterpolation.hh"
 
 namespace Amanzi {
 
@@ -40,4 +41,7 @@ Utils::RegisteredFactory<Evaluator, EvaluatorMultiplicativeReciprocal>
 Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction>
   EvaluatorSecondaryMonotypeFromFunction::fac_("secondary variable from function");
 
+Utils::RegisteredFactory<Evaluator, EvaluatorTemporalInterpolation>
+  EvaluatorTemporalInterpolation::fac_("temporal interpolation");
+  
 } // namespace Amanzi
