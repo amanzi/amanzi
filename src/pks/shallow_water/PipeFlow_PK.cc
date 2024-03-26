@@ -871,6 +871,9 @@ void PipeFlow_PK::InitializeFields(){
 void PipeFlow_PK::ComputeCellArrays(){
 
     if(!cellArraysInitDone_){
+       S_->Get<CV_t>(diameter_key_).ScatterMasterToGhosted("cell");
+       S_->Get<CV_t>(direction_key_).ScatterMasterToGhosted("cell");
+
        int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
        int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
        auto& dir_c = *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, direction_key_).ViewComponent("cell", true);
