@@ -431,8 +431,6 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   int ncells_owned =
     mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-  ComputeCellArrays();
-
   S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
 
   // distribute data to ghost cells
