@@ -64,10 +64,27 @@ TEST(MPC_DRIVER_MULTIPHASE_FRACTURES)
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
 
+  // work-around
+  
+  Key key("mass_density_gas");
+  S->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
+    .SetMesh(mesh)
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  
+  
   {
     Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
     try {
       cycle_driver.Go();
+
+      const auto& u0 = *S->Get<CompositeVector>("molar_flow_rate_liquid").ViewComponent("face");
+      int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+      for (int f = 0; f < nfaces_owned; ++f) { 
+        std::cout<<"f = "<<f<<"; molar flow rate liquid = "<<u0[0][f]<<std::endl;
+      }
+
+
     } catch (const std::exception& e) {
       std::cerr << e.what() << "\n\n";
       CHECK(false);
