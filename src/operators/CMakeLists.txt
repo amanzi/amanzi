@@ -297,7 +297,6 @@ if (ENABLE_TESTS)
                         SOURCE test/Main.cc test/operator_advdiff_surface.cc
                         LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-        if(0)
         # Test: electromagnetics 
         add_amanzi_test(operators_electromagnetics operators_electromagnetics
                         KIND unit
@@ -329,7 +328,6 @@ if (ENABLE_TESTS)
                         SOURCE test/Main.cc test/operator_advection_dg.cc
                                             test/operator_advection_dg_transient.cc
                         LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-        endif()
     endif()
 
     add_amanzi_test(operators_diffusion_curved_face operators_diffusion_curved_face

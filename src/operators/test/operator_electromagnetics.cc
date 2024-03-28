@@ -112,15 +112,12 @@ CurlCurl(double c_t,
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
-  AmanziMesh::Entity_Direction_View edirs;
-  AmanziMesh::Entity_ID_View cells, edges;
-
   for (int f = 0; f < nfaces_wghost; ++f) {
     const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
         fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
-      std::tie(edges, edirs) = mesh->getFaceEdgesAndDirections(f);
+      auto [edges, edirs] = mesh->getFaceEdgesAndDirections(f);
       int nedges = edges.size();
       for (int i = 0; i < nedges; ++i) {
         int e = edges[i];
@@ -154,7 +151,7 @@ CurlCurl(double c_t,
   source.PutScalarMasterAndGhosted(0.0);
 
   for (int c = 0; c < ncells_owned; c++) {
-    edges = mesh->getCellEdges(c);
+    auto edges = mesh->getCellEdges(c);
     int nedges = edges.size();
     double vol = 3.0 * mesh->getCellVolume(c) / nedges;
 

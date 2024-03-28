@@ -114,14 +114,13 @@ AnalyticElectromagneticsBase::ComputeNodeError(Epetra_MultiVector& u,
   int d = mesh_->getSpaceDimension();
   Amanzi::AmanziGeometry::Point xv(d);
 
-  Amanzi::AmanziMesh::Entity_ID_View nodes;
   int ncells = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
                                      Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells; c++) {
     double volume = mesh_->getCellVolume(c);
 
-    nodes = mesh_->getCellNodes(c);
+    auto nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
 
     for (int k = 0; k < nnodes; k++) {

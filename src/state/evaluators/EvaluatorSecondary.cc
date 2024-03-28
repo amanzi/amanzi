@@ -245,8 +245,6 @@ EvaluatorSecondary::UpdateDerivative(State& S,
                                      const Key& wrt_key,
                                      const Tag& wrt_tag)
 {
-  AMANZI_ASSERT(IsDependency(S, wrt_key, wrt_tag));
-
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
     *vo_.os() << "Algebraic Variable d" << my_keys_[0].first << "_d" << wrt_key << " requested by "
@@ -254,10 +252,12 @@ EvaluatorSecondary::UpdateDerivative(State& S,
   }
 
   // If wrt_key is not a dependency, no need to differentiate.
-  if (!IsDependency(S, wrt_key, wrt_tag)) {
+  if (!IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_.os() << wrt_key << " is not a dependency... " << std::endl;
+      *vo_.os() << my_keys_.front().first << " is not differentiable wrt " << wrt_key << std::endl;
     }
+    // this should be checked prior to calling UpdateDerivative
+    AMANZI_ASSERT(false);
     return false;
   }
 
@@ -265,14 +265,16 @@ EvaluatorSecondary::UpdateDerivative(State& S,
   // dependencies.
   bool update = false;
 
-  // -- must update if our our dependencies have changed, as these affect the
+  // -- must update if our our dependencies have changed, as these affect our
   // partial derivatives
   Key my_request = Keys::getDerivKey(my_keys_[0], KeyTag(wrt_key, wrt_tag));
   update |= Update(S, my_request);
 
   // -- must update if any of our dependencies' derivatives have changed
   for (auto& dep : dependencies_) {
-    if (S.GetEvaluator(dep.first, dep.second).IsDependency(S, wrt_key, wrt_tag)) {
+    const auto& dep_evaluator = S.GetEvaluator(dep.first, dep.second);
+    if (!dep_evaluator.ProvidesKey(wrt_key, wrt_tag) &&
+        dep_evaluator.IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
       update |=
         S.GetEvaluator(dep.first, dep.second).UpdateDerivative(S, my_request, wrt_key, wrt_tag);
     }
@@ -358,7 +360,9 @@ EvaluatorSecondary::IsDifferentiableWRT(const State& S,
   if (ProvidesKey(wrt_key, wrt_tag)) return true;
   if (IsDirectDependency(wrt_key, wrt_tag)) return true;
   for (auto& dep : dependencies_) {
-    if (S.GetEvaluator(dep.first, dep.second).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+    auto& dep_eval = S.GetEvaluator(dep.first, dep.second);
+    if (!dep_eval.ProvidesKey(wrt_key, wrt_tag) &&
+        dep_eval.IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
       return true;
     }
   }

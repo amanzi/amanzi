@@ -347,6 +347,21 @@ PreconditionerHypre::InitializeInverse()
   }
 
   IfpHypre_->Initialize();
+
+  // KL: the initialization sequence should be more compact but this works...
+  if (plist_.isParameter("discrete gradient operator") &&
+      plist_.isType<Teuchos::RCP<Epetra_CrsMatrix>>("discrete gradient operator")) {
+    Teuchos::RCP<Epetra_CrsMatrix> G;
+    G = plist_.get<Teuchos::RCP<Epetra_CrsMatrix>>("discrete gradient operator");
+    IfpHypre_->SetDiscreteGradient(G);
+  }
+
+  if (plist_.isParameter("graph coordinates") &&
+      plist_.isType<Teuchos::RCP<Epetra_MultiVector>>("graph coordinates")) {
+    Teuchos::RCP<Epetra_MultiVector> xyz;
+    xyz = plist_.get<Teuchos::RCP<Epetra_MultiVector>>("graph coordinates");
+    IfpHypre_->SetCoordinates(xyz);
+  }
 }
 
 

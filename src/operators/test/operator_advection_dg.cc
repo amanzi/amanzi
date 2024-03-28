@@ -107,9 +107,7 @@ AdvectionSteady(int dim,
       pk_name = "PK operator 2D: gauss points";
     }
   } else {
-    bool request_faces(true), request_edges(true);
-    mesh =
-      meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, request_faces, request_edges);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx);
     pk_name = "PK operator 3D";
   }
 

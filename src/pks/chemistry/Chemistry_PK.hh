@@ -114,18 +114,12 @@ class Chemistry_PK : public PK_Physical {
   virtual void CopyFieldstoNewState(const Teuchos::RCP<State>& S_next);
   // -- access
 #ifdef ALQUIMIA_ENABLED
-  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine()
-  {
-    return chem_engine_;
-  }
+  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine() { return chem_engine_; }
 #endif
 
   // -- output of error messages.
   void ErrorAnalysis(int ierr, std::string& internal_msg);
-  int num_aqueous_components()
-  {
-    return number_aqueous_components_;
-  }
+  int num_aqueous_components() { return number_aqueous_components_; }
 
  protected:
   std::string passwd_;

@@ -69,7 +69,7 @@ RunTest(const std::string xmlInFileName)
   double g(10.0), p0(1e+7), rho(1e+3), mu(1e-3), k(6e-18), phi_cp(1e-11);
   double E(3e+10), nu(0.0), t(36000.0);
   double Ss = rho * g * (phi_cp + 1.0 / E);
-  double cv = rho * g / mu * k / Ss;  // effective consolidation coefficient
+  double cv = rho * g / mu * k / Ss; // effective consolidation coefficient
 
   std::vector<double> pex(nx, 0.0), eex(nx, 0.0);
   for (int n = 0; n < 100; ++n) {
@@ -86,9 +86,10 @@ RunTest(const std::string xmlInFileName)
   }
 
   // compute error
-  double perr(0.0), eerr(0.0), pnorm, enorm; 
+  double perr(0.0), eerr(0.0), pnorm, enorm;
   const auto& p = *S->Get<CompositeVector>("pressure", Tags::DEFAULT).ViewComponent("cell");
-  const auto& e = *S->Get<CompositeVector>("volumetric_strain", Tags::DEFAULT).ViewComponent("cell");
+  const auto& e =
+    *S->Get<CompositeVector>("volumetric_strain", Tags::DEFAULT).ViewComponent("cell");
   p.Norm2(&pnorm);
   e.Norm2(&enorm);
 
