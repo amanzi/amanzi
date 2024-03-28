@@ -184,7 +184,11 @@
 #                - update Alquimia 1.1.0
 #                - update PFLOTRAN 5.0.0
 #                - update superlu_dist v6.4.0 (minimum required by PETSc is 6.3.0, but maybe we should go newer).
-#                - update CrunchTope to latest fix on master 
+#                - update CrunchTope to latest fix on master
+#   0.98.9       - bug fixes CheckMPISourceCompiles
+#                - update Trilinos to 15.1.0
+#                - update Silo to 4.11.1
+#                - remove Boost and Trilinos dependency on Boost
 
 include(CMakeParseArguments)
 
@@ -237,7 +241,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 8)
+set(AMANZI_TPLS_VERSION_PATCH 9)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -501,15 +505,15 @@ set(PETSc_MD5_SUM        1f17155e2077cb027f0838a27d02ef3c)
 #
 # TPL: Trilinos
 #
-set(Trilinos_VERSION_MAJOR 14)
-set(Trilinos_VERSION_MINOR 2)
-set(Trilinos_VERSION_PATCH fc55b9cd)
+set(Trilinos_VERSION_MAJOR 15)
+set(Trilinos_VERSION_MINOR 1)
+set(Trilinos_VERSION_PATCH 0)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
 set(Trilinos_GIT_REPOSITORY "https://github.com/trilinos/Trilinos")
-set(Trilinos_GIT_TAG        "fc55b9cd3703754ec187d7e7e5220f3116d4f523")
+
 
 #
 # TPL: SEACAS
@@ -554,12 +558,12 @@ set(Alquimia_MD5_SUM        adfa32fe2bcd690a847ec59390f82a0a)
 #
 set(Silo_VERSION_MAJOR 4)
 set(Silo_VERSION_MINOR 11)
-set(Silo_VERSION_PATCH 0)
-set(Silo_VERSION ${Silo_VERSION_MAJOR}.${Silo_VERSION_MINOR})
+set(Silo_VERSION_PATCH 1)
+set(Silo_VERSION ${Silo_VERSION_MAJOR}.${Silo_VERSION_MINOR}.${Silo_VERSION_PATCH})
 set(Silo_URL_STRING    "https://github.com/LLNL/Silo/archive")
 set(Silo_ARCHIVE_FILE  ${Silo_VERSION}.tar.gz)
 set(Silo_SAVEAS_FILE   silo-${Silo_VERSION}.tar.gz)
-set(Silo_MD5_SUM       b09f1236d3614d97e4df11f6e890f16b)
+set(Silo_MD5_SUM       242ecb14ab3cdf7bf4e05e2da682644d)
 
 #
 # TPL: CrunchTope

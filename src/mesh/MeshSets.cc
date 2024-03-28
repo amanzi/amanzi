@@ -173,12 +173,13 @@ resolveMeshSet_(const AmanziGeometry::Region& region,
   } else if (AmanziGeometry::RegionType::LABELEDSET == region.get_type()) {
     auto region_ls = dynamic_cast<const AmanziGeometry::RegionLabeledSet*>(&region);
     AMANZI_ASSERT(region_ls);
-    MeshCache<MemSpace_kind::HOST>::Entity_ID_View lresult;
     result = resolveMeshSetLabeledSet(*region_ls, kind, ptype, mesh);
+
     // labeled sets may not be sorted, though all other types are.  Sort labeled sets.
-    lresult.fromConst(result);
+    // Note that sorting as a View does not scale beyond ~500 entries.
+    std::vector<Entity_ID> lresult = asVector(result);
     std::sort(lresult.begin(), lresult.end());
-    result = lresult;
+    vectorToConstView(result, lresult);
 
   } else if (AmanziGeometry::RegionType::ALL == region.get_type()) {
     result = resolveMeshSetAll(region, kind, ptype, mesh);

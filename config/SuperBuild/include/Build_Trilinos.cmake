@@ -7,7 +7,7 @@
 if (ENABLE_XSDK)
   set(trilinos_depend_projects XSDK SEACAS)
 else()
-  set(trilinos_depend_projects NetCDF Boost SEACAS ParMetis)
+  set(trilinos_depend_projects NetCDF SEACAS ParMetis)
   if (ENABLE_SUPERLU)
     list(APPEND trilinos_depend_projects SuperLUDist)
   endif()
@@ -177,16 +177,6 @@ if (LAPACK_LIBRARIES)
 else()
   message(WARNING "LAPACK libraies not set. Trilinos will perform search.") 
 endif()
-
-# Boost
-list(APPEND Trilinos_CMAKE_TPL_ARGS
-            "-DTPL_ENABLE_BoostLib:BOOL=ON" 
-            "-DTPL_ENABLE_Boost:BOOL=ON" 
-            "-DTPL_ENABLE_GLM:BOOL=OFF" 
-            "-DTPL_BoostLib_INCLUDE_DIRS:FILEPATH=${BOOST_ROOT}/include"
-            "-DBoostLib_LIBRARY_DIRS:FILEPATH=${BOOST_ROOT}/lib"
-            "-DTPL_Boost_INCLUDE_DIRS:FILEPATH=${BOOST_ROOT}/include"
-            "-DBoost_LIBRARY_DIRS:FILEPATH=${BOOST_ROOT}/lib")
 
 # NetCDF
 list(APPEND Trilinos_CMAKE_TPL_ARGS

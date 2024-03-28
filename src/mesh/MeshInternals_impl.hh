@@ -157,7 +157,6 @@ computeCellNodes(const Mesh_type& mesh, const Entity_ID c)
     fnodes_prev.fromConst(fnodes_prev_c);
     std::sort(fnodes_prev.begin(), fnodes_prev.end());
 
-    result.resize(2);
     for (int i1 = 0; i1 < nfaces; ++i1) {
       mesh.getFaceNodes(faces[i1], fnodes);
       typename Mesh_type::Entity_ID_View fnodes_l;

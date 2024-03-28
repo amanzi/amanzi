@@ -115,13 +115,19 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
 
   string(REPLACE "\n" ";" AMANZI_GIT_BRANCH_INFO_SPLIT ${AMANZI_GIT_BRANCH_INFO})
   FOREACH(commit_msg ${AMANZI_GIT_BRANCH_INFO_SPLIT})
+    message(STATUS " .. ETC: ${commit_msg}")
     IF ( ${commit_msg} MATCHES "\\*\\+ \\[")
       set ( AMANZI_GIT_PARENT_BRANCH_MSG ${commit_msg} )
+    ELSE()
+      message(STATUS " .. ETC: does not match")
     ENDIF()
   ENDFOREACH()
 
-  string(REGEX MATCH "\\[(.*)\\]" _ ${AMANZI_GIT_PARENT_BRANCH_MSG})
-  set(AMANZI_GIT_PARENT_BRANCH ${CMAKE_MATCH_1})
+
+  message(STATUS ">>>> JDM: AMANZI_GIT_PARENT_BRANCH = ${AMANZI_GIT_PARENT_BRANCH_MSG}")
+
+  # string(REGEX MATCH "\\[(.*)\\]" _ ${AMANZI_GIT_PARENT_BRANCH_MSG})
+  # set(AMANZI_GIT_PARENT_BRANCH ${CMAKE_MATCH_1})
 
   message(STATUS ">>>> JDM: AMANZI_GIT_PARENT_BRANCH = ${AMANZI_GIT_PARENT_BRANCH}")
   
