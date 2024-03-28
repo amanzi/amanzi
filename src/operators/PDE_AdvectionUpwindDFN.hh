@@ -11,7 +11,7 @@
 /*
   Operators
 
-  Upwind-based advection operator for a scalar field in fractured rock.
+  Upwind-based scalar advection operator on manifolds.
 */
 
 #ifndef AMANZI_OPERATOR_PDE_ADVECTION_UPWIND_FRACTURE_HH_

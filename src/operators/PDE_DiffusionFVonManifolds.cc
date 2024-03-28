@@ -147,7 +147,7 @@ PDE_DiffusionFVonManifolds::UpdateMatrices(const Teuchos::Ptr<const CompositeVec
     WhetStone::DenseMatrix Aface(ndofs, ndofs);
     Aface = 0.0;
 
-    double ti, tj, sum(0.0);
+    double ti, tj, sum(0.0), umod;
     for (int i = 0; i != ndofs; ++i) {
       ti = beta_f[0][g + i] * (k_f.get() ? (*k_f)[0][g + i] : 1.0);
       sum += ti;
@@ -162,10 +162,11 @@ PDE_DiffusionFVonManifolds::UpdateMatrices(const Teuchos::Ptr<const CompositeVec
         ti = beta_f[0][g + i] * (k_f.get() ? (*k_f)[0][g + i] : 1.0);
         for (int j = i + 1; j != ndofs; ++j) {
           tj = beta_f[0][g + j] * (k_f.get() ? (*k_f)[0][g + j] : 1.0);
-          Aface(i, i) += ti * ti * sum;
-          Aface(j, j) += tj * tj * sum;
-          Aface(i, j) = -ti * tj * sum;
-          Aface(j, i) = -ti * tj * sum;
+          umod = ti * tj * sum;
+          Aface(i, i) += umod;
+          Aface(j, j) += umod;
+          Aface(i, j) = -umod;
+          Aface(j, i) = -umod;
         }
       }
     }
@@ -327,11 +328,9 @@ PDE_DiffusionFVonManifolds::ComputeBeta_()
   int d = mesh_->getSpaceDimension();
   AmanziGeometry::Point a(d);
 
-  auto k_f = (k_.get()) ? k_->ViewComponent("face") : Teuchos::null;
-  ;
-  WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
+  WhetStone::Tensor Kc(d, 1);
   Kc(0, 0) = 1.0;
-
+ 
   for (int f = 0; f < nfaces_owned; ++f) {
     auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
@@ -342,14 +341,11 @@ PDE_DiffusionFVonManifolds::ComputeBeta_()
       a = mesh_->getFaceCentroid(f) - mesh_->getCellCentroid(c);
       beta_f[0][g + i] = mesh_->getFaceArea(f) / norm(a);
 
-      if (K_.get()) {
-        const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f, c);
-        double perm = (((*K_)[c] * a) * normal);
-        double dxn = a * normal;
-        beta_f[0][g + i] *= perm / dxn;
-      } else if (k_f.get()) {
-        beta_f[0][g + i] *= (*k_f)[0][g + i];
-      }
+      if (K_.get()) Kc = (*K_)[c];
+      const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f, c);
+      double perm = (Kc * a) * normal;
+      double dxn = a * normal;
+      beta_f[0][g + i] *= perm / dxn;
     }
   }
 }
