@@ -115,7 +115,7 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
 
   // -- upwind
   tmp1.sublist("upwind").set<std::string>("upwind method", "upwind: darcy velocity");
-  tmp1.sublist("upwind").sublist("upwind standard parameters").set<double>("tolerance", 1e-12);
+  tmp1.sublist("upwind").sublist("upwind parameters").set<double>("tolerance", 1e-12);
 
   // additional state list
   auto& fic = state_list.sublist("initial conditions");
