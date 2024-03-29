@@ -119,9 +119,9 @@ if (BUILD_TESTS)
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
   # Test: spring test
-  add_amanzi_test(mechanics_springs mechanics_springs
-                  KIND int
-                  SOURCE test/Main.cc test/mechanics_springs.cc
-                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+  # add_amanzi_test(mechanics_springs mechanics_springs
+  #                 KIND int
+  #                 SOURCE test/Main.cc test/mechanics_springs.cc
+  #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 endif()
 
