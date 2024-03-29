@@ -18,9 +18,11 @@
 #include "PK_DomainFunctionFactory.hh"
 #include "PorosityEvaluator.hh"
 #include "StateArchive.hh"
+#include "StateHelpers.hh"
 
 #include "HydrostaticStressEvaluator.hh"
-#include "MechanicsElasticity_PK.hh"
+#include "MechanicsSmallStrain_PK.hh"
+#include "ShearModulusEvaluator.hh"
 
 namespace Amanzi {
 namespace Mechanics {
@@ -31,10 +33,10 @@ using CVS_t = CompositeVectorSpace;
 /* ******************************************************************
 * New constructor: extracts lists and requires fields.
 ****************************************************************** */
-MechanicsElasticity_PK::MechanicsElasticity_PK(Teuchos::ParameterList& pk_tree,
-                                               const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                                               const Teuchos::RCP<State>& S,
-                                               const Teuchos::RCP<TreeVector>& soln)
+MechanicsSmallStrain_PK::MechanicsSmallStrain_PK(Teuchos::ParameterList& pk_tree,
+                                                 const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                                                 const Teuchos::RCP<State>& S,
+                                                 const Teuchos::RCP<TreeVector>& soln)
   : Mechanics_PK(pk_tree, glist, S, soln)
 {
   S_ = S;
@@ -68,9 +70,24 @@ MechanicsElasticity_PK::MechanicsElasticity_PK(Teuchos::ParameterList& pk_tree,
 * "physical models and assumptions".
 ****************************************************************** */
 void
-MechanicsElasticity_PK::Setup()
+MechanicsSmallStrain_PK::Setup()
 {
   Mechanics_PK::Setup();
+
+  shear_modulus_key_ = Keys::getKey(domain_, "shear_modulus");
+  bulk_modulus_key_ = Keys::getKey(domain_, "bulk_modulus");
+
+  if (!S_->HasRecord(shear_modulus_key_)) {
+    auto elist = RequireFieldForEvaluator(*S_, shear_modulus_key_);
+
+    auto eval = Teuchos::rcp(new ShearModulusEvaluator(elist));
+    S_->SetEvaluator(shear_modulus_key_, Tags::DEFAULT, eval);
+  }
+
+  S_->Require<CV_t, CVS_t>(bulk_modulus_key_, Tags::DEFAULT, passwd_)
+    .SetMesh(mesh_)
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
 }
 
 
@@ -79,7 +96,7 @@ MechanicsElasticity_PK::Setup()
 * objects including those created during the setup step.
 ****************************************************************** */
 void
-MechanicsElasticity_PK::Initialize()
+MechanicsSmallStrain_PK::Initialize()
 {
   Mechanics_PK::Initialize();
 
@@ -113,7 +130,7 @@ MechanicsElasticity_PK::Initialize()
   op_matrix_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
   op_matrix_ = op_matrix_elas_->global_operator();
 
-  // -- extensions: The undrained split method add anotehr operator which has
+  // -- extensions: The undrained split method add another operator which has
   //    the grad-div structure. It is critical that it uses a separate global
   //    operator pointer. Its local matrices are shared with the original
   //    physics operator.
@@ -227,11 +244,11 @@ MechanicsElasticity_PK::Initialize()
 
   // Populate matrix and preconditioner
   // -- setup phase
-  const auto& E = S_->GetPtr<CV_t>(young_modulus_key_, Tags::DEFAULT);
-  const auto& nu = S_->GetPtr<CV_t>(poisson_ratio_key_, Tags::DEFAULT);
+  const auto& G = S_->GetPtr<CV_t>(shear_modulus_key_, Tags::DEFAULT);
+  const auto& K = S_->GetPtr<CV_t>(bulk_modulus_key_, Tags::DEFAULT);
 
   op_matrix_->Init();
-  op_matrix_elas_->SetTensorCoefficientEnu(E, nu);
+  op_matrix_elas_->SetTensorCoefficientGK(G, K);
 
   // -- initialize boundary conditions (memory allocation)
   auto bc = Teuchos::rcp(
@@ -297,56 +314,40 @@ MechanicsElasticity_PK::Initialize()
 * steady-state or transient simulation.
 ******************************************************************* */
 bool
-MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+MechanicsSmallStrain_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   dt_ = t_new - t_old;
 
   StateArchive archive(S_, vo_);
   archive.Add({ displacement_key_ }, Tags::DEFAULT);
 
-  UpdateSourceBoundaryData(t_old, t_new);
+  // initialization
+  if (num_itrs_ == 0) {
+    auto udot = Teuchos::rcp(new TreeVector(*soln_));
+    udot->PutScalar(0.0);
+    bdf1_dae_->SetInitialState(t_old, soln_, udot);
 
-  auto op = op_matrix_elas_->global_operator();
-  op->Init();
-
-  // add external forces
-  auto rhs = op_matrix_->rhs();
-  if (use_gravity_) AddGravityTerm(*rhs);
-  if (poroelasticity_) AddPressureGradient(*rhs);
-  if (thermoelasticity_) AddTemperatureGradient(*rhs);
-
-  // update the matrix = preconditioner
-  op_matrix_elas_->UpdateMatrices();
-  op_matrix_elas_->ApplyBCs(true, true, true);
-
-  // extensions
-  if (split_undrained_) {
-    auto u = S_->Get<CV_t>(displacement_key_, Tags::DEFAULT);
-    op_matrix_graddiv_->SetScalarCoefficient(
-      S_->Get<CV_t>(undrained_split_coef_key_, Tags::DEFAULT));
-    op_matrix_graddiv_->UpdateMatrices();
-    op_matrix_graddiv_->ApplyBCs(false, true, false);
-    op_matrix_graddiv_->global_operator()->Apply(u, *rhs, 1.0);
+    UpdatePreconditioner(t_old, soln_, dt_);
+    num_itrs_++;
   }
 
-  // solver the problem
-  op->ComputeInverse();
-  int ierr = op->ApplyInverse(*rhs, *solution_);
+  // trying to make a step
+  bool failed(false);
+  failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
+  if (failed) {
+    dt_ = dt_next_;
 
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "elasticity solver (PCG): ||r||_H=" << op->residual() << " itr=" << op->num_itrs()
-               << " code=" << op->returned_code() << std::endl;
-  }
-
-  if (ierr != 0) {
     archive.Restore("");
-    dt_ /= 2;
-    return true;
+    eval_->SetChanged();
+
+    return failed;
   }
 
-  dt_ *= 2;
+  // commit solution (should we do it here ?)
+  bdf1_dae_->CommitSolution(dt_, soln_);
   eval_->SetChanged();
+  num_itrs_++;
+
   return false;
 }
 
@@ -356,20 +357,10 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 * steady-state or transient simulation.
 ******************************************************************* */
 void
-MechanicsElasticity_PK::CommitStep(double t_old, double t_new, const Tag& tag)
+MechanicsSmallStrain_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   S_->GetEvaluator(hydrostatic_stress_key_).Update(*S_, "mechanics");
   S_->GetEvaluator(vol_strain_key_).Update(*S_, "mechanics");
-}
-
-
-/* ******************************************************************
-* Return a pointer to a local operator
-****************************************************************** */
-Teuchos::RCP<Operators::Operator>
-MechanicsElasticity_PK::my_operator(const Operators::OperatorType& type)
-{
-  return op_matrix_;
 }
 
 } // namespace Mechanics

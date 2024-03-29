@@ -39,11 +39,13 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 #
 # Library: mechanics
 #
-set(mechanics_src_files MechanicsElasticity_PK.cc
-                        MechanicsElasticity_TI.cc
+set(mechanics_src_files Mechanics_PK.cc
+                        MechanicsElasticity_PK.cc MechanicsElasticity_TI.cc
+                        MechanicsSmallStrain_PK.cc MechanicsSmallStrain_TI.cc
                         MechanicsBoundaryFunction.cc
                         HydrostaticStressEvaluator.cc
                         VolumetricStrainEvaluator.cc
+                        ShearModulusEvaluator.cc
    )
 set(mechanics_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${SEACAS_LIBRARIES})
 if (Ifpack_ENABLE_HYPRE)
@@ -62,6 +64,7 @@ add_amanzi_library(mechanics SOURCE ${mechanics_src_files}
 #
 set(mechanics_inc_files 
   MechanicsElasticity_PK.hh
+  MechanicsSmallStrain_PK.hh
   MechanicsBoundaryFunction.hh
   HydrostaticStressEvaluator.hh
   VolumetricStrainEvaluator.hh
@@ -113,6 +116,12 @@ if (BUILD_TESTS)
                   KIND int
                   NPROCS 2
                   SOURCE test/Main.cc test/mechanics_hydrostatic_stress.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+  # Test: spring test
+  add_amanzi_test(mechanics_springs mechanics_springs
+                  KIND int
+                  SOURCE test/Main.cc test/mechanics_springs.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 endif()
 

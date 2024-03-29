@@ -23,56 +23,10 @@ where
 and
 :math:`\boldsymbol{g}` is the gravity vector [:math:`m/s^2`].
 
-
-Global parameters
-.................
-Global parameters are placed in the sublist `"mechanics`".
-The list of global parameters include:
-
-* `"domain name`" [string] specifies mesh name that defined domain of this PK.
-  Default is `"domain`".
-
-
-Physical models and assumptions
-...............................
-This list is used to summarize physical models and assumptions, such as
-coupling with other PKs.
-This list is often generated or extended by a high-level MPC PK.
-
-* `"use gravity`" [bool] defines non-zero source term. Default is *false*.
-
-* `"biot scheme: undrained split`" [bool] defines iterative coupling with 
-  a flow PK where mechanics is solved first.
-
-* `"biot scheme: fixed-stress split`" [bool] defines iterative coupling with 
-  a flow PK where flow is solved first.
-
-.. code-block:: xml
-
-  <ParameterList name="mechanics">  <!-- parent list -->
-  <ParameterList name="physical models and assumptions">
-    <Parameter name="use gravity" type="bool" value="false"/>
-    <Parameter name="biot scheme: undrained split" type="bool" value="false"/>
-    <Parameter name="biot scheme: fixed stress split" type="bool" value="false"/>
-  </ParameterList>
-
-
-Main sublists
-.............
-The following sublists are needed to create and control this PK:
-
-.. code-block:: xml
-
-  <ParameterList name="mechanics">  <!-- parent list -->
-    <ParameterList name="time integrator">
-    <ParameterList name="operators">
-    <ParameterList name="physical models and assumptions">
-    <ParameterList name="boundary conditions">
-
 */
 
-#ifndef AMANZI_MECHANICS_ELASTICITY_PK_HH_
-#define AMANZI_MECHANICS_ELASTICITY_PK_HH_
+#ifndef AMANZI_MECHANICS_SMALL_STRAIN_PK_HH_
+#define AMANZI_MECHANICS_SMALL_STRAIN_PK_HH_
 
 #include <string>
 #include <vector>
@@ -106,14 +60,14 @@ The following sublists are needed to create and control this PK:
 namespace Amanzi {
 namespace Mechanics {
 
-class MechanicsElasticity_PK : public Mechanics_PK {
+class MechanicsSmallStrain_PK : public Mechanics_PK {
  public:
-  MechanicsElasticity_PK(Teuchos::ParameterList& pk_tree,
-                         const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                         const Teuchos::RCP<State>& S,
-                         const Teuchos::RCP<TreeVector>& soln);
+  MechanicsSmallStrain_PK(Teuchos::ParameterList& pk_tree,
+                          const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                          const Teuchos::RCP<State>& S,
+                          const Teuchos::RCP<TreeVector>& soln);
 
-  ~MechanicsElasticity_PK(){};
+  ~MechanicsSmallStrain_PK(){};
 
   // methods required for PK interface
   virtual void Setup() final;
@@ -139,15 +93,17 @@ class MechanicsElasticity_PK : public Mechanics_PK {
 
   // -- access
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae() { return bdf1_dae_; }
-  virtual Teuchos::RCP<Operators::Operator> my_operator(const Operators::OperatorType& type) override;
-  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization> my_pde(const Operators::PDEType& type) override { return op_matrix_elas_; }
 
  public:
   Teuchos::RCP<Operators::Operator> op_matrix_;
   Teuchos::RCP<Operators::PDE_Elasticity> op_matrix_elas_, op_matrix_graddiv_;
 
  private:
-  static RegisteredPKFactory<MechanicsElasticity_PK> reg_;
+  double dt_next_;
+  Key shear_modulus_key_, bulk_modulus_key_;
+
+ private:
+  static RegisteredPKFactory<MechanicsSmallStrain_PK> reg_;
 };
 
 } // namespace Mechanics

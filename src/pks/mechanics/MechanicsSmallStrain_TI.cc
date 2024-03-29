@@ -8,14 +8,14 @@
 */
 
 /*
-  MechanicsElasticity PK
+  MechanicsSmallStrain PK
 
 */
 
 #include "WhetStoneDefs.hh"
 #include "PorosityEvaluator.hh"
 
-#include "MechanicsElasticity_PK.hh"
+#include "MechanicsSmallStrain_PK.hh"
 
 namespace Amanzi {
 namespace Mechanics {
@@ -26,17 +26,19 @@ using CV_t = CompositeVector;
 * Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
 ****************************************************************** */
 void
-MechanicsElasticity_PK::FunctionalResidual(double t_old,
-                                           double t_new,
-                                           Teuchos::RCP<TreeVector> u_old,
-                                           Teuchos::RCP<TreeVector> u_new,
-                                           Teuchos::RCP<TreeVector> f)
+MechanicsSmallStrain_PK::FunctionalResidual(double t_old,
+                                            double t_new,
+                                            Teuchos::RCP<TreeVector> u_old,
+                                            Teuchos::RCP<TreeVector> u_new,
+                                            Teuchos::RCP<TreeVector> f)
 {
   UpdateSourceBoundaryData(t_old, t_new);
 
+  S_->GetEvaluator(shear_modulus_key_).Update(*S_, passwd_);
+
   op_matrix_elas_->global_operator()->Init();
 
-  // Add external forces
+  // add external forces
   auto rhs = op_matrix_->rhs();
   if (use_gravity_) AddGravityTerm(*rhs);
   if (poroelasticity_) AddPressureGradient(*rhs);
@@ -54,8 +56,8 @@ MechanicsElasticity_PK::FunctionalResidual(double t_old,
 * Apply preconditioner inv(B) * X.
 ****************************************************************** */
 int
-MechanicsElasticity_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
-                                            Teuchos::RCP<TreeVector> Y)
+MechanicsSmallStrain_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
+                                             Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
   return op_matrix_->ApplyInverse(*X->Data(), *Y->Data());
@@ -66,18 +68,10 @@ MechanicsElasticity_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
 * Update new preconditioner on the interval (tp-dtp, tp].
 ****************************************************************** */
 void
-MechanicsElasticity_PK::UpdatePreconditioner(double tp,
-                                             Teuchos::RCP<const TreeVector> u,
-                                             double dtp)
+MechanicsSmallStrain_PK::UpdatePreconditioner(double tp,
+                                              Teuchos::RCP<const TreeVector> u,
+                                              double dtp)
 {
-  // force component-wise coarsening
-  /*
-  auto block_indices = Teuchos::rcp(new std::vector<int>(nnodes_owned_ * dim_));
-  for (int n = 0; n < nnodes_owned_ * dim_; ++n) (*block_indices)[n] = n % dim_;
-  auto block_ids = std::make_pair(dim_, block_indices);
-  op_matrix_->set_coloring(dim_, block_indices);
-  */
-
   op_matrix_->ComputeInverse();
 }
 
@@ -87,8 +81,8 @@ MechanicsElasticity_PK::UpdatePreconditioner(double tp,
 * This is a wrapper for various error control methods.
 ****************************************************************** */
 double
-MechanicsElasticity_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                                  Teuchos::RCP<const TreeVector> du)
+MechanicsSmallStrain_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                                   Teuchos::RCP<const TreeVector> du)
 {
   if (!u->Data()->HasComponent("node")) return 0.0;
 
