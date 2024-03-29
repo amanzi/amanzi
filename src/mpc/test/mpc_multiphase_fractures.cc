@@ -51,7 +51,7 @@ TEST(MPC_DRIVER_MULTIPHASE_FRACTURES)
   mesh_list->set<bool>("request faces", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh3D = factory.create(0.0, 0.0, 0.0, 200.0, 12.0, 12.0, 50, 12, 12);
+  auto mesh3D = factory.create(0.0, 0.0, 0.0, 200.0, 12.0, 12.0, 50, 1, 2);
   // auto mesh3D = factory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, true, true);
 
   std::vector<std::string> names;
