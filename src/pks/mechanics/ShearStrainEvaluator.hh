@@ -23,11 +23,11 @@
 namespace Amanzi {
 namespace Mechanics {
 
-class ShearModulusEvaluator
+class ShearStrainEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  ShearModulusEvaluator(Teuchos::ParameterList& plist);
-  ShearModulusEvaluator(const ShearModulusEvaluator& other);
+  ShearStrainEvaluator(Teuchos::ParameterList& plist);
+  ShearStrainEvaluator(const ShearStrainEvaluator& other);
 
   // special initialization function
   void set_op(Teuchos::RCP<Operators::PDE_Elasticity>& op) { op_ = op; }
@@ -48,7 +48,6 @@ class ShearModulusEvaluator
 
  protected:
   Key displacement_key_;
-  Key shear_modulus_key_, shear_modulus_ref_key_, shear_strain_key_, bulk_modulus_key_;
   Teuchos::RCP<Operators::PDE_Elasticity> op_;
 };
 

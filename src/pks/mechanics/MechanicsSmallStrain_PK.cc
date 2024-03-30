@@ -22,7 +22,8 @@
 
 #include "HydrostaticStressEvaluator.hh"
 #include "MechanicsSmallStrain_PK.hh"
-#include "ShearModulusEvaluator.hh"
+#include "ShearStrainEvaluator.hh"
+#include "SSMEvaluator.hh"
 
 namespace Amanzi {
 namespace Mechanics {
@@ -74,13 +75,24 @@ MechanicsSmallStrain_PK::Setup()
 {
   Mechanics_PK::Setup();
 
+  shear_strain_key_ = Keys::getKey(domain_, "shear_strain");
   shear_modulus_key_ = Keys::getKey(domain_, "shear_modulus");
   bulk_modulus_key_ = Keys::getKey(domain_, "bulk_modulus");
+
+  if (!S_->HasRecord(shear_strain_key_)) {
+    auto elist = RequireFieldForEvaluator(*S_, shear_strain_key_);
+
+    eval_shear_strain_ = Teuchos::rcp(new ShearStrainEvaluator(elist));
+    S_->SetEvaluator(shear_strain_key_, Tags::DEFAULT, eval_shear_strain_);
+  }
+
+  auto ssm_list = Teuchos::sublist(ec_list_, "small strain models", true);
+  auto ssm = CreateSSMPartition(mesh_, ssm_list);
 
   if (!S_->HasRecord(shear_modulus_key_)) {
     auto elist = RequireFieldForEvaluator(*S_, shear_modulus_key_);
 
-    auto eval = Teuchos::rcp(new ShearModulusEvaluator(elist));
+    auto eval = Teuchos::rcp(new SSMEvaluator(elist, ssm));
     S_->SetEvaluator(shear_modulus_key_, Tags::DEFAULT, eval);
   }
 
@@ -129,6 +141,9 @@ MechanicsSmallStrain_PK::Initialize()
   auto tmp1 = ec_list_->sublist("operators").sublist("elasticity operator");
   op_matrix_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
   op_matrix_ = op_matrix_elas_->global_operator();
+
+  // For a quasi-static problem, we update PC every non-linear iteration.
+  // op_preconditioner_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
 
   // -- extensions: The undrained split method add another operator which has
   //    the grad-div structure. It is critical that it uses a separate global
@@ -288,9 +303,9 @@ MechanicsSmallStrain_PK::Initialize()
   op_matrix_->InitializeInverse();
 
   // we set up operators and can trigger re-initialization of stress
-  Teuchos::rcp_dynamic_cast<HydrostaticStressEvaluator>(eval_hydro_stress_)
-    ->set_op(op_matrix_elas_);
-  Teuchos::rcp_dynamic_cast<VolumetricStrainEvaluator>(eval_vol_strain_)->set_op(op_matrix_elas_);
+  eval_hydro_stress_->set_op(op_matrix_elas_);
+  eval_vol_strain_->set_op(op_matrix_elas_);
+  eval_shear_strain_->set_op(op_matrix_elas_);
   eval_->SetChanged();
 
   // summary of initialization

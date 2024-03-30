@@ -15,7 +15,7 @@
 
 #include "PDE_Elasticity.hh"
 
-#include "ShearModulusEvaluator.hh"
+#include "ShearStrainEvaluator.hh"
 
 namespace Amanzi {
 namespace Mechanics {
@@ -23,14 +23,9 @@ namespace Mechanics {
 /* ******************************************************************
 * Constructor
 ****************************************************************** */
-ShearModulusEvaluator::ShearModulusEvaluator(Teuchos::ParameterList& plist)
+ShearStrainEvaluator::ShearStrainEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
-  bulk_modulus_key_ = "bulk_modulus";
-  shear_modulus_key_ = "shear_modulus";
-  shear_modulus_ref_key_ = "shear_modulus_ref";
-  shear_strain_key_ = "shear_strain";
-
   displacement_key_ = plist.get<std::string>("displacement key", "displacement");
   dependencies_.insert(std::make_pair(displacement_key_, Tags::DEFAULT));
 }
@@ -39,7 +34,7 @@ ShearModulusEvaluator::ShearModulusEvaluator(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * A copy constructor.
 ****************************************************************** */
-ShearModulusEvaluator::ShearModulusEvaluator(const ShearModulusEvaluator& other)
+ShearStrainEvaluator::ShearStrainEvaluator(const ShearStrainEvaluator& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     displacement_key_(other.displacement_key_),
     op_(other.op_)
@@ -50,9 +45,9 @@ ShearModulusEvaluator::ShearModulusEvaluator(const ShearModulusEvaluator& other)
 * Clone with unclear yet purpose.
 ****************************************************************** */
 Teuchos::RCP<Evaluator>
-ShearModulusEvaluator::Clone() const
+ShearStrainEvaluator::Clone() const
 {
-  return Teuchos::rcp(new ShearModulusEvaluator(*this));
+  return Teuchos::rcp(new ShearStrainEvaluator(*this));
 }
 
 
@@ -60,17 +55,15 @@ ShearModulusEvaluator::Clone() const
 * Evaluator
 ****************************************************************** */
 void
-ShearModulusEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
+ShearStrainEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& gamma_ref = *S.Get<CompositeVector>(shear_modulus_ref_key_, Tags::DEFAULT).ViewComponent("cell");
-  const auto& shear_ref = *S.Get<CompositeVector>(shear_modulus_ref_key_, Tags::DEFAULT).ViewComponent("cell");
-  int ncells = shear_ref.MyLength();
-
   if (op_.get()) {
     auto u = S.Get<CompositeVector>(displacement_key_, Tags::DEFAULT);
     u.ScatterMasterToGhosted();
 
     auto& shear_c = *results[0]->ViewComponent("cell");
+    int ncells = shear_c.MyLength();
+
 
     for (int c = 0; c < ncells; ++c) {
       auto Tc = op_->ComputeCellStrain(u, c);
@@ -84,9 +77,7 @@ ShearModulusEvaluator::Evaluate_(const State& S, const std::vector<CompositeVect
         gamma += Tc(i, i) * Tc(i, i);
         for (int j = i + 1; j < d; ++j) gamma += 2 * Tc(i, j) * Tc(i, j);
       }
-      gamma = std::sqrt(2 * gamma);
-
-      shear_c[0][c] = shear_ref[0][c] / (1.0 + gamma / gamma_ref[0][c]);
+      shear_c[0][c] = std::sqrt(2 * gamma);
     }
   } else {
     // operator may not be available during initialization time

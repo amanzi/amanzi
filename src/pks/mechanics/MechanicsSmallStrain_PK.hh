@@ -55,6 +55,7 @@ and
 #include "HydrostaticStressEvaluator.hh"
 #include "Mechanics_PK.hh"
 #include "MechanicsBoundaryFunction.hh"
+#include "ShearStrainEvaluator.hh"
 #include "VolumetricStrainEvaluator.hh"
 
 namespace Amanzi {
@@ -98,9 +99,11 @@ class MechanicsSmallStrain_PK : public Mechanics_PK {
   Teuchos::RCP<Operators::Operator> op_matrix_;
   Teuchos::RCP<Operators::PDE_Elasticity> op_matrix_elas_, op_matrix_graddiv_;
 
+  Teuchos::RCP<ShearStrainEvaluator> eval_shear_strain_;
+
  private:
   double dt_next_;
-  Key shear_modulus_key_, bulk_modulus_key_;
+  Key shear_strain_key_, shear_modulus_key_, bulk_modulus_key_;
 
  private:
   static RegisteredPKFactory<MechanicsSmallStrain_PK> reg_;

@@ -271,9 +271,8 @@ MechanicsElasticity_PK::Initialize()
   op_matrix_->InitializeInverse();
 
   // we set up operators and can trigger re-initialization of stress
-  Teuchos::rcp_dynamic_cast<HydrostaticStressEvaluator>(eval_hydro_stress_)
-    ->set_op(op_matrix_elas_);
-  Teuchos::rcp_dynamic_cast<VolumetricStrainEvaluator>(eval_vol_strain_)->set_op(op_matrix_elas_);
+  eval_hydro_stress_->set_op(op_matrix_elas_);
+  eval_vol_strain_->set_op(op_matrix_elas_);
   eval_->SetChanged();
 
   // summary of initialization

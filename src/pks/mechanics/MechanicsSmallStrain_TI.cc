@@ -12,8 +12,8 @@
 
 */
 
-#include "WhetStoneDefs.hh"
 #include "PorosityEvaluator.hh"
+#include "WhetStoneDefs.hh"
 
 #include "MechanicsSmallStrain_PK.hh"
 
