@@ -30,7 +30,7 @@
 
   <!-- FLOW -->
   <ParameterList name="PKs">
-    <ParameterList name="mechanics elasticity">
+    <ParameterList name="mechanics small strain">
       <ParameterList name="physical models and assumptions">
 	<Parameter name="use gravity" type="bool" value="false"/>
         <Parameter name="biot scheme: undrained split" type="bool" value="false"/>
@@ -45,6 +45,15 @@
             <Parameter name="method" type="string" value="BernardiRaugel"/>
             <Parameter name="method order" type="int" value="1"/>
           </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="small strain models">
+        <ParameterList name="All">
+          <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <Parameter name="model" type="string" value="Hardin Drnevich"/>
+          <Parameter name="reference shear strain" type="double" value="8.0e-1"/>
+          <Parameter name="maximum shear stress" type="double" value="70.0"/>
         </ParameterList>
       </ParameterList>
 
@@ -70,7 +79,7 @@
 
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1e-10"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-7"/>
             <Parameter name="diverged tolerance" type="double" value="1e+10"/>
             <Parameter name="limit iterations" type="int" value="30"/>
             <Parameter name="max du growth factor" type="double" value="1e+5"/>
@@ -219,6 +228,20 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.3333"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="bulk_modulus">
+        <ParameterList name="function">
+          <ParameterList name="ALL">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="52.486"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
