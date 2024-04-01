@@ -1,0 +1,45 @@
+--- netcdf-fortran-4.5.4-source/fortran/CMakeLists-orig.txt	2023-02-06 13:33:49.000000000 -0500
++++ netcdf-fortran-4.5.4-source/fortran/CMakeLists.txt	2023-02-06 13:38:03.000000000 -0500
+@@ -148,14 +148,14 @@
+ # ADD_LIBRARY(netcdff STATIC SHARED ${netcdff_SOURCES})
+ # Builds only static, not shared
+ # Compile C-code to object, then link with Fortran
+-ADD_LIBRARY(netcdff_c OBJECT ${netcdff_C_SOURCES})
+-install(TARGETS netcdff_c OBJECTS DESTINATION lib)
+-# or is this better?   list(APPEND NETCDF_C_LIBRARY netcdff_c)
+-SET(NETCDF_C_LIBRARY ${NETCDF_C_LIBRARY} netcdff_c)
+-set_target_properties(netcdff_c PROPERTIES
++ADD_LIBRARY(netcdf OBJECT ${netcdff_C_SOURCES})
++install(TARGETS netcdf OBJECTS DESTINATION lib)
++# or is this better?   list(APPEND NETCDF_C_LIBRARY netcdf)
++SET(NETCDF_C_LIBRARY ${NETCDF_C_LIBRARY} netcdf)
++set_target_properties(netcdf PROPERTIES
+     INTERFACE_INCLUDE_DIRECTORIES "${NETCDF_C_INCLUDE_DIR}"
+   )
+-target_include_directories(netcdff_c PUBLIC "${NETCDF_C_INCLUDE_DIR}")
++target_include_directories(netcdf PUBLIC "${NETCDF_C_INCLUDE_DIR}")
+ 
+ ADD_LIBRARY(netcdff ${netcdff_SOURCES})
+ TARGET_LINK_LIBRARIES(netcdff PUBLIC netCDF::netcdf)
+@@ -171,9 +171,9 @@
+   $<INSTALL_INTERFACE:include>
+   )
+ 
+-if (HAVE_NC_USE_PARALLEL_ENABLED)
+-  target_link_libraries(netcdff PUBLIC MPI::MPI_Fortran)
+-endif()
++#if (HAVE_NC_USE_PARALLEL_ENABLED)
++#  target_link_libraries(netcdff PUBLIC MPI::MPI_Fortran)
++#endif()
+ 
+ # copied from netcdf-c... Changed from ADD_DEFINITIONS to TARGET_COMPILE_DEFINITIONS
+ # Option to Build DLL
+@@ -210,7 +210,7 @@
+ ENDIF()
+ 
+ # Installation of the program
+-INSTALL(TARGETS netcdff netcdff_c
++INSTALL(TARGETS netcdff
+     EXPORT netcdffTargets
+     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT bin
+     LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT shlib
