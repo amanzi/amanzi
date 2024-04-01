@@ -366,14 +366,6 @@ RStdata::calcRichardAlpha (MFTower&       Alpha,
   }
 }
 
-Array<int>&
-RStdata::rinflowBCLo()
-{}
-
-Array<int>&
-RStdata::rinflowBCHi()
-{}
-
 const MFTower*
 RStdata::GetKappaCCdir(Real t)
 {
