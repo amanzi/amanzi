@@ -114,14 +114,22 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
                   ERROR_STRIP_TRAILING_WHITESPACE)
 
   string(REPLACE "\n" ";" AMANZI_GIT_BRANCH_INFO_SPLIT ${AMANZI_GIT_BRANCH_INFO})
-  FOREACH(commit_msg ${AMANZI_GIT_BRANCH_INFO_SPLIT})
-    IF ( ${commit_msg} MATCHES "\\*\\+ \\[")
-      set ( AMANZI_GIT_PARENT_BRANCH_MSG ${commit_msg} )
-    ENDIF()
-  ENDFOREACH()
-
-  string(REGEX MATCH "\\[(.*)\\]" _ ${AMANZI_GIT_PARENT_BRANCH_MSG})
-  set(AMANZI_GIT_PARENT_BRANCH ${CMAKE_MATCH_1})
+  list(LENGTH AMANZI_GIT_BRANCH_INFO_SPLIT AMANZI_LIST_LEN)
+  
+  IF( ${AMANZI_LIST_LEN} GREATER 1 )
+    # On a branch with (more) complete commit history and branch information
+    FOREACH(commit_msg IN LISTS AMANZI_GIT_BRANCH_INFO_SPLIT)
+      IF ( ${commit_msg} MATCHES "\\*\\+ \\[")
+        set ( AMANZI_GIT_PARENT_BRANCH_MSG ${commit_msg} )
+      ENDIF()
+    ENDFOREACH()
+    string(REGEX MATCH "\\[(.*)\\]" _ ${AMANZI_GIT_PARENT_BRANCH_MSG})
+    set(AMANZI_GIT_PARENT_BRANCH ${CMAKE_MATCH_1})
+  ELSE( )
+    # Just on master, or a branch that was checked out directly so no way to
+    # deduce relationship to a parent branch. 
+    set(AMANZI_GIT_PARENT_BRANCH "master")
+  ENDIF()
 
   message(STATUS ">>>> JDM: AMANZI_GIT_PARENT_BRANCH = ${AMANZI_GIT_PARENT_BRANCH}")
   
