@@ -103,7 +103,7 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
                   ERROR_STRIP_TRAILING_WHITESPACE)
 
   # Get the parent branch
-  # - the nearest commit that resides on a branch other than the current branch, and which branch is that?                
+  # - the nearest commit that resides on a branch other than the current branch, and which branch is that?
   set(GIT_ARGS show-branch)
   execute_process(COMMAND  ${GIT_EXECUTABLE} ${GIT_ARGS}
                   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -119,7 +119,7 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
   IF( ${AMANZI_LIST_LEN} GREATER 1 )
     # On a branch with (more) complete commit history and branch information
     FOREACH(commit_msg IN LISTS AMANZI_GIT_BRANCH_INFO_SPLIT)
-      IF ( ${commit_msg} MATCHES "\\*\\+ \\[")
+      IF ( ${commit_msg} MATCHES "\\*\\+ \\[" OR ${commit_msg} MATCHES "\\+\\* \\[" )
         set ( AMANZI_GIT_PARENT_BRANCH_MSG ${commit_msg} )
       ENDIF()
     ENDFOREACH()
