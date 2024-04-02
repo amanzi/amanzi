@@ -86,3 +86,23 @@ Important bootstrap.sh arguments to ensure the Travis CI build does not take too
 
 exit
    - exits the docker container
+
+------------------------------------------------------------------
+4. Building docker containers for multiple processor architectures
+------------------------------------------------------------------
+
+Docker now provides multiple ways to build containers for multiple
+architectures. The most common use case for needing this is building
+images for newer Apple computers (the M-series chips, arm64) in addition
+to existing x86_64 that Intel/AMD chipsets (and many hpc centers) use.
+
+Images can either be build through emulation on a single system, one
+image cross-compiled on a single system, or images can be built on 
+two different architectures and combined in the docker manifest later on.
+
+a) Building multiarch on a single system via emulation (easy, but can be slow):
+
+b) Building multiarch on a single system using cross compilers:
+
+c) Building images separately on two different systems and combining in manifest:
+
