@@ -626,25 +626,6 @@ if (ENABLE_Structured)
              -DAMANZI_SPACEDIM:INT=${CCSE_BL_SPACEDIM})
 endif()
 
-# Boost
-if (NOT ENABLE_XSDK)
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_Boost.cmake) 
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DBOOST_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
-        -DBOOST_INCLUDEDIR=${TPL_INSTALL_PREFIX}/include/boost
-        -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
-else()
-    find_spack_install_location(boost BOOST_INSTALL_PREFIX)
-    message(STATUS "BOOST_INSTALL_PREFIX = ${BOOST_INSTALL_PREFIX}")
-    set(BOOST_ROOT ${BOOST_INSTALL_PREFIX})
-    set(BOOST_INCLUDEDIR ${BOOST_INSTALL_PREFIX}/include/boost)
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DBOOST_ROOT:FILEPATH=${BOOST_INSTALL_PREFIX}
-        -DBOOST_INCLUDEDIR=${BOOST_INSTALL_PREFIX}/include/boost
-        -DBoost_USE_STATIC_LIBS:BOOL=TRUE
-        -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
-endif()
-
 # HDF5  
 if (NOT ENABLE_XSDK)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5.cmake)

@@ -70,6 +70,12 @@ struct View_iter {
   {
     return v + d;
   }
+  KOKKOS_INLINE_FUNCTION friend View_iter operator-(const View_iter& v, const int& d)
+  {
+    View_iter tmp(v);
+    tmp += -d;
+    return tmp;
+  }
   KOKKOS_INLINE_FUNCTION friend int operator-(const View_iter& l, const View_iter& r)
   {
     return l.i_ - r.i_;

@@ -130,7 +130,7 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
     # deduce relationship to a parent branch. 
     set(AMANZI_GIT_PARENT_BRANCH "master")
   ENDIF()
-
+  
   message(STATUS ">>>> JDM: AMANZI_GIT_PARENT_BRANCH = ${AMANZI_GIT_PARENT_BRANCH}")
   
   # Put the tags in a list
