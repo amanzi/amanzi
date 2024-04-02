@@ -49,7 +49,8 @@ resolveMeshSet(const AmanziGeometry::Region& region,
 
   } else if (region_type == AmanziGeometry::RegionType::LOGICAL ||
              region_type == AmanziGeometry::RegionType::ALL ||
-             region_type == AmanziGeometry::RegionType::BOUNDARY) {
+             region_type == AmanziGeometry::RegionType::BOUNDARY ||
+             region_type == AmanziGeometry::RegionType::POINT) {
     // these are resolved on this mesh
     return Impl::resolveMeshSet_(region, kind, ptype, mesh);
 
@@ -173,12 +174,13 @@ resolveMeshSet_(const AmanziGeometry::Region& region,
   } else if (AmanziGeometry::RegionType::LABELEDSET == region.get_type()) {
     auto region_ls = dynamic_cast<const AmanziGeometry::RegionLabeledSet*>(&region);
     AMANZI_ASSERT(region_ls);
-    MeshCache<MemSpace_kind::HOST>::Entity_ID_View lresult;
     result = resolveMeshSetLabeledSet(*region_ls, kind, ptype, mesh);
+
     // labeled sets may not be sorted, though all other types are.  Sort labeled sets.
-    lresult.fromConst(result);
+    // Note that sorting as a View does not scale beyond ~500 entries.
+    std::vector<Entity_ID> lresult = asVector(result);
     std::sort(lresult.begin(), lresult.end());
-    result = lresult;
+    vectorToConstView(result, lresult);
 
   } else if (AmanziGeometry::RegionType::ALL == region.get_type()) {
     result = resolveMeshSetAll(region, kind, ptype, mesh);
@@ -224,8 +226,8 @@ resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
   }
 
   auto cells = mesh.getNodeCells(minnode, ptype);
-
   int ncells = cells.size();
+
   for (int ic = 0; ic < ncells; ic++) {
     Entity_ID icell = cells[ic];
 

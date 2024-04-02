@@ -292,33 +292,55 @@ polygon_get_area_centroid_normal(PVT& coords, double* area, Point* centroid, Poi
 }
 
 
-// Get area weighted normal of polygon
-// In 2D, the normal is unambiguous - the normal is evaluated at one corner
-// In 3D, the procedure evaluates the normal at each corner and averages it
-
-//  Point polygon_get_normal(const std::vector<Point> coords);
-
-
 // Check if point is in polygon by Jordan's crossing algorithm
 template <class PVT>
 bool
 point_in_polygon(const Point testpnt, const PVT& coords)
 {
+  int np = coords.size();
+  int d = coords[0].dim();
+
+  if (d == 3) {
+    double xmax(0.0), ymax(0.0), zmax(0.0);
+    for (int i = 1; i < np; i++) {
+      xmax = std::max(xmax, std::fabs(coords[i][0] - coords[0][0]));
+      ymax = std::max(ymax, std::fabs(coords[i][1] - coords[0][1]));
+      zmax = std::max(zmax, std::fabs(coords[i][2] - coords[0][2]));
+    }
+    // projection on one of the three planes: XY, XZ, and YZ
+    if (zmax <= std::min(xmax, ymax)) {
+      return point_in_polygon_flat(testpnt, coords, 0, 1);
+    } else if (ymax <= std::min(xmax, zmax)) {
+      return point_in_polygon_flat(testpnt, coords, 0, 2);
+    } else if (xmax <= std::min(ymax, zmax)) {
+      return point_in_polygon_flat(testpnt, coords, 1, 2);
+    }
+  } else {
+    return point_in_polygon_flat(testpnt, coords, 0, 1);
+  } 
+
+  return false;
+}
+
+
+template <class PVT>
+bool
+point_in_polygon_flat(const Point testpnt, const PVT& coords, int i0, int i1)
+{
   int i, ip1, c;
 
-  /* Basic test - will work for strictly interior and exterior points */
+  // Basic test - will work for strictly interior and exterior points
   int np = coords.size();
 
-  double x = testpnt.x();
-  double y = testpnt.y();
+  double x = testpnt[i0];
+  double y = testpnt[i1];
 
   for (i = 0, c = 0; i < np; i++) {
-    //    std::cout<<"coords "<<coords[i]<<"\n";
     ip1 = (i + 1) % np;
-    if (((coords[i].y() > y && coords[ip1].y() <= y) ||
-         (coords[ip1].y() > y && coords[i].y() <= y)) &&
-        (x <= (coords[i].x() + (y - coords[i].y()) * (coords[ip1].x() - coords[i].x()) /
-                                 (coords[ip1].y() - coords[i].y()))))
+    if (((coords[i][i1] > y && coords[ip1][i1] <= y) ||
+         (coords[ip1][i1] > y && coords[i][i1] <= y)) &&
+        (x <= (coords[i][i0] + (y - coords[i][i1]) * (coords[ip1][i0] - coords[i][i0]) /
+                                 (coords[ip1][i1] - coords[i][i1]))))
       c = !c;
   }
 
@@ -330,9 +352,7 @@ point_in_polygon(const Point testpnt, const PVT& coords)
   return (c == 1);
 }
 
-} // end namespace AmanziGeometry
-
-} // end namespace Amanzi
-
+} // namespace AmanziGeometry
+} // namespace Amanzi
 
 #endif

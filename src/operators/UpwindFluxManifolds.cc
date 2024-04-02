@@ -74,25 +74,29 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
     // volume-weigthed average over downwind cells
     if (ncells > 1) {
       int dir;
-      double tvol(0.0), mean(0.0), vol;
-      std::vector<int> out;
+      double utvol(0.0), umean(0.0), dtvol(0.0), dmean(0.0), vol;
 
       for (int i = 0; i < ncells; ++i) {
         int c = cells[i];
-
         mesh_->getFaceNormal(f, c, &dir);
+        vol = mesh_->getCellVolume(c);
+
         if (flux_f[0][g + i] * dir > tol) {
-          vol = mesh_->getCellVolume(c);
-          tvol += vol;
-          mean += vol * field_c[0][c];
-          out.push_back(i);
+          utvol += vol;
+          umean += vol * field_c[0][c];
         } else {
-          field_f[0][g + i] = field_c[0][c];
+          dtvol += vol;
+          dmean += vol * field_c[0][c];
         }
       }
 
-      if (tvol > 0.0) mean /= tvol;
-      for (int i : out) { field_f[0][g + i] = mean; }
+      if (utvol > 0.0) {
+        umean /= utvol;
+        for (int i = 0; i < ncells; ++i) field_f[0][g + i] = umean;
+      } else {
+        dmean /= dtvol;
+        for (int i = 0; i < ncells; ++i) field_f[0][g + i] = dmean;
+      }
 
       // upwind only on inflow Dirichlet faces
     } else {

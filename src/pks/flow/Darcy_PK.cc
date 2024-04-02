@@ -571,7 +571,8 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   const auto& ws_prev = S_->Get<CV_t>(prev_water_storage_key_, Tags::DEFAULT);
   S_->GetEvaluator(water_storage_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
-  const auto& dws_dp = S_->GetDerivative<CV_t>(water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
+  const auto& dws_dp =
+    S_->GetDerivative<CV_t>(water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
   op_acc_->AddAccumulationRhs(dws_dp, ws_prev, 1.0 / dt_, "cell", true);
   // op_acc_->AddAccumulationDelta(*solution, dws_dp, dws_dp, dt_, "cell");
 
@@ -661,7 +662,8 @@ Darcy_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   S_->GetEvaluator(vol_flowrate_key_).Update(*S_, passwd_);
 
   S_->GetEvaluator(water_storage_key_).Update(*S_, "flow");
-  S_->GetW<CV_t>(prev_water_storage_key_, Tags::DEFAULT, passwd_) = S_->Get<CV_t>(water_storage_key_, Tags::DEFAULT);
+  S_->GetW<CV_t>(prev_water_storage_key_, Tags::DEFAULT, passwd_) =
+    S_->Get<CV_t>(water_storage_key_, Tags::DEFAULT);
 
   if (coupled_to_matrix_ || flow_on_manifold_) VV_FractureConservationLaw();
 

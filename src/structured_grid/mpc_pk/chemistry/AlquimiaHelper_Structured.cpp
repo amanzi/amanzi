@@ -420,8 +420,9 @@ AlquimiaHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       in
       }
 
       int newton_iters;
+      int natural_id;
       engine->Advance(dt,alquimia_properties[threadid],alquimia_state[threadid],
-                      alquimia_aux_in[threadid],alquimia_aux_out[threadid],newton_iters);
+                      alquimia_aux_in[threadid],alquimia_aux_out[threadid],newton_iters,natural_id);
 
       if (ParallelDescriptor::IOProcessor() && chem_verbose>0) {
 	std::cout << "************* COMING OUT OF engine->Advance: " << std::endl;

@@ -19,9 +19,9 @@ which sets the next timestep based upon the previous timestep and how many
 nonlinear iterations the previous timestep took to converge.
 The next time step is given by the following rule:
 
-* if :math:`N_k > N^{max}` then :math:`\Delta t_{k+1} = f_{reduction} \Delta t_{k}`
-* if :math:`N_k < N^{min}` then :math:`\Delta t_{k+1} = f_{increase} \Delta t_{k}`
-* otherwise :math:`\Delta t_{k+1} = \Delta t_{k}`
+- if :math:`N_k > N^{max}` then :math:`\Delta t_{k+1} = f_{reduction} \Delta t_{k}`
+- if :math:`N_k < N^{min}` then :math:`\Delta t_{k+1} = f_{increase} \Delta t_{k}`
+- otherwise :math:`\Delta t_{k+1} = \Delta t_{k}`
 
 where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of nonlinear
 iterations required to solve step :math:`k`.

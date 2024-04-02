@@ -35,7 +35,7 @@ MechanicsElasticity_PK::MechanicsElasticity_PK(Teuchos::ParameterList& pk_tree,
                                                const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                                const Teuchos::RCP<State>& S,
                                                const Teuchos::RCP<TreeVector>& soln)
-  : soln_(soln), passwd_("")
+  : Mechanics_PK(pk_tree, glist, S, soln)
 {
   S_ = S;
 
@@ -70,89 +70,7 @@ MechanicsElasticity_PK::MechanicsElasticity_PK(Teuchos::ParameterList& pk_tree,
 void
 MechanicsElasticity_PK::Setup()
 {
-  dt_ = 1e+98;
-  mesh_ = S_->GetMesh();
-  dim_ = mesh_->getSpaceDimension();
-
-  displacement_key_ = Keys::getKey(domain_, "displacement");
-  hydrostatic_stress_key_ = Keys::getKey(domain_, "hydrostatic_stress");
-  vol_strain_key_ = Keys::getKey(domain_, "volumetric_strain");
-
-  young_modulus_key_ = Keys::getKey(domain_, "young_modulus");
-  poisson_ratio_key_ = Keys::getKey(domain_, "poisson_ratio");
-  particle_density_key_ = Keys::getKey(domain_, "particle_density");
-  undrained_split_coef_key_ = Keys::getKey(domain_, "undrained_split_coef");
-
-  // constant fields
-  S_->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT, "state");
-
-  // primary fields
-  // -- displacement
-  const auto& list = ec_list_->sublist("operators").sublist("elasticity operator");
-  auto schema = Operators::schemaFromPList(list, mesh_);
-
-  if (!S_->HasRecord(displacement_key_)) {
-    auto cvs = Operators::cvsFromSchema(schema, mesh_, true);
-    *S_->Require<CV_t, CVS_t>(displacement_key_, Tags::DEFAULT, passwd_)
-       .SetMesh(mesh_)
-       ->SetGhosted(true) = cvs;
-
-    Teuchos::ParameterList elist(displacement_key_);
-    elist.set<std::string>("evaluator name", displacement_key_);
-    eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S_->SetEvaluator(displacement_key_, Tags::DEFAULT, eval_);
-  }
-
-  if (!S_->HasRecord(hydrostatic_stress_key_)) {
-    S_->Require<CV_t, CVS_t>(hydrostatic_stress_key_, Tags::DEFAULT, hydrostatic_stress_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-  }
-  {
-    Teuchos::ParameterList elist(hydrostatic_stress_key_);
-    elist.set<std::string>("tag", "");
-    eval_hydro_stress_ = Teuchos::rcp(new HydrostaticStressEvaluator(elist));
-    S_->SetEvaluator(hydrostatic_stress_key_, Tags::DEFAULT, eval_hydro_stress_);
-  }
-
-  if (!S_->HasRecord(vol_strain_key_)) {
-    S_->Require<CV_t, CVS_t>(vol_strain_key_, Tags::DEFAULT, vol_strain_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1); // copy of states needs it
-  }
-  {
-    Teuchos::ParameterList elist(vol_strain_key_);
-    elist.set<std::string>("tag", "");
-    eval_vol_strain_ = Teuchos::rcp(new VolumetricStrainEvaluator(elist));
-    S_->SetEvaluator(vol_strain_key_, Tags::DEFAULT, eval_vol_strain_);
-  }
-
-  // -- rock properties
-  S_->Require<CV_t, CVS_t>(young_modulus_key_, Tags::DEFAULT, passwd_)
-    .SetMesh(mesh_)
-    ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  S_->Require<CV_t, CVS_t>(poisson_ratio_key_, Tags::DEFAULT, passwd_)
-    .SetMesh(mesh_)
-    ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  if (!S_->HasRecord(particle_density_key_)) {
-    S_->Require<CV_t, CVS_t>(particle_density_key_, Tags::DEFAULT, particle_density_key_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-    S_->RequireEvaluator(particle_density_key_, Tags::DEFAULT);
-  }
-
-  // set units
-  S_->GetRecordSetW(displacement_key_).set_units("m");
-  S_->GetRecordSetW(poisson_ratio_key_).set_units("-");
-  S_->GetRecordSetW(young_modulus_key_).set_units("Pa");
+  Mechanics_PK::Setup();
 }
 
 
@@ -163,27 +81,11 @@ MechanicsElasticity_PK::Setup()
 void
 MechanicsElasticity_PK::Initialize()
 {
-  // Initialize miscalleneous defaults.
+  Mechanics_PK::Initialize();
+
+  // -- miscalleneous defaults
   num_itrs_ = 0;
-
-  // -- times
   double t_ini = S_->get_time();
-
-  // -- mesh dimensions
-  ncells_owned_ =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
-  ncells_wghost_ =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
-
-  nfaces_owned_ =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  nfaces_wghost_ =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
-
-  nnodes_owned_ =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
-  nnodes_wghost_ =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   // -- control parameters
   auto physical_models = Teuchos::sublist(ec_list_, "physical models and assumptions");
@@ -193,12 +95,6 @@ MechanicsElasticity_PK::Initialize()
   split_undrained_ = physical_models->get<bool>("biot scheme: undrained split", false);
   split_fixed_stress_ = physical_models->get<bool>("biot scheme: fixed stress split", false);
   poroelasticity_ = split_undrained_ || split_fixed_stress_;
-
-  // Create verbosity object to print out initialiation statistics.
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "\nPK initialization started...\n";
-  }
 
   // Create pointers to the primary flow field displacement.
   solution_ = S_->GetPtrW<CV_t>(displacement_key_, Tags::DEFAULT, passwd_);
@@ -272,12 +168,21 @@ MechanicsElasticity_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
+        // nodal dofs
         auto bc = bc_factory.Create(
-          spec, "kinematic", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
+          spec, "kinematic", AmanziMesh::NODE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("kinematic");
         bc->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
-        bc->set_kind(AmanziMesh::FACE);
+        bc->set_kind(AmanziMesh::NODE);
         bcs_.push_back(bc);
+
+        // bubble dofs
+        auto bc2 = bc_factory.Create(
+          spec, "kinematic", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
+        bc2->set_bc_name("kinematic");
+        bc2->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
+        bc2->set_kind(AmanziMesh::FACE);
+        bcs_.push_back(bc2);
       }
     }
   }
@@ -322,11 +227,11 @@ MechanicsElasticity_PK::Initialize()
 
   // Populate matrix and preconditioner
   // -- setup phase
-  const auto E = S_->GetPtr<CV_t>(young_modulus_key_, Tags::DEFAULT);
-  const auto nu = S_->GetPtr<CV_t>(poisson_ratio_key_, Tags::DEFAULT);
+  const auto& E = S_->GetPtr<CV_t>(young_modulus_key_, Tags::DEFAULT);
+  const auto& nu = S_->GetPtr<CV_t>(poisson_ratio_key_, Tags::DEFAULT);
 
   op_matrix_->Init();
-  op_matrix_elas_->SetTensorCoefficient(E, nu);
+  op_matrix_elas_->SetTensorCoefficientEnu(E, nu);
 
   // -- initialize boundary conditions (memory allocation)
   auto bc = Teuchos::rcp(
@@ -347,7 +252,7 @@ MechanicsElasticity_PK::Initialize()
 
   for (auto bc : op_bcs_) op_matrix_elas_->AddBCs(bc, bc);
 
-  UpdateSourceBoundaryData_(t_ini, t_ini);
+  UpdateSourceBoundaryData(t_ini, t_ini);
   op_matrix_elas_->EnforceBCs(*solution_);
 
   // -- assemble phase
@@ -366,9 +271,8 @@ MechanicsElasticity_PK::Initialize()
   op_matrix_->InitializeInverse();
 
   // we set up operators and can trigger re-initialization of stress
-  Teuchos::rcp_dynamic_cast<HydrostaticStressEvaluator>(eval_hydro_stress_)
-    ->set_op(op_matrix_elas_);
-  Teuchos::rcp_dynamic_cast<VolumetricStrainEvaluator>(eval_vol_strain_)->set_op(op_matrix_elas_);
+  eval_hydro_stress_->set_op(op_matrix_elas_);
+  eval_vol_strain_->set_op(op_matrix_elas_);
   eval_->SetChanged();
 
   // summary of initialization
@@ -399,16 +303,16 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   StateArchive archive(S_, vo_);
   archive.Add({ displacement_key_ }, Tags::DEFAULT);
 
-  UpdateSourceBoundaryData_(t_old, t_new);
+  UpdateSourceBoundaryData(t_old, t_new);
 
   auto op = op_matrix_elas_->global_operator();
   op->Init();
 
   // add external forces
   auto rhs = op_matrix_->rhs();
-  if (use_gravity_) AddGravityTerm_(*rhs);
-  if (poroelasticity_) AddPressureGradient_(*rhs);
-  if (thermoelasticity_) AddTemperatureGradient_(*rhs);
+  if (use_gravity_) AddGravityTerm(*rhs);
+  if (poroelasticity_) AddPressureGradient(*rhs);
+  if (thermoelasticity_) AddTemperatureGradient(*rhs);
 
   // update the matrix = preconditioner
   op_matrix_elas_->UpdateMatrices();

@@ -283,6 +283,30 @@ MeshExtractedManifold::getNodeCoordinate(const Entity_ID n) const
   return xyz;
 }
 
+
+/* ******************************************************************
+* Connectivity list: node -> faces
+****************************************************************** */
+void
+MeshExtractedManifold::getNodeFaces(const Entity_ID n, cEntity_ID_View& nfaces) const
+{
+  auto parent_nodes = entid_to_parent_.at(Entity_kind::NODE);
+  auto parent_edges = entid_to_parent_.at(Entity_kind::FACE);
+
+  auto my_parent_node = parent_nodes(n);
+  auto my_parent_edges = parent_mesh_->getNodeEdges(my_parent_node);
+  Entity_ID_View faces("edges", my_parent_edges.size());
+
+  int i = 0;
+  for (auto e : my_parent_edges) {
+    for (auto pe : parent_edges)
+      if (e == pe) faces(i++) = parent_to_entid_[Entity_kind::FACE].at(e);
+  }
+  Kokkos::resize(faces, i);
+  nfaces = faces;
+}
+
+
 /* ******************************************************************
 * Create internal maps for child->parent
 ****************************************************************** */

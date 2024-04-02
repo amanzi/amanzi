@@ -47,7 +47,8 @@ WaterStorageDarcyStressSplit::WaterStorageDarcyStressSplit(Teuchos::ParameterLis
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-WaterStorageDarcyStressSplit::WaterStorageDarcyStressSplit(const WaterStorageDarcyStressSplit& other)
+WaterStorageDarcyStressSplit::WaterStorageDarcyStressSplit(
+  const WaterStorageDarcyStressSplit& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other){};
 
 
@@ -62,7 +63,8 @@ WaterStorageDarcyStressSplit::Clone() const
 * Required member: field calculation.
 ****************************************************************** */
 void
-WaterStorageDarcyStressSplit::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
+WaterStorageDarcyStressSplit::Evaluate_(const State& S,
+                                        const std::vector<CompositeVector*>& results)
 {
   const auto& p = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
   const auto& ss = *S.Get<CompositeVector>(specific_storage_key_).ViewComponent("cell");
@@ -89,10 +91,11 @@ WaterStorageDarcyStressSplit::Evaluate_(const State& S, const std::vector<Compos
 * Required member: field calculation.
 ****************************************************************** */
 void
-WaterStorageDarcyStressSplit::EvaluatePartialDerivative_(const State& S,
-                                                         const Key& wrt_key,
-                                                         const Tag& wrt_tag,
-                                                         const std::vector<CompositeVector*>& results)
+WaterStorageDarcyStressSplit::EvaluatePartialDerivative_(
+  const State& S,
+  const Key& wrt_key,
+  const Tag& wrt_tag,
+  const std::vector<CompositeVector*>& results)
 {
   const auto& ss = *S.Get<CompositeVector>(specific_storage_key_).ViewComponent("cell");
   double rho = S.Get<double>("const_fluid_density");

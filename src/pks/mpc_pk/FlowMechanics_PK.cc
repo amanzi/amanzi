@@ -54,7 +54,7 @@ void
 FlowMechanics_PK::Setup()
 {
   std::string passwd("");
-  pressure_key_ = Keys::getKey(domain_, "pressure"); // primary
+  pressure_key_ = Keys::getKey(domain_, "pressure");         // primary
   displacement_key_ = Keys::getKey(domain_, "displacement"); // primary
 
   hydrostatic_stress_key_ = Keys::getKey(domain_, "hydrostatic_stress");
@@ -109,6 +109,7 @@ FlowMechanics_PK::Setup()
     elist.set<std::string>("pressure key", pressure_key_)
       .set<std::string>("saturation key", saturation_liquid_key_)
       .set<std::string>("porosity key", porosity_key_);
+    // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
     auto eval = Teuchos::rcp(new WaterStorageStressSplit(elist));
     S_->SetEvaluator(water_storage_key_, Tags::DEFAULT, eval);
@@ -123,15 +124,35 @@ FlowMechanics_PK::Setup()
 
 
 /* ******************************************************************
+* Process additional parameter
+****************************************************************** */
+void
+FlowMechanics_PK::Initialize()
+{
+  PK_MPCSequential::Initialize();
+
+  if (my_list_->isParameter("initialize displacement")) {
+    bool fail = sub_pks_[1]->AdvanceStep(0.0, 0.0, false);
+    if (fail) Exceptions::amanzi_throw("Initialization of displacement has failed.");
+    Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+      S_->GetEvaluatorPtr(displacement_key_, Tags::DEFAULT))
+      ->SetChanged();
+
+    S_->GetEvaluator(water_storage_key_).Update(*S_, "mpc");
+    S_->GetW<CV_t>("prev_water_storage", Tags::DEFAULT, "") =
+      S_->Get<CV_t>(water_storage_key_, Tags::DEFAULT);
+  }
+}
+
+
+/* ******************************************************************
 * Overloading time-stepping to capture failure
 ****************************************************************** */
 bool
 FlowMechanics_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
-  std::vector<std::string> fields({ pressure_key_,
-                                    saturation_liquid_key_,
-                                    displacement_key_,
-                                    vol_strain_key_ });
+  std::vector<std::string> fields(
+    { pressure_key_, saturation_liquid_key_, displacement_key_, vol_strain_key_ });
   if (S_->HasRecord(water_storage_key_)) fields.push_back(water_storage_key_);
 
   StateArchive archive(S_, vo_);

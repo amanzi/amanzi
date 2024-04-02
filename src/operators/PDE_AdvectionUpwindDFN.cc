@@ -11,7 +11,7 @@
 /*
   Operators
 
-  Advection operator on a fracture network.
+  Upwind-based scalar advection operator on manifolds.
 */
 
 #include <vector>

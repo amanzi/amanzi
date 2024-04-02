@@ -14,11 +14,13 @@
 */
 
 #include "MechanicsElasticity_PK.hh"
+#include "MechanicsSmallStrain_PK.hh"
 
 namespace Amanzi {
 namespace Mechanics {
 
 RegisteredPKFactory<MechanicsElasticity_PK> MechanicsElasticity_PK::reg_("elastic");
+RegisteredPKFactory<MechanicsSmallStrain_PK> MechanicsSmallStrain_PK::reg_("small strain");
 
 } // namespace Mechanics
 } // namespace Amanzi
