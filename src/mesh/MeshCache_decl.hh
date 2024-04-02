@@ -892,34 +892,23 @@ struct MeshCache : public MeshCacheBase {
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION cEntity_ID_View getNodeFaces(const Entity_ID n) const;
 
-  //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
+  //[[deprecated("Prefer to use non-void variant that returns faces directly")]]
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION void getNodeFaces(const Entity_ID n, cEntity_ID_View& faces) const;
+
+  // Edges of type 'ptype' connected to a node
+  // NOTE: The order of faces is not guarnateed to be the same for
+  // corresponding nodes on different processors
+  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
+  KOKKOS_INLINE_FUNCTION cEntity_ID_View getNodeEdges(const Entity_ID n) const;
+
+  //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
+  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
+  KOKKOS_INLINE_FUNCTION void getNodeEdges(const Entity_ID n, cEntity_ID_View& edges) const;
 
   void PrintMeshStatistics() const;
 
   bool isPointInCell(const AmanziGeometry::Point& p, const Entity_ID cellid) const;
-
-  // // Edges of type 'ptype' connected to a node
-  // //
-  // // The order of edges is not guaranteed to be the same for corresponding
-  // // node on different processors
-  // KOKKOS_INLINE_FUNCTION
-  // View_type<const Entity_ID,MEM> getNodeEdges(const Entity_ID n,
-  //         const Parallel_kind ptype) const {
-  //   Errors::Message msg("MeshCache::getNodeEdges not implemented");
-  //   Exceptions::amanzi_throw(msg);
-  // }
-
-
-  // //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
-  // KOKKOS_INLINE_FUNCTION
-  // void getNodeEdges(const Entity_ID n,
-  //                   const Parallel_kind ptype,
-  //                   cEntity_ID_View& edgeids) const {
-  //   Errors::Message msg("MeshCache::getNodeEdges not implemented");
-  //   Exceptions::amanzi_throw(msg);
-  // }
 
   // column structure
   MeshColumns columns;

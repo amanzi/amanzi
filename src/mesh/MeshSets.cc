@@ -49,7 +49,8 @@ resolveMeshSet(const AmanziGeometry::Region& region,
 
   } else if (region_type == AmanziGeometry::RegionType::LOGICAL ||
              region_type == AmanziGeometry::RegionType::ALL ||
-             region_type == AmanziGeometry::RegionType::BOUNDARY) {
+             region_type == AmanziGeometry::RegionType::BOUNDARY ||
+             region_type == AmanziGeometry::RegionType::POINT) {
     // these are resolved on this mesh
     return Impl::resolveMeshSet_(region, kind, ptype, mesh);
 
@@ -225,8 +226,8 @@ resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
   }
 
   auto cells = mesh.getNodeCells(minnode, ptype);
-
   int ncells = cells.size();
+
   for (int ic = 0; ic < ncells; ic++) {
     Entity_ID icell = cells[ic];
 
