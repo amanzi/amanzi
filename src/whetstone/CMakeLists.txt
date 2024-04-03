@@ -31,7 +31,6 @@ include_directories(${DBG_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
-include_directories(${Boost_INCLUDE_DIRS})
 
 #
 # Library: whetstone
@@ -39,12 +38,12 @@ include_directories(${Boost_INCLUDE_DIRS})
 add_amanzi_library(whetstone
                    SOURCE DeRham_Node.cc DeRham_Edge.cc DeRham_Face.cc
                           MFD3D.cc
-                          MFD3D_BernardiRaugel.cc
+                          MFD3D_BernardiRaugel.cc MFD3D_BernardiRaugelGradDiv.cc
                           MFD3D_CrouzeixRaviart.cc MFD3D_CrouzeixRaviartAnyOrder.cc
                           MFD3D_CrouzeixRaviartSerendipity.cc
                           MFD3D_Diffusion.cc MFD3D_Diffusion_Surface.cc MFD3D_Diffusion_Other.cc 
                           MFD3D_Diffusion_CurvedFace.cc
-                          MFD3D_Elasticity.cc 
+                          MFD3D_Elasticity.cc MFD3D_ElasticityGradDiv.cc 
                           MFD3D_ElasticityWeakSymmetry.cc 
                           MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
                           MFD3D_GeneralizedDiffusion.cc
@@ -58,7 +57,7 @@ add_amanzi_library(whetstone
                           NumericalIntegration.cc
                           Tensor.cc DenseMatrix.cc DenseVector.cc
                           Polynomial.cc SpaceTimePolynomial.cc VectorObjects.cc
-                          MeshMaps.cc
+                          MeshMapsBase.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
                           SplinePolynomial.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
@@ -86,7 +85,7 @@ add_amanzi_library(whetstone
                            nlfv.hh
                            NumericalIntegration.hh
                            Quadrature1D.hh Quadrature2D.hh Quadrature3D.hh
-                           MeshMaps.hh MeshMapsFactory.hh
+                           MeshMapsBase.hh MeshMapsFactory.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh
                            Monomial.hh Polynomial.hh PolynomialIterator.hh PolynomialBase.hh
                            SpaceTimePolynomial.hh

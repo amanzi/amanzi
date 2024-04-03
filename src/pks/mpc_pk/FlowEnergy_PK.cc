@@ -13,6 +13,7 @@
   Process kernel for coupling Flow PK with Energy PK.
 */
 
+#include "CommonDefs.hh"
 #include "Flow_PK.hh"
 #include "Energy_PK.hh"
 #include "OperatorDefs.hh"
@@ -68,35 +69,17 @@ FlowEnergy_PK::Setup()
   }
 
   // keys
-  particle_density_key_ = Keys::getKey(domain_, "particle_density");
-  ie_rock_key_ = Keys::getKey(domain_, "internal_energy_rock");
-  ie_gas_key_ = Keys::getKey(domain_, "internal_energy_gas");
-  ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
-
   temperature_key_ = Keys::getKey(domain_, "temperature");
   energy_key_ = Keys::getKey(domain_, "energy");
-  prev_energy_key_ = Keys::getKey(domain_, "prev_energy");
-
-  mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
-  mol_density_gas_key_ = Keys::getKey(domain_, "molar_density_gas");
-  mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
+  ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
+  particle_density_key_ = Keys::getKey(domain_, "particle_density");
 
   pressure_key_ = Keys::getKey(domain_, "pressure");
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
-  prev_sat_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid");
-
   wc_key_ = Keys::getKey(domain_, "water_storage");
-  prev_wc_key_ = Keys::getKey(domain_, "prev_water_storage");
 
-  viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
-
-  // Require primary field for this PK, which is pressure
-  {
-    Teuchos::ParameterList tmp(temperature_key_);
-    tmp.set<std::string>("evaluator name", temperature_key_);
-    auto eval = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(tmp));
-    S_->SetEvaluator(temperature_key_, Tags::DEFAULT, eval);
-  }
+  mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
+  mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
 
   // Fields for solids
   // -- rock
@@ -118,7 +101,6 @@ FlowEnergy_PK::Setup()
       ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
     S_->RequireEvaluator(ie_liquid_key_, Tags::DEFAULT);
   }
-
 
   // -- molar and mass density
   if (!S_->HasRecord(mol_density_liquid_key_)) {
@@ -242,6 +224,9 @@ FlowEnergy_PK::FunctionalResidual(double t_old,
   auto mol_flowrate = S_->GetPtrW<CV_t>(key, Tags::DEFAULT, "");
   auto op0 = sub_pks_[0]->my_pde(Operators::PDEType::PDE_DIFFUSION);
   op0->UpdateFlux(u_new0->Data().ptr(), mol_flowrate.ptr());
+
+  if (Keys::getVarName(sub_pks_[0]->name()) == "darcy")
+    mol_flowrate->Scale(1.0 / CommonDefs::MOLAR_MASS_H2O);
 
   // energy
   auto u_old1 = u_old->SubVector(1);

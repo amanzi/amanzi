@@ -283,7 +283,7 @@
       <ParameterList name="diffusion operator">
         <ParameterList name="upwind">
           <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
-          <ParameterList name="upwind standard parameters">
+          <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
           </ParameterList>
         </ParameterList>
@@ -761,7 +761,6 @@
         <Parameter name="cycle applications" type="int" value="5"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="strong threshold" type="double" value="0.5"/>
-        <Parameter name="relaxation type" type="int" value="3"/>
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>

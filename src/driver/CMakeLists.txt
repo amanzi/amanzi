@@ -59,7 +59,6 @@ include_directories(${UDRIVER_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 
 # External (TPL) include directories
-include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 if(ENABLE_MESH_MOAB)
@@ -76,7 +75,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
                    LINK_LIBS mesh mesh_factory state mpc eos 
                              flow transport energy shallow_water multiphase mechanics
                              interface error_handling
-                             ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES}
+                             ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES}
                              ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
 
 add_install_include_file(AmanziUnstructuredGridSimulationDriver.hh)

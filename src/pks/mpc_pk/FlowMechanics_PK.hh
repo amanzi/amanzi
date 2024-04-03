@@ -32,6 +32,7 @@ class FlowMechanics_PK : public PK_MPCSequential {
 
   // PK methods
   virtual void Setup() override;
+  virtual void Initialize() override;
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override;
   virtual double
   ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
@@ -42,8 +43,10 @@ class FlowMechanics_PK : public PK_MPCSequential {
   Key domain_;
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
 
-  Key displacement_key_, hydrostatic_stress_key_, vol_strain_key_;
+  Key displacement_key_, hydrostatic_stress_key_, vol_strain_key_, biot_key_;
   Key pressure_key_, porosity_key_, saturation_liquid_key_, water_storage_key_;
+
+  bool thermal_flow_;
 
  private:
   static RegisteredPKFactory<FlowMechanics_PK> reg_;

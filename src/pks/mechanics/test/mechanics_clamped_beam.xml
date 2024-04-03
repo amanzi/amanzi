@@ -44,7 +44,7 @@
 
       <ParameterList name="time integrator">
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <Parameter name="preconditioner enhancement" type="string" value="PCG"/>
+        <Parameter name="linear solver" type="string" value="PCG"/>
         <Parameter name="error control options" type="Array(string)" value="{displacement}"/>
 
         <Parameter name="time integration method" type="string" value="BDF1"/>
@@ -215,22 +215,11 @@
 
   <!-- SOLVERS -->
   <ParameterList name="solvers">
-    <ParameterList name="GMRES with Hypre AMG">
-      <Parameter name="iterative method" type="string" value="gmres"/>
-      <ParameterList name="gmres parameters">
-        <Parameter name="maximum number of iterations" type="int" value="400"/>
-        <Parameter name="error tolerance" type="double" value="1e-14"/>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="low"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-
     <ParameterList name="PCG">
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="maximum number of iterations" type="int" value="400"/>
-        <Parameter name="error tolerance" type="double" value="1e-4"/>
+        <Parameter name="error tolerance" type="double" value="1e-10"/>
         <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, relative residual, make one iteration}"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="medium"/>
@@ -250,14 +239,6 @@
         <Parameter name="strong threshold" type="double" value="0.9"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
-        <Parameter name="verbosity" type="int" value="0"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="ILU">
-      <Parameter name="preconditioning method" type="string" value="ILU"/>
-      <ParameterList name="ILU parameters">
-        <Parameter name="ilu(k) fill level" type="int" value="5"/>
-        <Parameter name="rescale rows" type="bool" value="true"/>
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>

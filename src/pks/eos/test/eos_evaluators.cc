@@ -64,6 +64,15 @@ TEST(DensityEOS)
 
       double der = eos_fehm.DDensityDT(T + T0, p);
       CHECK(der < 0.0);
+
+      // finite difference approximation
+      double T1 = T + T0;
+      double der_fd = 10 * (eos_fehm.Density(T1 + 0.05, p) - eos_fehm.Density(T1 - 0.05, p));
+      CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
+
+      der = eos_fehm.DDensityDp(T1, p);
+      der_fd = eos_fehm.Density(T1, p + 0.5) - eos_fehm.Density(T1, p - 0.5);
+      CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
     }
   }
 }
@@ -85,8 +94,37 @@ TEST(ViscosityEOS)
       CHECK(nu1 < nu0);
       double der = eos.DViscosityDT(T + T0, p);
       CHECK(der < 0.0);
+
+      // finite difference approximation
+      double T1 = T + T0;
+      double der_fd = 10 * (eos.Viscosity(T1 + 0.05, p) - eos.Viscosity(T1 - 0.05, p));
+      CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
     }
     nu0 = nu1;
+  }
+
+  // next EOS
+  H2O_ViscosityFEHM eos_fehm(plist);
+
+  p = 101325.0;
+  for (int loop = 0; loop < 5; loop++) {
+    p *= 2.0;
+    for (double T = 15; T < 300; T += 1.5) {
+      nu1 = eos_fehm.Viscosity(T + T0, p);
+      CHECK(nu1 < 0.0012 && nu1 > 9e-6);
+
+      double der = eos_fehm.DViscosityDT(T + T0, p);
+      CHECK(der < 0.0);
+
+      // finite difference approximation
+      double T1 = T + T0;
+      double der_fd = 10 * (eos_fehm.Viscosity(T1 + 0.05, p) - eos_fehm.Viscosity(T1 - 0.05, p));
+      CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
+
+      der = eos_fehm.DViscosityDp(T1, p);
+      der_fd = eos_fehm.Viscosity(T1, p + 0.5) - eos_fehm.Viscosity(T1, p - 0.5);
+      CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
+    }
   }
 }
 

@@ -70,10 +70,25 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
     Init_(plist);
   }
 
+  PDE_Elasticity(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
+    : PDE_HelperDiscretization(global_op)
+  {
+    pde_type_ = PDE_ELASTICITY;
+    Init_(plist);
+  }
+
   // main virtual members
   // -- setup
-  void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K);
-  void SetTensorCoefficient(const WhetStone::Tensor& K);
+  void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& C);
+  void SetTensorCoefficient(const WhetStone::Tensor& C);
+  void SetScalarCoefficient(const CompositeVector& C);
+
+  // --- Young modulus and Poisson ratio
+  void SetTensorCoefficientEnu(const Teuchos::RCP<const CompositeVector>& E,
+                               const Teuchos::RCP<const CompositeVector>& nu);
+  // --- Shear modulus and bulk modulus
+  void SetTensorCoefficientGK(const Teuchos::RCP<const CompositeVector>& G,
+                              const Teuchos::RCP<const CompositeVector>& K);
 
   // -- creation of an operator
   using PDE_HelperDiscretization::UpdateMatrices;
@@ -100,8 +115,13 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   void ComputeHydrostaticStress(const CompositeVector& u, CompositeVector& p);
   void ComputeVolumetricStrain(const CompositeVector& u, CompositeVector& e);
 
+  // -- cell-based algorithms
+  WhetStone::Tensor ComputeCellStrain(const CompositeVector& u, int c);
+
  protected:
   void Init_(Teuchos::ParameterList& plist);
+  WhetStone::Tensor computeElasticityTensorEnu_(int c);
+  WhetStone::Tensor computeElasticityTensorGK_(int c);
 
  private:
   void ApplyBCs_Kinematic_(const BCs& bc, bool primary, bool eliminate, bool essential_eqn);
@@ -109,8 +129,10 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   void ApplyBCs_Traction_(const BCs& bc, bool primary, bool eliminate, bool essential_eqn);
 
  protected:
-  Teuchos::RCP<std::vector<WhetStone::Tensor>> K_;
-  WhetStone::Tensor K_default_;
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> C_;
+  WhetStone::Tensor C_default_;
+  Teuchos::RCP<const CompositeVector> E_, nu_;
+  Teuchos::RCP<const CompositeVector> G_, K_;
 
   Teuchos::RCP<WhetStone::BilinearForm> mfd_;
   AmanziMesh::Entity_kind base_;

@@ -754,16 +754,17 @@ HDF5_MPI::close_h5file()
 void
 HDF5_MPI::createTimestep(double time, int iteration, const std::string& tag)
 {
+  std::string tag_tmp = (iteration == Iteration() && tag == "" && iteration > 0) ? "ic" : "";
   setIteration(iteration);
   setTime(time);
-  set_tag(tag);
+  set_tag(tag_tmp);
 
   if (TrackXdmf() && viz_comm_->MyPID() == 0) {
     // create single step xdmf file
     Teuchos::XMLObject tmp("Xdmf");
     tmp.addChild(addXdmfHeaderLocal_("Mesh", time, iteration));
     std::stringstream filename;
-    filename << H5DataFilename() << "." << iteration << tag << ".xmf";
+    filename << H5DataFilename() << "." << iteration << tag_tmp << ".xmf";
     of_timestep_.open(filename.str().c_str());
     // channel will be closed when the endTimestep() is called
     setxdmfStepFilename(filename.str());

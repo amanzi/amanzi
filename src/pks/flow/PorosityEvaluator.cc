@@ -33,7 +33,9 @@ namespace Flow {
 ****************************************************************** */
 PorosityEvaluator::PorosityEvaluator(Teuchos::ParameterList& plist,
                                      Teuchos::RCP<PorosityModelPartition> pom)
-  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist), pom_(pom)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
+    pom_(pom),
+    poroelasticity_(false)
 {
   InitializeFromPlist_();
 }
@@ -64,15 +66,23 @@ PorosityEvaluator::InitializeFromPlist_()
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("porosity key"), Tags::DEFAULT));
   }
+  std::string domain = Keys::getDomain(my_keys_[0].first);
 
   // my dependency is pressure.
   pressure_key_ = plist_.get<std::string>("pressure key");
   dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
 
   if (plist_.isParameter("volumetric strain key")) {
-    use_strain_ = true;
+    poroelasticity_ = true;
+    biot_key_ = Keys::getKey(domain, "biot_coefficient");
     strain_key_ = plist_.get<std::string>("volumetric strain key");
     dependencies_.insert(std::make_pair(strain_key_, Tags::DEFAULT));
+  }
+
+  thermoelasticity_ = plist_.get<bool>("thermoelasticity");
+  if (thermoelasticity_) {
+    temperature_key_ = plist_.get<std::string>("temperature key");
+    dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
   }
 }
 
@@ -91,11 +101,19 @@ PorosityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>
     phi_c[0][c] = pom_->second[(*pom_->first)[c]]->PorosityValue(pres_c[0][c]);
   }
 
-  if (use_strain_) {
-    const auto& e_c = *S.Get<CompositeVector>("volumetric_strain").ViewComponent("cell");
+  if (poroelasticity_) {
+    const auto& e_c = *S.Get<CompositeVector>(strain_key_).ViewComponent("cell");
+    const auto& b_c = *S.Get<CompositeVector>(biot_key_).ViewComponent("cell");
     for (int c = 0; c != ncells; ++c) {
-      double b = pom_->second[(*pom_->first)[c]]->getBiotCoefficient();
-      phi_c[0][c] += b * e_c[0][c]; // e0 = 0.0
+      phi_c[0][c] += b_c[0][c] * e_c[0][c]; // e0 = 0.0
+    }
+  }
+
+  if (thermoelasticity_) {
+    const auto& temp_c = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
+    for (int c = 0; c != ncells; ++c) {
+      double a = pom_->second[(*pom_->first)[c]]->getThermalCoefficients().first;
+      phi_c[0][c] -= a * (temp_c[0][c] - 273.15);
     }
   }
 
@@ -122,7 +140,8 @@ PorosityEvaluator::EvaluatePartialDerivative_(const State& S,
       phi_c[0][c] = pom_->second[(*pom_->first)[c]]->dPorositydPressure(pres_c[0][c]);
     }
   } else if (wrt_key == strain_key_) {
-    for (int c = 0; c != ncells; ++c) phi_c[0][c] = 1.0;
+    const auto& b_c = *S.Get<CompositeVector>(biot_key_).ViewComponent("cell");
+    for (int c = 0; c != ncells; ++c) phi_c[0][c] = b_c[0][c];
   }
 
   Operators::CellToBoundaryFaces(*results[0]);

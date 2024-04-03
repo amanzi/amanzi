@@ -165,7 +165,7 @@
       </ParameterList>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{displacement}"/>
-        <Parameter name="linear solver" type="string" value="AztecOO"/>
+        <Parameter name="linear solver" type="string" value="PCG for elasticity"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <ParameterList name="pressure-lambda constraints">
           <Parameter name="method" type="string" value="projection"/>
@@ -235,8 +235,19 @@
     <ParameterList name="PCG with Hypre AMG">
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
-        <Parameter name="error tolerance" type="double" value="1.00000000000000008e-15"/>
+        <Parameter name="error tolerance" type="double" value="1.0e-15"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="PCG for elasticity">
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        <Parameter name="error tolerance" type="double" value="1.0e-08"/>
+        <Parameter name="maximum number of iterations" type="int" value="400"/>
+        <Parameter name="convergence criteria" type="Array(string)" value="{relative residual, relative rhs, make one iteration}"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
@@ -281,7 +292,6 @@
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="verbosity" type="int" value="0"/>
-        <Parameter name="relaxation type" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Block ILU">

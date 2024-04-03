@@ -324,11 +324,29 @@ InputConverterU::TranslateState_()
       std::string reg_str = CreateNameFromVector_(regions);
 
       // material properties
+      // -- fracture compliance
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, compliance", flag);
+      if (flag) {
+        compliance_ = true;
+        TranslateFieldEvaluator_(node,
+                                 "fracture-compliance",
+                                 "m*Pa^-1",
+                                 reg_str,
+                                 regions,
+                                 out_ic,
+                                 out_ev,
+                                 "value",
+                                 "fracture");
+      }
+
       // -- aperture
       node = GetUniqueElementByTagsString_(inode, "aperture", flag);
       if (flag) {
+        std::string key = (compliance_) ? "fracture-ref_aperture" : "fracture-aperture";
         TranslateFieldEvaluator_(
-          node, "fracture-aperture", "m", reg_str, regions, out_ic, out_ev, "value", "fracture");
+          node, key, "m", reg_str, regions, out_ic, out_ev, "value", "fracture");
+        if (out_ev.sublist(key).isParameter("variable name"))
+          out_ev.sublist(key).set<std::string>("variable name", "fracture-aperture");
       } else {
         msg << "Element \"aperture\" must be specified for all materials.";
         Exceptions::amanzi_throw(msg);
@@ -405,20 +423,6 @@ InputConverterU::TranslateState_()
             .set<std::string>("thermal conductivity key", "fracture-thermal_conductivity")
             .set<std::string>("aperture key", "fracture-aperture");
         }
-      }
-
-      // -- fracture compliance
-      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, compliance", flag);
-      if (flag) {
-        TranslateFieldEvaluator_(node,
-                                 "fracture-compliance",
-                                 "m*Pa^-1",
-                                 reg_str,
-                                 regions,
-                                 out_ic,
-                                 out_ev,
-                                 "value",
-                                 "fracture");
       }
 
       // -- thermal conductivity
@@ -1041,6 +1045,10 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
       // Young modulus
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, young_modulus", flag);
       if (flag) { TranslateFieldIC_(node, "young_modulus", "-", reg_str, regions, out_ic); }
+
+      // Biot coefficient
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, biot_coefficient", flag);
+      if (flag) { TranslateFieldIC_(node, "biot_coefficient", "-", reg_str, regions, out_ic); }
 
       // internal energy for liquid
       node = GetUniqueElementByTagsString_(inode, "thermal_properties, liquid_heat_capacity", flag);

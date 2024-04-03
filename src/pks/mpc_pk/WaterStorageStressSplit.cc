@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 /*
@@ -15,7 +15,6 @@
 */
 
 #include "CommonDefs.hh"
-#include "PorosityEvaluator.hh"
 
 #include "WaterStorageStressSplit.hh"
 
@@ -39,6 +38,7 @@ WaterStorageStressSplit::WaterStorageStressSplit(Teuchos::ParameterList& plist)
 
   young_modulus_key_ = Keys::getKey(domain, "young_modulus");
   poisson_ratio_key_ = Keys::getKey(domain, "poisson_ratio");
+  biot_key_ = Keys::getKey(domain, "biot_coefficient");
 
   dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(saturation_key_, Tags::DEFAULT));
@@ -74,16 +74,13 @@ WaterStorageStressSplit::Evaluate_(const State& S, const std::vector<CompositeVe
 
   const auto& E = *S.Get<CompositeVector>(young_modulus_key_).ViewComponent("cell");
   const auto& nu = *S.Get<CompositeVector>(poisson_ratio_key_).ViewComponent("cell");
-
-  auto tmp = const_cast<Evaluator*>(&S.GetEvaluator(porosity_key_));
-  auto eval = dynamic_cast<Flow::PorosityEvaluator*>(tmp);
+  const auto& b = *S.Get<CompositeVector>(biot_key_).ViewComponent("cell");
 
   auto& result_v = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell");
 
   for (int c = 0; c != ncells; ++c) {
-    double b = eval->getBiotCoefficient(c);
-    double stability = FixedStressStability(E[0][c], nu[0][c], b);
+    double stability = FixedStressStability(E[0][c], nu[0][c], b[0][c]);
     result_v[0][c] = phi[0][c] * s_l[0][c] * n_l[0][c] + stability * n_l[0][c] * p_l[0][c];
   }
 }
@@ -104,9 +101,7 @@ WaterStorageStressSplit::EvaluatePartialDerivative_(const State& S,
 
   const auto& E = *S.Get<CompositeVector>(young_modulus_key_).ViewComponent("cell");
   const auto& nu = *S.Get<CompositeVector>(poisson_ratio_key_).ViewComponent("cell");
-
-  auto tmp = const_cast<Evaluator*>(&S.GetEvaluator(porosity_key_));
-  auto eval = dynamic_cast<Flow::PorosityEvaluator*>(tmp);
+  const auto& b = *S.Get<CompositeVector>(biot_key_).ViewComponent("cell");
 
   auto& result_v = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell");
@@ -119,8 +114,7 @@ WaterStorageStressSplit::EvaluatePartialDerivative_(const State& S,
     for (int c = 0; c != ncells; ++c) { result_v[0][c] = phi[0][c] * s_l[0][c]; }
   } else if (wrt_key == pressure_key_) {
     for (int c = 0; c != ncells; ++c) {
-      double b = eval->getBiotCoefficient(c);
-      double stability = FixedStressStability(E[0][c], nu[0][c], b);
+      double stability = FixedStressStability(E[0][c], nu[0][c], b[0][c]);
       result_v[0][c] = stability * n_l[0][c];
     }
   } else {

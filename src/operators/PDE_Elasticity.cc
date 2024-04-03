@@ -41,34 +41,103 @@ namespace Operators {
 * Initialization of the operator, scalar coefficient.
 ****************************************************************** */
 void
-PDE_Elasticity::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K)
+PDE_Elasticity::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& C)
 {
-  K_ = K;
-  K_default_.Init(1, 1);
+  C_ = C;
+  C_default_.Init(1, 1);
+
+  E_ = Teuchos::null;
+  nu_ = Teuchos::null;
+
+  G_ = Teuchos::null;
+  K_ = Teuchos::null;
 }
 
 void
-PDE_Elasticity::SetTensorCoefficient(const WhetStone::Tensor& K)
+PDE_Elasticity::SetTensorCoefficient(const WhetStone::Tensor& C)
 {
+  C_ = Teuchos::null;
+  C_default_ = C;
+
+  E_ = Teuchos::null;
+  nu_ = Teuchos::null;
+
+  G_ = Teuchos::null;
   K_ = Teuchos::null;
-  K_default_ = K;
+}
+
+void
+PDE_Elasticity::SetTensorCoefficientEnu(const Teuchos::RCP<const CompositeVector>& E,
+                                        const Teuchos::RCP<const CompositeVector>& nu)
+{
+  E_ = E;
+  nu_ = nu;
+
+  C_ = Teuchos::null;
+  C_default_.Init(1, 1);
+
+  G_ = Teuchos::null;
+  K_ = Teuchos::null;
+}
+
+void
+PDE_Elasticity::SetTensorCoefficientGK(const Teuchos::RCP<const CompositeVector>& G,
+                                       const Teuchos::RCP<const CompositeVector>& K)
+{
+  G_ = G;
+  K_ = K;
+
+  C_ = Teuchos::null;
+  C_default_.Init(1, 1);
+
+  E_ = Teuchos::null;
+  nu_ = Teuchos::null;
+}
+
+void
+PDE_Elasticity::SetScalarCoefficient(const CompositeVector& C)
+{
+  const auto& C_c = *C.ViewComponent("cell");
+  int ncells = C_c.MyLength();
+
+  int d = C.Mesh()->getSpaceDimension();
+  WhetStone::Tensor tmp(d, 1);
+  C_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(ncells));
+  for (int c = 0; c < ncells; ++c) {
+    tmp(0, 0) = C_c[0][c];
+    (*C_)[c] = tmp;
+  }
+
+  C_default_.Init(1, 1);
+
+  E_ = Teuchos::null;
+  nu_ = Teuchos::null;
+
+  G_ = Teuchos::null;
+  K_ = Teuchos::null;
 }
 
 
 /* ******************************************************************
 * Calculate elemental matrices.
-* NOTE: The input parameters are not yet used.
 ****************************************************************** */
 void
 PDE_Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                                const Teuchos::Ptr<const CompositeVector>& p)
 {
   WhetStone::DenseMatrix Acell;
-  WhetStone::Tensor Kc(K_default_);
+  WhetStone::Tensor Cc(C_default_);
 
   for (int c = 0; c < ncells_owned; c++) {
-    if (K_.get()) Kc = (*K_)[c];
-    mfd_->StiffnessMatrix(c, Kc, Acell);
+    if (C_.get()) {
+      Cc = (*C_)[c];
+    } else if (E_.get() && nu_.get()) {
+      Cc = computeElasticityTensorEnu_(c);
+    } else if (G_.get() && K_.get()) {
+      Cc = computeElasticityTensorGK_(c);
+    }
+
+    mfd_->StiffnessMatrix(c, Cc, Acell);
     local_op_->matrices[c] = Acell;
   }
 }
@@ -81,7 +150,7 @@ void
 PDE_Elasticity::ComputeHydrostaticStress(const CompositeVector& u, CompositeVector& p)
 {
   WhetStone::Tensor Tc;
-  WhetStone::Tensor Kc(K_default_);
+  WhetStone::Tensor Cc(C_default_);
   WhetStone::DenseVector dofs;
 
   u.ScatterMasterToGhosted();
@@ -120,12 +189,20 @@ PDE_Elasticity::ComputeHydrostaticStress(const CompositeVector& u, CompositeVect
       }
     }
 
+    // strain tensor
     mfd3d->H1Cell(c, dofs, Tc);
 
-    if (K_.get()) Kc = (*K_)[c];
-    WhetStone::Tensor TKc = Kc * Tc;
+    // elasticity tensor
+    if (C_.get()) {
+      Cc = (*C_)[c];
+    } else if (E_.get() && nu_.get()) {
+      Cc = computeElasticityTensorEnu_(c);
+    } else {
+      Cc = computeElasticityTensorGK_(c);
+    }
+    WhetStone::Tensor CTc = Cc * Tc;
 
-    for (int k = 0; k < d; ++k) p_c[0][c] += TKc(k, k);
+    for (int k = 0; k < d; ++k) p_c[0][c] += CTc(k, k);
   }
 }
 
@@ -136,47 +213,15 @@ PDE_Elasticity::ComputeHydrostaticStress(const CompositeVector& u, CompositeVect
 void
 PDE_Elasticity::ComputeVolumetricStrain(const CompositeVector& u, CompositeVector& e)
 {
-  WhetStone::Tensor Tc;
-  WhetStone::DenseVector dofs;
-
   u.ScatterMasterToGhosted();
 
-  auto& e_c = *e.ViewComponent("cell");
-  const auto& u_n = *u.ViewComponent("node", true);
-
-  Teuchos::RCP<const Epetra_MultiVector> u_f;
-  if (u.HasComponent("face")) u_f = u.ViewComponent("face", true);
-
   int d = mesh_->getSpaceDimension();
-  auto mfd3d = Teuchos::rcp_dynamic_cast<WhetStone::MFD3D>(mfd_);
 
+  auto& e_c = *e.ViewComponent("cell");
   e_c.PutScalar(0.0);
 
   for (int c = 0; c < ncells_owned; c++) {
-    // nodal DoFs go first
-    auto nodes = mesh_->getCellNodes(c);
-    int nnodes = nodes.size();
-
-    dofs.Reshape(d * nnodes);
-    for (int n = 0; n < nnodes; ++n) {
-      int v = nodes[n];
-      for (int k = 0; k < d; ++k) { dofs(d * n + k) = u_n[k][v]; }
-    }
-
-    // optional face DoFs
-    if (u_f.get()) {
-      const auto& faces = mesh_->getCellFaces(c);
-      int nfaces = faces.size();
-
-      dofs.Reshape(d * nnodes + nfaces);
-      for (int n = 0; n < nfaces; ++n) {
-        int f = faces[n];
-        dofs(d * nnodes + n) = (*u_f)[0][f];
-      }
-    }
-
-    mfd3d->H1Cell(c, dofs, Tc);
-
+    auto Tc = ComputeCellStrain(u, c);
     for (int k = 0; k < d; ++k) e_c[0][c] += Tc(k, k);
   }
 }
@@ -229,7 +274,9 @@ PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
   local_op_ = Teuchos::rcp(new Op_Cell_Schema(my_schema, my_schema, mesh_));
   global_op_->OpPushBack(local_op_);
 
-  K_ = Teuchos::null;
+  C_ = Teuchos::null;
+  C_default_.Init(1, 1);
+  C_default_(0, 0) = 1.0; // to run the code without a tensor
 }
 
 
@@ -295,7 +342,7 @@ PDE_Elasticity::ApplyBCs_ShearStress_(const BCs& bc,
     for (int n = 0; n != nfaces; ++n) {
       int f = faces[n];
 
-      if (bc_model[f] == OPERATOR_BC_SHEAR_STRESS) {
+      if (bc_model[f] == OPERATOR_BC_SHEAR_STRESS && primary) {
         double area = mesh_->getFaceArea(f);
         const auto& tau = mesh_->getEdgeVector(f);
         auto lnodes = mesh_->getEdgeNodes(f);
@@ -340,7 +387,7 @@ PDE_Elasticity::ApplyBCs_Traction_(const BCs& bc, bool primary, bool eliminate, 
     for (int n = 0; n != nfaces; ++n) {
       int f = faces[n];
 
-      if (bc_model[f] == OPERATOR_BC_NORMAL_STRESS) {
+      if (bc_model[f] == OPERATOR_BC_NORMAL_STRESS && primary) {
         double area = mesh_->getFaceArea(f);
         auto lnodes = mesh_->getFaceNodes(f);
         int nlnodes = lnodes.size();
@@ -416,6 +463,94 @@ PDE_Elasticity::ApplyBCs_Kinematic_(const BCs& bc, bool primary, bool eliminate,
   }
 
   rhs->GatherGhostedToMaster(Add);
+}
+
+
+/* ******************************************************************
+* Supporting function
+****************************************************************** */
+WhetStone::Tensor
+PDE_Elasticity::ComputeCellStrain(const CompositeVector& u, int c)
+{
+  int d = mesh_->getSpaceDimension();
+  WhetStone::Tensor Tc;
+
+  // nodal DoFs go first
+  auto nodes = mesh_->getCellNodes(c);
+  int nnodes = nodes.size();
+
+  WhetStone::DenseVector dofs(d * nnodes);
+  const auto& u_n = *u.ViewComponent("node", true);
+
+  for (int n = 0; n < nnodes; ++n) {
+    int v = nodes[n];
+    for (int k = 0; k < d; ++k) { dofs(d * n + k) = u_n[k][v]; }
+  }
+
+  // optional face DoFs
+  if (u.HasComponent("face")) {
+    const auto& u_f = *u.ViewComponent("face", true);
+
+    const auto& faces = mesh_->getCellFaces(c);
+    int nfaces = faces.size();
+
+    dofs.Reshape(d * nnodes + nfaces);
+    for (int n = 0; n < nfaces; ++n) {
+      int f = faces[n];
+      dofs(d * nnodes + n) = u_f[0][f];
+    }
+  }
+
+  auto mfd3d = Teuchos::rcp_dynamic_cast<WhetStone::MFD3D>(mfd_);
+  mfd3d->H1Cell(c, dofs, Tc);
+
+  return Tc;
+}
+
+
+/* ******************************************************************
+* Supporting function
+****************************************************************** */
+WhetStone::Tensor
+PDE_Elasticity::computeElasticityTensorEnu_(int c)
+{
+  int d = mesh_->getSpaceDimension();
+  double E, nu, mu, lambda;
+
+  E = (*E_->ViewComponent("cell"))[0][c];
+  nu = (*nu_->ViewComponent("cell"))[0][c];
+  mu = E / (2 * (1 + nu));
+  lambda = (d == 3) ? E * nu / (1 + nu) / (1 - 2 * nu) : E * nu / (1 + nu) / (1 - nu);
+
+  Amanzi::WhetStone::Tensor Cc(d, 4);
+  for (int i = 0; i < d * d; ++i) Cc(i, i) = 2 * mu;
+  for (int i = 0; i < d; ++i) {
+    for (int j = 0; j < d; ++j) Cc(i, j) += lambda;
+  }
+  return Cc;
+}
+
+
+/* ******************************************************************
+* Supporting function
+****************************************************************** */
+WhetStone::Tensor
+PDE_Elasticity::computeElasticityTensorGK_(int c)
+{
+  int d = mesh_->getSpaceDimension();
+  double G, K, lambda;
+
+  G = (*G_->ViewComponent("cell"))[0][c];
+  K = (*K_->ViewComponent("cell"))[0][c];
+  lambda = K - 2 * G / d;
+
+  Amanzi::WhetStone::Tensor Cc(d, 4);
+  for (int i = 0; i < d * d; ++i) Cc(i, i) = 2 * G;
+  for (int i = 0; i < d; ++i) {
+    for (int j = 0; j < d; ++j) Cc(i, j) += lambda;
+  }
+ 
+  return Cc;
 }
 
 } // namespace Operators

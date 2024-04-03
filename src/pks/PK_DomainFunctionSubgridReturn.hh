@@ -42,9 +42,12 @@ class PK_DomainFunctionSubgridReturn : public FunctionBase, public Functions::Un
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return dset_; }
-  virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
+  virtual void Compute(double t0, double t1) override;
+  virtual DomainFunction_kind getType() const override
+  {
+    return DomainFunction_kind::SUBGRID_RETURN;
+  }
+  virtual void set_state(const Teuchos::RCP<State>& S) final { S_ = S; }
 
  protected:
   using FunctionBase::value_;
@@ -156,9 +159,7 @@ PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
 
       // find the subgrid gid to be integrated
       auto gid = map.GID(*c);
-
-      Key domain = Keys::getDomainInSet(name(), gid);
-
+      Key domain = Keys::getDomainInSet(dset_, gid);
       Key var = Keys::getKey(domain, field_out_suffix_);
 
       // get the vector to be integrated
@@ -173,7 +174,6 @@ PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
       for (int c_sg = 0; c_sg != ncells_sg; ++c_sg) {
         for (int k = 0; k != nfun; ++k) { val[k] += vec_c[k][c_sg] * alpha[k]; }
       }
-
       for (int k = 0; k != nfun; ++k) {
         val[k] *= ws_[0][*c] * phi_[0][*c] * mol_dens_[0][*c] / ncells_sg;
       }

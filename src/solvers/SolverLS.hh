@@ -7,7 +7,7 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-//! Backtracking line search on the provided correction as a solver.
+//! Line search on the provided correction as a solver.
 /*
   From PETSc SNES type BT, which in turn is from Numerical Methods for
   Unconstrained Optimization and Nonlinear Equations by Dennis & Schnabel, pg
@@ -27,10 +27,14 @@ measurement of the steepest descent direction, and so while the direction is
 guaranteed to be the direction which best reduces the residual, it may not
 provide the correct magnitude.
 
+The algorithm is a reimplementation based on PETSc SNES type BT, which in turn
+is from Numerical Methods for Unconstrained Optimization and Nonlinear
+Equations by Dennis & Schnabel, pg 325.
+
 Note, this always monitors the residual.
 
-.. _solver-backtracking-spec:
-.. admonition:: solver-backtracking-spec
+.. _solver-line-search-spec:
+.. admonition:: solver-line-search-spec
 
     * `"nonlinear tolerance`" ``[double]`` **1.e-6** defines the required error
       tolerance. The error is calculated by a PK.
@@ -59,14 +63,10 @@ Note, this always monitors the residual.
 
     * `"max line search iterations`" ``[int]`` **10**
 
-
  */
 
-
-#ifndef AMANZI_BT_SOLVER_
-#define AMANZI_BT_SOLVER_
-
-#include "boost/math/tools/minima.hpp"
+#ifndef AMANZI_LS_SOLVER_
+#define AMANZI_LS_SOLVER_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -77,16 +77,18 @@ Note, this always monitors the residual.
 #include "Solver.hh"
 #include "SolverFnBase.hh"
 #include "SolverDefs.hh"
+#include "LineSearchFunctor.hh"
+#include "Brent.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
 
 template <class Vector, class VectorSpace>
-class SolverBT : public Solver<Vector, VectorSpace> {
+class SolverLS : public Solver<Vector, VectorSpace> {
  public:
-  SolverBT(Teuchos::ParameterList& plist) : plist_(plist){};
+  SolverLS(Teuchos::ParameterList& plist) : plist_(plist){};
 
-  SolverBT(Teuchos::ParameterList& plist,
+  SolverLS(Teuchos::ParameterList& plist,
            const Teuchos::RCP<SolverFnBase<Vector>>& fn,
            const VectorSpace& map)
     : plist_(plist)
@@ -121,35 +123,6 @@ class SolverBT : public Solver<Vector, VectorSpace> {
   int BT_(const Teuchos::RCP<Vector>& u);
   int BT_ErrorControl_(double error, double previous_error, double l2_error);
 
-
-  struct Functor {
-    Functor(const Teuchos::RCP<SolverFnBase<Vector>>& my_fn) : fn(my_fn) {}
-
-    void setup(const Teuchos::RCP<Vector>& u_,
-               const Teuchos::RCP<Vector>& u0_,
-               const Teuchos::RCP<Vector>& du_)
-    {
-      u = u_;
-      du = du_;
-      u0 = u0_;
-      if (r == Teuchos::null) { r = Teuchos::rcp(new Vector(*u)); }
-      *u0 = *u;
-    }
-
-    double operator()(double x)
-    {
-      *u = *u0;
-      u->Update(-x, *du, 1.);
-      fn->ChangedSolution();
-      fn->Residual(u, r);
-      return fn->ErrorNorm(u, r);
-    }
-
-    Teuchos::RCP<Vector> u, r, u0, du;
-    Teuchos::RCP<SolverFnBase<Vector>> fn;
-  };
-
-
  private:
   Teuchos::ParameterList plist_;
   Teuchos::RCP<SolverFnBase<Vector>> fn_;
@@ -183,7 +156,7 @@ class SolverBT : public Solver<Vector, VectorSpace> {
 ****************************************************************** */
 template <class Vector, class VectorSpace>
 void
-SolverBT<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
+SolverLS<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
                                     const VectorSpace& map)
 {
   fn_ = fn;
@@ -196,7 +169,7 @@ SolverBT<Vector, VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn
 ****************************************************************** */
 template <class Vector, class VectorSpace>
 void
-SolverBT<Vector, VectorSpace>::Init_()
+SolverLS<Vector, VectorSpace>::Init_()
 {
   tol_ = plist_.get<double>("nonlinear tolerance", 1.e-6);
   overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);
@@ -217,7 +190,6 @@ SolverBT<Vector, VectorSpace>::Init_()
 
   residual_ = -1.0;
 
-
   // update the verbose options
   vo_ = Teuchos::rcp(new VerboseObject("Solver::BT", plist_));
 }
@@ -225,11 +197,10 @@ SolverBT<Vector, VectorSpace>::Init_()
 
 template <class Vector, class VectorSpace>
 int
-SolverBT<Vector, VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
+SolverLS<Vector, VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
 {
   // create storage
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> r_end = Teuchos::rcp(new Vector(*u));
   Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(*u));
   Teuchos::RCP<Vector> u0 = Teuchos::rcp(new Vector(*u));
 
@@ -256,8 +227,7 @@ SolverBT<Vector, VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
   if (ierr != SOLVER_CONTINUE) return ierr;
 
   // set up the functor for minimization in the line search
-  Functor linesearch_func(fn_);
-  linesearch_func.setup(u, u0, du);
+  LineSearchFunctor<Vector> linesearch_func(fn_, u0, du, u, r);
 
   // loop til convergence or failure
   do {
@@ -289,36 +259,35 @@ SolverBT<Vector, VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
     fn_->ChangedSolution();
     while (!fn_->IsAdmissible(u)) {
       endpoint *= 0.1;
-      *u = *u0;
-      u->Update(-endpoint, *du, 1.);
+      u->Update(-endpoint, *du, 1., *u0, 0.);
       fn_->ChangedSolution();
     }
 
     // minimize
     double left = min_alpha_;
-    std::uintmax_t ls_itrs(max_ls_itrs_);
-    std::pair<double, double> result =
-      boost::math::tools::brent_find_minima(linesearch_func, left, endpoint, bits_, ls_itrs);
-    fun_calls_ += ls_itrs;
+    int ls_itrs(max_ls_itrs_);
+    double eps = std::pow(2, -bits_ - 1);
+    double result = Utils::findMinimumBrent(linesearch_func, left, endpoint, eps, &ls_itrs);
+    fun_calls_ += linesearch_func.fun_calls;
 
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      *vo_->os() << "  Brent algorithm in: " << ls_itrs << " itrs (alpha=" << result.first
-                 << ") Error = " << result.second << "(old error=" << error << ")" << std::endl;
+      *vo_->os() << "  Brent algorithm in: " << ls_itrs << " itrs (alpha=" << result
+                 << ") Error = " << linesearch_func.error << "(old error=" << error << ")"
+                 << std::endl;
     }
 
     // check for a minimization value at the start
-    if (result.second - error >= 0.) {
+    if (linesearch_func.error - error >= 0.) {
       if (vo_->os_OK(Teuchos::VERB_HIGH))
         *vo_->os() << "Searching in this direction resulted in change of error of = "
-                   << result.second - error
+                   << linesearch_func.error - error
                    << ", which is not a sufficient reduction, indicating a bad search direction..."
                    << std::endl;
       return SOLVER_BAD_SEARCH_DIRECTION;
     }
 
     // update the correction
-    *u = *u0;
-    u->Update(-result.first, *du, 1.);
+    u->Update(-result, *du, 1., *u0, 0.);
     fn_->ChangedSolution();
 
     // Increment iteration counter.
@@ -329,7 +298,7 @@ SolverBT<Vector, VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
 
     // test convergence
     previous_error = error;
-    error = result.second;
+    error = linesearch_func.error;
     residual_ = error;
     r->Norm2(&l2_error);
 
@@ -345,7 +314,7 @@ SolverBT<Vector, VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
 ****************************************************************** */
 template <class Vector, class VectorSpace>
 int
-SolverBT<Vector, VectorSpace>::BT_ErrorControl_(double error,
+SolverLS<Vector, VectorSpace>::BT_ErrorControl_(double error,
                                                 double previous_error,
                                                 double l2_error)
 {

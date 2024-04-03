@@ -65,7 +65,6 @@ if (BUILD_TESTS)
   set(tpl_libs ${amanzi_mesh_libs}
                ${Teuchos_LIBRARIES}
                ${Epetra_LIBRARIES}
-               ${Boost_LIBRARIES}
                ${XERCES_LIBRARIES}
                ${XERCES_ICU_LIBRARIES})
 

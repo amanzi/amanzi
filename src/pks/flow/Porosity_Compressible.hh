@@ -29,7 +29,8 @@ class Porosity_Compressible : public Porosity {
     porosity_ = plist.get<double>("undeformed soil porosity");
     p_ref_ = plist.get<double>("reference pressure");
     c_ = plist.get<double>("pore compressibility");
-    b_ = plist.get<double>("biot coefficient", 1.0);
+    a_liquid_ = plist.get<double>("liquid thermal dilation", 0.0);
+    a_rock_ = plist.get<double>("rock thermal dilation", 0.0);
 
     factor_ = porosity_ * c_;
   }
@@ -47,12 +48,15 @@ class Porosity_Compressible : public Porosity {
     return factor_ * std::exp(c_ * dp);
   }
 
-  virtual double getBiotCoefficient() override { return b_; }
+  virtual std::pair<double, double> getThermalCoefficients() override
+  {
+    return std::make_pair(a_liquid_, a_rock_);
+  }
 
  private:
   double porosity_, p_ref_, c_;
   double factor_;
-  double b_;
+  double a_liquid_, a_rock_;
 };
 
 } // namespace Flow

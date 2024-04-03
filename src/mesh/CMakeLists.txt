@@ -22,7 +22,6 @@ include_directories(${ATK_SOURCE_DIR})
 
 # External (TPL) directories
 include_directories(${Epetra_INCLUDE_DIRS})
-include_directories(${Boost_INCLUDE_DIRS})
 
 #
 # Set files
@@ -36,10 +35,12 @@ set(mesh_inc_files
   MeshHelpers_decl.hh
   MeshHelpers_impl.hh
   MeshHelpers.hh
+  MeshAudit.hh
   MeshAudit_decl.hh
   MeshAudit_impl.hh
   MeshFrameworkAudit.hh
-  MeshAudit.hh
+  MeshInternals_decl.hh
+  MeshInternals_impl.hh
   MeshMaps.hh
   MeshCache.hh
   MeshCache_decl.hh

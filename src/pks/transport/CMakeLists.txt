@@ -106,7 +106,6 @@ if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
     endif()
 
     include_directories(${TRANSPORT_SOURCE_DIR})
-    include_directories(${Boost_INCLUDE_DIRS})
 
     set(amanzi_libs transport pks state operators mesh_functions data_structures functions 
                     whetstone mesh_factory mesh geometry)

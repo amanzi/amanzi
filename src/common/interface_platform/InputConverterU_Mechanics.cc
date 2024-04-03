@@ -44,27 +44,29 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
     *vo_->os() << "Translating mechanics, domain=" << domain << std::endl;
 
   MemoryManager mm;
-  DOMNode* node;
+  DOMNode *node, *inode;
   DOMElement* element;
 
   // process expert parameters
   bool flag;
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_mechanics_controls", flag);
 
+  // insert operator sublist
   bool biot_undrained_split(false), biot_stress_split(false);
-  node = GetUniqueElementByTagsString_(node, "biot_model", flag);
+  inode = GetUniqueElementByTagsString_(node, "biot_model", flag);
   if (flag) {
-    std::string method = GetTextContentS_(node, "undrained_split, fixed_stress_split");
+    std::string method = GetTextContentS_(inode, "undrained_split, fixed_stress_split");
     biot_undrained_split = (method == "undrained_split");
     biot_stress_split = (method == "fixed_stress_split");
   }
 
-  // create flow header
-  out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
+  // discretization method
+  std::string disc_method("elasticity");
+  inode = GetUniqueElementByTagsString_(node, "discretization_method", flag);
+  if (flag) disc_method = GetTextContentS_(inode, "elasticity, BernardiRaugel");
 
-  // insert operator sublist
-  std::string disc_method("mfd-default");
-  std::string pc_method("linearized_operator");
+  // create header
+  out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
 
   std::string nonlinear_solver("nka");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver", flag);
@@ -84,7 +86,7 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
                                                                    nonlinear_solver,
                                                                    modify_correction,
                                                                    unstr_controls,
-                                                                   TI_SOLVER,
+                                                                   "PCG for elasticity",
                                                                    TI_TS_REDUCTION_FACTOR,
                                                                    TI_TS_INCREASE_FACTOR);
   }
@@ -95,7 +97,7 @@ InputConverterU::TranslateMechanics_(const std::string& domain)
     .set<std::string>("matrix type", "stiffness")
     .sublist("schema")
     .set<std::string>("base", "cell")
-    .set<std::string>("method", "elasticity")
+    .set<std::string>("method", disc_method)
     .set<int>("method order", 1);
 
   out_list.sublist("physical models and assumptions")

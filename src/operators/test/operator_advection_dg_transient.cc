@@ -470,7 +470,6 @@ AdvectionFn_Projection<Analytic>::ComputeVelocities(
   auto maps = maps_factory.Create(map_list, mesh_, mesh_);
 
   // calculate approximate velocities
-  AmanziMesh::Entity_ID_View edges;
   int ncells_wghost =
     mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
@@ -496,7 +495,7 @@ AdvectionFn_Projection<Analytic>::ComputeVelocities(
     }
 
     if (d == 3) {
-      edges = mesh_->getCellEdges(c);
+      const auto& edges = mesh_->getCellEdges(c);
       int nedges = edges.size();
 
       for (int n = 0; n < nedges; ++n) {
@@ -548,7 +547,6 @@ AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
 
   // cell-based velocity is constant for dGP1
   // we approximate it with a linear function for dGP2
-  AmanziMesh::Entity_ID_View faces, cells;
   AmanziGeometry::Point zero(dim);
 
   // -- normalized cell-centered velocity
@@ -579,7 +577,7 @@ AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
   for (int f = 0; f < nfaces_owned; ++f) {
     const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
-    cells = mesh_->getFaceCells(f);
+    const auto& cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     WhetStone::Polynomial poly(dim, order_);
@@ -744,16 +742,15 @@ InterpolateCellToNode(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   int order = dg.get_order();
   int nk = uc.NumVectors();
   Amanzi::AmanziGeometry::Point xv(mesh->getSpaceDimension());
-  Amanzi::AmanziMesh::Entity_ID_View cells;
 
   int nnodes_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
                                           Amanzi::AmanziMesh::Parallel_kind::OWNED);
-  auto un =
-    Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::NODE, false), 1));
+  auto un = Teuchos::rcp(
+    new Epetra_MultiVector(mesh->getMap(Amanzi::AmanziMesh::Entity_kind::NODE, false), 1));
 
   for (int v = 0; v < nnodes_owned; ++v) {
     xv = mesh->getNodeCoordinate(v);
-    cells = mesh->getNodeCells(v, Amanzi::AmanziMesh::Parallel_kind::ALL);
+    const auto& cells = mesh->getNodeCells(v, Amanzi::AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 
     double value(0.0);
@@ -818,16 +815,19 @@ Transient(std::string filename,
   }
 
   // create a mesh framework
-  MeshFactory meshfactory(comm, Teuchos::null);
+  auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
+  mlist->set<bool>("request faces", true);
+  mlist->set<bool>("request edges", true);
+  MeshFactory meshfactory(comm, Teuchos::null, mlist);
   // meshfactory.set_partitioner(AmanziMesh::Partitioner_kind::ZOLTAN_RCB);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh;
   if (nx == 0 || ny == 0)
-    mesh = meshfactory.create(filename, true, true);
+    mesh = meshfactory.create(filename);
   else if (nz == 0)
     mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
   else
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz);
 
   // DeformMesh(mesh, deform, 0.0);
 

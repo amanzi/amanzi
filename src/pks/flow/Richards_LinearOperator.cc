@@ -107,7 +107,7 @@ Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u)
 
   // update diffusion coefficient
   // -- function
-  vol_flowrate_copy->ScatterMasterToGhosted("face");
+  mol_flowrate_copy->ScatterMasterToGhosted("face");
 
   pressure_eval_->SetChanged();
   auto& alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
@@ -115,7 +115,7 @@ Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u)
 
   *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
   Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
-  upwind_->Compute(*vol_flowrate_copy, bc_model, *alpha_upwind_);
+  upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_);
 
   // -- derivative
   S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
@@ -124,7 +124,7 @@ Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u)
 
   *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
   Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
-  upwind_->Compute(*vol_flowrate_copy, bc_model, *alpha_upwind_dP_);
+  upwind_->Compute(*mol_flowrate_copy, bc_model, *alpha_upwind_dP_);
 
   // modify relative permeability coefficient for influx faces
   UpwindInflowBoundary(u);

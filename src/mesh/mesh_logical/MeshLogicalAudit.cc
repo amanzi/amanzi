@@ -12,9 +12,6 @@
 #include <algorithm>
 #include <cfloat>
 
-#include <boost/graph/topological_sort.hpp>
-#include <boost/graph/breadth_first_search.hpp>
-
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_IntSerialDenseMatrix.h"
 #include "Epetra_Import.h"
@@ -27,7 +24,6 @@
 #include <iomanip>
 
 using namespace std;
-using namespace boost;
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -54,113 +50,68 @@ MeshLogicalAudit::MeshLogicalAudit(const Teuchos::RCP<const MeshHost>& mesh_, st
 int
 MeshLogicalAudit::Verify() const
 {
-  int status = 0;
+  int ok(0), v;
 
-  typedef Graph::vertex_descriptor Vertex;
-  std::list<Vertex> run_order;
-  topological_sort(g, std::front_inserter(run_order));
-
-  mark_do_not_run vis;
-
-  for (std::list<Vertex>::iterator itr = run_order.begin(); itr != run_order.end(); ++itr) {
-    if (g[*itr].run) {
-      os << "Checking " << g[*itr].name << " ..." << std::endl;
-      if (((*this).*(g[*itr].test))()) {
-        status = 1;
-        os << "  Test failed!" << std::endl;
-        breadth_first_search(g, *itr, visitor(vis));
-      }
+  while ((v = FindAnyRoot()) != -1) {
+    os << "Checking " << vertices_[v].name << " ..." << std::endl;
+    bool flag = (this->*(vertices_[v].test))();
+    if (!flag) {
+      vertices_[v].status = Status_kind::GOOD;
     } else {
-      os << "Skipping " << g[*itr].name << " check because of previous failures." << std::endl;
+      os << "  Test failed!" << std::endl;
+      vertices_[v].status = Status_kind::FAIL;
+      SkipBranches(v, os);
+      ok = 1;
     }
   }
-
-  return status;
+  return ok;
 }
 
 // This creates the dependency graph for the individual tests.  Adding a new
-// test to the graph is a simple matter of adding a new stanza of the form
-//
-//   Graph::vertex_descriptor my_test_handle = add_vertex(g);
-//   g[my_test_handle].name = "description of my test";
-//   g[my_test_handle].test = &MeshLogicalAudit::my_test;
-//   add_edge(other_test_handle, my_test_handle, g);
-//
-// The last line specifies that other_test_handle is a pre-requisite for
-// my_test_handle.  There may be multiple pre-requisites or none.
-
+// test to the graph is a simple matter of adding a new vertex and edge.
 void
 MeshLogicalAudit::create_test_dependencies()
 {
-  // Entity_counts tests
-  Graph::vertex_descriptor test01 = add_vertex(g);
-  g[test01].name = "entity_counts";
-  g[test01].test = &MeshLogicalAudit::check_entity_counts;
+  AddVertex("entity_counts", &MeshLogicalAudit::check_entity_counts); // test01
+  auto test04 = AddVertex("cell_to_faces", &MeshLogicalAudit::check_cell_to_faces);
 
-  // Cell_to_faces tests
-  Graph::vertex_descriptor test04 = add_vertex(g);
-  g[test04].name = "cell_to_faces";
-  g[test04].test = &MeshLogicalAudit::check_cell_to_faces;
+  auto test05 = AddVertex("face references by cells", &MeshLogicalAudit::check_face_refs_by_cells);
+  AddEdge(test04, test05);
 
-  Graph::vertex_descriptor test05 = add_vertex(g);
-  g[test05].name = "face references by cells";
-  g[test05].test = &MeshLogicalAudit::check_face_refs_by_cells;
-  add_edge(test04, test05, g);
+  auto test09 = AddVertex("cell_to_face_dirs", &MeshLogicalAudit::check_cell_to_face_dirs);
 
-  // cell_to_face_dirs tests
-  Graph::vertex_descriptor test09 = add_vertex(g);
-  g[test09].name = "cell_to_face_dirs";
-  g[test09].test = &MeshLogicalAudit::check_cell_to_face_dirs;
-
-  // cell_to_face_dirs tests
-  Graph::vertex_descriptor test08 = add_vertex(g);
-  g[test08].name = "cell_to_face_consistency";
-  g[test08].test = &MeshLogicalAudit::check_faces_cell_consistency;
-  add_edge(test05, test08, g);
+  auto test08 =
+    AddVertex("cell_to_face_consistency", &MeshLogicalAudit::check_faces_cell_consistency);
+  AddEdge(test05, test08);
 
   // cell degeneracy test
-  Graph::vertex_descriptor test10 = add_vertex(g);
-  g[test10].name = "topological non-degeneracy of cells";
-  g[test10].test = &MeshLogicalAudit::check_cell_degeneracy;
-  add_edge(test04, test10, g);
+  auto test10 =
+    AddVertex("topological non-degeneracy of cells", &MeshLogicalAudit::check_cell_degeneracy);
+  AddEdge(test04, test10);
 
   // cell topology/geometry test
-  Graph::vertex_descriptor test15 = add_vertex(g);
-  g[test15].name = "cell geometry";
-  g[test15].test = &MeshLogicalAudit::check_cell_geometry;
-  add_edge(test10, test15, g);
+  auto test15 = AddVertex("cell geometry", &MeshLogicalAudit::check_cell_geometry);
+  AddEdge(test10, test15);
 
-  Graph::vertex_descriptor test16 = add_vertex(g);
-  g[test16].name = "face geometry";
-  g[test16].test = &MeshLogicalAudit::check_face_geometry;
-  add_edge(test09, test16, g);
+  auto test16 = AddVertex("face geometry", &MeshLogicalAudit::check_face_geometry);
+  AddEdge(test09, test16);
 
-  Graph::vertex_descriptor test14 = add_vertex(g);
-  g[test14].name = "face-cell-bisector geometry";
-  g[test14].test = &MeshLogicalAudit::check_cell_face_bisector_geometry;
-  add_edge(test08, test14, g);
+  auto test14 =
+    AddVertex("face-cell-bisector geometry", &MeshLogicalAudit::check_cell_face_bisector_geometry);
+  AddEdge(test08, test14);
 
-  Graph::vertex_descriptor test17 = add_vertex(g);
-  g[test17].name = "owned and overlap face maps";
-  g[test17].test = &MeshLogicalAudit::check_face_maps;
-
-  Graph::vertex_descriptor test18 = add_vertex(g);
-  g[test18].name = "owned and overlap cell maps";
-  g[test18].test = &MeshLogicalAudit::check_cell_maps;
-
-  Graph::vertex_descriptor test22 = add_vertex(g);
-  g[test22].name = "cell_to_faces ghost data";
-  g[test22].test = &MeshLogicalAudit::check_cell_to_faces_ghost_data;
-  add_edge(test04, test22, g);
-  add_edge(test17, test22, g);
-  add_edge(test18, test22, g);
+  auto test17 = AddVertex("owned and overlap face maps", &MeshLogicalAudit::check_face_maps);
+  auto test18 = AddVertex("owned and overlap cell maps", &MeshLogicalAudit::check_cell_maps);
+  auto test22 =
+    AddVertex("cell_to_faces ghost data", &MeshLogicalAudit::check_cell_to_faces_ghost_data);
+  AddEdge(test04, test22);
+  AddEdge(test17, test22);
+  AddEdge(test18, test22);
 
   // partition tests
-  Graph::vertex_descriptor test32 = add_vertex(g);
-  g[test32].name = "face partition";
-  g[test32].test = &MeshLogicalAudit::check_face_partition;
-  add_edge(test17, test32, g);
-  add_edge(test18, test32, g);
+  auto test32 = AddVertex("face partition", &MeshLogicalAudit::check_face_partition);
+  AddEdge(test17, test32);
+  AddEdge(test18, test32);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

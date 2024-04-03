@@ -61,7 +61,6 @@ class Darcy_PK : public Flow_PK {
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
-  virtual void CalculateDiagnostics(const Tag& tag) override;
 
   virtual std::string name() override { return Keys::getKey(domain_, "darcy"); }
 
@@ -153,7 +152,8 @@ class Darcy_PK : public Flow_PK {
   bool initialize_with_darcy_;
   int num_itrs_;
 
-  Key compliance_key_;
+  bool external_aperture_;
+  Key compliance_key_, ref_aperture_key_, ref_pressure_key_;
 
   Teuchos::RCP<CompositeVector> solution;      // next pressure state
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev; // time derivative of pressure

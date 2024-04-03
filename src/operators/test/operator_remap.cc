@@ -66,7 +66,7 @@ class MyRemapDG : public Operators::RemapDG<CompositeVector> {
 
   // access
   const std::vector<WhetStone::SpaceTimePolynomial> det() const { return *det_; }
-  const std::shared_ptr<WhetStone::MeshMaps> maps() const { return maps_; }
+  const std::shared_ptr<WhetStone::MeshMapsBase> maps() const { return maps_; }
 
  public:
   double tprint_, dt_output_, l2norm_;
@@ -234,21 +234,22 @@ RemapTestsDualRK(std::string map_name,
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(dim, region_list, *comm));
 
   auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
+  mlist->set<bool>("request faces", true);
+  mlist->set<bool>("request edges", (dim == 3));
   MeshFactory meshfactory(comm, gm, mlist);
   meshfactory.set_preference(Preference({ AmanziMesh::Framework::MSTK }));
 
   Teuchos::RCP<const Mesh> mesh0;
   Teuchos::RCP<Mesh> mesh1;
   if (file_name != "") {
-    bool request_edges = (dim == 3);
-    mesh0 = meshfactory.create(file_name, true, request_edges);
-    mesh1 = meshfactory.create(file_name, true, request_edges);
+    mesh0 = meshfactory.create(file_name);
+    mesh1 = meshfactory.create(file_name);
   } else if (dim == 2) {
     mesh0 = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
     mesh1 = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
   } else {
-    mesh0 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
-    mesh1 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
+    mesh0 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz);
+    mesh1 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz);
   }
 
   int ncells_owned =

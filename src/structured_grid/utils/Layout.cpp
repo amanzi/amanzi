@@ -618,10 +618,8 @@ Layout::Build()
     }
 
 #ifdef BL_USE_PETSC
-    int n = nNodes_local; // Number of local columns of J
-    int m = nNodes_local; // Number of local rows of J
-    int N = nNodes_global; // Number of global columns of J
-    int M = nNodes_global; // Number of global rows of J
+    int n = nNodes_local; // Number of local columns and rows of J
+    int N = nNodes_global; // Number of global columns iand rows of J
     int d_nz = 1 + 2*BL_SPACEDIM; // Number of nonzero local columns of J
     int o_nz = 0; // Number of nonzero nonlocal (off-diagonal) columns of J
 

@@ -117,19 +117,52 @@ MFD3D_BernardiRaugel::H1consistency(int c, const Tensor& K, DenseMatrix& N, Dens
         R_(2 * m + 1, i) += tau[1] * t;
       }
     }
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+      double area = mesh_->getFaceArea(f);
+
+      for (int i = 0; i < modes; i++) {
+        v1 = vKT[i] * normal;
+        double p = (normal * v1) / area;
+        R_(d_ * nnodes + n, i) += p * dirs[n];
+      }
+    }
+    // 3D case
   } else {
-    AMANZI_ASSERT(false);
-  }
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+      const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+      double area = mesh_->getFaceArea(f);
 
-  for (int n = 0; n < nfaces; n++) {
-    int f = faces[n];
-    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
-    double area = mesh_->getFaceArea(f);
+      const auto& fnodes = mesh_->getFaceNodes(f);
+      int nfnodes = fnodes.size();
+      for (int j = 0; j < nfnodes; ++j) {
+        int v = fnodes[j];
+        const AmanziGeometry::Point& p = mesh_->getNodeCoordinate(v);
 
-    for (int i = 0; i < modes; i++) {
-      v1 = vKT[i] * normal;
-      double p = (normal * v1) / area;
-      R_(d_ * nnodes + n, i) += p * dirs[n];
+        int jnext = (j + 1) % nfnodes;
+        int jprev = (j + nfnodes - 1) % nfnodes;
+
+        int vnext = fnodes[jnext];
+        int vprev = fnodes[jprev];
+
+        const AmanziGeometry::Point& pnext = mesh_->getNodeCoordinate(vnext);
+        const AmanziGeometry::Point& pprev = mesh_->getNodeCoordinate(vprev);
+
+        auto v1 = pprev - pnext;
+        auto v2 = p - xf;
+        auto v3 = v1 ^ v2;
+        double u = dirs[n] * norm(v3) / (4 * area);
+
+        int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
+        for (int i = 0; i < modes; ++i) {
+          auto v4 = vKT[i] * normal;
+          for (int k = 0; k < d_; ++k) R_(d_ * pos + k, i) += v4[k] * u;
+        }
+      }
     }
   }
 
@@ -138,16 +171,11 @@ MFD3D_BernardiRaugel::H1consistency(int c, const Tensor& K, DenseMatrix& N, Dens
   coefM_.Inverse();
 
   for (int i = 0; i < nrows; i++) {
-    a1(0) = R_(i, 0);
-    a1(1) = R_(i, 1);
-    a1(2) = R_(i, 2);
+    for (int k = 0; k < modes; ++k) a1(k) = R_(i, k);
     coefM_.Multiply(a1, a3, false);
 
     for (int j = i; j < nrows; j++) {
-      a2(0) = R_(j, 0);
-      a2(1) = R_(j, 1);
-      a2(2) = R_(j, 2);
-
+      for (int k = 0; k < modes; ++k) a2(k) = R_(j, k);
       Ac(i, j) = a2 * a3;
     }
   }

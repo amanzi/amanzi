@@ -93,18 +93,18 @@ TEST(DARCY_TWO_FRACTURES)
 
   // double V = 0.25;  // fracture area [m^2]
   double a = 0.01; // aperture [m]
-  double dadt = 0.0;
+  double dadt = 0.00001;
   double Q = 8.0e-2; // source [kg/s]
   double Ss = 0.002; // specific storage [m^-1]
   double g = 10.0;   // gravity [m/s^2]
   double p_old = 200000.0;
-  double rho = 1000.0;
   double T = 100;
   // double p_new = p_old + (dt * 10) * (Q / V) * g / (Ss * a);
-  double p_new = p_old + (T * Q - rho * std::log(1.0 + dadt * T / a)) * g / (Ss);
+  // double p_new = p_old + (T * Q - rho * std::log(1.0 + dadt * T / a)) * g / (Ss);
+  double p_new = (p_old + T * Q * g / Ss) / (1.0 + dadt * T / a);
 
   std::string passwd("");
   auto& p =
     *S->GetW<CompositeVector>("fracture-pressure", Tags::DEFAULT, passwd).ViewComponent("cell");
-  for (int c = 0; c < p.MyLength(); c++) { CHECK_CLOSE(p_new, p[0][c], 0.02 * std::fabs(p_new)); }
+  for (int c = 0; c < p.MyLength(); c++) { CHECK_CLOSE(p_new, p[0][c], 0.01 * std::fabs(p_new)); }
 }

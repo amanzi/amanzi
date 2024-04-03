@@ -205,7 +205,7 @@ TEST(ENERGY_CONVERGENCE_SRC)
 
     printf("mesh=%d bdf1_steps=%3d  L2_temp_err=%7.3e L2_temp=%7.3e\n", n, itrs, l2_err, l2_norm);
     CHECK(l2_err < 8e-1);
-    //WriteStateStatistics(*S, *vo_);
+    // WriteStateStatistics(*S, *vo_);
 
     // save solution
     GMV::open_data_file(*mesh, (std::string) "energy.gmv");
@@ -213,7 +213,6 @@ TEST(ENERGY_CONVERGENCE_SRC)
     GMV::write_cell_data(*temp->ViewComponent("cell"), 0, "temperature");
     GMV::close_data_file();
   }
-
 
   // check convergence rate
   double l2_rate = Amanzi::Utils::bestLSfit(h, error);

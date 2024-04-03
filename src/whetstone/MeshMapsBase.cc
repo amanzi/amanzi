@@ -18,7 +18,7 @@
 #include "Point.hh"
 
 #include "DenseMatrix.hh"
-#include "MeshMaps.hh"
+#include "MeshMapsBase.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
 #include "NumericalIntegration.hh"
 #include "Polynomial.hh"
@@ -31,7 +31,7 @@ namespace WhetStone {
 * Calculate mesh velocity on 2D or 3D edge e.
 ****************************************************************** */
 void
-MeshMaps::VelocityEdge(int e, VectorPolynomial& v) const
+MeshMapsBase::VelocityEdge(int e, VectorPolynomial& v) const
 {
   AMANZI_ASSERT(d_ == 3);
 
@@ -89,7 +89,7 @@ MeshMaps::VelocityEdge(int e, VectorPolynomial& v) const
 * Calculate mesh velocity on 2D face f.
 ****************************************************************** */
 void
-MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
+MeshMapsBase::VelocityFace(int f, VectorPolynomial& v) const
 {
   AMANZI_ASSERT(d_ == 2);
 
@@ -147,9 +147,9 @@ MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 * Transformation of normal is defined completely by face data.
 ****************************************************************** */
 void
-MeshMaps::NansonFormula(int f,
-                        const VectorSpaceTimePolynomial& map,
-                        VectorSpaceTimePolynomial& cn) const
+MeshMapsBase::NansonFormula(int f,
+                            const VectorSpaceTimePolynomial& map,
+                            VectorSpaceTimePolynomial& cn) const
 {
   const auto& normal = mesh0_->getFaceNormal(f);
   cn.resize(d_);
@@ -176,7 +176,7 @@ MeshMaps::NansonFormula(int f,
 * Multiple velocities are packed in a rectagular matrix.
 ****************************************************************** */
 void
-MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
+MeshMapsBase::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
 {
   // allocate memory
   int nvc = vc.size();
@@ -195,10 +195,10 @@ MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
 * We assume that vectors of vertices have a proper length.
 ****************************************************************** */
 int
-MeshMaps::LeastSquareFit(int order,
-                         const AmanziMesh::Point_List& x1,
-                         const AmanziMesh::Point_List& x2,
-                         VectorPolynomial& v) const
+MeshMapsBase::LeastSquareFit(int order,
+                             const AmanziMesh::Point_List& x1,
+                             const AmanziMesh::Point_List& x2,
+                             VectorPolynomial& v) const
 {
   Polynomial poly(d_, order);
 
@@ -251,7 +251,7 @@ MeshMaps::LeastSquareFit(int order,
 * Project polynomial on mesh0 to polynomial space on mesh1.
 ****************************************************************** */
 void
-MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
+MeshMapsBase::ProjectPolynomial(int c, Polynomial& poly) const
 {
   int order = poly.order();
 

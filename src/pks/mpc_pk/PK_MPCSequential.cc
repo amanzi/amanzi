@@ -9,7 +9,7 @@
 */
 
 /*
-  This is the mpc_pk component of the Amanzi code.
+  MPC PK
 
   Implementation for the derived PK_MPCSequential class. Provides only the
   AdvanceStep() method missing from MPC.hh. In sequential coupling, we
@@ -60,6 +60,16 @@ PK_MPCSequential::get_dt()
 
 
 // -----------------------------------------------------------------------------
+// Inform PKs about the failure of the iterative coupling.
+// -----------------------------------------------------------------------------
+void
+PK_MPCSequential::set_dt(double dt)
+{
+  for (auto pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) (*pk)->set_dt(dt);
+}
+
+
+// -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
 bool
@@ -88,8 +98,13 @@ PK_MPCSequential::AdvanceStep(double t_old, double t_new, bool reinit)
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "sequential iteration #" << num_itrs_ << " error=" << error_norm_ << "\n";
+      *vo_->os() << "sequential itrs #" << num_itrs_ << " error=" << error_norm_ << "\n";
     }
+  }
+
+  if (error_norm_ > tol_) {
+    set_dt((t_new - t_old) / 2);
+    fail = true;
   }
 
   return fail;

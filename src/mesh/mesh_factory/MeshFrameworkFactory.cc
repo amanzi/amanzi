@@ -7,8 +7,6 @@
   Authors: William Perkins, Ethan Coon
 */
 
-#include <boost/format.hpp>
-
 #include "RegionLogical.hh"
 #include "MeshException.hh"
 #include "MeshFrameworkFactory.hh"
@@ -89,8 +87,8 @@ MeshFrameworkFactory::create(const std::string& filename)
   FileFormat fmt = fileFormatFromFilename(*comm_, filename);
 
   if (fmt == FileFormat::UNKNOWN) {
-    FileMessage e(
-      std::string(boost::str(boost::format("%s: unknown file format") % filename)).c_str());
+    FileMessage e;
+    e << "MeshFrameworkFactory: unknown file format for file \"" << filename << "\"";
     Exceptions::amanzi_throw(e);
   }
 
@@ -180,6 +178,7 @@ MeshFrameworkFactory::create(const double x0,
 #ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = vo_->getOSTab();
         *vo_->os() << "Creating 3D block mesh using format \"MSTK\"" << std::endl;
       }
       auto mesh = Teuchos::rcp(new Mesh_MSTK(x0,
@@ -342,8 +341,8 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
   for (auto p : preference_) {
 #ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
-      *vo_->os() << "Pref = MSTK\n";
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = vo_->getOSTab();
         *vo_->os() << "Creating extracted mesh using format \"MSTK\" with " << setids.size()
                    << " local entities." << std::endl;
       }

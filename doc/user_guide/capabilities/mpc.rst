@@ -7,6 +7,7 @@ For a single continuum, the following multiphysics models can be created:
   * Flow and transport 
   * Flow and reactive transport
   * Thermal flow 
+  * Poroelasticity
 
 Two spatial continua are supported by *Amanzi*:
 

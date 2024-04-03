@@ -372,19 +372,26 @@ RemapGCLr(const Amanzi::Explicit_TI::method_t& rk_method,
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(dim, region_list, *comm));
 
   auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
-  Teuchos::RCP<MeshCurved> mesh0, mesh1;
+  mlist->set<bool>("request faces", true);
+  mlist->set<bool>("request edges", (dim == 3));
+  Teuchos::RCP<MeshCurved> mesh0_fw, mesh1_fw;
 
   if (file_name != "") {
-    bool request_edges = (dim == 3);
-    mesh0 = Teuchos::rcp(new MeshCurved(file_name, comm, gm, mlist, true, request_edges));
-    mesh1 = Teuchos::rcp(new MeshCurved(file_name, comm, gm, mlist, true, request_edges));
+    mesh0_fw = Teuchos::rcp(new MeshCurved(file_name, comm, gm, mlist));
+    mesh1_fw = Teuchos::rcp(new MeshCurved(file_name, comm, gm, mlist));
   } else if (dim == 2) {
-    mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, gm, mlist));
-    mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, gm, mlist));
+    mesh0_fw = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, gm, mlist));
+    mesh1_fw = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, gm, mlist));
   } else {
-    mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
-    mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
+    mesh0_fw =
+      Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
+    mesh1_fw =
+      Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
   }
+  auto mesh0 = Teuchos::rcp(new AmanziMesh::MeshCache<MemSpace_kind::HOST>(
+    mesh0_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
+  auto mesh1 = Teuchos::rcp(new AmanziMesh::MeshCache<MemSpace_kind::HOST>(
+    mesh1_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
 
   int ncells_owned =
     mesh0->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);

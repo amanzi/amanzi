@@ -18,6 +18,8 @@
 #ifndef AMANZI_FLOW_POROSITY_EVALUATOR_HH_
 #define AMANZI_FLOW_POROSITY_EVALUATOR_HH_
 
+#include <utility>
+
 #include "Factory.hh"
 #include "EvaluatorSecondaryMonotype.hh"
 #include "Tag.hh"
@@ -45,7 +47,10 @@ class PorosityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Com
                                           const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
-  double getBiotCoefficient(int c) { return pom_->second[(*pom_->first)[c]]->getBiotCoefficient(); }
+  std::pair<double, double> getThermalCoefficients(int c)
+  {
+    return pom_->second[(*pom_->first)[c]]->getThermalCoefficients();
+  }
 
  protected:
   void InitializeFromPlist_();
@@ -53,9 +58,9 @@ class PorosityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Com
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<PorosityModelPartition> pom_;
-  Key pressure_key_, strain_key_;
+  Key pressure_key_, temperature_key_, strain_key_, biot_key_;
 
-  bool use_strain_ = false;
+  bool poroelasticity_, thermoelasticity_;
 
  private:
   static Utils::RegisteredFactory<Evaluator, PorosityEvaluator> reg_;

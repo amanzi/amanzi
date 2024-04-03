@@ -1,7 +1,8 @@
 #FROM ubuntu:latest
 #FROM ubuntu:artful
 #FROM ubuntu:bionic
-FROM ubuntu:focal
+#FROM ubuntu:focal
+FROM ubuntu:jammy
 
 
 LABEL Description="This image contains all of the third-party libraries needed by Amanzi (based on the specified branch, default branch is master)."
@@ -20,6 +21,7 @@ RUN apt-get -q update -y && apt-get install -y tzdata && apt-get -q install -y \
   curl \
   libcurl4-openssl-dev \
   emacs \
+  gedit \
   g++ \
   gfortran \
   git \
@@ -40,7 +42,7 @@ RUN apt-get -q update -y && apt-get install -y tzdata && apt-get -q install -y \
   wget \
   vim \
   zlib1g-dev \
-  # && apt-get clean - Dockerfile best practices indicate ubuntu apt-get calls by default
+  && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
 # Note this installs numpy as well
@@ -93,7 +95,7 @@ ENV AMANZI_PETSC_LIBS=$AMANZI_TPLS_DIR/petsc-${petsc_ver}/lib \
 
 # Add an unprivileged user and group: amanzi_user, amanzi_user
 RUN groupadd -r amanzi_user \
-  && useradd -r -m -g amanzi_user amanzi_user
+  && useradd -r -K UMASK=0022 -K HOME_MODE=0755 -m -g amanzi_user amanzi_user
 USER amanzi_user
 
 # Set the current working directory as the users home directory

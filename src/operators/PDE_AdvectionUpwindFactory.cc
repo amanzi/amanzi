@@ -39,6 +39,7 @@ PDE_AdvectionUpwindFactory::Create(const Teuchos::RCP<Operator>& global_op)
 
   if (global_op == Teuchos::null) {
     if (manifolds) {
+      oplist_.set<std::string>("name", "AdvectionDFN: FACE_CELL");
       op = Teuchos::rcp(new PDE_AdvectionUpwindDFN(oplist_, mesh_));
     } else if (fractured_matrix) {
       oplist_.set<std::string>("name", "AdvectionFracturedMatrix: FACE_CELL");
@@ -49,6 +50,7 @@ PDE_AdvectionUpwindFactory::Create(const Teuchos::RCP<Operator>& global_op)
 
   } else {
     if (manifolds) {
+      oplist_.set<std::string>("name", "AdvectionDFN: FACE_CELL");
       op = Teuchos::rcp(new PDE_AdvectionUpwindDFN(oplist_, global_op));
     } else if (fractured_matrix) {
       oplist_.set<std::string>("name", "AdvectionFracturedMatrix: FACE_CELL");

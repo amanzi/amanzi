@@ -86,24 +86,23 @@ EnergyMatrixFracture_PK::Setup()
     AddDefaultPrimaryEvaluator(S_, "temperature", Tags::DEFAULT);
   }
 
-  // -- darcy flux
-  if (!S_->HasRecord("volumetric_flow_rate")) {
+  // -- molar flow rates
+  if (!S_->HasRecord("molar_flow_rate")) {
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S_->Require<CV_t, CVS_t>("volumetric_flow_rate", Tags::DEFAULT)
+    S_->Require<CV_t, CVS_t>("molar_flow_rate", Tags::DEFAULT)
       .SetMesh(mesh_matrix_)
       ->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
-    AddDefaultPrimaryEvaluator(S_, "volumetric_flow_rate", Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator(S_, "molar_flow_rate", Tags::DEFAULT);
   }
 
-  // -- darcy flux for fracture
-  if (!S_->HasRecord("fracture-volumetric_flow_rate")) {
+  if (!S_->HasRecord("fracture-molar_flow_rate")) {
     auto cvs2 = Operators::CreateManifoldCVS(mesh_fracture_);
-    *S_->Require<CV_t, CVS_t>("fracture-volumetric_flow_rate", Tags::DEFAULT)
+    *S_->Require<CV_t, CVS_t>("fracture-molar_flow_rate", Tags::DEFAULT)
        .SetMesh(mesh_fracture_)
        ->SetGhosted(true) = *cvs2;
-    AddDefaultPrimaryEvaluator(S_, "fracture-volumetric_flow_rate", Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator(S_, "fracture-molar_flow_rate", Tags::DEFAULT);
   }
 
   // additional fields and evaluators related to matrix-frcature coupling
@@ -331,10 +330,6 @@ EnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     archive.Restore("");
   }
 
-  // update some fields, we cannot move this to commit step due to "initialize"
-  S_->GetW<CV_t>("fracture-prev_aperture", Tags::DEFAULT, "") =
-    S_->Get<CV_t>("fracture-aperture", Tags::DEFAULT);
-
   return fail;
 }
 
@@ -351,7 +346,7 @@ EnergyMatrixFracture_PK::FunctionalResidual(double t_old,
 {
   PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
 
-  UpdateEnthalpyCouplingFluxes(S_, mesh_matrix_, mesh_fracture_, adv_coupling_ops_);
+  UpdateEnthalpyCouplingFluxes(S_, mesh_matrix_, mesh_fracture_, adv_coupling_ops_, true);
 
   int ierr = op_matrix_->Apply(*u_new, *f, 1.0);
   AMANZI_ASSERT(!ierr);

@@ -65,8 +65,7 @@ if (BUILD_TESTS)
   endif()
 
   set(tpl_libs ${CCSE_LIBRARIES} ${PETSC_LIBRARIES}
-               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES}
-               ${Boost_LIBRARIES})
+               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
 
   if (BUILD_SHARED_LIBS)
     set(closing_dso ../../../shared_dso.f90)

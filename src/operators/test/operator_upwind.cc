@@ -25,7 +25,6 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
 #include "MeshAlgorithms.hh"
 #include "VerboseObject.hh"

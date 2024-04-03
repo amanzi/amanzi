@@ -23,7 +23,6 @@ include(PrintVariable)
 project(MESH_FACTORY)
 
 # External (TPL) include directories
-include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${STK_INCLUDE_DIRS})
@@ -76,8 +75,7 @@ set(mesh_factory_inc_files
 
 add_amanzi_library(mesh_factory
                    SOURCE ${mesh_factory_files} HEADERS ${mesh_factory_inc_files}
-                   LINK_LIBS ${mesh_factory_frameworks} ${Boost_LIBRARIES}
-                   LINK_LIBS ${mesh_factory_frameworks} mesh_extracted mesh_logical ${Boost_LIBRARIES})
+                   LINK_LIBS ${mesh_factory_frameworks} mesh_extracted mesh_logical)
 
 
 if (BUILD_TESTS)
@@ -106,7 +104,6 @@ if (BUILD_TESTS)
                    LINK_LIBS
 		         mesh_factory
 			 ${UnitTest_LIBRARIES}
-			 ${Boost_LIBRARIES}
                          ${Epetra_LIBRARIES}
 			 ${HDF5_LIBRARIES})
 
@@ -118,7 +115,7 @@ if (BUILD_TESTS)
    add_amanzi_test(mesh_factory_extract_comms_np5 mesh_factory_extract_comms
                    KIND unit
         	   SOURCE test/Main.cc test/mesh_factory_extract_comms.cc
-                   LINK_LIBS mesh_factory ${UnitTest_LIBRARIES} ${Boost_LIBRARIES} ${Epetra_LIBRARIES} ${HDF5_LIBRARIES}
+                   LINK_LIBS mesh_factory ${UnitTest_LIBRARIES} ${Epetra_LIBRARIES} ${HDF5_LIBRARIES}
                    NPROCS 5) # need sufficient cores to force one proc to have no surface faces
    
 endif()

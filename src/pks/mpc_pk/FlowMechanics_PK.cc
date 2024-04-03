@@ -18,10 +18,12 @@
 #include "PK_BDF.hh"
 #include "PorosityEvaluator.hh"
 #include "StateArchive.hh"
+#include "StateHelpers.hh"
 #include "Transport_PK.hh"
 
 #include "FlowMechanics_PK.hh"
 #include "WaterStorageStressSplit.hh"
+#include "WaterStorageDarcyStressSplit.hh"
 
 namespace Amanzi {
 
@@ -35,7 +37,7 @@ FlowMechanics_PK::FlowMechanics_PK(Teuchos::ParameterList& pk_tree,
                                    const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                    const Teuchos::RCP<State>& S,
                                    const Teuchos::RCP<TreeVector>& soln)
-  : PK_MPCSequential(pk_tree, glist, S, soln), glist_(glist)
+  : PK_MPCSequential(pk_tree, glist, S, soln), glist_(glist), thermal_flow_(false)
 {
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = my_list_->sublist("verbose object");
@@ -52,14 +54,18 @@ void
 FlowMechanics_PK::Setup()
 {
   std::string passwd("");
+  pressure_key_ = Keys::getKey(domain_, "pressure");         // primary
   displacement_key_ = Keys::getKey(domain_, "displacement"); // primary
+
   hydrostatic_stress_key_ = Keys::getKey(domain_, "hydrostatic_stress");
   vol_strain_key_ = Keys::getKey(domain_, "volumetric_strain");
+  biot_key_ = Keys::getKey(domain_, "biot_coefficient");
 
-  pressure_key_ = Keys::getKey(domain_, "pressure"); // primary
   porosity_key_ = Keys::getKey(domain_, "porosity");
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
   water_storage_key_ = Keys::getKey(domain_, "water_storage");
+
+  thermal_flow_ = (Keys::getVarName(sub_pks_[0]->name()) == "thermal flow");
 
   // mechanics
   auto mesh = S_->GetMesh(domain_);
@@ -73,6 +79,11 @@ FlowMechanics_PK::Setup()
     ->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
+  S_->Require<CV_t, CVS_t>(biot_key_, Tags::DEFAULT, passwd)
+    .SetMesh(S_->GetMesh())
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
   auto pks =
     glist_->sublist("PKs").sublist(name_).get<Teuchos::Array<std::string>>("PKs order").toVector();
   for (int i = 0; i < 2; ++i) {
@@ -80,31 +91,57 @@ FlowMechanics_PK::Setup()
       .sublist(pks[i])
       .sublist("physical models and assumptions")
       .set<bool>("biot scheme: undrained split", false)
-      .set<bool>("biot scheme: fixed stress split", true);
+      .set<bool>("biot scheme: fixed stress split", true)
+      .set<bool>("thermoelasticity", thermal_flow_);
   }
 
   // flow
-  // -- we redefine ws to get the fixed stress split scheme
-  S_->Require<CV_t, CVS_t>(water_storage_key_, Tags::DEFAULT, water_storage_key_)
-    .SetMesh(mesh)
-    ->SetGhosted(true)
-    ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+  // -- we re-define water_storage as a way to get the undrained split scheme
+  if (Keys::getVarName(sub_pks_[0]->name()) == "darcy") {
+    auto elist = RequireFieldForEvaluator(*S_, water_storage_key_);
+    elist.set<std::string>("pressure key", pressure_key_);
 
-  Teuchos::ParameterList elist(water_storage_key_);
-  elist.set<std::string>("water storage key", water_storage_key_)
-    .set<std::string>("tag", "")
-    .set<std::string>("pressure key", pressure_key_)
-    .set<std::string>("saturation key", saturation_liquid_key_)
-    .set<std::string>("porosity key", porosity_key_);
+    auto eval = Teuchos::rcp(new WaterStorageDarcyStressSplit(elist));
+    S_->SetEvaluator(water_storage_key_, Tags::DEFAULT, eval);
+  } else {
+    auto elist = RequireFieldForEvaluator(*S_, water_storage_key_);
+
+    elist.set<std::string>("pressure key", pressure_key_)
+      .set<std::string>("saturation key", saturation_liquid_key_)
+      .set<std::string>("porosity key", porosity_key_);
+    // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+
+    auto eval = Teuchos::rcp(new WaterStorageStressSplit(elist));
+    S_->SetEvaluator(water_storage_key_, Tags::DEFAULT, eval);
+  }
 
   S_->RequireDerivative<CV_t, CVS_t>(
       water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, water_storage_key_)
     .SetGhosted();
 
-  auto eval = Teuchos::rcp(new WaterStorageStressSplit(elist));
-  S_->SetEvaluator(water_storage_key_, Tags::DEFAULT, eval);
-
   PK_MPCSequential::Setup();
+}
+
+
+/* ******************************************************************
+* Process additional parameter
+****************************************************************** */
+void
+FlowMechanics_PK::Initialize()
+{
+  PK_MPCSequential::Initialize();
+
+  if (my_list_->isParameter("initialize displacement")) {
+    bool fail = sub_pks_[1]->AdvanceStep(0.0, 0.0, false);
+    if (fail) Exceptions::amanzi_throw("Initialization of displacement has failed.");
+    Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+      S_->GetEvaluatorPtr(displacement_key_, Tags::DEFAULT))
+      ->SetChanged();
+
+    S_->GetEvaluator(water_storage_key_).Update(*S_, "mpc");
+    S_->GetW<CV_t>("prev_water_storage", Tags::DEFAULT, "") =
+      S_->Get<CV_t>(water_storage_key_, Tags::DEFAULT);
+  }
 }
 
 
@@ -114,11 +151,10 @@ FlowMechanics_PK::Setup()
 bool
 FlowMechanics_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
-  std::vector<std::string> fields({ pressure_key_,
-                                    saturation_liquid_key_,
-                                    water_storage_key_,
-                                    displacement_key_,
-                                    vol_strain_key_ });
+  std::vector<std::string> fields(
+    { pressure_key_, saturation_liquid_key_, displacement_key_, vol_strain_key_ });
+  if (S_->HasRecord(water_storage_key_)) fields.push_back(water_storage_key_);
+
   StateArchive archive(S_, vo_);
   archive.Add(fields, Tags::DEFAULT);
 
@@ -151,23 +187,36 @@ void
 FlowMechanics_PK::CommitSequentialStep(Teuchos::RCP<const TreeVector> u_old,
                                        Teuchos::RCP<const TreeVector> u_new)
 {
-  Key prev = Keys::getKey(domain_, "prev_water_storage");
-  auto& ws_c = *S_->GetW<CV_t>(prev, Tags::DEFAULT, "").ViewComponent("cell");
-  auto& u0_c = *u_old->SubVector(0)->Data()->ViewComponent("cell");
-  auto& u1_c = *u_new->SubVector(0)->Data()->ViewComponent("cell");
+  // access to pressures, depends on PK
+  Teuchos::RCP<const Epetra_MultiVector> u0_c, u1_c;
+  if (thermal_flow_) {
+    u0_c = u_old->SubVector(0)->SubVector(0)->Data()->ViewComponent("cell");
+    u1_c = u_new->SubVector(0)->SubVector(0)->Data()->ViewComponent("cell");
+  } else {
+    u0_c = u_old->SubVector(0)->Data()->ViewComponent("cell");
+    u1_c = u_new->SubVector(0)->Data()->ViewComponent("cell");
+  }
 
   const auto& E = *S_->Get<CompositeVector>("young_modulus").ViewComponent("cell");
   const auto& nu = *S_->Get<CompositeVector>("poisson_ratio").ViewComponent("cell");
-  const auto& n_l = *S_->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
+  const auto& b = *S_->Get<CompositeVector>("biot_coefficient").ViewComponent("cell");
 
-  auto tmp = const_cast<Evaluator*>(&S_->GetEvaluator(porosity_key_));
-  auto eval = dynamic_cast<Flow::PorosityEvaluator*>(tmp);
+  int ncells = b.MyLength();
+  Key prev = Keys::getKey(domain_, "prev_water_storage");
+  auto& ws_c = *S_->GetW<CV_t>(prev, Tags::DEFAULT, "").ViewComponent("cell");
 
-  int ncells = ws_c.MyLength();
-  for (int c = 0; c != ncells; ++c) {
-    double b = eval->getBiotCoefficient(c);
-    double stability = FixedStressStability(E[0][c], nu[0][c], b);
-    ws_c[0][c] += stability * n_l[0][c] * (u1_c[0][c] - u0_c[0][c]);
+  if (Keys::getVarName(sub_pks_[0]->name()) == "richards") {
+    const auto& eta_c = *S_->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
+    for (int c = 0; c != ncells; ++c) {
+      double stability = FixedStressStability(E[0][c], nu[0][c], b[0][c]);
+      ws_c[0][c] += stability * eta_c[0][c] * ((*u1_c)[0][c] - (*u0_c)[0][c]);
+    }
+  } else {
+    double rho = S_->Get<double>("const_fluid_density");
+    for (int c = 0; c != ncells; ++c) {
+      double stability = FixedStressStability(E[0][c], nu[0][c], b[0][c]);
+      ws_c[0][c] += stability * rho * ((*u1_c)[0][c] - (*u0_c)[0][c]);
+    }
   }
 }
 

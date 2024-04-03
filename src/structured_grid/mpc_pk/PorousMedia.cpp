@@ -304,7 +304,6 @@ PorousMedia::setup_bound_desc()
 {
   BL_PROFILE("PorousMedia::setup_bound_desc()");
   bc_descriptor_map.clear();
-  const Real* dx   = geom.CellSize();
   const Box& domain = geom.Domain();
   int nGrowHYP = PorousMedia::NGrowHYP();
 
@@ -1014,7 +1013,6 @@ PorousMedia::initData ()
 
           // set pressure
           if (flow_model==PM_FLOW_MODEL_RICHARDS) {
-            const int idx = mfi.index();
             FArrayBox pc(vbox,1);
             FArrayBox s(vbox,1); s.copy(stmp);
             IArrayBox m(vbox,1); m.copy((*materialID)[mfi]);
@@ -1123,11 +1121,9 @@ PorousMedia::initData ()
             for (int i=0; i<rds.size(); ++i)
             {
               const IdxRegionData& tic = rds[i];
-              const Array<const Region*>& tic_regions = tic.Regions();
               const std::string& tic_type = tic.Type();
 
-              if (tic_type == "file")
-              {
+              if (tic_type == "file") {
                 std::cerr << "Initialization of initial condition based on "
                           << "a file has not been implemented yet.\n";
                 BoxLib::Abort("PorousMedia::initData()");
@@ -1334,12 +1330,10 @@ PorousMedia::solve_for_initial_flow_field()
     Real dt_init = initial_pressure_solve_init_dt;
     Real dt = dt_init;
     int k_max = initial_pressure_solve_max_cycles;
-    Real t_eps = 1.e-8*dt_init;
 
     MultiFab tmp(grids,1,1);
     MultiFab tmpP(grids,1,1);
     int nc = 0; // Component of water in state
-    PMAmr* p = dynamic_cast<PMAmr*>(parent); BL_ASSERT(p);
 
     bool solved = false;
     int total_num_Newton_iterations = 0;
@@ -1742,7 +1736,7 @@ PorousMedia::init (AmrLevel& old)
     }
   }
 
-  old_intersect_new          = BoxLib::intersect(grids,oldns->boxArray());
+  old_intersect_new = BoxLib::intersect(grids,oldns->boxArray());
   is_first_flow_step_after_regrid = true;
 }
 
@@ -2154,7 +2148,6 @@ PorousMedia::get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow)
     //  default the rest to somethign computable to silence runtime undefd data errors
     BoxList dbox(geom.Domain());
     for (OrientationIter oitr; oitr; ++oitr) {
-      Orientation face = oitr();
       dbox.push_back(BoxLib::adjCell(geom.Domain(),oitr(),1));
     }
 
@@ -2273,7 +2266,6 @@ PorousMedia::set_saturated_velocity()
 
   for (int i=0; i<ic_array.size(); ++i) {
     const RegionData& ic = ic_array[i];
-    const Array<const Region*>& ic_regions = ic.Regions();
     const std::string& type = ic.Type();
     if (type == "velocity") {
       Array<Real> vals = ic();
@@ -2776,13 +2768,11 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
     }
   }
 
-  int nc = 0; // Component of water in state
-
   // Save initial state, used in the native solver to build res_fix
   BL_ASSERT(richard_solver != 0);
   for (int lev=0;lev<nlevs;lev++)
   {
-    PorousMedia&    fine_lev   = getLevel(lev);
+    PorousMedia& fine_lev = getLevel(lev);
     MultiFab& P_lev = fine_lev.get_old_data(Press_Type);
     MFTower& IC = *(richard_solver->GetRSdata().InitialState);
     MultiFab::Copy(IC[lev],P_lev,0,0,1,1);
@@ -2947,7 +2937,6 @@ PorousMedia::get_inflow_velocity(const Orientation& face,
     {
         const Box domain = geom.Domain();
         const int* domhi = domain.hiVect();
-        const int* domlo = domain.loVect();
         const Real* dx   = geom.CellSize();
         Real t_eval = AdjustBCevalTime(State_Type,t,false);
 
@@ -3371,7 +3360,6 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
     int Aidx = first_tracer;
     int Cidx, Sidx, SRCidx, Didx, DUidx;
     Cidx = Sidx = Didx = DUidx = 0;
-    int use_conserv_diff = true;
 
     PArray<FArrayBox> U(BL_SPACEDIM, PArrayNoManage), Area(BL_SPACEDIM, PArrayNoManage);
     PArray<FArrayBox> Flux(BL_SPACEDIM, PArrayNoManage);
@@ -3649,7 +3637,6 @@ PorousMedia::advance_chemistry (Real time,
 
   bool chem_ok = true;
 
-  int first_tracer = ncomps;
   std::set<int> types_advanced;
   types_advanced.insert(State_Type);
   types_advanced.insert(FuncCount_Type);
@@ -4569,7 +4556,7 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
 {
   BL_PROFILE("PorousMedia::predictDT()");
 
-  const Real* dx       = geom.CellSize();
+  const Real* dx = geom.CellSize();
 
   dt_eig = 1.e20; // FIXME: Need more robust
 
@@ -4579,7 +4566,6 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
   get_fillpatched_rhosat(t_eval,RhoSat,nGrowEIGEST);
 
   int Ung = -1;
-  int Uidx = 0;
 
   for (MFIter mfi(RhoSat); mfi.isValid(); ++mfi) {
     const int i = mfi.index();
@@ -4775,8 +4761,6 @@ PorousMedia::computeNewDt (int                   finest_level,
   Real dt_init_local = -1;
 
   Real dt_0;
-  int max_level = parent->maxLevel();
-
   Real cum_time = parent->cumTime(); // Time evolved to so far
   Real start_time = parent->startTime(); // Time simulation started from
 
@@ -4945,7 +4929,6 @@ PorousMedia::post_init_estDT (Real&        dt_init_local,
                               Real         stop_time)
 {
   BL_PROFILE("PorousMedia::post_init_estDT()");
-  const Real strt_time    = parent->startTime();
   const Real cum_time     = parent->cumTime(); // Time evolved to so far
   const int  finest_level = parent->finestLevel();
 
@@ -5193,8 +5176,6 @@ PorousMedia::init_rock_properties (bool restart)
   bool ignore_mixed = true;
   rock_manager->GetMaterialID(level,*materialID,nGrow,ignore_mixed);
 
-  const Real* dx = geom.CellSize();
-  const int max_level = parent->maxLevel();
   Real cur_time = state[State_Type].curTime();
 
   MultiFab kappatmp(grids,BL_SPACEDIM,nGrowHYP);
@@ -5808,7 +5789,6 @@ PorousMedia::mac_sync ()
   const Real dt        = parent->dtLevel(level);
   MultiFab& S_new = get_new_data(State_Type);
 
-  bool any_diffusive = false;
   if (do_explicit_tracer_sync_only) {
     //
     // Here, the ONLY sync to compute is the time-explicit corrections from
@@ -5902,7 +5882,6 @@ PorousMedia::mac_sync ()
     MFVector new_state(*Ssync,first_tracer,1,1);
     MFVector Rhs(*Ssync,first_tracer,1,1);
     MultiFab& S_new = get_new_data(State_Type);
-    MultiFab& S_old = get_old_data(State_Type);
 
     for (int n=0; n<ntracers; ++n) {
       new_state.setVal(0);
@@ -6198,7 +6177,6 @@ PorousMedia::ComputeSourceVolume ()
       BL_ASSERT(pm != 0);
 
       const BoxArray& ba = pm->boxArray();
-      const Geometry& g = pm->Geom();
       const Real* dx = pm->Geom().CellSize();
 
       MultiFab mask(ba,source_array.size(),0); mask.setVal(0);
@@ -6502,8 +6480,6 @@ PorousMedia::calcDiffusivity (const Real time,
     }
 
     if (num_tracs>0) {
-      const Real* dx = geom.CellSize();
-
       int first_tracer = ncomps;
       int dComp_tracs = std::max(0,src_comp-ncomps) + first_tracer;
 
@@ -7130,8 +7106,7 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, const IArrayBox& matID, const FA
     int tracer_idx = sComp+n-ncomps;
     if (tbc_descriptor_map.size() > tracer_idx  && tbc_descriptor_map[tracer_idx].size())
     {
-      const Box domain = geom.Domain();
-      const Real* dx   = geom.CellSize();
+      const Real* dx = geom.CellSize();
 
       for (std::map<Orientation,BCDesc>::const_iterator
              it=tbc_descriptor_map[tracer_idx].begin(); it!=tbc_descriptor_map[tracer_idx].end(); ++it)
@@ -7173,10 +7148,7 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, const IArrayBox& matID, const FAr
   Array<int> bc(BL_SPACEDIM*2,0); // FIXME: Never set, why do we need this
   if (pbc_descriptor_map.size())
   {
-    const Box domain = geom.Domain();
-    const int* domhi = domain.hiVect();
-    const int* domlo = domain.loVect();
-    const Real* dx   = geom.CellSize();
+    const Real* dx = geom.CellSize();
     Real t_eval = AdjustBCevalTime(Press_Type,time,false);
 
     FArrayBox sdat, prdat, mask;
@@ -7282,9 +7254,6 @@ PorousMedia::dirichletDefaultBC (FArrayBox& fab, const IArrayBox& matID,  Real t
 
     if (tbc_descriptor_map.size())
       {
-	const Box domain = geom.Domain();
-	const Real* dx   = geom.CellSize();
-
 	for (std::map<Orientation,BCDesc>::const_iterator
 	       it=tbc_descriptor_map[0].begin(); it!=tbc_descriptor_map[0].end(); ++it)
             {

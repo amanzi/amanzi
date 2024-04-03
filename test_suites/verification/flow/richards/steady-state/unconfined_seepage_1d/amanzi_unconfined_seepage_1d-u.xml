@@ -120,6 +120,7 @@
             <linear_pressure gradient="0.0,-9793.52" reference_coord="0.0, 20.0" value="101325.0" />
           </liquid_component>
         </liquid_phase>
+        <uniform_temperature value="298.0"/>
       </initial_condition>
     </initial_conditions>
     <boundary_conditions>

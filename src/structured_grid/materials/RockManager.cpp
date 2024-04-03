@@ -253,8 +253,6 @@ RockManager::BuildInterpolators()
   static IntVect iv(D_DECL(0,0,0));
   static Box bx(iv,iv);
   FArrayBox pc_params(bx,nComp);
-  int level=0; //not really used
-  int dComp=0;
   Real time = 0;
 
   for (int n=0; n<rock.size(); ++n) {
@@ -380,9 +378,9 @@ RockManager::FillBoundary(Real      time,
         }
       }
     }
-    bool local = false;
     bool corner=true;
     mf.FillBoundary(dComp,nComp,!corner);
+    // bool local = false;
     // materialFiller->Geom(level).FillPeriodicBoundary(mf,dComp,nComp,corner,local);
   }
 }
@@ -498,8 +496,6 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     static Property::CoarsenRule arith_crsn = Property::Arithmetic;
     static Property::CoarsenRule harm_crsn = Property::ComponentHarmonic;
     static Property::RefineRule pc_refine = Property::PiecewiseConstant;
-
-    Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
 
     Property* Dmolec_func = 0;
 
@@ -1203,7 +1199,6 @@ RockManager::GetProperty(Real               time,
     if (gslib_prop != 0) {
       const AmrData* this_const_amrData = gslib_prop->GetAmrData();
       AmrData* this_amrData = const_cast<AmrData*>(this_const_amrData);
-      const Geometry& geom = materialFiller->Geom(level);
 
       Array<int> destFillComps(nComp);
       for (int n=0; n<nComp; ++n) {
@@ -1322,7 +1317,6 @@ RockManager::CapillaryPressure(const Real* saturation, int* matID, Real time, Re
         Real mI     = 1/m;
         Real omSrI  = 1/(1-Sr);
         Real alphaI = 1/alpha;
-        Real n      = 1/(1-m);
         Real nI     = 1-m;
 
         for (int i=0; i<N; ++i) {
@@ -1662,7 +1656,6 @@ RockManager::RelativePermeability(const Real* saturation, int* matID, Real time,
     } else if (is_BC) {
 
       Real lambda = pc_params[BC_LAMBDA];
-      Real alpha  = pc_params[BC_ALPHA];
       Real Sr     = pc_params[BC_SR];
       Real ell    = pc_params[BC_ELL];
       Real omSrI  = 1/(1 - Sr);

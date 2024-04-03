@@ -55,7 +55,7 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
 
   // expert parameters
-  bool include_work(true), include_potential(false);
+  bool include_potential(false);
   std::string pc_method("linearized_operator");
   std::string root("unstructured_controls, unstr_energy_controls");
 
@@ -85,6 +85,7 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
   auto& adv_list = out_list.sublist("operators").sublist("advection operator");
   if (fracture_network_ && domain != "fracture")
     adv_list.set<Teuchos::Array<std::string>>("fracture", fracture_regions_);
+  if (!fracture_network_) adv_list.set<bool>("single domain", true);
 
   // insert thermal conductivity evaluator with the default values (no 2.2 support yet)
   Teuchos::ParameterList& thermal =
@@ -209,7 +210,11 @@ InputConverterU::TranslateEnergyBCs_(const std::string& domain)
     if (bcs.type == "uniform_temperature") {
       bcs.type = "temperature";
       bcname = "boundary temperature";
+    } else if (bcs.type == "outward_energy_flux") {
+      bcs.type = "energy flux";
+      bcname = "outward energy flux";
     }
+
     std::stringstream ss;
     ss << "BC " << ibc++;
 

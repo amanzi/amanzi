@@ -237,10 +237,6 @@ MultiphaseMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
     archive.Restore("");
   }
 
-  // update some fields, we cannot move this to commit step due to "initialize"
-  S_->GetW<CV_t>("fracture-prev_aperture", Tags::DEFAULT, "") =
-    S_->Get<CV_t>("fracture-aperture", Tags::DEFAULT);
-
   return fail;
 }
 

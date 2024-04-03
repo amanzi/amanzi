@@ -33,7 +33,7 @@ class StateArchive {
   StateArchive() = delete;
   StateArchive(Teuchos::RCP<State>& S, Teuchos::RCP<VerboseObject>& vo) : S_(S), vo_(vo){};
 
-  void Add(std::vector<std::string>& fields, const Tag& tag);
+  void Add(const std::vector<std::string>& fields, const Tag& tag);
 
   void Restore(const std::string& passwd);
 

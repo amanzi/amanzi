@@ -478,7 +478,7 @@
       <Parameter name="domain name" type="string" value=""/>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{displacement}"/>
-        <Parameter name="linear solver" type="string" value="AztecOO"/>
+        <Parameter name="linear solver" type="string" value="PCG"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <Parameter name="time integration method" type="string" value="BDF1"/>
         <ParameterList name="BDF1">
@@ -881,13 +881,12 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="PCG with Hypre AMG">
-      <Parameter name="iterative method" type="string" value="gmres"/>
-      <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="1.0e-14"/>
-        <Parameter name="maximum number of iterations" type="int" value="20"/>
-        <Parameter name="controller training start" type="int" value="0"/>
-        <Parameter name="controller training end" type="int" value="3"/>
+    <ParameterList name="PCG">
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        <Parameter name="error tolerance" type="double" value="1.0e-12"/>
+        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, relative residual, make one iteration}"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>

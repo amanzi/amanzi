@@ -10,13 +10,14 @@
 /*
   MPC PK
 
-  Weak coupling of mechanics and flow PKs.
+  Iterative coupling of mechanics and flow PKs via undrained split.
 */
 
 #include <string>
 
+#include "PK_Physical.hh"
 #include "PK_Utils.hh"
-#include "Transport_PK.hh"
+#include "StateArchive.hh"
 
 #include "MechanicsFlow_PK.hh"
 
@@ -32,8 +33,10 @@ MechanicsFlow_PK::MechanicsFlow_PK(Teuchos::ParameterList& pk_tree,
                                    const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                    const Teuchos::RCP<State>& S,
                                    const Teuchos::RCP<TreeVector>& soln)
-  : PK_MPCWeak(pk_tree, glist, S, soln), glist_(glist)
+  : PK_MPCSequential(pk_tree, glist, S, soln), glist_(glist), thermal_flow_(false)
 {
+  domain_ = my_list_->template get<std::string>("domain name", "domain");
+
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = my_list_->sublist("verbose object");
   vo_ = Teuchos::rcp(new VerboseObject("MechanicsFlow", vlist));
@@ -47,8 +50,18 @@ void
 MechanicsFlow_PK::Setup()
 {
   std::string passwd("");
-  hydrostatic_stress_key_ = "hydrostatic_stress";
-  vol_strain_key_ = "volumetric_strain";
+
+  displacement_key_ = Keys::getKey(domain_, "displacement"); // primaries
+  pressure_key_ = Keys::getKey(domain_, "pressure");
+
+  hydrostatic_stress_key_ = Keys::getKey(domain_, "hydrostatic_stress");
+  vol_strain_key_ = Keys::getKey(domain_, "volumetric_strain");
+  biot_key_ = Keys::getKey(domain_, "biot_coefficient");
+  saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
+  water_storage_key_ = Keys::getKey(domain_, "water_storage");
+
+  porosity_key_ = Keys::getKey(domain_, "porosity");
+  undrained_split_coef_key_ = Keys::getKey(domain_, "undrained_split_coef");
 
   S_->Require<CV_t, CVS_t>(hydrostatic_stress_key_, Tags::DEFAULT, passwd)
     .SetMesh(S_->GetMesh())
@@ -60,6 +73,16 @@ MechanicsFlow_PK::Setup()
     ->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
+  S_->Require<CV_t, CVS_t>(biot_key_, Tags::DEFAULT, passwd)
+    .SetMesh(S_->GetMesh())
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+  S_->Require<CV_t, CVS_t>(undrained_split_coef_key_, Tags::DEFAULT, passwd)
+    .SetMesh(S_->GetMesh())
+    ->SetGhosted(true)
+    ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
   auto pks =
     glist_->sublist("PKs").sublist(name_).get<Teuchos::Array<std::string>>("PKs order").toVector();
   for (int i = 0; i < 2; ++i) {
@@ -67,10 +90,22 @@ MechanicsFlow_PK::Setup()
       .sublist(pks[i])
       .sublist("physical models and assumptions")
       .set<bool>("biot scheme: undrained split", true)
-      .set<bool>("biot scheme: fixed stress split", false);
+      .set<bool>("biot scheme: fixed stress split", false)
+      .set<bool>("thermoelasticity", thermal_flow_);
   }
 
-  PK_MPCWeak::Setup();
+  PK_MPCSequential::Setup();
+}
+
+
+/* ******************************************************************
+* Extend default initialization algorithms
+****************************************************************** */
+void
+MechanicsFlow_PK::Initialize()
+{
+  InitializeCVField(S_, *vo_, undrained_split_coef_key_, Tags::DEFAULT, "", 0.0);
+  PK_MPCSequential::Initialize();
 }
 
 
@@ -80,30 +115,88 @@ MechanicsFlow_PK::Setup()
 bool
 MechanicsFlow_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
-  // S_->GetEvaluator(vol_strain_key_).Update(*S_, "biot");
-  // auto e0_c = *S_->Get<CV_t>(vol_strain_key_).ViewComponent("cell");
+  std::vector<std::string> fields(
+    { pressure_key_, saturation_liquid_key_, displacement_key_, vol_strain_key_ });
+  if (S_->HasRecord(water_storage_key_)) fields.push_back(water_storage_key_);
 
-  auto pk0 = sub_pks_[0];
-  bool fail = pk0->AdvanceStep(t_old, t_new, reinit);
-  if (fail) return fail;
-  pk0->CommitStep(t_old, t_new, Tags::DEFAULT);
+  StateArchive archive(S_, vo_);
+  archive.Add(fields, Tags::DEFAULT);
 
-  // undrained weak split
-  /*
-  S_->GetEvaluator(vol_strain_key_).Update(*S_, "biot");
-  auto& p_c = *S_->GetW<CV_t>("pressure", Tags::DEFAULT, "").ViewComponent("cell");
-  const auto& e_c = *S_->Get<CV_t>(vol_strain_key_).ViewComponent("cell");
+  // compute stability coefficient
+  if (Keys::getVarName(sub_pks_[1]->name()) == "darcy") {
+    EvaluateForDarcy_();
+  } else {
+    EvaluateForRichards_();
+  }
 
-  double biot_modulus = 1.0 / (0.2 * 3.906e-7); // FIXME
-  int ncells = e_c.MyLength();
-  for (int c = 0; c < ncells; ++c) {
-    p_c[0][c] -= biot_modulus * (e_c[0][c] - e0_c[0][c]);
-  } 
-  */
+  bool fail = PK_MPCSequential::AdvanceStep(t_old, t_new, reinit);
+  if (fail) archive.Restore("");
 
-  auto pk1 = sub_pks_[1];
-  fail = pk1->AdvanceStep(t_old, t_new, reinit);
   return fail;
+}
+
+
+/* ******************************************************************
+* Stability coefficient for undrained split algorithm
+****************************************************************** */
+void
+MechanicsFlow_PK::EvaluateForDarcy_()
+{
+  Key specific_storage_key = Keys::getKey(domain_, "specific_storage");
+  Key biot_key = Keys::getKey(domain_, "biot_coefficient");
+
+  const auto& ss_c = *S_->Get<CompositeVector>(specific_storage_key).ViewComponent("cell");
+  const auto& b_c = *S_->Get<CompositeVector>(biot_key).ViewComponent("cell");
+
+  int d = S_->GetMesh(domain_)->getSpaceDimension();
+  auto gravity = S_->Get<AmanziGeometry::Point>("gravity");
+  double g = fabs(gravity[d - 1]);
+  double rho = S_->Get<double>("const_fluid_density");
+
+  auto& stability_c =
+    *S_->GetW<CompositeVector>(undrained_split_coef_key_, "").ViewComponent("cell");
+  int ncells = stability_c.MyLength();
+
+  double stbmax(0.0);
+  for (int c = 0; c != ncells; ++c) {
+    stability_c[0][c] = rho * g * b_c[0][c] * b_c[0][c] / ss_c[0][c];
+    stbmax = std::max(stbmax, stability_c[0][c]);
+  }
+
+  if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "max of stabilization: " << stbmax << std::endl;
+  }
+}
+
+void
+MechanicsFlow_PK::EvaluateForRichards_()
+{
+  Key mol_density_key = Keys::getKey(domain_, "molar_density_liquid");
+  Key biot_key = Keys::getKey(domain_, "biot_coefficient");
+
+  const auto& eta_c = *S_->Get<CompositeVector>(mol_density_key).ViewComponent("cell");
+  const auto& b_c = *S_->Get<CompositeVector>(biot_key).ViewComponent("cell");
+
+  S_->GetEvaluator(water_storage_key_).UpdateDerivative(*S_, "mpc", pressure_key_, Tags::DEFAULT);
+  const auto& dws_dp = *S_->GetDerivative<CompositeVector>(
+                            water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT)
+                          .ViewComponent("cell");
+
+  auto& stability_c =
+    *S_->GetW<CompositeVector>(undrained_split_coef_key_, "").ViewComponent("cell");
+  int ncells = stability_c.MyLength();
+
+  double stbmax(0.0);
+  for (int c = 0; c != ncells; ++c) {
+    stability_c[0][c] = eta_c[0][c] * b_c[0][c] * b_c[0][c] / std::fabs(dws_dp[0][c]);
+    stbmax = std::max(stbmax, stability_c[0][c]);
+  }
+
+  if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "max of stabilization: " << stbmax << std::endl;
+  }
 }
 
 } // namespace Amanzi

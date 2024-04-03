@@ -12,8 +12,6 @@
    Debugging object for writing debug cells using VerboseObject.
 
    ------------------------------------------------------------------------- */
-#include <boost/format.hpp>
-
 #include "errors.hh"
 #include "dbc.hh"
 #include "CompositeVector.hh"
@@ -30,11 +28,10 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   : verb_level_(verb_level),
     plist_(plist),
     mesh_(mesh),
-    width_(15),
-    header_width_(20),
-    precision_(10),
-    cellnum_width_(5),
-    decimal_width_(7),
+    formatter_(plist.get<int>("column width", 15),
+               plist.get<int>("precision", 7),
+               plist.get<int>("header width", 20),
+               plist.get<int>("cell number width", 5)),
     name_(name)
 {
   vo_ = Teuchos::rcp(new VerboseObject(name, plist));
@@ -66,20 +63,6 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   AmanziMesh::Entity_ID_View cells;
   vectorToView(cells, vcells);
   set_cells(cells);
-
-  // formatting
-  cellnum_width_ = plist_.get<int>("cell number width", cellnum_width_);
-  decimal_width_ = plist_.get<int>("decimal width", decimal_width_);
-  header_width_ = plist_.get<int>("header width", header_width_);
-  width_ = plist_.get<int>("column width", width_);
-  precision_ = plist_.get<int>("precision", precision_);
-}
-
-
-const AmanziMesh::Entity_ID_View&
-Debugger::get_cells() const
-{
-  return dc_gid_;
 }
 
 
@@ -125,65 +108,10 @@ Debugger::add_cells(const AmanziMesh::Entity_ID_View& dc)
 }
 
 
-std::string
-Debugger::Format_(double dat)
+const AmanziMesh::Entity_ID_View&
+Debugger::get_cells() const
 {
-  std::stringstream datastream;
-  if (dat == 0.) {
-    std::stringstream formatstream1;
-    formatstream1 << boost::format("%%%ds") % (decimal_width_);
-    std::stringstream formatstream2;
-    formatstream2 << boost::format("%%%ds") % (decimal_width_ - 1);
-
-    datastream << boost::format(formatstream1.str()) % std::string("") << "0."
-               << boost::format(formatstream2.str()) % std::string("");
-  } else {
-    int mag = std::floor(std::log10(std::abs(dat)));
-    if (mag < decimal_width_ && mag > -2) { // fixed format
-      std::stringstream formatstream1;
-      formatstream1 << boost::format("%%%ds") % (decimal_width_ - mag - 1);
-
-      std::stringstream formatstream2;
-      //formatstream2 << boost::format("%%%d.%df") % (width_ - (decimal_width_-mag-1)) % decimal_width_;
-      if (mag < 0) {
-        formatstream2 << boost::format("%%%df") % (width_ - (decimal_width_ - mag - 2));
-      } else {
-        formatstream2 << boost::format("%%%df") % (width_ - (decimal_width_ - mag - 1));
-      }
-
-      datastream << boost::format(formatstream1.str()) % std::string("")
-                 << boost::format(formatstream2.str()) % dat;
-
-    } else { // sci format
-      std::stringstream formatstream1;
-      formatstream1 << boost::format("%%%ds") % (decimal_width_ - 5);
-
-      std::stringstream formatstream2;
-      //formatstream2 << boost::format("%%%d.%df") % (width_ - (decimal_width_-mag-1)) % decimal_width_;
-      formatstream2 << boost::format("%%%de") % (width_ - (decimal_width_ - 5));
-
-      datastream << boost::format(formatstream1.str()) % std::string("")
-                 << boost::format(formatstream2.str()) % dat;
-    }
-  }
-  return datastream.str();
-}
-
-
-// note: vector name argument taken by value intentionally
-std::string
-Debugger::FormatHeader_(std::string header_prefix, int c)
-{
-  int header_prefix_width = header_width_ - cellnum_width_ - 4;
-  if (header_prefix.size() > header_prefix_width) {
-    header_prefix.erase(header_prefix_width);
-  } else if (header_prefix.size() < header_prefix_width) {
-    header_prefix.append(header_prefix_width - header_prefix.size(), ' ');
-  }
-
-  std::stringstream headerstream;
-  headerstream << header_prefix << "(" << std::setw(cellnum_width_) << std::right << c << "): ";
-  return headerstream.str();
+  return dc_gid_;
 }
 
 
@@ -257,15 +185,16 @@ Debugger::WriteVector(const std::string& vname,
       Teuchos::OSTab tab = dcvo_[i]->getOSTab();
 
       if (dcvo_[i]->os_OK(verb_level_)) {
-        *dcvo_[i]->os() << FormatHeader_(vname, c0_gid);
+        *dcvo_[i]->os() << formatter_.formatHeader(vname, c0_gid);
 
-        if (vec_c != Teuchos::null) *dcvo_[i]->os() << Format_((*vec_c)[j][c0]);
+        if (vec_c != Teuchos::null) *dcvo_[i]->os() << " " << formatter_.format((*vec_c)[j][c0]);
 
         if (include_faces && vec_f != Teuchos::null) {
           auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
           for (unsigned int n = 0; n != fnums0.size(); ++n)
-            if (fnums0[n] < nfaces_valid) *dcvo_[i]->os() << " " << Format_((*vec_f)[j][fnums0[n]]);
+            if (fnums0[n] < nfaces_valid)
+              *dcvo_[i]->os() << " " << formatter_.format((*vec_f)[j][fnums0[n]]);
         }
 
         if (include_faces && vec_bf != Teuchos::null) {
@@ -276,7 +205,8 @@ Debugger::WriteVector(const std::string& vname,
             AmanziMesh::Entity_ID bf =
               mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true)
                 .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, true).GID(f));
-            if (bf >= 0 && bf < nbfaces_valid) *dcvo_[i]->os() << " " << Format_((*vec_bf)[j][bf]);
+            if (bf >= 0 && bf < nbfaces_valid)
+              *dcvo_[i]->os() << " " << formatter_.format((*vec_bf)[j][bf]);
           }
         }
         *dcvo_[i]->os() << std::endl;
@@ -298,7 +228,8 @@ Debugger::WriteCellVector(const std::string& name, const Epetra_MultiVector& vec
       Teuchos::OSTab tab = dcvo_[i]->getOSTab();
 
       if (dcvo_[i]->os_OK(verb_level_)) {
-        *dcvo_[i]->os() << FormatHeader_(name, c0_gid) << Format_(vec[j][c0]) << std::endl;
+        *dcvo_[i]->os() << formatter_.formatHeader(name, c0_gid) << formatter_.format(vec[j][c0])
+                        << std::endl;
       }
     }
   }
@@ -312,10 +243,6 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
                        bool include_faces)
 {
   AMANZI_ASSERT(names.size() == vecs.size());
-
-  std::stringstream formatstream;
-  formatstream << "%_" << width_ << "." << precision_ << "g";
-  std::string format = formatstream.str();
 
   for (int i = 0; i != dc_.size(); ++i) {
     AmanziMesh::Entity_ID c0 = dc_[i];
@@ -347,14 +274,14 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
         }
 
         for (int j = 0; j != n_vec; ++j) {
-          *dcvo_[i]->os() << FormatHeader_(name, c0_gid);
-          if (vec_c != Teuchos::null) *dcvo_[i]->os() << Format_((*vec_c)[j][c0]);
+          *dcvo_[i]->os() << formatter_.formatHeader(name, c0_gid);
+          if (vec_c != Teuchos::null) *dcvo_[i]->os() << " " << formatter_.format((*vec_c)[j][c0]);
 
           if (include_faces && vec_f != Teuchos::null) {
             auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
             for (unsigned int n = 0; n != fnums0.size(); ++n)
-              *dcvo_[i]->os() << " " << Format_((*vec_f)[j][fnums0[n]]);
+              *dcvo_[i]->os() << " " << formatter_.format((*vec_f)[j][fnums0[n]]);
           }
 
           if (include_faces && vec_bf != Teuchos::null) {
@@ -365,7 +292,7 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
               AmanziMesh::Entity_ID bf =
                 mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true)
                   .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, true).GID(f));
-              if (bf >= 0) *dcvo_[i]->os() << " " << Format_((*vec_bf)[j][bf]);
+              if (bf >= 0) *dcvo_[i]->os() << " " << formatter_.format((*vec_bf)[j][bf]);
             }
           }
 
@@ -381,9 +308,10 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
 void
 Debugger::WriteBoundaryConditions(const std::vector<int>& flag, const std::vector<double>& data)
 {
-  std::stringstream formatstream;
-  formatstream << "%_" << width_ << "." << precision_ << "g";
-  std::string format = formatstream.str();
+  // bcs use 3 extra characters
+  int width = formatter_.getWidth();
+  int precision = formatter_.getPrecision();
+  formatter_.setWidth(width - 2); // note, this may also change precision
 
   for (int i = 0; i != dc_.size(); ++i) {
     AmanziMesh::Entity_ID c0 = dc_[i];
@@ -391,14 +319,17 @@ Debugger::WriteBoundaryConditions(const std::vector<int>& flag, const std::vecto
     Teuchos::OSTab tab = dcvo_[i]->getOSTab();
 
     if (dcvo_[i]->os_OK(verb_level_)) {
-      *dcvo_[i]->os() << FormatHeader_("BCs", c0_gid);
+      *dcvo_[i]->os() << formatter_.formatHeader("BCs", c0_gid);
       auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
       for (unsigned int n = 0; n != fnums0.size(); ++n)
-        *dcvo_[i]->os() << " " << flag[fnums0[n]] << "(" << Format_(data[fnums0[n]]) << ")";
+        *dcvo_[i]->os() << flag[fnums0[n]] << "(" << formatter_.format(data[fnums0[n]]) << ")";
       *dcvo_[i]->os() << std::endl;
     }
   }
+
+  formatter_.setWidth(width);
+  formatter_.setPrecision(precision);
 }
 
 

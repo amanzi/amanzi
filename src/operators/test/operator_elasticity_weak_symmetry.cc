@@ -102,7 +102,6 @@ RunTest(double mu, double lambda, bool flag)
   std::vector<std::vector<double>>& bcf_value = bcf->bc_value_vector(4);
 
   for (int f = 0; f < nfaces_wghost; ++f) {
-    double area = mesh->getFaceArea(f);
     const auto& xf = mesh->getFaceCentroid(f);
     const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
 

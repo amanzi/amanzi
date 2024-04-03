@@ -40,6 +40,13 @@ PDF = $(SRC:%.rst=%.pdf)
 %.rst:
 	@./AmanziNativeSpec.py $< $@
 
+help:
+	@echo '-------------------------------------------------------'
+	@echo 'Available options:'
+	@echo '   rst    - converts file.pre to file.rst'
+	@echo '   sphinx - converts file.rst to file.html'
+	@echo '-------------------------------------------------------'
+
 sphinx:
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 

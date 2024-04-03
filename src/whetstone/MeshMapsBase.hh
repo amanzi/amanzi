@@ -19,8 +19,8 @@
   and 1. Thus, the linearized velocity is v = F(x) - x.
 */
 
-#ifndef AMANZI_WHETSTONE_MESH_MAPS_HH_
-#define AMANZI_WHETSTONE_MESH_MAPS_HH_
+#ifndef AMANZI_WHETSTONE_MESH_MAPS_BASE_HH_
+#define AMANZI_WHETSTONE_MESH_MAPS_BASE_HH_
 
 #include "Teuchos_RCP.hpp"
 
@@ -38,15 +38,16 @@ namespace WhetStone {
 
 class Polynomial;
 
-class MeshMaps {
+class MeshMapsBase {
  public:
-  MeshMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+  MeshMapsBase(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : mesh0_(mesh), mesh1_(mesh), d_(mesh1_->getSpaceDimension()){};
 
-  MeshMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh0, Teuchos::RCP<const AmanziMesh::Mesh> mesh1)
+  MeshMapsBase(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
+               Teuchos::RCP<const AmanziMesh::Mesh> mesh1)
     : mesh0_(mesh0), mesh1_(mesh1), d_(mesh1_->getSpaceDimension()){};
 
-  virtual ~MeshMaps(){};
+  virtual ~MeshMapsBase(){};
 
   // Maps
   // -- pseudo-velocity
@@ -95,7 +96,7 @@ class MeshMaps {
 ****************************************************************** */
 template <typename Matrix>
 void
-MeshMaps::Cofactors(const Matrix& J, Matrix& C) const
+MeshMapsBase::Cofactors(const Matrix& J, Matrix& C) const
 {
   // allocate memory for matrix of cofactors
   C.Reshape(d_, d_, d_, 0, false);
@@ -130,7 +131,7 @@ MeshMaps::Cofactors(const Matrix& J, Matrix& C) const
 ****************************************************************** */
 template <typename Matrix, typename Poly>
 void
-MeshMaps::Determinant(const Matrix& J, Poly& det) const
+MeshMapsBase::Determinant(const Matrix& J, Poly& det) const
 {
   if (d_ == 2) {
     det = J(0, 0) * J(1, 1) - J(0, 1) * J(1, 0);

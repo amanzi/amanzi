@@ -70,13 +70,8 @@ TEST(SYMMETRY_2D)
   S->CheckAllFieldsInitialized();
 
   // solve the problem
-  double dT(1.0), dTnext;
-  Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
-  udot->PutScalar(0.0);
-  EPK->bdf1_dae()->SetInitialState(0.0, soln, udot);
-  EPK->UpdatePreconditioner(0.0, soln, dT);
-
-  EPK->bdf1_dae()->TimeStep(dT, dTnext, soln);
+  double dT(1.0);
+  EPK->AdvanceStep(0.0, dT);
   EPK->CommitStep(0.0, dT, Tags::DEFAULT);
 
   // initialize I/O

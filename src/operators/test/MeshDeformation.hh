@@ -16,9 +16,10 @@
 #ifndef AMANZI_OPERATOR_DEFORM_MESH_HH_
 #define AMANZI_OPERATOR_DEFORM_MESH_HH_
 
-#include "Mesh.hh"
-#include "MeshCurved.hh"
 #include "CompositeVector.hh"
+#include "Mesh.hh"
+#include "MeshHelpers.hh"
+#include "MeshCurved.hh"
 
 #include "OperatorDefs.hh"
 
@@ -70,7 +71,7 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
   int d = mesh1->getSpaceDimension();
 
   // consistent parallel data are needed for the random mesh deformation
-  AmanziMesh::Entity_ID_View bnd_ids;
+  AmanziMesh::cEntity_ID_View bnd_ids;
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh1)->SetGhosted(true)->AddComponent("node", AmanziMesh::Entity_kind::NODE, d);
   CompositeVector random(cvs);
@@ -84,17 +85,16 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
     random_n.Scale(scale);
     random.ScatterMasterToGhosted();
 
-    std::vector<double> vofs;
-    mesh1->getSetEntitiesAndVolumeFractions(
-      "Boundary", AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL, &bnd_ids, &vofs);
+    AmanziMesh::cDouble_View vofs;
+    Kokkos::tie(bnd_ids, vofs) = mesh1->getSetEntitiesAndVolumeFractions(
+      "Boundary", AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
   }
 
   // relocate mesh nodes
-  AmanziGeometry::Point xv(d), yv(d), uv(d);
-  AmanziMesh::Entity_ID_View nodeids;
-  AmanziGeometry::Point_View new_positions, final_positions;
-
   int nnodes = mesh1->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
+  AmanziGeometry::Point xv(d), yv(d), uv(d);
+  AmanziMesh::Entity_ID_View nodeids("nodeids", nnodes);
+  AmanziMesh::Point_View new_positions("newpos", nnodes);
 
   for (int v = 0; v < nnodes; ++v) {
     if (mesh0.get())
@@ -102,7 +102,7 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
     else
       xv = mesh1->getNodeCoordinate(v);
 
-    nodeids.push_back(v);
+    nodeids[v] = v;
 
     if (deform == 7) {
       yv = xv;
@@ -113,9 +113,9 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
       yv = MovePoint(t, xv, deform);
     }
 
-    new_positions.push_back(yv);
+    new_positions[v] = yv;
   }
-  mesh1->deform(nodeids, new_positions, false, &final_positions);
+  AmanziMesh::deform(*mesh1, nodeids, new_positions);
 }
 
 
@@ -135,8 +135,8 @@ DeformMeshCurved(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
   if (order > 1) {
     int nfaces =
       mesh0->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
-    auto ho_nodes0f = std::make_shared<std::vector<AmanziGeometry::Point_View>>(nfaces);
-    auto ho_nodes1f = std::make_shared<std::vector<AmanziGeometry::Point_View>>(nfaces);
+    auto ho_nodes0f = std::make_shared<std::vector<AmanziGeometry::Point_List>>(nfaces);
+    auto ho_nodes1f = std::make_shared<std::vector<AmanziGeometry::Point_List>>(nfaces);
 
     for (int f = 0; f < nfaces; ++f) {
       const AmanziGeometry::Point& xf = mesh0->getFaceCentroid(f);
@@ -146,14 +146,16 @@ DeformMeshCurved(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
       (*ho_nodes1f)[f].push_back(yv);
     }
     auto tmp = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(mesh0);
-    Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp)->set_face_ho_nodes(ho_nodes0f);
-    Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1)->set_face_ho_nodes(ho_nodes1f);
+    Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp->getMeshFramework())
+      ->set_face_ho_nodes(ho_nodes0f);
+    Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1->getMeshFramework())
+      ->set_face_ho_nodes(ho_nodes1f);
 
     if (dim == 3) {
       int nedges =
         mesh0->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::ALL);
-      auto ho_nodes0e = std::make_shared<std::vector<AmanziGeometry::Point_View>>(nedges);
-      auto ho_nodes1e = std::make_shared<std::vector<AmanziGeometry::Point_View>>(nedges);
+      auto ho_nodes0e = std::make_shared<std::vector<AmanziGeometry::Point_List>>(nedges);
+      auto ho_nodes1e = std::make_shared<std::vector<AmanziGeometry::Point_List>>(nedges);
 
       for (int e = 0; e < nedges; ++e) {
         const AmanziGeometry::Point& xe = mesh0->getEdgeCentroid(e);
@@ -162,8 +164,10 @@ DeformMeshCurved(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
         auto yv = MovePoint(t, xe, deform);
         (*ho_nodes1e)[e].push_back(yv);
       }
-      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp)->set_edge_ho_nodes(ho_nodes0e);
-      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1)->set_edge_ho_nodes(ho_nodes1e);
+      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp->getMeshFramework())
+        ->set_edge_ho_nodes(ho_nodes0e);
+      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1->getMeshFramework())
+        ->set_edge_ho_nodes(ho_nodes1e);
     }
   }
 }

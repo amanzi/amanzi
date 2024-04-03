@@ -67,7 +67,7 @@ class Porosity {
   virtual double PorosityValue(double p) = 0;
   virtual double dPorositydPressure(double p) = 0; // derivative wrt to pressure
 
-  virtual double getBiotCoefficient() = 0;
+  virtual std::pair<double, double> getThermalCoefficients() = 0;
 };
 
 } // namespace Flow

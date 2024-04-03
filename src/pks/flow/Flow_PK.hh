@@ -272,6 +272,7 @@ class Flow_PK : public PK_PhysicalBDF {
   // members required by PK interface
   virtual void Setup() override;
   virtual void Initialize() override;
+  virtual void CalculateDiagnostics(const Tag& tag) override { UpdateLocalFields_(S_.ptr()); }
 
   // other members of this PK.
   // -- initialize simple fields common for both flow models.
@@ -316,11 +317,14 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::BCs> op_bc() { return op_bc_; }
   double seepage_mass() { return seepage_mass_; } // support of unit tests
 
+ protected:
+  void Setup_FlowRates_(bool mass_to_molar, double molar_rho);
+  void Setup_LocalFields_();
+  void InitializeBCsSources_(Teuchos::ParameterList& list);
+  void ComputeMolarFlowRate_(bool mass_to_molar);
+
  private:
   void InitializeFields_();
-
- protected:
-  void InitializeBCsSources_(Teuchos::ParameterList& list);
 
  public:
   int ncells_owned, ncells_wghost;
@@ -363,9 +367,8 @@ class Flow_PK : public PK_PhysicalBDF {
   mutable double mass_bc, seepage_mass_, mass_initial;
 
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
-  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> vol_flowrate_eval_;
-  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> pressure_eval_,
-    pressure_msp_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> pressure_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> pressure_msp_eval_;
 
   // DFN model
   bool flow_on_manifold_; // true for the DFN model
@@ -379,8 +382,8 @@ class Flow_PK : public PK_PhysicalBDF {
   Key porosity_key_, hydraulic_head_key_, pressure_head_key_;
   Key permeability_key_, permeability_eff_key_;
   Key water_storage_key_, prev_water_storage_key_;
-  Key viscosity_liquid_key_, mol_density_liquid_key_;
-  Key prev_aperture_key_, aperture_key_, bulk_modulus_key_, hydrostatic_stress_key_;
+  Key viscosity_liquid_key_, mol_density_liquid_key_, mass_density_liquid_key_;
+  Key aperture_key_, bulk_modulus_key_, hydrostatic_stress_key_;
 
   // io
   Utils::Units units_;

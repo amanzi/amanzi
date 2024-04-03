@@ -406,7 +406,6 @@
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="use block indices" type="bool" value="true"/>
         <Parameter name="verbosity" type="int" value="0"/>
-        <Parameter name="relaxation type" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Block ILU">

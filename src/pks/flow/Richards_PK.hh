@@ -68,7 +68,6 @@ class Richards_PK : public Flow_PK {
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
-  virtual void CalculateDiagnostics(const Tag& tag) override;
 
   virtual std::string name() override { return Keys::getKey(domain_, "richards"); }
 
@@ -205,12 +204,12 @@ class Richards_PK : public Flow_PK {
 
   // miscaleneous models
   Key ppfactor_key_, vol_strain_key_;
-  bool use_strain_;
+  bool poroelasticity_, thermoelasticity_;
 
   // multiscale models
   Key pressure_msp_key_, porosity_msp_key_;
   Key water_storage_msp_key_, prev_water_storage_msp_key_;
-  Key mass_density_liquid_key_, temperature_key_;
+  Key temperature_key_;
 
   bool multiscale_porosity_;
   int ms_itrs_;
@@ -230,7 +229,7 @@ class Richards_PK : public Flow_PK {
   int functional_max_cell;
 
   // copies of state fields
-  Teuchos::RCP<CompositeVector> vol_flowrate_copy;
+  Teuchos::RCP<CompositeVector> mol_flowrate_copy;
 
   // upwind
   int upwind_frequency_;

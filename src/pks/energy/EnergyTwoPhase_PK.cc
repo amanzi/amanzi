@@ -162,6 +162,9 @@ EnergyTwoPhase_PK::Setup()
   if (!S_->HasRecord(particle_density_key_)) {
     S_->Require<CV_t, CVS_t>(particle_density_key_, Tags::DEFAULT, particle_density_key_);
   }
+
+  // units
+  S_->GetRecordSetW(enthalpy_key_).set_units("J/mol");
 }
 
 

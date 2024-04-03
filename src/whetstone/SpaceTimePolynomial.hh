@@ -122,7 +122,7 @@ class SpaceTimePolynomial {
   double NormInf() const
   {
     double val(0.0);
-    for (int i = 0; i < size_; ++i) std::max(val, coefs_[i].NormInf());
+    for (int i = 0; i < size_; ++i) val = std::max(val, coefs_[i].NormInf());
     return val;
   }
 

@@ -20,7 +20,6 @@ include(LibraryManager)
 # through these variables.
 project(ATK)
 
-include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${EXPRTK_INLCUDE_DIR})
@@ -28,6 +27,7 @@ include_directories(${EXPRTK_INLCUDE_DIR})
 add_amanzi_library(atk
                    SOURCE AmanziComm.cc
                           ExprTK.cc
+                          Formatter.cc
                           HDF5Reader.cc
                           IOEvent.cc
                           Key.cc
@@ -45,6 +45,7 @@ add_amanzi_library(atk
                            ExprTK.hh
                            Factory.hh
                            FIFO_Set.hh
+                           Formatter.hh
                            HDF5Reader.hh
                            IOEvent.hh
                            Iterators.hh
@@ -96,6 +97,11 @@ if (BUILD_TESTS)
     add_amanzi_test(utils_verbosity utils_verbosity
                     KIND unit
                     SOURCE test/Main.cc test/utils_verboseobject.cc
+                    LINK_LIBS atk ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(utils_formatter utils_formatter
+                    KIND unit
+                    SOURCE test/Main.cc test/utils_formatter.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
 
     add_amanzi_test(utils_units utils_units

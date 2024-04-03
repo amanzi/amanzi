@@ -74,30 +74,15 @@ TEST(CLAMPED_BEAM)
   int max_itrs = plist->get<int>("max iterations", 50);
   double T1 = plist->get<double>("end time", 100.0);
   double dT = plist->get<double>("initial time step", 1.0);
-  double T(0.0), T0(0.0), dT0(dT), dTnext;
+  double T(0.0);
 
   while (T < T1 && itrs < max_itrs) {
-    if (itrs == 0) {
-      Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
-      udot->PutScalar(0.0);
-      EPK->bdf1_dae()->SetInitialState(T0, soln, udot);
-      EPK->UpdatePreconditioner(T0, soln, dT0);
-    }
+    EPK->AdvanceStep(T, T + dT);
+    EPK->CommitStep(T, T + dT, Tags::DEFAULT);
 
-    while (EPK->bdf1_dae()->TimeStep(dT, dTnext, soln)) { dT = dTnext; }
-    EPK->bdf1_dae()->CommitSolution(dT, soln);
-
-    T = EPK->bdf1_dae()->time();
-    dT = dTnext;
+    T += dT;
+    dT *= 1.2;
     itrs++;
-
-    // reset primary fields
-    auto eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(
-      S->GetEvaluatorPtr("displacement", Tags::DEFAULT));
-    eval->SetChanged();
-
-    // commit step
-    EPK->CommitStep(T - dT, T, Tags::DEFAULT);
   }
 
   // update mesh

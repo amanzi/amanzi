@@ -69,7 +69,7 @@ void
 MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
 {
   if (d_ == 2) {
-    MeshMaps::VelocityFace(f, vf);
+    MeshMapsBase::VelocityFace(f, vf);
   } else {
     auto [edges, dirs] = mesh0_->getFaceEdgesAndDirections(f);
     int nedges = edges.size();
@@ -87,7 +87,7 @@ MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
 
       for (int n = 0; n < nedges; ++n) {
         int e = edges[n];
-        MeshMaps::VelocityEdge(e, v);
+        MeshMapsBase::VelocityEdge(e, v);
         ve.push_back(v[i]);
       }
 

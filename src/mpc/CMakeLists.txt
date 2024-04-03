@@ -1,5 +1,3 @@
-# -*- mode: cmake -*-
-
 #
 #  Amanzi
 #    Mulitprocess Coordinator (MPC)
@@ -59,7 +57,6 @@ get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
 include_directories(${CHEM_INCLUDES_DIR})
 
 # External (TPL) include directories
-include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_C_INCLUDE_DIR})
@@ -69,8 +66,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Library: mpc
 #
-set(boost_libs_used ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-set(mpc_tpl_libs ${boost_libs_used} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ) 
+set(mpc_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}) 
 list(REVERSE mpc_tpl_libs)
 list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lpritch
 list(REVERSE mpc_tpl_libs)
@@ -162,6 +158,11 @@ if (BUILD_TESTS)
     add_amanzi_test(mpc_thermal_darcy_dfn mpc_thermal_darcy_dfn
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_thermal_darcy_dfn.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(mpc_thermal_richards_jacobian mpc_thermal_richards_jacobian
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_thermal_richards_jacobian.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: mpc driver for flow and reactive transport
@@ -317,6 +318,7 @@ if (BUILD_TESTS)
 
     add_amanzi_test(mpc_mechanics_mandel mpc_mechanics_mandel
                     KIND      int
+                    NPROCS    3
                     SOURCE    test/Main.cc test/mpc_mechanics_mandel.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
@@ -325,6 +327,39 @@ if (BUILD_TESTS)
                     KIND      int
                     NPROCS    3
                     SOURCE    test/Main.cc test/mpc_mechanics_stress_split.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
+
+    add_amanzi_test(mpc_mechanics_thermal_flow mpc_mechanics_thermal_flow
+                    KIND      int
+                    NPROCS    3
+                    SOURCE    test/Main.cc test/mpc_mechanics_thermal_flow.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
+
+    add_amanzi_test(mpc_mechanics_thermal_flow_3D mpc_mechanics_thermal_flow_3D
+                    KIND      int
+                    NPROCS    3
+                    SOURCE    test/Main.cc test/mpc_mechanics_thermal_flow_3D.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
+
+    add_amanzi_test(mpc_biot_consolidation mpc_biot_consolidation
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_biot_consolidation.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
+
+    add_amanzi_test(mpc_biot_schiffman mpc_biot_schiffman
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_biot_schiffman.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
+
+    add_amanzi_test(mpc_biot_mcnamee_gibson mpc_biot_mcnamee_gibson
+                    KIND      int
+                    NPROCS    3
+                    SOURCE    test/Main.cc test/mpc_biot_mcnamee_gibson.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 endif()

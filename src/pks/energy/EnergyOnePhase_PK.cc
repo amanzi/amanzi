@@ -125,7 +125,7 @@ EnergyOnePhase_PK::Setup()
   }
 
   // set units
-  S_->GetRecordSetW(energy_key_).set_units("J");
+  S_->GetRecordSetW(energy_key_).set_units("J/m^3");
   S_->GetRecordSetW(enthalpy_key_).set_units("J/mol");
 }
 
@@ -266,8 +266,6 @@ EnergyOnePhase_PK::InitializeFields_()
         *vo_->os() << "initialized prev_energy to previous energy" << std::endl;
     }
   }
-
-  InitializeCVFieldFromCVField(S_, *vo_, prev_aperture_key_, aperture_key_, passwd_);
 }
 
 
