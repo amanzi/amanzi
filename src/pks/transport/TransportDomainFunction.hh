@@ -108,9 +108,9 @@ class TransportDomainFunction {
 //   }
 
 
-void inline copyToCompositeVector(const TransportDomainFunction& df, const Epetra_MultiVector& mv)
+void inline copyToCompositeVector(const TransportDomainFunction& df, CompositeVector& cv)
 {
-  // const Epetra_MultiVector& mv = *cv.ViewComponent(compname, true);
+  Epetra_MultiVector& mv = *cv.ViewComponent("cell", true);
   for (const auto& val : df) {
     AMANZI_ASSERT(val.second.size() == mv.NumVectors());
     for (int j=0; j!=mv.NumVectors(); ++j) {
