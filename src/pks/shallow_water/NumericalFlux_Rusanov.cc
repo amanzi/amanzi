@@ -33,7 +33,10 @@ NumericalFlux_Rusanov::NumericalFlux_Rusanov(Teuchos::ParameterList& plist)
 * Numerical flux
 ****************************************************************** */
 std::vector<double>
-NumericalFlux_Rusanov::Compute(const std::vector<double>& UL, const std::vector<double>& UR)
+NumericalFlux_Rusanov::Compute(const std::vector<double>& UL,
+                               const std::vector<double>& UR,
+                               const double& HPFL,
+                               const double& HPFR)
 {
   std::vector<double> FL, FR, F(3);
 
@@ -50,8 +53,8 @@ NumericalFlux_Rusanov::Compute(const std::vector<double>& UL, const std::vector<
   factor = 2.0 * hR / (hR * hR + std::fmax(hR * hR, eps * eps));
   uR = factor * UR[1];
 
-  FL = PhysicalFlux(UL);
-  FR = PhysicalFlux(UR);
+  FL = PhysicalFlux(UL, HPFL);
+  FR = PhysicalFlux(UR, HPFR);
 
   double SL, SR, Smax;
 
