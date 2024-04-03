@@ -7,24 +7,17 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Svetlana Tokareva (tokareva@lanl.gov)
+          Giacomo Capodaglio (gcapodaglio@lanl.gov)
 */
 
 
 #include "ShallowWater_PK.hh"
-
-namespace Amanzi {
-namespace ShallowWater {
-
-RegisteredPKFactory<ShallowWater_PK> ShallowWater_PK::reg_("shallow water");
-
-} // namespace ShallowWater
-} // namespace Amanzi
-
 #include "PipeFlow_PK.hh"
 
 namespace Amanzi {
 namespace ShallowWater {
 
+RegisteredPKFactory<ShallowWater_PK> ShallowWater_PK::reg_("shallow water");
 RegisteredPKFactory<PipeFlow_PK> PipeFlow_PK::reg_("pipe flow");
 
 } // namespace ShallowWater
