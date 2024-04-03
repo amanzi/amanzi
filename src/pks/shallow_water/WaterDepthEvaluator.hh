@@ -39,9 +39,6 @@ class WaterDepthEvaluator
                                           const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
- protected:
-  double TwoPi = 6.28318530718;
-
  private:
   std::string wetted_angle_key_;
   std::string primary_variable_key_;

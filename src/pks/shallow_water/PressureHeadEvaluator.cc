@@ -65,8 +65,8 @@ PressureHeadEvaluator::Evaluate_(const State& S, const std::vector<CompositeVect
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
-    double pipeCrossSection = Pi * 0.25 * PipeD_c[0][c] * PipeD_c[0][c];
-    if (WettedAngle_c[0][c] >= TwoPi) {
+    double pipeCrossSection = M_PI * 0.25 * PipeD_c[0][c] * PipeD_c[0][c];
+    if (WettedAngle_c[0][c] >= (2.0 * M_PI)) {
       result_c[0][c] =
         (celerity_ * celerity_ * (WettedArea_c[0][c] - pipeCrossSection)) / (g * pipeCrossSection);
     } else {
@@ -94,8 +94,8 @@ PressureHeadEvaluator::EvaluatePartialDerivative_(const State& S,
   int ncells = result_c.MyLength();
   if (wrt_key == wetted_angle_key_) {
     for (int c = 0; c != ncells; ++c) {
-      double pipeCrossSection = Pi * 0.25 * PipeD_c[0][c] * PipeD_c[0][c];
-      if (WettedAngle_c[0][c] >= TwoPi) {
+      double pipeCrossSection = M_PI * 0.25 * PipeD_c[0][c] * PipeD_c[0][c];
+      if (WettedAngle_c[0][c] >= (2.0 * M_PI)) {
         result_c[0][c] = (celerity_ * celerity_) / (g * pipeCrossSection);
         ;
       } else {
