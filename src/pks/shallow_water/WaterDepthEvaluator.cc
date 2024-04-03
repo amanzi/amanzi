@@ -64,10 +64,10 @@ WaterDepthEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
-    if (WettedAngle_c[0][c] >= TwoPi) {
+    if (WettedAngle_c[0][c] >= (2.0 * M_PI)) {
       // this means the pipe flow is pressurized
       result_c[0][c] = PipeD_c[0][c];
-    } else if (WettedAngle_c[0][c] < TwoPi && WettedAngle_c[0][c] >= 0.0) {
+    } else if (WettedAngle_c[0][c] < (2.0 * M_PI) && WettedAngle_c[0][c] >= 0.0) {
       // this means the pipe flow is ventilated
       result_c[0][c] = PipeD_c[0][c] * 0.5 * (1.0 - cos(WettedAngle_c[0][c] * 0.5));
     } else {
@@ -94,7 +94,7 @@ WaterDepthEvaluator::EvaluatePartialDerivative_(const State& S,
   int ncells = result_c.MyLength();
   if (wrt_key == wetted_angle_key_) {
     for (int c = 0; c != ncells; ++c) {
-      if (WettedAngle_c[0][c] >= TwoPi || WettedAngle_c[0][c] < 0.0) {
+      if (WettedAngle_c[0][c] >= (2.0 * M_PI) || WettedAngle_c[0][c] < 0.0) {
         result_c[0][c] = 0.0;
       } else {
         result_c[0][c] = PipeD_c[0][c] * 0.25 * sin(WettedAngle_c[0][c] * 0.5);

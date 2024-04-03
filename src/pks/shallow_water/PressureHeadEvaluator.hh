@@ -41,8 +41,6 @@ class PressureHeadEvaluator
 
  protected:
   double celerity_;
-  double Pi = 3.14159265359;
-  double TwoPi = 6.28318530718;
 
  private:
   std::string wetted_angle_key_, wetted_area_key_, diameter_key_;

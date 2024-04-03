@@ -173,8 +173,6 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
     return g_ * 0.5 * Data[0] * Data[0];
   };
 
-  void PushBackBC(Teuchos::RCP<ShallowWaterBoundaryFunction> bc) { bcs_.push_back(bc); };
-
   double inverse_with_tolerance(double h, double tol);
 
   // access
@@ -222,9 +220,6 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   double g_;
 
   double velocity_desingularization_eps_;
-
-  double Pi = 3.14159265359;
-  double TwoPi = 6.28318530718;
 
   // boundary conditions
   std::vector<Teuchos::RCP<ShallowWaterBoundaryFunction>> bcs_;
