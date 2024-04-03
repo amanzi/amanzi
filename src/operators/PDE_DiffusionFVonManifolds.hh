@@ -36,12 +36,14 @@ namespace Operators {
 
 class BCs;
 
-class PDE_DiffusionFVonManifolds : public virtual PDE_Diffusion, public PDE_DiffusionWithGravity {
+class PDE_DiffusionFVonManifolds : public PDE_DiffusionWithGravity {
  public:
   PDE_DiffusionFVonManifolds(Teuchos::ParameterList& plist,
                              const Teuchos::RCP<Operator>& global_op,
                              bool flag)
-    : PDE_Diffusion(global_op), PDE_DiffusionWithGravity(global_op), beta_initialized_(false)
+    : PDE_DiffusionWithGravity(global_op),
+      PDE_Diffusion(global_op),
+      beta_initialized_(false)
   {
     pde_type_ = PDE_DIFFUSION_FV_MANIFOLDS;
     Init_(plist);
@@ -49,7 +51,9 @@ class PDE_DiffusionFVonManifolds : public virtual PDE_Diffusion, public PDE_Diff
 
   PDE_DiffusionFVonManifolds(Teuchos::ParameterList& plist,
                              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : PDE_Diffusion(mesh), PDE_DiffusionWithGravity(mesh), beta_initialized_(false)
+    : PDE_DiffusionWithGravity(mesh),
+      PDE_Diffusion(mesh),
+      beta_initialized_(false)
   {
     pde_type_ = PDE_DIFFUSION_FV_MANIFOLDS;
     Init_(plist);

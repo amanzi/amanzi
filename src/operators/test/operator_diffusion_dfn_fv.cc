@@ -149,6 +149,8 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
       (*K)[c](0,0) = ana->ScalarDiffusivity(xc, 0.0);
     }
     op->SetTensorCoefficient(K);
+    op->SetDensity(0.);
+    op->SetGravity(gvec);
   } else if (icase == 3) {
     auto k = Teuchos::rcp(new CompositeVector(*cvs2));
     auto& k_f = *k->ViewComponent("face");
@@ -162,6 +164,8 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
       for (int i = 0; i < ndofs; ++i) k_f[0][g + i] = ana->ScalarDiffusivity(xf, 0.0);
     }
     op->SetScalarCoefficient(k, Teuchos::null);
+    op->SetDensity(0.);
+    op->SetGravity(gvec);
   }
 
   // create optional source term
