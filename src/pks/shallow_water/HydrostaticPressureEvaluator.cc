@@ -31,9 +31,18 @@ HydrostaticPressureEvaluator::HydrostaticPressureEvaluator(Teuchos::ParameterLis
   }
   std::string domain = Keys::getDomain(my_keys_[0].first);
 
-  ponded_depth_key_ =
-    plist_.get<std::string>("ponded depth key", Keys::getKey(domain, "ponded_depth"));
-  dependencies_.insert(std::make_pair(ponded_depth_key_, Tags::DEFAULT));
+  if (domain == "surface" || domain == "street") {
+    primary_variable_key_ =
+      plist_.get<std::string>("ponded depth key", Keys::getKey(domain, "ponded_depth"));
+  } else if (domain == "pipe" || domain == "network") {
+    primary_variable_key_ =
+      plist_.get<std::string>("water depth key", Keys::getKey(domain, "water_depth"));
+  } else {
+    std::cout << "Unknown domain in hydrostatic pressure evaluator" << std::endl;
+    AMANZI_ASSERT(false);
+  }
+
+  dependencies_.insert(std::make_pair(primary_variable_key_, Tags::DEFAULT));
 }
 
 
@@ -54,7 +63,7 @@ void
 HydrostaticPressureEvaluator::Evaluate_(const State& S,
                                         const std::vector<CompositeVector*>& results)
 {
-  const auto& h_c = *S.Get<CompositeVector>(ponded_depth_key_).ViewComponent("cell");
+  const auto& h_c = *S.Get<CompositeVector>(primary_variable_key_).ViewComponent("cell");
   const double rho = S.Get<double>("const_fluid_density");
   const double patm = S.Get<double>("atmospheric_pressure");
   double g = norm(S.Get<AmanziGeometry::Point>("gravity"));
@@ -82,7 +91,7 @@ HydrostaticPressureEvaluator::EvaluatePartialDerivative_(
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
-  if (wrt_key == ponded_depth_key_) {
+  if (wrt_key == primary_variable_key_) {
     for (int c = 0; c != ncells; ++c) { result_c[0][c] = rho * g; }
   } else {
     AMANZI_ASSERT(false);
