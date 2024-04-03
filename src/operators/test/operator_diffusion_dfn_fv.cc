@@ -33,6 +33,7 @@
 
 // Amanzi::Operators
 #include "Analytic00b.hh"
+#include "Analytic01c.hh"
 #include "Analytic03b.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
@@ -90,8 +91,10 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
   Teuchos::RCP<AnalyticBase> ana;
   if (icase == 0 || icase == 1) {
     ana = Teuchos::rcp(new Analytic00b(surfmesh, 1.0, 2.0, 3.0, 1, v, gravity));
-  } else {
+  } else if (icase == 2) {
     ana = Teuchos::rcp(new Analytic03(surfmesh));
+  } else {
+    ana = Teuchos::rcp(new Analytic01c(surfmesh));
   }
 
   // create boundary data (Dirichlet everywhere)
@@ -232,7 +235,7 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
 
   if (MyPID == 0) {
     l2_err /= pnorm;
-    printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  norms=%9.6f %9.6f\n",
+    printf("rel norms: L2(p)=%9.6f Inf(p)=%9.6f L2(u)=%9.6g Inf(u)=%9.6f norms=%9.6f %9.6f\n",
            l2_err / pnorm,
            inf_err / pnorm,
            ul2_err / unorm,
