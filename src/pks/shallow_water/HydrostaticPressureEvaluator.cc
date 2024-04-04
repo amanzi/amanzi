@@ -31,7 +31,7 @@ HydrostaticPressureEvaluator::HydrostaticPressureEvaluator(Teuchos::ParameterLis
   }
   std::string domain = Keys::getDomain(my_keys_[0].first);
 
-  if (domain == "surface" || domain == "street") {
+  if (domain == "surface" || domain == "street" || domain == "domain") {
     primary_variable_key_ =
       plist_.get<std::string>("ponded depth key", Keys::getKey(domain, "ponded_depth"));
   } else if (domain == "pipe" || domain == "network") {
