@@ -186,13 +186,15 @@ PipeFlow_PK::NumericalSourceBedSlope(int c,
     double FaceAreaR = 0.0;
     double denomL = 0.0;
     double denomR = 0.0;
+    double tol = 1.e-9;
 
     for (int n = 0; n < cfaces.size(); ++n) {
       int f = cfaces[n];
+      double farea = mesh_->getFaceArea(f);
       AmanziGeometry::Point normal = mesh_->getFaceNormal(f, c, &dir);
       ProjectNormalOntoMeshDirection(c, normal);
 
-      if (normal[0] > 1.e-08) { //this identifies the j+1/2 face
+      if (normal[0] > (farea * tol)) { //this identifies the j+1/2 face
 
         auto cells = mesh_->getFaceCells(f);
         int c1 = cells[0];
@@ -212,7 +214,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c,
 
       }
 
-      else if (normal[0] < -1.e-08) { //this identifies the j-1/2 face
+      else if (normal[0] < -(farea * tol)) { //this identifies the j-1/2 face
 
         BGrad -= BathymetryEdgeValue(f, B_n); //B_(j+1/2) - //B_(j-1/2)
 
