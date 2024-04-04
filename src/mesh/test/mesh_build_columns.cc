@@ -67,6 +67,17 @@ TEST(MESH_COLUMNS)
   }
 }
 
+// To avoid error: The enclosing parent function ("RunImpl") for an extended __host__ __device__ lambda cannot have private or protected access within its class
+void test_mesh_columns_copy(const AmanziMesh::Mesh& mesh2){
+    Kokkos::parallel_for("access columns",
+                         mesh2.columns.num_columns_owned,
+                         KOKKOS_LAMBDA(const int col) {
+                           auto cells_of_col = mesh2.columns.getCells<MemSpace_kind::DEVICE>(col);
+                           assert((cells_of_col.extent(0) > 0));
+                           printf("the copy's column %d has %d entries", col, (int)cells_of_col.extent(0));
+                         });
+}
+
 TEST(MESH_COLUMNS_COPY)
 {
   // must be able to copy-construct the mesh and still get the columns (via lambda capture)
@@ -89,18 +100,13 @@ TEST(MESH_COLUMNS_COPY)
 
     // Create the mesh
     auto mesh = createStructuredUnitHex({ frm }, 3, 3, 10, comm, Teuchos::null, mesh_pars, 2, 3, 2);
+    cacheAll(*mesh); 
 
     // Explicitly call build columns method
     mesh->buildColumns();
 
-    AmanziMesh::Mesh mesh2(*mesh);
+    auto mesh2 = onMemDevice(*mesh);
     CHECK(mesh2.columns.num_columns_owned > 0);
-    Kokkos::parallel_for("access columns",
-                         mesh2.columns.num_columns_owned,
-                         KOKKOS_LAMBDA(const int col) {
-                           auto cells_of_col = mesh2.columns.getCells(col);
-                           assert((cells_of_col.extent(0) > 0));
-                           std::cout << "the copy's column " << col << " has " << cells_of_col.extent(0) << "entries" << std::endl;
-                         });
+    test_mesh_columns_copy(mesh2); 
   }
 }

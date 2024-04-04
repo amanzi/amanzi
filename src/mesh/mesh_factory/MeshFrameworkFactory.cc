@@ -393,7 +393,6 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const MeshHost>& inmesh,
 
   } else {
     MeshFramework::Entity_ID_View ids;
-    auto inmesh_host = onMemSpace<MemSpace_kind::HOST>(inmesh);
     for (auto name : setnames) {
       auto ids_l = inmesh->getSetEntities(name, setkind, Parallel_kind::OWNED);
       ids.insert(ids.end(), ids_l.begin(), ids_l.end());

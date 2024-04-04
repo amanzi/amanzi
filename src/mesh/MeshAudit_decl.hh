@@ -70,6 +70,7 @@ class MeshAudit_Geometry : public MeshAudit_Base<Mesh_type> {
   // test may assume certain mesh data has been verified, and that verification
   // is done by other tests.
   bool checkEntityCounts() const;
+  DISABLE_CUDA_WARNING
   bool checkCellToNodes() const;
   bool checkCellToFaces() const;
   bool checkFaceToNodes() const;

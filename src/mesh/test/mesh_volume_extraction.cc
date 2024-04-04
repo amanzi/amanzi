@@ -73,13 +73,13 @@ TEST(MESH_VOLUME_EXTRACTION_GENERATED)
 
     // make a MeshCache
     auto mesh = Teuchos::rcp(
-      new Mesh(vol_framework_mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+      new MeshHost(vol_framework_mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
     mesh->setParentMesh(parent_mesh);
     cacheAll(*mesh);
 
     // test the surface mesh as a 3x3 quad mesh
     // -- mesh audit
-    testMeshAudit<MeshAudit, Mesh>(mesh);
+    testMeshAudit<MeshAuditHost, MeshHost>(mesh);
     // -- geometry
     testGeometryCube(mesh, 3, 3, 3);
     // -- exterior maps
@@ -172,7 +172,7 @@ TEST(MESH_VOLUME_EXTRACTION_EXO)
     fac.set_preference({ frm });
     auto column_mesh_fw = fac.create(parent_mesh, cell_list, AmanziMesh::Entity_kind::CELL);
     auto column_mesh = Teuchos::rcp(
-      new Mesh(column_mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+      new MeshHost(column_mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
 
     // Number of cells in column mesh
     int ncells_col =

@@ -120,7 +120,7 @@ TEST(MESH_CACHED_DEFORM2D)
     AmanziMesh::cacheAll(*mesh);
 
     // deform and test
-    test2D<MeshAudit>(mesh);
+    test2D<MeshAuditHost>(mesh);
   }
 }
 
@@ -154,6 +154,6 @@ TEST(MESH_CACHED_GENERATED_DEFORM3D)
       createStructuredUnitHex({ frm }, 3, 3, 3, comm, Teuchos::null, Teuchos::null, 1.0, 1.0, 2.0);
     AmanziMesh::cacheAll(*mesh);
 
-    test3D<MeshAudit>(mesh);
+    test3D<MeshAuditHost>(mesh);
   }
 }

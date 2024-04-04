@@ -119,6 +119,9 @@ if (ENABLE_Tpetra)
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_CUDA:BOOL=ON")
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_CUSPARSE:BOOL=ON")
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_CUDA:BOOL=ON")
+    # This needs to be handled better, maybe a user option?
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_ASSUME_CUDA_AWARE_MPI:BOOL=OFF")
+
   else()
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_CUDA:BOOL=OFF")
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTPL_ENABLE_CUDA:BOOL=OFF")

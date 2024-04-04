@@ -79,8 +79,8 @@ struct ComputeFunction {
 //
 // See MeshCache::getCellVolume() for an example.
 //
-template <MemSpace_kind MEM = MemSpace_kind::HOST,
-          AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
+template <MemSpace_kind MEM,
+          AccessPattern_kind AP>
 struct Getter {
   // DATA: the View-type storing the quantity to be got
   // MF: the MeshFramework-like object
@@ -88,52 +88,92 @@ struct Getter {
   //     not-null, to get the quantity.
   // CF: the compute function -- a lambda or NullFunc
   template <typename DATA, typename MF, typename FF, typename CF>
-  static KOKKOS_INLINE_FUNCTION decltype(auto)
+  static decltype(auto)
   get(bool cached, DATA& d, MF& mf, FF&& f, CF&& c, const Entity_ID i)
   {
+    static_assert(MEM == MemSpace_kind::HOST); 
     using type_t = typename DATA::t_dev::traits::value_type;
     // To avoid the cast to non-reference
     if (cached) return static_cast<type_t>(view<MEM>(d)(i));
-    if constexpr (MEM == MemSpace_kind::HOST && (!std::is_same_v<FF, decltype(nullptr)>)) {
+    if constexpr (!std::is_same_v<FF, decltype(nullptr)>) {
       if (mf.get()) return f(i);
     }
     if constexpr (std::is_invocable_v<CF, const Entity_ID>) { return c(i); }
-    assert(false && "No access to cache/framework/compute available in Getter");
+    assert(false && "No access to cache/framework/compute available in HOST Getter");
     return type_t{};
   }
 }; // Getter
 
-// specialization for CACHE
-template <MemSpace_kind MEM>
-struct Getter<MEM, AccessPattern_kind::CACHE> {
-  template <typename DATA, typename MF, typename FF, typename CF>
+// Getters for DEVICE
+template<>
+struct Getter<MemSpace_kind::DEVICE, AccessPattern_kind::DEFAULT> {
+  DISABLE_CUDA_WARNING
+  template<typename DATA, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
+  get(bool cached, DATA& d, CF&& c, const Entity_ID i){
+    using type_t = typename DATA::t_dev::traits::value_type;
+    if (cached) return static_cast<type_t>(view<MemSpace_kind::DEVICE>(d)(i));
+    if constexpr (std::is_invocable_v<CF, const Entity_ID>) { return c(i); }
+    assert(false && "No access to cache/framework/compute available in DEVICE Getter");
+    return type_t{};
+  }
+};
+  
+template<>
+struct Getter<MemSpace_kind::DEVICE, AccessPattern_kind::CACHE> {
+  DISABLE_CUDA_WARNING
+  template<typename DATA, typename CF>
+  static KOKKOS_INLINE_FUNCTION decltype(auto)
+  get(bool cached, DATA& d, CF&&, const Entity_ID i){
+    assert(cached);
+    return view<MemSpace_kind::DEVICE>(d)(i);
+  }
+};
+
+template<>
+struct Getter<MemSpace_kind::DEVICE, AccessPattern_kind::COMPUTE> {
+  DISABLE_CUDA_WARNING
+  template <typename DATA, typename CF>
+  static KOKKOS_INLINE_FUNCTION decltype(auto)
+  get(bool, DATA&, CF&& c, const Entity_ID i)
+  {
+    static_assert(std::is_invocable_v<CF, const Entity_ID>);
+    return c(i);
+  }
+};
+
+// Getters for HOST
+  
+// specialization for CACHE
+template<>
+struct Getter<MemSpace_kind::HOST, AccessPattern_kind::CACHE> {
+  template <typename DATA, typename MF, typename FF, typename CF>
+  static decltype(auto)
   get(bool cached, DATA& d, MF&, FF&&, CF&&, const Entity_ID i)
   {
     assert(cached);
-    return view<MEM>(d)(i);
+    return view<MemSpace_kind::HOST>(d)(i);
   }
 }; // Getter
 
 // specialization for FRAMEWORK
-template <MemSpace_kind MEM>
-struct Getter<MEM, AccessPattern_kind::FRAMEWORK> {
+template<>
+struct Getter<MemSpace_kind::HOST, AccessPattern_kind::FRAMEWORK> {
   template <typename DATA, typename MF, typename FF, typename CF>
-  static KOKKOS_INLINE_FUNCTION decltype(auto)
+  static decltype(auto)
   get(bool, DATA&, MF& mf, FF&& f, CF&&, const Entity_ID i)
   {
     static_assert(!std::is_same<FF, decltype(nullptr)>::value);
-    static_assert(MEM == MemSpace_kind::HOST);
     assert(mf.get());
     return f(i);
   }
 }; // Getter
 
 // specialization for COMPUTE
-template <MemSpace_kind MEM>
-struct Getter<MEM, AccessPattern_kind::COMPUTE> {
+template<>
+struct Getter<MemSpace_kind::HOST, AccessPattern_kind::COMPUTE> {
   template <typename DATA, typename MF, typename FF, typename CF>
-  static KOKKOS_INLINE_FUNCTION decltype(auto)
+  static decltype(auto)
   get(bool, DATA&, MF&, FF&&, CF&& c, const Entity_ID i)
   {
     static_assert(std::is_invocable_v<CF, const Entity_ID>);
@@ -161,13 +201,14 @@ struct RaggedGetter {
   //     not-null, to get the quantity.
   // CF: the compute function -- a lambda or NullFunc
   template <typename DATA, typename MF, typename FF, typename CF>
-  static KOKKOS_INLINE_FUNCTION decltype(auto)
+  static decltype(auto)
   get(bool cached, DATA& d, MF& mf, FF&& f, CF&& c, const Entity_ID n)
   {
+    static_assert(MEM == MemSpace_kind::HOST); 
     using view_t = typename decltype(d.template getRow<MEM>(n))::const_type;
     if (cached) { return static_cast<view_t>(d.template getRowUnmanaged<MEM>(n)); }
 
-    if constexpr (MEM == MemSpace_kind::HOST && (!std::is_same_v<FF, decltype(nullptr)>)) {
+    if constexpr (!std::is_same_v<FF, decltype(nullptr)>) {
       if (mf.get()) { return static_cast<view_t>(f(n)); }
     }
 
@@ -180,37 +221,79 @@ struct RaggedGetter {
   }
 };
 
-// specialization for CACHE
-template <MemSpace_kind MEM>
-struct RaggedGetter<MEM, AccessPattern_kind::CACHE> {
-  template <typename DATA, typename MF, typename FF, typename CF>
+// RaggedGetter for DEVICE
+template<>
+struct RaggedGetter<MemSpace_kind::DEVICE, AccessPattern_kind::DEFAULT> {
+  DISABLE_CUDA_WARNING
+  template <typename DATA, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto)
+  get(bool cached, DATA& d, CF&& c, const Entity_ID n)
+  {
+    using view_t = typename decltype(d.template getRow<MemSpace_kind::DEVICE>(n))::const_type;
+    if (cached) { return static_cast<view_t>(d.template getRowUnmanaged<MemSpace_kind::DEVICE>(n)); }
+    if constexpr (std::is_invocable_v<CF, const Entity_ID>) {
+      view_t v = c(n);
+      return v;
+    }
+    assert(false && "No access to cache/framework/compute available in RaggedGetter");
+    return view_t{};
+  }
+};
+  
+template<>
+struct RaggedGetter<MemSpace_kind::DEVICE, AccessPattern_kind::CACHE> {
+  DISABLE_CUDA_WARNING
+  template <typename DATA, typename CF>
+  static KOKKOS_INLINE_FUNCTION decltype(auto)
+  get(bool cached, DATA& d, CF&&, const Entity_ID n)
+  {
+    assert(cached);
+    return d.template getRowUnmanaged<MemSpace_kind::DEVICE>(n);
+  }
+};
+
+template<>
+struct RaggedGetter<MemSpace_kind::DEVICE, AccessPattern_kind::COMPUTE> {
+  DISABLE_CUDA_WARNING
+  template <typename DATA, typename CF>
+  static KOKKOS_INLINE_FUNCTION decltype(auto)
+  get(bool, DATA&, CF&& c, const Entity_ID n)
+  {
+    static_assert(std::is_invocable_v<CF, const Entity_ID>);
+    return c(n);
+  }
+};
+  
+// specialization for CACHE
+template <>
+struct RaggedGetter<MemSpace_kind::HOST, AccessPattern_kind::CACHE> {
+  template <typename DATA, typename MF, typename FF, typename CF>
+  static decltype(auto)
   get(bool cached, DATA& d, MF&, FF&&, CF&&, const Entity_ID n)
   {
     assert(cached);
-    return d.template getRowUnmanaged<MEM>(n);
+    return d.template getRowUnmanaged<MemSpace_kind::HOST>(n);
   }
 };
 
 // specialization for FRAMEWORK
-template <MemSpace_kind MEM>
-struct RaggedGetter<MEM, AccessPattern_kind::FRAMEWORK> {
+template <>
+struct RaggedGetter<MemSpace_kind::HOST, AccessPattern_kind::FRAMEWORK> {
   template <typename DATA, typename MF, typename FF, typename CF>
-  static KOKKOS_INLINE_FUNCTION decltype(auto)
+  static decltype(auto)
   get(bool, DATA&, MF& mf, FF&& f, CF&&, const Entity_ID n)
   {
     static_assert(!std::is_same_v<FF, decltype(nullptr)>);
-    static_assert(MEM == MemSpace_kind::HOST);
     assert(mf.get());
     return f(n);
   }
 };
 
 // specialization for COMPUTE
-template <MemSpace_kind MEM>
-struct RaggedGetter<MEM, AccessPattern_kind::COMPUTE> {
+template <>
+struct RaggedGetter<MemSpace_kind::HOST, AccessPattern_kind::COMPUTE> {
   template <typename DATA, typename MF, typename FF, typename CF>
-  static KOKKOS_INLINE_FUNCTION decltype(auto)
+  static decltype(auto)
   get(bool, DATA&, MF&, FF&&, CF&& c, const Entity_ID n)
   {
     static_assert(std::is_invocable_v<CF, const Entity_ID>);

@@ -55,21 +55,23 @@ TEST(COLUMN_MESH_3D)
   // Create the mesh
   Teuchos::RCP<AmanziMesh::MeshFramework> mesh_fw =
     Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, lx, ly, lz, nx, ny, nz, comm, gm));
-  auto mesh = Teuchos::rcp(
-    new AmanziMesh::Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
-  mesh->buildColumns();
+  auto meshHost = Teuchos::rcp(
+    new AmanziMesh::MeshHost(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+  meshHost->buildColumns();
 
   // Perturb the nodes above the base layer just a bit
   int nnodes =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+    meshHost->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
 
   for (int n = 0; n < nnodes; n++) {
     AmanziGeometry::Point xyz(3);
-    xyz = mesh->getNodeCoordinate(n);
+    xyz = meshHost->getNodeCoordinate(n);
     xyz[2] += 0.005 * xyz[0] * xyz[1] * xyz[2];
-    mesh->setNodeCoordinate(n, xyz);
+    meshHost->setNodeCoordinate(n, xyz);
   }
 
+  auto mesh = onMemDevice(meshHost); 
+  
   // verify in-going topology
   CHECK_EQUAL(16, mesh->columns.num_columns_owned);
   CHECK_EQUAL(4, mesh->columns.cells_.size<MemSpace_kind::HOST>(10));
@@ -88,7 +90,7 @@ TEST(COLUMN_MESH_3D)
   // Create the MeshColumn object
   Teuchos::RCP<AmanziMesh::MeshFramework> colmesh_fw =
     Teuchos::rcp(new AmanziMesh::MeshFrameworkColumn(colmesh_ext, Teuchos::null));
-  AmanziMesh::Mesh colmesh(
+  AmanziMesh::MeshHost colmesh(
     colmesh_fw, Teuchos::rcp(new AmanziMesh::MeshColumnAlgorithms()), Teuchos::null);
 
   // Verify column mesh topology
@@ -104,14 +106,14 @@ TEST(COLUMN_MESH_3D)
   CHECK_EQUAL(20, nnodes);
 
   for (int j = 0; j < ncells; j++) {
-    AmanziMesh::Mesh::cEntity_ID_View cfaces;
-    AmanziMesh::Mesh::cDirection_View cfdirs;
+    AmanziMesh::MeshHost::cEntity_ID_View cfaces;
+    AmanziMesh::MeshHost::cDirection_View cfdirs;
     colmesh.getCellFacesAndDirs(j, cfaces, &cfdirs);
     CHECK_EQUAL(2, cfaces.size());
   }
 
   for (int j = 0; j < nfaces; j++) {
-    AmanziMesh::Mesh::cEntity_ID_View fcells;
+    AmanziMesh::MeshHost::cEntity_ID_View fcells;
     colmesh.getFaceCells(j, fcells);
 
     if (j == 0) {
@@ -217,7 +219,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   Teuchos::RCP<AmanziMesh::MeshFramework> mesh_fw =
     Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, lx, ly, lz, nx, ny, nz, comm, gm));
   auto mesh = Teuchos::rcp(
-    new AmanziMesh::Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+    new AmanziMesh::MeshHost(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
   mesh->buildColumns({ "surface" });
 
   int nnodes =
@@ -241,7 +243,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   // Create the MeshColumn object
   Teuchos::RCP<AmanziMesh::MeshFramework> colmesh_fw =
     Teuchos::rcp(new AmanziMesh::MeshFrameworkColumn(colmesh_ext, Teuchos::null));
-  AmanziMesh::Mesh colmesh(
+  AmanziMesh::MeshHost colmesh(
     colmesh_fw, Teuchos::rcp(new AmanziMesh::MeshColumnAlgorithms()), Teuchos::null);
 
   // Verify column mesh topology
@@ -257,15 +259,15 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   CHECK_EQUAL(20, nnodes);
 
   for (int j = 0; j < ncells; j++) {
-    AmanziMesh::Mesh::cEntity_ID_View cfaces;
-    AmanziMesh::Mesh::cDirection_View cfdirs;
+    AmanziMesh::MeshHost::cEntity_ID_View cfaces;
+    AmanziMesh::MeshHost::cDirection_View cfdirs;
     colmesh.getCellFacesAndDirs(j, cfaces, &cfdirs);
 
     CHECK_EQUAL(2, cfaces.size());
   }
 
   for (int j = 0; j < nfaces; j++) {
-    AmanziMesh::Mesh::cEntity_ID_View fcells;
+    AmanziMesh::MeshHost::cEntity_ID_View fcells;
     colmesh.getFaceCells(j, fcells);
 
     if (j == 0) {
@@ -327,7 +329,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   // base face times the distance between the centroids of the lower
   // face of the cell and the upper face of the cell
   for (int j = 0; j < ncells; j++) {
-    AmanziMesh::Mesh::cEntity_ID_View cfaces;
+    AmanziMesh::MeshHost::cEntity_ID_View cfaces;
     colmesh.getCellFaces(j, cfaces);
 
     AmanziGeometry::Point locen(3), hicen(3);

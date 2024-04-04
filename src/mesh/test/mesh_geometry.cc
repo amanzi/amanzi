@@ -44,7 +44,6 @@ TEST(MESH_GEOMETRY_PLANAR)
   }
 }
 
-
 TEST(MESH_GEOMETRY_1CUBE_GENERATED)
 {
   // a 3D, generated, structured hex on the unit cube, NX=NY=NZ=1
@@ -181,8 +180,7 @@ TEST(MESH_GEOMETRY_2x3CUBE)
     std::cout << std::endl
               << "Testing 3D Box 2x2x3 with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh_on_device = createStructuredUnitHex(Preference{ frm }, 2, 2, 3);
-    auto mesh = onMemSpace<MemSpace_kind::HOST>(mesh_on_device);
+    auto mesh = createStructuredUnitHex(Preference{ frm }, 2, 2, 3);
     testMeshAudit<MeshAuditHost, MeshHost>(mesh);
     testGeometryCube(mesh, 2, 2, 3);
 
@@ -208,8 +206,7 @@ TEST(MESH_GEOMETRY_FRACTURE_EXO)
     std::cout << std::endl
               << "Testing 3D Fracture Exo with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh_on_device = createUnstructured(Preference{ frm }, "test/fractures.exo");
-    auto mesh = onMemSpace<MemSpace_kind::HOST>(mesh_on_device);
+    auto mesh = createUnstructured(Preference{ frm }, "test/fractures.exo");
     testMeshAudit<MeshAuditHost, MeshHost>(mesh);
   }
 }
@@ -225,8 +222,7 @@ TEST(MESH_GEOMETRY_PINCHOUTS)
     std::cout << std::endl
               << "Testing 3D Pinchout with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh_on_device = createUnstructured(Preference{ frm }, "test/test_pri_pinchout_mesh.exo");
-    auto mesh = onMemSpace<MemSpace_kind::HOST>(mesh_on_device);
+    auto mesh = createUnstructured(Preference{ frm }, "test/test_pri_pinchout_mesh.exo");
     testMeshAudit<MeshAuditHost, MeshHost>(mesh);
   }
 }

@@ -41,12 +41,13 @@ TEST(MESH_CACHE_GEOMETRY_PLANAR)
     // cache, pitch the framework, repeat
     AmanziMesh::cacheAll(*mesh);
     mesh->destroyFramework();
+
     testMeshAudit<MeshAuditHost>(mesh);
 
     testGeometryQuad(mesh, 2, 2);
     testExteriorMapsUnitBox(mesh, 2, 2);
 
-    auto mesh_dev = AmanziMesh::onMemSpace<MemSpace_kind::DEVICE>(mesh);
+    auto mesh_dev = AmanziMesh::onMemDevice(mesh);
     testMeshAudit<MeshAudit>(mesh_dev);
 
     testGeometryQuad(mesh_dev, 2, 2);
@@ -77,7 +78,7 @@ TEST(MESH_CACHE_GEOMETRY_1CUBE_GENERATED)
     testGeometryCube(mesh, 1, 1, 1);
     if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(mesh, 1, 1, 1);
 
-    auto mesh_dev = AmanziMesh::onMemSpace<MemSpace_kind::DEVICE>(mesh);
+    auto mesh_dev = AmanziMesh::onMemDevice(mesh);
     testMeshAudit<MeshAudit>(mesh_dev);
     testGeometryCube(mesh, 1, 1, 1);
     if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(mesh, 1, 1, 1);
@@ -108,7 +109,7 @@ TEST(MESH_CACHE_GEOMETRY_1CUBE_EXO)
     testGeometryCube(mesh, 1, 1, 1);
     if (frm == Framework::MSTK) testExteriorMapsUnitBox(mesh, 1, 1, 1);
 
-    auto mesh_dev = AmanziMesh::onMemSpace<MemSpace_kind::DEVICE>(mesh);
+    auto mesh_dev = AmanziMesh::onMemDevice(mesh);
     testMeshAudit<MeshAudit>(mesh_dev);
     testGeometryCube(mesh_dev, 1, 1, 1);
     if (frm == Framework::MSTK) testExteriorMapsUnitBox(mesh_dev, 1, 1, 1);
@@ -137,7 +138,7 @@ TEST(MESH_CACHE_GEOMETRY_3CUBE)
     testGeometryCube(mesh, 3, 3, 3);
     if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh, 3, 3, 3); }
 
-    auto mesh_dev = AmanziMesh::onMemSpace<MemSpace_kind::DEVICE>(mesh);
+    auto mesh_dev = AmanziMesh::onMemDevice(mesh);
     testMeshAudit<MeshAudit>(mesh_dev);
     testGeometryCube(mesh_dev, 3, 3, 3);
     if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh_dev, 3, 3, 3); }
@@ -169,7 +170,7 @@ TEST(MESH_CACHE_GEOMETRY_3CUBE_EXO)
     testGeometryCube(mesh, 3, 3, 3);
     if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh, 3, 3, 3); }
 
-    auto mesh_dev = AmanziMesh::onMemSpace<MemSpace_kind::DEVICE>(mesh);
+    auto mesh_dev = AmanziMesh::onMemDevice(mesh);
     testMeshAudit<MeshAudit>(mesh_dev);
     testGeometryCube(mesh_dev, 3, 3, 3);
     if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh_dev, 3, 3, 3); }
@@ -233,7 +234,7 @@ TEST(MESH_CACHE_GEOMETRY_2x3CUBE)
     testGeometryCube(mesh, 2, 2, 3);
     if (frm == Framework::MSTK) testExteriorMapsUnitBox(mesh, 2, 2, 3);
 
-    auto mesh_dev = AmanziMesh::onMemSpace<MemSpace_kind::DEVICE>(mesh);
+    auto mesh_dev = AmanziMesh::onMemDevice(mesh);
     testMeshAudit<MeshAudit>(mesh_dev);
     testGeometryCube(mesh, 2, 2, 3);
     if (frm == Framework::MSTK) testExteriorMapsUnitBox(mesh, 2, 2, 3);
@@ -264,7 +265,7 @@ TEST(MESH_CACHE_GEOMETRY_FRACTURE_EXO)
     mesh->destroyFramework();
     testMeshAudit<MeshAuditHost>(mesh);
 
-    auto mesh_dev = AmanziMesh::onMemSpace<MemSpace_kind::DEVICE>(mesh);
+    auto mesh_dev = AmanziMesh::onMemDevice(mesh);
     testMeshAudit<MeshAudit>(mesh_dev);
   }
 }
@@ -286,7 +287,7 @@ TEST(MESH_CACHE_GEOMETRY_PINCHOUTS)
     mesh->destroyFramework();
     testMeshAudit<MeshAuditHost>(mesh);
 
-    auto mesh_dev = AmanziMesh::onMemSpace<MemSpace_kind::DEVICE>(mesh);
+    auto mesh_dev = AmanziMesh::onMemDevice(mesh);
     testMeshAudit<MeshAudit>(mesh_dev);
   }
 }

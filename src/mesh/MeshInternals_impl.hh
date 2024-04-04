@@ -24,67 +24,6 @@ namespace AmanziMesh {
 namespace Impl {
 
 template <class Mesh_type>
-KOKKOS_INLINE_FUNCTION Cell_kind
-getCellType(const Mesh_type& mesh, const Entity_ID c)
-{
-  auto faces = mesh.getCellFaces(c);
-  if (mesh.getManifoldDimension() == 2) {
-    switch (faces.size()) {
-    case 3:
-      return Cell_kind::TRI;
-      break;
-    case 4:
-      return Cell_kind::QUAD;
-      break;
-    default:
-      return Cell_kind::POLYGON;
-    }
-  } else if (mesh.getManifoldDimension() == 3) {
-    int nquads = 0;
-    for (const auto& f : faces) {
-      typename Mesh_type::cEntity_ID_View fnodes;
-      mesh.getFaceNodes(f, fnodes);
-      if (fnodes.size() == 4) nquads++;
-    }
-
-    switch (faces.size()) {
-    case 4:
-      if (nquads == 0)
-        return Cell_kind::TET;
-      else
-        return Cell_kind::POLYHED;
-      break;
-    case 5:
-      if (nquads == 1)
-        return Cell_kind::PYRAMID;
-      else if (nquads == 3)
-        return Cell_kind::PRISM;
-      else
-        return Cell_kind::POLYHED;
-      break;
-    case 6:
-      if (nquads == 6)
-        return Cell_kind::HEX;
-      else
-        return Cell_kind::POLYHED;
-      break;
-    default:
-      return Cell_kind::POLYHED;
-    }
-  } else {
-    if (!std::is_same_v<Mesh_type, AmanziMesh::Mesh>) {
-      Errors::Message msg;
-      msg << "Mesh of manifold_dimension = " << mesh.getManifoldDimension() << " not supported";
-      Exceptions::amanzi_throw(msg);
-    } else {
-      assert(false); // "Invalid mesh manifold dimension");
-    }
-  }
-  return Cell_kind::UNKNOWN;
-}
-
-
-template <class Mesh_type>
 int
 getFaceDirectionInCell(const Mesh_type& mesh, const Entity_ID f, const Entity_ID c)
 {
@@ -119,7 +58,7 @@ template <class Mesh_type>
 typename Mesh_type::Entity_ID_View
 computeCellEdges(const Mesh_type& mesh, const Entity_ID c)
 {
-  static_assert(!std::is_same<Mesh_type, MeshCache<MemSpace_kind::DEVICE>>::value);
+  static_assert(!std::is_same<Mesh_type, MeshCacheDevice>::value);
   typename Mesh_type::Entity_ID_View edges;
   typename Mesh_type::cEntity_ID_View faces, fedges;
   Entity_ID_List vedges;
@@ -138,7 +77,7 @@ template <class Mesh_type>
 typename Mesh_type::Entity_ID_View
 computeCellNodes(const Mesh_type& mesh, const Entity_ID c)
 {
-  static_assert(!std::is_same<Mesh_type, MeshCache<MemSpace_kind::DEVICE>>::value);
+  static_assert(!std::is_same<Mesh_type, MeshCacheDevice>::value);
   typename Mesh_type::Entity_ID_View nodes;
   typename Mesh_type::cEntity_ID_View faces, fnodes;
   Entity_ID_List vnodes;
@@ -222,11 +161,12 @@ computeEdgeCells(const Mesh_type& mesh, const Entity_ID e)
 //
 // Geometry algorithms
 //
+
 template <class Mesh_type>
 std::pair<double, AmanziGeometry::Point>
 computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
 {
-  static_assert(!std::is_same<Mesh_type, MeshCache<MemSpace_kind::DEVICE>>::value);
+  static_assert(!std::is_same<Mesh_type, MeshCacheDevice>::value);
   if (mesh.getManifoldDimension() == 2) {
     auto ccoords = mesh.getCellCoordinates(c);
     auto vol_cent = std::make_pair((double)0, AmanziGeometry::Point(mesh.getSpaceDimension()));
@@ -267,7 +207,7 @@ template <class Mesh_type>
 std::tuple<double, AmanziGeometry::Point, typename Mesh_type::Point_View>
 computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
 {
-  static_assert(!std::is_same<Mesh_type, MeshCache<MemSpace_kind::DEVICE>>::value);
+  static_assert(!std::is_same<Mesh_type, MeshCacheDevice>::value);
   if (mesh.getManifoldDimension() == 3) {
     // 3D Elements with possibly curved faces
     typename Mesh_type::cPoint_View fcoords = mesh.getFaceCoordinates(f);
@@ -376,7 +316,7 @@ template <class Mesh_type>
 void
 debugCell(const Mesh_type& mesh, const Entity_ID c)
 {
-  static_assert(!std::is_same<Mesh_type, MeshCache<MemSpace_kind::DEVICE>>::value);
+  static_assert(!std::is_same<Mesh_type, MeshCacheDevice>::value);
   auto cc = mesh.getCellCentroid(c);
   std::stringstream stream;
   stream << "Debug cell: LID " << c << " Rank " << mesh.get_comm()->MyPID() << " GID "
