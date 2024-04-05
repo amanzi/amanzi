@@ -68,10 +68,9 @@ template <typename V, typename T>
 void
 vectorToConstView(V& view, const std::vector<T> vec)
 {
-  Kokkos::MeshView<T*> lview;
-  Kokkos::resize(lview, vec.size());
+  Kokkos::MeshView<T*> lview("", vec.size());
   for (int i = 0; i < lview.size(); ++i) lview[i] = vec[i];
-  view = lview;
+  view = std::move(lview);
 }
 
 template <typename V, typename T>
@@ -314,10 +313,12 @@ asRaggedArray_DualView(Func mesh_func, int count)
   adj.entries.resize(total);
 
   for (int i = 0; i != count; ++i) {
-    auto row_view = adj.template getRowUnmanaged<MemSpace_kind::HOST>(i);
-    assert(row_view.extent(0) == ents[i].size());
-    Kokkos::deep_copy(row_view, ents[i]);
+    const auto& ent = ents[i];
+    for (int j = 0; j != ent.size(); ++j) {
+      adj.template get<MemSpace_kind::HOST>(i, j) = ent[j];
+    }
   }
+
   Kokkos::deep_copy(adj.rows.view_device(), adj.rows.view_host());
   Kokkos::deep_copy(adj.entries.view_device(), adj.entries.view_host());
   return adj;

@@ -1083,13 +1083,11 @@ MeshCache<MEM>::setNodeCoordinates(const cEntity_ID_View& nodes, const cPoint_Vi
       nodes_on_host = nodes;
       coords_on_host = new_coords;
     } else {
-      View_type<Entity_ID, MemSpace_kind::HOST> nc_nodes_on_host;
-      View_type<AmanziGeometry::Point, MemSpace_kind::HOST> nc_coords_on_host;
-      Kokkos::resize(nc_nodes_on_host, nodes.size());
+      View_type<Entity_ID, MemSpace_kind::HOST> nc_nodes_on_host("", nodes.size());
       Kokkos::deep_copy(nc_nodes_on_host, nodes);
       nodes_on_host = nc_nodes_on_host;
 
-      Kokkos::resize(nc_coords_on_host, nodes.size());
+      View_type<AmanziGeometry::Point, MemSpace_kind::HOST> nc_coords_on_host("", nodes.size());
       Kokkos::deep_copy(nc_coords_on_host, new_coords);
       coords_on_host = nc_coords_on_host;
     }
@@ -1495,11 +1493,10 @@ MeshCache<MEM>::cacheFaceGeometry()
   //     space_dim != manifold_dim and ncells == 2
   auto lambda2 = [&, this](const Entity_ID& f,
                            View_type<const Direction_type, MemSpace_kind::HOST>& dirs) {
-    Direction_View ldirs;
     // This NEEDS to call the framework or be passed an host mesh to call the function on the host.
     View_type<const Entity_ID, MemSpace_kind::HOST> fcells;
     framework_mesh_->getFaceCells(f, fcells);
-    Kokkos::resize(ldirs, fcells.size());
+    Direction_View ldirs("", fcells.size());
     for (int i = 0; i != fcells.size(); ++i) {
       if ((getSpaceDimension() == getManifoldDimension()) || (fcells.size() != 2)) {
         ldirs(i) = Impl::getFaceDirectionInCell(*this, f, fcells(i));
