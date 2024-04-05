@@ -18,21 +18,24 @@ namespace ShallowWater {
 * Simple constructor
 ****************************************************************** */
 HydrostaticPressureEvaluator::HydrostaticPressureEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() == 0) {
-    my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key", "surface-ponded_pressure"), Tags::DEFAULT));
+    my_keys_.push_back(
+      std::make_pair(plist_.get<std::string>("my key", "surface-ponded_pressure"), Tags::DEFAULT));
   }
   std::string domain = Keys::getDomain(my_keys_[0].first);
 
-  if (domain == "surface" || domain == "street"){
-     primary_variable_key_ = plist_.get<std::string>("ponded depth key", Keys::getKey(domain, "ponded_depth"));
-  } else if (domain == "pipe" || domain == "network"){
-     primary_variable_key_ = plist_.get<std::string>("water depth key", Keys::getKey(domain, "water_depth"));
-  } else{
-     std::cout<<"Unknown domain in hydrostatic pressure evaluator"<<std::endl;
-     AMANZI_ASSERT(false);
-  } 
+  if (domain == "surface" || domain == "street" || domain == "domain") {
+    primary_variable_key_ =
+      plist_.get<std::string>("ponded depth key", Keys::getKey(domain, "ponded_depth"));
+  } else if (domain == "pipe" || domain == "network") {
+    primary_variable_key_ =
+      plist_.get<std::string>("water depth key", Keys::getKey(domain, "water_depth"));
+  } else {
+    std::cout << "Unknown domain in hydrostatic pressure evaluator" << std::endl;
+    AMANZI_ASSERT(false);
+  }
 
   dependencies_.insert(std::make_pair(primary_variable_key_, Tags::DEFAULT));
 }
@@ -41,7 +44,9 @@ HydrostaticPressureEvaluator::HydrostaticPressureEvaluator(Teuchos::ParameterLis
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<Evaluator> HydrostaticPressureEvaluator::Clone() const {
+Teuchos::RCP<Evaluator>
+HydrostaticPressureEvaluator::Clone() const
+{
   return Teuchos::rcp(new HydrostaticPressureEvaluator(*this));
 }
 
@@ -49,45 +54,44 @@ Teuchos::RCP<Evaluator> HydrostaticPressureEvaluator::Clone() const {
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void HydrostaticPressureEvaluator::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results)
+void
+HydrostaticPressureEvaluator::Evaluate_(const State& S,
+                                        const std::vector<CompositeVector*>& results)
 {
   const auto& h_c = *S.Get<CompositeVector>(primary_variable_key_).ViewComponent("cell");
   const double rho = S.Get<double>("const_fluid_density");
   const double patm = S.Get<double>("atmospheric_pressure");
   double g = norm(S.Get<AmanziGeometry::Point>("gravity"));
-  
+
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
-  for (int c = 0; c != ncells; ++c) {
-    result_c[0][c] = rho * g * h_c[0][c] + patm;
-  }
+  for (int c = 0; c != ncells; ++c) { result_c[0][c] = rho * g * h_c[0][c] + patm; }
 }
 
 
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void HydrostaticPressureEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Tag& wrt_tag,
-    const std::vector<CompositeVector*>& results)
+void
+HydrostaticPressureEvaluator::EvaluatePartialDerivative_(
+  const State& S,
+  const Key& wrt_key,
+  const Tag& wrt_tag,
+  const std::vector<CompositeVector*>& results)
 {
   const double rho = S.Get<double>("const_fluid_density");
   double g = norm(S.Get<AmanziGeometry::Point>("gravity"));
-  
+
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
   if (wrt_key == primary_variable_key_) {
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = rho * g;
-    }
+    for (int c = 0; c != ncells; ++c) { result_c[0][c] = rho * g; }
   } else {
     AMANZI_ASSERT(false);
   }
 }
 
-}  // namespace ShallowWater
-}  // namespace Amanzi
-
+} // namespace ShallowWater
+} // namespace Amanzi

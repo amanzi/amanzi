@@ -17,19 +17,20 @@ namespace Amanzi {
 namespace Utils {
 
 // explicity instantitate the static data of factory
-template<> Factory<ShallowWater::NumericalFlux>::map_type* Factory<ShallowWater::NumericalFlux>::map_;
+template <>
+Factory<ShallowWater::NumericalFlux>::map_type* Factory<ShallowWater::NumericalFlux>::map_;
 
-}  // namespace Utils
-}  // namespace Amanzi
+} // namespace Utils
+} // namespace Amanzi
 
 
 namespace Amanzi {
 namespace ShallowWater {
 
-Utils::RegisteredFactory<NumericalFlux, NumericalFlux_Rusanov> NumericalFlux_Rusanov::factory_("Rusanov");
-Utils::RegisteredFactory<NumericalFlux, NumericalFlux_CentralUpwind> NumericalFlux_CentralUpwind::factory_("central upwind");
+Utils::RegisteredFactory<NumericalFlux, NumericalFlux_Rusanov>
+  NumericalFlux_Rusanov::factory_("Rusanov");
+Utils::RegisteredFactory<NumericalFlux, NumericalFlux_CentralUpwind>
+  NumericalFlux_CentralUpwind::factory_("central upwind");
 
-}  // namespace ShallowWater
-}  // namespace Amanzi
-
-
+} // namespace ShallowWater
+} // namespace Amanzi

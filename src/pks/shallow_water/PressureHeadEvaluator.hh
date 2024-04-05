@@ -24,7 +24,8 @@
 namespace Amanzi {
 namespace ShallowWater {
 
-class PressureHeadEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class PressureHeadEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   PressureHeadEvaluator(Teuchos::ParameterList& plist);
 
@@ -33,21 +34,21 @@ class PressureHeadEvaluator : public EvaluatorSecondaryMonotype<CompositeVector,
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
-protected: 
+ protected:
   double celerity_;
   double Pi = 3.14159265359;
   double TwoPi = 6.28318530718;
 
  private:
   std::string wetted_angle_key_, wetted_area_key_, diameter_key_;
-
-
 };
 
-}  // namespace ShallowWater
-}  // namespace Amanzi
+} // namespace ShallowWater
+} // namespace Amanzi
 
 #endif

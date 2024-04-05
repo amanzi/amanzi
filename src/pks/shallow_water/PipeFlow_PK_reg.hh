@@ -16,6 +16,6 @@ namespace Amanzi {
 namespace ShallowWater {
 
 RegisteredPKFactory<PipeFlow_PK> PipeFlow_PK::reg_("pipe flow");
-    
-}  // namespace ShallowWater
-}  // namespace Amanzi
+
+} // namespace ShallowWater
+} // namespace Amanzi
