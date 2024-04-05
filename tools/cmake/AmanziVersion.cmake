@@ -123,7 +123,7 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
         set ( AMANZI_GIT_PARENT_BRANCH_MSG ${commit_msg} )
       ENDIF()
     ENDFOREACH()
-    #string(REGEX MATCH "\\[(.*)\\]" _ ${AMANZI_GIT_PARENT_BRANCH_MSG})
+    string(REGEX MATCH "\\[(.*)\\]" _ ${AMANZI_GIT_PARENT_BRANCH_MSG})
     set(AMANZI_GIT_PARENT_BRANCH ${CMAKE_MATCH_1})
   ELSE( )
     # Just on master, or a branch that was checked out directly so no way to
