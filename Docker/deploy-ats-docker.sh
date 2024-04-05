@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# PETSC_VER=3.11.3
-# TRILINOS_VER=12-18-55a7599733-Nov11
 
 get_tpl_version()
 #
@@ -49,7 +47,30 @@ echo ""
 # MPI_FLAVOR=openmpi
 MPI_FLAVOR=mpich
 
-docker build --no-cache --build-arg amanzi_branch=${AMANZI_BRANCH} --build-arg amanzi_tpls_ver=${AMANZI_TPLS_VER} --build-arg mpi_flavor=${MPI_FLAVOR} --progress=plain -f ${AMANZI_SOURCE_DIR}/Docker/Dockerfile-ATS -t metsi/ats:${ATS_VER} .
+# architecture options - if TRUE, build for arm and x86_64,
+# if FALSE, build only for current system architecture.
+MULTIARCH=FALSE
+
+# output style - change to "--progress=plain" for debugging
+OUTPUT_STYLE=""
+
+if $MULTIARCH
+then
+   docker buildx build --platform=linux/amd64,linux/arm64 \
+      --no-cache $OUTPUT_STYLE \
+      --build-arg amanzi_branch=${AMANZI_BRANCH} \
+      --build-arg amanzi_tpls_ver=${AMANZI_TPLS_VER} \
+      --build-arg mpi_flavor=${MPI_FLAVOR} \
+      -f ${AMANZI_SOURCE_DIR}/Docker/Dockerfile-ATS \
+      -t metsi/ats:${ATS_VER} .
+else
+   docker build --no-cache $OUTPUT_STYLE \
+      --build-arg amanzi_branch=${AMANZI_BRANCH} \
+      --build-arg amanzi_tpls_ver=${AMANZI_TPLS_VER} \
+      --build-arg mpi_flavor=${MPI_FLAVOR} \
+      -f ${AMANZI_SOURCE_DIR}/Docker/Dockerfile-ATS \
+      -t metsi/ats:${ATS_VER} .
+fi
 
 docker tag metsi/ats:${ATS_VER} metsi/ats:latest
 
