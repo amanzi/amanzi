@@ -55,8 +55,7 @@ UpwindFlux::Compute(const CompositeVector& flux,
   const Epetra_MultiVector& flux_f = *flux.ViewComponent("face", true);
 
   const Epetra_MultiVector& field_c = *field.ViewComponent("cell", true);
-  const Epetra_MultiVector& field_bf2 = *field.ViewComponent("boundary_face");
-  const Epetra_MultiVector& field_bf = *field.ViewComponent("boundary_face", true);
+  const Epetra_MultiVector& field_bf = *field.ViewComponent("boundary_face");
   Epetra_MultiVector& field_f = *field.ViewComponent(face_comp_, true);
 
   double flxmin, flxmax, tol;
@@ -112,7 +111,7 @@ UpwindFlux::Compute(const CompositeVector& flux,
       field_f[0][g + 1 - k] = kc2;
 
       // upwind only on inflow dirichlet faces
-      // owned cells have owned faces, so we may safely limit here
+      // owned cells have owned boundary faces, so we may safely limit here
     } else if (f < nfaces_owned) {
       field_f[0][g] = kc1;
       if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
