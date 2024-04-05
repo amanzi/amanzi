@@ -112,6 +112,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
           bc_model_vector[f] = Operators::OPERATOR_BC_DIRICHLET;
           auto nodes = mesh_->getFaceNodes(f);
           int n0 = nodes[0], n1 = nodes[1];
+          bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
           bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
           bc_value_qx[f] = bc_value_h[f] * it->second[0];
           bc_value_qy[f] = bc_value_h[f] * it->second[1];
@@ -195,13 +196,6 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
       ht_grad[1][c] *= alpha;
     }
   }
-
-  // compute bathymetry gradient for bed slope source
-  auto tmp7 =
-    S_->GetW<CompositeVector>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  bathymetry_grad_->Compute(tmp7);
-  bathymetry_grad_->data()->ScatterMasterToGhosted("cell");
-
 
   // flux
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);

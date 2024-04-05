@@ -51,7 +51,6 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
 
   // Create miscellaneous lists.
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
   sw_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
   // domain name
@@ -316,9 +315,6 @@ ShallowWater_PK::Initialize()
 
   total_depth_grad_ = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
   total_depth_grad_->Init(plist);
-
-  bathymetry_grad_ = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-  bathymetry_grad_->Init(plist);
 
   discharge_x_grad_ = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
   discharge_x_grad_->Init(plist);
