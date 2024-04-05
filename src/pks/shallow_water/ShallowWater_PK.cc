@@ -931,6 +931,7 @@ ShallowWater_PK::InitializeFields()
 
     S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
   }
+
 }
 
 //--------------------------------------------------------------
