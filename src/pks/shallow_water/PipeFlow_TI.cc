@@ -224,13 +224,6 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector&
     }
   }
 
-  // compute bathymetry gradient for bed slope source
-  auto tmp7 =
-    S_->GetW<CompositeVector>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  bathymetry_grad_->Compute(tmp7);
-  bathymetry_grad_->data()->ScatterMasterToGhosted("cell");
-
-
   // flux
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->Compute(tmp5, 0);
