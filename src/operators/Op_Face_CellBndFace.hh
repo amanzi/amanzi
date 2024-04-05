@@ -76,7 +76,7 @@ class Op_Face_CellBndFace : public Op {
   {
     if ((scaling.HasComponent("cell")) && (scaling.HasComponent("boundary_face"))) {
       const Epetra_MultiVector& s_c = *scaling.ViewComponent("cell", true);
-      const Epetra_MultiVector& s_bnd = *scaling.ViewComponent("boundary_face", true);
+      const Epetra_MultiVector& s_bnd = *scaling.ViewComponent("boundary_face");
       for (int f = 0; f != matrices.size(); ++f) {
         auto cells = mesh_->getFaceCells(f);
         if (cells.size() > 1) {
