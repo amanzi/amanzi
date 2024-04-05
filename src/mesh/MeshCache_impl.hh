@@ -1161,6 +1161,34 @@ MeshCache<MEM>::getNodeFaces(const Entity_ID n, cEntity_ID_View& faces) const
 }
 
 template <MemSpace_kind MEM>
+template <AccessPattern_kind AP>
+KOKKOS_INLINE_FUNCTION typename MeshCache<MEM>::cEntity_ID_View
+MeshCache<MEM>::getNodeEdges(const Entity_ID n) const
+{
+  cEntity_ID_View edges;
+  getNodeEdges<AP>(n, edges);
+  return edges;
+}
+
+template <MemSpace_kind MEM>
+template <AccessPattern_kind AP>
+KOKKOS_INLINE_FUNCTION void
+MeshCache<MEM>::getNodeEdges(const Entity_ID n, cEntity_ID_View& edges) const
+{
+  edges = Impl::RaggedGetter<MEM, AP>::get(
+    data_.node_edges_cached,
+    data_.node_edges,
+    framework_mesh_,
+    [&](const int i) {
+      cEntity_ID_View ledges;
+      framework_mesh_->getNodeEdges(i, ledges);
+      return ledges;
+    },
+    nullptr,
+    n);
+}
+
+template <MemSpace_kind MEM>
 KOKKOS_INLINE_FUNCTION Cell_kind
 MeshCache<MEM>::getCellType(const Entity_ID c) const
 {

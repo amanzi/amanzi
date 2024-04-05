@@ -21,6 +21,7 @@ RUN apt-get -q update -y && apt-get install -y tzdata && apt-get -q install -y \
   curl \
   libcurl4-openssl-dev \
   emacs \
+  gedit \
   g++ \
   gfortran \
   git \

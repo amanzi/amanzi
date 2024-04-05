@@ -1928,6 +1928,7 @@ Mesh_MSTK::label_celltype_()
       vectorToView(edges, vedges);
       Cell_kind ctype = MeshFramework::getCellType_(MEnt_ID(face), edges);
       MEnt_Set_AttVal(face, celltype_att_, (int)ctype, 0.0, NULL);
+      List_Delete(fedges);
     }
 
   } else if (getManifoldDimension() == 3) {
@@ -1945,6 +1946,7 @@ Mesh_MSTK::label_celltype_()
 
       Cell_kind ctype = MeshFramework::getCellType_(MEnt_ID(region), faces);
       MEnt_Set_AttVal(region, celltype_att_, (int)ctype, 0.0, NULL);
+      List_Delete(rfaces);
     }
   }
 }

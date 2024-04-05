@@ -253,6 +253,7 @@ Darcy_PK::Setup()
         ->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
       S_->GetRecordW(ref_pressure_key_, passwd_).set_io_vis(false);
+      S_->GetRecordW(ref_pressure_key_, passwd_).set_io_checkpoint(false);
 
       Teuchos::ParameterList elist(aperture_key_);
       elist.set<std::string>("reference aperture key", ref_aperture_key_)
