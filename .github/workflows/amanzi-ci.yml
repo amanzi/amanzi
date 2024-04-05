@@ -82,6 +82,11 @@ jobs:
     runs-on: macos-14
     name: Build Docker container
     steps:
+      - name: Install and start Colima
+        run: |
+          brew install colima
+          colima version
+          colima start --cpu --memory 6 --disk 100 --vm-type=qemu --mount-type=sshfs --dns=1.1.1.1
       - name: Check out the Amanzi repo
         uses: actions/checkout@v4
       - name: Extract the branch name
