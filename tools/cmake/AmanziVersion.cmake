@@ -124,6 +124,7 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
       ENDIF()
     ENDFOREACH()
 <<<<<<< HEAD
+<<<<<<< HEAD
     IF( NOT "${AMANZI_GIT_PARENT_BRANCH_MSG}" STREQUAL "" )
       string(REGEX MATCH "\\[(.*)\\]" _ ${AMANZI_GIT_PARENT_BRANCH_MSG})
       set(AMANZI_GIT_PARENT_BRANCH ${CMAKE_MATCH_1})
@@ -133,6 +134,9 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
   ELSE()
 =======
     #string(REGEX MATCH "\\[(.*)\\]" _ ${AMANZI_GIT_PARENT_BRANCH_MSG})
+=======
+    string(REGEX MATCH "\\[(.*)\\]" _ ${AMANZI_GIT_PARENT_BRANCH_MSG})
+>>>>>>> ded36720f (Reverted a tiny thing)
     set(AMANZI_GIT_PARENT_BRANCH ${CMAKE_MATCH_1})
   ELSE( )
 >>>>>>> 473d41c94 (Fixed BC type for velocity BC in SW)
