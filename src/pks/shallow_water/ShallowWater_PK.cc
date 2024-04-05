@@ -876,8 +876,8 @@ ShallowWater_PK::SetPrimaryVariableBC(Teuchos::RCP<Teuchos::ParameterList>& bc_l
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        Teuchos::RCP<ShallowWaterBoundaryFunction> bc =
-          bc_factory.Create(spec, "ponded depth", AmanziMesh::NODE, Teuchos::null);
+        Teuchos::RCP<ShallowWaterBoundaryFunction> bc = bc_factory.Create(
+          spec, "ponded depth", AmanziMesh::Entity_kind::NODE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("ponded depth");
         bc->set_type(WhetStone::DOF_Type::SCALAR);
         bcs_.push_back(bc);
@@ -931,6 +931,7 @@ ShallowWater_PK::InitializeFields()
 
     S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
   }
+
 }
 
 //--------------------------------------------------------------
