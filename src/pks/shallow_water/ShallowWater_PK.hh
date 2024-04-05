@@ -227,7 +227,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   // limited reconstruction
   bool use_limiter_;
-  Teuchos::RCP<Operators::ReconstructionCellLinear> total_depth_grad_, bathymetry_grad_;
+  Teuchos::RCP<Operators::ReconstructionCellLinear> total_depth_grad_;
   Teuchos::RCP<Operators::ReconstructionCellLinear> discharge_x_grad_, discharge_y_grad_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
 
