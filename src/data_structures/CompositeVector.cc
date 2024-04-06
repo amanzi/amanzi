@@ -452,9 +452,11 @@ CompositeVector::CreateVandelayVector_() const
   if (ghosted_) {
     double** data;
     vandelay_vector_all_->ExtractView(&data);
-    vandelay_vector_owned_ = Teuchos::rcp(new Epetra_MultiVector(View,
-            Mesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false),
-            data, mastervec_->NumVectors("face")));
+    vandelay_vector_owned_ = Teuchos::rcp(
+      new Epetra_MultiVector(View,
+                             Mesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false),
+                             data,
+                             mastervec_->NumVectors("face")));
   }
 
   // create new importer from face-component if it has more than one DOF per face

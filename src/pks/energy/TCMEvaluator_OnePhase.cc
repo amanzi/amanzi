@@ -36,7 +36,8 @@ TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::RCP<const AmanziMesh::Mesh
   }
   std::string domain = Keys::getDomain(my_keys_[0].first);
 
-  temperature_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
+  temperature_key_ =
+    plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
   dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
 
   porosity_key_ = plist_.get<std::string>("porosity key", Keys::getKey(domain, "porosity"));
@@ -103,7 +104,8 @@ TCMEvaluator_OnePhase::Evaluate_(const State& S, const std::vector<CompositeVect
     double phi = poro_c[0][i];
     result_c[0][i] = phi * k_liq + (1.0 - phi) * k_rock_[id];
   }
-  AmanziEOS::ErrorAnalysis(S.Get<CompositeVector>(temperature_key_).Comm(), ierr, tc_[0]->error_msg());
+  AmanziEOS::ErrorAnalysis(
+    S.Get<CompositeVector>(temperature_key_).Comm(), ierr, tc_[0]->error_msg());
 }
 
 

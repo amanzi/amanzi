@@ -104,7 +104,8 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
       GetUniqueElementByTagsString_(materials[i], "thermal_properties, liquid_conductivity", flag);
     if (flag) cv_f = GetTextContentD_(node, "W/m/K", true);
 
-    node = GetUniqueElementByTagsString_(materials[i], "thermal_properties, rock_conductivity", flag);
+    node =
+      GetUniqueElementByTagsString_(materials[i], "thermal_properties, rock_conductivity", flag);
     if (flag) cv_r = GetTextContentD_(node, "W/m/K", true);
 
     node = GetUniqueElementByTagsString_(materials[i], "assigned_regions", flag);

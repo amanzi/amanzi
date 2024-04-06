@@ -206,7 +206,8 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
 
     auto mesh = fac.create(parent_mesh_cache,
                            std::vector<std::string>({ "Top Face Plane" }),
-                           AmanziMesh::Entity_kind::FACE, true);
+                           AmanziMesh::Entity_kind::FACE,
+                           true);
     cacheAll(*mesh);
 
     // test the surface mesh as a 3x3 quad mesh
@@ -278,7 +279,8 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
 
     auto mesh = fac.create(parent_mesh_cache,
                            std::vector<std::string>({ "Top Face Plane" }),
-                           AmanziMesh::Entity_kind::FACE, true);
+                           AmanziMesh::Entity_kind::FACE,
+                           true);
     cacheAll(*mesh);
 
     // test the surface mesh as a 3x3 quad mesh

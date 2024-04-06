@@ -100,7 +100,8 @@ class Analytic01c : public AnalyticBase {
     py = 2 * x * t01 + x * 2 * M_PI * (x * t12 * t03 + t02 * t13) - g_;
 
     pxx = 6 * x * y * y + 4 * M_PI * t03 * (y * t12 - M_PI * y * y * x * t02);
-    pyy = 2 * x * x * x + x * 4 * M_PI * M_PI * (-x * x * t02 * t03 + 2 * x * t12 * t13 - t02 * t03);
+    pyy =
+      2 * x * x * x + x * 4 * M_PI * M_PI * (-x * x * t02 * t03 + 2 * x * t12 * t13 - t02 * t03);
 
     return -2 * (x + 1) * px - 2 * y * py - kr * (pxx + pyy);
   }

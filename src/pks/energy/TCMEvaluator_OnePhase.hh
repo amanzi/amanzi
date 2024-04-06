@@ -28,8 +28,7 @@ namespace Energy {
 class TCMEvaluator_OnePhase
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  TCMEvaluator_OnePhase(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                        Teuchos::ParameterList& plist);
+  TCMEvaluator_OnePhase(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::ParameterList& plist);
   TCMEvaluator_OnePhase(const TCMEvaluator_OnePhase& other);
 
   // required inteface functions

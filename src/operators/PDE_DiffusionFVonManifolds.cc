@@ -330,7 +330,7 @@ PDE_DiffusionFVonManifolds::ComputeBeta_()
 
   WhetStone::Tensor Kc(d, 1);
   Kc(0, 0) = 1.0;
- 
+
   for (int f = 0; f < nfaces_owned; ++f) {
     auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();

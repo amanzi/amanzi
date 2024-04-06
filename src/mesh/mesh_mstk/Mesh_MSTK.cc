@@ -493,7 +493,6 @@ Mesh_MSTK::getCellFacesAndDirs_ordered_(
     Cell_kind celltype = getCellType(cellid);
     if (celltype == Cell_kind::TET || celltype == Cell_kind::PRISM ||
         celltype == Cell_kind::PYRAMID || celltype == Cell_kind::HEX) {
-
       int lid, nf;
       MEntity_ptr cell = cell_id_to_handle_[cellid];
 
@@ -1043,7 +1042,7 @@ Mesh_MSTK::getNodeCells(const Entity_ID nodeid,
     }
   }
   List_Delete(cell_list);
-  cellids = Kokkos::subview(lcellids, Kokkos::pair{0,n});
+  cellids = Kokkos::subview(lcellids, Kokkos::pair{ 0, n });
 }
 
 
@@ -1113,7 +1112,7 @@ Mesh_MSTK::getNodeFaces(const Entity_ID nodeid,
       lfaceids[n++] = lid - 1;
     }
   }
-  faceids = Kokkos::subview(lfaceids, Kokkos::pair{0,n});
+  faceids = Kokkos::subview(lfaceids, Kokkos::pair{ 0, n });
   List_Delete(face_list);
 }
 
@@ -1150,7 +1149,7 @@ Mesh_MSTK::getNodeEdges(const Entity_ID nodeid,
       ledgeids[n++] = lid - 1;
     }
   }
-  edgeids = Kokkos::subview(ledgeids, Kokkos::pair{0,n});
+  edgeids = Kokkos::subview(ledgeids, Kokkos::pair{ 0, n });
   List_Delete(edge_list);
 }
 
@@ -1185,7 +1184,7 @@ Mesh_MSTK::getEdgeFaces(const Entity_ID edgeid,
       lfaceids[n++] = lid - 1;
     }
   }
-  faceids = Kokkos::subview(lfaceids, Kokkos::pair{0,n});
+  faceids = Kokkos::subview(lfaceids, Kokkos::pair{ 0, n });
   List_Delete(face_list);
 }
 
@@ -1225,7 +1224,7 @@ Mesh_MSTK::getEdgeCells(const Entity_ID edgeid,
       lcellids[n++] = lid - 1;
     }
   }
-  cellids = Kokkos::subview(lcellids, Kokkos::pair{0,n});
+  cellids = Kokkos::subview(lcellids, Kokkos::pair{ 0, n });
   List_Delete(cell_list);
 }
 
@@ -2050,7 +2049,8 @@ Mesh_MSTK::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
           ++nent_loc;
         }
         break;
-      default: {}
+      default: {
+      }
       }
     }
     entids = std::move(lentids);

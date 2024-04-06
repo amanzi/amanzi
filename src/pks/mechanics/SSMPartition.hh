@@ -27,8 +27,7 @@ typedef std::vector<Teuchos::RCP<SSM>> SSMList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, SSMList> SSMPartition;
 
 // Non-member factory
-inline
-Teuchos::RCP<SSMPartition>
+inline Teuchos::RCP<SSMPartition>
 CreateSSMPartition(Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                    Teuchos::RCP<Teuchos::ParameterList> plist)
 {

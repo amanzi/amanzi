@@ -314,9 +314,7 @@ asRaggedArray_DualView(Func mesh_func, int count)
 
   for (int i = 0; i != count; ++i) {
     const auto& ent = ents[i];
-    for (int j = 0; j != ent.size(); ++j) {
-      adj.template get<MemSpace_kind::HOST>(i, j) = ent[j];
-    }
+    for (int j = 0; j != ent.size(); ++j) { adj.template get<MemSpace_kind::HOST>(i, j) = ent[j]; }
   }
 
   Kokkos::deep_copy(adj.rows.view_device(), adj.rows.view_host());

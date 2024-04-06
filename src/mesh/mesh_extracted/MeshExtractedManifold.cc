@@ -340,7 +340,7 @@ MeshExtractedManifold::InitParentMaps(const std::string& setname)
     std::map<Entity_ID, int> marked_ents = EnforceOneLayerOfGhosts_(setname, kind_p, &setents);
 
     // extract owned ids
-    Entity_ID_View ids_p(std::string("parent ids: ")+to_string(kind_d), marked_ents.size());
+    Entity_ID_View ids_p(std::string("parent ids: ") + to_string(kind_d), marked_ents.size());
 
     std::size_t ids_p_s = 0;
     for (auto& it : marked_ents) {

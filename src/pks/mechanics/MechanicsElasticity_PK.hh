@@ -139,8 +139,13 @@ class MechanicsElasticity_PK : public Mechanics_PK {
 
   // -- access
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae() { return bdf1_dae_; }
-  virtual Teuchos::RCP<Operators::Operator> my_operator(const Operators::OperatorType& type) override;
-  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization> my_pde(const Operators::PDEType& type) override { return op_matrix_elas_; }
+  virtual Teuchos::RCP<Operators::Operator>
+  my_operator(const Operators::OperatorType& type) override;
+  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
+  my_pde(const Operators::PDEType& type) override
+  {
+    return op_matrix_elas_;
+  }
 
  public:
   Teuchos::RCP<Operators::Operator> op_matrix_;

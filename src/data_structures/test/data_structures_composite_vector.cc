@@ -363,7 +363,8 @@ SUITE(COMPOSITE_VECTOR)
 
     int nbf_owned = x->ViewComponent("boundary_face", false)->MyLength();
     int nbf_all = x->ViewComponent("boundary_face", true)->MyLength();
-    std::cout << "On rank " << rank << " of " << size << ", nbf_all = " << nbf_all << ", nbf_owned = " << nbf_owned << std::endl;
+    std::cout << "On rank " << rank << " of " << size << ", nbf_all = " << nbf_all
+              << ", nbf_owned = " << nbf_owned << std::endl;
 
     if (size == 1) {
       CHECK_EQUAL(nbf_owned, nbf_all);
@@ -371,5 +372,4 @@ SUITE(COMPOSITE_VECTOR)
       CHECK(nbf_owned < nbf_all);
     }
   }
-
 }

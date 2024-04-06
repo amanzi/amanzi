@@ -74,7 +74,7 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx);
-  std::string setname = (icase == 0 || icase == 1) ?  "fractures" : "fracture 1";
+  std::string setname = (icase == 0 || icase == 1) ? "fractures" : "fracture 1";
   auto surfmesh_fw =
     Teuchos::rcp(new MeshExtractedManifold(mesh, setname, AmanziMesh::FACE, comm, gm, plist));
   Teuchos::RCP<Mesh> surfmesh = Teuchos::rcp(
@@ -146,7 +146,7 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
     auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>(ncells_wghost, T));
     for (int c = 0; c < ncells_wghost; ++c) {
       const Point& xc = surfmesh->getCellCentroid(c);
-      (*K)[c](0,0) = ana->ScalarDiffusivity(xc, 0.0);
+      (*K)[c](0, 0) = ana->ScalarDiffusivity(xc, 0.0);
     }
     op->SetTensorCoefficient(K);
     op->SetDensity(0.);

@@ -182,7 +182,8 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO)
     cacheAll(*parent_mesh_cache);
     auto mesh = fac.create(parent_mesh_cache,
                            std::vector<std::string>({ "fractures-two" }),
-                           AmanziMesh::Entity_kind::FACE, false);
+                           AmanziMesh::Entity_kind::FACE,
+                           false);
     cacheAll(*mesh);
 
     // test the surface mesh as a fracture mesh

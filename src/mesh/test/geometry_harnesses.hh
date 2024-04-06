@@ -362,7 +362,8 @@ void
 testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz = -1)
 {
   // check faces are on the boundary
-  int nbfaces_global = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false).NumGlobalElements();
+  int nbfaces_global =
+    mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false).NumGlobalElements();
   int nbfaces_global_test;
   if (nz < 0) {
     nbfaces_global_test = 2 * nx + 2 * ny;
@@ -402,13 +403,14 @@ testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int
   // check nodes are on the boundary
   //
   // NOTE: this appears broken in current master, see #583
-  int nbnodes_global = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_NODE, false).NumGlobalElements();
+  int nbnodes_global =
+    mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_NODE, false).NumGlobalElements();
   int nbnodes_global_test;
   if (nz < 0) {
     nbnodes_global_test = 2 * (nx - 1) + 2 * (ny - 1) + 4; // don't double count the corners
   } else {
-    nbnodes_global_test = 2 * (nx - 1) * (ny - 1) + 2 * (nx - 1) * (nz - 1) + 2 * (ny - 1) * (nz - 1) +
-                   4 * (nx - 1) + 4 * (ny - 1) + 4 * (nz - 1) + 8;
+    nbnodes_global_test = 2 * (nx - 1) * (ny - 1) + 2 * (nx - 1) * (nz - 1) +
+                          2 * (ny - 1) * (nz - 1) + 4 * (nx - 1) + 4 * (ny - 1) + 4 * (nz - 1) + 8;
   }
   CHECK_EQUAL(nbnodes_global_test, nbnodes_global);
 

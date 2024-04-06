@@ -124,11 +124,11 @@ class MeshMaps {
       return view<MEM>(boundary_faces_);
     } else if (ptype == Parallel_kind::OWNED) {
       return Kokkos::subview(view<MEM>(boundary_faces_),
-                             Kokkos::pair{(int)0, (int)getNBoundaryFaces(Parallel_kind::OWNED)});
+                             Kokkos::pair{ (int)0, (int)getNBoundaryFaces(Parallel_kind::OWNED) });
     } else if (ptype == Parallel_kind::GHOST) {
       return Kokkos::subview(view<MEM>(boundary_faces_),
-                             Kokkos::pair{(int)getNBoundaryFaces(Parallel_kind::OWNED),
-                               (int)getNBoundaryFaces(Parallel_kind::ALL)});
+                             Kokkos::pair{ (int)getNBoundaryFaces(Parallel_kind::OWNED),
+                                           (int)getNBoundaryFaces(Parallel_kind::ALL) });
     }
     return View_type<const Entity_ID, MEM>();
   }
@@ -142,11 +142,11 @@ class MeshMaps {
       return view<MEM>(boundary_nodes_);
     } else if (ptype == Parallel_kind::OWNED) {
       return Kokkos::subview(view<MEM>(boundary_nodes_),
-                             Kokkos::pair{(int)0, (int)getNBoundaryNodes(Parallel_kind::OWNED)});
+                             Kokkos::pair{ (int)0, (int)getNBoundaryNodes(Parallel_kind::OWNED) });
     } else if (ptype == Parallel_kind::GHOST) {
       return Kokkos::subview(view<MEM>(boundary_nodes_),
-                             Kokkos::pair{(int)getNBoundaryNodes(Parallel_kind::OWNED),
-                               (int)getNBoundaryNodes(Parallel_kind::ALL)});
+                             Kokkos::pair{ (int)getNBoundaryNodes(Parallel_kind::OWNED),
+                                           (int)getNBoundaryNodes(Parallel_kind::ALL) });
     }
     return View_type<const Entity_ID, MEM>();
   }

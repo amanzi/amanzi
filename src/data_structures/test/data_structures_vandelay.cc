@@ -115,11 +115,10 @@ SUITE(VANDELAY_COMPOSITE_VECTOR)
     int size = comm->NumProc();
     if (size == 1) {
       CHECK_EQUAL(nbf_all, nbf_owned);
-      CHECK_CLOSE((*x2)("boundary_face", 0, nbf_owned-1), 2.0, 0.00001);
+      CHECK_CLOSE((*x2)("boundary_face", 0, nbf_owned - 1), 2.0, 0.00001);
     } else {
       CHECK(nbf_owned < nbf_all);
-      CHECK_CLOSE((*x2)("boundary_face", 0, nbf_all-1), 2.0, 0.00001);
+      CHECK_CLOSE((*x2)("boundary_face", 0, nbf_all - 1), 2.0, 0.00001);
     }
   }
-
 }
