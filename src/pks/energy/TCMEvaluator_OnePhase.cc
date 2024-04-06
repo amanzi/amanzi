@@ -26,26 +26,40 @@ namespace Energy {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist)
+TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                                             Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(
       make_pair(plist_.get<std::string>("thermal conductivity key"), Tags::DEFAULT));
   }
-  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
+  std::string domain = Keys::getDomain(my_keys_[0].first);
 
-  temperature_key_ = plist_.get<std::string>("temperature key", prefix + "temperature");
+  temperature_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
   dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
 
-  porosity_key_ = plist_.get<std::string>("porosity key", prefix + "porosity");
+  porosity_key_ = plist_.get<std::string>("porosity key", Keys::getKey(domain, "porosity"));
   dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
 
+  // EOS for thermal conductivity
+  std::vector<std::vector<std::string>> region_list;
   AmanziEOS::EOSFactory<AmanziEOS::EOS_ThermalConductivity> eos_fac;
-  auto& sublist = plist_.sublist("thermal conductivity parameters");
-  tc_ = eos_fac.Create(sublist);
 
-  k_rock_ = sublist.get<double>("thermal conductivity of rock");
+  for (auto lcv = plist.begin(); lcv != plist.end(); ++lcv) {
+    std::string name = lcv->first;
+    if (plist.isSublist(name)) {
+      Teuchos::ParameterList sublist = plist.sublist(name);
+      region_list.push_back(sublist.get<Teuchos::Array<std::string>>("regions").toVector());
+
+      tc_.push_back(eos_fac.Create(sublist));
+      k_rock_.push_back(sublist.get<double>("thermal conductivity of rock"));
+    }
+  }
+
+  partition_ = Teuchos::rcp(new Functions::MeshPartition());
+  partition_->Initialize(mesh, AmanziMesh::Entity_kind::CELL, region_list, -1);
+  partition_->Verify();
 }
 
 
@@ -82,13 +96,14 @@ TCMEvaluator_OnePhase::Evaluate_(const State& S, const std::vector<CompositeVect
   int ierr(0);
   int ncomp = results[0]->size("cell", false);
   for (int i = 0; i != ncomp; ++i) {
-    double k_liq = tc_->ThermalConductivity(temp_c[0][i], 0.0); // no models with pressure yet
-    ierr = std::max(ierr, tc_->error_code());
+    int id = (*partition_)[i];
+    double k_liq = tc_[id]->ThermalConductivity(temp_c[0][i], 0.0);
+    ierr = std::max(ierr, tc_[id]->error_code());
 
     double phi = poro_c[0][i];
-    result_c[0][i] = phi * k_liq + (1.0 - phi) * k_rock_;
+    result_c[0][i] = phi * k_liq + (1.0 - phi) * k_rock_[id];
   }
-  AmanziEOS::ErrorAnalysis(S.Get<CompositeVector>(temperature_key_).Comm(), ierr, tc_->error_msg());
+  AmanziEOS::ErrorAnalysis(S.Get<CompositeVector>(temperature_key_).Comm(), ierr, tc_[0]->error_msg());
 }
 
 
@@ -109,12 +124,14 @@ TCMEvaluator_OnePhase::EvaluatePartialDerivative_(const State& S,
 
     if (wrt_key == porosity_key_) {
       for (int i = 0; i != ncells; ++i) {
-        double k_liq = tc_->ThermalConductivity(temp_v[0][i], 0.0);
-        result_v[0][i] = k_liq - k_rock_;
+        int id = (*partition_)[i];
+        double k_liq = tc_[id]->ThermalConductivity(temp_v[0][i], 0.0);
+        result_v[0][i] = k_liq - k_rock_[id];
       }
     } else if (wrt_key == temperature_key_) {
       for (int i = 0; i != ncells; ++i) {
-        double k_liq = tc_->DThermalConductivityDT(temp_v[0][i], 0.0);
+        int id = (*partition_)[i];
+        double k_liq = tc_[id]->DThermalConductivityDT(temp_v[0][i], 0.0);
         result_v[0][i] = poro_v[0][i] * k_liq;
       }
     }

@@ -16,6 +16,8 @@
 #ifndef AMANZI_ENERGY_TCM_EVALUATOR_ONEPHASE_HH_
 #define AMANZI_ENERGY_TCM_EVALUATOR_ONEPHASE_HH_
 
+#include "MeshPartition.hh"
+
 #include "EvaluatorSecondaryMonotype.hh"
 #include "H2O_ThermalConductivity.hh"
 
@@ -26,8 +28,8 @@ namespace Energy {
 class TCMEvaluator_OnePhase
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  // constructor format for all derived classes
-  TCMEvaluator_OnePhase(Teuchos::ParameterList& plist);
+  TCMEvaluator_OnePhase(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                        Teuchos::ParameterList& plist);
   TCMEvaluator_OnePhase(const TCMEvaluator_OnePhase& other);
 
   // required inteface functions
@@ -43,9 +45,9 @@ class TCMEvaluator_OnePhase
   virtual void EnsureCompatibility_Units_(State& S) override;
 
  protected:
-  // We have one model so far; hence, no factory is needed.
-  Teuchos::RCP<AmanziEOS::EOS_ThermalConductivity> tc_;
-  double k_rock_;
+  std::vector<Teuchos::RCP<AmanziEOS::EOS_ThermalConductivity>> tc_;
+  std::vector<double> k_rock_;
+  Teuchos::RCP<Functions::MeshPartition> partition_;
 
   // Keys for fields dependencies
   Key temperature_key_, porosity_key_;
