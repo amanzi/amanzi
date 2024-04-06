@@ -274,9 +274,9 @@ Teuchos::RCP<const Epetra_MultiVector>
 CompositeVector::ViewComponent(const std::string& name, bool ghosted) const
 {
   if (name == "boundary_face") {
-    if (!mastervec_->HasComponent("boundary_face") && mastervec_->HasComponent("face")) {
+    if (!HasComponent("boundary_face") && HasComponent("face")) {
       ApplyVandelay_();
-      return vandelay_vector_;
+      return ghosted ? vandelay_vector_all_ : vandelay_vector_owned_;
     }
   }
 
@@ -292,10 +292,10 @@ Teuchos::RCP<Epetra_MultiVector>
 CompositeVector::ViewComponent(const std::string& name, bool ghosted)
 {
   if (name == "boundary_face") {
-    if (!mastervec_->HasComponent("boundary_face") && mastervec_->HasComponent("face")) {
+    if (!HasComponent("boundary_face") && HasComponent("face")) {
       ApplyVandelay_();
       ChangedValue("face");
-      return vandelay_vector_;
+      return ghosted ? vandelay_vector_all_ : vandelay_vector_owned_;
     }
   }
 
@@ -445,12 +445,21 @@ CompositeVector::GatherGhostedToMaster(const std::string& name, Epetra_CombineMo
 void
 CompositeVector::CreateVandelayVector_() const
 {
-  vandelay_vector_ = Teuchos::rcp(
-    new Epetra_MultiVector(Mesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false),
+  vandelay_vector_all_ = Teuchos::rcp(
+    new Epetra_MultiVector(Mesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true),
                            mastervec_->NumVectors("face"),
                            false));
+  if (ghosted_) {
+    double** data;
+    vandelay_vector_all_->ExtractView(&data);
+    vandelay_vector_owned_ = Teuchos::rcp(new Epetra_MultiVector(View,
+            Mesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false),
+            data, mastervec_->NumVectors("face")));
+  }
 
   // create new importer from face-component if it has more than one DOF per face
+  //
+  // Note that vandelay operates on OWNED entities, not ALL
   const auto& map = *ComponentMap("face", false);
   int nfaces = Mesh()->getMap(AmanziMesh::Entity_kind::FACE, false).NumMyElements();
   if (nfaces != map.NumMyPoints()) {
@@ -466,12 +475,12 @@ CompositeVector::CreateVandelayVector_() const
 void
 CompositeVector::ApplyVandelay_() const
 {
-  if (vandelay_vector_ == Teuchos::null) { CreateVandelayVector_(); }
+  if (vandelay_vector_owned_ == Teuchos::null) { CreateVandelayVector_(); }
   if (vandelay_import_ == Teuchos::null)
-    vandelay_vector_->Import(
+    vandelay_vector_owned_->Import(
       *ViewComponent("face", false), Mesh()->getBoundaryFaceImporter(), Insert);
   else
-    vandelay_vector_->Import(*ViewComponent("face", false), *vandelay_import_, Insert);
+    vandelay_vector_owned_->Import(*ViewComponent("face", false), *vandelay_import_, Insert);
 }
 
 
