@@ -840,7 +840,7 @@ PDE_DiffusionNLFVwithBndFaces::ApplyBCs(bool primary, bool eliminate, bool essen
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
-  Epetra_MultiVector& rhs_bnd = *global_op_->rhs()->ViewComponent("boundary_face", true);
+  Epetra_MultiVector& rhs_bnd = *global_op_->rhs()->ViewComponent("boundary_face");
   Epetra_MultiVector& hap = *stencil_data_->ViewComponent("hap", true);
 
   // un-rolling little-k data

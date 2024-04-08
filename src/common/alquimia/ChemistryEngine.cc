@@ -558,7 +558,8 @@ ChemistryEngine::Advance(const double delta_time,
                          AlquimiaState& chem_state,
                          AlquimiaAuxiliaryData& aux_data,
                          AlquimiaAuxiliaryOutputData& aux_output,
-                         int& num_iterations, int natural_id)
+                         int& num_iterations,
+                         int natural_id)
 {
 #ifdef AMANZI_USE_FENV
   // Disable divide-by-zero floating point exceptions.

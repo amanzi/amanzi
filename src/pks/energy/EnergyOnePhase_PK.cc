@@ -120,7 +120,7 @@ EnergyOnePhase_PK::Setup()
     elist.set("thermal conductivity key", conductivity_key_).set<std::string>("tag", "");
     elist.setName(conductivity_key_);
 
-    auto tcm = Teuchos::rcp(new TCMEvaluator_OnePhase(elist));
+    auto tcm = Teuchos::rcp(new TCMEvaluator_OnePhase(mesh_, elist));
     S_->SetEvaluator(conductivity_key_, Tags::DEFAULT, tcm);
   }
 

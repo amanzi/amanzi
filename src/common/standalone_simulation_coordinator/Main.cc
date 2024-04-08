@@ -119,8 +119,8 @@ main(int argc, char* argv[])
 
     if (print_tpl_versions) {
       if (rank == 0) {
-          std::cout << "Third party libraries that above amanzi binary is linked against:"
-                    << std::endl;
+        std::cout << "Third party libraries that above amanzi binary is linked against:"
+                  << std::endl;
 #ifdef AMANZI_TPLS_MAJOR
         std::cout << "Amanzi TPL collection version " << XSTR(AMANZI_TPLS_MAJOR) << "."
                   << XSTR(AMANZI_TPLS_MINOR) << "." << XSTR(AMANZI_TPLS_PATCH) << std::endl;

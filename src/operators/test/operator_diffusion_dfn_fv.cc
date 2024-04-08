@@ -33,6 +33,7 @@
 
 // Amanzi::Operators
 #include "Analytic00b.hh"
+#include "Analytic01c.hh"
 #include "Analytic03b.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
@@ -73,7 +74,7 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx);
-  std::string setname = (icase == 0 || icase == 1) ?  "fractures" : "fracture 1";
+  std::string setname = (icase == 0 || icase == 1) ? "fractures" : "fracture 1";
   auto surfmesh_fw =
     Teuchos::rcp(new MeshExtractedManifold(mesh, setname, AmanziMesh::FACE, comm, gm, plist));
   Teuchos::RCP<Mesh> surfmesh = Teuchos::rcp(
@@ -90,8 +91,10 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
   Teuchos::RCP<AnalyticBase> ana;
   if (icase == 0 || icase == 1) {
     ana = Teuchos::rcp(new Analytic00b(surfmesh, 1.0, 2.0, 3.0, 1, v, gravity));
-  } else {
+  } else if (icase == 2) {
     ana = Teuchos::rcp(new Analytic03(surfmesh));
+  } else {
+    ana = Teuchos::rcp(new Analytic01c(surfmesh));
   }
 
   // create boundary data (Dirichlet everywhere)
@@ -143,9 +146,11 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
     auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>(ncells_wghost, T));
     for (int c = 0; c < ncells_wghost; ++c) {
       const Point& xc = surfmesh->getCellCentroid(c);
-      (*K)[c](0,0) = ana->ScalarDiffusivity(xc, 0.0);
+      (*K)[c](0, 0) = ana->ScalarDiffusivity(xc, 0.0);
     }
     op->SetTensorCoefficient(K);
+    op->SetDensity(0.);
+    op->SetGravity(gvec);
   } else if (icase == 3) {
     auto k = Teuchos::rcp(new CompositeVector(*cvs2));
     auto& k_f = *k->ViewComponent("face");
@@ -159,6 +164,8 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
       for (int i = 0; i < ndofs; ++i) k_f[0][g + i] = ana->ScalarDiffusivity(xf, 0.0);
     }
     op->SetScalarCoefficient(k, Teuchos::null);
+    op->SetDensity(0.);
+    op->SetGravity(gvec);
   }
 
   // create optional source term
@@ -232,7 +239,7 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
 
   if (MyPID == 0) {
     l2_err /= pnorm;
-    printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  norms=%9.6f %9.6f\n",
+    printf("rel norms: L2(p)=%9.6f Inf(p)=%9.6f L2(u)=%9.6g Inf(u)=%9.6f norms=%9.6f %9.6f\n",
            l2_err / pnorm,
            inf_err / pnorm,
            ul2_err / unorm,

@@ -204,8 +204,10 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
       new Mesh(parent_mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
     cacheAll(*parent_mesh_cache);
 
-    auto mesh =
-      fac.create(parent_mesh_cache, { "Top Face Plane" }, AmanziMesh::Entity_kind::FACE, true);
+    auto mesh = fac.create(parent_mesh_cache,
+                           std::vector<std::string>({ "Top Face Plane" }),
+                           AmanziMesh::Entity_kind::FACE,
+                           true);
     cacheAll(*mesh);
 
     // test the surface mesh as a 3x3 quad mesh
@@ -275,8 +277,10 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
       new Mesh(parent_mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
     cacheAll(*parent_mesh_cache);
 
-    auto mesh =
-      fac.create(parent_mesh_cache, { "Top Face Plane" }, AmanziMesh::Entity_kind::FACE, true);
+    auto mesh = fac.create(parent_mesh_cache,
+                           std::vector<std::string>({ "Top Face Plane" }),
+                           AmanziMesh::Entity_kind::FACE,
+                           true);
     cacheAll(*mesh);
 
     // test the surface mesh as a 3x3 quad mesh

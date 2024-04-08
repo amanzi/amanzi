@@ -73,7 +73,6 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
                               View_type<double, MemSpace_kind::HOST>& vol_fracs,
                               const MeshCache<MemSpace_kind::HOST>& mesh)
 {
-  Kokkos::resize(vol_fracs, 0);
   MeshCache<MemSpace_kind::HOST>::cEntity_ID_View ret_ents;
   auto ents_cpt = 0;
   auto vol_fracs_cpt = 0;
@@ -85,8 +84,8 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
 
     if (kind == Entity_kind::CELL) {
       auto ncells = mesh.getNumEntities(Entity_kind::CELL, ptype);
-      Kokkos::resize(vol_fracs, ncells);
-      Kokkos::resize(ents, ncells);
+      Kokkos::realloc(vol_fracs, ncells);
+      Kokkos::realloc(ents, ncells);
 
       for (int c = 0; c != ncells; ++c) {
         auto polytope_nodes = mesh.getCellCoordinates(c);
@@ -126,8 +125,8 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
     } else {
       // ind == FACE
       int nfaces = mesh.getNumEntities(Entity_kind::FACE, ptype);
-      Kokkos::resize(vol_fracs, nfaces);
-      Kokkos::resize(ents, nfaces);
+      Kokkos::realloc(vol_fracs, nfaces);
+      Kokkos::realloc(ents, nfaces);
 
       for (int f = 0; f != nfaces; ++f) {
         auto polygon = mesh.getFaceCoordinates(f);

@@ -40,6 +40,7 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type& comm, bool include_io_set)
   NumNodes_ = 0;
   NumElems_ = 0;
   ConnLength_ = 0;
+  Iteration_ = 0;
 }
 
 
