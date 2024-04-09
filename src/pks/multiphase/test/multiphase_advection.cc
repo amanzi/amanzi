@@ -66,7 +66,7 @@ run_test(const std::string& domain, const std::string& filename)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh;
 
-  mesh = meshfactory.create(0.0, 0.0, 60.0, 40.0, 30, 20);
+  mesh = meshfactory.create(0.0, 0.0, 20.0, 20.0, 40, 40);
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -106,15 +106,15 @@ run_test(const std::string& domain, const std::string& filename)
 
   // loop
   int iloop(0);
-  double t(0.0), tend(3.14e+6), dt0(600.0), dt(dt0),
-   dt_max(2.0*3600.0); // 0.5 year time period; 10 day time step
+  double t(0.0), tend(100000.0), dt0(60.0), dt(dt0),
+   dt_max(24.0*3600.0); // 0.5 year time period; 10 day time step
   // store Newton iterations and time step size (after successful iteration)
   std::vector<int> newton_iterations_per_step;
   std::vector<double> time_step_size;
 
   while (t < tend) {
     // output solution
-    if (iloop % 20 == 0) {
+    if (iloop % 20 == 0 || (std::abs(t - 49439.2) < 4e3) ) {
       io->InitializeCycle(t, iloop, "");
       const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
