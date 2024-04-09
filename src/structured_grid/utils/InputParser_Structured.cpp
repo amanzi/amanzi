@@ -261,7 +261,7 @@ namespace Amanzi {
       }
       struc_out_list.set<bool>("echo_inputs",echo_inputs);
 
-      int prob_v, mg_v, cg_v, amr_v, diffuse_v, io_v, fab_v;
+      int prob_v, mg_v, cg_v, amr_v, io_v, fab_v;
       //
       // Set flow model
       //
@@ -702,19 +702,19 @@ namespace Amanzi {
       // Verbosity implementation
       //
       if (lc(v_val) == "none") {
-        prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0; io_v = 0; fab_v = 0;
+        prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; io_v = 0; fab_v = 0;
       }
       else if (lc(v_val) == "low") {
-        prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0; io_v = 0; fab_v = 0;
+        prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1; io_v = 0; fab_v = 0;
       }
       else if (lc(v_val) == "medium") {
-        prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 0; io_v = 0; fab_v = 0;
+        prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2; io_v = 0; fab_v = 0;
       }
       else if (lc(v_val) == "high") {
-        prob_v = 2; mg_v = 0; cg_v = 0; amr_v = 3;  diffuse_v = 0; io_v = 0; fab_v = 0;
+        prob_v = 2; mg_v = 0; cg_v = 0; amr_v = 3; io_v = 0; fab_v = 0;
       }
       else if (lc(v_val) == "extreme") {
-        prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1; io_v = 1; fab_v = 1;
+        prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3; io_v = 1; fab_v = 1;
       }
       //
       // Optional lists
@@ -2528,7 +2528,6 @@ namespace Amanzi {
             const std::string& p=pit->first;
             StateDef::CompMap& comps = state[p];
             for (StateDef::CompMap::iterator cit=comps.begin(); cit!=comps.end(); ++cit) {
-              const std::string& c=cit->first;
               const Array<TRACER>& solutes = cit->second.getTracerArray();
               for (int i=0; i<solutes.size(); ++i) {
                 const std::string& s=solutes[i].name;

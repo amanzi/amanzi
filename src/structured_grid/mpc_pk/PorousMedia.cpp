@@ -2885,7 +2885,7 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
     }
   }
 
-  bool cont = richard_solver_control->AdjustDt(dt_flow,ret,dt_flow_new);
+  richard_solver_control->AdjustDt(dt_flow,ret,dt_flow_new);
 
   step_ok = (ret == NLSstatus::NLS_SUCCESS);
 
@@ -3987,7 +3987,6 @@ PorousMedia::errorEst (TagBoxArray& tags,
               const Array<const Region*>& my_regions = pmfunc->Regions();
 
               MultiFab* mf = 0;
-              const std::string& name = err_list[j].name();
 
               if (!pmfunc->regionOnly())
                 mf = derive(err_list[j].name(), time, err_list[j].nGrow());
@@ -4049,8 +4048,6 @@ PorousMedia::errorEst (TagBoxArray& tags,
                           const int*  dlo     = (*mf)[mfi].box().loVect();
                           const int*  dhi     = (*mf)[mfi].box().hiVect();
                           const int   ncomp   = (*mf)[mfi].nComp();
-
-                          Real value = pmfunc->Value();
 
                           pmfunc->tagCells(tptr,ARLIM(tlo),ARLIM(thi),
                                            &tagval, &clearval, dat, ARLIM(dlo), ARLIM(dhi),
@@ -4752,9 +4749,7 @@ PorousMedia::computeNewDt (int                   finest_level,
 
   bool start_with_previously_suggested_dt = true;
   bool check_for_dt_cut_by_event = true;
-  bool in_transient_period = false;
 
-  int  tpc_interval = -1;
   Real dt_event = -1;
   Real dt_prev_suggest = -1;
   Real dt_eig_local = -1;
@@ -4762,7 +4757,6 @@ PorousMedia::computeNewDt (int                   finest_level,
 
   Real dt_0;
   Real cum_time = parent->cumTime(); // Time evolved to so far
-  Real start_time = parent->startTime(); // Time simulation started from
 
   const ExecControl* ec = PMParent()->GetExecControl(cum_time);
   BL_ASSERT(ec != 0);
@@ -4888,7 +4882,6 @@ PorousMedia::computeInitialDt (int                   finest_level,
     }
 
   Real cum_time = parent->cumTime(); // Time evolved to so far
-  Real start_time = parent->startTime(); // Time simulation started from
 
   const ExecControl* ec = PMParent()->GetExecControl(cum_time);
   BL_ASSERT(ec != 0);
@@ -4982,7 +4975,6 @@ PorousMedia::okToContinue ()
   BL_PROFILE("PorousMedia::okToContinue()");
   bool ret = true;
   std::string reason_for_stopping = "n/a";
-  bool successfully_completed = false;
 
   if (level == 0) {
     if (parent->dtLevel(0) <= dt_cutoff) {
@@ -4992,13 +4984,11 @@ PorousMedia::okToContinue ()
     int max_step = PMParent()->MaxStep();
     if (parent->levelSteps(0) >= max_step) {
       ret = false; reason_for_stopping = "Hit maximum allowed time steps";
-      successfully_completed = true;
     }
 
     Real stop_time = PMParent()->StopTime();
     if (parent->cumTime() >= stop_time) {
       ret = false; reason_for_stopping = "Hit maximum allowed time";
-      successfully_completed = true;
     }
 
     if (!ret) {
@@ -5784,8 +5774,6 @@ PorousMedia::mac_sync ()
   bool do_explicit_tracer_sync_only = (diffuse_tracers && be_cn_theta_trac==0);
 
   const int  numscal   = ncomps;
-  const Real prev_time = state[State_Type].prevTime();
-  const Real curr_time = state[State_Type].curTime();
   const Real dt        = parent->dtLevel(level);
   MultiFab& S_new = get_new_data(State_Type);
 
@@ -5809,9 +5797,9 @@ PorousMedia::mac_sync ()
     //
     // tracer sync must be diffused time-implicitly
     //
-    const Real  prev_time    = state[State_Type].prevTime();
-    const Real  cur_time     = state[State_Type].curTime();
-    const Real  dt           = cur_time - prev_time;
+    const Real prev_time = state[State_Type].prevTime();
+    const Real cur_time  = state[State_Type].curTime();
+    const Real dt        = cur_time - prev_time;
 
     MultiFab sat_new(grids,ncomps,nGrowHYP);
     Real t_sat_new = cur_time;
@@ -7441,7 +7429,6 @@ PorousMedia::derive_Aqueous_Pressure(Real      time,
                                      MultiFab& mf,
                                      int       dcomp)
 {
-  Real t_new = state[Press_Type].curTime();
   int ncomp = 1;
   int ngrow = mf.nGrow();
   if ( (flow_model == PM_FLOW_MODEL_RICHARDS)
@@ -7460,7 +7447,6 @@ PorousMedia::derive_Capillary_Pressure(Real      time,
 				       MultiFab& mf,
 				       int       dcomp)
 {
-  Real t_new = state[Press_Type].curTime();
   int ncomp = 1;
   int ngrow = mf.nGrow();
   if ( (flow_model == PM_FLOW_MODEL_RICHARDS)
