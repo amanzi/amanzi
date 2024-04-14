@@ -31,6 +31,8 @@ namespace WhetStone {
 *
 * Input: face f, two cells sharing this face, and two co-normal
 *        vectors Tni = Ti * normal where fixed normal is used.
+*        Second function assumes that Ti = I. 
+*      
 * Output: HAP p and weight w.
 ****************************************************************** */
 void
@@ -63,6 +65,30 @@ NLFV::HarmonicAveragingPoint(int f,
 
   double factor = dir * d1 * d2 / det / area;
   p = weight * cm1 + (1.0 - weight) * cm2 + factor * (Tn1 - Tn2);
+}
+
+
+void
+NLFV::HarmonicAveragingPoint(int f,
+                             int c1,
+                             int c2,
+                             AmanziGeometry::Point& p,
+                             double& weight)
+{
+  int dir;
+
+  const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
+  const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f, c1, &dir);
+
+  const AmanziGeometry::Point& cm1 = mesh_->getCellCentroid(c1);
+  const AmanziGeometry::Point& cm2 = mesh_->getCellCentroid(c2);
+
+  double area = mesh_->getFaceArea(f);
+  double d1 = fabs(normal * (fm - cm1)) / area;
+  double d2 = fabs(normal * (fm - cm2)) / area;
+
+  weight = d2 / (d1 + d2);
+  p = weight * cm1 + (1.0 - weight) * cm2;
 }
 
 
