@@ -548,14 +548,9 @@ template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 MeshCache<MEM>::getFaceCentroid(const Entity_ID f) const
 {
-  auto cf = Impl::ComputeFunction<MEM>::template hostOnly<
-    std::function<AmanziGeometry::Point(const Entity_ID)>>();
-  if constexpr (MEM == MemSpace_kind::HOST) {
-    cf = [&](const int i) { return algorithms_->computeFaceCentroid(*this, i); };
-  }
-
   return Impl::Getter<MEM, AP>::get(
-    data_.face_geometry_cached, data_.face_centroids, framework_mesh_, nullptr, cf, f);
+    data_.face_geometry_cached, data_.face_centroids, framework_mesh_, nullptr,
+    [&](const int i) { return algorithms_->computeFaceCentroid(*this, i); }, f);
 }
 
 
@@ -606,13 +601,9 @@ template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION double
 MeshCache<MEM>::getFaceArea(const Entity_ID f) const
 {
-  auto cf = Impl::ComputeFunction<MEM>::template hostOnly<std::function<double(const Entity_ID)>>();
-  if constexpr (MEM == MemSpace_kind::HOST) {
-    cf = [&](const Entity_ID i) { return algorithms_->computeFaceArea(*this, i); };
-  }
-
   return Impl::Getter<MEM, AP>::get(
-    data_.face_geometry_cached, data_.face_areas, framework_mesh_, nullptr, cf, f);
+    data_.face_geometry_cached, data_.face_areas, framework_mesh_, nullptr,
+    [&](const Entity_ID i) { return algorithms_->computeFaceArea(*this, i); }, f);
 }
 
 template <MemSpace_kind MEM>
@@ -693,13 +684,9 @@ template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION double
 MeshCache<MEM>::getCellVolume(const Entity_ID c) const
 {
-  auto cf = Impl::ComputeFunction<MEM>::template hostOnly<std::function<double(const Entity_ID)>>();
-  if constexpr (MEM == MemSpace_kind::HOST) {
-    cf = [&](const int i) { return algorithms_->computeCellVolume(*this, i); };
-  }
-
   return Impl::Getter<MEM, AP>::get(
-    data_.cell_geometry_cached, data_.cell_volumes, framework_mesh_, nullptr, cf, c);
+    data_.cell_geometry_cached, data_.cell_volumes, framework_mesh_, nullptr,
+    [&](const int i) { return algorithms_->computeCellVolume(*this, i); }, c);
 }
 
 template <MemSpace_kind MEM>
@@ -844,14 +831,9 @@ template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 MeshCache<MEM>::getCellCentroid(const Entity_ID c) const
 {
-  auto cf = Impl::ComputeFunction<MEM>::template hostOnly<
-    std::function<AmanziGeometry::Point(const Entity_ID)>>();
-  if constexpr (MEM == MemSpace_kind::HOST) {
-    cf = [&](const int i) { return algorithms_->computeCellCentroid(*this, i); };
-  }
-
   return Impl::Getter<MEM, AP>::get(
-    data_.cell_geometry_cached, data_.cell_centroids, framework_mesh_, nullptr, cf, c);
+    data_.cell_geometry_cached, data_.cell_centroids, framework_mesh_, nullptr,
+    [&](const int i) { return algorithms_->computeCellCentroid(*this, i); }, c);
 }
 
 
@@ -1276,14 +1258,9 @@ template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 MeshCache<MEM>::getEdgeCentroid(const Entity_ID c) const
 {
-  auto cf = Impl::ComputeFunction<MEM>::template hostOnly<
-    std::function<AmanziGeometry::Point(const Entity_ID)>>();
-  if constexpr (MEM == MemSpace_kind::HOST) {
-    cf = [&](const int i) { return algorithms_->computeEdgeCentroid(*this, i); };
-  }
-
   return Impl::Getter<MEM, AP>::get(
-    data_.edge_geometry_cached, data_.edge_centroids, framework_mesh_, nullptr, cf, c);
+    data_.edge_geometry_cached, data_.edge_centroids, framework_mesh_, nullptr,
+    [&](const int i) { return algorithms_->computeEdgeCentroid(*this, i); }, c);
 }
 
 template <MemSpace_kind MEM>
@@ -1291,14 +1268,9 @@ template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 MeshCache<MEM>::getEdgeVector(const Entity_ID e) const
 {
-  auto cf = Impl::ComputeFunction<MEM>::template hostOnly<
-    std::function<AmanziGeometry::Point(const Entity_ID)>>();
-  if constexpr (MEM == MemSpace_kind::HOST) {
-    cf = [&](const int i) { return algorithms_->computeEdgeVector(*this, i, -1, nullptr); };
-  }
-
   return Impl::Getter<MEM, AP>::get(
-    data_.edge_geometry_cached, data_.edge_vectors, framework_mesh_, nullptr, cf, e);
+    data_.edge_geometry_cached, data_.edge_vectors, framework_mesh_, nullptr,
+    [&](const int i) { return algorithms_->computeEdgeVector(*this, i, -1, nullptr); }, e);
 }
 
 
@@ -1307,13 +1279,9 @@ template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION double
 MeshCache<MEM>::getEdgeLength(const Entity_ID e) const
 {
-  auto cf = Impl::ComputeFunction<MEM>::template hostOnly<std::function<double(const Entity_ID)>>();
-  if constexpr (MEM == MemSpace_kind::HOST) {
-    cf = [&](const int i) { return algorithms_->computeEdgeLength(*this, i); };
-  }
-
   return Impl::Getter<MEM, AP>::get(
-    data_.edge_lengths_cached, data_.edge_lengths, framework_mesh_, nullptr, cf, e);
+    data_.edge_lengths_cached, data_.edge_lengths, framework_mesh_, nullptr,
+    [&](const int i) { return algorithms_->computeEdgeLength(*this, i); }, e);
 }
 
 template <MemSpace_kind MEM>
