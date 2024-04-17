@@ -10,7 +10,8 @@ export CC=@CMAKE_C_COMPILER@
 export CXX=@CMAKE_CXX_COMPILER@
 #export CXXFLAGS='@hypre_cxxflags@'
 export F77=@CMAKE_Fortran_COMPILER@
-export FFLAGS='@Amanzi_COMMON_FCFLAGS@'
+#export FFLAGS='-g -fPIC'
+export FFLAGS='@Amanzi_COMMON_FCFLAGS@ -g'
 #export PETSC_DIR='@PETSc_DIR@'
 
 # pflotran in-source build under src
@@ -22,21 +23,24 @@ cd @ECOSIM_source_dir@
 
 git checkout agraus/ats_seb
 
-echo "running install"
+echo "In ATS-Ecosim install script: "
+echo "ECOSIM_LIBRARIES: $ECOSIM_LIBRARIES"
+echo "TPL_INSTALL_PREFIX: $TPL_INSTALL_PREFIX"
+echo "AMANZI_TPLS_BUILD_DIR: $AMANZI_TPLS_BUILD_DIR"
 
-make -j1 install ATS=1 SHARED=1
+make -j1 install ATS=1 SHARED=1 DEBUG=1
 
 rc=$?
 
 if [ $rc -eq 0 ]; then
   echo "copying data to install"
 
-  cp -r /global/home/users/agraus/code/ats_dev_dir/amanzi_tpls-build-master-Debug/ecosim/ecosim--source /global/home/users/agraus/code/ats_dev_dir/amanzi_tpls-install-master-Debug
-  cd /global/home/users/agraus/code/ats_dev_dir/amanzi_tpls-install-master-Debug
+  cp -r $AMANZI_TPLS_BUILD_DIR/ecosim/ecosim--source $AMANZI_TPLS_INSTALL_DIR
+  cd $AMANZI_TPLS_INSTALL_DIR
 
   mv ecosim--source/ ecosim/
 
-  cd /global/home/users/agraus/code/ats_dev_dir/amanzi_tpls-install-master-Debug/ecosim
+  cd $AMANZI_TPLS_INSTALL_DIR/ecosim
 
   mkdir local/lib
 

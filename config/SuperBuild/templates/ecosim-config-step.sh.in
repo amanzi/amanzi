@@ -10,7 +10,7 @@ export CC=@CMAKE_C_COMPILER@
 export CXX=@CMAKE_CXX_COMPILER@
 #export CXXFLAGS='@hypre_cxxflags@'
 export F77=@CMAKE_Fortran_COMPILER@
-export FFLAGS='@Amanzi_COMMON_FCFLAGS@'
+export FFLAGS='@Amanzi_COMMON_FCFLAGS@ -g'
 #export PETSC_DIR='@PETSc_DIR@'
 
 # pflotran in-source build under src
@@ -22,20 +22,8 @@ cd @ECOSIM_source_dir@
 
 git checkout agraus/ats_seb
 
-echo "running config"
-
-make -j1 config ATS=1 SHARED=1
-
-echo "config finished"
+make -j1 config ATS=1 SHARED=1 DEBUG=1
 
 rc=$?
-
-echo "tpl: ${TPL_INSTALL_PREFIX}"
-echo "cc: ${CC}"
-echo "cxx: ${CXX}"
-echo "f77: ${F77}"
-echo "fflags: ${FFLAGS}"
-echo "finished install"
-echo "make ecosim returned $rc"
 
 exit $rc

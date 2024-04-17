@@ -822,6 +822,10 @@ if (ENABLE_ECOSIM)
   #include(${SuperBuild_BUILD_FILES_DIR}/Build_EcoSIM_new.cmake)
 endif()
 
+message(STATUS "In Superbuild/CMakeLists: ")
+message(STATUS "ECOSIM_INSTALL_PREFIX: " ${ECOSIM_INSTALL_PREFIX})
+set(ECOSIM_INSTALL_PREFIX ${ECOSIM_INSTALL_PREFIX})
+
 # Alquimia and chemical engines (PFloTran and CrunchTope)
 if (NOT ENABLE_XSDK)
 

@@ -153,5 +153,13 @@ set(SuperLUDist_DIR @SuperLUDist_DIR@ CACHE PATH "SuperLUDist installation prefi
 # CLM
 set(CLM_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CLM installation prefix")
 
+message("TPL_INSTALL_PREFIX: " ${TPL_INSTALL_PREFIX})
+message("CLM_DIR: " ${CLM_DIR})
+message("ECOSIM_DIR: " ${ECOSIM_DIR})
+
 # EcoSIM
 set(ECOSIM_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "EcoSIM installation prefix")
+message(STATUS "In amanzi-tpl-config: ")
+message(STATUS "ECOSIM_DIR: " ${ECOSIM_DIR})
+
+
