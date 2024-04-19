@@ -93,8 +93,9 @@ StateArchive::get(const std::string& name)
 {
   auto it = fields_.find(name);
   if (it != fields_.end()) return it->second;
-
   AMANZI_ASSERT(false);
+  // hide warnings
+  return fields_.begin()->second;
 }
 
 } // namespace Amanzi
