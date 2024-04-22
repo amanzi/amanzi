@@ -57,11 +57,9 @@ dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
   for (int c = 0; c < ncells_owned; c++) {
     Amanzi::AmanziGeometry::Point xc = mesh->getCellCentroid(c);
-    if (xc[0] < 1000.) {
-      ht_vec_c[0][c] = 10.;
-    } else {
-      ht_vec_c[0][c] = 0.01; //0.0000000001;
-    }
+
+    B_vec_c[0][c] = std::abs(xc[0] - 5.0) * 0.5;
+    ht_vec_c[0][c] = 3.0 - B_vec_c[0][c];
   }
 
   S->GetW<CompositeVector>("pipe-velocity", Tags::DEFAULT, passwd).PutScalar(0.0);
@@ -81,7 +79,7 @@ TEST(PIPE_FLOW_1D)
   if (MyPID == 0) std::cout << "Test: 1D pipe flow" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/pipe_flow_test.xml";
+  std::string xmlFileName = "test/pipe_flow_lake_at_rest.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a mesh framework
@@ -92,7 +90,7 @@ TEST(PIPE_FLOW_1D)
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
-  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 2000.0, 50.0, 1000, 1);
+  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 2.0, 50, 1);
 
   // create a state
   Teuchos::ParameterList state_list = plist->sublist("state");
@@ -113,7 +111,7 @@ TEST(PIPE_FLOW_1D)
 
   PFPK.Initialize();
 
-  dam_break_1D_setIC(mesh, S);
+  //dam_break_1D_setIC(mesh, S);
   S->CheckAllFieldsInitialized();
 
   const auto& ht = *S->Get<CompositeVector>("pipe-total_depth").ViewComponent("cell");
@@ -137,7 +135,7 @@ TEST(PIPE_FLOW_1D)
   int iter = 0;
   double TEini, TEfin;
 
-  while (t_new < 10.) {
+  while (t_new < 1.) {
 
     Epetra_MultiVector hh_ex(ht);
     Epetra_MultiVector vel_ex(vel);
@@ -156,7 +154,7 @@ TEST(PIPE_FLOW_1D)
     iter++;
 
     // output data
-    if (iter % 1 == 0) { 
+    if (iter % 1000 == 0) { 
       io->InitializeCycle(t_new, iter, "");
     
       const auto& u0 = *S->Get<CompositeVector>("pipe-total_depth").ViewComponent("cell");
@@ -175,6 +173,13 @@ TEST(PIPE_FLOW_1D)
   }
 
   // ADD CHECK(S)
+  int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
+                                          Amanzi::AmanziMesh::Parallel_kind::OWNED);
+
+  const auto& qc = *S->Get<CompositeVector>("pipe-discharge").ViewComponent("cell");
+  for (int c = 0; c < ncells_owned; ++c) { 
+    CHECK(std::abs(qc[0][c] - 0.0) < 1.e-14 && std::abs(qc[1][c] - 0.0) < 1.e-14);
+  }
 
   WriteStateStatistics(*S, *vo);
 }
