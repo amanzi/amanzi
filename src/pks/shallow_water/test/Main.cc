@@ -15,6 +15,8 @@
 #include "pks_shallow_water_reg.hh"
 #include "VerboseObject_objs.hh"
 
+#include "state_evaluators_registration.hh"
+
 #include "Kokkos_Core.hpp"
 
 int
