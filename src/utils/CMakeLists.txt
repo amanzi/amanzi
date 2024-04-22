@@ -10,6 +10,7 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(LibraryManager)
+include(BinaryManager)
 
 #
 # Define a project name
@@ -70,6 +71,19 @@ add_amanzi_library(atk
 if (APPLE AND BUILD_SHARED_LIBS)
   set_target_properties(atk PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
 endif()			  
+
+add_amanzi_executable(xml_to_yaml
+  SOURCE XmlToYaml.cc
+  LINK_LIBS ats_executable ${tpl_link_libs}
+  OUTPUT_NAME xml_to_yaml
+  OUTPUT_DIRECTORY ${ATS_BINARY_DIR})
+
+add_amanzi_executable(yaml_to_xml
+  SOURCE YamlToXml.cc
+  LINK_LIBS ats_executable ${tpl_link_libs}
+  OUTPUT_NAME yaml_to_xml
+  OUTPUT_DIRECTORY ${ATS_BINARY_DIR})
+
 
 if (BUILD_TESTS)
     # Add UnitTest include directoy
