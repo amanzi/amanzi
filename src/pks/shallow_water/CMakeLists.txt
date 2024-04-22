@@ -139,10 +139,10 @@ if (BUILD_TESTS)
     #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: Pipe flow test
-    add_amanzi_test(pipe_flow_test pipe_flow_test
+    add_amanzi_test(pipe_flow_lake_at_rest pipe_flow_lake_at_rest
                     KIND int
                     NPROCS 3
-                    SOURCE test/Main.cc test/pipe_flow_test.cc
+                    SOURCE test/Main.cc test/pipe_flow_lake_at_rest.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 endif()
