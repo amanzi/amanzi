@@ -11,9 +11,9 @@
     <ParameterList name="domain" type="ParameterList">
       <Parameter name="mesh type" type="string" value="generate mesh" />
       <ParameterList name="generate mesh parameters" type="ParameterList">
-        <Parameter name="number of cells" type="Array(int)" value="{100, 1}" />
+        <Parameter name="number of cells" type="Array(int)" value="{50, 1}" />
         <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0 }" />
-        <Parameter name="domain high coordinate" type="Array(double)" value="{2000.0, 50.0}" />
+        <Parameter name="domain high coordinate" type="Array(double)" value="{10.0, 2.0}" />
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -23,13 +23,13 @@
     <ParameterList name="Computational domain">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{2000.0,50.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{10.0,2.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left half">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1000.0,50.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{10.0,2.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left">
@@ -69,15 +69,16 @@
         <Parameter name="polynomial order" type="int" value="0"/>
         <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
         <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
-        <Parameter name="limiter location" type="string" value="node"/>
-        <Parameter name="limiter cfl" type="double" value="0.5"/>
+        <Parameter name="limiter location" type="string" value="face"/>
+        <Parameter name="limiter cfl" type="double" value="0.6"/>
       </ParameterList>
       
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="cfl" type="double" value="0.5"/>
       <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
       <Parameter name="numerical flux" type="string" value="Rusanov"/>
-      
+     
+      <!-- 
       <ParameterList name="boundary conditions">
         <ParameterList name="wetted area">
           <ParameterList name="BC 0">
@@ -112,7 +113,8 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      
+      -->
+
     </ParameterList>
     
   </ParameterList>
@@ -121,7 +123,7 @@
 
     <ParameterList name="evaluators">
 
-         <ParameterList name="pipe-diameter" type="ParameterList">
+      <ParameterList name="pipe-diameter" type="ParameterList">
         <Parameter name="evaluator type" type="string" value="independent variable" />
         <ParameterList name="function">
           <ParameterList name="Computational domain">
@@ -132,7 +134,7 @@
               <Parameter name="function type" type="string" value="composite function" />
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="2" />
+                  <Parameter name="value" type="double" value="5" />
                 </ParameterList>
               </ParameterList>
            </ParameterList>
@@ -140,7 +142,7 @@
         </ParameterList>
       </ParameterList>
 
-             <ParameterList name="pipe-direction">
+      <ParameterList name="pipe-direction">
         <Parameter name="evaluator type" type="string" value="independent variable" />
         <ParameterList name="function" type="ParameterList">
 
@@ -202,31 +204,9 @@
             <Parameter name="region" type="string" value="Computational domain"/>
             <Parameter name="components" type="Array(string)" value="{cell, node}"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant"> <!-- time component -->
-                <Parameter name="value" type="double" value="0.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="pipe-ponded_depth">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant"> <!-- time component -->
-                <Parameter name="value" type="double" value="0.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="left half">
-            <Parameter name="region" type="string" value="Left half"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant"> <!-- time component -->
-                <Parameter name="value" type="double" value="0.5"/>
+              <ParameterList name="function-exprtk"> <!-- time component -->
+                <Parameter name="number of arguments" type="int" value="4"/>
+                <Parameter name="formula" type="string" value="0.5*abs(x-5.0)"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -239,17 +219,9 @@
             <Parameter name="region" type="string" value="Computational domain"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant"> <!-- time component -->
-                <Parameter name="value" type="double" value="0.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="left half">
-            <Parameter name="region" type="string" value="Left half"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant"> <!-- time component -->
-                <Parameter name="value" type="double" value="0.5"/>
+              <ParameterList name="function-exprtk"> <!-- time component -->
+                <Parameter name="number of arguments" type="int" value="4"/>
+                <Parameter name="formula" type="string" value="4.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
