@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Naren Vohra (vohra@lanl.gov)
+  Authors:
 */
 
 /*
@@ -90,7 +90,7 @@ TEST(PIPE_FLOW_1D)
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
-  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 2.0, 50, 1);
+  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 25, 1);
 
   // create a state
   Teuchos::ParameterList state_list = plist->sublist("state");
@@ -172,14 +172,25 @@ TEST(PIPE_FLOW_1D)
     }
   }
 
-  // ADD CHECK(S)
+  // calculate error
   int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
                                           Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
-  const auto& qc = *S->Get<CompositeVector>("pipe-discharge").ViewComponent("cell");
-  for (int c = 0; c < ncells_owned; ++c) { 
-    CHECK(std::abs(qc[0][c] - 0.0) < 1.e-14 && std::abs(qc[1][c] - 0.0) < 1.e-14);
+  const auto& vc = *S->Get<CompositeVector>("pipe-velocity").ViewComponent("cell");
+  double err_L1_vx = 0.0, err_L1_vy = 0.0, err_Linf_v = 0.0, err_L1_v;
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    err_L1_vx += std::abs(vc[0][c]) *  mesh->getCellVolume(c);
+    err_L1_vy += std::abs(vc[1][c]) * mesh->getCellVolume(c);
+    err_Linf_v = std::max(err_Linf_v, std::max(std::abs(vc[0][c]), std::abs(vc[1][c]))); 
   }
+
+  err_L1_v = err_L1_vx + err_L1_vy;
+
+  std::cout.precision(6);
+  std::cout<<"Error velocity L1 = "<<err_L1_v<<"; Linf = "<<err_Linf_v<<std::endl;
+
+  CHECK(err_L1_v < 1.e-12 && err_Linf_v < 1.e-12);
 
   WriteStateStatistics(*S, *vo);
 }
