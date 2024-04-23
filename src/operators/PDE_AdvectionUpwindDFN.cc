@@ -78,7 +78,9 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
     }
 
     double flux_in(0.0);
-    for (int n = 0; n < ndownwind; ++n) { flux_in -= downwind_flux_dfn_[f][n]; }
+    for (int n = 0; n < ndownwind; ++n) {
+      flux_in -= downwind_flux_dfn_[f][n];
+    }
     if (flux_in == 0.0) flux_in = 1e-12;
 
     for (int n = 0; n < ndownwind; ++n) {
@@ -145,7 +147,9 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
     }
 
     double flux_in(0.0);
-    for (int n = 0; n < ndownwind; ++n) { flux_in -= downwind_flux_dfn_[f][n]; }
+    for (int n = 0; n < ndownwind; ++n) {
+      flux_in -= downwind_flux_dfn_[f][n];
+    }
     if (flux_in == 0.0) flux_in = 1e-12;
 
     for (int n = 0; n < ndownwind; ++n) {

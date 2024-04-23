@@ -48,13 +48,17 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
       }
     } else {
       auto tag = make_tag(plist_.get<std::string>("tag"));
-      for (auto name : names) { my_keys_.emplace_back(KeyTag{ name, Tag{ tag } }); }
+      for (auto name : names) {
+        my_keys_.emplace_back(KeyTag{ name, Tag{ tag } });
+      }
     }
   } else {
     auto name = Keys::cleanPListName(plist.name());
     if (plist_.isParameter("tags")) {
       auto tags = plist_.get<Teuchos::Array<std::string>>("tags");
-      for (auto tag : tags) { my_keys_.emplace_back(KeyTag{ name, Tag{ tag } }); }
+      for (auto tag : tags) {
+        my_keys_.emplace_back(KeyTag{ name, Tag{ tag } });
+      }
     } else {
       auto tag = make_tag(plist_.get<std::string>("tag"));
       my_keys_.emplace_back(KeyTag{ name, Tag{ tag } });
@@ -87,7 +91,9 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
     } else {
       auto my_tag = my_keys_.front().second;
       auto dep_tag = Keys::readTag(plist_, my_tag);
-      for (const auto& dep : deps) { dependencies_.insert(KeyTag(dep, dep_tag)); }
+      for (const auto& dep : deps) {
+        dependencies_.insert(KeyTag(dep, dep_tag));
+      }
     }
 
   } else if (plist_.isParameter("dependency suffixes")) {
@@ -294,7 +300,9 @@ EvaluatorSecondary::UpdateDerivative(State& S,
   // Do the update
   DerivativeTriple request = std::make_tuple(wrt_key, wrt_tag, requestor);
   if (update) {
-    if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  ... updating derivative" << std::endl; }
+    if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_.os() << "  ... updating derivative" << std::endl;
+    }
 
     // If so, update ourselves, empty our list of filled requests, and return.
     UpdateDerivative_(S, wrt_key, wrt_tag);
@@ -311,7 +319,9 @@ EvaluatorSecondary::UpdateDerivative(State& S,
       deriv_requests_.insert(request);
       return true;
     } else {
-      if (vo_.os_OK(Teuchos::VERB_EXTREME)) { *vo_.os() << "  ... has not changed." << std::endl; }
+      if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
+        *vo_.os() << "  ... has not changed." << std::endl;
+      }
       return false;
     }
   }
@@ -325,7 +335,9 @@ EvaluatorSecondary::IsDependency(const State& S, const Key& key, const Tag& tag)
     return true;
   } else {
     for (auto& dep : dependencies_) {
-      if (S.GetEvaluator(dep.first, dep.second).IsDependency(S, key, tag)) { return true; }
+      if (S.GetEvaluator(dep.first, dep.second).IsDependency(S, key, tag)) {
+        return true;
+      }
     }
   }
   return false;
@@ -374,7 +386,9 @@ std::string
 EvaluatorSecondary::WriteToString() const
 {
   std::stringstream result;
-  for (const auto& key : my_keys_) { result << Keys::getKey(key.first, key.second); }
+  for (const auto& key : my_keys_) {
+    result << Keys::getKey(key.first, key.second);
+  }
   result << std::endl << "  type: secondary" << std::endl;
   for (const auto& dep : dependencies_) {
     result << "  dep: " << dep.first << ", tag=\"" << dep.second.get() << "\"" << std::endl;

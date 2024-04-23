@@ -86,7 +86,9 @@ RemapDG<CompositeVector>::ModifySolution(double t, CompositeVector& u)
       double a = climiter[c];
       if (a < 1.0) {
         double mass(0.0);
-        for (int i = 0; i < nk; ++i) { mass += matrices[c](i, 0) * orig_c[i][c]; }
+        for (int i = 0; i < nk; ++i) {
+          mass += matrices[c](i, 0) * orig_c[i][c];
+        }
 
         field_c[0][c] = a * orig_c[0][c] + (1.0 - a) * mass / matrices[c](0, 0);
       }
@@ -219,7 +221,9 @@ RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
       double a = climiter[c];
       if (a < 1.0) {
         double mass(0.0);
-        for (int i = 0; i < mk; ++i) { mass += matrices[c](i, 0) * orig_c[i][c]; }
+        for (int i = 0; i < mk; ++i) {
+          mass += matrices[c](i, 0) * orig_c[i][c];
+        }
 
         field_c[0][c] = a * orig_c[0][c] + (1.0 - a) * mass / matrices[c](0, 0);
       }

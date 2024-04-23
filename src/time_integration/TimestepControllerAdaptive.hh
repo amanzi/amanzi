@@ -114,7 +114,9 @@ template <>
 inline double
 TimestepControllerAdaptive<Epetra_MultiVector>::get_timestep(double dt, int iterations)
 {
-  if (iterations < 0 || iterations > max_its_) { return dt * reduction_factor_; }
+  if (iterations < 0 || iterations > max_its_) {
+    return dt * reduction_factor_;
+  }
 
   Epetra_MultiVector& u1 = *udot_;
   Epetra_MultiVector& u0 = *udot_prev_;
@@ -126,7 +128,9 @@ template <>
 inline double
 TimestepControllerAdaptive<CompositeVector>::get_timestep(double dt, int iterations)
 {
-  if (iterations < 0 || iterations > max_its_) { return dt * reduction_factor_; }
+  if (iterations < 0 || iterations > max_its_) {
+    return dt * reduction_factor_;
+  }
 
   Epetra_MultiVector& u1 = *udot_->ViewComponent("cell");
   Epetra_MultiVector& u0 = *udot_prev_->ViewComponent("cell");

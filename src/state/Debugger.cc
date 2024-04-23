@@ -120,7 +120,9 @@ void
 Debugger::WriteCellInfo(bool include_faces)
 {
   Teuchos::OSTab tab1 = vo_->getOSTab();
-  if (vo_->os_OK(verb_level_)) { *vo_->os() << "Debug Cells Information:" << std::endl; }
+  if (vo_->os_OK(verb_level_)) {
+    *vo_->os() << "Debug Cells Information:" << std::endl;
+  }
 
   for (int i = 0; i != dc_.size(); ++i) {
     AmanziMesh::Entity_ID c0 = dc_[i];

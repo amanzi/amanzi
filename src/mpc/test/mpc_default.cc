@@ -266,7 +266,9 @@ ImplicitPK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   for (int i = 0; i < ngroups; ++i) {
     std::string field = "field_group_" + std::to_string(i);
-    if (field != my_field_) { InterpolateField(field, *S_, t_new, result[i]); }
+    if (field != my_field_) {
+      InterpolateField(field, *S_, t_new, result[i]);
+    }
   }
 
   // implicit solver (1/dt - A0) u0^{n+1} = u0^n/dt - A1 u1^{n + a}
@@ -290,7 +292,9 @@ ImplicitPK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     WhetStone::DGESV_F77(&n, &nrhs, A.Values(), &n, &(ipiv[0]), rhs.Values(), &n, &ierr);
 
-    for (int i = 0; i < n; ++i) { uc[i][c] = rhs(i); }
+    for (int i = 0; i < n; ++i) {
+      uc[i][c] = rhs(i);
+    }
   }
 
   return false;
@@ -323,7 +327,9 @@ ImplicitPK::FunctionalResidual(double t_old,
 
   for (int i = 0; i < ngroups; ++i) {
     std::string field = "field_group_" + std::to_string(i);
-    if (field != my_field_) { InterpolateField(field, *S_, t_new, result[i]); }
+    if (field != my_field_) {
+      InterpolateField(field, *S_, t_new, result[i]);
+    }
   }
 
   for (int c = 0; c < 4; ++c) {

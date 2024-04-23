@@ -136,7 +136,9 @@ class AnalyticDG08b : public AnalyticDGBase {
     if (cylinder_) {
       auto dp = p - r2;
       double tmp = Amanzi::AmanziGeometry::norm(dp);
-      if (tmp <= R2 && !(dp[1] >= 0.0 && std::fabs(dp[0]) <= W2)) { sol(0) += 1.0; }
+      if (tmp <= R2 && !(dp[1] >= 0.0 && std::fabs(dp[0]) <= W2)) {
+        sol(0) += 1.0;
+      }
     }
   }
 

@@ -435,7 +435,9 @@ TransportMatrixFractureImplicit_PK::AdvanceStepHO_(double t_old, double t_new, i
 void
 TransportMatrixFractureImplicit_PK::CalculateDiagnostics(const Tag& tag)
 {
-  if (nspace_m_ == 2 && nspace_f_ == 2) { PK_MPCStrong<PK_BDF>::CalculateDiagnostics(tag); }
+  if (nspace_m_ == 2 && nspace_f_ == 2) {
+    PK_MPCStrong<PK_BDF>::CalculateDiagnostics(tag);
+  }
 }
 
 

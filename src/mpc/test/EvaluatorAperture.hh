@@ -89,7 +89,9 @@ EvaluatorAperture::Evaluate_(const State& S, const std::vector<CompositeVector*>
   auto& result_v = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell");
 
-  for (int c = 0; c != ncells; ++c) { result_v[0][c] = 1e-5 + (p_c[0][c] - 11e+6) / K_; }
+  for (int c = 0; c != ncells; ++c) {
+    result_v[0][c] = 1e-5 + (p_c[0][c] - 11e+6) / K_;
+  }
 }
 
 
@@ -106,7 +108,9 @@ EvaluatorAperture::EvaluatePartialDerivative_(const State& S,
   int ncells = results[0]->size("cell");
 
   if (wrt_key == pressure_key_) {
-    for (int c = 0; c != ncells; ++c) { result_v[0][c] = 1.0 / K_; }
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] = 1.0 / K_;
+    }
   }
 }
 

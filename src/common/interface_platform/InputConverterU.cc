@@ -180,7 +180,9 @@ InputConverterU::Translate(int rank, int num_proc)
   }
 
   // -- walkabout enforces non-contiguous maps
-  if (io_walkabout_) { out_list.sublist("mesh").set<bool>("contiguous global ids", false); }
+  if (io_walkabout_) {
+    out_list.sublist("mesh").set<bool>("contiguous global ids", false);
+  }
 
   // -- single region for fracture network
   if (fracture_regions_.size() > 0) {
@@ -445,7 +447,9 @@ InputConverterU::ParseFractureNetwork_()
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
-      for (int n = 0; n < regions.size(); ++n) { fracture_regions_.push_back(regions[n]); }
+      for (int n = 0; n < regions.size(); ++n) {
+        fracture_regions_.push_back(regions[n]);
+      }
       fracture_regions_.erase(
         SelectUniqueEntries(fracture_regions_.begin(), fracture_regions_.end()),
         fracture_regions_.end());
@@ -665,7 +669,9 @@ std::string
 InputConverterU::CreateNameFromVector_(const std::vector<std::string>& list)
 {
   std::string str;
-  for (auto it = list.begin(); it != list.end(); ++it) { str = str + *it; }
+  for (auto it = list.begin(); it != list.end(); ++it) {
+    str = str + *it;
+  }
   return str;
 }
 
@@ -719,7 +725,9 @@ std::string
 InputConverterU::CreateUniqueName_(const Teuchos::Array<std::string>& list)
 {
   std::string name;
-  for (auto it = list.begin(); it != list.end(); ++it) { name.append(*it); }
+  for (auto it = list.begin(); it != list.end(); ++it) {
+    name.append(*it);
+  }
   return name;
 }
 

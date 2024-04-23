@@ -902,7 +902,9 @@ Multiphase_PK::Initialize()
   // io
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    for (const auto& name : soln_names_) { *vo_->os() << "unknown: \"" << name << "\"\n"; }
+    for (const auto& name : soln_names_) {
+      *vo_->os() << "unknown: \"" << name << "\"\n";
+    }
     for (int i = 0; i < bcs_.size(); i++) {
       *vo_->os() << "bc \"" << bcs_[i]->keyword() << "\" has " << bcs_[i]->size() << " entities"
                  << std::endl;
@@ -955,7 +957,9 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   int ncopy = copy_names.size();
   std::vector<CompositeVector> copies;
-  for (int i = 0; i < ncopy; ++i) { copies.push_back(S_->Get<CV_t>(copy_names[i])); }
+  for (int i = 0; i < ncopy; ++i) {
+    copies.push_back(S_->Get<CV_t>(copy_names[i]));
+  }
 
   // initialization
   if (num_ns_itrs_ == 0) {
@@ -1069,7 +1073,9 @@ Multiphase_PK::ModifyCorrection(double h,
     if (name == mol_density_liquid_key_) {
       // clip molar density to range [0; +\infty]
       for (int i = 0; i < uc.NumVectors(); ++i) {
-        for (int c = 0; c < ncells_owned_; ++c) { duc[i][c] = std::min(duc[i][c], uc[i][c]); }
+        for (int c = 0; c < ncells_owned_; ++c) {
+          duc[i][c] = std::min(duc[i][c], uc[i][c]);
+        }
       }
 
     } else if (name == x_gas_key_) {
@@ -1193,7 +1199,9 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
   }
 
   // remove solution vector from the list of secondary names
-  for (const auto& soln : soln_names_) { secondary_names_.erase(soln); }
+  for (const auto& soln : soln_names_) {
+    secondary_names_.erase(soln);
+  }
 
   return eqn_id + eqn_num;
 }

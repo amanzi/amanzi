@@ -988,7 +988,9 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // save a copy of primary and conservative fields
   std::vector<std::string> fields({ pressure_key_, saturation_liquid_key_, water_storage_key_ });
-  if (flow_on_manifold_) { fields.push_back(aperture_key_); }
+  if (flow_on_manifold_) {
+    fields.push_back(aperture_key_);
+  }
   if (multiscale_porosity_) {
     fields.push_back(pressure_msp_key_);
     fields.push_back(water_storage_msp_key_);
@@ -1000,7 +1002,9 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // enter subspace
   if (reinit && solution->HasComponent("face")) {
     EnforceConstraints(t_new, solution);
-    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) { VV_PrintHeadExtrema(*solution); }
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+      VV_PrintHeadExtrema(*solution);
+    }
   }
 
   // initialization
@@ -1037,7 +1041,9 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     VV_ReportWaterBalance(S_.ptr());
     VV_ReportMultiscale();
   }
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) { VV_ReportSeepageOutflow(S_.ptr(), dt_); }
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    VV_ReportSeepageOutflow(S_.ptr(), dt_);
+  }
 
   dt_ = dt_next_;
 

@@ -68,7 +68,9 @@ ReactiveTransport_PK::get_dt()
   dTtran_ = transport_pk_->get_dt();
   dTchem_ = chemistry_pk_->get_dt();
 
-  if (!chem_step_succeeded && (dTchem_ / dTtran_ > 0.99)) { dTchem_ *= 0.5; }
+  if (!chem_step_succeeded && (dTchem_ / dTtran_ > 0.99)) {
+    dTchem_ *= 0.5;
+  }
 
   if (dTtran_ > dTchem_) dTtran_ = dTchem_;
 

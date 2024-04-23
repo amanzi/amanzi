@@ -273,7 +273,9 @@ Energy_PK::Setup()
   // set units
   S_->GetRecordSetW(temperature_key_).set_units("K");
   S_->GetRecordSetW(mol_flowrate_key_).set_units("mol/s");
-  if (flow_on_manifold_) { S_->GetRecordSetW(aperture_key_).set_units("m"); }
+  if (flow_on_manifold_) {
+    S_->GetRecordSetW(aperture_key_).set_units("m");
+  }
 }
 
 
@@ -378,11 +380,17 @@ Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
 void
 Energy_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u)
 {
-  for (int i = 0; i < bc_temperature_.size(); ++i) { bc_temperature_[i]->Compute(t_old, t_new); }
+  for (int i = 0; i < bc_temperature_.size(); ++i) {
+    bc_temperature_[i]->Compute(t_old, t_new);
+  }
 
-  for (int i = 0; i < bc_flux_.size(); ++i) { bc_flux_[i]->Compute(t_old, t_new); }
+  for (int i = 0; i < bc_flux_.size(); ++i) {
+    bc_flux_[i]->Compute(t_old, t_new);
+  }
 
-  for (int i = 0; i < srcs_.size(); ++i) { srcs_[i]->Compute(t_old, t_new); }
+  for (int i = 0; i < srcs_.size(); ++i) {
+    srcs_[i]->Compute(t_old, t_new);
+  }
 
   ComputeBCs(u);
 }

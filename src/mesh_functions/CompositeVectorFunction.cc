@@ -45,7 +45,9 @@ CompositeVectorFunction::Compute(double time,
 #ifdef ENSURE_INITIALIZED_CVFUNCS
   // ensure all components are touched
   std::map<std::string, bool> done;
-  for (auto compname : *cv) { done[compname] = false; }
+  for (auto compname : *cv) {
+    done[compname] = false;
+  }
 #endif
 
   // create the input tuple
@@ -100,7 +102,9 @@ CompositeVectorFunction::Compute(double time,
 
               // evaluate the functions and stuff the result into the CV
               double* value = (*spec->second)(args);
-              for (int i = 0; i != (*spec->second).size(); ++i) { compvec[i][bf] = value[i]; }
+              for (int i = 0; i != (*spec->second).size(); ++i) {
+                compvec[i][bf] = value[i];
+              }
             }
           }
         } else {
@@ -144,7 +148,9 @@ CompositeVectorFunction::Compute(double time,
             int g = map->FirstPointInElement(*id);
             int ndofs = map->ElementSize(*id);
             for (int n = 0; n < ndofs; ++n) {
-              for (int i = 0; i != (*spec->second).size(); ++i) { compvec[i][g + n] = value[i]; }
+              for (int i = 0; i != (*spec->second).size(); ++i) {
+                compvec[i][g + n] = value[i];
+              }
             }
           }
         } else {

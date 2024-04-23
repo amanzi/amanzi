@@ -1342,7 +1342,9 @@ InputConverter::ThrowErrorMisschild_(const std::string& section,
   Errors::Message msg;
   msg << "Amanzi::InputConverter: an error occurred during parsing node \"" << section << "\"\n";
   msg << "  No child \"" << missing << "\" found";
-  if (!name.empty()) { msg << " for \"" << name << "\""; }
+  if (!name.empty()) {
+    msg << " for \"" << name << "\"";
+  }
   msg << ".\n";
   msg << "  Please correct and try again \n";
   Exceptions::amanzi_throw(msg);
@@ -1410,14 +1412,18 @@ InputConverter::CreateINFile_(std::string& filename, int rank)
     std::string tmp("  ACTIVITY_COEFFICIENTS TIMESTEP");
     if (flag) {
       std::string value = TrimString_(mm.transcode(node->getTextContent()));
-      if (value == "off") { tmp = "  ACTIVITY_COEFFICIENTS OFF"; }
+      if (value == "off") {
+        tmp = "  ACTIVITY_COEFFICIENTS OFF";
+      }
     }
     controls << tmp << "\n";
 
     node = GetUniqueElementByTagsString_(base, "log_formulation", flag);
     if (flag) {
       std::string value = TrimString_(mm.transcode(node->getTextContent()));
-      if (value == "on") { controls << "  LOG_FORMULATION \n"; }
+      if (value == "on") {
+        controls << "  LOG_FORMULATION \n";
+      }
     } else {
       controls << "  LOG_FORMULATION \n";
     }
@@ -1437,7 +1443,9 @@ InputConverter::CreateINFile_(std::string& filename, int rank)
     node = GetUniqueElementByTagsString_(base, "use_full_geochemistry", flag);
     if (flag) {
       std::string value = TrimString_(mm.transcode(node->getTextContent()));
-      if (value == "on") { controls << "  USE_FULL_GEOCHEMISTRY \n"; }
+      if (value == "on") {
+        controls << "  USE_FULL_GEOCHEMISTRY \n";
+      }
     } else {
       controls << "  USE_FULL_GEOCHEMISTRY \n";
     }
@@ -1638,7 +1646,9 @@ InputConverter::CreateINFile_(std::string& filename, int rank)
 
                 double value = GetAttributeValueD_(kelement, "value");
                 cation_selectivity.push_back(value);
-                if (value == 1.0) { first_cation = k; }
+                if (value == 1.0) {
+                  first_cation = k;
+                }
               }
 
               ion_list.set<Teuchos::Array<std::string>>("cations", cation_names);
@@ -1934,7 +1944,9 @@ InputConverter::CreateINFile_(std::string& filename, int rank)
         in_file << isotherms.str();
         in_file << "    /\n";
       }
-      if (!complexes.str().empty()) { in_file << complexes.str(); }
+      if (!complexes.str().empty()) {
+        in_file << complexes.str();
+      }
       if (!cations.str().empty()) {
         in_file << "    ION_EXCHANGE_RXN\n";
         in_file << cations.str();

@@ -501,7 +501,9 @@ Amanzi_PK::CopyCellStateToBeakerState(int c, Teuchos::RCP<Epetra_MultiVector> aq
   beaker_state_.saturation = (1.0 - a) * (*bf_.prev_saturation)[0][c] + a * (*bf_.saturation)[0][c];
   beaker_state_.volume = mesh_->getCellVolume(c);
 
-  if (S_->HasRecord(temperature_key_)) { beaker_state_.temperature = (*bf_.temperature)[0][c]; }
+  if (S_->HasRecord(temperature_key_)) {
+    beaker_state_.temperature = (*bf_.temperature)[0][c];
+  }
 }
 
 
@@ -625,7 +627,9 @@ Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
           max_itrs = num_itrs;
           cmax = c;
         }
-        if (min_itrs > num_itrs) { min_itrs = num_itrs; }
+        if (min_itrs > num_itrs) {
+          min_itrs = num_itrs;
+        }
         avg_itrs += num_itrs;
       } catch (Exceptions::Amanzi_exception& geochem_err) {
         ierr = 1;

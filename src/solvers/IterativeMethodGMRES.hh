@@ -182,7 +182,9 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRESRestart_
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // allocate memory for Krylov space
-  if (v_.size() != krylov_dim_ + 1) { v_.resize(krylov_dim_ + 1, Teuchos::null); }
+  if (v_.size() != krylov_dim_ + 1) {
+    v_.resize(krylov_dim_ + 1, Teuchos::null);
+  }
 
   num_itrs_ = 0;
   rnorm0_ = -1.0;
@@ -301,7 +303,9 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_(const 
     T(i + 1, i) = tmp;
     s[i + 1] = 0.0;
 
-    for (int k = 0; k < i; k++) { ApplyGivensRotation_(T(k, i), T(k + 1, i), cs[k], sn[k]); }
+    for (int k = 0; k < i; k++) {
+      ApplyGivensRotation_(T(k, i), T(k + 1, i), cs[k], sn[k]);
+    }
 
     InitGivensRotation_(T(i, i), T(i + 1, i), cs[i], sn[i]);
     ApplyGivensRotation_(T(i, i), T(i + 1, i), cs[i], sn[i]);
@@ -434,7 +438,9 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_Deflate
   // set the leading diagonal block of T
   T.PutScalar(0.0);
   for (int i = 0; i <= num_ritz_; ++i) {
-    for (int j = 0; j < num_ritz_; ++j) { T(i, j) = Hu_(i, j); }
+    for (int j = 0; j < num_ritz_; ++j) {
+      T(i, j) = Hu_(i, j);
+    }
   }
 
   // Apply Arnoldi method to extend the Krylov space calculate
@@ -550,10 +556,14 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::GMRES_Deflate
   for (int i = 0; i <= num_ritz_; ++i) {
     vv[i] = Teuchos::rcp(new Vector(x.Map()));
     vv[i]->PutScalar(0.0);
-    for (int k = 0; k <= krylov_dim_; ++k) { vv[i]->Update(Vr(k, i), *(v_[k]), 1.0); }
+    for (int k = 0; k <= krylov_dim_; ++k) {
+      vv[i]->Update(Vr(k, i), *(v_[k]), 1.0);
+    }
   }
 
-  for (int i = 0; i <= num_ritz_; ++i) { *(v_[i]) = *(vv[i]); }
+  for (int i = 0; i <= num_ritz_; ++i) {
+    *(v_[i]) = *(vv[i]);
+  }
 
   // Calculate modified Hessenberg matrix Hu = Vr_{nr+1}^T * T * Vr_nr
   WhetStone::DenseMatrix TVr(krylov_dim_ + 1, num_ritz_);
@@ -656,16 +666,22 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::ComputeSoluti
   for (int i = k; i >= 0; i--) {
     s[i] /= T(i, i);
 
-    for (int j = i - 1; j >= 0; j--) { s[j] -= T(j, i) * s[i]; }
+    for (int j = i - 1; j >= 0; j--) {
+      s[j] -= T(j, i) * s[i];
+    }
   }
 
   // solution is x = x0 + V s for the left preconditioner
   //         and x = x0 + H V s for the right preconditioner
   if (left_pc_) {
-    for (int j = 0; j <= k; j++) { x.Update(s[j], *(v_[j]), 1.0); }
+    for (int j = 0; j <= k; j++) {
+      x.Update(s[j], *(v_[j]), 1.0);
+    }
   } else {
     p.PutScalar(0.0);
-    for (int j = 0; j <= k; j++) { p.Update(s[j], *(v_[j]), 1.0); }
+    for (int j = 0; j <= k; j++) {
+      p.Update(s[j], *(v_[j]), 1.0);
+    }
     h_->ApplyInverse(p, r);
     x.Update(1.0, r, 1.0);
   }
@@ -684,10 +700,14 @@ IterativeMethodGMRES<Matrix, Preconditioner, Vector, VectorSpace>::ComputeSoluti
                                                                                     Vector& r) const
 {
   if (left_pc_) {
-    for (int j = 0; j < krylov_dim_; j++) { x.Update(d[j], *(v_[j]), 1.0); }
+    for (int j = 0; j < krylov_dim_; j++) {
+      x.Update(d[j], *(v_[j]), 1.0);
+    }
   } else {
     p.PutScalar(0.0);
-    for (int j = 0; j < krylov_dim_; j++) { p.Update(d[j], *(v_[j]), 1.0); }
+    for (int j = 0; j < krylov_dim_; j++) {
+      p.Update(d[j], *(v_[j]), 1.0);
+    }
     h_->ApplyInverse(p, r);
     x.Update(1.0, r, 1.0);
   }

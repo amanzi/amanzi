@@ -150,7 +150,9 @@ MatrixObjects<T>::Reshape(int d, int m, int n, int order, bool reset)
   polys_.resize(m_);
   for (int i = 0; i < m_; ++i) {
     polys_[i].resize(n_);
-    for (int j = 0; j < n_; ++j) { polys_[i][j].Reshape(d, order, reset); }
+    for (int j = 0; j < n_; ++j) {
+      polys_[i][j].Reshape(d, order, reset);
+    }
   }
 }
 
@@ -208,7 +210,9 @@ MatrixObjects<T>::Multiply(const VectorObjects<T>& v, VectorObjects<T>& av, bool
     for (int i = 0; i < m_; ++i) {
       av[i] = polys_[i][0] * v[0];
 
-      for (int k = 1; k < n_; ++k) { av[i] += polys_[i][k] * v[k]; }
+      for (int k = 1; k < n_; ++k) {
+        av[i] += polys_[i][k] * v[k];
+      }
     }
   } else {
     av.resize(n_);
@@ -216,7 +220,9 @@ MatrixObjects<T>::Multiply(const VectorObjects<T>& v, VectorObjects<T>& av, bool
     for (int i = 0; i < n_; ++i) {
       av[i] = polys_[0][i] * v[0];
 
-      for (int k = 1; k < m_; ++k) { av[i] += polys_[k][i] * v[k]; }
+      for (int k = 1; k < m_; ++k) {
+        av[i] += polys_[k][i] * v[k];
+      }
     }
   }
 }
@@ -231,14 +237,18 @@ MatrixObjects<T>::Multiply(const DenseVector& v, VectorObjects<T>& av, bool tran
     for (int i = 0; i < m_; ++i) {
       av[i] = polys_[i][0] * v(0);
 
-      for (int k = 1; k < n_; ++k) { av[i] += polys_[i][k] * v(k); }
+      for (int k = 1; k < n_; ++k) {
+        av[i] += polys_[i][k] * v(k);
+      }
     }
   } else {
     av.resize(n_);
     for (int i = 0; i < n_; ++i) {
       av[i] = polys_[0][i] * v(0);
 
-      for (int k = 1; k < m_; ++k) { av[i] += polys_[k][i] * v(k); }
+      for (int k = 1; k < m_; ++k) {
+        av[i] += polys_[k][i] * v(k);
+      }
     }
   }
 }
@@ -258,14 +268,18 @@ MatrixObjects<T>::Multiply(const AmanziGeometry::Point& p,
     for (int i = 0; i < m_; ++i) {
       av[i] = polys_[i][0] * p[0];
 
-      for (int k = 1; k < d; ++k) { av[i] += polys_[i][k] * p[k]; }
+      for (int k = 1; k < d; ++k) {
+        av[i] += polys_[i][k] * p[k];
+      }
     }
   } else {
     av.resize(d);
     for (int i = 0; i < d; ++i) {
       av[i] = polys_[0][i] * p[0];
 
-      for (int k = 1; k < d; ++k) { av[i] += polys_[k][i] * p[k]; }
+      for (int k = 1; k < d; ++k) {
+        av[i] += polys_[k][i] * p[k];
+      }
     }
   }
 }

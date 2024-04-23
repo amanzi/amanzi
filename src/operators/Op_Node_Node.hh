@@ -62,7 +62,9 @@ class Op_Node_Node : public Op {
     if (scaling.HasComponent("node")) {
       const Epetra_MultiVector& s_v = *scaling.ViewComponent("node", false);
       for (int k = 0; k != s_v.NumVectors(); ++k) {
-        for (int i = 0; i != s_v.MyLength(); ++i) { (*diag)[k][i] *= s_v[0][i]; }
+        for (int i = 0; i != s_v.MyLength(); ++i) {
+          (*diag)[k][i] *= s_v[0][i];
+        }
       }
     }
   }

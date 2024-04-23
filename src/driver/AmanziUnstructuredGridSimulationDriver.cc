@@ -292,7 +292,9 @@ AmanziUnstructuredGridSimulationDriver::InitMesh(
     }
 
     comm_->SumAll(&ierr, &aerr, 1);
-    if (aerr > 0) { return Amanzi::Simulator::FAIL; }
+    if (aerr > 0) {
+      return Amanzi::Simulator::FAIL;
+    }
 
   } else { // generate parameters are specified
     std::cerr << rank << ": error: "

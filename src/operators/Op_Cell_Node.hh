@@ -70,7 +70,9 @@ class Op_Cell_Node : public Op {
         auto nodes = mesh_->getCellNodes(c);
 
         for (int n = 0; n != nodes.size(); ++n) {
-          for (int m = 0; m != nodes.size(); ++m) { Acell(n, m) *= s_n[0][nodes[n]]; }
+          for (int m = 0; m != nodes.size(); ++m) {
+            Acell(n, m) *= s_n[0][nodes[n]];
+          }
         }
       }
     }

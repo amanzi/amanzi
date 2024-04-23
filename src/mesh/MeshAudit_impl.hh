@@ -1258,7 +1258,9 @@ MeshAudit_Maps<Mesh_type>::check_face_to_nodes_ghost_data() const
     mesh_->getFaceNodes(j, fnode);
     bool bad_data = false;
     for (int k = 0; k < fnode.size(); ++k)
-      if (node_map.GID(fnode[k]) != gids(j, k)) { bad_data = true; }
+      if (node_map.GID(fnode[k]) != gids(j, k)) {
+        bad_data = true;
+      }
     if (bad_data) {
       typename Mesh_type::Entity_ID_View lfnode;
       lfnode.fromConst(fnode);

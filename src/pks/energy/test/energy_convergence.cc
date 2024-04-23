@@ -62,7 +62,9 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
       auto& result_c = *results[0]->ViewComponent(*comp);
 
       int ncomp = results[0]->size(*comp, false);
-      for (int i = 0; i != ncomp; ++i) { result_c[0][i] = std::pow(temp_c[0][i], 3.0); }
+      for (int i = 0; i != ncomp; ++i) {
+        result_c[0][i] = std::pow(temp_c[0][i], 3.0);
+      }
     }
   }
 
@@ -76,7 +78,9 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
       Epetra_MultiVector& result_c = *results[0]->ViewComponent(*comp);
 
       int ncomp = results[0]->size(*comp, false);
-      for (int i = 0; i != ncomp; ++i) { result_c[0][i] = 3.0 * std::pow(temp_c[0][i], 2.0); }
+      for (int i = 0; i != ncomp; ++i) {
+        result_c[0][i] = 3.0 * std::pow(temp_c[0][i], 2.0);
+      }
     }
   }
 

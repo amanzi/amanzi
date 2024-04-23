@@ -68,7 +68,9 @@ class Op_Cell_FaceCell : public Op {
       for (int c = 0; c != matrices.size(); ++c) {
         const auto& faces = mesh_->getCellFaces(c);
         for (int n = 0; n != faces.size(); ++n) {
-          for (int m = 0; m != faces.size(); ++m) { matrices[c](n, m) *= s_c[0][faces[n]]; }
+          for (int m = 0; m != faces.size(); ++m) {
+            matrices[c](n, m) *= s_c[0][faces[n]];
+          }
           matrices[c](n, faces.size()) *= s_c[0][faces[n]];
         }
       }
@@ -81,7 +83,9 @@ class Op_Cell_FaceCell : public Op {
       AmanziMesh::Entity_ID_View face;
       for (int c = 0; c != matrices.size(); ++c) {
         int nfaces = mesh_->getCellNumFaces(c);
-        for (int m = 0; m != nfaces; ++m) { matrices[c](nfaces, m) *= s_c[0][c]; }
+        for (int m = 0; m != nfaces; ++m) {
+          matrices[c](nfaces, m) *= s_c[0][c];
+        }
         matrices[c](nfaces, nfaces) *= s_c[0][c];
       }
     }

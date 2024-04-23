@@ -42,7 +42,9 @@ InputConverterU::TranslateState_()
 {
   Teuchos::ParameterList out_list;
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) { *vo_->os() << "Translating state" << std::endl; }
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    *vo_->os() << "Translating state" << std::endl;
+  }
 
   // first we write initial conditions for scalars and vectors, not region-specific
   Teuchos::ParameterList& out_ev = out_list.sublist("evaluators");
@@ -290,14 +292,18 @@ InputConverterU::TranslateState_()
 
       // -- dual porosity: matrix porosity
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
-      if (flag) { TranslateFieldIC_(node, "porosity_msp", "-", reg_str, regions, out_ic); }
+      if (flag) {
+        TranslateFieldIC_(node, "porosity_msp", "-", reg_str, regions, out_ic);
+      }
     }
   }
 
   // ----------------------------------------------------------------
   // optional fracture network
   // ----------------------------------------------------------------
-  if (fracture_regions_.size() > 0) { TranslateCommonContinuumFields_("fracture", out_ic, out_ev); }
+  if (fracture_regions_.size() > 0) {
+    TranslateCommonContinuumFields_("fracture", out_ic, out_ev);
+  }
 
   if (fracture_regions_.size() > 0 && eos_model_ == "") {
     AddIndependentFieldEvaluator_(
@@ -1040,15 +1046,21 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
 
       // poisson ratio
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, poisson_ratio", flag);
-      if (flag) { TranslateFieldIC_(node, "poisson_ratio", "-", reg_str, regions, out_ic); }
+      if (flag) {
+        TranslateFieldIC_(node, "poisson_ratio", "-", reg_str, regions, out_ic);
+      }
 
       // Young modulus
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, young_modulus", flag);
-      if (flag) { TranslateFieldIC_(node, "young_modulus", "-", reg_str, regions, out_ic); }
+      if (flag) {
+        TranslateFieldIC_(node, "young_modulus", "-", reg_str, regions, out_ic);
+      }
 
       // Biot coefficient
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, biot_coefficient", flag);
-      if (flag) { TranslateFieldIC_(node, "biot_coefficient", "-", reg_str, regions, out_ic); }
+      if (flag) {
+        TranslateFieldIC_(node, "biot_coefficient", "-", reg_str, regions, out_ic);
+      }
 
       // internal energy for liquid
       node = GetUniqueElementByTagsString_(inode, "thermal_properties, liquid_heat_capacity", flag);
@@ -1256,7 +1268,9 @@ InputConverterU::TranslateMaterialsPartition_()
         char* text_content = mm.transcode(node->getTextContent());
         std::vector<std::string> names = CharToStrings_(text_content);
 
-        for (int n = 0; n < names.size(); ++n) { regions.push_back(names[n]); }
+        for (int n = 0; n < names.size(); ++n) {
+          regions.push_back(names[n]);
+        }
       }
     }
   }

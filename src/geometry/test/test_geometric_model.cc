@@ -117,10 +117,14 @@ TEST(GEOMETRIC_MODEL)
       // Compare coordinates read from XML file and retrieved from region
       CHECK_EQUAL(pmin.x(), in_min_xyz[0]);
       CHECK_EQUAL(pmin.y(), in_min_xyz[1]);
-      if (pmin.dim() == 3) { CHECK_EQUAL(pmin.z(), in_min_xyz[2]); }
+      if (pmin.dim() == 3) {
+        CHECK_EQUAL(pmin.z(), in_min_xyz[2]);
+      }
       CHECK_EQUAL(pmax.x(), in_max_xyz[0]);
       CHECK_EQUAL(pmax.y(), in_max_xyz[1]);
-      if (pmax.dim() == 3) { CHECK_EQUAL(pmax.z(), in_max_xyz[2]); }
+      if (pmax.dim() == 3) {
+        CHECK_EQUAL(pmax.z(), in_max_xyz[2]);
+      }
 
     } else if (shape == "region: labeled set") {
       Teuchos::ParameterList labset_params = reg_params.sublist(reg_params.name(j));

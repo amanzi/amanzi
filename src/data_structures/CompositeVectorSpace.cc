@@ -355,7 +355,9 @@ CompositeVectorSpace::SetComponents(
 void
 CompositeVectorSpace::InitIndexMap_()
 {
-  for (int i = 0; i != names_.size(); ++i) { indexmap_[names_[i]] = i; }
+  for (int i = 0; i != names_.size(); ++i) {
+    indexmap_[names_[i]] = i;
+  }
 }
 
 
@@ -417,8 +419,12 @@ CompositeVectorSpace::CheckConsistent_(const std::vector<std::string>& names1,
 
     if (n2_it != names2.end()) {
       int j = n2_it - names2.begin();
-      if (locations1[i] != locations2[j]) { return false; }
-      if (num_dofs1[i] != num_dofs2[j]) { return false; }
+      if (locations1[i] != locations2[j]) {
+        return false;
+      }
+      if (num_dofs1[i] != num_dofs2[j]) {
+        return false;
+      }
     }
   }
   return true;
@@ -448,7 +454,9 @@ CompositeVectorSpace::UnionAndConsistent_(const std::vector<std::string>& names1
               (locations2[j] != AmanziMesh::Entity_kind::FACE)) {
             return false;
           }
-          if (num_dofs1[i] != num_dofs2[j]) { return false; }
+          if (num_dofs1[i] != num_dofs2[j]) {
+            return false;
+          }
         } else {
           // add this spec
           names2.push_back(names1[i]);
@@ -464,7 +472,9 @@ CompositeVectorSpace::UnionAndConsistent_(const std::vector<std::string>& names1
               (locations2[j] != AmanziMesh::Entity_kind::BOUNDARY_FACE)) {
             return false;
           }
-          if (num_dofs1[i] != num_dofs2[j]) { return false; }
+          if (num_dofs1[i] != num_dofs2[j]) {
+            return false;
+          }
 
           // union of face and boundary_face is face
           names2[j] = "face";
@@ -485,8 +495,12 @@ CompositeVectorSpace::UnionAndConsistent_(const std::vector<std::string>& names1
     } else {
       // just make sure they match
       int j = n2_it - names2.begin();
-      if (locations1[i] != locations2[j]) { return false; }
-      if (num_dofs1[i] != num_dofs2[j]) { return false; }
+      if (locations1[i] != locations2[j]) {
+        return false;
+      }
+      if (num_dofs1[i] != num_dofs2[j]) {
+        return false;
+      }
     }
   }
   return true;
@@ -521,7 +535,9 @@ CompositeVectorSpace::UnionAndConsistent_(
               (locations2[j] != AmanziMesh::Entity_kind::FACE)) {
             return false;
           }
-          if (num_dofs1[i] != num_dofs2[j]) { return false; }
+          if (num_dofs1[i] != num_dofs2[j]) {
+            return false;
+          }
         } else {
           // add this spec
           names2.push_back(names1[i]);
@@ -539,7 +555,9 @@ CompositeVectorSpace::UnionAndConsistent_(
               (locations2[j] != AmanziMesh::Entity_kind::BOUNDARY_FACE)) {
             return false;
           }
-          if (num_dofs1[i] != num_dofs2[j]) { return false; }
+          if (num_dofs1[i] != num_dofs2[j]) {
+            return false;
+          }
 
           // union of face and boundary_face is face
           // we have to update all maps
@@ -569,8 +587,12 @@ CompositeVectorSpace::UnionAndConsistent_(
     } else {
       // just make sure they match
       int j = n2_it - names2.begin();
-      if (locations1[i] != locations2[j]) { return false; }
-      if (num_dofs1[i] != num_dofs2[j]) { return false; }
+      if (locations1[i] != locations2[j]) {
+        return false;
+      }
+      if (num_dofs1[i] != num_dofs2[j]) {
+        return false;
+      }
     }
   }
   return true;

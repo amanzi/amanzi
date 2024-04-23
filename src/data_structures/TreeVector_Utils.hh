@@ -64,7 +64,9 @@ collectTreeVectorLeaves_const(const T& tv)
 
   std::vector<Teuchos::RCP<const T>> leaves;
   for (auto it : list) {
-    if (it->Data() != Teuchos::null) { leaves.emplace_back(it); }
+    if (it->Data() != Teuchos::null) {
+      leaves.emplace_back(it);
+    }
   }
   return leaves;
 }

@@ -100,7 +100,9 @@ LimiterCellDG::LimiterScalarDG_(const WhetStone::DG_Modal& dg,
   AmanziGeometry::Point x1(dim), x2(dim), xm(dim);
   int order = WhetStone::PolynomialSpaceOrder(dim, nk);
 
-  if (!external_bounds_) { bounds_ = BoundsForCells(*field_, bc_model, bc_value, stencil_id_); }
+  if (!external_bounds_) {
+    bounds_ = BoundsForCells(*field_, bc_model, bc_value, stencil_id_);
+  }
 
   int ilast = (dim == 2) ? 1 : 0;
 

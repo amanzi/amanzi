@@ -66,7 +66,9 @@ PDE_DiffusionNLFVwithBndFaces::Init_(Teuchos::ParameterList& plist)
   // upwind options (not used yet)
   std::string uwname = plist.get<std::string>("nonlinear coefficient", "upwind: face");
   little_k_ = OPERATOR_LITTLE_K_UPWIND;
-  if (uwname == "none") { little_k_ = OPERATOR_LITTLE_K_NONE; }
+  if (uwname == "none") {
+    little_k_ = OPERATOR_LITTLE_K_NONE;
+  }
 
   // Newton correction terms
   std::string jacobian = plist.get<std::string>("Newton correction", "none");
@@ -111,7 +113,9 @@ PDE_DiffusionNLFVwithBndFaces::SetScalarCoefficient(const Teuchos::RCP<const Com
   dkdp_ = dkdp;
 
   if (k_ != Teuchos::null) {
-    if (little_k_ == OPERATOR_LITTLE_K_UPWIND) { AMANZI_ASSERT(k_->HasComponent("face")); }
+    if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
+      AMANZI_ASSERT(k_->HasComponent("face"));
+    }
   }
   // if (dkdp_ != Teuchos::null) AMANZI_ASSERT(dkdp_->HasComponent("cell"));
 }
@@ -175,7 +179,9 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
       WhetStone::TensorToVector(Kc, data);
     }
 
-    for (int i = 0; i < dim_ * dim_; ++i) { Ktmp[i][c] = data(i); }
+    for (int i = 0; i < dim_ * dim_; ++i) {
+      Ktmp[i][c] = data(i);
+    }
   }
   cv_tmp->ScatterMasterToGhosted();
 

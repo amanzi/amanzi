@@ -102,7 +102,9 @@ DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
       const int* idx_q = jt.multi_index();
       int l = jt.PolynomialPosition();
 
-      for (int i = 0; i < d_; ++i) { multi_index[i] = idx_p[i] + idx_q[i]; }
+      for (int i = 0; i < d_; ++i) {
+        multi_index[i] = idx_p[i] + idx_q[i];
+      }
 
       M(l, k) = M(k, l) = K00 * monomial_integrals_[c](PolynomialPosition(d_, multi_index));
     }
@@ -141,7 +143,9 @@ DG_Modal::MassMatrix(int c, const Tensor& K, PolynomialOnMesh& integrals, DenseM
       const int* idx_q = jt.multi_index();
       int l = jt.PolynomialPosition();
 
-      for (int i = 0; i < d_; ++i) { multi_index[i] = idx_p[i] + idx_q[i]; }
+      for (int i = 0; i < d_; ++i) {
+        multi_index[i] = idx_p[i] + idx_q[i];
+      }
 
       M(k, l) = K00 * integrals.poly()(PolynomialPosition(d_, multi_index));
       M(l, k) = M(k, l);
@@ -190,7 +194,9 @@ DG_Modal::MassMatrix(int c, const Polynomial& K, DenseMatrix& M)
         const int* idx_q = jt.multi_index();
         int l = jt.PolynomialPosition();
 
-        for (int i = 0; i < d_; ++i) { multi_index[i] = idx_p[i] + idx_q[i] + idx_K[i]; }
+        for (int i = 0; i < d_; ++i) {
+          multi_index[i] = idx_p[i] + idx_q[i] + idx_K[i];
+        }
 
         M(k, l) += factor * monomial_integrals_[c](PolynomialPosition(d_, multi_index));
       }
@@ -199,7 +205,9 @@ DG_Modal::MassMatrix(int c, const Polynomial& K, DenseMatrix& M)
 
   // symmetric part of mass matrix
   for (int k = 0; k < nrows; ++k) {
-    for (int l = k + 1; l < nrows; ++l) { M(l, k) = M(k, l); }
+    for (int l = k + 1; l < nrows; ++l) {
+      M(l, k) = M(k, l);
+    }
   }
 
   basis_[c]->BilinearFormNaturalToMy(M);
@@ -239,7 +247,9 @@ DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
       const int* jndex = jt.multi_index();
       int l = jt.PolynomialPosition();
 
-      for (int i = 0; i < d_; ++i) { multi_index[i] = index[i] + jndex[i]; }
+      for (int i = 0; i < d_; ++i) {
+        multi_index[i] = index[i] + jndex[i];
+      }
 
       double sum(0.0), tmp;
       for (int i = 0; i < d_; ++i) {
@@ -304,7 +314,9 @@ DG_Modal::StiffnessMatrix(int c, const MatrixPolynomial& K, DenseMatrix& A)
               int n = mt.PolynomialPosition();
               double factor = K(i, j)(n);
 
-              for (int m = 0; m < d_; ++m) { multi_index[m] = index[m] + jndex[m] + idx_K[m]; }
+              for (int m = 0; m < d_; ++m) {
+                multi_index[m] = index[m] + jndex[m] + idx_K[m];
+              }
 
               multi_index[i]--;
               multi_index[j]--;
@@ -349,7 +361,9 @@ DG_Modal::StiffnessMatrix(int c, const WhetStoneFunction* K, DenseMatrix& A)
       const int* jndex = jt.multi_index();
       int l = jt.PolynomialPosition();
 
-      for (int i = 0; i < d_; ++i) { multi_index[i] = index[i] + jndex[i]; }
+      for (int i = 0; i < d_; ++i) {
+        multi_index[i] = index[i] + jndex[i];
+      }
 
       double sum(0.0), tmp;
       for (int i = 0; i < d_; ++i) {
@@ -421,7 +435,9 @@ DG_Modal::AdvectionMatrix(int c, const VectorPolynomial& u, DenseMatrix& A, bool
         const int* idx_q = jt.multi_index();
         int l = PolynomialPosition(d_, idx_q);
 
-        for (int i = 0; i < d_; ++i) { multi_index[i] = idx_q[i] + idx_K[i]; }
+        for (int i = 0; i < d_; ++i) {
+          multi_index[i] = idx_q[i] + idx_K[i];
+        }
 
         A(k, l) += factor * monomial_integrals_[c](PolynomialPosition(d_, multi_index));
       }
@@ -429,7 +445,9 @@ DG_Modal::AdvectionMatrix(int c, const VectorPolynomial& u, DenseMatrix& A, bool
   }
 
   // gradient operator is applied to solution
-  if (!grad_on_test) { A.Transpose(); }
+  if (!grad_on_test) {
+    A.Transpose();
+  }
 
   basis_[c]->BilinearFormNaturalToMy(A);
 
@@ -587,7 +605,9 @@ DG_Modal::FluxMatrix(int f,
   }
 
   // jump operator is applied to solution
-  if (!jump_on_test) { A.Transpose(); }
+  if (!jump_on_test) {
+    A.Transpose();
+  }
 
   if (ncells == 1) {
     basis_[cells[0]]->BilinearFormNaturalToMy(A);
@@ -712,7 +732,9 @@ DG_Modal::FluxMatrixGaussPoints(int f,
   }
 
   // jump operator is applied to solution
-  if (!jump_on_test) { A.Transpose(); }
+  if (!jump_on_test) {
+    A.Transpose();
+  }
 
   if (ncells == 1) {
     basis_[cells[0]]->BilinearFormNaturalToMy(A);

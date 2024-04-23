@@ -90,7 +90,9 @@ class AnalyticDG03 : public AnalyticDGBase {
     }
     v[0](0, 0) = 0.1;
 
-    if (d_ == 3) { v[2].Reshape(d_, 0, true); }
+    if (d_ == 3) {
+      v[2].Reshape(d_, 0, true);
+    }
   }
 
   // -- reaction

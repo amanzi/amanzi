@@ -139,10 +139,14 @@ unpermute(const char* name, hid_t file_id, hid_t new_fileid, int* nodemap, int* 
 
     if (cdims[0] == num_nodes) {
       std::cout << "    E>> unpermute node data" << std::endl;
-      for (int i = 0; i < num; ++i) { new_data[nodemap[i]] = data[i]; }
+      for (int i = 0; i < num; ++i) {
+        new_data[nodemap[i]] = data[i];
+      }
     } else if (cdims[0] == num_elems) {
       std::cout << "    E>> unpermute elem data" << std::endl;
-      for (int i = 0; i < num; ++i) { new_data[elemmap[i]] = data[i]; }
+      for (int i = 0; i < num; ++i) {
+        new_data[elemmap[i]] = data[i];
+      }
     }
     // write data
     dataspace = H5Screate_simple(2, cdims, NULL);
@@ -338,7 +342,9 @@ main(int argc, char* argv[])
       map_offset += elem_types[id][1] + 1;
     }
     std::cout << "E>> new ordered element connectivities:";
-    for (int i = 0; i < elem_len; i++) { std::cout << " " << mapelems[i]; }
+    for (int i = 0; i < elem_len; i++) {
+      std::cout << " " << mapelems[i];
+    }
     std::cout << std::endl;
 
     // create Mesh group
@@ -375,7 +381,9 @@ main(int argc, char* argv[])
       // iterate over groups, fill in list of names
       std::cout << "E>> iterate to get field names" << std::endl;
       H5Giterate(data_file, "/", NULL, group_info, NULL);
-      for (int i = 0; i < groupList.size(); ++i) { std::cout << " " << groupList[i]; }
+      for (int i = 0; i < groupList.size(); ++i) {
+        std::cout << " " << groupList[i];
+      }
       std::cout << std::endl;
       for (int i = 0; i < groupList.size(); ++i) {
         std::stringstream group_name;

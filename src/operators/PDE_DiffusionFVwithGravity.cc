@@ -104,7 +104,9 @@ PDE_DiffusionFVwithGravity::ApplyBCs(bool primary, bool eliminate, bool essentia
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
 
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_model[f] == OPERATOR_BC_NEUMANN) { (*gravity_face)[0][f] = 0.0; }
+    if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+      (*gravity_face)[0][f] = 0.0;
+    }
   }
 }
 

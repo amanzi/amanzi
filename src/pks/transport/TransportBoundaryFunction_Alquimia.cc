@@ -112,7 +112,9 @@ TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new)
 
     // Move the concentrations into place.
     std::vector<double>& values = it->second;
-    for (int i = 0; i < values.size(); i++) { values[i] = alq_state_.total_mobile.data[i]; }
+    for (int i = 0; i < values.size(); i++) {
+      values[i] = alq_state_.total_mobile.data[i];
+    }
   }
 }
 

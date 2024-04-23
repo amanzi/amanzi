@@ -146,7 +146,9 @@ class Data {
   template <typename T>
   void SetPtr(Teuchos::RCP<T> t)
   {
-    if (!p_) { p_ = std::make_unique<Data_Impl<T>>(t); }
+    if (!p_) {
+      p_ = std::make_unique<Data_Impl<T>>(t);
+    }
     p_->SetPtr(t);
   }
 

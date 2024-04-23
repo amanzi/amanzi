@@ -149,7 +149,9 @@ PK_MPCStrong<PK_Base>::Setup()
 
   for (auto param = pk_tree_.begin(); param != pk_tree_.end(); ++param) {
     std::string pname = param->first;
-    if (pks_list->isSublist(pname)) { pks_list->sublist(pname).set("strongly coupled PK", true); }
+    if (pks_list->isSublist(pname)) {
+      pks_list->sublist(pname).set("strongly coupled PK", true);
+    }
   }
 
   // call each sub-PKs Setup()
@@ -396,7 +398,9 @@ PK_MPCStrong<PK_Base>::IsAdmissible(Teuchos::RCP<const TreeVector> u)
       Exceptions::amanzi_throw(message);
     }
 
-    if (!sub_pks_[i]->IsAdmissible(pk_u)) { return false; }
+    if (!sub_pks_[i]->IsAdmissible(pk_u)) {
+      return false;
+    }
   }
   return true;
 }

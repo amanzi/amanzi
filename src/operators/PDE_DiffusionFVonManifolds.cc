@@ -196,7 +196,9 @@ PDE_DiffusionFVonManifolds::UpdateMatrices(const Teuchos::Ptr<const CompositeVec
 
         Aface.Multiply(v, av, false);
 
-        for (int n = 0; n < ndofs; ++n) { rhs_c[0][cells[n]] += av(n); }
+        for (int n = 0; n < ndofs; ++n) {
+          rhs_c[0][cells[n]] += av(n);
+        }
       }
     }
   }
@@ -310,7 +312,9 @@ PDE_DiffusionFVonManifolds::UpdateFlux(const Teuchos::Ptr<const CompositeVector>
       }
       if (sum > 0.0) pf /= sum;
 
-      for (int i = 0; i < ndofs; ++i) { flux[0][g + i] = -ti(i) * (pf - pi(i)); }
+      for (int i = 0; i < ndofs; ++i) {
+        flux[0][g + i] = -ti(i) * (pf - pi(i));
+      }
     }
   }
 }

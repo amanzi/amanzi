@@ -85,7 +85,9 @@ class Op {
   virtual int CopyShadowToMaster()
   {
     for (int i = 0; i != matrices.size(); ++i) {
-      if (matrices_shadow[i].NumRows() != 0) { matrices[i] = matrices_shadow[i]; }
+      if (matrices_shadow[i].NumRows() != 0) {
+        matrices[i] = matrices_shadow[i];
+      }
     }
     *diag = *diag_shadow;
     return 0;
@@ -95,7 +97,9 @@ class Op {
   virtual void RestoreCheckPoint()
   {
     for (int i = 0; i != matrices.size(); ++i) {
-      if (matrices_shadow[i].NumRows() != 0) { matrices[i] = matrices_shadow[i]; }
+      if (matrices_shadow[i].NumRows() != 0) {
+        matrices[i] = matrices_shadow[i];
+      }
     }
     *diag = *diag_shadow;
   }
@@ -170,7 +174,9 @@ inline void
 Op::Rescale(double scaling)
 {
   if (scaling != 1.0) {
-    for (int i = 0; i != matrices.size(); ++i) { matrices[i] *= scaling; }
+    for (int i = 0; i != matrices.size(); ++i) {
+      matrices[i] *= scaling;
+    }
     if (diag.get()) diag->Scale(scaling);
   }
 }

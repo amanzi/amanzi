@@ -166,7 +166,9 @@ TimeStepManager::print(std::ostream& os, double start, double end) const
     }
     case TimeEvent::TIMES: {
       for (std::vector<double>::const_iterator j = i->times_.begin(); j != i->times_.end(); ++j) {
-        if (*j >= start && *j <= end) { print_times.push_back(*j); }
+        if (*j >= start && *j <= end) {
+          print_times.push_back(*j);
+        }
       }
     }
     }

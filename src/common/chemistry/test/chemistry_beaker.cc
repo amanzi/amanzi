@@ -63,7 +63,8 @@ SUITE(BeakerTests)
       chem.Initialize(state, parameters);
     } catch (Exceptions::Amanzi_exception& e) {
       correct_exception = true;
-    } catch (std::exception& e) {}
+    } catch (std::exception& e) {
+    }
 
     CHECK(correct_exception);
   }

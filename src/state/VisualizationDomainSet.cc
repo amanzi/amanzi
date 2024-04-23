@@ -86,7 +86,9 @@ VisualizationDomainSet::FinalizeTimestep() const
   if (lifted_vector_names_.size() == 0) {
     // have to get a common set of names across all ranks
     std::vector<std::string> my_names;
-    for (auto& lv : lifted_vectors_) { my_names.push_back(lv.first); }
+    for (auto& lv : lifted_vectors_) {
+      my_names.push_back(lv.first);
+    }
 
     Utils::StringReducer<100> reducer(mesh_->getComm());
     reducer.checkValidInput(my_names);

@@ -216,7 +216,9 @@ CompositeMultiVector<Vector>::MvDot(const Belos::MultiVec<double>& A,
                              std::invalid_argument,
                              "CompositeMultiVector::MvAddMv: A must be a CompositeMultiVector");
 
-  for (int i = 0; i < cmv_.size(); i++) { cmv_[i]->Dot(*cmvA->cmv_[i], &b[i]); }
+  for (int i = 0; i < cmv_.size(); i++) {
+    cmv_[i]->Dot(*cmvA->cmv_[i], &b[i]);
+  }
 }
 
 template <class Vector>

@@ -55,7 +55,9 @@ NCP_F::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
 
-  for (int c = 0; c != ncells; ++c) { result_c[0][c] = 1.0 - sl[0][c]; }
+  for (int c = 0; c != ncells; ++c) {
+    result_c[0][c] = 1.0 - sl[0][c];
+  }
 }
 
 

@@ -57,7 +57,9 @@ MDM_Bear::mech_dispersion(double t,
     double anisotropy = (alphaL_ - alphaT_) / vnorm;
     for (int i = 0; i < dim_; i++) {
       D(i, i) = alphaT_ * vnorm;
-      for (int j = i; j < dim_; j++) { D(j, i) = D(i, j) += anisotropy * v[i] * v[j]; }
+      for (int j = i; j < dim_; j++) {
+        D(j, i) = D(i, j) += anisotropy * v[i] * v[j];
+      }
     }
 
     D *= wc;

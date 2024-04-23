@@ -260,7 +260,9 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
     num_itrs_++;
 
     // evaluate precon at the beginning of the method
-    if (vo_->os_OK(Teuchos::VERB_HIGH)) { *vo_->os() << "Updating preconditioner." << std::endl; }
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "Updating preconditioner." << std::endl;
+    }
     pc_updates_++;
     fn_->UpdatePreconditioner(u);
 

@@ -148,7 +148,9 @@ copyCellsToBoundaryFaces(const MeshCache<MEM>& mesh,
   AMANZI_ASSERT(cells.NumVectors() == boundary_faces.NumVectors());
   for (Entity_ID bf = 0; bf != boundary_faces.MyLength(); ++bf) {
     Entity_ID c = getBoundaryFaceInternalCell(mesh, bf);
-    for (int i = 0; i != boundary_faces.NumVectors(); ++i) { boundary_faces[i][bf] = cells[i][c]; }
+    for (int i = 0; i != boundary_faces.NumVectors(); ++i) {
+      boundary_faces[i][bf] = cells[i][c];
+    }
   }
 }
 
@@ -475,10 +477,14 @@ cacheDefault(MeshCache<MEM>& mesh)
   std::cout << "############# CacheDefault ";
   std::cout << " hasNodes: " << mesh.hasNodes() << " hasEdges: " << mesh.hasEdges() << std::endl;
   // caches what the developers currently think is best
-  if (mesh.hasNodes()) { mesh.cacheNodeCoordinates(); }
+  if (mesh.hasNodes()) {
+    mesh.cacheNodeCoordinates();
+  }
   mesh.cacheCellFaces();
   mesh.cacheFaceCells();
-  if (mesh.hasNodes()) { mesh.cacheFaceNodes(); }
+  if (mesh.hasNodes()) {
+    mesh.cacheFaceNodes();
+  }
   mesh.cacheCellGeometry();
   mesh.cacheFaceGeometry();
   if (mesh.hasEdges()) {

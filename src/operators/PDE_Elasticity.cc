@@ -174,7 +174,9 @@ PDE_Elasticity::ComputeHydrostaticStress(const CompositeVector& u, CompositeVect
     dofs.Reshape(d * nnodes);
     for (int n = 0; n < nnodes; ++n) {
       int v = nodes[n];
-      for (int k = 0; k < d; ++k) { dofs(d * n + k) = u_n[k][v]; }
+      for (int k = 0; k < d; ++k) {
+        dofs(d * n + k) = u_n[k][v];
+      }
     }
 
     // optional face DoFs
@@ -354,7 +356,9 @@ PDE_Elasticity::ApplyBCs_ShearStress_(const BCs& bc,
         double value = bc_value[f];
         for (int m = 0; m < nlnodes; ++m) {
           int v = lnodes[m];
-          for (int k = 0; k < d; ++k) { (*rhs_node)[k][v] += value * tau[k] * weights[m]; }
+          for (int k = 0; k < d; ++k) {
+            (*rhs_node)[k][v] += value * tau[k] * weights[m];
+          }
         }
       }
     }
@@ -398,7 +402,9 @@ PDE_Elasticity::ApplyBCs_Traction_(const BCs& bc, bool primary, bool eliminate, 
         auto& value = bc_value[f];
         for (int m = 0; m < nlnodes; ++m) {
           int v = lnodes[m];
-          for (int k = 0; k < d; ++k) { (*rhs_node)[k][v] += value[k] * weights[m] * area; }
+          for (int k = 0; k < d; ++k) {
+            (*rhs_node)[k][v] += value[k] * weights[m] * area;
+          }
         }
       }
     }
@@ -436,7 +442,9 @@ PDE_Elasticity::ApplyBCs_Kinematic_(const BCs& bc, bool primary, bool eliminate,
 
       if (bc_model[v] == OPERATOR_BC_KINEMATIC) {
         double value = bc_value[v];
-        if (local_op_->matrices_shadow[c].NumRows() == 0) { local_op_->matrices_shadow[c] = Acell; }
+        if (local_op_->matrices_shadow[c].NumRows() == 0) {
+          local_op_->matrices_shadow[c] = Acell;
+        }
         auto cells = mesh_->getNodeCells(v);
         int ncells = cells.size();
 
@@ -484,7 +492,9 @@ PDE_Elasticity::ComputeCellStrain(const CompositeVector& u, int c)
 
   for (int n = 0; n < nnodes; ++n) {
     int v = nodes[n];
-    for (int k = 0; k < d; ++k) { dofs(d * n + k) = u_n[k][v]; }
+    for (int k = 0; k < d; ++k) {
+      dofs(d * n + k) = u_n[k][v];
+    }
   }
 
   // optional face DoFs

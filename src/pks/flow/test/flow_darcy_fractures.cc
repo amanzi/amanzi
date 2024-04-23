@@ -114,7 +114,9 @@ TEST(DARCY_TWO_FRACTURES)
     t_old = t_new;
   }
 
-  for (int c = 0; c < p.MyLength(); c++) { CHECK(p[0][c] > -1.0 && p[0][c] < 2.0); }
+  for (int c = 0; c < p.MyLength(); c++) {
+    CHECK(p[0][c] > -1.0 && p[0][c] < 2.0);
+  }
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Darcy", *plist));
   WriteStateStatistics(*S, *vo);
 

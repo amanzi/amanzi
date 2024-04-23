@@ -276,7 +276,9 @@ ConvergenceBoxMeshes(int order, double tol, std::string limiter)
 
       t_old = t_new;
 
-      if (TPK.internal_tests_) { TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12); }
+      if (TPK.internal_tests_) {
+        TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
+      }
       iter++;
     }
     // for (int k = 0; k < nx; ++k) std::cout << (*tcc)[0][k] << std::endl;

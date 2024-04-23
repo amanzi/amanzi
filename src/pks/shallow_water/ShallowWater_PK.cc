@@ -345,7 +345,9 @@ ShallowWater_PK::Initialize()
     auto& h_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
     auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
-    for (int c = 0; c < ncells_owned; c++) { h_c[0][c] = ht_c[0][c] - B_c[0][c]; }
+    for (int c = 0; c < ncells_owned; c++) {
+      h_c[0][c] = ht_c[0][c] - B_c[0][c];
+    }
 
     S_->GetRecordW(ponded_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
   }
@@ -354,7 +356,9 @@ ShallowWater_PK::Initialize()
     const auto& h_c = *S_->Get<CV_t>(ponded_depth_key_).ViewComponent("cell");
     auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
-    for (int c = 0; c < ncells_owned; c++) { ht_c[0][c] = h_c[0][c] + B_c[0][c]; }
+    for (int c = 0; c < ncells_owned; c++) {
+      ht_c[0][c] = h_c[0][c] + B_c[0][c];
+    }
 
     S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
   }
@@ -445,7 +449,9 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // update source (external) terms
-  for (int i = 0; i < srcs_.size(); ++i) { srcs_[i]->Compute(t_old, t_new); }
+  for (int i = 0; i < srcs_.size(); ++i) {
+    srcs_[i]->Compute(t_old, t_new);
+  }
 
   // compute total source value for each time step
   total_source_ = 0.0;
@@ -732,7 +738,9 @@ ShallowWater_PK::get_dt()
   }
 
   // reduce dt_min when dt is too large for completely dry conditions (h = 0, qx = 0, qy = 0)
-  if (dt >= d_min * 1.e8) { dt = d_min * dt_dry; }
+  if (dt >= d_min * 1.e8) {
+    dt = d_min * dt_dry;
+  }
 
   double dt_min;
   mesh_->getComm()->MinAll(&dt, &dt_min, 1);

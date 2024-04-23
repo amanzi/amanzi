@@ -55,7 +55,9 @@ class AnalyticDG02 : public AnalyticDGBase {
 
     sol(0, 0) = 1.0 + p * p;
 
-    for (int i = 0; i < d_; ++i) { sol(1, i) = 2.0 * p[i]; }
+    for (int i = 0; i < d_; ++i) {
+      sol(1, i) = 2.0 * p[i];
+    }
 
     sol(2, 0) = 1.0;
     if (d_ == 2) {
@@ -84,9 +86,13 @@ class AnalyticDG02 : public AnalyticDGBase {
 
     v.resize(d_);
     if (!advection_) {
-      for (int i = 0; i < 2; ++i) { v[i].Reshape(d_, 0, true); }
+      for (int i = 0; i < 2; ++i) {
+        v[i].Reshape(d_, 0, true);
+      }
     } else {
-      for (int i = 0; i < 2; ++i) { v[i].Reshape(d_, 2, true); }
+      for (int i = 0; i < 2; ++i) {
+        v[i].Reshape(d_, 2, true);
+      }
       v[0](0, 0) = 0.1 + x - x * x;
       v[0](1, 0) = 1.0 - 2 * x;
       v[0](2, 0) = -1.0;

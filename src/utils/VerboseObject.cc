@@ -97,7 +97,9 @@ VerboseObject::VerboseObject(const Comm_ptr_type& comm,
   // Options from ParameterList
   // -- Set up the VerboseObject header.
   std::string headername(name);
-  if (plist.isParameter("name")) { headername = plist.get<std::string>("name"); }
+  if (plist.isParameter("name")) {
+    headername = plist.get<std::string>("name");
+  }
   int width = plist.get("header width", -1);
   set_name(headername, width);
 

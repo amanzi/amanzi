@@ -97,7 +97,9 @@ PK_MPCAdditive<PK_Base>::PK_MPCAdditive(Teuchos::ParameterList& pk_tree,
   my_list_ = Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), name_);
 
   Teuchos::RCP<Teuchos::ParameterList> plist;
-  if (global_list_->isSublist("PKs")) { plist = Teuchos::sublist(global_list, "PKs"); }
+  if (global_list_->isSublist("PKs")) {
+    plist = Teuchos::sublist(global_list, "PKs");
+  }
 
   std::vector<std::string> pk_name =
     my_list_->get<Teuchos::Array<std::string>>("PKs order").toVector();
@@ -209,7 +211,9 @@ PK_MPCAdditive<PK_Base>::AdvanceStep(double t_old, double t_new, bool reinit)
   bool fail = false;
   for (PK_MPCAdditive<PK>::SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
-    if (fail) { return fail; }
+    if (fail) {
+      return fail;
+    }
   }
   return fail;
 }

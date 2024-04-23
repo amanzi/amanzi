@@ -64,7 +64,9 @@ class AnalyticDG00 : public AnalyticDGBase {
                               Amanzi::WhetStone::VectorPolynomial& v) override
   {
     v.resize(d_);
-    for (int i = 0; i < d_; ++i) { v[i].Reshape(d_, 0, true); }
+    for (int i = 0; i < d_; ++i) {
+      v[i].Reshape(d_, 0, true);
+    }
     v.set_origin(p);
   }
 

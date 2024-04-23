@@ -133,7 +133,9 @@ SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec)
   nvec_ = Teuchos::rcp(new int(0));
   times_ = Teuchos::rcp(new Teuchos::Array<double>(mvec));
   d_.resize(mvec);
-  for (int j = 0; j < mvec; ++j) { d_[j] = Teuchos::rcp(new Vector(initvec)); }
+  for (int j = 0; j < mvec; ++j) {
+    d_[j] = Teuchos::rcp(new Vector(initvec));
+  }
 
   // move into state
   if (S_ != Teuchos::null) {
@@ -278,7 +280,9 @@ SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x, unsigned int o
   AMANZI_ASSERT(order >= 0);
 
   x = *d_[order];
-  for (int k = order - 1; k >= 0; k--) { x.Update(1.0, *d_[k], t - (*times_)[k]); }
+  for (int k = order - 1; k >= 0; k--) {
+    x.Update(1.0, *d_[k], t - (*times_)[k]);
+  }
 }
 
 
@@ -307,7 +311,9 @@ SolutionHistory<Vector>::TimeDeltas(std::vector<double>& h)
 {
   h.resize((*nvec_) - 1);
 
-  for (unsigned int j = 0; j <= (*nvec_) - 2; j++) { h[j] = (*times_)[0] - (*times_)[j + 1]; }
+  for (unsigned int j = 0; j <= (*nvec_) - 2; j++) {
+    h[j] = (*times_)[0] - (*times_)[j + 1];
+  }
 }
 
 

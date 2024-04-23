@@ -69,7 +69,9 @@ TEST(DG2D_MASS_MATRIX)
     }
 
     double area = mesh->getCellVolume(0);
-    for (int i = 0; i < nk; ++i) { CHECK_CLOSE(M(i, i), area, 1e-12); }
+    for (int i = 0; i < nk; ++i) {
+      CHECK_CLOSE(M(i, i), area, 1e-12);
+    }
   }
 }
 
@@ -153,7 +155,9 @@ TEST(DG3D_MASS_MATRIX)
       printf("\n");
     }
 
-    for (int i = 1; i < nk; ++i) { CHECK_CLOSE(M0(i, 0), 0.0, 1e-12); }
+    for (int i = 1; i < nk; ++i) {
+      CHECK_CLOSE(M0(i, 0), 0.0, 1e-12);
+    }
   }
 }
 
@@ -261,7 +265,9 @@ TEST(DG2D_STIFFNESS_MATRIX)
 
     if (k > 1) {
       double area = mesh->getCellVolume(0);
-      for (int i = 1; i < 2; ++i) { CHECK_CLOSE(M1(i, i), area * 4, 1e-12); }
+      for (int i = 1; i < 2; ++i) {
+        CHECK_CLOSE(M1(i, i), area * 4, 1e-12);
+      }
     }
 
     M1 -= M2;
@@ -680,7 +686,9 @@ TEST(DG_LEAST_SQUARE_MAP_CELL)
   // test linear map
   AmanziMesh::Point_List x2(x1);
   AmanziGeometry::Point shift(0.1, 0.2);
-  for (int i = 0; i < nodes.size(); ++i) { x2[i] += shift; }
+  for (int i = 0; i < nodes.size(); ++i) {
+    x2[i] += shift;
+  }
 
   maps.LeastSquareFit(1, x1, x2, u);
   for (int i = 0; i < 2; ++i) {
@@ -737,7 +745,9 @@ TEST(DG_LEAST_SQUARE_MAP_CELL)
 
   // -- check vertex-to-vertex map
   for (int n = 0; n < 7; ++n) {
-    for (int i = 0; i < 2; ++i) { CHECK_CLOSE(x2[n][i], u[i].Value(x1[n]), 1e-12); }
+    for (int i = 0; i < 2; ++i) {
+      CHECK_CLOSE(x2[n][i], u[i].Value(x1[n]), 1e-12);
+    }
   }
 
   // -- check that it is bilinear map

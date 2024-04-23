@@ -43,7 +43,9 @@ TEST(SILO_STRUCTURED)
   // Setup cell quantity
   cell_quantity =
     Teuchos::rcp(new Epetra_Vector(Mesh->getMap(Amanzi::AmanziMesh::Entity_kind::CELL, false)));
-  for (int c = 0; c != ncells; ++c) { (*cell_quantity)[c] = Mesh->getCellCentroid(c)[0]; }
+  for (int c = 0; c != ncells; ++c) {
+    (*cell_quantity)[c] = Mesh->getCellCentroid(c)[0];
+  }
 
   // Setup second cell quantity -- called fake pressure
   fake_pressure =
@@ -112,7 +114,9 @@ TEST(SILO_POLYGONAL)
   // Setup cell quantity
   cell_quantity =
     Teuchos::rcp(new Epetra_Vector(Mesh->getMap(Amanzi::AmanziMesh::Entity_kind::CELL, false)));
-  for (int c = 0; c != cell_quantity->MyLength(); ++c) { (*cell_quantity)[c] = 10.0 * c; }
+  for (int c = 0; c != cell_quantity->MyLength(); ++c) {
+    (*cell_quantity)[c] = 10.0 * c;
+  }
 
   // Setup second cell quantity -- called fake pressure
   int cell_index_list[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
@@ -145,9 +149,15 @@ TEST(SILO_POLYGONAL)
 
     // advance time and values
     time += 2.0;
-    for (int j = 0; j < 8; j++) { cell_values[j] += 10.0; }
-    for (int j = 0; j < 4; j++) { fake_values[j] += 1.0; }
-    for (int j = 0; j < 12; j++) { node_values[j] += 10.0; }
+    for (int j = 0; j < 8; j++) {
+      cell_values[j] += 10.0;
+    }
+    for (int j = 0; j < 4; j++) {
+      fake_values[j] += 1.0;
+    }
+    for (int j = 0; j < 12; j++) {
+      node_values[j] += 10.0;
+    }
 
     // close file
     io.FinalizeCycle();

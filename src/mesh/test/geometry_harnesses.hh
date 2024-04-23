@@ -388,7 +388,9 @@ testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int
         break;
       }
     }
-    if (!found) { std::cout << "not found: " << bf << " at " << f_centroid << std::endl; }
+    if (!found) {
+      std::cout << "not found: " << bf << " at " << f_centroid << std::endl;
+    }
     CHECK(found);
   }
 
@@ -463,13 +465,17 @@ testColumnsUniformDz(const MeshCache<MEM>& mesh, double dz)
     // check all owned cells first, then all ghosted
     if (owned) {
       if (cells[0] < ncells_owned) {
-        for (const auto& c : cells) { CHECK(c < ncells_owned); }
+        for (const auto& c : cells) {
+          CHECK(c < ncells_owned);
+        }
       } else {
         owned = false;
       }
     }
     if (!owned) {
-      for (const auto& c : cells) { CHECK(c >= ncells_owned); }
+      for (const auto& c : cells) {
+        CHECK(c >= ncells_owned);
+      }
     }
 
     // check geometry

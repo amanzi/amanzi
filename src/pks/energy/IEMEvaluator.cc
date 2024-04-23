@@ -88,7 +88,9 @@ IEMEvaluator::InitializeFromPlist_()
 void
 IEMEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
-  if (iem_ == Teuchos::null) { CreateIEMPartition_(S.GetMesh(domain_), plist_); }
+  if (iem_ == Teuchos::null) {
+    CreateIEMPartition_(S.GetMesh(domain_), plist_);
+  }
 
   auto temp = S.GetPtr<CompositeVector>(temperature_key_, tag_);
   auto pres = S.GetPtr<CompositeVector>(pressure_key_, tag_);
@@ -127,7 +129,9 @@ IEMEvaluator::EvaluatePartialDerivative_(const State& S,
                                          const Tag& wrt_tag,
                                          const std::vector<CompositeVector*>& results)
 {
-  if (iem_ == Teuchos::null) { CreateIEMPartition_(S.GetMesh(domain_), plist_); }
+  if (iem_ == Teuchos::null) {
+    CreateIEMPartition_(S.GetMesh(domain_), plist_);
+  }
 
   auto temp = S.GetPtr<CompositeVector>(temperature_key_, tag_);
   auto pres = S.GetPtr<CompositeVector>(pressure_key_, tag_);

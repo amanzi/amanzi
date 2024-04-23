@@ -21,7 +21,8 @@ capabilities.
 #include "Teuchos_YamlParser_decl.hpp"
 
 
-int main(int argc, char* argv[])
+int
+main(int argc, char* argv[])
 {
   // input and output
   std::string output_yaml, input_xml;

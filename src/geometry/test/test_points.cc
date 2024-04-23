@@ -65,7 +65,9 @@ TEST(Point)
 
   int num3 = 25;
   Amanzi::AmanziGeometry::Point* points3[25];
-  for (int i = 0; i < num3; ++i) { points3[i] = new Amanzi::AmanziGeometry::Point(x, y, z); }
+  for (int i = 0; i < num3; ++i) {
+    points3[i] = new Amanzi::AmanziGeometry::Point(x, y, z);
+  }
 
   // Now delete some points in 3D - point 3, 4, 5, 8, 7, 16, 18, 17
   // Deletion of 3 is a stand alone deletion

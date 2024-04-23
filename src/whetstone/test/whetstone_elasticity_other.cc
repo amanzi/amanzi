@@ -245,7 +245,9 @@ TEST(ADVECTION_NAVIER_STOKES_2D)
 
   // setup velocity
   AmanziMesh::Point_List u(nnodes);
-  for (int i = 0; i < nnodes; ++i) { u[i] = AmanziGeometry::Point(1.0, 2.0); }
+  for (int i = 0; i < nnodes; ++i) {
+    u[i] = AmanziGeometry::Point(1.0, 2.0);
+  }
 
   // calculate advection matrix
   DenseMatrix A;

@@ -84,7 +84,9 @@ InputConverterU::TranslateMesh_()
 
   // Define the parameter partitioner_
   node = GetUniqueElementByTagsString_(inode, "partitioner", flag);
-  if (flag) { partitioner = mm.transcode(node->getTextContent()); }
+  if (flag) {
+    partitioner = mm.transcode(node->getTextContent());
+  }
 
   // Now we can properly parse the generate/read list.
   children = inode->getChildNodes();
@@ -171,7 +173,9 @@ InputConverterU::TranslateMesh_()
           }
         }
         node = GetUniqueElementByTagsString_(inode, "verify", flag3);
-        if (flag3) { verify = mm.transcode(node->getTextContent()); }
+        if (flag3) {
+          verify = mm.transcode(node->getTextContent());
+        }
         read = flag1 && flag2;
       }
     }
@@ -437,8 +441,12 @@ InputConverterU::TranslateRegions_()
           }
         }
 
-        if (!haveOp) { ThrowErrorMissing_("regions", "element", "operation", "logical"); }
-        if (!haveRL) { ThrowErrorMissing_("regions", "element", "region_list", "logical"); }
+        if (!haveOp) {
+          ThrowErrorMissing_("regions", "element", "operation", "logical");
+        }
+        if (!haveRL) {
+          ThrowErrorMissing_("regions", "element", "region_list", "logical");
+        }
       }
 
       else if (strcmp(node_name, "boundary") == 0) {

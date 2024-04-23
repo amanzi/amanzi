@@ -93,7 +93,9 @@ Teuchos::RCP<const TreeVectorSpace>
 TreeVectorSpace::SubVector(int index) const
 {
   // Get a pointer to the sub-vector by index
-  if (index < subvecs_.size()) { return subvecs_[index]; }
+  if (index < subvecs_.size()) {
+    return subvecs_[index];
+  }
   return Teuchos::null;
 };
 

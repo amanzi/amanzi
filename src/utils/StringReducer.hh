@@ -176,7 +176,9 @@ class StringReducer {
     std::set<std::string> set(in.begin(), in.end());
     AMANZI_ASSERT(set.size() == in.size());
     if (in.size() > 1) {
-      for (int i = 0; i != (in.size() - 1); ++i) { AMANZI_ASSERT(in[i + 1] > in[i]); }
+      for (int i = 0; i != (in.size() - 1); ++i) {
+        AMANZI_ASSERT(in[i + 1] > in[i]);
+      }
     }
   }
 

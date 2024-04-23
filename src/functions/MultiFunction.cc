@@ -117,7 +117,9 @@ MultiFunction::size() const
 double*
 MultiFunction::operator()(const std::vector<double>& xt) const
 {
-  for (int i = 0; i != size(); ++i) { values_[i] = (*functions_[i])(xt); }
+  for (int i = 0; i != size(); ++i) {
+    values_[i] = (*functions_[i])(xt);
+  }
   return values_;
 };
 

@@ -143,7 +143,9 @@ TotalEnergyEvaluator::Evaluate_(const State& S, const std::vector<CompositeVecto
 
   if (aperture_) {
     const auto& aperture = *S.Get<CompositeVector>(aperture_key_).ViewComponent("cell");
-    for (int c = 0; c != ncells; ++c) { result_v[0][c] *= aperture[0][c]; }
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] *= aperture[0][c];
+    }
   }
 }
 
@@ -185,12 +187,18 @@ TotalEnergyEvaluator::EvaluatePartialDerivative_(const State& S,
   } else if (wrt_key == sat_liquid_key_) {
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] = phi[0][c] * n_l[0][c] * u_l[0][c];
-      if (vapor_diffusion_) { result_v[0][c] -= (*n_g)[0][c] * (*u_g)[0][c]; }
+      if (vapor_diffusion_) {
+        result_v[0][c] -= (*n_g)[0][c] * (*u_g)[0][c];
+      }
     }
   } else if (wrt_key == mol_density_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) { result_v[0][c] = phi[0][c] * s_l[0][c] * u_l[0][c]; }
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] = phi[0][c] * s_l[0][c] * u_l[0][c];
+    }
   } else if (wrt_key == ie_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) { result_v[0][c] = phi[0][c] * s_l[0][c] * n_l[0][c]; }
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] = phi[0][c] * s_l[0][c] * n_l[0][c];
+    }
 
   } else if (wrt_key == mol_density_gas_key_) {
     for (int c = 0; c != ncells; ++c) {
@@ -204,16 +212,22 @@ TotalEnergyEvaluator::EvaluatePartialDerivative_(const State& S,
     }
 
   } else if (wrt_key == ie_rock_key_) {
-    for (int c = 0; c != ncells; ++c) { result_v[0][c] = (1.0 - phi[0][c]) * rho_rock[0][c]; }
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] = (1.0 - phi[0][c]) * rho_rock[0][c];
+    }
   } else if (wrt_key == particle_density_key_) {
-    for (int c = 0; c != ncells; ++c) { result_v[0][c] = (1.0 - phi[0][c]) * u_rock[0][c]; }
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] = (1.0 - phi[0][c]) * u_rock[0][c];
+    }
   } else {
     AMANZI_ASSERT(0);
   }
 
   if (aperture_) {
     const auto& aperture = *S.Get<CompositeVector>(aperture_key_).ViewComponent("cell");
-    for (int c = 0; c != ncells; ++c) { result_v[0][c] *= aperture[0][c]; }
+    for (int c = 0; c != ncells; ++c) {
+      result_v[0][c] *= aperture[0][c];
+    }
   }
 }
 

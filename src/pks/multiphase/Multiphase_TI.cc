@@ -42,9 +42,13 @@ Multiphase_PK::FunctionalResidual(double t_old,
 {
   double dtp = t_new - t_old;
   // update to handle time dependent BCs
-  for (int i = 0; i < bcs_.size(); ++i) { bcs_[i]->Compute(t_new, t_new); }
+  for (int i = 0; i < bcs_.size(); ++i) {
+    bcs_[i]->Compute(t_new, t_new);
+  }
   // update source terms
-  for (int i = 0; i < srcs_.size(); ++i) { srcs_[i]->Compute(t_new, t_new); }
+  for (int i = 0; i < srcs_.size(); ++i) {
+    srcs_[i]->Compute(t_new, t_new);
+  }
   // extract pointers to subvectors
   std::vector<Teuchos::RCP<CompositeVector>> up, fp;
   for (int i = 0; i < soln_names_.size(); ++i) {
@@ -153,7 +157,9 @@ Multiphase_PK::FunctionalResidual(double t_old,
         S_->GetEvaluator(gname).Update(*S_, passwd_);
         const auto& tmp = *S_->Get<CompositeVector>(gname).ViewComponent("cell");
         int m = std::min(eqns_flattened_[n][1], tmp.NumVectors() - 1);
-        for (int c = 0; c < ncells_owned_; ++c) { comp_c[0][c] = tmp[m][c]; }
+        for (int c = 0; c < ncells_owned_; ++c) {
+          comp_c[0][c] = tmp[m][c];
+        }
         pde->global_operator()->ComputeNegativeResidual(comp, fadd);
 
         double factor = eqns_[n].diff_factors[phase];
@@ -208,7 +214,9 @@ Multiphase_PK::FunctionalResidual(double t_old,
 
     auto& fci = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");
     if (ncp_ == "min") {
-      for (int c = 0; c < ncells_owned_; ++c) { fci[0][c] = std::min(ncp_fc[0][c], ncp_gc[0][c]); }
+      for (int c = 0; c < ncells_owned_; ++c) {
+        fci[0][c] = std::min(ncp_fc[0][c], ncp_gc[0][c]);
+      }
     } else if (ncp_ == "Fischer-Burmeister") {
       for (int c = 0; c < ncells_owned_; ++c) {
         double a = ncp_fc[0][c];
@@ -228,7 +236,9 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
 {
   // extract pointers to subvectors
   std::vector<Teuchos::RCP<const CompositeVector>> up;
-  for (int i = 0; i < soln_names_.size(); ++i) { up.push_back(u->SubVector(i)->Data()); }
+  for (int i = 0; i < soln_names_.size(); ++i) {
+    up.push_back(u->SubVector(i)->Data());
+  }
 
   // miscalleneous fields
   // -- molar densities
@@ -573,7 +583,9 @@ Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const Tr
     else if (soln_names_[i] == saturation_liquid_key_) {
       auto& dsc = *du->SubVector(i)->Data()->ViewComponent("cell");
 
-      for (int c = 0; c < ncells_owned_; c++) { error_tmp = std::max(error_tmp, fabs(dsc[0][c])); }
+      for (int c = 0; c < ncells_owned_; c++) {
+        error_tmp = std::max(error_tmp, fabs(dsc[0][c]));
+      }
     }
     error += error_tmp;
   }

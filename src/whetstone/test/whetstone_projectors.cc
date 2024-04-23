@@ -60,7 +60,9 @@ TEST(PROJECTORS_SQUARE_CR)
 
   // test zero cell deformation
   std::cout << "      subtest: ZERO deformation" << std::endl;
-  for (int n = 0; n < 4; ++n) { vf[n].Reshape(2, 1, true); }
+  for (int n = 0; n < 4; ++n) {
+    vf[n].Reshape(2, 1, true);
+  }
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);

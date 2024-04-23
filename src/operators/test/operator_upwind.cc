@@ -126,7 +126,9 @@ RunTestUpwind(const std::string& method)
 
     // add boundary face component
     for (int f = 0; f != bc_model.size(); ++f) {
-      if (bc_model[f] == OPERATOR_BC_DIRICHLET) { ffaces[0][f] = bc_value[f]; }
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+        ffaces[0][f] = bc_value[f];
+      }
     }
 
     // create and initialize face-based flux field

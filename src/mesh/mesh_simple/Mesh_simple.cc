@@ -516,7 +516,9 @@ Mesh_simple::getFaceNodes(Entity_ID face,
 {
   Entity_ID_View lnodeids("nodeids", 4);
   unsigned int offset = (unsigned int)4 * face;
-  for (int i = 0; i < 4; i++) { lnodeids[i] = face_to_node_[offset + i]; }
+  for (int i = 0; i < 4; i++) {
+    lnodeids[i] = face_to_node_[offset + i];
+  }
   nodeids = lnodeids;
 }
 
@@ -581,7 +583,9 @@ Mesh_simple::setNodeCoordinate(const AmanziMesh::Entity_ID local_node_id,
   unsigned int offset = (unsigned int)3 * local_node_id;
 
   int spdim = getSpaceDimension();
-  for (int i = 0; i < spdim; i++) { coordinates_[offset + i] = ncoord[i]; }
+  for (int i = 0; i < spdim; i++) {
+    coordinates_[offset + i] = ncoord[i];
+  }
 }
 
 

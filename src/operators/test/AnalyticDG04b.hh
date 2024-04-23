@@ -88,7 +88,9 @@ class AnalyticDG04b : public AnalyticDGBase {
     v.resize(d_);
     v.set_origin(p);
 
-    for (int i = 0; i < d_; ++i) { v[i].Reshape(d_, 0, true); }
+    for (int i = 0; i < d_; ++i) {
+      v[i].Reshape(d_, 0, true);
+    }
   }
 
   // -- reaction

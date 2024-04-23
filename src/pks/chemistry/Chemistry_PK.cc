@@ -328,7 +328,9 @@ Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist
     }
   }
 
-  if (ic_list.isSublist(sorp_sites_key_)) { using_sorption_ = true; }
+  if (ic_list.isSublist(sorp_sites_key_)) {
+    using_sorption_ = true;
+  }
 
   // in the old version, this was only in the Block sublist... may need work?
   if (plist->isParameter("Cation Exchange Capacity")) {

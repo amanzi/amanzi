@@ -109,10 +109,14 @@ Richards_PK::FunctionalResidual(double t_old,
   }
 
   // add vapor diffusion
-  if (vapor_diffusion_) { Functional_AddVaporDiffusion_(f->Data()); }
+  if (vapor_diffusion_) {
+    Functional_AddVaporDiffusion_(f->Data());
+  }
 
   // add water storage in matrix
-  if (multiscale_porosity_) { Functional_AddMassTransferMatrix_(dt_, f->Data()); }
+  if (multiscale_porosity_) {
+    Functional_AddMassTransferMatrix_(dt_, f->Data());
+  }
 
   // calculate normalized residual
   functional_max_norm = 0.0;

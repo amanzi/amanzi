@@ -39,7 +39,9 @@ class DenseVector {
 
   ~DenseVector()
   {
-    if (data_ != NULL) { delete[] data_; }
+    if (data_ != NULL) {
+      delete[] data_;
+    }
   }
 
   // primary members
@@ -149,7 +151,9 @@ class DenseVector {
   {
     const double* dataA = A.Values();
     const double* dataB = B.Values();
-    for (int i = 0; i < m_; ++i) { data_[i] = sa * dataA[i] + sb * dataB[i] + sthis * data_[i]; }
+    for (int i = 0; i < m_; ++i) {
+      data_[i] = sa * dataA[i] + sb * dataB[i] + sthis * data_[i];
+    }
     return *this;
   }
 
@@ -185,7 +189,9 @@ class DenseVector {
   void NormInf(double* result) const
   {
     *result = 0.0;
-    for (int i = 0; i < m_; ++i) { *result = std::max(*result, std::fabs(data_[i])); }
+    for (int i = 0; i < m_; ++i) {
+      *result = std::max(*result, std::fabs(data_[i]));
+    }
   }
 
   void SwapRows(int m1, int m2)

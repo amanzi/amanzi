@@ -108,7 +108,9 @@ int
 BlockVector::GlobalLength() const
 {
   int gl = 0;
-  for (int i = 0; i != num_components_; ++i) { gl += data_[i]->GlobalLength(); }
+  for (int i = 0; i != num_components_; ++i) {
+    gl += data_[i]->GlobalLength();
+  }
   return gl;
 }
 
@@ -259,7 +261,9 @@ BlockVector::Shift(double scalarA)
   for (int i = 0; i != num_components_; ++i) {
     Epetra_MultiVector& v = *data_[i];
     for (int j = 0; j != num_dofs_[i]; ++j) {
-      for (int k = 0; k != sizes_[i]; ++k) { v[j][k] += scalarA; }
+      for (int k = 0; k != sizes_[i]; ++k) {
+        v[j][k] += scalarA;
+      }
     }
   }
   return 0;
@@ -273,7 +277,9 @@ BlockVector::Shift(const std::string& name, double scalarA)
   int i = Index_(name);
   Epetra_MultiVector& v = *data_[i];
   for (int j = 0; j != num_dofs_[i]; ++j) {
-    for (int k = 0; k != sizes_[i]; ++k) { v[j][k] += scalarA; }
+    for (int k = 0; k != sizes_[i]; ++k) {
+      v[j][k] += scalarA;
+    }
   }
   return 0;
 };
@@ -312,7 +318,9 @@ BlockVector::Dot(const BlockVector& other, double* result) const
 BlockVector&
 BlockVector::Update(double scalarA, const BlockVector& A, double scalarThis)
 {
-  for (int i = 0; i != num_components_; ++i) { data_[i]->Update(scalarA, *A.data_[i], scalarThis); }
+  for (int i = 0; i != num_components_; ++i) {
+    data_[i]->Update(scalarA, *A.data_[i], scalarThis);
+  }
   return *this;
 };
 
@@ -377,7 +385,9 @@ BlockVector::NormInf(double* norm) const
     for (int lcv_vector = 0; lcv_vector != data_[i]->NumVectors(); ++lcv_vector) {
       ierr = (*data_[i])(lcv_vector)->NormInf(&norm_loc);
       if (ierr) return ierr;
-      if (norm_loc > *norm) { *norm = norm_loc; }
+      if (norm_loc > *norm) {
+        *norm = norm_loc;
+      }
     }
   }
   return ierr;
@@ -503,7 +513,9 @@ BlockVector::Print(std::ostream& os, bool data_io) const
   }
   os << std::endl;
   if (data_io) {
-    for (int i = 0; i != num_components_; ++i) { data_[i]->Print(os); }
+    for (int i = 0; i != num_components_; ++i) {
+      data_[i]->Print(os);
+    }
   }
 };
 

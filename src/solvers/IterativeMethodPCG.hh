@@ -193,7 +193,9 @@ IterativeMethodPCG<Matrix, Preconditioner, Vector, VectorSpace>::PCG_(const Vect
     r.Norm2(&rnorm);
     residual_ = rnorm;
 
-    if (vo_->os_OK(Teuchos::VERB_HIGH)) { *vo_->os() << i << " ||r||=" << residual_ << std::endl; }
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << i << " ||r||=" << residual_ << std::endl;
+    }
     num_itrs_ = i + 1;
 
     int ierr = CheckConvergence_(residual_, fnorm);

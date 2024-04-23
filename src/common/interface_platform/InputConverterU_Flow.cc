@@ -845,7 +845,9 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
 
     // -- identify a BC that do not require forms (the global BC)
     bool global_bc(false);
-    if (bctype_in == "linear_pressure" || bctype_in == "linear_hydrostatic") { global_bc = true; }
+    if (bctype_in == "linear_pressure" || bctype_in == "linear_hydrostatic") {
+      global_bc = true;
+    }
 
     // -- identify a hard-coded BC that uses spatially dependent functions
     //    temporarily, we assume that it is also the global BC.

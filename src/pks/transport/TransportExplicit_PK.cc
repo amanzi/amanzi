@@ -131,7 +131,9 @@ TransportExplicit_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
     mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_ / 2;
   }
 
-  if (internal_tests_) { VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell")); }
+  if (internal_tests_) {
+    VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
+  }
 }
 
 
@@ -311,7 +313,9 @@ TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // optional Henry Law for the case of gas diffusion
-  if (henry_law_) { MakeAirWaterPartitioning_(); }
+  if (henry_law_) {
+    MakeAirWaterPartitioning_();
+  }
 
   // statistics output
   nsubcycles = ncycles;
@@ -444,7 +448,9 @@ TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
     mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_;
   }
 
-  if (internal_tests_) { VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell")); }
+  if (internal_tests_) {
+    VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
+  }
 }
 
 
@@ -484,10 +490,14 @@ TransportExplicit_PK::AdvanceDonorUpwindManifold(double dt_cycle)
       int c = upwind_cells_[f][n];
       u = upwind_flux_[f][n];
 
-      for (int i = 0; i < num_advect; i++) { tcc_out[i] += u * tcc_prev[i][c]; }
+      for (int i = 0; i < num_advect; i++) {
+        tcc_out[i] += u * tcc_prev[i][c];
+      }
     }
 
-    for (int n = 0; n < downwind_cells_[f].size(); ++n) { flux_in -= downwind_flux_[f][n]; }
+    for (int n = 0; n < downwind_cells_[f].size(); ++n) {
+      flux_in -= downwind_flux_[f][n];
+    }
     if (flux_in == 0.0) flux_in = 1e-12;
 
     // update solutes
@@ -496,7 +506,9 @@ TransportExplicit_PK::AdvanceDonorUpwindManifold(double dt_cycle)
       u = upwind_flux_[f][n];
 
       if (c < ncells_owned) {
-        for (int i = 0; i < num_advect; i++) { tcc_next[i][c] -= dt_ * u * tcc_prev[i][c]; }
+        for (int i = 0; i < num_advect; i++) {
+          tcc_next[i][c] -= dt_ * u * tcc_prev[i][c];
+        }
       }
     }
 
@@ -506,7 +518,9 @@ TransportExplicit_PK::AdvanceDonorUpwindManifold(double dt_cycle)
 
       if (c < ncells_owned) {
         double tmp = u / flux_in;
-        for (int i = 0; i < num_advect; i++) { tcc_next[i][c] -= dt_ * tmp * tcc_out[i]; }
+        for (int i = 0; i < num_advect; i++) {
+          tcc_next[i][c] -= dt_ * tmp * tcc_out[i];
+        }
       }
     }
   }

@@ -97,7 +97,9 @@ struct Getter {
     if constexpr (MEM == MemSpace_kind::HOST && (!std::is_same_v<FF, decltype(nullptr)>)) {
       if (mf.get()) return f(i);
     }
-    if constexpr (std::is_invocable_v<CF, const Entity_ID>) { return c(i); }
+    if constexpr (std::is_invocable_v<CF, const Entity_ID>) {
+      return c(i);
+    }
     assert(false && "No access to cache/framework/compute available in Getter");
     return type_t{};
   }
@@ -165,10 +167,14 @@ struct RaggedGetter {
   get(bool cached, DATA& d, MF& mf, FF&& f, CF&& c, const Entity_ID n)
   {
     using view_t = typename decltype(d.template getRow<MEM>(n))::const_type;
-    if (cached) { return static_cast<view_t>(d.template getRowUnmanaged<MEM>(n)); }
+    if (cached) {
+      return static_cast<view_t>(d.template getRowUnmanaged<MEM>(n));
+    }
 
     if constexpr (MEM == MemSpace_kind::HOST && (!std::is_same_v<FF, decltype(nullptr)>)) {
-      if (mf.get()) { return static_cast<view_t>(f(n)); }
+      if (mf.get()) {
+        return static_cast<view_t>(f(n));
+      }
     }
 
     if constexpr (std::is_invocable_v<CF, const Entity_ID>) {

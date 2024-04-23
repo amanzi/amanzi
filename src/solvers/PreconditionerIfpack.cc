@@ -63,7 +63,9 @@ PreconditionerIfpack::InitializeInverse()
   std::string method = plist_.get<std::string>("method");
 
   // deprecated
-  if (method == "block ilu") { method = "ILU"; }
+  if (method == "block ilu") {
+    method = "ILU";
+  }
 
   int overlap = plist_.get<int>("overlap", 0);
   // set Amanzi defaults
@@ -78,7 +80,9 @@ PreconditionerIfpack::InitializeInverse()
   }
   IfpILU_->SetParameters(plist_);
   IfpILU_->Initialize();
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) { IfpILU_->Print(*vo_->os()); }
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    IfpILU_->Print(*vo_->os());
+  }
 }
 
 std::string

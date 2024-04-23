@@ -111,7 +111,9 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
   my_list_ = Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), name_);
 
   Teuchos::RCP<Teuchos::ParameterList> plist;
-  if (global_list_->isSublist("PKs")) { plist = Teuchos::sublist(global_list, "PKs"); }
+  if (global_list_->isSublist("PKs")) {
+    plist = Teuchos::sublist(global_list, "PKs");
+  }
 
   std::vector<std::string> pk_name =
     my_list_->get<Teuchos::Array<std::string>>("PKs order").toVector();

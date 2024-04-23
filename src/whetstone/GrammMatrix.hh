@@ -72,7 +72,9 @@ GrammMatrix(const Polynomial& poly,
       int l = jt.PolynomialPosition();
       double scalel = basis.monomial_scales()[jt.MonomialSetOrder()];
 
-      for (int i = 0; i < d; ++i) { multi_index[i] = index[i] + jndex[i]; }
+      for (int i = 0; i < d; ++i) {
+        multi_index[i] = index[i] + jndex[i];
+      }
 
       int pos = PolynomialPosition(d, multi_index);
       G(k, l) = G(l, k) = integrals.poly()(pos) * scalek * scalel;
@@ -112,7 +114,9 @@ GrammMatrixGradients(const Tensor& K,
       int l = jt.PolynomialPosition();
       double scalel = basis.monomial_scales()[jt.MonomialSetOrder()];
 
-      for (int i = 0; i < d; ++i) { multi_index[i] = index[i] + jndex[i]; }
+      for (int i = 0; i < d; ++i) {
+        multi_index[i] = index[i] + jndex[i];
+      }
 
       double sum(0.0), tmp;
       for (int i = 0; i < d; ++i) {

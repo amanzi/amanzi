@@ -139,7 +139,9 @@ Operator_Schema::ApplyMatrixFreeOp(const Op_Node_Node& op,
   Epetra_MultiVector& Yn = *Y.ViewComponent("node");
 
   for (int i = 0; i < Xn.NumVectors(); ++i) {
-    for (int v = 0; v != nnodes_owned; ++v) { Yn[i][v] += Xn[i][v] * (*op.diag)[i][v]; }
+    for (int v = 0; v != nnodes_owned; ++v) {
+      Yn[i][v] += Xn[i][v] * (*op.diag)[i][v];
+    }
   }
   return 0;
 }

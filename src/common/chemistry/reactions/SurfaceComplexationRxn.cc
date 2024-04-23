@@ -129,7 +129,9 @@ SurfaceComplexationRxn::Update(const std::vector<Species>& primary_species)
       free_site_concentration += damping_factor * dfree_site_conc;
       double tolerance = 1.e-12;
       double rel_change_in_free_site_conc = std::fabs(dfree_site_conc / free_site_concentration);
-      if (rel_change_in_free_site_conc < tolerance) { one_more = true; }
+      if (rel_change_in_free_site_conc < tolerance) {
+        one_more = true;
+      }
     } else {
       total = total / free_site_concentration;
       free_site_concentration = site_density / total;
@@ -218,7 +220,9 @@ void
 SurfaceComplexationRxn::DisplaySite(const Teuchos::Ptr<VerboseObject> vo) const
 {
   std::vector<SurfaceSite>::const_iterator site;
-  for (site = surface_site_.begin(); site != surface_site_.end(); site++) { site->Display(vo); }
+  for (site = surface_site_.begin(); site != surface_site_.end(); site++) {
+    site->Display(vo);
+  }
 }
 
 

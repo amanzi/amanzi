@@ -65,7 +65,9 @@ NumberMatrixNodes(Teuchos::RCP<MultiscaleTransportPorosityPartition>& msp)
   int nnodes(0);
   const auto& list = msp->second;
 
-  for (int i = 0; i < list.size(); ++i) { nnodes = std::max(nnodes, list[i]->NumberMatrixNodes()); }
+  for (int i = 0; i < list.size(); ++i) {
+    nnodes = std::max(nnodes, list[i]->NumberMatrixNodes());
+  }
 
   return nnodes;
 }

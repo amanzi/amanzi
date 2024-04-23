@@ -115,7 +115,9 @@ ActivityModelTest::RunTest(const std::string& name, double* gamma)
 {
   int index = -1;
   for (auto it = species_.begin(); it != species_.end(); ++it) {
-    if (it->name() == name) { index = it->identifier(); }
+    if (it->name() == name) {
+      index = it->identifier();
+    }
   }
   *gamma = -1.0; // final value should always be > 0
 

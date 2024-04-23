@@ -66,7 +66,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
   q_c_tmp.PutScalar(0.0);
 
   // update boundary conditions given by [h u v]
-  for (int i = 0; i < bcs_.size(); ++i) { bcs_[i]->Compute(t, t); }
+  for (int i = 0; i < bcs_.size(); ++i) {
+    bcs_[i]->Compute(t, t);
+  }
 
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_value_hn(nnodes_wghost, 0.0);
@@ -118,7 +120,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
 
     // calculate maximum bathymetry value on cell nodes
     double Bmax = 0.0;
-    for (int i = 0; i < cnodes.size(); ++i) { Bmax = std::max(B_n[0][cnodes[i]], Bmax); }
+    for (int i = 0; i < cnodes.size(); ++i) {
+      Bmax = std::max(B_n[0][cnodes[i]], Bmax);
+    }
 
     // check if cell is fully flooded and proceed with limiting
     if ((ht_c[0][c] > Bmax) && (ht_c[0][c] - B_c[0][c] > 0.0)) {
@@ -152,7 +156,9 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
   discharge_y_grad_->data()->ScatterMasterToGhosted("cell");
 
   // update source (external) terms
-  for (int i = 0; i < srcs_.size(); ++i) { srcs_[i]->Compute(t, t); }
+  for (int i = 0; i < srcs_.size(); ++i) {
+    srcs_[i]->Compute(t, t);
+  }
 
   // compute source (external) values
   // coupling submodel="rate" returns volumetric flux [m^3/s] integrated over

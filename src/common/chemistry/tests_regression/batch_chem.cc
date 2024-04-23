@@ -99,7 +99,9 @@ main(int argc, char** argv)
     abort();
   }
 
-  if (debug_batch_driver) { PrintInput(simulation_params, components, vo); }
+  if (debug_batch_driver) {
+    PrintInput(simulation_params, components, vo);
+  }
 
   double time_units_conversion = 1.0;
   char time_units = 's';
@@ -137,9 +139,13 @@ main(int argc, char** argv)
       // solve for free-ion concentrations
       chem->Speciate(&components, parameters);
       chem->CopyBeakerToComponents(&components);
-      if (vo->getVerbLevel() >= Teuchos::VERB_EXTREME) { chem->DisplayResults(); }
+      if (vo->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+        chem->DisplayResults();
+      }
       bool using_sorption = false;
-      if (components.total_sorbed.size() > 0) { using_sorption = true; }
+      if (components.total_sorbed.size() > 0) {
+        using_sorption = true;
+      }
       if (simulation_params.num_time_steps != 0) {
         message.str("");
         message << "-- Test Beaker Reaction Stepping -------------------------------------"
@@ -177,7 +183,9 @@ main(int argc, char** argv)
         }
         vo->Write(Teuchos::VERB_HIGH, "---- Final Speciation\n");
         chem->Speciate(&components, parameters);
-        if (vo->getVerbLevel() >= Teuchos::VERB_EXTREME) { chem->DisplayResults(); }
+        if (vo->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+          chem->DisplayResults();
+        }
       }
     } else {
       vo->Write(Teuchos::VERB_HIGH, "No database file specified in input file.\n");
@@ -501,7 +509,9 @@ ParseComponentValue(const std::string& raw_line, std::vector<double>* component)
   if (param.size() != 0) {
     ac::StringTokenizer param_value(param.at(1), spaces);
     double value;
-    if (param_value.size() > 0) { value = std::atof(param_value.at(0).c_str()); }
+    if (param_value.size() > 0) {
+      value = std::atof(param_value.at(0).c_str());
+    }
     component->push_back(value);
   }
 
@@ -519,7 +529,9 @@ ParseComponentValue(const std::string& raw_line, double* component)
   if (param.size() != 0) {
     ac::StringTokenizer param_value(param.at(1), spaces);
     double value = 0.;
-    if (param_value.size() > 0) { value = std::atof(param_value.at(0).c_str()); }
+    if (param_value.size() > 0) {
+      value = std::atof(param_value.at(0).c_str());
+    }
     *component = value;
   }
 

@@ -48,7 +48,9 @@ PrintVector(const std::string& name,
             const bool comma_seperated = false)
 {
   std::stringstream output;
-  if (precision > 0) { output << std::setprecision(precision); }
+  if (precision > 0) {
+    output << std::setprecision(precision);
+  }
   output << name << " : { ";
   for (auto i = data.begin(); i != data.end(); ++i) {
     output << *i;

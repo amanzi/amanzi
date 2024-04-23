@@ -168,7 +168,9 @@ PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
       // set polynomial with Dirichlet data
       WhetStone::DenseVector coef(nk);
-      for (int i = 0; i < nk; ++i) { coef(i) = bc_value[f][i]; }
+      for (int i = 0; i < nk; ++i) {
+        coef(i) = bc_value[f][i];
+      }
 
       WhetStone::Polynomial pf(d, method_order_, coef);
       pf.set_origin(xf);
@@ -190,12 +192,16 @@ PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
         Pcell.Multiply(v, pv, false);
         Jcell.Multiply(v, jv, false);
 
-        for (int i = 0; i < ncols; ++i) { rhs_c[i][c] += pv(i) + jv(i); }
+        for (int i = 0; i < ncols; ++i) {
+          rhs_c[i][c] += pv(i) + jv(i);
+        }
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         WhetStone::DenseMatrix& Jcell = jump_pu_op_->matrices[f];
         Jcell.Multiply(v, jv, false);
 
-        for (int i = 0; i < ncols; ++i) { rhs_c[i][c] -= jv(i); }
+        for (int i = 0; i < ncols; ++i) {
+          rhs_c[i][c] -= jv(i);
+        }
 
         Pcell.PutScalar(0.0);
         Jcell.PutScalar(0.0);

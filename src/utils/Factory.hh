@@ -111,7 +111,9 @@ class Factory {
   static map_type* GetMap()
   {
     static map_type* map_;
-    if (!map_) { map_ = new map_type; }
+    if (!map_) {
+      map_ = new map_type;
+    }
     return map_;
   }
 
@@ -140,12 +142,14 @@ class RegisteredFactory : public Factory<TBase> {
   {
     for (typename Factory<TBase>::map_type::iterator iter = Factory<TBase>::GetMap()->begin();
          iter != Factory<TBase>::GetMap()->end();
-         ++iter) {}
+         ++iter) {
+    }
     Factory<TBase>::GetMap()->insert(
       std::pair<std::string, TBase* (*)(Teuchos::ParameterList&)>(s, &CreateT<TBase, TDerived>));
     for (typename Factory<TBase>::map_type::iterator iter = Factory<TBase>::GetMap()->begin();
          iter != Factory<TBase>::GetMap()->end();
-         ++iter) {}
+         ++iter) {
+    }
   }
 };
 

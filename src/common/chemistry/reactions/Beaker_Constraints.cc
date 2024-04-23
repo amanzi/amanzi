@@ -132,7 +132,9 @@ Beaker::EnforceConstraint(BeakerState* state,
       if (name == "total") {
         residual_[i] = total_.at(i) - state->total.at(i);
 
-        for (int j = 0; j < ncomp_; ++j) { jacobian_(i, j) += dtotal_(i, j); }
+        for (int j = 0; j < ncomp_; ++j) {
+          jacobian_(i, j) += dtotal_(i, j);
+        }
 
       } else if (name == "charge") {
         residual_[i] = 0.0;
@@ -218,7 +220,9 @@ Beaker::EnforceConstraint(BeakerState* state,
   UpdateEquilibriumChemistry(*state);
   CopyBeakerToState(state);
   status_.num_newton_iterations = num_iterations;
-  if (max_rel_change < tolerance_) { status_.converged = true; }
+  if (max_rel_change < tolerance_) {
+    status_.converged = true;
+  }
 
   return num_iterations;
 }

@@ -307,7 +307,9 @@ AdvectionFn<Analytic>::FunctionalTimeDerivative(double t,
   auto K = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_wghost));
   WhetStone::Polynomial Kc(d, 0);
   Kc(0, 0) = 1.0;
-  for (int c = 0; c < ncells_wghost; c++) { (*K)[c] = Kc; }
+  for (int c = 0; c < ncells_wghost; c++) {
+    (*K)[c] = Kc;
+  }
 
   // -- source term
   int nk = WhetStone::PolynomialSpaceDimension(d, order_);
@@ -338,7 +340,9 @@ AdvectionFn<Analytic>::FunctionalTimeDerivative(double t,
 
     // -- convert moment to my basis
     dg_->cell_basis(c).LinearFormNaturalToMy(data);
-    for (int n = 0; n < pc.size(); ++n) { rhs_c[n][c] = data(n); }
+    for (int n = 0; n < pc.size(); ++n) {
+      rhs_c[n][c] = data(n);
+    }
   }
 
   // -- boundary data
@@ -366,7 +370,9 @@ AdvectionFn<Analytic>::FunctionalTimeDerivative(double t,
         ana_.SolutionTaylor(xf, t, coefs);
         data = coefs.coefs();
 
-        for (int i = 0; i < nk; ++i) { bc_value[f][i] = data(i); }
+        for (int i = 0; i < nk; ++i) {
+          bc_value[f][i] = data(i);
+        }
       } else if (weak_sign_ < 0.0) {
         bc_model[f] = Operators::OPERATOR_BC_REMOVE;
       }
@@ -443,7 +449,9 @@ AdvectionFn<Analytic>::ComputeVelocities(
   dt_stable_min = std::min(dt_stable_min, dt_stable);
 
   if (divergence_term_) {
-    for (int c = 0; c < ncells_wghost_; ++c) { (*divc)[c] = Divergence((*velc)[c]); }
+    for (int c = 0; c < ncells_wghost_; ++c) {
+      (*divc)[c] = Divergence((*velc)[c]);
+    }
   }
 }
 
@@ -597,7 +605,9 @@ AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
     vvf = GradientOnUnitSphere(poly, order_ - 1);
 
     for (int i = 0; i < 2; ++i) {
-      for (int m = 0; m < mk; ++m) { vecf_f[i * mk + m][f] = vvf[i](m); }
+      for (int m = 0; m < mk; ++m) {
+        vecf_f[i * mk + m][f] = vvf[i](m);
+      }
     }
   }
 
@@ -609,7 +619,9 @@ AdvectionFn_LevelSet<Analytic>::ComputeVelocities(
     const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
     for (int i = 0; i < 2; ++i) {
-      for (int m = 0; m < mk; ++m) { vvf[i](m) = vecf_f[i * mk + m][f]; }
+      for (int m = 0; m < mk; ++m) {
+        vvf[i](m) = vecf_f[i * mk + m][f];
+      }
     }
 
     (*velf)[f] = vvf * normal;
@@ -897,7 +909,9 @@ Transient(std::string filename,
     dt = std::min(dt0, tend - t);
 
     // overwrite solution at the origin
-    if (fn.name() == "level set") { ana.InitialGuess(*dg, sol_c, t, inside1); }
+    if (fn.name() == "level set") {
+      ana.InitialGuess(*dg, sol_c, t, inside1);
+    }
   }
 
   // compute solution error

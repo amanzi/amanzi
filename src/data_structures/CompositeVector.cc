@@ -193,7 +193,9 @@ CompositeVector::InitData_(const CompositeVector& other, InitMode mode)
   // Trilinos inits to 0
   //  if (mode == INIT_MODE_ZERO) {
   //    PutScalar(0.);
-  if (mode == INIT_MODE_COPY) { *this = other; }
+  if (mode == INIT_MODE_COPY) {
+    *this = other;
+  }
 }
 
 // Sets sizes of vectors, instantiates Epetra_Vectors, and preps for lazy
@@ -385,7 +387,9 @@ CompositeVector::ScatterMasterToGhosted(const std::string& name, bool force) con
 void
 CompositeVector::ScatterMasterToGhosted(Epetra_CombineMode mode) const
 {
-  for (name_iterator name = begin(); name != end(); ++name) { ScatterMasterToGhosted(*name, mode); }
+  for (name_iterator name = begin(); name != end(); ++name) {
+    ScatterMasterToGhosted(*name, mode);
+  }
 }
 
 // Scatter master values to ghosted values, on all components, in a mode.
@@ -423,7 +427,9 @@ CompositeVector::ScatterMasterToGhosted(const std::string& name, Epetra_CombineM
 void
 CompositeVector::GatherGhostedToMaster(Epetra_CombineMode mode)
 {
-  for (name_iterator name = begin(); name != end(); ++name) { GatherGhostedToMaster(*name, mode); }
+  for (name_iterator name = begin(); name != end(); ++name) {
+    GatherGhostedToMaster(*name, mode);
+  }
 };
 
 
@@ -470,14 +476,18 @@ CompositeVector::CreateVandelayVector_() const
     auto data = vandelay_import_->PermuteFromLIDs();
     int n = vandelay_import_->NumPermuteIDs();
 
-    for (int i = 0; i < n; ++i) { data[i] = map.FirstPointInElement(data[i]); }
+    for (int i = 0; i < n; ++i) {
+      data[i] = map.FirstPointInElement(data[i]);
+    }
   }
 }
 
 void
 CompositeVector::ApplyVandelay_() const
 {
-  if (vandelay_vector_owned_ == Teuchos::null) { CreateVandelayVector_(); }
+  if (vandelay_vector_owned_ == Teuchos::null) {
+    CreateVandelayVector_();
+  }
   if (vandelay_import_ == Teuchos::null)
     vandelay_vector_owned_->Import(
       *ViewComponent("face", false), Mesh()->getBoundaryFaceImporter(), Insert);
@@ -677,7 +687,9 @@ DeriveFaceValuesFromCellValues(CompositeVector& cv)
       int ncells = cells.size();
 
       double face_value = 0.0;
-      for (int n = 0; n != ncells; ++n) { face_value += cv_c[0][cells[n]]; }
+      for (int n = 0; n != ncells; ++n) {
+        face_value += cv_c[0][cells[n]];
+      }
       cv_f[0][f] = face_value / ncells;
     }
   } else if (cv.HasComponent("boundary_face")) {

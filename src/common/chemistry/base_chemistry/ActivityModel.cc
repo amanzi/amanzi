@@ -103,12 +103,16 @@ ActivityModel::CalculateSumC(const std::vector<Species>& primary_species,
 
   // primary species
   for (auto it = primary_species.begin(); it != primary_species.end(); ++it) {
-    if (it->name() != "h2o" && it->name() != "H2O") { M_ += it->molality(); }
+    if (it->name() != "h2o" && it->name() != "H2O") {
+      M_ += it->molality();
+    }
   }
 
   // secondary aqueous complexes
   for (auto it = secondary_species.begin(); it != secondary_species.end(); ++it) {
-    if (it->name() != "h2o" && it->name() != "H2O") { M_ += it->molality(); }
+    if (it->name() != "h2o" && it->name() != "H2O") {
+      M_ += it->molality();
+    }
   }
 }
 

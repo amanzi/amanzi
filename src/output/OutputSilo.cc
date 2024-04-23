@@ -143,7 +143,9 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag)
         face_node_list.insert(face_node_list.end(), fnodes.begin(), fnodes.end());
 
         auto fcells = mesh_->getVisMesh().getFaceCells(f);
-        if (fcells.size() == 1) { ext_faces[f] = 0x1; }
+        if (fcells.size() == 1) {
+          ext_faces[f] = 0x1;
+        }
       }
 
       // -- Construct the silo cell-face info
@@ -303,7 +305,9 @@ OutputSilo::WriteMultiVector(const Epetra_MultiVector& vec,
                              const AmanziMesh::Entity_kind& kind) const
 {
   AMANZI_ASSERT(vec.NumVectors() == names.size());
-  for (int i = 0; i != vec.NumVectors(); ++i) { WriteVector(*vec(i), names[i], kind); }
+  for (int i = 0; i != vec.NumVectors(); ++i) {
+    WriteVector(*vec(i), names[i], kind);
+  }
 }
 
 // can we template this?

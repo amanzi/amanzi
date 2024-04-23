@@ -66,7 +66,9 @@ MatrixBlock::Zero()
 void
 MatrixBlock::SetDiagonal(double d)
 {
-  for (int i = 0; i < size_; i++) { A_[i * size_ + i] = d; }
+  for (int i = 0; i < size_; i++) {
+    A_[i * size_ + i] = d;
+  }
 }
 
 
@@ -76,7 +78,9 @@ MatrixBlock::GetRowAbsMax(int irow)
   double max = 0.0;
   for (int i = 0; i < cols_; i++) {
     double value = std::fabs(A_[i * size_ + irow]);
-    if (value > max) { max = value; }
+    if (value > max) {
+      max = value;
+    }
   }
   return max;
 }
@@ -85,14 +89,18 @@ MatrixBlock::GetRowAbsMax(int irow)
 void
 MatrixBlock::ScaleRow(int irow, double scale)
 {
-  for (int i = 0; i < cols_; i++) { A_[i * size_ + irow] *= scale; }
+  for (int i = 0; i < cols_; i++) {
+    A_[i * size_ + irow] *= scale;
+  }
 }
 
 
 void
 MatrixBlock::ScaleColumn(int icol, double scale)
 {
-  for (int i = 0; i < size_; i++) { A_[icol * size_ + i] *= scale; }
+  for (int i = 0; i < size_; i++) {
+    A_[icol * size_ + i] *= scale;
+  }
 }
 
 

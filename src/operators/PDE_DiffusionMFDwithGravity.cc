@@ -276,7 +276,9 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
     }
   }
 
-  for (int f = 0; f < nfaces_owned; f++) { flux_data[0][f] += grav_flux[0][f] / hits[f]; }
+  for (int f = 0; f < nfaces_owned; f++) {
+    flux_data[0][f] += grav_flux[0][f] / hits[f];
+  }
 }
 
 
@@ -359,7 +361,9 @@ PDE_DiffusionMFDwithGravity::UpdateFluxManifold_(const Teuchos::Ptr<const Compos
   // if f is on a processor boundary, some g are not initialized
   grav.GatherGhostedToMaster(Add);
 
-  for (int g = 0; g < ndofs_owned; ++g) { flux_data[0][g] += grav_data[0][g]; }
+  for (int g = 0; g < ndofs_owned; ++g) {
+    flux_data[0][g] += grav_data[0][g];
+  }
 }
 
 

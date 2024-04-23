@@ -376,7 +376,9 @@ Transport_PK::Setup()
   // set units
   S_->GetRecordSetW(porosity_key_).set_units("-");
   S_->GetRecordSetW(saturation_liquid_key_).set_units("-");
-  if (transport_on_manifold_) { S_->GetRecordSetW(aperture_key_).set_units("m"); }
+  if (transport_on_manifold_) {
+    S_->GetRecordSetW(aperture_key_).set_units("m");
+  }
 }
 
 
@@ -692,7 +694,9 @@ Transport_PK::StableTimeStep(int n)
   for (int f = 0; f < nfaces_wghost; f++) {
     for (int k = 0; k < upwind_cells_[f].size(); k++) {
       int c = upwind_cells_[f][k];
-      if (c >= 0) { total_outflux[c] += fabs(upwind_flux_[f][k]); }
+      if (c >= 0) {
+        total_outflux[c] += fabs(upwind_flux_[f][k]);
+      }
     }
   }
 

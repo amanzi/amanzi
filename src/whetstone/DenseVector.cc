@@ -95,7 +95,9 @@ DenseVector::operator=(const DenseVector& B)
 {
   if (this != &B) {
     if (mem_ < B.m_) {
-      if (data_ != NULL) { delete[] data_; }
+      if (data_ != NULL) {
+        delete[] data_;
+      }
       data_ = new double[B.m_];
       mem_ = B.m_;
     }

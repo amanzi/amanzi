@@ -112,7 +112,9 @@ main(int argc, char** argv)
   }
   std::cout << "Serial cleanup:" << std::endl;
   // cleanup memory
-  for (int thread = 0; thread < num_threads; thread++) { delete mixing_cells[thread]; }
+  for (int thread = 0; thread < num_threads; thread++) {
+    delete mixing_cells[thread];
+  }
 
   std::cout << "Done!\n";
   return error;

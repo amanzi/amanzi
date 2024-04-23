@@ -230,11 +230,15 @@ class TreeOperator_BlockDiagonalPreconditioner {
   }
   void InitializeInverse()
   {
-    for (int n = 0; n != op_.get_col_size(); ++n) { op_.get_block(n, n)->InitializeInverse(); }
+    for (int n = 0; n != op_.get_col_size(); ++n) {
+      op_.get_block(n, n)->InitializeInverse();
+    }
   }
   void ComputeInverse()
   {
-    for (int n = 0; n != op_.get_col_size(); ++n) { op_.get_block(n, n)->ComputeInverse(); }
+    for (int n = 0; n != op_.get_col_size(); ++n) {
+      op_.get_block(n, n)->ComputeInverse();
+    }
   }
 
  private:

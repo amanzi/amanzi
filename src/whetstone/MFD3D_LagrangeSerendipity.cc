@@ -93,7 +93,9 @@ MFD3D_LagrangeSerendipity::H1consistency(int c, const Tensor& K, DenseMatrix& N,
 
   int nfaces = mesh_->getCellNumFaces(c);
   int nedges(0);
-  if (d_ == 3) { nedges = mesh_->getCellEdges(c).size(); }
+  if (d_ == 3) {
+    nedges = mesh_->getCellEdges(c).size();
+  }
 
   // select number of non-aligned edges: we assume cell convexity
   int eta(3);
@@ -293,7 +295,9 @@ MFD3D_LagrangeSerendipity::ProjectorCell_(const Teuchos::RCP<const AmanziMesh::M
     const DenseVector& v4 = moments->coefs();
     AMANZI_ASSERT(ndof_cs == v4.NumRows());
 
-    for (int n = 0; n < ndof_cs; ++n) { vdof(ndof_f + n) = v4(n); }
+    for (int n = 0; n < ndof_cs; ++n) {
+      vdof(ndof_f + n) = v4(n);
+    }
   }
 
   Ns.Multiply(vdof, v1, true);
@@ -315,7 +319,9 @@ MFD3D_LagrangeSerendipity::ProjectorCell_(const Teuchos::RCP<const AmanziMesh::M
     M.Multiply(v5, v4, false);
 
     vdof.Reshape(ndof_f + ndof_c);
-    for (int n = ndof_cs; n < ndof_c; ++n) { vdof(ndof_f + n) = v4(n) / mymesh->getCellVolume(c); }
+    for (int n = ndof_cs; n < ndof_c; ++n) {
+      vdof(ndof_f + n) = v4(n) / mymesh->getCellVolume(c);
+    }
 
     R_.Multiply(vdof, v4, true);
     G_.Multiply(v4, v5, false);
@@ -337,9 +343,13 @@ MFD3D_LagrangeSerendipity::ProjectorCell_(const Teuchos::RCP<const AmanziMesh::M
     M2 = M.SubMatrix(ndof_cs, nd, 0, nd);
     M2.Multiply(v5, v6, false);
 
-    for (int n = 0; n < ndof_cs; ++n) { v4(n) = v3(n) * mymesh->getCellVolume(c); }
+    for (int n = 0; n < ndof_cs; ++n) {
+      v4(n) = v3(n) * mymesh->getCellVolume(c);
+    }
 
-    for (int n = 0; n < nd - ndof_cs; ++n) { v4(ndof_cs + n) = v6(n); }
+    for (int n = 0; n < nd - ndof_cs; ++n) {
+      v4(ndof_cs + n) = v6(n);
+    }
 
     M.InverseSPD();
     M.Multiply(v4, v5, false);
@@ -380,7 +390,9 @@ MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
 
   // number of moments of faces
   Polynomial pf;
-  if (order_ > 1) { pf.Reshape(d - 1, order_ - 2); }
+  if (order_ > 1) {
+    pf.Reshape(d - 1, order_ - 2);
+  }
 
   int row(nnodes);
   for (int n = 0; n < nfaces; ++n) {

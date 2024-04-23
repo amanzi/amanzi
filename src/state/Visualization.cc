@@ -161,7 +161,9 @@ Visualization::WriteRegions()
           auto ids = mesh_->getSetEntities(
             *reg_it, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-          for (auto jt = ids.begin(); jt != ids.end(); ++jt) { reg[0][*jt] = reg_index; }
+          for (auto jt = ids.begin(); jt != ids.end(); ++jt) {
+            reg[0][*jt] = reg_index;
+          }
         }
       }
       std::vector<std::string> name;

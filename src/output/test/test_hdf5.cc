@@ -84,7 +84,9 @@ TEST(HDF5)
       cell_values[j] += 10.0;
       fake_values[j] += 1.0;
     }
-    for (int j = 0; j < 12; j++) { node_values[j] += 10.0; }
+    for (int j = 0; j < 12; j++) {
+      node_values[j] += 10.0;
+    }
 
     // close file
     viz_output.endTimestep();

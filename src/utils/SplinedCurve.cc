@@ -195,7 +195,9 @@ SplinedCurve::Setup_()
 
     // calculate the finite difference slopes
     std::vector<double> dy_fd(dx_.size(), 0.);
-    for (int i = 0; i != dx_.size(); ++i) { dy_fd[i] = (y_[i + 1] - y_[i]) / dx_[i]; }
+    for (int i = 0; i != dx_.size(); ++i) {
+      dy_fd[i] = (y_[i + 1] - y_[i]) / dx_[i];
+    }
 
     // enforce sufficient monotonicity constraint on slopes
     if (mean_slope > 0.) {

@@ -100,14 +100,20 @@ TotalComponentStorage_Tcc::EvaluatePartialDerivative_(const State& S,
       result_c[0][c] = tccl[0][c] * sl[0][c] + tccg[0][c] * (1.0 - sl[0][c]);
     }
   } else if (wrt_key == saturation_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * (tccl[0][c] - tccg[0][c]); }
+    for (int c = 0; c != ncells; ++c) {
+      result_c[0][c] = phi[0][c] * (tccl[0][c] - tccg[0][c]);
+    }
   }
 
   else if (wrt_key == tcc_liquid_key_) {
-    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * sl[0][c]; }
+    for (int c = 0; c != ncells; ++c) {
+      result_c[0][c] = phi[0][c] * sl[0][c];
+    }
 
   } else if (wrt_key == tcc_gas_key_) {
-    for (int c = 0; c != ncells; ++c) { result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]); }
+    for (int c = 0; c != ncells; ++c) {
+      result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]);
+    }
   }
 }
 

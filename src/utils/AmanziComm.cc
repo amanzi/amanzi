@@ -31,7 +31,9 @@ sameComm(const Comm_type& c1, const Comm_type& c2)
 
   auto serial_c1 = dynamic_cast<const SerialComm_type*>(&c1);
   auto serial_c2 = dynamic_cast<const SerialComm_type*>(&c2);
-  if (serial_c1 != nullptr && serial_c2 != nullptr) { return true; }
+  if (serial_c1 != nullptr && serial_c2 != nullptr) {
+    return true;
+  }
   return false;
 }
 
@@ -50,7 +52,9 @@ sameComm(const Comm_type& c1, const Comm_type& c2)
 
   auto serial_c1 = dynamic_cast<const SerialComm_type*>(&c1);
   auto serial_c2 = dynamic_cast<const SerialComm_type*>(&c2);
-  if (serial_c1 != nullptr && serial_c2 != nullptr) { return true; }
+  if (serial_c1 != nullptr && serial_c2 != nullptr) {
+    return true;
+  }
   return false;
 }
 

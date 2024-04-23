@@ -166,7 +166,9 @@ SolverContinuation<Vector, VectorSpace>::Solve_(const Teuchos::RCP<Vector>& u)
 
     num_itrs_ += solver_->num_itrs();
 
-    if (ierr) { return solver_->returned_code(); }
+    if (ierr) {
+      return solver_->returned_code();
+    }
 
     itr++;
   } while (itr <= n_cont_steps_);

@@ -123,10 +123,14 @@ MFD3D_Diffusion_CurvedFace::StiffnessMatrix(int c, const Tensor& K, DenseMatrix&
 
   double cntr(0.0);
   for (int i = 0; i < nfaces; ++i) {
-    for (int j = 0; j < nfaces; ++j) { A(i, j) = M(i, j) * area(i) * area(j); }
+    for (int j = 0; j < nfaces; ++j) {
+      A(i, j) = M(i, j) * area(i) * area(j);
+    }
 
     double add(0.0);
-    for (int j = 0; j < nfaces; ++j) { add -= M(i, j) * area(j); }
+    for (int j = 0; j < nfaces; ++j) {
+      add -= M(i, j) * area(j);
+    }
     A(nfaces, i) = A(i, nfaces) = add * area(i);
 
     cntr -= add * area(i);

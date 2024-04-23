@@ -445,7 +445,9 @@ AA_Base<Vector, VectorSpace>::Correction(const Vector& f,
 
 
   if (num_vec_ < mvec_) {
-    if (first_f_ < 0) { first_f_ = 0; }
+    if (first_f_ < 0) {
+      first_f_ = 0;
+    }
     last_f_ = new_f_;
     new_f_++;
     if (new_f_ > mvec_) new_f_ = 0;

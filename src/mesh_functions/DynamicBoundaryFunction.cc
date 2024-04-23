@@ -30,7 +30,9 @@ int
 DynamicBoundaryFunction::Func_ID(double time)
 {
   // lazily generate space for the values
-  if (!finalized_) { Finalize(); }
+  if (!finalized_) {
+    Finalize();
+  }
 
   if (unique_specs_.size() == 0) return 0;
 
@@ -50,7 +52,9 @@ void
 DynamicBoundaryFunction::Compute(double time)
 {
   // lazily generate space for the values
-  if (!finalized_) { Finalize(); }
+  if (!finalized_) {
+    Finalize();
+  }
 
   if (unique_specs_.size() == 0) return;
 

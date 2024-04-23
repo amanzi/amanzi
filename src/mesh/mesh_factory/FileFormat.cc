@@ -127,9 +127,13 @@ fileFormatFromFilename(const Comm_type& comm, std::string fname)
   case (FileFormat::EXODUS_II):
   case (FileFormat::NEMESIS):
     fmagic.assign(buffer, NetCDFmagic1.size());
-    if (fmagic == NetCDFmagic1) { ok = true; }
+    if (fmagic == NetCDFmagic1) {
+      ok = true;
+    }
     fmagic.assign(buffer, NetCDFmagic2.size());
-    if (fmagic == NetCDFmagic2) { ok = true; }
+    if (fmagic == NetCDFmagic2) {
+      ok = true;
+    }
     if (!ok) {
       e.add_data(": bad magic number, expected NetCDF");
       fmagic.assign(buffer, HDF5magic.size());
@@ -149,7 +153,9 @@ fileFormatFromFilename(const Comm_type& comm, std::string fname)
     }
     break;
   }
-  if (!ok) { Exceptions::amanzi_throw(e); }
+  if (!ok) {
+    Exceptions::amanzi_throw(e);
+  }
 
   return result;
 }

@@ -61,7 +61,9 @@ class nonlinearODE : public Amanzi::BDFFnBase<Epetra_Vector> {
   void UpdatePreconditioner(double t, Teuchos::RCP<const Epetra_Vector> up, double h)
   {
     // do nothing since the preconditioner is the identity
-    if (Pu_ == Teuchos::null) { Pu_ = Teuchos::rcp(new Epetra_Vector(*up)); }
+    if (Pu_ == Teuchos::null) {
+      Pu_ = Teuchos::rcp(new Epetra_Vector(*up));
+    }
 
     if (exact_jacobian_) {
       *Pu_ = *up;

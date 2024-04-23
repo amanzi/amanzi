@@ -143,7 +143,9 @@ MFD3D_ElasticityWeakSymmetry::L2consistency(int c, const Tensor& T, DenseMatrix&
     double area = mesh_->getFaceArea(f);
     for (int m = 0; m < modes; ++m) {
       v2 = vTE[m] * normal;
-      for (int k = 0; k < d_; ++k) { N(row + k, m) = v2[k] * dirs[i] / area; }
+      for (int k = 0; k < d_; ++k) {
+        N(row + k, m) = v2[k] * dirs[i] / area;
+      }
     }
     row += d_ * d_;
   }
@@ -337,7 +339,9 @@ MFD3D_ElasticityWeakSymmetry::TripleMatrixProduct_(const DenseVector& ML,
   int nm = Minv.NumCols();
 
   for (int i = 0; i < nm; ++i) {
-    for (int j = 0; j < nm; ++j) { A(i + i0, j + j0) = Minv(i, j) * ML(i) * MR(j); }
+    for (int j = 0; j < nm; ++j) {
+      A(i + i0, j + j0) = Minv(i, j) * ML(i) * MR(j);
+    }
   }
 }
 
@@ -356,7 +360,9 @@ MFD3D_ElasticityWeakSymmetry::TripleMatrixProduct_(const DenseVector& ML,
   for (int i = 0; i < nm; ++i) {
     for (int j = 0; j < nr; ++j) {
       double sum(0.0);
-      for (int k = 0; k < nm; ++k) { sum += Minv(i, k) * ML(i) * MR(k, j); }
+      for (int k = 0; k < nm; ++k) {
+        sum += Minv(i, k) * ML(i) * MR(k, j);
+      }
       A(i + i0, j + j0) = sum;
     }
   }
@@ -379,7 +385,9 @@ MFD3D_ElasticityWeakSymmetry::TripleMatrixProduct_(const DenseMatrix& ML,
     for (int j = 0; j < nr; ++j) {
       double sum(0.0);
       for (int k = 0; k < nm; ++k) {
-        for (int l = 0; l < nm; ++l) { sum += Minv(k, l) * ML(k, i) * MR(l, j); }
+        for (int l = 0; l < nm; ++l) {
+          sum += Minv(k, l) * ML(k, i) * MR(l, j);
+        }
       }
       A(i + i0, j + j0) = sum;
     }
