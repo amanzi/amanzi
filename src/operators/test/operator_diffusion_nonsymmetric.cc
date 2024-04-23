@@ -151,8 +151,9 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC)
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
 
-  op->UpdateFlux(solution.ptr(), flux.ptr());
   double unorm, ul2_err, uinf_err;
+  op->UpdateFlux(solution.ptr(), flux.ptr());
+  flux->ScatterMasterToGhosted();
   ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
   if (MyPID == 0) {
