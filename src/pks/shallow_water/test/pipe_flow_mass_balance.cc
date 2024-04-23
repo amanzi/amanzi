@@ -8,7 +8,7 @@
 */
 
 /*
- Pipe flow PK. Test to check lake at rest well-balancing.
+ Pipe flow PK. Test to check mass conservation.
 
  */
 
@@ -38,9 +38,6 @@
 
 using namespace Amanzi;
 
-//--------------------------------------------------------------
-// analytic solution
-//--------------------------------------------------------------
 void
 dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                    Teuchos::RCP<Amanzi::State>& S)
@@ -76,10 +73,10 @@ TEST(PIPE_FLOW_1D)
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: 1D pipe flow" << std::endl;
+  if (MyPID == 0) std::cout << "Test: 1D pipe flow mass conservtion" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/pipe_flow_lake_at_rest.xml";
+  std::string xmlFileName = "test/pipe_flow_mass_balance.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a mesh framework
@@ -133,9 +130,20 @@ TEST(PIPE_FLOW_1D)
   std::string passwd("state");
 
   int iter = 0;
-  double TEini, TEfin;
+  double Tend = 1.0;
+  
+  // for mass calculation
+  double total_mass = 0.0,total_mass_initial = 0.0, mass;
+  int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
+                                          Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
-  while (t_new < 1.) {
+  const auto& wac_init = *S->Get<CompositeVector>("pipe-wetted_area").ViewComponent("cell"); // wetted area
+
+  for (int c = 0; c < ncells_owned; ++c) {
+   total_mass_initial += wac_init[0][c] * mesh->getCellVolume(c); // length of cell = volume of cell
+  }
+
+  while (t_new < Tend) {
 
     Epetra_MultiVector hh_ex(ht);
     Epetra_MultiVector vel_ex(vel);
@@ -154,13 +162,14 @@ TEST(PIPE_FLOW_1D)
     iter++;
 
     // output data
-    if (iter % 1000 == 0) { 
+    if (iter % 10 == 0) { 
       io->InitializeCycle(t_new, iter, "");
     
       const auto& u0 = *S->Get<CompositeVector>("pipe-total_depth").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("pipe-velocity").ViewComponent("cell");
       const auto& u2 = *S->Get<CompositeVector>("pipe-bathymetry").ViewComponent("cell");
       const auto& u3 = *S->Get<CompositeVector>("pipe-discharge").ViewComponent("cell");
+      const auto& u4 = *S->Get<CompositeVector>("pipe-wetted_area").ViewComponent("cell");
 
       io->WriteVector(*u0(0), "pipe-total_depth", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u1(0), "pipe-velocity x", AmanziMesh::Entity_kind::CELL);
@@ -168,29 +177,25 @@ TEST(PIPE_FLOW_1D)
       io->WriteVector(*u2(0), "pipe-bathymetry", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u3(0), "pipe-discharge x", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u3(1), "pipe-discharge y", AmanziMesh::Entity_kind::CELL);    
+      io->WriteVector(*u4(0), "pipe-wetted_area", AmanziMesh::Entity_kind::CELL);
       io->FinalizeCycle();
     }
+
+
   }
+    
+  const auto& wac = *S->Get<CompositeVector>("pipe-wetted_area").ViewComponent("cell"); // wetted area
 
-  // calculate error
-  int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
-                                          Amanzi::AmanziMesh::Parallel_kind::OWNED);
-
-  const auto& vc = *S->Get<CompositeVector>("pipe-velocity").ViewComponent("cell");
-  double err_L1_vx = 0.0, err_L1_vy = 0.0, err_Linf_v = 0.0, err_L1_v;
-
+  mass = 0.0;
   for (int c = 0; c < ncells_owned; ++c) {
-    err_L1_vx += std::abs(vc[0][c]) *  mesh->getCellVolume(c);
-    err_L1_vy += std::abs(vc[1][c]) * mesh->getCellVolume(c);
-    err_Linf_v = std::max(err_Linf_v, std::max(std::abs(vc[0][c]), std::abs(vc[1][c]))); 
+    mass += wac[0][c] * mesh->getCellVolume(c); // length of cell = volume of cell
   }
+  total_mass += mass;
 
-  err_L1_v = err_L1_vx + err_L1_vy;
-
-  std::cout.precision(6);
-  std::cout<<"Error velocity L1 = "<<err_L1_v<<"; Linf = "<<err_Linf_v<<std::endl;
-
-  CHECK(err_L1_v < 1.e-12 && err_Linf_v < 1.e-12);
+  std::cout.precision(14);  
+  std::cout<<"Calculated total mass at the end = "<<total_mass - total_mass_initial<<std::endl;
+  std::cout<<"Calculated mass through BCs = "<<0.0<<std::endl;
+  CHECK(std::abs((total_mass - total_mass_initial) - 0.0) < 1.e-12);
 
   WriteStateStatistics(*S, *vo);
 }
