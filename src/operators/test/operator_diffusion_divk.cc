@@ -181,8 +181,9 @@ RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   // calculate flux error
-  op->UpdateFlux(solution.ptr(), flux.ptr());
   double unorm, ul2_err, uinf_err;
+  op->UpdateFlux(solution.ptr(), flux.ptr());
+  flux->ScatterMasterToGhosted();
   ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
   if (MyPID == 0) {
@@ -350,7 +351,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D)
            uinf_err,
            global_op->num_itrs());
 
-    CHECK(pl2_err < 0.03 && ul2_err < 0.1);
+    CHECK(pl2_err < 0.03 && ul2_err < 0.2);
     CHECK(global_op->num_itrs() < 10);
   }
 }

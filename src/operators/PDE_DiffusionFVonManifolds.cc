@@ -241,7 +241,7 @@ PDE_DiffusionFVonManifolds::ApplyBCs(bool primary, bool eliminate, bool essentia
 
 
 /* ******************************************************************
-* Calculate mass flux from cell-centered data
+* Calculate one-sided mass flux from cell-centered data
 ****************************************************************** */
 void
 PDE_DiffusionFVonManifolds::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
@@ -295,6 +295,7 @@ PDE_DiffusionFVonManifolds::UpdateFlux(const Teuchos::Ptr<const CompositeVector>
       flux[0][g] = dir * value * area;
 
     } else {
+      int dir;
       double factor = rho_ * norm(g_);
       ti.Reshape(ndofs);
       pi.Reshape(ndofs);
@@ -313,7 +314,8 @@ PDE_DiffusionFVonManifolds::UpdateFlux(const Teuchos::Ptr<const CompositeVector>
       if (sum > 0.0) pf /= sum;
 
       for (int i = 0; i < ndofs; ++i) {
-        flux[0][g + i] = -ti(i) * (pf - pi(i));
+        mesh_->getFaceNormal(f, cells[i], &dir);
+        flux[0][g + i] = -ti(i) * (pf - pi(i)) * dir;
       }
     }
   }

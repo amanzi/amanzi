@@ -84,8 +84,7 @@ class Analytic01c : public AnalyticBase {
     double y = p[1];
 
     double t01, t02, t03, t12, t13;
-    double kr, px, py, pxx, pxy, pyy;
-    double t04, t05, t06, tx4, tx5, ty5;
+    double kr, px, py, pxx, pyy;
 
     kr = (x + 1) * (x + 1) + y * y;
 
