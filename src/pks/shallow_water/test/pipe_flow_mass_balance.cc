@@ -34,34 +34,7 @@
 #include "EvaluatorIndependent.hh"
 #include "Evaluator.hh"
 
-
-
 using namespace Amanzi;
-
-void
-dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-                   Teuchos::RCP<Amanzi::State>& S)
-{
-  int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
-                                          Amanzi::AmanziMesh::Parallel_kind::OWNED);
-
-  std::string passwd("");
-
-  auto& B_vec_c =
-    *S->GetW<CompositeVector>("pipe-bathymetry", Tags::DEFAULT, passwd).ViewComponent("cell");
-  auto& ht_vec_c =
-    *S->GetW<CompositeVector>("pipe-total_depth", Tags::DEFAULT, passwd).ViewComponent("cell");
-
-  for (int c = 0; c < ncells_owned; c++) {
-    Amanzi::AmanziGeometry::Point xc = mesh->getCellCentroid(c);
-
-    B_vec_c[0][c] = std::abs(xc[0] - 5.0) * 0.5;
-    ht_vec_c[0][c] = 3.0 - B_vec_c[0][c];
-  }
-
-  S->GetW<CompositeVector>("pipe-velocity", Tags::DEFAULT, passwd).PutScalar(0.0);
-  S->GetW<CompositeVector>("pipe-discharge", Tags::DEFAULT, "pipe-discharge").PutScalar(0.0);
-}
 
 TEST(PIPE_FLOW_1D)
 {
@@ -73,7 +46,7 @@ TEST(PIPE_FLOW_1D)
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: 1D pipe flow mass conservtion" << std::endl;
+  if (MyPID == 0) std::cout << "Test: 1D pipe flow mass conservation" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/pipe_flow_mass_balance.xml";
@@ -115,6 +88,10 @@ TEST(PIPE_FLOW_1D)
   const auto& vel = *S->Get<CompositeVector>("pipe-velocity").ViewComponent("cell");
   const auto& B = *S->Get<CompositeVector>("pipe-bathymetry").ViewComponent("cell");
 
+  S->Get<CompositeVector>("pipe-bathymetry").ScatterMasterToGhosted("cell");
+  S->Get<CompositeVector>("pipe-velocity").ScatterMasterToGhosted("cell");
+  S->Get<CompositeVector>("pipe-total_depth").ScatterMasterToGhosted("cell");
+
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("PipeFlow", pf_list));
   WriteStateStatistics(*S, *vo);
@@ -130,23 +107,30 @@ TEST(PIPE_FLOW_1D)
   std::string passwd("state");
 
   int iter = 0;
-  double Tend = 1.0;
+  double Tend = 10.0;
   
   // for mass calculation
-  double total_mass = 0.0,total_mass_initial = 0.0, mass;
+  double total_mass_initial = 0.0, total_mass_final = 0.0;
+
   int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
                                           Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   const auto& wac_init = *S->Get<CompositeVector>("pipe-wetted_area").ViewComponent("cell"); // wetted area
+  const auto& htc_init = *S->Get<CompositeVector>("pipe-total_depth").ViewComponent("cell"); // total depth for junction
+  const auto& Bc = *S->Get<CompositeVector>("pipe-bathymetry").ViewComponent("cell"); // bathymetry for junction
+  const auto& dirc = *S->Get<CompositeVector>("pipe-direction").ViewComponent("cell"); // direction to identify junction
+
+  S->Get<CompositeVector>("pipe-wetted_area").ScatterMasterToGhosted("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
-   total_mass_initial += wac_init[0][c] * mesh->getCellVolume(c); // length of cell = volume of cell
+    if (std::abs(dirc[0][c] - 1.0) < 1.e-12) { 
+      total_mass_initial += wac_init[0][c] * mesh->getCellVolume(c); // length of cell = volume of cell
+    } else if (std::abs(dirc[0][c] - 0.0) < 1.e-12) { 
+      total_mass_initial += (htc_init[0][c] - Bc[0][c]) * mesh->getCellVolume(c);
+    }
   }
 
   while (t_new < Tend) {
-
-    Epetra_MultiVector hh_ex(ht);
-    Epetra_MultiVector vel_ex(vel);
 
     // cycle 1, time t
     double t_out = t_new;
@@ -170,6 +154,7 @@ TEST(PIPE_FLOW_1D)
       const auto& u2 = *S->Get<CompositeVector>("pipe-bathymetry").ViewComponent("cell");
       const auto& u3 = *S->Get<CompositeVector>("pipe-discharge").ViewComponent("cell");
       const auto& u4 = *S->Get<CompositeVector>("pipe-wetted_area").ViewComponent("cell");
+      const auto& u5 = *S->Get<CompositeVector>("pipe-direction").ViewComponent("cell");
 
       io->WriteVector(*u0(0), "pipe-total_depth", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u1(0), "pipe-velocity x", AmanziMesh::Entity_kind::CELL);
@@ -178,24 +163,29 @@ TEST(PIPE_FLOW_1D)
       io->WriteVector(*u3(0), "pipe-discharge x", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u3(1), "pipe-discharge y", AmanziMesh::Entity_kind::CELL);    
       io->WriteVector(*u4(0), "pipe-wetted_area", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*u5(0), "pipe-direction", AmanziMesh::Entity_kind::CELL);
       io->FinalizeCycle();
     }
-
-
   }
     
   const auto& wac = *S->Get<CompositeVector>("pipe-wetted_area").ViewComponent("cell"); // wetted area
+  const auto& htc = *S->Get<CompositeVector>("pipe-total_depth").ViewComponent("cell"); // total depth for junction
 
-  mass = 0.0;
   for (int c = 0; c < ncells_owned; ++c) {
-    mass += wac[0][c] * mesh->getCellVolume(c); // length of cell = volume of cell
+    if (std::abs(dirc[0][c] - 1.0) < 1.e-12) { 
+      total_mass_final += wac[0][c] * mesh->getCellVolume(c); // length of cell = volume of cell
+    } else if (std::abs(dirc[0][c] - 0.0) < 1.e-12) { 
+      total_mass_final += (htc[0][c] - Bc[0][c]) * mesh->getCellVolume(c);
+    }
   }
-  total_mass += mass;
 
   std::cout.precision(14);  
-  std::cout<<"Calculated total mass at the end = "<<total_mass - total_mass_initial<<std::endl;
+  std::cout<<"Calculated total initial mass = "<<total_mass_initial<<std::endl;
+  std::cout<<"Calculated total final mass = "<<total_mass_final<<std::endl;
+  std::cout<<"Difference = "<<total_mass_final - total_mass_initial<<std::endl;
   std::cout<<"Calculated mass through BCs = "<<0.0<<std::endl;
-  CHECK(std::abs((total_mass - total_mass_initial) - 0.0) < 1.e-12);
+
+  CHECK(std::abs((total_mass_final - total_mass_initial) - 0.0) < 1.e-12);
 
   WriteStateStatistics(*S, *vo);
 }
