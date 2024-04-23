@@ -97,52 +97,59 @@ if (BUILD_TESTS)
     set(amanzi_libs geometry mesh mesh_factory state shallow_water pks operators whetstone data_structures)
 
     # Test: transient 1D flow 
-    #add_amanzi_test(shallow_water_1D shallow_water_1D
-    #                KIND int
-    #                NPROCS 3
-    #                SOURCE test/Main.cc test/shallow_water_1D.cc
-    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                
+    add_amanzi_test(shallow_water_1D shallow_water_1D
+                    KIND int
+                    NPROCS 3
+                    SOURCE test/Main.cc test/shallow_water_1D.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                
                     
     # Test: smooth 2D travelling vortex 
-    #add_amanzi_test(shallow_water_2D_smooth shallow_water_2D_smooth
-    #                KIND int
-    #                NPROCS 3
-    #                SOURCE test/Main.cc test/shallow_water_2D_smooth.cc
-    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                   
+    add_amanzi_test(shallow_water_2D_smooth shallow_water_2D_smooth
+                    KIND int
+                    NPROCS 3
+                    SOURCE test/Main.cc test/shallow_water_2D_smooth.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                   
                     
     # Test: smooth 2D equilibrium
-    #add_amanzi_test(shallow_water_bathymetry shallow_water_bathymetry
-    #                KIND int
-    #                NPROCS 1
-    #                SOURCE test/Main.cc test/shallow_water_bathymetry.cc
-    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})      
+    add_amanzi_test(shallow_water_bathymetry shallow_water_bathymetry
+                    KIND int
+                    NPROCS 1
+                    SOURCE test/Main.cc test/shallow_water_bathymetry.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})      
 
     # Test: lake at rest with variable bathymetry
-    #add_amanzi_test(shallow_water_lake_at_rest shallow_water_lake_at_rest
-    #                KIND int
-    #                NPROCS 3
-    #                SOURCE test/Main.cc test/shallow_water_lake_at_rest.cc
-    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    add_amanzi_test(shallow_water_lake_at_rest shallow_water_lake_at_rest
+                    KIND int
+                    NPROCS 3
+                    SOURCE test/Main.cc test/shallow_water_lake_at_rest.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: Thacker's analytical solution
-    #add_amanzi_test(shallow_water_Thacker shallow_water_Thacker
-    #                KIND int
-    #                NPROCS 3
-    #                SOURCE test/Main.cc test/shallow_water_Thacker.cc
-    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    add_amanzi_test(shallow_water_Thacker shallow_water_Thacker
+                    KIND int
+                    NPROCS 3
+                    SOURCE test/Main.cc test/shallow_water_Thacker.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
     
     # Test: flow over dry bed with non-zero bathymetry
-    #add_amanzi_test(shallow_water_dry_bed shallow_water_dry_bed
-    #                KIND int
-    #                NPROCS 3
-    #                SOURCE test/Main.cc test/shallow_water_dry_bed.cc
-    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    add_amanzi_test(shallow_water_dry_bed shallow_water_dry_bed
+                    KIND int
+                    NPROCS 3
+                    SOURCE test/Main.cc test/shallow_water_dry_bed.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: Pipe flow test
+    # Test: Pipe flow lake at rest test
     add_amanzi_test(pipe_flow_lake_at_rest pipe_flow_lake_at_rest
                     KIND int
                     NPROCS 3
                     SOURCE test/Main.cc test/pipe_flow_lake_at_rest.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # Test: Pipe flow mass balance test
+    add_amanzi_test(pipe_flow_mass_balance pipe_flow_mass_balance
+                    KIND int
+                    NPROCS 3
+                    SOURCE test/Main.cc test/pipe_flow_mass_balance.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 endif()
