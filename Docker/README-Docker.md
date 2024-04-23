@@ -1,7 +1,7 @@
 
 # How to use the Docker files contained in this directory
 
-Currently, the Amanzi/ATS Docker image stack consists of three different images:
+Currently, the Amanzi-ATS Docker image stack consists of three different images:
 1) A "base" image containing compilers, CMake, and compiled versions of the third party libraries (metsi/amanzi-tpls)
 2) An image containing a compiled verison of amanzi (metsi/amanzi)
 3) An image containing a compiled version of ats (metsi/ats)
@@ -37,7 +37,7 @@ If you are not pushing your image to the metsi/amanzi-tpls DockerHub repository,
 docker tag metsi/amanzi-tpls:latest metsi/amanzi-tpls:<insert version number here>
 docker push metsi/amanzi-tpls
 ```
-   - For this step, you will need access to the DockerHub repository. Login information can be obtained from David Moulton or Alexis Perry.
+   - For this step, you will need access to the DockerHub repository. Login information can be obtained from David Moulton.
    - This last step pushes the newly-rebuilt-from-scratch docker image (with both tagnames) to the repository located here: [https://hub.docker.com/r/metsi/amanzi-tpls]
    - THIS WILL OVERWRITE ANY IMAGES ALREADY IN THE DOCKERHUB REPOSITORY THAT HAVE THE SAME TAGNAMES
    - If you go to the repository URL listed above and click on “tags” you will see all the different images available, one for each TPL version. Here, you can check that your push went through successfully.
