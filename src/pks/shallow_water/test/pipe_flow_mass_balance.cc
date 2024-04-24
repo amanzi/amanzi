@@ -182,12 +182,14 @@ TEST(PIPE_FLOW_1D)
 
   std::cout.precision(14);  
 
-  std::cout<<"Calculated total initial mass = "<<total_mass_initial<<std::endl;
-  std::cout<<"Calculated total final mass = "<<total_mass_final<<std::endl;
-  std::cout<<"Difference = "<<total_mass_final - total_mass_initial<<std::endl;
-  std::cout<<"Calculated mass through BCs = "<<0.0<<std::endl;
+  if (MyPID == 0) { 
+    std::cout<<"Calculated total initial mass = "<<total_mass_initial<<std::endl;
+    std::cout<<"Calculated total final mass = "<<total_mass_final<<std::endl;
+    std::cout<<"Difference = "<<total_mass_final - total_mass_initial<<std::endl;
+    std::cout<<"Calculated mass through BCs = "<<0.0<<std::endl;
 
-  CHECK(std::abs((total_mass_final - total_mass_initial) - 0.0) < 1.e-12);
+    CHECK(std::abs((total_mass_final - total_mass_initial) - 0.0) < 1.e-12);
+  }
 
   WriteStateStatistics(*S, *vo);
 }
