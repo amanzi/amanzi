@@ -38,6 +38,11 @@
         <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>      
+    <ParameterList name="Junction">
+      <ParameterList name="region: point">
+        <Parameter name="coordinate" type="Array(double)" value="{3.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <ParameterList name="cycle driver" type="ParameterList">
@@ -79,7 +84,8 @@
       <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
       <Parameter name="numerical flux" type="string" value="Rusanov"/>
      
-      
+     
+      <!-- 
       <ParameterList name="boundary conditions">
         <ParameterList name="wetted area">
           <ParameterList name="BC 0">
@@ -114,7 +120,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      
+      -->
 
     </ParameterList>
     
@@ -135,7 +141,7 @@
               <Parameter name="function type" type="string" value="composite function" />
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="5" />
+                  <Parameter name="value" type="double" value="10" />
                 </ParameterList>
               </ParameterList>
            </ParameterList>
@@ -147,7 +153,7 @@
         <Parameter name="evaluator type" type="string" value="independent variable" />
         <ParameterList name="function" type="ParameterList">
 
-          <ParameterList name="pipe" type="ParameterList">  <!-- USER DEFINED NAME -->
+          <ParameterList name="pipe" type="ParameterList">
             <Parameter name="region" type="string" value="Computational domain" />
             <Parameter name="component" type="string" value="cell" />
             <ParameterList name="function">
@@ -156,6 +162,25 @@
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.0"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.0"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+
+          <ParameterList name="pipe junction" type="ParameterList">
+            <Parameter name="region" type="string" value="Junction" />
+            <Parameter name="component" type="string" value="cell" />
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
