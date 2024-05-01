@@ -312,7 +312,7 @@ PDE_DiffusionFVonManifolds::UpdateFlux(const Teuchos::Ptr<const CompositeVector>
       if (sum > 0.0) pf /= sum;
 
       for (int i = 0; i < ndofs; ++i) {
-        const auto& normal = mesh_->getFaceNormal(f, cells[i], &dir);
+        mesh_->getFaceNormal(f, cells[i], &dir);
         flux[0][g + i] = -ti(i) * (pf - pi(i)) * dir;
       }
     }

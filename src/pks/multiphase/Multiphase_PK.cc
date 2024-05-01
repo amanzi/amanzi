@@ -85,6 +85,8 @@ Multiphase_PK::Multiphase_PK(Teuchos::ParameterList& pk_tree,
   num_ns_itrs_ = 0;
   num_ls_itrs_ = 0;
 
+  special_pc_term_ = mp_list_->template get<bool>("special pc term", true);
+
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = mp_list_->sublist("verbose object");
   std::string ioname = "MultiphasePK" + ((domain_ != "domain") ? "-" + domain_ : "");
