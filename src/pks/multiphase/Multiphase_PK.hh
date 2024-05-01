@@ -297,6 +297,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
   // miscaleneous
   AmanziGeometry::Point gravity_;
   double g_;
+  bool special_pc_term_;
 
  private:
   static RegisteredPKFactory<Multiphase_PK> reg_;

@@ -412,13 +412,15 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
 
         // populate advection operator. Note that upwind direction is based on
         // the Darcy flux, but flux value is based on derivatives of coefficients
-        auto pde1 = fac_adv_->Create(global_op);
-        const auto& flux = S_->Get<CompositeVector>(flux_names_[phase]);
-        pde1->Setup(flux);
+        if (special_pc_term_) {
+          auto pde1 = fac_adv_->Create(global_op);
+          const auto& flux = S_->Get<CompositeVector>(flux_names_[phase]);
+          pde1->Setup(flux);
 
-        pde1->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
-        pde1->UpdateMatrices(flux_acc.ptr(), [](double x) { return x; });
-        pde1->ApplyBCs(false, false, false);
+          pde1->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
+          pde1->UpdateMatrices(flux_acc.ptr(), [](double x) { return x; });
+          pde1->ApplyBCs(false, false, false);
+        }
       }
 
       // storage term
