@@ -24,10 +24,14 @@ include(FindPackageHandleStandardArgs)
 include(PrintVariable)
 include(AddPackageDependency)
 
-set(ECOSIM_DIR /global/home/users/agraus/code/ats_dev_dir/amanzi_tpls-install-master-Debug/ecosim/local)
-
 message("Starting FindEcoSIM...")
-message("EcoSIM dir: ${ECOSIM_DIR}")
+
+get_property(AMANZI_TPLS_DIR GLOBAL PROPERTY AMANZI_TPLS_DIR)
+
+#set(ECOSIM_DIR /global2/agraus/code/ats_dev_dir/amanzi_tpls-install-master-Debug/ecosim/local)
+#set(ECOSIM_DIR ${AMANZI_TPLS_DIR}/ecosim/local)
+
+message("EcoSIM dir: " ${ECOSIM_DIR})
 
 if (ECOSIM_LIBRARIES AND ECOSIM_INCLUDE_DIRS)
   message("Found EcoSIM Libs and Inc")
@@ -80,7 +84,13 @@ else()
   set(ECOSIM_FOUND FALSE)
 endif()
 
-message("running mark as advanced")
+
+message("running mark as advanced with the following dirs:")
+message("ECOSIM_DIR: " ${ECOSIM_DIR})
+message("ECOSIM_INCLUDE_DIR: " ${ECOSIM_INCLUDE_DIR})
+message("ECOSIM_LIBRARY_DIR: " ${ECOSIM_LIBRARY_DIR})
+message("ECOSIM_LIBRARIES: " ${ECOSIM_LIBRARIES})
+message("ECOSIM_INCLUDE_DIRS: " ${ECOSIM_INCLUDE_DIRS})  
 
 mark_as_advanced(
   ECOSIM_INCLUDE_DIR
