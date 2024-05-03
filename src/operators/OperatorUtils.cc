@@ -115,7 +115,9 @@ MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs)
     row_size += 8 * i;
   }
 
-  if (schema & OPERATOR_SCHEMA_INDICES) { row_size += 1; }
+  if (schema & OPERATOR_SCHEMA_INDICES) {
+    row_size += 1;
+  }
 
   return row_size * n_dofs;
 }

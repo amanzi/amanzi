@@ -1979,7 +1979,9 @@ Mesh_MSTK::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
       }
 
     } else {
-      if (mset2) { mset = mset2; }
+      if (mset2) {
+        mset = mset2;
+      }
     }
   }
 
@@ -2308,7 +2310,9 @@ Mesh_MSTK::init_mesh_from_file_(const std::string& filename)
 
       ok &= MSTK_Mesh_Distribute(
         globalmesh, &mesh_, &topo_dim, num_ghost_layers, with_attr, method, del_inmesh, mpicomm_);
-      if (contiguous_gids_) { ok &= MESH_Renumber_GlobalIDs(mesh_, MALLTYPE, 0, NULL, mpicomm_); }
+      if (contiguous_gids_) {
+        ok &= MESH_Renumber_GlobalIDs(mesh_, MALLTYPE, 0, NULL, mpicomm_);
+      }
     }
 
   } else if (filename.find(".par") != std::string::npos) { // Nemesis file
@@ -2328,7 +2332,9 @@ Mesh_MSTK::init_mesh_from_file_(const std::string& filename)
     int topo_dim = MESH_Num_Regions(mesh_) ? 3 : 2;
     ok &= MSTK_Weave_DistributedMeshes(mesh_, topo_dim, num_ghost_layers, input_type, mpicomm_);
 
-    if (contiguous_gids_) { ok &= MESH_Renumber_GlobalIDs(mesh_, MALLTYPE, 0, NULL, mpicomm_); }
+    if (contiguous_gids_) {
+      ok &= MESH_Renumber_GlobalIDs(mesh_, MALLTYPE, 0, NULL, mpicomm_);
+    }
 
   } else {
     Errors::Message msg;

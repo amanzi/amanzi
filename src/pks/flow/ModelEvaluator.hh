@@ -99,7 +99,9 @@ ModelEvaluator<Model>::Init_()
     deps_ = plist_.get<Teuchos::Array<std::string>>("dependencies").toVector();
   }
 
-  for (auto key : deps_) { dependencies_.insert(std::make_pair(key, Tags::DEFAULT)); }
+  for (auto key : deps_) {
+    dependencies_.insert(std::make_pair(key, Tags::DEFAULT));
+  }
 }
 
 } // namespace Flow

@@ -56,7 +56,9 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
         (*h_)[c] = lambda_ * std::pow(x, lambda_ - 1);
       }
     } else {
-      for (int c = 0; c != up->MyLength(); ++c) { (*h_)[c] = 1.0; }
+      for (int c = 0; c != up->MyLength(); ++c) {
+        (*h_)[c] = 1.0;
+      }
     }
   }
 

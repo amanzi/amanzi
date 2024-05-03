@@ -176,7 +176,9 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
 
   // -- write out node map
   ids = new int[nmap.NumMyElements()];
-  for (int i = 0; i < nnodes_local; i++) { ids[i] = nmap.GID(i); }
+  for (int i = 0; i < nnodes_local; i++) {
+    ids[i] = nmap.GID(i);
+  }
   globaldims[1] = 1;
   localdims[1] = 1;
 
@@ -201,13 +203,17 @@ HDF5_MPI::writeMesh(const double time, const int iteration)
   viz_comm_->GatherAll(&nnodes, &nnodesAll[0], 1);
   int start(0);
   std::vector<int> startAll(viz_comm_->NumProc(), 0);
-  for (int i = 0; i < viz_comm_->MyPID(); i++) { start += nnodesAll[i]; }
+  for (int i = 0; i < viz_comm_->MyPID(); i++) {
+    start += nnodesAll[i];
+  }
   viz_comm_->GatherAll(&start, &startAll[0], 1);
 
   std::vector<int> gid(nnodes_global);
   std::vector<int> pid(nnodes_global);
   std::vector<int> lid(nnodes_global);
-  for (int i = 0; i < nnodes_global; i++) { gid[i] = ngmap.GID(i); }
+  for (int i = 0; i < nnodes_global; i++) {
+    gid[i] = ngmap.GID(i);
+  }
   nmap.RemoteIDList(nnodes_global, &gid[0], &pid[0], &lid[0]);
 
   // -- determine size of connectivity vector
@@ -507,7 +513,9 @@ HDF5_MPI::writeDualMesh(const double time, const int iteration)
 
   // -- write out node map
   ids = new int[nmap.NumMyElements()];
-  for (int i = 0; i < nnodes_local; i++) { ids[i] = nmap.GID(i); }
+  for (int i = 0; i < nnodes_local; i++) {
+    ids[i] = nmap.GID(i);
+  }
   globaldims[1] = 1;
   localdims[1] = 1;
 
@@ -532,13 +540,17 @@ HDF5_MPI::writeDualMesh(const double time, const int iteration)
   viz_comm_->GatherAll(&nnodes, &nnodesAll[0], 1);
   int start(0);
   std::vector<int> startAll(viz_comm_->NumProc(), 0);
-  for (int i = 0; i < viz_comm_->MyPID(); i++) { start += nnodesAll[i]; }
+  for (int i = 0; i < viz_comm_->MyPID(); i++) {
+    start += nnodesAll[i];
+  }
   viz_comm_->GatherAll(&start, &startAll[0], 1);
 
   std::vector<int> gid(nnodes_global);
   std::vector<int> pid(nnodes_global);
   std::vector<int> lid(nnodes_global);
-  for (int i = 0; i < nnodes_global; i++) { gid[i] = ngmap.GID(i); }
+  for (int i = 0; i < nnodes_global; i++) {
+    gid[i] = ngmap.GID(i);
+  }
   nmap.RemoteIDList(nnodes_global, &gid[0], &pid[0], &lid[0]);
 
   // -- pass 1: count total connections, total entities
@@ -787,7 +799,9 @@ HDF5_MPI::endTimestep()
     // channel if they differ
     auto fields = extractFields_(xmlStep_);
     auto fields_prev = extractFields_(xmlStep_prev_);
-    if (fields != fields_prev && !xmlStep_prev_.isEmpty()) { createXdmfVisit_(); }
+    if (fields != fields_prev && !xmlStep_prev_.isEmpty()) {
+      createXdmfVisit_();
+    }
 
     xmlStep_prev_ = xmlStep_;
 
@@ -824,7 +838,9 @@ HDF5_MPI::extractFields_(const Teuchos::XMLObject& xml)
     for (int i = 0; i < node.numChildren(); i++) {
       auto tmp = node.getChild(i);
       if (tmp.getTag() == "Attribute" && tmp.hasAttribute("Name") && tmp.hasAttribute("Type")) {
-        if (tmp.getAttribute("Type") == "Scalar") { fields.insert(tmp.getAttribute("Name")); }
+        if (tmp.getAttribute("Type") == "Scalar") {
+          fields.insert(tmp.getAttribute("Name"));
+        }
       }
     }
   }
@@ -1222,7 +1238,9 @@ HDF5_MPI::writeFieldData_(const Epetra_Vector& x,
   //MB:   Exceptions::amanzi_throw(message);
   //MB: }
 
-  if (TrackXdmf()) { h5path << "/" << Iteration() << get_tag(); }
+  if (TrackXdmf()) {
+    h5path << "/" << Iteration() << get_tag();
+  }
 
   char* tmp;
   tmp = new char[h5path.str().size() + 1];
@@ -1294,7 +1312,9 @@ HDF5_MPI::checkFieldData_(const std::string& varname)
     // exists = H5Lexists(currfile->fid, h5path, H5P_DEFAULT);
     exists = parallelIO_name_exists(currfile->fid, h5path);
 
-    if (!exists) { std::cout << "Field " << h5path << " is not found in hdf5 file.\n"; }
+    if (!exists) {
+      std::cout << "Field " << h5path << " is not found in hdf5 file.\n";
+    }
 
     MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, viz_comm_->Comm());
   }
@@ -1623,14 +1643,18 @@ HDF5_MPI::findGridNode_(Teuchos::XMLObject xmlobject)
 
   // Step down to child tag==Domain
   for (int i = 0; i < xmlobject.numChildren(); i++) {
-    if (xmlobject.getChild(i).getTag() == "Domain") { node = xmlobject.getChild(i); }
+    if (xmlobject.getChild(i).getTag() == "Domain") {
+      node = xmlobject.getChild(i);
+    }
   }
 
   // Step down to child tag==Grid and Attribute(GridType==Collection)
   for (int i = 0; i < node.numChildren(); i++) {
     tmp = node.getChild(i);
     if (tmp.getTag() == "Grid" && tmp.hasAttribute("GridType")) {
-      if (tmp.getAttribute("GridType") == "Collection") { return tmp; }
+      if (tmp.getAttribute("GridType") == "Collection") {
+        return tmp;
+      }
     }
   }
 
@@ -1656,7 +1680,9 @@ HDF5_MPI::findMeshNode_(Teuchos::XMLObject xmlobject)
   for (int i = 0; i < node.numChildren(); i++) {
     tmp = node.getChild(i);
     if (tmp.getTag() == "Grid" && tmp.hasAttribute("Name")) {
-      if (tmp.getAttribute("Name") == "Mesh") { return tmp; }
+      if (tmp.getAttribute("Name") == "Mesh") {
+        return tmp;
+      }
     }
   }
 
@@ -1696,7 +1722,8 @@ HDF5_MPI::stripFilename_(std::string filename)
   std::string name;
   // strip for linux/unix/mac directory names
   char delim('/');
-  while (std::getline(ss, name, delim)) {};
+  while (std::getline(ss, name, delim)) {
+  };
   // strip for windows directory names
   // delim='\\';
   // while(std::getline(ss, name, delim)) {}

@@ -173,7 +173,9 @@ main(int argc, char** argv)
     // generate a mesh
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
     Amanzi::AmanziMesh::Preference pref;
-    if (dosimple) { pref.push_back(Amanzi::AmanziMesh::Framework::SIMPLE); }
+    if (dosimple) {
+      pref.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
+    }
     meshfactory.set_preference(pref);
 
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;

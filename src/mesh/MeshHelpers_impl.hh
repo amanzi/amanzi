@@ -183,7 +183,9 @@ copyCellsToBoundaryFaces(const MeshCache<MEM>& mesh,
   AMANZI_ASSERT(cells.NumVectors() == boundary_faces.NumVectors());
   for (Entity_ID bf = 0; bf != boundary_faces.MyLength(); ++bf) {
     Entity_ID c = getBoundaryFaceInternalCell(mesh, bf);
-    for (int i = 0; i != boundary_faces.NumVectors(); ++i) { boundary_faces[i][bf] = cells[i][c]; }
+    for (int i = 0; i != boundary_faces.NumVectors(); ++i) {
+      boundary_faces[i][bf] = cells[i][c];
+    }
   }
 }
 

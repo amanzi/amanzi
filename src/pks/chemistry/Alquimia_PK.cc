@@ -1044,22 +1044,34 @@ Alquimia_PK::InitializeAuxNamesMap_()
     } else if (this_name == "mineral_saturation_index") {
       // make sure all are present
       AMANZI_ASSERT(mineral_names_.size() == aux_subfield_names_[i].size());
-      for (int j = 0; j < mineral_names_.size(); ++j) { map_[1].push_back(counter++); }
+      for (int j = 0; j < mineral_names_.size(); ++j) {
+        map_[1].push_back(counter++);
+      }
     } else if (this_name == "mineral_reaction_rate") {
       AMANZI_ASSERT(mineral_names_.size() == aux_subfield_names_[i].size());
-      for (int j = 0; j < mineral_names_.size(); ++j) { map_[2].push_back(counter++); }
+      for (int j = 0; j < mineral_names_.size(); ++j) {
+        map_[2].push_back(counter++);
+      }
     } else if (this_name == "primary_free_ion_concentration") {
       AMANZI_ASSERT(primary_names_.size() == aux_subfield_names_[i].size());
-      for (int j = 0; j < primary_names_.size(); ++j) { map_[3].push_back(counter++); }
+      for (int j = 0; j < primary_names_.size(); ++j) {
+        map_[3].push_back(counter++);
+      }
     } else if (this_name == Keys::getVarName(primary_activity_coeff_key_)) {
       AMANZI_ASSERT(primary_names_.size() == aux_subfield_names_[i].size());
-      for (int j = 0; j < primary_names_.size(); ++j) { map_[4].push_back(counter++); }
+      for (int j = 0; j < primary_names_.size(); ++j) {
+        map_[4].push_back(counter++);
+      }
     } else if (this_name == "secondary_free_ion_concentration") {
       AMANZI_ASSERT(numAqueousComplexes == aux_subfield_names_[i].size());
-      for (int j = 0; j < numAqueousComplexes; ++j) { map_[5].push_back(counter++); }
+      for (int j = 0; j < numAqueousComplexes; ++j) {
+        map_[5].push_back(counter++);
+      }
     } else if (this_name == Keys::getVarName(secondary_activity_coeff_key_)) {
       AMANZI_ASSERT(numAqueousComplexes == aux_subfield_names_[i].size());
-      for (int j = 0; j < numAqueousComplexes; ++j) { map_[6].push_back(counter++); }
+      for (int j = 0; j < numAqueousComplexes; ++j) {
+        map_[6].push_back(counter++);
+      }
     }
   }
 }

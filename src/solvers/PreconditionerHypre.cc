@@ -342,7 +342,9 @@ PreconditionerHypre::InitializeInverse()
     // IfpHypre_::Compute() gets called (for every call but the last) and when
     // IfpHypre_ gets destroyed (for the last call).
     int* indices = new int[block_indices_->size()];
-    for (int i = 0; i != block_indices_->size(); ++i) { indices[i] = (*block_indices_)[i]; }
+    for (int i = 0; i != block_indices_->size(); ++i) {
+      indices[i] = (*block_indices_)[i];
+    }
     IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetDofFunc, indices);
   }
 

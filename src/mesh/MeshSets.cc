@@ -37,7 +37,9 @@ resolveMeshSet(const AmanziGeometry::Region& region,
 
   // If there is no parent, this is not an extracted mesh
   auto parent_mesh = mesh.getParentMesh();
-  if (parent_mesh == Teuchos::null) { return Impl::resolveMeshSet_(region, kind, ptype, mesh); }
+  if (parent_mesh == Teuchos::null) {
+    return Impl::resolveMeshSet_(region, kind, ptype, mesh);
+  }
 
   // there is a parent..
   auto region_type = region.get_type();
@@ -544,7 +546,9 @@ resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
     }
 
     // now copy ghosted into end of owned
-    for (std::size_t i = 0; i != cpt_g; ++i) { result[cpt++] = result_g[i]; }
+    for (std::size_t i = 0; i != cpt_g; ++i) {
+      result[cpt++] = result_g[i];
+    }
 
     Kokkos::resize(result, cpt);
     return result;
@@ -577,7 +581,9 @@ resolveMeshSetGeometric(const AmanziGeometry::Region& region,
   MeshCache<MemSpace_kind::HOST>::Entity_ID_View entities("entities", end - begin);
   int lcv = 0;
   for (Entity_ID i = begin; i != end; ++i) {
-    if (region.inside(mesh.getCentroid(kind, i))) { entities[lcv++] = i; }
+    if (region.inside(mesh.getCentroid(kind, i))) {
+      entities[lcv++] = i;
+    }
   }
   Kokkos::resize(entities, lcv);
   return entities;

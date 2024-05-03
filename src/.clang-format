@@ -9,7 +9,7 @@ AlignEscapedNewlines: Right
 AlignOperands:   true
 AlignTrailingComments: true
 AllowAllParametersOfDeclarationOnNextLine: false
-AllowShortBlocksOnASingleLine: true
+AllowShortBlocksOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: true

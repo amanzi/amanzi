@@ -89,7 +89,9 @@ AqueousEquilibriumComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const
   message << "    " << name() << " = " << std::fixed << std::setprecision(3);
   for (int i = 0; i < species_names_.size(); i++) {
     message << stoichiometry_.at(i) << " " << species_names_.at(i);
-    if (i < species_names_.size() - 1) { message << " + "; }
+    if (i < species_names_.size() - 1) {
+      message << " + ";
+    }
   }
   if (SecondarySpecies::h2o_stoich_ != 0.0) {
     message << " + ";

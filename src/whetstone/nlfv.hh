@@ -42,11 +42,7 @@ class NLFV {
                               AmanziGeometry::Point& p,
                               double& weight);
 
-  void HarmonicAveragingPoint(int f,
-                              int c1,
-                              int c2,
-                              AmanziGeometry::Point& p,
-                              double& weight);
+  void HarmonicAveragingPoint(int f, int c1, int c2, AmanziGeometry::Point& p, double& weight);
 
   int PositiveDecomposition(int id1,
                             const AmanziMesh::Point_List& tau,

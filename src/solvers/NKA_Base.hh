@@ -173,7 +173,9 @@ NKA_Base<Vector, VectorSpace>::Restart()
 
   // Initialize the free storage linked list.
   free_v_ = 0;
-  for (int k = 0; k < mvec_; k++) { next_v_[k] = k + 1; }
+  for (int k = 0; k < mvec_; k++) {
+    next_v_[k] = k + 1;
+  }
   next_v_[mvec_] = NKA_EOL;
 }
 
@@ -291,7 +293,9 @@ NKA_Base<Vector, VectorSpace>::Correction(const Vector& f,
       double hkk = 1.0;
       for (int j = first_v_; j != k; j = next_v_[j]) {
         double hkj = h_[j][k];
-        for (int i = first_v_; i != j; i = next_v_[i]) { hkj -= h_[k][i] * h_[j][i]; }
+        for (int i = first_v_; i != j; i = next_v_[i]) {
+          hkj -= h_[k][i] * h_[j][i];
+        }
         hkj /= h_[j][j];
         h_[k][j] = hkj;
         hkk -= hkj * hkj;
@@ -352,13 +356,17 @@ NKA_Base<Vector, VectorSpace>::Correction(const Vector& f,
       int ierr = dir.Dot(*w_[j], &cj);
       AMANZI_ASSERT(!ierr);
 
-      for (int i = first_v_; i != j; i = next_v_[i]) { cj -= h_[j][i] * c[i]; }
+      for (int i = first_v_; i != j; i = next_v_[i]) {
+        cj -= h_[j][i] * c[i];
+      }
       c[j] = cj / h_[j][j];
     }
     // backward substitution
     for (int j = last_v_; j != NKA_EOL; j = prev_v_[j]) {
       double cj = c[j];
-      for (int i = last_v_; i != j; i = prev_v_[i]) { cj -= h_[i][j] * c[i]; }
+      for (int i = last_v_; i != j; i = prev_v_[i]) {
+        cj -= h_[i][j] * c[i];
+      }
       c[j] = cj / h_[j][j];
     }
 

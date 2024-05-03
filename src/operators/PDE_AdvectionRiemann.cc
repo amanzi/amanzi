@@ -234,7 +234,9 @@ PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
       // --set polynomial with Dirichlet data
       WhetStone::DenseVector coef(nk);
-      for (int i = 0; i < nk; ++i) { coef(i) = bc_value[f][i]; }
+      for (int i = 0; i < nk; ++i) {
+        coef(i) = bc_value[f][i];
+      }
 
       WhetStone::Polynomial pf(d, dg_->get_order(), coef);
       pf.set_origin(xf);
@@ -255,11 +257,15 @@ PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
       // now fork the work flow
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-        for (int i = 0; i < ncols; ++i) { rhs_c[i][c] -= av(i); }
+        for (int i = 0; i < ncols; ++i) {
+          rhs_c[i][c] -= av(i);
+        }
         local_op_->matrices_shadow[f] = Aface;
         Aface.PutScalar(0.0);
       } else {
-        for (int i = 0; i < ncols; ++i) { rhs_c[i][c] += av(i); }
+        for (int i = 0; i < ncols; ++i) {
+          rhs_c[i][c] += av(i);
+        }
       }
     } else if (bc_model[f] == OPERATOR_BC_REMOVE) {
       local_op_->matrices[f].PutScalar(0.0);
@@ -286,7 +292,9 @@ PDE_AdvectionRiemann::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
   Epetra_MultiVector& flux_f = *flux->ViewComponent("face", false);
 
   flux->PutScalar(0.0);
-  for (int f = 0; f < nfaces_owned; ++f) { flux_f[0][f] = u_f[0][f] * h_f[0][f]; }
+  for (int f = 0; f < nfaces_owned; ++f) {
+    flux_f[0][f] = u_f[0][f] * h_f[0][f];
+  }
 }
 
 

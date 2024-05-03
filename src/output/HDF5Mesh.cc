@@ -74,7 +74,9 @@ HDF5::createMeshFile(AmanziMesh::Mesh& mesh_maps, std::string filename)
   for (unsigned int i = 0; i < num_elems; i++) {
     //mesh_maps.cell_to_nodes(i, xh.begin(), xh.end());
     auto nodeids = mesh_maps.getCellNodes(i);
-    for (int j = 0; j < conn_; j++) { ielem[i * conn_ + j] = nodeids[j]; }
+    for (int j = 0; j < conn_; j++) {
+      ielem[i * conn_ + j] = nodeids[j];
+    }
   }
 
   // write out connectivity
@@ -404,14 +406,18 @@ HDF5::findGridNode_(Teuchos::XMLObject xmlobject)
 
   // Step down to child tag==Domain
   for (int i = 0; i < xmlobject.numChildren(); i++) {
-    if (xmlobject.getChild(i).getTag() == "Domain") { node = xmlobject.getChild(i); }
+    if (xmlobject.getChild(i).getTag() == "Domain") {
+      node = xmlobject.getChild(i);
+    }
   }
 
   // Step down to child tag==Grid and Attribute(GridType==Collection)
   for (int i = 0; i < node.numChildren(); i++) {
     tmp = node.getChild(i);
     if (tmp.getTag() == "Grid" && tmp.hasAttribute("GridType")) {
-      if (tmp.getAttribute("GridType") == "Collection") { return tmp; }
+      if (tmp.getAttribute("GridType") == "Collection") {
+        return tmp;
+      }
     }
   }
 
@@ -426,14 +432,18 @@ HDF5::findMeshNode_(Teuchos::XMLObject xmlobject)
 
   // Step down to child tag==Domain
   for (int i = 0; i < xmlobject.numChildren(); i++) {
-    if (xmlobject.getChild(i).getTag() == "Domain") { node = xmlobject.getChild(i); }
+    if (xmlobject.getChild(i).getTag() == "Domain") {
+      node = xmlobject.getChild(i);
+    }
   }
 
   // Step down to child tag==Grid and Attribute(Name==Mesh)
   for (int i = 0; i < node.numChildren(); i++) {
     tmp = node.getChild(i);
     if (tmp.getTag() == "Grid" && tmp.hasAttribute("Name")) {
-      if (tmp.getAttribute("Name") == "Mesh") { return tmp; }
+      if (tmp.getAttribute("Name") == "Mesh") {
+        return tmp;
+      }
     }
   }
 

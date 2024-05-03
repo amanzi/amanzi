@@ -116,7 +116,9 @@ RunTest(double mu, double lambda, bool flag)
 
       val1 = ana.velocity_exact(xf - tau / 2, 0.0);
       val2 = ana.velocity_exact(xf + tau / 2, 0.0);
-      for (int k = 0; k < 2; ++k) { bcf_value[f][k + 2] = (val2[k] - val1[k]) / 6 / 4; }
+      for (int k = 0; k < 2; ++k) {
+        bcf_value[f][k + 2] = (val2[k] - val1[k]) / 6 / 4;
+      }
 
       ndir++;
     }

@@ -240,7 +240,9 @@ Checkpoint::ReadAttributes(State& S)
 void
 Checkpoint::Finalize()
 {
-  for (const auto& file_out : output_) { file_out.second->close_h5file(); }
+  for (const auto& file_out : output_) {
+    file_out.second->close_h5file();
+  }
 }
 
 
@@ -277,7 +279,9 @@ Checkpoint::WriteVector(const Epetra_MultiVector& vec, const std::vector<std::st
 
   if (single_file_) {
     const auto& output = output_.at("domain");
-    for (int i = 0; i != vec.NumVectors(); ++i) { output->writeCellDataReal(*vec(i), names[i]); }
+    for (int i = 0; i != vec.NumVectors(); ++i) {
+      output->writeCellDataReal(*vec(i), names[i]);
+    }
   } else {
     // double check that the comms are consistent and that the user is
     // following naming best practices
@@ -292,7 +296,9 @@ Checkpoint::WriteVector(const Epetra_MultiVector& vec, const std::vector<std::st
       Exceptions::amanzi_throw(msg);
     }
 
-    for (int i = 0; i != vec.NumVectors(); ++i) { output->writeCellDataReal(*vec(i), names[i]); }
+    for (int i = 0; i != vec.NumVectors(); ++i) {
+      output->writeCellDataReal(*vec(i), names[i]);
+    }
   }
 }
 

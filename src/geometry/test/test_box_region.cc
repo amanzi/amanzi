@@ -212,7 +212,9 @@ TEST(BOXREGION_VOFS_2D_INTERSECTION)
 
     Amanzi::AmanziGeometry::IntersectConvexPolygons(xy1, xy2, xy3);
 
-    for (int i = 0; i < xy3.size(); ++i) { std::cout << i << " xy=" << xy3[i] << std::endl; }
+    for (int i = 0; i < xy3.size(); ++i) {
+      std::cout << i << " xy=" << xy3[i] << std::endl;
+    }
     CHECK(xy3.size() == sizes[n++]);
   }
 }

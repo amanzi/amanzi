@@ -111,11 +111,15 @@ TreeOperator::TreeOperator(const TreeOperator& other) : TreeOperator(other.row_m
 
   for (int i = 0; i != row_size_; ++i) {
     for (int j = 0; j != col_size_; ++j) {
-      if (other.blocks_[i][j] != Teuchos::null) { blocks_[i][j] = other.blocks_[i][j]->Clone(); }
+      if (other.blocks_[i][j] != Teuchos::null) {
+        blocks_[i][j] = other.blocks_[i][j]->Clone();
+      }
     }
   }
 
-  if (other.data_ != Teuchos::null) { data_ = other.data_->Clone(); }
+  if (other.data_ != Teuchos::null) {
+    data_ = other.data_->Clone();
+  }
 }
 
 
@@ -602,7 +606,9 @@ TreeOperator::ComputeInverse()
     if (preconditioner_.get()) {
       preconditioner_->ComputeInverse(); // calls SymbolicAssemble if needed
     } else if (block_diagonal_) {
-      for (std::size_t n = 0; n != get_row_map()->size(); ++n) { blocks_[n][n]->ComputeInverse(); }
+      for (std::size_t n = 0; n != get_row_map()->size(); ++n) {
+        blocks_[n][n]->ComputeInverse();
+      }
     }
   }
   compute_complete_ = true;

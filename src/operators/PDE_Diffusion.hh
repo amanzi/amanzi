@@ -229,7 +229,9 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
     CompositeVectorSpace out;
     out.SetMesh(mesh_);
     out.SetGhosted();
-    if (little_k_ == OPERATOR_LITTLE_K_NONE) { return out; }
+    if (little_k_ == OPERATOR_LITTLE_K_NONE) {
+      return out;
+    }
     if (little_k_ != OPERATOR_LITTLE_K_UPWIND) {
       out.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     }

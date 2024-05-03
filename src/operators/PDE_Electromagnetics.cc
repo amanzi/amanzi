@@ -120,7 +120,9 @@ PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
     auto edges = mesh_->getCellEdges(c);
     int nedges = edges.size();
 
-    for (int n = 0; n < nedges; ++n) { edge_ncells[edges[n]]++; }
+    for (int n = 0; n < nedges; ++n) {
+      edge_ncells[edges[n]]++;
+    }
   }
 
   for (int c = 0; c != ncells_owned; ++c) {

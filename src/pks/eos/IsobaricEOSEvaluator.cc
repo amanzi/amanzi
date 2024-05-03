@@ -114,7 +114,9 @@ IsobaricEOSEvaluator::Evaluate_(const State& S, const std::vector<CompositeVecto
       Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
 
       int count = result->size(*comp);
-      for (int id = 0; id != count; ++id) { result_v[0][id] = eos_->Density(temp_v[0][id], pres); }
+      for (int id = 0; id != count; ++id) {
+        result_v[0][id] = eos_->Density(temp_v[0][id], pres);
+      }
     }
   }
 }

@@ -114,7 +114,9 @@ RegionLineSegment::intersect(const std::vector<Point>& polytope,
       } else if (diff_y < eps) { //projection to plane x-z
         vp[0] = v1[0];
         vp[1] = v1[2];
-        for (int j = 0; j < plane.size(); j++) { plane[j][1] = plane[j][2]; }
+        for (int j = 0; j < plane.size(); j++) {
+          plane[j][1] = plane[j][2];
+        }
       } else {
         vp = v1;
       }
@@ -210,7 +212,9 @@ RegionLineSegment::ComputeInterLinePoints(const std::vector<Point>& polytope,
       } else if (diff_y < eps) { //projection to plane x-z
         vp[0] = v1[0];
         vp[1] = v1[2];
-        for (int j = 0; j < plane.size(); j++) { plane[j][1] = plane[j][2]; }
+        for (int j = 0; j < plane.size(); j++) {
+          plane[j][1] = plane[j][2];
+        }
       } else {
         vp = v1;
       }
@@ -297,7 +301,9 @@ PlaneLineIntersection(const std::vector<Point>& plane, const std::vector<Point>&
   //   for (int j=0;j<4;j++) std::cout<<smatr2[i + j*3]<<" ";std::cout<<"\n";
   // }
 
-  if (fabs(t2) < 1e-10) { return nan(""); }
+  if (fabs(t2) < 1e-10) {
+    return nan("");
+  }
 
   return -t1 / t2;
 }

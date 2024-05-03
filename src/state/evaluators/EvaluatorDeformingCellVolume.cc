@@ -57,7 +57,9 @@ EvaluatorDeformingCellVolume::EnsureCompatibility(State& S)
 
   // For dependencies, all we really care is whether there is an evaluator or
   // not.  We do not use the data at all.
-  for (const auto& dep : dependencies_) { S.RequireEvaluator(dep.first, dep.second); }
+  for (const auto& dep : dependencies_) {
+    S.RequireEvaluator(dep.first, dep.second);
+  }
   EnsureCompatibility_Flags_(S);
 }
 

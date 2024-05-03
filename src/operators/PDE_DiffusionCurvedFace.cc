@@ -242,7 +242,9 @@ PDE_DiffusionCurvedFace::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u
     int nfaces = faces.size();
 
     WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
-    for (int n = 0; n < nfaces; n++) { v(n) = u_face[0][faces[n]]; }
+    for (int n = 0; n < nfaces; n++) {
+      v(n) = u_face[0][faces[n]];
+    }
     v(nfaces) = u_cell[0][c];
 
     if (local_op_->matrices_shadow[c].NumRows() == 0) {
@@ -260,7 +262,9 @@ PDE_DiffusionCurvedFace::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u
     }
   }
 
-  for (int f = 0; f != nfaces_owned; ++f) { flux_data[0][f] /= hits[f]; }
+  for (int f = 0; f != nfaces_owned; ++f) {
+    flux_data[0][f] /= hits[f];
+  }
 }
 
 
@@ -305,7 +309,9 @@ PDE_DiffusionCurvedFace::CreateMassMatrices_()
 void
 PDE_DiffusionCurvedFace::ScaleMassMatrices(double s)
 {
-  for (int c = 0; c < ncells_owned; c++) { Wff_cells_[c] *= s; }
+  for (int c = 0; c < ncells_owned; c++) {
+    Wff_cells_[c] *= s;
+  }
 }
 
 
@@ -402,7 +408,9 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
 
   // error analysis
   double err(0.0);
-  for (int f = 0; f < nfaces_owned; ++f) { err += norm((*bf_)[f] - mesh_->getFaceCentroid(f)); }
+  for (int f = 0; f < nfaces_owned; ++f) {
+    err += norm((*bf_)[f] - mesh_->getFaceCentroid(f));
+  }
   if (mesh_->getComm()->MyPID() == 0) {
     std::cout << "new face centroids deviation on rank zero is " << err / nfaces_owned << "\n\n";
   }
@@ -514,7 +522,9 @@ PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol, i
   bf->ScatterMasterToGhosted();
 
   // save to a vector which could be shared with WhetStone
-  for (int f = 0; f < nfaces_wghost; ++f) { (*bf_)[f][i0] = bf_f[0][f]; }
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    (*bf_)[f][i0] = bf_f[0][f];
+  }
 }
 
 } // namespace Operators

@@ -72,7 +72,9 @@ SurfaceComplex::SurfaceComplex(const std::string& name,
 void
 SurfaceComplex::UpdateTemperatureDependentCoefs(double T)
 {
-  if (func_.get() != nullptr) { logK_ = (*func_)({ T }); }
+  if (func_.get() != nullptr) {
+    logK_ = (*func_)({ T });
+  }
 }
 
 
@@ -124,7 +126,9 @@ SurfaceComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const
   }
   for (unsigned int i = 0; i < species_names_.size(); i++) {
     message << stoichiometry_[i] << " " << species_names_[i];
-    if (i < species_names_.size() - 1) { message << " + "; }
+    if (i < species_names_.size() - 1) {
+      message << " + ";
+    }
   }
   message << std::endl;
   message << std::setw(40) << " " << std::setw(10) << logK_ << std::setw(10) << charge_

@@ -125,7 +125,9 @@ SpaceTimePolynomial::operator*=(const SpaceTimePolynomial& poly)
   product.set_origin(poly[0].get_origin());
 
   for (int i = 0; i < size_; ++i) {
-    for (int j = 0; j < poly.size(); ++j) { product[i + j] += coefs_[i] * poly[j]; }
+    for (int j = 0; j < poly.size(); ++j) {
+      product[i + j] += coefs_[i] * poly[j];
+    }
   }
 
   *this = product;
@@ -184,7 +186,9 @@ operator<<(std::ostream& os, const SpaceTimePolynomial& p)
   int d = p.dimension();
   os << "space-time polynomial: order=" << p.order() << " d=" << d << " time_terms=" << p.size()
      << std::endl;
-  for (int i = 0; i < p.size(); ++i) { os << "t^" << i << " * " << p[i]; }
+  for (int i = 0; i < p.size(); ++i) {
+    os << "t^" << i << " * " << p[i];
+  }
   return os;
 }
 

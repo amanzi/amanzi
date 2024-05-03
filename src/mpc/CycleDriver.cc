@@ -219,7 +219,9 @@ CycleDriver::Setup()
     }
     std::string plist_name = "mesh info " + mesh->first;
     // in the case of just a domain mesh, we want to allow no name.
-    if ((mesh->first == "domain") && !glist_->isSublist(plist_name)) { plist_name = "mesh info"; }
+    if ((mesh->first == "domain") && !glist_->isSublist(plist_name)) {
+      plist_name = "mesh info";
+    }
     if (glist_->isSublist(plist_name)) {
       auto& mesh_info_list = glist_->sublist(plist_name);
       Teuchos::RCP<Amanzi::MeshInfo> mesh_info =
@@ -281,7 +283,9 @@ CycleDriver::Initialize()
   S_->InitializeIOFlags();
 
   // commit the initial conditions.
-  if (!restart_requested_) { pk_->CommitStep(S_->get_time(), S_->get_time(), Tags::DEFAULT); }
+  if (!restart_requested_) {
+    pk_->CommitStep(S_->get_time(), S_->get_time(), Tags::DEFAULT);
+  }
 }
 
 
@@ -321,7 +325,9 @@ CycleDriver::ReportMemory()
     double mem = Amanzi::rss_usage();
 
     double percell(mem);
-    if (local_ncells > 0) { percell = mem / local_ncells; }
+    if (local_ncells > 0) {
+      percell = mem / local_ncells;
+    }
 
     double max_percell(0.0);
     double min_percell(0.0);
@@ -492,7 +498,9 @@ CycleDriver::get_dt(bool after_failure)
   for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end();
        ++it, ++it_max) {
     if (S_->get_time() == it->first) {
-      if (reset_max_.size() > 0) { max_dt_ = it_max->second; }
+      if (reset_max_.size() > 0) {
+        max_dt_ = it_max->second;
+      }
 
       if (dt < it->second) {
         pk_->set_dt(dt);
@@ -555,7 +563,9 @@ CycleDriver::set_dt(double dt)
   }
 
   // cap the max step size
-  if (dt > max_dt_) { dt_ = max_dt_; }
+  if (dt > max_dt_) {
+    dt_ = max_dt_;
+  }
 
   // ask the step manager if this step is ok
   dt_ = tsm_->TimeStep(S_->get_time() + dt, dt);
@@ -640,7 +650,9 @@ CycleDriver::Advance(double dt)
     dt_new = get_dt(fail);
     // Failed the timestep.
     // Potentially write out failed timestep for debugging
-    for (auto& vis : failed_visualization_) { WriteVis(*vis, *S_); }
+    for (auto& vis : failed_visualization_) {
+      WriteVis(*vis, *S_);
+    }
     // The timestep sizes have been updated, so copy back old soln and try again.
     // NOT YET IMPLEMENTED, requires PKs to deal with failure.  Fortunately
     // transport and chemistry never fail, so we shouldn't break things.
@@ -680,7 +692,9 @@ CycleDriver::Visualize(bool force, const Tag& tag)
   bool dump = force;
   if (!dump) {
     for (auto vis = visualization_.begin(); vis != visualization_.end(); ++vis) {
-      if ((*vis)->DumpRequested(S_->get_cycle(), S_->get_time())) { dump = true; }
+      if ((*vis)->DumpRequested(S_->get_cycle(), S_->get_time())) {
+        dump = true;
+      }
     }
   }
 
@@ -969,7 +983,9 @@ CycleDriver::Go(double t_old, double t_new, double* dt0)
          ((tp_max_cycle_[time_period_id_] == -1) ||
           (S_->get_cycle() - start_cycle_num < tp_max_cycle_[time_period_id_]))) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      if (S_->get_cycle() % 100 == 0 && S_->get_cycle() > 0) { WriteStateStatistics(*S_, *vo_); }
+      if (S_->get_cycle() % 100 == 0 && S_->get_cycle() > 0) {
+        WriteStateStatistics(*S_, *vo_);
+      }
       Utils::Units units("molar");
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "\nCycle " << S_->get_cycle() << ": time = " << units.OutputTime(S_->get_time())

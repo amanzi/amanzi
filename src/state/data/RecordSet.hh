@@ -101,7 +101,9 @@ class RecordSet {
         e.second->data_ = std::forward<Impl::Data>(factory_.Create());
       }
     }
-    for (auto& pair : aliases_) { records_[pair.first]->AssignPtr(*records_[pair.second]); }
+    for (auto& pair : aliases_) {
+      records_[pair.first]->AssignPtr(*records_[pair.second]);
+    }
   }
 
   // Data setters/getters
@@ -188,14 +190,18 @@ class RecordSet {
   template <typename T, typename F>
   F& SetType()
   {
-    if (!factory_.HasType()) { factory_ = Impl::dataFactory<T, F>(); }
+    if (!factory_.HasType()) {
+      factory_ = Impl::dataFactory<T, F>();
+    }
     return GetFactory<T, F>();
   }
 
   template <typename T>
   void SetType()
   {
-    if (!factory_.HasType()) { factory_ = Impl::dataFactory<T, NullFactory>(); }
+    if (!factory_.HasType()) {
+      factory_ = Impl::dataFactory<T, NullFactory>();
+    }
     GetFactory<T, NullFactory>(); // checks valid type
   }
 

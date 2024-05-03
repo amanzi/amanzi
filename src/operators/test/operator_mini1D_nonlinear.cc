@@ -59,7 +59,9 @@ class NonlinearProblem : public AmanziSolvers::SolverFnBase<DenseVector> {
     op_->rhs() = *rhs0_;
 
     int ncells = u->NumRows();
-    for (int i = 0; i < ncells; ++i) { op_->k()(i) = 1.0 + (*u)(i) * (*u)(i); }
+    for (int i = 0; i < ncells; ++i) {
+      op_->k()(i) = 1.0 + (*u)(i) * (*u)(i);
+    }
 
     op_->UpdateMatrices();
     op_->ApplyBCs(bcl_, type_l_, bcr_, type_r_);
@@ -104,7 +106,9 @@ class NonlinearProblem : public AmanziSolvers::SolverFnBase<DenseVector> {
     // accumulation term to the main diagonal
     if (dt_ > 0.0) {
       DenseVector s1(ncells);
-      for (int i = 0; i < ncells; ++i) { s1(i) = 2.0 * (*u)(i) / dt_; }
+      for (int i = 0; i < ncells; ++i) {
+        s1(i) = 2.0 * (*u)(i) / dt_;
+      }
       op_->AddAccumulationTerm(s1);
     }
   }

@@ -165,7 +165,9 @@ class DEvaluator : public EvaluatorSecondaryMonotype<double> {
                                           const Tag& wrt_tag,
                                           const std::vector<double*>& results) override
   {
-    if (wrt_key == "fg") { (*results[0]) = 2.; }
+    if (wrt_key == "fg") {
+      (*results[0]) = 2.;
+    }
   }
 };
 
@@ -234,7 +236,9 @@ class FEvaluator : public EvaluatorSecondaryMonotype<double> {
                                           const Tag& wrt_tag,
                                           const std::vector<double*>& results) override
   {
-    if (wrt_key == "fg") { (*results[0]) = 2.; }
+    if (wrt_key == "fg") {
+      (*results[0]) = 2.;
+    }
   }
 };
 
@@ -264,7 +268,9 @@ class HEvaluator : public EvaluatorSecondaryMonotype<double> {
                                           const Tag& wrt_tag,
                                           const std::vector<double*>& results) override
   {
-    if (wrt_key == "ff") { (*results[0]) = 2.; }
+    if (wrt_key == "ff") {
+      (*results[0]) = 2.;
+    }
   }
 };
 

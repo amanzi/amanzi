@@ -128,7 +128,9 @@ DenseMatrix::Reshape(int mrow, int ncol)
   n_ = ncol;
 
   if (mem_ < m_ * n_) {
-    if (data_ != NULL) { delete[] data_; }
+    if (data_ != NULL) {
+      delete[] data_;
+    }
     mem_ = m_ * n_;
     data_ = new double[mem_];
   }

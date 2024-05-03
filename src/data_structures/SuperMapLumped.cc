@@ -163,7 +163,9 @@ const std::vector<int>&
 SuperMapLumped::Indices(const std::string& compname, int dofnum) const
 {
   if (indices_.count(compname)) {
-    if (indices_[compname].count(dofnum)) { return indices_[compname][dofnum]; }
+    if (indices_[compname].count(dofnum)) {
+      return indices_[compname][dofnum];
+    }
   }
   return CreateIndices_(compname, dofnum, false);
 }
@@ -173,7 +175,9 @@ const std::vector<int>&
 SuperMapLumped::GhostIndices(const std::string& compname, int dofnum) const
 {
   if (ghosted_indices_.count(compname)) {
-    if (ghosted_indices_[compname].count(dofnum)) { return ghosted_indices_[compname][dofnum]; }
+    if (ghosted_indices_[compname].count(dofnum)) {
+      return ghosted_indices_[compname][dofnum];
+    }
   }
   return CreateIndices_(compname, dofnum, true);
 }
@@ -200,7 +204,9 @@ const std::vector<int>&
 SuperMapLumped::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const
 {
   if (ghosted) {
-    if (ghosted_indices_.count(compname) == 0) { ghosted_indices_[compname]; }
+    if (ghosted_indices_.count(compname) == 0) {
+      ghosted_indices_[compname];
+    }
 
     // create the vector
     int nentities_owned = counts_.at(compname);
@@ -209,7 +215,9 @@ SuperMapLumped::CreateIndices_(const std::string& compname, int dofnum, bool gho
     std::vector<int> indices(nentities, -1);
     int offset = offsets_.at(compname);
     int num_dof = num_dofs_.at(compname);
-    for (int i = 0; i != nentities_owned; ++i) { indices[i] = offset + dofnum + i * num_dof; }
+    for (int i = 0; i != nentities_owned; ++i) {
+      indices[i] = offset + dofnum + i * num_dof;
+    }
 
     int ghosted_offset = ghosted_offsets_.at(compname);
     for (int i = nentities_owned; i != nentities; ++i) {
@@ -221,7 +229,9 @@ SuperMapLumped::CreateIndices_(const std::string& compname, int dofnum, bool gho
     return ghosted_indices_[compname][dofnum];
 
   } else {
-    if (indices_.count(compname) == 0) { indices_[compname]; }
+    if (indices_.count(compname) == 0) {
+      indices_[compname];
+    }
 
     // create the vector
     int nentities = counts_.at(compname);
@@ -229,7 +239,9 @@ SuperMapLumped::CreateIndices_(const std::string& compname, int dofnum, bool gho
     std::vector<int> indices(nentities, -1);
     int offset = offsets_.at(compname);
     int num_dof = num_dofs_.at(compname);
-    for (int i = 0; i != nentities; ++i) { indices[i] = offset + dofnum + i * num_dof; }
+    for (int i = 0; i != nentities; ++i) {
+      indices[i] = offset + dofnum + i * num_dof;
+    }
 
     // move-assign, indices is no longer valid
     indices_[compname][dofnum] = std::move(indices);

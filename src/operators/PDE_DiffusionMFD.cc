@@ -76,13 +76,17 @@ PDE_DiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>
 
   // compatibility checks
   if (k_ != Teuchos::null) {
-    if (little_k_ != OPERATOR_LITTLE_K_UPWIND) { AMANZI_ASSERT(k->HasComponent("cell")); }
+    if (little_k_ != OPERATOR_LITTLE_K_UPWIND) {
+      AMANZI_ASSERT(k->HasComponent("cell"));
+    }
 
     if (little_k_ != OPERATOR_LITTLE_K_STANDARD && little_k_ != OPERATOR_LITTLE_K_NONE) {
       AMANZI_ASSERT(k->HasComponent("face"));
     }
 
-    if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) { AMANZI_ASSERT(k->HasComponent("twin")); }
+    if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
+      AMANZI_ASSERT(k->HasComponent("twin"));
+    }
   }
 }
 
@@ -988,7 +992,9 @@ PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
     int nfaces = faces.size();
 
     WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
-    for (int n = 0; n < nfaces; n++) { v(n) = u_face[0][faces[n]]; }
+    for (int n = 0; n < nfaces; n++) {
+      v(n) = u_face[0][faces[n]];
+    }
     v(nfaces) = u_cell[0][c];
 
     if (local_op_->matrices_shadow[c].NumRows() == 0) {
@@ -1006,7 +1012,9 @@ PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
     }
   }
 
-  for (int f = 0; f != nfaces_owned; ++f) { flux_data[0][f] /= hits[f]; }
+  for (int f = 0; f != nfaces_owned; ++f) {
+    flux_data[0][f] /= hits[f];
+  }
 }
 
 
@@ -1036,7 +1044,9 @@ PDE_DiffusionMFD::UpdateFluxManifold_(const Teuchos::Ptr<const CompositeVector>&
     int nfaces = faces.size();
 
     WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
-    for (int n = 0; n < nfaces; n++) { v(n) = u_face[0][faces[n]]; }
+    for (int n = 0; n < nfaces; n++) {
+      v(n) = u_face[0][faces[n]];
+    }
     v(nfaces) = u_cell[0][c];
 
     if (local_op_->matrices_shadow[c].NumRows() == 0) {
@@ -1154,7 +1164,9 @@ PDE_DiffusionMFD::CreateMassMatrices_()
 void
 PDE_DiffusionMFD::ScaleMassMatrices(double s)
 {
-  for (int c = 0; c < ncells_owned; c++) { Wff_cells_[c] *= s; }
+  for (int c = 0; c < ncells_owned; c++) {
+    Wff_cells_[c] *= s;
+  }
 }
 
 
@@ -1416,7 +1428,9 @@ PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
 
-    for (int n = 0; n != nfaces; ++n) { y_f[0][faces[n]] -= Acell(n, nfaces) * x_c[0][c]; }
+    for (int n = 0; n != nfaces; ++n) {
+      y_f[0][faces[n]] -= Acell(n, nfaces) * x_c[0][c];
+    }
   }
 
   y.GatherGhostedToMaster("face", Add);

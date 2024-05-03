@@ -217,7 +217,9 @@ Flow_PK::Setup()
   }
 
   // set units
-  if (flow_on_manifold_) { S_->GetRecordSetW(aperture_key_).set_units("m"); }
+  if (flow_on_manifold_) {
+    S_->GetRecordSetW(aperture_key_).set_units("m");
+  }
 }
 
 
@@ -425,7 +427,9 @@ Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
   if (S->HasRecord(optional_key)) {
     auto& field_c =
       *S->GetW<CompositeVector>(optional_key, Tags::DEFAULT, passwd_).ViewComponent("cell");
-    for (int c = 0; c != ncells_owned; ++c) { field_c[0][c] = pressure[0][c] / (g * rho); }
+    for (int c = 0; c != ncells_owned; ++c) {
+      field_c[0][c] = pressure[0][c] / (g * rho);
+    }
   }
 
   // calculate full velocity vector
@@ -548,7 +552,9 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
         std::string name = it->first;
         if (tmp_list.isSublist(name)) {
           Teuchos::ParameterList& spec = tmp_list.sublist(name);
-          if (IsWellIndexRequire(spec)) { ComputeWellIndex(spec); }
+          if (IsWellIndexRequire(spec)) {
+            ComputeWellIndex(spec);
+          }
         }
       }
     }
@@ -676,7 +682,9 @@ Flow_PK::IsWellIndexRequire(Teuchos::ParameterList& spec)
     if (model == "simple well") {
       Teuchos::ParameterList well_list = spec.sublist("well");
       if (well_list.isParameter("submodel")) {
-        if (well_list.get<std::string>("submodel") == "bhp") { return true; }
+        if (well_list.get<std::string>("submodel") == "bhp") {
+          return true;
+        }
       }
     }
   }

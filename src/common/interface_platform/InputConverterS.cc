@@ -459,7 +459,9 @@ InputConverterS::ParseExecutionControls_()
     DOMElement* echo_elt = static_cast<DOMElement*>(echo_node);
     string echo_file_name = GetAttributeValueS_(echo_elt, "file_name", TYPE_NONE, true);
     string echo_file_format = GetAttributeValueS_(echo_elt, "format", TYPE_NONE, false);
-    if (echo_file_format.empty()) { echo_file_format = "native"; }
+    if (echo_file_format.empty()) {
+      echo_file_format = "native";
+    }
     if (echo_file_format != "native") {
       Errors::Message msg;
       msg << "An error occurred during parsing \"echo_translated_input\"\n";
@@ -478,7 +480,9 @@ InputConverterS::ParseExecutionControls_()
   if (found) {
     DOMNode* defaults =
       GetUniqueElementByTagsString_("execution_controls, execution_control_defaults", found);
-    if (!found) { ThrowErrorMisschild_("execution_controls", "execution_control_defaults"); }
+    if (!found) {
+      ThrowErrorMisschild_("execution_controls", "execution_control_defaults");
+    }
 
     DOMElement* def = static_cast<DOMElement*>(defaults);
 
@@ -495,7 +499,9 @@ InputConverterS::ParseExecutionControls_()
     default_vals["mode"] = GetAttributeValueS_(def, "mode", TYPE_NUMERICAL, true);
     default_vals["method"] = GetAttributeValueS_(def, "method", TYPE_NUMERICAL, true);
     string this_max_cycles = GetAttributeValueS_(def, "max_cycles", TYPE_NUMERICAL, false);
-    if (!this_max_cycles.empty()) { default_vals["max_cycles"] = this_max_cycles; }
+    if (!this_max_cycles.empty()) {
+      default_vals["max_cycles"] = this_max_cycles;
+    }
 
     vector<DOMNode*> control_nodes = GetChildren_(controls_block, "execution_control", found);
     if (!found) {
@@ -522,7 +528,9 @@ InputConverterS::ParseExecutionControls_()
         for (map<string, string>::const_iterator it = exec_control[i].begin();
              it != exec_control[i].end();
              ++it) {
-          if (it->first == "start") { exec_control[i - 1]["end"] = it->second; }
+          if (it->first == "start") {
+            exec_control[i - 1]["end"] = it->second;
+          }
         }
       }
 
@@ -702,7 +710,9 @@ InputConverterS::ParseNumericalControls_(const string& flow_model)
         char* cname = mm.transcode(inode->getNodeName());
         for (map<string, string>::iterator it = ts_controls.begin(); it != ts_controls.end();
              ++it) {
-          if (it->first == cname) { it->second = mm.transcode(inode->getTextContent()); }
+          if (it->first == cname) {
+            it->second = mm.transcode(inode->getTextContent());
+          }
         }
       }
     }
@@ -764,7 +774,9 @@ InputConverterS::ParseNumericalControls_(const string& flow_model)
         char* cname = mm.transcode(inode->getNodeName());
         for (map<string, string>::iterator it = flow_controls.begin(); it != flow_controls.end();
              ++it) {
-          if (it->first == cname) { it->second = mm.transcode(inode->getTextContent()); }
+          if (it->first == cname) {
+            it->second = mm.transcode(inode->getTextContent());
+          }
         }
       }
     }
@@ -814,7 +826,9 @@ InputConverterS::ParseNumericalControls_(const string& flow_model)
         for (map<string, string>::iterator it = transport_controls.begin();
              it != transport_controls.end();
              ++it) {
-          if (it->first == cname) { it->second = mm.transcode(inode->getTextContent()); }
+          if (it->first == cname) {
+            it->second = mm.transcode(inode->getTextContent());
+          }
         }
       }
     }
@@ -897,7 +911,9 @@ InputConverterS::ParseNumericalControls_(const string& flow_model)
         } else {
           for (map<string, string>::iterator it = amr_controls.begin(); it != amr_controls.end();
                ++it) {
-            if (it->first == cname) { it->second = mm.transcode(inode->getTextContent()); }
+            if (it->first == cname) {
+              it->second = mm.transcode(inode->getTextContent());
+            }
           }
         }
       }
@@ -1135,7 +1151,8 @@ InputConverterS::ParseRegions_()
 
     // FIXME: color functions (what files do we read from?)
     vector<DOMNode*> colors = GetChildren_(regions, "color", found);
-    for (size_t i = 0; i < colors.size(); ++i) {}
+    for (size_t i = 0; i < colors.size(); ++i) {
+    }
 
     // point
     vector<DOMNode*> points = GetChildren_(regions, "point", found);
@@ -1246,12 +1263,14 @@ InputConverterS::ParseRegions_()
       // rotated_polygon
       // FIXME
       vector<DOMNode*> rotated_polygons = GetChildren_(regions, "rotated_polygon", found);
-      for (size_t i = 0; i < rotated_polygons.size(); ++i) {}
+      for (size_t i = 0; i < rotated_polygons.size(); ++i) {
+      }
 
       // swept_polygon
       // FIXME
       vector<DOMNode*> swept_polygons = GetChildren_(regions, "swept_polygon", found);
-      for (size_t i = 0; i < swept_polygons.size(); ++i) {}
+      for (size_t i = 0; i < swept_polygons.size(); ++i) {
+      }
     }
 
     // logical
@@ -1380,7 +1399,9 @@ InputConverterS::ParseGeochemistry_()
           for (size_t g = 0; g < gccs.size(); ++g) {
             DOMElement* constraint = static_cast<DOMElement*>(gccs[g]);
             string constraint_name = GetAttributeValueS_(constraint, "name");
-            if (!constraint_name.empty()) { constraint_names_.push_back(constraint_name); }
+            if (!constraint_name.empty()) {
+              constraint_names_.push_back(constraint_name);
+            }
           }
         }
       }
@@ -1764,7 +1785,9 @@ InputConverterS::ParsePhases_(bool& do_tracer_diffusion)
           AddToTable(table,
                      MakePPPrefix("tracer", sol_name, "molecularDiffusivity"),
                      MakePPEntry(diff_coeff));
-          if (atof(diff_coeff.c_str()) != 0) { do_tracer_diffusion = true; }
+          if (atof(diff_coeff.c_str()) != 0) {
+            do_tracer_diffusion = true;
+          }
         }
       }
     }
@@ -1831,7 +1854,9 @@ InputConverterS::ParseInitialConditions_()
                   if (ic_type_labels[i] == "velocity") {
                     vel.push_back(GetAttributeValueS_(elt, "x"));
                     vel.push_back(GetAttributeValueS_(elt, "y"));
-                    if (dim_ > 2) { vel.push_back(GetAttributeValueS_(elt, "z")); }
+                    if (dim_ > 2) {
+                      vel.push_back(GetAttributeValueS_(elt, "z"));
+                    }
                   } else {
                     values.push_back(GetAttributeValueS_(elt, "value"));
                   }
@@ -1887,7 +1912,9 @@ InputConverterS::ParseInitialConditions_()
             sfound = true;
 
             vector<string> conc(solutes_.size());
-            for (int s = 0; s < solutes_.size(); ++s) { conc[s] = "0.0"; }
+            for (int s = 0; s < solutes_.size(); ++s) {
+              conc[s] = "0.0";
+            }
             vector<DOMNode*> sols = GetChildren_(sc, "uniform_conc", found);
 
             if (sols.size() > 0) {
@@ -2088,7 +2115,9 @@ InputConverterS::ParseBoundaryConditions_()
                     csys.push_back(
                       GetAttributeValueS_(elt, "coordinate_system", TYPE_NONE, false, "absolute"));
                     string sms_ = GetAttributeValueS_(elt, "submodel", TYPE_NONE, false);
-                    if (!sms_.empty()) { sms.push_back(sms_); }
+                    if (!sms_.empty()) {
+                      sms.push_back(sms_);
+                    }
                   }
 
                   if (bc_type_labels[i] == "seepage_face") {
@@ -2192,7 +2221,9 @@ InputConverterS::ParseBoundaryConditions_()
                 }
               }
               for (int s = 0; s < solutes_.size(); ++s) {
-                if (conc[s].size() == 0) { conc[s].push_back("0.0"); }
+                if (conc[s].size() == 0) {
+                  conc[s].push_back("0.0");
+                }
               }
               for (int s = 0; s < solutes_.size(); ++s) {
                 AddToTable(table,
@@ -2236,7 +2267,9 @@ InputConverterS::ParseBoundaryConditions_()
                     vector<string> thisgic;
                     thisgic.push_back(constraint_name);
                     string condition_time = GetAttributeValueS_(geocon, "start");
-                    if (!condition_time.empty()) { thisgic.push_back(condition_time); }
+                    if (!condition_time.empty()) {
+                      thisgic.push_back(condition_time);
+                    }
                     string condition_form = GetAttributeValueS_(geocon, "function");
                     if (!condition_form.empty()) {
                       if (condition_form != "constant") {

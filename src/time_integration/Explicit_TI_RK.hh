@@ -324,7 +324,9 @@ void
 RK<Vector>::CreateStorage_(const Vector& initvector)
 {
   k_.resize(order_);
-  for (int i = 0; i != order_; ++i) { k_[i] = Teuchos::rcp(new Vector(initvector)); }
+  for (int i = 0; i != order_; ++i) {
+    k_[i] = Teuchos::rcp(new Vector(initvector));
+  }
 }
 
 
@@ -345,7 +347,9 @@ RK<Vector>::TimeStep(double t, double h, const Vector& y, Vector& y_new)
       y_new = y_tmp;
 
       for (int j = 0; j != i; ++j) {
-        if (a_(i, j) != 0.0) { y_new.Update(a_(i, j), *k_[j], 1.0); }
+        if (a_(i, j) != 0.0) {
+          y_new.Update(a_(i, j), *k_[j], 1.0);
+        }
       }
       fn_.ModifySolution(sum_time, y_new);
       fn_.FunctionalTimeDerivative(sum_time, y_new, *k_[i]);
@@ -356,7 +360,9 @@ RK<Vector>::TimeStep(double t, double h, const Vector& y, Vector& y_new)
 
   y_new = y_tmp;
   for (int i = 0; i != order_; ++i) {
-    if (b_[i] != 0.0) { y_new.Update(b_[i], *k_[i], 1.0); }
+    if (b_[i] != 0.0) {
+      y_new.Update(b_[i], *k_[i], 1.0);
+    }
   }
 }
 

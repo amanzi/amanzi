@@ -72,9 +72,15 @@ TEST(XDMF)
 
     // advance time and values
     time += 2.0;
-    for (int j = 0; j < 8; j++) { cell_values[j] += 10.0; }
-    for (int j = 0; j < 4; j++) { fake_values[j] += 1.0; }
-    for (int j = 0; j < 12; j++) { node_values[j] += 10.0; }
+    for (int j = 0; j < 8; j++) {
+      cell_values[j] += 10.0;
+    }
+    for (int j = 0; j < 4; j++) {
+      fake_values[j] += 1.0;
+    }
+    for (int j = 0; j < 12; j++) {
+      node_values[j] += 10.0;
+    }
 
     // close file
     io.FinalizeCycle();

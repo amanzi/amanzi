@@ -399,7 +399,10 @@ class CompositeVector {
   void InitData_(const CompositeVector& other, InitMode mode);
   void CreateData_();
 
-  int Index_(const std::string& name) const { return indexmap_.at(name); }
+  int Index_(const std::string& name) const
+  {
+    return indexmap_.at(name);
+  }
 
   // The Vandelay is an Importer/Exporter which allows face unknowns
   // to be spoofed as boundary face unknowns.
@@ -470,7 +473,9 @@ CompositeVector::PutScalarGhosted(double scalar)
       for (int i = size_owned; i != size_ghosted; ++i) {
         int first = vec.Map().FirstPointInElement(i);
         int ndofs = vec.Map().ElementSize(i);
-        for (int k = 0; k < ndofs; ++k) { vec[j][first + k] = scalar; }
+        for (int k = 0; k < ndofs; ++k) {
+          vec[j][first + k] = scalar;
+        }
       }
     }
   }

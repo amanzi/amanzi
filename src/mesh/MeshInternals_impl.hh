@@ -123,7 +123,9 @@ computeCellEdges(const Mesh_type& mesh, const Entity_ID c)
   for (const auto& f : faces) {
     mesh.getFaceEdges(f, fedges);
     for (const auto& e : fedges) {
-      if (std::find(begin(vedges), end(vedges), e) == end(vedges)) { vedges.emplace_back(e); }
+      if (std::find(begin(vedges), end(vedges), e) == end(vedges)) {
+        vedges.emplace_back(e);
+      }
     }
   }
   vectorToView(edges, vedges);
@@ -144,7 +146,9 @@ computeCellNodes(const Mesh_type& mesh, const Entity_ID c)
     for (const auto& f : faces) {
       mesh.getFaceNodes(f, fnodes);
       for (const auto& n : fnodes) {
-        if (std::find(vnodes.begin(), vnodes.end(), n) == vnodes.end()) { vnodes.emplace_back(n); }
+        if (std::find(vnodes.begin(), vnodes.end(), n) == vnodes.end()) {
+          vnodes.emplace_back(n);
+        }
       }
     }
   } else {
@@ -185,7 +189,9 @@ computeNodeCells(const Mesh_type& mesh, const Entity_ID n)
   for (const auto& f : faces) {
     mesh.getFaceCells(f, fcells);
     for (const auto& c : fcells) {
-      if (std::find(vcells.begin(), vcells.end(), c) == vcells.end()) { vcells.emplace_back(c); }
+      if (std::find(vcells.begin(), vcells.end(), c) == vcells.end()) {
+        vcells.emplace_back(c);
+      }
     }
   }
   typename Mesh_type::Entity_ID_View cells;
@@ -205,7 +211,9 @@ computeEdgeCells(const Mesh_type& mesh, const Entity_ID e)
   for (const auto& v : nodes) {
     auto vcells = computeNodeCells(mesh, v);
     for (const auto& c : vcells) {
-      if (std::find(ecells.begin(), ecells.end(), c) == ecells.end()) { ecells.emplace_back(c); }
+      if (std::find(ecells.begin(), ecells.end(), c) == ecells.end()) {
+        ecells.emplace_back(c);
+      }
     }
   }
   typename Mesh_type::Entity_ID_View cells;
@@ -399,7 +407,9 @@ computeEdgeCoordinates(const Mesh_type& mesh, const Entity_ID e)
   typename Mesh_type::Point_View coords("coords", nodes.size());
   auto coords_cpt = 0;
 
-  for (const auto& n : nodes) { coords[coords_cpt++] = mesh.getNodeCoordinate(n); }
+  for (const auto& n : nodes) {
+    coords[coords_cpt++] = mesh.getNodeCoordinate(n);
+  }
   return coords;
 }
 
@@ -413,7 +423,9 @@ computeFaceCoordinates(const Mesh_type& mesh, const Entity_ID f)
   typename Mesh_type::Point_View coords("coords", nodes.size());
   auto coords_cpt = 0;
 
-  for (const auto& n : nodes) { coords[coords_cpt++] = mesh.getNodeCoordinate(n); }
+  for (const auto& n : nodes) {
+    coords[coords_cpt++] = mesh.getNodeCoordinate(n);
+  }
   return coords;
 }
 
@@ -427,7 +439,9 @@ computeCellCoordinates(const Mesh_type& mesh, const Entity_ID c)
   typename Mesh_type::Point_View coords("coords", nodes.size());
   auto coords_cpt = 0;
 
-  for (const auto& n : nodes) { coords[coords_cpt++] = mesh.getNodeCoordinate(n); }
+  for (const auto& n : nodes) {
+    coords[coords_cpt++] = mesh.getNodeCoordinate(n);
+  }
   return coords;
 }
 

@@ -136,11 +136,15 @@ RemapDG_Helper::StaticEdgeFaceVelocities()
   maps_ = maps_factory.Create(map_list, mesh0_, mesh1_);
 
   velf_vec_.resize(nfaces_wghost_);
-  for (int f = 0; f < nfaces_wghost_; ++f) { maps_->VelocityFace(f, velf_vec_[f]); }
+  for (int f = 0; f < nfaces_wghost_; ++f) {
+    maps_->VelocityFace(f, velf_vec_[f]);
+  }
 
   if (mesh0_->hasEdges()) {
     vele_vec_.resize(nedges_wghost_);
-    for (int e = 0; e < nedges_wghost_; ++e) { maps_->VelocityEdge(e, vele_vec_[e]); }
+    for (int e = 0; e < nedges_wghost_; ++e) {
+      maps_->VelocityEdge(e, vele_vec_[e]);
+    }
   }
 }
 
@@ -158,13 +162,17 @@ RemapDG_Helper::StaticCellVelocity()
     const auto& faces = mesh0_->getCellFaces(c);
 
     std::vector<WhetStone::VectorPolynomial> vve, vvf;
-    for (int n = 0; n < faces.size(); ++n) { vvf.push_back(velf_vec_[faces[n]]); }
+    for (int n = 0; n < faces.size(); ++n) {
+      vvf.push_back(velf_vec_[faces[n]]);
+    }
 
     // edges are included in 3D only
     if (dim_ == 3) {
       auto edges = mesh0_->getCellEdges(c);
 
-      for (int n = 0; n < edges.size(); ++n) { vve.push_back(vele_vec_[edges[n]]); }
+      for (int n = 0; n < edges.size(); ++n) {
+        vve.push_back(vele_vec_[edges[n]]);
+      }
     }
 
     maps_->VelocityCell(c, vve, vvf, uc_[c]);

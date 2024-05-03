@@ -563,13 +563,17 @@ MagneticDiffusion3D(double dt,
       WhetStone::DenseMatrix R(nedges, 3), W(nedges, nedges);
       WhetStone::DenseVector v1(nedges), v2(3);
 
-      for (int n = 0; n < nedges; ++n) { v1(n) = Ee[0][edges[n]]; }
+      for (int n = 0; n < nedges; ++n) {
+        v1(n) = Ee[0][edges[n]];
+      }
 
       mfd.L2consistencyInverse(c, Ic, R, W);
       R.Multiply(v1, v2, true);
 
       double vol = mesh->getCellVolume(c);
-      for (int k = 0; k < 3; ++k) { sol_e[k][c] = v2(k) / vol; }
+      for (int k = 0; k < 3; ++k) {
+        sol_e[k][c] = v2(k) / vol;
+      }
     }
 
     ana.GlobalOp("sum", &avgB, 1);

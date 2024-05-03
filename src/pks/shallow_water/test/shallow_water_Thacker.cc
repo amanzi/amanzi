@@ -280,7 +280,9 @@ RunTest(int icase)
 
       analytical_exact_field(mesh, hh_ex, vel_ex, t_out);
 
-      if (iter % 5 == 0) { IO_Fields(t_out, iter, MyPID, io, *S, &hh_ex, &vel_ex); }
+      if (iter % 5 == 0) {
+        IO_Fields(t_out, iter, MyPID, io, *S, &hh_ex, &vel_ex);
+      }
 
       dt = SWPK.get_dt();
 

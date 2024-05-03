@@ -58,7 +58,9 @@ EvaluatorSecondaryMonotype<double>::UpdateDerivative_(State& S,
       // partial F / partial x
       std::vector<double> tmp_data(my_keys_.size(), 0.);
       std::vector<double*> tmp(my_keys_.size());
-      for (int i = 0; i != my_keys_.size(); ++i) { tmp[i] = &tmp_data[i]; }
+      for (int i = 0; i != my_keys_.size(); ++i) {
+        tmp[i] = &tmp_data[i];
+      }
       EvaluatePartialDerivative_(S, wrt_key, wrt_tag, tmp);
       for (int i = 0; i != my_keys_.size(); ++i) (*results[i]) += tmp_data[i];
 
@@ -72,7 +74,9 @@ EvaluatorSecondaryMonotype<double>::UpdateDerivative_(State& S,
       // -- partial F / partial dep
       std::vector<double> tmp_data(my_keys_.size(), 0.);
       std::vector<double*> tmp(my_keys_.size());
-      for (int i = 0; i != my_keys_.size(); ++i) { tmp[i] = &tmp_data[i]; }
+      for (int i = 0; i != my_keys_.size(); ++i) {
+        tmp[i] = &tmp_data[i];
+      }
       EvaluatePartialDerivative_(S, dep.first, dep.second, tmp);
 
       // sum
@@ -116,7 +120,9 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
       // partial F / partial x
       std::vector<CompositeVector> tmp_data(my_keys_.size(), *results[0]);
       std::vector<CompositeVector*> tmp(my_keys_.size());
-      for (int i = 0; i != my_keys_.size(); ++i) { tmp[i] = &tmp_data[i]; }
+      for (int i = 0; i != my_keys_.size(); ++i) {
+        tmp[i] = &tmp_data[i];
+      }
       EvaluatePartialDerivative_(S, wrt_key, wrt_tag, tmp);
       for (int i = 0; i != my_keys_.size(); ++i) results[i]->Update(1., tmp_data[i], 1.);
 
@@ -132,7 +138,9 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
       // -- partial F / partial dep
       std::vector<CompositeVector> tmp_data(my_keys_.size(), *results[0]);
       std::vector<CompositeVector*> tmp(my_keys_.size());
-      for (int i = 0; i != my_keys_.size(); ++i) { tmp[i] = &tmp_data[i]; }
+      for (int i = 0; i != my_keys_.size(); ++i) {
+        tmp[i] = &tmp_data[i];
+      }
       EvaluatePartialDerivative_(S, dep.first, dep.second, tmp);
 
       // sum

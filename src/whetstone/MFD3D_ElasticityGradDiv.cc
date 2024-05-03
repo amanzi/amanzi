@@ -57,7 +57,9 @@ MFD3D_ElasticityGradDiv::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
       int v = fnodes(m);
       int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
 
-      for (int k = 0; k < d_; ++k) { div(d_ * pos + k) += a * normal[k]; }
+      for (int k = 0; k < d_; ++k) {
+        div(d_ * pos + k) += a * normal[k];
+      }
     }
   }
 
@@ -65,7 +67,9 @@ MFD3D_ElasticityGradDiv::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
 
   double coef = T(0, 0);
   for (int m = 0; m < nrows; ++m) {
-    for (int n = m; n < nrows; ++n) { A(n, m) = A(m, n) = coef * div(m) * div(n); }
+    for (int n = m; n < nrows; ++n) {
+      A(n, m) = A(m, n) = coef * div(m) * div(n);
+    }
   }
 
   return 0;

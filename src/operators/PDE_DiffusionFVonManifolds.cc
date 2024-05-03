@@ -196,7 +196,9 @@ PDE_DiffusionFVonManifolds::UpdateMatrices(const Teuchos::Ptr<const CompositeVec
 
         Aface.Multiply(v, av, false);
 
-        for (int n = 0; n < ndofs; ++n) { rhs_c[0][cells[n]] += av(n); }
+        for (int n = 0; n < ndofs; ++n) {
+          rhs_c[0][cells[n]] += av(n);
+        }
       }
     }
   }

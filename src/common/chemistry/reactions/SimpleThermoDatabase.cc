@@ -314,7 +314,9 @@ SimpleThermoDatabase::RebuildAqueousComplexes_(const Teuchos::ParameterList& pli
       for (int k = 0; k < nT; ++k) logK(i, k) = Keq;
     } else {
       auto Keq = tmp.sublist("equilibrium constant").get<Teuchos::Array<double>>("Keq").toVector();
-      if (Keq.size() != nT) { AMANZI_ASSERT(false); }
+      if (Keq.size() != nT) {
+        AMANZI_ASSERT(false);
+      }
       for (int k = 0; k < nT; ++k) logK(i, k) = Keq[k];
     }
 
@@ -346,7 +348,9 @@ SimpleThermoDatabase::RebuildAqueousComplexes_(const Teuchos::ParameterList& pli
 
     std::stringstream ss;
     for (int k = 0; k < npri; ++k) {
-      if (Bnew(i, k) != 0.0) { ss << Bnew(i, k) << " " << primaries[k] << " "; }
+      if (Bnew(i, k) != 0.0) {
+        ss << Bnew(i, k) << " " << primaries[k] << " ";
+      }
     }
     tmp.set<std::string>("reaction", ss.str());
 

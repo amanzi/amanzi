@@ -107,16 +107,24 @@ TEST(Verify_Mesh_and_Operators)
   }
 
   double tol(1e-10);
-  if (argc > 4) { tol = std::stod(argv_copy[4]); }
+  if (argc > 4) {
+    tol = std::stod(argv_copy[4]);
+  }
 
   double nloops(1);
-  if (argc > 5) { nloops = std::stoi(argv_copy[5]); }
+  if (argc > 5) {
+    nloops = std::stoi(argv_copy[5]);
+  }
 
   std::string linsolver("pcg");
-  if (argc > 6) { linsolver = argv_copy[6]; }
+  if (argc > 6) {
+    linsolver = argv_copy[6];
+  }
 
   std::string ana("00");
-  if (argc > 7) { ana = argv_copy[7]; }
+  if (argc > 7) {
+    ana = argv_copy[7];
+  }
 
   // set other parameters based on input values
   // -- little_k

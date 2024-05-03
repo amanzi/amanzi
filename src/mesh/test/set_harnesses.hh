@@ -303,7 +303,9 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh, bool labeled, Framewor
           auto fc = mesh->getFaceCentroid(e);
           std::cout << r_name << " centroid = " << fc << std::endl;
           CHECK_CLOSE(1, fc[2], 1.e-10);
-          if (std::abs(fc[0] - 0.5) < 1e-10 && std::abs(fc[1] - 0.5) < 1e-10) { CHECK(false); }
+          if (std::abs(fc[0] - 0.5) < 1e-10 && std::abs(fc[1] - 0.5) < 1e-10) {
+            CHECK(false);
+          }
         }
       }
 

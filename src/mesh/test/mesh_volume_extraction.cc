@@ -52,7 +52,9 @@ TEST(MESH_VOLUME_EXTRACTION_GENERATED)
 
   // only MSTK currently supports extraction
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
@@ -145,7 +147,9 @@ TEST(MESH_VOLUME_EXTRACTION_EXO)
 
   // only MSTK currently supports extraction
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl

@@ -282,7 +282,9 @@ MeshLogicalAudit::check_faces_cell_consistency() const
     mesh->getCellFaces(j, cface);
     for (int k = 0; k < cface.size(); ++k) {
       mesh->getFaceCells(cface[k], fcell);
-      if (std::find(fcell.begin(), fcell.end(), j) == fcell.end()) { bad_cells.push_back(j); }
+      if (std::find(fcell.begin(), fcell.end(), j) == fcell.end()) {
+        bad_cells.push_back(j);
+      }
     }
   }
 
@@ -291,7 +293,9 @@ MeshLogicalAudit::check_faces_cell_consistency() const
     mesh->getFaceCells(j, fcell);
     for (int k = 0; k < fcell.size(); ++k) {
       mesh->getCellFaces(fcell[k], cface);
-      if (std::find(cface.begin(), cface.end(), j) == cface.end()) { bad_faces.push_back(j); }
+      if (std::find(cface.begin(), cface.end(), j) == cface.end()) {
+        bad_faces.push_back(j);
+      }
     }
   }
 
@@ -447,7 +451,9 @@ MeshLogicalAudit::check_cell_face_bisector_geometry() const
       continue;
     }
     for (int i = 0; i != cface.size(); ++i) {
-      if (AmanziGeometry::norm(bisectors[i]) < 1.e-10) { bad_cells.push_back(j); }
+      if (AmanziGeometry::norm(bisectors[i]) < 1.e-10) {
+        bad_cells.push_back(j);
+      }
     }
   }
 

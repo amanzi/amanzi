@@ -113,7 +113,9 @@ EvaluatorMultiplicativeReciprocal::Evaluate_(const State& S,
     }
 
     if (enforce_positivity_) {
-      for (int c = 0; c != ndofs; ++c) { result_c[0][c] = std::max(result_c[0][c], 0.0); }
+      for (int c = 0; c != ndofs; ++c) {
+        result_c[0][c] = std::max(result_c[0][c], 0.0);
+      }
     }
   }
 }

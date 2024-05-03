@@ -82,7 +82,9 @@ PressureSaturation_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   double dt_done = 0.;
   while (!done) {
     // do not overstep
-    if (t_old + dt_done + dt_next > t_new) { dt_next = t_new - t_old - dt_done; }
+    if (t_old + dt_done + dt_next > t_new) {
+      dt_next = t_new - t_old - dt_done;
+    }
 
     // set the intermediate time
     S_->set_intermediate_time(t_old + dt_done + dt_next);

@@ -388,7 +388,9 @@ InputConverterU::TranslateCycleDriverNew_()
   out_list.set<Teuchos::Array<double>>("component molar masses", tmp);
 
   out_list.sublist("time period control") = TranslateTimePeriodControls_();
-  if (filename.size() > 0) { out_list.sublist("restart").set<std::string>("file name", filename); }
+  if (filename.size() > 0) {
+    out_list.sublist("restart").set<std::string>("file name", filename);
+  }
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
 
   return out_list;

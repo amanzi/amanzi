@@ -115,7 +115,9 @@ class Richards_PK : public Flow_PK {
   virtual void ChangedSolution() override
   {
     pressure_eval_->SetChanged();
-    if (multiscale_porosity_) { pressure_msp_eval_->SetChanged(); }
+    if (multiscale_porosity_) {
+      pressure_msp_eval_->SetChanged();
+    }
   }
 
   // -- returns the number of linear iterations.

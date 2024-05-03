@@ -122,7 +122,9 @@ void
 OutputXDMF::ReadMultiVector(Epetra_MultiVector& vec, const std::vector<std::string>& names) const
 {
   AMANZI_ASSERT(names.size() == vec.NumVectors());
-  for (int i = 0; i != vec.NumVectors(); ++i) { io_->readData(*vec(i), names[i]); }
+  for (int i = 0; i != vec.NumVectors(); ++i) {
+    io_->readData(*vec(i), names[i]);
+  }
 }
 
 

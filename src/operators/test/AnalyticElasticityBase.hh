@@ -183,7 +183,9 @@ AnalyticElasticityBase::VectorNodeError(Amanzi::CompositeVector& u,
     auto nodes = mesh_->getCellNodes(c);
     int nnodes = nodes.size();
 
-    for (int i = 0; i < nnodes; i++) { vol_node[0][nodes[i]] += mesh_->getCellVolume(c) / nnodes; }
+    for (int i = 0; i < nnodes; i++) {
+      vol_node[0][nodes[i]] += mesh_->getCellVolume(c) / nnodes;
+    }
   }
   vol.GatherGhostedToMaster("node");
 

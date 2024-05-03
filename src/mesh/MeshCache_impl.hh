@@ -502,7 +502,9 @@ MeshCache<MEM>::getFaceNormal(const Entity_ID f, const Entity_ID c, int* orienta
     return normal;
   }
 
-  if constexpr (MEM == MemSpace_kind::DEVICE) { assert(data_.face_geometry_cached); }
+  if constexpr (MEM == MemSpace_kind::DEVICE) {
+    assert(data_.face_geometry_cached);
+  }
 
   if (data_.face_geometry_cached) {
     if (c < 0) {
@@ -549,8 +551,12 @@ KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 MeshCache<MEM>::getFaceCentroid(const Entity_ID f) const
 {
   return Impl::Getter<MEM, AP>::get(
-    data_.face_geometry_cached, data_.face_centroids, framework_mesh_, nullptr,
-    [&](const int i) { return algorithms_->computeFaceCentroid(*this, i); }, f);
+    data_.face_geometry_cached,
+    data_.face_centroids,
+    framework_mesh_,
+    nullptr,
+    [&](const int i) { return algorithms_->computeFaceCentroid(*this, i); },
+    f);
 }
 
 
@@ -602,8 +608,12 @@ KOKKOS_INLINE_FUNCTION double
 MeshCache<MEM>::getFaceArea(const Entity_ID f) const
 {
   return Impl::Getter<MEM, AP>::get(
-    data_.face_geometry_cached, data_.face_areas, framework_mesh_, nullptr,
-    [&](const Entity_ID i) { return algorithms_->computeFaceArea(*this, i); }, f);
+    data_.face_geometry_cached,
+    data_.face_areas,
+    framework_mesh_,
+    nullptr,
+    [&](const Entity_ID i) { return algorithms_->computeFaceArea(*this, i); },
+    f);
 }
 
 template <MemSpace_kind MEM>
@@ -685,8 +695,12 @@ KOKKOS_INLINE_FUNCTION double
 MeshCache<MEM>::getCellVolume(const Entity_ID c) const
 {
   return Impl::Getter<MEM, AP>::get(
-    data_.cell_geometry_cached, data_.cell_volumes, framework_mesh_, nullptr,
-    [&](const int i) { return algorithms_->computeCellVolume(*this, i); }, c);
+    data_.cell_geometry_cached,
+    data_.cell_volumes,
+    framework_mesh_,
+    nullptr,
+    [&](const int i) { return algorithms_->computeCellVolume(*this, i); },
+    c);
 }
 
 template <MemSpace_kind MEM>
@@ -832,8 +846,12 @@ KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 MeshCache<MEM>::getCellCentroid(const Entity_ID c) const
 {
   return Impl::Getter<MEM, AP>::get(
-    data_.cell_geometry_cached, data_.cell_centroids, framework_mesh_, nullptr,
-    [&](const int i) { return algorithms_->computeCellCentroid(*this, i); }, c);
+    data_.cell_geometry_cached,
+    data_.cell_centroids,
+    framework_mesh_,
+    nullptr,
+    [&](const int i) { return algorithms_->computeCellCentroid(*this, i); },
+    c);
 }
 
 
@@ -1049,7 +1067,9 @@ MeshCache<MEM>::setNodeCoordinates(const cEntity_ID_View& nodes, const cPoint_Vi
   auto bf = view<MEM>(data_.node_coordinates);
   if (data_.node_coordinates_cached) {
     if constexpr (MEM == MemSpace_kind::HOST) {
-      for (int i = 0; i != nodes.size(); ++i) { bf(nodes(i)) = new_coords(i); }
+      for (int i = 0; i != nodes.size(); ++i) {
+        bf(nodes(i)) = new_coords(i);
+      }
     } else {
       Kokkos::parallel_for(
         "setNodeCoordinates", nodes.size(), KOKKOS_LAMBDA(const int& i) {
@@ -1259,8 +1279,12 @@ KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 MeshCache<MEM>::getEdgeCentroid(const Entity_ID c) const
 {
   return Impl::Getter<MEM, AP>::get(
-    data_.edge_geometry_cached, data_.edge_centroids, framework_mesh_, nullptr,
-    [&](const int i) { return algorithms_->computeEdgeCentroid(*this, i); }, c);
+    data_.edge_geometry_cached,
+    data_.edge_centroids,
+    framework_mesh_,
+    nullptr,
+    [&](const int i) { return algorithms_->computeEdgeCentroid(*this, i); },
+    c);
 }
 
 template <MemSpace_kind MEM>
@@ -1269,8 +1293,12 @@ KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 MeshCache<MEM>::getEdgeVector(const Entity_ID e) const
 {
   return Impl::Getter<MEM, AP>::get(
-    data_.edge_geometry_cached, data_.edge_vectors, framework_mesh_, nullptr,
-    [&](const int i) { return algorithms_->computeEdgeVector(*this, i, -1, nullptr); }, e);
+    data_.edge_geometry_cached,
+    data_.edge_vectors,
+    framework_mesh_,
+    nullptr,
+    [&](const int i) { return algorithms_->computeEdgeVector(*this, i, -1, nullptr); },
+    e);
 }
 
 
@@ -1280,8 +1308,12 @@ KOKKOS_INLINE_FUNCTION double
 MeshCache<MEM>::getEdgeLength(const Entity_ID e) const
 {
   return Impl::Getter<MEM, AP>::get(
-    data_.edge_lengths_cached, data_.edge_lengths, framework_mesh_, nullptr,
-    [&](const int i) { return algorithms_->computeEdgeLength(*this, i); }, e);
+    data_.edge_lengths_cached,
+    data_.edge_lengths,
+    framework_mesh_,
+    nullptr,
+    [&](const int i) { return algorithms_->computeEdgeLength(*this, i); },
+    e);
 }
 
 template <MemSpace_kind MEM>
@@ -1929,10 +1961,14 @@ template <MemSpace_kind MEM>
 void
 cacheDefault(MeshCache<MEM>& mesh)
 {
-  if (mesh.hasNodes()) { mesh.cacheNodeCoordinates(); }
+  if (mesh.hasNodes()) {
+    mesh.cacheNodeCoordinates();
+  }
   mesh.cacheCellFaces();
   mesh.cacheFaceCells();
-  if (mesh.hasNodes()) { mesh.cacheFaceNodes(); }
+  if (mesh.hasNodes()) {
+    mesh.cacheFaceNodes();
+  }
   mesh.cacheCellGeometry();
   mesh.cacheFaceGeometry();
   if (mesh.hasEdges()) {

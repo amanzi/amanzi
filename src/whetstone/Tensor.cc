@@ -160,7 +160,9 @@ Tensor::PseudoInverse()
 
     // pseudo-invert diagonal matrix S
     double norm_inf(fabs(S[0]));
-    for (int i = 1; i < n; i++) { norm_inf = std::max(norm_inf, fabs(S[i])); }
+    for (int i = 1; i < n; i++) {
+      norm_inf = std::max(norm_inf, fabs(S[i]));
+    }
 
     double eps = norm_inf * 1e-15;
     for (int i = 0; i < n; i++) {
@@ -176,7 +178,9 @@ Tensor::PseudoInverse()
     for (int i = 0; i < n; i++) {
       for (int j = i; j < n; j++) {
         double tmp(0.0);
-        for (int k = 0; k < n; k++) { tmp += T(i, k) * S[k] * T(j, k); }
+        for (int k = 0; k < n; k++) {
+          tmp += T(i, k) * S[k] * T(j, k);
+        }
         (*this)(i, j) = tmp;
         (*this)(j, i) = tmp;
       }
@@ -606,7 +610,9 @@ VectorToTensor(const DenseVector& v, Tensor& T)
 
   const double* data1 = v.Values();
   double* data2 = T.data();
-  for (int i = 0; i < v.NumRows(); ++i) { data2[i] = data1[i]; }
+  for (int i = 0; i < v.NumRows(); ++i) {
+    data2[i] = data1[i];
+  }
 }
 
 

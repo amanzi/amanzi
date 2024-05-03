@@ -66,7 +66,9 @@ class Op_Cell_Face : public Op {
       for (int c = 0; c != matrices.size(); ++c) {
         const auto& faces = mesh_->getCellFaces(c);
         for (int n = 0; n != faces.size(); ++n) {
-          for (int m = 0; m != faces.size(); ++m) { matrices[c](n, m) *= s_f[0][faces[n]]; }
+          for (int m = 0; m != faces.size(); ++m) {
+            matrices[c](n, m) *= s_f[0][faces[n]];
+          }
         }
       }
     }

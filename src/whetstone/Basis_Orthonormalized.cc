@@ -95,12 +95,16 @@ Basis_Orthonormalized::BilinearFormNaturalToMy(DenseMatrix& A) const
 
   // calculate A * R
   for (int k = 1; k < nrows; ++k) {
-    for (int i = 0; i < nrows; ++i) { A(i, k) = A(i, k) * a[k] + A(i, 0) * b[k]; }
+    for (int i = 0; i < nrows; ++i) {
+      A(i, k) = A(i, k) * a[k] + A(i, 0) * b[k];
+    }
   }
 
   // calculate R^T * A * R
   for (int k = 1; k < nrows; ++k) {
-    for (int i = 0; i < nrows; ++i) { A(k, i) = A(k, i) * a[k] + A(0, i) * b[k]; }
+    for (int i = 0; i < nrows; ++i) {
+      A(k, i) = A(k, i) * a[k] + A(0, i) * b[k];
+    }
   }
 }
 
@@ -183,7 +187,9 @@ Basis_Orthonormalized::LinearFormNaturalToMy(DenseVector& f) const
   }
 
   // calculate R^T * f
-  for (int k = 1; k < nrows; ++k) { f(k) = f(k) * a[k] + f(0) * b[k]; }
+  for (int k = 1; k < nrows; ++k) {
+    f(k) = f(k) * a[k] + f(0) * b[k];
+  }
 }
 
 

@@ -60,7 +60,9 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
       const auto& temp_c = *S.Get<CompositeVector>("temperature").ViewComponent(*comp);
       auto& result_c = *results[0]->ViewComponent(*comp);
       int ncomp = results[0]->size(*comp, false);
-      for (int i = 0; i != ncomp; ++i) { result_c[0][i] = temp_c[0][i]; }
+      for (int i = 0; i != ncomp; ++i) {
+        result_c[0][i] = temp_c[0][i];
+      }
     }
   }
 
@@ -72,7 +74,9 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
     for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
       auto& result_c = *results[0]->ViewComponent(*comp);
       int ncomp = results[0]->size(*comp, false);
-      for (int i = 0; i != ncomp; ++i) { result_c[0][i] = 1.0; }
+      for (int i = 0; i != ncomp; ++i) {
+        result_c[0][i] = 1.0;
+      }
     }
   }
 

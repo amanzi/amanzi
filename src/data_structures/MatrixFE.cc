@@ -172,7 +172,9 @@ MatrixFE::DiagonalShiftMin(double shift_min)
   int ierr(0);
   Epetra_Vector diag(RowMap());
   ierr = matrix_->ExtractDiagonalCopy(diag);
-  for (int i = 0; i != diag.MyLength(); ++i) { diag[i] = std::max(diag[i], shift_min); }
+  for (int i = 0; i != diag.MyLength(); ++i) {
+    diag[i] = std::max(diag[i], shift_min);
+  }
   ierr |= matrix_->ReplaceDiagonalValues(diag);
   return ierr;
 }

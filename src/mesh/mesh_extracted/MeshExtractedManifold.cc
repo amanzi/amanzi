@@ -154,7 +154,9 @@ MeshExtractedManifold::getCellFacesAndDirs(const Entity_ID c,
   if (!flattened_ && fdirs) {
     Direction_View lfdirs;
     lfdirs.fromConst(*fdirs);
-    for (int i = 0; i < nfaces; ++i) { (lfdirs)[i] = 1; }
+    for (int i = 0; i < nfaces; ++i) {
+      (lfdirs)[i] = 1;
+    }
     *fdirs = lfdirs;
   }
   faces = lfaces;
@@ -360,7 +362,9 @@ MeshExtractedManifold::InitParentMaps(const std::string& setname)
     // create reverse ordered map
     std::map<Entity_ID, Entity_ID>& ids_d = parent_to_entid_[kind_d];
     ids_d.clear();
-    for (std::size_t n = 0; n != ids_p.size(); ++n) { ids_d[ids_p[n]] = n; }
+    for (std::size_t n = 0; n != ids_p.size(); ++n) {
+      ids_d[ids_p[n]] = n;
+    }
   }
 }
 
@@ -396,10 +400,14 @@ MeshExtractedManifold::TryExtension_(const std::string& setname,
       setents_tmp.insert(f);
     } else if (kind_p == Entity_kind::EDGE) {
       parent_mesh_->getFaceEdgesAndDirs(f, edges, &dirs);
-      for (int i = 0; i < edges.size(); ++i) { setents_tmp.insert(edges[i]); }
+      for (int i = 0; i < edges.size(); ++i) {
+        setents_tmp.insert(edges[i]);
+      }
     } else if (kind_p == Entity_kind::NODE) {
       parent_mesh_->getFaceNodes(f, nodes);
-      for (int i = 0; i < nodes.size(); ++i) { setents_tmp.insert(nodes[i]); }
+      for (int i = 0; i < nodes.size(); ++i) {
+        setents_tmp.insert(nodes[i]);
+      }
     }
   }
 

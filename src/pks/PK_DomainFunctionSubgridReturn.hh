@@ -155,7 +155,9 @@ PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
       std::vector<double> alpha(nfun);
 
-      for (int i = 0; i < nfun; ++i) { alpha[i] = (*(*uspec)->first->second)(args)[i]; }
+      for (int i = 0; i < nfun; ++i) {
+        alpha[i] = (*(*uspec)->first->second)(args)[i];
+      }
 
       // find the subgrid gid to be integrated
       auto gid = map.GID(*c);
@@ -172,7 +174,9 @@ PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
       int ncells_sg = vec_out.Mesh()->getNumEntities(AmanziMesh::Entity_kind::CELL,
                                                      AmanziMesh::Parallel_kind::ALL);
       for (int c_sg = 0; c_sg != ncells_sg; ++c_sg) {
-        for (int k = 0; k != nfun; ++k) { val[k] += vec_c[k][c_sg] * alpha[k]; }
+        for (int k = 0; k != nfun; ++k) {
+          val[k] += vec_c[k][c_sg] * alpha[k];
+        }
       }
       for (int k = 0; k != nfun; ++k) {
         val[k] *= ws_[0][*c] * phi_[0][*c] * mol_dens_[0][*c] / ncells_sg;

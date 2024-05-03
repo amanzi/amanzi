@@ -132,7 +132,9 @@ PDE_DiffusionFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const CompositeV
       Anew.PutScalar(0.0);
 
       for (int i = 0; i < nfaces + 1; ++i) {
-        for (int j = 0; j < nfaces + 1; ++j) { Anew(map[i], map[j]) = Acell(i, j); }
+        for (int j = 0; j < nfaces + 1; ++j) {
+          Anew(map[i], map[j]) = Acell(i, j);
+        }
       }
 
       local_op_->matrices[c] = Anew;
@@ -367,7 +369,9 @@ PDE_DiffusionFracturedMatrix::UpdateFlux(const Teuchos::Ptr<const CompositeVecto
       WhetStone::DenseMatrix& Wff = Wff_cells_[c];
       Wff.Multiply(w, aw, false);
 
-      for (int n = 0; n < nfaces; n++) { av(map[n]) -= aw(n); }
+      for (int n = 0; n < nfaces; n++) {
+        av(map[n]) -= aw(n);
+      }
     }
 
     // points of the master/slave interface require special logic
@@ -381,7 +385,9 @@ PDE_DiffusionFracturedMatrix::UpdateFlux(const Teuchos::Ptr<const CompositeVecto
     }
   }
 
-  for (int g = 0; g != ndofs_owned; ++g) { flux_data[0][g] /= hits[g]; }
+  for (int g = 0; g != ndofs_owned; ++g) {
+    flux_data[0][g] /= hits[g];
+  }
 
   flux->GatherGhostedToMaster();
 }

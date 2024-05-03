@@ -620,7 +620,9 @@ Operator::InitializeInverse()
 void
 Operator::ComputeInverse()
 {
-  if (!initialize_complete_) { InitializeInverse(); }
+  if (!initialize_complete_) {
+    InitializeInverse();
+  }
   // assembly must be possible now
   AMANZI_ASSERT(preconditioner_.get());
   preconditioner_->ComputeInverse(); // NOTE: calls this->AssembleMatrix()
@@ -704,7 +706,9 @@ Operator::RestoreCheckPoint()
   *rhs_ = *rhs_checkpoint_;
 
   // restore local matrices without boundary conditions
-  for (auto& it : *this) { it->RestoreCheckPoint(); }
+  for (auto& it : *this) {
+    it->RestoreCheckPoint();
+  }
 
   assembly_complete_ = false;
   compute_complete_ = false;
@@ -734,7 +738,9 @@ Operator::const_op_iterator
 Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action) const
 {
   for (const_op_iterator it = begin(); it != end(); ++it) {
-    if ((*it)->Matches(schema_dofs, matching_rule)) { return it; }
+    if ((*it)->Matches(schema_dofs, matching_rule)) {
+      return it;
+    }
   }
 
   if (action) {
@@ -754,7 +760,9 @@ Operator::op_iterator
 Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action)
 {
   for (op_iterator it = begin(); it != end(); ++it) {
-    if ((*it)->Matches(schema_dofs, matching_rule)) { return it; }
+    if ((*it)->Matches(schema_dofs, matching_rule)) {
+      return it;
+    }
   }
 
   if (action) {

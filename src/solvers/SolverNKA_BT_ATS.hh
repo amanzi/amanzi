@@ -246,7 +246,9 @@ SolverNKA_BT_ATS<Vector, VectorSpace>::Init_()
   fail_on_failed_backtrack_ = plist_.get<bool>("backtrack fail on bad search direction", false);
 
   use_aa_ = plist_.get<bool>("Anderson mixing", false);
-  if (use_aa_) { aa_beta_ = plist_.get<double>("relaxation parameter", 0.7); }
+  if (use_aa_) {
+    aa_beta_ = plist_.get<double>("relaxation parameter", 0.7);
+  }
 
   std::string bt_monitor_string = plist_.get<std::string>("backtrack monitor", "monitor either");
   if (bt_monitor_string == "monitor enorm") {
@@ -343,7 +345,9 @@ SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector>& u
     num_itrs_++;
 
     // evaluate precon at the beginning of the method
-    if (vo_->os_OK(Teuchos::VERB_HIGH)) { *vo_->os() << "Updating preconditioner." << std::endl; }
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "Updating preconditioner." << std::endl;
+    }
     pc_updates_++;
     fn_->UpdatePreconditioner(u);
 

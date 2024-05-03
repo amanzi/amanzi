@@ -230,7 +230,9 @@ Beaker::Speciate(BeakerState* state)
   CopyStateToBeaker(*state);
 
   // store current molalities
-  for (int i = 0; i < ncomp_; i++) { prev_molal_.at(i) = primary_species().at(i).molality(); }
+  for (int i = 0; i < ncomp_; i++) {
+    prev_molal_.at(i) = primary_species().at(i).molality();
+  }
 
   int max_rel_index, num_iterations(0);
   double max_rel_change, max_residual;
@@ -243,7 +245,9 @@ Beaker::Speciate(BeakerState* state)
 
     // calculate residual
     // units of residual: mol/sec
-    for (int i = 0; i < ncomp_; i++) { residual_.at(i) = total_.at(i) - state->total.at(i); }
+    for (int i = 0; i < ncomp_; i++) {
+      residual_.at(i) = total_.at(i) - state->total.at(i);
+    }
     // add derivatives of total with respect to free to Jacobian
     // units of Jacobian: kg water/sec
     jacobian_.Zero();
@@ -289,7 +293,9 @@ Beaker::Speciate(BeakerState* state)
   UpdateEquilibriumChemistry(*state);
   CopyBeakerToState(state);
   status_.num_newton_iterations = num_iterations;
-  if (max_rel_change < tolerance_) { status_.converged = true; }
+  if (max_rel_change < tolerance_) {
+    status_.converged = true;
+  }
 
   return num_iterations;
 }
@@ -312,7 +318,9 @@ Beaker::ReactionStep(BeakerState* state, const BeakerParameters& parameters, dou
   UpdateTemperatureDependentCoefs_();
 
   // store current molalities
-  for (int i = 0; i < ncomp_; i++) { prev_molal_.at(i) = primary_species().at(i).molality(); }
+  for (int i = 0; i < ncomp_; i++) {
+    prev_molal_.at(i) = primary_species().at(i).molality();
+  }
 
   // initialize to a large number (not necessary, but safe)
   double max_rel_change = 1.e20;
@@ -376,7 +384,9 @@ Beaker::ReactionStep(BeakerState* state, const BeakerParameters& parameters, dou
   }
 
   status_.num_newton_iterations = num_iterations;
-  if (max_rel_change < tolerance_) { status_.converged = true; }
+  if (max_rel_change < tolerance_) {
+    status_.converged = true;
+  }
 
   // update total concentrations
   UpdateEquilibriumChemistry(*state);
@@ -420,7 +430,9 @@ Beaker::CopyBeakerToState(BeakerState* state)
 
   // free ion
   state->free_ion.resize(ncomp_);
-  for (int i = 0; i < ncomp_; ++i) { state->free_ion[i] = primary_species()[i].molality(); }
+  for (int i = 0; i < ncomp_; ++i) {
+    state->free_ion[i] = primary_species()[i].molality();
+  }
 
   // activity coeff
   state->primary_activity_coeff.resize(ncomp_);
@@ -622,7 +634,9 @@ Beaker::DisplayResults() const
   header << "           Name       Molality Activity Coeff       Activity\n";
   vo_->Write(Teuchos::VERB_HIGH, header.str());
 
-  for (int i = 0; i < ncomp_; i++) { primary_species().at(i).DisplayResults(vo_); }
+  for (int i = 0; i < ncomp_; i++) {
+    primary_species().at(i).DisplayResults(vo_);
+  }
 
   // same header info as primaries....
   for (unsigned int i = 0; i < aq_complex_rxns_.size(); i++) {
@@ -633,7 +647,9 @@ Beaker::DisplayResults() const
     vo_->Write(Teuchos::VERB_HIGH, "---- Minerals\n");
     vo_->Write(Teuchos::VERB_HIGH, header.str());
 
-    for (unsigned int i = 0; i < minerals_.size(); i++) { minerals_.at(i).DisplayResults(vo_); }
+    for (unsigned int i = 0; i < minerals_.size(); i++) {
+      minerals_.at(i).DisplayResults(vo_);
+    }
   }
 
   if (ion_exchange_rxns_.size() > 0) {
@@ -675,9 +691,13 @@ Beaker::DisplayTotalColumns(const double time,
   std::stringstream message;
   message << std::scientific << std::setprecision(6) << std::setw(15);
   message << time;
-  for (int i = 0; i < ncomp_; i++) { message << std::setw(15) << state.total.at(i); }
+  for (int i = 0; i < ncomp_; i++) {
+    message << std::setw(15) << state.total.at(i);
+  }
   if (display_free) {
-    for (int i = 0; i < ncomp_; i++) { message << std::setw(15) << state.free_ion.at(i); }
+    for (int i = 0; i < ncomp_; i++) {
+      message << std::setw(15) << state.free_ion.at(i);
+    }
   }
   if (total_sorbed_.size() > 0) {
     for (int i = 0; i < total_sorbed_.size(); i++) {
@@ -756,7 +776,9 @@ Beaker::VerifyState(const BeakerState& state) const
                  << ") do not match.\n";
   }
 
-  if (error) { Exceptions::amanzi_throw(Errors::Message(error_stream.str())); }
+  if (error) {
+    Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
+  }
 }
 
 
@@ -838,7 +860,9 @@ Beaker::CopyStateToBeaker(const BeakerState& state)
       }
     } else {
       // no previous value, provide a guess
-      for (int i = 0; i < size; ++i) { ion_exchange_rxns_[i].set_ref_cation_sorbed_conc(1.0e-9); }
+      for (int i = 0; i < size; ++i) {
+        ion_exchange_rxns_[i].set_ref_cation_sorbed_conc(1.0e-9);
+      }
     }
   }
 
@@ -1009,7 +1033,9 @@ Beaker::UpdateActivityCoefficients_()
 {
   activity_model_->CalculateIonicStrength(primary_species_, aq_complex_rxns_);
   activity_model_->CalculateActivityCoefficients(&primary_species_, &aq_complex_rxns_, &water_);
-  for (auto it = primary_species_.begin(); it != primary_species_.end(); ++it) { it->update(); }
+  for (auto it = primary_species_.begin(); it != primary_species_.end(); ++it) {
+    it->update();
+  }
 }
 
 
@@ -1086,7 +1112,9 @@ void
 Beaker::UpdateEquilibriumChemistry(const BeakerState& state)
 {
   // update primary species activities
-  for (auto it = primary_species_.begin(); it != primary_species_.end(); ++it) { it->update(); }
+  for (auto it = primary_species_.begin(); it != primary_species_.end(); ++it) {
+    it->update();
+  }
 
   // calculated secondary aqueous complex concentrations
   for (auto it = aq_complex_rxns_.begin(); it != aq_complex_rxns_.end(); ++it) {
@@ -1132,11 +1160,15 @@ Beaker::CalculateTotal(const BeakerState& state)
   }
 
   // scale by water density to convert to molarity
-  for (int i = 0; i < total_.size(); i++) { total_.at(i) *= water_density_kg_L_; }
+  for (int i = 0; i < total_.size(); i++) {
+    total_.at(i) *= water_density_kg_L_;
+  }
 
   // calculate sorbed totals
   // initialize to zero
-  for (int i = 0; i < total_sorbed_.size(); i++) { total_sorbed_.at(i) = 0.0; }
+  for (int i = 0; i < total_sorbed_.size(); i++) {
+    total_sorbed_.at(i) = 0.0;
+  }
 
   // add in surface complex contributions
   for (auto it = surface_complexation_rxns_.begin(); it != surface_complexation_rxns_.end(); ++it) {
@@ -1300,7 +1332,9 @@ Beaker::AddAccumulationDerivative(MatrixBlock* J, MatrixBlock* dtotal, MatrixBlo
   // (e.g. Kd, surface complexation) here
   // sorbed_accumulation_coef = volume/dt
   // units = (kg water/m^3 bulk)*(m^3 bulk)/(sec) = kg water/sec
-  if (total_sorbed_.size()) { J->AddValues(dtotal_sorbed, sorbed_accumulation_coef_); }
+  if (total_sorbed_.size()) {
+    J->AddValues(dtotal_sorbed, sorbed_accumulation_coef_);
+  }
 }
 
 
@@ -1309,7 +1343,9 @@ Beaker::CalculateFixedAccumulation(const std::vector<double>& total,
                                    const std::vector<double>& total_sorbed,
                                    std::vector<double>* fixed_accumulation)
 {
-  for (int i = 0; i < total.size(); i++) { fixed_accumulation->at(i) = 0.0; }
+  for (int i = 0; i < total.size(); i++) {
+    fixed_accumulation->at(i) = 0.0;
+  }
   AddAccumulation(total, total_sorbed, fixed_accumulation);
 }
 
@@ -1320,7 +1356,9 @@ Beaker::CalculateResidual()
   status_.num_rhs_evaluations++;
 
   // subtract fixed portion
-  for (int i = 0; i < ncomp_; i++) { residual_.at(i) = -fixed_accumulation_.at(i); }
+  for (int i = 0; i < ncomp_; i++) {
+    residual_.at(i) = -fixed_accumulation_.at(i);
+  }
 
   // accumulation adds in equilibrium chemistry
   AddAccumulation(total_, total_sorbed_, &residual_);
@@ -1558,7 +1596,9 @@ Beaker::DisplayMinerals() const
             << std::setw(13) << "[g/mol]" << std::setw(13) << "[m^2/m^3 blk]" << std::setw(13)
             << "[-]" << std::endl;
     vo_->Write(Teuchos::VERB_HIGH, message.str());
-    for (auto it = minerals_.begin(); it != minerals_.end(); ++it) { it->Display(vo_); }
+    for (auto it = minerals_.begin(); it != minerals_.end(); ++it) {
+      it->Display(vo_);
+    }
     vo_->Write(Teuchos::VERB_HIGH, "\n");
   }
 }
@@ -1570,7 +1610,9 @@ Beaker::DisplayMineralKinetics() const
   if (mineral_rates_.size() > 0) {
     std::stringstream message;
     vo_->Write(Teuchos::VERB_HIGH, "---- Mineral Kinetics\n");
-    for (auto m = mineral_rates_.begin(); m != mineral_rates_.end(); m++) { (*m)->Display(vo_); }
+    for (auto m = mineral_rates_.begin(); m != mineral_rates_.end(); m++) {
+      (*m)->Display(vo_);
+    }
     vo_->Write(Teuchos::VERB_HIGH, "\n");
   }
 }

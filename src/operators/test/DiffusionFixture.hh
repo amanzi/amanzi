@@ -425,7 +425,9 @@ DiffusionFixture::MatVec(int nloops)
   auto sol(*solution);
 
   auto start = std::chrono::high_resolution_clock::now();
-  for (int i = 0; i < nloops; ++i) { global_op->Apply(sol, *solution); }
+  for (int i = 0; i < nloops; ++i) {
+    global_op->Apply(sol, *solution);
+  }
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 

@@ -43,7 +43,9 @@ Amanzi_XMLParameterListWriter::toXML(const ParameterList& p) const
 XMLObject
 Amanzi_XMLParameterListWriter::toXML(const ParameterEntry& entry) const
 {
-  if (entry.isList()) { return toXML(getValue<ParameterList>(entry)); }
+  if (entry.isList()) {
+    return toXML(getValue<ParameterList>(entry));
+  }
 
   XMLObject rtn("Parameter");
   std::string type;
@@ -100,9 +102,13 @@ Amanzi_XMLParameterListWriter::toXML(const ParameterEntry& entry) const
   rtn.addAttribute("type", type);
   rtn.addAttribute("value", value);
 
-  if (entry.isDefault()) { rtn.addAttribute("isDefault", "true"); }
+  if (entry.isDefault()) {
+    rtn.addAttribute("isDefault", "true");
+  }
 
-  if (entry.isUsed()) { rtn.addAttribute("isUsed", "true"); }
+  if (entry.isUsed()) {
+    rtn.addAttribute("isUsed", "true");
+  }
 
   return rtn;
 }

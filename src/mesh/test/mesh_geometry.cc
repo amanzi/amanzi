@@ -30,7 +30,9 @@ TEST(MESH_GEOMETRY_PLANAR)
   // a 2D, generated, structured quad on the unit square, NX=NY=2
   std::vector<Framework> frameworks;
   // works in MSTK
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
@@ -54,7 +56,9 @@ TEST(MESH_GEOMETRY_1CUBE_GENERATED)
 
   std::vector<Framework> frameworks;
   // works in MSTK & SIMPLE (in serial)
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
   if (getDefaultComm()->NumProc() == 1) frameworks.push_back(Framework::SIMPLE);
 
   for (const auto& frm : frameworks) {
@@ -80,8 +84,12 @@ TEST(MESH_GEOMETRY_1CUBE_EXO)
 
   // works in MSTK or MOAB
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
-  if (framework_enabled(Framework::MOAB)) { frameworks.push_back(Framework::MOAB); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+  if (framework_enabled(Framework::MOAB)) {
+    frameworks.push_back(Framework::MOAB);
+  }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
@@ -102,7 +110,9 @@ TEST(MESH_GEOMETRY_3CUBE)
   // a 3D, generated, structured hex on the unit cube, NX=NY=NZ=3
   // works in MSTK & SIMPLE (in serial)
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
   if (getDefaultComm()->NumProc() == 1) frameworks.push_back(Framework::SIMPLE);
 
   for (const auto& frm : frameworks) {
@@ -113,7 +123,9 @@ TEST(MESH_GEOMETRY_3CUBE)
     auto mesh = onMemSpace<MemSpace_kind::HOST>(mesh_on_device);
     testMeshAudit<MeshAuditHost, MeshHost>(mesh);
     testGeometryCube(mesh, 3, 3, 3);
-    if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh, 3, 3, 3); }
+    if (frm == Framework::MSTK) {
+      testExteriorMapsUnitBox(mesh, 3, 3, 3);
+    }
   }
 }
 
@@ -123,7 +135,9 @@ TEST(MESH_GEOMETRY_3CUBE_EXO)
   // a 3D exodus file, structured hex on the unit cube, NX=NY=NZ=3
   // works in MSTK or MOAB
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
   if (framework_enabled(Framework::MOAB) && getDefaultComm()->NumProc() == 1) {
     // moab only reads exo in serial, otherwise must read par
     frameworks.push_back(Framework::MOAB);
@@ -137,7 +151,9 @@ TEST(MESH_GEOMETRY_3CUBE_EXO)
     auto mesh = onMemSpace<MemSpace_kind::HOST>(mesh_on_device);
     testMeshAudit<MeshAuditHost, MeshHost>(mesh);
     testGeometryCube(mesh, 3, 3, 3);
-    if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh, 3, 3, 3); }
+    if (frm == Framework::MSTK) {
+      testExteriorMapsUnitBox(mesh, 3, 3, 3);
+    }
   }
 }
 
@@ -179,7 +195,9 @@ TEST(MESH_GEOMETRY_2x3CUBE)
   // a 3D, generated, structured hex on the unit cube, NX=NY=NZ=3
   // works in MSTK & SIMPLE (in serial)
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
   if (getDefaultComm()->NumProc() == 1) frameworks.push_back(Framework::SIMPLE);
 
   for (const auto& frm : frameworks) {
@@ -202,7 +220,9 @@ TEST(MESH_GEOMETRY_FRACTURE_EXO)
   // Note this only checks the exo mesh, which does not have the fractures in it!
   // Actual fracture capability is checked later, but would depend on this test passing.
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
 
   // Not sure what is up with this mesh, but MOAB errors trying to read it.
   // if (framework_enabled(Framework::MOAB)) {
@@ -224,7 +244,9 @@ TEST(MESH_GEOMETRY_PINCHOUTS)
 {
   // only MSTK can handle this mesh -- it has degeneracies
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
@@ -241,7 +263,9 @@ TEST(MESH_CONST_DANGER)
 {
   // only MSTK can handle this mesh -- it has degeneracies
   std::vector<Framework> frameworks;
-  if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl

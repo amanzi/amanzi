@@ -326,7 +326,9 @@ Units::ConvertUnitS(const std::string& in_unit, const UnitsSystem& system)
     ss << separator << it->first;
 
     int i = it->second;
-    if (i != 1) { ss << "^" << i; }
+    if (i != 1) {
+      ss << "^" << i;
+    }
     separator = "*";
   }
 
@@ -430,7 +432,9 @@ Units::AtomicUnitFormToString_(const AtomicUnitForm& auf)
     ss << separator << it->first;
 
     int i = it->second;
-    if (i != 1) { ss << "^" << i; }
+    if (i != 1) {
+      ss << "^" << i;
+    }
     separator = "*";
   }
 

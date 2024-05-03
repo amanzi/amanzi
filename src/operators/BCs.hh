@@ -172,7 +172,9 @@ class BCs {
       int nent = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_kind::ALL);
       bc_value_vector_.resize(nent);
 
-      for (int i = 0; i < nent; ++i) { bc_value_vector_[i].resize(n); }
+      for (int i = 0; i < nent; ++i) {
+        bc_value_vector_[i].resize(n);
+      }
     }
     return bc_value_vector_;
   }

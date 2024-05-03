@@ -587,7 +587,9 @@ State::Setup()
   }
 
   // Create the data for all derivatives
-  for (auto& deriv : derivs_) { deriv.second->CreateData(); }
+  for (auto& deriv : derivs_) {
+    deriv.second->CreateData();
+  }
 
   // -- Write DAG to disk for visualization
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -732,7 +734,9 @@ State::InitializeFields(const Tag& tag)
         if (HasEvaluator(it->first, tag)) {
           Evaluator& fm = GetEvaluator(it->first, tag);
           auto tmp = dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>*>(&fm);
-          if (tmp != nullptr) { tmp->SetChanged(); }
+          if (tmp != nullptr) {
+            tmp->SetChanged();
+          }
         }
       }
 
@@ -904,7 +908,9 @@ State::GetEvaluatorList(const Key& key)
     bool is_ds = Keys::splitDomainSet(key, split);
     if (is_ds) {
       Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
-      if (FEList().isParameter(lifted_key)) { return FEList().sublist(lifted_key); }
+      if (FEList().isParameter(lifted_key)) {
+        return FEList().sublist(lifted_key);
+      }
     }
   }
 
@@ -942,7 +948,9 @@ State::CheckIsDebugEval_(const Key& key, const Tag& tag)
                  << std::endl;
     }
     if (tag == Tags::DEFAULT) {
-      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) { *vo_->os() << " -- default tag" << std::endl; }
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo_->os() << " -- default tag" << std::endl;
+      }
     }
   }
 #endif
@@ -962,7 +970,9 @@ State::CheckIsDebugData_(const Key& key, const Tag& tag)
                  << std::endl;
     }
     if (tag == Tags::DEFAULT) {
-      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) { *vo_->os() << " -- default tag" << std::endl; }
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo_->os() << " -- default tag" << std::endl;
+      }
     }
   }
 #endif

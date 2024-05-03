@@ -64,11 +64,15 @@ class TransportDomainFunction_UnitConversion : public T {
 
     if (reciprocal_) {
       for (auto& it : *this) {
-        for (auto& val : it.second) { val *= scalar_ / vector[0][it.first]; }
+        for (auto& val : it.second) {
+          val *= scalar_ / vector[0][it.first];
+        }
       }
     } else {
       for (auto& it : *this) {
-        for (auto& val : it.second) { val *= scalar_ * vector[0][it.first]; }
+        for (auto& val : it.second) {
+          val *= scalar_ * vector[0][it.first];
+        }
       }
     }
   }

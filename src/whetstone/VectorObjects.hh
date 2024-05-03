@@ -147,7 +147,9 @@ class VectorObjects {
 
     T tmp(poly[0] * p[0]);
 
-    for (int i = 1; i < p.dim(); ++i) { tmp += poly[i] * p[i]; }
+    for (int i = 1; i < p.dim(); ++i) {
+      tmp += poly[i] * p[i];
+    }
     return tmp;
   }
 
@@ -164,7 +166,9 @@ class VectorObjects {
       tmp.set_origin(poly[0].get_origin());
 
       for (int i = 0; i < d; ++i) {
-        for (int j = 0; j < d; ++j) { tmp[i] += K(i, j) * poly[j]; }
+        for (int j = 0; j < d; ++j) {
+          tmp[i] += K(i, j) * poly[j];
+        }
       }
     }
     return tmp;
@@ -177,7 +181,9 @@ class VectorObjects {
 
     T tmp(v1[0] * v2[0]);
 
-    for (int i = 1; i < v1.size(); ++i) { tmp += v1[i] * v2[i]; }
+    for (int i = 1; i < v1.size(); ++i) {
+      tmp += v1[i] * v2[i];
+    }
     return tmp;
   }
 
@@ -185,7 +191,9 @@ class VectorObjects {
   friend std::ostream& operator<<(std::ostream& os, const VectorObjects<T>& poly)
   {
     os << "Vector Object (length=" << poly.size() << "):" << std::endl;
-    for (int i = 0; i < poly.size(); ++i) { os << "i=" << i << " " << poly[i]; }
+    for (int i = 0; i < poly.size(); ++i) {
+      os << "i=" << i << " " << poly[i];
+    }
     return os;
   }
 

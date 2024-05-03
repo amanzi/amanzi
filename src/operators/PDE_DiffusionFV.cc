@@ -256,7 +256,9 @@ PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
-  if (k_ != Teuchos::null) { k_face = k_->ViewComponent("face", true); }
+  if (k_ != Teuchos::null) {
+    k_face = k_->ViewComponent("face", true);
+  }
 
   if (!exclude_primary_terms_) {
     Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell", true);
@@ -371,7 +373,9 @@ PDE_DiffusionFV::ScaleMatricesColumns(const CompositeVector& s)
 
     for (int n = 0; n < ncells; ++n) {
       double factor = s_c[0][cells[n]];
-      for (int m = 0; m < ncells; ++m) { Aface(m, n) *= factor; }
+      for (int m = 0; m < ncells; ++m) {
+        Aface(m, n) *= factor;
+      }
     }
   }
 }
@@ -397,7 +401,9 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
   AMANZI_ASSERT(dKdP_cell.MyLength() == ncells_wghost);
 
   Teuchos::RCP<const Epetra_MultiVector> dKdP_face;
-  if (dkdp_->HasComponent("face")) { dKdP_face = dkdp_->ViewComponent("face", true); }
+  if (dkdp_->HasComponent("face")) {
+    dKdP_face = dkdp_->ViewComponent("face", true);
+  }
 
   for (int f = 0; f != nfaces_owned; ++f) {
     auto cells = mesh_->getFaceCells(f);
@@ -528,7 +534,9 @@ PDE_DiffusionFV::ComputeTransmissibility_()
   // some calculatons.
   transmissibility_->PutScalar(0.0);
 
-  for (int f = 0; f < nfaces_owned; f++) { trans_face[0][f] = 1.0 / beta_face[0][f]; }
+  for (int f = 0; f < nfaces_owned; f++) {
+    trans_face[0][f] = 1.0 / beta_face[0][f];
+  }
   transmissibility_->ScatterMasterToGhosted("face", true);
   transmissibility_initialized_ = true;
 }

@@ -50,12 +50,16 @@ Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
 
     if (ncells == 2) {
       WhetStone::DenseVector v(ncells), av(ncells);
-      for (int n = 0; n != ncells; ++n) { v(n) = Xc[0][cells[n]]; }
+      for (int n = 0; n != ncells; ++n) {
+        v(n) = Xc[0][cells[n]];
+      }
 
       const WhetStone::DenseMatrix& Aface = op.matrices[f];
       Aface.Multiply(v, av, false);
 
-      for (int n = 0; n != ncells; ++n) { Yc[0][cells[n]] += av(n); }
+      for (int n = 0; n != ncells; ++n) {
+        Yc[0][cells[n]] += av(n);
+      }
     } else if (ncells == 1) {
       int bf = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)
                  .LID(mesh_->getMap(AmanziMesh::Entity_kind::FACE, false).GID(f));

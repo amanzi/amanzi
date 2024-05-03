@@ -136,7 +136,8 @@ PDE_Reaction::UpdateMatrices(double t)
 void
 PDE_Reaction::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {}
+  for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
+  }
 }
 
 

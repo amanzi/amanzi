@@ -160,9 +160,13 @@ runTest(double switch_time,
 
   // check that the final state is constant for no swicth time
   if (switch_time > 0.5) {
-    for (int k = 0; k < 10; k++) { CHECK_CLOSE(1.0, (*tcc)[0][k], 1e-6); }
+    for (int k = 0; k < 10; k++) {
+      CHECK_CLOSE(1.0, (*tcc)[0][k], 1e-6);
+    }
   } else {
-    for (int k = 0; k < 10; k++) { CHECK_CLOSE(0.0, (*tcc)[0][k], 2e-6); }
+    for (int k = 0; k < 10; k++) {
+      CHECK_CLOSE(0.0, (*tcc)[0][k], 2e-6);
+    }
   }
 
   WriteStateStatistics(*S);

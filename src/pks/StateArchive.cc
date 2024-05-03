@@ -20,7 +20,9 @@ void
 StateArchive::Add(const std::vector<std::string>& fields, const Tag& tag)
 {
   tag_ = tag;
-  for (const auto& name : fields) { fields_.emplace(name, S_->Get<CompositeVector>(name, tag)); }
+  for (const auto& name : fields) {
+    fields_.emplace(name, S_->Get<CompositeVector>(name, tag));
+  }
 }
 
 

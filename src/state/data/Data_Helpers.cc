@@ -525,7 +525,9 @@ WriteVis<TreeVector>(const Visualization& vis,
     WriteVis(vis, subvec_name, nullptr, *subvec);
     ++i;
   }
-  if (vec.Data() != Teuchos::null) { WriteVis(vis, fieldname + "_data", nullptr, *vec.Data()); }
+  if (vec.Data() != Teuchos::null) {
+    WriteVis(vis, fieldname + "_data", nullptr, *vec.Data());
+  }
 }
 
 template <>

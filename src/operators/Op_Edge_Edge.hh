@@ -62,7 +62,9 @@ class Op_Edge_Edge : public Op {
     if (scaling.HasComponent("edge")) {
       const Epetra_MultiVector& s_e = *scaling.ViewComponent("edge", false);
       for (int k = 0; k != s_e.NumVectors(); ++k) {
-        for (int i = 0; i != s_e.MyLength(); ++i) { (*diag)[k][i] *= s_e[0][i]; }
+        for (int i = 0; i != s_e.MyLength(); ++i) {
+          (*diag)[k][i] *= s_e[0][i];
+        }
       }
     }
   }

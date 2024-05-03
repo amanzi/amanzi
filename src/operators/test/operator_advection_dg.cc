@@ -152,7 +152,9 @@ AdvectionSteady(int dim,
   auto K = Teuchos::rcp(new CompositeVector(*cvs));
   auto Kc = K->ViewComponent("cell", true);
 
-  for (int c = 0; c < ncells_wghost; c++) { (*Kc)[0][c] = Kreac; }
+  for (int c = 0; c < ncells_wghost; c++) {
+    (*Kc)[0][c] = Kreac;
+  }
 
   // -- velocity function
   auto velc = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost));
@@ -166,7 +168,9 @@ AdvectionSteady(int dim,
     (*velc)[c] *= -weak_sign;
   }
 
-  for (int f = 0; f < nfaces_wghost; ++f) { (*velf)[f] = v * (mesh->getFaceNormal(f) * weak_sign); }
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    (*velf)[f] = v * (mesh->getFaceNormal(f) * weak_sign);
+  }
 
   // -- divergence of velocity
   //    non-conservative formulation leads to Kn = Kreac - div(v)
@@ -213,7 +217,9 @@ AdvectionSteady(int dim,
 
     // -- convert moment to my basis
     dg.cell_basis(c).LinearFormNaturalToMy(data);
-    for (int n = 0; n < pc.size(); ++n) { rhs_c[n][c] = data(n); }
+    for (int n = 0; n < pc.size(); ++n) {
+      rhs_c[n][c] = data(n);
+    }
   }
 
   // -- boundary data
@@ -238,7 +244,9 @@ AdvectionSteady(int dim,
         ana.SolutionTaylor(xf, 0.0, coefs);
         data = coefs.coefs();
 
-        for (int i = 0; i < nk; ++i) { bc_value[f][i] = data(i); }
+        for (int i = 0; i < nk; ++i) {
+          bc_value[f][i] = data(i);
+        }
       } else if (weak_sign < 0.0) {
         bc_model[f] = OPERATOR_BC_REMOVE;
       }

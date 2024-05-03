@@ -143,7 +143,9 @@ BackTracking<Vector>::LineSearch(Vector& xold,
   p.Norm2(&sum);
 
   // Scale if attempted step is too big.
-  if (sum > step_max) { p.Scale(step_max / sum); }
+  if (sum > step_max) {
+    p.Scale(step_max / sum);
+  }
 
   double slope;
   g.Dot(p, &slope);

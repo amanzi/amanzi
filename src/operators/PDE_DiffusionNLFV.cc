@@ -120,7 +120,9 @@ PDE_DiffusionNLFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector
   dkdp_ = dkdp;
 
   if (k_ != Teuchos::null) {
-    if (little_k_ == OPERATOR_LITTLE_K_UPWIND) { AMANZI_ASSERT(k_->HasComponent("face")); }
+    if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
+      AMANZI_ASSERT(k_->HasComponent("face"));
+    }
   }
   if (dkdp_ != Teuchos::null) AMANZI_ASSERT(dkdp_->HasComponent("cell"));
 }
@@ -178,7 +180,9 @@ PDE_DiffusionNLFV::InitStencils_()
   WhetStone::DenseVector data(dim_ * dim_);
   for (int c = 0; c < ncells_owned; ++c) {
     WhetStone::TensorToVector((*K_)[c], data);
-    for (int i = 0; i < dim_ * dim_; ++i) { Ktmp[i][c] = data(i); }
+    for (int i = 0; i < dim_ * dim_; ++i) {
+      Ktmp[i][c] = data(i);
+    }
   }
   cv_tmp->ScatterMasterToGhosted();
 

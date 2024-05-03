@@ -65,7 +65,9 @@ class Analytic00 : public AnalyticBase {
     grad_[1](0) += g_;
 
     Amanzi::WhetStone::VectorPolynomial tmp(2, 2);
-    for (int i = 0; i < 2; ++i) { tmp[i] = v_[i] * poly_; }
+    for (int i = 0; i < 2; ++i) {
+      tmp[i] = v_[i] * poly_;
+    }
     rhs_ = kr_ * (Amanzi::WhetStone::Divergence(tmp) - poly_.Laplacian());
   }
   ~Analytic00(){};

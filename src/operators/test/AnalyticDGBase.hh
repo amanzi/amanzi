@@ -86,7 +86,9 @@ class AnalyticDGBase {
     VelocityTaylor(p, t, v);
 
     Amanzi::AmanziGeometry::Point tmp(d_);
-    for (int i = 0; i < d_; ++i) { tmp[i] = v[i](0, 0); }
+    for (int i = 0; i < d_; ++i) {
+      tmp[i] = v[i](0, 0);
+    }
     return tmp;
   }
 

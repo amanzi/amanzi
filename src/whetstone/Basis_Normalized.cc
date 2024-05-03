@@ -76,7 +76,9 @@ Basis_Normalized::BilinearFormNaturalToMy(DenseMatrix& A) const
 
   // calculate R^T * A * R
   for (int k = 0; k < nrows; ++k) {
-    for (int i = 0; i < nrows; ++i) { A(i, k) = A(i, k) * a(k) * a(i); }
+    for (int i = 0; i < nrows; ++i) {
+      A(i, k) = A(i, k) * a(k) * a(i);
+    }
   }
 }
 
@@ -117,7 +119,9 @@ Basis_Normalized::BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
 void
 Basis_Normalized::LinearFormNaturalToMy(DenseVector& f) const
 {
-  for (int n = 0; n < monomial_scales_.size(); ++n) { f(n) *= monomial_scales_(n); }
+  for (int n = 0; n < monomial_scales_.size(); ++n) {
+    f(n) *= monomial_scales_(n);
+  }
 }
 
 
@@ -129,7 +133,9 @@ Basis_Normalized::ChangeBasisMyToNatural(DenseVector& v) const
 {
   AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
 
-  for (int n = 0; n < monomial_scales_.size(); ++n) { v(n) *= monomial_scales_(n); }
+  for (int n = 0; n < monomial_scales_.size(); ++n) {
+    v(n) *= monomial_scales_(n);
+  }
 }
 
 
@@ -141,7 +147,9 @@ Basis_Normalized::ChangeBasisNaturalToMy(DenseVector& v) const
 {
   AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
 
-  for (int n = 0; n < monomial_scales_.size(); ++n) { v(n) /= monomial_scales_(n); }
+  for (int n = 0; n < monomial_scales_.size(); ++n) {
+    v(n) /= monomial_scales_(n);
+  }
 }
 
 

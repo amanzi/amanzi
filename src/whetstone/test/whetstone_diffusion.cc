@@ -595,7 +595,9 @@ TEST(DARCY_STIFFNESS_2D_EDGE)
 
   DenseMatrix A;
   for (int method = 0; method < 1; method++) {
-    if (method == 0) { mfd.StiffnessMatrix(cell, T, A); }
+    if (method == 0) {
+      mfd.StiffnessMatrix(cell, T, A);
+    }
 
     printf("Stiffness matrix for cell %3d\n", cell);
     PrintMatrix(A, "%8.4f ");

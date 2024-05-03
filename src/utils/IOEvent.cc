@@ -58,7 +58,9 @@ IOEvent::disable(bool disabled)
 void
 IOEvent::RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm)
 {
-  if (times_.size() != 0) { tsm->RegisterTimeEvent(times_.toVector(), false); }
+  if (times_.size() != 0) {
+    tsm->RegisterTimeEvent(times_.toVector(), false);
+  }
   if (times_sps_.size() != 0) {
     for (Teuchos::Array<Teuchos::Array<double>>::const_iterator sps = times_sps_.begin();
          sps != times_sps_.end();
@@ -88,7 +90,9 @@ IOEvent::DumpRequested(int cycle) const
   if (!is_disabled()) {
     if (cycles_.size() > 0) {
       for (Teuchos::Array<int>::const_iterator i = cycles_.begin(); i != cycles_.end(); ++i) {
-        if (cycle == *i) { return true; }
+        if (cycle == *i) {
+          return true;
+        }
       }
     }
     if (cycles_sps_.size() != 0) {
@@ -160,7 +164,9 @@ IOEvent::ReadParameters_()
     }
   }
 
-  if (plist_.isParameter("cycles")) { cycles_ = plist_.get<Teuchos::Array<int>>("cycles"); }
+  if (plist_.isParameter("cycles")) {
+    cycles_ = plist_.get<Teuchos::Array<int>>("cycles");
+  }
 
   if (plist_.isParameter("times start period stop")) {
     auto times_sps = plist_.get<Teuchos::Array<double>>("times start period stop");

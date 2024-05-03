@@ -68,7 +68,8 @@ class RegisteredFactory : public BilinearFormFactory {
   {
     for (auto it = BilinearFormFactory::GetMap()->begin();
          it != BilinearFormFactory::GetMap()->end();
-         ++it) {}
+         ++it) {
+    }
     BilinearFormFactory::GetMap()->insert(
       std::pair<BFKey,
                 BilinearForm* (*)(const Teuchos::ParameterList&,
@@ -76,7 +77,8 @@ class RegisteredFactory : public BilinearFormFactory {
         s, &CreateT<TDerived>));
     for (auto it = BilinearFormFactory::GetMap()->begin();
          it != BilinearFormFactory::GetMap()->end();
-         ++it) {}
+         ++it) {
+    }
   }
 };
 

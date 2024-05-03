@@ -96,7 +96,9 @@ EnthalpyEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>
       Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
 
       int ncomp = results[0]->size(*comp);
-      for (int i = 0; i != ncomp; ++i) { result_v[0][i] += pres_v[0][i] / nl_v[0][i]; }
+      for (int i = 0; i != ncomp; ++i) {
+        result_v[0][i] += pres_v[0][i] / nl_v[0][i];
+      }
     }
   }
 
@@ -152,7 +154,9 @@ EnthalpyEvaluator::EvaluatePartialDerivative_(const State& S,
       Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
 
       int ncomp = results[0]->size(*comp);
-      for (int i = 0; i != ncomp; ++i) { result_v[0][i] = 1.0 / nl_v[0][i]; }
+      for (int i = 0; i != ncomp; ++i) {
+        result_v[0][i] = 1.0 / nl_v[0][i];
+      }
     }
 
   } else if (wrt_key == mol_density_key_) {

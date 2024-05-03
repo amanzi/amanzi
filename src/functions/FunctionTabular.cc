@@ -44,7 +44,9 @@ FunctionTabular::FunctionTabular(const std::vector<double>& x,
 FunctionTabular::FunctionTabular(const FunctionTabular& other)
   : x_(other.x_), y_(other.y_), xi_(other.xi_), form_(other.form_), func_()
 {
-  for (const auto& f : other.func_) { func_.emplace_back(f->Clone()); }
+  for (const auto& f : other.func_) {
+    func_.emplace_back(f->Clone());
+  }
 }
 
 

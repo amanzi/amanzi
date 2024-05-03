@@ -337,7 +337,9 @@ template <typename Data_t, typename DataFactory_t>
 inline void
 EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility_Deps_(State& S)
 {
-  for (auto& dep : dependencies_) { S.Require<Data_t, DataFactory_t>(dep.first, dep.second); }
+  for (auto& dep : dependencies_) {
+    S.Require<Data_t, DataFactory_t>(dep.first, dep.second);
+  }
 }
 
 
@@ -375,7 +377,9 @@ inline void
 EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility_DepEnsureCompatibility_(
   State& S)
 {
-  for (auto& dep : dependencies_) { S.GetEvaluator(dep.first, dep.second).EnsureCompatibility(S); }
+  for (auto& dep : dependencies_) {
+    S.GetEvaluator(dep.first, dep.second).EnsureCompatibility(S);
+  }
 }
 
 

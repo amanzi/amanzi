@@ -599,7 +599,9 @@ InputConverterU::TranslateTransportBCs_(const std::string& domain)
 
     // geochemical BCs
     node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry_component", flag);
-    if (flag) { TranslateTransportGeochemistry_(node, bcname, regions, out_list); }
+    if (flag) {
+      TranslateTransportGeochemistry_(node, bcname, regions, out_list);
+    }
   }
 
   // backward compatibility: translate constraints for native chemistry
@@ -855,7 +857,9 @@ InputConverterU::TranslateTransportSources_()
 
     // geochemical sources
     node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry_component", flag);
-    if (flag) { TranslateTransportGeochemistry_(node, srcname, regions, out_list); }
+    if (flag) {
+      TranslateTransportGeochemistry_(node, srcname, regions, out_list);
+    }
   }
 
   return out_list;

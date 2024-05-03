@@ -82,7 +82,9 @@ SUITE(SOLVERS)
 
     bool CheckSolution(const Epetra_Vector& soln)
     {
-      for (int i = 0; i < 5; i++) { CHECK_CLOSE((*soln_)[i], soln[i], 1e-6); }
+      for (int i = 0; i < 5; i++) {
+        CHECK_CLOSE((*soln_)[i], soln[i], 1e-6);
+      }
       return true;
     }
 

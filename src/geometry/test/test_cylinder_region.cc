@@ -54,11 +54,15 @@ TEST(CYLINDER_REGION)
   pin.push_back(Amanzi::AmanziGeometry::Point(0.0, -2.0, 1.0));
   pin.push_back(Amanzi::AmanziGeometry::Point(0.5, 0.0, 2.0));
 
-  for (auto p = pin.begin(); p != pin.end(); ++p) { CHECK(reg->inside(*p)); }
+  for (auto p = pin.begin(); p != pin.end(); ++p) {
+    CHECK(reg->inside(*p));
+  }
 
   std::vector<Amanzi::AmanziGeometry::Point> pout;
   pin.push_back(Amanzi::AmanziGeometry::Point(9.9, 8.0, 0.0));
   pin.push_back(Amanzi::AmanziGeometry::Point(1.0, 2.0, -1.0));
 
-  for (auto p = pout.begin(); p != pout.end(); ++p) { CHECK(!reg->inside(*p)); }
+  for (auto p = pout.begin(); p != pout.end(); ++p) {
+    CHECK(!reg->inside(*p));
+  }
 }

@@ -149,7 +149,9 @@ PK_DomainFunctionField<FunctionBase>::Compute(double t0, double t1)
   std::vector<double> val_vec(nvalues);
 
   for (auto c : *entity_ids_) {
-    for (int i = 0; i < nvalues; ++i) { val_vec[i] = field_vec[i][c]; }
+    for (int i = 0; i < nvalues; ++i) {
+      val_vec[i] = field_vec[i][c];
+    }
     value_[c] = val_vec;
   }
 }

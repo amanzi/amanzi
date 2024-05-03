@@ -69,11 +69,7 @@ NLFV::HarmonicAveragingPoint(int f,
 
 
 void
-NLFV::HarmonicAveragingPoint(int f,
-                             int c1,
-                             int c2,
-                             AmanziGeometry::Point& p,
-                             double& weight)
+NLFV::HarmonicAveragingPoint(int f, int c1, int c2, AmanziGeometry::Point& p, double& weight)
 {
   int dir;
 
