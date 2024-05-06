@@ -374,7 +374,7 @@ PreconditionerHypre::InitializeInverse()
   
   if (A_->RowMatrixRowMap().LinearMap()) {
     GloballyContiguousRowMap_ = Teuchos::rcpFromRef(A_->RowMatrixRowMap());
-    GloballyContiguousColMap_ = Teuchos::rcpFromRef(A_->RowMatrixRowMap());
+    GloballyContiguousColMap_ = Teuchos::rcpFromRef(A_->RowMatrixColMap());
   } else {
     assert(false);
   }
