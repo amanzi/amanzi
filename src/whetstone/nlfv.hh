@@ -51,6 +51,7 @@ class NLFV {
   int PositiveDecomposition(int id1,
                             const AmanziMesh::Point_List& tau,
                             const AmanziGeometry::Point& conormal,
+                            int manifold_dim,
                             double* ws,
                             int* ids);
 

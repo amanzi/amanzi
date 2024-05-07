@@ -113,7 +113,7 @@ class PDE_DiffusionNLFV : public virtual PDE_Diffusion {
   int OrderCellsByGlobalId_(const AmanziMesh::cEntity_ID_View& cells, int& c1, int& c2);
 
  protected:
-  int dim_;
+  int dim_, manifold_dim_;
   int newton_correction_;
 
   bool stencil_initialized_;

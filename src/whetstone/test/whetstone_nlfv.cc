@@ -49,7 +49,7 @@ TEST(NLFV_POSITIVE_DECOMPOSITION_2D)
     std::cout << "tau[" << i << "] = " << p << std::endl;
   }
 
-  int ids[2];
+  int d(2), ids[2];
   double ws[2];
   WhetStone::NLFV nlfv;
   AmanziGeometry::Point conormal(2), v(2);
@@ -58,7 +58,7 @@ TEST(NLFV_POSITIVE_DECOMPOSITION_2D)
     conormal = tau[i];
     conormal[1] += 0.1;
 
-    int ierr = nlfv.PositiveDecomposition(i, tau, conormal, ws, ids);
+    int ierr = nlfv.PositiveDecomposition(i, tau, conormal, d, ws, ids);
 
     std::cout << "cornormal = " << conormal << "\nws: " << ws[0] << " " << ws[1]
               << "\nids: " << ids[0] << " " << ids[1] << std::endl;
@@ -94,7 +94,7 @@ TEST(NLFV_POSITIVE_DECOMPOSITION_3D)
     }
   }
 
-  int ids[3];
+  int d(3), ids[3];
   double ws[3];
   WhetStone::NLFV nlfv;
   AmanziGeometry::Point conormal(3), v(3);
@@ -105,7 +105,7 @@ TEST(NLFV_POSITIVE_DECOMPOSITION_3D)
     conormal[1] += 0.2 / (i + 1);
     conormal[2] += 0.3 / (i + 1);
 
-    int ierr = nlfv.PositiveDecomposition(i, tau, conormal, ws, ids);
+    int ierr = nlfv.PositiveDecomposition(i, tau, conormal, d, ws, ids);
 
     std::cout << "cornormal = " << conormal << "\nws: " << ws[0] << " " << ws[1] << " " << ws[2]
               << "\nids: " << ids[0] << " " << ids[1] << " " << ids[2] << std::endl;

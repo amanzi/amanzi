@@ -119,7 +119,7 @@ class PDE_DiffusionNLFVwithBndFaces : public virtual PDE_Diffusion {
   int NLTPFAContributions_(int f, double& tc1, double& tc2);
 
  protected:
-  int dim_;
+  int dim_, manifold_dim_;
   int newton_correction_;
 
   bool stencil_initialized_;
