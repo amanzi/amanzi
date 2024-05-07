@@ -123,10 +123,10 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
   ierr = MatCreate(comm, &Jac); CHKPETSC(ierr);
   ierr = MatSetSizes(Jac,n,n,N,N);  CHKPETSC(ierr);
   ierr = MatSetFromOptions(Jac); CHKPETSC(ierr);
-  //ierr = MatSeqAIJSetPreallocation(Jac, d_nz*d_nz, PETSC_NULL); CHKPETSC(ierr);
-  //ierr = MatMPIAIJSetPreallocation(Jac, d_nz, PETSC_NULL, o_nz, PETSC_NULL); CHKPETSC(ierr);
-  ierr = MatSeqAIJSetPreallocation(Jac, MAX_NUM_COLS, PETSC_NULL); CHKPETSC(ierr);
-  ierr = MatMPIAIJSetPreallocation(Jac, MAX_NUM_COLS, PETSC_NULL, MAX_NUM_COLS, PETSC_NULL); CHKPETSC(ierr);
+  //ierr = MatSeqAIJSetPreallocation(Jac, d_nz*d_nz, PETSC_NULLPTR); CHKPETSC(ierr);
+  //ierr = MatMPIAIJSetPreallocation(Jac, d_nz, PETSC_NULLPTR, o_nz, PETSC_NULLPTR); CHKPETSC(ierr);
+  ierr = MatSeqAIJSetPreallocation(Jac, MAX_NUM_COLS, PETSC_NULLPTR); CHKPETSC(ierr);
+  ierr = MatMPIAIJSetPreallocation(Jac, MAX_NUM_COLS, PETSC_NULLPTR, MAX_NUM_COLS, PETSC_NULLPTR); CHKPETSC(ierr);
 
   calcSpace = false;
   BuildOpSkel(Jac, calcSpace);
@@ -427,7 +427,7 @@ PetscErrorCode
   PetscErrorCode (*func)(SNES,Vec,Vec,void*);
   void *fctx;
 
-  ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx); CHKPETSC(ierr);
+  ierr = SNESGetFunction(snes,PETSC_NULLPTR,&func,&fctx); CHKPETSC(ierr);
 
   Vec& F = rs->GetResidualV();
   Vec& G = rs->GetTrialResV();
@@ -660,7 +660,7 @@ PetscErrorCode
 
   Real ls_factor = 1;
   ierr = AltUpdate(snes,p,dp,pnew,ctx,ls_factor,changed_dp,changed_pnew);CHKPETSC(ierr);
-  ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx);CHKPETSC(ierr);
+  ierr = SNESGetFunction(snes,PETSC_NULLPTR,&func,&fctx);CHKPETSC(ierr);
 
   Vec& F = rs->GetResidualV();
   Vec& G = rs->GetTrialResV();
@@ -838,7 +838,7 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
     ierr = SNESLineSearchSetPostCheck(snes->linesearch,PostCheck,(void *)(&check_ctx));CHKPETSC(ierr);
   }
 
-  ierr = SNESSetConvergenceTest(snes,Richard_SNESConverged,(void*)(&check_ctx),PETSC_NULL); CHKPETSC(ierr);
+  ierr = SNESSetConvergenceTest(snes,Richard_SNESConverged,(void*)(&check_ctx),PETSC_NULLPTR); CHKPETSC(ierr);
 
   UnsetRemainingJacobianReuses();
 
@@ -851,7 +851,7 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
   // Evaluate the function
   PetscErrorCode (*func)(SNES,Vec,Vec,void*);
   void *fctx;
-  ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx);
+  ierr = SNESGetFunction(snes,PETSC_NULLPTR,&func,&fctx);
   ierr = (*func)(snes,SolnV,RhsV,fctx); CHKPETSC(ierr);
   ierr = VecNorm(RhsV,NORM_2,&norm0); CHKPETSC(ierr); // Save initial norm FIXME: This is already done internally, better to access that
 
@@ -861,7 +861,7 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
   BL_PROFILE_VAR_STOP(p_prep);
 
   BL_PROFILE_VAR("RichardSolver::Solve::SNESSolve", p_solve);
-  ierr = SNESSolve(snes,PETSC_NULL,SolnV);// CHKPETSC(ierr);
+  ierr = SNESSolve(snes,PETSC_NULLPTR,SolnV);// CHKPETSC(ierr);
   BL_PROFILE_VAR_STOP(p_solve);
   RichardSolver::SetTheRichardSolver(0);
 
@@ -1848,7 +1848,7 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
 
   ierr = PetscLogEventBegin(MAT_FDColoringApply,coloring,J,x1,0);CHKPETSC(ierr);
   ierr = MatSetUnfactored(J);CHKPETSC(ierr);
-  ierr = PetscOptionsGetBool(PETSC_NULL,"","-mat_fd_coloring_dont_rezero",&flg,PETSC_NULL);CHKPETSC(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULLPTR,"","-mat_fd_coloring_dont_rezero",&flg,PETSC_NULLPTR);CHKPETSC(ierr);
   if (flg) {
     ierr = PetscInfo(coloring,"Not calling MatZeroEntries()\n");CHKPETSC(ierr);
   } else {
@@ -2043,9 +2043,9 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   }
 
   flg  = PETSC_FALSE;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"","-mat_null_space_test",&flg,PETSC_NULL);CHKPETSC(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULLPTR,"","-mat_null_space_test",&flg,PETSC_NULLPTR);CHKPETSC(ierr);
   if (flg) {
-    ierr = MatNullSpaceTest(J->nullsp,J,PETSC_NULL);CHKPETSC(ierr);
+    ierr = MatNullSpaceTest(J->nullsp,J,PETSC_NULLPTR);CHKPETSC(ierr);
   }
 
   PetscFunctionReturn(0);
@@ -2101,7 +2101,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
 
   ierr = PetscLogEventBegin(MAT_FDColoringApply,coloring,J,x1,0);CHKPETSC(ierr);
   ierr = MatSetUnfactored(J);CHKPETSC(ierr);
-  ierr = PetscOptionsGetBool(PETSC_NULL,"","-mat_fd_coloring_dont_rezero",&flg,PETSC_NULL);CHKPETSC(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULLPTR,"","-mat_fd_coloring_dont_rezero",&flg,PETSC_NULLPTR);CHKPETSC(ierr);
   if (flg) {
     ierr = PetscInfo(coloring,"Not calling MatZeroEntries()\n");CHKPETSC(ierr);
   } else {
@@ -2280,9 +2280,9 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   }
 
   flg  = PETSC_FALSE;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"","-mat_null_space_test",&flg,PETSC_NULL);CHKPETSC(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULLPTR,"","-mat_null_space_test",&flg,PETSC_NULLPTR);CHKPETSC(ierr);
   if (flg) {
-    ierr = MatNullSpaceTest(J->nullsp,J,PETSC_NULL);CHKPETSC(ierr);
+    ierr = MatNullSpaceTest(J->nullsp,J,PETSC_NULLPTR);CHKPETSC(ierr);
   }
 
   PetscFunctionReturn(0);
@@ -2312,7 +2312,7 @@ RichardComputeJacobianColor(SNES snes,Vec x1,Mat J,Mat B,void *ctx)
   }
 
   ierr  = SNESGetFunction(snes,&f,(PetscErrorCode (**)(SNES,Vec,Vec,void*))&ff,0);CHKPETSC(ierr);
-  ierr  = MatFDColoringGetFunction(color,&fd,PETSC_NULL);CHKPETSC(ierr);
+  ierr  = MatFDColoringGetFunction(color,&fd,PETSC_NULLPTR);CHKPETSC(ierr);
   if (fd == ff) { /* reuse function value computed in SNES */
     ierr  = MatFDColoringSetF(color,f);CHKPETSC(ierr);
   }

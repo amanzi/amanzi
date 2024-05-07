@@ -7350,7 +7350,6 @@ PorousMedia::derive_Volumetric_Water_Content(Real      time,
 #endif
 
   if (scomp>=0) {
-    const BoxArray& BA = mf.boxArray();
     int ngrow = mf.nGrow();
     BL_ASSERT(mf.nGrow()<=rock_phi->nGrow());
 

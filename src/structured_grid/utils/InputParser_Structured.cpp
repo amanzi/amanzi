@@ -3912,7 +3912,6 @@ namespace Amanzi {
         for (StateDef::Phases::const_iterator pit = phases.begin(); pit!=phases.end() && !found_solute; ++pit)
         {
           const std::string& phaseLabel = pit->first;
-          PHASE& phase = stateDef.getPhases()[phaseLabel];
           const CompMap comp_map = stateDef[phaseLabel];
           for (CompMap::const_iterator cit = comp_map.begin(); cit!=comp_map.end() && !found_solute; ++cit)
           {

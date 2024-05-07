@@ -257,8 +257,8 @@ RStdata::FillStateBndry (MFTower& press,
     const Real* dx = geom.CellSize();
     MultiFab& mf = press[lev];
     const BoxArray& ba = mf.boxArray();
+
     for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
-      int         i       = mfi.index();
       RealBox     gridloc = RealBox(mfi.validbox(),geom.CellSize(),geom.ProbLo());
       FArrayBox&  fab     = mf[mfi];
       const int*  flo     = fab.loVect();
@@ -310,10 +310,6 @@ RStdata::calcInvPressure (MFTower&       N,
       N[lev].FillBoundary(dComp,1);
     }
   }
-}
-
-static Real vgKr(Real seff, Real m, Real ell) {
-  return std::pow(seff, ell) * std::pow(1-std::pow(1-std::pow(seff,1/m),m),2);
 }
 
 void
