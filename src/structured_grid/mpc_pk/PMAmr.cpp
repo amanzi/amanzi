@@ -738,7 +738,6 @@ PMAmr::coarseTimeStep (Real _stop_time)
 
     amr_level[0].postCoarseTimeStep(cumtime);
 
-    static int cnt = 0;
     if (cumtime == ec->end) {
       if (ParallelDescriptor::IOProcessor()) {
 	std::cout << "Exiting Exceution Control Period \"" << ec->label << "\" at time: "

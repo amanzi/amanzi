@@ -115,10 +115,10 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
   BuildOpSkel(Jac,calcSpace);
 
   // Estmated number of nonzero local columns of J
-  //int d_nz = (nlsc.use_dense_Jacobian ? N : 1 + (rs_data.pressure_maxorder-1)*(2*BL_SPACEDIM));
-  int d_nz = MAX_NUM_COLS;
-  //int o_nz = 2*BL_SPACEDIM + rs_data.pressure_maxorder - 1; // Estimated number of nonzero nonlocal (off-diagonal) columns of J
-  int o_nz = MAX_NUM_COLS;
+  // int d_nz = (nlsc.use_dense_Jacobian ? N : 1 + (rs_data.pressure_maxorder-1)*(2*BL_SPACEDIM));
+  // int d_nz = MAX_NUM_COLS;
+  // int o_nz = 2*BL_SPACEDIM + rs_data.pressure_maxorder - 1; // Estimated number of nonzero nonlocal (off-diagonal) columns of J
+  // int o_nz = MAX_NUM_COLS;
 
   ierr = MatCreate(comm, &Jac); CHKPETSC(ierr);
   ierr = MatSetSizes(Jac,n,n,N,N);  CHKPETSC(ierr);
@@ -567,14 +567,12 @@ AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *c
   MFTower& P_MFT = rs->GetPressureNp1();
   MFTower& RS_MFT = rs->GetRhoSatNp1();
   MFTower& DP_MFT = rs->GetLambda(); //Handy data container
-  const MFTower& K_MFT = rs->GetKappaCCavg();
 
   Layout& layout = rs->GetLayout();
   ierr = layout.VecToMFTower(P_MFT,pk,0); CHKPETSC(ierr);
   ierr = layout.VecToMFTower(DP_MFT,dp,0); CHKPETSC(ierr);
 
   Real cur_time = rs->GetTime();
-  Real dt = rs->GetDt();
 
   // Fill (rho.sat)^{n+1,k} from p^{n+1,k}
   rs->GetRSdata().calcInvPressure(RS_MFT,P_MFT,cur_time,0,0,0);
@@ -899,12 +897,10 @@ RichardSolver::BuildOpSkel(Mat& J, bool calcSpace)
   Array<int> cols;
 
   Layout& layout = GetLayout();
-  const Array<Geometry>& geomArray = layout.GeomArray();
   const Array<BoxArray>& gridArray = layout.GridArray();
   const Array<IntVect>& refRatio = layout.RefRatio();
   const PArray<Layout::MultiNodeFab>& nodes = layout.Nodes();
   const PArray<Layout::MultiIntFab>& nodeIds = layout.NodeIds();
-  const Array<BoxArray>& bndryCells = layout.BndryCells();
   const Array<Array<IVSMap> >& growCellStencil = mftfp->GrowCellStencil();
   int nLevs = layout.NumLevels();
 
@@ -1215,8 +1211,6 @@ RichardSolver::XmultYZ(MFTower&       X,
   BL_ASSERT(X.NGrow()>=nGrow);
   BL_ASSERT(Y.NGrow()>=nGrow);
   BL_ASSERT(Z.NGrow()>=nGrow);
-  const Array<BoxArray>& gridArray = GridArray();
-  const Array<Geometry>& geomArray = GeomArray();
   const Array<IntVect>& refRatio = RefRatio();
 
   FArrayBox tfabY, tfabZ;
@@ -1550,8 +1544,6 @@ void RichardSolver::CreateJac(Mat& J,
   BL_PROFILE("RichardSolver::CreateJac()");
 
   Layout& layout = GetLayout();
-  const Array<BoxArray>& gridArray = layout.GridArray();
-  const Array<IntVect>& refRatio   = layout.RefRatio();
   BaseFab<int> nodeNums;
   PetscErrorCode ierr;
   const BCRec& theBC = rs_data.pressure_bc;
@@ -1561,7 +1553,6 @@ void RichardSolver::CreateJac(Mat& J,
   for (int lev=0; lev<nLevs; ++lev) {
     kr_rs_data.set(lev, &(GetKrParams()[lev]));
   }
-  MFTower& PCapParamsaMFT = GetPCapParams();
   MFTower KrParamsMFT(layout,kr_rs_data,nLevs);
 
   const Array<int>& rinflow_bc_lo = rs_data.rinflowBCLo();
@@ -1922,7 +1913,6 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   /*
     Loop over each color
   */
-  int p = ParallelDescriptor::MyProc();
   if (rs->GetNLScontrol().scale_soln_before_solve) {
     //
     // In this case, since the soln is scaled, the perturbation is a simple constant, epsilon
@@ -2060,7 +2050,6 @@ RichardSolver::ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure,Real t)
 {
   BL_PROFILE("RichardSolver::ComputeRichardAlpha()");
 
-  MFTower& PCapParamsMFT = GetPCapParams();
   MFTower& PMFT = GetPressureNp1();
   MFTower& aMFT = GetAlpha();
   PetscErrorCode ierr = GetLayout().VecToMFTower(PMFT,Pressure,0); CHKPETSC(ierr);
@@ -2169,7 +2158,6 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   /*
     Loop over each color
   */
-  int p = ParallelDescriptor::MyProc();
   //
   // In this case, since the soln is scaled, the perturbation is a simple constant, epsilon
   // Compared to the case where dx=dx_i, the logic cleans up quite a bit here.

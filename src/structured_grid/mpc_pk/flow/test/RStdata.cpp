@@ -80,8 +80,6 @@ static int CPL_MODEL_ID = 0;
 static int VG_M                   = 1;
 static int VG_ALPHA               = 2;
 static int VG_SR                  = 3;
-static int VG_ELL                 = 4;
-static int VG_KR_MODEL_ID         = 5;
 static int VG_KR_SMOOTHING_MAX_PC = 6;
 
 static int BC_LAMBDA              = 1;
@@ -256,7 +254,6 @@ RStdata::FillStateBndry (MFTower& press,
     const int* domhi = domain.hiVect();
     const Real* dx = geom.CellSize();
     MultiFab& mf = press[lev];
-    const BoxArray& ba = mf.boxArray();
 
     for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
       RealBox     gridloc = RealBox(mfi.validbox(),geom.CellSize(),geom.ProbLo());

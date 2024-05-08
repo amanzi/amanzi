@@ -56,7 +56,6 @@ bldTable (Teuchos::ParameterList& params,
             //  formatting rules buried in the bowels of trilinos...
 
             std::stringstream ppStr;
-            std::ios::fmtflags oflags = ppStr.flags();
             ppStr.setf(std::ios::floatfield, std::ios::scientific);
             int old_prec = ppStr.precision(15);
 

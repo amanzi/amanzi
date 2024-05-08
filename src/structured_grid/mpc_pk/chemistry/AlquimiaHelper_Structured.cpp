@@ -420,7 +420,7 @@ AlquimiaHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       in
       }
 
       int newton_iters;
-      int natural_id;
+      int natural_id(0);
       engine->Advance(dt,alquimia_properties[threadid],alquimia_state[threadid],
                       alquimia_aux_in[threadid],alquimia_aux_out[threadid],newton_iters,natural_id);
 

@@ -204,10 +204,8 @@ EventCoord::TimeEvent::ThisEventInit(Real t) const
           teps = times[0];
         } else if (i>0) {
           teps = times[i] - times[i-1];
-        } else if (i<times.size()-1) {
-          teps = times[i+1] - times[i];
         } else {
-          BoxLib::Abort("bad logic in time event processing");
+          teps = times[i+1] - times[i];
         }
         teps *= 1.e-8;
 
@@ -281,10 +279,8 @@ EventCoord::TimeEvent::ThisEventDue(Real t, Real dt, Real& dt_red) const
                 teps = times[0];
             } else if (i>0) {
                 teps = times[i] - times[i-1];
-            } else if (i<times.size()-1) {
-                teps = times[i+1] - times[i];
             } else {
-                BoxLib::Abort("bad logic in time event processing");
+                teps = times[i+1] - times[i];
             }
             teps *= 1.e-8;
 
@@ -349,7 +345,6 @@ EventCoord::NextEvent(Real t, Real dt, int cycle, int dcycle) const
     for (std::map<std::string,Event*>::const_iterator it=cycleEvents.begin(); it!=cycleEvents.end(); ++it) {
         const std::string& name = it->first;
         const CycleEvent* event = dynamic_cast<const CycleEvent*>(it->second);
-        const CycleEvent::CType& type = event->Type();
         if (event->ThisEventDue(cycle,dcycle)) {
             events.push_back(name);
         }
@@ -358,7 +353,6 @@ EventCoord::NextEvent(Real t, Real dt, int cycle, int dcycle) const
     for (std::map<std::string,Event*>::const_iterator it=timeEvents.begin(); it!=timeEvents.end(); ++it) {
         const std::string& name = it->first;
         const TimeEvent* event = dynamic_cast<const TimeEvent*>(it->second);
-        TimeEvent::TType type = event->Type();
         Real dt_red;
         if (event->ThisEventDue(t,dt,dt_red)) {
             events.push_back(name);
@@ -376,7 +370,6 @@ EventCoord::InitEvent(Real t, int cycle) const
   for (std::map<std::string,Event*>::const_iterator it=cycleEvents.begin(); it!=cycleEvents.end(); ++it) {
     const std::string& name = it->first;
     const CycleEvent* event = dynamic_cast<const CycleEvent*>(it->second);
-    const CycleEvent::CType& type = event->Type();
     if (event->ThisEventInit(cycle)) {
       events.push_back(name);
     }
@@ -385,7 +378,6 @@ EventCoord::InitEvent(Real t, int cycle) const
   for (std::map<std::string,Event*>::const_iterator it=timeEvents.begin(); it!=timeEvents.end(); ++it) {
     const std::string& name = it->first;
     const TimeEvent* event = dynamic_cast<const TimeEvent*>(it->second);
-    TimeEvent::TType type = event->Type();
     if (event->ThisEventInit(t)) {
       events.push_back(name);
     }

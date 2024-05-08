@@ -10,6 +10,8 @@
 #include <fstream>
 #include <iomanip>
 
+#include "dbc.hh"
+
 #include <RockManager.H>
 #include <RockManager_F.H>
 
@@ -355,7 +357,6 @@ RockManager::FillBoundary(Real      time,
       if ( !(domain.contains(gbox)) ) {
         for (int d=0; d<BL_SPACEDIM; ++d) {
           Box adjCellLo = BoxLib::adjCellLo(vbox,d,1);
-          Box intCellLo = Box(adjCellLo).shift(d,1);
           for (int i=0; i<nGrow; ++i) {
             Box ladjCellLo = Box(adjCellLo).shift(d,-i);
             for (int dd=0; dd<d; ++dd) {
@@ -366,7 +367,6 @@ RockManager::FillBoundary(Real      time,
           }
 
           Box adjCellHi = BoxLib::adjCellHi(vbox,d,1);
-          Box intCellHi = Box(adjCellHi).shift(d,-1);
           for (int i=0; i<nGrow; ++i) {
             Box ladjCellHi = Box(adjCellHi).shift(d,i);
             for (int dd=0; dd<d; ++dd) {
@@ -490,7 +490,6 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     const std::string prefix("rock." + rname);
     ParmParse ppr(prefix.c_str());
 
-    bool generate_porosity_gslib_file = false;
     bool generate_perm_gslib_file = false;
 
     static Property::CoarsenRule arith_crsn = Property::Arithmetic;
@@ -572,7 +571,6 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     else {
       // phi_dist == gslib
       std::string gslib_param_file, gslib_data_file;
-      generate_porosity_gslib_file = (pprp.countval(PorosityGSParamFileName.c_str()) != 0);
       if (pprp.countval(PorosityGSDataFileName.c_str()) == 0) {
         pprp.get(PorosityGSParamFileName.c_str(),gslib_param_file);
         gslib_data_file="porosity.gslib";
@@ -894,7 +892,7 @@ RockManager::Initialize(const Array<std::string>* solute_names)
 
 	// Convert input alpa values to invAtm, if necessary
 	if (Capillary_Pressure_alpha_in_invPa) {
-	  BL_ASSERT(!Capillary_Pressure_alpha_in_invAtm);
+	  AMANZI_ASSERT(!Capillary_Pressure_alpha_in_invAtm);
 	  alpha *= 1.01325e5;
 	}
 
@@ -1663,7 +1661,7 @@ RockManager::RelativePermeability(const Real* saturation, int* matID, Real time,
       bool is_Mualem  = Is_Kr_model_XX(pc_params[VG_KR_MODEL_ID],Kr_model_BC_Mualem);
       bool is_Burdine = Is_Kr_model_XX(pc_params[VG_KR_MODEL_ID],Kr_model_BC_Burdine);
 
-      BL_ASSERT(is_Mualem || is_Burdine);
+      AMANZI_ASSERT(is_Mualem || is_Burdine);
       Real f = (is_Mualem ? ell + 2 + 2/lambda : ell + 1 + 2/lambda);
 
       for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
