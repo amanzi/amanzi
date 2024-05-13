@@ -47,8 +47,7 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
   my_list_ = Teuchos::sublist(pk_list, pk_name, true);
   domain_ = my_list_->template get<std::string>("domain name", "domain");
 
-  Teuchos::ParameterList vlist;
-  vo_ = Teuchos::rcp(new VerboseObject("FlowEnergy-" + domain_, vlist));
+  vo_ = Teuchos::rcp(new VerboseObject("FlowEnergy-" + domain_, *glist));
 }
 
 

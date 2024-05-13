@@ -74,31 +74,6 @@ EnsureFolderExists(const std::string& full_path)
   }
 }
 
-static void
-memUsage(const std::string& note)
-{
-  Real min_alloc_fab_gb = BoxLib::TotalBytesAllocatedInFabs()/(1024.0*1024.0);
-  Real max_alloc_fab_gb = min_alloc_fab_gb;
-  Real min_fab_gb = BoxLib::TotalBytesAllocatedInFabsHWM()/(1024.0*1024.0);
-  Real max_fab_gb = min_fab_gb;
-
-  ParallelDescriptor::ReduceRealMin(min_fab_gb,ParallelDescriptor::IOProcessorNumber());
-  ParallelDescriptor::ReduceRealMax(max_fab_gb,ParallelDescriptor::IOProcessorNumber());
-  ParallelDescriptor::ReduceRealMin(min_alloc_fab_gb,ParallelDescriptor::IOProcessorNumber());
-  ParallelDescriptor::ReduceRealMax(max_alloc_fab_gb,ParallelDescriptor::IOProcessorNumber());
-  if (ParallelDescriptor::IOProcessor()) {
-    std::cout << "\n" << note << " FAB GB spread across MPI nodes: ["
-	      << min_fab_gb
-	      << " ... "
-	      << max_fab_gb
-	      << "  alloc: "
-	      << min_alloc_fab_gb
-	      << " ... "
-	      << max_alloc_fab_gb
-	      << "]\n";
-  }
-}
-
 void
 GSLibProperty::BuildGSLibFile(Real                   avg,
                               const std::string&     gslib_param_file,

@@ -490,8 +490,6 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     const std::string prefix("rock." + rname);
     ParmParse ppr(prefix.c_str());
 
-    bool generate_perm_gslib_file = false;
-
     static Property::CoarsenRule arith_crsn = Property::Arithmetic;
     static Property::CoarsenRule harm_crsn = Property::ComponentHarmonic;
     static Property::RefineRule pc_refine = Property::PiecewiseConstant;
@@ -772,7 +770,6 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     else {
       // K_dist == gslib
       std::string gslib_param_file, gslib_data_file;
-      generate_perm_gslib_file = (pprK.countval(KGSParamFileName.c_str()) != 0);
       if (pprK.countval(KGSDataFileName.c_str()) == 0) {
         pprK.get(KGSParamFileName.c_str(),gslib_param_file);
         gslib_data_file="permeability.gslib";

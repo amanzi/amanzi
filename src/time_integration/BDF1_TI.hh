@@ -399,6 +399,13 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
 
     ReportStatistics_();
   }
+
+  // debug tool: forcing step to report failure
+  if (state_->report_failure == state_->seq) {
+    ierr = 1;
+    state_->report_failure = -1;
+  }
+
   return (ierr != 0); // Returns true when it fails.
 }
 

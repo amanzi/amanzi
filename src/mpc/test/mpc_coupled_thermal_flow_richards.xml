@@ -78,6 +78,11 @@
       <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>
       </ParameterList>
+      <ParameterList name="submesh">
+        <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+        <Parameter name="extraction method" type="string" value="none"/>
+        <Parameter name="domain name" type="string" value="surface"/>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 
@@ -618,10 +623,6 @@
       <Parameter name="PKs order" type="Array(string)" value="{flow matrix, flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
 
-      <ParameterList name="verbose object">
-        <Parameter name="verbosity level" type="string" value="high"/>
-      </ParameterList>
-
       <ParameterList name="time integrator">
         <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
@@ -662,6 +663,10 @@
     <ParameterList name="coupled thermal flow">
       <Parameter name="PKs order" type="Array(string)" value="{thermal flow matrix, thermal flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
+
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
 
       <ParameterList name="time integrator">
         <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>

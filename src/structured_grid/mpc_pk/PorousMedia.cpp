@@ -1316,7 +1316,6 @@ PorousMedia::solve_for_initial_flow_field()
     initial_iter = 1;
 
     Real cur_time = PMParent()->startTime();
-    Real prev_time = cur_time;
     Real time_before_init = cur_time;
 
     int  finest_level = parent->finestLevel();
@@ -1420,7 +1419,6 @@ PorousMedia::solve_for_initial_flow_field()
 	  }
 
 	  cur_time = state[Press_Type].curTime();
-	  prev_time = state[Press_Type].prevTime();
 
 	  for (int lev=0;lev<finest_level+1;lev++) {
 	    PorousMedia& pm = getLevel(lev);
@@ -1622,7 +1620,6 @@ PorousMedia::solve_for_initial_flow_field()
     }
 
     Observation::setPMAmrPtr(PMParent());
-    prev_time = state[State_Type].prevTime();
     PArray<Observation>& observations = PMParent()->TheObservations();
     for (int i=0; i<observations.size(); ++i) {
       observations[i].process(time_before_init, time_after_init, parent->levelSteps(0),

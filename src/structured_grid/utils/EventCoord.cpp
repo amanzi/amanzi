@@ -15,7 +15,7 @@ typedef EventCoord::CycleEvent CycleEvent;
 typedef EventCoord::TimeEvent TimeEvent;
 
 CycleEvent::CycleEvent(const Array<int>& _cycles)
-    : type(CYCLES), cycles(_cycles.size())
+    : cycles(_cycles.size()), type(CYCLES)
 {
     for (int i=0; i<cycles.size(); ++i) {
         cycles[i] = _cycles[i];
@@ -32,7 +32,7 @@ CycleEvent::CycleEvent(const CycleEvent& rhs)
 }
 
 TimeEvent::TimeEvent(const Array<Real>& _times)
-    : type(TIMES), times(_times.size())
+    : times(_times.size()), type(TIMES)
 {
     for (int i=0; i<times.size(); ++i) {
         times[i] = _times[i];
