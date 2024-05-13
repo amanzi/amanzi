@@ -442,7 +442,7 @@
             <Parameter name="limit iterations" type="int" value="20"/>
             <Parameter name="modify correction" type="bool" value="false"/>
           </ParameterList>
-          <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+          <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
           <Parameter name="extrapolate initial guess" type="bool" value="true"/>
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>

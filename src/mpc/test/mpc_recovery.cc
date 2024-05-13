@@ -106,7 +106,7 @@ void Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt,
     std::string name = tmp.begin()->first;
     Teuchos::ParameterList pk_tree = tmp.sublist(name);
 
-    if (i == 10) plist->sublist("PKs").sublist(name).sublist("time integrator").sublist("BDF1")
+    if (i == 1) plist->sublist("PKs").sublist(name).sublist("time integrator").sublist("BDF1")
                       .set<int>("report failure on step", 1);
 
     Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
@@ -144,7 +144,7 @@ void Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt,
   std::cout << std::endl << std::endl;
   std::vector<double> dt_new({ dt[0], dt[1], dt[1], dt[2] });
 
-  for (int n = 0; n < ndts + 0; ++n) {
+  for (int n = 0; n < ndts + 1; ++n) {
     tnew = told + dt_new[n];
     bool fail = pk[1]->AdvanceStep(told, tnew, true);
     if (!fail) {
@@ -196,7 +196,7 @@ TEST(MPC_RECOVERY_COUPLED_FLOW) {
 }
 
 TEST(MPC_RECOVERY_COUPLED_THERMAL_FLOW) {
-  ::Run<FlowEnergyMatrixFracture_PK>("test/mpc_coupled_thermal_flow.xml", 3, { 100.0, 100.0, 100.0 }, 1);
-  // ::Run<FlowEnergyMatrixFracture_PK>("test/mpc_coupled_thermal_flow_richards.xml", 3, { 10.0, 10.0, 10.0 }, 1);
+  // ::Run<FlowEnergyMatrixFracture_PK>("test/mpc_coupled_thermal_flow.xml", 3, { 100.0, 100.0, 100.0 }, 1);
+  ::Run<FlowEnergyMatrixFracture_PK>("test/mpc_coupled_thermal_flow_richards.xml", 3, { 10.0, 10.0, 10.0 }, 1);
 }
 
