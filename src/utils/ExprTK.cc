@@ -38,10 +38,11 @@ ExprTK::Initialize(int n, const std::string& formula)
 double
 ExprTK::operator()(const std::vector<double>& txyz)
 {
+  int size = txyz.size();
   t = txyz[0];
   if (n_ > 1) x = txyz[1];
   if (n_ > 2) y = txyz[2];
-  if (n_ > 3) z = txyz[3];
+  if (n_ > 3 && size > 3) z = txyz[3];
   return expression_.value();
 }
 
