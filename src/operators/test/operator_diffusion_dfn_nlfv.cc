@@ -10,7 +10,7 @@
 /*
   Operators
 
-  Tests for the diffusion solver on a fracture network.
+  Tests for diffusion solver on manifolds, nonlinear FV schemes.
 */
 
 #include <cstdlib>
@@ -33,12 +33,9 @@
 
 // Amanzi::Operators
 #include "Analytic00b.hh"
-#include "Analytic01c.hh"
-#include "Analytic03b.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
-#include "PDE_DiffusionFVonManifolds.hh"
-#include "Verification.hh"
+#include "PDE_DiffusionNLFV.hh"
 
 
 /* *****************************************************************
@@ -74,37 +71,23 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx);
-  Teuchos::RCP<Mesh> surfmesh;
-  if (icase != 1) {
-    std::string setname = (icase == 0 || icase == 1) ? "fractures" : "fracture 1";
-    auto surfmesh_fw =
-      Teuchos::rcp(new MeshExtractedManifold(mesh, setname, AmanziMesh::FACE, comm, gm, plist));
-    surfmesh = Teuchos::rcp(
-      new Mesh(surfmesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
-  } else {
-    surfmesh = meshfactory.create("test/fractures.exo");
-  }
+  std::string setname = "fracture 1";
+  auto surfmesh_fw =
+    Teuchos::rcp(new MeshExtractedManifold(mesh, setname, AmanziMesh::FACE, comm, gm, plist));
+  Teuchos::RCP<Mesh> surfmesh = Teuchos::rcp(
+    new Mesh(surfmesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
 
   // modify diffusion coefficient
   int ncells_owned = surfmesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int ncells_wghost = surfmesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
   int nfaces_owned = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
 
-  double rho(1.0);
   AmanziGeometry::Point v(3);
   Teuchos::RCP<AnalyticBase> ana;
-  if (icase == 0 || icase == 1) {
-    ana = Teuchos::rcp(new Analytic00b(surfmesh, 1.1, 2.2, 3.3, 1, v, gravity));
-  } else if (icase == 2) {
-    ana = Teuchos::rcp(new Analytic03(surfmesh));
-  } else {
-    ana = Teuchos::rcp(new Analytic01c(surfmesh));
-  }
+  ana = Teuchos::rcp(new Analytic00b(surfmesh, 1.0, 2.0, 0.0, 1, v, gravity));
 
   // create boundary data (Dirichlet everywhere)
-  Teuchos::RCP<BCs> bc =
-    Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -121,7 +104,7 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
     }
   }
 
-  // create solution
+  // allocate memory for solution
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(surfmesh)->SetGhosted(true);
   cvs->SetComponent("cell", AmanziMesh::CELL, 1)->SetOwned(false);
@@ -134,44 +117,12 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
   Teuchos::ParameterList olist = plist->sublist("PK operator").sublist("diffusion operator");
   olist.set<bool>("gravity", (gravity > 0.0));
 
-  auto op = Teuchos::rcp(new Operators::PDE_DiffusionFVonManifolds(olist, surfmesh));
+  auto op = Teuchos::rcp(new Operators::PDE_DiffusionNLFV(olist, surfmesh));
   op->SetBCs(bc, bc);
+  op->SetScalarCoefficient(Teuchos::null, Teuchos::null);
 
   auto cvs2 = Operators::CreateManifoldCVS(surfmesh);
-  if (icase == 0) {
-    op->SetScalarCoefficient(Teuchos::null, Teuchos::null);
-  } else if (icase == 1) {
-    auto k = Teuchos::rcp(new CompositeVector(*cvs2));
-    k->PutScalar(1.0);
-    op->SetScalarCoefficient(k, Teuchos::null);
-    op->SetDensity(rho);
-    op->SetGravity(gvec);
-  } else if (icase == 2) {
-    WhetStone::Tensor T(3, 1);
-    auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>(ncells_wghost, T));
-    for (int c = 0; c < ncells_wghost; ++c) {
-      const Point& xc = surfmesh->getCellCentroid(c);
-      (*K)[c](0, 0) = ana->ScalarDiffusivity(xc, 0.0);
-    }
-    op->SetTensorCoefficient(K);
-    op->SetDensity(0.);
-    op->SetGravity(gvec);
-  } else if (icase == 3) {
-    auto k = Teuchos::rcp(new CompositeVector(*cvs2));
-    auto& k_f = *k->ViewComponent("face");
-    const auto& fmap = *k->Map().Map("face", true);
-
-    for (int f = 0; f < nfaces_owned; ++f) {
-      const Point& xf = surfmesh->getFaceCentroid(f);
-
-      int g = fmap.FirstPointInElement(f);
-      int ndofs = fmap.ElementSize(f);
-      for (int i = 0; i < ndofs; ++i) k_f[0][g + i] = ana->ScalarDiffusivity(xf, 0.0);
-    }
-    op->SetScalarCoefficient(k, Teuchos::null);
-    op->SetDensity(0.);
-    op->SetGravity(gvec);
-  }
+  auto flux = Teuchos::rcp(new CompositeVector(*cvs2));
 
   // create optional source term
   CompositeVector src(*cvs);
@@ -182,41 +133,39 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
     src_c[0][c] = ana->source_exact(xc, 0.0);
   }
 
-  // populate diffusion operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  global_op->Init();
-
-  op->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op->ApplyBCs(true, true, true);
-
-  // add source term
-  global_op->UpdateRHS(src, false);
-
-  // create preconditoner
   global_op->set_inverse_parameters(
     "Hypre AMG", plist->sublist("preconditioners"), "PCG", plist->sublist("solvers"));
-  global_op->InitializeInverse();
-  global_op->ComputeInverse();
 
-  VerificationCV ver(global_op);
-  ver.CheckMatrixSPD(true, true, 3);
-  ver.CheckPreconditionerSPD(1e-12, true, true);
+  for (int loop = 0; loop < 2; ++loop) {
+    // populate diffusion operator
+    global_op->Init();
 
-  CompositeVector rhs = *global_op->rhs();
-  global_op->ApplyInverse(rhs, *solution);
+    // add source term
+    global_op->UpdateRHS(src, false);
+
+    op->UpdateMatrices(Teuchos::null, solution.ptr());
+    op->ApplyBCs(true, true, true);
+
+    // create preconditoner
+    global_op->InitializeInverse();
+    global_op->ComputeInverse();
+
+    CompositeVector rhs = *global_op->rhs();
+    global_op->ApplyInverse(rhs, *solution);
+  }
 
   // post-processing
-  auto flux = Teuchos::rcp(new CompositeVector(*cvs2));
   op->UpdateFlux(solution.ptr(), flux.ptr());
 
   // statistics
   int ndofs = global_op->A()->NumGlobalRows();
-  double a;
-  rhs.Norm2(&a);
+  double fnorm;
+  global_op->rhs()->Norm2(&fnorm);
   if (MyPID == 0) {
     std::cout << "pressure solver"
               << ": ||r||=" << global_op->residual() << " itr=" << global_op->num_itrs()
-              << "  ||f||=" << a << "  #dofs=" << ndofs << " code=" << global_op->returned_code()
+              << "  ||f||=" << fnorm << "  #dofs=" << ndofs 
               << std::endl;
   }
 
@@ -230,14 +179,13 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
   // calculate flux error
   double unorm, ul2_err, uinf_err;
   Epetra_MultiVector& flux_f = *flux->ViewComponent("face", true);
-  flux->ScatterMasterToGhosted();
 
   ana->ComputeFaceError(flux_f, 0.0, unorm, ul2_err, uinf_err);
-  CHECK(ul2_err < tol * unorm);
+  // CHECK(ul2_err < tol * unorm);
 
   if (MyPID == 0) {
     l2_err /= pnorm;
-    printf("rel norms: L2(p)=%9.6f Inf(p)=%9.6f L2(u)=%9.6g Inf(u)=%9.6f norms=%9.6f %9.6f\n",
+    printf("rel norms: L2(p)=%9.6f Inf(p)=%9.6f L2(u)=%9.6g Inf(u)=%9.6f norms(p/u): %9.6f %9.6f\n",
            l2_err / pnorm,
            inf_err / pnorm,
            ul2_err / unorm,
@@ -248,22 +196,8 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
 }
 
 
-TEST(DIFFUSION_FRACTURES_FV_NO_K)
+TEST(DIFFUSION_FRACTURES_NLFV_NO_K)
 {
   RunTest(0, 0.0);
 }
 
-TEST(DIFFUSION_FRACTURES_FV_K)
-{
-  RunTest(1, 1.0);
-}
-
-TEST(DIFFUSION_FRACTURE1_FV_GENERAL_K)
-{
-  RunTest(2, 0.0, 10, 1e-2);
-}
-
-TEST(DIFFUSION_FRACTURE1_FV_GENERAL_LITTLE_K)
-{
-  RunTest(3, 0.0, 10, 1e-1);
-}

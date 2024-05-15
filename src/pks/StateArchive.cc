@@ -35,7 +35,8 @@ StateArchive::Restore(const std::string& passwd)
   for (auto it = fields_.begin(); it != fields_.end(); ++it) {
     std::string owner(passwd);
     if (S_->HasEvaluator(it->first, tag_)) {
-      if (S_->GetEvaluatorPtr(it->first, tag_)->get_type() == EvaluatorType::SECONDARY)
+      auto type = S_->GetEvaluatorPtr(it->first, tag_)->get_type();
+      if (type == EvaluatorType::SECONDARY || type == EvaluatorType::INDEPENDENT)
         owner = it->first;
     }
     S_->GetW<CompositeVector>(it->first, tag_, owner) = it->second;
@@ -80,6 +81,11 @@ StateArchive::CopyFieldsToPrevFields(std::vector<std::string>& fields,
       }
       if (add) fields_.emplace(prev, S_->Get<CompositeVector>(prev));
       S_->GetW<CompositeVector>(prev, tag_, passwd) = S_->Get<CompositeVector>(*it);
+
+      // if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
+      //   Teuchos::OSTab tab = vo_->getOSTab();
+      //   *vo_->os() << "moved " << *it << " to " << prev << std::endl;
+      // }
     }
   }
 }

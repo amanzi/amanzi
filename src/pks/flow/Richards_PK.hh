@@ -151,7 +151,7 @@ class Richards_PK : public Flow_PK {
     return op_matrix_diff_;
   }
 
-  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> get_bdf1_dae() { return bdf1_dae_; }
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>>& get_bdf1_dae() { return bdf1_dae_; }
 
   // -- verbose output and visualization methods
   void PlotWRMcurves(Teuchos::ParameterList& plist);

@@ -273,7 +273,9 @@ bool
 FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // create copies of conservative fields
-  std::vector<std::string> fields = { "saturation_liquid",
+  std::vector<std::string> fields = { "pressure",
+                                      "fracture-pressure", 
+                                      "saturation_liquid",
                                       "fracture-saturation_liquid",
                                       "fracture-aperture" };
   if (sub_pks_[0]->name() == "richards") {

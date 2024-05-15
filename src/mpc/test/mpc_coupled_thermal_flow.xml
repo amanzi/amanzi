@@ -66,6 +66,11 @@
         <Parameter name="framework" type="string" value="MSTK"/>
         <Parameter name="partitioner" type="string" value="zoltan_rcb"/>
       </ParameterList>
+      <ParameterList name="submesh">
+        <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+        <Parameter name="extraction method" type="string" value="none"/>
+        <Parameter name="domain name" type="string" value="surface"/>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 

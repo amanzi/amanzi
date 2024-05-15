@@ -15,6 +15,7 @@
 */
 
 #include "nlfv.hh"
+#include "SurfaceCoordinateSystem.hh"
 #include "WhetStoneDefs.hh"
 
 namespace Amanzi {
@@ -100,6 +101,7 @@ int
 NLFV::PositiveDecomposition(int id1,
                             const AmanziMesh::Point_List& tau,
                             const AmanziGeometry::Point& conormal,
+                            int manifold_dim,
                             double* ws,
                             int* ids)
 {
@@ -123,10 +125,11 @@ NLFV::PositiveDecomposition(int id1,
   if (fabs(cs - 1.0) < WHETSTONE_TOLERANCE_DECOMPOSITION) return 0;
 
   // Find the other directions
-  Tensor T(d, 2);
   double det(0.0);
 
   if (d == 2) {
+    Tensor T(2, 2);
+
     for (int i = 0; i < ntau; i++) {
       if (i == id1) continue;
 
@@ -153,7 +156,46 @@ NLFV::PositiveDecomposition(int id1,
         }
       }
     }
+  } else if (d == 3 && manifold_dim == 2) {
+    Tensor T(2, 2);
+    AmanziGeometry::Point origin(3);
+
+    for (int i = 0; i < ntau; i++) {
+      if (i == id1) continue;
+
+      auto manifold_normal = tau[id1] ^ tau[i];
+      AmanziGeometry::SurfaceCoordinateSystem coordsys(origin, manifold_normal);
+      auto manifold_conormal = coordsys.Project(conormal, false);
+
+      auto tau1 = coordsys.Project(tau[id1], false);
+      auto tau2 = coordsys.Project(tau[i], false);
+
+      T.SetColumn(0, tau1);
+      T.SetColumn(1, tau2);
+
+      // We skip almost colinear pairs.
+      c2 = norm(tau2);
+      double tmp = fabs(T.Det()) / (c1 * c2);
+      if (tmp < WHETSTONE_TOLERANCE_DECOMPOSITION) continue;
+
+      T.Inverse();
+      AmanziGeometry::Point p = T * manifold_conormal;
+
+      // We look for the strongest pair of vectors and try to
+      // avoid degenerate cases to improve robustness.
+      if (p[0] >= 0.0 && p[1] >= -WHETSTONE_TOLERANCE_DECOMPOSITION) {
+        if (tmp > det) {
+          det = tmp;
+          ws[0] = p[0];
+          ws[1] = fabs(p[1]);
+          ids[1] = i;
+          ierr = 0;
+        }
+      }
+    }
   } else if (d == 3) {
+    Tensor T(3, 2);
+
     for (int i = 0; i < ntau; i++) {
       if (i == id1) continue;
 

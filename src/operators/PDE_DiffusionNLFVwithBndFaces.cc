@@ -94,6 +94,7 @@ PDE_DiffusionNLFVwithBndFaces::Init_(Teuchos::ParameterList& plist)
 
   // other data
   dim_ = mesh_->getSpaceDimension();
+  manifold_dim_ = mesh_->getManifoldDimension();
 }
 
 
@@ -247,7 +248,7 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
       const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
       conormal = (Kc * normal) * dirs[n];
 
-      ierr = nlfv.PositiveDecomposition(n, tau, conormal, ws, ids);
+      ierr = nlfv.PositiveDecomposition(n, tau, conormal, manifold_dim_, ws, ids);
       AMANZI_ASSERT(ierr == 0);
 
       auto cells = mesh_->getFaceCells(f);
@@ -296,7 +297,7 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
       int ierr, ids[dim_];
       double ws[dim_];
 
-      ierr = nlfv.PositiveDecomposition(face_itself, tau, conormal, ws, ids);
+      ierr = nlfv.PositiveDecomposition(face_itself, tau, conormal, manifold_dim_, ws, ids);
       AMANZI_ASSERT(ierr == 0);
 
       weight[dim_][f] = ws[0];

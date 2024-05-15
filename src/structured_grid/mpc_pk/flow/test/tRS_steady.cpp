@@ -237,7 +237,6 @@ main (int   argc,
 
     MFTower& Pold = *(rs_data.Pold);
     MFTower& Pnew = *(rs_data.Pnew);
-    MFTower& RSold = *(rs_data.RhoSatOld);
     MFTower& RSnew = *(rs_data.RhoSatNew);
 
     rs_data.old_time = 0;

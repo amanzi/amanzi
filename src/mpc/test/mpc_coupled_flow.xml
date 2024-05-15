@@ -81,6 +81,13 @@
         <Parameter name="framework" type="string" value="MSTK"/>
         <Parameter name="partitioner" type="string" value="zoltan_rcb"/>
       </ParameterList>
+      <ParameterList name="submesh">
+        <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+        <Parameter name="extraction method" type="string" value="none"/>
+        <Parameter name="domain name" type="string" value="surface"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="verbose object">
     </ParameterList>
   </ParameterList>
 
@@ -467,9 +474,15 @@
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.0e+00"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
+          </ParameterList>                        
         </ParameterList>
-
       </ParameterList>
+
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>                        
     </ParameterList>
 
     <ParameterList name="flow matrix">
