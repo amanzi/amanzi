@@ -164,6 +164,12 @@ if (BUILD_TESTS)
                   KIND      int
                   SOURCE    test/Main.cc test/multiphase_source.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})  
+
+  # Jaffre model with temperature
+  add_amanzi_test(multiphase_jaffre_energy multiphase_jaffre_energy
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_jaffre_energy.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})  
   
 
 endif()
