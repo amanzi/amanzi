@@ -63,8 +63,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   virtual void set_dt(double dt) override{};
 
   // Advance PK by step size dt.
-  virtual bool
-  AdvanceStep(double t_old, double t_new, bool reinit = false) override;
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
 
   virtual void FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector& f) override;
 
@@ -78,15 +77,15 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual void UpdateExtraEvaluators(){};
 
-  virtual void SetPrimaryVariableBC(Teuchos::RCP<Teuchos::ParameterList> &bc_list);
+  virtual void SetPrimaryVariableBC(Teuchos::RCP<Teuchos::ParameterList>& bc_list);
 
   virtual void InitializeFields();
 
   virtual void ComputeCellArrays(){};
 
-  virtual void ComputeExternalForcingOnCells(std::vector<double> &forcing);
+  virtual void ComputeExternalForcingOnCells(std::vector<double>& forcing);
 
-  virtual void CopyPrimaryFields(StateArchive & archive);
+  virtual void CopyPrimaryFields(StateArchive& archive);
 
   // Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
@@ -100,31 +99,47 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   double BathymetryEdgeValue(int e, const Epetra_MultiVector& Bn);
 
   // Recalculate total depth for positivity of ponded depth
-  double TotalDepthEdgeValue(int c, int e, double htc,
-                             double Bc, double Bmax, const Epetra_MultiVector& B_n);
+  double TotalDepthEdgeValue(int c,
+                             int e,
+                             double htc,
+                             double Bc,
+                             double Bmax,
+                             const Epetra_MultiVector& B_n);
 
-  double ComputeFieldOnEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n); 
+  double ComputeFieldOnEdge(int c,
+                            int e,
+                            double htc,
+                            double Bc,
+                            double Bmax,
+                            const Epetra_MultiVector& B_n);
 
 
   // due to rotational invariance of SW equations, we need flux in the
   // x-direction only.
   std::vector<double> PhysicalFlux_x(const std::vector<double>&);
 
+  std::vector<double> NumericalFlux_x(std::vector<double>&, std::vector<double>&);
   std::vector<double>
-  NumericalFlux_x(std::vector<double>&, std::vector<double>&);
-  std::vector<double> NumericalFlux_x_Rusanov(const std::vector<double>&, const std::vector<double>&);
-  std::vector<double> NumericalFlux_x_CentralUpwind(const std::vector<double>&, const std::vector<double>&);
+  NumericalFlux_x_Rusanov(const std::vector<double>&, const std::vector<double>&);
+  std::vector<double>
+  NumericalFlux_x_CentralUpwind(const std::vector<double>&, const std::vector<double>&);
 
-  std::vector<double> NumericalSourceBedSlope(int c, double htc, double Bc,
-                                              double Bmax, const Epetra_MultiVector& B_n);
+  std::vector<double>
+  NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n);
 
-  double ComputeTotalDepth(double PrimaryVar, double Bathymetry){return PrimaryVar + Bathymetry;};
+  double ComputeTotalDepth(double PrimaryVar, double Bathymetry)
+  {
+    return PrimaryVar + Bathymetry;
+  };
 
   virtual void UpdateSecondaryFields();
 
-  virtual double ComputeHydrostaticPressureForce (std::vector<double> Data){return g_ * 0.5 * Data[0] * Data[0];};
+  virtual double ComputeHydrostaticPressureForce(std::vector<double> Data)
+  {
+    return g_ * 0.5 * Data[0] * Data[0];
+  };
 
-  void PushBackBC(Teuchos::RCP<ShallowWaterBoundaryFunction> bc){bcs_.push_back(bc);};
+  void PushBackBC(Teuchos::RCP<ShallowWaterBoundaryFunction> bc) { bcs_.push_back(bc); };
 
   double inverse_with_tolerance(double h, double tol);
 
@@ -132,9 +147,9 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   double get_total_source() const { return total_source_; }
 
  protected:
-  void
-  InitializeFieldFromField_(const std::string& field0,
-                            const std::string& field1, bool call_evaluator);
+  void InitializeFieldFromField_(const std::string& field0,
+                                 const std::string& field1,
+                                 bool call_evaluator);
 
   void VerifySolution_(TreeVector& A);
   int ErrorDiagnostics_(double t, int c, double h);
@@ -154,7 +169,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   // the primary variable is:
   // ponded depth for shallow water
   // wetted area for pipe flow
-  Key primary_variable_key_, prev_primary_variable_key_; 
+  Key primary_variable_key_, prev_primary_variable_key_;
   Key total_depth_key_, bathymetry_key_;
   Key hydrostatic_pressure_key_;
   Key riemann_flux_key_;
@@ -164,7 +179,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim_;
-  
+
   // source terms
   std::vector<Teuchos::RCP<PK_DomainFunction>> srcs_;
   double total_source_;
@@ -183,7 +198,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   // limited reconstruction
   bool use_limiter_;
-  Teuchos::RCP<Operators::ReconstructionCellLinear> total_depth_grad_, bathymetry_grad_;
+  Teuchos::RCP<Operators::ReconstructionCellLinear> total_depth_grad_;
   Teuchos::RCP<Operators::ReconstructionCellLinear> discharge_x_grad_, discharge_y_grad_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
 

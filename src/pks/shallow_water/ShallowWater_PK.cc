@@ -39,12 +39,7 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
                                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                  const Teuchos::RCP<State>& S,
                                  const Teuchos::RCP<TreeVector>& soln)
-  : PK(pk_tree, glist, S, soln), 
-    glist_(glist),
-    soln_(soln),
-    S_(S),
-    passwd_(""),
-    iters_(0)
+  : PK(pk_tree, glist, S, soln), glist_(glist), soln_(soln), S_(S), passwd_(""), iters_(0)
 {
   std::string pk_name = pk_tree.name();
   auto found = pk_name.rfind("->");
@@ -52,7 +47,6 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
 
   // Create miscellaneous lists.
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
   sw_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
   // domain name
@@ -61,7 +55,7 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
   cfl_ = sw_list_->get<double>("cfl", 0.1);
   max_iters_ = sw_list_->get<int>("number of reduced cfl cycles", 10);
   cfl_positivity_ = sw_list_->get<double>("depth positivity cfl", 0.95);
-  velocity_desingularization_eps_ = sw_list_->get<double>("desingularization epsilon", 1.e-04); 
+  velocity_desingularization_eps_ = sw_list_->get<double>("desingularization epsilon", 1.e-04);
   source_key_ = sw_list_->get<std::string>("source key", "");
 
   Teuchos::ParameterList vlist;
@@ -130,7 +124,9 @@ ShallowWater_PK::Setup()
   // -- discharge
   if (!S_->HasRecord(discharge_key_)) {
     S_->Require<CV_t, CVS_t>(discharge_key_, Tags::DEFAULT, discharge_key_)
-      .SetMesh(mesh_) ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 2);
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 2);
 
     Teuchos::ParameterList elist(discharge_key_);
     elist.set<std::string>("my key", discharge_key_).set<std::string>("tag", "");
@@ -142,24 +138,30 @@ ShallowWater_PK::Setup()
   // secondary fields
   //-------------------------------
 
-  // -- pipe drain 
-  if(!source_key_.empty()){ 
-     if (!S_->HasRecord(source_key_)) {
-        S_->Require<CV_t, CVS_t>(source_key_, Tags::NEXT, source_key_)
-          .SetMesh(mesh_) ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+  // -- pipe drain
+  if (!source_key_.empty()) {
+    if (!S_->HasRecord(source_key_)) {
+      S_->Require<CV_t, CVS_t>(source_key_, Tags::NEXT, source_key_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-        S_->RequireEvaluator(source_key_, Tags::NEXT);
-     }
+      S_->RequireEvaluator(source_key_, Tags::NEXT);
+    }
+
   }
 
   // -- bathymetry
   if (!S_->HasRecord(bathymetry_key_)) {
     std::vector<std::string> names({ "cell", "node", "cmax" });
-    std::vector<int> ndofs({ 1, 1, 1 } );
-    std::vector<AmanziMesh::Entity_kind> locations({ AmanziMesh::CELL, AmanziMesh::NODE, AmanziMesh::CELL });
+    std::vector<int> ndofs({ 1, 1, 1 });
+    std::vector<AmanziMesh::Entity_kind> locations(
+      { AmanziMesh::CELL, AmanziMesh::NODE, AmanziMesh::CELL });
 
     S_->Require<CV_t, CVS_t>(bathymetry_key_, Tags::DEFAULT, passwd_)
-      .SetMesh(mesh_)->SetGhosted(true)->SetComponents(names, locations, ndofs);
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->SetComponents(names, locations, ndofs);
   }
 
   // -- hydrostatic pressure
@@ -257,9 +259,9 @@ ShallowWater_PK::Initialize()
     }
   }
 
-  
+
   if (bc_list->isSublist("outward discharge")) {
-    // in the xml, a negative sign on the BC will mean inflow of water  
+    // in the xml, a negative sign on the BC will mean inflow of water
     PK_DomainFunctionFactory<ShallowWaterBoundaryFunction> bc_factory(mesh_, S_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("outward discharge");
@@ -295,7 +297,9 @@ ShallowWater_PK::Initialize()
 
   // numerical flux
   Teuchos::ParameterList model_list;
-  model_list.set<std::string>("numerical flux", sw_list_->get<std::string>("numerical flux", "central upwind"))
+  model_list
+    .set<std::string>("numerical flux",
+                      sw_list_->get<std::string>("numerical flux", "central upwind"))
     .set<double>("gravity", g_);
   NumericalFluxFactory nf_factory;
   numerical_flux_ = nf_factory.Create(model_list);
@@ -305,9 +309,6 @@ ShallowWater_PK::Initialize()
 
   total_depth_grad_ = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
   total_depth_grad_->Init(plist);
-
-  bathymetry_grad_ = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
-  bathymetry_grad_->Init(plist);
 
   discharge_x_grad_ = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
   discharge_x_grad_->Init(plist);
@@ -362,8 +363,8 @@ ShallowWater_PK::Initialize()
       AmanziGeometry::Point area = (xc - x0) ^ (xc - x1);
       tmp += norm(area) * (B_n[0][n0] + B_n[0][n1]) / 4;
 
-      B_max[0][c] = std::max(B_max[0][c], B_n[0][n0]); 
-      B_max[0][c] = std::max(B_max[0][c], B_n[0][n1]); 
+      B_max[0][c] = std::max(B_max[0][c], B_n[0][n0]);
+      B_max[0][c] = std::max(B_max[0][c], B_n[0][n1]);
     }
     B_c[0][c] = tmp / mesh_->cell_volume(c);
   }
@@ -371,7 +372,7 @@ ShallowWater_PK::Initialize()
   S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("cell");
   S_->Get<CV_t>(bathymetry_key_).ScatterMasterToGhosted("cmax");
 
-  // calculate cell area square (used as a tolerance)  
+  // calculate cell area square (used as a tolerance)
   cell_area2_max_ = cell_area_max * cell_area_max;
 
   InitializeFields();
@@ -463,12 +464,15 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // save a copy of primary and conservative fields
   auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  auto& h_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& h_c =
+    *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& ht_c =
+    *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   auto& vel_c = *S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
 
   S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
-  auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
+  auto& q_c =
+    *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
 
   // create copies of primary fields
   StateArchive archive(S_, vo_);
@@ -524,7 +528,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     rk1.TimeStep(t_old, dt, *soln_old, *soln_new);
 
     *soln_ = *soln_new;
-    VerifySolution_(*soln_); 
+    VerifySolution_(*soln_);
   } catch (...) {
     ierr = -1;
   }
@@ -532,13 +536,14 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // recover state in case of error
   if (ierr < 0) {
     archive.Restore(passwd_);
-    cfl_*=0.75;
+    cfl_ *= 0.75;
     return true;
   }
 
   // For consistency with other flow models, we need to track previous h
   // which was placed earlier in the archive.
-  S_->GetW<CV_t>(prev_primary_variable_key_, Tags::DEFAULT, passwd_) = archive.get(primary_variable_key_);
+  S_->GetW<CV_t>(prev_primary_variable_key_, Tags::DEFAULT, passwd_) =
+    archive.get(primary_variable_key_);
 
   return false;
 }
@@ -550,14 +555,16 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
-
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  auto& h_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
+  auto& h_c =
+    *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& ht_c =
+    *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& q_c =
+    *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
   auto& vel_c = *S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
 
   Epetra_MultiVector& h_new = *soln_->SubVector(0)->Data()->ViewComponent("cell");
@@ -574,21 +581,23 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   }
   UpdateSecondaryFields();
 
-  if(!source_key_.empty()){
-     S_->GetEvaluator(source_key_).Update(*S_, passwd_); // in this evaluator when running pipe flow
+  if (!source_key_.empty()) {
+    S_->GetEvaluator(source_key_).Update(*S_, passwd_); // in this evaluator when running pipe flow
   }
 
   Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-    S_->GetEvaluatorPtr(primary_variable_key_, Tags::DEFAULT))->SetChanged();
+    S_->GetEvaluatorPtr(primary_variable_key_, Tags::DEFAULT))
+    ->SetChanged();
 
   Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-    S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))->SetChanged();
+    S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))
+    ->SetChanged();
 
   S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
 
   UpdateExtraEvaluators();
 
-    // min-max values
+  // min-max values
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     double hmin(DBL_MAX), hmax(DBL_MIN);
     for (int c = 0; c < ncells_owned; ++c) {
@@ -621,8 +630,12 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 // Reconstruct if necessary for positivity
 //--------------------------------------------------------------
 double
-ShallowWater_PK::TotalDepthEdgeValue(
-    int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n)
+ShallowWater_PK::TotalDepthEdgeValue(int c,
+                                     int e,
+                                     double htc,
+                                     double Bc,
+                                     double Bmax,
+                                     const Epetra_MultiVector& B_n)
 {
   double ht_edge(0.0); // value to return
 
@@ -638,7 +651,7 @@ ShallowWater_PK::TotalDepthEdgeValue(
   cell_is_fully_flooded = false;
 
   // characterize cell based on [Beljadid et al.' 16]
-  if ((htc > Bmax) && (htc - Bc > 0.0)) { 
+  if ((htc > Bmax) && (htc - Bc > 0.0)) {
     cell_is_fully_flooded = true;
   } else if (std::abs(htc - Bc) < 1.e-15) {
     cell_is_dry = true;
@@ -704,11 +717,15 @@ ShallowWater_PK::TotalDepthEdgeValue(
 
 
 //--------------------------------------------------------------------
-// Discretization of the bed slope source term (well-balanced for lake at rest) 
-// To be used for the shallow water model only 
+// Discretization of the bed slope source term (well-balanced for lake at rest)
+// To be used for the shallow water model only
 //--------------------------------------------------------------------
 std::vector<double>
-ShallowWater_PK::NumericalSourceBedSlope( int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n)
+ShallowWater_PK::NumericalSourceBedSlope(int c,
+                                         double htc,
+                                         double Bc,
+                                         double Bmax,
+                                         const Epetra_MultiVector& B_n)
 {
   AmanziMesh::Entity_ID_List cfaces, cnodes;
   mesh_->cell_get_faces(c, &cfaces);
@@ -721,7 +738,7 @@ ShallowWater_PK::NumericalSourceBedSlope( int c, double htc, double Bc, double B
   for (int n = 0; n < cfaces.size(); ++n) {
     int f = cfaces[n];
     const auto& normal = mesh_->face_normal(f, false, c, &orientation);
-		
+
     double ht_rec = TotalDepthEdgeValue(c, f, htc, Bc, Bmax, B_n);
     double B_rec = BathymetryEdgeValue(f, B_n);
 
@@ -754,7 +771,6 @@ ShallowWater_PK::NumericalSourceBedSlope( int c, double htc, double Bc, double B
 double
 ShallowWater_PK::get_dt()
 {
-
   int dir;
   double d, d_min = 1.e10, vn, dt = 1.e10, dt_dry = 1.e-1;
   double h, vx, vy;
@@ -803,7 +819,8 @@ ShallowWater_PK::get_dt()
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "stable dt = " << dt_min << ", cfl = " << cfl_ << std::endl;
-    *vo_->os() << "max abs vel normal to face = " << vnMax << ", max primary variable = " << hMax << std::endl;
+    *vo_->os() << "max abs vel normal to face = " << vnMax << ", max primary variable = " << hMax
+               << std::endl;
   }
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH && iters_ == max_iters_) {
@@ -822,7 +839,8 @@ ShallowWater_PK::get_dt()
 //--------------------------------------------------------------
 // Throws an error if solution u is not valid.
 //--------------------------------------------------------------
-void ShallowWater_PK::VerifySolution_(TreeVector& u) 
+void
+ShallowWater_PK::VerifySolution_(TreeVector& u)
 {
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   const auto& h_c = *u.SubVector(0)->Data()->ViewComponent("cell");
@@ -860,18 +878,19 @@ ShallowWater_PK::BathymetryEdgeValue(int e, const Epetra_MultiVector& B_n)
 //--------------------------------------------------------------
 // Setup primary variable keys
 //--------------------------------------------------------------
-void ShallowWater_PK::SetupPrimaryVariableKeys(){
-
+void
+ShallowWater_PK::SetupPrimaryVariableKeys()
+{
   primary_variable_key_ = Keys::getKey(domain_, "ponded_depth");
   prev_primary_variable_key_ = Keys::getKey(domain_, "prev_ponded_depth");
-
 }
 
 //--------------------------------------------------------------
 // Set primary variable BC
 //--------------------------------------------------------------
-void ShallowWater_PK::SetPrimaryVariableBC(Teuchos::RCP<Teuchos::ParameterList> &bc_list){
-
+void
+ShallowWater_PK::SetPrimaryVariableBC(Teuchos::RCP<Teuchos::ParameterList>& bc_list)
+{
   // -- ponded depth BC
   if (bc_list->isSublist("ponded depth")) {
     PK_DomainFunctionFactory<ShallowWaterBoundaryFunction> bc_factory(mesh_, S_);
@@ -882,105 +901,114 @@ void ShallowWater_PK::SetPrimaryVariableBC(Teuchos::RCP<Teuchos::ParameterList> 
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        Teuchos::RCP<ShallowWaterBoundaryFunction> bc = bc_factory.Create(spec, "ponded depth", AmanziMesh::NODE, Teuchos::null);
+        Teuchos::RCP<ShallowWaterBoundaryFunction> bc =
+          bc_factory.Create(spec, "ponded depth", AmanziMesh::NODE, Teuchos::null);
         bc->set_bc_name("ponded depth");
         bc->set_type(WhetStone::DOF_Type::SCALAR);
         bcs_.push_back(bc);
       }
     }
   }
-
 }
 
 //--------------------------------------------------------------------
 // Update total depth for shallow water model
 //--------------------------------------------------------------------
-void ShallowWater_PK::UpdateSecondaryFields(){
+void
+ShallowWater_PK::UpdateSecondaryFields()
+{
+  auto& h_c =
+    *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& ht_c =
+    *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-   auto& h_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-   auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-   auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-
-   for (int c = 0; c < ncells_owned; ++c) {
-       ht_c[0][c] = ComputeTotalDepth(h_c[0][c], B_c[0][c]);
-   }
-
+  for (int c = 0; c < ncells_owned; ++c) { ht_c[0][c] = ComputeTotalDepth(h_c[0][c], B_c[0][c]); }
 }
 
 //--------------------------------------------------------------
 // Initialize fields
 //--------------------------------------------------------------
-void ShallowWater_PK::InitializeFields(){
+void
+ShallowWater_PK::InitializeFields()
+{
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
-     int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-     auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+  if (!S_->GetRecord(primary_variable_key_, Tags::DEFAULT).initialized()) {
+    auto& h_c =
+      *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+    auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
-     if (!S_->GetRecord(primary_variable_key_, Tags::DEFAULT).initialized()) {
-        auto& h_c = *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-        auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+    for (int c = 0; c < ncells_owned; c++) { h_c[0][c] = ht_c[0][c] - B_c[0][c]; }
 
-        for (int c = 0; c < ncells_owned; c++) { h_c[0][c] = ht_c[0][c] - B_c[0][c]; }
+    S_->GetRecordW(primary_variable_key_, Tags::DEFAULT, passwd_).set_initialized();
+  }
 
-        S_->GetRecordW(primary_variable_key_, Tags::DEFAULT, passwd_).set_initialized();
-     }
+  if (!S_->GetRecord(total_depth_key_).initialized()) {
+    const auto& h_c = *S_->Get<CV_t>(primary_variable_key_).ViewComponent("cell");
+    auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
-     if (!S_->GetRecord(total_depth_key_).initialized()) {
-        const auto& h_c = *S_->Get<CV_t>(primary_variable_key_).ViewComponent("cell");
-        auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+    for (int c = 0; c < ncells_owned; c++) { ht_c[0][c] = ComputeTotalDepth(h_c[0][c], B_c[0][c]); }
 
-        for (int c = 0; c < ncells_owned; c++) { ht_c[0][c] = ComputeTotalDepth(h_c[0][c], B_c[0][c]); }
-
-        S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
-     }
-
+    S_->GetRecordW(total_depth_key_, Tags::DEFAULT, passwd_).set_initialized();
+  }
 }
 
 //--------------------------------------------------------------
 // Compute external forcing on cells
 //--------------------------------------------------------------
-void ShallowWater_PK::ComputeExternalForcingOnCells(std::vector<double> &forcing){
-
-     for (int i = 0; i < srcs_.size(); ++i) {
-         for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
-             int c = it->first;
-             forcing[c] = it->second[0] / mesh_->cell_volume(c); // [m/s] for SW
-         }
-     }
-
+void
+ShallowWater_PK::ComputeExternalForcingOnCells(std::vector<double>& forcing)
+{
+  for (int i = 0; i < srcs_.size(); ++i) {
+    for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
+      int c = it->first;
+      forcing[c] = it->second[0] / mesh_->cell_volume(c); // [m/s] for SW
+    }
+  }
 }
 
 //--------------------------------------------------------------------
 // Compute ponded depth at edge location
 //--------------------------------------------------------------------
-double ShallowWater_PK::ComputeFieldOnEdge(int c, int e, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n)
+double
+ShallowWater_PK::ComputeFieldOnEdge(int c,
+                                    int e,
+                                    double htc,
+                                    double Bc,
+                                    double Bmax,
+                                    const Epetra_MultiVector& B_n)
 {
-
   double ht_rec = TotalDepthEdgeValue(c, e, htc, Bc, Bmax, B_n);
   double B_rec = BathymetryEdgeValue(e, B_n);
   double V_rec = ht_rec - B_rec;
 
   return V_rec;
-
 }
 
 
 //--------------------------------------------------------------
 // Copy primary fields
 //--------------------------------------------------------------
-void ShallowWater_PK::CopyPrimaryFields( StateArchive & archive ){
-
-  archive.Add({ primary_variable_key_ }, { discharge_key_ },
-                 { primary_variable_key_, velocity_key_ },
-                 Tags::DEFAULT, "shallow_water");
+void
+ShallowWater_PK::CopyPrimaryFields(StateArchive& archive)
+{
+  archive.Add({ primary_variable_key_ },
+              { discharge_key_ },
+              { primary_variable_key_, velocity_key_ },
+              Tags::DEFAULT,
+              "shallow_water");
 }
 
 //--------------------------------------------------------------
 // Inversion operation protected for small values
 //--------------------------------------------------------------
-double ShallowWater_PK::inverse_with_tolerance(double h, double tol)
+double
+ShallowWater_PK::inverse_with_tolerance(double h, double tol)
 {
-  double eps(velocity_desingularization_eps_); 
+  double eps(velocity_desingularization_eps_);
 
   if (h > eps) return 1.0 / h;
 

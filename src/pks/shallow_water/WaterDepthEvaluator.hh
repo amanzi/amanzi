@@ -24,7 +24,8 @@
 namespace Amanzi {
 namespace ShallowWater {
 
-class WaterDepthEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+class WaterDepthEvaluator
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   WaterDepthEvaluator(Teuchos::ParameterList& plist);
 
@@ -33,21 +34,21 @@ class WaterDepthEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, C
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
-protected: 
+ protected:
   double TwoPi = 6.28318530718;
 
  private:
   std::string wetted_angle_key_;
   std::string primary_variable_key_;
   std::string diameter_key_;
-
-
 };
 
-}  // namespace ShallowWater
-}  // namespace Amanzi
+} // namespace ShallowWater
+} // namespace Amanzi
 
 #endif
