@@ -145,10 +145,10 @@ ShallowWater_PK::Setup()
   // -- pipe drain 
   if(!source_key_.empty()){ 
      if (!S_->HasRecord(source_key_)) {
-        S_->Require<CV_t, CVS_t>(source_key_, Tags::DEFAULT, source_key_)
+        S_->Require<CV_t, CVS_t>(source_key_, Tags::NEXT, source_key_)
           .SetMesh(mesh_) ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
-        S_->RequireEvaluator(source_key_, Tags::DEFAULT);
+        S_->RequireEvaluator(source_key_, Tags::NEXT);
      }
   }
 
@@ -168,6 +168,7 @@ ShallowWater_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
+
 
     Teuchos::ParameterList elist(hydrostatic_pressure_key_);
     elist.set<std::string>("my key", hydrostatic_pressure_key_).set<std::string>("tag", "");

@@ -35,6 +35,9 @@ include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
+include_directories(${ATS_SOURCE_DIR}/src/pks)
+include_directories(${CHEMPK_SOURCE_DIR})
+include_directories(${AMANZI_SOURCE_DIR}/src/common/alquimia)
 
 #
 # Library: shallow_water
@@ -94,7 +97,7 @@ if (BUILD_TESTS)
     # Add the flow directory to the include paths
     include_directories(${SHALLOW_WATER_SOURCE_DIR})
 
-    set(amanzi_libs geometry mesh mesh_factory state shallow_water pks operators whetstone data_structures)
+    set(amanzi_libs geometry mesh mesh_factory state shallow_water pks operators whetstone data_structures ats_pks)
 
     # Test: transient 1D flow 
     add_amanzi_test(shallow_water_1D shallow_water_1D

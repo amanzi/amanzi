@@ -16,6 +16,7 @@
 #include "PressureHeadEvaluator.hh"
 #include "NumericalFluxFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
+#include "pk_helpers.hh"
 
 namespace Amanzi {
 namespace ShallowWater {
@@ -93,11 +94,14 @@ void PipeFlow_PK::Setup()
    if (!S_->HasRecord(pressure_head_key_)) {
       S_->Require<CV_t, CVS_t>(pressure_head_key_, Tags::DEFAULT, pressure_head_key_)
          .SetMesh(mesh_) ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+      
       Teuchos::ParameterList elist(pressure_head_key_);
       elist.set<std::string>("my key", pressure_head_key_).set<std::string>("tag", Tags::DEFAULT.get())
          .set<double>("celerity", celerity_);
       auto eval = Teuchos::rcp(new PressureHeadEvaluator(elist));
       S_->SetEvaluator(pressure_head_key_, Tags::DEFAULT, eval);
+
+      requireAtCurrent(pressure_head_key_, Tags::CURRENT, *S_, pressure_head_key_);
    }
 
    // -- direction
