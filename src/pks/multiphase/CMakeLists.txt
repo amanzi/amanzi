@@ -120,6 +120,11 @@ if (BUILD_TESTS)
                   SOURCE    test/Main.cc test/multiphase_jaffre.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+  add_amanzi_test(multiphase_jaffre_nlfv multiphase_jaffre_nlfv
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_jaffre_nlfv.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
   # Jaffre model with fractures
   add_amanzi_test(multiphase_jaffre_fractures multiphase_jaffre_fractures
                   KIND      int

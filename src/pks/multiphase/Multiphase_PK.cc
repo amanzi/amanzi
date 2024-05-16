@@ -784,7 +784,6 @@ Multiphase_PK::Initialize()
     }
   }
 
-
   // allocate metadata and populate boundary conditions
   op_bcs_.clear();
 
@@ -824,17 +823,22 @@ Multiphase_PK::Initialize()
   auto mass_l = S_->GetPtr<CV_t>(mass_density_liquid_key_, Tags::DEFAULT);
   fac_diffK_->SetVariableGravitationalTerm(gravity_, mass_l);
 
+  auto pres0 = S_->GetPtr<CV_t>(pressure_names_[0], Tags::DEFAULT);
+  auto pres1 = S_->GetPtr<CV_t>(pressure_names_[1], Tags::DEFAULT);
+  auto flux0 = S_->GetPtr<CV_t>(flux_names_[0], Tags::DEFAULT);
+  auto flux1 = S_->GetPtr<CV_t>(flux_names_[1], Tags::DEFAULT);
+
   pde_diff_K_.resize(2);
   pde_diff_K_[0] = fac_diffK_->Create();
   pde_diff_K_[0]->SetBCs(op_bcs_[pressure_liquid_key_], op_bcs_[pressure_liquid_key_]);
-  pde_diff_K_[0]->UpdateMatrices(Teuchos::null, Teuchos::null);
+  pde_diff_K_[0]->UpdateMatrices(flux0.ptr(), pres0.ptr());
 
   auto mass_g = S_->GetPtr<CV_t>(mass_density_gas_key_, Tags::DEFAULT);
   fac_diffK_->SetVariableGravitationalTerm(gravity_, mass_g);
 
   pde_diff_K_[1] = fac_diffK_->Create();
   pde_diff_K_[1]->SetBCs(op_bcs_[pressure_gas_key_], op_bcs_[pressure_gas_key_]);
-  pde_diff_K_[1]->UpdateMatrices(Teuchos::null, Teuchos::null);
+  pde_diff_K_[1]->UpdateMatrices(flux1.ptr(), pres1.ptr());
 
   auto& mdf_list =
     mp_list_->sublist("operators").sublist("molecular diffusion operator").sublist("matrix");
@@ -889,15 +893,14 @@ Multiphase_PK::Initialize()
     S_->GetEvaluator(adv_names_[phase]).Update(*S_, passwd_);
     kr_c = *S_->Get<CV_t>(adv_names_[phase]).ViewComponent("cell");
 
+    auto var = S_->GetPtr<CV_t>(pressure_names_[phase], Tags::DEFAULT);
     auto flux = S_->GetPtrW<CV_t>(flux_names_[phase], Tags::DEFAULT, passwd_);
     upwind_->Compute(*flux, bcnone, *kr);
 
     auto pdeK = pde_diff_K_[phase];
     pdeK->Setup(Kptr, kr, Teuchos::null);
     pdeK->global_operator()->Init();
-    pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-    auto var = S_->GetPtr<CV_t>(pressure_names_[phase], Tags::DEFAULT);
+    pdeK->UpdateMatrices(flux.ptr(), var.ptr());
     pdeK->UpdateFlux(var.ptr(), flux.ptr());
   }
 
@@ -1029,18 +1032,17 @@ Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   for (int phase = 0; phase < 2; ++phase) {
     S_->GetEvaluator(adv_names_[phase]).Update(*S_, passwd_);
 
-    kr_c = *S_->Get<CV_t>(adv_names_[phase]).ViewComponent("cell");
+    auto var = S_->GetPtr<CV_t>(pressure_names_[phase], Tags::DEFAULT);
     auto flux = S_->GetPtrW<CV_t>(flux_names_[phase], Tags::DEFAULT, passwd_);
 
+    kr_c = *S_->Get<CV_t>(adv_names_[phase]).ViewComponent("cell");
     upwind_->Compute(*flux, bcnone, *kr);
 
     auto pdeK = pde_diff_K_[phase];
     pdeK->Setup(Kptr, kr, Teuchos::null);
     pdeK->SetBCs(op_bcs_[pressure_names_[phase]], op_bcs_[pressure_names_[phase]]);
     pdeK->global_operator()->Init();
-    pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-    auto var = S_->GetPtr<CV_t>(pressure_names_[phase], Tags::DEFAULT);
+    pdeK->UpdateMatrices(flux.ptr(), var.ptr());
     pdeK->UpdateFlux(var.ptr(), flux.ptr());
   }
 

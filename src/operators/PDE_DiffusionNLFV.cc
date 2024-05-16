@@ -483,6 +483,10 @@ PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const Compo
   }
 }
 
+
+/* ******************************************************************
+*
+****************************************************************** */
 void
 PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
                                                   const Teuchos::Ptr<const CompositeVector>& u,
@@ -544,6 +548,7 @@ PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const Compo
     jac_op_->matrices[f] = Aface;
   }
 }
+
 
 /* ******************************************************************
 * Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).
@@ -741,8 +746,8 @@ PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
       auto cells = mesh_->getFaceCells(f);
       mesh_->getFaceNormal(f, cells[0], &dir);
       flux_data[0][f] = wgt_sideflux[0][f] * dir;
-      // } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-      //   flux_data[0][f] = bc_value[f] * mesh_->getFaceArea(f);
+    // } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+    //   flux_data[0][f] = bc_value[f] * mesh_->getFaceArea(f);
     } else if (bc_model[f] == OPERATOR_BC_NONE) {
       auto cells = mesh_->getFaceCells(f);
       OrderCellsByGlobalId_(cells, c1, c2);
@@ -755,6 +760,28 @@ PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
         flux_data[0][f] = 0.5 * (wg1 - wg2) * dir;
       else
         flux_data[0][f] = dir * wg1;
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Scale face-based matrices.
+****************************************************************** */
+void
+PDE_DiffusionNLFV::ScaleMatricesColumns(const CompositeVector& s)
+{
+  const auto& s_c = *s.ViewComponent("cell");
+
+  for (int f = 0; f < nfaces_owned; ++f) {
+    WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
+
+    auto cells = mesh_->getFaceCells(f);
+    int ncells = cells.size();
+
+    for (int n = 0; n < ncells; ++n) {
+      double factor = s_c[0][cells[n]];
+      for (int m = 0; m < ncells; ++m) { Aface(m, n) *= factor; }
     }
   }
 }
