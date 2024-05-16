@@ -22,6 +22,10 @@ if (ENABLE_ALQUIMIA)
   add_subdirectory(common/alquimia)
 endif()
 
+if (ENABLE_ECOSIM)
+  add_definitions(-DECOSIM_ENABLED)
+endif()
+
 if (ENABLE_Unstructured)
   # Mesh
   add_subdirectory(mesh)

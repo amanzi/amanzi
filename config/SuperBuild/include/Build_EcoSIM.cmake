@@ -1,10 +1,10 @@
 #  -*- mode: cmake -*-
-
 #
 # Build TPL:  EcoSIM
 # This builds the BGC code EcoSIM for use within ATS
 #
 # --- Define all the directories and common external project flags
+
 define_external_project_args(ECOSIM
                              TARGET ecosim
                              DEPENDS HDF5 ZLIB NetCDF NetCDF_Fortran
@@ -31,21 +31,32 @@ if ( DISABLE_EXTERNAL_DOWNLOAD )
 else()
   set (ECOSIM_GIT_REPOSITORY_TEMP ${ECOSIM_GIT_REPOSITORY})
 endif()
-message(STATUS "ECOSIM git repository = ${ECOSIM_GIT_REPOSITORY_TEMP}")
 
 #set(ECOSIM_cmake_config ${ECOSIM_prefix_dir}/ecosim-config-step.cmake)
-#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ecosim-config-step.cmake.in
-#               ${ECOSIM_cmake_config}
-#               @ONLY)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ecosim-install-step.sh.in
+	       ${ECOSIM_prefix_dir}/ecosim-install-step.sh
+               @ONLY)
 
-set(ECOSIM_config_command ${CMAKE_COMMAND} ${ECOSIM_source_dir})
+#set(ECOSIM_CONFIGURE_COMMAND ${CMAKE_COMMAND} -P ${ECOSIM_prefix_dir}/ecosim-configure-step.cmake)
+
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ecosim-build-step.cmake.in
+               ${ECOSIM_prefix_dir}/ecosim-build-step.cmake
+               @ONLY)
+
+set(ECOSIM_BUILD_COMMAND ${CMAKE_COMMAND} -P ${ECOSIM_prefix_dir}/ecosim-build-step.cmake)
+set(ECOSIM_INSTALL_COMMAND sh ${ECOSIM_prefix_dir}/ecosim-install-step.sh)
+
+#set(ECOSIM_config_command ${CMAKE_COMMAND} ${ECOSIM_source_dir})
 set(ECOSIM_build_dir ${ECOSIM_prefix_dir}/build)
 
 message(STATUS "Attempting ecosim build...")
 message(STATUS "ECOSIM_prefix_dir: ${ECOSIM_prefix_dir}")
 message(STATUS "ECOSIM_source_dir: ${ECOSIM_source_dir}")
+message(STATUS "ECOSIM_CONFIGURE_COMMAND: ${ECOSIM_CONFIGURE_COMMAND}")
+message(STATUS "TPL_INSTALL_PREFIX: ${TPL_INSTALL_PREFIX}")
+message(STATUS "AMANZI_TPLS_INSTALL_DIR: ${AMANZI_TPLS_INSTALL_DIR}")
 
-# --- Add external project build and tie to the ECOSIM build target
+
 ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                     DEPENDS   ${ECOSIM_PACKAGE_DEPENDS}        # Package dependency target
                     TMP_DIR   ${ECOSIM_tmp_dir}                # Temporary files directory
@@ -60,7 +71,7 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                     PATCH_COMMAND ""
                     # -- Configure
                     SOURCE_DIR    ${ECOSIM_source_dir}         # Source directory
-		    CONFIGURE_COMMAND ${ECOSIM_config_command} 
+                    CONFIGURE_COMMAND ""
                     CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}     # Ensure uniform build
                                   ${ECOSIM_CMAKE_CACHE_ARGS}
                                   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
@@ -70,15 +81,47 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                                   -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                     BINARY_DIR     ${ECOSIM_build_dir}       # Build directory
-		    BUILD_COMMAND    $(MAKE)   # $(MAKE) enables parallel builds through make
-                    BUILD_IN_SOURCE  0                           # Flag for in source builds
+		    BUILD_COMMAND  ${ECOSIM_BUILD_COMMAND}
+		    BUILD_IN_SOURCE  0                           # Flag for in source builds
 #                    # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}       # Install directory
-		    INSTALL_COMMAND  $(MAKE) install
+		    INSTALL_COMMAND  ${ECOSIM_INSTALL_COMMAND}
 #                    # -- Output control
                     ${ECOSIM_logging_args})
 
-message(STATUS "build finished, making libraries")
+# --- Add external project build and tie to the ECOSIM build target
+# --- Old version before new shell script
+#ExternalProject_Add(${ECOSIM_BUILD_TARGET}
+#                    DEPENDS   ${ECOSIM_PACKAGE_DEPENDS}        # Package dependency target
+#                    TMP_DIR   ${ECOSIM_tmp_dir}                # Temporary files directory
+#                    STAMP_DIR ${ECOSIM_stamp_dir}              # Timestamp and log directory
+#                    # -- Download and URL definitions
+#                    # -- Note: The repo is cloned into the ${ECOSIM_source_dir} directory
+#                    GIT_REPOSITORY ${ECOSIM_GIT_REPOSITORY_TEMP}
+#                    GIT_TAG        ${ECOSIM_GIT_TAG}
+#                    # -- Update (one way to skip this step is use null command)
+#                    UPDATE_COMMAND ""
+#                    # -- Patch
+#                    PATCH_COMMAND ""
+#                    # -- Configure
+#                    SOURCE_DIR    ${ECOSIM_source_dir}         # Source directory
+#		    CONFIGURE_COMMAND ${ECOSIM_config_command} 
+#                    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}     # Ensure uniform build
+#                                  ${ECOSIM_CMAKE_CACHE_ARGS}
+#                                  -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
+#                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+#                                  -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}  # Ensure uniform build
+#                                  -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+#                                  -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
+#                                  -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+#                    BINARY_DIR     ${ECOSIM_build_dir}       # Build directory
+#		    BUILD_COMMAND    $(MAKE)   # $(MAKE) enables parallel builds through make
+#                    BUILD_IN_SOURCE  0                           # Flag for in source builds
+##                    # -- Install
+#                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}       # Install directory
+#		    INSTALL_COMMAND  $(MAKE) install
+##                    # -- Output control
+#                    ${ECOSIM_logging_args})
 
 include(BuildLibraryName)
 build_library_name(ecosim ECOSIM_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib/)
@@ -86,7 +129,3 @@ set(ECOSIM_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/ecosim/local/include)
 set(ECOSIM_DIR ${TPL_INSTALL_PREFIX}/ecosim)
 set(ECOSIM_INSTALL_PREFIX ${TPL_INSTALL_PREFIX})
 
-message("Ecosim include dirs: ${ECOSIM_INCLUDE_DIRS}")
-message("Ecosim lib: ${ECOSIM_LIBRARIES}")
-message("Ecosim dir: ${ECOSIM_DIR}")
-message("EcoSIM install prefix ${ECOSIM_INSTALL_PREFIX}")
