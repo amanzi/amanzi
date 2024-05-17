@@ -766,28 +766,6 @@ PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
 
 
 /* ******************************************************************
-* Scale face-based matrices.
-****************************************************************** */
-void
-PDE_DiffusionNLFV::ScaleMatricesColumns(const CompositeVector& s)
-{
-  const auto& s_c = *s.ViewComponent("cell");
-
-  for (int f = 0; f < nfaces_owned; ++f) {
-    WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
-
-    auto cells = mesh_->getFaceCells(f);
-    int ncells = cells.size();
-
-    for (int n = 0; n < ncells; ++n) {
-      double factor = s_c[0][cells[n]];
-      for (int m = 0; m < ncells; ++m) { Aface(m, n) *= factor; }
-    }
-  }
-}
-
-
-/* ******************************************************************
 * Order cells by their global ids. Returns 1 if cells were swapped.
 ****************************************************************** */
 int

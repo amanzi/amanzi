@@ -51,9 +51,7 @@ TEST(MPC_DRIVER_MULTIPHASE_FRACTURES)
   mesh_list->set<bool>("request faces", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({ Framework::MSTK }));
-  // auto mesh3D = factory.create(0.0, 0.0, 0.0, 200.0, 12.0, 60.0, 50, 1, 20);
-  auto mesh3D = factory.create(0.0, 0.0, 0.0, 200.0, 12.0, 12.0, 50, 12, 12);
-
+  auto mesh3D = factory.create(0.0, 0.0, 0.0, 200.0, 12.0, 60.0, 100, 2, 20);
 
   std::vector<std::string> names;
   names.push_back("fractures");
@@ -66,9 +64,9 @@ TEST(MPC_DRIVER_MULTIPHASE_FRACTURES)
   S->RegisterMesh("domain", mesh);
 
   // work-around
-  // Key key("mass_density_gas");
-  // S->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
-  //   .SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+  Key key("mass_density_gas");
+  S->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
+    .SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
 
   {
     Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
