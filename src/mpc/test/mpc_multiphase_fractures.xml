@@ -74,12 +74,17 @@
   <ParameterList name="mesh">
     <ParameterList name="unstructured">
       <ParameterList name="generate mesh">
-        <Parameter name="number of cells" type="Array(int)" value="{200, 3, 3}"/>
+        <Parameter name="number of cells" type="Array(int)" value="{100, 2, 20}"/>
         <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-        <Parameter name="domain high coordinate" type="Array(double)" value="{200.0,12.0,12.0}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{200.0,12.0,60.0}"/>
       </ParameterList>
       <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>
+      </ParameterList>
+      <ParameterList name="submesh">
+        <Parameter name="regions" type="Array(string)" value="{fractures}"/>
+        <Parameter name="extraction method" type="string" value="none"/>
+        <Parameter name="domain name" type="string" value="surface"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -198,6 +203,9 @@
              <Parameter name="modify correction" type="bool" value="true"/>
              <Parameter name="monitor" type="string" value="monitor update"/>
              <Parameter name="make one iteration" type="bool" value="true"/>
+             <ParameterList name="verbose object">
+               <Parameter name="verbosity level" type="string" value="high"/>
+             </ParameterList>                        
            </ParameterList>
           
            <!--
@@ -723,7 +731,6 @@
       </ParameterList>
     </ParameterList>
     -->
-    
   </ParameterList>
 
   <ParameterList name="verbose object">

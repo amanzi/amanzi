@@ -30,16 +30,19 @@
 #include "CompositeVector.hh"
 #include "eos_reg.hh"
 #include "evaluators_flow_reg.hh"
+#include "evaluators_multiphase_reg.hh"
 #include "IO.hh"
 #include "MeshFactory.hh"
 #include "MeshExtractedManifold.hh"
 #include "models_energy_reg.hh"
 #include "models_flow_reg.hh"
+#include "models_multiphase_reg.hh"
 #include "Operator.hh"
 #include "pks_energy_reg.hh"
 #include "pks_flow_reg.hh"
 #include "pks_mechanics_reg.hh"
 #include "pks_mpc_reg.hh"
+#include "pks_multiphase_reg.hh"
 #include "Richards_PK.hh"
 #include "State.hh"
 #include "VerboseObject.hh"
@@ -53,7 +56,7 @@ using namespace Amanzi::Operators;
 * Analysis of Failure/Recovery 
 * ************************************************************** */
 template<class PK>
-void Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt, int iTP)
+void Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt, int iTP, bool special = false)
 {
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
@@ -111,8 +114,17 @@ void Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt,
 
     Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
     S[i] = Teuchos::rcp(new State(state_list));
-    S[i]->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
-    if (has_submesh) S[i]->RegisterMesh("fracture", Teuchos::rcp_const_cast<Mesh>(submesh));
+
+    if (special) {
+      S[i]->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(submesh));
+
+      Key key("mass_density_gas");
+      S[i]->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
+        .SetMesh(submesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+    } else {
+      S[i]->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
+      if (has_submesh) S[i]->RegisterMesh("fracture", Teuchos::rcp_const_cast<Mesh>(submesh));
+    }
 
     soln[i] = Teuchos::rcp(new TreeVector());
     pk[i] = Teuchos::rcp(new PK(pk_tree, plist, S[i], soln[i]));
@@ -198,5 +210,9 @@ TEST(MPC_RECOVERY_COUPLED_FLOW) {
 TEST(MPC_RECOVERY_COUPLED_THERMAL_FLOW) {
   // ::Run<FlowEnergyMatrixFracture_PK>("test/mpc_coupled_thermal_flow.xml", 3, { 100.0, 100.0, 100.0 }, 1);
   ::Run<FlowEnergyMatrixFracture_PK>("test/mpc_coupled_thermal_flow_richards.xml", 3, { 10.0, 10.0, 10.0 }, 1);
+}
+
+TEST(MPC_RECOVERY_MULTIPHASE) {
+  ::Run<Multiphase::Multiphase_PK>("test/mpc_multiphase_fractures.xml", 3, { 2.0e+11, 2.0e+11, 2.0e+11 }, 0, true);
 }
 

@@ -20,7 +20,6 @@
 #ifndef UNIQUE_LOCAL_INDEX_HH_
 #define UNIQUE_LOCAL_INDEX_HH_
 
-#include <iterator>
 #include <set>
 
 #include "Epetra_BlockMap.h"
