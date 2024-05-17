@@ -30,6 +30,7 @@
 #include "PDE_DiffusionFVonManifolds.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "RelPermEvaluator.hh"
+#include "StateArchive.hh"
 #include "TCMEvaluator_TwoPhase.hh"
 #include "UpwindFactory.hh"
 
@@ -951,16 +952,16 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   dt_ = t_new - t_old;
 
   // make a copy of primary and conservative fields
-  auto copy_names = soln_names_;
-  copy_names.push_back(prev_tws_key_);
-  copy_names.push_back(prev_tcs_key_);
-  copy_names.push_back(mol_flowrate_liquid_key_);
-  copy_names.push_back(mol_flowrate_gas_key_);
-  if (system_["energy eqn"]) copy_names.push_back(prev_energy_key_);
+  auto names = soln_names_;
+  names.push_back(mol_flowrate_liquid_key_);
+  names.push_back(mol_flowrate_gas_key_);
 
-  int ncopy = copy_names.size();
-  std::vector<CompositeVector> copies;
-  for (int i = 0; i < ncopy; ++i) { copies.push_back(S_->Get<CV_t>(copy_names[i])); }
+  std::vector<Key> fields = { tws_key_, tcs_key_ };
+  if (system_["energy eqn"]) fields.push_back(energy_key_);
+
+  StateArchive archive(S_, vo_);
+  archive.Add(names, Tags::DEFAULT);
+  archive.CopyFieldsToPrevFields(fields, "", true);
 
   // initialization
   if (num_ns_itrs_ == 0) {
@@ -990,12 +991,9 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (failed) {
     dt_ = dt_next_;
 
-    // recover the original fields
-    for (int i = 0; i < ncopy; ++i) {
-      S_->GetW<CV_t>(copy_names[i], Tags::DEFAULT, passwd_) = copies[i];
-    }
-
+    archive.Restore("");
     ChangedSolution();
+
     return failed;
   }
 
