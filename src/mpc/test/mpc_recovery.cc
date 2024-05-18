@@ -56,7 +56,7 @@ using namespace Amanzi::Operators;
 * Analysis of Failure/Recovery 
 * ************************************************************** */
 template<class PK>
-void Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt, int iTP, bool special = false)
+void Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt, int iTP, int icase = -1)
 {
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
@@ -113,14 +113,22 @@ void Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt,
                       .set<int>("report failure on step", 1);
 
     Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
+    state_list.sublist("verbose object").set<std::string>("verbosity level", "none");
     S[i] = Teuchos::rcp(new State(state_list));
 
-    if (special) {
+    // special cases
+    if (icase == 5) {
       S[i]->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(submesh));
 
       Key key("mass_density_gas");
       S[i]->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
         .SetMesh(submesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+    } else if (icase == 6) {
+      S[i]->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
+
+      Key key("mass_density_gas");
+      S[i]->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
+        .SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
     } else {
       S[i]->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
       if (has_submesh) S[i]->RegisterMesh("fracture", Teuchos::rcp_const_cast<Mesh>(submesh));
@@ -212,7 +220,12 @@ TEST(MPC_RECOVERY_COUPLED_THERMAL_FLOW) {
   ::Run<FlowEnergyMatrixFracture_PK>("test/mpc_coupled_thermal_flow_richards.xml", 3, { 10.0, 10.0, 10.0 }, 1);
 }
 
-TEST(MPC_RECOVERY_MULTIPHASE) {
-  ::Run<Multiphase::Multiphase_PK>("test/mpc_multiphase_fractures.xml", 3, { 2.0e+11, 2.0e+11, 2.0e+11 }, 0, true);
+TEST(MPC_RECOVERY_MULTIPHASE_FRACTURES) {
+  ::Run<Multiphase::Multiphase_PK>("test/mpc_multiphase_fractures.xml", 3, { 2.0e+11, 2.0e+11, 2.0e+11 }, 0, 5);
 }
+
+TEST(MPC_RECOVERY_MULTIPHASE_THERMAL_3D) {
+  ::Run<Multiphase::Multiphase_PK>("test/mpc_multiphase_thermal.xml", 3, { 2.0e+7, 2.0e+7, 2.0e+7 }, 0, 6);
+}
+
 
