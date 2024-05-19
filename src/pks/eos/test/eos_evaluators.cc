@@ -178,8 +178,11 @@ TEST(TabularEOS_FEHM)
 
     LookupTable_FEHM eos(plist);
 
-    for (double T = 293.15; T < 320; T += 10.0) {
-      for (double p = 1e+5; p < 1.4e+5; p += 1.0e+4) { eos.Function(T, p, &ierr); }
+    for (double T = 73.15; T < 320; T += 10.0) {
+      for (double p = 1e+5; p < 1.4e+5; p += 1.0e+4) {
+        double val = eos.Function(T, p, &ierr);
+        if (loop < 2) CHECK(val > 0.0);
+      }
     }
 
     // verify derivatives
