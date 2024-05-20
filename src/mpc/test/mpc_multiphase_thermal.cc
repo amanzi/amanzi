@@ -23,6 +23,7 @@
 #include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
 #include "Mesh.hh"
+#include "models_energy_reg.hh"
 #include "models_multiphase_reg.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
@@ -30,7 +31,7 @@
 #include "State.hh"
 
 
-TEST(MPC_DRIVER_MULTIPHASE_FRACTURES)
+TEST(MPC_DRIVER_MULTIPHASE_THERMAL)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -39,7 +40,7 @@ TEST(MPC_DRIVER_MULTIPHASE_FRACTURES)
   auto comm = Amanzi::getDefaultComm();
 
   // read the main parameter list
-  std::string xmlInFileName = "test/mpc_multiphase_fractures.xml";
+  std::string xmlInFileName = "test/mpc_multiphase_thermal.xml";
   auto plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
 
   // create mesh
@@ -47,15 +48,9 @@ TEST(MPC_DRIVER_MULTIPHASE_FRACTURES)
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
 
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
-  mesh_list->set<bool>("request edges", true);
-  mesh_list->set<bool>("request faces", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh3D = factory.create(0.0, 0.0, 0.0, 200.0, 12.0, 60.0, 100, 2, 20);
-
-  std::vector<std::string> names;
-  names.push_back("fractures");
-  auto mesh = factory.create(mesh3D, names, AmanziMesh::FACE);
+  auto mesh = factory.create(0.0, 0.0, 0.0, 200.0, 20.0, 20.0, 50, 4, 4);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;
@@ -80,4 +75,9 @@ TEST(MPC_DRIVER_MULTIPHASE_FRACTURES)
     }
   }
   WriteStateStatistics(*S);
+
+  const auto& T = S->Get<CompositeVector>("temperature", Tags::DEFAULT);
+  double Tmin;
+  T.MinValue(&Tmin);
+  CHECK(Tmin > 303.0 && Tmin < 320.0);
 }

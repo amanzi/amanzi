@@ -138,6 +138,17 @@ Multiphase_PK::PopulateBCs(int icomp, bool flag)
         bc_value_x[f] = 0.0;
       }
     }
+
+    if (bcs_[i]->get_bc_name() == "temperature") {
+      auto& bc_model_t = op_bcs_[temperature_key_]->bc_model();
+      auto& bc_value_t = op_bcs_[temperature_key_]->bc_value();
+
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        bc_model_t[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value_t[f] = it->second[0];
+      }
+    }
   }
 
   // mark missing boundary conditions as zero flux conditions

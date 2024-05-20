@@ -483,6 +483,10 @@ PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const Compo
   }
 }
 
+
+/* ******************************************************************
+*
+****************************************************************** */
 void
 PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
                                                   const Teuchos::Ptr<const CompositeVector>& u,
@@ -544,6 +548,7 @@ PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const Compo
     jac_op_->matrices[f] = Aface;
   }
 }
+
 
 /* ******************************************************************
 * Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).
@@ -741,8 +746,8 @@ PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
       auto cells = mesh_->getFaceCells(f);
       mesh_->getFaceNormal(f, cells[0], &dir);
       flux_data[0][f] = wgt_sideflux[0][f] * dir;
-      // } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-      //   flux_data[0][f] = bc_value[f] * mesh_->getFaceArea(f);
+    // } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+    //   flux_data[0][f] = bc_value[f] * mesh_->getFaceArea(f);
     } else if (bc_model[f] == OPERATOR_BC_NONE) {
       auto cells = mesh_->getFaceCells(f);
       OrderCellsByGlobalId_(cells, c1, c2);

@@ -83,9 +83,8 @@ class PDE_DiffusionFVonManifolds : public PDE_DiffusionWithGravity {
 
   // -- modify the local operator
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
-  virtual void ModifyMatrices(const CompositeVector& u) override{};
-  virtual void ScaleMassMatrices(double s) override{};
-  virtual void ScaleMatricesColumns(const CompositeVector& s) override{};
+  virtual void ModifyMatrices(const CompositeVector& u) override { AMANZI_ASSERT(false); }
+  virtual void ScaleMassMatrices(double s) override { AMANZI_ASSERT(false); }
 
   // -- transmisibility is multi-valued for manifolds and is skipped
   virtual double ComputeTransmissibility(int f) const override { return 0.0; }

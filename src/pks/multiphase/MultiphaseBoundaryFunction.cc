@@ -13,7 +13,6 @@
 */
 
 #include <algorithm>
-#include <iterator>
 
 #include "MultiphaseBoundaryFunction.hh"
 

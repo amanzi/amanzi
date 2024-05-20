@@ -40,6 +40,49 @@
 // Multiphase
 #include "Multiphase_PK.hh"
 
+const std::vector<std::vector<double>> fv_data = {
+  { 1.5700e+11, 9.9937e+05, 9.9937e+05 },
+  { 8.3210e+11, 1.0589e+06, 1.1866e+06 },
+  { 1.5072e+12, 1.1088e+06, 1.3037e+06 },
+  { 2.2922e+12, 1.1324e+06, 1.3694e+06 },
+  { 3.0772e+12, 1.1406e+06, 1.4062e+06 },
+  { 3.8622e+12, 1.1371e+06, 1.4247e+06 },
+  { 4.6472e+12, 1.1246e+06, 1.4302e+06 },
+  { 5.4322e+12, 1.1066e+06, 1.4274e+06 },
+  { 6.2172e+12, 1.0873e+06, 1.4207e+06 },
+  { 7.0022e+12, 1.0693e+06, 1.4132e+06 },
+  { 7.7872e+12, 1.0542e+06, 1.4066e+06 },
+  { 8.5722e+12, 1.0420e+06, 1.4013e+06 },
+  { 9.3572e+12, 1.0325e+06, 1.3971e+06 },
+  { 1.0142e+13, 1.0252e+06, 1.3941e+06 },
+  { 1.0927e+13, 1.0195e+06, 1.3917e+06 },
+  { 1.1712e+13, 1.0151e+06, 1.3899e+06 },
+  { 1.2497e+13, 1.0116e+06, 1.3885e+06 },
+  { 1.3282e+13, 1.0089e+06, 1.3874e+06 },
+  { 1.4067e+13, 1.0067e+06, 1.3866e+06 },
+  { 1.4852e+13, 1.0050e+06, 1.3859e+06 },
+  { 1.5637e+13, 1.0037e+06, 1.3854e+06 },
+  { 1.6422e+13, 8.1554e+05, 1.1625e+06 },
+  { 1.7207e+13, 7.6860e+05, 1.0873e+06 },
+  { 1.7992e+13, 7.7228e+05, 1.0507e+06 },
+  { 1.8777e+13, 8.0347e+05, 1.0290e+06 },
+  { 1.9562e+13, 8.4838e+05, 1.0129e+06 },
+  { 2.0347e+13, 8.9968e+05, 9.9627e+05 },
+  { 2.1132e+13, 9.8651e+05, 9.8651e+05 },
+  { 2.1917e+13, 1.0001e+06, 1.0001e+06 },
+  { 2.2702e+13, 1.0001e+06, 1.0001e+06 },
+  { 2.3487e+13, 1.0001e+06, 1.0001e+06 },
+  { 2.4272e+13, 1.0001e+06, 1.0001e+06 },
+  { 2.5057e+13, 1.0001e+06, 1.0001e+06 },
+  { 2.5842e+13, 1.0000e+06, 1.0000e+06 },
+  { 2.6627e+13, 1.0000e+06, 1.0000e+06 },
+  { 2.7412e+13, 1.0000e+06, 1.0000e+06 },
+  { 2.8197e+13, 1.0000e+06, 1.0000e+06 },
+  { 2.8982e+13, 1.0000e+06, 1.0000e+06 },
+  { 2.9767e+13, 1.0000e+06, 1.0000e+06 },
+  { 3.0552e+13, 1.0000e+06, 1.0000e+06 },
+  { 3.1337e+13, 1.0000e+06, 1.0000e+06 },
+};
 
 /* **************************************************************** */
 void
@@ -97,23 +140,19 @@ run_test(const std::string& domain, const std::string& filename)
   // initialize the multiphase process kernel
   MPK->Initialize();
   S->CheckAllFieldsInitialized();
-  // S->WriteDependencyGraph();
   WriteStateStatistics(*S, *vo);
 
-  // initialize io
-  Teuchos::ParameterList iolist;
-  iolist.get<std::string>("file name base", "plot");
-  auto io = Teuchos::rcp(new OutputXDMF(iolist, mesh, true, false));
-
-  // loop
+  // Tend = 1000,000 years, dt = 5000 years
   int iloop(0);
-  double t(0.0), tend(3.14e+13), dt(1.57e+11),
-    dt_max(1.57e+11); // Tend = 1000,000 years, dt = 5000 years
+  double t(0.0), tend(3.14e+13), dt(1.57e+11), dt_max(1.57e+11);
+
   // store Newton iterations and time step size (after successful iteration)
   std::vector<int> newton_iterations_per_step;
   std::vector<double> time_step_size;
 
-  while (t < tend && iloop < 100000) {
+  std::vector<std::vector<double>> nlfv_data;
+
+  while (t < tend && iloop < 1000) {
     while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 2.0; }
 
     MPK->CommitStep(t, t + dt, Tags::DEFAULT);
@@ -131,55 +170,39 @@ run_test(const std::string& domain, const std::string& filename)
     iloop++;
 
     // output solution
-    if (iloop % 20 == 0) {
-      io->InitializeCycle(t, iloop, "");
-      const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
-      const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
-      const auto& u2 = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
-      const auto& u3 = *S->Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
-      const auto& u4 = *S->Get<CompositeVector>("pressure_gas").ViewComponent("cell");
+    const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
+    const auto& u4 = *S->Get<CompositeVector>("pressure_gas").ViewComponent("cell");
 
-      io->WriteVector(*u0(0), "liquid pressure", AmanziMesh::Entity_kind::CELL);
-      io->WriteVector(*u1(0), "saturation_liquid", AmanziMesh::Entity_kind::CELL);
-      io->WriteVector(*u2(0), "liquid hydrogen", AmanziMesh::Entity_kind::CELL);
-      io->WriteVector(*u3(0), "gas hydrogen", AmanziMesh::Entity_kind::CELL);
-      io->WriteVector(*u4(0), "gas pressure", AmanziMesh::Entity_kind::CELL);
-      io->FinalizeCycle();
-
-      WriteStateStatistics(*S, *vo);
-    }
+    std::vector<double> data({ t, u0[0][0], u4[0][0] });
+    nlfv_data.push_back(data);
   }
-
   WriteStateStatistics(*S, *vo);
 
-  // write iteration output to text file
-  int mean(0);
-  std::ofstream outFile("iterations_per_time_step.txt");
-  for (int i = 0; i < newton_iterations_per_step.size(); ++i) {
-    outFile << newton_iterations_per_step[i] << "," << time_step_size[i] << std::endl;
-    mean += newton_iterations_per_step[i];
+  // compute error between two curves
+  double w, pl0, pg0, pl1, pg1, pref(1e+6), err_l(0.0), err_g(0.0);
+  for (int i = 0; i < nlfv_data.size(); ++i) {
+    t = nlfv_data[i][0];
+    pl0 = nlfv_data[i][1];
+    pg0 = nlfv_data[i][2];
+
+    for (int n = 0; n < fv_data.size() - 1; ++n) { 
+      if (fv_data[n][0] <= t && t <= fv_data[n + 1][0]) {
+        w = (t - fv_data[n][0]) / (fv_data[n + 1][0] - fv_data[n][0]);
+        pl1 = fv_data[n + 1][1] * w + fv_data[n][1] * (1 - w);
+        pg1 = fv_data[n + 1][2] * w + fv_data[n][2] * (1 - w);
+        break;
+      }
+    }
+    err_l += std::fabs(pl1 - pl0) / pref / nlfv_data.size();
+    err_g += std::fabs(pg1 - pg0) / pref / nlfv_data.size();
   }
-  outFile.close();
-  mean /= newton_iterations_per_step.size();
-  CHECK(mean < 5);
 
-  // verification
-  double dmin, dmax;
-  const auto& sl = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
-  sl.MinValue(&dmin);
-  sl.MaxValue(&dmax);
-  CHECK(dmin >= 0.0 && dmax <= 1.0 && dmin <= 1.0);
-
-  S->Get<CompositeVector>("ncp_fg").NormInf(&dmax);
-  CHECK(dmax <= 1.0e-9);
-
-  const auto& xg = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
-  xg.MinValue(&dmin);
-  CHECK(dmin >= 0.0);
+  CHECK(err_l <= 2e-3);
+  CHECK(err_g <= 3e-3);
 }
 
 
-TEST(MULTIPHASE_JAFFRE)
+TEST(MULTIPHASE_JAFFRE_NLFV)
 {
-  run_test("2D", "test/multiphase_jaffre.xml");
+  run_test("2D", "test/multiphase_jaffre_nlfv.xml");
 }

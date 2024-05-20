@@ -124,7 +124,6 @@ class PDE_DiffusionCurvedFace : public virtual PDE_Diffusion {
 
   // -- by rescaling mass and stiffness matrices.
   virtual void ScaleMassMatrices(double s) override;
-  virtual void ScaleMatricesColumns(const CompositeVector& s) override{};
 
   // main virtual members after solving the problem
   // -- calculate the flux variable.

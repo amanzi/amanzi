@@ -142,6 +142,13 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 
+    add_amanzi_test(mpc_multiphase_thermal mpc_multiphase_thermal
+                    KIND      int
+                    NPROCS    2
+                    SOURCE    test/Main.cc test/mpc_multiphase_thermal.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
+
     # Test: mpc driver for reactive transport
     add_amanzi_test(mpc_reactive_transport mpc_reactive_transport
                     KIND      int

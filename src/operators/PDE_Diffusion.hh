@@ -190,7 +190,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   // -- matrix modifications
   virtual void ModifyMatrices(const CompositeVector& u) = 0;
   virtual void ScaleMassMatrices(double s) = 0;
-  virtual void ScaleMatricesColumns(const CompositeVector& s) = 0;
+  virtual void ScaleMatricesColumns(const CompositeVector& s);
 
   // -- default implementation
   virtual void Setup(const Teuchos::RCP<const std::vector<WhetStone::Tensor>>& K,
@@ -224,23 +224,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   int schema_jacobian() { return jac_op_schema_; }
 
   int little_k() const { return little_k_; }
-  CompositeVectorSpace little_k_space() const
-  {
-    CompositeVectorSpace out;
-    out.SetMesh(mesh_);
-    out.SetGhosted();
-    if (little_k_ == OPERATOR_LITTLE_K_NONE) { return out; }
-    if (little_k_ != OPERATOR_LITTLE_K_UPWIND) {
-      out.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
-    }
-    if (little_k_ != OPERATOR_LITTLE_K_STANDARD) {
-      out.AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
-    }
-    if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
-      out.AddComponent("twin", AmanziMesh::Entity_kind::FACE, 1);
-    }
-    return out;
-  }
+  CompositeVectorSpace little_k_space() const;
 
  protected:
   // -- additional interface on non-manifolds
@@ -261,6 +245,54 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   Teuchos::RCP<Op> jac_op_;
   int global_op_schema_, local_op_schema_, jac_op_schema_;
 };
+
+
+/* ******************************************************************
+* Scale face-based matrices.
+****************************************************************** */
+inline void
+PDE_Diffusion::ScaleMatricesColumns(const CompositeVector& s)
+{
+  if (!(local_op_schema_ & OPERATOR_SCHEMA_BASE_FACE)) AMANZI_ASSERT(false);
+  if (!s.HasComponent("cell")) AMANZI_ASSERT(false);
+
+  const auto& s_c = *s.ViewComponent("cell");
+
+  for (int f = 0; f < nfaces_owned; ++f) {
+    WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
+
+    auto cells = mesh_->getFaceCells(f);
+    int ncells = cells.size();
+
+    for (int n = 0; n < ncells; ++n) {
+      double factor = s_c[0][cells[n]];
+      for (int m = 0; m < ncells; ++m) { Aface(m, n) *= factor; }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Default implementations
+****************************************************************** */
+inline CompositeVectorSpace 
+PDE_Diffusion::little_k_space() const
+{
+  CompositeVectorSpace out;
+  out.SetMesh(mesh_);
+  out.SetGhosted();
+  if (little_k_ == OPERATOR_LITTLE_K_NONE) { return out; }
+  if (little_k_ != OPERATOR_LITTLE_K_UPWIND) {
+    out.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+  }
+  if (little_k_ != OPERATOR_LITTLE_K_STANDARD) {
+    out.AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
+  }
+  if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
+    out.AddComponent("twin", AmanziMesh::Entity_kind::FACE, 1);
+  }
+  return out;
+}
 
 
 /* ******************************************************************
