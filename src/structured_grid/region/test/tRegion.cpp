@@ -95,7 +95,6 @@ int main(int argc, char* argv[])
   UnionRegion compound1(cname,cpurpose,set2);
   fab.setVal(0);
   compound1.setVal(fab,vol,0,dx.dataPtr(),0);
-  Real res1 = fab.sum(0);
   pass &= std::abs(fab.sum(0) - (vol1 + vol2)) < sum_eps;
   if (ioproc && !pass) {
     std::cout << "Test 1 fail: fab.sum(): " << fab.sum(0) << std::endl;

@@ -278,6 +278,11 @@ if (ENABLE_TESTS)
                         SOURCE test/Main.cc test/operator_diffusion_dfn_fv.cc
                         LINK_LIBS mesh_extracted ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+        add_amanzi_test(operators_diffusion_dfn_nlfv operators_diffusion_dfn_nlfv
+                        KIND unit
+                        SOURCE test/Main.cc test/operator_diffusion_dfn_nlfv.cc
+                        LINK_LIBS mesh_extracted ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
         add_amanzi_test(operators_coupled_diffusion operators_coupled_diffusion
                         KIND unit
                         SOURCE test/Main.cc test/operator_coupled_diffusion.cc

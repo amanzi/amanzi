@@ -113,13 +113,13 @@ SUITE(ChemistryBenchmarkTests)
     // Copy the contents of the directory to cwd.
     char command[1025];
     snprintf(command, 1024, "cp -R %s/* .", test_dir);
-    int status = std::system(command);
+    std::system(command);
 
     // Run Amanzi.
     snprintf(
       command, 1024, "%s --xml_file=test/chemistry_benchmarks_1d_a.xml", amanzi_exe_.c_str());
     std::cout << command << "\n";
-    status = std::system(command);
+    std::system(command);
 
     // Fetch the newly-created output and the reference data.
     hid_t output = H5Fopen("calcite_data.h5", H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -154,7 +154,7 @@ SUITE(ChemistryBenchmarkTests)
     snprintf(
       command, 1024, "%s --xml_file=test/chemistry_benchmarks_1d_b.xml", amanzi_exe_.c_str());
     std::cout << command << "\n";
-    int status = std::system(command);
+    std::system(command);
 
     // Fetch the newly-created output and the reference data.
     hid_t output = H5Fopen("calcite_data.h5", H5F_ACC_RDONLY, H5P_DEFAULT);

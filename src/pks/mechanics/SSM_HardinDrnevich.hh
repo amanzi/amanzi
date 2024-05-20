@@ -25,7 +25,8 @@ namespace Mechanics {
 
 class SSM_HardinDrnevich : public SSM {
  public:
-  SSM_HardinDrnevich(Teuchos::ParameterList& plist) {
+  SSM_HardinDrnevich(Teuchos::ParameterList& plist)
+  {
     Gmax_ = plist.get<double>("maximum shear stress");
     gamma_ref_ = plist.get<double>("reference shear strain");
   }
@@ -36,7 +37,7 @@ class SSM_HardinDrnevich : public SSM {
   virtual double BulkModulus(double e) { return 0.0; }
 
  private:
-  double Gmax_, gamma_ref_; 
+  double Gmax_, gamma_ref_;
 };
 
 } // namespace Mechanics

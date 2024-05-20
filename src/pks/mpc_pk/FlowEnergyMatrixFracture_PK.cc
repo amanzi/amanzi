@@ -19,6 +19,7 @@
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "TreeOperator.hh"
+#include "StateArchive.hh"
 #include "SuperMap.hh"
 #include "UniqueLocalIndex.hh"
 
@@ -46,8 +47,6 @@ FlowEnergyMatrixFracture_PK::FlowEnergyMatrixFracture_PK(
     Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln),
     glist_(glist)
 {
-  Teuchos::ParameterList vlist;
-  vo_ = Teuchos::rcp(new VerboseObject("CoupledThermalFlow_PK", vlist));
   Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(glist, "PKs");
   if (pks_list->isSublist(name_)) {
     plist_ = Teuchos::sublist(pks_list, name_);
@@ -61,6 +60,10 @@ FlowEnergyMatrixFracture_PK::FlowEnergyMatrixFracture_PK(
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(plist_, "time integrator", true);
+
+  Teuchos::ParameterList vlist;
+  vlist.sublist("verbose object") = plist_->sublist("verbose object");
+  vo_ = Teuchos::rcp(new VerboseObject("CoupledThermalFlow_PK", vlist));
 }
 
 
@@ -316,19 +319,13 @@ FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
   auto counter = Teuchos::TimeMonitor::getNewCounter("Flow-Energy MPC PK");
   Teuchos::TimeMonitor tm(*counter);
 
-  // make copy of evaluators
-  std::vector<Key> names = { "saturation_liquid", "water_storage", "energy" };
-  Teuchos::RCP<CompositeVector> copies[6];
-
-  int k(0), nnames(names.size());
-  for (int i = 0; i < nnames; ++i) {
-    SwapEvaluatorField_(names[i], copies[k], copies[k + 1]);
-    k += 2;
-  }
-
-  // make copy of primary unknowns
-  // save a copy of solution, i.e. primary variables
-  TreeVector solution_copy(*solution_);
+  // make copy of conservative fields
+  std::vector<Key> names = { "pressure", "temperature", "fracture-pressure", "fracture-temperature" };
+  std::vector<Key> fields = { "saturation_liquid", "water_storage", "energy",
+                              "fracture-saturation_liquid", "fracture-water_storage", "fracture-energy" };
+  StateArchive archive(S_, vo_);
+  archive.Add(names, Tags::DEFAULT);
+  archive.CopyFieldsToPrevFields(fields, "", true);
 
   bool fail;
   try {
@@ -340,26 +337,7 @@ FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
     }
     fail = false;
   }
-
-  if (fail) {
-    std::string passwd("");
-    k = 0;
-    for (int i = 0; i < nnames; ++i) {
-      if (S_->HasRecord(names[i])) {
-        S_->GetW<CV_t>("prev_" + names[i], passwd) = *(copies[k]);
-        S_->GetW<CV_t>("fracture-prev_" + names[i], passwd) = *(copies[k + 1]);
-      }
-      k += 2;
-    }
-
-    // recover the original solution
-    *solution_ = solution_copy;
-    ChangedSolution();
-
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Step failed. Restored [fracture-]{ " << names[0] << ", " << names[1] << ", "
-               << names[2] << ", pressure, temperature }" << std::endl;
-  }
+  if (fail) archive.Restore("");
 
   return fail;
 }

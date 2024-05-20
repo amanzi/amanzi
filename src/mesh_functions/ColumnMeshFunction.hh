@@ -23,13 +23,14 @@ Function values u:
 
   /f[:] = (f_0(z_0), f_1(z_1), ..., f_n(z_n))
 
-.. _column-initialization-spec
+.. _column-initialization-spec:
 .. admonition:: column-initialization-spec
 
    * `"file`" ``[string]`` HDF5 filename
    * `"z header`" ``[string]`` name of the z-coordinate data: `z` above.  Depth
      coordinates (positive downward from the surface), [m]
    * `"f header`" ``[string]`` name of the function data: `f` above.
+
 */
 
 

@@ -9,7 +9,10 @@
 */
 
 /*
-MoMas benchmark example: 2 component Hydrogen (H) and water (W) to show gas phase appearance/disappearance with assumptions/model as in [Gharbia, Jaffre' 14]. Primary variables are pressure liquid, saturation liquid, and molar density of hydrogen in liquid phase. 
+  MoMas benchmark example: 2 component Hydrogen (H) and water (W) to show gas 
+  phase appearance/disappearance with assumptions/model as in [Gharbia, Jaffre' 14]. 
+  Primary variables are pressure liquid, saturation liquid, and molar density 
+  of hydrogen in liquid phase. 
 */
 
 #include <cstdlib>
@@ -128,7 +131,7 @@ run_test(const std::string& domain, const std::string& filename)
     iloop++;
 
     // output solution
-    if (iloop % 2 == 0) {
+    if (iloop % 20 == 0) {
       io->InitializeCycle(t, iloop, "");
       const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
@@ -150,11 +153,15 @@ run_test(const std::string& domain, const std::string& filename)
   WriteStateStatistics(*S, *vo);
 
   // write iteration output to text file
+  int mean(0);
   std::ofstream outFile("iterations_per_time_step.txt");
   for (int i = 0; i < newton_iterations_per_step.size(); ++i) {
     outFile << newton_iterations_per_step[i] << "," << time_step_size[i] << std::endl;
+    mean += newton_iterations_per_step[i];
   }
   outFile.close();
+  mean /= newton_iterations_per_step.size();
+  CHECK(mean < 5);
 
   // verification
   double dmin, dmax;

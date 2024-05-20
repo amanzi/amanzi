@@ -66,9 +66,11 @@ MeshMaps::initialize(const MeshFramework& mesh, bool renumber)
 
   std::size_t nbf_owned = 0;
   std::size_t nbf_all = 0;
-  // This used to loop over nfaces_all but logically that allows internal ghosted faces
+  // This used to loop over nfaces_all but logically that includes internal ghosted faces
   // that have one cell on this rank but that more than one cell on the other rank.
-  // As a result nbf_owned = nbf_all
+  //
+  // On the other hand, if a boundary face is owned and only has one cell, then
+  // it is a true boundary face.
   for (Entity_ID f = 0; f != nfaces_all; ++f) {
     MeshFramework::cEntity_ID_View fcells;
     mesh.getFaceCells(f, fcells);
@@ -187,21 +189,21 @@ MeshMaps::getImporter(Entity_kind kind) const
 
 
 std::size_t
-MeshMaps::getNBoundaryFaces(Parallel_kind ptype)
+MeshMaps::getNBoundaryFaces(Parallel_kind ptype) const
 {
   if (Parallel_kind::OWNED == ptype)
-    return owned_[Entity_kind::BOUNDARY_FACE]->NumMyElements();
+    return owned_.at(Entity_kind::BOUNDARY_FACE)->NumMyElements();
   else
-    return all_[Entity_kind::BOUNDARY_FACE]->NumMyElements();
+    return all_.at(Entity_kind::BOUNDARY_FACE)->NumMyElements();
 }
 
 std::size_t
-MeshMaps::getNBoundaryNodes(Parallel_kind ptype)
+MeshMaps::getNBoundaryNodes(Parallel_kind ptype) const
 {
   if (Parallel_kind::OWNED == ptype)
-    return owned_[Entity_kind::BOUNDARY_NODE]->NumMyElements();
+    return owned_.at(Entity_kind::BOUNDARY_NODE)->NumMyElements();
   else
-    return all_[Entity_kind::BOUNDARY_NODE]->NumMyElements();
+    return all_.at(Entity_kind::BOUNDARY_NODE)->NumMyElements();
 }
 
 

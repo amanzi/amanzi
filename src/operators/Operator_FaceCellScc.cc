@@ -170,7 +170,7 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
       if (diag_ops_.size() > i_schur) {
         // get existing
         diag_op = diag_ops_[i_schur];
-        schur_ops_[i_schur];
+        schur_op = schur_ops_[i_schur];
       } else {
         // create and fill
         AMANZI_ASSERT(i_schur == diag_ops_.size());

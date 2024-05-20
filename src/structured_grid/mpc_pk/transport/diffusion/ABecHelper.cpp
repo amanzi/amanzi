@@ -24,7 +24,6 @@ ABecHelper::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
                     MultiFab& in, bool do_ApplyBC, const BC_Mode& bc_mode,
                     int src_comp, int dst_comp, int num_comp, int bnd_comp)
 {
-  int bndryComp = (bnd_comp < 0 ? default_bndryComp : bnd_comp);
   int alphaComp = default_betaComp;
   int betaComp = default_betaComp;
 
@@ -141,16 +140,16 @@ ABecHelper::residual (MultiFab&       residL,
   int srcComp = 0;
   int destComp = 0;
   int numComp = 1;
-  int rhsComp = 0;
   int bndryComp = default_bndryComp;
   apply(residL, solnL, level, bc_mode, local, srcComp, destComp, numComp, bndryComp);
-
-  const bool tiling = true;
 
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
   /*
+  int rhsComp = 0;
+  const bool tiling = true;
+
   for (MFIter solnLmfi(solnL,tiling); solnLmfi.isValid(); ++solnLmfi)
   {
     const int nc = residL.nComp();
@@ -205,7 +204,6 @@ ABecHelper::norm (int nm, int level, const bool local)
 {
   int alphaComp = default_alphaComp;
   int betaComp = default_betaComp;
-  int bndryComp = default_bndryComp;
 
   BL_ASSERT(nm == 0);
   const MultiFab& a   = aCoefficients(level);
@@ -296,7 +294,6 @@ ABecHelper::Fapply (MultiFab&       out,
 {
   int alphaComp = default_alphaComp;
   int betaComp = default_betaComp;
-  int bndryComp = default_bndryComp;
 
   BL_ASSERT(out.nComp()>=dst_comp+num_comp);
   BL_ASSERT(in.nComp()>=src_comp+num_comp);
@@ -367,7 +364,6 @@ ABecHelper::Fsmooth (MultiFab&       solnL,
 {
   int alphaComp = default_alphaComp;
   int betaComp = default_betaComp;
-  int bndryComp = default_bndryComp;
   int rhsComp = 0;
   int solnComp = 0;
 
@@ -483,7 +479,6 @@ ABecHelper::Fsmooth_jacobi (MultiFab&       solnL,
 {
   int alphaComp = default_alphaComp;
   int betaComp = default_betaComp;
-  int bndryComp = default_bndryComp;
   int rhsComp = 0;
   int solnComp = 0;
 

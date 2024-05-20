@@ -68,7 +68,7 @@
       </ParameterList>
 
       <ParameterList name="thermal conductivity evaluator">
-	<ParameterList name="thermal conductivity parameters">
+	<ParameterList name="All">
 	  <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
 	  <Parameter name="thermal conductivity of rock" type="double" value="2.0"/>
 	  <Parameter name="thermal conductivity of liquid" type="double" value="0.2"/>
@@ -77,9 +77,7 @@
 	  <Parameter name="eos type" type="string" value="liquid water"/-->
           <Parameter name="eos type" type="string" value="constant"/>
           <Parameter name="thermal conductivity" type="double" value="0.6"/>
-	</ParameterList>
-	<ParameterList name="verbose object">
-	  <Parameter name="verbosity level" type="string" value="high"/>
+	  <Parameter name="regions" type="Array(string)" value="{All}"/>
 	</ParameterList>
       </ParameterList>
 

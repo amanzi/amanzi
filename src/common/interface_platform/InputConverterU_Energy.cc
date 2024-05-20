@@ -88,39 +88,48 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
   if (!fracture_network_) adv_list.set<bool>("single domain", true);
 
   // insert thermal conductivity evaluator with the default values (no 2.2 support yet)
-  Teuchos::ParameterList& thermal =
-    out_list.sublist("thermal conductivity evaluator").sublist("thermal conductivity parameters");
-  if (pk_model == "two-phase energy") {
-    thermal.set<std::string>("thermal conductivity type", "two-phase Peters-Lidard");
-    thermal.set<double>("thermal conductivity of gas", 0.02);
-    thermal.set<double>("unsaturated alpha", 1.0);
-    thermal.set<double>("epsilon", 1.0e-10);
-  } else {
-    thermal.set<std::string>("thermal conductivity type", "one-phase polynomial");
-  }
+  Teuchos::ParameterList& thermal = out_list.sublist("thermal conductivity evaluator");
 
   double cv_f(0.0), cv_r(0.0);
   std::string prefix = (domain == "fracture") ? "fracture_network," : "";
   node = GetUniqueElementByTagsString_(prefix + "materials", flag);
   std::vector<DOMNode*> materials = GetChildren_(node, "material", flag);
 
-  std::string model;
-  node = GetUniqueElementByTagsString_(materials[0], "thermal_properties", flag);
-  if (flag) { model = GetAttributeValueS_(node, "model", "constant, liquid water"); }
+  for (int i = 0; i < materials.size(); ++i) {
+    std::string model;
+    node = GetUniqueElementByTagsString_(materials[i], "thermal_properties", flag);
+    if (flag) { model = GetAttributeValueS_(node, "model", "constant, liquid water"); }
 
-  node =
-    GetUniqueElementByTagsString_(materials[0], "thermal_properties, liquid_conductivity", flag);
-  if (flag) cv_f = GetTextContentD_(node, "W/m/K", true);
+    node =
+      GetUniqueElementByTagsString_(materials[i], "thermal_properties, liquid_conductivity", flag);
+    if (flag) cv_f = GetTextContentD_(node, "W/m/K", true);
 
-  node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, rock_conductivity", flag);
-  if (flag) cv_r = GetTextContentD_(node, "W/m/K", true);
+    node =
+      GetUniqueElementByTagsString_(materials[i], "thermal_properties, rock_conductivity", flag);
+    if (flag) cv_r = GetTextContentD_(node, "W/m/K", true);
 
-  thermal.set<double>("thermal conductivity of liquid", cv_f);
-  thermal.set<double>("thermal conductivity of rock", cv_r);
-  thermal.set<double>("reference temperature", 298.15);
-  thermal.set<std::string>("eos type", model);
+    node = GetUniqueElementByTagsString_(materials[i], "assigned_regions", flag);
+    std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
-  if (model == "constant") { thermal.set<double>("thermal conductivity", cv_f + cv_r); }
+    Teuchos::ParameterList& tmp = thermal.sublist("TCM_" + std::to_string(i));
+    tmp.set<Teuchos::Array<std::string>>("regions", regions);
+
+    if (pk_model == "two-phase energy") {
+      tmp.set<std::string>("thermal conductivity type", "two-phase Peters-Lidard");
+      tmp.set<double>("thermal conductivity of gas", 0.02)
+        .set<double>("unsaturated alpha", 1.0)
+        .set<double>("epsilon", 1.0e-10);
+    } else {
+      tmp.set<std::string>("thermal conductivity type", "one-phase polynomial");
+    }
+
+    tmp.set<double>("thermal conductivity of liquid", cv_f)
+      .set<double>("thermal conductivity of rock", cv_r)
+      .set<double>("reference temperature", 298.15)
+      .set<std::string>("eos type", model);
+
+    if (model == "constant") { tmp.set<double>("thermal conductivity", cv_f + cv_r); }
+  }
 
   // insert time integrator
   std::string err_options("energy"),

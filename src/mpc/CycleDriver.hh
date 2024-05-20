@@ -55,6 +55,8 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
 
       * `"initial time step`" is the initial time step for the current time period.
 
+* `"io frequency`" [int] defines frequency of printing field statistics.
+
 .. code-block:: xml
 
   <ParameterList>  <!-- parent list -->
@@ -205,6 +207,7 @@ class CycleDriver {
   Teuchos::RCP<Amanzi::WalkaboutCheckpoint> walkabout_;
 
   // fancy OS
+  int io_frequency_;
   Teuchos::RCP<VerboseObject> vo_;
 };
 

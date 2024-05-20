@@ -133,6 +133,9 @@ if (ENABLE_Tpetra)
 else() 
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Tpetra:BOOL=OFF")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_Tpetra:BOOL=OFF")
+
+  # disable atomics for MPI-only/serial Kokkos builds
+  list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_ATOMICS_BYPASS:BOOL=ON")
 endif()
 
 # MueLu is not required by Epetra at the moment...

@@ -275,11 +275,10 @@ computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
     typename Mesh_type::cEntity_ID_View fcells;
     mesh.getFaceCells(f, fcells);
     typename Mesh_type::Point_View normals("normals", fcells.size());
-    Kokkos::deep_copy(normals, normal);
 
     for (int i = 0; i != fcells.size(); ++i) {
       int dir = Impl::getFaceDirectionInCell(mesh, f, fcells[i]);
-      normals[i] = dir * normals[i];
+      normals[i] = dir * normal;
     }
     return std::make_tuple(area, centroid, normals);
 
@@ -298,10 +297,9 @@ computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
       typename Mesh_type::cEntity_ID_View fcells;
       mesh.getFaceCells(f, fcells);
       typename Mesh_type::Point_View normals("normals", fcells.size());
-      Kokkos::deep_copy(normals, normal);
       for (int i = 0; i != fcells.size(); ++i) {
         int dir = Impl::getFaceDirectionInCell(mesh, f, fcells[i]);
-        normals[i] = dir * normals[i];
+        normals[i] = dir * normal;
       }
       return std::make_tuple(area, centroid, normals);
 

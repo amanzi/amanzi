@@ -324,8 +324,8 @@ MeshExtractedManifold::InitParentMaps(const std::string& setname)
     { Entity_kind::FACE, Entity_kind::EDGE, Entity_kind::NODE });
 
   for (int i = 0; i < 3; ++i) {
-    auto kind_d = kinds_extracted[i];
-    auto kind_p = kinds_parent[i];
+    Entity_kind kind_d = kinds_extracted[i];
+    Entity_kind kind_p = kinds_parent[i];
 
     // build edge set from Exodus labeled face set
     Entity_ID_View setents;
@@ -333,34 +333,34 @@ MeshExtractedManifold::InitParentMaps(const std::string& setname)
     if (setents.size() == 0) {
       auto [lsetents, lvfs] =
         parent_mesh_->getSetEntitiesAndVolumeFractions(setname, kind_p, Parallel_kind::ALL);
-      Kokkos::resize(setents, lsetents.size());
-      Kokkos::deep_copy(setents, lsetents);
+      Kokkos::realloc(setents, lsetents.size());
+      for (size_t k = 0; k != lsetents.size(); ++k) setents(k) = lsetents(k);
     }
 
-    auto marked_ents = EnforceOneLayerOfGhosts_(setname, kind_p, &setents);
+    std::map<Entity_ID, int> marked_ents = EnforceOneLayerOfGhosts_(setname, kind_p, &setents);
 
     // extract owned ids
-    auto& ids_p = entid_to_parent_[kind_d];
-    int ids_p_s = std::distance(marked_ents.begin(), marked_ents.end());
-    Kokkos::resize(ids_p, ids_p_s);
-    ids_p_s = 0;
-    for (auto it = marked_ents.begin(); it != marked_ents.end(); ++it) {
-      if (it->second == MASTER) ids_p[ids_p_s++] = it->first;
+    Entity_ID_View ids_p(std::string("parent ids: ") + to_string(kind_d), marked_ents.size());
+
+    std::size_t ids_p_s = 0;
+    for (auto& it : marked_ents) {
+      if (it.second == MASTER) ids_p[ids_p_s++] = it.first;
     }
 
     nents_owned_[kind_d] = ids_p_s;
     nents_ghost_[kind_d] = marked_ents.size() - ids_p_s;
 
     // extract ghost ids
-    for (auto it = marked_ents.begin(); it != marked_ents.end(); ++it) {
-      if (it->second == GHOST) ids_p[ids_p_s++] = it->first;
+    for (auto& it : marked_ents) {
+      if (it.second == GHOST) ids_p[ids_p_s++] = it.first;
     }
 
-    Kokkos::resize(ids_p, ids_p_s);
+    entid_to_parent_[kind_d] = ids_p;
+
     // create reverse ordered map
-    auto& ids_d = parent_to_entid_[kind_d];
+    std::map<Entity_ID, Entity_ID>& ids_d = parent_to_entid_[kind_d];
     ids_d.clear();
-    for (int n = 0; n < ids_p.size(); ++n) { ids_d[ids_p[n]] = n; }
+    for (std::size_t n = 0; n != ids_p.size(); ++n) { ids_d[ids_p[n]] = n; }
   }
 }
 

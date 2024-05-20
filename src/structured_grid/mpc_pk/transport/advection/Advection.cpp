@@ -48,10 +48,9 @@ Advection::FluxDivergence(const FArrayBox& CoCC, FArrayBox& CnCC,       int Ccom
                           const Box& vbox, const Real* dx, Real dt, const int* bc, int nc,
                           bool is_conservative)
 {
-  int nGrowH = nGrowHyp();
   int nGrowF = nGrowForce();
 
-  BL_ASSERT(Cng >= nGrowH);
+  BL_ASSERT(Cng >= nGrowHyp());
   BL_ASSERT(Sng >= nGrowF);
   BL_ASSERT(Ung >= 0);
   BL_ASSERT(FDivng >= 0);
@@ -133,8 +132,6 @@ Advection::AdvUpdate(const FArrayBox& CoCC, FArrayBox& CnCC,       int Ccomp,   
   const Real* co_dat    = CoCC.dataPtr(Ccomp);
   const Real* so_dat    = SoCC.dataPtr(Ccomp);
   const Real* sn_dat    = SnCC.dataPtr(Ccomp);
-  const Real* xflux_dat = FluxEC[0].dataPtr(Flcomp);
-  const Real* yflux_dat = FluxEC[1].dataPtr(Flcomp);
   const Real* phi_dat   = PhiCC.dataPtr();
   Real*       aofs_dat  = FDivCC.dataPtr(FDivcomp);
 

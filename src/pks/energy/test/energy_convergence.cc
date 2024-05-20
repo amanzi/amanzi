@@ -251,8 +251,7 @@ TEST(ENERGY_PRECONDITIONER)
 
     Teuchos::ParameterList pk_tree = plist->sublist("PKs").sublist("energy");
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-    Teuchos::RCP<EnergyOnePhase_PK> EPK =
-      Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
+    auto EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
 
     // overwrite enthalpy with a different model
     Teuchos::ParameterList ev_list;

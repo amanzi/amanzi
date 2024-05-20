@@ -173,13 +173,14 @@ TestDiffusionFracturedMatrix(double gravity)
   // calculate flux error. To reuse the standard tools, we need to
   // collapse flux on fracture interface
   Epetra_MultiVector& flx_long = *flux->ViewComponent("face", true);
-  Epetra_MultiVector flx_short(mesh->getMap(AmanziMesh::Entity_kind::FACE, false), 1);
+  Epetra_MultiVector flx_short(mesh->getMap(AmanziMesh::Entity_kind::FACE, true), 1);
   double unorm, ul2_err, uinf_err;
 
   op->UpdateFlux(solution.ptr(), flux.ptr());
+  flux->ScatterMasterToGhosted();
 
   const auto& fmap = *flux->Map().Map("face", true);
-  for (int f = 0; f < nfaces; ++f) {
+  for (int f = 0; f < nfaces_wghost; ++f) {
     int g = fmap.FirstPointInElement(f);
     flx_short[0][f] = flx_long[0][g];
   }

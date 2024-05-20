@@ -201,7 +201,20 @@ class ParameterList(base.TeuchosBaseXML):
         return search.child_by_name(self, name)
 
     def pop(self, name):
+        """Remove and return element of a given name."""
         return search.remove_element(self, name, False, True)
+
+    def replace(self, name, element):
+        """Replace element of a given name, returning the removed element."""
+        try:
+            i = next(i for i,v in enumerate(self) if v.getName() == name)
+        except StopIteration:
+            raise errors.MissingXMLError(f'Cannot find element "{name}"')
+
+        res = self[i]
+        self[i] = element
+        return res
+
 
     def __copy__(self):
         cp = self.__class__(self.getName())

@@ -103,6 +103,7 @@ PDE_DiffusionNLFV::Init_(Teuchos::ParameterList& plist)
 
   // other data
   dim_ = mesh_->getSpaceDimension();
+  manifold_dim_ = mesh_->getManifoldDimension();
 }
 
 
@@ -174,10 +175,14 @@ PDE_DiffusionNLFV::InitStencils_()
   // instantiate variables to access supporting tools
   WhetStone::NLFV nlfv(mesh_);
 
-  // distribute diffusion tensor
+  // distribute diffusion tensor FIXME 
+  WhetStone::Tensor Kdefault(dim_, 1);
+  Kdefault(0, 0) = 1.0; 
+  
   WhetStone::DenseVector data(dim_ * dim_);
   for (int c = 0; c < ncells_owned; ++c) {
-    WhetStone::TensorToVector((*K_)[c], data);
+    const auto& Kc = K_.get() ? (*K_)[c] : Kdefault;
+    WhetStone::TensorToVector(Kc, data);
     for (int i = 0; i < dim_ * dim_; ++i) { Ktmp[i][c] = data(i); }
   }
   cv_tmp->ScatterMasterToGhosted();
@@ -226,6 +231,7 @@ PDE_DiffusionNLFV::InitStencils_()
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+    const auto& Kc = K_.get() ? (*K_)[c] : Kdefault;
 
     // calculate list of candidate vectors
     const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
@@ -236,7 +242,7 @@ PDE_DiffusionNLFV::InitStencils_()
       int f = faces[n];
       if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f, c, &dir);
-        v = (*K_)[c] * normal;
+        v = Kc * normal;
       } else {
         for (int i = 0; i < dim_; ++i) v[i] = hap[i][f] - xc[i];
       }
@@ -248,10 +254,10 @@ PDE_DiffusionNLFV::InitStencils_()
     double ws[dim_];
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
-      conormal = ((*K_)[c] * normal) * dirs[n];
+      const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f, c, &dir);
+      conormal = Kc * normal;
 
-      ierr = nlfv.PositiveDecomposition(n, tau, conormal, ws, ids);
+      ierr = nlfv.PositiveDecomposition(n, tau, conormal, manifold_dim_, ws, ids);
       AMANZI_ASSERT(ierr == 0);
 
       auto cells = mesh_->getFaceCells(f);
@@ -294,8 +300,6 @@ PDE_DiffusionNLFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flu
 {
   if (!stencil_initialized_) InitStencils_();
   if (k_ != Teuchos::null) k_->ScatterMasterToGhosted("face");
-
-  u->ScatterMasterToGhosted("cell");
 
   Epetra_MultiVector& hap_gamma = *stencil_data_->ViewComponent("gamma", true);
   Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
@@ -390,7 +394,7 @@ PDE_DiffusionNLFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flu
     }
   }
 
-  //stencil_data_->ScatterMasterToGhosted("flux_data");
+  // stencil_data_->ScatterMasterToGhosted("flux_data");
   stencil_data_->GatherGhostedToMaster("flux_data");
   matrix_cv.GatherGhostedToMaster();
 
@@ -479,6 +483,10 @@ PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const Compo
   }
 }
 
+
+/* ******************************************************************
+*
+****************************************************************** */
 void
 PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
                                                   const Teuchos::Ptr<const CompositeVector>& u,
@@ -540,6 +548,7 @@ PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const Compo
     jac_op_->matrices[f] = Aface;
   }
 }
+
 
 /* ******************************************************************
 * Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).
@@ -696,7 +705,8 @@ PDE_DiffusionNLFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
         double kf(1.0);
         if (k_face.get()) kf = (*k_face)[0][f];
 
-        rhs_cell[0][c] -= (Aface(0, 0) / kf) * bc_value[f] * mesh_->getFaceArea(f);
+        if (kf != 0.0) 
+          rhs_cell[0][c] -= (Aface(0, 0) / kf) * bc_value[f] * mesh_->getFaceArea(f);
         Aface = 0.0;
       }
     }
@@ -736,8 +746,8 @@ PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
       auto cells = mesh_->getFaceCells(f);
       mesh_->getFaceNormal(f, cells[0], &dir);
       flux_data[0][f] = wgt_sideflux[0][f] * dir;
-      // } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-      //   flux_data[0][f] = bc_value[f] * mesh_->getFaceArea(f);
+    // } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+    //   flux_data[0][f] = bc_value[f] * mesh_->getFaceArea(f);
     } else if (bc_model[f] == OPERATOR_BC_NONE) {
       auto cells = mesh_->getFaceCells(f);
       OrderCellsByGlobalId_(cells, c1, c2);
