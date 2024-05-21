@@ -336,8 +336,12 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     TMP_DIR   ${Trilinos_tmp_dir}                     # Temporary files directory
                     STAMP_DIR ${Trilinos_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
-                    GIT_REPOSITORY ${Trilinos_GIT_REPOSITORY_TEMP}              
-                    GIT_TAG        ${Trilinos_GIT_TAG}      
+                    DOWNLOAD_DIR  ${TPL_DOWNLOAD_DIR}
+                    URL           ${Trilinos_URL}                # URL may be a web site OR a local file
+                    URL_MD5       ${Trilinos_MD5_SUM}            # md5sum of the archive file
+                    DOWNLOAD_NAME ${Trilinos_SAVEAS_FILE}        # file name to store (if not end of URL)
+                    #GIT_REPOSITORY ${Trilinos_GIT_REPOSITORY_TEMP}              
+                    #GIT_TAG        ${Trilinos_GIT_TAG}      
                     # -- Update (one way to skip this step is use null command)
                     UPDATE_COMMAND ""
                     # -- Patch
