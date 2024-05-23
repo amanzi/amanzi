@@ -1,19 +1,16 @@
 /*
-  Copyright 2010-202x held jointly by participating institutions.
+  Pipe Flow PK
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors:
+  Author: Giacomo Capodaglio (gcapodaglio@lanl.gov)
 */
 
-/*
-  Shallow Water PK
-
-*/
-
-#ifndef AMANZI_HYDROSTATICPRESSURE_EVALUATOR_HH_
-#define AMANZI_HYDROSTATICPRESSURE_EVALUATOR_HH_
+#ifndef AMANZI_PRESSURE_HEAD_EVALUATOR_HH_
+#define AMANZI_PRESSURE_HEAD_EVALUATOR_HH_
 
 #include <string>
 #include <vector>
@@ -27,10 +24,10 @@
 namespace Amanzi {
 namespace ShallowWater {
 
-class HydrostaticPressureEvaluator
+class PressureHeadEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  HydrostaticPressureEvaluator(Teuchos::ParameterList& plist);
+  PressureHeadEvaluator(Teuchos::ParameterList& plist);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -42,8 +39,11 @@ class HydrostaticPressureEvaluator
                                           const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
+ protected:
+  double celerity_;
+
  private:
-  std::string primary_variable_key_;
+  std::string wetted_angle_key_, wetted_area_key_, diameter_key_;
 };
 
 } // namespace ShallowWater

@@ -28,7 +28,10 @@ class NumericalFlux_CentralUpwind : public NumericalFlux {
   explicit NumericalFlux_CentralUpwind(Teuchos::ParameterList& plist);
   ~NumericalFlux_CentralUpwind(){};
 
-  virtual std::vector<double> Compute(const std::vector<double>& UL, const std::vector<double>& UR);
+  virtual std::vector<double> Compute(const std::vector<double>& UL,
+                                      const std::vector<double>& UR,
+                                      const double& HPFL,
+                                      const double& HPFR);
 
  private:
   static Utils::RegisteredFactory<NumericalFlux, NumericalFlux_CentralUpwind> reg_;

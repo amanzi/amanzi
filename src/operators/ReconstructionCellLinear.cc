@@ -133,7 +133,7 @@ ReconstructionCellLinear::PopulateLeastSquareSystem_(AmanziGeometry::Point& cent
 
 
 /* ******************************************************************
-* On intersecting manifolds, we extract neighboors living in the same
+* On intersecting manifolds, we extract neighbors living in the same
 * manifold using a smoothness criterion.
 ****************************************************************** */
 void

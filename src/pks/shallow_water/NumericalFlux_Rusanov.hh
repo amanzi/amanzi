@@ -28,7 +28,11 @@ class NumericalFlux_Rusanov : public NumericalFlux {
   explicit NumericalFlux_Rusanov(Teuchos::ParameterList& plist);
   ~NumericalFlux_Rusanov(){};
 
-  virtual std::vector<double> Compute(const std::vector<double>& UL, const std::vector<double>& UR);
+  virtual std::vector<double> Compute(const std::vector<double>& UL,
+                                      const std::vector<double>& UR,
+                                      const double& HPFL,
+                                      const double& HPFR);
+
 
  private:
   static Utils::RegisteredFactory<NumericalFlux, NumericalFlux_Rusanov> reg_;
