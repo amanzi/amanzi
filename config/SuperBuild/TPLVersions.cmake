@@ -186,7 +186,7 @@
 #                - update superlu_dist v6.4.0 (minimum required by PETSc is 6.3.0, but maybe we should go newer).
 #                - update CrunchTope to latest fix on master
 #   0.98.9       - bug fixes CheckMPISourceCompiles
-#                - update Trilinos to 15.1.0
+#                - update Trilinos to 15.1.0 (6af5f44)
 #                - update Silo to 4.11.1
 #                - remove Boost and Trilinos dependency on Boost
 
