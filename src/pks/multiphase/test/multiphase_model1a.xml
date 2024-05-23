@@ -60,26 +60,30 @@
     <ParameterList name="system">
       <ParameterList name="pressure eqn">
         <Parameter name="primary unknown" type="string" value="pressure_liquid"/>
-        <Parameter name="advection liquid" type="Array(string)" value="{ advection_water, pressure_liquid }"/>
-        <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
-
-        <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_vapor, mole_fraction_vapor }"/>
-        <Parameter name="diffusion factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
-
         <Parameter name="accumulation" type="string" value="total_water_storage"/>
+
+        <ParameterList name="terms">
+          <Parameter name="advection 1" type="Array(string)" value="{ advection_water, pressure_liquid }"/>
+          <Parameter name="diffusion 2" type="Array(string)" value="{ diffusion_vapor, mole_fraction_vapor }"/>
+        </ParameterList>
+
+        <Parameter name="phases" type="Array(int)" value="{ 0, 0 }"/>
+        <Parameter name="factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
       </ParameterList>
 
       <ParameterList name="solute eqn">
         <Parameter name="primary unknown" type="string" value="mole_fraction_gas"/>
-        <Parameter name="advection liquid" type="Array(string)" value="{ advection_liquid, pressure_liquid }"/>
-        <Parameter name="advection gas" type="Array(string)" value="{ advection_gas, pressure_gas }"/>
-        <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
-
-        <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_liquid, mole_fraction_liquid }"/>
-        <Parameter name="diffusion gas" type="Array(string)" value="{ diffusion_gas, mole_fraction_gas }"/>
-        <Parameter name="diffusion factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
-
         <Parameter name="accumulation" type="string" value="total_component_storage"/>
+
+        <ParameterList name="terms">
+          <Parameter name="advection 1" type="Array(string)" value="{ advection_liquid, pressure_liquid }"/>
+          <Parameter name="advection 2" type="Array(string)" value="{ advection_gas, pressure_gas }"/>
+          <Parameter name="diffusion 3" type="Array(string)" value="{ diffusion_liquid, mole_fraction_liquid }"/>
+          <Parameter name="diffusion 4" type="Array(string)" value="{ diffusion_gas, mole_fraction_gas }"/>
+        </ParameterList>
+
+        <Parameter name="phases" type="Array(int)" value="{ 0, 1, 0, 1 }"/>
+        <Parameter name="factors" type="Array(double)" value="{ 1.0, 1.0, 1.0, 1.0 }"/>
       </ParameterList>
 
       <ParameterList name="constraint eqn">

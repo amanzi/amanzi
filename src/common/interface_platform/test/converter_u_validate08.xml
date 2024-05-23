@@ -93,36 +93,43 @@
        ncp_g, total_water_storage, total_component_storage, advection_water, advection_liquid, 
        advection_gas, diffusion_liquid, diffusion_gas, diffusion_vapor,
        mole_fraction_liquid, mole_fraction_vapor, adv_energy_liquid}"/>
+
     <ParameterList name="system">
       <ParameterList name="pressure eqn">
+        <ParameterList name="terms">
+          <Parameter name="advection 0" type="Array(string)" value="{advection_water, pressure_liquid}"/>
+          <Parameter name="diffusion 1" type="Array(string)" value="{diffusion_vapor, mole_fraction_vapor}"/>
+        </ParameterList>
         <Parameter name="primary unknown" type="string" value="pressure_liquid"/>
-        <Parameter name="advection liquid" type="Array(string)" value="{advection_water, pressure_liquid}"/>
-        <Parameter name="advection factors" type="Array(double)" value="{1.0, 1.0}"/>
-        <Parameter name="diffusion gas" type="Array(string)" value="{diffusion_vapor, mole_fraction_vapor}"/>
-        <Parameter name="diffusion factors" type="Array(double)" value="{1.0, 1.0}"/>
         <Parameter name="accumulation" type="string" value="total_water_storage"/>
+        <Parameter name="factors" type="Array(double)" value="{1.00000000000000000e+00, 1.00000000000000000e+00}"/>
+        <Parameter name="phases" type="Array(int)" value="{0, 1}"/>
       </ParameterList>
       <ParameterList name="solute eqn">
+        <ParameterList name="terms">
+          <Parameter name="advection 0" type="Array(string)" value="{advection_liquid, pressure_liquid}"/>
+          <Parameter name="advection 1" type="Array(string)" value="{advection_gas, pressure_gas}"/>
+          <Parameter name="diffusion 3" type="Array(string)" value="{diffusion_liquid, mole_fraction_liquid}"/>
+          <Parameter name="diffusion 4" type="Array(string)" value="{diffusion_gas, mole_fraction_gas}"/>
+        </ParameterList>
         <Parameter name="primary unknown" type="string" value="mole_fraction_gas"/>
-        <Parameter name="advection liquid" type="Array(string)" value="{advection_liquid, pressure_liquid}"/>
-        <Parameter name="advection gas" type="Array(string)" value="{advection_gas, pressure_gas}"/>
-        <Parameter name="advection factors" type="Array(double)" value="{1.0, 1.0}"/>
-        <Parameter name="diffusion liquid" type="Array(string)" value="{diffusion_liquid, mole_fraction_liquid}"/>
-        <Parameter name="diffusion gas" type="Array(string)" value="{diffusion_gas, mole_fraction_gas}"/>
-        <Parameter name="diffusion factors" type="Array(double)" value="{1.0, 1.0}"/>
         <Parameter name="accumulation" type="string" value="total_component_storage"/>
+        <Parameter name="factors" type="Array(double)" value="{1.0, 1.0, 1.0, 1.0}"/>
+        <Parameter name="phases" type="Array(int)" value="{0, 1, 0, 1}"/>
       </ParameterList>
       <ParameterList name="constraint eqn">
         <Parameter name="primary unknown" type="string" value="saturation_liquid"/>
         <Parameter name="ncp evaluators" type="Array(string)" value="{ncp_f, ncp_g}"/>
       </ParameterList>
       <ParameterList name="energy eqn">
+        <ParameterList name="terms">
+          <Parameter name="advection 0" type="Array(string)" value="{adv_energy_liquid, pressure_liquid}"/>
+          <Parameter name="diffusion 1" type="Array(string)" value="{thermal_conductivity, temperature}"/>
+        </ParameterList>
         <Parameter name="primary unknown" type="string" value="temperature"/>
-        <Parameter name="advection liquid" type="Array(string)" value="{adv_energy_liquid, pressure_liquid}"/>
-        <Parameter name="advection factors" type="Array(double)" value="{1.0, 1.0}"/>
-        <Parameter name="diffusion liquid" type="Array(string)" value="{thermal_conductivity, temperature}"/>
-        <Parameter name="diffusion factors" type="Array(double)" value="{1.0, 1.0}"/>
         <Parameter name="accumulation" type="string" value="energy"/>
+        <Parameter name="factors" type="Array(double)" value="{1.00000000000000000e+00, 1.00000000000000000e+00}"/>
+        <Parameter name="phases" type="Array(int)" value="{0, 0}"/>
       </ParameterList>
     </ParameterList>
 

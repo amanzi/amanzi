@@ -1136,6 +1136,8 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
   primary_name = slist.get<std::string>("primary unknown");
   soln_names_.push_back(primary_name);
 
+  const auto& tlist = slist.sublist("terms");
+
   for (int i = 0; i < eqn_num; ++i) {
     int n = eqn_id + i;
     eqns_.resize(n + 1);
@@ -1155,48 +1157,21 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
       eqns_[n].component_id = std::distance(component_names_.begin(), it);
     }
 
-    // advection evaluators
-    if (slist.isParameter("advection factors"))
-      eqns_[n].adv_factors = slist.get<Teuchos::Array<double>>("advection factors").toVector();
-
-    if (slist.isParameter("advection liquid")) {
-      names = slist.get<Teuchos::Array<std::string>>("advection liquid").toVector();
-      eqns_[n].advection.push_back(std::make_pair(names[0], names[1]));
-      eval_flattened_.push_back(names[0]);
-      secondary_names_.insert(names[1]);
-    } else {
-      eqns_[n].advection.push_back(std::make_pair("", "")); // no liquid phase
+    if (slist.isParameter("factors")) {
+      eqns_[n].phases = slist.get<Teuchos::Array<int>>("phases").toVector();
+      eqns_[n].factors = slist.get<Teuchos::Array<double>>("factors").toVector();
     }
 
-    if (slist.isParameter("advection gas")) {
-      names = slist.get<Teuchos::Array<std::string>>("advection gas").toVector();
-      eqns_[n].advection.push_back(std::make_pair(names[0], names[1]));
+    for (auto it = tlist.begin(); it != tlist.end(); ++it) {
+      auto name = it->first;
+      names = tlist.get<Teuchos::Array<std::string>>(name).toVector();
+
+      eqns_[n].terms.push_back(std::make_pair(names[0], names[1]));
       eval_flattened_.push_back(names[0]);
       secondary_names_.insert(names[1]);
-    } else {
-      eqns_[n].advection.push_back(std::make_pair("", "")); // no gas phase
-    }
 
-    // diffusion evaluators
-    if (slist.isParameter("diffusion factors"))
-      eqns_[n].diff_factors = slist.get<Teuchos::Array<double>>("diffusion factors").toVector();
-
-    if (slist.isParameter("diffusion liquid")) {
-      names = slist.get<Teuchos::Array<std::string>>("diffusion liquid").toVector();
-      eqns_[n].diffusion.push_back(std::make_pair(names[0], names[1]));
-      eval_flattened_.push_back(names[0]);
-      secondary_names_.insert(names[1]);
-    } else {
-      eqns_[n].diffusion.push_back(std::make_pair("", ""));
-    }
-
-    if (slist.isParameter("diffusion gas")) {
-      names = slist.get<Teuchos::Array<std::string>>("diffusion gas").toVector();
-      eqns_[n].diffusion.push_back(std::make_pair(names[0], names[1]));
-      eval_flattened_.push_back(names[0]);
-      secondary_names_.insert(names[1]);
-    } else {
-      eqns_[n].diffusion.push_back(std::make_pair("", ""));
+      int type = (std::strncmp(name.c_str(), "advection", 9) == 0) ? 0 : 1;
+      eqns_[n].types.push_back(type);
     }
 
     // storage
