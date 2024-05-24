@@ -1131,8 +1131,6 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
   system_[eqn_name] = true;
 
   std::string name, primary_name;
-  std::vector<std::string> names;
-
   primary_name = slist.get<std::string>("primary unknown");
   soln_names_.push_back(primary_name);
 
@@ -1152,23 +1150,26 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
     if (eqn_name == "pressure eqn") {
       eqns_[n].component_id = -1;
     } else if (eqn_name == "solute eqn") {
-      std::string name = component_names_[i];
+      name = component_names_[i];
       auto it = std::find(component_names_.begin(), component_names_.end(), component_names_[i]);
       eqns_[n].component_id = std::distance(component_names_.begin(), it);
     }
 
-    if (slist.isParameter("factors")) {
-      eqns_[n].phases = slist.get<Teuchos::Array<int>>("phases").toVector();
-      eqns_[n].factors = slist.get<Teuchos::Array<double>>("factors").toVector();
-    }
-
     for (auto it = tlist.begin(); it != tlist.end(); ++it) {
-      auto name = it->first;
-      names = tlist.get<Teuchos::Array<std::string>>(name).toVector();
+      name = it->first;
+      const auto& sublist = tlist.sublist(name);
 
-      eqns_[n].terms.push_back(std::make_pair(names[0], names[1]));
-      eval_flattened_.push_back(names[0]);
-      secondary_names_.insert(names[1]);
+      std::string coef = sublist.get<std::string>("coefficient");
+      std::string arg = sublist.get<std::string>("argument");
+      double scale = sublist.get<double>("scaling factor");
+      int phase = sublist.get<int>("phase");
+
+      eqns_[n].terms.push_back(std::make_pair(coef, arg));
+      eval_flattened_.push_back(coef);
+      secondary_names_.insert(arg);
+
+      eqns_[n].phases.push_back(phase);
+      eqns_[n].factors.push_back(scale);
 
       int type = (std::strncmp(name.c_str(), "advection", 9) == 0) ? 0 : 1;
       eqns_[n].types.push_back(type);
@@ -1183,7 +1184,7 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
 
     // constraint
     if (slist.isParameter("ncp evaluators")) {
-      names = slist.get<Teuchos::Array<std::string>>("ncp evaluators").toVector();
+      auto names = slist.get<Teuchos::Array<std::string>>("ncp evaluators").toVector();
       eqns_[n].constraint = std::make_pair(names[0], names[1]);
       eval_flattened_.push_back(names[0]);
       eval_flattened_.push_back(names[1]);
