@@ -26,6 +26,8 @@
 #include "H2O_Viscosity.hh"
 #include "H2O_ViscosityFEHM.hh"
 #include "IdealGas_Density.hh"
+#include "IdealGas_Viscosity.hh"
+#include "IdealGas_ThermalConductivity.hh"
 #include "IsobaricEOSEvaluator.hh"
 #include "MolarFractionGasEvaluator.hh"
 #include "ThermalConductivityConstant.hh"
@@ -54,6 +56,7 @@ Utils::RegisteredFactory<EOS_Density, DensityTabular> DensityTabular::reg_("look
 Utils::RegisteredFactory<EOS_SaturatedVaporPressure, H2O_SaturatedVaporPressure>
   H2O_SaturatedVaporPressure::reg_("water vapor over water/ice");
 
+Utils::RegisteredFactory<EOS_Viscosity, IdealGas_Viscosity> IdealGas_Viscosity::reg_("ideal gas");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_Viscosity> H2O_Viscosity::reg_("liquid water 0-30C");
 Utils::RegisteredFactory<EOS_Viscosity, ViscosityConstant> ViscosityConstant::reg_("constant");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM>
@@ -66,6 +69,8 @@ Utils::RegisteredFactory<EOS_Diffusion, VaporInGas_Diffusion>
 Utils::RegisteredFactory<COM_Tortuosity, COM_MillingtonQuirk>
   COM_MillingtonQuirk::reg_("Millington Quirk");
 
+Utils::RegisteredFactory<EOS_ThermalConductivity, IdealGas_ThermalConductivity>
+   IdealGas_ThermalConductivity::reg_("ideal gas");
 Utils::RegisteredFactory<EOS_ThermalConductivity, H2O_ThermalConductivity>
   H2O_ThermalConductivity::reg_("liquid water");
 Utils::RegisteredFactory<EOS_ThermalConductivity, ThermalConductivityConstant>

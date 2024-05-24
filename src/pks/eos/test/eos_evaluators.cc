@@ -20,6 +20,7 @@
 
 #include "errors.hh"
 
+#include "IdealGas_Viscosity.hh"
 #include "EOS_Density.hh"
 #include "EOS_SaturatedVaporPressure.hh"
 #include "EOSFactory.hh"
@@ -126,6 +127,14 @@ TEST(ViscosityEOS)
       CHECK_CLOSE(der, der_fd, 1e-3 * std::fabs(der));
     }
   }
+
+  // next EOS
+  plist.set<double>("reference viscosity", 1.716e-5);
+  plist.set<double>("reference temperature", 273.0);
+  plist.set<double>("Sutherland constant", 111.0);
+  IdealGas_Viscosity eos_ideal_gas(plist);
+  nu0 = eos_ideal_gas.Viscosity(290.0, 0.0);
+  CHECK_CLOSE(nu0, 1.8e-5, 1e-8);
 }
 
 
