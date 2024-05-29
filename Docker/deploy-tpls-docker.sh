@@ -142,6 +142,7 @@ then
     docker buildx build \
         --platform=linux/amd64,linux/arm64 \
         ${cache} \
+        ${push_arg} \
         --build-arg petsc_ver=${petsc_ver} \
         --build-arg trilinos_ver=${trilinos_ver} \
         --build-arg amanzi_branch=${amanzi_branch} \
@@ -155,6 +156,7 @@ then
 else
     docker build \
         ${cache} \
+        ${push_arg} \
         --build-arg petsc_ver=${petsc_ver} \
         --build-arg trilinos_ver=${trilinos_ver} \
         --build-arg amanzi_branch=${amanzi_branch} \
