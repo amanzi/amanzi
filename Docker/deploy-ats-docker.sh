@@ -1,74 +1,138 @@
 #!/bin/bash
 
+# Print out options and help statements
+Help()
+{
+    echo "Usage: $(basename $0) [-h|--help] [additional options]"
+    echo "Options:"
+    echo "  -h, --help          Display this help message"
+    echo "  --amanzi_branch     Which Amanzi branch should be used when building container? (Default: master)"
+    echo "  --amanzi_src_dir    Where does the Amanzi repo reside on the current system?"
+    echo "                      (Default: /ascem/amanzi/repos/amanzi-master)"
+    echo "  --ats_src_dir       Where does the ATS repo reside on the current system?"
+    echo "                      (Default: \$amanzi_src_dir/src/physics/ats)"
+    echo "  --amanzi_tpls_ver   Which version of the Amanzi TPLs should we build? (Default: 0.98.9)"
+    echo "  --output_style      Should we use the condensed or plain version of Docker output (Default: condensed)."
+    echo "                      Set --output_style='plain' for expanded output"
+    echo "  --multiarch         Build for both linux/amd64 and linux/arm64 instead of only local system architecture"
+    echo "  --mpi_flavor        Which MPI implementation does the TPL image you want to build from use? (Default: mpich)"
+    exit 0
+}
 
 get_tpl_version()
 #
 #  Find version information and provide it for production installs
 #
 {
-   local SBFile=${AMANZI_SOURCE_DIR}/config/SuperBuild/TPLVersions.cmake
+   local SBFile=${amanzi_src_dir}/config/SuperBuild/TPLVersions.cmake
    tpl_version_major=`grep AMANZI_TPLS_VERSION_MAJOR ${SBFile} | tr -cd '[[:digit:]]'`
    tpl_version_minor=`grep AMANZI_TPLS_VERSION_MINOR ${SBFile} | tr -cd '[[:digit:]]'`
    tpl_version_patch=`grep AMANZI_TPLS_VERSION_PATCH ${SBFile} | tr -cd '[[:digit:]]'`
    echo "${tpl_version_major}.${tpl_version_minor}.${tpl_version_patch}"
 }
 
-AMANZI_BRANCH=master
-AMANZI_SOURCE_DIR=/ascem/amanzi/repos/amanzi-master
-AMANZI_TPLS_VER=`get_tpl_version`
+# parse command line options, if given
+for i in "$@"
+do
+case $i in
+    -h|--help)
+    Help
+    ;;
+    --amanzi_branch=*)
+    amanzi_branch="${i#*=}"
+    shift
+    ;;
+    --amanzi_src_dir=*)
+    amanzi_src_dir="${i#*=}"
+    shift
+    ;;
+    --ats_src_dir=*)
+    ats_src_dir="${i#*=}"
+    shift
+    ;;
+    --amanzi_tpls_ver=*)
+    amanzi_tpls_ver="${i#*=}"
+    shift
+    ;;
+    --use_proxy=*)
+    use_proxy="${i#*=}"
+    shift
+    ;;
+    --output_style=*)
+    output_style="${i#*=}"
+    shift
+    ;;
+    --multiarch)
+    multiarch=True
+    shift
+    ;;
+    *)
+        # unknown option?
+    ;;
+esac
+done
 
-ATS_SOURCE_DIR=$AMANZI_SOURCE_DIR/src/physics/ats
+# set defaults, if not given on CLI
+amanzi_branch="${amanzi_branch:-master}"
+amanzi_src_dir="${amanzi_src_dir:-/ascem/amanzi/repos/amanzi-master}"
+amanzi_tpls_ver="${amanzi_tpls_ver:-`get_tpl_version`}"
+use_proxy="${use_proxy:-False}"
+output_style="${output_style:-}"
+multiarch="${multiarch:-False}"
+mpi_flavor="${mpi_flavor:-mpich}"
+ats_src_dir="${ats_src_dir:-$amanzi_src_dir/src/physics/ats}"
 
-# LANL_PROXY="--build-arg http_proxy=proxyout.lanl.gov:8080 --build-arg https_proxy=proxyout.lanl.gov:8080"
-
-AMANZI_GIT_LATEST_TAG_VER=`(cd $AMANZI_SOURCE_DIR; git tag -l amanzi-* | tail -n1 | sed -e 's/amanzi-//')`
-AMANZI_GIT_GLOBAL_HASH=`(cd $AMANZI_SOURCE_DIR; git rev-parse --short HEAD)`
+AMANZI_GIT_LATEST_TAG_VER=`(cd $amanzi_src_dir; git tag -l amanzi-* | tail -n1 | sed -e 's/amanzi-//')`
+AMANZI_GIT_GLOBAL_HASH=`(cd $amanzi_src_dir; git rev-parse --short HEAD)`
 AMANZI_VER="${AMANZI_GIT_LATEST_TAG_VER}_${AMANZI_GIT_GLOBAL_HASH}"
 
 echo ""
-echo "AMANZI_SOURCE_DIR = $AMANZI_SOURCE_DIR"
+echo "AMANZI_SRC_DIR    = $amanzi_src_dir"
 echo " - latest tag       $AMANZI_GIT_LATEST_TAG_VER"
 echo " - global hash      $AMANZI_GIT_GLOBAL_HASH"
 echo " - version string   $AMANZI_VER"
 echo ""
 
-ATS_GIT_LATEST_TAG_VER=`(cd $ATS_SOURCE_DIR; git tag -l ats-* | tail -n1 | sed -e 's/ats-//')`
-ATS_GIT_GLOBAL_HASH=`(cd $ATS_SOURCE_DIR; git rev-parse --short HEAD)`
+ATS_GIT_LATEST_TAG_VER=`(cd $ats_src_dir; git tag -l ats-* | tail -n1 | sed -e 's/ats-//')`
+ATS_GIT_GLOBAL_HASH=`(cd $ats_src_dir; git rev-parse --short HEAD)`
 ATS_VER="${ATS_GIT_LATEST_TAG_VER}_${ATS_GIT_GLOBAL_HASH}"
 
-echo "ATS_SOURCE_DIR =    $ATS_SOURCE_DIR"
+echo "ATS_SOURCE_DIR =    $ats_src_dir"
 echo " - latest tag       $ATS_GIT_LATEST_TAG_VER"
 echo " - global hash      $ATS_GIT_GLOBAL_HASH"
 echo " - version string   $ATS_VER"
 echo ""
 
-# MPI installed in the Docker image
-# Options: openmpi, mpich
-# MPI_FLAVOR=openmpi
-MPI_FLAVOR=mpich
+if "${use_proxy}" ; then
+    LANL_PROXY="--build-arg http_proxy=proxyout.lanl.gov:8080 --build-arg https_proxy=proxyout.lanl.gov:8080"
+else
+    LANL_PROXY=""
+fi
+if [ "${output_style}" = "plain" ]; then
+    OUTPUT_STYLE="--progress=plain"
+else
+    OUTPUT_STYLE=""
+fi
 
-# architecture options - if TRUE, build for arm and x86_64,
-# if FALSE, build only for current system architecture.
-MULTIARCH=FALSE
-
-# output style - change to "--progress=plain" for debugging
-OUTPUT_STYLE=""
-
-if $MULTIARCH
+if $multiarch
 then
    docker buildx build --platform=linux/amd64,linux/arm64 \
-      --no-cache $OUTPUT_STYLE \
-      --build-arg amanzi_branch=${AMANZI_BRANCH} \
-      --build-arg amanzi_tpls_ver=${AMANZI_TPLS_VER} \
-      --build-arg mpi_flavor=${MPI_FLAVOR} \
-      -f ${AMANZI_SOURCE_DIR}/Docker/Dockerfile-ATS \
+      --no-cache \
+      $OUTPUT_STYLE \
+      $LANL_PROXY \
+      --build-arg amanzi_branch=${amanzi_branch} \
+      --build-arg amanzi_tpls_ver=${amanzi_tpls_ver} \
+      --build-arg mpi_flavor=${mpi_flavor} \
+      -f ${amanzi_src_dir}/Docker/Dockerfile-ATS \
       -t metsi/ats:${ATS_VER} .
 else
-   docker build --no-cache $OUTPUT_STYLE \
-      --build-arg amanzi_branch=${AMANZI_BRANCH} \
-      --build-arg amanzi_tpls_ver=${AMANZI_TPLS_VER} \
-      --build-arg mpi_flavor=${MPI_FLAVOR} \
-      -f ${AMANZI_SOURCE_DIR}/Docker/Dockerfile-ATS \
+   docker build --no-cache \
+      ${OUTPUT_STYLE} \
+      ${LANL_PROXY} \
+      --build-arg amanzi_branch=${amanzi_branch} \
+      --build-arg amanzi_tpls_ver=${amanzi_tpls_ver} \
+      --build-arg mpi_flavor=${mpi_flavor} \
+      -f ${amanzi_src_dir}/Docker/Dockerfile-ATS \
       -t metsi/ats:${ATS_VER} .
 fi
 
