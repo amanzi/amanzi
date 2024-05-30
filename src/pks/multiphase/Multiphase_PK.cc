@@ -826,7 +826,7 @@ Multiphase_PK::Initialize()
     bcs_[i]->ComputeSubmodel(mesh_);
   }
 
-  PopulateBCs(0, true);
+  PopulateBCs(-1, true);
 
   // matrix is used to simplify calculation of residual
   // -- absolute permeability
@@ -1037,14 +1037,12 @@ Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   // no BC for upwind algorithms
   std::vector<int> bcnone(nfaces_wghost_, Operators::OPERATOR_BC_NONE);
 
-  S_->GetEvaluator(advection_gas_key_).Update(*S_, passwd_);
-
   // work memory
   auto kr = CreateCVforUpwind_();
   auto& kr_c = *kr->ViewComponent("cell");
 
   Teuchos::RCP<std::vector<WhetStone::Tensor>> Kptr = Teuchos::rcpFromRef(K_);
-  PopulateBCs(0, true);
+  PopulateBCs(-1, true);
 
   // Using form div [K k grad(p)] to compute u = -K k grad(p)
   // NOTE: k is upwinded using flux from last iteration
@@ -1058,7 +1056,7 @@ Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
     upwind_->Compute(*flux, bcnone, *kr);
 
     auto pdeK = pde_diff_K_[phase];
-    pdeK->Setup(Kptr, kr, Teuchos::null);
+    pdeK->SetScalarCoefficient(kr, Teuchos::null);
     pdeK->SetBCs(op_bcs_[pressure_names_[phase]], op_bcs_[pressure_names_[phase]]);
     pdeK->global_operator()->Init();
     pdeK->UpdateMatrices(flux.ptr(), var.ptr());
@@ -1083,11 +1081,11 @@ Multiphase_PK::ModifyCorrection(double h,
 {
   int nnames = soln_names_.size();
 
-  for (int i = 0; i < nnames; ++i) {
-    auto name = soln_names_[i];
+  for (int n = 0; n < nnames; ++n) {
+    auto name = soln_names_[n];
 
-    const auto& uc = *u->SubVector(i)->Data()->ViewComponent("cell");
-    auto& duc = *du->SubVector(i)->Data()->ViewComponent("cell");
+    const auto& uc = *u->SubVector(n)->Data()->ViewComponent("cell");
+    auto& duc = *du->SubVector(n)->Data()->ViewComponent("cell");
 
     if (name == mol_density_liquid_key_) {
       // clip molar density to range [0; +\infty]
@@ -1100,7 +1098,7 @@ Multiphase_PK::ModifyCorrection(double h,
       for (int i = 0; i < uc.NumVectors(); ++i) {
         for (int c = 0; c < ncells_owned_; ++c) {
           duc[i][c] = std::min(duc[i][c], uc[i][c]);
-          duc[0][c] = std::max(duc[0][c], uc[0][c] - 1.0);
+          duc[i][c] = std::max(duc[i][c], uc[i][c] - 1.0);
         }
       }
 
@@ -1151,7 +1149,7 @@ Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_nu
       eqns_[n].component_id = -1;
     } else if (eqn_name == "solute eqn") {
       name = component_names_[i];
-      auto it = std::find(component_names_.begin(), component_names_.end(), component_names_[i]);
+      auto it = std::find(component_names_.begin(), component_names_.end(), name); // FIXME
       eqns_[n].component_id = std::distance(component_names_.begin(), it);
     }
 

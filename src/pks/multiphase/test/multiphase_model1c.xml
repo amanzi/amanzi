@@ -208,7 +208,7 @@
           <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
           <Parameter name="max error growth factor" type="double" value="1.0e+10"/>
           <Parameter name="max divergent iterations" type="int" value="3"/>
-          <Parameter name="limit iterations" type="int" value="40"/>
+          <Parameter name="limit iterations" type="int" value="25"/>
           <Parameter name="modify correction" type="bool" value="true"/>
           <Parameter name="monitor" type="string" value="monitor update"/>
           <Parameter name="make one iteration" type="bool" value="true"/>
@@ -219,7 +219,7 @@
           <Parameter name="limit iterations" type="int" value="20"/>
           <Parameter name="max du growth factor" type="double" value="1000.0"/>
           <Parameter name="max divergent iterations" type="int" value="3"/>
-          <Parameter name="max nka vectors" type="int" value="40"/>
+          <Parameter name="max nka vectors" type="int" value="25"/>
           <Parameter name="modify correction" type="bool" value="true"/>
           <Parameter name="monitor" type="string" value="monitor update"/>
         </ParameterList>

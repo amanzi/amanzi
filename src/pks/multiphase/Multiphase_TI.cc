@@ -87,7 +87,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
     Key keyr = soln_names_[eqns_flattened_[n][0]];
 
     ModifyEvaluators(n);
-    PopulateBCs(eqns_flattened_[n][1], true);
+    PopulateBCs(eqns_[n].component_id, true);
 
     // Richards-type "advection" and molecular diffusion operators of 
     // the form  div [f K grad g]  where f and g are evaluators
@@ -235,6 +235,26 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
   auto fone_c = fone->ViewComponent("cell");
   fone->PutScalar(1.0);
 
+  // update fluxes
+  /*
+  for (int phase = 0; phase < 2; ++phase) {
+    S_->GetEvaluator(adv_names_[phase]).Update(*S_, passwd_);
+
+    auto var = S_->GetPtr<CompositeVector>(pressure_names_[phase], Tags::DEFAULT);
+    auto flux = S_->GetPtrW<CompositeVector>(flux_names_[phase], Tags::DEFAULT, passwd_);
+
+    kr_c = *S_->Get<CompositeVector>(adv_names_[phase]).ViewComponent("cell");
+    upwind_->Compute(*flux, bcnone, *kr);
+
+    auto pdeK = pde_diff_K_[phase];
+    pdeK->SetScalarCoefficient(kr, Teuchos::null);
+    pdeK->SetBCs(op_bcs_[pressure_names_[phase]], op_bcs_[pressure_names_[phase]]);
+    pdeK->global_operator()->Init();
+    pdeK->UpdateMatrices(flux.ptr(), var.ptr());
+    pdeK->UpdateFlux(var.ptr(), flux.ptr());
+  }
+  */
+
   // for each operator we linearize (a) functions on which it acts and
   // (b) non-linear coefficients
   int neqns = eqns_.size();
@@ -244,7 +264,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
   for (int row = 0; row < neqns - nncps; ++row) {
     ModifyEvaluators(row);
     Key keyr = soln_names_[eqns_flattened_[row][0]];
-    PopulateBCs(eqns_flattened_[row][1], false);
+    PopulateBCs(eqns_[row].component_id, false);
 
     for (int col = 0; col < neqns; ++col) {
       Key keyc = soln_names_[eqns_flattened_[col][0]];
