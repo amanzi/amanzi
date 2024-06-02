@@ -227,9 +227,8 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
   // liquid phase: primary component
   Teuchos::ParameterList& peqn = out_list.sublist("system").sublist("pressure eqn");
   Teuchos::ParameterList& pterms = peqn.sublist("terms");
-  
-  peqn.set<std::string>("primary unknown", pl)
-    .set<std::string>("accumulation", storage_water_key);
+
+  peqn.set<std::string>("primary unknown", pl).set<std::string>("accumulation", storage_water_key);
 
   pterms.sublist("advection 0")
     .set<std::string>("coefficient", adv_water_key)
@@ -274,8 +273,7 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
   // -- equation for solute
   Teuchos::ParameterList& seqn = out_list.sublist("system").sublist("solute eqn");
   Teuchos::ParameterList& sterms = seqn.sublist("terms");
-  seqn.set<std::string>("primary unknown", xg)
-    .set<std::string>("accumulation", storage_tcc_key);
+  seqn.set<std::string>("primary unknown", xg).set<std::string>("accumulation", storage_tcc_key);
 
   sterms.sublist("advection 0")
     .set<std::string>("coefficient", adv_liquid_key)

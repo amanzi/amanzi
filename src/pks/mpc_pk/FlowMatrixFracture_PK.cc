@@ -274,7 +274,7 @@ FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // create copies of conservative fields
   std::vector<std::string> fields = { "pressure",
-                                      "fracture-pressure", 
+                                      "fracture-pressure",
                                       "saturation_liquid",
                                       "fracture-saturation_liquid",
                                       "fracture-aperture" };

@@ -275,7 +275,7 @@ PDE_Diffusion::ScaleMatricesColumns(const CompositeVector& s)
 /* ******************************************************************
 * Default implementations
 ****************************************************************** */
-inline CompositeVectorSpace 
+inline CompositeVectorSpace
 PDE_Diffusion::little_k_space() const
 {
   CompositeVectorSpace out;

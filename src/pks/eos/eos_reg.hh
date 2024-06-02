@@ -70,7 +70,7 @@ Utils::RegisteredFactory<COM_Tortuosity, COM_MillingtonQuirk>
   COM_MillingtonQuirk::reg_("Millington Quirk");
 
 Utils::RegisteredFactory<EOS_ThermalConductivity, IdealGas_ThermalConductivity>
-   IdealGas_ThermalConductivity::reg_("ideal gas");
+  IdealGas_ThermalConductivity::reg_("ideal gas");
 Utils::RegisteredFactory<EOS_ThermalConductivity, H2O_ThermalConductivity>
   H2O_ThermalConductivity::reg_("liquid water");
 Utils::RegisteredFactory<EOS_ThermalConductivity, ThermalConductivityConstant>

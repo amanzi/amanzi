@@ -129,9 +129,8 @@ class VerboseObject;
 namespace AmanziSolvers {
 
 class PreconditionerHypre : public AmanziSolvers::Preconditioner {
+  enum HyprePreconditioners { Boomer, ILU, MGR, AMS };
 
-  enum HyprePreconditioners {Boomer, ILU, MGR, AMS};
-  
  public:
   PreconditionerHypre()
     : AmanziSolvers::Preconditioner(),
@@ -140,20 +139,21 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
       returned_code_(0)
   {}
 
-  ~PreconditionerHypre(){
+  ~PreconditionerHypre()
+  {
     HYPRE_IJVectorDestroy(XHypre_);
     HYPRE_IJVectorDestroy(YHypre_);
     if (method_type_ == Boomer) {
       HYPRE_BoomerAMGDestroy(method_);
     } else if (method_type_ == ILU) {
       HYPRE_ILUDestroy(method_);
-    } else if (method_type_ == AMS){
-      HYPRE_AMSDestroy(method_); 
+    } else if (method_type_ == AMS) {
+      HYPRE_AMSDestroy(method_);
     } else if (method_type_ == MGR) {
       HYPRE_MGRDestroy(method_);
     }
   }
-  
+
   virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final;
   virtual void InitializeInverse() override final;
   virtual void ComputeInverse() override final;
@@ -163,10 +163,9 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
   virtual std::string returned_code_string() const override final { return "success"; }
 
  private:
+  void copy_matrix_();
 
-  void copy_matrix_(); 
 
-  
   void InitBoomer_();
   void InitILU_();
   void InitAMS_();
@@ -175,7 +174,8 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
 
   int SetCoordinates_(Teuchos::RCP<Epetra_MultiVector>);
   int SetDiscreteGradient_(Teuchos::RCP<const Epetra_CrsMatrix>);
-  Teuchos::RCP<const Epetra_Map> MakeContiguousColumnMap_(Teuchos::RCP<const Epetra_RowMatrix>&) const; 
+  Teuchos::RCP<const Epetra_Map>
+  MakeContiguousColumnMap_(Teuchos::RCP<const Epetra_RowMatrix>&) const;
 
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
@@ -192,7 +192,7 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
 
   Teuchos::RCP<const Map_type> GloballyContiguousNodeRowMap_;
   Teuchos::RCP<const Map_type> GloballyContiguousNodeColMap_;
-  
+
   HYPRE_ParCSRMatrix ParMatrix_;
   HYPRE_IJMatrix HypreA_;
   HYPRE_ParVector ParX_;
@@ -202,14 +202,14 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
 
   HYPRE_ParCSRMatrix ParMatrixG_;
   HYPRE_IJMatrix HypreG_;
-  
+
   HYPRE_IJVector xHypre_;
   HYPRE_IJVector yHypre_;
   HYPRE_IJVector zHypre_;
   HYPRE_ParVector xPar_;
   HYPRE_ParVector yPar_;
   HYPRE_ParVector zPar_;
-  
+
   Teuchos::RCP<hypre_ParVector> XVec_;
   Teuchos::RCP<hypre_ParVector> YVec_;
 
@@ -217,7 +217,6 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
   HyprePreconditioners method_type_ = Boomer;
 
   Teuchos::RCP<const Epetra_CrsMatrix> G_;
-  
 };
 
 } // namespace AmanziSolvers

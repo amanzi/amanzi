@@ -22,22 +22,23 @@
 
 namespace Amanzi {
 namespace AmanziSolvers {
-  
+
 void
 PreconditionerHypre::copy_matrix_()
 {
-  Teuchos::RCP<const Epetra_CrsMatrix> Matrix = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(A_);
-  if(Matrix.is_null())
+  Teuchos::RCP<const Epetra_CrsMatrix> Matrix =
+    Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(A_);
+  if (Matrix.is_null())
     throw std::runtime_error("Hypre<MatrixType>: Unsupported matrix "
                              "configuration: Tpetra::CrsMatrix required");
 
   std::vector<int> new_indices(Matrix->MaxNumEntries());
-  for(int i = 0; i < Matrix->NumMyRows(); i++){
+  for (int i = 0; i < Matrix->NumMyRows(); i++) {
     int numEntries;
-    int *indices;
-    double *values;
+    int* indices;
+    double* values;
     Matrix->ExtractMyRowView(i, numEntries, values, indices);
-    for(int j = 0; j < numEntries; j++){
+    for (int j = 0; j < numEntries; j++) {
       new_indices[j] = GloballyContiguousColMap_->GID(indices[j]);
     }
     int GlobalRow[1];
@@ -48,7 +49,7 @@ PreconditionerHypre::copy_matrix_()
   HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_);
 }
 
-  
+
 /* ******************************************************************
  * Apply the preconditioner.
  ****************************************************************** */
@@ -56,33 +57,33 @@ int
 PreconditionerHypre::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
 
 {
-  hypre_Vector *XLocal_ = hypre_ParVectorLocalVector(XVec_);
-  hypre_Vector *YLocal_ = hypre_ParVectorLocalVector(YVec_);
+  hypre_Vector* XLocal_ = hypre_ParVectorLocalVector(XVec_);
+  hypre_Vector* YLocal_ = hypre_ParVectorLocalVector(YVec_);
 
-  double * XValues = const_cast<double*>(&v[0]);
-  double * YValues = const_cast<double*>(&hv[0]);
+  double* XValues = const_cast<double*>(&v[0]);
+  double* YValues = const_cast<double*>(&hv[0]);
 
-  double *XTemp = XLocal_->data;
+  double* XTemp = XLocal_->data;
   XLocal_->data = XValues;
-  double *YTemp = YLocal_->data;
+  double* YTemp = YLocal_->data;
   YLocal_->data = YValues;
 
   HYPRE_ParVectorSetConstantValues(ParY_, 0.0);
-  if(method_type_ == Boomer){
+  if (method_type_ == Boomer) {
     // Use the solver methods
     HYPRE_BoomerAMGSolve(method_, ParMatrix_, ParX_, ParY_);
   } else if (method_type_ == ILU) {
     // Apply the preconditioner
     HYPRE_ILUSolve(method_, ParMatrix_, ParX_, ParY_);
-  } else if(method_type_ == MGR){
-    HYPRE_MGRSolve(method_, ParMatrix_, ParX_, ParY_); 
-  } else if(method_type_ == AMS){
-    HYPRE_AMSSolve(method_, ParMatrix_, ParX_, ParY_); 
+  } else if (method_type_ == MGR) {
+    HYPRE_MGRSolve(method_, ParMatrix_, ParX_, ParY_);
+  } else if (method_type_ == AMS) {
+    HYPRE_AMSSolve(method_, ParMatrix_, ParX_, ParY_);
   }
 
   XLocal_->data = XTemp;
   YLocal_->data = YTemp;
-  
+
   return 0;
 }
 
@@ -121,7 +122,7 @@ PreconditionerHypre::InitBoomer_()
   } else if (vo_->getVerbLevel() == Teuchos::VERB_EXTREME) {
     vlevel_int = 3;
   }
-  
+
   if (plist_.isParameter("verbosity")) vlevel_int = plist_.get<int>("verbosity");
   HYPRE_BoomerAMGSetPrintLevel(method_, vlevel_int);
 
@@ -171,7 +172,7 @@ PreconditionerHypre::InitBoomer_()
     for (int i = 0; i != block_indices_->size(); ++i) { indices[i] = (*block_indices_)[i]; }
     HYPRE_BoomerAMGSetDofFunc(method_, indices);
   }
-  
+
   if (plist_.isParameter("number of functions")) {
     if (num_blocks_ > 0) {
       Errors::Message msg("Hypre (BoomerAMG) cannot be given both \"use block "
@@ -275,32 +276,44 @@ PreconditionerHypre::InitILU_()
 /* ******************************************************************
 * Initialize MRG preconditioner.
 ****************************************************************** */
-void PreconditionerHypre::InitMGR_()
+void
+PreconditionerHypre::InitMGR_()
 {
 #ifdef HAVE_HYPRE
   method_type_ = MGR;
 
-  // Set up block data with information about coarse indexes for reduction. Here, the user specifies the number of reduction levels, as well as the the coarse nodes for each level of the reduction. These coarse nodes are indexed by their index in the block of unknowns. This is used internally to tag the appropriate indexes of the linear system matrix as coarse nodes.
-  //HYPRE_MGRSetCpointsByBlock(method_, block_size, max_num_levels, *num_block_coarse_points, **block_coarse_indexes);
-  
-  // Prescribe a subset of nodes to be kept as coarse nodes until the coarsest level. These nodes are transferred onto the coarsest grid of the BoomerAMG coarse grid solver.
-  //HYPRE_MGRSetReservedCoarseNodes(method_, reserved_coarse_size, *reserved_coarse_nodes);
-  
-  // Set points not prescribed as C points to be fixed as F points for intermediate levels. Setting this to 1 uses the user input to define the C/F splitting. Otherwise, a BoomerAMG coarsening routine is used to determine the C/F splitting for intermediate levels.
-  //HYPRE_MGRSetNonCpointsToFpoints(method_, nonCptToFptFlag);
-  
-  // This function sets the BoomerAMG solver to be used for the solve on the coarse grid. The user can define their own BoomerAMG solver with their preferred options and pass this to the MGR solver. Otherwise, an internal BoomerAMG solver is used as the coarse grid solver instead.
-  //HYPRE_MGRSetCoarseSolver(method_, coarse_grid_solver_solve, coarse_grid_solver_setup, coarse_grid_solver); 
+  // Set up block data with information about coarse indexes for reduction. 
+  // Here, the user specifies the number of reduction levels, as well as the 
+  // coarse nodes for each level of the reduction. These coarse nodes are 
+  // indexed by their index in the block of unknowns. This is used internally
+  // to tag the appropriate indexes of the linear system matrix as coarse nodes.
+  // HYPRE_MGRSetCpointsByBlock(
+  //   method_, block_size, max_num_levels, *num_block_coarse_points, **block_coarse_indexes);
+
+  // Prescribe a subset of nodes to be kept as coarse nodes until the coarsest level.
+  // These nodes are transferred onto the coarsest grid of the BoomerAMG coarse grid solver.
+  // HYPRE_MGRSetReservedCoarseNodes(method_, reserved_coarse_size, *reserved_coarse_nodes);
+
+  // Set points not prescribed as C points to be fixed as F points for intermediate levels. 
+  // Setting this to 1 uses the user input to define the C/F splitting. Otherwise, a 
+  // BoomerAMG coarsening routine is used to determine the C/F splitting for intermediate levels.
+  // HYPRE_MGRSetNonCpointsToFpoints(method_, nonCptToFptFlag);
+
+  // This function sets the BoomerAMG solver to be used for the solve on the coarse grid. 
+  // The user can define their own BoomerAMG solver with their preferred options and pass 
+  // this to the MGR solver. Otherwise, an internal BoomerAMG solver is used as the coarse 
+  // grid solver instead.
+  // HYPRE_MGRSetCoarseSolver(
+  //   method_, coarse_grid_solver_solve, coarse_grid_solver_setup, coarse_grid_solver);
 
 #else
   Errors::Message msg("Hypre (MRG) is not available in this installation of Amanzi.  To use "
                       "Hypre, please reconfigure.");
   Exceptions::amanzi_throw(msg);
 #endif
-    
 }
 
-  
+
 /* ******************************************************************
 * Initialize specialized AMS preconditioner.
 ****************************************************************** */
@@ -321,15 +334,15 @@ PreconditionerHypre::InitAMS_()
   if (plist_.isParameter("discrete gradient operator") &&
       plist_.isType<Teuchos::RCP<Epetra_CrsMatrix>>("discrete gradient operator")) {
     G = plist_.get<Teuchos::RCP<Epetra_CrsMatrix>>("discrete gradient operator");
-    SetDiscreteGradient_(G); 
+    SetDiscreteGradient_(G);
   }
-  
+
   if (plist_.isParameter("graph coordinates") &&
       plist_.isType<Teuchos::RCP<Epetra_MultiVector>>("graph coordinates")) {
     xyz = plist_.get<Teuchos::RCP<Epetra_MultiVector>>("graph coordinates");
     SetCoordinates_(xyz);
   }
-  
+
   if (!xyz.get() || !G.get()) {
     Errors::Message msg("Hypre (AMS) needs additional data: gradient matrix and graph coordinates");
     Exceptions::amanzi_throw(msg);
@@ -342,7 +355,7 @@ PreconditionerHypre::InitAMS_()
   //tmp.sublist("Coordinates").set<Teuchos::RCP<Epetra_MultiVector>>("Coordinates", xyz);
   //tmp.sublist("Operators").set<Teuchos::RCP<const Epetra_CrsMatrix>>("G", G);
   //IfpHypre_->SetParameters(tmp);
-  
+
   HYPRE_AMSSetAlphaAMGOptions(method_, 6, 0, 6, 0.25, 0, 0);
   HYPRE_AMSSetBetaAMGOptions(method_, 6, 0, 6, 0.25, 0, 0);
 
@@ -366,12 +379,11 @@ PreconditionerHypre::InitAMS_()
 void
 PreconditionerHypre::InitializeInverse()
 {
-
   // must be row matrix
   A_ = h_;
 
   assert(A_->RowMatrixRowMap().SameAs(A_->OperatorRangeMap()));
-  
+
   if (A_->RowMatrixRowMap().LinearMap()) {
     GloballyContiguousRowMap_ = Teuchos::rcpFromRef(A_->RowMatrixRowMap());
     GloballyContiguousColMap_ = Teuchos::rcpFromRef(A_->RowMatrixColMap());
@@ -379,11 +391,9 @@ PreconditionerHypre::InitializeInverse()
     assert(false);
   }
 
-  MPI_Comm comm =
-    dynamic_cast<const Epetra_MpiComm*>(&A_->Comm())
-        ->GetMpiComm();
+  MPI_Comm comm = dynamic_cast<const Epetra_MpiComm*>(&A_->Comm())->GetMpiComm();
 
-  
+
   // Next create vectors that will be used when ApplyInverse() is called
   int ilower = GloballyContiguousRowMap_->MinMyGID();
   int iupper = GloballyContiguousRowMap_->MaxMyGID();
@@ -416,10 +426,10 @@ PreconditionerHypre::InitializeInverse()
     method_type_ = AMS;
     HYPRE_AMSCreate(&method_);
     InitAMS_();
-  } else if (method_name == "MGR"){
-    method_type_ = MGR; 
+  } else if (method_name == "MGR") {
+    method_type_ = MGR;
     HYPRE_MGRCreate(&method_);
-    InitMGR_(); 
+    InitMGR_();
   } else {
     Errors::Message msg;
     msg << "PreconditionerHypre: unknown method name \"" << method_name << "\"";
@@ -435,9 +445,7 @@ void
 PreconditionerHypre::ComputeInverse()
 {
 #ifdef HAVE_HYPRE
-  MPI_Comm comm =
-    dynamic_cast<const Epetra_MpiComm*>(&A_->Comm())
-        ->GetMpiComm();
+  MPI_Comm comm = dynamic_cast<const Epetra_MpiComm*>(&A_->Comm())->GetMpiComm();
 
   int ilower = GloballyContiguousRowMap_->MinMyGID();
   int iupper = GloballyContiguousRowMap_->MaxMyGID();
@@ -451,61 +459,59 @@ PreconditionerHypre::ComputeInverse()
   } else if (method_type_ == ILU) {
     HYPRE_ILUSetup(method_, ParMatrix_, ParX_, ParY_);
   } else if (method_type_ == MGR) {
-    HYPRE_MGRSetup(method_, ParMatrix_, ParX_, ParY_); 
-  } else if (method_type_ == AMS){
+    HYPRE_MGRSetup(method_, ParMatrix_, ParX_, ParY_);
+  } else if (method_type_ == AMS) {
     HYPRE_AMSSetup(method_, ParMatrix_, ParX_, ParY_);
   }
 #endif
 }
 
-int PreconditionerHypre::SetCoordinates_(Teuchos::RCP<Epetra_MultiVector> coords) {
-
-  if(!G_.is_null() && !G_->DomainMap().SameAs(coords->Map()))
+int
+PreconditionerHypre::SetCoordinates_(Teuchos::RCP<Epetra_MultiVector> coords)
+{
+  if (!G_.is_null() && !G_->DomainMap().SameAs(coords->Map()))
     throw std::runtime_error("Ifpack_Hypre: Node map mismatch: G->DomainMap() and coords");
 
-  if(method_type_ != AMS)
-    return 0;
+  if (method_type_ != AMS) return 0;
 
-  double *xPtr;
-  double *yPtr;
-  double *zPtr;
+  double* xPtr;
+  double* yPtr;
+  double* zPtr;
 
   IFPACK_CHK_ERR(((*coords)(0))->ExtractView(&xPtr));
   IFPACK_CHK_ERR(((*coords)(1))->ExtractView(&yPtr));
   IFPACK_CHK_ERR(((*coords)(2))->ExtractView(&zPtr));
 
-  MPI_Comm comm =
-    dynamic_cast<const Epetra_MpiComm*>(&A_->Comm())
-        ->GetMpiComm();
-  
+  MPI_Comm comm = dynamic_cast<const Epetra_MpiComm*>(&A_->Comm())->GetMpiComm();
+
   int NumEntries = coords->MyLength();
-  int * indices = GloballyContiguousNodeRowMap_->MyGlobalElements();
+  int* indices = GloballyContiguousNodeRowMap_->MyGlobalElements();
 
   int ilower = GloballyContiguousNodeRowMap_->MinMyGID();
   int iupper = GloballyContiguousNodeRowMap_->MaxMyGID();
 
-  assert(NumEntries != iupper-ilower+1); 
+  assert(NumEntries != iupper - ilower + 1);
 
   HYPRE_IJVectorCreate(comm, ilower, iupper, &xHypre_);
   HYPRE_IJVectorSetObjectType(xHypre_, HYPRE_PARCSR);
   HYPRE_IJVectorInitialize(xHypre_);
-  HYPRE_IJVectorSetValues(xHypre_,NumEntries,indices,xPtr);
+  HYPRE_IJVectorSetValues(xHypre_, NumEntries, indices, xPtr);
   HYPRE_IJVectorAssemble(xHypre_);
-  HYPRE_IJVectorGetObject(xHypre_, (void**) &xPar_);
+  HYPRE_IJVectorGetObject(xHypre_, (void**)&xPar_);
 
   HYPRE_IJVectorCreate(comm, ilower, iupper, &yHypre_);
   HYPRE_IJVectorSetObjectType(yHypre_, HYPRE_PARCSR);
   HYPRE_IJVectorInitialize(yHypre_);
-  HYPRE_IJVectorSetValues(yHypre_,NumEntries,indices,yPtr);
+  HYPRE_IJVectorSetValues(yHypre_, NumEntries, indices, yPtr);
   HYPRE_IJVectorAssemble(yHypre_);
-  HYPRE_IJVectorGetObject(yHypre_, (void**) &yPar_);
+  HYPRE_IJVectorGetObject(yHypre_, (void**)&yPar_);
 
   HYPRE_IJVectorCreate(comm, ilower, iupper, &zHypre_);
   HYPRE_IJVectorSetObjectType(zHypre_, HYPRE_PARCSR);
   HYPRE_IJVectorInitialize(zHypre_);
-  HYPRE_IJVectorSetValues(zHypre_,NumEntries,indices,zPtr);
+  HYPRE_IJVectorSetValues(zHypre_, NumEntries, indices, zPtr);
   HYPRE_IJVectorAssemble(zHypre_);
-  HYPRE_IJVectorGetObject(zHypre_, (void**) &zPar_);
+  HYPRE_IJVectorGetObject(zHypre_, (void**)&zPar_);
 
   HYPRE_AMSSetCoordinateVectors(method_, xPar_, yPar_, zPar_);
 
@@ -513,22 +519,21 @@ int PreconditionerHypre::SetCoordinates_(Teuchos::RCP<Epetra_MultiVector> coords
 
 } //SetCoordinate
 
-int PreconditionerHypre::SetDiscreteGradient_(Teuchos::RCP<const Epetra_CrsMatrix> G){
-
+int
+PreconditionerHypre::SetDiscreteGradient_(Teuchos::RCP<const Epetra_CrsMatrix> G)
+{
   // Sanity check
-  if(!A_->RowMatrixRowMap().SameAs(G->RowMap()))
+  if (!A_->RowMatrixRowMap().SameAs(G->RowMap()))
     throw std::runtime_error("Ifpack_Hypre: Edge map mismatch: A and discrete gradient");
-  
+
   // Get the maps for the nodes (assuming the edge map from A is OK);
-  GloballyContiguousNodeRowMap_ = Teuchos::rcp(new Epetra_Map(G->DomainMap().NumGlobalElements(),
-                                                              G->DomainMap().NumMyElements(), 0, A_->Comm()));
+  GloballyContiguousNodeRowMap_ = Teuchos::rcp(new Epetra_Map(
+    G->DomainMap().NumGlobalElements(), G->DomainMap().NumMyElements(), 0, A_->Comm()));
   Teuchos::RCP<const Epetra_RowMatrix> Grow = Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(G);
   GloballyContiguousNodeColMap_ = MakeContiguousColumnMap_(Grow);
 
   // Start building G
-  MPI_Comm comm =
-    dynamic_cast<const Epetra_MpiComm*>(&A_->Comm())
-        ->GetMpiComm();
+  MPI_Comm comm = dynamic_cast<const Epetra_MpiComm*>(&A_->Comm())->GetMpiComm();
   int ilower = GloballyContiguousRowMap_->MinMyGID();
   int iupper = GloballyContiguousRowMap_->MaxMyGID();
   int jlower = GloballyContiguousNodeRowMap_->MinMyGID();
@@ -538,12 +543,12 @@ int PreconditionerHypre::SetDiscreteGradient_(Teuchos::RCP<const Epetra_CrsMatri
   HYPRE_IJMatrixInitialize(HypreG_);
 
   std::vector<int> new_indices(G->MaxNumEntries());
-  for(int i = 0; i < G->NumMyRows(); i++){
+  for (int i = 0; i < G->NumMyRows(); i++) {
     int numEntries;
-    double * values;
-    int *indices;
+    double* values;
+    int* indices;
     G->ExtractMyRowView(i, numEntries, values, indices);
-    for(int j = 0; j < numEntries; j++){
+    for (int j = 0; j < numEntries; j++) {
       new_indices[j] = GloballyContiguousNodeColMap_->GID(indices[j]);
     }
     int GlobalRow[1];
@@ -558,43 +563,50 @@ int PreconditionerHypre::SetDiscreteGradient_(Teuchos::RCP<const Epetra_CrsMatri
   return 0;
 } //SetDiscreteGradient()
 
-Teuchos::RCP<const Epetra_Map> PreconditionerHypre::MakeContiguousColumnMap_(Teuchos::RCP<const Epetra_RowMatrix> &MatrixRow) const{
+Teuchos::RCP<const Epetra_Map>
+PreconditionerHypre::MakeContiguousColumnMap_(Teuchos::RCP<const Epetra_RowMatrix>& MatrixRow) const
+{
   // Must create GloballyContiguous DomainMap (which is a permutation of Matrix_'s
   // DomainMap) and the corresponding permuted ColumnMap.
   //   Epetra_GID  --------->   LID   ----------> HYPRE_GID
   //           via DomainMap.LID()       via GloballyContiguousDomainMap.GID()
-  Teuchos::RCP<const Epetra_CrsMatrix> Matrix = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(MatrixRow);
-  if(Matrix.is_null()) 
-    throw std::runtime_error("Ifpack_Hypre: Unsupported matrix configuration: Epetra_CrsMatrix required");
-  const Epetra_Map & DomainMap = Matrix->DomainMap();
-  const Epetra_Map & ColumnMap = Matrix->ColMap();
-  const Epetra_Import * importer = Matrix->Importer();
+  Teuchos::RCP<const Epetra_CrsMatrix> Matrix =
+    Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(MatrixRow);
+  if (Matrix.is_null())
+    throw std::runtime_error(
+      "Ifpack_Hypre: Unsupported matrix configuration: Epetra_CrsMatrix required");
+  const Epetra_Map& DomainMap = Matrix->DomainMap();
+  const Epetra_Map& ColumnMap = Matrix->ColMap();
+  const Epetra_Import* importer = Matrix->Importer();
 
-  if(DomainMap.LinearMap() ) {
+  if (DomainMap.LinearMap()) {
     // If the domain map is linear, then we can just use the column map as is.
     return Teuchos::rcpFromRef(ColumnMap);
-  }
-  else {
+  } else {
     // The domain map isn't linear, so we need a new domain map
-    Teuchos::RCP<Epetra_Map> ContiguousDomainMap = Teuchos::rcp(new Epetra_Map(DomainMap.NumGlobalElements(),
-                                                                      DomainMap.NumMyElements(), 0, A_->Comm()));
-    if(importer) {    
+    Teuchos::RCP<Epetra_Map> ContiguousDomainMap = Teuchos::rcp(
+      new Epetra_Map(DomainMap.NumGlobalElements(), DomainMap.NumMyElements(), 0, A_->Comm()));
+    if (importer) {
       // If there's an importer then we can use it to get a new column map
-      Epetra_IntVector MyGIDsHYPRE(View,DomainMap,ContiguousDomainMap->MyGlobalElements());
+      Epetra_IntVector MyGIDsHYPRE(View, DomainMap, ContiguousDomainMap->MyGlobalElements());
 
       // import the HYPRE GIDs
       Epetra_IntVector ColGIDsHYPRE(ColumnMap);
       ColGIDsHYPRE.Import(MyGIDsHYPRE, *importer, Insert);
-   
+
       // Make a HYPRE numbering-based column map.
-      return Teuchos::rcp(new Epetra_Map(ColumnMap.NumGlobalElements(),ColGIDsHYPRE.MyLength(), &ColGIDsHYPRE[0], 0, A_->Comm()));
-    }
-    else {
+      return Teuchos::rcp(new Epetra_Map(
+        ColumnMap.NumGlobalElements(), ColGIDsHYPRE.MyLength(), &ColGIDsHYPRE[0], 0, A_->Comm()));
+    } else {
       // The problem has matching domain/column maps, and somehow the domain map isn't linear, so just use the new domain map
-      return Teuchos::rcp(new Epetra_Map(ColumnMap.NumGlobalElements(),ColumnMap.NumMyElements(), ContiguousDomainMap->MyGlobalElements(), 0, A_->Comm()));
+      return Teuchos::rcp(new Epetra_Map(ColumnMap.NumGlobalElements(),
+                                         ColumnMap.NumMyElements(),
+                                         ContiguousDomainMap->MyGlobalElements(),
+                                         0,
+                                         A_->Comm()));
     }
-  }  
+  }
 }
-  
+
 } // namespace AmanziSolvers
 } // namespace Amanzi

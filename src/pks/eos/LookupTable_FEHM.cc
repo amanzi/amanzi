@@ -152,16 +152,28 @@ LookupTable_FEHM::Function(double T, double p, int* ierr)
   double f10(F_[ip][jp - 1]), f11(F_[ip][jp]);
 
   n = map_[ip - 1][jp - 1];
-  if (n >= 0) { f00 = satFl_[n][0]; m++; }
+  if (n >= 0) {
+    f00 = satFl_[n][0];
+    m++;
+  }
 
   n = map_[ip - 1][jp];
-  if (n >= 0) { f01 = satFl_[n][0]; m++; }
+  if (n >= 0) {
+    f01 = satFl_[n][0];
+    m++;
+  }
 
   n = map_[ip][jp - 1];
-  if (n >= 0) { f10 = satFl_[n][0]; m++; }
+  if (n >= 0) {
+    f10 = satFl_[n][0];
+    m++;
+  }
 
   n = map_[ip][jp];
-  if (n >= 0) { f11 = satFl_[n][0]; m++; }
+  if (n >= 0) {
+    f11 = satFl_[n][0];
+    m++;
+  }
 
   // bilinear and linear interpolations
   double a, b, dp, dT, D, val;
