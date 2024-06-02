@@ -90,7 +90,7 @@ Each part of the spec is illustrated by an example followed by optional comments
    </ParameterList>   
  
 This defines soil properties in region TOP_DOMAIN using the
-Brocks-Corey model with parameters *lambda=0.7* and *alpha=1e-3*.
+Brooks-Corey model with parameters *lambda=0.7* and *alpha=1e-3*.
 
 Additional conventions:
 
@@ -108,7 +108,7 @@ Additional conventions:
 Naming convention rule
 ----------------------
 It is hard to overestimate importance of a reasonable naming convention rule for efficient
-code development and its daily usage in reasearch.
+code development and its daily usage in research.
 
 * Camel-case names should *not* be used as names for fixed keywords (parameters and parameter lists).  
   The following is a short list of allowed exceptions. 
@@ -118,7 +118,7 @@ code development and its daily usage in reasearch.
     the underscore symbol.
 
   * Proper names such as an individual person, place, or organization, including their derivatives
-    *should* be spelled using capital letters. Examples: *van Genuchten m*, *Brocks-Corey lambda*, 
+    *should* be spelled using capital letters. Examples: *van Genuchten m*, *Brooks-Corey lambda*, 
     *Jacobian matrix*, and *Newton correction*.
 
   * Names of chemical species (inside fixed keywords) should be capitalized. Examples: *CO2*, *H+*.
@@ -281,7 +281,7 @@ Additional comments:
 
 * `"initial conditions`" [sublist] There are several options available to initialize 
   fields using this sublist: `"restart file`" - read field
-  from existing HDF55 file, `"exodus file initialization`" - read field
+  from existing HDF5 file, `"exodus file initialization`" - read field
   from existing Exodus file, `"cells from file`" - read cell
   components from HDF5 file, `"constant`" - set field values to constant, `"initialize
   from 1D column`" - initialize 1D column from file and `"function`" -
@@ -295,7 +295,7 @@ There are five different types of field evaluators.
 
 Independent variable field evaluator
 ....................................
-An independent ivariable field evaluator has no dependencies and is specified by a function.
+An independent variable field evaluator has no dependencies and is specified by a function.
 Typically, it is evaluated once per simulation.
 The evaluator has the following control parameters.
 
@@ -519,7 +519,7 @@ checkpoints of visualization files. Default values are *true*.
 In this example, the field *pressure* has constant value 90000 [Pa] in 
 each mesh cell of the first region. The second mesh block will define
 the pressure in the second mesh region and so on.
-Note that the names of functions may coinsider with the names of regions.
+Note that the names of functions may coincide with the names of regions.
 
 
 A vector or tensor field
@@ -578,7 +578,7 @@ normal producing one number per mesh face.
 
 Geochemical constraint
 ......................
-We can define geochemical contraint as follows: 
+We can define geochemical constraint as follows: 
 
 .. code-block:: xml
 
@@ -679,17 +679,17 @@ If so, all material fields, such as *porosity* and *permeability*, will be initi
 
 Data IO control
 ---------------
-Two parameters below allow us to control fields that will go into a visuzalization file.
+Two parameters below allow us to control fields that will go into a visualization file.
 First, we remove all fields matching the patterns specified by *blacklist*.
 Second, we add all fields matching the patterns specified by *whitelist*.
 Both parameters are optional.
 
 * `"blacklist`" [Array(string)] list of fields that should *not* be written to the visualization file.
-  Standard regular expressuion rules can be used, e.g. `"(secondary_)(.*)`" skips all fields 
+  Standard regular expression rules can be used, e.g. `"(secondary_)(.*)`" skips all fields 
   those names start with `"secondary_`".
 
 * `"whitelist`" [Array(string)] list of fields that should *be* written to the visualization file.
-  Standard regular expressuion rules can be used, e.g. `"(primary_)(.*)`" adds all fields 
+  Standard regular expression rules can be used, e.g. `"(primary_)(.*)`" adds all fields 
   those names start with `"primary_`".
 
 
@@ -787,7 +787,7 @@ The field *permeability* is the piecewise constant diagonal tensor.
   </ParameterList>
 
 
-Pprocess Kernels (PKs)
+Process Kernels (PKs)
 ======================
 { PK }
 
@@ -862,7 +862,7 @@ Weight function
 
 Physical PKs
 ============
-Physical PKs are the physical capability implemented within ATS.
+Physical PKs are the physical capability implemented within Amanzi.
 
 
 .. _`PK: Flow`:
@@ -906,7 +906,7 @@ The available options are
   and `"layer`".
 
 * `"off-diagonal components`" [int] defines additional (typically off-diagonal) 
-  components of the absolute permeability. Deafult is 0.
+  components of the absolute permeability. Default is 0.
 
 .. code-block:: xml
 
@@ -1097,7 +1097,7 @@ This modification is referred to as a submodel and requires additional parameter
 Each boundary condition accepts three parameters: `"regions`", 
 `"use area fractions`", and `"spatial distribution method`". Parameter `"regions`"
 specifies the list of regions where the boundary condition is defined. 
-The boolen parameter `"use area fractions`" instructs the code to use all available volume fractions. 
+The boolean parameter `"use area fractions`" instructs the code to use all available volume fractions. 
 Default value is *false*, it corresponds to :math:`f=1` in the formulas below.
 Parameter `"spatial distribution method`" defines the method for distributing
 data (e.g. the total mass flux) over the specified regions. The available options 
@@ -1109,8 +1109,8 @@ different boundary conditions for the Darcy velocity in the original PDE:
   {{\boldsymbol q}} \cdot {{\boldsymbol n}} = g(x)\, f\, \frac{{1}}{{|B|}},\quad\mbox{{and}}\quad
   {{\boldsymbol q}} \cdot {{\boldsymbol n}} = g(x)\, f,
 
-where :math:`f` is the folume fraction function, and :math:`|B|` is the area of the
-specified regions calculated using the folume fraction function.
+where :math:`f` is the volume fraction function, and :math:`|B|` is the area of the
+specified regions calculated using the volume fraction function.
 
 .. code-block:: xml
 
@@ -1213,7 +1213,7 @@ Again, constant functions can be replaced by any of the available functions.
   `"integrated source`" and `"bhp"` (bottom hole pressure). The first option defines the source 
   in a natural way as the rate of change `q`. The second option defines the indefinite
   integral `Q` of the rate of change, i.e. the source term is calculated as `q = dQ/dt`. 
-  For most distributions methods, two submodles are available: `"rate`" and `"integrated source`".
+  For most distributions methods, two submodels are available: `"rate`" and `"integrated source`".
   For distribution method `"simple well`", two submodels are available: `"rate`" and
   `"bhp`". Submodel `"bhp`" requires `"depth"`, `"well radius`" and 
   `"bhp`" function. Submodel `"rate`" requires only rate function.
@@ -1565,7 +1565,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
   </ParameterList>
   </ParameterList>
 
-This example creates a p-lambda system, i.e. the concentation is
+This example creates a p-lambda system, i.e. the concentration is
 discretized in mesh cells and on mesh faces. The later unknowns are auxiliary unknowns.
 
 
@@ -1684,7 +1684,7 @@ Note that the source values are set up separately for each component.
    * `"spatial distribution method`" [string] identifies a method for distributing
      source Q over the specified regions. The available options are `"volume`",
      `"none`", and `"permeability`". For option `"none`" the source term Q is measured
-     in [mol/L/s] (if units for concetration is mol/L) or [mol/m^3/s] (otherwise). 
+     in [mol/L/s] (if units for concentration is mol/L) or [mol/m^3/s] (otherwise). 
      For the other options, it is measured in [mol/s]. When the source function
      is defined over a few regions, Q will be distributed over their union.
 
@@ -1852,7 +1852,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
     <Parameter name="include enthalpy in preconditioner" type="boll" value="true"/>
     <ParameterList name="diffusion operator">
       <ParameterList name="matrix">
-        <Parameter name="discretization primary" type="string" value="mdf: optimized for monotonicity"/>
+        <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
         <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
         <Parameter name="schema" type="Array(string)" value="{{face, cell}}"/>
         <Parameter name="preconditioner schema" type="Array(string)" value="{{face}}"/>
@@ -2095,7 +2095,7 @@ to calculate it.
         <Parameter name="regions" type="Array(string)" value="{{_SURFACE_1}}"/>
         <Parameter name="spatial distribution method" type="string" value="none"/>
         <ParameterList name="traction">
-          <!-- similar to the dislacement boundary condition -->
+          <!-- similar to the displacement boundary condition -->
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -2637,7 +2637,7 @@ This specification format uses and describes the unstructured mesh only.
 
       * `"request edges`" [bool] builds support for mesh edges. Only in 3D.
 
-      * `"contiguous global ids`" [bool] enforces contigoud global ids. Default is *true*.
+      * `"contiguous global ids`" [bool] enforces contiguous global ids. Default is *true*.
 
     * `"submesh`" [list] parameters for extracted meshes
 
@@ -2660,7 +2660,7 @@ Example of *Unstructured* mesh generated internally:
     <ParameterList name="unstructured"/>
       <ParameterList name="generate mesh">
         <Parameter name="number of cells" type="Array(int)" value="{{100, 1, 100}}"/>
-        <Parameter name="domain low cooordinate" type="Array(double)" value="{{0.0, 0.0, 0.0}}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{{0.0, 0.0, 0.0}}"/>
         <Parameter name="domain high coordinate" type="Array(double)" value="{{103.2, 1.0, 103.2}}"/>
       </ParameterList>   
 
@@ -2694,7 +2694,7 @@ It is not always possible to extract space dimension from provided data.
 Therefore, we require the user to provide simple list *domain* with only 
 one parameter *spatial dimension*.
 
-* `"spatial dimension`" [int] defined space dimenstion. The available values are 2 or 3.
+* `"spatial dimension`" [int] defined space dimension. The available values are 2 or 3.
 
 .. code-block:: xml
 
@@ -3093,7 +3093,7 @@ Input analysis
 
 Tabulated EOS format
 --------------------
-The tabulated equation of state uses a free format for integres, doubles and text string; 
+The tabulated equation of state uses a free format for integers, doubles and text string; 
 however, the order of block is fixed and string cannot have spaces. 
 The first two line have the following format:
 

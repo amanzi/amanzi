@@ -146,7 +146,7 @@ PDE_DiffusionFactory::Create(const Teuchos::RCP<Operator>& global_op)
       op = Teuchos::rcp(new PDE_DiffusionFV(oplist_, global_op));
     } else if (name == "fv: default" && gravity_) {
       op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist_, global_op, g_));
- 
+
       // NLFV methods
     } else if (name == "nlfv: default" && !gravity_) {
       op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist_, global_op));

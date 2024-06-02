@@ -223,6 +223,9 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   node = GetUniqueElementByTagsString_(controls + ", monitor", flag);
   if (flag) solver->set<std::string>("monitor", mm.transcode(node->getTextContent()));
 
+  node = GetUniqueElementByTagsString_(controls + ", make_one_iteration", flag);
+  if (flag) solver->set<bool>("make one iteration", strncmp(mm.transcode(node->getTextContent()), "true", 5) == 0);
+
 
   // bdf1 options
   {

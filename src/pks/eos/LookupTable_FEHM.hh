@@ -41,7 +41,6 @@ class LookupTable_FEHM : public LookupTable {
   void ComputeDownwardMap_(int nP, int nT, int nS);
 
  private:
-  double M_;
   std::string field_;
 
   std::vector<std::vector<int>> map_;

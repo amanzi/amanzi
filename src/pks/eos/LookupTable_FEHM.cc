@@ -32,7 +32,6 @@ LookupTable_FEHM::LookupTable_FEHM(Teuchos::ParameterList& plist) : LookupTable(
 {
   std::string filename = plist.get<std::string>("table name");
   field_ = plist.get<std::string>("field name");
-  M_ = plist.get<double>("molar weight");
 
   std::ifstream ifs;
   ifs.open(filename, std::ifstream::in);
