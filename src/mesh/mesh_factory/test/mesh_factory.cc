@@ -349,7 +349,7 @@ SUITE(MeshFramework)
       CHECK(!mesh.is_null());
       MeshFramework::Entity_ID_View ids("ids", 1);
       auto mesh_cache =
-        Teuchos::rcp(new Mesh(mesh, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
+        Teuchos::rcp(new MeshHost(mesh, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
       CHECK_THROW(newmesh = meshfactory.create(mesh_cache, ids, Entity_kind::FACE, flatten),
                   Message);
     }
@@ -366,7 +366,7 @@ SUITE(MeshFramework)
 
       MeshFramework::Entity_ID_View ents("ents", 1);
       auto mesh_cache =
-        Teuchos::rcp(new Mesh(mesh, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
+        Teuchos::rcp(new MeshHost(mesh, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
       newmesh = meshfactory.create(mesh_cache, ents, Entity_kind::FACE, flatten);
       CHECK(!newmesh.is_null());
     }

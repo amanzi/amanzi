@@ -34,6 +34,7 @@ createContiguousMaps(const Map_ptr_type& ghosted, const Map_ptr_type& owned)
     new Map_type(owned->getGlobalNumElements(), owned->getLocalNumElements(), 0, owned->getComm()));
 
   // communicated owned to ghosted using the mesh's maps
+  AMANZI_ASSERT(ghosted->getLocalNumElements() >= owned->getLocalNumElements());
   Vector_type_<GO> owned_contiguous_vec(owned);
   {
     auto data = owned_contiguous_vec.getLocalViewHost(Tpetra::Access::ReadWrite);
@@ -43,8 +44,10 @@ createContiguousMaps(const Map_ptr_type& ghosted, const Map_ptr_type& owned)
   Vector_type_<GO> all_contiguous_vec(ghosted);
   all_contiguous_vec.doImport(owned_contiguous_vec, importer, Tpetra::CombineMode::INSERT);
 
+  auto all_contiguous_vec_view = all_contiguous_vec.getLocalViewDevice(Tpetra::Access::ReadOnly);
+  auto all_contiguous_view = Kokkos::subview(all_contiguous_vec_view, Kokkos::ALL, 0);
   auto ghosted_contiguous =
-    Teuchos::rcp(new Map_type(-1, all_contiguous_vec.getData()(), 0, ghosted->getComm()));
+    Teuchos::rcp(new Map_type(-1, all_contiguous_view, 0, ghosted->getComm()));
   return std::make_pair(ghosted_contiguous, owned_contiguous);
 }
 

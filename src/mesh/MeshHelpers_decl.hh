@@ -47,9 +47,9 @@ getBoundaryFaceFace(const Mesh_type& mesh, Entity_ID bf);
 //
 // Given a face ID, get the corresponding boundary face ID (assuming it is a bf)
 //
-template <MemSpace_kind MEM>
+template <class Mesh_type>
 Entity_ID
-getFaceOnBoundaryBoundaryFace(const MeshCache<MEM>& mesh, Entity_ID f);
+getFaceOnBoundaryBoundaryFace(const Mesh_type& mesh, Entity_ID f);
 
 
 //
@@ -99,27 +99,27 @@ getCellFaceAdjacentCells(const Mesh_type& mesh, Entity_ID c, Parallel_kind ptype
 //
 // Given a vector on faces, import to vector on boundary faces
 //
-template <MemSpace_kind MEM>
+template <class Mesh_type>
 void
-copyFacesToBoundaryFaces(const MeshCache<MEM>& mesh,
+copyFacesToBoundaryFaces(const Mesh_type& mesh,
                          const MultiVector_type& faces,
                          MultiVector_type& boundary_faces);
 
 //
 // Given a vector on faces, import to vector on boundary faces
 //
-template <MemSpace_kind MEM>
+template <class Mesh_type>
 void
-copyBoundaryFacesToFaces(const MeshCache<MEM>& mesh,
+copyBoundaryFacesToFaces(const Mesh_type& mesh,
                          const MultiVector_type& boundary_faces,
                          MultiVector_type& faces);
 
 //
 // Given a vector on cells, set the boundary_face entries by their internal cell
 //
-template <MemSpace_kind MEM>
+template <class Mesh_type>
 void
-copyCellsToBoundaryFaces(const MeshCache<MEM>& mesh,
+copyCellsToBoundaryFaces(const Mesh_type& mesh,
                          const MultiVector_type& cells,
                          MultiVector_type& boundary_faces);
 

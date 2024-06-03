@@ -45,6 +45,10 @@ set(mesh_inc_files
   MeshCache.hh
   MeshCache_decl.hh
   MeshCache_impl.hh
+  MeshCacheDevice_decl.hh
+  MeshCacheDevice_impl.hh
+  MeshCacheHost_decl.hh
+  MeshCacheHost_impl.hh
   MeshSets.hh
   MeshColumns.hh
   MeshUtils.hh
@@ -60,6 +64,8 @@ set(mesh_src_files
   MeshSets.cc
   MeshColumns.cc
   DomainSet.cc
+  MeshCacheHost.cc
+  MeshCacheDevice.cc
 )
 
 #

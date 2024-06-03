@@ -14,6 +14,8 @@
 
 #include "Iterators.hh"
 
+#include "Kokkos_Sort.hpp"
+
 namespace Kokkos {
 
 template <class DataType, class... Properties>
@@ -76,6 +78,7 @@ struct MeshView : public Kokkos::View<DataType, Properties...> {
 };
 
 template <class SubDataType, class... SubProperties, class... Args>
+KOKKOS_INLINE_FUNCTION
 MeshView<SubDataType, SubProperties...>
 subview(Kokkos::MeshView<SubDataType, SubProperties...> v, Args... args)
 {
@@ -100,16 +103,19 @@ struct MeshDualView : public Kokkos::ViewTraits<DataType, Arg1Type, Arg2Type, Ar
   t_dev d_view;
   t_host h_view;
 
+  KOKKOS_INLINE_FUNCTION
   MeshDualView() = default;
   MeshDualView(const std::string& label, const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG)
     : modified_flags(t_modified_flags("DualView::modified_flags")),
       d_view(label, n0),
       h_view(create_mirror_view(d_view)) // without UVM, host View mirrors
   {}
+  KOKKOS_INLINE_FUNCTION
   MeshDualView(const MeshDualView& src)
     : modified_flags(src.modified_flags), d_view(src.d_view), h_view(src.h_view)
   {}
   template <class SS, class LS, class DS, class MS>
+  KOKKOS_INLINE_FUNCTION
   MeshDualView(const MeshDualView<SS, LS, DS, MS>& src)
     : modified_flags(src.modified_flags), d_view(src.d_view), h_view(src.h_view)
   {}
@@ -149,5 +155,11 @@ struct MeshDualView : public Kokkos::ViewTraits<DataType, Arg1Type, Arg2Type, Ar
     }
   }
 };
+
+template<class ViewType> void sort( ViewType view)
+{
+  Kokkos::sort(static_cast<typename ViewType::baseView>(view), 0, view.size()); 
+}
+
 
 } // namespace Kokkos

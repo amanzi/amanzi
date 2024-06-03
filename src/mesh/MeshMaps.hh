@@ -190,8 +190,8 @@ createMapsFromMeshGIDs(const Mesh_type& mesh, const Entity_kind kind)
   Kokkos::View<const GO*, Amanzi::HostSpace> gids = mesh.getEntityGIDs(kind, true);
 
   Kokkos::View<GO*, Amanzi::DefaultMemorySpace> gids_d("gids on device", gids.extent(0));
-
   Kokkos::deep_copy(gids_d, gids);
+
   auto gids_d_owned = Kokkos::subview(gids_d, Kokkos::make_pair((std::size_t)0, (std::size_t)num_owned));
 
   return std::make_pair(Teuchos::rcp(new Map_type(-1, gids_d, 0, mesh.getComm())),

@@ -104,11 +104,10 @@ setToView(V& view, const std::set<T> vec)
 // NOTE: change this to DefaultDevice!
 template <typename T, typename MemSpace = Kokkos::HostSpace>
 Kokkos::MeshDualView<typename std::remove_const<T>::type*, MemSpace>
-asDualView(const std::vector<T>& in)
+asDualView(const std::vector<T>& in, std::string name = "unnamed in asDualView")
 {
   using DV_type = Kokkos::MeshDualView<typename std::remove_const<T>::type*, MemSpace>;
-  DV_type dv;
-  dv.resize(in.size());
+  DV_type dv(name, in.size());
   Kokkos::deep_copy(dv.h_view, toNonOwningView(in));
   Kokkos::deep_copy(dv.d_view, dv.h_view);
   return dv;
@@ -118,8 +117,7 @@ template <typename T, typename MemSpace = Kokkos::HostSpace, typename... Args>
 Kokkos::MeshDualView<typename std::remove_const<T>::type*, MemSpace>
 asDualView(const Kokkos::MeshView<T*, Args...>& in)
 {
-  Kokkos::MeshDualView<typename std::remove_const<T>::type*, MemSpace> dv;
-  dv.resize(in.size());
+  Kokkos::MeshDualView<typename std::remove_const<T>::type*, MemSpace> dv(in.label(), in.size());
   Kokkos::deep_copy(dv.h_view, in);
   Kokkos::deep_copy(dv.d_view, dv.h_view);
   return dv;
@@ -192,7 +190,7 @@ struct RaggedArray_DualView {
   using host_mirror_space = typename Kokkos::MeshDualView<T*>::host_mirror_space;
   using execution_space = typename Kokkos::MeshDualView<T*>::execution_space;
 
-  RaggedArray_DualView() {}
+  RaggedArray_DualView(): rows("RaggedArray_DualView: Rows", 0), entries("RaggedArray_DualView: Entries", 0) {}
 
 
   RaggedArray_DualView(const std::vector<std::vector<T>>& vect)

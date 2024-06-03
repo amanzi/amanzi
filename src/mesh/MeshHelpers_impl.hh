@@ -31,6 +31,7 @@ namespace AmanziMesh {
 //
 // Given a boundary face ID, get the corresponding face ID
 //
+DISABLE_CUDA_WARNING
 template <class Mesh_type>
 KOKKOS_INLINE_FUNCTION Entity_ID
 getBoundaryFaceFace(const Mesh_type& mesh, Entity_ID bf)
@@ -42,9 +43,9 @@ getBoundaryFaceFace(const Mesh_type& mesh, Entity_ID bf)
 //
 // Given a face ID, get the corresponding boundary face ID (assuming it is a bf)
 //
-template <MemSpace_kind MEM>
+template <class Mesh_type>
 Entity_ID
-getFaceOnBoundaryBoundaryFace(const MeshCache<MEM>& mesh, Entity_ID f)
+getFaceOnBoundaryBoundaryFace(const Mesh_type& mesh, Entity_ID f)
 {
   // should this be deprecated?  It seems likely to not perform well
   const auto& fmap = mesh.getMap(AmanziMesh::Entity_kind::FACE, true);
@@ -66,21 +67,23 @@ getBoundaryFaceInternalCell(const Mesh_type& mesh, Entity_ID bf)
 //
 // Given a face ID, and assuming it is a boundary face, get the cell internal.
 //
+DISABLE_CUDA_WARNING
 template <class Mesh_type>
 KOKKOS_INLINE_FUNCTION Entity_ID
 getFaceOnBoundaryInternalCell(const Mesh_type& mesh, Entity_ID f)
 {
-  if constexpr (std::is_same<Mesh_type, Mesh>::value) {
+  if constexpr (std::is_same_v<Mesh_type, Mesh>) {
     assert(mesh.getFaceNumCells(f, Parallel_kind::ALL) == 1 &&
            "getFaceOnBoundaryInternalCell() requires a face on the boundary.");
   } else {
     if (mesh.getFaceNumCells(f, Parallel_kind::ALL) != 1) {
-      AmanziGeometry::Point fc = mesh.getFaceCentroid(f);
-      std::stringstream msgs;
-      msgs << "getFaceOnBoundaryInternalCell called with non-internal face GID "
-           << mesh.getMap(AmanziMesh::Entity_kind::FACE, true)->getGlobalElement(f) << " at " << fc;
-      Errors::Message msg(msgs.str());
-      Exceptions::amanzi_throw(msg);
+      assert(false && "getFaceOnBoundaryInternalCell called with non-internal face"); 
+      //AmanziGeometry::Point fc = mesh.getFaceCentroid(f);
+      //std::stringstream msgs;
+      //msgs << "getFaceOnBoundaryInternalCell called with non-internal face GID "
+      //     << mesh.getMap(AmanziMesh::Entity_kind::FACE, true)->getGlobalElement(f) << " at " << fc;
+      //Errors::Message msg(msgs.str());
+      //Exceptions::amanzi_throw(msg);
     }
   }
   return mesh.getFaceCell(f, 0);
@@ -122,7 +125,7 @@ template <class Mesh_type>
 typename Mesh_type::Entity_ID_View
 getCellFaceAdjacentCells(const Mesh_type& mesh, Entity_ID c, Parallel_kind ptype)
 {
-  static_assert(!std::is_same<Mesh_type, MeshCache<MemSpace_kind::DEVICE>>::value);
+  static_assert(!std::is_same_v<Mesh_type, MeshHost>);
   auto cfaces = mesh.getCellFaces(c);
   typename Mesh_type::Entity_ID_View adj_cells;
   Entity_ID_List vadj_cells;
@@ -145,9 +148,9 @@ getCellFaceAdjacentCells(const Mesh_type& mesh, Entity_ID c, Parallel_kind ptype
 //
 // Given a vector on faces, import to vector on boundary faces
 //
-template <MemSpace_kind MEM>
+template <class Mesh_type>
 void
-copyFacesToBoundaryFaces(const MeshCache<MEM>& mesh,
+copyFacesToBoundaryFaces(const Mesh_type& mesh,
                          const MultiVector_type& faces,
                          MultiVector_type& boundary_faces)
 {
@@ -158,9 +161,9 @@ copyFacesToBoundaryFaces(const MeshCache<MEM>& mesh,
 //
 // Given a vector on faces, import to vector on boundary faces
 //
-template <MemSpace_kind MEM>
+template <class Mesh_type>
 void
-copyBoundaryFacesToFaces(const MeshCache<MEM>& mesh,
+copyBoundaryFacesToFaces(const Mesh_type& mesh,
                          const MultiVector_type& boundary_faces,
                          MultiVector_type& faces)
 {
@@ -171,9 +174,9 @@ copyBoundaryFacesToFaces(const MeshCache<MEM>& mesh,
 //
 // Given a vector on cells, set the boundary_face entries by their internal cell
 //
-template <MemSpace_kind MEM>
+template <class Mesh_type>
 void
-copyCellsToBoundaryFaces(const MeshCache<MEM>& mesh,
+copyCellsToBoundaryFaces(const Mesh_type& mesh,
                          const MultiVector_type& cells,
                          MultiVector_type& boundary_faces)
 {

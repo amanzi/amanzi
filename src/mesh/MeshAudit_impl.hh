@@ -359,6 +359,7 @@ MeshAudit_Geometry<Mesh_type>::checkEntityCounts() const
 // Check that cell_to_nodes successfully returns valid references to local
 // nodes.  A nonzero return value signals an error, and further tests using its
 // data should be avoided.
+DISABLE_CUDA_WARNING
 template <class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::checkCellToNodes() const
@@ -384,6 +385,7 @@ MeshAudit_Geometry<Mesh_type>::checkCellToNodes() const
 // Check that every node is referenced by at least one cell.  This assumes
 // that cell_to_nodes have been verified to return valid data.  A nonzero
 // return value indicates that one or more nodes are not attached to any cell.
+DISABLE_CUDA_WARNING
 template <class Mesh_type>
 bool
 MeshAudit_Geometry<Mesh_type>::checkNodeRefsByCells() const
@@ -1061,7 +1063,7 @@ MeshAudit_Maps<Mesh_type>::checkNodeToCoordinatesGhostData() const
     }
   }
 
-  Import_type importer(node_map_use, node_map_own);
+  Import_type importer(node_map_own, node_map_use);
   coord_use.doImport(*coord_own, importer, Tpetra::INSERT);
 
   Entity_ID_View bad_nodes("bad nodes", nnode_use - nnode_own);

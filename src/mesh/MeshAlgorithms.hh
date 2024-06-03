@@ -39,6 +39,7 @@ struct MeshAlgorithms {
   // virtual std::pair<double, AmanziGeometry::Point>
   // computeCellGeometry(const Mesh& mesh, const Entity_ID c) const;
 
+  DISABLE_CUDA_WARNING
   virtual std::pair<double, AmanziGeometry::Point>
   computeCellGeometry(const MeshHost& mesh, const Entity_ID c) const
   {

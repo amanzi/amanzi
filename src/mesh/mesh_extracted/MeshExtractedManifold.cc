@@ -84,12 +84,12 @@ MeshExtractedManifold::InitMaps()
     }
 
     Kokkos::View<int*, Amanzi::DefaultMemorySpace> gids_d("gids", nents_wghost);
-    Kokkos::deep_copy(gids, gids_d);
+    Kokkos::deep_copy(gids_d, gids);
 
     auto subset_map_wghost = Teuchos::rcp(new Map_type(-1, gids_d, 0, comm_));
 
-    Kokkos::resize(gids, nents);
-    auto subset_map = Teuchos::rcp(new Map_type(-1, gids_d, 0, comm_));
+    auto gids_d_owned = Kokkos::subview(gids_d, Kokkos::make_pair((std::size_t)0, (std::size_t)nents));
+    auto subset_map = Teuchos::rcp(new Map_type(-1, gids_d_owned, 0, comm_));
 
     // create continuous maps
     auto tmp = createContiguousMaps(subset_map_wghost, subset_map);

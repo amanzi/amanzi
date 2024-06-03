@@ -44,8 +44,8 @@ TEST(SURFACE_COLUMN_MESH_3D)
   // Create the mesh
   Teuchos::RCP<AmanziMesh::MeshFramework> mesh_fw =
     Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, lx, ly, lz, nx, ny, nz, comm, gm));
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp(
-    new AmanziMesh::Mesh(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+  Teuchos::RCP<AmanziMesh::MeshHost> mesh = Teuchos::rcp(
+    new AmanziMesh::MeshHost(mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
   mesh->buildColumns();
 
   // Perturb the nodes above the base layer just a bit
@@ -72,15 +72,15 @@ TEST(SURFACE_COLUMN_MESH_3D)
   // Create the MeshColumn object
   Teuchos::RCP<AmanziMesh::MeshFramework> colmesh_fw =
     Teuchos::rcp(new AmanziMesh::MeshFrameworkColumn(colmesh_ext, Teuchos::null));
-  AmanziMesh::Mesh colmesh(
+  AmanziMesh::MeshHost colmesh(
     colmesh_fw, Teuchos::rcp(new AmanziMesh::MeshColumnAlgorithms()), Teuchos::null);
 
   // Extract the surface from this column
   Teuchos::RCP<AmanziMesh::MeshSurfaceCell> col_surf_fw =
     Teuchos::rcp(new AmanziMesh::MeshSurfaceCell(colmesh_fw));
-  AmanziMesh::Mesh col_surf(
+  AmanziMesh::MeshHost col_surf(
     col_surf_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null);
-
+  
   // -- check basic mesh structure
   CHECK_EQUAL(
     1, col_surf.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED));
