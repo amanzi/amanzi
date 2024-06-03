@@ -9,14 +9,14 @@ rc=$?
 
 echo "copying data to install"
 
-cp -r @ECOSIM_source_dir@ /global2/agraus/code/ats_dev_dir/amanzi_tpls-install-master-Debug
-cd /global2/agraus/code/ats_dev_dir/amanzi_tpls-install-master-Debug
+cp -r @ECOSIM_source_dir@ ../../../amanzi_tpls-install-master-Debug
+cd ../../../amanzi_tpls-install-master-Debug
 
 mv ecosim--source/ ecosim/
 
-cd /global2/agraus/code/ats_dev_dir/amanzi_tpls-install-master-Debug/ecosim
+cd ecosim
 
-mkdir local/lib
+mkdir -p local/lib
 
 find . -name lib*.a -exec cp {} ./local/lib/ \;
 

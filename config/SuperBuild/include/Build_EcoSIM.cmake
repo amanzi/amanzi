@@ -50,12 +50,16 @@ set(ECOSIM_INSTALL_COMMAND sh ${ECOSIM_prefix_dir}/ecosim-install-step.sh)
 set(ECOSIM_build_dir ${ECOSIM_prefix_dir}/build)
 
 message(STATUS "Attempting ecosim build...")
-message(STATUS "ECOSIM_prefix_dir: ${ECOSIM_prefix_dir}")
-message(STATUS "ECOSIM_source_dir: ${ECOSIM_source_dir}")
-message(STATUS "ECOSIM_CONFIGURE_COMMAND: ${ECOSIM_CONFIGURE_COMMAND}")
+message(STATUS "Amanzi_COMMON_CFLAGS: ${Amanzi_COMMON_CFLAGS}")
+message(STATUS "Amanzi_COMMON_CXXFLAGS: ${Amanzi_COMMON_CXXFLAGS}")
+message(STATUS "Amanzi_COMMON_FCFLAGS: ${Amanzi_COMMON_FCFLAGS}")
 message(STATUS "TPL_INSTALL_PREFIX: ${TPL_INSTALL_PREFIX}")
 message(STATUS "AMANZI_TPLS_INSTALL_DIR: ${AMANZI_TPLS_INSTALL_DIR}")
 
+# First, set the common flags with the -fPIC flag
+set(Amanzi_COMMON_CFLAGS "${Amanzi_COMMON_CFLAGS} -fPIC")
+set(Amanzi_COMMON_CXXFLAGS "${Amanzi_COMMON_CXXFLAGS} -fPIC")
+set(Amanzi_COMMON_FCFLAGS "${Amanzi_COMMON_FCFLAGS} -fPIC")
 
 ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                     DEPENDS   ${ECOSIM_PACKAGE_DEPENDS}        # Package dependency target
