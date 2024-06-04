@@ -767,6 +767,14 @@ InputConverterU::TranslateFAM_(const std::string& domain)
         .set<double>("overburden pressure", p0)
         .set<double>("BartonBandis A", A)
         .set<double>("BartonBandis B", B);
+    } else if (model == "linearized") {
+      auto& field_ev = glist_->sublist("state").sublist("evaluators").sublist("fracture-aperture");
+      field_ev.set<std::string>("evaluator type", "secondary variable")
+        .set<std::string>("reference aperture key", "fracture-ref_aperture")
+        .set<std::string>("reference pressure key", "fracture-ref_pressure")
+        .set<std::string>("pressure key", "fracture-pressure")
+        .set<std::string>("compliance key", "fracture-compliance")
+        .set<std::string>("tag", "");
     } else {
       other = true;
     }

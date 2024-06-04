@@ -9,19 +9,34 @@
 
 /*!
 
-The conceptual PDE model for the quasi-static elastic deformation is
+Nonlinear material models
+.........................
+Currently, the only available option is the Hardin-Drnevich hyperbolic model.
+Recall that
 
 .. math::
-  \boldsymbol{\nabla} \cdot (C \varepsilon(\boldsymbol{d}))
-  =
-  \rho \boldsymbol{g}
+  \boldsymbol{\sigma} = 2 G {\rm dev}(\varepsilon) + K {\rm trace}(\varepsilon) \boldsymbol{I}
 
-where 
-:math:`\boldsymbol{\d}` is the displacement [m],
-:math:`\rho` is the rock density [kg/m^3],
-:math:`\boldsymbol{\varepsilon}` is the strain tensor,
-and
-:math:`\boldsymbol{g}` is the gravity vector [:math:`m/s^2`].
+where :math:`K` is the bulk modulus and :math:`G` is the shear modulus. 
+The shear modulus is a nonlinear function of shear strain :math:`\gamma`:
+
+.. math::
+  G = G_{max} \left(1 + \displaystyle\frac{\gamma}{\gamma_{ref}}\right)^{-1}
+
+where :math:`G_{max}` is the maximum shear modulus and :math:`\gamma_{ref}` is the
+reference shear strain. 
+The model parameters are placed in the following sublist:
+
+.. code-block:: xml
+
+  <ParameterList name="small strain models">
+    <ParameterList name="All">
+      <Parameter name="regions" type="Array(string)" value="{All}"/>
+      <Parameter name="model" type="string" value="Hardin Drnevich"/>
+      <Parameter name="reference shear strain" type="double" value="0.8"/>
+      <Parameter name="maximum shear stress" type="double" value="70.0"/>
+    </ParameterList>
+  </ParameterList>
 
 */
 

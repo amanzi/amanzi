@@ -2049,6 +2049,7 @@ sublist, described in Reconstruction_. Here is the example:
 Mechanics PK
 ------------
 { MechanicsElasticity_PK }
+{ MechanicsSmallStrain_PK }
 
 
 Boundary conditions

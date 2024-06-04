@@ -10,7 +10,7 @@
 /*
   Mechanics PK
 
-  Evaluator for computing hydrostatic stress.
+  Evaluator for computing shear modulus.
 */
 
 #include "PDE_Elasticity.hh"

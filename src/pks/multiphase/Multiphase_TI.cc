@@ -89,7 +89,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
     ModifyEvaluators(n);
     PopulateBCs(eqns_[n].component_id, true);
 
-    // Richards-type "advection" and molecular diffusion operators of 
+    // Richards-type "advection" and molecular diffusion operators of
     // the form  div [f K grad g]  where f and g are evaluators
     fone.PutScalar(0.0);
 
@@ -118,7 +118,7 @@ Multiphase_PK::FunctionalResidual(double t_old,
 
       Teuchos::RCP<Operators::PDE_Diffusion> pde;
       pde = (type == 0) ? pde_diff_K_[phase] : pde_diff_D_;
-         
+
       pde->SetScalarCoefficient(kr, Teuchos::null); // FIXME (gravity for gas phase)
       pde->SetBCs(op_bcs_[gname], op_bcs_[gname]);
       pde->global_operator()->Init();
@@ -308,7 +308,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
           auto flux = S_->GetPtr<CompositeVector>(flux_names_[phase], Tags::DEFAULT);
           upwind_->Compute(*flux, bcnone, *kr);
 
-          if (type == 0) 
+          if (type == 0)
             pde->Setup(Kptr, kr, Teuchos::null);
           else
             pde->Setup(Teuchos::null, kr, Teuchos::null);
@@ -351,7 +351,7 @@ Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u,
           double factor = eqns_[row].factors[i];
           flux_acc->Update(factor, *flux_tmp, 1.0);
         }
- 
+
         // populate advection operator. Note that upwind direction is based on
         // the Darcy flux, but flux value is based on derivatives of coefficients
         if (special_pc_term_) {
