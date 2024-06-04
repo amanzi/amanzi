@@ -108,7 +108,8 @@ class MeshEmbeddedLogical : public MeshFramework {
 
   virtual void getFaceNodes(const Entity_ID f, MeshHost::cEntity_ID_View& nodes) const override;
 
-  virtual void getNodeFaces(const Entity_ID nodeid, MeshHost::cEntity_ID_View& faceids) const override;
+  virtual void
+  getNodeFaces(const Entity_ID nodeid, MeshHost::cEntity_ID_View& faceids) const override;
 
 
   //

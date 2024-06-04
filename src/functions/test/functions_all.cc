@@ -474,7 +474,7 @@ TEST(composition_test)
   int xi = 0;
   auto f1 = std::make_unique<FunctionTabular>(x, y, xi);
 
-  FunctionComposition f(std::move(f1),std::move(f2));
+  FunctionComposition f(std::move(f1), std::move(f2));
 
   std::vector<std::vector<double>> val = { { 3., 2., 1. }, { 1., -1., 1. } };
   std::vector<double> res = { 2., 1. };

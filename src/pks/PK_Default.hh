@@ -98,10 +98,10 @@ class State;
 class PK_Factory;
 class TreeVector;
 
-template<class PK_type>
+template <class PK_type>
 class PK_Default : public PK_type {
  public:
-  PK_Default() {};
+  PK_Default(){};
   // Required constructor for use by the PK factory.
   PK_Default(const Comm_ptr_type& comm,
              Teuchos::ParameterList& pk_tree,
@@ -139,11 +139,11 @@ class PK_Default : public PK_type {
 };
 
 
-template<class PK_type>
+template <class PK_type>
 PK_Default<PK_type>::PK_Default(const Comm_ptr_type& comm,
-        Teuchos::ParameterList& pk_tree,
-        const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-        const Teuchos::RCP<State>& S)
+                                Teuchos::ParameterList& pk_tree,
+                                const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+                                const Teuchos::RCP<State>& S)
   : comm_(comm),
     name_(Keys::cleanPListName(pk_tree)),
     tag_current_(Tags::CURRENT),
@@ -173,7 +173,4 @@ PK_Default<PK_type>::PK_Default(const Comm_ptr_type& comm,
 };
 
 
-
-
 } // namespace Amanzi
-

@@ -1564,8 +1564,7 @@ HDF5_MPI::addXdmfGeo_(const int cycle)
 
   Teuchos::XMLObject DataItem("DataItem");
   DataItem.addAttribute("DataType", "Float");
-  tmp1 << NumNodes() << " "
-       << " 3";
+  tmp1 << NumNodes() << " " << " 3";
   DataItem.addAttribute("Dimensions", tmp1.str());
   DataItem.addAttribute("Format", "HDF");
   if (dynamic_mesh_) {

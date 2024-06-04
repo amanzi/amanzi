@@ -56,10 +56,12 @@ class FunctionComposition : public Function {
   {}
   ~FunctionComposition() {} //{ if (f1_) delete f1_; if (f2_) delete f2_; }
   std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionComposition>(*this); }
-  double operator()(const std::vector<double>& x) const
+
+  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
   {
-    std::vector<double> y(x);
-    y[0] = (*f2_)(x);
+    Kokkos::View<double*, Kokkos::HostSpace> y("y", x.extent(0));
+    Kokkos::deep_copy(y, x);
+    y(0) = (*f2_)(x);
     return (*f1_)(y);
   }
 

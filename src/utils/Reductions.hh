@@ -13,7 +13,7 @@
 #pragma once
 
 #ifdef KOKKOS_ENABLE_CUDA
-#include <cuda/std/limits>
+#  include <cuda/std/limits>
 #endif
 
 #include "Teuchos_ReductionOp.hpp"

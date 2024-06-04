@@ -186,13 +186,14 @@ class MeshFramework;
 struct MeshAlgorithms;
 
 #ifdef __CUDA_ARCH__
-#define KOKKOS_DEVICE __device__
+#  define KOKKOS_DEVICE __device__
 #else
-#define KOKKOS_DEVICE
-#endif 
-  
+#  define KOKKOS_DEVICE
+#endif
+
 // forward declaration of MeshAudit to friend
-template <class Mesh_type> class MeshAudit_Sets;
+template <class Mesh_type>
+class MeshAudit_Sets;
 
 struct MeshCacheDevice : public MeshCacheBase {
   // view types
@@ -208,38 +209,38 @@ struct MeshCacheDevice : public MeshCacheBase {
   using Double_View = View_type<double, MEM>;
   using cDouble_View = View_type<const double, MEM>;
 
-  MeshCacheDevice() : MeshCacheBase() {}
-
-  //
-  // To be used by non-framework meshes
-  //
-  MeshCacheDevice(const Teuchos::RCP<Teuchos::ParameterList>& plist) : MeshCacheBase(plist) {}
-
-  //
-  // Standard constructor, used by the factory
-  //
-  MeshCacheDevice(const Teuchos::RCP<MeshFramework>& framework_mesh,
-            const Teuchos::RCP<MeshAlgorithms>& algorithms,
-            const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    : MeshCacheBase(framework_mesh, algorithms, plist)
-  {}
+  // default constructor
+  MeshCacheDevice() = default;
 
   // copy constructor
-  MeshCacheDevice(const MeshCacheDevice& other) = default; 
+  MeshCacheDevice(const MeshCacheDevice& other) = default;
 
   //
   // Memory-transfer constructor -- used for getting HOST-view meshes from
   // DEVICE-view meshes, and visa versa.
   //
-  MeshCacheDevice(const MeshCacheHost& other);
-  
-  // Should these be available on a device mesh? 
+  explicit MeshCacheDevice(const MeshCacheHost& other);
+
+  // Should these be available on a device mesh?
   Teuchos::RCP<const MeshCacheDevice> getParentMesh() const { return parent_; }
-  
-  // // Note that regions are cached on demand the first time they are requested,
-  // // but labeled sets must be pre-cached if the framework mesh is to be
-  // // destroyed.
-  // void precacheLabeledSets();
+
+  // NOTE: When constructing an extracted mesh, we must do this on Host.  So
+  // the pattern becomes, given a Mesh as parent, we construct the MeshHost
+  // host_parent, then extract, then call setParent(host_parent).  Then we call
+  // onMemDevice() to get the extracted mesh on Device.  However, that
+  // construction (onMemDevice()) constructs a new parent, on device, which is
+  // _logically_ the same as the original parent we were given, but is not the
+  // same physical mesh in memory.  This will cause problems with,
+  // e.g. CompositeVectorSpace::SetMesh(), when the parent mesh doesn't match
+  // the original domain mesh.  Therefore, we allow the factory to reset this
+  // pointer to be the original parent, and not the twice-copied parent.
+  void setParentMesh(const Teuchos::RCP<const MeshCacheDevice>& parent)
+  {
+    // this was set in construction, and if it wasn't then the original host mesh
+    // didn't have a parent, and we should not be manually setting a parent here!
+    AMANZI_ASSERT(parent_ != Teuchos::null);
+    parent_ = parent;
+  }
 
   //
   // Baseline mesh functionality
@@ -290,62 +291,62 @@ struct MeshCacheDevice : public MeshCacheBase {
   int getSetSize(const std::string& region_name,
                  const Entity_kind kind,
                  const Parallel_kind ptype) const;
-  
+
   cEntity_ID_View getSetEntities(const std::string& region_name,
                                  const Entity_kind kind,
                                  const Parallel_kind ptype) const;
 
-  
+
   // ----------------
   // Entity meta-data
   // ----------------
   KOKKOS_DEVICE
   Entity_ID getNumEntities(const Entity_kind kind, const Parallel_kind ptype) const
   {
-      Entity_ID nowned, nall;
-  switch (kind) {
-  case (Entity_kind::CELL):
-    nowned = ncells_owned;
-    nall = ncells_all;
-    break;
-  case (Entity_kind::FACE):
-    nowned = nfaces_owned;
-    nall = nfaces_all;
-    break;
-  case (Entity_kind::EDGE):
-    nowned = nedges_owned;
-    nall = nedges_all;
-    break;
-  case (Entity_kind::NODE):
-    nowned = nnodes_owned;
-    nall = nnodes_all;
-    break;
-  case (Entity_kind::BOUNDARY_FACE):
-    nowned = nboundary_faces_owned;
-    nall = nboundary_faces_all;
-    break;
-  case (Entity_kind::BOUNDARY_NODE):
-    nowned = nboundary_nodes_owned;
-    nall = nboundary_nodes_all;
-    break;
-  default:
-    nowned = -1;
-    nall = -1;
-  }
+    Entity_ID nowned, nall;
+    switch (kind) {
+    case (Entity_kind::CELL):
+      nowned = ncells_owned;
+      nall = ncells_all;
+      break;
+    case (Entity_kind::FACE):
+      nowned = nfaces_owned;
+      nall = nfaces_all;
+      break;
+    case (Entity_kind::EDGE):
+      nowned = nedges_owned;
+      nall = nedges_all;
+      break;
+    case (Entity_kind::NODE):
+      nowned = nnodes_owned;
+      nall = nnodes_all;
+      break;
+    case (Entity_kind::BOUNDARY_FACE):
+      nowned = nboundary_faces_owned;
+      nall = nboundary_faces_all;
+      break;
+    case (Entity_kind::BOUNDARY_NODE):
+      nowned = nboundary_nodes_owned;
+      nall = nboundary_nodes_all;
+      break;
+    default:
+      nowned = -1;
+      nall = -1;
+    }
 
-  switch (ptype) {
-  case (Parallel_kind::OWNED):
-    return nowned;
-    break;
-  case (Parallel_kind::ALL):
-    return nall;
-    break;
-  case Parallel_kind::GHOST:
-    return nall - nowned;
-    break;
-  default:
-    return 0;
-  }
+    switch (ptype) {
+    case (Parallel_kind::OWNED):
+      return nowned;
+      break;
+    case (Parallel_kind::ALL):
+      return nall;
+      break;
+    case Parallel_kind::GHOST:
+      return nall - nowned;
+      break;
+    default:
+      return 0;
+    }
   }
 
   // // corresponding entity in the parent mesh
@@ -356,56 +357,56 @@ struct MeshCacheDevice : public MeshCacheBase {
   KOKKOS_DEVICE
   Entity_ID getEntityParent(const Entity_kind kind, const Entity_ID entid) const
   {
-      if (data_.parent_entities_cached) {
-    switch (kind) {
-    case Entity_kind::CELL:
-      return view<MEM>(data_.parent_cells)[entid];
-      break;
-    case Entity_kind::FACE:
-      return view<MEM>(data_.parent_faces)[entid];
-      break;
-    case Entity_kind::EDGE:
-      return view<MEM>(data_.parent_edges)[entid];
-      break;
-    case Entity_kind::NODE:
-      return view<MEM>(data_.parent_nodes)[entid];
-    default: {
+    if (data_.parent_entities_cached) {
+      switch (kind) {
+      case Entity_kind::CELL:
+        return view<MEM>(data_.parent_cells)[entid];
+        break;
+      case Entity_kind::FACE:
+        return view<MEM>(data_.parent_faces)[entid];
+        break;
+      case Entity_kind::EDGE:
+        return view<MEM>(data_.parent_edges)[entid];
+        break;
+      case Entity_kind::NODE:
+        return view<MEM>(data_.parent_nodes)[entid];
+      default: {
+      }
+      }
     }
-    }
-  }
-  assert(false); 
-  return -1;
+    assert(false);
+    return -1;
   }
 
   cEntity_ID_View getEntityParents(const Entity_kind kind) const
-{
-  AMANZI_ASSERT(data_.parent_entities_cached);
-  switch (kind) {
-  case Entity_kind::CELL:
-    return view<MEM>(data_.parent_cells);
-    break;
-  case Entity_kind::FACE:
-    return view<MEM>(data_.parent_faces);
-    break;
-  case Entity_kind::EDGE:
-    return view<MEM>(data_.parent_edges);
-    break;
-  case Entity_kind::NODE:
-    return view<MEM>(data_.parent_nodes);
-  default: {
+  {
+    AMANZI_ASSERT(data_.parent_entities_cached);
+    switch (kind) {
+    case Entity_kind::CELL:
+      return view<MEM>(data_.parent_cells);
+      break;
+    case Entity_kind::FACE:
+      return view<MEM>(data_.parent_faces);
+      break;
+    case Entity_kind::EDGE:
+      return view<MEM>(data_.parent_edges);
+      break;
+    case Entity_kind::NODE:
+      return view<MEM>(data_.parent_nodes);
+    default: {
+    }
+    }
+    return MeshCacheDevice::cEntity_ID_View();
   }
-  }
-  return MeshCacheDevice::cEntity_ID_View();
-}
-  
-  
+
+
   KOKKOS_DEVICE
   Cell_kind getCellType(const Entity_ID c) const
   {
     assert(false);
     return Cell_kind{};
   }
-  
+
 
   KOKKOS_DEVICE
   Parallel_kind getParallelType(const Entity_kind& kind, const Entity_ID id) const
@@ -418,7 +419,7 @@ struct MeshCacheDevice : public MeshCacheBase {
     return Parallel_kind::UNKNOWN;
   }
 
-  
+
   //---------------------
   // Geometry
   //---------------------
@@ -470,16 +471,14 @@ struct MeshCacheDevice : public MeshCacheBase {
 
   // at run-time, calls one of getCellVolume, getFaceArea, or getEdgeLength
   template <Entity_kind EK, AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  KOKKOS_INLINE_FUNCTION
-  double getExtent(const Entity_ID e) const;
+  KOKKOS_INLINE_FUNCTION double getExtent(const Entity_ID e) const;
 
   // at compile-time, calls one of getCellVolume, getFaceArea, or getEdgeLength
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  KOKKOS_INLINE_FUNCTION
-  double getExtent(const Entity_kind kind, const Entity_ID e) const;
+  KOKKOS_INLINE_FUNCTION double getExtent(const Entity_kind kind, const Entity_ID e) const;
 
   // // Normal vector of a face
-  
+
   template <AccessPattern_kind = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION AmanziGeometry::Point getFaceNormal(const Entity_ID f) const;
 
@@ -491,7 +490,7 @@ struct MeshCacheDevice : public MeshCacheBase {
   // The orientation is 1 if the outward normal is the same direction as the
   // natural normal, -1 if in opposite directions, and 0 if there is no natural
   // normal.
-  
+
   template <AccessPattern_kind = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
   getFaceNormal(const Entity_ID f, const Entity_ID c, int* orientation = nullptr) const;
@@ -548,7 +547,7 @@ struct MeshCacheDevice : public MeshCacheBase {
     getCellFaces<AP>(c, cfaces);
     return cfaces;
   }
-    
+
   // note, no AccessPattern_kind -- only works on cached
   KOKKOS_DEVICE
   const Entity_ID& getCellFace(const Entity_ID c, const size_type i) const
@@ -565,9 +564,8 @@ struct MeshCacheDevice : public MeshCacheBase {
     getCellFacesAndDirs(c, cfaces, &dirs);
     return Kokkos::pair(cfaces, dirs);
   }
-  
 
-  
+
   KOKKOS_DEVICE
   Kokkos::pair<cEntity_ID_View, cPoint_View> getCellFacesAndBisectors(const Entity_ID c) const
   {
@@ -580,11 +578,7 @@ struct MeshCacheDevice : public MeshCacheBase {
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION void getCellFaces(const Entity_ID c, cEntity_ID_View& faces) const
   {
-    faces = Impl::RaggedGetter<MEM, AP>::get(
-                                              data_.cell_faces_cached,
-                                              data_.cell_faces,
-                                              nullptr,
-                                              c);
+    faces = Impl::RaggedGetter<MEM, AP>::get(data_.cell_faces_cached, data_.cell_faces, nullptr, c);
   }
 
   KOKKOS_DEVICE
@@ -621,11 +615,7 @@ struct MeshCacheDevice : public MeshCacheBase {
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION cEntity_ID_View getCellEdges(const Entity_ID c) const
   {
-    return Impl::RaggedGetter<MEM, AP>::get(
-                                            data_.cell_edges_cached,
-                                            data_.cell_edges,
-                                            nullptr,
-                                            c);
+    return Impl::RaggedGetter<MEM, AP>::get(data_.cell_edges_cached, data_.cell_edges, nullptr, c);
   }
 
   KOKKOS_DEVICE
@@ -639,11 +629,7 @@ struct MeshCacheDevice : public MeshCacheBase {
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION void getCellEdges(const Entity_ID c, cEntity_ID_View& edges) const
   {
-    edges = Impl::RaggedGetter<MEM, AP>::get(
-                                              data_.cell_edges_cached,
-                                              data_.cell_edges,
-                                              nullptr,
-                                              c);
+    edges = Impl::RaggedGetter<MEM, AP>::get(data_.cell_edges_cached, data_.cell_edges, nullptr, c);
   }
 
   // Get nodes of a cell.
@@ -672,10 +658,7 @@ struct MeshCacheDevice : public MeshCacheBase {
   void getCellNodes(const Entity_ID c, cEntity_ID_View& nodes) const
   {
     nodes = Impl::RaggedGetter<MEM, AccessPattern_kind::DEFAULT>::get(
-    data_.cell_nodes_cached,
-    data_.cell_nodes,
-    nullptr,
-    c);
+      data_.cell_nodes_cached, data_.cell_nodes, nullptr, c);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -714,11 +697,7 @@ struct MeshCacheDevice : public MeshCacheBase {
   KOKKOS_DEVICE
   cEntity_ID_View getFaceEdges(const Entity_ID f) const
   {
-    return Impl::RaggedGetter<MEM>::get(
-                                        data_.face_edges_cached,
-                                        data_.face_edges,
-                                        nullptr,
-                                        f);
+    return Impl::RaggedGetter<MEM>::get(data_.face_edges_cached, data_.face_edges, nullptr, f);
   }
 
   KOKKOS_DEVICE
@@ -728,7 +707,7 @@ struct MeshCacheDevice : public MeshCacheBase {
     return data_.face_edges.get<MEM>(f, i);
   }
 
-  
+
   KOKKOS_DEVICE
   Kokkos::pair<cEntity_ID_View, cDirection_View> getFaceEdgesAndDirections(const Entity_ID f) const
   {
@@ -755,27 +734,27 @@ struct MeshCacheDevice : public MeshCacheBase {
       if (dirs) *dirs = data_.face_edge_directions.getRowUnmanaged<MEM>(f);
       return;
     }
-    assert(false); 
+    assert(false);
   }
 
   KOKKOS_DEVICE
   std::vector<int> getFaceCellEdgeMap(const Entity_ID faceid, const Entity_ID cellid) const
   {
     assert(false && "Not implemented on device");
-    return {}; 
-#if 0 
+    return {};
+#if 0
     std::vector<int> map;
     cEntity_ID_View fedgeids;
     cDirection_View fedgedirs;
-    
+
     getFaceEdgesAndDirs(faceid, fedgeids, &fedgedirs);
     auto cedgeids = getCellEdges(cellid);
-    
+
     map.resize(fedgeids.size(), -1);
-    
+
     for (int f = 0; f < fedgeids.size(); ++f) {
       Entity_ID fedge = fedgeids[f];
-      
+
       for (int c = 0; c < cedgeids.size(); ++c) {
         if (fedge == cedgeids[c]) {
           map[f] = c;
@@ -784,7 +763,7 @@ struct MeshCacheDevice : public MeshCacheBase {
       }
     }
     return map;
-#endif 
+#endif
   }
 
   // // Get nodes of face
@@ -868,12 +847,12 @@ struct MeshCacheDevice : public MeshCacheBase {
   KOKKOS_DEVICE
   cEntity_ID_View getFaceCells(const Entity_ID f) const
   {
-      cEntity_ID_View fcells;
-  getFaceCells(f, fcells);
-  return fcells;
+    cEntity_ID_View fcells;
+    getFaceCells(f, fcells);
+    return fcells;
   }
 
-  
+
   KOKKOS_DEVICE
   const Entity_ID& getFaceCell(const Entity_ID f, const size_type i) const
   {
@@ -881,15 +860,11 @@ struct MeshCacheDevice : public MeshCacheBase {
     return data_.face_cells.get<MEM>(f, i);
   }
 
-  
+
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION void getFaceCells(const Entity_ID f, cEntity_ID_View& cells) const
   {
-    cells = Impl::RaggedGetter<MEM, AP>::get(
-                                             data_.face_cells_cached,
-                                             data_.face_cells,
-                                             nullptr,
-                                             f);
+    cells = Impl::RaggedGetter<MEM, AP>::get(data_.face_cells_cached, data_.face_cells, nullptr, f);
   }
 
   KOKKOS_DEVICE
@@ -916,7 +891,6 @@ struct MeshCacheDevice : public MeshCacheBase {
       }
     }
     return n;
-
   }
 
   // Cells of a given Parallel_kind connected to an edge
@@ -934,12 +908,12 @@ struct MeshCacheDevice : public MeshCacheBase {
   // Faces of type 'ptype' connected to an edge
   // NOTE: The order of faces is not guaranteed to be the same for
   // corresponding edges on different processors
-  
+
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION cEntity_ID_View getEdgeFaces(const Entity_ID e) const;
 
   //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
-  
+
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   KOKKOS_INLINE_FUNCTION void getEdgeFaces(const Entity_ID edgeid, cEntity_ID_View& faces) const;
 
@@ -969,35 +943,16 @@ struct MeshCacheDevice : public MeshCacheBase {
 
   bool isPointInCell(const AmanziGeometry::Point& p, const Entity_ID cellid) const;
 
-  // // Edges of type 'ptype' connected to a node
-  // //
-  // // The order of edges is not guaranteed to be the same for corresponding
-  // // node on different processors
-  // KOKKOS_INLINE_FUNCTION
-  // View_type<const Entity_ID,MEM> getNodeEdges(const Entity_ID n,
-  //         const Parallel_kind ptype) const {
-  //   Errors::Message msg("MeshCache::getNodeEdges not implemented");
-  //   Exceptions::amanzi_throw(msg);
-  // }
+  // Edges of type 'ptype' connected to a node
+  //
+  // The order of edges is not guaranteed to be the same for corresponding
+  // node on different processors
+  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
+  KOKKOS_INLINE_FUNCTION View_type<const Entity_ID, MEM> getNodeEdges(const Entity_ID n) const;
 
-
-  // //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
-  // KOKKOS_INLINE_FUNCTION
-  // void getNodeEdges(const Entity_ID n,
-  //                   const Parallel_kind ptype,
-  //                   cEntity_ID_View& edgeids) const {
-  //   Errors::Message msg("MeshCache::getNodeEdges not implemented");
-  //   Exceptions::amanzi_throw(msg);
-  // }
-  inline void buildColumns() {
-    assert(false && "Not supported for MeshCacheDevice yet"); 
-    //columns.initialize(*this);
-  }
-  inline void buildColumns(const std::vector<std::string>& regions)
-  {
-    assert(false && "Not supported for MeshCacheDevice yet"); 
-    //columns.initialize(*this, regions);
-  }
+  //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
+  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
+  KOKKOS_INLINE_FUNCTION void getNodeEdges(const Entity_ID n, cEntity_ID_View& edgeids) const;
 
  protected:
   // common error messaging
@@ -1006,11 +961,10 @@ struct MeshCacheDevice : public MeshCacheBase {
   // friend MeshAudit_Sets so it can check any existing MeshSets
   friend MeshAudit_Sets<MeshCacheDevice>;
   Teuchos::RCP<const MeshCacheDevice> parent_;
-  Teuchos::RCP<const MeshCacheHost> vis_mesh_; 
-  
+  Teuchos::RCP<const MeshCacheHost> vis_mesh_;
 };
 
 using Mesh = Amanzi::AmanziMesh::MeshCacheDevice;
-  
+
 } // namespace AmanziMesh
 } // namespace Amanzi

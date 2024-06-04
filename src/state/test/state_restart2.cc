@@ -41,15 +41,12 @@ SUITE(RESTART2)
 
     int size = comm->getSize();
     int rank = comm->getRank();
-    auto domain_mesh_mstk =
-      Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4 * size, 1, 1, comm));
-    auto serial_mesh_mstk =
-      Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0, 0, 0, 1, 1, 1, 4, 1, 1, comm_serial));
-    auto domain_mesh = Teuchos::rcp(new AmanziMesh::Mesh(
-      domain_mesh_mstk, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), Teuchos::null));
-    auto serial_mesh = Teuchos::rcp(new AmanziMesh::Mesh(
-      serial_mesh_mstk, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), Teuchos::null));
 
+    AmanziMesh::MeshFactory meshfac(comm);
+    AmanziMesh::MeshFactory meshfac_serial(comm);
+
+    auto domain_mesh = meshfac.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4 * size, 1, 1);
+    auto serial_mesh = meshfac_serial.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4 * size, 1, 1);
 
     auto S = Teuchos::rcp(new State());
     S->RegisterDomainMesh(domain_mesh);

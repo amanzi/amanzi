@@ -61,9 +61,7 @@ RunTest(double FunExact(const AmanziGeometry::Point& xp))
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0)
-    std::cout << "\nTest: 1st-order convergence for upwind \""
-              << "\"\n";
+  if (MyPID == 0) std::cout << "\nTest: 1st-order convergence for upwind \"" << "\"\n";
 
   // read parameter list
   std::string xmlFileName = "test/operator_upwind.xml";

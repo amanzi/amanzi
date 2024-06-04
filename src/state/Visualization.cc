@@ -182,8 +182,7 @@ Visualization::createFiles(bool include_io_set)
   if (include_io_set)
     output_plist.set("file name base",
                      Keys::cleanPListName(plist_) + "-io-counter" + std::to_string(count_++));
-  output_ =
-    OutputFactory::createForVis(output_plist, AmanziMesh::onMemSpace<MemSpace_kind::HOST>(mesh_));
+  output_ = OutputFactory::createForVis(output_plist, AmanziMesh::onMemHost(mesh_));
 
   if (write_mesh_exo_ && !dynamic_mesh_ && mesh_->getMeshFramework()) {
     std::string mesh_fname = output_plist.get<std::string>("file name base") + "_mesh.exo";

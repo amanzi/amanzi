@@ -198,10 +198,7 @@ class PreconditionerGinkgo : public Preconditioner {
     std::cout << "ComputeInverse DONE" << std::endl;
   }
 
-  virtual int returned_code() const override final
-  {
-    return returned_code_;
-  }
+  virtual int returned_code() const override final { return returned_code_; }
 
   virtual int applyInverse(const Vector_type& v, Vector_type& hv) const override
   {
@@ -220,10 +217,7 @@ class PreconditionerGinkgo : public Preconditioner {
     return 0;
   }
 
-  virtual std::string returned_code_string() const override
-  {
-    return "NULL";
-  }
+  virtual std::string returned_code_string() const override { return "NULL"; }
 
  protected:
   Teuchos::ParameterList plist_;

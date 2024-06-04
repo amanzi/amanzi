@@ -110,7 +110,6 @@ class PK {
 
   // Tag the primary variable as changed in the DAG
   virtual void markChangedSolutionPK(const Tag& tag) = 0;
-
 };
 
 } // namespace Amanzi

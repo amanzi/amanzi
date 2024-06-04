@@ -31,10 +31,10 @@ namespace Amanzi {
 template <typename Data_t, typename DataFactory_t = NullFactory>
 class EvaluatorSecondaryMonotypeMultiplicative
   : public EvaluatorSecondaryMonotype<Data_t, DataFactory_t> {
-
  public:
   EvaluatorSecondaryMonotypeMultiplicative(const Teuchos::RCP<Teuchos::ParameterList>& plist);
-  EvaluatorSecondaryMonotypeMultiplicative(const EvaluatorSecondaryMonotypeMultiplicative& other) = default;
+  EvaluatorSecondaryMonotypeMultiplicative(const EvaluatorSecondaryMonotypeMultiplicative& other) =
+    default;
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
   virtual std::string getType() const override { return eval_type; }
@@ -43,9 +43,9 @@ class EvaluatorSecondaryMonotypeMultiplicative
   virtual void Evaluate_(const State& S, const std::vector<Data_t*>& results) override;
 
   virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key,
-          const Tag& wrt_tag,
-          const std::vector<Data_t*>& results) override;
+                                          const Key& wrt_key,
+                                          const Tag& wrt_tag,
+                                          const std::vector<Data_t*>& results) override;
 
  protected:
   static const std::string eval_type;
@@ -56,13 +56,14 @@ class EvaluatorSecondaryMonotypeMultiplicative
 
  private:
   static Utils::RegisteredFactory<Evaluator,
-                                  EvaluatorSecondaryMonotypeMultiplicative<Data_t, DataFactory_t>> reg_;
+                                  EvaluatorSecondaryMonotypeMultiplicative<Data_t, DataFactory_t>>
+    reg_;
 };
 
 
 template <typename Data_t, typename DataFactory_t>
-EvaluatorSecondaryMonotypeMultiplicative<Data_t, DataFactory_t>::EvaluatorSecondaryMonotypeMultiplicative(
-  const Teuchos::RCP<Teuchos::ParameterList>& plist)
+EvaluatorSecondaryMonotypeMultiplicative<Data_t, DataFactory_t>::
+  EvaluatorSecondaryMonotypeMultiplicative(const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : EvaluatorSecondaryMonotype<Data_t, DataFactory_t>(plist)
 {
   if (dependencies_.size() == 0) {
@@ -89,7 +90,8 @@ EvaluatorSecondaryMonotypeMultiplicative<Data_t, DataFactory_t>::Clone() const
 template <typename Data_t, typename DataFactory_t>
 void
 EvaluatorSecondaryMonotypeMultiplicative<Data_t, DataFactory_t>::Evaluate_(
-  const State& S, const std::vector<Data_t*>& results)
+  const State& S,
+  const std::vector<Data_t*>& results)
 {
   AMANZI_ASSERT(results.size() == 1);
   AMANZI_ASSERT(dependencies_.size() >= 1);
@@ -150,8 +152,9 @@ EvaluatorSecondaryMonotypeMultiplicative<Data_t, DataFactory_t>::EvaluatePartial
 
 
 template <>
-const std::string EvaluatorSecondaryMonotypeMultiplicative<CompositeVector, CompositeVectorSpace>::eval_type =
-  "multiplicative";
+const std::string
+  EvaluatorSecondaryMonotypeMultiplicative<CompositeVector, CompositeVectorSpace>::eval_type =
+    "multiplicative";
 
 using EvaluatorSecondaryMonotypeMultiplicativeCV =
   EvaluatorSecondaryMonotypeMultiplicative<CompositeVector, CompositeVectorSpace>;

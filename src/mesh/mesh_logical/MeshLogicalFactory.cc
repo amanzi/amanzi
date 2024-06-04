@@ -201,9 +201,9 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 
-// Create the mesh
+// create the mesh
 Teuchos::RCP<MeshLogical>
-MeshLogicalFactory::Create() const
+MeshLogicalFactory::create() const
 {
   Teuchos::RCP<AmanziMesh::MeshLogical> mesh;
   if (cell_centroids_.size() > 0) {
@@ -232,7 +232,7 @@ MeshLogicalFactory::Create() const
 
 // One-stop shop -- create the whole thing from PList
 Teuchos::RCP<MeshLogical>
-MeshLogicalFactory::Create(Teuchos::ParameterList& plist)
+MeshLogicalFactory::create(Teuchos::ParameterList& plist)
 {
   // set global options
   tracking_centroids_ = plist.get<bool>("infer cell centroids", false);
@@ -244,7 +244,7 @@ MeshLogicalFactory::Create(Teuchos::ParameterList& plist)
     Exceptions::amanzi_throw(msg);
   }
 
-  // Create each segment
+  // create each segment
   // - map to store metadata about previously inserted segments
   Teuchos::ParameterList& segments = plist.sublist("segments");
   for (auto& segment_it : segments) {
@@ -254,7 +254,7 @@ MeshLogicalFactory::Create(Teuchos::ParameterList& plist)
 
     // things we need to call the constructor
     std::string seg_name = segment_it.first;
-    AddSegment(segments.sublist(seg_name));
+    addSegment(segments.sublist(seg_name));
   }
 
   // add any additional sets
@@ -274,14 +274,14 @@ MeshLogicalFactory::Create(Teuchos::ParameterList& plist)
 
       set_ents.insert(set_ents.end(), seg_cell->second.begin(), seg_cell->second.end());
     }
-    AddSet(set_name, "cell", set_ents);
+    addSet(set_name, "cell", set_ents);
   }
-  return Create();
+  return create();
 }
 
 
 void
-MeshLogicalFactory::AddSegment(int n_cells,
+MeshLogicalFactory::addSegment(int n_cells,
                                const AmanziGeometry::Point& begin,
                                const AmanziGeometry::Point& end,
                                double face_area,
@@ -317,7 +317,7 @@ MeshLogicalFactory::AddSegment(int n_cells,
     centroids[c + 1] = my_centroid;
   }
 
-  AddSegment(&centroids,
+  addSegment(&centroids,
              nullptr,
              lengths,
              face_areas,
@@ -330,7 +330,7 @@ MeshLogicalFactory::AddSegment(int n_cells,
 }
 
 
-// Add a segment
+// add a segment
 //
 // Centroids and cell volumes are optional arguments.
 //
@@ -339,7 +339,7 @@ MeshLogicalFactory::AddSegment(int n_cells,
 //
 // Master add a segment -- all the others call this one!
 void
-MeshLogicalFactory::AddSegment(Point_List const* const cell_centroids,
+MeshLogicalFactory::addSegment(Point_List const* const cell_centroids,
                                Double_List const* const cell_volumes,
                                Double_List const& cell_lengths,
                                Double_List const& face_areas,
@@ -450,19 +450,19 @@ MeshLogicalFactory::AddSegment(Point_List const* const cell_centroids,
   }
 
   // add sets
-  AddSet(seg_name, "CELL", new_cells);
+  addSet(seg_name, "CELL", new_cells);
   if (first_tip_type == LogicalTip_t::BOUNDARY)
-    AddSet(seg_name + "_first_tip", "FACE", Entity_ID_List(1, new_faces[0]));
+    addSet(seg_name + "_first_tip", "FACE", Entity_ID_List(1, new_faces[0]));
   if (last_tip_type == LogicalTip_t::BOUNDARY)
-    AddSet(seg_name + "_last_tip", "FACE", Entity_ID_List(1, new_faces.back()));
+    addSet(seg_name + "_last_tip", "FACE", Entity_ID_List(1, new_faces.back()));
 }
 
 
-// Add segment from sublist
+// add segment from sublist
 void
-MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
+MeshLogicalFactory::addSegment(Teuchos::ParameterList& plist)
 {
-  // need the following info to call AddSegment
+  // need the following info to call addSegment
   Point_List cell_centroids;
   Double_List cell_volumes;
   Double_List cell_lengths;
@@ -676,13 +676,13 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
     }
 
     // add the first face
-    Entity_ID f = ReserveFace();
+    Entity_ID f = reserveFace();
 
     // -- add the interior faces
     auto centroids_p = cell_centroids.size() > 0 ? &cell_centroids : nullptr;
     auto volumes_p = cell_volumes.size() > 0 ? &cell_volumes : nullptr;
 
-    AddSegment(centroids_p,
+    addSegment(centroids_p,
                volumes_p,
                cell_lengths,
                face_areas,
@@ -693,7 +693,7 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
                &new_cells,
                &new_faces);
 
-    AddFace(f, cells, bisectors, dirs, face_areas_mine[0]);
+    addFace(f, cells, bisectors, dirs, face_areas_mine[0]);
 
 
   } else {
@@ -701,7 +701,7 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
     auto centroids_p = cell_centroids.size() > 0 ? &cell_centroids : nullptr;
     auto volumes_p = cell_volumes.size() > 0 ? &cell_volumes : nullptr;
 
-    AddSegment(centroids_p,
+    addSegment(centroids_p,
                volumes_p,
                cell_lengths,
                face_areas,
@@ -719,9 +719,9 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist)
 }
 
 
-// Reserve a slot for a face (likely to be added via AddFace!)
+// reserve a slot for a face (likely to be added via addFace!)
 int
-MeshLogicalFactory::ReserveFace()
+MeshLogicalFactory::reserveFace()
 {
   int f = face_cell_list_.size();
   face_cell_list_.emplace_back(Entity_ID_List());
@@ -734,13 +734,13 @@ MeshLogicalFactory::ReserveFace()
 
 // Manually add a connection, returning the face id.
 int
-MeshLogicalFactory::AddFace(int f,
+MeshLogicalFactory::addFace(int f,
                             const Entity_ID_List& cells,
                             const Point_List& bisectors,
                             const std::vector<int>& dirs,
                             double area)
 {
-  if (f < 0) f = ReserveFace();
+  if (f < 0) f = reserveFace();
 
   if (cells.size() != 2) {
     Errors::Message msg("MeshLogicalFactory: connection added is improperly formed -- all "
@@ -763,7 +763,7 @@ MeshLogicalFactory::AddFace(int f,
 }
 
 int
-MeshLogicalFactory::AddSet(const std::string& set_name,
+MeshLogicalFactory::addSet(const std::string& set_name,
                            const std::string& ent,
                            const Entity_ID_List& ents)
 {

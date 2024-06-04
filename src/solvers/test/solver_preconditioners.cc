@@ -150,9 +150,9 @@ SUITE(SOLVERS)
       //"ifpack2: FAST_ILU"
     };
 #else
-    static std::vector<std::string> prec_name = {
-      "identity", "diagonal", "ifpack2: ILUT", "hypre: boomer amg", "hypre: ILU", "muelu"
-    };
+    static std::vector<std::string> prec_name = { "identity",      "diagonal",
+                                                  "ifpack2: ILUT", "hypre: boomer amg",
+                                                  "hypre: ILU",    "muelu" };
 #endif
 
     for (const auto& prec_name : prec_name) {

@@ -10,11 +10,12 @@
 
 namespace Amanzi::AmanziMesh {
 
-MeshCacheDevice::MeshCacheDevice(const MeshCacheHost& other): MeshCacheBase(other) {
-  parent_  = Teuchos::RCP<const MeshCacheDevice>(other.getParentMesh() == Teuchos::null ? Teuchos::null :
-          onMemDevice(other.getParentMesh()));     
+MeshCacheDevice::MeshCacheDevice(const MeshCacheHost& other) : MeshCacheBase(other)
+{
+  parent_ = Teuchos::RCP<const MeshCacheDevice>(
+    other.getParentMesh() == Teuchos::null ? Teuchos::null : onMemDevice(other.getParentMesh()));
 }
-  
+
 //
 // TODO --etc
 // This should be updated -- only cache the ALL set, then construct the
@@ -26,8 +27,8 @@ MeshCacheDevice::MeshCacheDevice(const MeshCacheHost& other): MeshCacheBase(othe
 //
 typename MeshCacheDevice::cEntity_ID_View
 MeshCacheDevice::getSetEntities(const std::string& region_name,
-                               const Entity_kind kind,
-                               const Parallel_kind ptype) const
+                                const Entity_kind kind,
+                                const Parallel_kind ptype) const
 {
   auto key = std::make_tuple(region_name, kind, ptype);
   auto key_all = std::make_tuple(region_name, kind, Parallel_kind::ALL);
@@ -91,7 +92,8 @@ MeshCacheDevice::getSetEntities(const std::string& region_name,
 }
 
 bool
-MeshCacheDevice::isValidSetType(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const
+MeshCacheDevice::isValidSetType(const AmanziGeometry::RegionType rtype,
+                                const Entity_kind kind) const
 {
   if (rtype == AmanziGeometry::RegionType::LABELEDSET && framework_mesh_.get()) {
     return framework_mesh_->isValidSetType(rtype, kind);
@@ -102,8 +104,8 @@ MeshCacheDevice::isValidSetType(const AmanziGeometry::RegionType rtype, const En
 
 int
 MeshCacheDevice::getSetSize(const std::string& region_name,
-                           const Entity_kind kind,
-                           const Parallel_kind ptype) const
+                            const Entity_kind kind,
+                            const Parallel_kind ptype) const
 {
   return getSetEntities(region_name, kind, ptype).size();
 }
@@ -113,7 +115,7 @@ MeshCacheDevice::getSetSize(const std::string& region_name,
 //    getFace*
 //===================
 
-  // // Note that regions are cached on demand the first time they are requested,
+// // Note that regions are cached on demand the first time they are requested,
 // // but labeled sets must be pre-cached if the framework mesh is to be
 // // destroyed.
 // void MeshCacheDeviceprecacheLabeledSets()
@@ -188,7 +190,6 @@ MeshCacheDevice::isPointInCell(const AmanziGeometry::Point& p, const Entity_ID c
 
   return false;
 }
-
 
 
 void

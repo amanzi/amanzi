@@ -143,7 +143,8 @@ MeshCacheHost::getFaceCells(const Entity_ID f) const
   return fcells;
 }
 
-template <AccessPattern_kind AP> void
+template <AccessPattern_kind AP>
+void
 MeshCacheHost::getFaceCells(const Entity_ID f, cEntity_ID_View& fcells) const
 {
   fcells = Impl::RaggedGetter<MEM, AP>::get(
@@ -214,23 +215,23 @@ template <AccessPattern_kind AP>
 AmanziGeometry::Point
 MeshCacheHost::getFaceCentroid(const Entity_ID f) const
 {
-  auto  cf = [&](const int i) { return algorithms_->computeFaceCentroid(*this, i); };
+  auto cf = [&](const int i) { return algorithms_->computeFaceCentroid(*this, i); };
   return Impl::Getter<MEM, AP>::get(
     data_.face_geometry_cached, data_.face_centroids, framework_mesh_, nullptr, cf, f);
 }
 
 template <AccessPattern_kind AP>
- double
+double
 MeshCacheHost::getFaceArea(const Entity_ID f) const
 {
   auto cf = [&](const Entity_ID i) { return algorithms_->computeFaceArea(*this, i); };
-  
+
   return Impl::Getter<MEM, AP>::get(
     data_.face_geometry_cached, data_.face_areas, framework_mesh_, nullptr, cf, f);
 }
 
 template <AccessPattern_kind AP>
- typename MeshCacheHost::cPoint_View
+typename MeshCacheHost::cPoint_View
 MeshCacheHost::getFaceCoordinates(const Entity_ID f) const
 {
   return Impl::RaggedGetter<MEM, AP>::get(
@@ -305,7 +306,7 @@ AmanziGeometry::Point
 MeshCacheHost::getCellCentroid(const Entity_ID c) const
 {
   auto cf = [&](const int i) { return algorithms_->computeCellCentroid(*this, i); };
-  
+
   return Impl::Getter<MEM, AP>::get(
     data_.cell_geometry_cached, data_.cell_centroids, framework_mesh_, nullptr, cf, c);
 }
@@ -423,8 +424,8 @@ MeshCacheHost::getNodeCells(const Entity_ID n, const Parallel_kind ptype) const
 template <AccessPattern_kind AP>
 void
 MeshCacheHost::getNodeCells(const Entity_ID n,
-                             const Parallel_kind ptype,
-                             cEntity_ID_View& cells) const
+                            const Parallel_kind ptype,
+                            cEntity_ID_View& cells) const
 {
   cells = Impl::RaggedGetter<MEM, AP>::get(
     data_.node_cells_cached,
@@ -559,7 +560,7 @@ MeshCacheHost::getEdgeLength(const Entity_ID e) const
 
 
 template <AccessPattern_kind AP>
- typename MeshCacheHost::cEntity_ID_View
+typename MeshCacheHost::cEntity_ID_View
 MeshCacheHost::getEdgeCells(const Entity_ID e) const
 {
   cEntity_ID_View cells;
@@ -569,7 +570,7 @@ MeshCacheHost::getEdgeCells(const Entity_ID e) const
 
 
 template <AccessPattern_kind AP>
- void
+void
 MeshCacheHost::getEdgeCells(const Entity_ID e, cEntity_ID_View& cells) const
 {
   cells = Impl::RaggedGetter<MEM, AP>::get(
@@ -586,7 +587,7 @@ MeshCacheHost::getEdgeCells(const Entity_ID e, cEntity_ID_View& cells) const
 }
 
 template <AccessPattern_kind AP>
- typename MeshCacheHost::cEntity_ID_View
+typename MeshCacheHost::cEntity_ID_View
 MeshCacheHost::getEdgeFaces(const Entity_ID e) const
 {
   cEntity_ID_View faces;
@@ -595,7 +596,7 @@ MeshCacheHost::getEdgeFaces(const Entity_ID e) const
 }
 
 template <AccessPattern_kind AP>
- void
+void
 MeshCacheHost::getEdgeFaces(const Entity_ID e, cEntity_ID_View& faces) const
 {
   faces = Impl::RaggedGetter<MEM, AP>::get(
@@ -610,6 +611,35 @@ MeshCacheHost::getEdgeFaces(const Entity_ID e, cEntity_ID_View& faces) const
     nullptr,
     e);
 }
+
+
+template <AccessPattern_kind AP>
+KOKKOS_INLINE_FUNCTION typename MeshCacheHost::cEntity_ID_View
+MeshCacheHost::getNodeEdges(const Entity_ID n) const
+{
+  cEntity_ID_View edges;
+  getNodeEdges<AP>(n, edges);
+  return edges;
+}
+
+
+template <AccessPattern_kind AP>
+KOKKOS_INLINE_FUNCTION void
+MeshCacheHost::getNodeEdges(const Entity_ID n, cEntity_ID_View& edges) const
+{
+  edges = Impl::RaggedGetter<MEM, AP>::get(
+    data_.node_edges_cached,
+    data_.node_edges,
+    framework_mesh_,
+    [&](const int i) {
+      MeshFramework::cEntity_ID_View ledges;
+      framework_mesh_->getNodeEdges(i, ledges);
+      return ledges;
+    },
+    nullptr,
+    n);
+}
+
 
 } // namespace AmanziMesh
 } // namespace Amanzi

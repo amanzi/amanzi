@@ -21,7 +21,8 @@ capabilities.
 #include "Teuchos_YamlParser_decl.hpp"
 
 
-int main(int argc, char* argv[])
+int
+main(int argc, char* argv[])
 {
   // input and output
   std::string output_xml, input_yaml;
@@ -43,12 +44,8 @@ int main(int argc, char* argv[])
   clp.recogniseAllOptions(true);
 
   auto parseReturn = clp.parse(argc, argv);
-  if (parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
-    return 0;
-  }
-  if (parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-    return 1;
-  }
+  if (parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) { return 0; }
+  if (parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) { return 1; }
 
   // make sure we got input -- output can be std::cout
   if (input_yaml.empty()) {
@@ -58,7 +55,8 @@ int main(int argc, char* argv[])
 
   // convert
   // -- read
-  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::YAMLParameterList::parseYamlFile(input_yaml);
+  Teuchos::RCP<Teuchos::ParameterList> plist =
+    Teuchos::YAMLParameterList::parseYamlFile(input_yaml);
 
   // -- write
   if (output_xml.empty()) {

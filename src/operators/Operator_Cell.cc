@@ -149,7 +149,7 @@ Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
   const auto cell_row_inds = map.viewGhostIndices<MirrorHost>(my_block_row, "cell", 0);
   const auto cell_col_inds = map.viewGhostIndices<MirrorHost>(my_block_col, "cell", 0);
 
-  auto mesh = AmanziMesh::onMemSpace<MemSpace_kind::HOST>(op.mesh);
+  auto mesh = AmanziMesh::onMemHost(op.mesh);
   for (int f = 0; f != nfaces_owned; ++f) {
     auto cells = mesh->getFaceCells(f);
 

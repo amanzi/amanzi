@@ -114,6 +114,9 @@ template <typename T>
 void
 ReadCheckpoint(const Checkpoint& chkp, Teuchos::ParameterList& attrs, T& t)
 {
+  // hack to have dof indices in length 1 vectors for checkpointing/regression
+  // tests to match master's behavior
+  attrs.set("always write subfield dof", true);
   chkp.read(attrs, t);
 }
 

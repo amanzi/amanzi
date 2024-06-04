@@ -49,8 +49,8 @@ TEST(MESH_SURFACE_FLATTENED)
     Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list));
 
   bool flatten = true;
-  auto mesh3D_cache =
-    Teuchos::rcp(new MeshHost(mesh3D, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+  auto mesh3D_cache = Teuchos::rcp(
+    new MeshHost(mesh3D, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
   cacheAll(*mesh3D_cache);
 
   RCP<MeshFramework> mesh = Teuchos::rcp(new MeshExtractedManifold(

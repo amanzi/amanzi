@@ -17,9 +17,8 @@
 #include "MeshCacheHost_decl.hh"
 #include "MeshCacheDevice_decl.hh"
 
-namespace Amanzi::AmanziMesh 
-{
-  
+namespace Amanzi::AmanziMesh {
+
 // -----------------------------------------------------------------------------
 // Memory space transfer
 // -----------------------------------------------------------------------------
@@ -51,8 +50,8 @@ onMemHost(const MeshCacheDevice& mc_in)
   MeshCacheDevice* mc_in_nc = const_cast<MeshCacheDevice*>(&mc_in);
   MeshCacheHost mc_out(*mc_in_nc);
   return mc_out;
-} 
-  
+}
+
 inline Teuchos::RCP<const MeshCacheHost>
 onMemHost(const Teuchos::RCP<const MeshCacheDevice>& mc_in)
 {
@@ -66,5 +65,5 @@ onMemHost(const Teuchos::RCP<MeshCacheDevice>& mc_in)
 {
   return Teuchos::rcp(new MeshCacheHost(*mc_in));
 }
-  
-}
+
+} // namespace Amanzi::AmanziMesh

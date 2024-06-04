@@ -95,12 +95,12 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
         for (int i = 0; i < ncells; ++i) {
           int c = cells[i];
           mesh_->getFaceNormal(f, c, &dir);
-          if (flux_f[0][g + i] * dir >= tol) 
+          if (flux_f[0][g + i] * dir >= tol)
             field_f[0][g + i] = field_c[0][c];
           else
             field_f[0][g + i] = umean;
         }
-      // flow is negligent, use average all cell values
+        // flow is negligent, use average all cell values
       } else {
         tmean /= tvol;
         for (int i = 0; i < ncells; ++i) field_f[0][g + i] = tmean;

@@ -99,8 +99,7 @@ class AEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeV
     const auto fh_c = S.Get<CompositeVector>("fh").viewComponent("cell");
 
     if (wrt_key == "fb") {
-      Kokkos::parallel_for(
-        1, KOKKOS_LAMBDA(const int i) { result_c(i, 0) = 2.0; });
+      Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i) { result_c(i, 0) = 2.0; });
     } else if (wrt_key == "fc") {
       Kokkos::parallel_for(
         1, KOKKOS_LAMBDA(const int i) { result_c(i, 0) = fe_c(i, 0) * fh_c(i, 0); });
@@ -149,11 +148,9 @@ class CEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeV
   {
     auto result_c = results[0]->viewComponent("cell", false);
     if (wrt_key == "fd") {
-      Kokkos::parallel_for(
-        result_c.extent(0), KOKKOS_LAMBDA(const int i) { result_c(i, 0) = 2.; });
+      Kokkos::parallel_for(result_c.extent(0), KOKKOS_LAMBDA(const int i) { result_c(i, 0) = 2.; });
     } else if (wrt_key == "fg") {
-      Kokkos::parallel_for(
-        result_c.extent(0), KOKKOS_LAMBDA(const int i) { result_c(i, 0) = 1.; });
+      Kokkos::parallel_for(result_c.extent(0), KOKKOS_LAMBDA(const int i) { result_c(i, 0) = 1.; });
     }
   }
 };
@@ -190,8 +187,7 @@ class DEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeV
   {
     auto result_c = results[0]->viewComponent("cell", false);
     if (wrt_key == "fg") {
-      Kokkos::parallel_for(
-        result_c.extent(0), KOKKOS_LAMBDA(const int i) { result_c(i, 0) = 2.; });
+      Kokkos::parallel_for(result_c.extent(0), KOKKOS_LAMBDA(const int i) { result_c(i, 0) = 2.; });
     }
   }
 };
@@ -274,8 +270,7 @@ class FEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeV
   {
     auto result_c = results[0]->viewComponent("cell", false);
     if (wrt_key == "fg") {
-      Kokkos::parallel_for(
-        result_c.extent(0), KOKKOS_LAMBDA(const int i) { result_c(i, 0) = 2.; });
+      Kokkos::parallel_for(result_c.extent(0), KOKKOS_LAMBDA(const int i) { result_c(i, 0) = 2.; });
     }
   }
 };
@@ -312,8 +307,7 @@ class HEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeV
   {
     auto result_c = results[0]->viewComponent("cell", false);
     if (wrt_key == "ff") {
-      Kokkos::parallel_for(
-        result_c.extent(0), KOKKOS_LAMBDA(const int i) { result_c(i, 0) = 2.; });
+      Kokkos::parallel_for(result_c.extent(0), KOKKOS_LAMBDA(const int i) { result_c(i, 0) = 2.; });
     }
   }
 };

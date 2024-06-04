@@ -201,9 +201,7 @@ struct Aspect {
   static const AmanziMesh::Entity_kind EntityKind = EK;
   static const bool needs_3d = false;
 
-  Aspect(const AmanziMesh::Mesh& mesh_, Teuchos::RCP<CompositeVector>& v_)
-    : mesh(mesh_), v(v_)
-  {}
+  Aspect(const AmanziMesh::Mesh& mesh_, Teuchos::RCP<CompositeVector>& v_) : mesh(mesh_), v(v_) {}
 
   void Compute()
   {
@@ -224,38 +222,37 @@ struct Aspect {
           // right half
           if (n[1] > 0.0) {
             // upper right quadrant
-            vv(c,0) = std::atan(n[0] / n[1]);
+            vv(c, 0) = std::atan(n[0] / n[1]);
           } else if (n[1] < 0.0) {
             // lower right quadrant
-            vv(c,0) = M_PI - std::atan(n[0] / -n[1]);
+            vv(c, 0) = M_PI - std::atan(n[0] / -n[1]);
           } else {
             // due east
-            vv(c,0) = M_PI_2;
+            vv(c, 0) = M_PI_2;
           }
         } else if (n[0] < 0.0) {
           // left half
           if (n[1] > 0.0) {
             // upper left quadrant
-            vv(c,0) = 2 * M_PI - std::atan(-n[0] / n[1]);
+            vv(c, 0) = 2 * M_PI - std::atan(-n[0] / n[1]);
           } else if (n[1] < 0.0) {
             // lower left quadrant
-            vv(c,0) = M_PI + std::atan(n[0] / -n[1]);
+            vv(c, 0) = M_PI + std::atan(n[0] / -n[1]);
           } else {
             // due west
-            vv(c,0) = 3 * M_PI_2;
+            vv(c, 0) = 3 * M_PI_2;
           }
         } else {
           // north or south
           if (n[1] > 0.0) {
-            vv(c,0) = 0.0;
+            vv(c, 0) = 0.0;
           } else if (n[1] < 0.0) {
-            vv(c,0) = M_PI;
+            vv(c, 0) = M_PI;
           } else {
             // n is (0,0,1)
-            vv(c,0) = 0.;
+            vv(c, 0) = 0.;
           }
         }
-
       });
   }
 

@@ -81,18 +81,9 @@ class SuperMapLumped {
 #endif
 
   // meta-data accessors
-  LO getOffset(const std::string& compname) const
-  {
-    return offsets_.at(compname);
-  }
-  LO getGhostedOffset(const std::string& compname) const
-  {
-    return ghosted_offsets_.at(compname);
-  }
-  LO getNumOwnedElements(const std::string& compname) const
-  {
-    return counts_.at(compname);
-  }
+  LO getOffset(const std::string& compname) const { return offsets_.at(compname); }
+  LO getGhostedOffset(const std::string& compname) const { return ghosted_offsets_.at(compname); }
+  LO getNumOwnedElements(const std::string& compname) const { return counts_.at(compname); }
   LO getNumUsedElements(const std::string& compname) const
   {
     return counts_.at(compname) + ghosted_counts_.at(compname);
@@ -105,18 +96,9 @@ class SuperMapLumped {
  protected:
   // iterate over compnames
   using name_iterator = std::vector<std::string>::const_iterator;
-  name_iterator begin() const
-  {
-    return comp_maps_->begin();
-  }
-  name_iterator end() const
-  {
-    return comp_maps_->end();
-  }
-  std::size_t size() const
-  {
-    return comp_maps_->size();
-  }
+  name_iterator begin() const { return comp_maps_->begin(); }
+  name_iterator end() const { return comp_maps_->end(); }
+  std::size_t size() const { return comp_maps_->size(); }
 
  public:
   void createIndexing_();

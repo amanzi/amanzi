@@ -43,14 +43,14 @@ MeshAudit_Base<Mesh_type>::MeshAudit_Base(const Teuchos::RCP<const Mesh_type>& m
 
 template <class MeshAudit_type>
 void
-createTestDependencies_Base(MeshAudit_type& audit, AuditGraph<MeshAudit_type>& graph)
+createTestDependencies_Base(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph)
 {}
 
 
 // This creates the dependency graph for the individual tests.  Adding a new
 // test to the graph is a simple matter of adding a new stanza of the form
 //
-//   Graph::vertex_descriptor my_test_handle = addVertex_(g);
+//   Graph::vertex_descriptor my_test_handle = AddVertex_(g);
 //   g_[my_test_handle].name = "description of my test";
 //   g_[my_test_handle].test = &MeshAudit::my_test;
 //   addEdge_(other_test_handle, my_test_handle);
@@ -59,227 +59,166 @@ createTestDependencies_Base(MeshAudit_type& audit, AuditGraph<MeshAudit_type>& g
 // my_test_handle.  There may be multiple pre-requisites or none.
 template <class MeshAudit_type>
 void
-createTestDependencies_Geometry(MeshAudit_type& audit, AuditGraph<MeshAudit_type>& graph)
+createTestDependencies_Geometry(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph)
 {
   createTestDependencies_Base(audit, graph);
 
   // Cell_to_nodes tests
-  auto test02 = graph.addVertex();
-  graph.getVertex(test02).name = "cell_to_nodes";
-  graph.getVertex(test02).test = &MeshAudit_type::checkCellToNodes;
+  auto test02 = graph.AddVertex("cell_to_nodes", &MeshAudit_type::checkCellToNodes);
 
-  auto test03 = graph.addVertex();
-  graph.getVertex(test03).name = "node references by cells";
-  graph.getVertex(test03).test = &MeshAudit_type::checkNodeRefsByCells;
-  graph.addEdge(test02, test03);
+  auto test03 = graph.AddVertex("node references by cells", &MeshAudit_type::checkNodeRefsByCells);
+  graph.AddEdge(test02, test03);
 
   // Cell_to_faces tests
-  auto test04 = graph.addVertex();
-  graph.getVertex(test04).name = "cell_to_faces";
-  graph.getVertex(test04).test = &MeshAudit_type::checkCellToFaces;
+  auto test04 = graph.AddVertex("cell_to_faces", &MeshAudit_type::checkCellToFaces);
 
-  auto test05 = graph.addVertex();
-  graph.getVertex(test05).name = "face references by cells";
-  graph.getVertex(test05).test = &MeshAudit_type::checkFaceRefsByCells;
-  graph.addEdge(test04, test05);
+  auto test05 = graph.AddVertex("face references by cells", &MeshAudit_type::checkFaceRefsByCells);
+  graph.AddEdge(test04, test05);
 
   // face_to_nodes tests
-  auto test06 = graph.addVertex();
-  graph.getVertex(test06).name = "face_to_nodes";
-  graph.getVertex(test06).test = &MeshAudit_type::checkFaceToNodes;
+  auto test06 = graph.AddVertex("face_to_nodes", &MeshAudit_type::checkFaceToNodes);
 
-  auto test08 = graph.addVertex();
-  graph.getVertex(test08).name = "node references by faces";
-  graph.getVertex(test08).test = &MeshAudit_type::checkNodeRefsByFaces;
-  graph.addEdge(test06, test08);
+  auto test08 = graph.AddVertex("node references by faces", &MeshAudit_type::checkNodeRefsByFaces);
+  graph.AddEdge(test06, test08);
 
   // cell_to_face_dirs tests
-  auto test09 = graph.addVertex();
-  graph.getVertex(test09).name = "cell_to_face_dirs";
-  graph.getVertex(test09).test = &MeshAudit_type::checkCellToFaceDirs;
+  auto test09 = graph.AddVertex("cell_to_face_dirs", &MeshAudit_type::checkCellToFaceDirs);
 
   // cell degeneracy test
-  auto test10 = graph.addVertex();
-  graph.getVertex(test10).name = "topological non-degeneracy of cells";
-  graph.getVertex(test10).test = &MeshAudit_type::checkCellDegeneracy;
-  graph.addEdge(test02, test10);
+  auto test10 =
+    graph.AddVertex("topological non-degeneracy of cells", &MeshAudit_type::checkCellDegeneracy);
+  graph.AddEdge(test02, test10);
 
   // Consistency between the various mesh connectivity data.
-  auto test11 = graph.addVertex();
-  graph.getVertex(test11).name = "consistency of mesh connectivity data";
-  graph.getVertex(test11).test = &MeshAudit_type::checkCellToFacesToNodes;
-  graph.addEdge(test02, test11);
-  graph.addEdge(test04, test11);
-  graph.addEdge(test06, test11);
-  graph.addEdge(test09, test11);
-  graph.addEdge(test10, test11);
+  auto test11 = graph.AddVertex("consistency of mesh connectivity data",
+                                &MeshAudit_type::checkCellToFacesToNodes);
+  graph.AddEdge(test02, test11);
+  graph.AddEdge(test04, test11);
+  graph.AddEdge(test06, test11);
+  graph.AddEdge(test09, test11);
+  graph.AddEdge(test10, test11);
 
   // node_to_coordinates tests
-  auto test12 = graph.addVertex();
-  graph.getVertex(test12).name = "node_to_coordinates";
-  graph.getVertex(test12).test = &MeshAudit_type::checkNodeToCoordinates;
+  auto test12 = graph.AddVertex("node_to_coordinates", &MeshAudit_type::checkNodeToCoordinates);
 
   // cell_to_coordinates tests
-  auto test13 = graph.addVertex();
-  graph.getVertex(test13).name = "cell_to_coordinates";
-  graph.getVertex(test13).test = &MeshAudit_type::checkCellToCoordinates;
-  graph.addEdge(test02, test13);
-  graph.addEdge(test12, test13);
+  auto test13 = graph.AddVertex("cell_to_coordinates", &MeshAudit_type::checkCellToCoordinates);
+  graph.AddEdge(test02, test13);
+  graph.AddEdge(test12, test13);
 
   // face_to_coordinates tests
-  auto test14 = graph.addVertex();
-  graph.getVertex(test14).name = "face_to_coordinates";
-  graph.getVertex(test14).test = &MeshAudit_type::checkFaceToCoordinates;
-  graph.addEdge(test06, test14);
-  graph.addEdge(test12, test14);
+  auto test14 = graph.AddVertex("face_to_coordinates", &MeshAudit_type::checkFaceToCoordinates);
+  graph.AddEdge(test06, test14);
+  graph.AddEdge(test12, test14);
 
   // cell topology/geometry test
-  auto test15 = graph.addVertex();
-  graph.getVertex(test15).name = "cell geometry";
-  graph.getVertex(test15).test = &MeshAudit_type::checkCellGeometry;
-  graph.addEdge(test10, test15);
-  graph.addEdge(test13, test15);
+  auto test15 = graph.AddVertex("cell geometry", &MeshAudit_type::checkCellGeometry);
+  graph.AddEdge(test10, test15);
+  graph.AddEdge(test13, test15);
 
   // cell-to-face adjacencies and orientations
-  auto test16 = graph.addVertex();
-  graph.getVertex(test16).name = "consistency of face-cell adjacencies";
-  graph.getVertex(test16).test = &MeshAudit_type::checkFaceCellAdjacencyConsistency;
-  graph.addEdge(test04, test16);
-  graph.addEdge(test09, test16);
+  auto test16 = graph.AddVertex("consistency of face-cell adjacencies",
+                                &MeshAudit_type::checkFaceCellAdjacencyConsistency);
+  graph.AddEdge(test04, test16);
+  graph.AddEdge(test09, test16);
 
   // face normals relto cell
-  auto test17 = graph.addVertex();
-  graph.getVertex(test17).name = "face normals are outward";
-  graph.getVertex(test17).test = &MeshAudit_type::checkFaceNormalReltoCell;
-  graph.addEdge(test16, test17);
+  auto test17 =
+    graph.AddVertex("face normals are outward", &MeshAudit_type::checkFaceNormalReltoCell);
+  graph.AddEdge(test16, test17);
 
   // face normals
-  auto test18 = graph.addVertex();
-  graph.getVertex(test18).name = "face normals are oriented";
-  graph.getVertex(test18).test = &MeshAudit_type::checkFaceNormalOrientation;
-  graph.addEdge(test16, test18);
+  auto test18 =
+    graph.AddVertex("face normals are oriented", &MeshAudit_type::checkFaceNormalOrientation);
+  graph.AddEdge(test16, test18);
 }
 
 
 template <class MeshAudit_type>
 void
-createTestDependencies_Maps(MeshAudit_type& audit, AuditGraph<MeshAudit_type>& graph)
+createTestDependencies_Maps(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph)
 {
   createTestDependencies_Geometry(audit, graph);
 
   // Entity_counts tests
-  auto test01 = graph.addVertex();
-  graph.getVertex(test01).name = "entity_counts";
-  graph.getVertex(test01).test = &MeshAudit_type::checkEntityCounts;
+  auto test01 = graph.AddVertex("entity_counts", &MeshAudit_type::checkEntityCounts);
 
   // map tests
-  auto test16 = graph.addVertex();
-  graph.getVertex(test16).name = "owned and overlap node maps";
-  graph.getVertex(test16).test = &MeshAudit_type::checkNodeMaps;
+  auto test16 = graph.AddVertex("owned and overlap node maps", &MeshAudit_type::checkNodeMaps);
 
-  auto test17 = graph.addVertex();
-  graph.getVertex(test17).name = "owned and overlap face maps";
-  graph.getVertex(test17).test = &MeshAudit_type::checkFaceMaps;
+  auto test17 = graph.AddVertex("owned and overlap face maps", &MeshAudit_type::checkFaceMaps);
 
-  auto test18 = graph.addVertex();
-  graph.getVertex(test18).name = "owned and overlap cell maps";
-  graph.getVertex(test18).test = &MeshAudit_type::checkCellMaps;
+  auto test18 = graph.AddVertex("owned and overlap cell maps", &MeshAudit_type::checkCellMaps);
 
   // ghost data tests
-  auto test19 = graph.addVertex();
-  graph.getVertex(test19).name = "node_to_coordinates ghost data";
-  graph.getVertex(test19).test = &MeshAudit_type::checkNodeToCoordinatesGhostData;
-  graph.addEdge("node_to_coordinates", test19);
-  graph.addEdge("owned and overlap node maps", test19);
+  auto test19 = graph.AddVertex("node_to_coordinates ghost data",
+                                &MeshAudit_type::checkNodeToCoordinatesGhostData);
+  graph.AddEdge("node_to_coordinates", test19);
+  graph.AddEdge("owned and overlap node maps", test19);
 
-  auto test20 = graph.addVertex();
-  graph.getVertex(test20).name = "face_to_nodes ghost data";
-  graph.getVertex(test20).test = &MeshAudit_type::checkFaceToNodesGhostData;
-  graph.addEdge("face_to_nodes", test20);
-  graph.addEdge("owned and overlap node maps", test20);
-  graph.addEdge("owned and overlap face maps", test20);
+  auto test20 =
+    graph.AddVertex("face_to_nodes ghost data", &MeshAudit_type::checkFaceToNodesGhostData);
+  graph.AddEdge("face_to_nodes", test20);
+  graph.AddEdge("owned and overlap node maps", test20);
+  graph.AddEdge("owned and overlap face maps", test20);
 
-  auto test21 = graph.addVertex();
-  graph.getVertex(test21).name = "cell_to_nodes ghost data";
-  graph.getVertex(test21).test = &MeshAudit_type::checkCellToNodesGhostData;
-  graph.addEdge("cell_to_nodes", test21);
-  graph.addEdge("owned and overlap cell maps", test21);
-  graph.addEdge("owned and overlap node maps", test21);
+  auto test21 =
+    graph.AddVertex("cell_to_nodes ghost data", &MeshAudit_type::checkCellToNodesGhostData);
+  graph.AddEdge("cell_to_nodes", test21);
+  graph.AddEdge("owned and overlap cell maps", test21);
+  graph.AddEdge("owned and overlap node maps", test21);
 
-  auto test22 = graph.addVertex();
-  graph.getVertex(test22).name = "cell_to_faces ghost data";
-  graph.getVertex(test22).test = &MeshAudit_type::checkCellToFacesGhostData;
-  graph.addEdge("cell_to_faces", test22);
-  graph.addEdge("owned and overlap cell maps", test22);
-  graph.addEdge("owned and overlap face maps", test22);
+  auto test22 =
+    graph.AddVertex("cell_to_faces ghost data", &MeshAudit_type::checkCellToFacesGhostData);
+  graph.AddEdge("cell_to_faces", test22);
+  graph.AddEdge("owned and overlap cell maps", test22);
+  graph.AddEdge("owned and overlap face maps", test22);
 
   // partition tests
-  auto test32 = graph.addVertex();
-  graph.getVertex(test32).name = "face partition";
-  graph.getVertex(test32).test = &MeshAudit_type::checkFacePartition;
-  graph.addEdge("owned and overlap face maps", test32);
-  graph.addEdge("owned and overlap cell maps", test32);
-  graph.addEdge(test18, test32);
+  auto test32 = graph.AddVertex("face partition", &MeshAudit_type::checkFacePartition);
+  graph.AddEdge("owned and overlap face maps", test32);
+  graph.AddEdge("owned and overlap cell maps", test32);
+  graph.AddEdge(test18, test32);
 
-  auto test33 = graph.addVertex();
-  graph.getVertex(test33).name = "node partition";
-  graph.getVertex(test33).test = &MeshAudit_type::checkNodePartition;
-  graph.addEdge("owned and overlap node maps", test33);
-  graph.addEdge("owned and overlap cell maps", test33);
+  auto test33 = graph.AddVertex("node partition", &MeshAudit_type::checkNodePartition);
+  graph.AddEdge("owned and overlap node maps", test33);
+  graph.AddEdge("owned and overlap cell maps", test33);
 };
 
 template <class MeshAudit_type>
 void
-createTestDependencies_Sets(MeshAudit_type& audit, AuditGraph<MeshAudit_type>& graph)
+createTestDependencies_Sets(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph)
 {
   createTestDependencies_Maps(audit, graph);
 
   // node set data tests
-  auto test23 = graph.addVertex();
-  graph.getVertex(test23).name = "node set IDs";
-  graph.getVertex(test23).test = &MeshAudit_type::checkNodeSetIDs;
+  auto test23 = graph.AddVertex("node set IDs", &MeshAudit_type::checkNodeSetIDs);
 
-  auto test24 = graph.addVertex();
-  graph.getVertex(test24).name = "node sets";
-  graph.getVertex(test24).test = &MeshAudit_type::checkNodeSets;
-  graph.addEdge("owned and overlap node maps", test24);
+  auto test24 = graph.AddVertex("node sets", &MeshAudit_type::checkNodeSets);
+  graph.AddEdge("owned and overlap node maps", test24);
 
-  auto test25 = graph.addVertex();
-  graph.getVertex(test25).name = "valid node set IDs";
-  graph.getVertex(test25).test = &MeshAudit_type::checkValidNodeSetID;
-  graph.addEdge("node set IDs", test25);
+  auto test25 = graph.AddVertex("valid node set IDs", &MeshAudit_type::checkValidNodeSetID);
+  graph.AddEdge("node set IDs", test25);
 
   // face set data tests
-  auto test26 = graph.addVertex();
-  graph.getVertex(test26).name = "face set IDs";
-  graph.getVertex(test26).test = &MeshAudit_type::checkFaceSetIDs;
+  auto test26 = graph.AddVertex("face set IDs", &MeshAudit_type::checkFaceSetIDs);
 
-  auto test27 = graph.addVertex();
-  graph.getVertex(test27).name = "face sets";
-  graph.getVertex(test27).test = &MeshAudit_type::checkFaceSets;
-  graph.addEdge("owned and overlap face maps", test27);
-  graph.addEdge("face set IDs", test27);
+  auto test27 = graph.AddVertex("face sets", &MeshAudit_type::checkFaceSets);
+  graph.AddEdge("owned and overlap face maps", test27);
+  graph.AddEdge("face set IDs", test27);
 
-  auto test28 = graph.addVertex();
-  graph.getVertex(test28).name = "valid face set IDs";
-  graph.getVertex(test28).test = &MeshAudit_type::checkValidFaceSetID;
-  graph.addEdge("face set IDs", test28);
+  auto test28 = graph.AddVertex("valid face set IDs", &MeshAudit_type::checkValidFaceSetID);
+  graph.AddEdge("face set IDs", test28);
 
   // cell set data tests
-  auto test29 = graph.addVertex();
-  graph.getVertex(test29).name = "cell set IDs";
-  graph.getVertex(test29).test = &MeshAudit_type::checkCellSetIDs;
+  auto test29 = graph.AddVertex("cell set IDs", &MeshAudit_type::checkCellSetIDs);
 
-  auto test30 = graph.addVertex();
-  graph.getVertex(test30).name = "cell sets";
-  graph.getVertex(test30).test = &MeshAudit_type::checkCellSets;
-  graph.addEdge("owned and overlap cell maps", test30);
-  graph.addEdge("cell set IDs", test30);
+  auto test30 = graph.AddVertex("cell sets", &MeshAudit_type::checkCellSets);
+  graph.AddEdge("owned and overlap cell maps", test30);
+  graph.AddEdge("cell set IDs", test30);
 
-  auto test31 = graph.addVertex();
-  graph.getVertex(test31).name = "valid cell set IDs";
-  graph.getVertex(test31).test = &MeshAudit_type::checkValidCellSetID;
-  graph.addEdge("cell set IDs", test31);
+  auto test31 = graph.AddVertex("valid cell set IDs", &MeshAudit_type::checkValidCellSetID);
+  graph.AddEdge("cell set IDs", test31);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -369,13 +308,13 @@ MeshAudit_Geometry<Mesh_type>::checkCellToNodes() const
   const Mesh_type& m = *mesh_;
   int nnodes_all = nnodes_all_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for("MeshAudit::checkCellToNodes", Range_type(0, ncells_all_),
-                       KOKKOS_LAMBDA(const LO c) {
-                         auto cnode = m.getCellNodes(c);
-                         for (auto& n : cnode) {
-                           if (n >= nnodes_all) bad_cells(c) = 1;
-                         }
-                       });
+  Kokkos::parallel_for(
+    "MeshAudit::checkCellToNodes", Range_type(0, ncells_all_), KOKKOS_LAMBDA(const LO c) {
+      auto cnode = m.getCellNodes(c);
+      for (auto& n : cnode) {
+        if (n >= nnodes_all) bad_cells(c) = 1;
+      }
+    });
 
   bool error = checkErrorList(bad_cells, "invalid nodes referenced by cells", this->os_);
   return globalAny_(error);
@@ -395,12 +334,14 @@ MeshAudit_Geometry<Mesh_type>::checkNodeRefsByCells() const
 
   const Mesh_type& m = *mesh_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for("MeshAudit::checkNodeRefsByCells", Range_type(0, ncells_all_),
-                       KOKKOS_LAMBDA(const Entity_ID c) {
-                         cEntity_ID_View cnode;
-                         m.getCellNodes(c, cnode);
-                         for (auto& n : cnode) Kokkos::atomic_store(&free_nodes(n), 0);
-                       });
+  Kokkos::parallel_for(
+    "MeshAudit::checkNodeRefsByCells",
+    Range_type(0, ncells_all_),
+    KOKKOS_LAMBDA(const Entity_ID c) {
+      cEntity_ID_View cnode;
+      m.getCellNodes(c, cnode);
+      for (auto& n : cnode) Kokkos::atomic_store(&free_nodes(n), 0);
+    });
 
   bool error = checkErrorList(free_nodes, "found unreferenced nodes", this->os_);
   return globalAny_(error);
@@ -419,13 +360,13 @@ MeshAudit_Geometry<Mesh_type>::checkCellToFaces() const
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
   const Mesh_type& m = *mesh_;
   int nfaces_all = nfaces_all_;
-  Kokkos::parallel_for("MeshAudit::checkCellToFaces", Range_type(0, ncells_all_),
-                       KOKKOS_LAMBDA(const Entity_ID c) {
-                         auto cface = m.getCellFaces(c);
-                         for (auto& f : cface) {
-                           if (f >= nfaces_all) bad_cells(c) = 1;
-                         }
-                       });
+  Kokkos::parallel_for(
+    "MeshAudit::checkCellToFaces", Range_type(0, ncells_all_), KOKKOS_LAMBDA(const Entity_ID c) {
+      auto cface = m.getCellFaces(c);
+      for (auto& f : cface) {
+        if (f >= nfaces_all) bad_cells(c) = 1;
+      }
+    });
 
   bool error = checkErrorList(bad_cells, "invalid faces referenced by cells", this->os_);
   return globalAny_(error);
@@ -445,19 +386,23 @@ MeshAudit_Geometry<Mesh_type>::checkFaceRefsByCells() const
 
   const Mesh_type& m = *mesh_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for("MeshAudit::checkNodeRefsByCells", Range_type(0, ncells_all_),
-                       KOKKOS_LAMBDA(const Entity_ID c) {
-                         cEntity_ID_View cface;
-                         m.getCellFaces(c, cface);
-                         for (auto& n : cface) Kokkos::atomic_add(&face_counts(n), 1);
-                       });
+  Kokkos::parallel_for(
+    "MeshAudit::checkNodeRefsByCells",
+    Range_type(0, ncells_all_),
+    KOKKOS_LAMBDA(const Entity_ID c) {
+      cEntity_ID_View cface;
+      m.getCellFaces(c, cface);
+      for (auto& n : cface) Kokkos::atomic_add(&face_counts(n), 1);
+    });
 
 
-  Kokkos::parallel_for("MeshAudit::checkNodeRefsByCells2", Range_type(0, nfaces_all_),
-                       KOKKOS_LAMBDA(const Entity_ID f) {
-                         if (face_counts(f) == 0) free_faces(f) = 1;
-                         if (face_counts(f) <= 2) face_counts(f) = 0;
-                       });
+  Kokkos::parallel_for(
+    "MeshAudit::checkNodeRefsByCells2",
+    Range_type(0, nfaces_all_),
+    KOKKOS_LAMBDA(const Entity_ID f) {
+      if (face_counts(f) == 0) free_faces(f) = 1;
+      if (face_counts(f) <= 2) face_counts(f) = 0;
+    });
 
   bool error = checkErrorList(free_faces, "found unreferenced faces", this->os_);
 
@@ -481,13 +426,13 @@ MeshAudit_Geometry<Mesh_type>::checkFaceToNodes() const
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
   const Mesh_type& m = *mesh_;
   int nnodes_all = nnodes_all_;
-  Kokkos::parallel_for("MeshAudit::checkFaceToNodes", Range_type(0, nfaces_all_),
-                       KOKKOS_LAMBDA(const LO c) {
-                         auto cnode = m.getFaceNodes(c);
-                         for (auto& n : cnode) {
-                           if (n >= nnodes_all) bad_faces(c) = 1;
-                         }
-                       });
+  Kokkos::parallel_for(
+    "MeshAudit::checkFaceToNodes", Range_type(0, nfaces_all_), KOKKOS_LAMBDA(const LO c) {
+      auto cnode = m.getFaceNodes(c);
+      for (auto& n : cnode) {
+        if (n >= nnodes_all) bad_faces(c) = 1;
+      }
+    });
 
   bool error = checkErrorList(bad_faces, "invalid nodes referenced by faces", this->os_);
   return globalAny_(error);
@@ -506,12 +451,14 @@ MeshAudit_Geometry<Mesh_type>::checkNodeRefsByFaces() const
 
   const Mesh_type& m = *mesh_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for("MeshAudit::checkNodeRefsByFaces", Range_type(0, nfaces_all_),
-                       KOKKOS_LAMBDA(const Entity_ID c) {
-                         cEntity_ID_View cnode;
-                         m.getFaceNodes(c, cnode);
-                         for (auto& n : cnode) Kokkos::atomic_store(&free_nodes(n), 0);
-                       });
+  Kokkos::parallel_for(
+    "MeshAudit::checkNodeRefsByFaces",
+    Range_type(0, nfaces_all_),
+    KOKKOS_LAMBDA(const Entity_ID c) {
+      cEntity_ID_View cnode;
+      m.getFaceNodes(c, cnode);
+      for (auto& n : cnode) Kokkos::atomic_store(&free_nodes(n), 0);
+    });
 
   bool error = checkErrorList(free_nodes, "found unreferenced nodes", this->os_);
   return globalAny_(error);
@@ -528,13 +475,13 @@ MeshAudit_Geometry<Mesh_type>::checkCellToFaceDirs() const
 
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
   const Mesh_type& m = *mesh_;
-  Kokkos::parallel_for("MeshAudit::checkCellToFaces", Range_type(0, ncells_all_),
-                       KOKKOS_LAMBDA(const Entity_ID c) {
-                         auto [cface,fdirs] = m.getCellFacesAndDirections(c);
-                         for (auto& fd : fdirs) {
-                           if (fd != 1 && fd != -1) bad_cells(c) = 1;
-                         }
-                       });
+  Kokkos::parallel_for(
+    "MeshAudit::checkCellToFaces", Range_type(0, ncells_all_), KOKKOS_LAMBDA(const Entity_ID c) {
+      auto [cface, fdirs] = m.getCellFacesAndDirections(c);
+      for (auto& fd : fdirs) {
+        if (fd != 1 && fd != -1) bad_cells(c) = 1;
+      }
+    });
 
   bool error = checkErrorList(bad_cells, "inadmissable or no data for cells", this->os_);
   return globalAny_(error);
@@ -555,11 +502,13 @@ MeshAudit_Geometry<Mesh_type>::checkCellDegeneracy() const
 
   const Mesh_type& m = *mesh_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for("MeshAudit::checkCellDegeneracy", Range_type(0, ncells_all_),
-                       KOKKOS_CLASS_LAMBDA(const Entity_ID c) {
-                         auto cnodes = m.getCellNodes(c); // should not fail
-                         if (!this->areDistinctValues_(cnodes)) bad_cells(c) = 1;
-                       });
+  Kokkos::parallel_for(
+    "MeshAudit::checkCellDegeneracy",
+    Range_type(0, ncells_all_),
+    KOKKOS_CLASS_LAMBDA(const Entity_ID c) {
+      auto cnodes = m.getCellNodes(c); // should not fail
+      if (!this->areDistinctValues_(cnodes)) bad_cells(c) = 1;
+    });
 
   bool error = checkErrorList(bad_cells, "found topologically degenerate cells", this->os_);
   return globalAny_(error);
@@ -590,7 +539,7 @@ MeshAudit_Geometry<Mesh_type>::checkCellToFacesToNodes() const
     Entity_ID_View bad_cells("bad cells", ncells_all_);
     Entity_ID_View bad_cells1("bad cells1", ncells_all_);
 
-    for (LO c=0; c!=ncells_all_; ++c) {
+    for (LO c = 0; c != ncells_all_; ++c) {
       Cell_kind ctype_enum = mesh_->getCellType(c);
 
       // If this is a general, non-standard element there is nothing to
@@ -662,11 +611,11 @@ MeshAudit_Geometry<Mesh_type>::checkNodeToCoordinates() const
 
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
   const Mesh_type& m = *mesh_;
-  Kokkos::parallel_for("MeshAudit::checkNodeToCoordinates", Range_type(0, nnodes_all_),
-                       KOKKOS_LAMBDA(const LO n) {
-                         auto x0 = m.getNodeCoordinate(n); // this may fail
-                         if (x0.dim() != spdim) bad_nodes(n) = 1;
-                       });
+  Kokkos::parallel_for(
+    "MeshAudit::checkNodeToCoordinates", Range_type(0, nnodes_all_), KOKKOS_LAMBDA(const LO n) {
+      auto x0 = m.getNodeCoordinate(n); // this may fail
+      if (x0.dim() != spdim) bad_nodes(n) = 1;
+    });
 
   bool error = checkErrorList(bad_nodes, "missing coordinate data for nodes", this->os_);
   return globalAny_(error);
@@ -687,23 +636,23 @@ MeshAudit_Geometry<Mesh_type>::checkCellToCoordinates() const
 
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
   const Mesh_type& m = *mesh_;
-  Kokkos::parallel_for("MeshAudit::checkNodeToCoordinates", Range_type(0, ncells_all_),
-                       KOKKOS_LAMBDA(const LO c) {
-                         auto x0 = m.getCellCoordinates(c); // this may fail
-                         cEntity_ID_View cnode;
-                         m.getCellNodes(c, cnode);          // this should not fail
-                         for (int k = 0; k < cnode.size(); ++k) {
-                           bool bad_data = false;
-                           auto xref = m.getNodeCoordinate(cnode(k)); // this should not fail
-                           for (int i = 0; i < spdim; i++)
-                             if (x0(k)[i] != xref[i]) {
-                               bad_data = true;
-                               bad_cells(c) = 1;
-                               break;
-                             }
-                           if (bad_data) break;
-                         }
-                       });
+  Kokkos::parallel_for(
+    "MeshAudit::checkNodeToCoordinates", Range_type(0, ncells_all_), KOKKOS_LAMBDA(const LO c) {
+      auto x0 = m.getCellCoordinates(c); // this may fail
+      cEntity_ID_View cnode;
+      m.getCellNodes(c, cnode); // this should not fail
+      for (int k = 0; k < cnode.size(); ++k) {
+        bool bad_data = false;
+        auto xref = m.getNodeCoordinate(cnode(k)); // this should not fail
+        for (int i = 0; i < spdim; i++)
+          if (x0(k)[i] != xref[i]) {
+            bad_data = true;
+            bad_cells(c) = 1;
+            break;
+          }
+        if (bad_data) break;
+      }
+    });
 
   bool error = checkErrorList(bad_cells, "bad cell_to_coordinates data for cells", this->os_);
   return globalAny_(error);
@@ -724,23 +673,23 @@ MeshAudit_Geometry<Mesh_type>::checkFaceToCoordinates() const
 
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
   const Mesh_type& m = *mesh_;
-  Kokkos::parallel_for("MeshAudit::checkNodeToCoordinates", Range_type(0, nfaces_all_),
-                       KOKKOS_LAMBDA(const LO c) {
-                         auto x0 = m.getFaceCoordinates(c); // this may fail
-                         cEntity_ID_View cnode;
-                         m.getFaceNodes(c, cnode);          // this should not fail
-                         for (int k = 0; k < cnode.size(); ++k) {
-                           bool bad_data = false;
-                           auto xref = m.getNodeCoordinate(cnode(k)); // this should not fail
-                           for (int i = 0; i < spdim; i++)
-                             if (x0(k)[i] != xref[i]) {
-                               bad_data = true;
-                               bad_faces(c) = 1;
-                               break;
-                             }
-                           if (bad_data) break;
-                         }
-                       });
+  Kokkos::parallel_for(
+    "MeshAudit::checkNodeToCoordinates", Range_type(0, nfaces_all_), KOKKOS_LAMBDA(const LO c) {
+      auto x0 = m.getFaceCoordinates(c); // this may fail
+      cEntity_ID_View cnode;
+      m.getFaceNodes(c, cnode); // this should not fail
+      for (int k = 0; k < cnode.size(); ++k) {
+        bool bad_data = false;
+        auto xref = m.getNodeCoordinate(cnode(k)); // this should not fail
+        for (int i = 0; i < spdim; i++)
+          if (x0(k)[i] != xref[i]) {
+            bad_data = true;
+            bad_faces(c) = 1;
+            break;
+          }
+        if (bad_data) break;
+      }
+    });
 
   bool error = checkErrorList(bad_faces, "bad face_to_coordinates data for faces", this->os_);
   return globalAny_(error);
@@ -760,45 +709,45 @@ MeshAudit_Geometry<Mesh_type>::checkFaceCellAdjacencyConsistency() const
 
   const Mesh_type& m = *mesh_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for("MeshAudit::checkFaceCellAdjacencyConsistency", Range_type(0, nfaces_all_),
-                       KOKKOS_LAMBDA(const LO f) {
-                         cEntity_ID_View fcells;
-                         m.getFaceCells(f, fcells);
-                         for (const auto& c : fcells) {
-                           cEntity_ID_View cfaces;
-                           typename Mesh_type::cDirection_View cfdirs;
-                           m.getCellFacesAndDirs(c, cfaces, &cfdirs);
+  Kokkos::parallel_for(
+    "MeshAudit::checkFaceCellAdjacencyConsistency",
+    Range_type(0, nfaces_all_),
+    KOKKOS_LAMBDA(const LO f) {
+      cEntity_ID_View fcells;
+      m.getFaceCells(f, fcells);
+      for (const auto& c : fcells) {
+        cEntity_ID_View cfaces;
+        typename Mesh_type::cDirection_View cfdirs;
+        m.getCellFacesAndDirs(c, cfaces, &cfdirs);
 
-                           // find the match
-                           int i = 0;
-                           for (; i != cfaces.size(); ++i) {
-                             if (f == cfaces[i]) {
-                               break;
-                             }
-                           }
-                           if (i == cfaces.size()) {
-                             bad_faces[f] = 1;
-                             break;
-                           }
+        // find the match
+        int i = 0;
+        for (; i != cfaces.size(); ++i) {
+          if (f == cfaces[i]) { break; }
+        }
+        if (i == cfaces.size()) {
+          bad_faces[f] = 1;
+          break;
+        }
 
-                           // check directions
-                           int orientation = 0;
-                           auto fnormal = m.getFaceNormal(f, c, &orientation);
-                           if (orientation == 0) {
-                             if (m.getSpaceDimension() == m.getManifoldDimension()) {
-                               // should be an orientation but there isn't
-                               bad_faces1[f] = 1;
-                               break;
-                             }
-                           } else {
-                             if (orientation != cfdirs[i]) {
-                               // orientation is there, not equivalent to the dir from the cell
-                               bad_faces1[f] = 1;
-                               break;
-                             }
-                           }
-                         }
-                       });
+        // check directions
+        int orientation = 0;
+        auto fnormal = m.getFaceNormal(f, c, &orientation);
+        if (orientation == 0) {
+          if (m.getSpaceDimension() == m.getManifoldDimension()) {
+            // should be an orientation but there isn't
+            bad_faces1[f] = 1;
+            break;
+          }
+        } else {
+          if (orientation != cfdirs[i]) {
+            // orientation is there, not equivalent to the dir from the cell
+            bad_faces1[f] = 1;
+            break;
+          }
+        }
+      }
+    });
 
   bool error = checkErrorList(bad_faces, "inconsistent adjacencies", this->os_);
   error |= checkErrorList(bad_faces1, "inconsistent orientations", this->os_);
@@ -818,21 +767,23 @@ MeshAudit_Geometry<Mesh_type>::checkFaceNormalReltoCell() const
 
   const Mesh_type& m = *mesh_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for("MeshAudit::checkFaceNormalReltoCell", Range_type(0, nfaces_all_),
-                       KOKKOS_CLASS_LAMBDA(const LO f) {
-                         auto fc = m.getFaceCentroid(f);
+  Kokkos::parallel_for(
+    "MeshAudit::checkFaceNormalReltoCell",
+    Range_type(0, nfaces_all_),
+    KOKKOS_CLASS_LAMBDA(const LO f) {
+      auto fc = m.getFaceCentroid(f);
 
-                         cEntity_ID_View fcells;
-                         m.getFaceCells(f, fcells);
-                         for (int k = 0; k < fcells.size(); ++k) {
-                           AmanziGeometry::Point cc = m.getCellCentroid(fcells[k]);
-                           AmanziGeometry::Point fnormal = m.getFaceNormal(f, fcells[k]);
-                           if ((fc - cc) * fnormal < 0) {
-                             bad_faces[f] = 1;
-                             break;
-                           }
-                         }
-                       });
+      cEntity_ID_View fcells;
+      m.getFaceCells(f, fcells);
+      for (int k = 0; k < fcells.size(); ++k) {
+        AmanziGeometry::Point cc = m.getCellCentroid(fcells[k]);
+        AmanziGeometry::Point fnormal = m.getFaceNormal(f, fcells[k]);
+        if ((fc - cc) * fnormal < 0) {
+          bad_faces[f] = 1;
+          break;
+        }
+      }
+    });
 
   bool error = checkErrorList(bad_faces, "bad face_normal, not outward", this->os_);
   return globalAny_(error);
@@ -853,23 +804,23 @@ MeshAudit_Geometry<Mesh_type>::checkFaceNormalOrientation() const
 
   const Mesh_type& m = *mesh_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for("MeshAudit::checkFaceNormalOrientation", Range_type(0, nfaces_all_),
-                       KOKKOS_LAMBDA(const LO f) {
-                         AmanziGeometry::Point fnormal = m.getFaceNormal(f);
+  Kokkos::parallel_for(
+    "MeshAudit::checkFaceNormalOrientation", Range_type(0, nfaces_all_), KOKKOS_LAMBDA(const LO f) {
+      AmanziGeometry::Point fnormal = m.getFaceNormal(f);
 
-                         cEntity_ID_View fcells;
-                         m.getFaceCells(f, fcells);
-                         for (int k = 0; k < fcells.size(); ++k) {
-                           int orientation = 0;
-                           AmanziGeometry::Point fnormalc = m.getFaceNormal(f, fcells[k], &orientation);
-                           if (orientation != 0) {
-                             if (AmanziGeometry::norm((orientation * fnormal) - fnormalc) > 1.e-16) {
-                               bad_faces[f] = 1;
-                               break;
-                             }
-                           }
-                         }
-                       });
+      cEntity_ID_View fcells;
+      m.getFaceCells(f, fcells);
+      for (int k = 0; k < fcells.size(); ++k) {
+        int orientation = 0;
+        AmanziGeometry::Point fnormalc = m.getFaceNormal(f, fcells[k], &orientation);
+        if (orientation != 0) {
+          if (AmanziGeometry::norm((orientation * fnormal) - fnormalc) > 1.e-16) {
+            bad_faces[f] = 1;
+            break;
+          }
+        }
+      }
+    });
 
   bool error = checkErrorList(bad_faces, "bad face_normal, inconsistent orientation", this->os_);
   return globalAny_(error);
@@ -888,11 +839,11 @@ MeshAudit_Geometry<Mesh_type>::checkCellGeometry() const
 
   const Mesh_type& m = *mesh_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for("MeshAudit::checkCellGeometry", Range_type(0, ncells_all_),
-                       KOKKOS_LAMBDA(const LO c) {
-                         double hvol = m.getCellVolume(c);
-                         if (hvol <= 0.0) bad_cells[c] = 1;
-                       });
+  Kokkos::parallel_for(
+    "MeshAudit::checkCellGeometry", Range_type(0, ncells_all_), KOKKOS_LAMBDA(const LO c) {
+      double hvol = m.getCellVolume(c);
+      if (hvol <= 0.0) bad_cells[c] = 1;
+    });
   bool error = checkErrorList(bad_cells, "found cells with non-positive volumes", this->os_);
   return globalAny_(error);
 }
@@ -1046,20 +997,19 @@ MeshAudit_Maps<Mesh_type>::checkNodeToCoordinatesGhostData() const
 
   MultiVector_type coord_use(node_map_use, spdim);
   auto coord_own = coord_use.offsetViewNonConst(node_map_own, 0);
-  if constexpr(std::is_same_v<Mesh_type, Mesh>) {
+  if constexpr (std::is_same_v<Mesh_type, Mesh>) {
     auto coord_own_view = coord_own->getLocalViewDevice(Tpetra::Access::ReadWrite);
     const Mesh_type& m = *mesh_;
-    Kokkos::parallel_for("MeshAudit::check_node_to_coordinates_ghost_data",
-                         nnode_own,
-                         KOKKOS_LAMBDA(const int n) {
-                           auto coord = m.getNodeCoordinate(n);
-                           for (int k = 0; k < spdim; ++k) coord_own_view(n,k) = coord[k];
-                         });
+    Kokkos::parallel_for(
+      "MeshAudit::check_node_to_coordinates_ghost_data", nnode_own, KOKKOS_LAMBDA(const int n) {
+        auto coord = m.getNodeCoordinate(n);
+        for (int k = 0; k < spdim; ++k) coord_own_view(n, k) = coord[k];
+      });
   } else {
     auto coord_own_view = coord_own->getLocalViewHost(Tpetra::Access::ReadWrite);
-    for (size_t n=0; n!=nnode_own; ++n) {
+    for (size_t n = 0; n != nnode_own; ++n) {
       auto coord = mesh_->getNodeCoordinate(n);
-      for (int k = 0; k < spdim; ++k) coord_own_view(n,k) = coord[k];
+      for (int k = 0; k < spdim; ++k) coord_own_view(n, k) = coord[k];
     }
   }
 
@@ -1067,27 +1017,24 @@ MeshAudit_Maps<Mesh_type>::checkNodeToCoordinatesGhostData() const
   coord_use.doImport(*coord_own, importer, Tpetra::INSERT);
 
   Entity_ID_View bad_nodes("bad nodes", nnode_use - nnode_own);
-  if constexpr(std::is_same_v<Mesh_type, Mesh>) {
+  if constexpr (std::is_same_v<Mesh_type, Mesh>) {
     auto coord_use_view = coord_use.getLocalViewDevice(Tpetra::Access::ReadOnly);
     const Mesh_type& m = *mesh_;
-    Kokkos::parallel_for("MeshAudit::check_node_to_coordinates_ghost_data",
-                         nnode_use - nnode_own,
-                         KOKKOS_LAMBDA(const int n) {
-                           auto coord = m.getNodeCoordinate(n+nnode_own);
-                           for (int k = 0; k < spdim; ++k) {
-                             if (coord[k] != coord_use_view(n+nnode_own,k)) {
-                               bad_nodes[n] = 1;
-                             }
-                           }
-                         });
+    Kokkos::parallel_for(
+      "MeshAudit::check_node_to_coordinates_ghost_data",
+      nnode_use - nnode_own,
+      KOKKOS_LAMBDA(const int n) {
+        auto coord = m.getNodeCoordinate(n + nnode_own);
+        for (int k = 0; k < spdim; ++k) {
+          if (coord[k] != coord_use_view(n + nnode_own, k)) { bad_nodes[n] = 1; }
+        }
+      });
   } else {
     auto coord_use_view = coord_use.getLocalViewHost(Tpetra::Access::ReadOnly);
-    for (size_t n=0; n!=(nnode_use - nnode_own); ++n) {
-      auto coord = mesh_->getNodeCoordinate(n+nnode_own);
+    for (size_t n = 0; n != (nnode_use - nnode_own); ++n) {
+      auto coord = mesh_->getNodeCoordinate(n + nnode_own);
       for (int k = 0; k < spdim; ++k) {
-        if (coord[k] != coord_use_view(n+nnode_own,k)) {
-          bad_nodes[n] = 1;
-        }
+        if (coord[k] != coord_use_view(n + nnode_own, k)) { bad_nodes[n] = 1; }
       }
     }
   }
@@ -1392,7 +1339,7 @@ MeshAudit_Maps<Mesh_type>::checkCellToFacesGhostData() const
 //
 template <class Mesh_type>
 bool
- MeshAudit_Sets<Mesh_type>::checkNodeSetIDs() const
+MeshAudit_Sets<Mesh_type>::checkNodeSetIDs() const
 {
   return checkGetSetIDs_(Entity_kind::NODE);
 }
@@ -1521,8 +1468,8 @@ MeshAudit_Sets<Mesh_type>::checkCellSets() const
 template <class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::checkSets_(Entity_kind kind,
-        const Map_type& map_own,
-        const Map_type& map_use) const
+                                      const Map_type& map_own,
+                                      const Map_type& map_use) const
 {
   // This needs some work.  Since we lazily resolve sets on demand, there is no
   // real way to know what sets the user actually intends to use.
@@ -1560,9 +1507,9 @@ MeshAudit_Sets<Mesh_type>::checkSets_(Entity_kind kind,
 template <class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::checkGetSet_(Set_ID sid,
-        Entity_kind kind,
-        Parallel_kind ptype,
-        const Map_type& map) const
+                                        Entity_kind kind,
+                                        Parallel_kind ptype,
+                                        const Map_type& map) const
 {
   os_ << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods "
          "(Tkt #686)"
@@ -1628,9 +1575,9 @@ MeshAudit_Sets<Mesh_type>::checkGetSet_(Set_ID sid,
 template <class Mesh_type>
 bool
 MeshAudit_Sets<Mesh_type>::checkUsedSet_(Set_ID sid,
-        Entity_kind kind,
-        const Map_type& map_own,
-        const Map_type& map_use) const
+                                         Entity_kind kind,
+                                         const Map_type& map_own,
+                                         const Map_type& map_use) const
 {
   os_ << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods "
          "(Tkt #686)"
@@ -1731,14 +1678,14 @@ MeshAudit_Maps<Mesh_type>::checkFacePartition() const
 
   const Mesh_type& m = *mesh_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for("MeshAudit::checkFacePartition", Range_type(0, ncells_owned_),
-                       KOKKOS_LAMBDA(const LO c) {
-                         cEntity_ID_View cface;
-                         m.getCellFaces(c, cface);
-                         for (auto& f : cface) Kokkos::atomic_store(&all_faces(f), 0);
-                       });
+  Kokkos::parallel_for(
+    "MeshAudit::checkFacePartition", Range_type(0, ncells_owned_), KOKKOS_LAMBDA(const LO c) {
+      cEntity_ID_View cface;
+      m.getCellFaces(c, cface);
+      for (auto& f : cface) Kokkos::atomic_store(&all_faces(f), 0);
+    });
 
-  auto owned_faces = Kokkos::subview(all_faces, Kokkos::pair{0, nfaces_owned_});
+  auto owned_faces = Kokkos::subview(all_faces, Kokkos::pair{ 0, nfaces_owned_ });
   bool error = checkErrorList(owned_faces, "found orphaned owned faces", this->os_);
   return globalAny_(error);
 }
@@ -1754,14 +1701,14 @@ MeshAudit_Maps<Mesh_type>::checkNodePartition() const
 
   const Mesh_type& m = *mesh_;
   using Range_type = Kokkos::RangePolicy<LO, typename cEntity_ID_View::execution_space>;
-  Kokkos::parallel_for("MeshAudit::checkNodePartition", Range_type(0, ncells_owned_),
-                       KOKKOS_LAMBDA(const LO c) {
-                         cEntity_ID_View cnode;
-                         m.getCellNodes(c, cnode);
-                         for (auto& f : cnode) Kokkos::atomic_store(&all_nodes(f), 0);
-                       });
+  Kokkos::parallel_for(
+    "MeshAudit::checkNodePartition", Range_type(0, ncells_owned_), KOKKOS_LAMBDA(const LO c) {
+      cEntity_ID_View cnode;
+      m.getCellNodes(c, cnode);
+      for (auto& f : cnode) Kokkos::atomic_store(&all_nodes(f), 0);
+    });
 
-  auto owned_nodes = Kokkos::subview(all_nodes, Kokkos::pair{0, nnodes_owned_});
+  auto owned_nodes = Kokkos::subview(all_nodes, Kokkos::pair{ 0, nnodes_owned_ });
   bool error = checkErrorList(owned_nodes, "found orphaned owned nodes", this->os_);
   return globalAny_(error);
 }
@@ -1772,8 +1719,8 @@ template <class Mesh_type>
 bool
 MeshAudit_Base<Mesh_type>::areDistinctValues_(const cEntity_ID_View& list) const
 {
-  for (size_t i=0; i!=(list.extent(0)-1); ++i) {
-    for (size_t j=(i+1); j!=list.extent(0); ++j) {
+  for (size_t i = 0; i != (list.extent(0) - 1); ++i) {
+    for (size_t j = (i + 1); j != list.extent(0); ++j) {
       if (list(i) == list(j)) return false;
     }
   }
@@ -1789,9 +1736,7 @@ MeshAudit_Base<Mesh_type>::areDistinctValues_(const cEntity_ID_View& list) const
 template <class Mesh_type>
 template <class View1_type, class View2_type>
 int
-MeshAudit_Base<Mesh_type>::isSameFace_(
-  const View1_type& fnode1,
-  const View2_type& fnode2) const
+MeshAudit_Base<Mesh_type>::isSameFace_(const View1_type& fnode1, const View2_type& fnode2) const
 {
   int nn = fnode1.size();
   if (nn != fnode2.size()) return 0;
@@ -1830,23 +1775,23 @@ MeshAudit_Base<Mesh_type>::isSameFace_(
 
 template <class View_type>
 bool
-checkErrorList(const View_type& list,
-               const std::string& msg,
-               std::ostream& os)
+checkErrorList(const View_type& list, const std::string& msg, std::ostream& os)
 {
   using Range_type = Kokkos::RangePolicy<LO, typename View_type::execution_space>;
   int count = 0;
-  Kokkos::parallel_reduce("MeshAudit::checkErrorList()", Range_type(0, list.extent(0)),
-                          KOKKOS_LAMBDA(const Entity_ID i, int& lcount) {
-                            lcount += list(i) > 0 ? 1 : 0;
-                          }, count);
+  Kokkos::parallel_reduce(
+    "MeshAudit::checkErrorList()",
+    Range_type(0, list.extent(0)),
+    KOKKOS_LAMBDA(const Entity_ID i, int& lcount) { lcount += list(i) > 0 ? 1 : 0; },
+    count);
 
   if (count > 0) {
-    if constexpr(Kokkos::SpaceAccessibility<typename View_type::execution_space,
-                 typename Kokkos::HostSpace>::accessible) {
+    if constexpr (Kokkos::SpaceAccessibility<typename View_type::execution_space,
+                                             typename Kokkos::HostSpace>::accessible) {
       printErrorList(list, msg, count, os);
     } else {
-      Kokkos::View<typename View_type::data_type, Amanzi::DefaultHost> list_host(list.label()+"_h", list.extent(0));
+      Kokkos::View<typename View_type::data_type, Amanzi::DefaultHost> list_host(
+        list.label() + "_h", list.extent(0));
       Kokkos::deep_copy(list_host, list);
       printErrorList(list_host, msg, count, os);
     }
@@ -1857,16 +1802,13 @@ checkErrorList(const View_type& list,
 
 template <class View_type>
 void
-printErrorList(const View_type& list,
-               const std::string& msg,
-               int count,
-               std::ostream& os)
+printErrorList(const View_type& list, const std::string& msg, int count, std::ostream& os)
 {
   static_assert(Kokkos::SpaceAccessibility<typename View_type::execution_space,
                                            typename Kokkos::HostSpace>::accessible);
   os << "ERROR: " << msg << ":";
   size_t lcount = 0;
-  for (size_t i=0; i!=list.size(); ++i) {
+  for (size_t i = 0; i != list.size(); ++i) {
     if (list[i] > 0) {
       os << " " << i;
       ++lcount;

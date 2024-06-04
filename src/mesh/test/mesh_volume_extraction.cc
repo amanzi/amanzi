@@ -72,8 +72,8 @@ TEST(MESH_VOLUME_EXTRACTION_GENERATED)
       fac.create(parent_mesh, unit_hex_cells, AmanziMesh::Entity_kind::CELL);
 
     // make a MeshCache
-    auto mesh = Teuchos::rcp(
-      new MeshHost(vol_framework_mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+    auto mesh = Teuchos::rcp(new MeshHost(
+      vol_framework_mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
     mesh->setParentMesh(parent_mesh);
     cacheAll(*mesh);
 

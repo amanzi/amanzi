@@ -402,47 +402,17 @@ class Tensor {
   }
 
   // access members
-  KOKKOS_INLINE_FUNCTION double& operator()(int i, int j)
-  {
-    return data_[j * size_ + i];
-  }
-  KOKKOS_INLINE_FUNCTION double& operator()(int i, int j) const
-  {
-    return data_[j * size_ + i];
-  }
+  KOKKOS_INLINE_FUNCTION double& operator()(int i, int j) { return data_[j * size_ + i]; }
+  KOKKOS_INLINE_FUNCTION double& operator()(int i, int j) const { return data_[j * size_ + i]; }
 
-  KOKKOS_INLINE_FUNCTION int dimension() const
-  {
-    return d_;
-  }
-  KOKKOS_INLINE_FUNCTION int rank() const
-  {
-    return rank_;
-  }
-  KOKKOS_INLINE_FUNCTION int size() const
-  {
-    return size_;
-  }
-  KOKKOS_INLINE_FUNCTION int mem() const
-  {
-    return size_ * size_;
-  }
-  KOKKOS_INLINE_FUNCTION Kokkos::View<double*, MEMSPACE> data()
-  {
-    return data_;
-  }
-  KOKKOS_INLINE_FUNCTION Kokkos::View<double*, MEMSPACE> data() const
-  {
-    return data_;
-  }
-  KOKKOS_INLINE_FUNCTION double* data_ptr()
-  {
-    return &data_[0];
-  }
-  KOKKOS_INLINE_FUNCTION double* data_ptr() const
-  {
-    return &data_[0];
-  }
+  KOKKOS_INLINE_FUNCTION int dimension() const { return d_; }
+  KOKKOS_INLINE_FUNCTION int rank() const { return rank_; }
+  KOKKOS_INLINE_FUNCTION int size() const { return size_; }
+  KOKKOS_INLINE_FUNCTION int mem() const { return size_ * size_; }
+  KOKKOS_INLINE_FUNCTION Kokkos::View<double*, MEMSPACE> data() { return data_; }
+  KOKKOS_INLINE_FUNCTION Kokkos::View<double*, MEMSPACE> data() const { return data_; }
+  KOKKOS_INLINE_FUNCTION double* data_ptr() { return &data_[0]; }
+  KOKKOS_INLINE_FUNCTION double* data_ptr() const { return &data_[0]; }
 
   void assign(const Tensor<MEMSPACE>& other)
   {

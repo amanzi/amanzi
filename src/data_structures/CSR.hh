@@ -85,13 +85,16 @@ class CSR {
    */
   void prefix_sum()
   {
+    if (row_map_.view_host().size() == 0) return;
+
     int tmp1 = row_map_.view_host()(0);
     row_map_.view_host()(0) = 0;
-    for (int i = 0; i < row_map_.view_host().extent(0); ++i) {
+    for (int i = 0; i < row_map_.view_host().extent(0) - 1; ++i) {
       int tmp2 = row_map_.view_host()(i + 1);
       row_map_.view_host()(i + 1) = tmp1 + row_map_.view_host()(i);
       tmp1 = tmp2;
     }
+
     if (entries_.view_host().extent(0) < row_map_.view_host()(row_map_.view_host().extent(0) - 1))
       entries_.realloc(row_map_.view_host()(row_map_.extent(0) - 1));
     // Transfer to device
@@ -101,6 +104,9 @@ class CSR {
 
   void prefix_sum_device()
   {
+    assert(false); // this can't be right...
+    if (row_map_.view_host().size() == 0) return;
+
     Kokkos::parallel_for(
       "", row_map_.view_device().extent(0), KOKKOS_LAMBDA(const int i) {
         printf("%d - ", row_map_.d_view(i));

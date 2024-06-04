@@ -33,7 +33,6 @@ namespace Amanzi {
 template <typename Data_t, typename DataFactory_t = NullFactory>
 class EvaluatorSecondaryMonotypeAdditive
   : public EvaluatorSecondaryMonotype<Data_t, DataFactory_t> {
-
  public:
   EvaluatorSecondaryMonotypeAdditive(const Teuchos::RCP<Teuchos::ParameterList>& plist);
   EvaluatorSecondaryMonotypeAdditive(const EvaluatorSecondaryMonotypeAdditive& other) = default;
@@ -58,7 +57,8 @@ class EvaluatorSecondaryMonotypeAdditive
 
  private:
   static Utils::RegisteredFactory<Evaluator,
-                                  EvaluatorSecondaryMonotypeAdditive<Data_t, DataFactory_t>> reg_;
+                                  EvaluatorSecondaryMonotypeAdditive<Data_t, DataFactory_t>>
+    reg_;
 };
 
 
@@ -126,8 +126,8 @@ EvaluatorSecondaryMonotypeAdditive<Data_t, DataFactory_t>::EvaluatePartialDeriva
 }
 
 template <>
-const std::string EvaluatorSecondaryMonotypeAdditive<CompositeVector, CompositeVectorSpace>::eval_type =
-  "additive";
+const std::string
+  EvaluatorSecondaryMonotypeAdditive<CompositeVector, CompositeVectorSpace>::eval_type = "additive";
 
 using EvaluatorSecondaryMonotypeAdditiveCV =
   EvaluatorSecondaryMonotypeAdditive<CompositeVector, CompositeVectorSpace>;

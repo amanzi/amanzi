@@ -75,7 +75,7 @@ class Mechanics_PK : public PK_PhysicalBDF {
   virtual double get_dt() final { return dt_; }
   virtual void set_dt(double dt) final { dt_ = dt; }
 
-  virtual void CalculateDiagnostics(const Tag& tag) final{};
+  virtual void CalculateDiagnostics(const Tag& tag) final {};
 
   // -- check the admissibility of a solution
   //    override with the actual admissibility check

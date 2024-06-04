@@ -70,6 +70,8 @@ if (BUILD_TESTS)
   # Add include directory. Need to remove this required path. -- lpritch
   include_directories(${MFUNCS_SOURCE_DIR})
   include_directories(${FUNCS_SOURCE_DIR})
+  include_directories(${MESH_LOGICAL_SOURCE_DIR})
+  include_directories(${MESH_EXTRACTED_SOURCE_DIR})
   include_directories(${MESH_FACTORY_SOURCE_DIR})
 
   # Copy test subdirectory for out of source builds

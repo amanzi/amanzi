@@ -93,7 +93,7 @@ set(solvers_link_libs data_structures
 add_amanzi_library(solvers
                    SOURCE ${solvers_source_files} 
                    HEADERS ${solvers_inc_files}
-		   LINK_LIBS data_structures output whetstone atk
+		   LINK_LIBS ${solvers_link_libs}
                              ${solver_depends} ${solvers_tpl_libs})
 
 if (BUILD_TESTS)

@@ -919,7 +919,8 @@ PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                              const Teuchos::Ptr<CompositeVector>& flux)
 {
   if (bcs_applied_) {
-    Errors::Message msg("PDE_DiffusionMFD::UpdateFlux: Developer Error -- UpdateFlux() cannot be called after BCs have been applied.");
+    Errors::Message msg("PDE_DiffusionMFD::UpdateFlux: Developer Error -- UpdateFlux() cannot be "
+                        "called after BCs have been applied.");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -1045,7 +1046,7 @@ PDE_DiffusionMFD::UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector
 void
 PDE_DiffusionMFD::CreateMassMatrices_()
 {
-  WhetStone::MFD3D_Diffusion mfd(mesh_);
+  WhetStone::MFD3D_Diffusion mfd(AmanziMesh::onMemHost(mesh_));
   WhetStone::DenseMatrix<> Wff;
   bool surface_mesh = (mesh_->getManifoldDimension() != mesh_->getSpaceDimension());
 
@@ -1066,13 +1067,13 @@ PDE_DiffusionMFD::CreateMassMatrices_()
 
     // For problems with degenerate coefficients we should skip WhetStone.
     if (Kc.Trace() == 0.0) {
-      AMANZI_ASSERT(0);
+      assert(false);
       //int nfaces = mesh_->cell_get_num_faces(c);
       //Wff.reshape(nfaces, nfaces);
       //Wff.putScalar(0.0);
       //ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK;
     } else if (surface_mesh) {
-      AMANZI_ASSERT(0);
+      assert(false);
       // ok = mfd.MassMatrixInverseSurface(c, Kc, Wff);
     } else {
       int method = mfd_primary_;
@@ -1081,29 +1082,26 @@ PDE_DiffusionMFD::CreateMassMatrices_()
       // try primary and then secondary discretization methods.
       if (method == WhetStone::DIFFUSION_HEXAHEDRA_MONOTONE) {
         AMANZI_ASSERT(0);
-        // ok = mfd.MassMatrixInverseMMatrixHex(c, Kc, Wff);
-        // method = mfd_secondary_;
+        ok = mfd.MassMatrixInverseMMatrixHex(c, Kc, Wff);
+        method = mfd_secondary_;
       } else if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_MONOTONICITY) {
         assert(false);
-        //ok = mfd.MassMatrixInverseMMatrix(c, Kc, Wff);
-        //method = mfd_secondary_;
+        ok = mfd.MassMatrixInverseMMatrix(c, Kc, Wff);
+        method = mfd_secondary_;
       }
 
       if (ok != WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) {
         if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY) {
-          assert(false);
-          //ok = mfd.MassMatrixInverseOptimized(c, Kc, Wff);
+          ok = mfd.MassMatrixInverseOptimized(c, Kc, Wff);
         } else if (method == WhetStone::DIFFUSION_TPFA) {
           ok = mfd.MassMatrixInverseTPFA(c, Kc, Wff);
         } else if (method == WhetStone::DIFFUSION_SUPPORT_OPERATOR) {
-          AMANZI_ASSERT(0);
-          // ok = mfd.MassMatrixInverseSO(c, Kc, Wff);
+          ok = mfd.MassMatrixInverseSO(c, Kc, Wff);
         } else if (method == WhetStone::DIFFUSION_POLYHEDRA_SCALED) {
           if (K_symmetric_) {
             ok = mfd.MassMatrixInverse(c, Kc, Wff);
           } else {
-            AMANZI_ASSERT(0);
-            // ok = mfd.MassMatrixInverseNonSymmetric(c, Kc, Wff);
+            ok = mfd.MassMatrixInverseNonSymmetric(c, Kc, Wff);
           }
         }
       }
@@ -1471,7 +1469,7 @@ PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 double
 PDE_DiffusionMFD::ComputeTransmissibility(int f) const
 {
-  WhetStone::MFD3D_Diffusion mfd(mesh_);
+  WhetStone::MFD3D_Diffusion mfd(AmanziMesh::onMemHost(mesh_));
   auto cells = mesh_->getFaceCells(f);
   int c = cells[0];
 

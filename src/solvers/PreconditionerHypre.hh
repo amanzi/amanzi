@@ -191,7 +191,7 @@ class PreconditionerHypre : public Preconditioner {
 
 
  private:
-  void Init_(){};
+  void Init_() {};
   void InitBoomer_();
   void InitILU_();
 

@@ -74,8 +74,7 @@ class Debugger {
   void WriteCellVector(const std::string& name, const MultiVector_type& vec);
 
   // Write boundary condition data.
-  void WriteBoundaryConditions(const CompositeVector_<int>& flags,
-          const CompositeVector& values);
+  void WriteBoundaryConditions(const CompositeVector_<int>& flags, const CompositeVector& values);
 
   // Write list of vectors.
   void WriteVectors(const std::vector<std::string>& names,

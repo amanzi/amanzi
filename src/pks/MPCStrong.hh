@@ -111,16 +111,16 @@ class MPCStrong : public MPC<PK_BDF_Default, SubPK_type> {
 // -----------------------------------------------------------------------------
 template <class SubPK_type>
 MPCStrong<SubPK_type>::MPCStrong(const Comm_ptr_type& comm,
-                           Teuchos::ParameterList& pk_tree,
-                           const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-                           const Teuchos::RCP<State>& S)
+                                 Teuchos::ParameterList& pk_tree,
+                                 const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                                 const Teuchos::RCP<State>& S)
   : MPC<PK_BDF_Default, SubPK_type>(comm, pk_tree, global_list, S)
 {
   MPC<PK_BDF_Default, SubPK_type>::createSubPKs_();
 }
 
 
-template<class SubPK_type>
+template <class SubPK_type>
 void
 MPCStrong<SubPK_type>::modifyParameterList()
 {
@@ -141,10 +141,10 @@ MPCStrong<SubPK_type>::modifyParameterList()
 template <class SubPK_type>
 void
 MPCStrong<SubPK_type>::FunctionalResidual(double t_old,
-                                    double t_new,
-                                    Teuchos::RCP<TreeVector> u_old,
-                                    Teuchos::RCP<TreeVector> u_new,
-                                    Teuchos::RCP<TreeVector> g)
+                                          double t_new,
+                                          Teuchos::RCP<TreeVector> u_old,
+                                          Teuchos::RCP<TreeVector> u_new,
+                                          Teuchos::RCP<TreeVector> g)
 {
   this->moveSolutionToState(*u_new, tag_next_);
 
@@ -185,7 +185,8 @@ MPCStrong<SubPK_type>::FunctionalResidual(double t_old,
 // -----------------------------------------------------------------------------
 template <class SubPK_type>
 int
-MPCStrong<SubPK_type>::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu)
+MPCStrong<SubPK_type>::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+                                           Teuchos::RCP<TreeVector> Pu)
 {
   // loop over sub-PKs
   int ierr = 0;
@@ -218,7 +219,8 @@ MPCStrong<SubPK_type>::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teu
 // -----------------------------------------------------------------------------
 template <class SubPK_type>
 double
-MPCStrong<SubPK_type>::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du)
+MPCStrong<SubPK_type>::ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                                 Teuchos::RCP<const TreeVector> du)
 {
   double norm = 0.0;
 
@@ -320,8 +322,8 @@ MPCStrong<SubPK_type>::IsAdmissible(Teuchos::RCP<const TreeVector> u)
 template <class SubPK_type>
 bool
 MPCStrong<SubPK_type>::ModifyPredictor(double h,
-                                 Teuchos::RCP<const TreeVector> u0,
-                                 Teuchos::RCP<TreeVector> u)
+                                       Teuchos::RCP<const TreeVector> u0,
+                                       Teuchos::RCP<TreeVector> u)
 {
   // loop over sub-PKs
   bool modified = false;
@@ -346,9 +348,9 @@ MPCStrong<SubPK_type>::ModifyPredictor(double h,
 template <class SubPK_type>
 AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 MPCStrong<SubPK_type>::ModifyCorrection(double h,
-                                  Teuchos::RCP<const TreeVector> res,
-                                  Teuchos::RCP<const TreeVector> u,
-                                  Teuchos::RCP<TreeVector> du)
+                                        Teuchos::RCP<const TreeVector> res,
+                                        Teuchos::RCP<const TreeVector> u,
+                                        Teuchos::RCP<TreeVector> du)
 {
   // loop over sub-PKs
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult modified =
@@ -369,8 +371,10 @@ MPCStrong<SubPK_type>::ModifyCorrection(double h,
   return modified;
 };
 
-template<> inline const std::string MPCStrong<PK_PhysicalBDF_Default>::pk_type_ = "NOT USED";
-template<> inline const std::string MPCStrong<PK_BDF_Default>::pk_type_ = "strong mpc";
+template <>
+inline const std::string MPCStrong<PK_PhysicalBDF_Default>::pk_type_ = "NOT USED";
+template <>
+inline const std::string MPCStrong<PK_BDF_Default>::pk_type_ = "strong mpc";
 
 
 } // namespace Amanzi

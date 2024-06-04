@@ -65,7 +65,7 @@ struct DiffusionFixture {
         mesh_dev = meshfactory.create(mesh_file);
       }
     }
-    mesh = AmanziMesh::onMemSpace<MemSpace_kind::HOST>(mesh_dev);
+    mesh = AmanziMesh::onMemHost(mesh_dev);
   }
 
   template <class PDE_Diffusion_type, AmanziMesh::Entity_kind Boundary_kind>

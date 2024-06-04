@@ -320,7 +320,7 @@ demoMeshLogicalFromXML(const std::string& meshname)
   std::string xmlFileName = "test/demo_mesh.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  return fac.Create(plist.sublist(meshname));
+  return fac.create(plist.sublist(meshname));
 }
 
 

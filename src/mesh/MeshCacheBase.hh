@@ -16,7 +16,7 @@ namespace AmanziMesh {
 
 class MeshFramework;
 struct MeshAlgorithms;
-struct MeshCacheDevice; 
+struct MeshCacheDevice;
 
 
 struct MeshCacheData {
@@ -48,7 +48,7 @@ struct MeshCacheData {
   bool parent_entities_cached = false;
   bool cell_cellbelow_cached = false;
 
-  bool cell_global_indices_cached = false; 
+  bool cell_global_indices_cached = false;
 
   // geometry
   Point_DualView node_coordinates;
@@ -97,16 +97,16 @@ struct MeshCacheData {
   // Map
   Entity_GID_DualView cell_global_indices;
 
-  MeshCacheData(): node_coordinates("node_coordinates", 0),
-                   cell_centroids("cell_centroids", 0),
-                   face_centroids("face_centroids", 0), 
-                   edge_centroids("edge_centroids", 0),
-                   cell_volumes("cell_volumes", 0),
-                   face_areas("face_areas", 0),
-                   edge_lengths("edge_lengths", 0),
-                   cell_cellbelow("cell_cellbelow", 0){}
-
-
+  MeshCacheData()
+    : node_coordinates("node_coordinates", 0),
+      cell_centroids("cell_centroids", 0),
+      face_centroids("face_centroids", 0),
+      edge_centroids("edge_centroids", 0),
+      cell_volumes("cell_volumes", 0),
+      face_areas("face_areas", 0),
+      edge_lengths("edge_lengths", 0),
+      cell_cellbelow("cell_cellbelow", 0)
+  {}
 };
 
 
@@ -157,11 +157,11 @@ struct MeshCacheBase {
     algorithms_ = framework_algorithms;
   }
 
-  
+
   MeshCacheBase(const MeshCacheBase& other) = default;
 
-  ~MeshCacheBase() = default; 
-  
+  ~MeshCacheBase() = default;
+
  public:
   // sizes
   Entity_ID ncells_owned, ncells_all;
@@ -209,13 +209,13 @@ struct MeshCacheBase {
   void setGeometricModel(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) { gm_ = gm; }
 
   // space dimension describes the dimension of coordinates in space
-  
+
   KOKKOS_INLINE_FUNCTION std::size_t getSpaceDimension() const { return space_dim_; }
   KOKKOS_INLINE_FUNCTION void setSpaceDimension(unsigned int dim) { space_dim_ = dim; }
 
   // manifold dimension describes the dimensionality of the corresponding R^n
   // manifold onto which this mesh can be projected.
-  
+
   KOKKOS_INLINE_FUNCTION std::size_t getManifoldDimension() const { return manifold_dim_; }
   void setManifoldDimension(const unsigned int dim) { manifold_dim_ = dim; }
 
@@ -252,7 +252,7 @@ struct MeshCacheBase {
 // -----------------------------------------------------------------------------
 const MeshCacheDevice
 onMemDevice(const MeshCacheHost& mc_in);
-  
+
 Teuchos::RCP<const MeshCacheDevice>
 onMemDevice(const Teuchos::RCP<const MeshCacheHost>& mc_in);
 
@@ -261,12 +261,12 @@ onMemDevice(const Teuchos::RCP<MeshCacheHost>& mc_in);
 
 const MeshCacheHost
 onMemHost(const MeshCacheDevice& mc_in);
-  
+
 Teuchos::RCP<const MeshCacheHost>
 onMemHost(const Teuchos::RCP<const MeshCacheDevice>& mc_in);
 
 Teuchos::RCP<MeshCacheHost>
 onMemHost(const Teuchos::RCP<MeshCacheDevice>& mc_in);
-  
-}
-}
+
+} // namespace AmanziMesh
+} // namespace Amanzi

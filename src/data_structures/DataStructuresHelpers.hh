@@ -188,7 +188,7 @@ copyMeshCoordinatesToVector(const AmanziMesh::Mesh& mesh,
                             AmanziMesh::Entity_kind kind,
                             CompositeVector& vec);
 void
-copyVectorToMeshCoordinates(const CompositeVector& vec, AmanziMesh::Mesh& mesh);
+copyVectorToMeshCoordinates(const CompositeVector& vec, AmanziMesh::MeshHost& mesh);
 
 } // namespace Amanzi
 

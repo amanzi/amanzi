@@ -190,7 +190,9 @@ struct RaggedArray_DualView {
   using host_mirror_space = typename Kokkos::MeshDualView<T*>::host_mirror_space;
   using execution_space = typename Kokkos::MeshDualView<T*>::execution_space;
 
-  RaggedArray_DualView(): rows("RaggedArray_DualView: Rows", 0), entries("RaggedArray_DualView: Entries", 0) {}
+  RaggedArray_DualView()
+    : rows("RaggedArray_DualView: Rows", 0), entries("RaggedArray_DualView: Entries", 0)
+  {}
 
 
   RaggedArray_DualView(const std::vector<std::vector<T>>& vect)

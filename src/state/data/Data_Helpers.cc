@@ -343,7 +343,7 @@ WriteVis<Teuchos::Array<double>>(const Visualization& vis,
                                  Teuchos::ParameterList& attrs,
                                  const Teuchos::Array<double>& vec)
 {
-  auto names = OutputUtils::names(attrs, vec.size());
+  auto names = OutputUtils::getNames(attrs, vec.size());
   for (int i = 0; i != vec.size(); ++i) {
     Teuchos::ParameterList attrs_i(attrs);
     attrs_i.setName(names[i]);
@@ -357,7 +357,7 @@ WriteCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
                                         Teuchos::ParameterList& attrs,
                                         const Teuchos::Array<double>& vec)
 {
-  auto names = OutputUtils::names(attrs, vec.size());
+  auto names = OutputUtils::getNames(attrs, vec.size());
   for (int i = 0; i != vec.size(); ++i) {
     Teuchos::ParameterList attrs_i(attrs);
     attrs_i.setName(names[i]);
@@ -371,7 +371,7 @@ ReadCheckpoint<Teuchos::Array<double>>(const Checkpoint& chkp,
                                        Teuchos::ParameterList& attrs,
                                        Teuchos::Array<double>& vec)
 {
-  auto names = OutputUtils::names(attrs, vec.size());
+  auto names = OutputUtils::getNames(attrs, vec.size());
   for (int i = 0; i != vec.size(); ++i) {
     Teuchos::ParameterList attrs_i(attrs);
     attrs_i.setName(names[i]);

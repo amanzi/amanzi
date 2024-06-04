@@ -62,7 +62,6 @@ code, so usually are not supplied by the user.
 namespace Amanzi {
 
 class PK_PhysicalBDF_Default : public PK_Physical_Default<PK_BDF_Default> {
-
  public:
   PK_PhysicalBDF_Default(const Comm_ptr_type& comm,
                          Teuchos::ParameterList& pk_tree,

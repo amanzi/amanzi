@@ -81,7 +81,7 @@ struct test_cv_bf {
 
     x_space = Teuchos::rcp(new CompositeVectorSpace());
     x_space->SetMesh(mesh)->SetGhosted()->SetComponents(names, locations, num_dofs);
-    x = Teuchos::rcp(new CompositeVector(*x_space));
+    x = x_space->Create();
   }
 };
 
@@ -292,11 +292,11 @@ SUITE(COMPOSITE_VECTOR)
   {
     // this test just confirms that CVs use BOUNDARY_FACE maps correctly, a
     // long-running bug
-    int size = comm->NumProc();
-    int rank = comm->MyPID();
+    int size = comm->getSize();
+    int rank = comm->getRank();
 
-    int nbf_owned = x->ViewComponent("boundary_face", false)->MyLength();
-    int nbf_all = x->ViewComponent("boundary_face", true)->MyLength();
+    int nbf_owned = x->viewComponent<MirrorHost>("boundary_face", false).extent(0);
+    int nbf_all = x->viewComponent<MirrorHost>("boundary_face", true).extent(0);
     std::cout << "On rank " << rank << " of " << size << ", nbf_all = " << nbf_all
               << ", nbf_owned = " << nbf_owned << std::endl;
 

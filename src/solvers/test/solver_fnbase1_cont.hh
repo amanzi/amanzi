@@ -71,7 +71,7 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Vector_type>
     std::cout << "Updating lambda = " << lambda_ << std::endl;
   }
 
-  void ChangedSolution(){};
+  void ChangedSolution() {};
 
  protected:
   double atol_, rtol_;

@@ -115,9 +115,6 @@ add_amanzi_executable(unscramble_restart
 # Tests
 #
 if (BUILD_TESTS)
-
-  include_directories(${MESH_FACTORY_SOURCE_DIR})
-
   # Add UnitTest
   include_directories(${UnitTest_INCLUDE_DIRS})
 
@@ -132,7 +129,10 @@ if (BUILD_TESTS)
     include_directories(${MESH_MOAB_SOURCE_DIR})
     list(APPEND output_test_link_libs mesh_moab)
   endif()
-
+  include_directories(${MESH_LOGICAL_SOURCE_DIR})
+  include_directories(${MESH_EXTRACTED_SOURCE_DIR})
+  include_directories(${MESH_FACTORY_SOURCE_DIR})
+  
   # Copy test directory files if an out of source build
   if (NOT (${OUTPUT_SOURCE_DIR} EQUAL ${OUTPUT_BINARY_DIR}))
       file(GLOB DataFiles "${OUTPUT_SOURCE_DIR}/test/*.exo")
@@ -143,7 +143,7 @@ if (BUILD_TESTS)
 
   # Test: gmv_output
   add_amanzi_test(output_gmv output_gmv
-                  SOURCE     test/Main.cc test/output_file_gmv.cc
+                  SOURCE     test/Main.cc test/output_gmv.cc
                   LINK_LIBS  ${output_test_link_libs} ${UnitTest_LIBRARIES}
                   KIND unit)
 

@@ -36,16 +36,22 @@ REGISTER(EvaluatorIndependentConstant);
 REGISTER(EvaluatorIndependentTensorFunction);
 REGISTER(EvaluatorIndependentPatchFunction);
 REGISTER(EvaluatorSecondaryMonotypeFromFunction);
-template<> REGISTER(EvaluatorSecondaryMonotypeAdditiveCV);
-template<> REGISTER(EvaluatorSecondaryMonotypeMultiplicativeCV);
+template <>
+REGISTER(EvaluatorSecondaryMonotypeAdditiveCV);
+template <>
+REGISTER(EvaluatorSecondaryMonotypeMultiplicativeCV);
 
 const std::string EvaluatorPrimaryStaticMesh::eval_type = "static mesh";
 REGISTER(EvaluatorPrimaryStaticMesh);
 
-template <> REGISTER(EvaluatorCellVolume);
-template <> REGISTER(EvaluatorMeshElevation);
-template <> REGISTER(EvaluatorMeshSlopeMagnitude);
-template <> REGISTER(EvaluatorMeshAspect);
+template <>
+REGISTER(EvaluatorCellVolume);
+template <>
+REGISTER(EvaluatorMeshElevation);
+template <>
+REGISTER(EvaluatorMeshSlopeMagnitude);
+template <>
+REGISTER(EvaluatorMeshAspect);
 
 REGISTER(EvaluatorAggregateBCs);
 REGISTER(EvaluatorSecondaryVectorAsPatch);

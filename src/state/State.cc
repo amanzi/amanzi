@@ -363,7 +363,10 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
         if (sublist->isType<std::string>("additional model parameters")) {
           std::string add_par = sublist->get<std::string>("additional model parameters");
           sublist->remove("additional model parameters");
-          sublist->set<Teuchos::Array<std::string>>("additional model parameters", std::vector<std::string>{add_par,});
+          sublist->set<Teuchos::Array<std::string>>("additional model parameters",
+                                                    std::vector<std::string>{
+                                                      add_par,
+                                                    });
         }
 
         auto add_pars = sublist->get<Teuchos::Array<std::string>>("additional model parameters");
@@ -371,8 +374,9 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
         sublist->remove("additional model parameters");
         sublist->set<Teuchos::Array<std::string>>("additional model parameters", add_pars);
       } else {
-        sublist->set<Teuchos::Array<std::string>>("additional model parameters",
-                std::vector<std::string>{sublist->get<std::string>("model parameters")});
+        sublist->set<Teuchos::Array<std::string>>(
+          "additional model parameters",
+          std::vector<std::string>{ sublist->get<std::string>("model parameters") });
       }
       sublist->remove("model parameters");
 
@@ -382,7 +386,10 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
         if (sublist->isType<std::string>("additional model parameters")) {
           std::string add_par = sublist->get<std::string>("additional model parameters");
           sublist->remove("additional model parameters");
-          sublist->set<Teuchos::Array<std::string>>("additional model parameters", std::vector<std::string>{add_par,});
+          sublist->set<Teuchos::Array<std::string>>("additional model parameters",
+                                                    std::vector<std::string>{
+                                                      add_par,
+                                                    });
         }
 
         auto add_pars = sublist->get<Teuchos::Array<std::string>>("additional model parameters");
@@ -392,8 +399,9 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
         sublist->remove("additional model parameters");
         sublist->set<Teuchos::Array<std::string>>("additional model parameters", add_pars);
       } else {
-        sublist->set<Teuchos::Array<std::string>>("additional model parameters",
-                sublist->get<Teuchos::Array<std::string>>("model parameters"));
+        sublist->set<Teuchos::Array<std::string>>(
+          "additional model parameters",
+          sublist->get<Teuchos::Array<std::string>>("model parameters"));
       }
       sublist->remove("model parameters");
     }
@@ -403,12 +411,16 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
       if (sublist->isType<std::string>("additional model parameters")) {
         std::string add_par = sublist->get<std::string>("additional model parameters");
         sublist->remove("additional model parameters");
-        sublist->set<Teuchos::Array<std::string>>("additional model parameters", std::vector<std::string>{add_par,});
+        sublist->set<Teuchos::Array<std::string>>("additional model parameters",
+                                                  std::vector<std::string>{
+                                                    add_par,
+                                                  });
       }
 
       auto add_pars = sublist->get<Teuchos::Array<std::string>>("additional model parameters");
       for (const auto& add_par : add_pars) {
-        sublist->sublist("model parameters").setParametersNotAlreadySet(GetModelParameters(add_par));
+        sublist->sublist("model parameters")
+          .setParametersNotAlreadySet(GetModelParameters(add_par));
       }
       sublist->remove("additional model parameters");
     }
@@ -438,9 +450,8 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
         }
 
         Evaluator_Factory eval_fac;
-        if (!initial_by_region &&
-            eval_fac.HasEntry(evaluator_type+" by region")) {
-          sublist->set<std::string>("evaluator type", evaluator_type+" by region");
+        if (!initial_by_region && eval_fac.HasEntry(evaluator_type + " by region")) {
+          sublist->set<std::string>("evaluator type", evaluator_type + " by region");
         }
       }
     }
@@ -1001,8 +1012,8 @@ State::CheckIsDebugEval(const Key& key, const Tag& tag, const std::string& msg)
   if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       std::string lmsg = msg.empty() ? "required" : msg;
-      *vo_->os() << "State: Evaluator for debug field \"" << key << "@" << tag << "\" was " << lmsg << "."
-                 << std::endl;
+      *vo_->os() << "State: Evaluator for debug field \"" << key << "@" << tag << "\" was " << lmsg
+                 << "." << std::endl;
     }
     if (tag == Tags::DEFAULT) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) { *vo_->os() << " -- default tag" << std::endl; }
@@ -1022,8 +1033,8 @@ State::CheckIsDebugData(const Key& key, const Tag& tag, const std::string& msg)
   if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       std::string lmsg = msg.empty() ? "required" : msg;
-      *vo_->os() << "State: data for debug field \"" << key << "@" << tag << "\" was " << lmsg << "."
-                 << std::endl;
+      *vo_->os() << "State: data for debug field \"" << key << "@" << tag << "\" was " << lmsg
+                 << "." << std::endl;
     }
     if (tag == Tags::DEFAULT) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) { *vo_->os() << " -- default tag" << std::endl; }

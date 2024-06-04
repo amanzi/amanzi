@@ -15,10 +15,11 @@
 namespace Amanzi {
 
 PK_BDF_Default::PK_BDF_Default(const Comm_ptr_type& comm,
-        Teuchos::ParameterList& pk_tree,
-        const Teuchos::RCP<Teuchos::ParameterList>& glist,
-        const Teuchos::RCP<State>& S)
-  : PK_Default(comm, pk_tree, glist, S) {}
+                               Teuchos::ParameterList& pk_tree,
+                               const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                               const Teuchos::RCP<State>& S)
+  : PK_Default(comm, pk_tree, glist, S)
+{}
 
 
 double
@@ -191,7 +192,6 @@ PK_BDF_Default::UpdateContinuationParameter(double lambda)
   S_->Assign("continuation_parameter", Tag(name_), name_, lambda);
   MarkChangedSolution();
 }
-
 
 
 } // namespace Amanzi

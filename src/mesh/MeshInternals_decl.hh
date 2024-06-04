@@ -80,7 +80,7 @@ getCellType(const Mesh_type& mesh, const Entity_ID c)
     }
   } else {
     if (!std::is_same_v<Mesh_type, AmanziMesh::MeshCacheDevice>) {
-      assert(false && "Mesh not supported"); 
+      assert(false && "Mesh not supported");
       //Errors::Message msg;
       //msg << "Mesh of manifold_dimension = " << mesh.getManifoldDimension() << " not supported";
       //Exceptions::amanzi_throw(msg);

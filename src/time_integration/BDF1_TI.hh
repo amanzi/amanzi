@@ -351,8 +351,8 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
 
   if (ierr == 0) {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      *vo_->os() << "success: " << itr << " nonlinear itrs"
-                 << " residual=" << solver_->residual() << std::endl;
+      *vo_->os() << "success: " << itr << " nonlinear itrs" << " residual=" << solver_->residual()
+                 << std::endl;
     }
   } else {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {

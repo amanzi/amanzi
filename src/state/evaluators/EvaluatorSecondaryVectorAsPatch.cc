@@ -25,21 +25,24 @@ void
 EvaluatorSecondaryVectorAsPatch::EnsureCompatibility(State& S)
 {
   auto my_key_tag = my_keys_.front();
-  S.Require<MultiPatch<double>,MultiPatchSpace>(my_key_tag.first, my_key_tag.second, my_key_tag.first);
+  S.Require<MultiPatch<double>, MultiPatchSpace>(
+    my_key_tag.first, my_key_tag.second, my_key_tag.first);
 
   auto dep = dependencies_.front();
-  S.Require<CompositeVector,CompositeVectorSpace>(dep.first, dep.second);
+  S.Require<CompositeVector, CompositeVectorSpace>(dep.first, dep.second);
 }
 
 
 void
 EvaluatorSecondaryVectorAsPatch::Update_(State& S)
 {
-  auto& multipatch = S.GetW<MultiPatch<double>>(my_keys_.front().first, my_keys_.front().second, my_keys_.front().first);
+  auto& multipatch = S.GetW<MultiPatch<double>>(
+    my_keys_.front().first, my_keys_.front().second, my_keys_.front().first);
   AMANZI_ASSERT(multipatch.size() == 1);
   auto& patch = multipatch[0];
 
-  auto& cv = S.GetW<CompositeVector>(dependencies_.front().first, dependencies_.front().second, dependencies_.front().first);
+  auto& cv = S.GetW<CompositeVector>(
+    dependencies_.front().first, dependencies_.front().second, dependencies_.front().first);
   AMANZI_ASSERT(cv.hasComponent("cell"));
   auto cv_view = cv.viewComponent("cell", false);
   AMANZI_ASSERT(patch.data.extent(0) == cv_view.extent(0));

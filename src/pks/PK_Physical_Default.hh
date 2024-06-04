@@ -17,5 +17,3 @@
 
 #include "PK_Physical_Default_decl.hh"
 #include "PK_Physical_Default_impl.hh"
-
-

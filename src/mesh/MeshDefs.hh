@@ -20,11 +20,9 @@
 #include "MeshView.hh"
 
 #ifdef KOKKOS_ENABLE_CUDA
-#define DISABLE_CUDA_WARNING \
-#pragma  nv_exec_check_disable \
-#pragma  hd_warning_disable
+#  define DISABLE_CUDA_WARNING #pragma nv_exec_check_disable #pragma hd_warning_disable
 #else
-#define DISABLE_CUDA_WARNING
+#  define DISABLE_CUDA_WARNING
 #endif
 
 namespace Amanzi {

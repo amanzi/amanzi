@@ -28,18 +28,19 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 // Transfer operators -- copies ONLY pointers
 // -----------------------------------------------------------------------------
-template<class PK_type>
+template <class PK_type>
 Teuchos::RCP<TreeVectorSpace>
 PK_Physical_Default<PK_type>::getSolutionSpace() const
 {
-  CompositeVectorSpace& cvs = S_->template Require<CompositeVector, CompositeVectorSpace>(key_, tag_next_);
+  CompositeVectorSpace& cvs =
+    S_->template Require<CompositeVector, CompositeVectorSpace>(key_, tag_next_);
   auto soln_space = Teuchos::rcp(new TreeVectorSpace(cvs.getComm()));
   soln_space->setData(cvs.CreateSpace());
   return soln_space;
 }
 
 
-template<class PK_type>
+template <class PK_type>
 void
 PK_Physical_Default<PK_type>::moveStateToSolution(const Tag& tag, TreeVector& solution)
 {
@@ -47,7 +48,7 @@ PK_Physical_Default<PK_type>::moveStateToSolution(const Tag& tag, TreeVector& so
 }
 
 
-template<class PK_type>
+template <class PK_type>
 void
 PK_Physical_Default<PK_type>::moveSolutionToState(const TreeVector& solution, const Tag& tag)
 {
@@ -58,7 +59,7 @@ PK_Physical_Default<PK_type>::moveSolutionToState(const TreeVector& solution, co
 // -----------------------------------------------------------------------------
 // Construction -- parse the ParameterList
 // -----------------------------------------------------------------------------
-template<class PK_type>
+template <class PK_type>
 void
 PK_Physical_Default<PK_type>::parseParameterList()
 {
@@ -84,7 +85,7 @@ PK_Physical_Default<PK_type>::parseParameterList()
 // -----------------------------------------------------------------------------
 // Construction of data.
 // -----------------------------------------------------------------------------
-template<class PK_type>
+template <class PK_type>
 void
 PK_Physical_Default<PK_type>::setup()
 {
@@ -99,7 +100,7 @@ PK_Physical_Default<PK_type>::setup()
 // -----------------------------------------------------------------------------
 // Initialization of the PK data.
 // -----------------------------------------------------------------------------
-template<class PK_type>
+template <class PK_type>
 void
 PK_Physical_Default<PK_type>::initialize()
 {
@@ -136,7 +137,7 @@ PK_Physical_Default<PK_type>::initialize()
 // -----------------------------------------------------------------------------
 // Called after all PKs have finished advancing a step successfully
 // -----------------------------------------------------------------------------
-template<class PK_type>
+template <class PK_type>
 void
 PK_Physical_Default<PK_type>::commitStep(double t_old, double t_new, const Tag& tag_next)
 {
@@ -156,7 +157,7 @@ PK_Physical_Default<PK_type>::commitStep(double t_old, double t_new, const Tag& 
 // -----------------------------------------------------------------------------
 // Called if any PKs have failed to advance a step successfully
 // -----------------------------------------------------------------------------
-template<class PK_type>
+template <class PK_type>
 void
 PK_Physical_Default<PK_type>::failStep(double t_old, double t_new, const Tag& tag_next)
 {
@@ -171,7 +172,7 @@ PK_Physical_Default<PK_type>::failStep(double t_old, double t_new, const Tag& ta
 // -----------------------------------------------------------------------------
 // Ensures the step size is smaller than max_valid_change
 // -----------------------------------------------------------------------------
-template<class PK_type>
+template <class PK_type>
 bool
 PK_Physical_Default<PK_type>::isValidStep()
 {
@@ -198,7 +199,7 @@ PK_Physical_Default<PK_type>::isValidStep()
 // -----------------------------------------------------------------------------
 //  Marks as changed
 // -----------------------------------------------------------------------------
-template<class PK_type>
+template <class PK_type>
 void
 PK_Physical_Default<PK_type>::markChangedSolutionPK(const Tag& tag)
 {

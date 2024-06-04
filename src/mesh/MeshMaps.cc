@@ -101,8 +101,8 @@ MeshMaps::initialize(const MeshFramework& mesh, bool renumber)
   MeshFramework::Entity_GID_View boundary_face_GIDs_h("boundary_face_GIDs", boundary_faces.size());
 
   // GID of the cell internal to the bf
-  MeshFramework::Entity_GID_View boundary_face_internal_cell_GIDs_h("boundary_face_internal_cell_GIDs",
-          boundary_faces.size());
+  MeshFramework::Entity_GID_View boundary_face_internal_cell_GIDs_h(
+    "boundary_face_internal_cell_GIDs", boundary_faces.size());
   const auto& fmap_all = getMap(Entity_kind::FACE, true);
   const auto& cmap_all = getMap(Entity_kind::CELL, true);
   for (std::size_t i = 0; i != nbf_all; ++i) {
@@ -113,9 +113,11 @@ MeshMaps::initialize(const MeshFramework& mesh, bool renumber)
   }
 
   // -- copy to device
-  Kokkos::View<GO*, Amanzi::DefaultMemorySpace> boundary_face_GIDs("boundary_face_GIDs", boundary_faces.size());
+  Kokkos::View<GO*, Amanzi::DefaultMemorySpace> boundary_face_GIDs("boundary_face_GIDs",
+                                                                   boundary_faces.size());
   Kokkos::deep_copy(boundary_face_GIDs, boundary_face_GIDs_h);
-  Kokkos::View<GO*, Amanzi::DefaultMemorySpace> boundary_face_internal_cell_GIDs("boundary_face_internal_cell_GIDs", boundary_faces.size());
+  Kokkos::View<GO*, Amanzi::DefaultMemorySpace> boundary_face_internal_cell_GIDs(
+    "boundary_face_internal_cell_GIDs", boundary_faces.size());
   Kokkos::deep_copy(boundary_face_internal_cell_GIDs, boundary_face_internal_cell_GIDs_h);
 
   // -- construct owned maps
@@ -202,7 +204,8 @@ MeshMaps::initialize(const MeshFramework& mesh, bool renumber)
     boundary_nodes_ = asDualView(boundary_nodes);
 
     // copy GIDs to device
-    Kokkos::View<GO*, Amanzi::DefaultMemorySpace> boundary_node_GIDs("boundary_node_GIDs", boundary_node_GIDs_h.extent(0));
+    Kokkos::View<GO*, Amanzi::DefaultMemorySpace> boundary_node_GIDs(
+      "boundary_node_GIDs", boundary_node_GIDs_h.extent(0));
     Kokkos::deep_copy(boundary_node_GIDs, boundary_node_GIDs_h);
 
     // -- construct map, importer
@@ -250,16 +253,16 @@ MeshMaps::getNBoundaryFaces(Parallel_kind ptype) const
   if (Parallel_kind::OWNED == ptype)
     return owned_.at(Entity_kind::BOUNDARY_FACE)->getLocalNumElements();
   else
-    return all_.at(Entity_kind::BOUNDARY_FACE)->// getLocalNumElements();
-// }
+    return all_.at(Entity_kind::BOUNDARY_FACE)->getLocalNumElements();
+}
 
-// std::size_t
-// MeshMaps::getNBoundaryNodes(Parallel_kind ptype) const
-// {
-//   if (Parallel_kind::OWNED == ptype)
-//     return owned_.at(Entity_kind::BOUNDARY_NODE)->getLocalNumElements();
-//   else
-//     return all_.at(Entity_kind::BOUNDARY_NODE)->getLocalNumElements();
+std::size_t
+MeshMaps::getNBoundaryNodes(Parallel_kind ptype) const
+{
+  if (Parallel_kind::OWNED == ptype)
+    return owned_.at(Entity_kind::BOUNDARY_NODE)->getLocalNumElements();
+  else
+    return all_.at(Entity_kind::BOUNDARY_NODE)->getLocalNumElements();
 }
 
 

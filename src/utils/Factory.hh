@@ -106,12 +106,13 @@ class Factory {
     return iter->second(plist);
   }
 
-  bool HasEntry(const std::string& s) {
+  bool HasEntry(const std::string& s)
+  {
     typename map_type::iterator iter = GetMap()->find(s);
     return (iter == GetMap()->end()) ? false : true;
   }
 
-protected:
+ protected:
   static map_type* GetMap()
   {
     if (!map_) { map_ = new map_type; }

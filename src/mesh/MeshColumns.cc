@@ -28,8 +28,7 @@ MeshColumns::initialize(const MeshHost& mesh)
 
   // loop over all boundary faces and look for those whose normal z component
   // is not zero and whose opposing face is below them.
-  MeshHost::Entity_ID_View surface_faces("surface_faces",
-                                                               mesh.getBoundaryFaces().size());
+  MeshHost::Entity_ID_View surface_faces("surface_faces", mesh.getBoundaryFaces().size());
   int sf = 0;
   for (const Entity_ID f : mesh.getBoundaryFaces()) {
     auto f_normal = mesh.getFaceNormal(f);
@@ -45,8 +44,7 @@ MeshColumns::initialize(const MeshHost& mesh)
 // Constructor that infers columnar structure from a mesh set.
 //
 void
-MeshColumns::initialize(const MeshHost& mesh,
-                        const std::vector<std::string>& regions)
+MeshColumns::initialize(const MeshHost& mesh, const std::vector<std::string>& regions)
 {
   AMANZI_ASSERT(mesh.getSpaceDimension() == 3);
   AMANZI_ASSERT(mesh.getManifoldDimension() == 3);
@@ -72,8 +70,7 @@ MeshColumns::initialize(const MeshHost& mesh,
 
 
 void
-MeshColumns::initialize(const MeshHost& mesh,
-                        const MeshHost::Entity_ID_View& surface_faces)
+MeshColumns::initialize(const MeshHost& mesh, const MeshHost::Entity_ID_View& surface_faces)
 {
   // figure out the correct size
   // Note, this is done to make life easier for Kokkos

@@ -28,7 +28,7 @@ TEST(GMV)
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
   meshfactory.set_preference(pref);
 
-  auto mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1);
+  auto mesh = meshfactory.create<MemSpace_kind::HOST>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1);
 
   unsigned int num_nodes = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
                                                 Amanzi::AmanziMesh::Parallel_kind::OWNED);

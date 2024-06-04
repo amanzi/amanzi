@@ -177,7 +177,7 @@ resolveMeshSet_(const AmanziGeometry::Region& region,
     result = resolveMeshSetLabeledSet(*region_ls, kind, ptype, mesh);
     // labeled sets may not be sorted, though all other types are.  Sort labeled sets.
     lresult.fromConst(result);
-    Kokkos::sort(lresult); 
+    Kokkos::sort(lresult);
     result = lresult;
 
   } else if (AmanziGeometry::RegionType::ALL == region.get_type()) {
@@ -430,13 +430,13 @@ resolveGeometricMeshSetFromParent(const AmanziGeometry::Region& region,
     } else if (kind == Entity_kind::FACE) {
       // faces are edges, which are typically not formal entities -- how do we deal with this?
       Errors::Message msg;
-      msg << "Mesh: cannot resolve set entities on parent mesh "
-          << "for entities of kind \"" << to_string(kind) << "\"";
+      msg << "Mesh: cannot resolve set entities on parent mesh " << "for entities of kind \""
+          << to_string(kind) << "\"";
       Exceptions::amanzi_throw(msg);
     } else {
       Errors::Message msg;
-      msg << "Mesh: cannot resolve set entities on parent mesh "
-          << "for entities of kind \"" << to_string(kind) << "\"";
+      msg << "Mesh: cannot resolve set entities on parent mesh " << "for entities of kind \""
+          << to_string(kind) << "\"";
       Exceptions::amanzi_throw(msg);
     }
 

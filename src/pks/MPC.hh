@@ -119,7 +119,7 @@ class MPC : public BasePK_type {
 
 template <class BasePK_type, class SubPK_type>
 void
-MPC<BasePK_type,SubPK_type>::modifyParameterList()
+MPC<BasePK_type, SubPK_type>::modifyParameterList()
 {
   for (auto& pk : sub_pks_) pk->modifyParameterList();
   BasePK_type::modifyParameterList();
@@ -127,7 +127,7 @@ MPC<BasePK_type,SubPK_type>::modifyParameterList()
 
 template <class BasePK_type, class SubPK_type>
 void
-MPC<BasePK_type,SubPK_type>::parseParameterList()
+MPC<BasePK_type, SubPK_type>::parseParameterList()
 {
   for (auto& pk : sub_pks_) pk->parseParameterList();
   BasePK_type::parseParameterList();
@@ -139,7 +139,7 @@ MPC<BasePK_type,SubPK_type>::parseParameterList()
 // -----------------------------------------------------------------------------
 template <class BasePK_type, class SubPK_type>
 void
-MPC<BasePK_type,SubPK_type>::setup()
+MPC<BasePK_type, SubPK_type>::setup()
 {
   for (auto& pk : sub_pks_) pk->setup();
   BasePK_type::setup();
@@ -151,7 +151,7 @@ MPC<BasePK_type,SubPK_type>::setup()
 // -----------------------------------------------------------------------------
 template <class BasePK_type, class SubPK_type>
 void
-MPC<BasePK_type,SubPK_type>::initialize()
+MPC<BasePK_type, SubPK_type>::initialize()
 {
   for (auto& pk : sub_pks_) pk->initialize();
   BasePK_type::initialize();
@@ -163,7 +163,7 @@ MPC<BasePK_type,SubPK_type>::initialize()
 // -----------------------------------------------------------------------------
 template <class BasePK_type, class SubPK_type>
 void
-MPC<BasePK_type,SubPK_type>::setTags(const Tag& current, const Tag& next)
+MPC<BasePK_type, SubPK_type>::setTags(const Tag& current, const Tag& next)
 {
   for (auto& pk : sub_pks_) pk->setTags(current, next);
   BasePK_type::setTags(current, next);
@@ -172,7 +172,7 @@ MPC<BasePK_type,SubPK_type>::setTags(const Tag& current, const Tag& next)
 
 template <class BasePK_type, class SubPK_type>
 Teuchos::RCP<TreeVectorSpace>
-MPC<BasePK_type,SubPK_type>::getSolutionSpace() const
+MPC<BasePK_type, SubPK_type>::getSolutionSpace() const
 {
   auto tvs = Teuchos::rcp(new TreeVectorSpace(comm_));
   for (const auto& sub_pk : sub_pks_) { tvs->PushBack(sub_pk->getSolutionSpace()); }
@@ -185,7 +185,7 @@ MPC<BasePK_type,SubPK_type>::getSolutionSpace() const
 // -----------------------------------------------------------------------------
 template <class BasePK_type, class SubPK_type>
 void
-MPC<BasePK_type,SubPK_type>::moveStateToSolution(const Tag& tag, TreeVector& soln)
+MPC<BasePK_type, SubPK_type>::moveStateToSolution(const Tag& tag, TreeVector& soln)
 {
   for (std::size_t i = 0; i != sub_pks_.size(); ++i) {
     Teuchos::RCP<TreeVector> pk_soln = soln.getSubVector(i);
@@ -203,7 +203,7 @@ MPC<BasePK_type,SubPK_type>::moveStateToSolution(const Tag& tag, TreeVector& sol
 // -----------------------------------------------------------------------------
 template <class BasePK_type, class SubPK_type>
 void
-MPC<BasePK_type,SubPK_type>::moveSolutionToState(const TreeVector& soln, const Tag& tag)
+MPC<BasePK_type, SubPK_type>::moveSolutionToState(const TreeVector& soln, const Tag& tag)
 {
   for (std::size_t i = 0; i != sub_pks_.size(); ++i) {
     auto pk_soln = soln.getSubVector(i);
@@ -221,7 +221,7 @@ MPC<BasePK_type,SubPK_type>::moveSolutionToState(const TreeVector& soln, const T
 // -----------------------------------------------------------------------------
 template <class BasePK_type, class SubPK_type>
 void
-MPC<BasePK_type,SubPK_type>::commitStep(double t_old, double t_new, const Tag& tag)
+MPC<BasePK_type, SubPK_type>::commitStep(double t_old, double t_new, const Tag& tag)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "commiting step @ " << tag << std::endl;
@@ -235,7 +235,7 @@ MPC<BasePK_type,SubPK_type>::commitStep(double t_old, double t_new, const Tag& t
 // -----------------------------------------------------------------------------
 template <class BasePK_type, class SubPK_type>
 void
-MPC<BasePK_type,SubPK_type>::failStep(double t_old, double t_new, const Tag& tag)
+MPC<BasePK_type, SubPK_type>::failStep(double t_old, double t_new, const Tag& tag)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "failing step @ " << tag << std::endl;
@@ -249,7 +249,7 @@ MPC<BasePK_type,SubPK_type>::failStep(double t_old, double t_new, const Tag& tag
 // -----------------------------------------------------------------------------
 template <class BasePK_type, class SubPK_type>
 void
-MPC<BasePK_type,SubPK_type>::calculateDiagnostics(const Tag& tag)
+MPC<BasePK_type, SubPK_type>::calculateDiagnostics(const Tag& tag)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -263,7 +263,7 @@ MPC<BasePK_type,SubPK_type>::calculateDiagnostics(const Tag& tag)
 // -----------------------------------------------------------------------------
 template <class BasePK_type, class SubPK_type>
 bool
-MPC<BasePK_type,SubPK_type>::isValidStep()
+MPC<BasePK_type, SubPK_type>::isValidStep()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << "Validating time step." << std::endl;
@@ -285,7 +285,7 @@ MPC<BasePK_type,SubPK_type>::isValidStep()
 // -----------------------------------------------------------------------------
 template <class BasePK_type, class SubPK_type>
 void
-MPC<BasePK_type,SubPK_type>::markChangedSolutionPK(const Tag& tag)
+MPC<BasePK_type, SubPK_type>::markChangedSolutionPK(const Tag& tag)
 {
   for (auto& pk : sub_pks_) pk->markChangedSolutionPK(tag);
 };
@@ -293,7 +293,7 @@ MPC<BasePK_type,SubPK_type>::markChangedSolutionPK(const Tag& tag)
 
 template <class BasePK_type, class SubPK_type>
 Teuchos::RCP<SubPK_type>
-MPC<BasePK_type,SubPK_type>::getSubPK(int i)
+MPC<BasePK_type, SubPK_type>::getSubPK(int i)
 {
   if (i >= sub_pks_.size()) {
     return Teuchos::null;
@@ -306,7 +306,7 @@ MPC<BasePK_type,SubPK_type>::getSubPK(int i)
 // protected constructor of subpks
 template <class BasePK_type, class SubPK_type>
 void
-MPC<BasePK_type,SubPK_type>::createSubPKs_(Comm_ptr_type comm)
+MPC<BasePK_type, SubPK_type>::createSubPKs_(Comm_ptr_type comm)
 {
   PKFactory pk_factory;
   auto pk_order = plist_->template get<Teuchos::Array<std::string>>("PKs order");

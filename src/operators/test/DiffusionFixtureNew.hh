@@ -60,8 +60,8 @@ struct DiffusionFixture {
 
   // -- boundary conditions
   void SetBCsDirichlet();
-  void SetBCsDirichletNeumann(){};
-  void SetBCsDirichletNeumannRobin(){};
+  void SetBCsDirichletNeumann() {};
+  void SetBCsDirichletNeumannRobin() {};
 
   // main loop:
   //   tolerance of a Krylov solver
@@ -113,7 +113,7 @@ DiffusionFixture::Init(int d, int nx, const std::string& mesh_file)
     mesh = meshfactory.create(mesh_file);
   }
   nvtxRangePop();
-  mesh_host = AmanziMesh::onMemSpace<MemSpace_kind::HOST>(mesh);
+  mesh_host = AmanziMesh::onMemHost(mesh);
 }
 
 

@@ -94,7 +94,8 @@ class nonlinearODE : public Amanzi::BDFFnBase<Vector_type> {
   }
 
   void
-  compute_udot(double t, Teuchos::RCP<const Vector_type> u, Teuchos::RCP<const Vector_type> udot){};
+  compute_udot(double t, Teuchos::RCP<const Vector_type> u, Teuchos::RCP<const Vector_type> udot) {
+  };
 
   bool IsAdmissible(Teuchos::RCP<const Vector_type> up) { return true; }
   bool ModifyPredictor(double h, Teuchos::RCP<const Vector_type> u0, Teuchos::RCP<Vector_type> u)

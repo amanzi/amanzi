@@ -36,7 +36,7 @@ namespace WhetStone {
 
 class BilinearForm {
  public:
-  BilinearForm(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  BilinearForm(const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh)
     : mesh_(mesh), d_(mesh->getSpaceDimension()), order_(1){};
   virtual ~BilinearForm(){};
 
@@ -189,7 +189,7 @@ class BilinearForm {
   void set_order(int order) { order_ = order; }
 
  protected:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::MeshHost> mesh_;
   int d_, order_;
 };
 

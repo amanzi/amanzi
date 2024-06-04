@@ -102,12 +102,14 @@ add_amanzi_library(data_structures
 if (BUILD_TESTS)
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
-
+    
     # Add Data_structures include directory.
     include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 
     include_directories(${MESH_SOURCE_DIR})
     include_directories(${MESH_SIMPLE_SOURCE_DIR})
+    include_directories(${MESH_LOGICAL_SOURCE_DIR})
+    include_directories(${MESH_EXTRACTED_SOURCE_DIR})
     include_directories(${MESH_FACTORY_SOURCE_DIR})
 
     # Copy test subdirectory for out of source builds
@@ -134,7 +136,7 @@ if (BUILD_TESTS)
                     LINK_LIBS ${data_structures_test_link_libs} ${UnitTest_LIBRARIES})
     
     # Tests for distributed vectors
-    add_amanzi_test(data_structures_vectors data_structures_vectors
+    add_amanzi_test(data_structures_vectors_np2 data_structures_vectors
                     KIND unit
                     NPROCS 2
         	    SOURCE test/Main.cc

@@ -42,8 +42,7 @@ struct MeshColumns {
   //
   // Note these MUST be constructed on HOST caches.
   //
-  void
-  initialize(const MeshCacheHost& mesh, const std::vector<std::string>& regions);
+  void initialize(const MeshCacheHost& mesh, const std::vector<std::string>& regions);
 
   //
   // Constructor that sets top faces directly

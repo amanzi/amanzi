@@ -47,8 +47,8 @@ class SolverNKA_LS_ATS : public Solver<Vector, VectorSpace> {
     Init(fn, map);
   }
 
-  void Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
-            const Teuchos::RCP<const VectorSpace>& map);
+  void
+  Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const Teuchos::RCP<const VectorSpace>& map);
 
   virtual int Solve(const Teuchos::RCP<Vector>& u)
   {
@@ -333,10 +333,8 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
           residual_ = error;
           l2_error = res->norm2();
           if (vo_->os_OK(Teuchos::VERB_LOW)) {
-            *vo_->os() << num_itrs_ << ": NKA "
-                       << ": error(res) = " << error << std::endl
-                       << num_itrs_ << ": NKA "
-                       << ": L2 error(res) = " << l2_error << std::endl;
+            *vo_->os() << num_itrs_ << ": NKA " << ": error(res) = " << error << std::endl
+                       << num_itrs_ << ": NKA " << ": L2 error(res) = " << l2_error << std::endl;
           }
 
           // Check if we have improved
@@ -386,10 +384,9 @@ SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector>& u
                 residual_ = error;
                 l2_error = res->norm2();
                 if (vo_->os_OK(Teuchos::VERB_LOW)) {
-                  *vo_->os() << num_itrs_ << ": PIC "
-                             << ": error(res) = " << error << std::endl
-                             << num_itrs_ << ": PIC "
-                             << ": L2 error(res) = " << l2_error << std::endl;
+                  *vo_->os() << num_itrs_ << ": PIC " << ": error(res) = " << error << std::endl
+                             << num_itrs_ << ": PIC " << ": L2 error(res) = " << l2_error
+                             << std::endl;
                 }
               }
               good_step = true;

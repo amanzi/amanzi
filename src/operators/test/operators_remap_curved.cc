@@ -348,9 +348,9 @@ RemapTestsCurved(std::string file_name,
     std::string limiter = limiter_list.get<std::string>("limiter");
     std::string stencil = limiter_list.get<std::string>("limiter stencil");
 
-    std::cout << "\nTest: " << dim << "D remap curved:"
-              << " mesh=" << ((ny == 0) ? file_name : "box mesh") << " deform=" << deform
-              << std::endl;
+    std::cout << "\nTest: " << dim
+              << "D remap curved:" << " mesh=" << ((ny == 0) ? file_name : "box mesh")
+              << " deform=" << deform << std::endl;
 
     std::cout << "      discretization: order=" << order
               << ", map=" << map_list.get<std::string>("map name")

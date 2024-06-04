@@ -65,7 +65,16 @@ set(time_integration_inc_files TimeIntegrationDefs.hh
                                Explicit_TI_RK.hh
                                )
 
-set(time_integration_link_libs solvers state data_structures output mesh geometry error_handling whetstone atk )
+set(time_integration_link_libs
+  solvers
+  state
+  data_structures
+  output
+  mesh
+  geometry
+  error_handling
+  whetstone
+  atk )
 
 add_amanzi_library(time_integration
                            SOURCE ${time_integration_source_files}

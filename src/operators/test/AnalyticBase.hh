@@ -42,12 +42,12 @@
 #include "AmanziVector.hh"
 #include "CompositeVector.hh"
 #include "MFD3D_Diffusion.hh"
-#include "MFD3D_Lagrange.hh"
+//#include "MFD3D_Lagrange.hh"
 #include "Mesh.hh"
 //#include "NumericalIntegration.hh"
-#include "Quadrature1D.hh"
-#include "Quadrature2D.hh"
-#include "Quadrature3D.hh"
+// #include "Quadrature1D.hh"
+// #include "Quadrature2D.hh"
+// #include "Quadrature3D.hh"
 
 
 #ifndef DEBUG
@@ -230,82 +230,82 @@ ComputeFaceError(const AnalyticBase& ana,
 
 
 /* ******************************************************************
-* Error for face-based fields
+* Error for node-based fields
 ****************************************************************** */
-inline void
-ComputeNodeError(const AnalyticBase& ana,
-                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_dev,
-                 const CompositeVector& p_vec,
-                 double t,
-                 double& pnorm,
-                 double& l2_err,
-                 double& inf_err,
-                 double& hnorm,
-                 double& h1_err)
-{
-  pnorm = 0.0;
-  l2_err = 0.0;
-  inf_err = 0.0;
-  hnorm = 0.0;
-  h1_err = 0.0;
+// inline void
+// ComputeNodeError(const AnalyticBase& ana,
+//                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_dev,
+//                  const CompositeVector& p_vec,
+//                  double t,
+//                  double& pnorm,
+//                  double& l2_err,
+//                  double& inf_err,
+//                  double& hnorm,
+//                  double& h1_err)
+// {
+//   pnorm = 0.0;
+//   l2_err = 0.0;
+//   inf_err = 0.0;
+//   hnorm = 0.0;
+//   h1_err = 0.0;
 
-  AmanziGeometry::Point grad(ana.dimension());
+//   AmanziGeometry::Point grad(ana.dimension());
 
-  Teuchos::ParameterList plist;
-  plist.set<int>("method order", 1);
-  WhetStone::MFD3D_Lagrange mfd(plist, mesh_dev);
-  auto mesh = AmanziMesh::onMemSpace<MemSpace_kind::HOST>(mesh_dev);
+//   Teuchos::ParameterList plist;
+//   plist.set<int>("method order", 1);
+//   WhetStone::MFD3D_Lagrange mfd(plist, mesh_dev);
+//   auto mesh = AmanziMesh::onMemHost(mesh_dev);
 
-  WhetStone::Polynomial<> poly(ana.dimension(), 1);
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+//   WhetStone::Polynomial<> poly(ana.dimension(), 1);
+//   int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-  auto p = p_vec.viewComponent<MirrorHost>("node", false);
-  for (int c = 0; c < ncells; c++) {
-    double volume = mesh->getCellVolume(c);
+//   auto p = p_vec.viewComponent<MirrorHost>("node", false);
+//   for (int c = 0; c < ncells; c++) {
+//     double volume = mesh->getCellVolume(c);
 
-    auto nodes = mesh->getCellNodes(c);
-    int nnodes = nodes.size();
-    std::vector<WhetStone::Polynomial<>> cell_solution(nnodes);
-    std::vector<WhetStone::Polynomial<>> vf_solutions(nnodes);
+//     auto nodes = mesh->getCellNodes(c);
+//     int nnodes = nodes.size();
+//     std::vector<WhetStone::Polynomial<>> cell_solution(nnodes);
+//     std::vector<WhetStone::Polynomial<>> vf_solutions(nnodes);
 
-    for (int k = 0; k < nnodes; k++) {
-      int v = nodes[k];
-      cell_solution[k].reshape(ana.dimension(), 0);
-      cell_solution[k](0) = p(v, 0);
+//     for (int k = 0; k < nnodes; k++) {
+//       int v = nodes[k];
+//       cell_solution[k].reshape(ana.dimension(), 0);
+//       cell_solution[k](0) = p(v, 0);
 
-      auto xv = mesh->getNodeCoordinate(v);
-      double tmp = ana.pressure_exact(xv, t);
+//       auto xv = mesh->getNodeCoordinate(v);
+//       double tmp = ana.pressure_exact(xv, t);
 
-      if (std::abs(tmp - p(v, 0)) > .01) {
-        auto xv2 = mesh->getNodeCoordinate(v);
-        // std::cout << v << " at " << xv << " error: " << tmp << " " << p(v,0) << std::endl;
-      }
-      l2_err += std::pow(tmp - p(v, 0), 2.0) * volume / nnodes;
-      inf_err = std::max(inf_err, fabs(tmp - p(v, 0)));
-      pnorm += std::pow(tmp, 2.0) * volume / nnodes;
-    }
+//       if (std::abs(tmp - p(v, 0)) > .01) {
+//         auto xv2 = mesh->getNodeCoordinate(v);
+//         // std::cout << v << " at " << xv << " error: " << tmp << " " << p(v,0) << std::endl;
+//       }
+//       l2_err += std::pow(tmp - p(v, 0), 2.0) * volume / nnodes;
+//       inf_err = std::max(inf_err, fabs(tmp - p(v, 0)));
+//       pnorm += std::pow(tmp, 2.0) * volume / nnodes;
+//     }
 
-    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
-    const AmanziGeometry::Point& grad_exact = ana.gradient_exact(xc, t);
-    mfd.L2Cell(c, cell_solution, vf_solutions, NULL, poly);
-    for (int k = 0; k < ana.dimension(); ++k) grad[k] = poly(k + 1);
+//     const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
+//     const AmanziGeometry::Point& grad_exact = ana.gradient_exact(xc, t);
+//     mfd.L2Cell(c, cell_solution, vf_solutions, NULL, poly);
+//     for (int k = 0; k < ana.dimension(); ++k) grad[k] = poly(k + 1);
 
-    h1_err += L22(grad - grad_exact) * volume;
-    hnorm += L22(grad_exact) * volume;
-  }
-#ifdef HAVE_MPI
-  GlobalOp(*mesh->getComm(), "sum", &pnorm, 1);
-  GlobalOp(*mesh->getComm(), "sum", &l2_err, 1);
-  GlobalOp(*mesh->getComm(), "max", &inf_err, 1);
-  GlobalOp(*mesh->getComm(), "sum", &hnorm, 1);
-  GlobalOp(*mesh->getComm(), "sum", &h1_err, 1);
-#endif
-  pnorm = sqrt(pnorm);
-  l2_err = sqrt(l2_err);
+//     h1_err += L22(grad - grad_exact) * volume;
+//     hnorm += L22(grad_exact) * volume;
+//   }
+// #ifdef HAVE_MPI
+//   GlobalOp(*mesh->getComm(), "sum", &pnorm, 1);
+//   GlobalOp(*mesh->getComm(), "sum", &l2_err, 1);
+//   GlobalOp(*mesh->getComm(), "max", &inf_err, 1);
+//   GlobalOp(*mesh->getComm(), "sum", &hnorm, 1);
+//   GlobalOp(*mesh->getComm(), "sum", &h1_err, 1);
+// #endif
+//   pnorm = sqrt(pnorm);
+//   l2_err = sqrt(l2_err);
 
-  hnorm = sqrt(hnorm);
-  h1_err = sqrt(h1_err);
-}
+//   hnorm = sqrt(hnorm);
+//   h1_err = sqrt(h1_err);
+// }
 
 
 /* ******************************************************************
@@ -365,62 +365,62 @@ ComputeEdgeError(const AnalyticBase& ana,
 /* ******************************************************************
 * Error in edge-based fields
 ****************************************************************** */
-inline void
-ComputeEdgeMomentsError(const AnalyticBase& ana,
-                        const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh,
-                        const CompositeVector& p_vec,
-                        double t,
-                        int ngauss,
-                        double& pnorm,
-                        double& l2_err,
-                        double& inf_err)
-{
-  pnorm = 0.0;
-  l2_err = 0.0;
-  inf_err = 0.0;
+// inline void
+// ComputeEdgeMomentsError(const AnalyticBase& ana,
+//                         const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh,
+//                         const CompositeVector& p_vec,
+//                         double t,
+//                         int ngauss,
+//                         double& pnorm,
+//                         double& l2_err,
+//                         double& inf_err)
+// {
+//   pnorm = 0.0;
+//   l2_err = 0.0;
+//   inf_err = 0.0;
 
-  AmanziMesh::Entity_ID n0, n1;
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+//   AmanziMesh::Entity_ID n0, n1;
+//   int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-  auto p = p_vec.viewComponent<MirrorHost>(
-    "edge_moments", false); // likely this will fail, not sure what it sould be.  fix when it fails.
-  for (int c = 0; c < ncells; c++) {
-    double volume = mesh->getCellVolume(c);
+//   auto p = p_vec.viewComponent<MirrorHost>(
+//     "edge_moments", false); // likely this will fail, not sure what it sould be.  fix when it fails.
+//   for (int c = 0; c < ncells; c++) {
+//     double volume = mesh->getCellVolume(c);
 
-    auto edges = mesh->getCellEdges(c);
-    int nedges = edges.size();
+//     auto edges = mesh->getCellEdges(c);
+//     int nedges = edges.size();
 
-    for (int k = 0; k < nedges; k++) {
-      int e = edges[k];
+//     for (int k = 0; k < nedges; k++) {
+//       int e = edges[k];
 
-      auto nodes = mesh->getEdgeNodes(e);
-      auto x0 = mesh->getNodeCoordinate(nodes(0));
-      auto x1 = mesh->getNodeCoordinate(nodes(1));
+//       auto nodes = mesh->getEdgeNodes(e);
+//       auto x0 = mesh->getNodeCoordinate(nodes(0));
+//       auto x1 = mesh->getNodeCoordinate(nodes(1));
 
-      double s0(0.0), s1(0.0);
-      for (int n = 0; n <= ngauss; ++n) {
-        double gp = WhetStone::q1d_points[ngauss - 1][n];
-        double gw = WhetStone::q1d_weights[ngauss - 1][n];
+//       double s0(0.0), s1(0.0);
+//       for (int n = 0; n <= ngauss; ++n) {
+//         double gp = WhetStone::q1d_points[ngauss - 1][n];
+//         double gw = WhetStone::q1d_weights[ngauss - 1][n];
 
-        auto xv = x0 * gp + x1 * (1.0 - gp);
-        s0 += gw * ana.pressure_exact(xv, t);
-        s1 += gw * ana.pressure_exact(xv, t) * (0.5 - gp);
-      }
+//         auto xv = x0 * gp + x1 * (1.0 - gp);
+//         s0 += gw * ana.pressure_exact(xv, t);
+//         s1 += gw * ana.pressure_exact(xv, t) * (0.5 - gp);
+//       }
 
-      l2_err += std::pow(s0 - p(e, 0), 2.0) * volume / nedges;
-      inf_err = std::max(inf_err, fabs(s0 - p(e, 0)));
-      pnorm += std::pow(s0, 2.0) * volume / nedges;
-      // std::cout << e << " at " << (x0 + x1) / 2 << " error: " << s0 << " " <<
-      // p(e,0) << std::endl;
-    }
-  }
-#ifdef HAVE_MPI
-  GlobalOp(*mesh->getComm(), "sum", &pnorm, 1);
-  GlobalOp(*mesh->getComm(), "sum", &l2_err, 1);
-  GlobalOp(*mesh->getComm(), "max", &inf_err, 1);
-#endif
-  pnorm = sqrt(pnorm);
-  l2_err = sqrt(l2_err);
-}
+//       l2_err += std::pow(s0 - p(e, 0), 2.0) * volume / nedges;
+//       inf_err = std::max(inf_err, fabs(s0 - p(e, 0)));
+//       pnorm += std::pow(s0, 2.0) * volume / nedges;
+//       // std::cout << e << " at " << (x0 + x1) / 2 << " error: " << s0 << " " <<
+//       // p(e,0) << std::endl;
+//     }
+//   }
+// #ifdef HAVE_MPI
+//   GlobalOp(*mesh->getComm(), "sum", &pnorm, 1);
+//   GlobalOp(*mesh->getComm(), "sum", &l2_err, 1);
+//   GlobalOp(*mesh->getComm(), "max", &inf_err, 1);
+// #endif
+//   pnorm = sqrt(pnorm);
+//   l2_err = sqrt(l2_err);
+// }
 
 #endif

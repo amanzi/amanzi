@@ -79,11 +79,12 @@ class EvaluatorModelCV : public EvaluatorSecondaryMonotype<CompositeVector, Comp
 
   // some models may not implement partial derivatives, even if they are
   // differentiable.  Allow the model to turn off _all_ derivatives.
-  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override {
-    if constexpr (!Model_type::provides_derivatives) {
-      return false;
-    }
-    return EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::IsDifferentiableWRT(S, wrt_key, wrt_tag);
+  virtual bool
+  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override
+  {
+    if constexpr (!Model_type::provides_derivatives) { return false; }
+    return EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::IsDifferentiableWRT(
+      S, wrt_key, wrt_tag);
   }
 
  protected:
@@ -170,9 +171,7 @@ EvaluatorModelCV<Model, Device_type>::EvaluatePartialDerivative_(
   const Tag& wrt_tag,
   const std::vector<CompositeVector*>& results)
 {
-  if constexpr (!Model_type::provides_derivatives) {
-    AMANZI_ASSERT(false);
-  }
+  if constexpr (!Model_type::provides_derivatives) { AMANZI_ASSERT(false); }
 
   AMANZI_ASSERT(results.size() > 0);
   for (const auto& comp : *results[0]) {
@@ -188,7 +187,7 @@ EvaluatorModelCV<Model, Device_type>::EvaluatePartialDerivative_(
     // set up the model and range and then dispatch
     model_->setViews(dependency_views, result_views, S);
 
-    KeyTag wrt{wrt_key, wrt_tag};
+    KeyTag wrt{ wrt_key, wrt_tag };
     Impl::EvaluatorModelLauncher<Model_type::n_dependencies - 1, Model_type, Device_type> launcher(
       name_, wrt, dependencies_, *model_);
     launcher.launch(result_views[0].extent(0));

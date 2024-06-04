@@ -88,7 +88,8 @@ MeshExtractedManifold::InitMaps()
 
     auto subset_map_wghost = Teuchos::rcp(new Map_type(-1, gids_d, 0, comm_));
 
-    auto gids_d_owned = Kokkos::subview(gids_d, Kokkos::make_pair((std::size_t)0, (std::size_t)nents));
+    auto gids_d_owned =
+      Kokkos::subview(gids_d, Kokkos::make_pair((std::size_t)0, (std::size_t)nents));
     auto subset_map = Teuchos::rcp(new Map_type(-1, gids_d_owned, 0, comm_));
 
     // create continuous maps

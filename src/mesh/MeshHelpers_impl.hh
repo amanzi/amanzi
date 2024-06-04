@@ -77,7 +77,7 @@ getFaceOnBoundaryInternalCell(const Mesh_type& mesh, Entity_ID f)
            "getFaceOnBoundaryInternalCell() requires a face on the boundary.");
   } else {
     if (mesh.getFaceNumCells(f, Parallel_kind::ALL) != 1) {
-      assert(false && "getFaceOnBoundaryInternalCell called with non-internal face"); 
+      assert(false && "getFaceOnBoundaryInternalCell called with non-internal face");
       //AmanziGeometry::Point fc = mesh.getFaceCentroid(f);
       //std::stringstream msgs;
       //msgs << "getFaceOnBoundaryInternalCell called with non-internal face GID "

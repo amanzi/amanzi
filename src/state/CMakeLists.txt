@@ -150,8 +150,9 @@ add_install_include_file(${state_inc_files})
     include_directories(${STATE_SOURCE_DIR})
 
     # Mesh factory includes
-    include_directories(${MESH_FACTORY_SOURCE_DIR})
     include_directories(${MESH_EXTRACTED_SOURCE_DIR})
+    include_directories(${MESH_LOGICAL_SOURCE_DIR})
+    include_directories(${MESH_FACTORY_SOURCE_DIR})
 
 if (BUILD_TESTS)
 

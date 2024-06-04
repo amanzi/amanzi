@@ -117,11 +117,7 @@ SurfaceComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const
   std::stringstream message;
   message << "    " << name() << " = ";
   message << free_site_stoichiometry_ << " " << free_site_name_ << " + ";
-  if (h2o_stoichiometry_ > 0) {
-    message << h2o_stoichiometry_ << " "
-            << "H2O"
-            << " + ";
-  }
+  if (h2o_stoichiometry_ > 0) { message << h2o_stoichiometry_ << " " << "H2O" << " + "; }
   for (unsigned int i = 0; i < species_names_.size(); i++) {
     message << stoichiometry_[i] << " " << species_names_[i];
     if (i < species_names_.size() - 1) { message << " + "; }

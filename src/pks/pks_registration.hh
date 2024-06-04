@@ -16,7 +16,8 @@
 
 namespace Amanzi {
 
-template<> REGISTER_PK(MPCStrong<PK_BDF_Default>);
+template <>
+REGISTER_PK(MPCStrong<PK_BDF_Default>);
 
 REGISTER_PK(MPCWeak);
 

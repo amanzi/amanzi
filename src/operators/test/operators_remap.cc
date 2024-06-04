@@ -213,9 +213,9 @@ RemapTestsDualRK(std::string map_name,
     std::string vel_projector = map_list.get<std::string>("projector");
     std::string map_name = map_list.get<std::string>("map name");
 
-    std::cout << "\nTest: " << dim << "D remap:"
-              << " mesh=" << ((file_name == "") ? "structured" : file_name) << " deform=" << deform
-              << std::endl;
+    std::cout << "\nTest: " << dim
+              << "D remap:" << " mesh=" << ((file_name == "") ? "structured" : file_name)
+              << " deform=" << deform << std::endl;
 
     std::cout << "      discretization: order=" << order << ", map=" << map_name << std::endl;
 

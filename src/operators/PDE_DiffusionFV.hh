@@ -58,15 +58,11 @@ class BCs;
 class PDE_DiffusionFV : public virtual PDE_Diffusion {
  public:
   PDE_DiffusionFV(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
-    : PDE_Diffusion(plist, global_op),
-      transmissibility_initialized_(false),
-      bcs_applied_(false)
+    : PDE_Diffusion(plist, global_op), transmissibility_initialized_(false), bcs_applied_(false)
   {}
 
   PDE_DiffusionFV(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : PDE_Diffusion(plist, mesh),
-      transmissibility_initialized_(false),
-      bcs_applied_(false)
+    : PDE_Diffusion(plist, mesh), transmissibility_initialized_(false), bcs_applied_(false)
   {}
 
   virtual void Init() override;
@@ -96,8 +92,8 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
   virtual void ApplyBCsJacobian() override;
 
-  virtual void ModifyMatrices(const CompositeVector& u) override{};
-  virtual void ScaleMassMatrices(double s) override{};
+  virtual void ModifyMatrices(const CompositeVector& u) override {};
+  virtual void ScaleMassMatrices(double s) override {};
 
   // access
   const CompositeVector& transmissibility() { return *transmissibility_; }

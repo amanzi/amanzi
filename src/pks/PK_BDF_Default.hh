@@ -23,7 +23,8 @@ namespace Amanzi {
 
 class TreeVector;
 class TreeVectorSpace;
-template<class Vec, class Space> class BDF1_TI;
+template <class Vec, class Space>
+class BDF1_TI;
 
 namespace Operators {
 class Operator;
@@ -31,7 +32,6 @@ class Operator;
 
 class PK_BDF_Default : public PK_Default<PK_BDF> {
  public:
-
   PK_BDF_Default(const Comm_ptr_type& comm,
                  Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -53,7 +53,9 @@ class PK_BDF_Default : public PK_Default<PK_BDF> {
 
   // -- BDF API
   virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override { return true; }
-  virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> up, Teuchos::RCP<TreeVector> u) override {
+  virtual bool
+  ModifyPredictor(double h, Teuchos::RCP<const TreeVector> up, Teuchos::RCP<TreeVector> u) override
+  {
     return false;
   }
 
@@ -67,9 +69,7 @@ class PK_BDF_Default : public PK_Default<PK_BDF> {
   }
 
 
-  virtual void MarkChangedSolution() override {
-    markChangedSolutionPK(tag_next_);
-  }
+  virtual void MarkChangedSolution() override { markChangedSolutionPK(tag_next_); }
 
   virtual void UpdateContinuationParameter(double lambda) override;
   virtual int ReportStatistics() override { return -1; }
@@ -87,4 +87,3 @@ class PK_BDF_Default : public PK_Default<PK_BDF> {
 };
 
 } // namespace Amanzi
-

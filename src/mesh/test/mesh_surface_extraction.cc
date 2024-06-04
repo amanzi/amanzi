@@ -178,7 +178,6 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
   //
   // extract & flatten the top surface to form a 2D mesh, NX=NY=3
   std::vector<Framework> frameworks;
-  //if (comm->getSize() == 1) frameworks.push_back(Framework::SIMPLE);
   if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
 
   for (const auto& frm : frameworks) {
@@ -189,36 +188,35 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
     auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
     fac_list->set<std::string>("partitioner", "zoltan_rcb");
     fac_list->set("request edges", true);
-    auto parent_mesh =
-      createFrameworkStructuredUnitHex(Preference{ frm }, 3, 3, 3, comm, gm, fac_list);
+    fac_list->set<std::string>("cache policy", "all");
+
+    auto parent_on_host = createStructuredUnitHex(Preference{ frm }, 3, 3, 3, comm, gm, fac_list);
 
     // extract the surface
     auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
     fac_plist->sublist("unstructured")
       .sublist("submesh")
-      .set<std::string>("extraction method", "manifold mesh");
+      .set<std::string>("extraction method", "manifold mesh")
+      .set<std::string>("cache policy", "all");
     MeshFactory fac(comm, gm, fac_plist);
     fac.set_preference({ frm });
 
-    // cache all, even edges here because Manifold needs them
-    auto parent_mesh_cache = Teuchos::rcp(
-      new MeshHost(parent_mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
-    cacheAll(*parent_mesh_cache);
-
-    auto mesh = fac.create(parent_mesh_cache, std::vector<std::string>{ "Top Face Plane" }, AmanziMesh::Entity_kind::FACE, true);
-    cacheAll(*mesh);
+    auto mesh_on_host = fac.create(parent_on_host,
+                                   std::vector<std::string>{ "Top Face Plane" },
+                                   AmanziMesh::Entity_kind::FACE,
+                                   true);
 
     // test the surface mesh as a 3x3 quad mesh
     // -- mesh audit
-    testMeshAudit<MeshAuditHost, MeshHost>(mesh);
+    testMeshAudit<MeshAuditHost, MeshHost>(mesh_on_host);
     // -- geometry
-    testGeometryQuad(mesh, 3, 3);
+    testGeometryQuad(mesh_on_host, 3, 3);
 
     // -- exterior maps -- NOT SUPPORTED BY SIMPLE
-    if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(mesh, 3, 3);
+    if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(mesh_on_host, 3, 3);
 
     // -- sets, which should inherit from the parent mesh
-    testQuadMeshSets3x3(mesh, false, frm, true);
+    testQuadMeshSets3x3(mesh_on_host, false, frm, true);
   }
 }
 
@@ -247,11 +245,6 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
   std::vector<Framework> frameworks;
   if (framework_enabled(Framework::MSTK)) { frameworks.push_back(Framework::MSTK); }
 
-  // MOAB does not support edges, so cannot work with MeshExtractedManifold.  See #596 part 3
-  // if (framework_enabled(Framework::MOAB)) {
-  //   frameworks.push_back(Framework::MOAB);
-  // }
-
   for (const auto& frm : frameworks) {
     std::cout << std::endl
               << "MeshExtractedManifold from surface of 3D EXO Box with "
@@ -260,34 +253,35 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
     auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
     fac_list->set<std::string>("partitioner", "zoltan_rcb");
     fac_list->set("request edges", true);
-    auto parent_mesh =
-      createFrameworkUnstructured(Preference{ frm }, "test/hex_3x3x3_sets.exo", comm, gm, fac_list);
+    fac_list->set<std::string>("cache policy", "all");
+
+    auto parent_on_host =
+      createUnstructured(Preference{ frm }, "test/hex_3x3x3_sets.exo", comm, gm, fac_list);
+    auto parent = onMemDevice(parent_on_host);
 
     // extract the surface
     auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
     fac_plist->sublist("unstructured")
       .sublist("submesh")
-      .set<std::string>("extraction method", "manifold mesh");
+      .set<std::string>("extraction method", "manifold mesh")
+      .set<std::string>("cache policy", "all");
 
     MeshFactory fac(comm, gm, fac_plist);
     fac.set_preference({ frm });
-    auto parent_mesh_cache = Teuchos::rcp(
-      new MeshHost(parent_mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
-    cacheAll(*parent_mesh_cache);
 
-    auto mesh =
-      fac.create(parent_mesh_cache, std::vector<std::string>{ "Top Face Plane" }, AmanziMesh::Entity_kind::FACE, true);
-    cacheAll(*mesh);
+    auto mesh = fac.create(
+      parent, std::vector<std::string>{ "Top Face Plane" }, AmanziMesh::Entity_kind::FACE, true);
+    auto mesh_on_host = onMemHost(mesh);
 
     // test the surface mesh as a 3x3 quad mesh
     // -- mesh audit
-    testMeshAudit<MeshAuditHost, MeshHost>(mesh);
+    testMeshAudit<MeshAuditHost, MeshHost>(mesh_on_host);
     // -- geometry
-    testGeometryQuad(mesh, 3, 3);
+    testGeometryQuad(mesh_on_host, 3, 3);
     // -- exterior maps
-    testExteriorMapsUnitBox(mesh, 3, 3);
+    testExteriorMapsUnitBox(mesh_on_host, 3, 3);
 
     // -- sets, which should inherit from the parent mesh
-    testQuadMeshSets3x3(mesh, true, frm, true);
+    testQuadMeshSets3x3(mesh_on_host, true, frm, true);
   }
 }

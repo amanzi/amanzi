@@ -49,7 +49,7 @@ ResidualDebugger::StartIteration<TreeVectorSpace>(double time,
         Teuchos::ParameterList plist;
         plist.set<std::string>("file name base", filename.str());
         vis_[i] = OutputFactory::createForVis(
-          plist, AmanziMesh::onMemSpace<MemSpace_kind::HOST>(leaves[i]->getData()->getMesh()));
+          plist, AmanziMesh::onMemHost(leaves[i]->getData()->getMesh()));
       }
     }
   }

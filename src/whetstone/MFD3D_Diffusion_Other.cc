@@ -116,7 +116,7 @@ MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor<>& K, DenseMatrix<>& W)
   const auto& [faces, fdirs] = mesh_->getCellFacesAndDirections(c);
   int num_faces = faces.size();
 
-  AmanziMesh::Mesh::Entity_ID_View corner_faces;
+  AmanziMesh::MeshHost::Entity_ID_View corner_faces;
   auto nodes = mesh_->getCellNodes(c);
   int nnodes = nodes.size();
 

@@ -489,16 +489,13 @@ class State {
   // managed in State, where each node is an Evaluator.
   //
   // -- allows PKs to add to this list to custom evaluators
-  Teuchos::ParameterList& ConstantsList() const
-  {
-    return state_plist_->sublist("constants");
-  }
+  Teuchos::ParameterList& ConstantsList() const { return state_plist_->sublist("constants"); }
 
 
   //
   // Get a constant value from the constants list
   //
-  template<typename T>
+  template <typename T>
   T GetConstant(const std::string& name) const
   {
     T t;
@@ -514,7 +511,7 @@ class State {
   //
   // Get a map of region to constant value from the constants list
   //
-  template<typename T>
+  template <typename T>
   std::map<std::string, T> GetConstantByRegion(const std::string& name) const
   {
     std::map<std::string, T> result;
@@ -533,7 +530,7 @@ class State {
   //
   // Get a constant on a region
   //
-  template<typename T>
+  template <typename T>
   T GetConstantByRegion(const std::string& name, const std::string& region) const
   {
     T t;
@@ -547,14 +544,8 @@ class State {
   }
 
 
-  Teuchos::ParameterList& FEList()
-  {
-    return state_plist_->sublist("evaluators");
-  }
-  const Teuchos::ParameterList& FEList() const
-  {
-    return state_plist_->sublist("evaluators");
-  }
+  Teuchos::ParameterList& FEList() { return state_plist_->sublist("evaluators"); }
+  const Teuchos::ParameterList& FEList() const { return state_plist_->sublist("evaluators"); }
   Teuchos::ParameterList& GetEvaluatorList(const Key& key);
   bool HasEvaluatorList(const Key& key) const;
 
@@ -576,10 +567,7 @@ class State {
   Teuchos::RCP<Evaluator> GetEvaluatorPtr(const Key& key, const Tag& tag);
 
   // -- iterators/counts
-  int evaluator_count()
-  {
-    return evaluators_.size();
-  }
+  int evaluator_count() { return evaluators_.size(); }
 
   // Write evaluators to file for drawing dependency graph.
   void WriteDependencyGraph() const;
@@ -606,101 +594,44 @@ class State {
   {
     return Require<double>("time", tag, owner, false);
   }
-  double get_time(const Tag& tag = Tags::DEFAULT) const
-  {
-    return Get<double>("time", tag);
-  }
-  void set_time(const Tag& tag, double value)
-  {
-    Assign("time", tag, "time", value);
-  }
-  void set_time(double value)
-  {
-    Assign("time", Tags::DEFAULT, "time", value);
-  }
+  double get_time(const Tag& tag = Tags::DEFAULT) const { return Get<double>("time", tag); }
+  void set_time(const Tag& tag, double value) { Assign("time", tag, "time", value); }
+  void set_time(double value) { Assign("time", Tags::DEFAULT, "time", value); }
 
-  void advance_time(const Tag& tag, double dt)
-  {
-    Assign("time", tag, "time", get_time(tag) + dt);
-  }
-  void advance_time(double dt)
-  {
-    advance_time(Tags::DEFAULT, dt);
-  }
+  void advance_time(const Tag& tag, double dt) { Assign("time", tag, "time", get_time(tag) + dt); }
+  void advance_time(double dt) { advance_time(Tags::DEFAULT, dt); }
 
   // can these go away in favor of time at different tags?
-  double final_time() const
-  {
-    return final_time_;
-  }
-  void set_final_time(double new_time)
-  {
-    final_time_ = new_time;
-  }
-  double intermediate_time() const
-  {
-    return intermediate_time_;
-  }
-  void set_intermediate_time(double new_time)
-  {
-    intermediate_time_ = new_time;
-  }
+  double final_time() const { return final_time_; }
+  void set_final_time(double new_time) { final_time_ = new_time; }
+  double intermediate_time() const { return intermediate_time_; }
+  void set_intermediate_time(double new_time) { intermediate_time_ = new_time; }
 
-  double last_time() const
-  {
-    return last_time_;
-  }
-  void set_last_time(double last_time)
-  {
-    last_time_ = last_time;
-  }
-  double initial_time() const
-  {
-    return initial_time_;
-  }
-  void set_initial_time(double initial_time)
-  {
-    initial_time_ = initial_time;
-  }
+  double last_time() const { return last_time_; }
+  void set_last_time(double last_time) { last_time_ = last_time; }
+  double initial_time() const { return initial_time_; }
+  void set_initial_time(double initial_time) { initial_time_ = initial_time; }
 
   // Cycle accessor and mutators.
-  void require_cycle(const Tag& tag)
-  {
-    Require<int>("cycle", tag, "cycle", false);
-  }
-  int get_cycle(Tag tag = Tags::DEFAULT) const
-  {
-    return Get<int>("cycle", tag);
-  }
-  void set_cycle(Tag tag, int cycle)
-  {
-    Assign("cycle", tag, "cycle", cycle);
-  }
-  void set_cycle(int cycle)
-  {
-    set_cycle(Tags::DEFAULT, cycle);
-  }
+  void require_cycle(const Tag& tag) { Require<int>("cycle", tag, "cycle", false); }
+  int get_cycle(Tag tag = Tags::DEFAULT) const { return Get<int>("cycle", tag); }
+  void set_cycle(Tag tag, int cycle) { Assign("cycle", tag, "cycle", cycle); }
+  void set_cycle(int cycle) { set_cycle(Tags::DEFAULT, cycle); }
   void advance_cycle(Tag tag = Tags::DEFAULT, int dcycle = 1)
   {
     Assign("cycle", tag, "cycle", get_cycle(tag) + dcycle);
   }
 
   // Position accessor and mutators.
-  int get_position() const
-  {
-    return Get<int>("position", Tags::DEFAULT);
-  }
-  void set_position(int pos)
-  {
-    Assign("position", Tags::DEFAULT, "position", pos);
-  }
+  int get_position() const { return Get<int>("position", Tags::DEFAULT); }
+  void set_position(int pos) { Assign("position", Tags::DEFAULT, "position", pos); }
 
   // Utility for setting vis flags using blacklist and whitelist
   void InitializeIOFlags();
 
   // a hook to allow debuggers to connect
-  void CheckIsDebugEval(const Key& key, const Tag& tag, const std::string& message="");
-  void CheckIsDebugData(const Key& key, const Tag& tag, const std::string& message="");
+  void CheckIsDebugEval(const Key& key, const Tag& tag, const std::string& message = "");
+  void CheckIsDebugData(const Key& key, const Tag& tag, const std::string& message = "");
 
  private:
   // Accessors that return null if the Key does not exist.

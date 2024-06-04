@@ -59,7 +59,7 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED)
 
     auto mesh = fac.create(parent_mesh_cache, setnames, AmanziMesh::Entity_kind::FACE, false);
     cacheAll(*mesh);
-    
+
     // test the surface mesh as a fracture mesh
     // -- mesh audit
     testMeshAudit<MeshAuditHost, MeshHost>(mesh);
@@ -130,7 +130,7 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
 
     auto mesh = fac.create(parent_mesh_cache, setnames, AmanziMesh::Entity_kind::FACE, false);
     cacheAll(*mesh);
-    
+
     // test the surface mesh as a fracture mesh
     // -- mesh audit
     testMeshAudit<MeshAuditHost, MeshHost>(mesh);
@@ -180,8 +180,10 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO)
     auto parent_mesh_cache = Teuchos::rcp(
       new MeshHost(parent_mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
     cacheAll(*parent_mesh_cache);
-    auto mesh =
-      fac.create(parent_mesh_cache, std::vector<std::string>{ "fractures-two" }, AmanziMesh::Entity_kind::FACE, false);
+    auto mesh = fac.create(parent_mesh_cache,
+                           std::vector<std::string>{ "fractures-two" },
+                           AmanziMesh::Entity_kind::FACE,
+                           false);
     cacheAll(*mesh);
 
     // test the surface mesh as a fracture mesh
@@ -253,7 +255,7 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO_MANIFOLD)
 
     auto mesh = fac.create(parent_mesh_cache, setnames, AmanziMesh::Entity_kind::FACE, false);
     cacheAll(*mesh);
-    
+
     // test the surface mesh as a fracture mesh
     // -- mesh audit
     testMeshAudit<MeshAuditHost, MeshHost>(mesh);

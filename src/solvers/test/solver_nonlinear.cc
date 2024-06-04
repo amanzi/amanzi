@@ -445,8 +445,7 @@ TEST_FIXTURE(test_data, JFNK_SOLVER_RIGHT_PC) {
               << std::endl
               << "----------------------------------------------------------------";
     std::cout << std::endl
-              << "NKA with line search, ATS custom, globalized problem..."
-              << std::endl;
+              << "NKA with line search, ATS custom, globalized problem..." << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem6> fn = Teuchos::rcp(new NonlinearProblem6(1.0, 1.0, true));
@@ -506,8 +505,7 @@ TEST_FIXTURE(test_data, JFNK_SOLVER_RIGHT_PC) {
     std::cout << std::endl
               << std::endl
               << "----------------------------------------------------------------";
-    std::cout << std::endl
-              << "Line-search using Brent, globalized problem..." << std::endl;
+    std::cout << std::endl << "Line-search using Brent, globalized problem..." << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem6> fn = Teuchos::rcp(new NonlinearProblem6(1.0, 1.0, true));

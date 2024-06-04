@@ -29,7 +29,7 @@ namespace WhetStone {
 /* ******************************************************************
 * Constructors
 ****************************************************************** */
-MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : BilinearForm(mesh)
+MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh) : BilinearForm(mesh)
 {
   stability_method_ = WHETSTONE_STABILITY_GENERIC;
   scaling_factor_ = 1.0;
@@ -445,7 +445,6 @@ MFD3D::StabilityMMatrix_(int c, DenseMatrix<>& N, DenseMatrix<>& M, int objectiv
       M(j, i) = M(i, j);
     }
   }
-
   return 0;
 }
 
@@ -493,7 +492,7 @@ MFD3D::SimplexFindFeasibleSolution_(DenseMatrix<>& T,
       T.MaxRowValue(m + 1, 1, n, &kp, &vmax);
 
       // feasible solution does not exist
-      if (vmax < tol && T(m + 1, 0) < -tol) return WHETSTONE_SIMPLEX_NO_FEASIBLE_SET;
+      if (vmax < tol && T(m + 1, 0) < -tol) { return WHETSTONE_SIMPLEX_NO_FEASIBLE_SET; }
 
       // feasible solution has been found
       if (vmax < tol && fabs(T(m + 1, 0)) < tol) {
@@ -519,7 +518,7 @@ MFD3D::SimplexFindFeasibleSolution_(DenseMatrix<>& T,
 
       // locate a pivot element in column kp (skipping degeneracy)
       SimplexPivotElement_(T, kp, &ip);
-      if (ip == 0) return WHETSTONE_SIMPLEX_UNBOUNDED_PROBLEM;
+      if (ip == 0) { return WHETSTONE_SIMPLEX_UNBOUNDED_PROBLEM; }
 
       // Exchange left and right-hand variables
       SimplexExchangeVariables_(T, kp, ip);
@@ -549,7 +548,7 @@ MFD3D::SimplexFindFeasibleSolution_(DenseMatrix<>& T,
       izrow[kp] = iypos[ip];
       iypos[ip] = is;
     }
-    if (flag == 0) return WHETSTONE_SIMPLEX_NO_CONVERGENCE;
+    if (flag == 0) { return WHETSTONE_SIMPLEX_NO_CONVERGENCE; }
   }
 
   // Start of phase II.
@@ -661,7 +660,7 @@ MFD3D::SimplexExchangeVariables_(DenseMatrix<>& T, int kp, int ip)
 * Modify the stability space by extending matrix N.
 ****************************************************************** */
 void
-AddGradient(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, DenseMatrix<>& N)
+AddGradient(const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh, int c, DenseMatrix<>& N)
 {
   const auto& edges = mesh->getCellEdges(c);
   int nedges = edges.size();

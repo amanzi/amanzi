@@ -53,8 +53,7 @@ namespace Amanzi {
 // A generic evaluator for acting on regions
 //
 template <template <class, class> class Model, class Device_type = DefaultDevice>
-class EvaluatorModelCVByMaterial
-  : public EvaluatorSecondaryMonotypeCV {
+class EvaluatorModelCVByMaterial : public EvaluatorSecondaryMonotypeCV {
  public:
   using cView_type = cMultiVectorView_type<Device_type>;
   using View_type = MultiVectorView_type<Device_type>;
@@ -64,18 +63,16 @@ class EvaluatorModelCVByMaterial
   EvaluatorModelCVByMaterial(const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
-  virtual std::string getType() const override
-  {
-    return eval_type;
-  }
+  virtual std::string getType() const override { return eval_type; }
 
   // some models may not implement partial derivatives, even if they are
   // differentiable.  Allow the model to turn off _all_ derivatives.
-  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override {
-    if constexpr (!Model_type::provides_derivatives) {
-      return false;
-    }
-    return EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::IsDifferentiableWRT(S, wrt_key, wrt_tag);
+  virtual bool
+  IsDifferentiableWRT(const State& S, const Key& wrt_key, const Tag& wrt_tag) const override
+  {
+    if constexpr (!Model_type::provides_derivatives) { return false; }
+    return EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::IsDifferentiableWRT(
+      S, wrt_key, wrt_tag);
   }
 
   std::vector<std::pair<std::string, Teuchos::RCP<Model_type>>>& getModels() { return models_; }
@@ -190,8 +187,7 @@ EvaluatorModelCVByMaterial<Model, Device_type>::Evaluate_(
 
       Kokkos::RangePolicy<typename Device_type::execution_space> range(0, mat_ids.extent(0));
 
-      Kokkos::parallel_for(
-        name_, range, KOKKOS_LAMBDA(const int& i) { f(mat_ids(i)); });
+      Kokkos::parallel_for(name_, range, KOKKOS_LAMBDA(const int& i) { f(mat_ids(i)); });
 
       // must clear the views -- this tells tpetra's dual view that it can sync
       // if needed.

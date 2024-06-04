@@ -88,6 +88,7 @@ struct obs_test {
 
     plist = Teuchos::rcp(new Teuchos::ParameterList("mesh factory"));
     plist->set<std::string>("partitioner", "zoltan_rcb");
+    plist->set("build columns", true);
     meshfactory = Teuchos::rcp(new AmanziMesh::MeshFactory(comm, gm, plist));
 
     AmanziMesh::Preference pref;
@@ -190,12 +191,11 @@ struct obs_domain_set_test : public obs_test {
   {
     // create the surface mesh
     auto parent = S->GetMesh("domain");
-    auto surface_mesh =
-      meshfactory->create(parent, { "top face" }, AmanziMesh::Entity_kind::FACE, true);
+    auto surface_mesh = meshfactory->create(
+      parent, std::vector<std::string>{ "top face" }, AmanziMesh::Entity_kind::FACE, true);
     S->RegisterMesh("surface", surface_mesh);
 
     // create domain set
-    parent->buildColumns();
     AMANZI_ASSERT(parent->columns.num_columns_owned * parent->columns.getCells(0).extent(0) ==
                   parent->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED));
     std::vector<std::string> cols;

@@ -16,24 +16,18 @@ namespace Amanzi {
 namespace AmanziSolvers {
 
 // functor for minimization
-template<class Vector>
+template <class Vector>
 struct LineSearchFunctor {
-
   LineSearchFunctor(const Teuchos::RCP<SolverFnBase<Vector>>& my_fn,
                     const Teuchos::RCP<const Vector>& u0_,
                     const Teuchos::RCP<const Vector>& du_,
                     const Teuchos::RCP<Vector>& u_,
                     const Teuchos::RCP<Vector>& r_)
-    : fn(my_fn),
-      u(u_),
-      u0(u0_),
-      du(du_),
-      r(r_),
-      error(-1),
-      fun_calls(0)
-    {}
+    : fn(my_fn), u(u_), u0(u0_), du(du_), r(r_), error(-1), fun_calls(0)
+  {}
 
-  double operator()(double x) const {
+  double operator()(double x) const
+  {
     u->update(-x, *du, 1., *u0, 0);
     fn->ChangedSolution();
     fn->Residual(u, r);

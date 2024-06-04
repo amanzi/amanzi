@@ -129,7 +129,7 @@ RunTest(const std::string regname, int* cells, int* edges, const std::vector<int
         Teuchos::rcp(new MeshHost(mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), plist_tmp));
       cacheAll(*mesh_cache);
 
-      auto mesh_cache_device = onMemDevice(mesh_cache); 
+      auto mesh_cache_device = onMemDevice(mesh_cache);
 
       // verify mesh
       MeshAudit audit(mesh_cache_device);

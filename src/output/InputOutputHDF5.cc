@@ -53,18 +53,18 @@ InputHDF5::read(const Teuchos::ParameterList& attrs, IntVector_type& vec) const
   file_->readVector(attrs.name(), vec);
 }
 
-void
-InputHDF5::read(const Teuchos::ParameterList& attrs, MultiVector_type& vec) const
-{
-  // read as a block
-  file_->readMultiVector(attrs.name(), vec);
-}
+// void
+// InputHDF5::read(const Teuchos::ParameterList& attrs, MultiVector_type& vec) const
+// {
+//   // read as a block
+//   file_->readMultiVector(attrs.name(), vec);
+// }
 
-void
-InputHDF5::read(const Teuchos::ParameterList& attrs, IntMultiVector_type& vec) const
-{
-  file_->readMultiVector(attrs.name(), vec);
-}
+// void
+// InputHDF5::read(const Teuchos::ParameterList& attrs, IntMultiVector_type& vec) const
+// {
+//   file_->readMultiVector(attrs.name(), vec);
+// }
 
 
 OutputHDF5::OutputHDF5(Teuchos::ParameterList& plist, const Comm_ptr_type& comm) : comm_(comm)

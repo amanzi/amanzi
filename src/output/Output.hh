@@ -124,7 +124,7 @@ class Output {
   void
   writeMultiVector_(const Teuchos::ParameterList& attrs, const MultiVector_type_<Scalar>& vec) const
   {
-    std::vector<std::string> names = OutputUtils::names(attrs, vec.getNumVectors());
+    std::vector<std::string> names = OutputUtils::getNames(attrs, vec.getNumVectors());
     for (int i = 0; i != vec.getNumVectors(); ++i) {
       Teuchos::ParameterList attrs_i(attrs);
       attrs_i.setName(names[i]);
@@ -194,7 +194,7 @@ struct Output::writes<CompositeVector_<double>> {
 };
 
 template <>
-struct Output::writes<AmanziMesh::MeshCache<MemSpace_kind::HOST>> {
+struct Output::writes<AmanziMesh::MeshHost> {
   static const bool value = true;
 };
 

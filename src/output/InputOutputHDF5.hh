@@ -44,8 +44,8 @@ class InputHDF5 : public Input {
   virtual void read(const Teuchos::ParameterList& attrs, std::string& val) const override;
   virtual void read(const Teuchos::ParameterList& attrs, Vector_type& vec) const override;
   virtual void read(const Teuchos::ParameterList& attrs, IntVector_type& vec) const override;
-  virtual void read(const Teuchos::ParameterList& attrs, MultiVector_type& vec) const override;
-  virtual void read(const Teuchos::ParameterList& attrs, IntMultiVector_type& vec) const override;
+  // virtual void read(const Teuchos::ParameterList& attrs, MultiVector_type& vec) const override;
+  // virtual void read(const Teuchos::ParameterList& attrs, IntMultiVector_type& vec) const override;
 
  protected:
   std::unique_ptr<FileHDF5> file_;

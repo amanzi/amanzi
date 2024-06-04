@@ -100,9 +100,11 @@ MeshFunction::readSpec_(Teuchos::ParameterList& list, const std::string& functio
   } else {
     Teuchos::Array<std::string> defs;
     if (entity_kind_ != AmanziMesh::Entity_kind::UNKNOWN) {
-      defs = { to_string(entity_kind_) };
+      defs = Teuchos::Array<std::string>{
+        to_string(entity_kind_),
+      };
     } else {
-      defs = { "cell", "face", "node" };
+      defs = Teuchos::Array<std::string>{ "cell", "face", "node" };
     }
     components = list.get<Teuchos::Array<std::string>>("components", defs);
   }

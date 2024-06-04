@@ -40,7 +40,7 @@ enum class DOF_Type { SCALAR = 1, VECTOR, POINT, NORMAL_COMPONENT, MOMENT };
 
 #ifdef AMANZI_CODE
 using Entity_ID = AmanziGeometry::Entity_ID;
-using Entity_ID_View = AmanziMesh::Mesh::Entity_ID_View;
+using Entity_ID_View = AmanziMesh::MeshHost::Entity_ID_View;
 using Parallel_kind = AmanziMesh::Parallel_kind;
 using Entity_kind = AmanziMesh::Entity_kind;
 using SchemaItem = std::tuple<AmanziMesh::Entity_kind, DOF_Type, int>;

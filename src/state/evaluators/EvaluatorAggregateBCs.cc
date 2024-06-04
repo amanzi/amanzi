@@ -51,7 +51,8 @@ EvaluatorAggregateBCs::EnsureCompatibility(State& S)
 
       if (fac.flag_type == -1) {
         // also need a flag patch, but this is not in dependencies...
-        auto& flag_fac = S.Require<MultiPatch<int>, MultiPatchSpace>(dep.first+"_flags", dep.second);
+        auto& flag_fac =
+          S.Require<MultiPatch<int>, MultiPatchSpace>(dep.first + "_flags", dep.second);
         flag_fac = fac;
       }
     }
@@ -86,7 +87,7 @@ EvaluatorAggregateBCs::Update_(State& S)
       copyMultiPatchToCompositeVector(i_bcs, to_string(result.kind()), *value, *model);
 
       if (i_bcs.space->flag_type == -1) {
-        const auto& i_bcs_flags = S.Get<MultiPatch<int>>(dep.first+"_flags", dep.second);
+        const auto& i_bcs_flags = S.Get<MultiPatch<int>>(dep.first + "_flags", dep.second);
         copyMultiPatchToCompositeVector(i_bcs_flags, to_string(result.kind()), *model);
       }
     }

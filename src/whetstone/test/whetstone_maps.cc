@@ -51,8 +51,8 @@ TEST(DG_MAP_DETERMINANT_CELL)
   // create two meshes
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh0 = meshfactory.create("test/one_pentagon.exo");
-  Teuchos::RCP<Mesh> mesh1 = meshfactory.create("test/one_pentagon.exo");
+  auto mesh0 = meshfactory.create<MemSpace_kind::DEVICE>("test/one_pentagon.exo");
+  auto mesh1_on_host = meshfactory.create<MemSpace_kind::HOST>("test/one_pentagon.exo");
 
   // deform the second mesh
   int dim(2), cell(0), nnodes(5), nfaces(5);
@@ -62,7 +62,7 @@ TEST(DG_MAP_DETERMINANT_CELL)
 
   Kokkos::parallel_for(
     "deform", nnodes, KOKKOS_LAMBDA(const int v) {
-      auto xv = mesh1->getNodeCoordinate(v);
+      auto xv = mesh1_on_host->getNodeCoordinate(v);
       xv[0] = (xv[0] + xv[0] * xv[0] + xv[0] * xv[0] * xv[0]) / 3;
       xv[1] = (xv[1] + xv[1] * xv[1]) / 2;
 
@@ -70,7 +70,8 @@ TEST(DG_MAP_DETERMINANT_CELL)
       new_positions[v] = xv;
     });
 
-  Amanzi::AmanziMesh::deform(*mesh1, nodeids, new_positions);
+  Amanzi::AmanziMesh::deform(*mesh1_on_host, nodeids, new_positions);
+  auto mesh1 = Amanzi::AmanziMesh::onMemDevice(mesh1_on_host);
 
   // cell-baced velocities and Jacobian matrices
   // test piecewise linear deformation (part II)
@@ -90,6 +91,7 @@ TEST(DG_MAP_DETERMINANT_CELL)
       plist.set<std::string>("method", "Lagrange serendipity")
         .set<int>("method order", k)
         .set<std::string>("projector", "L2");
+
       auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
 
       std::vector<WhetStone::VectorPolynomial> vf(nfaces);
@@ -135,8 +137,8 @@ TEST(DG_MAP_LEAST_SQUARE_CELL)
   // create two meshes
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh0 = meshfactory.create("test/one_pentagon.exo");
-  Teuchos::RCP<Mesh> mesh1 = meshfactory.create("test/one_pentagon.exo");
+  auto mesh0 = meshfactory.create<MemSpace_kind::DEVICE>("test/one_pentagon.exo");
+  auto mesh1_on_host = meshfactory.create<MemSpace_kind::HOST>("test/one_pentagon.exo");
 
   // deform the second mesh
   int d(2), cell(0), nnodes(5), nfaces(5);
@@ -170,7 +172,7 @@ TEST(DG_MAP_LEAST_SQUARE_CELL)
 
   // -- mesh deformation
   for (int v = 0; v < nnodes; ++v) {
-    xv = mesh1->getNodeCoordinate(v);
+    xv = mesh1_on_host->getNodeCoordinate(v);
 
     yv[0] = xv[0] + u[0].Value(xv);
     yv[1] = xv[1] + u[1].Value(xv);
@@ -178,7 +180,8 @@ TEST(DG_MAP_LEAST_SQUARE_CELL)
     nodeids[v] = v;
     new_positions[v] = yv;
   }
-  Amanzi::AmanziMesh::deform(*mesh1, nodeids, new_positions);
+  Amanzi::AmanziMesh::deform(*mesh1_on_host, nodeids, new_positions);
+  auto mesh1 = Amanzi::AmanziMesh::onMemDevice(mesh1_on_host);
 
   // least-square calculation
   Teuchos::ParameterList plist;
@@ -298,8 +301,8 @@ TEST(DG_MAP_VELOCITY_CELL)
   factory_plist->set<bool>("request faces", true);
   MeshFactory meshfactory(comm, Teuchos::null, factory_plist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<Mesh> mesh0 = meshfactory.create("test/cube_unit.exo");
-  Teuchos::RCP<Mesh> mesh1 = meshfactory.create("test/cube_unit.exo");
+  auto mesh0 = meshfactory.create<MemSpace_kind::DEVICE>("test/cube_unit.exo");
+  auto mesh1_on_host = meshfactory.create<MemSpace_kind::HOST>("test/cube_unit.exo");
 
   // deform the second mesh
   int d(3), nnodes(8), nfaces(6), nedges(12);
@@ -321,14 +324,15 @@ TEST(DG_MAP_VELOCITY_CELL)
   u *= 0.05;
 
   for (int v = 0; v < nnodes; ++v) {
-    xv = mesh1->getNodeCoordinate(v);
+    xv = mesh1_on_host->getNodeCoordinate(v);
 
     for (int i = 0; i < d; ++i) yv[i] = xv[i] + u[i].Value(xv);
 
     nodeids[v] = v;
     new_positions[v] = yv;
   }
-  Amanzi::AmanziMesh::deform(*mesh1, nodeids, new_positions);
+  Amanzi::AmanziMesh::deform(*mesh1_on_host, nodeids, new_positions);
+  auto mesh1 = Amanzi::AmanziMesh::onMemDevice(mesh1_on_host);
 
   // velocity calculation
   // -- on edges

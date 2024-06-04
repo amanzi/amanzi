@@ -34,7 +34,7 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
 
   virtual void SumLocalDiag(CompositeVector& X) const
   {
-    AMANZI_ASSERT(false);  // this is incorrectly implemented... --ETC
+    AMANZI_ASSERT(false); // this is incorrectly implemented... --ETC
     // AmanziMesh::Mesh const* mesh_ = mesh.get();
     // AmanziMesh::Mesh const* surf_mesh_ = surf_mesh.get();
     // auto Xv = X.viewComponent<Amanzi::MirrorHost>("face", true);
@@ -75,19 +75,18 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
   {
     if (scaling.hasComponent("cell") &&
         scaling.getComponent("cell", false)->getLocalLength() ==
-        mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED)) {
+          mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED)) {
       // scaling's cell entry is defined on the surface mesh
       Op_Face_Cell::Rescale(scaling);
     }
 
-    if (scaling.hasComponent("face") &&
-        scaling.getComponent("face", false)->getLocalLength() ==
-        mesh->getParentMesh()->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED)) {
+    if (scaling.hasComponent("face") && scaling.getComponent("face", false)->getLocalLength() ==
+                                          mesh->getParentMesh()->getNumEntities(
+                                            AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED)) {
       Exceptions::amanzi_throw(
         "Scaling surface cell entities with subsurface face vector not yet implemented");
     }
   }
-
 };
 
 } // namespace Operators

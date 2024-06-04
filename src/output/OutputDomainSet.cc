@@ -20,7 +20,7 @@ namespace Amanzi {
 void
 OutputDomainSet::write(const Teuchos::ParameterList& attrs, const MultiVector_type& vec) const
 {
-  std::vector<std::string> names = OutputUtils::names(attrs, vec.getNumVectors());
+  std::vector<std::string> names = OutputUtils::getNames(attrs, vec.getNumVectors());
   AmanziMesh::Entity_kind entity_kind = attrs.get<AmanziMesh::Entity_kind>("location");
   if (entity_kind != AmanziMesh::CELL) return;
 
@@ -54,7 +54,7 @@ OutputDomainSet::write(const Teuchos::ParameterList& attrs, const MultiVector_ty
 void
 OutputDomainSet::write(const Teuchos::ParameterList& attrs, const IntMultiVector_type& vec) const
 {
-  std::vector<std::string> names = OutputUtils::names(attrs, vec.getNumVectors());
+  std::vector<std::string> names = OutputUtils::getNames(attrs, vec.getNumVectors());
   AmanziMesh::Entity_kind entity_kind = attrs.get<AmanziMesh::Entity_kind>("location");
   if (entity_kind != AmanziMesh::CELL) return;
 

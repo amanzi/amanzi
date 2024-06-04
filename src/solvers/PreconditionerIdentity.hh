@@ -44,9 +44,9 @@ class PreconditionerIdentity : public Inverse<Matrix, Preconditioner, Vector, Ve
   PreconditionerIdentity(){};
   ~PreconditionerIdentity(){};
 
-  virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final{};
-  virtual void initializeInverse() override final{};
-  virtual void computeInverse() override final{};
+  virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final {};
+  virtual void initializeInverse() override final {};
+  virtual void computeInverse() override final {};
 
   virtual int applyInverse(const Vector& v, Vector& hv) const override final
   {

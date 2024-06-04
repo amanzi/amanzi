@@ -32,7 +32,7 @@ DeRham_Face::L2consistency(int c,
                            DenseMatrix<>& Mc,
                            bool symmetry)
 {
-  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
+  const auto [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   N.reshape(nfaces, d_);
@@ -102,7 +102,7 @@ DeRham_Face::L2consistencyInverse(int c,
                                   DenseMatrix<>& Wc,
                                   bool symmetry)
 {
-  const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
+  const auto [faces, dirs] = mesh_->getCellFacesAndDirections(c);
   int nfaces = faces.size();
 
   R.reshape(nfaces, d_);

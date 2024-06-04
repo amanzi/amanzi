@@ -28,6 +28,8 @@ struct test_cv_vandelay {
   Teuchos::RCP<Mesh> mesh;
   Teuchos::RCP<CompositeVectorSpace> x_space;
   Teuchos::RCP<CompositeVector> x;
+  Teuchos::RCP<CompositeVectorSpace> x2_space;
+  Teuchos::RCP<CompositeVector> x2;
 
   test_cv_vandelay()
   {
@@ -36,13 +38,20 @@ struct test_cv_vandelay {
     mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
     std::vector<Entity_kind> locations = { CELL, FACE };
+    std::vector<Entity_kind> locations_v = { CELL, BOUNDARY_FACE };
     std::vector<std::string> names = { "cell", "face" };
+    std::vector<std::string> names_v = { "cell", "boundary_face" };
+
 
     std::vector<int> num_dofs = { 2, 1 };
 
     x_space = Teuchos::rcp(new CompositeVectorSpace());
     x_space->SetMesh(mesh)->SetGhosted()->SetComponents(names, locations, num_dofs);
     x = x_space->Create();
+
+    x2_space = Teuchos::rcp(new CompositeVectorSpace());
+    x2_space->SetMesh(mesh)->SetGhosted()->SetComponents(names_v, locations_v, num_dofs);
+    x2 = x2_space->Create();
   }
   ~test_cv_vandelay() {}
 };
@@ -75,25 +84,33 @@ SUITE(VANDELAY_COMPOSITE_VECTOR)
   // test owned vs ghosted
   TEST_FIXTURE(test_cv_vandelay, CVVandelayGhosted)
   {
-    std::cout << "X has " << x->NumComponents() << " components" << std::endl;
-    x->PutScalar(2.0);
-    CHECK_CLOSE((*x)("cell", 0, 0), 2.0, 0.00001);
-    CHECK_CLOSE((*x)("cell", 1, 0), 2.0, 0.00001);
-    CHECK_CLOSE((*x)("face", 0, 0), 2.0, 0.00001);
+    std::cout << "X has " << x->size() << " components" << std::endl;
+    x->putScalar(2.0);
+    {
+      auto v_c = x->viewComponent<MirrorHost>("cell", false);
+      CHECK_CLOSE(2.0, v_c(0, 0), 0.00001);
+      CHECK_CLOSE(2.0, v_c(0, 1), 0.00001);
 
-    *x2->ViewComponent("boundary_face", false) = *x->ViewComponent("boundary_face", false);
+      auto v_f = x->viewComponent<MirrorHost>("face", false);
+      CHECK_CLOSE(2.0, v_f(0, 0), 0.00001);
+    }
+
+    Kokkos::deep_copy(x2->viewComponent("boundary_face", false),
+                      x->viewComponent("boundary_face", false));
 
     // test the scatter of boundary_faces
-    x2->ScatterMasterToGhosted("boundary_face");
-    int nbf_owned = x2->ViewComponent("boundary_face", false)->MyLength();
-    int nbf_all = x2->ViewComponent("boundary_face", true)->MyLength();
-    int size = comm->NumProc();
+    x2->scatterMasterToGhosted("boundary_face");
+    int nbf_owned = x2->getComponent("boundary_face", false)->getLocalLength();
+    int nbf_all = x2->getComponent("boundary_face", true)->getLocalLength();
+    int size = comm->getSize();
     if (size == 1) {
       CHECK_EQUAL(nbf_all, nbf_owned);
-      CHECK_CLOSE((*x2)("boundary_face", 0, nbf_owned - 1), 2.0, 0.00001);
+      auto v_bf = x2->viewComponent<MirrorHost>("boundary_face", false);
+      CHECK_CLOSE(v_bf(nbf_owned - 1, 0), 2.0, 0.00001);
     } else {
       CHECK(nbf_owned < nbf_all);
-      CHECK_CLOSE((*x2)("boundary_face", 0, nbf_all - 1), 2.0, 0.00001);
+      auto v_bf = x2->viewComponent<MirrorHost>("boundary_face", false);
+      CHECK_CLOSE(2.0, v_bf(nbf_all - 1, 0), 0.00001);
     }
   }
 }

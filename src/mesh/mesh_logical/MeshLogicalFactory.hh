@@ -211,7 +211,7 @@ class MeshLogicalFactory {
     NONE,     // do nothing
     BOUNDARY, // tip is a boundary, include the face
     JUNCTION, // tip is a junction -- face will be added later
-    BRANCH    // tip branches from a junction.  Add the face.
+    BRANCH    // tip branches from a junction.  add the face.
   };
 
 
@@ -221,16 +221,16 @@ class MeshLogicalFactory {
     : comm_(comm), gm_(gm), calculated_volume_(calculated_volume), tracking_centroids_(false)
   {}
 
-  // Create, assuming AddSegment, etc have all been called previously.
-  Teuchos::RCP<MeshLogical> Create() const;
+  // create, assuming addSegment, etc have all been called previously.
+  Teuchos::RCP<MeshLogical> create() const;
 
-  // Create from parameterlist
-  Teuchos::RCP<MeshLogical> Create(Teuchos::ParameterList& plist);
+  // create from parameterlist
+  Teuchos::RCP<MeshLogical> create(Teuchos::ParameterList& plist);
 
   //
   // Convenience function to add a segment, mostly for testing
   //
-  void AddSegment(int n_cells,
+  void addSegment(int n_cells,
                   const AmanziGeometry::Point& begin,
                   const AmanziGeometry::Point& end,
                   double face_area,
@@ -241,13 +241,13 @@ class MeshLogicalFactory {
                   Entity_ID_List* const faces);
 
 
-  // Add a segment
+  // add a segment
   //
   // Centroids and cell volumes are optional arguments.
   //
   // Cells and faces are optional return values containing the list of
   // entities in the new segment.
-  void AddSegment(Point_List const* const cell_centroids,
+  void addSegment(Point_List const* const cell_centroids,
                   Double_List const* const cell_volumes,
                   Double_List const& cell_lengths,
                   Double_List const& face_areas,
@@ -258,20 +258,20 @@ class MeshLogicalFactory {
                   Entity_ID_List* const cells,
                   Entity_ID_List* const faces);
 
-  // Add segment from sublist
-  void AddSegment(Teuchos::ParameterList& sublist);
+  // add segment from sublist
+  void addSegment(Teuchos::ParameterList& sublist);
 
-  // Reserve a slot for a face (likely to be added via AddFace!)
-  int ReserveFace();
+  // reserve a slot for a face (likely to be added via addFace!)
+  int reserveFace();
   // Manually add a connection, returning the face id.
-  int AddFace(int f,
+  int addFace(int f,
               const Entity_ID_List& cells,
               const Point_List& bisectors,
               const std::vector<int>& dirs,
               double area);
 
-  // Add a set from a list of entities
-  int AddSet(const std::string& set_name, const std::string& ent, const Entity_ID_List& ents);
+  // add a set from a list of entities
+  int addSet(const std::string& set_name, const std::string& ent, const Entity_ID_List& ents);
 
  protected:
   // Reads a tip type from plist

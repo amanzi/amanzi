@@ -36,16 +36,16 @@ enum class PDE_kind;
 //
 // Note, this could be:
 //  - PK_Default
-template<class PK_type>
+template <class PK_type>
 class PK_Physical_Default : public PK_type {
  public:
-  PK_Physical_Default() : PK_type() {};
+  PK_Physical_Default() : PK_type(){};
 
   PK_Physical_Default(const Comm_ptr_type& comm,
-              Teuchos::ParameterList& pk_tree,
-              const Teuchos::RCP<Teuchos::ParameterList>& glist,
-              const Teuchos::RCP<State>& S)
-    : PK_type(comm, pk_tree, glist, S) {};
+                      Teuchos::ParameterList& pk_tree,
+                      const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                      const Teuchos::RCP<State>& S)
+    : PK_type(comm, pk_tree, glist, S){};
 
   // Default implementations of PK methods.
   // -- transfer operators -- pointer copies only
@@ -58,7 +58,8 @@ class PK_Physical_Default : public PK_type {
   Teuchos::RCP<Debugger> getDebugger() { return db_; }
   Teuchos::RCP<Operators::BCs> getBCs() { return bc_; }
 
-  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization> getPDE(const Operators::PDE_kind& type) {
+  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization> getPDE(const Operators::PDE_kind& type)
+  {
     return Teuchos::null;
   }
 
@@ -100,4 +101,3 @@ class PK_Physical_Default : public PK_type {
 };
 
 } // namespace Amanzi
-

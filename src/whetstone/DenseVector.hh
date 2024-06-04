@@ -36,7 +36,7 @@ namespace WhetStone {
 template <class MEMSPACE = DefaultHostMemorySpace>
 class DenseVector {
  public:
-  KOKKOS_INLINE_FUNCTION DenseVector() : m_(0), mem_(0), unmanaged_(false){};
+  KOKKOS_INLINE_FUNCTION DenseVector() : m_(0), mem_(0), unmanaged_(false) {};
 
   explicit DenseVector(int m) : m_(m), mem_(m), unmanaged_(false) { Kokkos::resize(data_, mem_); }
 
@@ -230,30 +230,12 @@ class DenseVector {
   }
 
   // access to private data
-  KOKKOS_INLINE_FUNCTION int NumRows() const
-  {
-    return m_;
-  }
-  KOKKOS_INLINE_FUNCTION int Capacity() const
-  {
-    return mem_;
-  }
-  KOKKOS_INLINE_FUNCTION Kokkos::View<double*, MEMSPACE> Values()
-  {
-    return data_;
-  }
-  KOKKOS_INLINE_FUNCTION const Kokkos::View<double*, MEMSPACE> Values() const
-  {
-    return data_;
-  }
-  KOKKOS_INLINE_FUNCTION double* Values_ptr()
-  {
-    return &data_[0];
-  }
-  KOKKOS_INLINE_FUNCTION const double* Values_ptr() const
-  {
-    return &data_[0];
-  }
+  KOKKOS_INLINE_FUNCTION int NumRows() const { return m_; }
+  KOKKOS_INLINE_FUNCTION int Capacity() const { return mem_; }
+  KOKKOS_INLINE_FUNCTION Kokkos::View<double*, MEMSPACE> Values() { return data_; }
+  KOKKOS_INLINE_FUNCTION const Kokkos::View<double*, MEMSPACE> Values() const { return data_; }
+  KOKKOS_INLINE_FUNCTION double* Values_ptr() { return &data_[0]; }
+  KOKKOS_INLINE_FUNCTION const double* Values_ptr() const { return &data_[0]; }
 
   // First level routines
   KOKKOS_INLINE_FUNCTION double norm2() const

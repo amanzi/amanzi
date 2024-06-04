@@ -81,15 +81,12 @@ SUITE(DIFFUSION)
 #if FV
   TEST(EXACT)
   {
-    std::cout << "Test: "
-              << "EXACT" << std::endl;
+    std::cout << "Test: " << "EXACT" << std::endl;
     DiffusionFixture fix(Teuchos::null);
     fix.Init(2, 10, "structured1d");
 
     std::cout << std::endl
-              << "Diffusion Forward Apply Test (np=" << fix.comm->NumProc() << "): "
-              << "fv"
-              << ", "
+              << "Diffusion Forward Apply Test (np=" << fix.comm->NumProc() << "): " << "fv" << ", "
               << "structured1d" << std::endl
               << "--------------------------------------------------------------------------------"
               << std::endl;
@@ -139,18 +136,15 @@ SUITE(DIFFUSION)
 #if MFD
   TEST(EXACT_MFD)
   {
-    std::cout << "Test: "
-              << "EXACT_MFD" << std::endl;
+    std::cout << "Test: " << "EXACT_MFD" << std::endl;
     DiffusionFixture fix(Teuchos::null);
     fix.Init(2, 10, "structured1d");
 
     std::cout << std::endl
               << "================================================================================"
               << std::endl
-              << "Diffusion Forward Apply Test (np=" << fix.comm->NumProc() << "): "
-              << "MFD"
-              << ", "
-              << "structured1d" << std::endl
+              << "Diffusion Forward Apply Test (np=" << fix.comm->NumProc() << "): " << "MFD"
+              << ", " << "structured1d" << std::endl
               << "--------------------------------------------------------------------------------"
               << std::endl;
 
@@ -213,8 +207,7 @@ SUITE(DIFFUSION)
 #if FV
   TEST(Analytic00_Linear1_FV_Dirichlet_structured2d_identity)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_FV_Dirichlet_structured2d_identity" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_FV_Dirichlet_structured2d_identity" << std::endl;
     test("identity",
          "Dirichlet",
          "structured2d",
@@ -227,8 +220,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravity1_FV_Dirichlet_structured2d_identity)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravity1_FV_Dirichlet_structured2d_identity" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravity1_FV_Dirichlet_structured2d_identity"
+              << std::endl;
     testWGravity(1.1,
                  "identity",
                  "Dirichlet",
@@ -242,8 +235,7 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_Linear1_FV_Dirichlet_structured2d_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_FV_Dirichlet_structured2d_diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_FV_Dirichlet_structured2d_diagonal" << std::endl;
     test("diagonal",
          "Dirichlet",
          "structured2d",
@@ -257,8 +249,8 @@ SUITE(DIFFUSION)
 
   TEST(Analytic00_LinearGravity1_FV_Dirichlet_structured2d_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravity1_FV_Dirichlet_structured2d_diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravity1_FV_Dirichlet_structured2d_diagonal"
+              << std::endl;
     testWGravity(1.1,
                  "diagonal",
                  "Dirichlet",
@@ -274,8 +266,7 @@ SUITE(DIFFUSION)
 #if SO
   TEST(Analytic00_Linear1_SO_Dirichlet_structured2d_identity)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_SO_Dirichlet_structured2d_identity" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_SO_Dirichlet_structured2d_identity" << std::endl;
     test("identity",
          "Dirichlet",
          "structured2d",
@@ -290,8 +281,7 @@ SUITE(DIFFUSION)
 #if MFD
   TEST(Analytic00_Linear1_MFD_Dirichlet_structured2d_identity)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_MFD_Dirichlet_structured2d_identity" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_MFD_Dirichlet_structured2d_identity" << std::endl;
     test("identity",
          "Dirichlet",
          "structured2d",
@@ -303,8 +293,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravity1_MFD_Dirichlet_structured2d_identity)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravity1_MFD_Dirichlet_structured2d_identity" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravity1_MFD_Dirichlet_structured2d_identity"
+              << std::endl;
     testWGravity(1.1,
                  "identity",
                  "Dirichlet",
@@ -317,8 +307,7 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_Linear1_MFD_Dirichlet_structured2d_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_MFD_Dirichlet_structured2d_diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_MFD_Dirichlet_structured2d_diagonal" << std::endl;
     test("diagonal",
          "Dirichlet",
          "structured2d",
@@ -330,8 +319,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravity1_MFD_Dirichlet_structured2d_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravity1_MFD_Dirichlet_structured2d_diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravity1_MFD_Dirichlet_structured2d_diagonal"
+              << std::endl;
     testWGravity(1.1,
                  "diagonal",
                  "Dirichlet",
@@ -346,8 +335,7 @@ SUITE(DIFFUSION)
 #if NLFV
   TEST(Analytic00_Linear1_NLFV_Dirichlet_structured2d_identity)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_NLFV_Dirichlet_structured2d_identity" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_NLFV_Dirichlet_structured2d_identity" << std::endl;
     test("identity",
          "Dirichlet",
          "structured2d",
@@ -359,8 +347,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravity1_NLFV_Dirichlet_structured2d_identity)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravity1_NLFV_Dirichlet_structured2d_identity" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravity1_NLFV_Dirichlet_structured2d_identity"
+              << std::endl;
     testWGravity(1.1,
                  "identity",
                  "Dirichlet",
@@ -374,8 +362,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_Linear1_NLFVBFace_Dirichlet_structured2d_identity)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_NLFVBFace_Dirichlet_structured2d_identity" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_NLFVBFace_Dirichlet_structured2d_identity"
+              << std::endl;
     test("identity",
          "Dirichlet",
          "structured2d",
@@ -388,8 +376,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravity1_NLFVBFace_Dirichlet_structured2d_identity)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravity1_NLFVBFace_Dirichlet_structured2d_identity" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravity1_NLFVBFace_Dirichlet_structured2d_identity"
+              << std::endl;
     testWGravity(1.1,
                  "identity",
                  "Dirichlet",
@@ -403,8 +391,7 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_Linear1_NLFV_Dirichlet_structured2d_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_NLFV_Dirichlet_structured2d_diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_NLFV_Dirichlet_structured2d_diagonal" << std::endl;
     test("diagonal",
          "Dirichlet",
          "structured2d",
@@ -417,8 +404,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravity1_NLFV_Dirichlet_structured2d_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravity1_NLFV_Dirichlet_structured2d_diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravity1_NLFV_Dirichlet_structured2d_diagonal"
+              << std::endl;
     testWGravity(1.1,
                  "diagonal",
                  "Dirichlet",
@@ -432,8 +419,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_Linear1_NLFVBFace_Dirichlet_structured2d_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_NLFVBFace_Dirichlet_structured2d_diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_NLFVBFace_Dirichlet_structured2d_diagonal"
+              << std::endl;
     test("diagonal",
          "Dirichlet",
          "structured2d",
@@ -446,8 +433,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravity1_NLFVBFace_Dirichlet_structured2d_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravity1_NLFVBFace_Dirichlet_structured2d_diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravity1_NLFVBFace_Dirichlet_structured2d_diagonal"
+              << std::endl;
     testWGravity(1.1,
                  "diagonal",
                  "Dirichlet",
@@ -471,8 +458,7 @@ SUITE(DIFFUSION)
 #  if FV
   TEST(Analytic00_Linear1_FV_Dirichlet_structured2d_ILU)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_FV_Dirichlet_structured2d_ILU" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_FV_Dirichlet_structured2d_ILU" << std::endl;
     test("ifpack2: ILUT",
          "Dirichlet",
          "structured2d",
@@ -485,8 +471,7 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravity1_FV_Dirichlet_structured2d_ILU)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravity1_FV_Dirichlet_structured2d_ILU" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravity1_FV_Dirichlet_structured2d_ILU" << std::endl;
     testWGravity(1.1,
                  "ifpack2: ILUT",
                  "Dirichlet",
@@ -502,8 +487,8 @@ SUITE(DIFFUSION)
 #  if MFD
   TEST(Analytic00_Linear1_MFD_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_MFD_DirichletNeumann_structured2d_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_MFD_DirichletNeumann_structured2d_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
          "structured2d",
@@ -532,8 +517,8 @@ SUITE(DIFFUSION)
 #  if NLFV
   TEST(Analytic00_Linear1_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
          "structured2d",
@@ -601,8 +586,7 @@ SUITE(DIFFUSION)
 #if FV
   TEST(Analytic00_Linearkr_FV_Dirichlet_structured2d_Diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linearkr_FV_Dirichlet_structured2d_Diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linearkr_FV_Dirichlet_structured2d_Diagonal" << std::endl;
     test("diagonal",
          "Dirichlet",
          "structured2d",
@@ -615,8 +599,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravitykr_FV_Dirichlet_structured2d_Diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravitykr_FV_Dirichlet_structured2d_Diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravitykr_FV_Dirichlet_structured2d_Diagonal"
+              << std::endl;
     testWGravity(1.1,
                  "diagonal",
                  "Dirichlet",
@@ -632,8 +616,7 @@ SUITE(DIFFUSION)
 #if MFD
   TEST(Analytic00_Linearkr_MFD_Dirichlet_structured2d_Diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linearkr_MFD_Dirichlet_structured2d_Diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linearkr_MFD_Dirichlet_structured2d_Diagonal" << std::endl;
     test("diagonal",
          "Dirichlet",
          "structured2d",
@@ -645,8 +628,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravitykr_MFD_Dirichlet_structured2d_Diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravitykr_MFD_Dirichlet_structured2d_Diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravitykr_MFD_Dirichlet_structured2d_Diagonal"
+              << std::endl;
     testWGravity(1.1,
                  "diagonal",
                  "Dirichlet",
@@ -661,8 +644,8 @@ SUITE(DIFFUSION)
 #if NLFV
   TEST(Analytic00_Linearkr_NLFV_Dirichlet_structured2d_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linearkr_NLFV_Dirichlet_structured2d_diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linearkr_NLFV_Dirichlet_structured2d_diagonal"
+              << std::endl;
     test("diagonal",
          "Dirichlet",
          "structured2d",
@@ -675,8 +658,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravitykr_NLFV_Dirichlet_structured2d_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravitykr_NLFV_Dirichlet_structured2d_diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravitykr_NLFV_Dirichlet_structured2d_diagonal"
+              << std::endl;
     testWGravity(1.1,
                  "diagonal",
                  "Dirichlet",
@@ -690,8 +673,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_Linearkr_NLFVBFace_Dirichlet_structured2d_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linearkr_NLFVBFace_Dirichlet_structured2d_diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linearkr_NLFVBFace_Dirichlet_structured2d_diagonal"
+              << std::endl;
     test("diagonal",
          "Dirichlet",
          "structured2d",
@@ -704,8 +687,7 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravitykr_NLFVBFace_Dirichlet_structured2d_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravitykr_NLFVBFace_Dirichlet_structured2d_diagonal"
+    std::cout << "Test: " << "Analytic00_LinearGravitykr_NLFVBFace_Dirichlet_structured2d_diagonal"
               << std::endl;
     testWGravity(1.1,
                  "diagonal",
@@ -727,8 +709,8 @@ SUITE(DIFFUSION)
 #if FV
   TEST(Analytic00_LinearK_FV_DirichletNeumann_structured2d_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearK_FV_DirichletNeumann_structured2d_diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearK_FV_DirichletNeumann_structured2d_diagonal"
+              << std::endl;
     test("diagonal",
          "DirichletNeumann",
          "structured2d",
@@ -741,8 +723,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravityK_FV_DirichletNeumann_structured2d_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravityK_FV_DirichletNeumann_structured2d_diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravityK_FV_DirichletNeumann_structured2d_diagonal"
+              << std::endl;
     testWGravity(1.1,
                  "diagonal",
                  "DirichletNeumann",
@@ -758,8 +740,8 @@ SUITE(DIFFUSION)
 #if MFD
   TEST(Analytic00_LinearK_MFD_DirichletNeumann_structured2d_diagona)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearK_MFD_DirichletNeumann_structured2d_diagona" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearK_MFD_DirichletNeumann_structured2d_diagona"
+              << std::endl;
     test("diagonal",
          "DirichletNeumann",
          "structured2d",
@@ -771,8 +753,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravityK_MFD_DirichletNeumann_structured2d_diagona)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravityK_MFD_DirichletNeumann_structured2d_diagona" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravityK_MFD_DirichletNeumann_structured2d_diagona"
+              << std::endl;
     testWGravity(1.1,
                  "diagonal",
                  "DirichletNeumann",
@@ -787,8 +769,8 @@ SUITE(DIFFUSION)
 #if NLFV
   TEST(Analytic00_LinearK_NLFV_DirichletNeumann_structured2d_diagona)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearK_NLFV_DirichletNeumann_structured2d_diagona" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearK_NLFV_DirichletNeumann_structured2d_diagona"
+              << std::endl;
     test("diagonal",
          "DirichletNeumann",
          "structured2d",
@@ -801,8 +783,7 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravityK_NLFV_DirichletNeumann_structured2d_diagona)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravityK_NLFV_DirichletNeumann_structured2d_diagona"
+    std::cout << "Test: " << "Analytic00_LinearGravityK_NLFV_DirichletNeumann_structured2d_diagona"
               << std::endl;
     testWGravity(1.1,
                  "diagonal",
@@ -817,8 +798,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearK_NLFVBFace_DirichletNeumann_structured2d_diagona)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearK_NLFVBFace_DirichletNeumann_structured2d_diagona" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearK_NLFVBFace_DirichletNeumann_structured2d_diagona"
+              << std::endl;
     test("diagonal",
          "DirichletNeumann",
          "structured2d",
@@ -857,8 +838,8 @@ SUITE(DIFFUSION)
 #  if FV
   TEST(Analytic00_Linear1_FV_DirichletNeumann_Wiggled_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_FV_DirichletNeumann_Wiggled_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_FV_DirichletNeumann_Wiggled_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
          "test/random10.exo",
@@ -871,8 +852,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravity1_FV_DirichletNeumann_Wiggled_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravity1_FV_DirichletNeumann_Wiggled_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravity1_FV_DirichletNeumann_Wiggled_ifpack2_ILUT"
+              << std::endl;
     testWGravity(1.1,
                  "ifpack2: ILUT",
                  "DirichletNeumann",
@@ -889,8 +870,8 @@ SUITE(DIFFUSION)
   // on mfd: default, these have a tolerance of 1.e-12.  On TPFA, it is the same as FV?
   TEST(Analytic00_Linear1_MFD_DirichletNeumann_Wiggled_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_MFD_DirichletNeumann_Wiggled_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_MFD_DirichletNeumann_Wiggled_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
          "test/random10.exo",
@@ -903,8 +884,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravity1_MFD_DirichletNeumann_Wiggled_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravity1_MFD_DirichletNeumann_Wiggled_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravity1_MFD_DirichletNeumann_Wiggled_ifpack2_ILUT"
+              << std::endl;
     testWGravity(1.1,
                  "ifpack2: ILUT",
                  "DirichletNeumann",
@@ -920,8 +901,8 @@ SUITE(DIFFUSION)
 #  if NLFV
   TEST(Analytic00_Linear1_NLFV_DirichletNeumann_Wiggled_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_NLFV_DirichletNeumann_Wiggled_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_NLFV_DirichletNeumann_Wiggled_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
          "test/random10.exo",
@@ -937,8 +918,7 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravity1_NLFV_DirichletNeumann_Wiggled_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravity1_NLFV_DirichletNeumann_Wiggled_ifpack2_ILUT"
+    std::cout << "Test: " << "Analytic00_LinearGravity1_NLFV_DirichletNeumann_Wiggled_ifpack2_ILUT"
               << std::endl;
     testWGravity(1.1,
                  "ifpack2: ILUT",
@@ -956,8 +936,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_Linear1_NLFVBFace_DirichletNeumann_Wiggled_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_NLFVBFace_DirichletNeumann_Wiggled_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_NLFVBFace_DirichletNeumann_Wiggled_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
          "test/random10.exo",
@@ -1001,8 +981,8 @@ SUITE(DIFFUSION)
 #  if FV
   TEST(Analytic00_Linear1_FV_DirichletNeumann_Poly_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_FV_DirichletNeumann_Poly_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_FV_DirichletNeumann_Poly_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
          "test/median7x8_filtered.exo",
@@ -1015,8 +995,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravity1_FV_DirichletNeumann_Poly_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravity1_FV_DirichletNeumann_Poly_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravity1_FV_DirichletNeumann_Poly_ifpack2_ILUT"
+              << std::endl;
     testWGravity(1.1,
                  "ifpack2: ILUT",
                  "DirichletNeumann",
@@ -1033,8 +1013,8 @@ SUITE(DIFFUSION)
   // on mfd: default, these have a tolerance of 1.e-12.  On TPFA, it is the same as FV?
   TEST(Analytic00_Linear1_MFD_DirichletNeumann_Poly_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_MFD_DirichletNeumann_Poly_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_MFD_DirichletNeumann_Poly_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
          "test/median7x8_filtered.exo",
@@ -1047,8 +1027,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravity1_MFD_DirichletNeumann_Poly_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravity1_MFD_DirichletNeumann_Poly_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravity1_MFD_DirichletNeumann_Poly_ifpack2_ILUT"
+              << std::endl;
     testWGravity(1.1,
                  "ifpack2: ILUT",
                  "DirichletNeumann",
@@ -1064,8 +1044,8 @@ SUITE(DIFFUSION)
 #  if NLFV
   TEST(Analytic00_Linear1_NLFV_DirichletNeumann_Poly_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_NLFV_DirichletNeumann_Poly_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_NLFV_DirichletNeumann_Poly_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
          "test/median7x8_filtered.exo",
@@ -1081,8 +1061,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_LinearGravity1_NLFV_DirichletNeumann_Poly_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_LinearGravity1_NLFV_DirichletNeumann_Poly_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic00_LinearGravity1_NLFV_DirichletNeumann_Poly_ifpack2_ILUT"
+              << std::endl;
     testWGravity(1.1,
                  "ifpack2: ILUT",
                  "DirichletNeumann",
@@ -1099,8 +1079,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic00_Linear1_NLFVBFace_DirichletNeumann_Poly_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_Linear1_NLFVBFace_DirichletNeumann_Poly_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic00_Linear1_NLFVBFace_DirichletNeumann_Poly_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
          "test/median7x8_filtered.exo",
@@ -1142,8 +1122,8 @@ SUITE(DIFFUSION)
 #  if FV
   TEST(Analytic00_Quadratic1_FV_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_Quadratic1_FV_DirichletNeumann_structured2d_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic00_Quadratic1_FV_DirichletNeumann_structured2d_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
          "structured2d",
@@ -1176,8 +1156,7 @@ SUITE(DIFFUSION)
 #  if MFD
   TEST(Analytic00_Quadratic1_MFD_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_Quadratic1_MFD_DirichletNeumann_structured2d_ifpack2_ILUT"
+    std::cout << "Test: " << "Analytic00_Quadratic1_MFD_DirichletNeumann_structured2d_ifpack2_ILUT"
               << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
@@ -1211,8 +1190,7 @@ SUITE(DIFFUSION)
 #  if NLFV
   TEST(Analytic00_Quadratic1_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic00_Quadratic1_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT"
+    std::cout << "Test: " << "Analytic00_Quadratic1_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT"
               << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
@@ -1283,8 +1261,8 @@ SUITE(DIFFUSION)
 #  if FV
   TEST(Analytic02_FV_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic02_FV_DirichletNeumann_structured2d_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic02_FV_DirichletNeumann_structured2d_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "Dirichlet",
          "structured2d",
@@ -1303,8 +1281,8 @@ SUITE(DIFFUSION)
   // on mfd: default, these have a tolerance of 1.e-12.  On TPFA, it is the same as FV?
   TEST(Analytic02_MFD_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic02_MFD_DirichletNeumann_structured2d_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic02_MFD_DirichletNeumann_structured2d_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumannRobin",
          "structured2d",
@@ -1319,8 +1297,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic02_Gravity_MFD_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic02_Gravity_MFD_DirichletNeumann_structured2d_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic02_Gravity_MFD_DirichletNeumann_structured2d_ifpack2_ILUT"
+              << std::endl;
     testWGravity(0.1,
                  "ifpack2: ILUT",
                  "DirichletNeumann",
@@ -1338,8 +1316,7 @@ SUITE(DIFFUSION)
   // the original test tested on circle-quad
   TEST(Analytic02_MFD_DirichletNeumann_CircleQuad_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic02_MFD_DirichletNeumann_CircleQuad_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic02_MFD_DirichletNeumann_CircleQuad_ifpack2_ILUT" << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
          "test/circle_quad10.exo",
@@ -1354,8 +1331,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic02_Gravity_MFD_DirichletNeumann_CircleQuad_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic02_Gravity_MFD_DirichletNeumann_CircleQuad_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic02_Gravity_MFD_DirichletNeumann_CircleQuad_ifpack2_ILUT"
+              << std::endl;
     testWGravity(0.1,
                  "ifpack2: ILUT",
                  "DirichletNeumann",
@@ -1373,8 +1350,8 @@ SUITE(DIFFUSION)
   // test in 3D
   TEST(Analytic02_MFD_DirichletNeumann_structured3d_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic02_MFD_DirichletNeumann_structured3d_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic02_MFD_DirichletNeumann_structured3d_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
          "structured3d",
@@ -1389,8 +1366,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic02_Gravity_MFD_DirichletNeumann_structured3d_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic02_Gravity_MFD_DirichletNeumann_structured3d_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic02_Gravity_MFD_DirichletNeumann_structured3d_ifpack2_ILUT"
+              << std::endl;
     testWGravity(0.1,
                  "ifpack2: ILUT",
                  "DirichletNeumann",
@@ -1412,8 +1389,8 @@ SUITE(DIFFUSION)
 #  if NLFV
   TEST(Analytic02_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic02_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic02_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
          "structured2d",
@@ -1429,8 +1406,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic02_Gravity_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic02_Gravity_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic02_Gravity_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT"
+              << std::endl;
     testWGravity(0.1,
                  "ifpack2: ILUT",
                  "DirichletNeumann",
@@ -1449,8 +1426,8 @@ SUITE(DIFFUSION)
   // the original test tested on circle-quad
   TEST(Analytic02_NLFV_DirichletNeumann_CircleQuad_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic02_NLFV_DirichletNeumann_CircleQuad_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic02_NLFV_DirichletNeumann_CircleQuad_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
          "test/circle_quad10.exo",
@@ -1466,8 +1443,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic02_Gravity_NLFV_DirichletNeumann_CircleQuad_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic02_Gravity_NLFV_DirichletNeumann_CircleQuad_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic02_Gravity_NLFV_DirichletNeumann_CircleQuad_ifpack2_ILUT"
+              << std::endl;
     testWGravity(0.1,
                  "ifpack2: ILUT",
                  "DirichletNeumann",
@@ -1488,8 +1465,8 @@ SUITE(DIFFUSION)
   // These probably should pass?  Not sure why they don't.
   TEST(Analytic02_NLFV_DirichletNeumann_structured3d_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic02_NLFV_DirichletNeumann_structured3d_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic02_NLFV_DirichletNeumann_structured3d_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
          "structured3d",
@@ -1505,8 +1482,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic02_Gravity_NLFV_DirichletNeumann_structured3d_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic02_Gravity_NLFV_DirichletNeumann_structured3d_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic02_Gravity_NLFV_DirichletNeumann_structured3d_ifpack2_ILUT"
+              << std::endl;
     testWGravity(0.1,
                  "ifpack2: ILUT",
                  "DirichletNeumann",
@@ -1566,8 +1543,7 @@ SUITE(DIFFUSION)
   // the original test tested on circle-quad
   TEST(Analytic02_NLFVwithBndFaces_DirichletNeumann_CircleQuad_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic02_NLFVwithBndFaces_DirichletNeumann_CircleQuad_ifpack2_ILUT"
+    std::cout << "Test: " << "Analytic02_NLFVwithBndFaces_DirichletNeumann_CircleQuad_ifpack2_ILUT"
               << std::endl;
     test("ifpack2: ILUT",
          "DirichletNeumann",
@@ -1654,8 +1630,7 @@ SUITE(DIFFUSION)
 #if FV
   TEST(Analytic03b_Linear1_FV_Dirichlet_Poly_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic03b_Linear1_FV_Dirichlet_Poly_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic03b_Linear1_FV_Dirichlet_Poly_ifpack2_ILUT" << std::endl;
     test("ifpack2: ILUT",
          "Dirichlet",
          "structured2d",
@@ -1672,8 +1647,7 @@ SUITE(DIFFUSION)
 #if MFD
   TEST(Analytic03b_Linear1_MFD_Dirichlet_Poly_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic03b_Linear1_MFD_Dirichlet_Poly_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic03b_Linear1_MFD_Dirichlet_Poly_ifpack2_ILUT" << std::endl;
     test("ifpack2: ILUT",
          "Dirichlet",
          "structured2d",
@@ -1690,8 +1664,7 @@ SUITE(DIFFUSION)
 #if NLFV
   TEST(Analytic03b_Linear1_NLFV_Dirichlet_Poly_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic03b_Linear1_NLFV_Dirichlet_Poly_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic03b_Linear1_NLFV_Dirichlet_Poly_ifpack2_ILUT" << std::endl;
     test("ifpack2: ILUT",
          "Dirichlet",
          "structured2d",
@@ -1707,8 +1680,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic03b_Linear1_NLFVBFace_Dirichlet_Poly_ifpack2_ILUT)
   {
-    std::cout << "Test: "
-              << "Analytic03b_Linear1_NLFVBFace_Dirichlet_Poly_ifpack2_ILUT" << std::endl;
+    std::cout << "Test: " << "Analytic03b_Linear1_NLFVBFace_Dirichlet_Poly_ifpack2_ILUT"
+              << std::endl;
     test("ifpack2: ILUT",
          "Dirichlet",
          "structured2d",
@@ -1727,8 +1700,7 @@ SUITE(DIFFUSION)
 #if FV
   TEST(Analytic03b_Linear1_FV_Dirichlet_Poly_ifpack2_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic03b_Linear1_FV_Dirichlet_Poly_ifpack2_diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic03b_Linear1_FV_Dirichlet_Poly_ifpack2_diagonal" << std::endl;
     test("diagonal",
          "Dirichlet",
          "structured2d",
@@ -1746,8 +1718,7 @@ SUITE(DIFFUSION)
   // on mfd: default, these have a tolerance of 1.e-12.  On TPFA, it is the same as FV?
   TEST(Analytic03b_Linear1_MFD_Dirichlet_Poly_ifpack2_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic03b_Linear1_MFD_Dirichlet_Poly_ifpack2_diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic03b_Linear1_MFD_Dirichlet_Poly_ifpack2_diagonal" << std::endl;
     test("diagonal",
          "Dirichlet",
          "structured2d",
@@ -1764,8 +1735,8 @@ SUITE(DIFFUSION)
 #if NLFV
   TEST(Analytic03b_Linear1_NLFV_Dirichlet_Poly_ifpack2_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic03b_Linear1_NLFV_Dirichlet_Poly_ifpack2_diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic03b_Linear1_NLFV_Dirichlet_Poly_ifpack2_diagonal"
+              << std::endl;
     test("diagonal",
          "Dirichlet",
          "structured2d",
@@ -1781,8 +1752,8 @@ SUITE(DIFFUSION)
   }
   TEST(Analytic03b_Linear1_NLFVBFace_Dirichlet_Poly_ifpack2_diagonal)
   {
-    std::cout << "Test: "
-              << "Analytic03b_Linear1_NLFVBFace_Dirichlet_Poly_ifpack2_diagonal" << std::endl;
+    std::cout << "Test: " << "Analytic03b_Linear1_NLFVBFace_Dirichlet_Poly_ifpack2_diagonal"
+              << std::endl;
     test("diagonal",
          "Dirichlet",
          "structured2d",

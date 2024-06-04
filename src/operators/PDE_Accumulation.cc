@@ -55,11 +55,10 @@ PDE_Accumulation::AddAccumulationTerm(const CompositeVector& du,
     auto diag_v = op->diag->getLocalViewDevice(Tpetra::Access::ReadWrite);
     auto du_v = du.viewComponent(name, false);
 
-    Kokkos::parallel_for("PDE_Accumulation::AddAccumulationTerm(Volume)",
-                         diag_v.extent(0),
-                         KOKKOS_LAMBDA(const int i) {
-                           diag_v(i, 0) += du_v(i,0) * m.getExtent(ent_kind, i) / dT;
-                         });
+    Kokkos::parallel_for(
+      "PDE_Accumulation::AddAccumulationTerm(Volume)",
+      diag_v.extent(0),
+      KOKKOS_LAMBDA(const int i) { diag_v(i, 0) += du_v(i, 0) * m.getExtent(ent_kind, i) / dT; });
 
   } else {
     op->diag->update(1.0 / dT, *du.getComponent(name, false), 1.0);

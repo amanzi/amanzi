@@ -520,10 +520,19 @@ MFD3D_Diffusion::MassMatrixInverseOptimized(int c, const Tensor<>& K, DenseMatri
   DenseMatrix<> R;
 
   int ok = L2consistencyInverse(c, K, R, W, true);
+  // std::cout << "After L2consistency:" << std::endl
+  //           << "  R = " << R << std::endl
+  //           << "  W = " << W << std::endl;
   if (ok) return ok;
 
   ok = StabilityOptimized_(K, R, W);
+  // std::cout << "After StabOpt:" << std::endl
+  //           << "  R = " << R << std::endl
+  //           << "  W = " << W << std::endl;
   RescaleMassMatrixInverse_(c, W);
+
+  // std::cout << "After Rescale:" << std::endl
+  //           << "  W = " << W << std::endl;
 
   return ok;
 }

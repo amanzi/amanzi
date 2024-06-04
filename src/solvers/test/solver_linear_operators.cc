@@ -316,97 +316,97 @@ SUITE(SOLVERS)
     }
   };
 
-    // TEST(BELOS_GMRES_SOLVER) {
-    //   std::cout << "\nChecking Belos GMRES solver..." << std::endl;
+  // TEST(BELOS_GMRES_SOLVER) {
+  //   std::cout << "\nChecking Belos GMRES solver..." << std::endl;
 
-    //   Teuchos::ParameterList plist;
-    //   Teuchos::ParameterList& vo = plist.sublist("VerboseObject");
-    //   vo.set("Verbosity Level", "high");
-    //   plist.set<int>("size of Krylov space", 15);
-    //   plist.set<double>("error tolerance", 1e-12);
+  //   Teuchos::ParameterList plist;
+  //   Teuchos::ParameterList& vo = plist.sublist("VerboseObject");
+  //   vo.set("Verbosity Level", "high");
+  //   plist.set<int>("size of Krylov space", 15);
+  //   plist.set<double>("error tolerance", 1e-12);
 
-    //   auto comm = getDefaultComm();
-    //   auto map = Teuchos::rcp(new Map_type(100, 0, comm));
+  //   auto comm = getDefaultComm();
+  //   auto map = Teuchos::rcp(new Map_type(100, 0, comm));
 
-    //   // create the operator
-    //   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-    //   AmanziSolvers::LinearOperatorBelosGMRES<Matrix, Vector_type, Map_type>
-    //   gmres(m, m); gmres.Init(plist);
+  //   // create the operator
+  //   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+  //   AmanziSolvers::LinearOperatorBelosGMRES<Matrix, Vector_type, Map_type>
+  //   gmres(m, m); gmres.Init(plist);
 
-    //   // initial guess
-    //   Vector_type u(map);
-    //  {
-    //    auto uv = u.getLocalViewHost();
-    //    uv(55,0) = 1.0;
-    //  }
-    //  u.sync_device();
+  //   // initial guess
+  //   Vector_type u(map);
+  //  {
+  //    auto uv = u.getLocalViewHost();
+  //    uv(55,0) = 1.0;
+  //  }
+  //  u.sync_device();
 
-    //   // solve
-    //   Vector_type v(map);
-    //   int ierr = gmres.applyInverse(u, v);
-    //   CHECK(ierr > 0);
-    // v.sync_host();
-    // {
-    //   auto vv = v.getLocalViewHost();
-    //   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i,0), 1e-6);
-    // }
+  //   // solve
+  //   Vector_type v(map);
+  //   int ierr = gmres.applyInverse(u, v);
+  //   CHECK(ierr > 0);
+  // v.sync_host();
+  // {
+  //   auto vv = v.getLocalViewHost();
+  //   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i,0), 1e-6);
+  // }
 
 
-    //
-    // };
+  //
+  // };
 
-    // TEST(AMESOS_SOLVER) {
-    //   std::cout << "\nChecking Amesos solver..." << std::endl;
+  // TEST(AMESOS_SOLVER) {
+  //   std::cout << "\nChecking Amesos solver..." << std::endl;
 
-    //   Teuchos::ParameterList plist;
-    //   Teuchos::ParameterList& vo = plist.sublist("VerboseObject");
-    //   vo.set("Verbosity Level", "high");
-    //   plist.set<std::string>("solver name", "Amesos_Klu")
-    //        .set<int>("amesos version", 1);
+  //   Teuchos::ParameterList plist;
+  //   Teuchos::ParameterList& vo = plist.sublist("VerboseObject");
+  //   vo.set("Verbosity Level", "high");
+  //   plist.set<std::string>("solver name", "Amesos_Klu")
+  //        .set<int>("amesos version", 1);
 
-    //   auto comm = getDefaultComm();
-    //   auto map = Teuchos::rcp(new Map_type(10, 0, comm));
+  //   auto comm = getDefaultComm();
+  //   auto map = Teuchos::rcp(new Map_type(10, 0, comm));
 
-    //   // create the operator
-    //   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-    //   m->Init();
+  //   // create the operator
+  //   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+  //   m->Init();
 
-    //   // initial guess
-    //   Vector_type v(map), u(map);
-    //  {
-    //    auto uv = u.getLocalViewHost();
-    //    uv(55,0) = 1.0;
-    //  }
-    //  u.sync_device();
+  //   // initial guess
+  //   Vector_type v(map), u(map);
+  //  {
+  //    auto uv = u.getLocalViewHost();
+  //    uv(55,0) = 1.0;
+  //  }
+  //  u.sync_device();
 
-    //   // Amesos1
-    //   {
-    //     AmanziSolvers::LinearOperatorAmesos<Matrix, Vector_type, Map_type>
-    //     klu(m, m); klu.Init(plist);
+  //   // Amesos1
+  //   {
+  //     AmanziSolvers::LinearOperatorAmesos<Matrix, Vector_type, Map_type>
+  //     klu(m, m); klu.Init(plist);
 
-    //     int ierr = klu.applyInverse(u, v);
-    //     CHECK(ierr > 0);
+  //     int ierr = klu.applyInverse(u, v);
+  //     CHECK(ierr > 0);
 
-    //     double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
-    //     CHECK_CLOSE(residual, 1.0, 1e-12);
-    //   }
+  //     double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
+  //     CHECK_CLOSE(residual, 1.0, 1e-12);
+  //   }
 
-    //   // Amesos2
-    //   {
-    //     AmanziSolvers::LinearOperatorAmesos<Matrix, Vector_type, Map_type>
-    //     klu(m, m); plist.set<std::string>("solver name", "Klu2")
-    //          .set<int>("amesos version", 2);
-    //     klu.Init(plist);
+  //   // Amesos2
+  //   {
+  //     AmanziSolvers::LinearOperatorAmesos<Matrix, Vector_type, Map_type>
+  //     klu(m, m); plist.set<std::string>("solver name", "Klu2")
+  //          .set<int>("amesos version", 2);
+  //     klu.Init(plist);
 
-    //     int ierr = klu.applyInverse(u, v);
-    //     CHECK(ierr > 0);
+  //     int ierr = klu.applyInverse(u, v);
+  //     CHECK(ierr > 0);
 
-    //     double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
-    //     CHECK_CLOSE(residual, 1.0, 1e-12);
-    //   }
+  //     double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
+  //     CHECK_CLOSE(residual, 1.0, 1e-12);
+  //   }
 
-    //
-    // };
+  //
+  // };
 
 #if 0
 

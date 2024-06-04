@@ -157,14 +157,8 @@ class DenseMatrix {
     }
   }
 
-  KOKKOS_INLINE_FUNCTION double& operator()(int i, int j)
-  {
-    return data_(j * m_ + i);
-  }
-  KOKKOS_INLINE_FUNCTION const double& operator()(int i, int j) const
-  {
-    return data_(j * m_ + i);
-  }
+  KOKKOS_INLINE_FUNCTION double& operator()(int i, int j) { return data_(j * m_ + i); }
+  KOKKOS_INLINE_FUNCTION const double& operator()(int i, int j) const { return data_(j * m_ + i); }
 
 
   KOKKOS_INLINE_FUNCTION DenseMatrix<MEMSPACE>& operator=(double val)
@@ -295,7 +289,7 @@ class DenseMatrix {
       for (int i = 0; i < n_; i++) {
         double s(0.0);
         for (int j = 0; j < m_; j++) {
-          s += operator()(i, j) * A(j);
+          s += operator()(j, i) * A(j);
           // s += (*tmpM) * dataA[j];
           // tmpM++;
         }
@@ -312,27 +306,12 @@ class DenseMatrix {
   }
 
   // access: the data are ordered by columns
-  KOKKOS_INLINE_FUNCTION int NumRows() const
-  {
-    return m_;
-  }
-  KOKKOS_INLINE_FUNCTION int NumCols() const
-  {
-    return n_;
-  }
+  KOKKOS_INLINE_FUNCTION int NumRows() const { return m_; }
+  KOKKOS_INLINE_FUNCTION int NumCols() const { return n_; }
 
-  KOKKOS_INLINE_FUNCTION Kokkos::View<double*, MEMSPACE> Values()
-  {
-    return data_;
-  }
-  KOKKOS_INLINE_FUNCTION double* Values_ptr()
-  {
-    return &data_[0];
-  }
-  KOKKOS_INLINE_FUNCTION const double* Values_ptr() const
-  {
-    return &data_[0];
-  }
+  KOKKOS_INLINE_FUNCTION Kokkos::View<double*, MEMSPACE> Values() { return data_; }
+  KOKKOS_INLINE_FUNCTION double* Values_ptr() { return &data_[0]; }
+  KOKKOS_INLINE_FUNCTION const double* Values_ptr() const { return &data_[0]; }
 
   KOKKOS_INLINE_FUNCTION double& Value(int i, int j)
   {
@@ -342,10 +321,7 @@ class DenseMatrix {
 #endif
     return data_(j * m_ + i);
   }
-  KOKKOS_INLINE_FUNCTION const Kokkos::View<double*, MEMSPACE> Values() const
-  {
-    return data_;
-  }
+  KOKKOS_INLINE_FUNCTION const Kokkos::View<double*, MEMSPACE> Values() const { return data_; }
 
   KOKKOS_INLINE_FUNCTION const double& Value(int i, int j) const
   {
@@ -384,11 +360,11 @@ class DenseMatrix {
     //*j = jmin;
     //*value = *data;
     *j = jmin;
-    *value = operator()(jmin, irow);
+    *value = operator()(irow, jmin);
 
     for (int k = jmin + 1; k < jmax + 1; k++) {
       // data += m_;
-      double v = data_(k * m_ + irow);
+      double v = operator()(irow, k);
       if (v > *value) {
         // if (*data > *value) {
         *j = k;
@@ -601,7 +577,7 @@ class DenseMatrix {
   DenseMatrix<MEMSPACE> NullSpace()
   {
     // We can treat only one type of rectangular matrix.
-    AMANZI_ASSERT(m_ <= n_);
+    AMANZI_ASSERT(m_ > n_);
 
     int m = m_, n = m_ - n_;
 
@@ -612,7 +588,7 @@ class DenseMatrix {
 
     DGESVD_F77("A", "N", &m_, &n_, &data_(0), &m_, S, U, &m, &V, &ldv, work, &lwork, &info);
 
-    AMANZI_ASSERT(info != 0);
+    AMANZI_ASSERT(!info);
 
     DenseMatrix<MEMSPACE> D(m, n);
     {

@@ -15,10 +15,10 @@ License:
 
 Checkpointing for state.
 ------------------------------------------------------------------------- */
+#include <filesystem>
 #include <iostream>
 #include <iomanip>
 
-#include "boost/filesystem.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 #include "Output.hh"
@@ -99,9 +99,9 @@ Checkpoint::Checkpoint(Teuchos::ParameterList& plist, const State& S)
 Checkpoint::Checkpoint(const std::string& file_or_dirname, const State& S) : IOEvent()
 {
   // if provided a directory, use new style
-  if (boost::filesystem::is_directory(file_or_dirname)) {
+  if (std::filesystem::is_directory(file_or_dirname)) {
     single_file_ = false;
-  } else if (boost::filesystem::is_regular_file(file_or_dirname)) {
+  } else if (std::filesystem::is_regular_file(file_or_dirname)) {
     single_file_ = true;
   } else {
     Errors::Message message;
@@ -121,8 +121,8 @@ Checkpoint::Checkpoint(const std::string& file_or_dirname, const State& S) : IOE
       const auto& mesh = S.GetMesh(domain->first);
 
       Key domain_name = Keys::replace_all(domain->first, ":", "-");
-      boost::filesystem::path chkp_file =
-        boost::filesystem::path(file_or_dirname) / (domain_name + ".h5");
+      std::filesystem::path chkp_file =
+        std::filesystem::path(file_or_dirname) / (domain_name + ".h5");
       Teuchos::ParameterList plist(domain_name);
       plist.set<std::string>("file name", chkp_file.string());
       input_[domain->first] = InputFactory::createForCheckpoint(plist, mesh->getComm());
@@ -138,11 +138,11 @@ Checkpoint::Checkpoint(const std::string& filename,
   : IOEvent()
 {
   // if provided a directory, use new style
-  if (boost::filesystem::is_directory(filename)) {
+  if (std::filesystem::is_directory(filename)) {
     single_file_ = false;
 
     Key domain_name = Keys::replace_all(domain, ":", "-");
-    boost::filesystem::path chkp_file = boost::filesystem::path(filename) / (domain_name + ".h5");
+    std::filesystem::path chkp_file = std::filesystem::path(filename) / (domain_name + ".h5");
 
     Teuchos::ParameterList plist(domain_name);
     plist.set<std::string>("file name", chkp_file.string());
@@ -150,7 +150,7 @@ Checkpoint::Checkpoint(const std::string& filename,
     filenamebase_ = filename;
     input_[domain] = InputFactory::createForCheckpoint(plist, comm);
 
-  } else if (boost::filesystem::is_regular_file(filename)) {
+  } else if (std::filesystem::is_regular_file(filename)) {
     Teuchos::ParameterList plist("input checkpoint");
     plist.set<std::string>("file name", filename);
     plist.set<std::string>("file format", "HDF5");
@@ -195,7 +195,7 @@ Checkpoint::createFile_(const int cycle)
 
   } else {
     std::string dirname = output_["domain"]->getFilename(cycle);
-    boost::filesystem::create_directory(dirname);
+    std::filesystem::create_directory(dirname);
     for (const auto& file_out : output_) { file_out.second->createTimestep(-1.0, cycle); }
   }
 }
@@ -207,15 +207,13 @@ Checkpoint::createFinalFile_(int cycle)
   if (single_file_) {
     std::string ch_file = output_["domain"]->getFilename(cycle);
     std::string ch_final = filenamebase_ + "_final.h5";
-    if (boost::filesystem::is_regular_file(ch_final.data()))
-      boost::filesystem::remove(ch_final.data());
-    boost::filesystem::create_hard_link(ch_file.data(), ch_final.data());
+    if (std::filesystem::is_regular_file(ch_final.data())) std::filesystem::remove(ch_final.data());
+    std::filesystem::create_hard_link(ch_file.data(), ch_final.data());
   } else {
     std::string ch_file = output_["domain"]->getFilename(cycle);
     std::string ch_final = filenamebase_ + "_final";
-    if (boost::filesystem::is_directory(ch_final.data()))
-      boost::filesystem::remove(ch_final.data());
-    boost::filesystem::create_symlink(ch_final.data(), ch_final.data());
+    if (std::filesystem::is_directory(ch_final.data())) std::filesystem::remove(ch_final.data());
+    std::filesystem::create_symlink(ch_final.data(), ch_final.data());
   }
 }
 
@@ -336,8 +334,8 @@ Checkpoint::read(State& S)
       const auto& mesh = S.GetMesh(domain->first);
 
       Key domain_name = Keys::cleanName(Keys::replace_all(domain->first, ":", "-"));
-      boost::filesystem::path chkp_file =
-        boost::filesystem::path(filenamebase_) / (domain_name + ".h5");
+      std::filesystem::path chkp_file =
+        std::filesystem::path(filenamebase_) / (domain_name + ".h5");
 
       Teuchos::ParameterList plist(domain_name);
       plist.set<std::string>("file name", chkp_file.string());

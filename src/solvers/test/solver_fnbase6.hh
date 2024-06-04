@@ -74,7 +74,7 @@ class NonlinearProblem6 : public Amanzi::AmanziSolvers::SolverFnBase<Vector_type
     h_->reciprocal(*h_);
   }
 
-  void ChangedSolution(){};
+  void ChangedSolution() {};
 
  protected:
   double atol_, rtol_;

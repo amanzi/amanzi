@@ -206,11 +206,9 @@ FileXDMF::getTopo_(const int cycle, const bool write_mesh)
 
   std::stringstream tmp1;
   if (write_mesh) {
-    tmp1 << basename_ << "_mesh.h5"
-         << ":/" << cycle << "/Mesh/MixedElements";
+    tmp1 << basename_ << "_mesh.h5" << ":/" << cycle << "/Mesh/MixedElements";
   } else {
-    tmp1 << basename_ << "_mesh.h5"
-         << ":/" << last_mesh_cycle_ << "/Mesh/MixedElements";
+    tmp1 << basename_ << "_mesh.h5" << ":/" << last_mesh_cycle_ << "/Mesh/MixedElements";
   }
 
   data_item.addContent(tmp1.str());
@@ -230,18 +228,15 @@ FileXDMF::getGeo_(const int cycle, const bool write_mesh)
   data_item.addAttribute("DataType", "Float");
 
   std::stringstream tmp1;
-  tmp1 << n_nodes_ << " "
-       << " 3";
+  tmp1 << n_nodes_ << " " << " 3";
   data_item.addAttribute("Dimensions", tmp1.str());
   data_item.addAttribute("Format", "HDF");
 
   std::stringstream tmp;
   if (write_mesh) {
-    tmp << basename_ << "_mesh.h5"
-        << ":/" << cycle << "/Mesh/Nodes";
+    tmp << basename_ << "_mesh.h5" << ":/" << cycle << "/Mesh/Nodes";
   } else {
-    tmp << basename_ << "_mesh.h5"
-        << ":/" << last_mesh_cycle_ << "/Mesh/Nodes";
+    tmp << basename_ << "_mesh.h5" << ":/" << last_mesh_cycle_ << "/Mesh/Nodes";
   }
   data_item.addContent(tmp.str());
   geo.addChild(data_item);
@@ -323,8 +318,7 @@ FileXDMF::getField_(const std::string& varname,
 
   data_item.addAttribute("DataType", data_type);
   std::stringstream tmp;
-  tmp << basename_ << "_data.h5"
-      << ":" << varname << "/" << cycle;
+  tmp << basename_ << "_data.h5" << ":" << varname << "/" << cycle;
   data_item.addContent(tmp.str());
   attribute.addChild(data_item);
   return attribute;

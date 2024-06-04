@@ -57,7 +57,8 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
         // debug the neighboring cells
         auto fcells = mesh->getFaceCells(lf);
         for (const auto& lc : fcells)
-          if (lc < cell_map.getLocalNumElements()) vcells.emplace_back(cell_map.getGlobalElement(lc));
+          if (lc < cell_map.getLocalNumElements())
+            vcells.emplace_back(cell_map.getGlobalElement(lc));
       }
     }
   }
@@ -189,7 +190,8 @@ Debugger::WriteVector(const std::string& vname, const CompositeVector& vec, bool
           auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
           for (unsigned int n = 0; n != fnums0.size(); ++n)
-            if (fnums0[n] < nfaces_valid) *dcvo_[i]->os() << " " << formatter_.format(vec_f(fnums0[n], j));
+            if (fnums0[n] < nfaces_valid)
+              *dcvo_[i]->os() << " " << formatter_.format(vec_f(fnums0[n], j));
         }
 
         if (include_faces && vec_bf.extent(0) != 0) {
@@ -198,7 +200,8 @@ Debugger::WriteVector(const std::string& vname, const CompositeVector& vec, bool
           for (unsigned int n = 0; n != fnums0.size(); ++n) {
             AmanziMesh::Entity_ID f = fnums0[n];
             AmanziMesh::Entity_ID bf = AmanziMesh::getFaceOnBoundaryBoundaryFace(*mesh_, f);
-            if (bf >= 0 && bf < nbfaces_valid) *dcvo_[i]->os() << " " << formatter_.format(vec_bf(bf, j));
+            if (bf >= 0 && bf < nbfaces_valid)
+              *dcvo_[i]->os() << " " << formatter_.format(vec_bf(bf, j));
           }
         }
         *dcvo_[i]->os() << std::endl;
@@ -221,8 +224,8 @@ Debugger::WriteCellVector(const std::string& name, const MultiVector_type& vec)
       Teuchos::OSTab tab = dcvo_[i]->getOSTab();
 
       if (dcvo_[i]->os_OK(verb_level_)) {
-        *dcvo_[i]->os() << formatter_.formatHeader(name, c0_gid)
-                        << " " << formatter_.format(vec_v(c0, j)) << std::endl;
+        *dcvo_[i]->os() << formatter_.formatHeader(name, c0_gid) << " "
+                        << formatter_.format(vec_v(c0, j)) << std::endl;
       }
     }
   }
@@ -297,8 +300,7 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
 
 // Write boundary condition data.
 void
-Debugger::WriteBoundaryConditions(const CompositeVector_<int>& flags,
-        const CompositeVector& values)
+Debugger::WriteBoundaryConditions(const CompositeVector_<int>& flags, const CompositeVector& values)
 {
   // bcs use 3 extra characters
   int width = formatter_.getWidth();
@@ -319,8 +321,8 @@ Debugger::WriteBoundaryConditions(const CompositeVector_<int>& flags,
       auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
       for (unsigned int n = 0; n != fnums0.size(); ++n)
-        *dcvo_[i]->os() << flags_v(fnums0(n), 0) << "("
-                        << formatter_.format(values_v(fnums0(n), 0)) << ")";
+        *dcvo_[i]->os() << flags_v(fnums0(n), 0) << "(" << formatter_.format(values_v(fnums0(n), 0))
+                        << ")";
       *dcvo_[i]->os() << std::endl;
     }
   }

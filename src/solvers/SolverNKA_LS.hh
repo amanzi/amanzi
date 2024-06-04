@@ -82,8 +82,8 @@ class SolverNKA_LS : public Solver<Vector, VectorSpace> {
     Init(fn, map);
   }
 
-  void Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
-            const Teuchos::RCP<const VectorSpace>& map);
+  void
+  Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const Teuchos::RCP<const VectorSpace>& map);
 
   int Solve(const Teuchos::RCP<Vector>& u)
   {

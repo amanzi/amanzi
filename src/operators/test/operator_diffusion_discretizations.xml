@@ -84,27 +84,27 @@
     </ParameterList>
 
     <ParameterList name="Amesos2: KLU">
-      <Parameter name="direct method" type="string" value="amesos"/>
-      <ParameterList name="amesos parameters">
-        <Parameter name="solver name" type="string" value="basker"/>
-        <Parameter name="amesos version" type="int" value="2"/>
-      </ParameterList>
+      <Parameter name="direct method" type="string" value="amesos2: KLU"/>
+      <!-- <ParameterList name="amesos2: KLU parameters"> -->
+      <!--   <Parameter name="solver name" type="string" value="KLU"/> -->
+      <!--   <Parameter name="amesos version" type="int" value="2"/> -->
+      <!-- </ParameterList> -->
     </ParameterList>
 
     <ParameterList name="Amesos2: basker">
-      <Parameter name="direct method" type="string" value="amesos"/>
-      <ParameterList name="amesos parameters">
-        <Parameter name="solver name" type="string" value="basker"/>
-        <Parameter name="amesos version" type="int" value="2"/>
-      </ParameterList>
+      <Parameter name="direct method" type="string" value="amesos2: basker"/>
+      <!-- <ParameterList name="amesos parameters"> -->
+      <!--   <Parameter name="solver name" type="string" value="basker"/> -->
+      <!--   <Parameter name="amesos version" type="int" value="2"/> -->
+      <!-- </ParameterList> -->
     </ParameterList>
 
     <ParameterList name="Amesos2: superludist">
-      <Parameter name="direct method" type="string" value="amesos"/>
-      <ParameterList name="amesos parameters">
-        <Parameter name="solver name" type="string" value="superludist"/>
-        <Parameter name="amesos version" type="int" value="2"/>
-      </ParameterList>
+      <Parameter name="direct method" type="string" value="amesos2: superludist"/>
+    <!--   <ParameterList name="amesos parameters"> -->
+    <!--     <Parameter name="solver name" type="string" value="superludist"/> -->
+    <!--     <Parameter name="amesos version" type="int" value="2"/> -->
+    <!--   </ParameterList> -->
     </ParameterList>
   </ParameterList>
 

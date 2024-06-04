@@ -31,7 +31,7 @@ namespace GMV {
 
 // Write a GMV file containing only mesh data to be used as a "fromfile".
 void
-create_mesh_file(const AmanziMesh::Mesh& meshs, std::string filename);
+create_mesh_file(const AmanziMesh::MeshHost& mesh, std::string filename);
 
 // Opens and initializes a GMV file for writing which references a "fromfile" for mesh definition.
 void
@@ -52,12 +52,12 @@ open_data_file(std::string mesh_fromfile,
 
 // Opens and initializes a GMV file which contains mesh data, i.e. doesn't use a "fromfile".
 void
-open_data_file(const AmanziMesh::Mesh& mesh, const std::string& filename);
+open_data_file(const AmanziMesh::MeshHost& mesh, const std::string& filename);
 
 // Opens and initializes a GMV file which contains mesh data, i.e. doesn't use a "fromfile"
 // adds a suffix of the type .000302 with, in this case, cycleno=302 and digits= 6
 void
-open_data_file(const AmanziMesh::Mesh& mesh,
+open_data_file(const AmanziMesh::MeshHost& mesh,
                std::string filename,
                unsigned int cycleno,
                unsigned int digits);

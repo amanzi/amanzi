@@ -35,12 +35,12 @@ typedef std::string BFKey;
 class BilinearFormFactory {
   typedef std::map<BFKey,
                    BilinearForm* (*)(const Teuchos::ParameterList&,
-                                     const Teuchos::RCP<const AmanziMesh::Mesh>&)>
+                                     const Teuchos::RCP<const AmanziMesh::MeshHost>&)>
     map_type;
 
  public:
   static Teuchos::RCP<BilinearForm>
-  Create(const Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+  Create(const Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh);
 
  protected:
   static map_type* GetMap()
@@ -56,7 +56,7 @@ class BilinearFormFactory {
 
 template <typename TDerived>
 BilinearForm*
-CreateT(const Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+CreateT(const Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh)
 {
   return new TDerived(plist, mesh);
 }
@@ -72,7 +72,7 @@ class RegisteredFactory : public BilinearFormFactory {
     BilinearFormFactory::GetMap()->insert(
       std::pair<BFKey,
                 BilinearForm* (*)(const Teuchos::ParameterList&,
-                                  const Teuchos::RCP<const AmanziMesh::Mesh>&)>(
+                                  const Teuchos::RCP<const AmanziMesh::MeshHost>&)>(
         s, &CreateT<TDerived>));
     for (auto it = BilinearFormFactory::GetMap()->begin();
          it != BilinearFormFactory::GetMap()->end();

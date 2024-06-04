@@ -155,7 +155,8 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
       cell_gids[c] = bg_cell_all_vec_data[c - ncells_log + ncells_bg_owned];
   }
 
-  Kokkos::View<GO*, Amanzi::DefaultExecutionSpace> cell_gids_d("cell_gids on device", cell_gids.size());
+  Kokkos::View<GO*, Amanzi::DefaultExecutionSpace> cell_gids_d("cell_gids on device",
+                                                               cell_gids.size());
   Kokkos::deep_copy(cell_gids_d, cell_gids);
 
   // -- create the map
@@ -186,7 +187,8 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
       face_gids[f] = bg_face_all_vec_data[f - nfaces_log - nfaces_extra + nfaces_bg_owned];
   }
 
-  Kokkos::View<GO*, Amanzi::DefaultExecutionSpace> face_gids_d("face_gids on device", face_gids.size());
+  Kokkos::View<GO*, Amanzi::DefaultExecutionSpace> face_gids_d("face_gids on device",
+                                                               face_gids.size());
   Kokkos::deep_copy(face_gids_d, face_gids);
 
   // -- create the map

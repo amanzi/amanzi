@@ -182,10 +182,8 @@ SUITE(DIFFUSION)
     fix.setBCsDirichlet();
     fix.setup("diagonal", "PCG");
 
-    std::cout << "Diffusion Forward Apply Test (np=" << fix.comm->getSize() << "): "
-              << "fv"
-              << ", " << ana->name() << ", "
-              << "Generate1D" << std::endl
+    std::cout << "Diffusion Forward Apply Test (np=" << fix.comm->getSize() << "): " << "fv" << ", "
+              << ana->name() << ", " << "Generate1D" << std::endl
               << "--------------------------------------------------------------------------------"
               << std::endl;
 
@@ -241,10 +239,8 @@ SUITE(DIFFUSION)
     fix.setBCsDirichlet();
     fix.setup("diagonal", "PCG");
 
-    std::cout << "Diffusion Forward Apply Test (np=" << fix.comm->getSize() << "): "
-              << "MFD"
-              << ", " << ana->name() << ", "
-              << "Generate1D" << std::endl
+    std::cout << "Diffusion Forward Apply Test (np=" << fix.comm->getSize() << "): " << "MFD"
+              << ", " << ana->name() << ", " << "Generate1D" << std::endl
               << "--------------------------------------------------------------------------------"
               << std::endl;
 

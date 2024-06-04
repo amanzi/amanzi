@@ -435,10 +435,8 @@ SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector>& u
           residual_ = error;
           l2_error = res->norm2();
           if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-            *vo_->os() << num_itrs_ << ": NKA "
-                       << ": error(res) = " << error << std::endl
-                       << num_itrs_ << ": NKA "
-                       << ": L2 error(res) = " << l2_error << std::endl;
+            *vo_->os() << num_itrs_ << ": NKA " << ": error(res) = " << error << std::endl
+                       << num_itrs_ << ": NKA " << ": L2 error(res) = " << l2_error << std::endl;
           }
 
           // Check if we have improved
@@ -492,10 +490,9 @@ SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector>& u
                 residual_ = error;
                 l2_error = res->norm2();
                 if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-                  *vo_->os() << num_itrs_ << ": PIC "
-                             << ": error(res) = " << error << std::endl
-                             << num_itrs_ << ": PIC "
-                             << ": L2 error(res) = " << l2_error << std::endl;
+                  *vo_->os() << num_itrs_ << ": PIC " << ": error(res) = " << error << std::endl
+                             << num_itrs_ << ": PIC " << ": L2 error(res) = " << l2_error
+                             << std::endl;
                 }
               }
               good_step = true;
@@ -573,7 +570,7 @@ SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector>& u
           }
           done_backtracking = good_step || n_backtrack > max_backtrack_;
         } // backtrack loop
-      }   // backtracking
+      } // backtracking
 
     } else {
       // not backtracking, either due to BT Lag or past the last BT iteration

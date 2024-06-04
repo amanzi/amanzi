@@ -85,8 +85,8 @@ TEST_FIXTURE(reference_mesh, MESH_FUNCTION)
   // finally, one for a seepage-like condition, which may switch dynamically in
   // time between DIRICHLET and NEUMANN, and needs a function
   int OPERATOR_BC_CONDITIONAL = -1; // NOTE: -1 is necessary here to tell the
-                                 // PatchSpace that it needs to store a VIEW of
-                                 // flags, and not one flag
+                                    // PatchSpace that it needs to store a VIEW of
+                                    // flags, and not one flag
   MeshFunction mf_s(plist.sublist("seepage face"),
                     mesh,
                     "boundary pressure",
@@ -140,7 +140,7 @@ TEST_FIXTURE(reference_mesh, MESH_FUNCTION)
   {
     auto vals = bc_values.viewComponent<DefaultHostMemorySpace>("face", false);
     auto markers = bc_markers.viewComponent<DefaultHostMemorySpace>("face", false);
-    auto mh = onMemSpace<MemSpace_kind::HOST>(mesh);
+    auto mh = onMemHost(mesh);
     for (int f = 0; f != vals.extent(0); ++f) {
       auto fc = mesh->getFaceCentroid(f);
       std::cout << "Checking " << f << " at " << fc << std::endl;

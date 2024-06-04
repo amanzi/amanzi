@@ -9,7 +9,7 @@
 #define REGISTER_BY_MATERIAL(c)                                                                    \
   template <>                                                                                      \
   Utils::RegisteredFactory<Evaluator, EvaluatorModelCVByMaterial<c, DefaultDevice>>                \
-  EvaluatorModelCVByMaterial<c, DefaultDevice>::reg_(c<cView_type, View_type>::eval_type +              \
+  EvaluatorModelCVByMaterial<c, DefaultDevice>::reg_(c<cView_type, View_type>::eval_type +         \
                                                      " by region")
 
 
