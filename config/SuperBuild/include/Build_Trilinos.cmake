@@ -129,6 +129,12 @@ if (ENABLE_Tpetra)
   message(STATUS "Kokkos Serial enabled")
   list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_SERIAL:BOOL=ON")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=ON")
+
+  # NOTE: this should probably get turned off if anything BUT serial is turned on...
+  if (NOT (ENABLE_CUDA OR ENABLE_OpenMP))
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_ATOMICS_BYPASS=ON")
+  endif()
+
     
 else() 
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Tpetra:BOOL=OFF")
