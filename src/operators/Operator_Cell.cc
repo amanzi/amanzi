@@ -79,7 +79,7 @@ Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   auto Yc = Y.viewComponent("cell", true);
   auto Xc = X.viewComponent("cell", true);
 
-  const AmanziMesh::Mesh* mesh = op.mesh.get();
+  const AmanziMesh::Mesh& m = *op.mesh;
 
   // Allocate the first time
   if (op.v.size() != op.A.size()) { op.PreallocateWorkVectors(); }
@@ -93,7 +93,7 @@ Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
     "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell COMPUTE",
     nfaces_owned,
     KOKKOS_LAMBDA(const int f) {
-      auto cells = mesh->getFaceCells(f);
+      auto cells = m.getFaceCells(f);
 
       int ncells = cells.extent(0);
       auto lv = local_v[f];
@@ -217,10 +217,10 @@ Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
   auto offproc_mat = mat.getOffProcLocalMatrixDevice();
   int nrows_local = mat.getMatrix()->getLocalNumRows();
 
-  const AmanziMesh::Mesh* mesh = op.mesh.get();
+  const AmanziMesh::Mesh& m = *op.mesh;
   Kokkos::parallel_for(
     "Operator_Cell::AssembleMatrixOp::Face_Cell", nfaces_owned, KOKKOS_LAMBDA(const int f) {
-      auto cells = mesh->getFaceCells(f);
+      auto cells = m.getFaceCells(f);
 
       auto A_f = op.A[f];
       int nc = cells.extent(0);

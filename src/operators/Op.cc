@@ -26,9 +26,7 @@ namespace Operators {
 void
 Op::Zero()
 {
-  if (A.size()) {
-    Kokkos::parallel_for("Op::Zero", A.size(), KOKKOS_LAMBDA(const int i) { Zero(i); });
-  }
+  if (A.size()) A.data.zero();
   if (diag.get()) diag->putScalar(0.);
 }
 

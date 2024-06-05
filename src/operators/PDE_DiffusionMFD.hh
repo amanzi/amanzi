@@ -93,6 +93,9 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
     ParsePList_();
   }
 
+  // delete this to avoid accidental capture in lambdas
+  PDE_DiffusionMFD(const PDE_DiffusionMFD& other) = delete;
+
   virtual void Init() override;
 
   virtual void SetTensorCoefficient(const Teuchos::RCP<const TensorVector>& K) override;

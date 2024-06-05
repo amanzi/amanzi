@@ -32,10 +32,10 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
     auto Xv = X.viewComponent("face", false);
     auto diag_v = diag->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
-    const AmanziMesh::Mesh* mesh_ = mesh.get();
+    const AmanziMesh::Mesh& m = *mesh;
     Kokkos::parallel_for(
       "Op_Surfacecell_Surfacecell::SumLocalDiag", diag_v.extent(0), KOKKOS_LAMBDA(const int& sc) {
-        auto f = mesh_->getEntityParent(AmanziMesh::CELL, sc);
+        auto f = m.getEntityParent(AmanziMesh::CELL, sc);
         Xv(f, 0) += diag_v(sc, 0);
       });
   }
@@ -77,11 +77,11 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
                                             AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED)) {
       const auto s_f = scaling.viewComponent("face", false);
       auto diag_v = diag->getLocalViewDevice(Tpetra::Access::ReadWrite);
-      const AmanziMesh::Mesh* mesh_ = mesh.get();
+      const AmanziMesh::Mesh& m = *mesh;
 
       Kokkos::parallel_for(
         "Op_SurfaceCell_SurfaceCell::Rescale", diag_v.extent(0), KOKKOS_LAMBDA(const int& sc) {
-          auto f = mesh_->getEntityParent(AmanziMesh::CELL, sc);
+          auto f = m.getEntityParent(AmanziMesh::CELL, sc);
           diag_v(sc, 0) *= s_f(f, 0);
         });
     }

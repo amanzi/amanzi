@@ -201,7 +201,7 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist, CompositeVector& t)
             // int ndofs = fmap.ElementSize(f);
             // int g = fmap.FirstPointInElement(f);
             // if (ndofs == 1) {
-            const AmanziGeometry::Point& normal = mesh.getFaceNormal(f);
+            auto normal = mesh.getFaceNormal(f);
             dat_f(f, 0) = vel * normal;
             // } else {
             //   AmanziMesh::Entity_ID_List cells;

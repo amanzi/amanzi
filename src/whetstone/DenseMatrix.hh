@@ -152,7 +152,8 @@ class DenseMatrix {
   void assign(const DenseMatrix<MEMSPACE>& other)
   {
     if (this != &other) {
-      if (n_ != other.n_ || m_ != other.m_) reshape(other.m_, other.n_);
+      AMANZI_ASSERT(n_ == other.n_ && m_ == other.m_);
+      //if (n_ != other.n_ || m_ != other.m_) reshape(other.m_, other.n_);
       for (int i = 0; i < n_ * m_; ++i) { data_(i) = other.data_(i); }
     }
   }
@@ -506,7 +507,8 @@ class DenseMatrix {
   void Transpose(const DenseMatrix<MEMSPACE>& A)
   {
     int mrowsA = A.NumRows(), ncolsA = A.NumCols();
-    reshape(ncolsA, mrowsA);
+    AMANZI_ASSERT(n_ == A.m_ && m_ == A.n_);
+    //reshape(ncolsA, mrowsA);
 
     for (int j = 0; j < ncolsA; ++j) {
       for (int i = 0; i < mrowsA; ++i) { operator()(j, i) = A(i, j); }

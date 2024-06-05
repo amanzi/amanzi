@@ -101,6 +101,7 @@ PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   for (const auto& comp : *dvec) {
     Reductions::MaxLoc<double, GO> enorm_comp;
     const auto dvec_v = dvec->viewComponent(comp, false);
+    double atol(atol_), rtol(rtol_);
 
     if (comp == "cell") {
       // error done relative to extensive, conserved quantity
@@ -110,7 +111,7 @@ PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         ncells,
         KOKKOS_LAMBDA(const int& c, Reductions::MaxLoc<double, GO>& lval) {
           double enorm_c =
-            std::abs(h * dvec_v(c, 0)) / (atol_ * cv(c, 0) + rtol_ * std::abs(conserved(c, 0)));
+            fabs(h * dvec_v(c, 0)) / (atol * cv(c, 0) + rtol * fabs(conserved(c, 0)));
           Reductions::MaxLoc<double, GO> myval(enorm_c, c);
           lval += myval;
         },
@@ -119,19 +120,22 @@ PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     } else if (comp == "face") {
       // error in flux -- relative to cell's extensive conserved quantity
       int nfaces = dvec_v.extent(0);
+      auto& m = *mesh_;
+      double fluxtol(fluxtol_);
+
       Kokkos::parallel_reduce(
         "PK_PhysicalBDF_Default::ErrorNorm",
         nfaces,
         KOKKOS_LAMBDA(const int& f, Reductions::MaxLoc<double, GO>& lval) {
-          auto cells = mesh_->getFaceCells(f);
+          auto cells = m.getFaceCells(f);
           double cv_min =
-            cells.size() == 1 ? cv(cells[0], 0) : std::min(cv(cells[0], 0), cv(cells[1], 0));
+            cells.size() == 1 ? cv(cells[0], 0) : fmin(cv(cells[0], 0), cv(cells[1], 0));
           double conserved_min = cells.size() == 1 ?
                                    conserved(cells[0], 0) :
-                                   std::min(conserved(cells[0], 0), conserved(cells[1], 0));
+                                   fmin(conserved(cells[0], 0), conserved(cells[1], 0));
 
-          double enorm_f = fluxtol_ * h * std::abs(dvec_v(f, 0)) /
-                           (atol_ * cv_min + rtol_ * std::abs(conserved_min));
+          double enorm_f = fluxtol * h * fabs(dvec_v(f, 0)) /
+                           (atol * cv_min + rtol * fabs(conserved_min));
           lval += Reductions::MaxLoc<double, GO>(enorm_f, f);
         },
         enorm_comp);

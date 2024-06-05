@@ -105,7 +105,7 @@ FunctionBilinearAndTime::apply(
     val_after_->apply(in, out2, ids);
 
     if (ids) {
-      auto ids_loc = *ids;
+      auto& ids_loc = *ids;
       Kokkos::View<double*> out_copy(out);
       Kokkos::parallel_for(
         "FunctionBilinearAndTime::apply", out2.extent(0), KOKKOS_LAMBDA(const int& i) {

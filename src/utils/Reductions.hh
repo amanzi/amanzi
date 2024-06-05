@@ -161,7 +161,7 @@ reduceAllLoc(const Vector_type_<Scalar>& vec,
   if (indices) {
     auto vec_view = vec.getLocalViewDevice(Tpetra::Access::ReadOnly);
     // do the local reduction in Kokkos
-    auto indices_loc = *indices;
+    auto& indices_loc = *indices;
     Kokkos::parallel_reduce(
       "Amanzi::reduceAll",
       indices_loc.extent(0),

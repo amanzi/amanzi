@@ -47,6 +47,9 @@ class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV, public PDE_DiffusionW
       PDE_DiffusionWithGravity(plist, mesh)
   {}
 
+  // delete this to avoid accidental capture in lambdas
+  PDE_DiffusionFVwithGravity(const PDE_DiffusionFVwithGravity& other) = delete;
+
   virtual void Init() override;
 
   // main virtual members

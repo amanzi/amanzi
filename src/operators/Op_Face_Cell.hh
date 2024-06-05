@@ -38,13 +38,13 @@ class Op_Face_Cell : public Op {
 
   virtual void SumLocalDiag(CompositeVector& X) const
   {
-    AmanziMesh::Mesh const* mesh_ = mesh.get();
+    const AmanziMesh::Mesh& m = *mesh;
     auto Xv = X.viewComponent("cell", true);
     Kokkos::parallel_for(
-      "Op_Face_Cell::GetLocalDiagCopy", A.size(), KOKKOS_LAMBDA(const int f) {
+      "Op_Face_Cell::GetLocalDiagCopy", A.size(), KOKKOS_CLASS_LAMBDA(const int f) {
         // Extract matrix
         auto lA = A[f];
-        auto cells = mesh_->getFaceCells(f);
+        auto cells = m.getFaceCells(f);
         Kokkos::atomic_add(&Xv(cells(0), 0), lA(0, 0));
         if (cells.extent(0) > 1) { Kokkos::atomic_add(&Xv(cells(1), 0), lA(1, 1)); }
       });
@@ -78,10 +78,10 @@ class Op_Face_Cell : public Op {
   {
     if (scaling.hasComponent("cell")) {
       const auto s_c = scaling.viewComponent("cell", true);
-      const Amanzi::AmanziMesh::Mesh* m = mesh.get();
+      const AmanziMesh::Mesh& m = *mesh;
       Kokkos::parallel_for(
-        "Op_Face_Cell::Rescale", A.size(), KOKKOS_LAMBDA(const int& f) {
-          auto cells = m->getFaceCells(f);
+        "Op_Face_Cell::Rescale", A.size(), KOKKOS_CLASS_LAMBDA(const int& f) {
+          auto cells = m.getFaceCells(f);
           auto lA = A[f];
           lA(0, 0) *= s_c(cells(0), 0);
           if (cells.size() > 1) {

@@ -25,17 +25,18 @@ DeriveFaceValuesFromCellValues(CompositeVector& cv)
 
     const auto cv_c = cv.viewComponent("cell", true);
     auto cv_f = cv.viewComponent("face", false);
-    const AmanziMesh::Mesh* mesh = &*cv.getMesh();
+    const AmanziMesh::Mesh& mesh = *cv.getMesh();
 
     Kokkos::parallel_for(
       "CompositeVector::DeriveFaceValuesFromCellValues loop 1",
       cv_f.extent(0),
       KOKKOS_LAMBDA(decltype(cv_f)::size_type f) {
-        int ncells = mesh->getFaceNumCells(f, AmanziMesh::Parallel_kind::ALL);
+        int ncells = mesh.getFaceNumCells(f, AmanziMesh::Parallel_kind::ALL);
         double face_value = 0.0;
-        for (int n = 0; n != ncells; ++n) { face_value += cv_c(mesh->getFaceCell(f, n), 0); }
+        for (int n = 0; n != ncells; ++n) { face_value += cv_c(mesh.getFaceCell(f, n), 0); }
         cv_f(f, 0) = face_value / ncells;
       });
+
   } else if (cv.hasComponent("boundary_face")) {
     AmanziMesh::copyCellsToBoundaryFaces(
       *cv.getMesh(), *cv.getComponent("cell", false), *cv.getComponent("boundary_face", false));
@@ -64,17 +65,17 @@ copyVectorToMeshCoordinates(const CompositeVector& vec, AmanziMesh::MeshHost& me
   const auto nodes = vec.viewComponent<DefaultHostMemorySpace>("node", true);
   int ndim = mesh.getSpaceDimension();
 
-  AmanziMesh::Mesh::Entity_ID_View node_ids("node ids", nodes.extent(0));
-  AmanziMesh::Mesh::Point_View new_positions("new pos", nodes.extent(0));
-  Kokkos::parallel_for(
-    "copyVectorToMeshCoordinates", nodes.extent(0), KOKKOS_LAMBDA(const int& n) {
-      node_ids[n] = n;
-      if (mesh.getSpaceDimension() == 2) {
-        new_positions[n] = Amanzi::AmanziGeometry::Point{ nodes(n, 0), nodes(n, 1) };
-      } else {
-        new_positions[n] = Amanzi::AmanziGeometry::Point{ nodes(n, 0), nodes(n, 1), nodes(n, 2) };
-      }
-    });
+  AmanziMesh::MeshHost::Entity_ID_View node_ids("node ids", nodes.extent(0));
+  AmanziMesh::MeshHost::Point_View new_positions("new pos", nodes.extent(0));
+
+  for (int n=0; n!=nodes.extent(0); ++n) {
+    node_ids[n] = n;
+    if (mesh.getSpaceDimension() == 2) {
+      new_positions[n] = Amanzi::AmanziGeometry::Point{ nodes(n, 0), nodes(n, 1) };
+    } else {
+      new_positions[n] = Amanzi::AmanziGeometry::Point{ nodes(n, 0), nodes(n, 1), nodes(n, 2) };
+    }
+  };
   AmanziMesh::deform(mesh, node_ids, new_positions);
 }
 

@@ -185,8 +185,8 @@ namespace Impl {
 Kokkos::View<double**>
 getMeshFunctionCoordinates(double time, const PatchSpace& ps)
 {
-  const AmanziMesh::Mesh* mesh = ps.mesh.get();
-  int dim = mesh->getSpaceDimension();
+  const AmanziMesh::Mesh& mesh = *ps.mesh;
+  int dim = mesh.getSpaceDimension();
   Kokkos::View<double**> txyz("txyz", dim + 1, ps.size());
 
   auto ids = ps.getIDs();
@@ -198,17 +198,17 @@ getMeshFunctionCoordinates(double time, const PatchSpace& ps)
     Kokkos::parallel_for(
       "computeMeshFunction txyz init node", ps.size(), KOKKOS_LAMBDA(const int& i) {
         txyz(0, i) = time;
-        auto cc = mesh->getNodeCoordinate(ids[i]);
+        auto cc = mesh.getNodeCoordinate(ids[i]);
         txyz(1, i) = cc[0];
         txyz(2, i) = cc[1];
-        if (mesh->getSpaceDimension() == 3) txyz(3, i) = cc[2];
+        if (mesh.getSpaceDimension() == 3) txyz(3, i) = cc[2];
       });
 
   } else if (ps.entity_kind == AmanziMesh::CELL) {
     Kokkos::parallel_for(
       "computeMeshFunction txyz init cell", ps.size(), KOKKOS_LAMBDA(const int& i) {
         txyz(0, i) = time;
-        auto cc = mesh->getCellCentroid(ids[i]);
+        auto cc = mesh.getCellCentroid(ids[i]);
         txyz(1, i) = cc[0];
         txyz(2, i) = cc[1];
         if (dim == 3) txyz(3, i) = cc[2];
@@ -218,7 +218,7 @@ getMeshFunctionCoordinates(double time, const PatchSpace& ps)
     Kokkos::parallel_for(
       "computeMeshFunction txyz init face", ps.size(), KOKKOS_LAMBDA(const int& i) {
         txyz(0, i) = time;
-        auto cc = mesh->getFaceCentroid(ids[i]);
+        auto cc = mesh.getFaceCentroid(ids[i]);
         txyz(1, i) = cc[0];
         txyz(2, i) = cc[1];
         if (dim == 3) txyz(3, i) = cc[2];

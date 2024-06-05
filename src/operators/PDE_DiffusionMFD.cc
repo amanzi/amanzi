@@ -161,10 +161,11 @@ void
 PDE_DiffusionMFD::UpdateMatricesMixed_()
 {
   DenseMatrix_Vector& A = local_op_->A;
+  auto& Wff_cells = Wff_cells_;
 
   Kokkos::parallel_for(
     "PDE_DiffusionMFD::UpdateMatricesMixed_", ncells_owned, KOKKOS_LAMBDA(const int& c) {
-      auto Wff = Wff_cells_[c];
+      auto Wff = Wff_cells[c];
       int nfaces = Wff.NumRows();
 
       auto Acell = A[c];
@@ -219,54 +220,58 @@ PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
   }
 
   DenseMatrix_Vector& A = local_op_->A;
-  const AmanziMesh::Mesh* mesh = mesh_.get();
+  const AmanziMesh::Mesh& m = *mesh_;
   Preallocate_little_k_();
+
+  auto& Wff_cells = Wff_cells_;
+  auto& kr_cells = kr_cells_;
+  int little_k_type(little_k_type_);
 
   Kokkos::parallel_for(
     "PDE_DiffusionMFD::UpdateMatricesMixed_little_k_", ncells_owned, KOKKOS_LAMBDA(const int& c) {
-      auto faces = mesh->getCellFaces(c);
+      auto faces = m.getCellFaces(c);
       int nfaces = faces.extent(0);
 
       // set up kr
-      auto kr = kr_cells_[c];
+      auto kr = kr_cells[c];
       kr.putScalar(1.0);
 
       // -- chefs recommendation: SPD discretization with upwind
-      if (little_k_type_ == OPERATOR_LITTLE_K_DIVK) {
+      if (little_k_type == OPERATOR_LITTLE_K_DIVK) {
         if (k_face.extent(0) > 0)
           for (int n = 0; n < nfaces; n++) kr(n) = k_face(faces[n], 0);
         if (k_cell.extent(0) > 0) kr(nfaces) = k_cell(c, 0);
 
         // -- new scheme: SPD discretization with upwind and equal spliting
-      } else if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_BASE) {
+      } else if (little_k_type == OPERATOR_LITTLE_K_DIVK_BASE) {
         if (k_face.extent(0) > 0)
           for (int n = 0; n < nfaces; n++) kr(n) = sqrt(k_face(faces[n], 0));
 
         // -- same as above but remains second-order for dicontinuous coefficients
-      } else if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
+      } else if (little_k_type == OPERATOR_LITTLE_K_DIVK_TWIN) {
         if (k_face.extent(0) > 0) {
           for (int n = 0; n < nfaces; n++) {
             int f = faces[n];
-            auto cells = mesh->getFaceCells(f);
+            auto cells = m.getFaceCells(f);
             kr(n) = (c == cells[0]) ? k_face(f, 0) : k_twin(f, 0);
           }
         }
         if (k_cell.extent(0) > 0) kr(nfaces) = k_cell(c, 0);
 
         // -- the second most popular choice: classical upwind
-      } else if (little_k_type_ == OPERATOR_LITTLE_K_UPWIND) {
+      } else if (little_k_type == OPERATOR_LITTLE_K_UPWIND) {
         if (k_face.extent(0) > 0)
           for (int n = 0; n < nfaces; n++) kr(n) = k_face(faces[n], 0);
 
-      } else if (little_k_type_ == OPERATOR_LITTLE_K_STANDARD) {
+      } else if (little_k_type == OPERATOR_LITTLE_K_STANDARD) {
         if (k_cell.extent(0) > 0)
           for (int n = 0; n < nfaces; n++) kr(n) = k_cell(c, 0);
       }
 
-      auto Wff = Wff_cells_[c];
+      auto Wff = Wff_cells[c];
       auto Acell = A[c];
 
-      if (little_k_type_ & OPERATOR_LITTLE_K_DIVK_BASE) {
+      if (little_k_type & OPERATOR_LITTLE_K_DIVK_BASE) {
         double matsum = 0.0;
         for (int n = 0; n < nfaces; n++) {
           double rowsum = 0.0;
@@ -387,7 +392,7 @@ PDE_DiffusionMFD::UpdateMatricesTPFA_()
 
   //WhetStone::Tensor<> Kc(mesh_->space_dimension(), 1);
   //Kc(0, 0) = 1.0;
-  //const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
+  //const Amanzi::AmanziMesh::Mesh& m = *mesh_;
 
   //AmanziMesh::Entity_ID_View cells, faces;
   //Ttmp.PutScalar(0.0);
@@ -397,7 +402,7 @@ PDE_DiffusionMFD::UpdateMatricesTPFA_()
   //  ncells_owned,
   //  KOKKOS_LAMBDA(const int& c){
   //    AmanziMesh::Entity_ID_View faces;
-  //    mesh_->cell_get_faces(c, faces);
+  //    m.cell_get_faces(c, faces);
   //    int nfaces = faces.size();
 
   //    WhetStone::Tensor<DeviceOnlyMemorySpace> Kc = K_->at(c);
@@ -416,7 +421,7 @@ PDE_DiffusionMFD::UpdateMatricesTPFA_()
   //  nfaces_owned,
   //  KOKKOS_LAMBDA(const int& f){
   //    AmanziMesh::Entity_ID_View cells;
-  //    mesh_->face_get_cells(f, AmanziMesh::Parallel_kind::ALL, cells);
+  //    m.face_get_cells(f, AmanziMesh::Parallel_kind::ALL, cells);
   //    int ncells = cells.size();
   //    WhetStone::DenseMatrix<DeviceOnlyMemorySpace> Aface(A.at(f),A.size(f,0),A.size(f,1));
 
@@ -513,7 +518,7 @@ PDE_DiffusionMFD::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
 
   { // context for views
     // apply diffusion type BCs to FACE-CELL system
-    const Amanzi::AmanziMesh::Mesh* mesh = mesh_.get();
+    const Amanzi::AmanziMesh::Mesh& m = *mesh_;
     DenseMatrix_Vector& A = local_op_->A;
 
     const auto bc_model_trial = bc_trial->bc_model();
@@ -530,7 +535,7 @@ PDE_DiffusionMFD::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
 
     Kokkos::parallel_for(
       "PDE_DiffusionMFD::ApplyBCs_Mixed_", ncells_owned, KOKKOS_LAMBDA(const int& c) {
-        auto faces = mesh->getCellFaces(c);
+        auto faces = m.getCellFaces(c);
         int nfaces = faces.size();
 
         auto Acell = A[c];
@@ -564,11 +569,11 @@ PDE_DiffusionMFD::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
             }
           } else if (bc_model_trial[f] == OPERATOR_BC_NEUMANN && primary) {
             // need not be atomic if f is boundary face?
-            Kokkos::atomic_add(&rhs_face(f, 0), -value * mesh->getFaceArea(f));
+            Kokkos::atomic_add(&rhs_face(f, 0), -value * m.getFaceArea(f));
           } else if (bc_model_trial[f] == OPERATOR_BC_TOTAL_FLUX && primary) {
-            Kokkos::atomic_add(&rhs_face(f, 0), -value * mesh->getFaceArea(f));
+            Kokkos::atomic_add(&rhs_face(f, 0), -value * m.getFaceArea(f));
           } else if (bc_model_trial[f] == OPERATOR_BC_MIXED && primary) {
-            double area = mesh->getFaceArea(f);
+            double area = m.getFaceArea(f);
             Kokkos::atomic_add(&rhs_face(f, 0), -value * area);
             Acell(n, n) += bc_mixed[f] * area;
           }
@@ -772,7 +777,7 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
   // only works on upwinded methods
   if (little_k_type_ == OPERATOR_UPWIND_NONE) return;
 
-  const AmanziMesh::Mesh* mesh = mesh_.get();
+  const AmanziMesh::Mesh& m = *mesh_;
   DenseMatrix_Vector& A = jac_op_->A;
 
   { // context for views
@@ -783,7 +788,7 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
     Kokkos::parallel_for(
       "PDE_DiffusionMFD::AddNewtonCorrectionCell_", nfaces_owned, KOKKOS_LAMBDA(const int& f) {
         // populate the local matrices
-        auto cells = mesh->getFaceCells(f);
+        auto cells = m.getFaceCells(f);
         int ncells = cells.size();
 
         auto Aface = A[f];
@@ -799,7 +804,7 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
         // define the upwind cell, index i in this case
         int i, dir, c1;
         c1 = cells[0];
-        const AmanziGeometry::Point& normal = mesh->getFaceNormal(f, c1, &dir);
+        const AmanziGeometry::Point& normal = m.getFaceNormal(f, c1, &dir);
         i = (v * dir >= 0.0) ? 0 : 1;
 
         if (ncells == 2) {
@@ -941,7 +946,7 @@ PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
     auto flux_data = flux->viewComponent("face", true);
     auto hits_data = hits.viewComponent("face", true);
 
-    const Amanzi::AmanziMesh::Mesh* mesh = mesh_.get();
+    const Amanzi::AmanziMesh::Mesh& m = *mesh_;
 
     auto local_A = local_op_->A;
     auto local_Av = local_op_->Av;
@@ -949,7 +954,7 @@ PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
 
     Kokkos::parallel_for(
       "PDE_DiffusionMFD::UpdateFlux", ncells_owned, KOKKOS_LAMBDA(const int& c) {
-        auto [faces, dirs] = mesh->getCellFacesAndDirections(c);
+        auto [faces, dirs] = m.getCellFacesAndDirections(c);
         int nfaces = faces.size();
 
         auto lv = local_v[c];
@@ -1129,10 +1134,11 @@ void
 PDE_DiffusionMFD::ScaleMassMatrices(double s)
 {
   assert(Wff_cells_.size() == ncells_owned);
+  auto& Wff_cells = Wff_cells_;
 
   Kokkos::parallel_for(
     "PDE_DiffusionMFD::ScaleMassMatrices", ncells_owned, KOKKOS_LAMBDA(const int& c) {
-      auto lm = Wff_cells_[c];
+      auto lm = Wff_cells[c];
       lm *= s;
     });
 }

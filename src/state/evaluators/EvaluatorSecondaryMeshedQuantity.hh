@@ -126,9 +126,10 @@ struct Extent {
   {
     std::string compname = AmanziMesh::to_string(EntityKind);
     auto vv = v->viewComponent(compname, false);
+    const auto& m = mesh;
     Kokkos::parallel_for(
       "EvaluatorMeshedEntityExtent", vv.extent(0), KOKKOS_LAMBDA(const int c) {
-        vv(c, 0) = mesh.getExtent<EntityKind>(c);
+        vv(c, 0) = m.getExtent<EntityKind>(c);
       });
   }
 
@@ -149,11 +150,12 @@ struct Elevation {
   {
     std::string compname = AmanziMesh::to_string(EntityKind);
     auto vv = v->viewComponent(compname, false);
+    const auto& m = mesh;
     int d = mesh.getSpaceDimension() - 1;
 
     Kokkos::parallel_for(
       "EvaluatorMeshedEntityElevation", vv.extent(0), KOKKOS_LAMBDA(const int c) {
-        vv(c, 0) = mesh.getCentroid<EntityKind>(c)[d];
+        vv(c, 0) = m.getCentroid<EntityKind>(c)[d];
       });
   }
 
@@ -179,11 +181,12 @@ struct SlopeMagnitude {
 
     const AmanziMesh::Mesh& parent = *mesh.getParentMesh();
     auto vv = v->viewComponent("cell", false);
+    const auto& m = mesh;
 
     Kokkos::parallel_for(
       "EvaluatorMeshedCellSlopeMagnitude", vv.extent(0), KOKKOS_LAMBDA(const int& c) {
         // face normal
-        auto f = mesh.getEntityParent(AmanziMesh::Entity_kind::CELL, c);
+        auto f = m.getEntityParent(AmanziMesh::Entity_kind::CELL, c);
         AmanziGeometry::Point n = parent.getFaceNormal(f);
 
         // -- S = || n - (n dot z) z || / | n dot z |
@@ -210,11 +213,12 @@ struct Aspect {
 
     const AmanziMesh::Mesh& parent = *mesh.getParentMesh();
     auto vv = v->viewComponent("cell", false);
+    const auto& m = mesh;
 
     Kokkos::parallel_for(
       "EvaluatorMeshedCellAspect", vv.extent(0), KOKKOS_LAMBDA(const int& c) {
         // compute the normal
-        auto f = mesh.getEntityParent(AmanziMesh::Entity_kind::CELL, c);
+        auto f = m.getEntityParent(AmanziMesh::Entity_kind::CELL, c);
         AmanziGeometry::Point n = parent.getFaceNormal(f);
 
         // and aspect
@@ -222,10 +226,10 @@ struct Aspect {
           // right half
           if (n[1] > 0.0) {
             // upper right quadrant
-            vv(c, 0) = std::atan(n[0] / n[1]);
+            vv(c, 0) = atan(n[0] / n[1]);
           } else if (n[1] < 0.0) {
             // lower right quadrant
-            vv(c, 0) = M_PI - std::atan(n[0] / -n[1]);
+            vv(c, 0) = M_PI - atan(n[0] / -n[1]);
           } else {
             // due east
             vv(c, 0) = M_PI_2;
@@ -234,10 +238,10 @@ struct Aspect {
           // left half
           if (n[1] > 0.0) {
             // upper left quadrant
-            vv(c, 0) = 2 * M_PI - std::atan(-n[0] / n[1]);
+            vv(c, 0) = 2 * M_PI - atan(-n[0] / n[1]);
           } else if (n[1] < 0.0) {
             // lower left quadrant
-            vv(c, 0) = M_PI + std::atan(n[0] / -n[1]);
+            vv(c, 0) = M_PI + atan(n[0] / -n[1]);
           } else {
             // due west
             vv(c, 0) = 3 * M_PI_2;

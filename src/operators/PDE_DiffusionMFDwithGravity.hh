@@ -37,15 +37,15 @@ namespace Impl {
 // Developments
 // -- interface to solvers for treating nonlinear BCs.
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
-GravitySpecialDirection(const AmanziMesh::Mesh* const mesh, int f)
+GravitySpecialDirection(const AmanziMesh::Mesh& mesh, int f)
 {
-  auto cells = mesh->getFaceCells(f);
+  auto cells = mesh.getFaceCells(f);
   int ncells = cells.size();
 
   if (ncells == 2) {
-    return mesh->getCellCentroid(cells[1]) - mesh->getCellCentroid(cells[0]);
+    return mesh.getCellCentroid(cells[1]) - mesh.getCellCentroid(cells[0]);
   } else {
-    return mesh->getFaceCentroid(f) - mesh->getCellCentroid(cells[0]);
+    return mesh.getFaceCentroid(f) - mesh.getCellCentroid(cells[0]);
   }
 }
 } // namespace Impl
@@ -67,6 +67,9 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD, public PDE_Diffusio
       PDE_DiffusionMFD(plist, mesh),
       PDE_DiffusionWithGravity(plist, mesh)
   {}
+
+  // delete this to avoid accidental capture in lambdas
+  PDE_DiffusionMFDwithGravity(const PDE_DiffusionMFDwithGravity& other) = delete;
 
   virtual void Init() override;
 

@@ -36,6 +36,7 @@ copyPatchToCompositeVector(const Patch<T>& p, const std::string& component, Comp
       "patchToCompositeVector", range, KOKKOS_LAMBDA(const int& i, const int& j) {
         cv_c(ids[i], j) = p.data(i, j);
       });
+
   } else {
     AMANZI_ASSERT(false && "Not yet implemented: patchToCompositeVector with boundary_face");
     // have to do some dancing here... this is not correct because p.data is

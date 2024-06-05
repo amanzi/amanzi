@@ -69,11 +69,11 @@ PDE_DiffusionFVwithGravity::UpdateMatrices(const Teuchos::Ptr<const CompositeVec
     const auto grav_f = gravity_term_->viewComponent("face", true);
     auto rhs_c = global_op_->rhs()->viewComponent("cell");
     const auto k_face = ScalarCoefficientFaces(true);
-    const AmanziMesh::Mesh* m = mesh_.get();
+    const AmanziMesh::Mesh& m = *mesh_.get();
 
     Kokkos::parallel_for(
       "PDE_DiffusionFVwithGravity::UpdateMatrices", ncells_owned, KOKKOS_LAMBDA(const int c) {
-        auto [faces, dirs] = m->getCellFacesAndDirections(c);
+        auto [faces, dirs] = m.getCellFacesAndDirections(c);
         int nfaces = faces.size();
 
         for (int n = 0; n != nfaces; ++n) {
@@ -152,13 +152,13 @@ PDE_DiffusionFVwithGravity::AnalyticJacobian_(const CompositeVector& u)
     // if (dkdp_->hasComponent("face")) {
     //   dKdP_face = dkdp_->viewComponent("face", true);
     // }
-    const AmanziMesh::Mesh* mesh = mesh_.get();
+    const AmanziMesh::Mesh& mesh = *mesh_.get();
     DenseMatrix_Vector& A = jac_op_->A;
-
+    int little_k_type(little_k_type_);
 
     Kokkos::parallel_for(
       "PDE_DiffusionFV::AnalyticJacobian_", nfaces_owned, KOKKOS_LAMBDA(const int& f) {
-        auto cells = mesh->getFaceCells(f);
+        auto cells = mesh.getFaceCells(f);
         int mcells = cells.size();
 
         auto Aface = A[f];
@@ -175,7 +175,7 @@ PDE_DiffusionFVwithGravity::AnalyticJacobian_(const CompositeVector& u)
         }
 
         // find the face direction from cell 0 to cell 1
-        auto [cfaces, fdirs] = mesh->getCellFacesAndDirections(cells(0));
+        auto [cfaces, fdirs] = mesh.getCellFacesAndDirections(cells(0));
         int f_index;
         for (f_index = 0; f_index != cfaces.extent(0); ++f_index) {
           if (cfaces(f_index) == f) break;
@@ -189,7 +189,7 @@ PDE_DiffusionFVwithGravity::AnalyticJacobian_(const CompositeVector& u)
 
         if (mcells == 2) {
           dpres = pres[0] - pres[1];
-          if (little_k_type_ == OPERATOR_LITTLE_K_UPWIND) {
+          if (little_k_type == OPERATOR_LITTLE_K_UPWIND) {
             double flux0to1 = trans_face(f, 0) * dpres + fdirs(f_index) * gravity_face(f, 0);
             if (flux0to1 > OPERATOR_UPWIND_RELATIVE_TOLERANCE) { // Upwind
               dKrel_dp[0] = dkdp[0];
@@ -201,7 +201,7 @@ PDE_DiffusionFVwithGravity::AnalyticJacobian_(const CompositeVector& u)
               dKrel_dp[0] = 0.5 * dkdp[0];
               dKrel_dp[1] = 0.5 * dkdp[1];
             }
-          } else if (little_k_type_ == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
+          } else if (little_k_type == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
             dKrel_dp[0] = 0.5 * dkdp[0];
             dKrel_dp[1] = 0.5 * dkdp[1];
           } else {
@@ -256,23 +256,23 @@ PDE_DiffusionFVwithGravity::ComputeTransmissibility_(Teuchos::RCP<CompositeVecto
       K->Init();
       K_ = K;
     }
-    const TensorVector* K = K_.get();
+    const TensorVector& K = *K_.get();
 
     auto beta_f = transmissibility_->viewComponent("face", true);
     auto h_f = h->viewComponent("face", true);
-    const AmanziMesh::Mesh* m = mesh_.get();
+    const AmanziMesh::Mesh& mesh = *mesh_.get();
     Kokkos::parallel_for(
       "PDE_DiffusionFVwithGravity::ComputeTransmissibility1",
       ncells_owned,
       KOKKOS_LAMBDA(const int c) {
-        auto [faces, bisectors] = m->getCellFacesAndBisectors(c);
-        auto Kc = K->at(c);
+        auto [faces, bisectors] = mesh.getCellFacesAndBisectors(c);
+        auto Kc = K.at(c);
 
         for (int i = 0; i < faces.extent(0); i++) {
           auto f = faces(i);
           const AmanziGeometry::Point& a = bisectors(i);
-          const AmanziGeometry::Point& normal = m->getFaceNormal(f);
-          const double area = m->getFaceArea(f);
+          const AmanziGeometry::Point& normal = mesh.getFaceNormal(f);
+          const double area = mesh.getFaceArea(f);
 
           const double h_tmp = AmanziGeometry::norm(a);
           const double s = area / h_tmp;
@@ -293,31 +293,32 @@ PDE_DiffusionFVwithGravity::ComputeTransmissibility_(Teuchos::RCP<CompositeVecto
     auto h_f = h->viewComponent("face", false);
     const auto trans_f = transmissibility_->viewComponent("face", false);
     auto grav_f = g_cv->viewComponent("face", false);
-    const AmanziMesh::Mesh* m = mesh_.get();
+    const AmanziMesh::Mesh& m = *mesh_.get();
+    AmanziGeometry::Point g(g_);
 
     Kokkos::parallel_for(
       "PDE_DiffusionFVwithGravity::ComputeTransmissibility2",
       nfaces_owned,
       KOKKOS_LAMBDA(const int f) {
-        auto cells = m->getFaceCells(f);
+        auto cells = m.getFaceCells(f);
         int ncells = cells.size();
 
         AmanziGeometry::Point a_dist;
         if (ncells == 2) {
-          a_dist = m->getCellCentroid(cells[1]) - m->getCellCentroid(cells[0]);
+          a_dist = m.getCellCentroid(cells[1]) - m.getCellCentroid(cells[0]);
         } else if (ncells == 1) {
-          a_dist = m->getFaceCentroid(f) - m->getCellCentroid(cells[0]);
+          a_dist = m.getFaceCentroid(f) - m.getCellCentroid(cells[0]);
         }
         a_dist *= 1.0 / AmanziGeometry::norm(a_dist);
 
         trans_f(f, 0) = 1.0 / trans_f(f, 0);
 
-        const AmanziGeometry::Point& normal = m->getFaceNormal(f);
+        auto normal = m.getFaceNormal(f);
         double dir = std::copysign(1.0, normal * a_dist);
 
         double rho =
           ncells == 1 ? rho_c(cells(0), 0) : (rho_c(cells(0), 0) + rho_c(cells(1), 0)) / 2.;
-        double grav = (g_ * a_dist) * rho * dir;
+        double grav = (g * a_dist) * rho * dir;
         grav *= h_f(f, 0);
 
         grav_f(f, 0) = trans_f(f, 0) * grav;

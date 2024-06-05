@@ -108,20 +108,20 @@ class CSR {
     if (row_map_.view_host().size() == 0) return;
 
     Kokkos::parallel_for(
-      "", row_map_.view_device().extent(0), KOKKOS_LAMBDA(const int i) {
+      "", row_map_.view_device().extent(0), KOKKOS_CLASS_LAMBDA(const int i) {
         printf("%d - ", row_map_.d_view(i));
       });
     Kokkos::fence();
 
     Kokkos::parallel_scan(
-      row_map_.view_device().extent(0), KOKKOS_LAMBDA(const int i, int& update, bool final) {
+      row_map_.view_device().extent(0), KOKKOS_CLASS_LAMBDA(const int i, int& update, bool final) {
         update += row_map_.d_view(i);
         if (final) { row_map_.d_view(i) = update; }
       });
 
     Kokkos::fence();
     Kokkos::parallel_for(
-      "", row_map_.view_device().extent(0), KOKKOS_LAMBDA(const int i) {
+      "", row_map_.view_device().extent(0), KOKKOS_CLASS_LAMBDA(const int i) {
         printf("%d - ", row_map_.d_view(i));
       });
     Kokkos::fence();
@@ -186,6 +186,9 @@ class CSR {
   void set_sizes_host(const int& i, const int& j, const int& v) { sizes_.view_host()(i, j) = v; }
   int row_map_host(const int& i) { return row_map_.view_host()[i]; }
 
+  void zero() {
+    Kokkos::deep_copy(entries_.view_device(), 0.);
+  }
 
   // Device side functions = default name -------------------------------------
 

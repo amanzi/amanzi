@@ -35,19 +35,19 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
   virtual void SumLocalDiag(CompositeVector& X) const
   {
     AMANZI_ASSERT(false); // this is incorrectly implemented... --ETC
-    // AmanziMesh::Mesh const* mesh_ = mesh.get();
-    // AmanziMesh::Mesh const* surf_mesh_ = surf_mesh.get();
+    // const AmanziMesh::Mesh& m = *mesh;
+    // const AmanziMesh::Mesh& surf_m = *surf_mesh;
     // auto Xv = X.viewComponent<Amanzi::MirrorHost>("face", true);
 
     // Kokkos::parallel_for(
     //   "Op_SurfaceFace_SurfaceCell::SumLocalDiag", A.size(), KOKKOS_LAMBDA(const int& sf) {
-    //     auto cells = mesh_->getFaceCells(sf);
+    //     auto cells = m.getFaceCells(sf);
 
     //     auto lm = A[sf];
-    //     auto f0 = surf_mesh_->getEntityParent(AmanziMesh::CELL, cells(0));
+    //     auto f0 = surf_m.getEntityParent(AmanziMesh::CELL, cells(0));
     //     Kokkos::atomic_add(&Xv(f0, 0), lm(0, 0));
     //     if (cells.extent(0) > 1) {
-    //       auto f1 = surf_mesh_->getEntityParent(AmanziMesh::CELL, cells(1));
+    //       auto f1 = surf_m.getEntityParent(AmanziMesh::CELL, cells(1));
     //       Kokkos::atomic_add(&Xv(f1, 0), lm(1, 1));
     //     }
     //   });

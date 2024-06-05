@@ -614,7 +614,7 @@ MeshCacheHost::getEdgeFaces(const Entity_ID e, cEntity_ID_View& faces) const
 
 
 template <AccessPattern_kind AP>
-KOKKOS_INLINE_FUNCTION typename MeshCacheHost::cEntity_ID_View
+typename MeshCacheHost::cEntity_ID_View
 MeshCacheHost::getNodeEdges(const Entity_ID n) const
 {
   cEntity_ID_View edges;
@@ -624,7 +624,7 @@ MeshCacheHost::getNodeEdges(const Entity_ID n) const
 
 
 template <AccessPattern_kind AP>
-KOKKOS_INLINE_FUNCTION void
+void
 MeshCacheHost::getNodeEdges(const Entity_ID n, cEntity_ID_View& edges) const
 {
   edges = Impl::RaggedGetter<MEM, AP>::get(

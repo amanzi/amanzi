@@ -65,6 +65,9 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
     : PDE_Diffusion(plist, mesh), transmissibility_initialized_(false), bcs_applied_(false)
   {}
 
+  // delete this to avoid accidental capture in lambdas
+  PDE_DiffusionFV(const PDE_DiffusionFV& other) = delete;
+
   virtual void Init() override;
 
   // main virtual members

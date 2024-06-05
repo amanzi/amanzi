@@ -58,7 +58,7 @@ class Point {
     xyz[1] = y;
     xyz[2] = z;
   }
-  KOKKOS_INLINE_FUNCTION ~Point(){};
+  KOKKOS_INLINE_FUNCTION ~Point() {};
 
   // main members
   KOKKOS_INLINE_FUNCTION void set(const double& val)
