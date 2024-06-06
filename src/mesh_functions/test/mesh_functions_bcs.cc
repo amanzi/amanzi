@@ -95,6 +95,7 @@ TEST_FIXTURE(reference_mesh, MESH_FUNCTION)
   MultiPatch<double> seepage(mf_s.createMPS(false));
   MultiPatch<int> seepage_flags(mf_s.createMPS(false));
   mf_s.Compute(1.0, seepage);
+  const auto& m = *mesh;
 
   for (int i = 0; i != seepage.size(); ++i) {
     auto ps = (*seepage.space)[i];
@@ -103,7 +104,7 @@ TEST_FIXTURE(reference_mesh, MESH_FUNCTION)
     auto& flags = seepage_flags[i];
     Kokkos::parallel_for(
       "seepage", ids.extent(0), KOKKOS_LAMBDA(const int& i) {
-        auto fc = mesh->getFaceCentroid(ids(i));
+        auto fc = m.getFaceCentroid(ids(i));
         if (fc[2] > 2.0) {
           patch.data(i, 0) = 0.0;
           flags.data(i, 0) = OPERATOR_BC_NEUMANN;

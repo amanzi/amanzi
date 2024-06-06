@@ -69,7 +69,8 @@ using RaggedArray_List = std::vector<std::vector<T>>;
 
 
 template <typename T>
-using DualView_type = Kokkos::MeshDualView<T*, Kokkos::DefaultHostExecutionSpace>;
+//using DualView_type = Kokkos::MeshDualView<T*, Kokkos::DefaultHostExecutionSpace>;
+using DualView_type = Kokkos::MeshDualView<T*, Kokkos::DefaultExecutionSpace>;
 using Entity_ID_DualView = DualView_type<Entity_ID>;
 using Entity_GID_DualView = DualView_type<Entity_GID>;
 using Direction_DualView = DualView_type<int>;

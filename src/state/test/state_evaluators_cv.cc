@@ -47,7 +47,6 @@ class AEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeV
 
   virtual std::string getType() const override { return "AEvaluator"; }
 
- protected:
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override
   {
     auto result_c = results[0]->viewComponent(comp_);
@@ -67,6 +66,7 @@ class AEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeV
     Kokkos::deep_copy(result_c, 2);
   }
 
+ protected:
   std::string comp_;
 };
 

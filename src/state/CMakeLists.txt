@@ -128,7 +128,7 @@ set(state_src_files
   # chemistry_data.cc
   )  
 
-set(state_link_libs  data_structures functions mesh_functions output mesh atk ${Boost_LIBRARIES})
+set(state_link_libs  data_structures functions mesh_functions output mesh atk error_handling)
 
 add_amanzi_library(state 
   SOURCE ${state_src_files}

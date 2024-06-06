@@ -168,7 +168,7 @@ template <typename T, typename F>
 Teuchos::RCP<const F>
 DataFactory_Intf::Get() const
 {
-  auto p = dynamic_cast<DataFactory_Impl<T, F>*>(this);
+  auto p = dynamic_cast<const DataFactory_Impl<T, F>*>(this);
   if (!p) {
     Errors::Message msg;
     msg << "factory requested via incorrect type: \"" << typeid(T).name() << "\"";

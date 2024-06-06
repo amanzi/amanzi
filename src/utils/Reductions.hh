@@ -12,7 +12,7 @@
 
 #pragma once
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef __CUDA_ARCH__
 #  include <cuda/std/limits>
 #endif
 

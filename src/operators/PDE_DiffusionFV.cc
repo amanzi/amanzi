@@ -268,7 +268,7 @@ PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
     const auto bc_model = bcs_trial_[0]->bc_model();
     const auto bc_value = bcs_trial_[0]->bc_value();
     Kokkos::parallel_for(
-      "PDE_DiffusionFV::ApplyBCs", nfaces_owned, [=](const int f) {
+      "PDE_DiffusionFV::ApplyBCs", nfaces_owned, KOKKOS_LAMBDA(const int f) {
         auto cells = m.getFaceCells(f);
         int ncells = cells.extent(0);
 
@@ -323,6 +323,7 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
   solution->scatterMasterToGhosted("cell");
   const auto p = solution->viewComponent<DefaultDevice>("cell", true);
   const Amanzi::AmanziMesh::Mesh& m = *mesh_;
+  int lnfaces_owned(nfaces_owned);
 
   Kokkos::View<int*> flag("flags", nfaces_wghost); // initialized to 0 by default
   Kokkos::parallel_for(
@@ -343,7 +344,7 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
 
         } else {
           // this needs more thought --etc
-          if (f < nfaces_owned && Kokkos::atomic_compare_exchange(&flag(f), 0, 1) == 0) {
+          if (f < lnfaces_owned && Kokkos::atomic_compare_exchange(&flag(f), 0, 1) == 0) {
             auto cells = m.getFaceCells(f);
             // if (cells.size() <= 1) {
             //   Errors::Message msg("Flow PK: These boundary conditions are not supported by FV.");

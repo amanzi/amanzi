@@ -52,7 +52,7 @@ LocalMatMultAdd(const MatView_type& mat,
       Kokkos::parallel_reduce(
         "local_mat_mult_inner_reduction",
         X_ids.extent(0),
-        KOKKOS_LAMBDA(const int& j, double& lsum) { lsum += mat(elem, j + i * num_cols) * X(X_ids(j), 0); },
+        [=](const int& j, double& lsum) { lsum += mat(elem, j + i * num_cols) * X(X_ids(j), 0); },
         result);
       Kokkos::atomic_add(Y(Y_ids(i), 0), result);
     });

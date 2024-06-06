@@ -77,7 +77,7 @@ CHECK_OWNED_SUBSET_GHOST(const View_type& owned,
 
 template <class View_type, typename size_type>
 void
-CHECK_UNIQUE(const std::vector<View_type>& index_lists, size_type total)
+CHECK_UNIQUE(const std::vector<View_type const *>& index_lists, size_type total)
 {
   std::set<Entity_GID> all;
   int expected_count = 0;
@@ -359,15 +359,15 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR)
           ->isSameAs(*map->getComponentGhostedMap(0, "face")));
 
   // check ordering is as expected
-  const auto& inds_c0 = map->viewGhostIndices<MirrorHost>(0, "cell", 0);
-  const auto& inds_c1 = map->viewGhostIndices<MirrorHost>(0, "cell", 1);
-  const auto& inds_f0 = map->viewGhostIndices<MirrorHost>(0, "face", 0);
-  const auto& inds_f1 = map->viewGhostIndices<MirrorHost>(0, "face", 1);
+  const auto& inds_c0 = map->viewGhostIndices<DefaultHost>(0, "cell", 0);
+  const auto& inds_c1 = map->viewGhostIndices<DefaultHost>(0, "cell", 1);
+  const auto& inds_f0 = map->viewGhostIndices<DefaultHost>(0, "face", 0);
+  const auto& inds_f1 = map->viewGhostIndices<DefaultHost>(0, "face", 1);
 
-  const auto& inds_c0_owned = map->viewIndices<MirrorHost>(0, "cell", 0);
-  const auto& inds_c1_owned = map->viewIndices<MirrorHost>(0, "cell", 1);
-  const auto& inds_f0_owned = map->viewIndices<MirrorHost>(0, "face", 0);
-  const auto& inds_f1_owned = map->viewIndices<MirrorHost>(0, "face", 1);
+  const auto& inds_c0_owned = map->viewIndices<DefaultHost>(0, "cell", 0);
+  const auto& inds_c1_owned = map->viewIndices<DefaultHost>(0, "cell", 1);
+  const auto& inds_f0_owned = map->viewIndices<DefaultHost>(0, "face", 0);
+  const auto& inds_f1_owned = map->viewIndices<DefaultHost>(0, "face", 1);
 
   // check owned list is a subset of the ghost list
   CHECK_OWNED_SUBSET_GHOST(inds_c0_owned, ncells_owned, inds_c0, ncells_used);
@@ -376,10 +376,10 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR)
   CHECK_OWNED_SUBSET_GHOST(inds_f1_owned, nfaces_owned, inds_f1, nfaces_used);
 
   // check lists are non-overlapping and of sufficient size to cover all values
-  std::vector<cVectorView_type_<MirrorHost, LO> const*> inds_owned = {
+  std::vector<cVectorView_type_<DefaultHost, LO> const*> inds_owned = {
     &inds_c0_owned, &inds_c1_owned, &inds_f0_owned, &inds_f1_owned
   };
-  std::vector<cVectorView_type_<MirrorHost, LO> const*> inds_ghost = {
+  std::vector<cVectorView_type_<DefaultHost, LO> const*> inds_ghost = {
     &inds_c0, &inds_c1, &inds_f0, &inds_f1
   };
   CHECK_UNIQUE(inds_owned, 2 * ncells_owned + 2 * nfaces_owned);
@@ -460,21 +460,21 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS)
           ->isSameAs(*map->getComponentGhostedMap(0, "cellB")));
 
   // check ordering is as expected
-  const auto& inds_c0 = map->viewGhostIndices(0, "cellA", 0);
-  const auto& inds_c1 = map->viewGhostIndices(0, "cellB", 0);
+  const auto& inds_c0 = map->viewGhostIndices<DefaultHost>(0, "cellA", 0);
+  const auto& inds_c1 = map->viewGhostIndices<DefaultHost>(0, "cellB", 0);
 
-  const auto& inds_c0_owned = map->viewIndices(0, "cellA", 0);
-  const auto& inds_c1_owned = map->viewIndices(0, "cellB", 0);
+  const auto& inds_c0_owned = map->viewIndices<DefaultHost>(0, "cellA", 0);
+  const auto& inds_c1_owned = map->viewIndices<DefaultHost>(0, "cellB", 0);
 
   // check owned list is a subset of the ghost list
   CHECK_OWNED_SUBSET_GHOST(inds_c0_owned, ncells_owned, inds_c0, ncells_used);
   CHECK_OWNED_SUBSET_GHOST(inds_c1_owned, ncells_owned, inds_c1, ncells_used);
 
   // check lists are non-overlapping and of sufficient size to cover all values
-  std::vector<cVectorView_type_<MirrorHost, LO> const*> inds_owned = { &inds_c0_owned,
-                                                                       &inds_c1_owned };
+  std::vector<cVectorView_type_<DefaultHost, LO> const*> inds_owned = { &inds_c0_owned, &inds_c1_owned };
   CHECK_UNIQUE(inds_owned, 2 * ncells_owned);
-  std::vector<cVectorView_type_<MirrorHost, LO> const*> inds_ghost = { &inds_c0, &inds_c1 };
+
+  std::vector<cVectorView_type_<DefaultHost, LO> const *> inds_ghost = { &inds_c0, &inds_c1 };
   CHECK_UNIQUE(inds_ghost, 2 * ncells_used);
 
   // check owned maps interleave
