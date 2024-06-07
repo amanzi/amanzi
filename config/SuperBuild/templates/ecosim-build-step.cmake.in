@@ -2,7 +2,20 @@
 
 # Now run the patch script
 set(TPL_INSTALL_PREFIX @TPL_INSTALL_PREFIX@)
+
+message(STATUS "In CMake build script:")
+
+if (ATS_ECOSIM)
+  message(STATUS "ATS_ECOSIM Enabled")
+else()
+  message(STATUS "Not set in CMake Build Script, setting")
+  set(ATS_ECOSIM TRUE CACHE INTERNAL "")
+  set(ENV{ATS_ECOSIM} TRUE)
+endif()
+
+set(TPL_INSTALL_PREFIX @TPL_INSTALL_PREFIX@)
 set(command sh build_ATS-EcoSIM.sh)
+
 execute_process(
   COMMAND ${command}
   RESULT_VARIABLE result

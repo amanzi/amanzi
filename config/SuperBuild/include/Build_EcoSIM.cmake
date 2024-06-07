@@ -44,17 +44,22 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ecosim-build-step.cmake.in
                @ONLY)
 
 set(ECOSIM_BUILD_COMMAND ${CMAKE_COMMAND} -P ${ECOSIM_prefix_dir}/ecosim-build-step.cmake)
+#set(ECOSIM_BUILD_COMMAND "${CMAKE_COMMAND} -DATS_ECOSIM=${ATS_ECOSIM}  && make && make install")
 set(ECOSIM_INSTALL_COMMAND sh ${ECOSIM_prefix_dir}/ecosim-install-step.sh)
 
 #set(ECOSIM_config_command ${CMAKE_COMMAND} ${ECOSIM_source_dir})
 set(ECOSIM_build_dir ${ECOSIM_prefix_dir}/build)
 
 message(STATUS "Attempting ecosim build...")
-message(STATUS "Amanzi_COMMON_CFLAGS: ${Amanzi_COMMON_CFLAGS}")
-message(STATUS "Amanzi_COMMON_CXXFLAGS: ${Amanzi_COMMON_CXXFLAGS}")
-message(STATUS "Amanzi_COMMON_FCFLAGS: ${Amanzi_COMMON_FCFLAGS}")
+message(STATUS "ATS_ECOSIM: ${ATS_ECOSIM}")
 message(STATUS "TPL_INSTALL_PREFIX: ${TPL_INSTALL_PREFIX}")
 message(STATUS "AMANZI_TPLS_INSTALL_DIR: ${AMANZI_TPLS_INSTALL_DIR}")
+
+if(ATS_ECOSIM)
+	message(STATUS "ATS-EcoSIM enabled")
+else()
+	set(ATS_ECOSIM TRUE CACHE INTERNAL "")
+endif()
 
 # First, set the common flags with the -fPIC flag
 set(Amanzi_COMMON_CFLAGS "${Amanzi_COMMON_CFLAGS} -fPIC")
@@ -84,7 +89,7 @@ ExternalProject_Add(${ECOSIM_BUILD_TARGET}
                                   -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                                   -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
-                    BINARY_DIR     ${ECOSIM_build_dir}       # Build directory
+		    BINARY_DIR     ${ECOSIM_build_dir}       # Build directory
 		    BUILD_COMMAND  ${ECOSIM_BUILD_COMMAND}
 		    BUILD_IN_SOURCE  0                           # Flag for in source builds
 #                    # -- Install
