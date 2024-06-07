@@ -342,6 +342,9 @@ Multiphase_PK::Setup()
   }
 
   // viscosities
+  S_->FEList().sublist(viscosity_liquid_key_).set<std::string>("pressure key", pressure_liquid_key_);
+  S_->FEList().sublist(viscosity_gas_key_).set<std::string>("pressure key", pressure_gas_key_);
+
   if (!S_->HasRecord(viscosity_liquid_key_)) {
     MyRequire_(viscosity_liquid_key_, viscosity_liquid_key_);
     S_->RequireEvaluator(viscosity_liquid_key_, Tags::DEFAULT);

@@ -38,9 +38,11 @@ case of Jacobian Operators for a PDE).
 However, one option may be provided by the user, which is related to dealing
 with nearly singular operators:
 
-* `"diagonal shift`" ``[double]`` **0.0** Adds a scalar shift to the diagonal
-  of the ``Operator``, which can be useful if the ``Operator`` is singular or
-  near-singular.
+.. admonition:: operators-spec
+
+  * `"diagonal shift`" ``[double]`` **0.0** Adds a scalar shift to the diagonal
+    of the ``Operator``, which can be useful if the ``Operator`` is singular or
+    near-singular.
 
 A PK decides how to bundle operators in a collection of operators.
 For example, an advection-diffusion problem may benefit from using

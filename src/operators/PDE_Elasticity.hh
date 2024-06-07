@@ -12,17 +12,19 @@
 Elasticity operator is used for describing soil deformation or fluid flow (Stokes
 and Navier-Stokes).
 
-* `"method`" [string] defines a discretization method. The available
-  options are `"BernardiRaugel`".
+.. admonition:: elasticity_op-spec
 
-* `"schema`" [list] defines a discretization schema.
+  * `"method`" ``[string]`` defines a discretization method. The available
+    options are `"BernardiRaugel`".
 
-  * `"location`" [Array(string)] defines geometric location of degrees of freedom.
+  * `"schema`" ``[list]`` defines a discretization schema.
 
-  * `"type`" [Array(string)] defines type of degrees of freedom. The available options
-    are `"scalar`" and `"normal component`".
+    * `"location`" ``[Array(string)]`` defines geometric location of degrees of freedom.
 
-  * `"number`" [Array(int)] indicates how many time this degree of freedom is repeated.
+    * `"type`" ``[Array(string)]`` defines type of degrees of freedom. The available options
+      are `"scalar`" and `"normal component`".
+
+    * `"number`" ``[Array(int)]`` indicates how many time this degree of freedom is repeated.
 
 .. code-block:: xml
 

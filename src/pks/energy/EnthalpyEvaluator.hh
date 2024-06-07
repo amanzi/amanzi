@@ -9,7 +9,11 @@
 
 /*!
 
-Field evaluator for specific molar enthalpy, h = u + p / rho.
+Field evaluator for specific molar enthalpy, 
+
+.. math::
+
+  h = u + \displaystyle\frac{p}{\rho}.
 
 .. code-block:: xml
 

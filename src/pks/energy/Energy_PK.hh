@@ -49,10 +49,12 @@ This list is used to summarize physical models and assumptions, such as
 coupling with other PKs.
 This list is often generated on a fly by a high-level MPC PK.
 
-* `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
-  e.g. by EnergyFlow PK. The default value is `"false`".
+.. admonition:: energy_pk-spec
 
-* `"eos lookup table`" [string] provides the name for optional EOS lookup table.
+  * `"vapor diffusion`" ``[bool]`` is set up automatically by a high-level PK,
+    e.g. by EnergyFlow PK. The default value is `"false`".
+
+  * `"eos lookup table`" ``[string]`` provides the name for optional EOS lookup table.
 
 .. code-block:: xml
 

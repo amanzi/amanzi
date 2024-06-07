@@ -48,7 +48,7 @@ where
 The nonlinear algebraic constraint may have different forms. One of the available forms is
 
 .. math::
-  min (s_g, 1 - \sum\limits_i \x_g^i) = 0.
+  min (s_g, 1 - \sum\limits_i x_g^i) = 0.
 
 It implies that if gas compounent is present, then the sum of component
 mole fractions on the gas phase must be equal to 1.
@@ -63,26 +63,28 @@ The structure of a system of multiphase equations is described by sublist `"syst
 contains as many blocks as there are equations. The names of blocks are currently reserved 
 and cannot be changed. Each block except for the "constraint eqn" has the following parameters:
 
-* `"primary unknown`" [string] defines a name of the primary variable which goes into 
-  a solution vector.
+.. admonition:: multiphase_pk-spec
 
-* `"accumulation`" [string] defines an evaluator for the accumulattion (or storage) term 
-  in this equation.
+  * `"primary unknown`" ``[string]`` defines a name of the primary variable which goes into 
+    a solution vector.
 
-* `"terms`" [list] specifies details of underluing PDE operators. The list constains as 
-  many sublists as there are operators. Some of the operators can be considered either as 
-  diffusion operators with respect to particular fields or as advection operators associate 
-  with a Darcy velocities. We input parameters follow the diffusion viewpoint for 
-  all operators.
+  * `"accumulation`" ``[string]`` defines an evaluator for the accumulattion (or storage) term 
+    in this equation.
 
-  * `"coefficient`" [string] defined the diffusion coefficient. 
+  * `"terms`" [list] specifies details of underluing PDE operators. The list constains as 
+    many sublists as there are operators. Some of the operators can be considered either as 
+    diffusion operators with respect to particular fields or as advection operators associate 
+    with a Darcy velocities. We input parameters follow the diffusion viewpoint for 
+    all operators.
 
-  * `"argument`" [string] defines a field for which the operator has the diffusion structure. 
+    * `"coefficient`" ``[string]`` defined the diffusion coefficient. 
 
-  * `"scaling factor`" [double] defines a scalar multiplier for the operator.
+    * `"argument`" ``[string]`` defines a field for which the operator has the diffusion structure. 
 
-  * `"phase`" [int] specifies a phase accosiated with the operator. It is used to upwind 
-    the diffusion coefficient w.r.t. to the corresponding Darcy velocity.
+    * `"scaling factor`" ``[double]`` defines a scalar multiplier for the operator.
+
+    * `"phase`" ``[int]`` specifies a phase accosiated with the operator. It is used to upwind 
+      the diffusion coefficient w.r.t. to the corresponding Darcy velocity.
 
 .. code-block:: xml
 

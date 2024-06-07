@@ -15,17 +15,19 @@ Its ordered by soil regions and includes parameters for the multiscale,
 capillary pressure, and relative permebility models.
 This list is optional.
 
-* `"multiscale model`" [string] is the model name. Available options are `"dual porosity`"
-  and `"generalized dual porosity`".
+.. admonition:: multiscale_porosity-spec
 
-* `"xxx parameters`" [sublist] provides parameters for the model specified by variable `"multiscale model`".
+  * `"multiscale model`" [string] is the model name. Available options are `"dual porosity`"
+    and `"generalized dual porosity`".
 
-* `"water retention model`" [string] specifies a model for the soil.
-  The available models are `"van Genuchten`" and `"Brooks Corey`".
-  Parameters for each model are described above.
+  * `"xxx parameters`" [sublist] provides parameters for the model specified by variable `"multiscale model`".
 
-* `"relative permeability model`" [string] The available options are `"Mualem`" (default)
-  and `"Burdine`".
+  * `"water retention model`" [string] specifies a model for the soil.
+    The available models are `"van Genuchten`" and `"Brooks Corey`".
+    Parameters for each model are described above.
+
+  * `"relative permeability model`" [string] The available options are `"Mualem`" (default)
+    and `"Burdine`".
 
 */
 

@@ -15,10 +15,12 @@ single-porosity model correspond now to the fracture continuum.
 Example: pressure = pressure in the fracture continuum;
 pressure_msp = pressure in the matrix continuum.
 
-* `"mass transfer coefficient`" [double] is the mass transfer coefficient.
+.. admonition:: dual_porosity-spec
 
-* `"tolerance`" [double] defines tolerance for iterative methods used to solve
-  secondary equations. Default is 1e-8.
+  * `"mass transfer coefficient`" [double] is the mass transfer coefficient.
+
+  * `"tolerance`" [double] defines tolerance for iterative methods used to solve
+    secondary equations. Default is 1e-8.
 
 */
 

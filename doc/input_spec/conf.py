@@ -24,9 +24,9 @@ copyright = '202X, jointly shared by contributor institutions'
 author = 'Konstantin Lipnikov'
 
 # The short X.Y version
-version = '1.5'
+version = '1.6'
 # The full version, including alpha/beta/rc tags
-release = '1.5'
+release = '1.6'
 
 
 # -- General configuration ---------------------------------------------------
@@ -188,5 +188,5 @@ epub_exclude_files = ['search.html']
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'amanzi': ('https://amanzi.github.io/amanzi', None),
-                      }
+# intersphinx_mapping = {'amanzi': ('https://amanzi.github.io/amanzi', None),
+#                      }

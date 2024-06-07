@@ -13,11 +13,11 @@ The `"radiaoctive decay`" section is the list of decay reactions for aqueous and
 sorbed species. It not deal with decay of solid phase.
 Currently, it does not deal with decay of solid phase.
 
-* `"reactant`" [string] is the species name.
+.. admonition:: radioactive_decay-spec
 
-* `"product`" [string] is the species name.
-
-* `"half life`" [double] is the half-life time of decay.
+  * `"reactant`" ``[string]`` is the species name.
+  * `"product`" ``[string]`` is the species name.
+  * `"half life`" ``[double]`` is the half-life time of decay.
 
 .. code-block:: xml
 

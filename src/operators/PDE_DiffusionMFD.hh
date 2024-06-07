@@ -32,45 +32,47 @@
 
 Additional options available only for the MFD family of discretizations include:
 
-* `"nonlinear coefficient`" ``[string]`` specifies a method for treating nonlinear
-  diffusion coefficient, if any. Available options are `"none`", `"upwind:
-  face`", `"divk: cell-face`" (default), `"divk: face`", `"standard: cell`",
-  `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".  Symmetry
-  preserving methods are the divk-family of methods and the classical
-  cell-centered method (`"standard: cell`"). The first part of the name
-  indicates the base scheme.  The second part (after the semi-column)
-  indicates required components of the composite vector that must be provided
-  by a physical PK.
+.. admonition:: diffusion_op_addon-spec
 
-* `"discretization secondary`" ``[string]`` specifies the most robust
-  discretization method that is used when the primary selection fails to
-  satisfy all a priori conditions.  This is typically `"mfd: default`", and is
-  used only when an MFD `"discretization primary`" is used.
+  * `"nonlinear coefficient`" ``[string]`` specifies a method for treating nonlinear
+    diffusion coefficient, if any. Available options are `"none`", `"upwind:
+    face`", `"divk: cell-face`" (default), `"divk: face`", `"standard: cell`",
+    `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".  Symmetry
+    preserving methods are the divk-family of methods and the classical
+    cell-centered method (`"standard: cell`"). The first part of the name
+    indicates the base scheme.  The second part (after the semi-column)
+    indicates required components of the composite vector that must be provided
+    by a physical PK.
 
-* `"schema`" ``[Array(string)]`` defines the operator stencil. It is a collection of
-  geometric objects.  Typically this is set by the implementation and is not provided.
+  * `"discretization secondary`" ``[string]`` specifies the most robust
+    discretization method that is used when the primary selection fails to
+    satisfy all a priori conditions.  This is typically `"mfd: default`", and is
+    used only when an MFD `"discretization primary`" is used.
 
-* `"preconditioner schema`" ``[Array(string)]`` **{face,cell}** Defines the
-  preconditioner stencil.  It is needed only when the default assembling
-  procedure is not desirable. If skipped, the `"schema`" is used instead.
-  In addition to the default, **{face}** may be used, which forms the Schur
-  complement.
+  * `"schema`" ``[Array(string)]`` defines the operator stencil. It is a collection of
+    geometric objects.  Typically this is set by the implementation and is not provided.
 
-* `"consistent faces`" ``[list]`` may contain a `"preconditioner`" and
-  `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
-  respectively).  If these lists are provided, and the `"discretization
-  primary`" is of type `"mfd: *`", then the diffusion method
-  UpdateConsistentFaces() can be used.  This method, given a set of cell
-  values, determines the faces constraints that satisfy the constraint
-  equation in MFD by assembling and inverting the face-only system.  This is
-  not currently used by any Amanzi PKs.
+  * `"preconditioner schema`" ``[Array(string)]`` **{face,cell}** Defines the
+    preconditioner stencil.  It is needed only when the default assembling
+    procedure is not desirable. If skipped, the `"schema`" is used instead.
+    In addition to the default, **{face}** may be used, which forms the Schur
+    complement.
 
-* `"diffusion tensor`" ``[string]`` allows us to solve problems with symmetric and
-  non-symmetric (but positive definite) tensors. Available options are *symmetric*
-  (default) and *nonsymmetric*.
+  * `"consistent faces`" ``[list]`` may contain a `"preconditioner`" and
+    `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
+    respectively).  If these lists are provided, and the `"discretization
+    primary`" is of type `"mfd: *`", then the diffusion method
+    UpdateConsistentFaces() can be used.  This method, given a set of cell
+    values, determines the faces constraints that satisfy the constraint
+    equation in MFD by assembling and inverting the face-only system.  This is
+    not currently used by any Amanzi PKs.
 
-* `"use manifold flux`"  ``[bool]`` **false** Computes the flux using algorithms
-  and data structures for manifolds or fracture networks.
+  * `"diffusion tensor`" ``[string]`` allows us to solve problems with symmetric and
+    non-symmetric (but positive definite) tensors. Available options are *symmetric*
+    (default) and *nonsymmetric*.
+
+  * `"use manifold flux`"  ``[bool]`` **false** Computes the flux using algorithms
+    and data structures for manifolds or fracture networks.
 
 */
 

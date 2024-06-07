@@ -12,8 +12,9 @@
 A user may request to dump mesh information. Mesh information includes coordinates of cell centroids
 written is the order consistent with all output fields.
 
+.. admonition:: mesh_info-spec
 
-* `"filename`"[string] - name of the HDF5 file where coordinates of the centroids are dumped.
+  * `"filename`" ``[string]`` is name of the HDF5 file where coordinates of the centroids are dumped.
 
 .. code-block:: xml
 
