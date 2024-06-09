@@ -128,8 +128,15 @@
         <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="internal_energy_liquid">
-        <Parameter name="evaluator type" type="string" value="iem"/>
+        <Parameter name="evaluator type" type="string" value="eos"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="lookup table"/>
+          <Parameter name="table name" type="string" value="h2o.eos"/>
+          <Parameter name="field name" type="string" value="internal_energy"/>
+          <Parameter name="format" type="string" value="Amanzi"/>
+        </ParameterList>
+        <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
         <ParameterList name="IEM parameters">
           <ParameterList name="TopRegion">
             <Parameter name="regions" type="Array(string)" value="{TopRegion}"/>
@@ -145,7 +152,7 @@
             <Parameter name="regions" type="Array(string)" value="{BottomRegion}"/>
             <ParameterList name="IEM parameters">
               <Parameter name="iem type" type="string" value="lookup table"/>
-              <Parameter name="heat capacity" type="double" value="7.62e+01"/>
+              <Parameter name="heat capacity" type="double" value="7.62000000000000028e+01"/>
               <Parameter name="table name" type="string" value="h2o.eos"/>
               <Parameter name="field name" type="string" value="internal_energy"/>
               <Parameter name="format" type="string" value="Amanzi"/>

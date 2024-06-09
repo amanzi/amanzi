@@ -130,6 +130,7 @@ class InputConverterU : public InputConverter {
   void ParseFractureNetwork_();
   void ModifyDefaultPhysicalConstants_();
   void ParseGlobalNumericalControls_();
+  void ParseMisc_();
 
   BCs ParseCondList_(DOMNode* node,
                      double vmin,
@@ -223,7 +224,8 @@ class InputConverterU : public InputConverter {
                                    const Key& field,
                                    const Key& key,
                                    const std::string& type,
-                                   const std::string& eos_table_name);
+                                   const std::string& eos_table_name,
+                                   const std::vector<KeyPair>& deps = {});
 
   void AddConstantFieldInitialization_(Teuchos::ParameterList& out_ev,
                                        const std::string& field,

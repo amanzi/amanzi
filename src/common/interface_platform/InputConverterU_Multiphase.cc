@@ -236,7 +236,7 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
     .set<double>("scaling factor", 1.0)
     .set<int>("phase", 0);
 
-  if (phases_[GAS].model != "") {
+  if (phases_[GAS].active) {
     pterms.sublist("diffusion 1")
       .set<std::string>("coefficient", diff_vapor_key)
       .set<std::string>("argument", mole_xv_key)

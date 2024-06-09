@@ -578,9 +578,21 @@
       </ParameterList>
 
       <ParameterList name="internal_energy_liquid">
+        <Parameter name="evaluator type" type="string" value="eos"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water FEHM"/>
+        </ParameterList>
+        <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
         <Parameter name="pressure key" type="string" value="pressure_liquid"/>
       </ParameterList>
       <ParameterList name="internal_energy_gas">
+        <Parameter name="evaluator type" type="string" value="eos"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_gas"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water FEHM"/>
+        </ParameterList>
+        <Parameter name="molar density key" type="string" value="molar_density_gas"/>
         <Parameter name="pressure key" type="string" value="pressure_gas"/>
       </ParameterList>
       <ParameterList name="internal_energy_rock">

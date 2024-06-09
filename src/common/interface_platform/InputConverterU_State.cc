@@ -960,6 +960,26 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
       .set<double>("heat capacity", cv);
   }
 
+  if (eos_model_ != "") {
+    if (phases_[LIQUID].active) {
+      AddSecondaryFieldEvaluator_(out_ev,
+                                  Keys::getKey("domain", "internal_energy_liquid"),
+                                  "internal energy key",
+                                  "eos",
+                                  "internal_energy",
+                                  { {"molar density key", "molar_density_liquid"} });
+    }
+
+    if (phases_[GAS].active) {
+      AddSecondaryFieldEvaluator_(out_ev,
+                                  Keys::getKey("domain", "internal_energy_gas"),
+                                  "internal energy key",
+                                  "eos",
+                                  "internal_energy",
+                                  { {"molar density key", "molar_density_gas"} });
+    }
+  }
+
   if (domain == "domain") {
     DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("materials"));
     children = node_list->item(0)->getChildNodes();
@@ -1371,7 +1391,8 @@ InputConverterU::AddSecondaryFieldEvaluator_(Teuchos::ParameterList& out_ev,
                                              const Key& field,
                                              const Key& key,
                                              const std::string& type,
-                                             const std::string& eos_table_name)
+                                             const std::string& eos_table_name,
+                                             const std::vector<KeyPair>& deps)
 {
   out_ev.sublist(field).set<std::string>("evaluator type", type).set<std::string>(key, field);
 
@@ -1388,6 +1409,11 @@ InputConverterU::AddSecondaryFieldEvaluator_(Teuchos::ParameterList& out_ev,
       .set<std::string>("field name", eos_table_name)
       .set<std::string>("format", "Amanzi");
   }
+
+  // dependencies
+  for (auto dep : deps) {
+    out_ev.sublist(field).set<std::string>(dep.first, dep.second);
+  } 
 
   // extensions
   Key prefix = Keys::split(field, '-').first;
