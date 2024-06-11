@@ -54,7 +54,7 @@ set(solvers_source_files
 
 set(kokkos_cuda_libs)
 if(ENABLE_CUDA OR ENABLE_UVM)
-  set(kokkos_cuda_libs curand cusparse "-lnvToolsExt")
+  #  set(kokkos_cuda_libs curand cusparse "-lnvToolsExt")
 endif()
 if(ENABLE_KOKKOS_OPENMP)
   add_definitions("-DHAVE_OPENMP")
@@ -98,6 +98,11 @@ add_amanzi_library(solvers
 
 if (BUILD_TESTS)
     set(solvers_test_link_libs solvers ${solvers_link_libs})
+
+    if(ENABLE_CUDA OR ENABLE_UVM)
+      set(solvers_test_link_libs ${solvers_test_link_libs} "-lnvToolsExt")
+    endif()
+
 
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})

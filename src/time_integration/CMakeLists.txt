@@ -98,6 +98,10 @@ if (BUILD_TESTS)
     include_directories(${SOLVERS_SOURCE_DIR})
     include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 
+    if(ENABLE_CUDA OR ENABLE_UVM)
+      set(time_integration_test_link_libs ${time_integration_test_link_libs} "-lnvToolsExt")
+    endif()
+
     add_amanzi_test(time_integration_solution_history time_integration_solution_history
                     KIND unit
 		    SOURCE
@@ -106,7 +110,8 @@ if (BUILD_TESTS)
 		    LINK_LIBS
 			  ${time_integration_link_libs}
 			  ${UnitTest_LIBRARIES}	  
-			  ${time_integration_tpl_libs})
+			  ${time_integration_tpl_libs}
+                          ${time_integration_test_link_libs})
 
     add_amanzi_test(time_integration_bdf1 time_integration_bdf1
                     KIND unit
@@ -117,7 +122,8 @@ if (BUILD_TESTS)
         	          time_integration
         		  ${time_integration_link_libs}
         		  ${UnitTest_LIBRARIES}
-        		  ${time_integration_tpl_libs})
+        		  ${time_integration_tpl_libs}
+                          ${time_integration_test_link_libs})
 
     # add_amanzi_test(time_integration_rk time_integration_rk
     #                 KIND unit
@@ -130,6 +136,7 @@ if (BUILD_TESTS)
     #     		  ${UnitTest_LIBRARIES}
     #     		  ${Teuchos_LIBRARIES}
     #     		  ${Tpetra_LIBRARIES}
-    #     		  ${time_integration_tpl_libs})
+    #     		  ${time_integration_tpl_libs}
+    #                     ${time_integration_test_link_libs})
 
 endif()
