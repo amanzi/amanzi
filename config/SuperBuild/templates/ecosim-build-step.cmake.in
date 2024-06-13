@@ -14,7 +14,7 @@ else()
 endif()
 
 set(TPL_INSTALL_PREFIX @TPL_INSTALL_PREFIX@)
-set(command sh build_ATS-EcoSIM.sh)
+set(command sh build_EcoSIM.sh)
 
 execute_process(
   COMMAND ${command}
