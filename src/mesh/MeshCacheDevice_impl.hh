@@ -37,6 +37,7 @@ template <Entity_kind EK, AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 MeshCacheDevice::getCentroid(const Entity_ID ent) const
 {
+  static_assert(EK != Entity_kind::UNKNOWN && EK != Entity_kind::BOUNDARY_NODE, "No centroid information for Entity_kind::UNKNOWN or Entity_kind::BOUNDARY_NODE"); 
   if constexpr (EK == Entity_kind::CELL) {
     return getCellCentroid<AP>(ent);
   } else if constexpr (EK == Entity_kind::FACE) {
@@ -47,9 +48,7 @@ MeshCacheDevice::getCentroid(const Entity_ID ent) const
     return getEdgeCentroid<AP>(ent);
   } else if constexpr (EK == Entity_kind::NODE) {
     return getNodeCoordinate<AP>(ent);
-  }
-  AMANZI_ASSERT(false);
-  return AmanziGeometry::Point();
+  }  
 }
 
 
@@ -75,6 +74,7 @@ template <Entity_kind EK, AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION double
 MeshCacheDevice::getExtent(const Entity_ID ent) const
 {
+  static_assert(EK == Entity_kind::CELL || EK == Entity_kind::FACE || EK == Entity_kind::EDGE, "getExtent only supports CELL, FACE and EDGE"); 
   if constexpr (EK == Entity_kind::CELL) {
     return getCellVolume<AP>(ent);
   } else if constexpr (EK == Entity_kind::FACE) {
@@ -82,8 +82,6 @@ MeshCacheDevice::getExtent(const Entity_ID ent) const
   } else if constexpr (EK == Entity_kind::EDGE) {
     return getEdgeLength<AP>(ent);
   }
-  AMANZI_ASSERT(false);
-  return -1.0;
 }
 
 template <AccessPattern_kind AP>
