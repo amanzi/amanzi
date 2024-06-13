@@ -41,7 +41,6 @@ Mechanics_PK::Setup()
   mesh_ = S_->GetMesh();
   dim_ = mesh_->getSpaceDimension();
 
-  displacement_key_ = Keys::getKey(domain_, "displacement");
   hydrostatic_stress_key_ = Keys::getKey(domain_, "hydrostatic_stress");
   vol_strain_key_ = Keys::getKey(domain_, "volumetric_strain");
 
@@ -64,10 +63,8 @@ Mechanics_PK::Setup()
        .SetMesh(mesh_)
        ->SetGhosted(true) = cvs;
 
-    Teuchos::ParameterList elist(displacement_key_);
-    elist.set<std::string>("evaluator name", displacement_key_);
-    eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S_->SetEvaluator(displacement_key_, Tags::DEFAULT, eval_);
+    eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+      S_->GetEvaluatorPtr(displacement_key_, Tags::DEFAULT));
   }
 
   if (!S_->HasRecord(hydrostatic_stress_key_)) {

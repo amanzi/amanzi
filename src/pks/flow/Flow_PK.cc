@@ -86,7 +86,6 @@ Flow_PK::Setup()
   // keys and tags
   Tag tag = Tags::DEFAULT;
 
-  pressure_key_ = Keys::getKey(domain_, "pressure");
   hydraulic_head_key_ = Keys::getKey(domain_, "hydraulic_head");
   darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity");
 

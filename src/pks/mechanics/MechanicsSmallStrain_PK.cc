@@ -55,8 +55,10 @@ MechanicsSmallStrain_PK::MechanicsSmallStrain_PK(Teuchos::ParameterList& pk_tree
   linear_solver_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(ec_list_, "time integrator", true);
 
-  // domain name
+  // domain and primary evaluators
   domain_ = ec_list_->get<std::string>("domain name", "domain");
+  displacement_key_ = Keys::getKey(domain_, "displacement");
+  AddDefaultPrimaryEvaluator(S_, displacement_key_);
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = ec_list_->sublist("verbose object");

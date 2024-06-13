@@ -71,8 +71,10 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
 
-  // computational domain
+  // domain and primary evaluators
   domain_ = fp_list_->template get<std::string>("domain name", "domain");
+  pressure_key_ = Keys::getKey(domain_, "pressure");
+  AddDefaultPrimaryEvaluator(S_, pressure_key_);
 }
 
 
@@ -96,8 +98,10 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
 
-  // domain name
+  // domain and primary evaluators
   domain_ = fp_list_->template get<std::string>("domain name", "domain");
+  pressure_key_ = Keys::getKey(domain_, "pressure");
+  AddDefaultPrimaryEvaluator(S_, pressure_key_);
 }
 
 
@@ -160,7 +164,6 @@ Darcy_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
-    AddDefaultPrimaryEvaluator(S_, pressure_key_);
   }
 
   // require additional fields and evaluators
@@ -255,15 +258,7 @@ Darcy_PK::Setup()
       S_->GetRecordW(ref_pressure_key_, passwd_).set_io_vis(false);
       S_->GetRecordW(ref_pressure_key_, passwd_).set_io_checkpoint(false);
 
-      Teuchos::ParameterList elist(aperture_key_);
-      elist.set<std::string>("reference aperture key", ref_aperture_key_)
-        .set<std::string>("reference pressure key", ref_pressure_key_)
-        .set<std::string>("pressure key", pressure_key_)
-        .set<std::string>("compliance key", compliance_key_)
-        .set<std::string>("tag", "");
-
-      auto eval = Teuchos::rcp(new ApertureDarcyEvaluator(elist));
-      S_->SetEvaluator(aperture_key_, Tags::DEFAULT, eval);
+      S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
     } else {
       S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
     }

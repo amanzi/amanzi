@@ -327,7 +327,6 @@ InputConverterU::TranslateState_()
       // -- fracture compliance
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, compliance", flag);
       if (flag) {
-        compliance_ = true;
         TranslateFieldEvaluator_(node,
                                  "fracture-compliance",
                                  "m*Pa^-1",
@@ -342,11 +341,20 @@ InputConverterU::TranslateState_()
       // -- aperture
       node = GetUniqueElementByTagsString_(inode, "aperture", flag);
       if (flag) {
-        std::string key = (compliance_) ? "fracture-ref_aperture" : "fracture-aperture";
+        std::string model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
+        std::string key = (model == "linearized") ? "fracture-ref_aperture" : "fracture-aperture";
         TranslateFieldEvaluator_(
           node, key, "m", reg_str, regions, out_ic, out_ev, "value", "fracture");
         if (out_ev.sublist(key).isParameter("variable name"))
           out_ev.sublist(key).set<std::string>("variable name", "fracture-aperture");
+        if (model == "linearized") {
+          out_ev.sublist("fracture-aperture")
+            .set<std::string>("reference aperture key", "fracture-ref_aperture")
+            .set<std::string>("reference pressure key", "fracture-ref_pressure")
+            .set<std::string>("pressure key", "fracture-pressure")
+            .set<std::string>("compliance key", "fracture-compliance")
+            .set<std::string>("evaluator type", "linearized aperture");
+        }
       } else {
         msg << "Element \"aperture\" must be specified for all materials.";
         Exceptions::amanzi_throw(msg);
@@ -960,6 +968,7 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
       .set<double>("heat capacity", cv);
   }
 
+  /*
   if (eos_model_ != "") {
     if (phases_[LIQUID].active) {
       AddSecondaryFieldEvaluator_(out_ev,
@@ -979,6 +988,7 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
                                   { {"molar density key", "molar_density_gas"} });
     }
   }
+  */
 
   if (domain == "domain") {
     DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("materials"));
@@ -1142,7 +1152,7 @@ InputConverterU::TranslateFieldEvaluator_(DOMNode* node,
       .set<std::string>("variable name", field)
       .set<int>("number of dofs", 1)
       .set<bool>("constant in time", temporal);
-  } else if (model == "constant") { // FIXME: some overlap between "constant" and ""
+  } else if (model == "constant" || model == "linearized") { // FIXME: some overlap between "constant" and ""
     double val =
       GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
 

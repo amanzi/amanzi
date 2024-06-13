@@ -128,15 +128,8 @@
         <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="internal_energy_liquid">
-        <Parameter name="evaluator type" type="string" value="eos"/>
+        <Parameter name="evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
-        <ParameterList name="EOS parameters">
-          <Parameter name="eos type" type="string" value="lookup table"/>
-          <Parameter name="table name" type="string" value="h2o.eos"/>
-          <Parameter name="field name" type="string" value="internal_energy"/>
-          <Parameter name="format" type="string" value="Amanzi"/>
-        </ParameterList>
-        <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
         <ParameterList name="IEM parameters">
           <ParameterList name="TopRegion">
             <Parameter name="regions" type="Array(string)" value="{TopRegion}"/>
@@ -681,6 +674,7 @@
       <ParameterList name="physical models and assumptions">
         <Parameter name="flow and transport in fractures" type="bool" value="true"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
+        <Parameter name="external aperture" type="bool" value="false"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
