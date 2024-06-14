@@ -57,13 +57,13 @@ MeshCacheHost::setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_mes
     nnodes_all = framework_mesh_->getNumEntities(Entity_kind::NODE, Parallel_kind::ALL);
   }
   bool natural_ordered_maps = plist_->get<bool>("natural map ordering", false);
-  maps_.initialize(*framework_mesh_, natural_ordered_maps);
+  maps.initialize(*framework_mesh_, natural_ordered_maps);
 
-  nboundary_faces_owned = maps_.getNBoundaryFaces(Parallel_kind::OWNED);
-  nboundary_faces_all = maps_.getNBoundaryFaces(Parallel_kind::ALL);
+  nboundary_faces_owned = maps.getNBoundaryFaces(Parallel_kind::OWNED);
+  nboundary_faces_all = maps.getNBoundaryFaces(Parallel_kind::ALL);
   if (hasNodes()) {
-    nboundary_nodes_owned = maps_.getNBoundaryNodes(Parallel_kind::OWNED);
-    nboundary_nodes_all = maps_.getNBoundaryNodes(Parallel_kind::ALL);
+    nboundary_nodes_owned = maps.getNBoundaryNodes(Parallel_kind::OWNED);
+    nboundary_nodes_all = maps.getNBoundaryNodes(Parallel_kind::ALL);
   }
 
   std::string policy = plist_->get<std::string>("cache policy", "default");

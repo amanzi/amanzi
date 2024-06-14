@@ -102,7 +102,12 @@ set(operators_link_libs
   solvers
   ${Teuchos_LIBRARIES}
   ${Tpetra_LIBRARIES}
-  )
+)
+
+
+if(ENABLE_CUDA OR ENABLE_UVM)
+  set(operators_link_libs ${operators_link_libs} nvToolsExt)
+endif()
 
 
 add_amanzi_library(operators 
@@ -126,9 +131,6 @@ if (BUILD_TESTS)
     message(DEBUG "KokkosKernels_LIBRARIES = ${KokkosKernels_LIBRARIES}")
     set(operators_test_link_libs geometry atk mesh mesh_factory  data_structures operators whetstone output atk ${KokkosKernels_LIBRARIES})
 
-    if(ENABLE_CUDA OR ENABLE_UVM)
-      set(operators_test_link_libs ${operators_test_link_libs} "-lnvToolsExt")
-    endif()
     
     #mesh_logical
     

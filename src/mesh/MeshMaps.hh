@@ -122,12 +122,12 @@ class MeshMaps {
   getBoundaryFaces(const Parallel_kind ptype = Parallel_kind::ALL) const
   {
     if (ptype == Parallel_kind::ALL) {
-      return view<MEM>(boundary_faces_);
+      return view<MEM>(boundary_faces);
     } else if (ptype == Parallel_kind::OWNED) {
-      return Kokkos::subview(view<MEM>(boundary_faces_),
+      return Kokkos::subview(view<MEM>(boundary_faces),
                              Kokkos::pair{ (int)0, (int)getNBoundaryFaces(Parallel_kind::OWNED) });
     } else if (ptype == Parallel_kind::GHOST) {
-      return Kokkos::subview(view<MEM>(boundary_faces_),
+      return Kokkos::subview(view<MEM>(boundary_faces),
                              Kokkos::pair{ (int)getNBoundaryFaces(Parallel_kind::OWNED),
                                            (int)getNBoundaryFaces(Parallel_kind::ALL) });
     }
@@ -140,12 +140,12 @@ class MeshMaps {
   getBoundaryNodes(const Parallel_kind ptype = Parallel_kind::ALL) const
   {
     if (ptype == Parallel_kind::ALL) {
-      return view<MEM>(boundary_nodes_);
+      return view<MEM>(boundary_nodes);
     } else if (ptype == Parallel_kind::OWNED) {
-      return Kokkos::subview(view<MEM>(boundary_nodes_),
+      return Kokkos::subview(view<MEM>(boundary_nodes),
                              Kokkos::pair{ (int)0, (int)getNBoundaryNodes(Parallel_kind::OWNED) });
     } else if (ptype == Parallel_kind::GHOST) {
-      return Kokkos::subview(view<MEM>(boundary_nodes_),
+      return Kokkos::subview(view<MEM>(boundary_nodes),
                              Kokkos::pair{ (int)getNBoundaryNodes(Parallel_kind::OWNED),
                                            (int)getNBoundaryNodes(Parallel_kind::ALL) });
     }
@@ -164,6 +164,9 @@ class MeshMaps {
   }
   const Import_type& getBoundaryNodeImporter() const { return *boundary_node_importer_; }
 
+  Entity_ID_DualView boundary_faces;
+  Entity_ID_DualView boundary_nodes;
+
  private:
   std::map<Entity_kind, Map_ptr_type> owned_;
   std::map<Entity_kind, Map_ptr_type> all_;
@@ -171,8 +174,6 @@ class MeshMaps {
   Import_ptr_type boundary_face_importer_;
   Import_ptr_type boundary_face_internal_cell_importer_;
   Import_ptr_type boundary_node_importer_;
-  Entity_ID_DualView boundary_faces_;
-  Entity_ID_DualView boundary_nodes_;
 };
 
 

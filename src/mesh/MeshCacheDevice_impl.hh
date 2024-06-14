@@ -9,6 +9,7 @@
 #include "MeshCacheDevice_decl.hh"
 #include "MeshAlgorithms.hh"
 #include "MeshSets.hh"
+#include "MeshHelpers_decl.hh"
 
 namespace Amanzi::AmanziMesh {
 
@@ -22,7 +23,7 @@ MeshCacheDevice::getCentroid(const Entity_kind kind, const Entity_ID ent) const
   case (Entity_kind::FACE):
     return getFaceCentroid<AP>(ent);
   case (Entity_kind::BOUNDARY_FACE):
-    return getFaceCentroid<AP>(getBoundaryFaces()(ent));
+    return getFaceCentroid<AP>(getBoundaryFaceFace(*this, ent));
   case (Entity_kind::EDGE):
     return getEdgeCentroid<AP>(ent);
   case (Entity_kind::NODE):
@@ -37,18 +38,18 @@ template <Entity_kind EK, AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 MeshCacheDevice::getCentroid(const Entity_ID ent) const
 {
-  static_assert(EK != Entity_kind::UNKNOWN && EK != Entity_kind::BOUNDARY_NODE, "No centroid information for Entity_kind::UNKNOWN or Entity_kind::BOUNDARY_NODE"); 
+  static_assert(EK != Entity_kind::UNKNOWN, "No centroid information for Entity_kind::UNKNOWN");
   if constexpr (EK == Entity_kind::CELL) {
     return getCellCentroid<AP>(ent);
   } else if constexpr (EK == Entity_kind::FACE) {
     return getFaceCentroid<AP>(ent);
   } else if constexpr (EK == Entity_kind::BOUNDARY_FACE) {
-    return getFaceCentroid<AP>(getBoundaryFaces()(ent));
+    return getFaceCentroid<AP>(getBoundaryFaceFace(*this, ent));
   } else if constexpr (EK == Entity_kind::EDGE) {
     return getEdgeCentroid<AP>(ent);
   } else if constexpr (EK == Entity_kind::NODE) {
     return getNodeCoordinate<AP>(ent);
-  }  
+  }
 }
 
 
@@ -61,6 +62,8 @@ MeshCacheDevice::getExtent(const Entity_kind kind, const Entity_ID ent) const
     return getCellVolume<AP>(ent);
   case (Entity_kind::FACE):
     return getFaceArea<AP>(ent);
+  case (Entity_kind::BOUNDARY_FACE):
+    return getFaceArea<AP>(getBoundaryFaceFace(*this, ent));
   case (Entity_kind::EDGE):
     return getEdgeLength<AP>(ent);
   default:
@@ -74,11 +77,17 @@ template <Entity_kind EK, AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION double
 MeshCacheDevice::getExtent(const Entity_ID ent) const
 {
-  static_assert(EK == Entity_kind::CELL || EK == Entity_kind::FACE || EK == Entity_kind::EDGE, "getExtent only supports CELL, FACE and EDGE"); 
+  static_assert(EK == Entity_kind::CELL ||
+                EK == Entity_kind::FACE ||
+                EK == Entity_kind::BOUNDARY_FACE ||
+                EK == Entity_kind::EDGE,
+                "getExtent only supports CELL, FACE and EDGE");
   if constexpr (EK == Entity_kind::CELL) {
     return getCellVolume<AP>(ent);
   } else if constexpr (EK == Entity_kind::FACE) {
     return getFaceArea<AP>(ent);
+  } else if constexpr (EK == Entity_kind::BOUNDARY_FACE) {
+    return getFaceArea<AP>(getBoundaryFaceFace(*this, ent));
   } else if constexpr (EK == Entity_kind::EDGE) {
     return getEdgeLength<AP>(ent);
   }

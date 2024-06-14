@@ -221,6 +221,7 @@ struct MeshCacheBase {
 
   // column structure
   MeshColumns columns;
+  MeshMaps maps;
 
  protected:
   // standard things
@@ -241,7 +242,6 @@ struct MeshCacheBase {
 
   // helper classes
   MeshCacheData data_;
-  MeshMaps maps_;
   mutable MeshSets sets_;
   mutable MeshSetVolumeFractions set_vol_fracs_;
 };

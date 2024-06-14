@@ -31,12 +31,11 @@ namespace AmanziMesh {
 //
 // Given a boundary face ID, get the corresponding face ID
 //
-DISABLE_CUDA_WARNING
 template <class Mesh_type>
 KOKKOS_INLINE_FUNCTION Entity_ID
 getBoundaryFaceFace(const Mesh_type& mesh, Entity_ID bf)
 {
-  return mesh.getBoundaryFaces()(bf);
+  return view<Mesh_type::MEM>(mesh.maps.boundary_faces)(bf);
 }
 
 

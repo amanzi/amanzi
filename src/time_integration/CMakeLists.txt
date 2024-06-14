@@ -99,7 +99,7 @@ if (BUILD_TESTS)
     include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 
     if(ENABLE_CUDA OR ENABLE_UVM)
-      set(time_integration_test_link_libs ${time_integration_test_link_libs} "-lnvToolsExt")
+      set(time_integration_test_link_libs ${time_integration_test_link_libs} nvToolsExt)
     endif()
 
     add_amanzi_test(time_integration_solution_history time_integration_solution_history

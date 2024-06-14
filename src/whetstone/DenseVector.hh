@@ -150,16 +150,10 @@ class DenseVector {
   // -- access to components
   KOKKOS_INLINE_FUNCTION double& operator()(int i)
   {
-#if WHETSTONE_ABC
-    AMANZI_ASSERT(i <= m_);
-#endif
     return data_[i];
   }
   KOKKOS_INLINE_FUNCTION const double& operator()(int i) const
   {
-#if WHETSTONE_ABC
-    AMANZI_ASSERT(i <= m_);
-#endif
     return data_[i];
   }
 

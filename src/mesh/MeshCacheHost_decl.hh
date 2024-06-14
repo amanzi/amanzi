@@ -313,34 +313,34 @@ struct MeshCacheHost : public MeshCacheBase {
   // -------------------
   //
   // a list of ALL face LIDs that are on the boundary
-  cEntity_ID_View getBoundaryFaces() const { return maps_.getBoundaryFaces<MEM>(); }
+  cEntity_ID_View getBoundaryFaces() const { return maps.getBoundaryFaces<MEM>(); }
 
   // a list of ALL node LIDs that are on the boundary
-  cEntity_ID_View getBoundaryNodes() const { return maps_.getBoundaryNodes<MEM>(); }
+  cEntity_ID_View getBoundaryNodes() const { return maps.getBoundaryNodes<MEM>(); }
 
   // maps define GIDs of each Entity_kind
   const Map_ptr_type& getMap(const Entity_kind kind, bool is_ghosted) const
   {
-    return maps_.getMap(kind, is_ghosted);
+    return maps.getMap(kind, is_ghosted);
   }
 
   // importers allow scatter/gather operations
-  const Import_type& getImporter(const Entity_kind kind) const { return maps_.getImporter(kind); }
+  const Import_type& getImporter(const Entity_kind kind) const { return maps.getImporter(kind); }
 
   // an importer from FACE-indexed objects to BOUNDARY_FACE-indexed objects
   //
   // Note this is not the same as getImporter(BOUNDARY_FACE), which
   // communicates BOUNDARY_FACE-indexed objects to other BOUNDARY_FACE-indexed
   // objects.
-  const Import_type& getBoundaryFaceImporter() const { return maps_.getBoundaryFaceImporter(); }
+  const Import_type& getBoundaryFaceImporter() const { return maps.getBoundaryFaceImporter(); }
 
   // an importer from NODE-indexed objects to BOUNDARY_NODE-indexed objects
-  const Import_type& getBoundaryNodeImporter() const { return maps_.getBoundaryNodeImporter(); }
+  const Import_type& getBoundaryNodeImporter() const { return maps.getBoundaryNodeImporter(); }
 
   // an importer from CELL-indexed objects to BOUNDARY_FACE-indexed objects
   const Import_type& getBoundaryFaceInternalCellImporter() const
   {
-    return maps_.getBoundaryFaceInternalCellImporter();
+    return maps.getBoundaryFaceInternalCellImporter();
   }
 
   // ----------------

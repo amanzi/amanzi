@@ -76,8 +76,8 @@ MeshMaps::initialize(const MeshFramework& mesh, bool renumber)
   // -- get a list of all face LIDs with 1 cell
   std::size_t nfaces_owned = mesh.getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   std::size_t nfaces_all = mesh.getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
-  MeshFramework::Entity_ID_View boundary_faces("boundary_faces", nfaces_all);
-  Kokkos::deep_copy(boundary_faces, -1);
+  MeshFramework::Entity_ID_View lboundary_faces("boundary_faces", nfaces_all);
+  Kokkos::deep_copy(lboundary_faces, -1);
 
   std::size_t nbf_owned = 0;
   std::size_t nbf_all = 0;
@@ -90,34 +90,34 @@ MeshMaps::initialize(const MeshFramework& mesh, bool renumber)
     MeshFramework::cEntity_ID_View fcells;
     mesh.getFaceCells(f, fcells);
     if (fcells.size() == 1) {
-      boundary_faces[nbf_all++] = f;
+      lboundary_faces[nbf_all++] = f;
       if (f < nfaces_owned) nbf_owned = nbf_all;
     }
   }
-  Kokkos::resize(boundary_faces, nbf_all);
+  Kokkos::resize(lboundary_faces, nbf_all);
 
   // -- convert to GID
   // GID of the face corresponding to the bf
-  MeshFramework::Entity_GID_View boundary_face_GIDs_h("boundary_face_GIDs", boundary_faces.size());
+  MeshFramework::Entity_GID_View boundary_face_GIDs_h("boundary_face_GIDs", lboundary_faces.size());
 
   // GID of the cell internal to the bf
   MeshFramework::Entity_GID_View boundary_face_internal_cell_GIDs_h(
-    "boundary_face_internal_cell_GIDs", boundary_faces.size());
+    "boundary_face_internal_cell_GIDs", lboundary_faces.size());
   const auto& fmap_all = getMap(Entity_kind::FACE, true);
   const auto& cmap_all = getMap(Entity_kind::CELL, true);
   for (std::size_t i = 0; i != nbf_all; ++i) {
-    boundary_face_GIDs_h[i] = fmap_all->getGlobalElement(boundary_faces[i]);
+    boundary_face_GIDs_h[i] = fmap_all->getGlobalElement(lboundary_faces[i]);
     MeshFramework::cEntity_ID_View fcells;
-    mesh.getFaceCells(boundary_faces[i], fcells);
+    mesh.getFaceCells(lboundary_faces[i], fcells);
     boundary_face_internal_cell_GIDs_h[i] = cmap_all->getGlobalElement(fcells[0]);
   }
 
   // -- copy to device
   Kokkos::View<GO*, Amanzi::DefaultMemorySpace> boundary_face_GIDs("boundary_face_GIDs",
-                                                                   boundary_faces.size());
+                                                                   lboundary_faces.size());
   Kokkos::deep_copy(boundary_face_GIDs, boundary_face_GIDs_h);
   Kokkos::View<GO*, Amanzi::DefaultMemorySpace> boundary_face_internal_cell_GIDs(
-    "boundary_face_internal_cell_GIDs", boundary_faces.size());
+    "boundary_face_internal_cell_GIDs", lboundary_faces.size());
   Kokkos::deep_copy(boundary_face_internal_cell_GIDs, boundary_face_internal_cell_GIDs_h);
 
   // -- construct owned maps
@@ -145,19 +145,19 @@ MeshMaps::initialize(const MeshFramework& mesh, bool renumber)
   int nbf_notowned_tight = 0;
   for (int i = 0; i != nbf_notowned; ++i) {
     if (pr_id[i] >= 0) {
-      boundary_faces[nbf_owned + nbf_notowned_tight] = boundary_faces[nbf_owned + i];
+      lboundary_faces[nbf_owned + nbf_notowned_tight] = lboundary_faces[nbf_owned + i];
       boundary_face_GIDs_h[nbf_owned + nbf_notowned_tight] = boundary_face_GIDs_h[nbf_owned + i];
       ++nbf_notowned_tight;
     }
   }
   nbf_all = nbf_owned + nbf_notowned_tight;
-  Kokkos::resize(boundary_faces, nbf_all);
+  Kokkos::resize(lboundary_faces, nbf_all);
   Kokkos::resize(boundary_face_GIDs_h, nbf_all);
   Kokkos::resize(boundary_face_GIDs, nbf_all);
   Kokkos::deep_copy(boundary_face_GIDs, boundary_face_GIDs_h);
 
   // create the dual view
-  boundary_faces_ = asDualView(boundary_faces);
+  boundary_faces = asDualView(lboundary_faces);
 
   // -- construct the all map
 
@@ -180,28 +180,28 @@ MeshMaps::initialize(const MeshFramework& mesh, bool renumber)
     std::set<Entity_ID> bnodes_lid;
     for (std::size_t i = 0; i != nbf_all; ++i) {
       MeshFramework::cEntity_ID_View fnodes;
-      mesh.getFaceNodes(boundary_faces[i], fnodes);
+      mesh.getFaceNodes(lboundary_faces[i], fnodes);
       for (const auto& n : fnodes) bnodes_lid.insert(n);
     }
 
     // -- convert to GID
-    MeshFramework::Entity_ID_View boundary_nodes("boundary_nodes", bnodes_lid.size());
-    Kokkos::deep_copy(boundary_nodes, -1);
+    MeshFramework::Entity_ID_View lboundary_nodes("boundary_nodes", bnodes_lid.size());
+    Kokkos::deep_copy(lboundary_nodes, -1);
     MeshFramework::Entity_GID_View boundary_node_GIDs_h("boundary_node_GIDs", bnodes_lid.size());
     std::size_t nnodes_owned = mesh.getNumEntities(Entity_kind::NODE, Parallel_kind::OWNED);
     std::size_t nbn_owned = 0;
     std::size_t nbn_all = 0;
     const auto& nmap_all = getMap(Entity_kind::NODE, true);
     for (const auto& bn : bnodes_lid) {
-      boundary_nodes[nbn_all] = bn;
+      lboundary_nodes[nbn_all] = bn;
       boundary_node_GIDs_h[nbn_all++] = nmap_all->getGlobalElement(bn);
       if (bn < nnodes_owned) nbn_owned = nbn_all;
     }
-    Kokkos::resize(boundary_nodes, nbn_all);
+    Kokkos::resize(lboundary_nodes, nbn_all);
     Kokkos::resize(boundary_node_GIDs_h, nbn_all);
 
     // create dual view
-    boundary_nodes_ = asDualView(boundary_nodes);
+    boundary_nodes = asDualView(lboundary_nodes);
 
     // copy GIDs to device
     Kokkos::View<GO*, Amanzi::DefaultMemorySpace> boundary_node_GIDs(
