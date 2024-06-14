@@ -1,4 +1,4 @@
-<amanzi_input version="1.5.0" type="unstructured">
+<amanzi_input version="1.6-dev" type="unstructured">
 
   <model_description name="SR Test Problem">
     <comments>Steady-State Saturated: linear pressure profile</comments>

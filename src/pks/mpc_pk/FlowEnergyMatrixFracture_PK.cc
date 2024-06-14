@@ -320,9 +320,13 @@ FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
   Teuchos::TimeMonitor tm(*counter);
 
   // make copy of conservative fields
-  std::vector<Key> names = { "pressure", "temperature", "fracture-pressure", "fracture-temperature" };
-  std::vector<Key> fields = { "saturation_liquid", "water_storage", "energy",
-                              "fracture-saturation_liquid", "fracture-water_storage", "fracture-energy" };
+  std::vector<Key> names = {
+    "pressure", "temperature", "fracture-pressure", "fracture-temperature"
+  };
+  std::vector<Key> fields = {
+    "saturation_liquid",          "water_storage",          "energy",
+    "fracture-saturation_liquid", "fracture-water_storage", "fracture-energy"
+  };
   StateArchive archive(S_, vo_);
   archive.Add(names, Tags::DEFAULT);
   archive.CopyFieldsToPrevFields(fields, "", true);
