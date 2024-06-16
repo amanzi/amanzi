@@ -133,6 +133,15 @@ CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                          const Teuchos::RCP<const AmanziMesh::Mesh>& fracture);
 
 Teuchos::RCP<CompositeVectorSpace>
+CreateFracturedMatrixCVS_Node(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                              const Teuchos::RCP<const AmanziMesh::Mesh>& fracture);
+
+Teuchos::RCP<CompositeVectorSpace>
+CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                         const Teuchos::RCP<const AmanziMesh::Mesh>& fracture,
+                         const Schema& schema);
+
+Teuchos::RCP<CompositeVectorSpace>
 CreateManifoldCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
 void

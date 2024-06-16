@@ -233,11 +233,18 @@ Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
       int nents = entities.size();
       AMANZI_ASSERT(nents > 0);
 
+      Teuchos::RCP<const Epetra_BlockMap> gmap = map.ComponentGhostedMap(my_block_col, name);
+
       for (int n = 0; n != nents; ++n) {
         int id = entities[n];
+        int first = gmap->FirstPointInElement(id);
+        int ndofs = gmap->ElementSize(id);
+
         for (int k = 0; k < num; ++k) {
           const std::vector<int>& col_inds = map.GhostIndices(my_block_col, name, k);
-          lid_c.push_back(col_inds[id]);
+          for (int m = 0; m < ndofs; ++m) {
+            lid_c.push_back(col_inds[first + m]);
+          }
         }
       }
     }
@@ -251,11 +258,18 @@ Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
       int nents = entities.size();
       AMANZI_ASSERT(nents > 0);
 
+      Teuchos::RCP<const Epetra_BlockMap> gmap = map.ComponentGhostedMap(my_block_row, name);
+
       for (int n = 0; n != nents; ++n) {
         int id = entities[n];
+        int first = gmap->FirstPointInElement(id);
+        int ndofs = gmap->ElementSize(id);
+
         for (int k = 0; k < num; ++k) {
           const std::vector<int>& row_inds = map.GhostIndices(my_block_row, name, k);
-          lid_r.push_back(row_inds[id]);
+          for (int m = 0; m < ndofs; ++m) {
+            lid_r.push_back(row_inds[first + m]);
+          }
         }
       }
     }
@@ -454,11 +468,18 @@ Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
       int nents = entities.size();
       AMANZI_ASSERT(nents > 0);
 
+      Teuchos::RCP<const Epetra_BlockMap> gmap = map.ComponentGhostedMap(my_block_col, name);
+
       for (int n = 0; n != nents; ++n) {
         int id = entities[n];
+        int first = gmap->FirstPointInElement(id);
+        int ndofs = gmap->ElementSize(id);
+
         for (int k = 0; k < num; ++k) {
           const std::vector<int>& col_inds = map.GhostIndices(my_block_col, name, k);
-          lid_c.push_back(col_inds[id]);
+          for (int m = 0; m < ndofs; ++m) {
+            lid_c.push_back(col_inds[first + m]);
+          }
         }
       }
     }
@@ -472,11 +493,18 @@ Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
       int nents = entities.size();
       AMANZI_ASSERT(nents > 0);
 
+      Teuchos::RCP<const Epetra_BlockMap> gmap = map.ComponentGhostedMap(my_block_row, name);
+
       for (int n = 0; n != nents; ++n) {
         int id = entities[n];
+        int first = gmap->FirstPointInElement(id);
+        int ndofs = gmap->ElementSize(id);
+
         for (int k = 0; k < num; ++k) {
           const std::vector<int>& row_inds = map.GhostIndices(my_block_row, name, k);
-          lid_r.push_back(row_inds[id]);
+          for (int m = 0; m < ndofs; ++m) {
+            lid_r.push_back(row_inds[first + m]);
+          }
         }
       }
     }

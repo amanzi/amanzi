@@ -200,6 +200,8 @@ ExtractVectorCellOp(int c,
       AMANZI_ASSERT(false);
     }
   }
+
+  v.Reshape(m);
 }
 
 

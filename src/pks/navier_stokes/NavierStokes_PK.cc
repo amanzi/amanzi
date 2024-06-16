@@ -206,6 +206,9 @@ NavierStokes_PK::Initialize()
   op_matrix_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
   op_preconditioner_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
 
+  op_matrix_elas_->Init(tmp1);
+  op_preconditioner_elas_->Init(tmp1);
+
   // -- create divergence block
   Teuchos::ParameterList& tmp2 = ns_list_->sublist("operators").sublist("divergence operator");
   op_matrix_div_ = Teuchos::rcp(new Operators::PDE_Abstract(tmp2, mesh_));

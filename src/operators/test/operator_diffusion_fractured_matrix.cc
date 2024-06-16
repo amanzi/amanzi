@@ -91,8 +91,7 @@ TestDiffusionFracturedMatrix(double gravity)
   // create boundary data.
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator");
 
-  Teuchos::RCP<BCs> bc =
-    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 

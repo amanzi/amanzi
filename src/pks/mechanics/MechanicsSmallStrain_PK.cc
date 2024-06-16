@@ -142,10 +142,13 @@ MechanicsSmallStrain_PK::Initialize()
   // -- create elastic block
   auto tmp1 = ec_list_->sublist("operators").sublist("elasticity operator");
   op_matrix_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
+  op_matrix_elas_->Init(tmp1);
+
   op_matrix_ = op_matrix_elas_->global_operator();
 
   // For a quasi-static problem, we update PC every non-linear iteration.
   // op_preconditioner_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
+  // op_preconditioner_elas_->Init(tmp1);
 
   // -- extensions: The undrained split method add another operator which has
   //    the grad-div structure. It is critical that it uses a separate global
@@ -155,6 +158,8 @@ MechanicsSmallStrain_PK::Initialize()
     std::string method = tmp1.sublist("schema").get<std::string>("method");
     tmp1.sublist("schema").set<std::string>("method", method + " graddiv");
     op_matrix_graddiv_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
+    op_matrix_graddiv_->Init(tmp1);
+
     op_matrix_->OpPushBack(op_matrix_graddiv_->local_op());
   }
 

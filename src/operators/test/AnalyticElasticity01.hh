@@ -29,8 +29,9 @@ class AnalyticElasticity01 : public AnalyticElasticityBase {
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t)
   {
+    int d = mesh_->getSpaceDimension();
     if (lambda_ == 0.0 && !flag_) {
-      Amanzi::WhetStone::Tensor K(2, 1);
+      Amanzi::WhetStone::Tensor K(d, 1);
       K(0, 0) = 2 * mu_;
       return K;
     } else {
@@ -44,16 +45,22 @@ class AnalyticElasticity01 : public AnalyticElasticityBase {
 
   Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t)
   {
+    int d = mesh_->getSpaceDimension();
+    Amanzi::AmanziGeometry::Point out(d);
+
     double x = p[0];
     double y = p[1];
-    return Amanzi::AmanziGeometry::Point(x + y, x - 2 * y);
+    out[0] = x + y;
+    out[1] = x - 2 * y;
+    return out;
   }
 
   double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { return 0.0; }
 
   Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t)
   {
-    return Amanzi::AmanziGeometry::Point(0.0, 0.0);
+    int d = mesh_->getSpaceDimension();
+    return Amanzi::AmanziGeometry::Point(d);
   }
 
   virtual Amanzi::WhetStone::Tensor stress_exact(const Amanzi::AmanziGeometry::Point& p, double t)

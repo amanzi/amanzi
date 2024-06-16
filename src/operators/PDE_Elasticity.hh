@@ -69,18 +69,15 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   {
     global_op_ = Teuchos::null;
     pde_type_ = PDE_ELASTICITY;
-    Init_(plist);
   }
 
   PDE_Elasticity(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
     : PDE_HelperDiscretization(global_op)
   {
     pde_type_ = PDE_ELASTICITY;
-    Init_(plist);
   }
 
-  // main virtual members
-  // -- setup
+  // setup
   void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& C);
   void SetTensorCoefficient(const WhetStone::Tensor& C);
   void SetScalarCoefficient(const CompositeVector& C);
@@ -91,6 +88,9 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   // --- Shear modulus and bulk modulus
   void SetTensorCoefficientGK(const Teuchos::RCP<const CompositeVector>& G,
                               const Teuchos::RCP<const CompositeVector>& K);
+
+  // main virtual members
+  virtual void Init(Teuchos::ParameterList& plist);
 
   // -- creation of an operator
   using PDE_HelperDiscretization::UpdateMatrices;
@@ -121,7 +121,6 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   WhetStone::Tensor ComputeCellStrain(const CompositeVector& u, int c);
 
  protected:
-  void Init_(Teuchos::ParameterList& plist);
   WhetStone::Tensor computeElasticityTensorEnu_(int c);
   WhetStone::Tensor computeElasticityTensorGK_(int c);
 
