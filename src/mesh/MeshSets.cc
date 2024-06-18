@@ -149,6 +149,19 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
 }
 
 
+std::string
+getUniqueName(const AmanziGeometry::Region& region,
+              const Entity_kind& kind,
+              const Parallel_kind& ptype)
+{
+  // note, subviews share labels with their parent, so making the label depend
+  // upon ptype is a bad idea, as ptype OWNED will be a subview of ptype ALL.
+  std::stringstream str;
+  str << "set ents: " << region.get_name() << " on " << to_string(kind);
+  return str.str();
+}
+
+
 namespace Impl {
 //
 // This helper function resolves sets on this mesh, never a parent mesh.
@@ -470,7 +483,7 @@ resolveMeshSetAll(const AmanziGeometry::Region& region,
                   const MeshHost& mesh)
 {
   auto num_ents = mesh.getNumEntities(kind, ptype);
-  View_type<Entity_ID, MemSpace_kind::HOST> ents("ents", num_ents);
+  View_type<Entity_ID, MemSpace_kind::HOST> ents(getUniqueName(region, kind, ptype), num_ents);
   for (Entity_ID i = 0; i != num_ents; ++i) ents[i] = i;
   return ents;
 }
@@ -528,7 +541,7 @@ resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
 
     // note that we have to sort these by owned, then ghosted
     std::size_t cpt = 0, cpt_g = 0;
-    MeshHost::Entity_ID_View result("SetEnumerated", mesh_map->getLocalNumElements());
+    MeshHost::Entity_ID_View result(getUniqueName(region, kind, ptype), mesh_map->getLocalNumElements());
     MeshHost::Entity_ID_View result_g("ghosted SetEnumerated", mesh_map->getLocalNumElements());
     Entity_ID nowned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
     for (Entity_GID gid : region_entities) {
@@ -573,7 +586,7 @@ resolveMeshSetGeometric(const AmanziGeometry::Region& region,
   }
 
   // check whether centroid is inside region
-  MeshHost::Entity_ID_View entities("entities", end - begin);
+  MeshHost::Entity_ID_View entities(getUniqueName(region, kind, ptype), end - begin);
   int lcv = 0;
   for (Entity_ID i = begin; i != end; ++i) {
     if (region.inside(mesh.getCentroid(kind, i))) { entities[lcv++] = i; }

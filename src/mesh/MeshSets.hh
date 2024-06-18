@@ -51,6 +51,11 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
                               View_type<double, MemSpace_kind::HOST>& vol_fracs,
                               const MeshCacheHost& mesh);
 
+std::string
+getUniqueName(const AmanziGeometry::Region& region,
+              const Entity_kind& kind,
+              const Parallel_kind& ptype);
+
 
 namespace Impl {
 

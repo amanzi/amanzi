@@ -316,9 +316,10 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
 
     // get the region
     AmanziMesh::Entity_kind entity = AmanziMesh::createEntityKind(location_);
+    auto mesh_on_host = AmanziMesh::onMemHost(vec.getMesh());
 
     { // get the vector component
-      auto ids = vec.getMesh()->getSetEntities(region_, entity, AmanziMesh::Parallel_kind::OWNED);
+      auto ids = mesh_on_host->getSetEntities(region_, entity, AmanziMesh::Parallel_kind::OWNED);
       auto subvec = vec.viewComponent<DefaultHostMemorySpace>(location_, false);
 
       if (entity == AmanziMesh::Entity_kind::CELL) {
@@ -361,7 +362,7 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
 
             } else if (!flux_normalize_region_.empty()) {
               // normalize to outward normal relative to a volumetric region
-              auto vol_cells = vec.getMesh()->getSetEntities(flux_normalize_region_,
+              auto vol_cells = mesh_on_host->getSetEntities(flux_normalize_region_,
                                                              AmanziMesh::Entity_kind::CELL,
                                                              AmanziMesh::Parallel_kind::ALL);
 
