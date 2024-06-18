@@ -143,7 +143,7 @@ TEST_FIXTURE(reference_mesh, MESH_FUNCTION)
     auto markers = bc_markers.viewComponent<DefaultHostMemorySpace>("face", false);
     auto mh = onMemHost(mesh);
     for (int f = 0; f != vals.extent(0); ++f) {
-      auto fc = mesh->getFaceCentroid(f);
+      auto fc = mh->getFaceCentroid(f);
       std::cout << "Checking " << f << " at " << fc << std::endl;
       if (fc[0] == 0.0) {
         // left

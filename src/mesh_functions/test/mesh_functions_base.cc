@@ -60,7 +60,9 @@ TEST_FIXTURE(reference_mesh, MESH_FUNCTION)
 
   mf.Compute(0.0, mp);
 
-  CHECK_CLOSE(1.0, mp[0].data(2, 0), 0.0000001);
+  Kokkos::parallel_for("Check mp MESH_FUNCTION", 1, KOKKOS_LAMBDA(const int i){
+      assert(std::fabs(1.0-mp[0].data(2, 0)) <= 0.0000001);
+    });
 }
 
 
@@ -80,7 +82,9 @@ TEST_FIXTURE(reference_mesh, BOUNDARY_CONDITION_PLIST)
   // Check
   int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
   {
-    CHECK_CLOSE(0.5, mp[0].data(0, 0), 0.0000001);
-    CHECK_CLOSE(2, mp[1].data(0, 0), 0.0000001);
+  Kokkos::parallel_for("Check mp BOUNDARY_CONDITION_PLIST", 1, KOKKOS_LAMBDA(const int i){
+      assert(std::fabs(0.5-mp[0].data(0, 0)) <= 0.0000001);
+      assert(std::fabs(2-mp[1].data(0, 0)) <= 0.0000001);
+    });
   }
 }
