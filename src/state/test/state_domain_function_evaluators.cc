@@ -63,6 +63,7 @@ SUITE(DOMAIN_FUNCTIONS)
 
     MeshFactory meshfac(comm, gm);
     auto mesh = meshfac.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+    auto mesh_on_host = AmanziMesh::onMemHost(mesh);
     auto S = Teuchos::rcp(new State());
     S->RegisterDomainMesh(mesh);
 
@@ -129,13 +130,15 @@ SUITE(DOMAIN_FUNCTIONS)
     S->GetEvaluator("D", Tags::DEFAULT).Update(*S, "main");
 
     // what to do on HOST/DEVICE?  this may fail on host since data is on DEVICE?
-    Kokkos::View<double**, Kokkos::HostSpace> on_host("on host", 4, 1);
-    Kokkos::deep_copy(on_host, S->Get<MultiPatch<double>>("source_left", Tags::DEFAULT)[0].data);
+    auto on_host = Kokkos::create_mirror_view_and_copy(
+      Kokkos::HostSpace(),
+      S->Get<MultiPatch<double>>("source_left", Tags::DEFAULT)[0].data);
     CHECK_CLOSE(3.14, on_host(0, 0), 1.e-10);
 
     std::cout << "Dptr = " << S->GetPtr<MultiPatch<double>>("D", Tags::DEFAULT) << std::endl;
-    Kokkos::deep_copy(on_host, S->Get<MultiPatch<double>>("D", Tags::DEFAULT)[0].data);
-    CHECK_CLOSE(4, on_host(0, 0), 1.e-10);
+    auto on_host2 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+            S->Get<MultiPatch<double>>("D", Tags::DEFAULT)[0].data);
+    CHECK_CLOSE(4, on_host2(0, 0), 1.e-10);
   }
 
 
@@ -162,6 +165,7 @@ SUITE(DOMAIN_FUNCTIONS)
 
     MeshFactory meshfac(comm, gm);
     auto mesh = meshfac.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+    auto mesh_on_host = AmanziMesh::onMemHost(mesh);
     auto S = Teuchos::rcp(new State());
     S->RegisterDomainMesh(mesh);
 
@@ -252,12 +256,12 @@ SUITE(DOMAIN_FUNCTIONS)
         S->Get<Operators::BCs>("diffusion_bcs", Tags::DEFAULT).bc_value_host();
 
       int nfaces =
-        mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+        mesh_on_host->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
       CHECK_EQUAL(nfaces, bc_markers.extent(0));
       CHECK_EQUAL(nfaces, bc_values.extent(0));
 
       for (int f = 0; f != nfaces; ++f) {
-        auto fc = mesh->getFaceCentroid(f);
+        auto fc = mesh_on_host->getFaceCentroid(f);
         if (std::abs(fc[0]) < 1.e-10) {
           // should be a Dirichlet face, value of 3.14
           CHECK_EQUAL(Operators::OPERATOR_BC_DIRICHLET, bc_markers(f));

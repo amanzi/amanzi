@@ -324,7 +324,7 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
 
       if (entity == AmanziMesh::Entity_kind::CELL) {
         for (auto id : ids) {
-          double vol = vec.getMesh()->getCellVolume(id);
+          double vol = mesh_on_host->getCellVolume(id);
 
           if (dof_ < 0) {
             for (int i = 0; i != get_num_vectors(); ++i) {
@@ -350,14 +350,14 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
 
       } else if (entity == AmanziMesh::Entity_kind::FACE) {
         for (auto id : ids) {
-          double vol = vec.getMesh()->getFaceArea(id);
+          double vol = mesh_on_host->getFaceArea(id);
 
           // hack to orient flux to outward-normal along a boundary only
           double sign = 1;
           if (flux_normalize_) {
             if (direction_.get()) {
               // normalize to the provided vector
-              AmanziGeometry::Point normal = vec.getMesh()->getFaceNormal(id);
+              AmanziGeometry::Point normal = mesh_on_host->getFaceNormal(id);
               sign = (normal * (*direction_)) / AmanziGeometry::norm(normal);
 
             } else if (!flux_normalize_region_.empty()) {
@@ -367,7 +367,7 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
                                                              AmanziMesh::Parallel_kind::ALL);
 
               // which cell of the face is "inside" the volume
-              auto cells = vec.getMesh()->getFaceCells(id);
+              auto cells = mesh_on_host->getFaceCells(id);
               AmanziMesh::Entity_ID c = -1;
               for (const auto& cc : cells) {
                 if (std::find(vol_cells.begin(), vol_cells.end(), cc) != vol_cells.end()) {
@@ -388,15 +388,15 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
               }
 
               // normalize with respect to that cell's direction
-              auto [faces, dirs] = vec.getMesh()->getCellFacesAndDirections(c);
+              auto [faces, dirs] = mesh_on_host->getCellFacesAndDirections(c);
               int i = std::find(faces.begin(), faces.end(), id) - faces.begin();
 
               sign = dirs[i];
 
             } else {
               // normalize to outward normal
-              auto cells = vec.getMesh()->getFaceCells(id);
-              auto [faces, dirs] = vec.getMesh()->getCellFacesAndDirections(cells[0]);
+              auto cells = mesh_on_host->getFaceCells(id);
+              auto [faces, dirs] = mesh_on_host->getCellFacesAndDirections(cells[0]);
               int i = std::find(faces.begin(), faces.end(), id) - faces.begin();
               sign = dirs[i];
             }
