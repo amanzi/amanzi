@@ -215,19 +215,19 @@ SuperMap_Manual(bool continuous)
 
   // check the indices
   {
-    auto inds_m1_d0 = map.viewIndices("map1", 0);
+    auto inds_m1_d0 = map.viewIndices<DefaultHost>("map1", 0);
     CHECK(inds_m1_d0.size() == 3);
     CHECK(inds_m1_d0[0] == 0);
     CHECK(inds_m1_d0[1] == 2);
     CHECK(inds_m1_d0[2] == 4);
 
-    auto inds_m1_d1 = map.viewIndices("map1", 1);
+    auto inds_m1_d1 = map.viewIndices<DefaultHost>("map1", 1);
     CHECK(inds_m1_d1.size() == 3);
     CHECK(inds_m1_d1[0] == 1);
     CHECK(inds_m1_d1[1] == 3);
     CHECK(inds_m1_d1[2] == 5);
 
-    auto inds_m2_d0 = map.viewIndices("map2", 0);
+    auto inds_m2_d0 = map.viewIndices<DefaultHost>("map2", 0);
     CHECK(inds_m2_d0.size() == 5);
     CHECK(inds_m2_d0[0] == 6);
     CHECK(inds_m2_d0[1] == 8);
@@ -235,7 +235,7 @@ SuperMap_Manual(bool continuous)
     CHECK(inds_m2_d0[3] == 12);
     CHECK(inds_m2_d0[4] == 14);
 
-    auto inds_m2_d1 = map.viewIndices("map2", 1);
+    auto inds_m2_d1 = map.viewIndices<DefaultHost>("map2", 1);
     CHECK(inds_m2_d1.size() == 5);
     CHECK(inds_m2_d1[0] == 7);
     CHECK(inds_m2_d1[1] == 9);
@@ -245,24 +245,24 @@ SuperMap_Manual(bool continuous)
   }
 
   {
-    auto inds_m1_d0 = map.viewGhostIndices("map1", 0);
+    auto inds_m1_d0 = map.viewGhostIndices<DefaultHost>("map1", 0);
     CHECK(inds_m1_d0[0] == 0);
     CHECK(inds_m1_d0[1] == 2);
     CHECK(inds_m1_d0[2] == 4);
 
-    auto inds_m1_d1 = map.viewGhostIndices("map1", 1);
+    auto inds_m1_d1 = map.viewGhostIndices<DefaultHost>("map1", 1);
     CHECK(inds_m1_d1[0] == 1);
     CHECK(inds_m1_d1[1] == 3);
     CHECK(inds_m1_d1[2] == 5);
 
-    auto inds_m2_d0 = map.viewGhostIndices("map2", 0);
+    auto inds_m2_d0 = map.viewGhostIndices<DefaultHost>("map2", 0);
     CHECK(inds_m2_d0[0] == 6);
     CHECK(inds_m2_d0[1] == 8);
     CHECK(inds_m2_d0[2] == 10);
     CHECK(inds_m2_d0[3] == 12);
     CHECK(inds_m2_d0[4] == 14);
 
-    auto inds_m2_d1 = map.viewGhostIndices("map2", 1);
+    auto inds_m2_d1 = map.viewGhostIndices<DefaultHost>("map2", 1);
     CHECK(inds_m2_d1[0] == 7);
     CHECK(inds_m2_d1[1] == 9);
     CHECK(inds_m2_d1[2] == 11);

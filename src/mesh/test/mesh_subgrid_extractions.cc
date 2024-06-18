@@ -146,11 +146,15 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED_SETS)
     auto cells_in_surf = mesh_sc->getSetEntities(
       "Top Face Plane", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     CHECK_EQUAL(1, cells_in_surf.size());
-    CHECK_EQUAL(0, cells_in_surf[0]);
+    auto cells_in_surf_h = Kokkos::create_mirror_view(cells_in_surf);
+    Kokkos::deep_copy(cells_in_surf_h, cells_in_surf);
+    CHECK_EQUAL(0, cells_in_surf_h[0]);
 
     auto cells_in_surf2 = mesh_sc->getSetEntities(
       "Face 106", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     CHECK_EQUAL(1, cells_in_surf2.size());
-    CHECK_EQUAL(0, cells_in_surf2[0]);
+    auto cells_in_surf2_h = Kokkos::create_mirror_view(cells_in_surf2);
+    Kokkos::deep_copy(cells_in_surf2_h, cells_in_surf2);
+    CHECK_EQUAL(0, cells_in_surf2_h[0]);
   }
 }
