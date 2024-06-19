@@ -33,14 +33,29 @@
 
 
 #include "OperatorDefs.hh"
+
+#define FV 1
+#define MFD 1
+#define NLFV 0
+#define ASSEMBLING 1
+
+#if FV
 #include "PDE_DiffusionFV.hh"
 #include "PDE_DiffusionFVwithGravity.hh"
+#endif
+
+#if MFD
 #include "PDE_DiffusionMFD.hh"
 #include "PDE_DiffusionMFDwithGravity.hh"
-// #include "PDE_DiffusionNLFV.hh"
-// #include "PDE_DiffusionNLFVwithGravity.hh"
-// #include "PDE_DiffusionNLFVwithBndFaces.hh"
-// #include "PDE_DiffusionNLFVwithBndFacesGravity.hh"
+#endif
+
+#if NLFV
+#include "PDE_DiffusionNLFV.hh"
+#include "PDE_DiffusionNLFVwithGravity.hh"
+#include "PDE_DiffusionNLFVwithBndFaces.hh"
+#include "PDE_DiffusionNLFVwithBndFacesGravity.hh"
+#endif
+
 // #include "UpwindSecondOrder.hh"
 // #include "Verification.hh"
 
@@ -132,11 +147,6 @@ testWGravity(const Teuchos::RCP<AnalyticBase>& ana,
   std::cout << "============================================================================="
             << std::endl;
 }
-
-#define FV 1
-#define MFD 1
-#define NLFV 0
-#define ASSEMBLING 1
 
 /* *****************************************************************
 * Exactness test for mixed diffusion solver.
@@ -408,54 +418,54 @@ SUITE(DIFFUSION)
 
 #endif
 #if NLFV
-  // TEST(Analytic00_Linear1_NLFV_Dirichlet_Generate2D_identity) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
-  //   test<Operators::PDE_DiffusionNLFV>(
-  //       ana, "identity", "Dirichlet", "Generate2D",
-  //       "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic00_LinearGravity1_NLFV_Dirichlet_Generate2D_identity) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
-  //       ana, 1.1, "identity", "Dirichlet", "Generate2D",
-  //       "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic00_Linear1_NLFVBFace_Dirichlet_Generate2D_identity) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
-  //   test<Operators::PDE_DiffusionNLFVwithBndFaces>(
-  //       ana, "identity", "Dirichlet", "Generate2D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic00_LinearGravity1_NLFVBFace_Dirichlet_Generate2D_identity) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
-  //       ana, 1.1, "identity", "Dirichlet", "Generate2D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic00_Linear1_NLFV_Dirichlet_Generate2D_diagonal) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
-  //   test<Operators::PDE_DiffusionNLFV>(
-  //       ana, "diagonal", "Dirichlet", "Generate2D",
-  //       "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic00_LinearGravity1_NLFV_Dirichlet_Generate2D_diagonal) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
-  //       ana, 1.1, "diagonal", "Dirichlet", "Generate2D",
-  //       "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic00_Linear1_NLFVBFace_Dirichlet_Generate2D_diagonal) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
-  //   test<Operators::PDE_DiffusionNLFVwithBndFaces>(
-  //       ana, "diagonal", "Dirichlet", "Generate2D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic00_LinearGravity1_NLFVBFace_Dirichlet_Generate2D_diagonal) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
-  //       ana, 1.1, "diagonal", "Dirichlet", "Generate2D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
+  TEST(Analytic00_Linear1_NLFV_Dirichlet_Generate2D_identity) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
+    test<Operators::PDE_DiffusionNLFV>(
+        ana, "identity", "Dirichlet", "Generate2D",
+        "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+  TEST(Analytic00_LinearGravity1_NLFV_Dirichlet_Generate2D_identity) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
+        ana, 1.1, "identity", "Dirichlet", "Generate2D",
+        "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+  TEST(Analytic00_Linear1_NLFVBFace_Dirichlet_Generate2D_identity) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
+    test<Operators::PDE_DiffusionNLFVwithBndFaces>(
+        ana, "identity", "Dirichlet", "Generate2D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+  TEST(Analytic00_LinearGravity1_NLFVBFace_Dirichlet_Generate2D_identity) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
+        ana, 1.1, "identity", "Dirichlet", "Generate2D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+  TEST(Analytic00_Linear1_NLFV_Dirichlet_Generate2D_diagonal) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
+    test<Operators::PDE_DiffusionNLFV>(
+        ana, "diagonal", "Dirichlet", "Generate2D",
+        "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+  TEST(Analytic00_LinearGravity1_NLFV_Dirichlet_Generate2D_diagonal) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
+        ana, 1.1, "diagonal", "Dirichlet", "Generate2D",
+        "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+  TEST(Analytic00_Linear1_NLFVBFace_Dirichlet_Generate2D_diagonal) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
+    test<Operators::PDE_DiffusionNLFVwithBndFaces>(
+        ana, "diagonal", "Dirichlet", "Generate2D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+  TEST(Analytic00_LinearGravity1_NLFVBFace_Dirichlet_Generate2D_diagonal) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
+        ana, 1.1, "diagonal", "Dirichlet", "Generate2D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
 #endif
 
   //
@@ -518,30 +528,30 @@ SUITE(DIFFUSION)
   }
 #  endif
 #  if NLFV
-  // TEST(Analytic00_Linear1_NLFV_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
-  //   test<Operators::PDE_DiffusionNLFV>(
-  //       ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
-  //       "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic00_LinearGravity1_NLFV_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
-  //       ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
-  //       "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic00_Linear1_NLFVBFace_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
-  //   test<Operators::PDE_DiffusionNLFVwithBndFaces>(
-  //       ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic00_LinearGravity1_NLFVBFace_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
-  //       ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
+  TEST(Analytic00_Linear1_NLFV_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
+    test<Operators::PDE_DiffusionNLFV>(
+        ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
+        "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+  TEST(Analytic00_LinearGravity1_NLFV_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
+        ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
+        "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+  TEST(Analytic00_Linear1_NLFVBFace_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
+    test<Operators::PDE_DiffusionNLFVwithBndFaces>(
+        ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+  TEST(Analytic00_LinearGravity1_NLFVBFace_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
+        ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
 #  endif
 #endif
 
@@ -604,30 +614,30 @@ SUITE(DIFFUSION)
   }
 #endif
 #if NLFV
-  // TEST(Analytic00_Linearkr_NLFV_Dirichlet_Generate2D_diagonal) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 3.14, 1.0, 0.0));
-  //   test<Operators::PDE_DiffusionNLFV>(
-  //       ana, "diagonal", "Dirichlet", "Generate2D",
-  //       "nlfv", true, AmanziMesh::Entity_kind::FACE, 1.e-12);
-  // }
-  // TEST(Analytic00_LinearGravitykr_NLFV_Dirichlet_Generate2D_diagonal) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 3.14, 1.0, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
-  //       ana, 1.1, "diagonal", "Dirichlet", "Generate2D",
-  //       "nlfv", true, AmanziMesh::Entity_kind::FACE, 1.e-12);
-  // }
-  // TEST(Analytic00_Linearkr_NLFVBFace_Dirichlet_Generate2D_diagonal) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 3.14, 1.0, 0.0));
-  //   test<Operators::PDE_DiffusionNLFVwithBndFaces>(
-  //       ana, "diagonal", "Dirichlet", "Generate2D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::FACE, 1.e-12);
-  // }
-  // TEST(Analytic00_LinearGravitykr_NLFVBFace_Dirichlet_Generate2D_diagonal) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 3.14, 1.0, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
-  //       ana, 1.1, "diagonal", "Dirichlet", "Generate2D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::FACE, 1.e-12);
-  // }
+  TEST(Analytic00_Linearkr_NLFV_Dirichlet_Generate2D_diagonal) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 3.14, 1.0, 0.0));
+    test<Operators::PDE_DiffusionNLFV>(
+        ana, "diagonal", "Dirichlet", "Generate2D",
+        "nlfv", true, AmanziMesh::Entity_kind::FACE, 1.e-12);
+  }
+  TEST(Analytic00_LinearGravitykr_NLFV_Dirichlet_Generate2D_diagonal) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 3.14, 1.0, 1.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
+        ana, 1.1, "diagonal", "Dirichlet", "Generate2D",
+        "nlfv", true, AmanziMesh::Entity_kind::FACE, 1.e-12);
+  }
+  TEST(Analytic00_Linearkr_NLFVBFace_Dirichlet_Generate2D_diagonal) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 3.14, 1.0, 0.0));
+    test<Operators::PDE_DiffusionNLFVwithBndFaces>(
+        ana, "diagonal", "Dirichlet", "Generate2D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::FACE, 1.e-12);
+  }
+  TEST(Analytic00_LinearGravitykr_NLFVBFace_Dirichlet_Generate2D_diagonal) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 3.14, 1.0, 1.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
+        ana, 1.1, "diagonal", "Dirichlet", "Generate2D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::FACE, 1.e-12);
+  }
 #endif
 
   //
@@ -689,30 +699,30 @@ SUITE(DIFFUSION)
   }
 #endif
 #if NLFV
-  // TEST(Analytic00_LinearK_NLFV_DirichletNeumannBox_Generate2D_diagona) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 3.14, 0.0));
-  //   test<Operators::PDE_DiffusionNLFV>(
-  //       ana, "diagonal", "DirichletNeumannBox", "Generate2D",
-  //       "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic00_LinearGravityK_NLFV_DirichletNeumannBox_Generate2D_diagona) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 3.14, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
-  //       ana, 1.1, "diagonal", "DirichletNeumannBox", "Generate2D",
-  //       "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic00_LinearK_NLFVBFace_DirichletNeumannBox_Generate2D_diagona) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 3.14, 0.0));
-  //   test<Operators::PDE_DiffusionNLFVwithBndFaces>(
-  //       ana, "diagonal", "DirichletNeumannBox", "Generate2D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic00_LinearGravityK_NLFVBFace_DirichletNeumannBox_Generate2D_diagona) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 3.14, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
-  //       ana, 1.1, "diagonal", "DirichletNeumannBox", "Generate2D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
+  TEST(Analytic00_LinearK_NLFV_DirichletNeumannBox_Generate2D_diagona) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 3.14, 0.0));
+    test<Operators::PDE_DiffusionNLFV>(
+        ana, "diagonal", "DirichletNeumannBox", "Generate2D",
+        "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+  TEST(Analytic00_LinearGravityK_NLFV_DirichletNeumannBox_Generate2D_diagona) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 3.14, 1.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
+        ana, 1.1, "diagonal", "DirichletNeumannBox", "Generate2D",
+        "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+  TEST(Analytic00_LinearK_NLFVBFace_DirichletNeumannBox_Generate2D_diagona) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 3.14, 0.0));
+    test<Operators::PDE_DiffusionNLFVwithBndFaces>(
+        ana, "diagonal", "DirichletNeumannBox", "Generate2D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+  TEST(Analytic00_LinearGravityK_NLFVBFace_DirichletNeumannBox_Generate2D_diagona) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 3.14, 1.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
+        ana, 1.1, "diagonal", "DirichletNeumannBox", "Generate2D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
 #endif
 
   //
@@ -778,30 +788,30 @@ SUITE(DIFFUSION)
   }
 #  endif
 #  if NLFV
-  // TEST(Analytic00_Linear1_NLFV_DirichletNeumannBox_Wiggled_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
-  //   test<Operators::PDE_DiffusionNLFV>(
-  //       ana, "ifpack2: ILUT", "DirichletNeumannBox", "test/random10.exo",
-  //       "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
-  // }
-  // TEST(Analytic00_LinearGravity1_NLFV_DirichletNeumannBox_Wiggled_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
-  //       ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "test/random10.exo",
-  //       "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
-  // }
-  // TEST(Analytic00_Linear1_NLFVBFace_DirichletNeumannBox_Wiggled_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
-  //   test<Operators::PDE_DiffusionNLFVwithBndFaces>(
-  //       ana, "ifpack2: ILUT", "DirichletNeumannBox", "test/random10.exo",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
-  // }
-  // TEST(Analytic00_LinearGravity1_NLFVBFace_DirichletNeumannBox_Wiggled_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
-  //       ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "test/random10.exo",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
-  // }
+  TEST(Analytic00_Linear1_NLFV_DirichletNeumannBox_Wiggled_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
+    test<Operators::PDE_DiffusionNLFV>(
+        ana, "ifpack2: ILUT", "DirichletNeumannBox", "test/random10.exo",
+        "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
+  }
+  TEST(Analytic00_LinearGravity1_NLFV_DirichletNeumannBox_Wiggled_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
+        ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "test/random10.exo",
+        "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
+  }
+  TEST(Analytic00_Linear1_NLFVBFace_DirichletNeumannBox_Wiggled_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
+    test<Operators::PDE_DiffusionNLFVwithBndFaces>(
+        ana, "ifpack2: ILUT", "DirichletNeumannBox", "test/random10.exo",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
+  }
+  TEST(Analytic00_LinearGravity1_NLFVBFace_DirichletNeumannBox_Wiggled_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
+        ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "test/random10.exo",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
+  }
 #  endif
 
   //
@@ -866,30 +876,30 @@ SUITE(DIFFUSION)
   }
 #  endif
 #  if NLFV
-  // TEST(Analytic00_Linear1_NLFV_DirichletNeumannBox_Poly_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
-  //   test<Operators::PDE_DiffusionNLFV>(
-  //       ana, "ifpack2: ILUT", "DirichletNeumannBox", "test/median7x8_filtered.exo",
-  //       "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
-  // }
-  // TEST(Analytic00_LinearGravity1_NLFV_DirichletNeumannBox_Poly_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
-  //       ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "test/median7x8_filtered.exo",
-  //       "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
-  // }
-  // TEST(Analytic00_Linear1_NLFVBFace_DirichletNeumannBox_Poly_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
-  //   test<Operators::PDE_DiffusionNLFVwithBndFaces>(
-  //       ana, "ifpack2: ILUT", "DirichletNeumannBox", "test/median7x8_filtered.exo",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
-  // }
-  // TEST(Analytic00_LinearGravity1_NLFVBFace_DirichletNeumannBox_Poly_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
-  //       ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "test/median7x8_filtered.exo",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
-  // }
+  TEST(Analytic00_Linear1_NLFV_DirichletNeumannBox_Poly_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
+    test<Operators::PDE_DiffusionNLFV>(
+        ana, "ifpack2: ILUT", "DirichletNeumannBox", "test/median7x8_filtered.exo",
+        "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
+  }
+  TEST(Analytic00_LinearGravity1_NLFV_DirichletNeumannBox_Poly_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
+        ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "test/median7x8_filtered.exo",
+        "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
+  }
+  TEST(Analytic00_Linear1_NLFVBFace_DirichletNeumannBox_Poly_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
+    test<Operators::PDE_DiffusionNLFVwithBndFaces>(
+        ana, "ifpack2: ILUT", "DirichletNeumannBox", "test/median7x8_filtered.exo",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
+  }
+  TEST(Analytic00_LinearGravity1_NLFVBFace_DirichletNeumannBox_Poly_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
+        ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "test/median7x8_filtered.exo",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
+  }
 #  endif
 
   //
@@ -932,30 +942,30 @@ SUITE(DIFFUSION)
   // endif not working
 
 #  if NLFV
-  // TEST(Analytic00_Quadratic1_NLFV_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic00(2, 1.0, 1.0, 0.0));
-  //   test<Operators::PDE_DiffusionNLFV>(
-  //       ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
-  //       "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, .006);
-  // }
-  // TEST(Analytic00_QuadraticGravity1_NLFV_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic00(2, 1.0, 1.0, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
-  //       ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
-  //       "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, .006);
-  // }
-  // TEST(Analytic00_Quadratic1_NLFVBFace_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic00(2, 1.0, 1.0, 0.0));
-  //   test<Operators::PDE_DiffusionNLFVwithBndFaces>(
-  //       ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, .006);
-  // }
-  // TEST(Analytic00_QuadraticGravity1_NLFVBFace_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic00(2, 1.0, 1.0, 1.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
-  //       ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, .006);
-  // }
+  TEST(Analytic00_Quadratic1_NLFV_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic00(2, 1.0, 1.0, 0.0));
+    test<Operators::PDE_DiffusionNLFV>(
+        ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
+        "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, .006);
+  }
+  TEST(Analytic00_QuadraticGravity1_NLFV_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic00(2, 1.0, 1.0, 1.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
+        ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
+        "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, .006);
+  }
+  TEST(Analytic00_Quadratic1_NLFVBFace_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic00(2, 1.0, 1.0, 0.0));
+    test<Operators::PDE_DiffusionNLFVwithBndFaces>(
+        ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, .006);
+  }
+  TEST(Analytic00_QuadraticGravity1_NLFVBFace_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic00(2, 1.0, 1.0, 1.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
+        ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, .006);
+  }
 #  endif
 
   //
@@ -1049,94 +1059,94 @@ SUITE(DIFFUSION)
   // With NLFV
   //
 #  if NLFV
-  // TEST(Analytic02_NLFV_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(2));
-  //   test<Operators::PDE_DiffusionNLFV>(
-  //       ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
-  //       "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
-  // }
-  // TEST(Analytic02_Gravity_NLFV_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(2, 0.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
-  //       ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
-  //       "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
-  // }
+  TEST(Analytic02_NLFV_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(2));
+    test<Operators::PDE_DiffusionNLFV>(
+        ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
+        "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
+  }
+  TEST(Analytic02_Gravity_NLFV_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(2, 0.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
+        ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
+        "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
+  }
 
   // the original test tested on circle-quad
-  // TEST(Analytic02_NLFV_DirichletNeumannBox_CircleQuad_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(2));
-  //   test<Operators::PDE_DiffusionNLFV>(
-  //       ana, "ifpack2: ILUT", "DirichletNeumannBox", "test/circle_quad10.exo",
-  //       "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
-  // }
-  // TEST(Analytic02_Gravity_NLFV_DirichletNeumannBox_CircleQuad_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(2, 0.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
-  //       ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "test/circle_quad10.exo",
-  //       "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
-  // }
+  TEST(Analytic02_NLFV_DirichletNeumannBox_CircleQuad_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(2));
+    test<Operators::PDE_DiffusionNLFV>(
+        ana, "ifpack2: ILUT", "DirichletNeumannBox", "test/circle_quad10.exo",
+        "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
+  }
+  TEST(Analytic02_Gravity_NLFV_DirichletNeumannBox_CircleQuad_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(2, 0.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
+        ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "test/circle_quad10.exo",
+        "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
+  }
 
   // test in 3D
   //
   // These probably should pass?  Not sure why they don't.
-  // TEST(Analytic02_NLFV_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(3));
-  //   test<Operators::PDE_DiffusionNLFV>(
-  //       ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
-  //       "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
-  // }
-  // TEST(Analytic02_Gravity_NLFV_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(3, 0.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
-  //       ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
-  //       "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
-  // }
+  TEST(Analytic02_NLFV_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(3));
+    test<Operators::PDE_DiffusionNLFV>(
+        ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
+        "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
+  }
+  TEST(Analytic02_Gravity_NLFV_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(3, 0.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
+        ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
+        "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
+  }
 
   //
   // With NLFV and Boundary Faces
   //
-  // TEST(Analytic02_NLFVwithBndFaces_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(2));
-  //   test<Operators::PDE_DiffusionNLFVwithBndFaces>(
-  //       ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
-  // }
-  // TEST(Analytic02_Gravity_NLFVwithBndFaces_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(2, 0.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
-  //       ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
-  // }
+  TEST(Analytic02_NLFVwithBndFaces_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(2));
+    test<Operators::PDE_DiffusionNLFVwithBndFaces>(
+        ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
+  }
+  TEST(Analytic02_Gravity_NLFVwithBndFaces_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(2, 0.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
+        ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 20);
+  }
 
   // the original test tested on circle-quad
   //
   // These probably should pass?  Not sure why the don't.
-  // TEST(Analytic02_NLFVwithBndFaces_DirichletNeumannBox_CircleQuad_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(2));
-  //   test<Operators::PDE_DiffusionNLFVwithBndFaces>(
-  //       ana, "ifpack2: ILUT", "DirichletNeumannBox", "test/circle_quad10.exo",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
-  // }
-  // TEST(Analytic02_Gravity_NLFVwithBndFaces_DirichletNeumannBox_CircleQuad_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(2, 0.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
-  //       ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "test/circle_quad10.exo",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
-  // }
+  TEST(Analytic02_NLFVwithBndFaces_DirichletNeumannBox_CircleQuad_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(2));
+    test<Operators::PDE_DiffusionNLFVwithBndFaces>(
+        ana, "ifpack2: ILUT", "DirichletNeumannBox", "test/circle_quad10.exo",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
+  }
+  TEST(Analytic02_Gravity_NLFVwithBndFaces_DirichletNeumannBox_CircleQuad_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(2, 0.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
+        ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "test/circle_quad10.exo",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
+  }
 
   // test in 3D
-  // TEST(Analytic02_NLFVwithBndFaces_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(3));
-  //   test<Operators::PDE_DiffusionNLFVwithBndFaces>(
-  //       ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
-  // }
-  // TEST(Analytic02_Gravity_NLFVwithBndFaces_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(3, 0.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
-  //       ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
-  // }
+  TEST(Analytic02_NLFVwithBndFaces_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(3));
+    test<Operators::PDE_DiffusionNLFVwithBndFaces>(
+        ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
+  }
+  TEST(Analytic02_Gravity_NLFVwithBndFaces_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(3, 0.1));
+    testWGravity<Operators::PDE_DiffusionNLFVwithBndFacesGravity>(
+        ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
+  }
 #  endif
 #endif
 
@@ -1167,18 +1177,18 @@ SUITE(DIFFUSION)
   }
 #endif
 #if NLFV
-  // TEST(Analytic03b_Linear1_NLFV_Dirichlet_Poly_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic03b());
-  //   test<Operators::PDE_DiffusionNLFV>(
-  //       ana, "ifpack2: ILUT", "Dirichlet", "Generate2D",
-  //       "nlfv", false, AmanziMesh::Entity_kind::FACE, 1.e-12, 20);
-  // }
-  // TEST(Analytic03b_Linear1_NLFVBFace_Dirichlet_Poly_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic03b());
-  //   test<Operators::PDE_DiffusionNLFVwithBndFaces>(
-  //       ana, "ifpack2: ILUT", "Dirichlet", "Generate2D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::FACE, 1.e-12, 20);
-  // }
+  TEST(Analytic03b_Linear1_NLFV_Dirichlet_Poly_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic03b());
+    test<Operators::PDE_DiffusionNLFV>(
+        ana, "ifpack2: ILUT", "Dirichlet", "Generate2D",
+        "nlfv", false, AmanziMesh::Entity_kind::FACE, 1.e-12, 20);
+  }
+  TEST(Analytic03b_Linear1_NLFVBFace_Dirichlet_Poly_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic03b());
+    test<Operators::PDE_DiffusionNLFVwithBndFaces>(
+        ana, "ifpack2: ILUT", "Dirichlet", "Generate2D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::FACE, 1.e-12, 20);
+  }
 #endif
 
 #if FV
@@ -1210,17 +1220,17 @@ SUITE(DIFFUSION)
   }
 #endif
 #if NLFV
-  // TEST(Analytic03b_Linear1_NLFV_Dirichlet_Poly_ifpack2_diagonal) {
-  //   auto ana = Teuchos::rcp(new Analytic03b());
-  //   test<Operators::PDE_DiffusionNLFV>(
-  //       ana, "diagonal", "Dirichlet", "Generate2D",
-  //       "nlfv", false, AmanziMesh::Entity_kind::FACE, 1.e-12, 20);
-  // }
-  // TEST(Analytic03b_Linear1_NLFVBFace_Dirichlet_Poly_ifpack2_diagonal) {
-  //   auto ana = Teuchos::rcp(new Analytic03b());
-  //   test<Operators::PDE_DiffusionNLFVwithBndFaces>(
-  //       ana, "diagonal", "Dirichlet", "Generate2D",
-  //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::FACE, 1.e-12, 20);
-  // }
+  TEST(Analytic03b_Linear1_NLFV_Dirichlet_Poly_ifpack2_diagonal) {
+    auto ana = Teuchos::rcp(new Analytic03b());
+    test<Operators::PDE_DiffusionNLFV>(
+        ana, "diagonal", "Dirichlet", "Generate2D",
+        "nlfv", false, AmanziMesh::Entity_kind::FACE, 1.e-12, 20);
+  }
+  TEST(Analytic03b_Linear1_NLFVBFace_Dirichlet_Poly_ifpack2_diagonal) {
+    auto ana = Teuchos::rcp(new Analytic03b());
+    test<Operators::PDE_DiffusionNLFVwithBndFaces>(
+        ana, "diagonal", "Dirichlet", "Generate2D",
+        "nlfv with bfaces", false, AmanziMesh::Entity_kind::FACE, 1.e-12, 20);
+  }
 #endif
 }

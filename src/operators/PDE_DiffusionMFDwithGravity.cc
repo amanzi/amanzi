@@ -43,6 +43,7 @@ PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
     int dim = mesh_->getSpaceDimension();
 
     Preallocate_little_k_(true);
+    TensorVector K_alternative;
 
     { // context for views
       auto rho_c = DensityCells(true);
@@ -54,8 +55,8 @@ PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
       bool fv_flag =
         (gravity_method_ == OPERATOR_GRAVITY_FV) || !(little_k_type_ & OPERATOR_LITTLE_K_DIVK_BASE);
 
-      const TensorVector* K_ptr = K_.get();
-      const TensorVector& K = K_ptr ? *K_ : TensorVector();
+      bool have_K = K_ != Teuchos::null;
+      const TensorVector& K = have_K ? *K_ : K_alternative;
       const AmanziMesh::Mesh& mesh = *mesh_;
       AmanziGeometry::Point g(g_);
       bool gravity_special_projection(gravity_special_projection_);
@@ -78,7 +79,7 @@ PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
           // -- always used for the finite volume method, also for non-DIVK
           //    upwind methods
           if (fv_flag) {
-            AmanziGeometry::Point Kcg = K_ptr == nullptr ? g : K.at(c) * g;
+            AmanziGeometry::Point Kcg = have_K ? K.at(c) * g : g;
 
             for (int n = 0; n < nfaces; n++) {
               int f = faces[n];
@@ -150,18 +151,20 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
   Preallocate_little_k_(true);
 
   Kokkos::View<int*, DeviceOnlyMemorySpace> hits("hits", nfaces_owned);
+  TensorVector K_alternative;
 
   { // context for views
     auto rho_c = DensityCells(true);
-
     auto grav_flux_v = grav_flux.viewComponent("face", false);
 
     const AmanziMesh::Mesh& mesh = *mesh_;
     AmanziGeometry::Point g(g_);
-    const TensorVector* K_ptr = K_.get();
-    const TensorVector& K = K_ptr ? *K_ : TensorVector();
+    bool have_K = K_ != Teuchos::null;
+    const TensorVector& K = have_K ? *K_ : K_alternative;
     auto& Wff_cells = Wff_cells_;
     auto& kr_cells = kr_cells_;
+    int lnfaces_owned(nfaces_owned);
+    bool gravity_special_projection(gravity_special_projection_);
 
     // gravity discretization
     bool fv_flag =
@@ -178,14 +181,14 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
         auto kr = kr_cells[c];
 
         if (fv_flag) {
-          AmanziGeometry::Point Kcg = (K_ptr == nullptr) ? g : K.at(c) * g;
+          AmanziGeometry::Point Kcg = have_K ? K.at(c) * g : g;
 
           for (int n = 0; n < nfaces; n++) {
             int f = faces[n];
-            if (f < nfaces_owned) {
+            if (f < lnfaces_owned) {
               const AmanziGeometry::Point& normal = mesh.getFaceNormal(f);
 
-              if (gravity_special_projection_) {
+              if (gravity_special_projection) {
                 const AmanziGeometry::Point& xcc = Impl::GravitySpecialDirection(mesh, f);
                 double sign = normal * xcc;
                 double tmp = copysign(norm(normal) / norm(xcc), sign);
