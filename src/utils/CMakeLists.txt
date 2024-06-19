@@ -31,7 +31,6 @@ add_amanzi_library(atk
                           IOEvent.cc
                           Key.cc
                           LeastSquare.cc 
-                          Spline.cc
                           SplinedCurve.cc
                           TimeStepManager.cc
                           Units.cc
