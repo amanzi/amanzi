@@ -49,7 +49,7 @@ namespace Amanzi {
 class Debugger {
  public:
   // Constructor
-  Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+  Debugger(const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh,
            std::string name,
            Teuchos::ParameterList& plist,
            Teuchos::EVerbosityLevel verb_level = Teuchos::VERB_HIGH);
@@ -101,7 +101,7 @@ class Debugger {
   Teuchos::EVerbosityLevel verb_level_;
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::MeshHost> mesh_;
   AmanziMesh::Entity_ID_List dc_;
   AmanziMesh::Entity_GID_List dc_gid_;
   std::vector<Teuchos::RCP<VerboseObject>> dcvo_;

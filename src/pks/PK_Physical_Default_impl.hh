@@ -78,7 +78,7 @@ PK_Physical_Default<PK_type>::parseParameterList()
     vo_plist = Teuchos::rcp(new Teuchos::ParameterList(*plist_));
     vo_plist->set("verbose object", plist_->sublist(name_ + " verbose object"));
   }
-  db_ = Teuchos::rcp(new Debugger(mesh_, name_, *vo_plist));
+  db_ = Teuchos::rcp(new Debugger(AmanziMesh::onMemHost(mesh_), name_, *vo_plist));
 }
 
 

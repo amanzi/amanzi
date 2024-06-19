@@ -18,29 +18,36 @@
 #ifndef AMANZI_UTILS_SPLINE_HH_
 #define AMANZI_UTILS_SPLINE_HH_
 
-
-#include "Teuchos_RCP.hpp"
+#include "Kokkos_Core.hpp"
 
 namespace Amanzi {
 namespace Utils {
 
 class Spline {
  public:
-  Spline(){};
+  KOKKOS_INLINE_FUNCTION Spline(){};
 
   Spline(double x1, double y1, double dy1, double x2, double y2, double dy2)
   {
     Setup(x1, y1, dy1, x2, y2, dy2);
   }
 
+  KOKKOS_FUNCTION Spline(const Spline& other) = default;
+  KOKKOS_FUNCTION ~Spline() = default;
+
   void Setup(double x1, double y1, double dy1, double x2, double y2, double dy2);
 
+  KOKKOS_INLINE_FUNCTION
   double operator()(double x) const { return Value(x); }
 
+  KOKKOS_FUNCTION
   double Value(double x) const;
+
+  KOKKOS_FUNCTION
   double Derivative(double x) const;
 
  private:
+  KOKKOS_FUNCTION
   double T(double x) const;
 
   double x1_, x2_, y1_, y2_, dy1_, dy2_;

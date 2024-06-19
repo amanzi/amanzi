@@ -170,6 +170,8 @@ endif()
                     KIND unit
                     SOURCE test/Main.cc test/operators_diffusion_discretizations.cc
                     LINK_LIBS ${UnitTest_LIBRARIES} ${operators_test_link_libs})
+    add_amanzi_test(operators_diffusion_disc_3pe operators_diffusion_discretization NPROCS 3 KIND unit)
+                  
 
     add_amanzi_test(operators_solvers operators_solvers
                     KIND unit
@@ -177,8 +179,6 @@ endif()
                     LINK_LIBS ${UnitTest_LIBRARIES} ${operators_test_link_libs})
 
 
-    add_amanzi_test(operators_diffusion_disc_3pe operators_diffusion_discretization NPROCS 3 KIND unit)
-                  
     # add_amanzi_test(operators_diffusion operators_diffusion
     #                 KIND unit
     #                 SOURCE test/Main.cc test/operators_diffusion_nodal.cc
