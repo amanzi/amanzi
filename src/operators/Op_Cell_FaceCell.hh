@@ -29,9 +29,10 @@ class Op_Cell_FaceCell : public Op {
   {
     int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
     A = DenseMatrix_Vector(ncells_owned);
+    auto mesh_host = onMemHost(mesh);
 
     for (int c = 0; c != ncells_owned; ++c) {
-      auto faces = mesh->getCellFaces(c); // This perform the prefix_sum
+      auto faces = mesh_host->getCellFaces(c); // This performs the prefix_sum
       int nfaces = faces.extent(0);
       A.set_shape(c, nfaces + 1, nfaces + 1);
     }
