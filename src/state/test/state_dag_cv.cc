@@ -437,28 +437,28 @@ SUITE(DAG)
   {
     // check initialized properly
     CHECK_CLOSE(
-      2.0, (S.Get<CompositeVector>("fb").viewComponent<MirrorHost>("cell", false))(0, 0), 1e-12);
+      2.0, (S.Get<CompositeVector>("fb").viewComponent<MemSpace_kind::HOST>("cell", false))(0, 0), 1e-12);
     CHECK_CLOSE(
-      3.0, (S.Get<CompositeVector>("fg").viewComponent<MirrorHost>("cell", false))(0, 0), 1e-12);
+      3.0, (S.Get<CompositeVector>("fg").viewComponent<MemSpace_kind::HOST>("cell", false))(0, 0), 1e-12);
 
     // calculate field A
     std::cout << "Calculate field A:" << std::endl;
     bool changed = fa_eval->Update(S, "main");
     CHECK_CLOSE(
-      6484.0, (S.Get<CompositeVector>("fa").viewComponent<MirrorHost>("cell", false))(0, 0), 1e-12);
+      6484.0, (S.Get<CompositeVector>("fa").viewComponent<MemSpace_kind::HOST>("cell", false))(0, 0), 1e-12);
     CHECK(changed);
 
 
     // check intermediate steps got updated too
     CHECK_CLOSE(
-      6.0, (S.Get<CompositeVector>("fd").viewComponent<MirrorHost>("cell", false))(0, 0), 1e-12);
+      6.0, (S.Get<CompositeVector>("fd").viewComponent<MemSpace_kind::HOST>("cell", false))(0, 0), 1e-12);
 
     // calculate dA/dB
     std::cout << "Calculate derivative of field A wrt field B:" << std::endl;
     changed = fa_eval->UpdateDerivative(S, "fa", "fb", Tags::DEFAULT);
     CHECK_CLOSE(2.0,
                 (S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT)
-                   .viewComponent<MirrorHost>("cell", false))(0, 0),
+                   .viewComponent<MemSpace_kind::HOST>("cell", false))(0, 0),
                 1e-12);
     CHECK(changed);
 
@@ -467,7 +467,7 @@ SUITE(DAG)
     changed = fa_eval->UpdateDerivative(S, "fa", "fg", Tags::DEFAULT);
     CHECK_CLOSE(8640.0,
                 (S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fg", Tags::DEFAULT)
-                   .viewComponent<MirrorHost>("cell", false))(0, 0),
+                   .viewComponent<MemSpace_kind::HOST>("cell", false))(0, 0),
                 1e-12);
     CHECK(changed);
 
@@ -476,7 +476,7 @@ SUITE(DAG)
     changed = fe_eval->UpdateDerivative(S, "fe", "fg", Tags::DEFAULT);
     CHECK_CLOSE(24.0,
                 (S.GetDerivative<CompositeVector>("fe", Tags::DEFAULT, "fg", Tags::DEFAULT)
-                   .viewComponent<MirrorHost>("cell", false))(0, 0),
+                   .viewComponent<MemSpace_kind::HOST>("cell", false))(0, 0),
                 1e-12);
     CHECK(changed);
 
@@ -487,7 +487,7 @@ SUITE(DAG)
     changed = fa_eval->UpdateDerivative(S, "fa", "fg", Tags::DEFAULT);
     CHECK_CLOSE(8640.0,
                 (S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fg", Tags::DEFAULT)
-                   .viewComponent<MirrorHost>("cell", false))(0, 0),
+                   .viewComponent<MemSpace_kind::HOST>("cell", false))(0, 0),
                 1e-12);
     CHECK(!changed);
 
@@ -496,7 +496,7 @@ SUITE(DAG)
     changed = fa_eval->UpdateDerivative(S, "fa", "fg", Tags::DEFAULT);
     CHECK_CLOSE(8640.0,
                 (S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fg", Tags::DEFAULT)
-                   .viewComponent<MirrorHost>("cell", false))(0, 0),
+                   .viewComponent<MemSpace_kind::HOST>("cell", false))(0, 0),
                 1e-12);
     CHECK(changed);
   }

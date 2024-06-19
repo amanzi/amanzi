@@ -66,17 +66,17 @@ SUITE(VANDELAY_COMPOSITE_VECTOR)
     x->putScalar(2.0);
 
     {
-      auto v_c = x->viewComponent<MirrorHost>("cell", false);
+      auto v_c = x->viewComponent<MemSpace_kind::HOST>("cell", false);
       CHECK_CLOSE(2., v_c(0, 0), 0.00001);
       CHECK_CLOSE(2., v_c(0, 1), 0.00001);
 
-      auto v_f = x->viewComponent<MirrorHost>("face", 0, false);
+      auto v_f = x->viewComponent<MemSpace_kind::HOST>("face", 0, false);
       CHECK_CLOSE(2.0, v_f(0), 0.00001);
     }
     std::cout << " set componets are good" << std::endl;
 
     {
-      auto v_bf = x->viewComponent<MirrorHost>("boundary_face", 0, false);
+      auto v_bf = x->viewComponent<MemSpace_kind::HOST>("boundary_face", 0, false);
       CHECK_CLOSE(2.0, v_bf(0), 0.00001);
     }
   }
@@ -87,11 +87,11 @@ SUITE(VANDELAY_COMPOSITE_VECTOR)
     std::cout << "X has " << x->size() << " components" << std::endl;
     x->putScalar(2.0);
     {
-      auto v_c = x->viewComponent<MirrorHost>("cell", false);
+      auto v_c = x->viewComponent<MemSpace_kind::HOST>("cell", false);
       CHECK_CLOSE(2.0, v_c(0, 0), 0.00001);
       CHECK_CLOSE(2.0, v_c(0, 1), 0.00001);
 
-      auto v_f = x->viewComponent<MirrorHost>("face", false);
+      auto v_f = x->viewComponent<MemSpace_kind::HOST>("face", false);
       CHECK_CLOSE(2.0, v_f(0, 0), 0.00001);
     }
 
@@ -105,11 +105,11 @@ SUITE(VANDELAY_COMPOSITE_VECTOR)
     int size = comm->getSize();
     if (size == 1) {
       CHECK_EQUAL(nbf_all, nbf_owned);
-      auto v_bf = x2->viewComponent<MirrorHost>("boundary_face", false);
+      auto v_bf = x2->viewComponent<MemSpace_kind::HOST>("boundary_face", false);
       CHECK_CLOSE(v_bf(nbf_owned - 1, 0), 2.0, 0.00001);
     } else {
       CHECK(nbf_owned < nbf_all);
-      auto v_bf = x2->viewComponent<MirrorHost>("boundary_face", false);
+      auto v_bf = x2->viewComponent<MemSpace_kind::HOST>("boundary_face", false);
       CHECK_CLOSE(2.0, v_bf(nbf_all - 1, 0), 0.00001);
     }
   }

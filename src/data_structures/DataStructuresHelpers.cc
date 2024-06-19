@@ -62,7 +62,7 @@ copyMeshCoordinatesToVector(const AmanziMesh::Mesh& mesh,
 void
 copyVectorToMeshCoordinates(const CompositeVector& vec, AmanziMesh::MeshHost& mesh)
 {
-  const auto nodes = vec.viewComponent<DefaultHostMemorySpace>("node", true);
+  const auto nodes = vec.viewComponent<MemSpace_kind::HOST>("node", true);
   int ndim = mesh.getSpaceDimension();
 
   AmanziMesh::MeshHost::Entity_ID_View node_ids("node ids", nodes.extent(0));

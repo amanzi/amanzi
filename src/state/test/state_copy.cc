@@ -76,7 +76,7 @@ SUITE(ASSIGN)
     state->Assign("fieldname", tag2, tag1);
 
     auto& field = state->Get<CompositeVector>("fieldname", tag2);
-    CHECK_CLOSE(2.0, field.viewComponent<Kokkos::HostSpace>("cell")(0, 0), 0.00001);
+    CHECK_CLOSE(2.0, field.viewComponent<MemSpace_kind::HOST>("cell")(0, 0), 0.00001);
     std::cout << "State copy... passed\n";
   }
 }

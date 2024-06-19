@@ -1211,7 +1211,7 @@ Operator::WriteMatrix(const std::string& fname_base) const
           auto mesh_map = mesh_->getMap(AmanziMesh::createEntityKind(comp), false);
           int lcv_dof = 0;
           while (smap_->hasComponent(lcv_block, comp, lcv_dof)) {
-            auto ids = smap_->viewIndices<Amanzi::MirrorHost>(lcv_block, comp, lcv_dof);
+            auto ids = smap_->viewIndices<MemSpace_kind::HOST>(lcv_block, comp, lcv_dof);
             for (int i = 0; i != ids.extent(0); ++i) {
               os << r << " " << comp << " " << i << " " << mesh_map->getGlobalElement(i) << " "
                  << ids(i) << " " << smap->getGlobalElement(ids(i)) << " "

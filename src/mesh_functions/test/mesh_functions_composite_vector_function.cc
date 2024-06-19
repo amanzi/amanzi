@@ -70,13 +70,13 @@ TEST_FIXTURE(reference_mesh, COMPOSITE_VECTOR_FUNCTION)
   // Check
   int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
   {
-    auto cv_c = cv->viewComponent<MirrorHost>("cell", false);
+    auto cv_c = cv->viewComponent<MemSpace_kind::HOST>("cell", false);
     for (int c = 0; c != ncells; ++c) { CHECK_CLOSE(1.0, cv_c(c, 0), 0.0000001); }
   }
 
   int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
   {
-    auto cv_c = cv->viewComponent<MirrorHost>("face", false);
+    auto cv_c = cv->viewComponent<MemSpace_kind::HOST>("face", false);
     for (int c = 0; c != nfaces; ++c) { CHECK_CLOSE(1.0, cv_c(c, 0), 0.0000001); }
   }
 }
@@ -95,14 +95,14 @@ TEST_FIXTURE(reference_mesh, COMPOSITE_VECTOR_FUNCTION_PLIST)
   // Check
   int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
   {
-    auto cv_c = cv.viewComponent<MirrorHost>("cell", false);
+    auto cv_c = cv.viewComponent<MemSpace_kind::HOST>("cell", false);
     CHECK_CLOSE(0.5, cv_c(0, 0), 0.0000001);
     CHECK_CLOSE(2.0, cv_c(ncells - 1, 0), 0.0000001);
   }
 
   int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
   {
-    auto cv_c = cv.viewComponent<MirrorHost>("face", false);
+    auto cv_c = cv.viewComponent<MemSpace_kind::HOST>("face", false);
     for (int c = 0; c != nfaces; ++c) { CHECK_CLOSE(3.0, cv_c(c, 0), 0.0000001); }
   }
 }

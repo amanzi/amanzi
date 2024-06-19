@@ -83,22 +83,22 @@ SUITE(COMPOSITE_VECTOR_INT)
     x->putScalar(2);
     {
       // check on owned
-      auto v1 = x->viewComponent<MirrorHost>("cell", false);
+      auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", false);
       CHECK_EQUAL(2, v1(0, 0));
       CHECK_EQUAL(2, v1(0, 1));
 
-      auto v2 = x->viewComponent<MirrorHost>("face", 0, false);
+      auto v2 = x->viewComponent<MemSpace_kind::HOST>("face", 0, false);
       CHECK_EQUAL(2, v2(0));
     }
 
 
     {
       // check on ghosted
-      auto v1 = x->viewComponent<MirrorHost>("cell", true);
+      auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", true);
       CHECK_EQUAL(2, v1(0, 0));
       CHECK_EQUAL(2, v1(0, 1));
 
-      auto v2 = x->viewComponent<MirrorHost>("face", 0, true);
+      auto v2 = x->viewComponent<MemSpace_kind::HOST>("face", 0, true);
       CHECK_EQUAL(2, v2(0));
     }
 
@@ -111,20 +111,20 @@ SUITE(COMPOSITE_VECTOR_INT)
     // x->putScalar("face", 3);
     // {
     //   // check on owned
-    //   auto v1 = x->viewComponent<MirrorHost>("cell", false);
+    //   auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", false);
     //   CHECK_EQUAL(4, v1(0,0));
     //   CHECK_EQUAL(5, v1(0,1));
 
-    //   auto v2 = x->viewComponent<MirrorHost>("face", false);
+    //   auto v2 = x->viewComponent<MemSpace_kind::HOST>("face", false);
     //   CHECK_EQUAL(3, v2(0,0));
     // }
     // {
     //   // check on ghosted
-    //   auto v1 = x->viewComponent<MirrorHost>("cell", true);
+    //   auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", true);
     //   CHECK_EQUAL(4, v1(0,0));
     //   CHECK_EQUAL(5, v1(0,1));
 
-    //   auto v2 = x->viewComponent<MirrorHost>("face", true);
+    //   auto v2 = x->viewComponent<MemSpace_kind::HOST>("face", true);
     //   CHECK_EQUAL(3, v2(0,0));
     // }
 
@@ -132,17 +132,17 @@ SUITE(COMPOSITE_VECTOR_INT)
     // check set by view
     {
       // set the value, then destroy the view
-      auto v1 = x->viewComponent<MirrorHost>("cell", 0, false);
+      auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       v1(0) = 16;
     }
     {
       // check set by view on owned
-      auto v1 = x->viewComponent<MirrorHost>("cell", 0, false);
+      auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       CHECK_EQUAL(16, v1(0));
     }
     {
       // check set by view on ghosted
-      auto v1 = x->viewComponent<MirrorHost>("cell", 0, true);
+      auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", 0, true);
       CHECK_EQUAL(16, v1(0));
     }
   }
@@ -158,11 +158,11 @@ SUITE(COMPOSITE_VECTOR_INT)
 
     {
       // check set by view on owned
-      auto v1 = x->viewComponent<MirrorHost>("cell", 0, false);
+      auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       CHECK_EQUAL(2, v1(0));
 
       // check set by view on owned
-      auto v2 = y.viewComponent<MirrorHost>("cell", 0, false);
+      auto v2 = y.viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       CHECK_EQUAL(4, v2(0));
     }
   }
@@ -179,11 +179,11 @@ SUITE(COMPOSITE_VECTOR_INT)
     y = *x;
     {
       // check set by view on owned
-      auto v1 = x->viewComponent<MirrorHost>("cell", 0, false);
+      auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       CHECK_EQUAL(2, v1(0));
 
       // check set by view on owned
-      auto v2 = y.viewComponent<MirrorHost>("cell", 0, false);
+      auto v2 = y.viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       CHECK_EQUAL(2, v2(0));
     }
 
@@ -191,11 +191,11 @@ SUITE(COMPOSITE_VECTOR_INT)
     x->putScalar(4);
     {
       // check set by view on owned
-      auto v1 = x->viewComponent<MirrorHost>("cell", 0, false);
+      auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       CHECK_EQUAL(4, v1(0));
 
       // check set by view on owned
-      auto v2 = y.viewComponent<MirrorHost>("cell", 0, false);
+      auto v2 = y.viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       CHECK_EQUAL(2, v2(0));
     }
   }
@@ -211,7 +211,7 @@ SUITE(COMPOSITE_VECTOR_INT)
     x->scatterMasterToGhosted("cell");
 
     if (size == 2) {
-      auto x_c = x->viewComponent<MirrorHost>("cell", 0, true);
+      auto x_c = x->viewComponent<MemSpace_kind::HOST>("cell", 0, true);
       if (rank == 0) {
         CHECK_EQUAL(1, x_c(0));
         CHECK_EQUAL(2, x_c(4));
@@ -220,7 +220,7 @@ SUITE(COMPOSITE_VECTOR_INT)
         CHECK_EQUAL(1, x_c(4));
       }
     } else {
-      auto x_c = x->viewComponent<MirrorHost>("cell", 0, true);
+      auto x_c = x->viewComponent<MemSpace_kind::HOST>("cell", 0, true);
       CHECK_EQUAL(rank + 1, x_c(0));
     }
   }
@@ -232,13 +232,13 @@ SUITE(COMPOSITE_VECTOR_INT)
     int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
 
     { // scope for x_c
-      auto x_c = x->viewComponent<MirrorHost>("cell", 0, true);
+      auto x_c = x->viewComponent<MemSpace_kind::HOST>("cell", 0, true);
       for (int c = 0; c != ncells; ++c) { x_c(c) = rank + 1; }
     }
     x->gatherGhostedToMaster("cell");
 
     if (size == 2) {
-      auto x_c = x->viewComponent<MirrorHost>("cell", 0, false);
+      auto x_c = x->viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       if (rank == 0) {
         CHECK_EQUAL(1, x_c(0));
         CHECK_EQUAL(3, x_c(3));
@@ -247,7 +247,7 @@ SUITE(COMPOSITE_VECTOR_INT)
         CHECK_EQUAL(2, x_c(3));
       }
     } else {
-      auto x_c = x->viewComponent<MirrorHost>("cell", 0, false);
+      auto x_c = x->viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       CHECK_EQUAL(1, x_c(0));
       CHECK_EQUAL(1, x_c(7));
     }

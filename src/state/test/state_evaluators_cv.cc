@@ -140,7 +140,7 @@ SUITE(EVALUATORS_CV)
 
     CHECK_CLOSE(1.0,
                 S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fa", Tags::DEFAULT)
-                  .viewComponent<DefaultHostMemorySpace>("cell")(0, 0),
+                  .viewComponent<MemSpace_kind::HOST>("cell")(0, 0),
                 1.0e-10);
   }
 
@@ -219,11 +219,11 @@ SUITE(EVALUATORS_CV)
     // check the value and derivative
     CHECK_CLOSE(6.0,
                 S.Get<CompositeVector>("fa", Tags::DEFAULT)
-                  .viewComponent<DefaultHostMemorySpace>("cell")(0, 0),
+                  .viewComponent<MemSpace_kind::HOST>("cell")(0, 0),
                 1.0e-10);
     CHECK_CLOSE(2.0,
                 S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT)
-                  .viewComponent<DefaultHostMemorySpace>("cell")(0, 0),
+                  .viewComponent<MemSpace_kind::HOST>("cell")(0, 0),
                 1.0e-10);
 
     // second call should not be changed
@@ -237,11 +237,11 @@ SUITE(EVALUATORS_CV)
     // check the value and derivative are still the same
     CHECK_CLOSE(6.0,
                 S.Get<CompositeVector>("fa", Tags::DEFAULT)
-                  .viewComponent<DefaultHostMemorySpace>("cell")(0, 0),
+                  .viewComponent<MemSpace_kind::HOST>("cell")(0, 0),
                 1.0e-10);
     CHECK_CLOSE(2.0,
                 S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT)
-                  .viewComponent<DefaultHostMemorySpace>("cell")(0, 0),
+                  .viewComponent<MemSpace_kind::HOST>("cell")(0, 0),
                 1.0e-10);
 
     // change the primary and mark as changed
@@ -259,11 +259,11 @@ SUITE(EVALUATORS_CV)
     // check the values
     CHECK_CLOSE(28.0,
                 S.Get<CompositeVector>("fa", Tags::DEFAULT)
-                  .viewComponent<DefaultHostMemorySpace>("cell")(0, 0),
+                  .viewComponent<MemSpace_kind::HOST>("cell")(0, 0),
                 1.0e-10);
     CHECK_CLOSE(2.0,
                 S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT)
-                  .viewComponent<DefaultHostMemorySpace>("cell")(0, 0),
+                  .viewComponent<MemSpace_kind::HOST>("cell")(0, 0),
                 1.0e-10);
 
     // check self-derivative is not working

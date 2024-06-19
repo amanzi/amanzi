@@ -161,7 +161,7 @@ ComputeCellError(const AnalyticBase& ana,
   inf_err = 0.0;
 
   int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  auto p = p_vec.viewComponent<MirrorHost>("cell", false);
+  auto p = p_vec.viewComponent<MemSpace_kind::HOST>("cell", false);
 
 
   for (int c = 0; c < ncells; c++) {
@@ -202,7 +202,7 @@ ComputeFaceError(const AnalyticBase& ana,
   unorm = 0.0;
   l2_err = 0.0;
   inf_err = 0.0;
-  auto u = u_vec.viewComponent<MirrorHost>("face", false);
+  auto u = u_vec.viewComponent<MemSpace_kind::HOST>("face", false);
   int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces; f++) {
     double area = mesh->getFaceArea(f);
@@ -259,7 +259,7 @@ ComputeFaceError(const AnalyticBase& ana,
 //   WhetStone::Polynomial<> poly(ana.dimension(), 1);
 //   int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-//   auto p = p_vec.viewComponent<MirrorHost>("node", false);
+//   auto p = p_vec.viewComponent<MemSpace_kind::HOST>("node", false);
 //   for (int c = 0; c < ncells; c++) {
 //     double volume = mesh->getCellVolume(c);
 
@@ -331,7 +331,7 @@ ComputeEdgeError(const AnalyticBase& ana,
   AmanziGeometry::Point grad(ana.dimension());
   int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-  auto p = p_vec.viewComponent<MirrorHost>("edge", false);
+  auto p = p_vec.viewComponent<MemSpace_kind::HOST>("edge", false);
   for (int c = 0; c < ncells; c++) {
     double volume = mesh->getCellVolume(c);
 
@@ -382,7 +382,7 @@ ComputeEdgeError(const AnalyticBase& ana,
 //   AmanziMesh::Entity_ID n0, n1;
 //   int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-//   auto p = p_vec.viewComponent<MirrorHost>(
+//   auto p = p_vec.viewComponent<MemSpace_kind::HOST>(
 //     "edge_moments", false); // likely this will fail, not sure what it sould be.  fix when it fails.
 //   for (int c = 0; c < ncells; c++) {
 //     double volume = mesh->getCellVolume(c);

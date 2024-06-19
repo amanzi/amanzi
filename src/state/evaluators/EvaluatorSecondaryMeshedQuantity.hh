@@ -129,7 +129,7 @@ struct Extent {
     const auto& m = mesh;
     Kokkos::parallel_for(
       "EvaluatorMeshedEntityExtent", vv.extent(0), KOKKOS_LAMBDA(const int c) {
-        vv(c, 0) = m.getExtent<EntityKind>(c);
+        vv(c, 0) = m.template getExtent<EntityKind>(c);
       });
   }
 
@@ -155,7 +155,7 @@ struct Elevation {
 
     Kokkos::parallel_for(
       "EvaluatorMeshedEntityElevation", vv.extent(0), KOKKOS_LAMBDA(const int c) {
-        vv(c, 0) = m.getCentroid<EntityKind>(c)[d];
+        vv(c, 0) = m.template getCentroid<EntityKind>(c)[d];
       });
   }
 

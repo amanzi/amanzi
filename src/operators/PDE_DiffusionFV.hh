@@ -110,19 +110,6 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
     return out;
   }
 
-
- protected:
-  cMultiVectorView_type_<DefaultDevice, double> ScalarCoefficientFaces(bool scatter) const
-  {
-    if (k_ != Teuchos::null) {
-      if (scatter) k_->scatterMasterToGhosted("face");
-      if (k_->hasComponent("face")) { return k_->viewComponent<DefaultDevice>("face", true); }
-    }
-    MultiVectorView_type_<DefaultDevice, double> k_face("k_face", nfaces_wghost, 1);
-    Kokkos::deep_copy(k_face, 1.0);
-    return k_face;
-  }
-
  public:
   // This function need to be public for Kokkos Lambda
   void ComputeTransmissibility_();

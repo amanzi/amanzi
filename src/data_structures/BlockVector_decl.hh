@@ -22,6 +22,7 @@
 #include "Teuchos_DataAccess.hpp"
 #include "Tpetra_CombineMode.hpp"
 
+#include "AmanziTypes.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 #include "AmanziTypes.hh"
@@ -35,6 +36,11 @@ enum class InitMode { NONE, ZERO, COPY, NOALLOC };
 template <typename Scalar>
 class BlockVector {
  public:
+  using View_type = typename MultiVector_type_<Scalar>::device_view_type;
+  using cView_type = typename View_type::const_type;
+  using HostView_type = typename MultiVector_type_<Scalar>::host_view_type;
+  using cHostView_type = typename HostView_type::const_type;
+
   //
   // Constructors etc
   // ---------------------------------------------
@@ -69,36 +75,31 @@ class BlockVector {
 
   std::size_t getNumVectors(const std::string& name) const { return getMap()->getNumVectors(name); }
 
-  //
-  // Accessors to data.
-  // ---------------------------------------------
-  template <class DeviceType = DefaultDevice>
-  using cMultiVectorView_type = cMultiVectorView_type_<DeviceType, Scalar>;
-  template <class DeviceType = DefaultDevice>
-  using MultiVectorView_type = MultiVectorView_type_<DeviceType, Scalar>;
-  template <class DeviceType = DefaultDevice>
-  using cVectorView_type = cVectorView_type_<DeviceType, Scalar>;
-  template <class DeviceType = DefaultDevice>
-  using VectorView_type = VectorView_type_<DeviceType, Scalar>;
-
   // -- Access a component vector
-  cMultiVector_ptr_type_<Scalar> getComponent(const std::string& name, bool ghosted = false) const;
-  MultiVector_ptr_type_<Scalar> getComponent(const std::string& name, bool ghosted = false);
+  Teuchos::RCP<const MultiVector_type_<Scalar>>
+  getComponent(const std::string& name, bool ghosted = false) const;
+
+  Teuchos::RCP<MultiVector_type_<Scalar>>
+  getComponent(const std::string& name, bool ghosted = false);
 
   // -- View a component vector
-  template <class DeviceType = DefaultDevice>
-  cMultiVectorView_type<DeviceType>
+  template<MemSpace_kind MEM = MemSpace_kind::DEVICE>
+  auto
   viewComponent(const std::string& name, bool ghosted = false) const;
-  template <class DeviceType = DefaultDevice>
-  MultiVectorView_type<DeviceType> viewComponent(const std::string& name, bool ghosted = false);
+
+  template<MemSpace_kind MEM = MemSpace_kind::DEVICE>
+  auto
+  viewComponent(const std::string& name, bool ghosted = false);
 
   // -- SubView of a component vector
-  template <class DeviceType = DefaultDevice>
-  cVectorView_type<DeviceType>
+  template<MemSpace_kind MEM = MemSpace_kind::DEVICE>
+  auto
   viewComponent(const std::string& name, std::size_t dof, bool ghosted = false) const;
-  template <class DeviceType = DefaultDevice>
-  VectorView_type<DeviceType>
+
+  template<MemSpace_kind MEM = MemSpace_kind::DEVICE>
+  auto
   viewComponent(const std::string& name, std::size_t dof, bool ghosted = false);
+
 
   // // -- Set entries in the vectors.
   // void setComponent(const std::string& name, const
@@ -203,7 +204,7 @@ class BlockVector {
   void print(std::ostream& os, bool ghosted = false, bool data_io = true) const;
 
  protected:
-  virtual cMultiVector_ptr_type_<Scalar>
+  virtual Teuchos::RCP<const MultiVector_type_<Scalar>>
   getComponent_(const std::string& name, bool ghosted = false) const
   {
     if (!hasComponent(name)) {
@@ -213,7 +214,7 @@ class BlockVector {
     }
     return ghosted ? ghost_data_.at(name) : master_data_.at(name);
   }
-  virtual MultiVector_ptr_type_<Scalar> getComponent_(const std::string& name, bool ghosted = false)
+  virtual Teuchos::RCP<MultiVector_type_<Scalar>> getComponent_(const std::string& name, bool ghosted = false)
   {
     if (!hasComponent(name)) {
       Errors::Message msg;
@@ -223,7 +224,7 @@ class BlockVector {
     return ghosted ? ghost_data_.at(name) : master_data_.at(name);
   }
 
-  void setComponent_(const std::string& name, bool ghosted, const MultiVector_ptr_type_<Scalar>& v)
+  void setComponent_(const std::string& name, bool ghosted, const Teuchos::RCP<MultiVector_type_<Scalar>>& v)
   {
     if (ghosted)
       ghost_data_[name] = v;
@@ -236,7 +237,7 @@ class BlockVector {
 
  protected:
   Teuchos::RCP<const BlockSpace> map_;
-  std::map<std::string, MultiVector_ptr_type_<Scalar>> master_data_, ghost_data_;
+  std::map<std::string, Teuchos::RCP<MultiVector_type_<Scalar>>> master_data_, ghost_data_;
 };
 
 } // namespace Amanzi

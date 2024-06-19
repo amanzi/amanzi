@@ -36,6 +36,9 @@ class TreeVector;
 // wrapper class
 class SuperMap {
  public:
+  using cView_type = typename BlockVector<LO>::cView_type;
+  using cHostView_type = typename BlockVector<LO>::cHostView_type;
+
   SuperMap(const Comm_ptr_type& comm, const std::vector<Teuchos::Ptr<const BlockSpace>>& cvss);
 
   // map accessors
@@ -63,8 +66,8 @@ class SuperMap {
   }
 
   // index accessors
-  template <class DeviceType = DefaultDevice>
-  cVectorView_type_<DeviceType, LO>
+  template <MemSpace_kind MEM = MemSpace_kind::DEVICE>
+  auto
   viewIndices(std::size_t block_num, const std::string& compname, std::size_t dof_num) const
   {
     auto bi = block_info_.find(std::make_tuple(block_num, compname, dof_num));
@@ -74,11 +77,11 @@ class SuperMap {
           << (int)dof_num;
       Exceptions::amanzi_throw(msg);
     }
-    return smap_->viewIndices<DeviceType>(bi->second.first, bi->second.second);
+    return smap_->viewIndices<MEM>(bi->second.first, bi->second.second);
   }
 
-  template <class DeviceType = DefaultDevice>
-  cVectorView_type_<DeviceType, LO>
+  template <MemSpace_kind MEM = MemSpace_kind::DEVICE>
+  auto
   viewGhostIndices(std::size_t block_num, const std::string& compname, std::size_t dof_num) const
   {
     auto bi = block_info_.find(std::make_tuple(block_num, compname, dof_num));
@@ -88,7 +91,7 @@ class SuperMap {
           << (int)dof_num;
       Exceptions::amanzi_throw(msg);
     }
-    return smap_->viewGhostIndices<DeviceType>(bi->second.first, bi->second.second);
+    return smap_->viewGhostIndices<MEM>(bi->second.first, bi->second.second);
   }
 
   // block indices.  This is an array of integers, length

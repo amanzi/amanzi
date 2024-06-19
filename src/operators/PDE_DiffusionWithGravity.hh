@@ -46,7 +46,7 @@ class PDE_DiffusionWithGravity : public virtual PDE_Diffusion {
     if (rho->hasComponent("cell")) { rho_cv_ = rho; }
   }
 
-  cMultiVectorView_type_<DefaultDevice, double> DensityCells(bool scatter) const
+  CompositeVector::cView_type DensityCells(bool scatter) const
   {
     if (!is_scalar_ && !rho_cv_.get()) {
       Errors::Message msg("Diffusion: density was not set.");
@@ -57,7 +57,7 @@ class PDE_DiffusionWithGravity : public virtual PDE_Diffusion {
       AMANZI_ASSERT(rho_cv_->hasComponent("cell"));
       return rho_cv_->viewComponent("cell", true);
     }
-    MultiVectorView_type_<DefaultDevice, double> rho_c("rho_cell", ncells_wghost, 1);
+    CompositeVector::View_type rho_c("rho_cell", ncells_wghost, 1);
     Kokkos::deep_copy(rho_c, rho_);
     return rho_c;
   }

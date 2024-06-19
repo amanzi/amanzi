@@ -209,13 +209,13 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
 
  protected:
   // accessors for things that may or may not be constant
-  cMultiVectorView_type_<DefaultDevice, double> ScalarCoefficientFaces(bool scatter) const
+  CompositeVector::cView_type ScalarCoefficientFaces(bool scatter) const
   {
     if (k_ != Teuchos::null) {
       if (scatter) k_->scatterMasterToGhosted("face");
-      if (k_->hasComponent("face")) { return k_->viewComponent<DefaultDevice>("face", true); }
+      if (k_->hasComponent("face")) { return k_->viewComponent("face", true); }
     }
-    MultiVectorView_type_<DefaultDevice, double> k_face("k_face", nfaces_wghost, 1);
+    CompositeVector::View_type k_face("k_face", nfaces_wghost, 1);
     Kokkos::deep_copy(k_face, 1.0);
     return k_face;
   }

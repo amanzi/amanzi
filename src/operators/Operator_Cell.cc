@@ -119,8 +119,8 @@ Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
                                         int my_block_row,
                                         int my_block_col) const
 {
-  const auto cell_row_inds = map.viewGhostIndices<MirrorHost>(my_block_row, "cell", 0);
-  const auto cell_col_inds = map.viewGhostIndices<MirrorHost>(my_block_col, "cell", 0);
+  const auto cell_row_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_row, "cell", 0);
+  const auto cell_col_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_col, "cell", 0);
 
   for (int c = 0; c != ncells_owned; ++c) {
     int row = cell_row_inds[c];
@@ -146,8 +146,8 @@ Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
   int lid_r[2];
   int lid_c[2];
 
-  const auto cell_row_inds = map.viewGhostIndices<MirrorHost>(my_block_row, "cell", 0);
-  const auto cell_col_inds = map.viewGhostIndices<MirrorHost>(my_block_col, "cell", 0);
+  const auto cell_row_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_row, "cell", 0);
+  const auto cell_col_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_col, "cell", 0);
 
   auto mesh = AmanziMesh::onMemHost(op.mesh);
   for (int f = 0; f != nfaces_owned; ++f) {

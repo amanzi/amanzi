@@ -87,7 +87,7 @@ SUITE(EVALS)
     // calculate field A
     fa_eval->Update(*S, "main");
     const auto fa = S->GetW<CompositeVector>("fa", Tags::DEFAULT, "fa")
-                      .viewComponent<DefaultHostMemorySpace>("cell");
+                      .viewComponent<MemSpace_kind::HOST>("cell");
 
     // eval point of 0th cell is:
     // {  1.1, 1, 1, 1 }
@@ -178,7 +178,7 @@ SUITE(EVALS)
     // calculate field B
     fb_eval->Update(*S, "main");
     const auto fb =
-      S->Get<CompositeVector>("fb", Tags::DEFAULT).viewComponent<DefaultHostMemorySpace>("cell");
+      S->Get<CompositeVector>("fb", Tags::DEFAULT).viewComponent<MemSpace_kind::HOST>("cell");
 
     // eval point of 0th cell is:
     // {  1.1, 1, 1, 1 }

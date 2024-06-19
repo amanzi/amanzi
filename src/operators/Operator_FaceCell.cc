@@ -211,10 +211,10 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   std::vector<int> lid_c(OPERATOR_MAX_FACES + 1);
 
   // ELEMENT: cell, DOFS: cell and face
-  const auto face_row_inds = map.viewGhostIndices<MirrorHost>(my_block_row, "face", 0);
-  const auto face_col_inds = map.viewGhostIndices<MirrorHost>(my_block_col, "face", 0);
-  const auto cell_row_inds = map.viewGhostIndices<MirrorHost>(my_block_row, "cell", 0);
-  const auto cell_col_inds = map.viewGhostIndices<MirrorHost>(my_block_col, "cell", 0);
+  const auto face_row_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_row, "face", 0);
+  const auto face_col_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_col, "face", 0);
+  const auto cell_row_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_row, "cell", 0);
+  const auto cell_col_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_col, "cell", 0);
 
   AMANZI_ASSERT(mesh_ == op.mesh);
   auto mesh = AmanziMesh::onMemHost(op.mesh);
@@ -248,8 +248,8 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
   std::vector<int> lid_c(OPERATOR_MAX_FACES);
 
   // ELEMENT: cell, DOFS: face
-  const auto face_row_inds = map.viewGhostIndices<MirrorHost>(my_block_row, "face", 0);
-  const auto face_col_inds = map.viewGhostIndices<MirrorHost>(my_block_col, "face", 0);
+  const auto face_row_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_row, "face", 0);
+  const auto face_col_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_col, "face", 0);
   AMANZI_ASSERT(mesh_ == op.mesh);
   auto mesh = AmanziMesh::onMemHost(op.mesh);
 
@@ -277,8 +277,8 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op
 {
   int nsurf_cells = op.mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
 
-  auto face_row_inds = map.viewGhostIndices<MirrorHost>(my_block_row, "face", 0);
-  auto face_col_inds = map.viewGhostIndices<MirrorHost>(my_block_col, "face", 0);
+  auto face_row_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_row, "face", 0);
+  auto face_col_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_col, "face", 0);
 
   for (int sc = 0; sc != nsurf_cells; ++sc) {
     auto f = op.mesh->getEntityParent(AmanziMesh::CELL, sc);
@@ -304,8 +304,8 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op
   int lid_c[2];
 
   // ELEMENT: cell, DOFS: cell and face
-  auto face_row_inds = map.viewGhostIndices<MirrorHost>(my_block_row, "face", 0);
-  auto face_col_inds = map.viewGhostIndices<MirrorHost>(my_block_col, "face", 0);
+  auto face_row_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_row, "face", 0);
+  auto face_col_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_col, "face", 0);
   auto mesh = AmanziMesh::onMemHost(op.mesh);
 
   int ierr = 0;

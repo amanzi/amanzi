@@ -153,24 +153,24 @@ void
 Debugger::WriteVector(const std::string& vname, const CompositeVector& vec, bool include_faces)
 {
   int n_vecs = 0;
-  cMultiVectorView_type_<Kokkos::HostSpace, double> vec_c;
+  CompositeVector::cHostView_type vec_c;
   if (vec.hasComponent("cell")) {
-    vec_c = vec.viewComponent<Kokkos::HostSpace>("cell", false);
+    vec_c = vec.viewComponent<MemSpace_kind::HOST>("cell", false);
     n_vecs = vec_c.extent(1);
   }
 
-  cMultiVectorView_type_<Kokkos::HostSpace, double> vec_f;
+  CompositeVector::cHostView_type vec_f;
   int nfaces_valid = 0;
   if (vec.hasComponent("face")) {
-    vec_f = vec.viewComponent<Kokkos::HostSpace>("face", true);
+    vec_f = vec.viewComponent<MemSpace_kind::HOST>("face", true);
     nfaces_valid = vec_f.extent(0);
     n_vecs = vec_f.extent(1);
   }
 
-  cMultiVectorView_type_<Kokkos::HostSpace, double> vec_bf;
+  CompositeVector::cHostView_type vec_bf;
   int nbfaces_valid = 0;
   if (vec.hasComponent("boundary_face")) {
-    vec_bf = vec.viewComponent<Kokkos::HostSpace>("boundary_face", true);
+    vec_bf = vec.viewComponent<MemSpace_kind::HOST>("boundary_face", true);
     nbfaces_valid = vec_bf.extent(0);
     n_vecs = vec_bf.extent(1);
   }
@@ -251,21 +251,21 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
         Teuchos::Ptr<const CompositeVector> vec = vecs[lcv];
 
         int n_vec = 1;
-        cMultiVectorView_type_<Kokkos::HostSpace, double> vec_c;
+        CompositeVector::cHostView_type vec_c;
         if (vec->hasComponent("cell")) {
-          vec_c = vec->viewComponent<Kokkos::HostSpace>("cell", false);
+          vec_c = vec->viewComponent<MemSpace_kind::HOST>("cell", false);
           n_vec = vec_c.extent(1);
         }
 
-        cMultiVectorView_type_<Kokkos::HostSpace, double> vec_f;
+        CompositeVector::cHostView_type vec_f;
         if (vec->hasComponent("face")) {
-          vec_f = vec->viewComponent<Kokkos::HostSpace>("face", false);
+          vec_f = vec->viewComponent<MemSpace_kind::HOST>("face", false);
           n_vec = vec_f.extent(1);
         }
 
-        cMultiVectorView_type_<Kokkos::HostSpace, double> vec_bf;
+        CompositeVector::cHostView_type vec_bf;
         if (vec->hasComponent("boundary_face")) {
-          vec_bf = vec->viewComponent<Kokkos::HostSpace>("boundary_face", false);
+          vec_bf = vec->viewComponent<MemSpace_kind::HOST>("boundary_face", false);
           n_vec = vec_bf.extent(1);
         }
 
@@ -308,8 +308,8 @@ Debugger::WriteBoundaryConditions(const CompositeVector_<int>& flags, const Comp
   formatter_.setWidth(width - 2); // note, this may also change precision
 
   // get views on host
-  auto flags_v = flags.viewComponent<Amanzi::DefaultHost>("face", false);
-  auto values_v = values.viewComponent<Amanzi::DefaultHost>("face", false);
+  auto flags_v = flags.viewComponent<MemSpace_kind::HOST>("face", false);
+  auto values_v = values.viewComponent<MemSpace_kind::HOST>("face", false);
 
   for (int i = 0; i != dc_.size(); ++i) {
     AmanziMesh::Entity_ID c0 = dc_[i];

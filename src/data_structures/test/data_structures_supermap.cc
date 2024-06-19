@@ -215,19 +215,19 @@ SuperMap_Manual(bool continuous)
 
   // check the indices
   {
-    auto inds_m1_d0 = map.viewIndices<DefaultHost>("map1", 0);
+    auto inds_m1_d0 = map.viewIndices<MemSpace_kind::HOST>("map1", 0);
     CHECK(inds_m1_d0.size() == 3);
     CHECK(inds_m1_d0[0] == 0);
     CHECK(inds_m1_d0[1] == 2);
     CHECK(inds_m1_d0[2] == 4);
 
-    auto inds_m1_d1 = map.viewIndices<DefaultHost>("map1", 1);
+    auto inds_m1_d1 = map.viewIndices<MemSpace_kind::HOST>("map1", 1);
     CHECK(inds_m1_d1.size() == 3);
     CHECK(inds_m1_d1[0] == 1);
     CHECK(inds_m1_d1[1] == 3);
     CHECK(inds_m1_d1[2] == 5);
 
-    auto inds_m2_d0 = map.viewIndices<DefaultHost>("map2", 0);
+    auto inds_m2_d0 = map.viewIndices<MemSpace_kind::HOST>("map2", 0);
     CHECK(inds_m2_d0.size() == 5);
     CHECK(inds_m2_d0[0] == 6);
     CHECK(inds_m2_d0[1] == 8);
@@ -235,7 +235,7 @@ SuperMap_Manual(bool continuous)
     CHECK(inds_m2_d0[3] == 12);
     CHECK(inds_m2_d0[4] == 14);
 
-    auto inds_m2_d1 = map.viewIndices<DefaultHost>("map2", 1);
+    auto inds_m2_d1 = map.viewIndices<MemSpace_kind::HOST>("map2", 1);
     CHECK(inds_m2_d1.size() == 5);
     CHECK(inds_m2_d1[0] == 7);
     CHECK(inds_m2_d1[1] == 9);
@@ -245,24 +245,24 @@ SuperMap_Manual(bool continuous)
   }
 
   {
-    auto inds_m1_d0 = map.viewGhostIndices<DefaultHost>("map1", 0);
+    auto inds_m1_d0 = map.viewGhostIndices<MemSpace_kind::HOST>("map1", 0);
     CHECK(inds_m1_d0[0] == 0);
     CHECK(inds_m1_d0[1] == 2);
     CHECK(inds_m1_d0[2] == 4);
 
-    auto inds_m1_d1 = map.viewGhostIndices<DefaultHost>("map1", 1);
+    auto inds_m1_d1 = map.viewGhostIndices<MemSpace_kind::HOST>("map1", 1);
     CHECK(inds_m1_d1[0] == 1);
     CHECK(inds_m1_d1[1] == 3);
     CHECK(inds_m1_d1[2] == 5);
 
-    auto inds_m2_d0 = map.viewGhostIndices<DefaultHost>("map2", 0);
+    auto inds_m2_d0 = map.viewGhostIndices<MemSpace_kind::HOST>("map2", 0);
     CHECK(inds_m2_d0[0] == 6);
     CHECK(inds_m2_d0[1] == 8);
     CHECK(inds_m2_d0[2] == 10);
     CHECK(inds_m2_d0[3] == 12);
     CHECK(inds_m2_d0[4] == 14);
 
-    auto inds_m2_d1 = map.viewGhostIndices<DefaultHost>("map2", 1);
+    auto inds_m2_d1 = map.viewGhostIndices<MemSpace_kind::HOST>("map2", 1);
     CHECK(inds_m2_d1[0] == 7);
     CHECK(inds_m2_d1[1] == 9);
     CHECK(inds_m2_d1[2] == 11);
@@ -359,15 +359,15 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR)
           ->isSameAs(*map->getComponentGhostedMap(0, "face")));
 
   // check ordering is as expected
-  const auto& inds_c0 = map->viewGhostIndices<DefaultHost>(0, "cell", 0);
-  const auto& inds_c1 = map->viewGhostIndices<DefaultHost>(0, "cell", 1);
-  const auto& inds_f0 = map->viewGhostIndices<DefaultHost>(0, "face", 0);
-  const auto& inds_f1 = map->viewGhostIndices<DefaultHost>(0, "face", 1);
+  const auto& inds_c0 = map->viewGhostIndices<MemSpace_kind::HOST>(0, "cell", 0);
+  const auto& inds_c1 = map->viewGhostIndices<MemSpace_kind::HOST>(0, "cell", 1);
+  const auto& inds_f0 = map->viewGhostIndices<MemSpace_kind::HOST>(0, "face", 0);
+  const auto& inds_f1 = map->viewGhostIndices<MemSpace_kind::HOST>(0, "face", 1);
 
-  const auto& inds_c0_owned = map->viewIndices<DefaultHost>(0, "cell", 0);
-  const auto& inds_c1_owned = map->viewIndices<DefaultHost>(0, "cell", 1);
-  const auto& inds_f0_owned = map->viewIndices<DefaultHost>(0, "face", 0);
-  const auto& inds_f1_owned = map->viewIndices<DefaultHost>(0, "face", 1);
+  const auto& inds_c0_owned = map->viewIndices<MemSpace_kind::HOST>(0, "cell", 0);
+  const auto& inds_c1_owned = map->viewIndices<MemSpace_kind::HOST>(0, "cell", 1);
+  const auto& inds_f0_owned = map->viewIndices<MemSpace_kind::HOST>(0, "face", 0);
+  const auto& inds_f1_owned = map->viewIndices<MemSpace_kind::HOST>(0, "face", 1);
 
   // check owned list is a subset of the ghost list
   CHECK_OWNED_SUBSET_GHOST(inds_c0_owned, ncells_owned, inds_c0, ncells_used);
@@ -376,10 +376,11 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR)
   CHECK_OWNED_SUBSET_GHOST(inds_f1_owned, nfaces_owned, inds_f1, nfaces_used);
 
   // check lists are non-overlapping and of sufficient size to cover all values
-  std::vector<cVectorView_type_<DefaultHost, LO> const*> inds_owned = {
+  using cDofView_type = std::remove_reference_t<decltype(inds_c0)>;
+  std::vector<cDofView_type const*> inds_owned = {
     &inds_c0_owned, &inds_c1_owned, &inds_f0_owned, &inds_f1_owned
   };
-  std::vector<cVectorView_type_<DefaultHost, LO> const*> inds_ghost = {
+  std::vector<cDofView_type const*> inds_ghost = {
     &inds_c0, &inds_c1, &inds_f0, &inds_f1
   };
   CHECK_UNIQUE(inds_owned, 2 * ncells_owned + 2 * nfaces_owned);
@@ -460,21 +461,22 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS)
           ->isSameAs(*map->getComponentGhostedMap(0, "cellB")));
 
   // check ordering is as expected
-  const auto& inds_c0 = map->viewGhostIndices<DefaultHost>(0, "cellA", 0);
-  const auto& inds_c1 = map->viewGhostIndices<DefaultHost>(0, "cellB", 0);
+  const auto& inds_c0 = map->viewGhostIndices<MemSpace_kind::HOST>(0, "cellA", 0);
+  const auto& inds_c1 = map->viewGhostIndices<MemSpace_kind::HOST>(0, "cellB", 0);
 
-  const auto& inds_c0_owned = map->viewIndices<DefaultHost>(0, "cellA", 0);
-  const auto& inds_c1_owned = map->viewIndices<DefaultHost>(0, "cellB", 0);
+  const auto& inds_c0_owned = map->viewIndices<MemSpace_kind::HOST>(0, "cellA", 0);
+  const auto& inds_c1_owned = map->viewIndices<MemSpace_kind::HOST>(0, "cellB", 0);
 
   // check owned list is a subset of the ghost list
   CHECK_OWNED_SUBSET_GHOST(inds_c0_owned, ncells_owned, inds_c0, ncells_used);
   CHECK_OWNED_SUBSET_GHOST(inds_c1_owned, ncells_owned, inds_c1, ncells_used);
 
   // check lists are non-overlapping and of sufficient size to cover all values
-  std::vector<cVectorView_type_<DefaultHost, LO> const*> inds_owned = { &inds_c0_owned, &inds_c1_owned };
+  using cDofView_type = std::remove_reference_t<decltype(inds_c0)>;
+  std::vector<cDofView_type const*> inds_owned = { &inds_c0_owned, &inds_c1_owned };
   CHECK_UNIQUE(inds_owned, 2 * ncells_owned);
 
-  std::vector<cVectorView_type_<DefaultHost, LO> const *> inds_ghost = { &inds_c0, &inds_c1 };
+  std::vector<cDofView_type const *> inds_ghost = { &inds_c0, &inds_c1 };
   CHECK_UNIQUE(inds_ghost, 2 * ncells_used);
 
   // check owned maps interleave
@@ -541,14 +543,14 @@ TEST(SUPERMAP_FROM_TWO_IDENTICAL_COMPOSITEVECTORS)
   CHECK(map->getGhostedMap()->isSameAs(*map2->getGhostedMap()));
 
   // same indices!
-  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::DefaultHost>(0, "cell", 0),
-                         map2->viewIndices<Amanzi::DefaultHost>(0, "cell", 0)));
-  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::DefaultHost>(0, "cell", 0),
-                         map2->viewGhostIndices<Amanzi::DefaultHost>(0, "cell", 0)));
-  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::DefaultHost>(1, "cell", 0),
-                         map2->viewIndices<Amanzi::DefaultHost>(0, "cell", 1)));
-  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::DefaultHost>(1, "cell", 0),
-                         map2->viewGhostIndices<Amanzi::DefaultHost>(0, "cell", 1)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::MemSpace_kind::HOST>(0, "cell", 0),
+                         map2->viewIndices<Amanzi::MemSpace_kind::HOST>(0, "cell", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::MemSpace_kind::HOST>(0, "cell", 0),
+                         map2->viewGhostIndices<Amanzi::MemSpace_kind::HOST>(0, "cell", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::MemSpace_kind::HOST>(1, "cell", 0),
+                         map2->viewIndices<Amanzi::MemSpace_kind::HOST>(0, "cell", 1)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::MemSpace_kind::HOST>(1, "cell", 0),
+                         map2->viewGhostIndices<Amanzi::MemSpace_kind::HOST>(0, "cell", 1)));
 }
 
 
@@ -588,14 +590,14 @@ TEST(SUPERMAP_FROM_CELL_PLUS_FACE_IS_CELLFACE)
   CHECK(map->getGhostedMap()->isSameAs(*map2->getGhostedMap()));
 
   // same indices!
-  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::DefaultHost>(0, "cell", 0),
-                         map2->viewIndices<Amanzi::DefaultHost>(0, "cell", 0)));
-  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::DefaultHost>(0, "cell", 0),
-                         map2->viewGhostIndices<Amanzi::DefaultHost>(0, "cell", 0)));
-  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::DefaultHost>(1, "face", 0),
-                         map2->viewIndices<Amanzi::DefaultHost>(0, "face", 0)));
-  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::DefaultHost>(1, "face", 0),
-                         map2->viewGhostIndices<Amanzi::DefaultHost>(0, "face", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::MemSpace_kind::HOST>(0, "cell", 0),
+                         map2->viewIndices<Amanzi::MemSpace_kind::HOST>(0, "cell", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::MemSpace_kind::HOST>(0, "cell", 0),
+                         map2->viewGhostIndices<Amanzi::MemSpace_kind::HOST>(0, "cell", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::MemSpace_kind::HOST>(1, "face", 0),
+                         map2->viewIndices<Amanzi::MemSpace_kind::HOST>(0, "face", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::MemSpace_kind::HOST>(1, "face", 0),
+                         map2->viewGhostIndices<Amanzi::MemSpace_kind::HOST>(0, "face", 0)));
 }
 
 
@@ -635,14 +637,14 @@ TEST(SUPERMAP_FROM_SAME_NAME_DIFFERENT_MAP)
   CHECK(map->getGhostedMap()->isSameAs(*map2->getGhostedMap()));
 
   // same indices!
-  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::DefaultHost>(0, "cell", 0),
-                         map2->viewIndices<Amanzi::DefaultHost>(0, "cell", 0)));
-  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::DefaultHost>(0, "cell", 0),
-                         map2->viewGhostIndices<Amanzi::DefaultHost>(0, "cell", 0)));
-  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::DefaultHost>(1, "cell", 0),
-                         map2->viewIndices<Amanzi::DefaultHost>(0, "face", 0)));
-  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::DefaultHost>(1, "cell", 0),
-                         map2->viewGhostIndices<Amanzi::DefaultHost>(0, "face", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::MemSpace_kind::HOST>(0, "cell", 0),
+                         map2->viewIndices<Amanzi::MemSpace_kind::HOST>(0, "cell", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::MemSpace_kind::HOST>(0, "cell", 0),
+                         map2->viewGhostIndices<Amanzi::MemSpace_kind::HOST>(0, "cell", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewIndices<Amanzi::MemSpace_kind::HOST>(1, "cell", 0),
+                         map2->viewIndices<Amanzi::MemSpace_kind::HOST>(0, "face", 0)));
+  CHECK(CHECK_EQUAL_VIEW(map->viewGhostIndices<Amanzi::MemSpace_kind::HOST>(1, "cell", 0),
+                         map2->viewGhostIndices<Amanzi::MemSpace_kind::HOST>(0, "face", 0)));
 }
 
 //

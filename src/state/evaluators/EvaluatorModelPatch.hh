@@ -58,7 +58,7 @@ template <template <class, class> class Model, class Device_type = DefaultDevice
 class EvaluatorModelPatch : public EvaluatorSecondary {
  public:
   using View_type = Patch<double>::View_type;
-  using cView_type = cMultiVectorView_type<Device_type>;
+  using cView_type = CompositeVector::cView_type;
   using Model_type = Model<cView_type, View_type>;
 
   EvaluatorModelPatch(const Teuchos::RCP<Teuchos::ParameterList>& plist);

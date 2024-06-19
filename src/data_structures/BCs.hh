@@ -163,81 +163,52 @@ class BCs {
     return mixed_;
   }
 
+  template<MemSpace_kind MEM = MemSpace_kind::DEVICE>
+  auto
+  bc_model(bool ghosted = true) const
+  {
+    const auto& model = *model_; // note preserves const correct
+    return model.viewComponent<MEM>(kind_str_, 0, ghosted);
+  }
 
-  Kokkos::View<int*, Amanzi::HostSpaceSpecial> bc_model_host(bool ghosted = true)
+  template<MemSpace_kind MEM = MemSpace_kind::DEVICE>
+  auto
+  bc_value(bool ghosted = true) const
   {
-    return Kokkos::subview(
-      model_->viewComponent<Amanzi::HostSpaceSpecial>(kind_str_, ghosted), Kokkos::ALL, 0);
+    const auto& value = *value_; // note preserves const correct
+    return value.viewComponent<MEM>(kind_str_, 0, ghosted);
   }
-  Kokkos::View<double*, Amanzi::HostSpaceSpecial> bc_value_host(bool ghosted = true)
-  {
-    return Kokkos::subview(
-      value_->viewComponent<Amanzi::HostSpaceSpecial>(kind_str_, ghosted), Kokkos::ALL, 0);
-  }
-  Kokkos::View<double*, Amanzi::HostSpaceSpecial> bc_mixed_host(bool ghosted = true)
+
+  template<MemSpace_kind MEM = MemSpace_kind::DEVICE>
+  auto
+  bc_mixed(bool ghosted = true) const
   {
     if (!mixed_.get()) mixed_ = cvs_.Create();
-    return Kokkos::subview(
-      mixed_->viewComponent<Amanzi::HostSpaceSpecial>(kind_str_, ghosted), Kokkos::ALL, 0);
+    const auto& mixed = *mixed_; // note preserves const correct
+    return mixed.viewComponent<MEM>(kind_str_, 0, ghosted);
   }
 
-  Kokkos::View<const int*, Amanzi::HostSpaceSpecial> bc_model_host(bool ghosted = true) const
+  template<MemSpace_kind MEM = MemSpace_kind::DEVICE>
+  auto
+  bc_model(bool ghosted = true)
   {
-    return Kokkos::subview(
-      model_->viewComponent<Amanzi::HostSpaceSpecial>(kind_str_, ghosted), Kokkos::ALL, 0);
+    return model_->viewComponent<MEM>(kind_str_, 0, ghosted);
   }
-  Kokkos::View<const double*, Amanzi::HostSpaceSpecial> bc_value_host(bool ghosted = true) const
+
+  template<MemSpace_kind MEM = MemSpace_kind::DEVICE>
+  auto
+  bc_value(bool ghosted = true)
   {
-    return Kokkos::subview(
-      value_->viewComponent<Amanzi::HostSpaceSpecial>(kind_str_, ghosted), Kokkos::ALL, 0);
+    return value_->viewComponent<MEM>(kind_str_, 0, ghosted);
   }
-  Kokkos::View<const double*, Amanzi::HostSpaceSpecial> bc_mixed_host(bool ghosted = true) const
+
+  template<MemSpace_kind MEM = MemSpace_kind::DEVICE>
+  auto
+  bc_mixed(bool ghosted = true)
   {
     if (!mixed_.get()) mixed_ = cvs_.Create();
-    return Kokkos::subview(
-      mixed_->viewComponent<Amanzi::HostSpaceSpecial>(kind_str_, ghosted), Kokkos::ALL, 0);
+    return mixed_->viewComponent<MEM>(kind_str_, 0, ghosted);
   }
-
-  // Kokkos::View<AmanziGeometry::Point*> bc_value_point()
-  // {
-  //   if (bc_value_point_.size() == 0) {
-  //     AmanziGeometry::Point p(mesh_->space_dimension());
-  //     int nent = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_kind::ALL);
-  //     Kokkos::resize(bc_value_point_, nent);
-  //   }
-  //   return bc_value_point_;
-  // }
-
-  // Kokkos::View<double**> bc_value_vector(int n = 1)
-  // {
-  //   if (bc_value_vector_.size() == 0) {
-  //     int nent = mesh_->getNumEntities(kind_, AmanziMesh::Parallel_kind::ALL);
-  //     Kokkos::resize(bc_value_vector_, nent, n);
-  //   }
-  //   return bc_value_vector_;
-  // }
-
-  Kokkos::View<int*> bc_model(bool ghosted = true) const
-  {
-    return Kokkos::subview(model_->viewComponent(kind_str_, ghosted), Kokkos::ALL, 0);
-  }
-  Kokkos::View<double*> bc_value(bool ghosted = true) const
-  {
-    return Kokkos::subview(value_->viewComponent(kind_str_, ghosted), Kokkos::ALL, 0);
-  }
-  Kokkos::View<double*> bc_mixed(bool ghosted = true) const
-  {
-    if (!mixed_.get()) mixed_ = cvs_.Create();
-    return Kokkos::subview(mixed_->viewComponent(kind_str_, ghosted), Kokkos::ALL, 0);
-  }
-  // Kokkos::View<const AmanziGeometry::Point*> bc_value_point() const
-  // {
-  //   return bc_value_point_;
-  // }
-  // Kokkos::View<const double**> bc_value_vector() const
-  // {
-  //   return bc_value_vector_;
-  // }
 
  private:
   AmanziMesh::Entity_kind kind_;

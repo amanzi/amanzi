@@ -255,15 +255,15 @@ PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   if (bcs_applied_) return;
   bcs_applied_ = true;
-  auto rhs = global_op_->rhs()->viewComponent<DefaultDevice>("cell", true);
+  auto rhs = global_op_->rhs()->viewComponent("cell", true);
   AMANZI_ASSERT(bcs_trial_.size() > 0);
 
   if (local_op_.get()) {
     auto& A = local_op_->A;
     // prep views
     auto k_face = ScalarCoefficientFaces(false);
-    const auto rhs_cell = global_op_->rhs()->viewComponent<DefaultDevice>("cell", true);
-    auto trans_face = transmissibility_->viewComponent<DefaultDevice>("face", true);
+    const auto rhs_cell = global_op_->rhs()->viewComponent("cell", true);
+    auto trans_face = transmissibility_->viewComponent("face", true);
     const Amanzi::AmanziMesh::Mesh& m = *mesh_;
     const auto bc_model = bcs_trial_[0]->bc_model();
     const auto bc_value = bcs_trial_[0]->bc_value();
@@ -312,16 +312,16 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
   if (!bcs_applied_) ApplyBCs(true, false, true);
 
   // prep views
-  auto trans_face = transmissibility_->viewComponent<DefaultDevice>("face", true);
+  auto trans_face = transmissibility_->viewComponent("face", true);
   AMANZI_ASSERT(bcs_trial_.size() > 0);
   const auto bc_model = bcs_trial_[0]->bc_model();
   const auto bc_value = bcs_trial_[0]->bc_value();
 
   const auto k_face = ScalarCoefficientFaces(true);
-  auto flux = darcy_mass_flux->viewComponent<DefaultDevice>("face", false);
+  auto flux = darcy_mass_flux->viewComponent("face", false);
 
   solution->scatterMasterToGhosted("cell");
-  const auto p = solution->viewComponent<DefaultDevice>("cell", true);
+  const auto p = solution->viewComponent("cell", true);
   const Amanzi::AmanziMesh::Mesh& m = *mesh_;
   int lnfaces_owned(nfaces_owned);
 

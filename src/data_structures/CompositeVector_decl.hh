@@ -74,9 +74,9 @@ class CompositeVector_ : public BlockVector<Scalar> {
   }
 
  protected:
-  virtual cMultiVector_ptr_type_<Scalar>
+  virtual Teuchos::RCP<const MultiVector_type_<Scalar>>
   getComponent_(const std::string& name, bool ghosted = false) const override;
-  virtual MultiVector_ptr_type_<Scalar>
+  virtual Teuchos::RCP<MultiVector_type_<Scalar>>
   getComponent_(const std::string& name, bool ghosted = false) override;
 
   // The Vandelay is an Importer/Exporter which allows face unknowns
@@ -88,7 +88,7 @@ class CompositeVector_ : public BlockVector<Scalar> {
   Teuchos::RCP<const CompositeSpace> cvs_;
 
   // importer and vector for boundary data
-  mutable MultiVector_ptr_type_<Scalar> vandelay_vector_;
+  mutable Teuchos::RCP<MultiVector_type_<Scalar>> vandelay_vector_;
 };
 
 } // namespace Amanzi

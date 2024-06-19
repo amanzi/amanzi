@@ -55,8 +55,8 @@ namespace Amanzi {
 template <template <class, class> class Model, class Device_type = DefaultDevice>
 class EvaluatorModelCVByMaterial : public EvaluatorSecondaryMonotypeCV {
  public:
-  using cView_type = cMultiVectorView_type<Device_type>;
-  using View_type = MultiVectorView_type<Device_type>;
+  using View_type = typename CompositeVector::View_type;
+  using cView_type = typename CompositeVector::cView_type;
   using Model_type = Model<cView_type, View_type>;
   static const std::string eval_type;
 

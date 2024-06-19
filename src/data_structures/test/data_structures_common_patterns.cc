@@ -75,9 +75,9 @@ SUITE(COMMON_MESH_OPERATIONS)
 
     // compute on device
     {
-      auto sl_view = sl_c->viewComponent<DefaultDevice>("cell", 0, false);
-      auto poro_view = poro_c->viewComponent<DefaultDevice>("cell", 0, false);
-      auto wc_view = wc->viewComponent<DefaultDevice>("cell", 0, false);
+      auto sl_view = sl_c->viewComponent("cell", 0, false);
+      auto poro_view = poro_c->viewComponent("cell", 0, false);
+      auto wc_view = wc->viewComponent("cell", 0, false);
       Mesh* m = mesh.get();
 
       // typedef Kokkos::RangePolicy<DefaultDevice, LO> Policy_type;
@@ -92,7 +92,7 @@ SUITE(COMMON_MESH_OPERATIONS)
     // test on the host
     {
       Teuchos::RCP<const CompositeVector> wc_c(wc);
-      auto wc_view = wc_c->viewComponent<Amanzi::HostSpaceSpecial>("cell", 0, false);
+      auto wc_view = wc_c->viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       for (LO i = 0; i != wc_view.extent(0); ++i) {
         CHECK_CLOSE(0.5 * 0.25 * 8.0, wc_view(i), 1.e-10);
       }
@@ -105,7 +105,7 @@ SUITE(COMMON_MESH_OPERATIONS)
     // Computes transmissibility through flat parallelism
     auto trans = CreateVec("face", Entity_kind::FACE, 1);
     {
-      auto trans_view = trans->viewComponent<DefaultDevice>("face", 0, false);
+      auto trans_view = trans->viewComponent("face", 0, false);
       Mesh* m = mesh.get();
 
       typedef Kokkos::RangePolicy<DefaultDevice, LO> Policy_type;

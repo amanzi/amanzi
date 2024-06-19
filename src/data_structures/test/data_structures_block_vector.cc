@@ -91,22 +91,22 @@ SUITE(_VECTOR)
     x->putScalar(2.0);
     {
       // check on owned
-      auto v1 = x->viewComponent<Amanzi::HostSpaceSpecial>("cell", false);
+      auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", false);
       CHECK_CLOSE(2.0, v1(0, 0), 0.00001);
       CHECK_CLOSE(2.0, v1(0, 1), 0.00001);
 
-      auto v2 = x->viewComponent<MirrorHost>("face", 0, false);
+      auto v2 = x->viewComponent<MemSpace_kind::HOST>("face", 0, false);
       CHECK_CLOSE(2.0, v2(0), 0.00001);
     }
 
 
     {
       // check on ghosted
-      auto v1 = x->viewComponent<MirrorHost>("cell", true);
+      auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", true);
       CHECK_CLOSE(2.0, v1(0, 0), 0.00001);
       CHECK_CLOSE(2.0, v1(0, 1), 0.00001);
 
-      auto v2 = x->viewComponent<MirrorHost>("face", 0, true);
+      auto v2 = x->viewComponent<MemSpace_kind::HOST>("face", 0, true);
       CHECK_CLOSE(2.0, v2(0), 0.00001);
     }
 
@@ -119,20 +119,20 @@ SUITE(_VECTOR)
     // x->putScalar("face", 3.0);
     // {
     //   // check on owned
-    //   auto v1 = x->viewComponent<MirrorHost>("cell", false);
+    //   auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", false);
     //   CHECK_CLOSE(4.0, v1(0,0), 0.00001);
     //   CHECK_CLOSE(5.0, v1(0,1), 0.00001);
 
-    //   auto v2 = x->viewComponent<MirrorHost>("face", false);
+    //   auto v2 = x->viewComponent<MemSpace_kind::HOST>("face", false);
     //   CHECK_CLOSE(3.0, v2(0,0), 0.00001);
     // }
     // {
     //   // check on ghosted
-    //   auto v1 = x->viewComponent<MirrorHost>("cell", true);
+    //   auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", true);
     //   CHECK_CLOSE(4.0, v1(0,0), 0.00001);
     //   CHECK_CLOSE(5.0, v1(0,1), 0.00001);
 
-    //   auto v2 = x->viewComponent<MirrorHost>("face", true);
+    //   auto v2 = x->viewComponent<MemSpace_kind::HOST>("face", true);
     //   CHECK_CLOSE(3.0, v2(0,0), 0.00001);
     // }
 
@@ -140,17 +140,17 @@ SUITE(_VECTOR)
     // check set by view
     {
       // set the value, then destroy the view
-      auto v1 = x->viewComponent<MirrorHost>("cell", 0, false);
+      auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       v1(0) = 16.0;
     }
     {
       // check set by view on owned
-      auto v1 = x->viewComponent<MirrorHost>("cell", 0, false);
+      auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       CHECK_CLOSE(16.0, v1(0), 0.00001);
     }
     {
       // check set by view on ghosted
-      auto v1 = x->viewComponent<MirrorHost>("cell", 0, true);
+      auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", 0, true);
       CHECK_CLOSE(16.0, v1(0), 0.00001);
     }
   }
@@ -166,11 +166,11 @@ SUITE(_VECTOR)
 
     {
       // check set by view on owned
-      auto v1 = x->viewComponent<MirrorHost>("cell", 0, false);
+      auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       CHECK_CLOSE(2.0, v1(0), 0.00001);
 
       // check set by view on owned
-      auto v2 = y.viewComponent<MirrorHost>("cell", 0, false);
+      auto v2 = y.viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       CHECK_CLOSE(4.0, v2(0), 0.00001);
     }
   }
@@ -187,11 +187,11 @@ SUITE(_VECTOR)
     y = *x;
     {
       // check set by view on owned
-      auto v1 = x->viewComponent<MirrorHost>("cell", 0, false);
+      auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       CHECK_CLOSE(2.0, v1(0), 0.00001);
 
       // check set by view on owned
-      auto v2 = y.viewComponent<MirrorHost>("cell", 0, false);
+      auto v2 = y.viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       CHECK_CLOSE(2.0, v2(0), 0.00001);
     }
 
@@ -199,11 +199,11 @@ SUITE(_VECTOR)
     x->putScalar(4.0);
     {
       // check set by view on owned
-      auto v1 = x->viewComponent<MirrorHost>("cell", 0, false);
+      auto v1 = x->viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       CHECK_CLOSE(4.0, v1(0), 0.00001);
 
       // check set by view on owned
-      auto v2 = y.viewComponent<MirrorHost>("cell", 0, false);
+      auto v2 = y.viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       CHECK_CLOSE(2.0, v2(0), 0.00001);
     }
   }
@@ -219,7 +219,7 @@ SUITE(_VECTOR)
     x->scatterMasterToGhosted("cell");
 
     if (size == 2) {
-      auto x_c = x->viewComponent<MirrorHost>("cell", 0, true);
+      auto x_c = x->viewComponent<MemSpace_kind::HOST>("cell", 0, true);
       if (rank == 0) {
         CHECK_CLOSE(1.0, x_c(0), 0.00001);
         CHECK_CLOSE(2.0, x_c(4), 0.00001);
@@ -228,7 +228,7 @@ SUITE(_VECTOR)
         CHECK_CLOSE(1.0, x_c(4), 0.00001);
       }
     } else {
-      auto x_c = x->viewComponent<MirrorHost>("cell", 0, true);
+      auto x_c = x->viewComponent<MemSpace_kind::HOST>("cell", 0, true);
       CHECK_CLOSE(rank + 1, x_c(0), 0.00001);
     }
   }
@@ -240,13 +240,13 @@ SUITE(_VECTOR)
     int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
 
     { // scope for x_c
-      auto x_c = x->viewComponent<MirrorHost>("cell", 0, true);
+      auto x_c = x->viewComponent<MemSpace_kind::HOST>("cell", 0, true);
       for (int c = 0; c != ncells; ++c) { x_c(c) = rank + 1; }
     }
     x->gatherGhostedToMaster("cell");
 
     if (size == 2) {
-      auto x_c = x->viewComponent<MirrorHost>("cell", 0, false);
+      auto x_c = x->viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       if (rank == 0) {
         CHECK_CLOSE(1.0, x_c(0), 0.00001);
         CHECK_CLOSE(3.0, x_c(3), 0.00001);
@@ -255,7 +255,7 @@ SUITE(_VECTOR)
         CHECK_CLOSE(2.0, x_c(3), 0.00001);
       }
     } else {
-      auto x_c = x->viewComponent<MirrorHost>("cell", 0, false);
+      auto x_c = x->viewComponent<MemSpace_kind::HOST>("cell", 0, false);
       CHECK_CLOSE(1, x_c(0), 0.00001);
       CHECK_CLOSE(1, x_c(7), 0.00001);
     }

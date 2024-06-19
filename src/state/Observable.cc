@@ -320,7 +320,7 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
 
     { // get the vector component
       auto ids = mesh_on_host->getSetEntities(region_, entity, AmanziMesh::Parallel_kind::OWNED);
-      auto subvec = vec.viewComponent<DefaultHostMemorySpace>(location_, false);
+      auto subvec = vec.viewComponent<MemSpace_kind::HOST>(location_, false);
 
       if (entity == AmanziMesh::Entity_kind::CELL) {
         for (auto id : ids) {

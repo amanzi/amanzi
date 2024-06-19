@@ -192,7 +192,7 @@ SUITE(DIFFUSION)
 
     CompositeVector& rhs = *fix.global_op->rhs();
     {
-      auto rhs_c = rhs.viewComponent<HostSpaceSpecial>("cell", false);
+      auto rhs_c = rhs.viewComponent<MemSpace_kind::HOST>("cell", false);
       for (int c = 0; c != fix.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL,
                                                     AmanziMesh::Parallel_kind::OWNED);
            ++c) {
@@ -204,7 +204,7 @@ SUITE(DIFFUSION)
     fix.op->ApplyBCs(true, true, true);
 
     {
-      auto soln_c = fix.solution->viewComponent<HostSpaceSpecial>("cell", false);
+      auto soln_c = fix.solution->viewComponent<MemSpace_kind::HOST>("cell", false);
       for (int c = 0; c != fix.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL,
                                                     AmanziMesh::Parallel_kind::OWNED);
            ++c) {
@@ -249,7 +249,7 @@ SUITE(DIFFUSION)
 
     CompositeVector& rhs = *fix.global_op->rhs();
     {
-      auto rhs_c = rhs.viewComponent<HostSpaceSpecial>("cell", false);
+      auto rhs_c = rhs.viewComponent<MemSpace_kind::HOST>("cell", false);
       for (int c = 0; c != fix.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL,
                                                     AmanziMesh::Parallel_kind::OWNED);
            ++c) {
@@ -261,7 +261,7 @@ SUITE(DIFFUSION)
     fix.op->ApplyBCs(true, true, true);
 
     {
-      auto soln_c = fix.solution->viewComponent<HostSpaceSpecial>("cell", false);
+      auto soln_c = fix.solution->viewComponent<MemSpace_kind::HOST>("cell", false);
       for (int c = 0; c != fix.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL,
                                                     AmanziMesh::Parallel_kind::OWNED);
            ++c) {
@@ -270,7 +270,7 @@ SUITE(DIFFUSION)
       }
     }
     {
-      auto soln_f = fix.solution->viewComponent<HostSpaceSpecial>("face", false);
+      auto soln_f = fix.solution->viewComponent<MemSpace_kind::HOST>("face", false);
       for (int f = 0; f != fix.mesh->getNumEntities(AmanziMesh::Entity_kind::FACE,
                                                     AmanziMesh::Parallel_kind::OWNED);
            ++f) {

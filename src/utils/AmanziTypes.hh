@@ -179,53 +179,10 @@ using Vector_type_ = Tpetra::Vector<Scalar, LO, GO>;
 template <typename Scalar>
 using MultiVector_type_ = Tpetra::MultiVector<Scalar, LO, GO>;
 
-template <typename Scalar>
-using Vector_ptr_type_ = Teuchos::RCP<Vector_type_<Scalar>>;
-template <typename Scalar>
-using cVector_ptr_type_ = Teuchos::RCP<const Vector_type_<Scalar>>;
-template <typename Scalar>
-using MultiVector_ptr_type_ = Teuchos::RCP<MultiVector_type_<Scalar>>;
-template <typename Scalar>
-using cMultiVector_ptr_type_ = Teuchos::RCP<const MultiVector_type_<Scalar>>;
-
 using Vector_type = Vector_type_<double_type>;
 using MultiVector_type = MultiVector_type_<double_type>;
 using IntVector_type = Vector_type_<int_type>;
 using IntMultiVector_type = MultiVector_type_<int_type>;
-
-// Kokkos Views into vectors
-template <class Device_type, typename Scalar>
-using VectorView_type_ = Kokkos::View<Scalar*,
-                                      Kokkos::LayoutLeft,
-                                      Device_type>; // MH: layout depends on Tpetra fix later
-
-template <class Device_type, typename Scalar>
-using cVectorView_type_ = Kokkos::View<const Scalar*, Kokkos::LayoutLeft, Device_type>;
-
-template <class Device_type, typename Scalar>
-using MultiVectorView_type_ = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device_type>;
-
-template <class Device_type, typename Scalar>
-using cMultiVectorView_type_ = Kokkos::View<const Scalar**, Kokkos::LayoutLeft, Device_type>;
-
-// and some defaults
-template <class Device_type>
-using VectorView_type = VectorView_type_<Device_type, double_type>;
-template <class Device_type>
-using cVectorView_type = cVectorView_type_<Device_type, double_type>;
-template <class Device_type>
-using MultiVectorView_type = MultiVectorView_type_<Device_type, double_type>;
-template <class Device_type>
-using cMultiVectorView_type = cMultiVectorView_type_<Device_type, double_type>;
-
-template <class Device_type>
-using IntVectorView_type = VectorView_type_<Device_type, int_type>;
-template <class Device_type>
-using cIntVectorView_type = cVectorView_type_<Device_type, int_type>;
-template <class Device_type>
-using IntMultiVectorView_type = MultiVectorView_type_<Device_type, int_type>;
-template <class Device_type>
-using cIntMultiVectorView_type = cMultiVectorView_type_<Device_type, int_type>;
 
 // Graphs and Matrices
 using Graph_type = Tpetra::CrsGraph<LO, GO>;

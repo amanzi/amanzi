@@ -251,9 +251,9 @@ SUITE(DOMAIN_FUNCTIONS)
     // compare to make sure we get flags and values right...
     {
       const auto& bc_markers =
-        S->Get<Operators::BCs>("diffusion_bcs", Tags::DEFAULT).bc_model_host();
+        S->Get<Operators::BCs>("diffusion_bcs", Tags::DEFAULT).bc_model<MemSpace_kind::HOST>();
       const auto& bc_values =
-        S->Get<Operators::BCs>("diffusion_bcs", Tags::DEFAULT).bc_value_host();
+        S->Get<Operators::BCs>("diffusion_bcs", Tags::DEFAULT).bc_value<MemSpace_kind::HOST>();
 
       int nfaces =
         mesh_on_host->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);

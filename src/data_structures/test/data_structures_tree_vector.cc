@@ -75,7 +75,7 @@ struct test_tv {
 double
 get_value(const CompositeVector& cv, const std::string& cname, int dof_num, int lid)
 {
-  auto vec = cv.viewComponent<MirrorHost>(cname, true);
+  auto vec = cv.viewComponent<MemSpace_kind::HOST>(cname, true);
   return vec(lid, dof_num);
 }
 

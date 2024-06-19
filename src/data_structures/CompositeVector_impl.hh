@@ -67,7 +67,7 @@ CompositeVector_<Scalar>::operator=(const CompositeVector_<Scalar>& other)
 // Ghosted views are simply the vector itself, while non-ghosted views are
 // lazily generated.
 template <typename Scalar>
-cMultiVector_ptr_type_<Scalar>
+Teuchos::RCP<const MultiVector_type_<Scalar>>
 CompositeVector_<Scalar>::getComponent_(const std::string& name, bool ghosted) const
 {
   if (name == std::string("boundary_face") && !this->hasComponent("boundary_face") &&
@@ -80,7 +80,7 @@ CompositeVector_<Scalar>::getComponent_(const std::string& name, bool ghosted) c
 
 
 template <typename Scalar>
-MultiVector_ptr_type_<Scalar>
+Teuchos::RCP<MultiVector_type_<Scalar>>
 CompositeVector_<Scalar>::getComponent_(const std::string& name, bool ghosted)
 {
   if (name == std::string("boundary_face") && !this->hasComponent("boundary_face") &&

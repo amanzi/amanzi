@@ -166,7 +166,7 @@ class make_state {
   void check_close(double val1, double val2, const std::string& name)
   {
     auto cvv = S.Get<CompositeVector>(name, Tags::DEFAULT)
-                 .viewComponent<DefaultHostMemorySpace>("cell", 0, false);
+                 .viewComponent<MemSpace_kind::HOST>("cell", 0, false);
     CHECK_CLOSE(val1, cvv(0), 1.e-10);
     CHECK_CLOSE(val2, cvv(1), 1.e-10);
   }
@@ -174,7 +174,7 @@ class make_state {
   void check_close_deriv(double val1, double val2, const std::string& name, const std::string& wrt)
   {
     auto cvv = S.GetDerivative<CompositeVector>(name, Tags::DEFAULT, wrt, Tags::DEFAULT)
-                 .viewComponent<DefaultHostMemorySpace>("cell", 0, false);
+                 .viewComponent<MemSpace_kind::HOST>("cell", 0, false);
     CHECK_CLOSE(val1, cvv(0), 1.e-10);
     CHECK_CLOSE(val2, cvv(1), 1.e-10);
   }

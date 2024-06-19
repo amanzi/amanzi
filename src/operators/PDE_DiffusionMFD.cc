@@ -212,11 +212,11 @@ void
 PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
 {
   k_->scatterMasterToGhosted();
-  cMultiVectorView_type_<Amanzi::DefaultDevice, double> k_cell, k_face, k_twin;
+  CompositeVector::cView_type k_cell, k_face, k_twin;
   if (k_ != Teuchos::null) {
-    if (k_->hasComponent("cell")) k_cell = k_->viewComponent<>("cell", false);
-    if (k_->hasComponent("face")) k_face = k_->viewComponent<>("face", true);
-    if (k_->hasComponent("twin")) k_twin = k_->viewComponent<>("twin", true);
+    if (k_->hasComponent("cell")) k_cell = k_->viewComponent("cell", false);
+    if (k_->hasComponent("face")) k_face = k_->viewComponent("face", true);
+    if (k_->hasComponent("twin")) k_twin = k_->viewComponent("twin", true);
   }
 
   DenseMatrix_Vector& A = local_op_->A;

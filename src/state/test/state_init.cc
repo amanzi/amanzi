@@ -75,7 +75,7 @@ TEST(FIELD_INITIALIZATION)
   int ncells =
     mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   {
-    auto phi = S.Get<CompositeVector>("porosity").viewComponent<Kokkos::HostSpace>("cell");
+    auto phi = S.Get<CompositeVector>("porosity").viewComponent<MemSpace_kind::HOST>("cell");
     for (int c = 0; c < ncells; ++c) { CHECK_EQUAL(0.25, phi(c, 0)); }
   }
 

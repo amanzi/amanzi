@@ -139,8 +139,8 @@ TEST_FIXTURE(reference_mesh, MESH_FUNCTION)
 
   // check...
   {
-    auto vals = bc_values.viewComponent<DefaultHostMemorySpace>("face", false);
-    auto markers = bc_markers.viewComponent<DefaultHostMemorySpace>("face", false);
+    auto vals = bc_values.viewComponent<MemSpace_kind::HOST>("face", false);
+    auto markers = bc_markers.viewComponent<MemSpace_kind::HOST>("face", false);
     auto mh = onMemHost(mesh);
     for (int f = 0; f != vals.extent(0); ++f) {
       auto fc = mh->getFaceCentroid(f);

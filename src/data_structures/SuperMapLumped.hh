@@ -39,6 +39,9 @@ namespace Amanzi {
 
 class SuperMapLumped {
  public:
+  using cView_type = typename BlockVector<LO>::cView_type;
+  using cHostView_type = typename BlockVector<LO>::cHostView_type;
+
   explicit SuperMapLumped(const Teuchos::RCP<const BlockSpace>& maps);
 
   SuperMapLumped(const SuperMapLumped& other) = delete;
@@ -63,10 +66,13 @@ class SuperMapLumped {
   }
 
   // index accessors
-  template <class DeviceType = DefaultDevice>
-  cVectorView_type_<DeviceType, LO> viewIndices(const std::string& compname, int dofnum) const;
-  template <class DeviceType = DefaultDevice>
-  cVectorView_type_<DeviceType, LO> viewGhostIndices(const std::string& compname, int dofnum) const;
+  template <MemSpace_kind MEM = MemSpace_kind::DEVICE>
+  auto
+  viewIndices(const std::string& compname, int dofnum) const;
+
+  template <MemSpace_kind MEM = MemSpace_kind::DEVICE>
+  auto
+  viewGhostIndices(const std::string& compname, int dofnum) const;
 
   // block indices.  This is an array of integers, length
   // Map().getLocalLength(), where each dof and component have a unique integer
@@ -124,19 +130,23 @@ Teuchos::RCP<SuperMapLumped>
 createSuperMapLumped(const BlockSpace& cv);
 
 // implementation of templated member functions
-template <class DeviceType>
-cVectorView_type_<DeviceType, LO>
+template <MemSpace_kind MEM>
+auto
 SuperMapLumped::viewIndices(const std::string& compname, int dofnum) const
 {
-  return indices_->viewComponent<DeviceType>(compname, dofnum, false);
+  // force returning const view
+  const BlockVector<LO>& inds = *indices_;
+  return inds.viewComponent<MEM>(compname, dofnum, false);
 }
 
 
-template <class DeviceType>
-cVectorView_type_<DeviceType, LO>
+template <MemSpace_kind MEM>
+auto
 SuperMapLumped::viewGhostIndices(const std::string& compname, int dofnum) const
 {
-  return indices_->viewComponent<DeviceType>(compname, dofnum, true);
+  // force returning const view
+  const BlockVector<LO>& inds = *indices_;
+  return inds.viewComponent<MEM>(compname, dofnum, true);
 }
 
 

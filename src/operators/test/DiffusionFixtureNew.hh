@@ -148,7 +148,7 @@ DiffusionFixture::Discretize(const std::string& name, AmanziMesh::Entity_kind sc
     CompositeVectorSpace cvs;
     cvs.SetMesh(mesh)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
     Teuchos::RCP<CompositeVector> kr = cvs.Create();
-    auto vec = kr->viewComponent<MirrorHost>("face", true);
+    auto vec = kr->viewComponent<MemSpace_kind::HOST>("face", true);
     for (int f = 0; f != nents; ++f) {
       vec(f, 0) = ana->ScalarDiffusivity(mesh_host->getFaceCentroid(f), 0.0);
     }
@@ -215,7 +215,7 @@ DiffusionFixture::SetScalarCoefficient(Operators::PDE_DiffusionFactory& opfactor
   if (kind == AmanziMesh::CELL) {
     cvs.SetComponent("cell", AmanziMesh::CELL, 1);
     kr = cvs.Create();
-    auto vec = kr->viewComponent<MirrorHost>("cell", true);
+    auto vec = kr->viewComponent<MemSpace_kind::HOST>("cell", true);
     for (int c = 0; c != nents; ++c) {
       vec(c, 0) = ana->ScalarDiffusivity(mesh_host->getCellCentroid(c), 0.0);
     }
@@ -223,7 +223,7 @@ DiffusionFixture::SetScalarCoefficient(Operators::PDE_DiffusionFactory& opfactor
   } else if (kind == AmanziMesh::FACE) {
     cvs.SetComponent("face", AmanziMesh::FACE, 1);
     kr = cvs.Create();
-    auto vec = kr->viewComponent<MirrorHost>("face", true);
+    auto vec = kr->viewComponent<MemSpace_kind::HOST>("face", true);
     for (int f = 0; f != nents; ++f) {
       vec(f, 0) = ana->ScalarDiffusivity(mesh_host->getFaceCentroid(f), 0.0);
     }
@@ -239,8 +239,8 @@ DiffusionFixture::SetScalarCoefficient(Operators::PDE_DiffusionFactory& opfactor
 void
 DiffusionFixture::SetBCsDirichlet()
 {
-  auto bc_value = bc->bc_value_host();
-  auto bc_model = bc->bc_model_host();
+  auto bc_value = bc->bc_value<MemSpace_kind::HOST>();
+  auto bc_model = bc->bc_model<MemSpace_kind::HOST>();
 
   if (bc->kind() == AmanziMesh::FACE) {
     const auto& bf_map = *mesh->getMap(AmanziMesh::BOUNDARY_FACE, false);
@@ -273,7 +273,7 @@ DiffusionFixture::Go(double tol, bool initial_guess)
   // The view on host needs to be scoped to be released
   // This would prevent the vector to be copied later (in apply inverse)
   {
-    auto rhs_c = rhs.viewComponent<MirrorHost>("cell", false);
+    auto rhs_c = rhs.viewComponent<MemSpace_kind::HOST>("cell", false);
     for (int c = 0; c != ncells; ++c) {
       const auto& xc = mesh_host->getCellCentroid(c);
       rhs_c(c, 0) += ana->source_exact(xc, 0.0) * mesh->getCellVolume(c);

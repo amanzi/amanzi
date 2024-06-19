@@ -138,7 +138,7 @@ struct DiffusionFixture {
     if (kind == AmanziMesh::CELL) {
       space.SetComponent("cell", AmanziMesh::CELL, 1);
       kr = space.Create();
-      auto vec = kr->viewComponent<MirrorHost>("cell", true);
+      auto vec = kr->viewComponent<MemSpace_kind::HOST>("cell", true);
       for (int i = 0; i != mesh->getNumEntities(kind, AmanziMesh::Parallel_kind::ALL); ++i) {
         vec(i, 0) = ana->ScalarDiffusivity(mesh->getCellCentroid(i), 0.0);
       }
@@ -146,7 +146,7 @@ struct DiffusionFixture {
     } else if (kind == AmanziMesh::FACE) {
       space.SetComponent("face", AmanziMesh::FACE, 1);
       kr = space.Create();
-      auto vec = kr->viewComponent<MirrorHost>("face", true);
+      auto vec = kr->viewComponent<MemSpace_kind::HOST>("face", true);
       for (int i = 0; i != mesh->getNumEntities(kind, AmanziMesh::Parallel_kind::ALL); ++i) {
         vec(i, 0) = ana->ScalarDiffusivity(mesh->getFaceCentroid(i), 0.0);
       }
@@ -156,8 +156,8 @@ struct DiffusionFixture {
 
   void setBCsDirichlet()
   {
-    auto bc_value = bc->bc_value_host();
-    auto bc_model = bc->bc_model_host();
+    auto bc_value = bc->bc_value<MemSpace_kind::HOST>();
+    auto bc_model = bc->bc_model<MemSpace_kind::HOST>();
 
     if (bc->kind() == AmanziMesh::FACE) {
       const auto& bf_map = *mesh->getMap(AmanziMesh::BOUNDARY_FACE, false);
@@ -175,8 +175,8 @@ struct DiffusionFixture {
 
   void setBCsDirichletNeumannBox()
   {
-    auto bc_value = bc->bc_value_host();
-    auto bc_model = bc->bc_model_host();
+    auto bc_value = bc->bc_value<MemSpace_kind::HOST>();
+    auto bc_model = bc->bc_model<MemSpace_kind::HOST>();
 
     if (bc->kind() == AmanziMesh::FACE) {
       const auto& bf_map = *mesh->getMap(AmanziMesh::BOUNDARY_FACE, false);
@@ -236,7 +236,7 @@ struct DiffusionFixture {
     // ApplyBC: need to free the host view
     {
       CompositeVector& rhs = *global_op->rhs();
-      auto rhs_c = rhs.viewComponent<MirrorHost>("cell", false);
+      auto rhs_c = rhs.viewComponent<MemSpace_kind::HOST>("cell", false);
       for (int c = 0; c != mesh->getNumEntities(AmanziMesh::Entity_kind::CELL,
                                                 AmanziMesh::Parallel_kind::OWNED);
            ++c) {

@@ -134,7 +134,7 @@ BlockVector<Scalar>::operator=(const BlockVector<Scalar>& other)
 // View data, const version.
 // I would prefer these be private, but for now...
 template <typename Scalar>
-cMultiVector_ptr_type_<Scalar>
+Teuchos::RCP<const MultiVector_type_<Scalar>>
 BlockVector<Scalar>::getComponent(const std::string& name, bool ghosted) const
 {
   if (!getMap()->hasComponent(name)) {
@@ -147,7 +147,7 @@ BlockVector<Scalar>::getComponent(const std::string& name, bool ghosted) const
 
 // View data, non-const version.
 template <typename Scalar>
-MultiVector_ptr_type_<Scalar>
+Teuchos::RCP<MultiVector_type_<Scalar>>
 BlockVector<Scalar>::getComponent(const std::string& name, bool ghosted)
 {
   if (!getMap()->hasComponent(name)) {
@@ -162,7 +162,7 @@ BlockVector<Scalar>::getComponent(const std::string& name, bool ghosted)
 // template<typename Scalar>
 // void
 // BlockVector<Scalar>::setComponent(const std::string& name,
-//         const MultiVector_ptr_type_<Scalar>& data)
+//         const Teuchos::RCP<MultiVector_type_<Scalar>>& data)
 // {
 //   if (!getMap()->hasComponent(name)) {
 //     Errors::Message message("BlockVector: Requested setComponent("+name+")
@@ -183,40 +183,48 @@ BlockVector<Scalar>::getComponent(const std::string& name, bool ghosted)
 
 // -- View a component vector
 template <typename Scalar>
-template <class DeviceType>
-cMultiVectorView_type_<DeviceType, Scalar>
+template<MemSpace_kind MEM>
+auto
 BlockVector<Scalar>::viewComponent(const std::string& name, bool ghosted) const
 {
-  using memory_space = typename DeviceType::memory_space;
-  return getComponent_(name, ghosted)
-    ->template getLocalView<memory_space>(Tpetra::Access::ReadOnly);
+  if constexpr(MEM == MemSpace_kind::HOST) {
+    return getComponent_(name, ghosted)
+      ->template getLocalView<typename HostView_type::memory_space>(Tpetra::Access::ReadOnly);
+  } else {
+    return getComponent_(name, ghosted)
+      ->template getLocalView<typename View_type::memory_space>(Tpetra::Access::ReadOnly);
+  }
 }
 
 template <typename Scalar>
-template <class DeviceType>
-MultiVectorView_type_<DeviceType, Scalar>
+template<MemSpace_kind MEM>
+auto
 BlockVector<Scalar>::viewComponent(const std::string& name, bool ghosted)
 {
-  using memory_space = typename DeviceType::memory_space;
-  return getComponent_(name, ghosted)
-    ->template getLocalView<memory_space>(Tpetra::Access::ReadWrite);
+  if constexpr(MEM == MemSpace_kind::HOST) {
+    return getComponent_(name, ghosted)
+      ->template getLocalView<typename HostView_type::memory_space>(Tpetra::Access::ReadWrite);
+  } else {
+    return getComponent_(name, ghosted)
+      ->template getLocalView<typename View_type::memory_space>(Tpetra::Access::ReadWrite);
+  }
 }
 
 // -- SubView of a component vector
 template <typename Scalar>
-template <class DeviceType>
-cVectorView_type_<DeviceType, Scalar>
+template<MemSpace_kind MEM>
+auto
 BlockVector<Scalar>::viewComponent(const std::string& name, std::size_t dof, bool ghosted) const
 {
-  return Kokkos::subview(viewComponent<DeviceType>(name, ghosted), Kokkos::ALL(), dof);
+  return Kokkos::subview(viewComponent<MEM>(name, ghosted), Kokkos::ALL(), dof);
 }
 
 template <typename Scalar>
-template <class DeviceType>
-VectorView_type_<DeviceType, Scalar>
+template<MemSpace_kind MEM>
+auto
 BlockVector<Scalar>::viewComponent(const std::string& name, std::size_t dof, bool ghosted)
 {
-  return Kokkos::subview(viewComponent<DeviceType>(name, ghosted), Kokkos::ALL(), dof);
+  return Kokkos::subview(viewComponent<MEM>(name, ghosted), Kokkos::ALL(), dof);
 }
 
 

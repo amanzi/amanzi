@@ -158,14 +158,14 @@ struct obs_test {
     auto mesh = AmanziMesh::onMemHost(mesh_on_device);
     {
       auto flux_f =
-        S->GetW<CV>("flux", Tags::DEFAULT, "my_password").viewComponent<Kokkos::HostSpace>("face");
+        S->GetW<CV>("flux", Tags::DEFAULT, "my_password").viewComponent<MemSpace_kind::HOST>("face");
       AmanziGeometry::Point plus_xz(1.0, 0.0, 1.0);
       for (int f = 0; f != flux_f.extent(0); ++f) flux_f(f, 0) = mesh->getFaceNormal(f) * plus_xz;
     }
 
     {
       auto id_c =
-        S->GetW<CV>("id", Tags::DEFAULT, "my_password").viewComponent<Kokkos::HostSpace>("cell");
+        S->GetW<CV>("id", Tags::DEFAULT, "my_password").viewComponent<MemSpace_kind::HOST>("cell");
       auto& cell_map = mesh->getMap(AmanziMesh::Entity_kind::CELL, false);
       for (int c = 0; c != id_c.extent(0); ++c) id_c(c, 0) = cell_map->getGlobalElement(c);
     }
