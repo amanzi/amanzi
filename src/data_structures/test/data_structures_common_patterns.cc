@@ -43,15 +43,7 @@ struct TestHarness {
   {
     auto x_space = Teuchos::rcp(new CompositeVectorSpace());
     x_space->SetMesh(mesh)->SetGhosted()->SetComponents(
-      {
-        name,
-      },
-      {
-        kind,
-      },
-      {
-        num_vectors,
-      });
+      { name, }, { kind, }, { num_vectors, });
     return x_space->Create();
   }
 };
@@ -61,15 +53,20 @@ SUITE(COMMON_MESH_OPERATIONS)
 {
   TEST_FIXTURE(TestHarness, FOR_EACH_CELL_VOLUME_LAMBDA)
   {
-    // does a Kokkos for_each over cell volumes to calculate a derived quantity
-    // using lambdas
-    auto sl = CreateVec("cell", Entity_kind::CELL, 1);
-    sl->putScalar(0.5);
-    Teuchos::RCP<const CompositeVector> sl_c(sl);
+    Teuchos::RCP<const CompositeVector> sl_c, poro_c;
 
-    auto poro = CreateVec("cell", Entity_kind::CELL, 1);
-    poro->putScalar(0.25);
-    Teuchos::RCP<const CompositeVector> poro_c(poro);
+    {
+      // Note, creating these in a scope to ensure we only have the const version
+      auto sl = CreateVec("cell", Entity_kind::CELL, 1);
+      sl->putScalar(0.5);
+      sl_c = sl;
+    }
+
+    {
+      auto poro = CreateVec("cell", Entity_kind::CELL, 1);
+      poro->putScalar(0.25);
+      poro_c = poro;
+    }
 
     auto wc = CreateVec("cell", Entity_kind::CELL, 1);
 
@@ -78,14 +75,13 @@ SUITE(COMMON_MESH_OPERATIONS)
       auto sl_view = sl_c->viewComponent("cell", 0, false);
       auto poro_view = poro_c->viewComponent("cell", 0, false);
       auto wc_view = wc->viewComponent("cell", 0, false);
-      Mesh* m = mesh.get();
+      const Mesh& m = *mesh;
 
-      // typedef Kokkos::RangePolicy<DefaultDevice, LO> Policy_type;
       Kokkos::parallel_for(
         "data_structures_common_patterns::FOR_EACH_CELL_VOLUME_LAMBDA",
-        sl_view.extent(0),
+        wc_view.extent(0),
         KOKKOS_LAMBDA(const LO i) {
-          wc_view[i] = sl_view[i] * poro_view[i] * m->getCellVolume(i);
+          wc_view(i) = sl_view(i) * poro_view(i) * m.getCellVolume(i);
         });
     }
 
@@ -106,7 +102,7 @@ SUITE(COMMON_MESH_OPERATIONS)
     auto trans = CreateVec("face", Entity_kind::FACE, 1);
     {
       auto trans_view = trans->viewComponent("face", 0, false);
-      Mesh* m = mesh.get();
+      const Mesh& m = *mesh;
 
       typedef Kokkos::RangePolicy<DefaultDevice, LO> Policy_type;
       Kokkos::parallel_for(
@@ -114,16 +110,16 @@ SUITE(COMMON_MESH_OPERATIONS)
         trans_view.extent(0),
         KOKKOS_LAMBDA(const LO& f) {
           // face info
-          const auto& fc = m->getFaceCentroid(f);
-          const auto& f_normal = m->getFaceNormal(f);
-          double area = m->getFaceArea(f);
+          const auto& fc = m.getFaceCentroid(f);
+          const auto& f_normal = m.getFaceNormal(f);
+          double area = m.getFaceArea(f);
 
           // neighbor cells
-          auto cellids = m->getFaceCells(f);
+          auto cellids = m.getFaceCells(f);
 
           // this could be a kokkos reduction...
           for (int i = 0; i != cellids.size(); ++i) {
-            const auto& cc = m->getCellCentroid(cellids[i]);
+            const auto& cc = m.getCellCentroid(cellids[i]);
             auto bisector = fc - cc;
             double s = area / norm(bisector);
 
