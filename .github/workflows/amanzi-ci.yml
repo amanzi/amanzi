@@ -8,10 +8,19 @@ on:
       - amanzi-*
 
 jobs:
-  build-ubuntu:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     name: Build Docker container
     steps:
+    - name: Set up docker (missing on macOS runners)
+      if: runner.os == 'macos'
+      run: |
+        brew install docker
+        colima version
+        colima start
     - name: Check out the Amanzi repo
       uses: actions/checkout@v4
     - name: Extract the branch name
@@ -50,7 +59,7 @@ jobs:
   serial-tests:
     runs-on: ubuntu-latest
     name: serial tests
-    needs: build-ubuntu
+    needs: build
     steps:
     - name: Check out the Amanzi repo
       uses: actions/checkout@v4
@@ -65,7 +74,7 @@ jobs:
   parallel-tests:
     runs-on: ubuntu-latest
     name: parallel tests
-    needs: build-ubuntu
+    needs: build
     steps:
     - name: Check out the Amanzi repo
       uses: actions/checkout@v4
@@ -77,78 +86,3 @@ jobs:
       working-directory: Docker
       run:
         docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L PARALLEL"
-
-  build-mac:
-    runs-on: macos-14
-    name: Build Docker container
-    steps:
-      - name: Install and start Colima
-        run: |
-          brew install colima
-          colima version
-          colima start --cpu --memory 6 --disk 100 --vm-type=qemu --mount-type=sshfs --dns=1.1.1.1
-      - name: Check out the Amanzi repo
-        uses: actions/checkout@v4
-      - name: Extract the branch name
-        id: branch
-        run:
-          echo "AMANZI_BRANCH=$GITHUB_REF_NAME" >> $GITHUB_ENV
-      - name: Filter the branch name to generate a tag for Docker
-        id: tag
-        run:
-          echo "AMANZI_BRANCH_TAG=$(echo ${{env.AMANZI_BRANCH}} | sed -e 's/\//--/g')" >> $GITHUB_ENV
-      - name: Output the branch name
-        run:
-          echo "Amanzi Branch = ${{env.AMANZI_BRANCH}}"
-      - name: Get TPLs version
-        id: version
-        working-directory: Docker
-        run:
-          echo "AMANZI_TPLS_VER=$(./get_tpls_version.sh)" >> $GITHUB_ENV
-      - name: Output the TPLs version
-        run:
-          echo "TPLs version = ${{env.AMANZI_TPLS_VER}}"
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{secrets.DOCKERHUB_USERNAME}}
-          password: ${{secrets.DOCKERHUB_PASSWORD}}
-      - name: Docker build
-        id: docker
-        working-directory: Docker
-        run:
-          docker build --build-arg amanzi_branch=${{env.AMANZI_BRANCH}} --build-arg amanzi_tpls_ver=${{env.AMANZI_TPLS_VER}} -t metsi/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest -f Dockerfile-Amanzi-build .
-      - name: Docker push
-        working-directory: Docker
-        run:
-          docker push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest
-  serial-tests-mac:
-    runs-on: macos-14
-    name: serial tests
-    needs: build-mac
-    steps:
-      - name: Check out the Amanzi repo
-        uses: actions/checkout@v4
-      - name: Set environment variables
-        run:
-          echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
-      - name: Run tests
-        id: tests
-        working-directory: Docker
-        run:
-          docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L SERIAL"
-  parallel-tests-mac:
-    runs-on: macos-14
-    name: parallel tests
-    needs: build-mac
-    steps:
-      - name: Check out the Amanzi repo
-        uses: actions/checkout@v4
-      - name: Set environment variables
-        run:
-          echo "AMANZI_BRANCH_TAG=$(echo $GITHUB_REF_NAME | sed -e 's/\//--/g')" >> $GITHUB_ENV
-      - name: Run tests
-        id: tests
-        working-directory: Docker
-        run:
-          docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L PARALLEL"
