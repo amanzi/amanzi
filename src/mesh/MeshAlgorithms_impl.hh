@@ -168,7 +168,7 @@ copyCellsToBoundaryFaces(const MeshCache<MEM>& mesh,
 // }
 
 std::pair<double, AmanziGeometry::Point>
-MeshAlgorithms::computeCellGeometry(const MeshHost& mesh, const Entity_ID c) const
+MeshAlgorithms::computeCellGeometry(const Mesh& mesh, const Entity_ID c) const
 {
   return Impl::computeCellGeometry(mesh, c);
 }
@@ -180,7 +180,7 @@ MeshAlgorithms::computeCellGeometry(const MeshHost& mesh, const Entity_ID c) con
 // }
 
 std::tuple<double, AmanziGeometry::Point, typename Mesh::cPoint_View>
-MeshAlgorithms::computeFaceGeometry(const MeshHost& mesh, const Entity_ID f) const
+MeshAlgorithms::computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const
 {
   return Impl::computeFaceGeometry(mesh, f);
 }
@@ -192,7 +192,7 @@ MeshAlgorithms::computeFaceGeometry(const MeshHost& mesh, const Entity_ID f) con
 // }
 
 std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
-MeshAlgorithms::computeEdgeGeometry(const MeshHost& mesh, const Entity_ID e) const
+MeshAlgorithms::computeEdgeGeometry(const Mesh& mesh, const Entity_ID e) const
 {
   return Impl::computeEdgeGeometry(mesh, e);
 }
@@ -204,7 +204,7 @@ MeshAlgorithms::computeEdgeGeometry(const MeshHost& mesh, const Entity_ID e) con
 // }
 
 double
-MeshAlgorithms::computeCellVolume(const MeshHost& mesh, const Entity_ID c) const
+MeshAlgorithms::computeCellVolume(const Mesh& mesh, const Entity_ID c) const
 {
   return Impl::computeCellGeometry(mesh, c).first;
 }
@@ -216,7 +216,7 @@ MeshAlgorithms::computeCellVolume(const MeshHost& mesh, const Entity_ID c) const
 // }
 
 AmanziGeometry::Point
-MeshAlgorithms::computeCellCentroid(const MeshHost& mesh, const Entity_ID c) const
+MeshAlgorithms::computeCellCentroid(const Mesh& mesh, const Entity_ID c) const
 {
   return Impl::computeCellGeometry(mesh, c).second;
 }
@@ -228,7 +228,7 @@ MeshAlgorithms::computeCellCentroid(const MeshHost& mesh, const Entity_ID c) con
 // }
 
 double
-MeshAlgorithms::computeFaceArea(const MeshHost& mesh, const Entity_ID f) const
+MeshAlgorithms::computeFaceArea(const Mesh& mesh, const Entity_ID f) const
 {
   return std::get<0>(Impl::computeFaceGeometry(mesh, f));
 }
@@ -240,7 +240,7 @@ MeshAlgorithms::computeFaceArea(const MeshHost& mesh, const Entity_ID f) const
 // }
 
 AmanziGeometry::Point
-MeshAlgorithms::computeFaceCentroid(const MeshHost& mesh, const Entity_ID f) const
+MeshAlgorithms::computeFaceCentroid(const Mesh& mesh, const Entity_ID f) const
 {
   return std::get<1>(Impl::computeFaceGeometry(mesh, f));
 }
@@ -253,7 +253,7 @@ MeshAlgorithms::computeFaceCentroid(const MeshHost& mesh, const Entity_ID f) con
 // }
 
 AmanziGeometry::Point
-MeshAlgorithms::computeFaceNormal(const MeshHost& mesh,
+MeshAlgorithms::computeFaceNormal(const Mesh& mesh,
                                   const Entity_ID f,
                                   const Entity_ID c,
                                   int* const orientation) const
@@ -315,7 +315,7 @@ MeshAlgorithms::computeFaceNormal(const MeshHost& mesh,
 // }
 
 double
-MeshAlgorithms::computeEdgeLength(const MeshHost& mesh, const Entity_ID e) const
+MeshAlgorithms::computeEdgeLength(const Mesh& mesh, const Entity_ID e) const
 {
   return AmanziGeometry::norm(Impl::computeEdgeGeometry(mesh, e).first);
 }
@@ -340,7 +340,7 @@ MeshAlgorithms::computeEdgeLength(const MeshHost& mesh, const Entity_ID e) const
 // }
 
 AmanziGeometry::Point
-MeshAlgorithms::computeEdgeVector(const MeshHost& mesh,
+MeshAlgorithms::computeEdgeVector(const Mesh& mesh,
                                   const Entity_ID e,
                                   const Entity_ID n,
                                   int* const orientation) const
@@ -368,7 +368,7 @@ MeshAlgorithms::computeEdgeVector(const MeshHost& mesh,
 // }
 
 AmanziGeometry::Point
-MeshAlgorithms::computeEdgeCentroid(const MeshHost& mesh, const Entity_ID e) const
+MeshAlgorithms::computeEdgeCentroid(const Mesh& mesh, const Entity_ID e) const
 {
   return Impl::computeEdgeGeometry(mesh, e).second;
 }
@@ -383,10 +383,10 @@ MeshAlgorithms::computeEdgeCentroid(const MeshHost& mesh, const Entity_ID e) con
 // }
 
 void
-MeshAlgorithms::computeCellFacesAndBisectors(const MeshHost& mesh,
+MeshAlgorithms::computeCellFacesAndBisectors(const Mesh& mesh,
                                              const Entity_ID cellid,
-                                             typename MeshHost::cEntity_ID_View& faceids,
-                                             typename MeshHost::cPoint_View* const bisectors) const
+                                             typename Mesh::cEntity_ID_View& faceids,
+                                             typename Mesh::cPoint_View* const bisectors) const
 {
   mesh.getCellFaces(cellid, faceids);
   if (bisectors) *bisectors = Impl::computeBisectors(mesh, cellid, faceids);

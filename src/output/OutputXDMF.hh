@@ -62,7 +62,7 @@ XDMFCellTypeID(AmanziMesh::Cell_kind type)
 
 class OutputXDMF : public Output {
  public:
-  OutputXDMF(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh);
+  OutputXDMF(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   virtual ~OutputXDMF() = default;
 
@@ -97,7 +97,7 @@ class OutputXDMF : public Output {
 
   std::string filenamebase_;
 
-  Teuchos::RCP<const AmanziMesh::MeshHost> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   std::unique_ptr<FileHDF5> h5_data_;
   std::string h5_data_filename_;

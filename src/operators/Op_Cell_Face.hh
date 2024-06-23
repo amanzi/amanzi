@@ -27,7 +27,6 @@ class Op_Cell_Face : public Op {
   {
     int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
     A = DenseMatrix_Vector(ncells_owned);
-    auto mesh_host = onMemHost(mesh);
 
     for (int c = 0; c != ncells_owned; ++c) {
       auto faces = mesh->getCellFaces(c); // This performs the prefix_sum
@@ -43,7 +42,7 @@ class Op_Cell_Face : public Op {
     assert(false);
     std::cout << "Op_Cell_Face.hh::SumLocalDiag" << std::endl;
 
-    const AmanziMesh::Mesh& m = *mesh;
+    const AmanziMesh::MeshCache& m = mesh->getCache();
     auto Xf = X.viewComponent("face", true);
     auto Xc = X.viewComponent("cell", false);
 

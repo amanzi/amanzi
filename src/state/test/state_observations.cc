@@ -154,8 +154,7 @@ struct obs_test {
       ->getVectorNonConst(2)
       ->putScalar(2.0);
 
-    auto mesh_on_device = S->GetMesh("domain");
-    auto mesh = AmanziMesh::onMemHost(mesh_on_device);
+    auto mesh = S->GetMesh("domain");
     {
       auto flux_f =
         S->GetW<CV>("flux", Tags::DEFAULT, "my_password").viewComponent<MemSpace_kind::HOST>("face");
@@ -197,10 +196,10 @@ struct obs_domain_set_test : public obs_test {
     S->RegisterMesh("surface", surface_mesh);
 
     // create domain set
-    AMANZI_ASSERT(parent->columns.num_columns_owned * parent->columns.getCells(0).extent(0) ==
+    AMANZI_ASSERT(parent->columns->num_columns_owned * parent->columns->getCells(0).extent(0) ==
                   parent->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED));
     std::vector<std::string> cols;
-    for (int i = 0; i != parent->columns.num_columns_owned; ++i) {
+    for (int i = 0; i != parent->columns->num_columns_owned; ++i) {
       cols.emplace_back(std::to_string(
         surface_mesh->getMap(AmanziMesh::Entity_kind::CELL, false)->getGlobalElement(i)));
     }

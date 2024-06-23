@@ -100,7 +100,7 @@ using namespace Amanzi;
 
 struct output_test_harness {
   Comm_ptr_type comm;
-  Teuchos::RCP<AmanziMesh::MeshHost> mesh;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh;
   Teuchos::RCP<Vector_type> cell_quantity;
   Teuchos::RCP<Vector_type> node_quantity;
   Teuchos::RCP<MultiVector_type> multi;
@@ -154,7 +154,7 @@ struct output_test_harness {
                                  AmanziMesh::Framework::MOAB };
     meshfactory.set_preference(pref);
 
-    mesh = meshfactory.create<MemSpace_kind::HOST>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1);
   }
 
   void create_mesh_polyhedral()
@@ -162,7 +162,7 @@ struct output_test_harness {
     AmanziMesh::MeshFactory meshfactory(comm);
     AmanziMesh::Preference pref{ AmanziMesh::Framework::MSTK, AmanziMesh::Framework::MOAB };
     meshfactory.set_preference(pref);
-    mesh = meshfactory.create<MemSpace_kind::HOST>("./test/four_polygon.exo");
+    mesh = meshfactory.create("./test/four_polygon.exo");
   }
 
   void test_write(const Output& out)

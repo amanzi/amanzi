@@ -29,7 +29,7 @@ test2D(const Teuchos::RCP<Mesh_type>& mesh)
 {
   std::cout << "Pre-deform mesh audit" << std::endl
             << "----------------------------------------" << std::endl;
-  testMeshAudit<MeshAudit_type, Mesh_type>(mesh);
+  testMeshAuditHost<MeshAudit_type>(Teuchos::RCP<const Mesh>(mesh));
 
   std::cout << "Deform" << std::endl << "----------------------------------------" << std::endl;
   // Deform the mesh
@@ -58,7 +58,7 @@ test2D(const Teuchos::RCP<Mesh_type>& mesh)
   }
   std::cout << "Post-deform mesh audit" << std::endl
             << "----------------------------------------" << std::endl;
-  testMeshAudit<MeshAudit_type, Mesh_type>(mesh);
+  testMeshAuditHost<MeshAudit_type>(Teuchos::RCP<const Mesh>(mesh));
 }
 
 template <class MeshAudit_type, class Mesh_type>
@@ -67,7 +67,7 @@ test3D(const Teuchos::RCP<Mesh_type>& mesh)
 {
   std::cout << "Pre-deform mesh audit" << std::endl
             << "----------------------------------------" << std::endl;
-  testMeshAudit<MeshAudit_type, Mesh_type>(mesh);
+  testMeshAuditHost<MeshAudit_type>(Teuchos::RCP<const Mesh>(mesh));
 
   std::cout << "Deform" << std::endl << "----------------------------------------" << std::endl;
   // Deform the mesh
@@ -88,10 +88,10 @@ test3D(const Teuchos::RCP<Mesh_type>& mesh)
   // check geometry
   std::cout << "Post-deform mesh audit" << std::endl
             << "----------------------------------------" << std::endl;
-  testMeshAudit<MeshAudit_type, Mesh_type>(mesh);
+  testMeshAuditHost<MeshAudit_type>(Teuchos::RCP<const Mesh>(mesh));
   std::cout << "Post-deform mesh geometry" << std::endl
             << "----------------------------------------" << std::endl;
-  testGeometryCube<Mesh_type>(mesh, 3, 3, 3);
+  testGeometryCube(*mesh, mesh.get(), 3, 3, 3);
 }
 
 
@@ -117,10 +117,10 @@ TEST(MESH_CACHED_DEFORM2D)
     // Create the mesh
     auto mesh =
       createStructuredUnitQuad({ frm }, 10, 10, comm, Teuchos::null, Teuchos::null, 10.0, 10.0);
-    AmanziMesh::cacheAll(*mesh);
+    mesh->cacheAll();
 
     // deform and test
-    test2D<MeshAuditHost>(mesh);
+    test2D<MeshAudit>(mesh);
   }
 }
 
@@ -152,8 +152,8 @@ TEST(MESH_CACHED_GENERATED_DEFORM3D)
     // start with a mesh that will be deformed into the known mesh coordinates
     auto mesh =
       createStructuredUnitHex({ frm }, 3, 3, 3, comm, Teuchos::null, Teuchos::null, 1.0, 1.0, 2.0);
-    AmanziMesh::cacheAll(*mesh);
+    mesh->cacheAll();
 
-    test3D<MeshAuditHost>(mesh);
+    test3D<MeshAudit>(mesh);
   }
 }

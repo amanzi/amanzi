@@ -21,7 +21,7 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 std::pair<double, AmanziGeometry::Point>
-MeshColumnAlgorithms::computeCellGeometry(const MeshHost& mesh, const Entity_ID c) const
+MeshColumnAlgorithms::computeCellGeometry(const Mesh& mesh, const Entity_ID c) const
 {
   return Impl::computeMeshColumnCellGeometry(mesh, c);
 }
@@ -70,11 +70,11 @@ MeshFrameworkColumn::computeSpecialNodeCoordinates_()
   // error will be zero.
 
   // Create a cached object, so that we can use columns.
-  MeshHost col3D_mesh(col3D_mesh_, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null);
+  Mesh col3D_mesh(col3D_mesh_, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null);
   col3D_mesh.buildColumns();
 
   // Get the ordered face indexes of the column
-  auto colfaces = col3D_mesh.columns.getFaces<MemSpace_kind::HOST>(0);
+  auto colfaces = col3D_mesh.columns->getFaces<MemSpace_kind::HOST>(0);
   column_faces_ = colfaces;
 
   // mask for face index in the column of faces
@@ -82,9 +82,7 @@ MeshFrameworkColumn::computeSpecialNodeCoordinates_()
   Kokkos::deep_copy(face_in_column_, -1);
 
   // How many nodes each "horizontal" face has in the column
-  cEntity_ID_View face_nodes;
-  col3D_mesh.getFaceNodes(column_faces_[0], face_nodes);
-  nfnodes_ = face_nodes.size();
+  nfnodes_ = col3D_mesh.getFaceNodes(column_faces_[0]).size();
 
   // Set up the new node coordinates This is done in two passes, which may be
   // unnecessary, but I'm not sure if face_centroid() would break if done in
@@ -101,7 +99,7 @@ MeshFrameworkColumn::computeSpecialNodeCoordinates_()
     face_in_column_[column_faces_[j]] = j;
 
     // calculate node coordinates
-    col3D_mesh.getFaceNodes(column_faces_[j], face_nodes);
+    auto face_nodes = col3D_mesh.getFaceNodes(column_faces_[j]);
     auto face_coordinates = col3D_mesh.getFaceCoordinates(column_faces_[j]);
     auto fcen = col3D_mesh.getFaceCentroid(column_faces_[j]);
 

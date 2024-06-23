@@ -40,9 +40,9 @@ void
 LocalMatMultAdd(const MatView_type& mat,
                 const GO elem,
                 const typename VecView_type::const_type& X,
-                const typename AmanziMesh::Mesh::cEntity_ID_View& X_ids,
+                const typename AmanziMesh::MeshCache::cEntity_ID_View& X_ids,
                 const VecView_type& Y,
-                const typename AmanziMesh::Mesh::cEntity_ID_View& Y_ids)
+                const typename AmanziMesh::MeshCache::cEntity_ID_View& Y_ids)
 {
   auto num_cols = X_ids.extent(0);
   auto num_rows = Y_ids.extent(0);

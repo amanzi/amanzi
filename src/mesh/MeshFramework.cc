@@ -9,11 +9,13 @@
 
 // Default imlementations of MeshFramework.
 
-#include "VerboseObject.hh"
 #include "errors.hh"
 #include "exceptions.hh"
-#include "MeshFramework.hh"
+#include "VerboseObject.hh"
+
+#include "ViewUtils.hh"
 #include "MeshInternals.hh"
+#include "MeshFramework.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {

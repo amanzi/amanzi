@@ -69,7 +69,7 @@ PDE_DiffusionFVwithGravity::UpdateMatrices(const Teuchos::Ptr<const CompositeVec
     const auto grav_f = gravity_term_->viewComponent("face", true);
     auto rhs_c = global_op_->rhs()->viewComponent("cell");
     const auto k_face = ScalarCoefficientFaces(true);
-    const AmanziMesh::Mesh& m = *mesh_.get();
+    const AmanziMesh::MeshCache& m = mesh_->getCache();
 
     Kokkos::parallel_for(
       "PDE_DiffusionFVwithGravity::UpdateMatrices", ncells_owned, KOKKOS_LAMBDA(const int c) {
@@ -152,7 +152,7 @@ PDE_DiffusionFVwithGravity::AnalyticJacobian_(const CompositeVector& u)
     // if (dkdp_->hasComponent("face")) {
     //   dKdP_face = dkdp_->viewComponent("face", true);
     // }
-    const AmanziMesh::Mesh& mesh = *mesh_.get();
+    const AmanziMesh::MeshCache& mesh = mesh_->getCache();
     DenseMatrix_Vector& A = jac_op_->A;
     int little_k_type(little_k_type_);
 
@@ -260,19 +260,19 @@ PDE_DiffusionFVwithGravity::ComputeTransmissibility_(Teuchos::RCP<CompositeVecto
 
     auto beta_f = transmissibility_->viewComponent("face", true);
     auto h_f = h->viewComponent("face", true);
-    const AmanziMesh::Mesh& mesh = *mesh_.get();
+    const AmanziMesh::MeshCache& m = mesh_->getCache();
     Kokkos::parallel_for(
       "PDE_DiffusionFVwithGravity::ComputeTransmissibility1",
       ncells_owned,
       KOKKOS_LAMBDA(const int c) {
-        auto [faces, bisectors] = mesh.getCellFacesAndBisectors(c);
+        auto [faces, bisectors] = m.getCellFacesAndBisectors(c);
         auto Kc = K.at(c);
 
         for (int i = 0; i < faces.extent(0); i++) {
           auto f = faces(i);
           const AmanziGeometry::Point& a = bisectors(i);
-          const AmanziGeometry::Point& normal = mesh.getFaceNormal(f);
-          const double area = mesh.getFaceArea(f);
+          const AmanziGeometry::Point& normal = m.getFaceNormal(f);
+          const double area = m.getFaceArea(f);
 
           const double h_tmp = AmanziGeometry::norm(a);
           const double s = area / h_tmp;
@@ -293,7 +293,7 @@ PDE_DiffusionFVwithGravity::ComputeTransmissibility_(Teuchos::RCP<CompositeVecto
     auto h_f = h->viewComponent("face", false);
     const auto trans_f = transmissibility_->viewComponent("face", false);
     auto grav_f = g_cv->viewComponent("face", false);
-    const AmanziMesh::Mesh& m = *mesh_.get();
+    const AmanziMesh::MeshCache& m = mesh_->getCache();
     AmanziGeometry::Point g(g_);
 
     Kokkos::parallel_for(

@@ -194,7 +194,7 @@ struct Output::writes<CompositeVector_<double>> {
 };
 
 template <>
-struct Output::writes<AmanziMesh::MeshHost> {
+struct Output::writes<AmanziMesh::Mesh> {
   static const bool value = true;
 };
 

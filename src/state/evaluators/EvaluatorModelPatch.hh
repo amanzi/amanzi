@@ -136,7 +136,7 @@ EvaluatorModelPatch<Model, Device_type>::Update_(State& S)
     // set up the model and range and then dispatch
     model_->setViews(dependency_views, result_views, S);
 
-    auto mat_ids = result.space->mesh->getSetEntities(
+    auto mat_ids = result.space->mesh->getSetEntities<MemSpace_kind::DEVICE>(
       res_patch.space->region, entity_kind, AmanziMesh::Parallel_kind::OWNED);
     model_->setAccessor(mat_ids);
 

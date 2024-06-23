@@ -65,26 +65,26 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED)
     // extract the surface
     MeshFrameworkFactory fac(comm, gm);
     fac.set_preference({ frm });
-    auto top_faces = parent_mesh->getSetEntities(
+    auto top_faces = parent_mesh->getSetEntities<MemSpace_kind::HOST>(
       "Top Face Plane", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
     auto surface_framework_mesh =
       fac.create(parent_mesh, top_faces, AmanziMesh::Entity_kind::FACE, true);
 
     // make a MeshCache
-    auto mesh = Teuchos::rcp(new MeshHost(
+    auto mesh = Teuchos::rcp(new Mesh(
       surface_framework_mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
     // Get the host mesh
     mesh->setParentMesh(parent_mesh);
-    cacheAll(*mesh);
+    mesh->cacheAll();
 
     // test the surface mesh as a 3x3 quad mesh
     // -- mesh audit
-    testMeshAudit<MeshAuditHost, MeshHost>(mesh);
+    testMeshAuditHost<MeshAudit>(Teuchos::RCP<const Mesh>(mesh));
     // -- geometry
-    testGeometryQuad(mesh, 3, 3);
+    testGeometryQuad(*mesh, mesh.get(), 3, 3);
     // -- exterior maps
-    testExteriorMapsUnitBox(mesh, 3, 3);
+    testExteriorMapsUnitBox(*mesh, mesh.get(), 3, 3);
     // -- sets, which should inherit from the parent mesh
     testQuadMeshSets3x3(mesh, false, frm, true);
   }
@@ -129,24 +129,24 @@ TEST(MESH_SURFACE_EXTRACTION_EXO)
     // extract the surface
     MeshFrameworkFactory fac(comm, gm);
     fac.set_preference({ frm });
-    auto top_faces = parent_mesh->getSetEntities(
+    auto top_faces = parent_mesh->getSetEntities<MemSpace_kind::HOST>(
       "Top Face Plane", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     auto surface_framework_mesh =
       fac.create(parent_mesh, top_faces, AmanziMesh::Entity_kind::FACE, true);
 
     // make a MeshCache
-    auto mesh = Teuchos::rcp(new MeshHost(
+    auto mesh = Teuchos::rcp(new Mesh(
       surface_framework_mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
     mesh->setParentMesh(parent_mesh);
-    cacheAll(*mesh);
+    mesh->cacheAll();
 
     // test the surface mesh as a 3x3 quad mesh
     // -- mesh audit
-    testMeshAudit<MeshAuditHost, MeshHost>(mesh);
+    testMeshAuditHost<MeshAudit>(Teuchos::RCP<const Mesh>(mesh));
     // -- geometry
-    testGeometryQuad(mesh, 3, 3);
+    testGeometryQuad(*mesh, mesh.get(), 3, 3);
     // -- exterior maps
-    testExteriorMapsUnitBox(mesh, 3, 3);
+    testExteriorMapsUnitBox(*mesh, mesh.get(), 3, 3);
     // -- sets, which should inherit from the parent mesh
     testQuadMeshSets3x3(mesh, true, frm, true);
   }
@@ -190,7 +190,7 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
     fac_list->set("request edges", true);
     fac_list->set<std::string>("cache policy", "all");
 
-    auto parent_on_host = createStructuredUnitHex(Preference{ frm }, 3, 3, 3, comm, gm, fac_list);
+    auto parent = createStructuredUnitHex(Preference{ frm }, 3, 3, 3, comm, gm, fac_list);
 
     // extract the surface
     auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
@@ -201,22 +201,22 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
     MeshFactory fac(comm, gm, fac_plist);
     fac.set_preference({ frm });
 
-    auto mesh_on_host = fac.create(parent_on_host,
-                                   std::vector<std::string>{ "Top Face Plane" },
-                                   AmanziMesh::Entity_kind::FACE,
-                                   true);
+    auto mesh = fac.create(parent,
+                           std::vector<std::string>{ "Top Face Plane" },
+                           AmanziMesh::Entity_kind::FACE,
+                           true);
 
     // test the surface mesh as a 3x3 quad mesh
     // -- mesh audit
-    testMeshAudit<MeshAuditHost, MeshHost>(mesh_on_host);
+    testMeshAuditHost<MeshAudit>(Teuchos::RCP<const Mesh>(mesh));
     // -- geometry
-    testGeometryQuad(mesh_on_host, 3, 3);
+    testGeometryQuad(*mesh, mesh.get(), 3, 3);
 
     // -- exterior maps -- NOT SUPPORTED BY SIMPLE
-    if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(mesh_on_host, 3, 3);
+    if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(*mesh, mesh.get(), 3, 3);
 
     // -- sets, which should inherit from the parent mesh
-    testQuadMeshSets3x3(mesh_on_host, false, frm, true);
+    testQuadMeshSets3x3(mesh, false, frm, true);
   }
 }
 
@@ -255,9 +255,8 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
     fac_list->set("request edges", true);
     fac_list->set<std::string>("cache policy", "all");
 
-    auto parent_on_host =
+    auto parent =
       createUnstructured(Preference{ frm }, "test/hex_3x3x3_sets.exo", comm, gm, fac_list);
-    auto parent = onMemDevice(parent_on_host);
 
     // extract the surface
     auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
@@ -271,17 +270,16 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
 
     auto mesh = fac.create(
       parent, std::vector<std::string>{ "Top Face Plane" }, AmanziMesh::Entity_kind::FACE, true);
-    auto mesh_on_host = onMemHost(mesh);
 
     // test the surface mesh as a 3x3 quad mesh
     // -- mesh audit
-    testMeshAudit<MeshAuditHost, MeshHost>(mesh_on_host);
+    testMeshAuditHost<MeshAudit>(Teuchos::RCP<const Mesh>(mesh));
     // -- geometry
-    testGeometryQuad(mesh_on_host, 3, 3);
+    testGeometryQuad(*mesh, mesh.get(), 3, 3);
     // -- exterior maps
-    testExteriorMapsUnitBox(mesh_on_host, 3, 3);
+    testExteriorMapsUnitBox(*mesh, mesh.get(), 3, 3);
 
     // -- sets, which should inherit from the parent mesh
-    testQuadMeshSets3x3(mesh_on_host, true, frm, true);
+    testQuadMeshSets3x3(mesh, true, frm, true);
   }
 }

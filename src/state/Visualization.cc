@@ -134,7 +134,7 @@ Visualization::writeRegions() const
           // only do something if the user provided a valid region name
           // for a region that consists of cells
           if (mesh_->isValidSetName(*reg_it, AmanziMesh::Entity_kind::CELL)) {
-            auto ids = mesh_->getSetEntities(
+            auto ids = mesh_->getSetEntities<MemSpace_kind::HOST>(
               *reg_it, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
             for (auto jt : ids) reg_v(jt, 0) = reg_index;
@@ -182,7 +182,7 @@ Visualization::createFiles(bool include_io_set)
   if (include_io_set)
     output_plist.set("file name base",
                      Keys::cleanPListName(plist_) + "-io-counter" + std::to_string(count_++));
-  output_ = OutputFactory::createForVis(output_plist, AmanziMesh::onMemHost(mesh_));
+  output_ = OutputFactory::createForVis(output_plist, mesh_);
 
   if (write_mesh_exo_ && !dynamic_mesh_ && mesh_->getMeshFramework()) {
     std::string mesh_fname = output_plist.get<std::string>("file name base") + "_mesh.exo";

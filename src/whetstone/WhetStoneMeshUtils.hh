@@ -35,8 +35,8 @@ namespace WhetStone {
 * NOTE: polygon must be star-shaped w.r.t. its geometric center.
 ****************************************************************** */
 inline void
-PolygonCentroidWeights(const AmanziMesh::MeshHost& mesh,
-                       const typename AmanziMesh::MeshHost::cEntity_ID_View& nodes,
+PolygonCentroidWeights(const AmanziMesh::Mesh& mesh,
+                       const typename AmanziMesh::Mesh::cEntity_ID_View& nodes,
                        double area,
                        AmanziMesh::Double_List& weights)
 {
@@ -72,11 +72,11 @@ PolygonCentroidWeights(const AmanziMesh::MeshHost& mesh,
 // Faces of ptype of cell c that are connected to node v.
 ****************************************************************** */
 inline void
-node_get_cell_faces(const AmanziMesh::MeshHost& mesh,
+node_get_cell_faces(const AmanziMesh::Mesh& mesh,
                     const AmanziMesh::Entity_ID v,
                     const AmanziMesh::Entity_ID c,
                     const AmanziMesh::Parallel_kind ptype,
-                    typename AmanziMesh::MeshHost::Entity_ID_View* faces)
+                    typename AmanziMesh::Mesh::Entity_ID_View* faces)
 {
   AmanziMesh::Entity_ID_List vfaces;
   int nfaces_owned =
@@ -106,10 +106,10 @@ node_get_cell_faces(const AmanziMesh::MeshHost& mesh,
 * Extension of Mesh API: entities in cell
 ****************************************************************** */
 inline void
-cell_get_entities(const AmanziMesh::MeshHost& mesh,
+cell_get_entities(const AmanziMesh::Mesh& mesh,
                   int c,
                   const AmanziMesh::Entity_kind kind,
-                  typename AmanziMesh::MeshHost::cEntity_ID_View* entities)
+                  typename AmanziMesh::Mesh::cEntity_ID_View* entities)
 {
   if (kind == AmanziMesh::Entity_kind::FACE) {
     *entities = mesh.getCellFaces(c);
@@ -118,12 +118,12 @@ cell_get_entities(const AmanziMesh::MeshHost& mesh,
   } else if (kind == AmanziMesh::Entity_kind::NODE) {
     *entities = mesh.getCellNodes(c);
   } else if (kind == AmanziMesh::Entity_kind::CELL) {
-    AmanziMesh::MeshHost::Entity_ID_View lentities;
+    AmanziMesh::Mesh::Entity_ID_View lentities;
     Kokkos::resize(lentities, 1);
     lentities[0] = c;
     *entities = lentities;
   } else {
-    typename AmanziMesh::MeshHost::Entity_ID_View lentities;
+    typename AmanziMesh::Mesh::Entity_ID_View lentities;
     *entities = lentities;
   }
 }
@@ -133,7 +133,7 @@ cell_get_entities(const AmanziMesh::MeshHost& mesh,
 * Extension of Mesh API: entities in cell
 ****************************************************************** */
 inline AmanziGeometry::Point
-getNodeUnitNormal(const AmanziMesh::MeshHost& mesh, int v)
+getNodeUnitNormal(const AmanziMesh::Mesh& mesh, int v)
 {
   auto faces = mesh.getNodeFaces(v);
   int nfaces = faces.size();

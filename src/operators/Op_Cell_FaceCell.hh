@@ -29,10 +29,9 @@ class Op_Cell_FaceCell : public Op {
   {
     int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
     A = DenseMatrix_Vector(ncells_owned);
-    auto mesh_host = onMemHost(mesh);
 
     for (int c = 0; c != ncells_owned; ++c) {
-      auto faces = mesh_host->getCellFaces(c); // This performs the prefix_sum
+      auto faces = mesh->getCellFaces(c); // This performs the prefix_sum
       int nfaces = faces.extent(0);
       A.set_shape(c, nfaces + 1, nfaces + 1);
     }
@@ -43,7 +42,7 @@ class Op_Cell_FaceCell : public Op {
   {
     std::cout << "Op_Cell_FaceCell.hh::SumLocalDiag" << std::endl;
 
-    const AmanziMesh::Mesh& m = *mesh;
+    const AmanziMesh::MeshCache& m = mesh->getCache();
     auto Xf = X.viewComponent("face", true);
     auto Xc = X.viewComponent("cell", false);
     Kokkos::parallel_for(
@@ -84,7 +83,7 @@ class Op_Cell_FaceCell : public Op {
 
   virtual void Rescale(const CompositeVector& scaling)
   {
-    const Amanzi::AmanziMesh::Mesh& m = *mesh;
+    const AmanziMesh::MeshCache& m = mesh->getCache();
 
     if (scaling.hasComponent("face")) {
       const auto s_c = scaling.viewComponent("face", true);

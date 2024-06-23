@@ -70,7 +70,7 @@ class EvaluatorModelLauncher {
     }
   }
 
-  void launch(const AmanziMesh::Mesh::cEntity_ID_View& material_ids)
+  void launch(const AmanziMesh::MeshCache::cEntity_ID_View& material_ids)
   {
     if (wrt_ == dependencies_[I]) {
       Kokkos::RangePolicy<typename Device_type::execution_space> range(0, material_ids.extent(0));
@@ -111,7 +111,7 @@ class EvaluatorModelLauncher<-1, Model_type, Device_type> {
     throw(msg);
   }
 
-  void launch(const AmanziMesh::Mesh::cEntity_ID_View& material_ids)
+  void launch(const AmanziMesh::MeshCache::cEntity_ID_View& material_ids)
   {
     Errors::Message msg;
     msg << "EvaluatorModel (" << name_ << "): requested derivative with respect to ( \""

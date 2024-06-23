@@ -31,7 +31,7 @@ namespace WhetStone {
 
 class DeRham_Face : public MFD3D {
  public:
-  DeRham_Face(const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh) : MFD3D(mesh){};
+  DeRham_Face(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : MFD3D(mesh){};
 
   virtual std::vector<SchemaItem> schema() const override
   {

@@ -220,7 +220,7 @@ PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
   }
 
   DenseMatrix_Vector& A = local_op_->A;
-  const AmanziMesh::Mesh& m = *mesh_;
+  const AmanziMesh::MeshCache& m = mesh_->getCache();
   Preallocate_little_k_();
 
   auto& Wff_cells = Wff_cells_;
@@ -392,7 +392,7 @@ PDE_DiffusionMFD::UpdateMatricesTPFA_()
 
   //WhetStone::Tensor<> Kc(mesh_->space_dimension(), 1);
   //Kc(0, 0) = 1.0;
-  //const Amanzi::AmanziMesh::Mesh& m = *mesh_;
+  // const AmanziMesh::MeshCache& m = mesh_->getCache();
 
   //AmanziMesh::Entity_ID_View cells, faces;
   //Ttmp.PutScalar(0.0);
@@ -518,7 +518,7 @@ PDE_DiffusionMFD::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
 
   { // context for views
     // apply diffusion type BCs to FACE-CELL system
-    const Amanzi::AmanziMesh::Mesh& m = *mesh_;
+    const AmanziMesh::MeshCache& m = mesh_->getCache();
     DenseMatrix_Vector& A = local_op_->A;
 
     const auto bc_model_trial = bc_trial->bc_model();
@@ -777,7 +777,7 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
   // only works on upwinded methods
   if (little_k_type_ == OPERATOR_UPWIND_NONE) return;
 
-  const AmanziMesh::Mesh& m = *mesh_;
+  const AmanziMesh::MeshCache& m = mesh_->getCache();
   DenseMatrix_Vector& A = jac_op_->A;
 
   { // context for views
@@ -946,7 +946,7 @@ PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
     auto flux_data = flux->viewComponent("face", true);
     auto hits_data = hits.viewComponent("face", true);
 
-    const Amanzi::AmanziMesh::Mesh& m = *mesh_;
+    const AmanziMesh::MeshCache& m = mesh_->getCache();
 
     auto local_A = local_op_->A;
     auto local_Av = local_op_->Av;
@@ -1051,7 +1051,7 @@ PDE_DiffusionMFD::UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector
 void
 PDE_DiffusionMFD::CreateMassMatrices_()
 {
-  WhetStone::MFD3D_Diffusion mfd(AmanziMesh::onMemHost(mesh_));
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
   WhetStone::DenseMatrix<> Wff;
   bool surface_mesh = (mesh_->getManifoldDimension() != mesh_->getSpaceDimension());
 
@@ -1475,7 +1475,7 @@ PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 double
 PDE_DiffusionMFD::ComputeTransmissibility(int f) const
 {
-  WhetStone::MFD3D_Diffusion mfd(AmanziMesh::onMemHost(mesh_));
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
   auto cells = mesh_->getFaceCells(f);
   int c = cells[0];
 

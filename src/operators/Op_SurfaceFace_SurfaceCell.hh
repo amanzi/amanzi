@@ -35,6 +35,7 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
   virtual void SumLocalDiag(CompositeVector& X) const
   {
     AMANZI_ASSERT(false); // this is incorrectly implemented... --ETC
+    //const AmanziMesh::MeshCache& m = mesh->getCache();
     // const AmanziMesh::Mesh& m = *mesh;
     // const AmanziMesh::Mesh& surf_m = *surf_mesh;
     // auto Xv = X.viewComponent<Amanzi::MirrorHost>("face", true);

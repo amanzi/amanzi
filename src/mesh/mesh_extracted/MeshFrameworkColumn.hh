@@ -64,7 +64,7 @@ namespace AmanziMesh {
 struct MeshColumnAlgorithms : public MeshAlgorithms {
   // lumped things for more efficient calculation
   virtual std::pair<double, AmanziGeometry::Point>
-  computeCellGeometry(const MeshHost& mesh, const Entity_ID c) const override;
+  computeCellGeometry(const Mesh& mesh, const Entity_ID c) const override;
 };
 
 

@@ -16,7 +16,7 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-using MeshFrameworkAudit = MeshAudit_<MeshFramework, Impl::MeshAudit_Geometry>;
+using MeshFrameworkAudit = MeshAudit_<MeshFramework, MeshFramework const *, Impl::MeshAudit_Topology>;
 
 }
 } // namespace Amanzi

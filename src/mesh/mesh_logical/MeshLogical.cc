@@ -29,22 +29,22 @@ namespace AmanziMesh {
 
 // lumped things for more efficient calculation
 std::pair<double, AmanziGeometry::Point>
-MeshLogicalAlgorithms::computeCellGeometry(const MeshHost& mesh, const Entity_ID c) const
+MeshLogicalAlgorithms::computeCellGeometry(const Mesh& mesh, const Entity_ID c) const
 {
   double volume = mesh.getCellVolume(c);
   AmanziGeometry::Point centroid = mesh.getCellCentroid(c);
   return std::make_pair(volume, centroid);
 }
 
-std::tuple<double, AmanziGeometry::Point, MeshHost::cPoint_View>
-MeshLogicalAlgorithms::computeFaceGeometry(const MeshHost& mesh, const Entity_ID f) const
+std::tuple<double, AmanziGeometry::Point, Mesh::cPoint_View>
+MeshLogicalAlgorithms::computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const
 {
   double area = mesh.getFaceArea(f);
   AmanziGeometry::Point centroid = mesh.getFaceCentroid(f);
 
-  MeshHost::cEntity_ID_View fcells;
+  Mesh::cEntity_ID_View fcells;
   mesh.getFaceCells(f, fcells);
-  MeshHost::Point_View normals("normals", fcells.size());
+  Mesh::Point_View normals("normals", fcells.size());
   for (int i = 0; i != fcells.size(); ++i) {
     normals[i] = mesh.getFaceNormal(f, fcells[i], nullptr);
   }
@@ -52,7 +52,7 @@ MeshLogicalAlgorithms::computeFaceGeometry(const MeshHost& mesh, const Entity_ID
 }
 
 std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
-MeshLogicalAlgorithms::computeEdgeGeometry(const MeshHost& mesh, const Entity_ID e) const
+MeshLogicalAlgorithms::computeEdgeGeometry(const Mesh& mesh, const Entity_ID e) const
 {
   Errors::Message msg("There are no edges in a MeshLogical.");
   Exceptions::amanzi_throw(msg);
@@ -60,41 +60,41 @@ MeshLogicalAlgorithms::computeEdgeGeometry(const MeshHost& mesh, const Entity_ID
 }
 
 void
-MeshLogicalAlgorithms::computeCellFacesAndBisectors(const MeshHost& mesh,
+MeshLogicalAlgorithms::computeCellFacesAndBisectors(const Mesh& mesh,
                                                     const Entity_ID cellid,
-                                                    MeshHost::cEntity_ID_View& faceids,
-                                                    MeshHost::cPoint_View* const bisectors) const
+                                                    Mesh::cEntity_ID_View& faceids,
+                                                    Mesh::cPoint_View* const bisectors) const
 {
   static_cast<const MeshLogical*>(mesh.getMeshFramework().get())
     ->getCellFacesAndBisectors(cellid, faceids, bisectors);
 }
 
 double
-MeshLogicalAlgorithms::computeCellVolume(const MeshHost& mesh, const Entity_ID c) const
+MeshLogicalAlgorithms::computeCellVolume(const Mesh& mesh, const Entity_ID c) const
 {
   return static_cast<const MeshLogical*>(mesh.getMeshFramework().get())->getCellVolume(c);
 }
 
 AmanziGeometry::Point
-MeshLogicalAlgorithms::computeCellCentroid(const MeshHost& mesh, const Entity_ID c) const
+MeshLogicalAlgorithms::computeCellCentroid(const Mesh& mesh, const Entity_ID c) const
 {
   return static_cast<const MeshLogical*>(mesh.getMeshFramework().get())->getCellCentroid(c);
 }
 
 double
-MeshLogicalAlgorithms::computeFaceArea(const MeshHost& mesh, const Entity_ID f) const
+MeshLogicalAlgorithms::computeFaceArea(const Mesh& mesh, const Entity_ID f) const
 {
   return static_cast<const MeshLogical*>(mesh.getMeshFramework().get())->getFaceArea(f);
 }
 
 AmanziGeometry::Point
-MeshLogicalAlgorithms::computeFaceCentroid(const MeshHost& mesh, const Entity_ID f) const
+MeshLogicalAlgorithms::computeFaceCentroid(const Mesh& mesh, const Entity_ID f) const
 {
   return static_cast<const MeshLogical*>(mesh.getMeshFramework().get())->getFaceCentroid(f);
 }
 
 AmanziGeometry::Point
-MeshLogicalAlgorithms::computeFaceNormal(const MeshHost& mesh,
+MeshLogicalAlgorithms::computeFaceNormal(const Mesh& mesh,
                                          const Entity_ID f,
                                          const Entity_ID c,
                                          int* const orientation) const

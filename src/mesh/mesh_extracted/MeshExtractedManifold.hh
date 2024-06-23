@@ -42,7 +42,7 @@ class MeshExtractedManifold : public MeshFramework {
   // Construct a mesh by extracting a subset of entities from another
   // mesh. The subset may be specified by a list of entities.
   MeshExtractedManifold(
-    const Teuchos::RCP<const MeshHost>& parent_mesh,
+    const Teuchos::RCP<const Mesh>& parent_mesh,
     const std::string& setname,
     const Entity_kind entity_kind,
     const Comm_ptr_type& comm = Teuchos::null,
@@ -151,7 +151,7 @@ class MeshExtractedManifold : public MeshFramework {
                                                     Entity_ID_View_Type* setents) const;
 
  private:
-  Teuchos::RCP<const MeshHost> parent_mesh_;
+  Teuchos::RCP<const Mesh> parent_mesh_;
 
   // owned ids are enforced to be first in the child -> parent map
   mutable std::map<Entity_kind, Entity_ID> nents_owned_, nents_ghost_;

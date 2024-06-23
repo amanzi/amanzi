@@ -22,7 +22,7 @@ overriding them for special meshes (MeshLogical).
 #pragma once
 
 #include "MeshInternals_decl.hh"
-#include "MeshCache_decl.hh"
+#include "Mesh_decl.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -37,110 +37,109 @@ struct MeshAlgorithms {
   // lumped things for more efficient calculation
   // KOKKOS_INLINE_FUNCTION
   // virtual std::pair<double, AmanziGeometry::Point>
-  // computeCellGeometry(const Mesh& mesh, const Entity_ID c) const;
+  // computeCellGeometry(const MeshCache& mesh, const Entity_ID c) const;
 
-  DISABLE_CUDA_WARNING
   virtual std::pair<double, AmanziGeometry::Point>
-  computeCellGeometry(const MeshHost& mesh, const Entity_ID c) const
+  computeCellGeometry(const Mesh& mesh, const Entity_ID c) const
   {
     return Impl::computeCellGeometry(mesh, c);
   }
 
   // KOKKOS_INLINE_FUNCTION
   // virtual std::tuple<double, AmanziGeometry::Point, typename Mesh::cPoint_View>
-  // computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const;
+  // computeFaceGeometry(const MeshCache& mesh, const Entity_ID f) const;
 
-  virtual std::tuple<double, AmanziGeometry::Point, typename MeshHost::cPoint_View>
-  computeFaceGeometry(const MeshHost& mesh, const Entity_ID f) const
+  virtual std::tuple<double, AmanziGeometry::Point, typename Mesh::cPoint_View>
+  computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const
   {
     return Impl::computeFaceGeometry(mesh, f);
   }
 
   // KOKKOS_INLINE_FUNCTION
   // virtual std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
-  // computeEdgeGeometry(const Mesh& mesh, const Entity_ID e) const;
+  // computeEdgeGeometry(const MeshCache& mesh, const Entity_ID e) const;
 
   virtual std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
-  computeEdgeGeometry(const MeshHost& mesh, const Entity_ID e) const
+  computeEdgeGeometry(const Mesh& mesh, const Entity_ID e) const
   {
     return Impl::computeEdgeGeometry(mesh, e);
   }
 
   // KOKKOS_INLINE_FUNCTION
-  // virtual double computeCellVolume(const Mesh& mesh, const Entity_ID c) const;
+  // virtual double computeCellVolume(const MeshCache& mesh, const Entity_ID c) const;
 
-  virtual double computeCellVolume(const MeshHost& mesh, const Entity_ID c) const
+  virtual double computeCellVolume(const Mesh& mesh, const Entity_ID c) const
   {
     return Impl::computeCellGeometry(mesh, c).first;
   }
 
   // KOKKOS_INLINE_FUNCTION
-  // virtual AmanziGeometry::Point computeCellCentroid(const Mesh& mesh, const Entity_ID c) const;
+  // virtual AmanziGeometry::Point computeCellCentroid(const MeshCache& mesh, const Entity_ID c) const;
 
-  virtual AmanziGeometry::Point computeCellCentroid(const MeshHost& mesh, const Entity_ID c) const
+  virtual AmanziGeometry::Point computeCellCentroid(const Mesh& mesh, const Entity_ID c) const
   {
     return Impl::computeCellGeometry(mesh, c).second;
   }
 
   // KOKKOS_INLINE_FUNCTION
-  // virtual double computeFaceArea(const Mesh& mesh, const Entity_ID f) const;
+  // virtual double computeFaceArea(const MeshCache& mesh, const Entity_ID f) const;
 
-  virtual double computeFaceArea(const MeshHost& mesh, const Entity_ID f) const
+  virtual double computeFaceArea(const Mesh& mesh, const Entity_ID f) const
   {
     return std::get<0>(Impl::computeFaceGeometry(mesh, f));
   }
 
   // KOKKOS_INLINE_FUNCTION
-  // virtual AmanziGeometry::Point computeFaceCentroid(const Mesh& mesh, const Entity_ID f) const;
+  // virtual AmanziGeometry::Point computeFaceCentroid(const MeshCache& mesh, const Entity_ID f) const;
 
-  virtual AmanziGeometry::Point computeFaceCentroid(const MeshHost& mesh, const Entity_ID f) const
+  virtual AmanziGeometry::Point computeFaceCentroid(const Mesh& mesh, const Entity_ID f) const
   {
     return std::get<1>(Impl::computeFaceGeometry(mesh, f));
   }
 
   // KOKKOS_INLINE_FUNCTION
-  // virtual AmanziGeometry::Point computeFaceNormal(const Mesh& mesh, const Entity_ID f,
+  // virtual AmanziGeometry::Point computeFaceNormal(const MeshCache& mesh, const Entity_ID f,
   //         const Entity_ID c, int * const orientation) const;
 
-  virtual AmanziGeometry::Point computeFaceNormal(const MeshHost& mesh,
+  virtual AmanziGeometry::Point computeFaceNormal(const Mesh& mesh,
                                                   const Entity_ID f,
                                                   const Entity_ID c,
                                                   int* const orientation) const;
 
   // KOKKOS_INLINE_FUNCTION
-  // virtual double computeEdgeLength(const Mesh& mesh, const Entity_ID e) const;
+  // virtual double computeEdgeLength(const MeshCache& mesh, const Entity_ID e) const;
 
-  virtual double computeEdgeLength(const MeshHost& mesh, const Entity_ID e) const
+  virtual double computeEdgeLength(const Mesh& mesh, const Entity_ID e) const
   {
     return AmanziGeometry::norm(Impl::computeEdgeGeometry(mesh, e).first);
   }
 
   // KOKKOS_INLINE_FUNCTION
   // virtual AmanziGeometry::Point
-  // computeEdgeVector(const Mesh& mesh, const Entity_ID e, const Entity_ID n, int * const orientation) const;
+  // computeEdgeVector(const MeshCache& mesh, const Entity_ID e, const Entity_ID n, int * const orientation) const;
 
-  virtual AmanziGeometry::Point computeEdgeVector(const MeshHost& mesh,
+  virtual AmanziGeometry::Point computeEdgeVector(const Mesh& mesh,
                                                   const Entity_ID e,
                                                   const Entity_ID n,
                                                   int* const orientation) const;
 
   // KOKKOS_INLINE_FUNCTION
   // virtual AmanziGeometry::Point
-  // computeEdgeCentroid(const Mesh& mesh, const Entity_ID e) const;
+  // computeEdgeCentroid(const MeshCache& mesh, const Entity_ID e) const;
 
-  virtual AmanziGeometry::Point computeEdgeCentroid(const MeshHost& mesh, const Entity_ID e) const
+  virtual AmanziGeometry::Point computeEdgeCentroid(const Mesh& mesh, const Entity_ID e) const
   {
     return Impl::computeEdgeGeometry(mesh, e).second;
   }
 
   // KOKKOS_INLINE_FUNCTION
-  // virtual void computeCellFacesAndBisectors(const Mesh& mesh, const Entity_ID cellid,
+  // virtual void computeCellFacesAndBisectors(const MeshCache& mesh, const Entity_ID cellid,
   //         typename Mesh::cEntity_ID_View& faceids, typename Mesh::cPoint_View * const bisectors) const;
 
-  virtual void computeCellFacesAndBisectors(const MeshHost& mesh,
+  virtual void computeCellFacesAndBisectors(const Mesh& mesh,
                                             const Entity_ID cellid,
-                                            typename MeshHost::cEntity_ID_View& faceids,
-                                            typename MeshHost::cPoint_View* const bisectors) const;
+                                            typename Mesh::cEntity_ID_View& faceids,
+                                            typename Mesh::cPoint_View* const bisectors) const;
 };
 
 

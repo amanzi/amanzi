@@ -149,9 +149,8 @@ Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
   const auto cell_row_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_row, "cell", 0);
   const auto cell_col_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_col, "cell", 0);
 
-  auto mesh = AmanziMesh::onMemHost(op.mesh);
   for (int f = 0; f != nfaces_owned; ++f) {
-    auto cells = mesh->getFaceCells(f);
+    auto cells = op.mesh->getFaceCells(f);
 
     int ncells = cells.size();
     for (int n = 0; n != ncells; ++n) {
@@ -217,7 +216,7 @@ Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
   auto offproc_mat = mat.getOffProcLocalMatrixDevice();
   int nrows_local = mat.getMatrix()->getLocalNumRows();
 
-  const AmanziMesh::Mesh& m = *op.mesh;
+  const AmanziMesh::MeshCache& m = op.mesh->getCache();
   Kokkos::parallel_for(
     "Operator_Cell::AssembleMatrixOp::Face_Cell", nfaces_owned, KOKKOS_LAMBDA(const int f) {
       auto cells = m.getFaceCells(f);

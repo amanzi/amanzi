@@ -141,9 +141,9 @@ TEST_FIXTURE(reference_mesh, MESH_FUNCTION)
   {
     auto vals = bc_values.viewComponent<MemSpace_kind::HOST>("face", false);
     auto markers = bc_markers.viewComponent<MemSpace_kind::HOST>("face", false);
-    auto mh = onMemHost(mesh);
+
     for (int f = 0; f != vals.extent(0); ++f) {
-      auto fc = mh->getFaceCentroid(f);
+      auto fc = mesh->getFaceCentroid(f);
       std::cout << "Checking " << f << " at " << fc << std::endl;
       if (fc[0] == 0.0) {
         // left

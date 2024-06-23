@@ -46,31 +46,31 @@ namespace AmanziMesh {
 struct MeshLogicalAlgorithms : public MeshAlgorithms {
   // lumped things for more efficient calculation
   virtual std::pair<double, AmanziGeometry::Point>
-  computeCellGeometry(const MeshHost& mesh, const Entity_ID c) const override;
+  computeCellGeometry(const Mesh& mesh, const Entity_ID c) const override;
 
 
-  virtual std::tuple<double, AmanziGeometry::Point, MeshHost::cPoint_View>
-  computeFaceGeometry(const MeshHost& mesh, const Entity_ID f) const override;
+  virtual std::tuple<double, AmanziGeometry::Point, Mesh::cPoint_View>
+  computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const override;
 
 
   virtual std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
-  computeEdgeGeometry(const MeshHost& mesh, const Entity_ID e) const override;
+  computeEdgeGeometry(const Mesh& mesh, const Entity_ID e) const override;
 
 
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
-  virtual void computeCellFacesAndBisectors(const MeshHost& mesh,
+  virtual void computeCellFacesAndBisectors(const Mesh& mesh,
                                             const Entity_ID cellid,
-                                            MeshHost::cEntity_ID_View& faceids,
-                                            MeshHost::cPoint_View* const bisectors) const override;
+                                            Mesh::cEntity_ID_View& faceids,
+                                            Mesh::cPoint_View* const bisectors) const override;
 
-  virtual double computeCellVolume(const MeshHost& mesh, const Entity_ID c) const override;
+  virtual double computeCellVolume(const Mesh& mesh, const Entity_ID c) const override;
   virtual AmanziGeometry::Point
-  computeCellCentroid(const MeshHost& mesh, const Entity_ID c) const override;
+  computeCellCentroid(const Mesh& mesh, const Entity_ID c) const override;
 
-  virtual double computeFaceArea(const MeshHost& mesh, const Entity_ID f) const override;
+  virtual double computeFaceArea(const Mesh& mesh, const Entity_ID f) const override;
   virtual AmanziGeometry::Point
-  computeFaceCentroid(const MeshHost& mesh, const Entity_ID f) const override;
-  virtual AmanziGeometry::Point computeFaceNormal(const MeshHost& mesh,
+  computeFaceCentroid(const Mesh& mesh, const Entity_ID f) const override;
+  virtual AmanziGeometry::Point computeFaceNormal(const Mesh& mesh,
                                                   const Entity_ID f,
                                                   const Entity_ID c,
                                                   int* const orientation = nullptr) const override;

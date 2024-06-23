@@ -21,6 +21,7 @@
 // -------------------------------------------------------------
 // check_preference
 // -------------------------------------------------------------
+using namespace Amanzi;
 
 SUITE(MeshFramework)
 {
@@ -62,7 +63,7 @@ SUITE(MeshFramework)
       auto parent_mesh = meshfactory.create(x0, y0, z0, x1, y1, z1, nx, ny, nz);
       CHECK(!parent_mesh.is_null());
 
-      auto setents = parent_mesh->getSetEntities("Top Surface",
+      auto setents = parent_mesh->getSetEntities<MemSpace_kind::HOST>("Top Surface",
                                                  Amanzi::AmanziMesh::Entity_kind::FACE,
                                                  Amanzi::AmanziMesh::Parallel_kind::OWNED);
       int local_count = setents.size();

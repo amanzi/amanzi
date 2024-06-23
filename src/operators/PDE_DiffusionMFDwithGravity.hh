@@ -37,7 +37,7 @@ namespace Impl {
 // Developments
 // -- interface to solvers for treating nonlinear BCs.
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
-GravitySpecialDirection(const AmanziMesh::Mesh& mesh, int f)
+GravitySpecialDirection(const AmanziMesh::MeshCache& mesh, int f)
 {
   auto cells = mesh.getFaceCells(f);
   int ncells = cells.size();

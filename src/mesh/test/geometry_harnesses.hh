@@ -24,14 +24,30 @@ using namespace Amanzi::AmanziMesh;
 //
 template <class MeshAudit_type, class Mesh_type>
 bool
-testMeshAudit(const Teuchos::RCP<Mesh_type>& mesh)
+testMeshAuditHost(const Teuchos::RCP<const Mesh_type>& mesh)
 {
   // run MeshAudit
-  MeshAudit_type audit(mesh);
+  // note on host, passing POINTER to the object
+  Mesh_type const * mc = mesh.get();
+
+  MeshAudit_type audit(mesh, mc);
   int status = audit.Verify();
   CHECK_EQUAL(0, status);
   return status;
 }
+
+template <class MeshAudit_type>
+bool
+testMeshAuditDevice(const Teuchos::RCP<const Mesh>& mesh)
+{
+  // run MeshAudit
+  // note on device, passing the cache
+  MeshAudit_type audit(mesh, mesh->getCache());
+  int status = audit.Verify();
+  CHECK_EQUAL(0, status);
+  return status;
+}
+
 
 //
 // Sums a scalar over all processes and compares the result to exp
@@ -53,37 +69,50 @@ CHECK_CLOSE_SUMALL(T exp, T contrib, const Amanzi::Comm_type& comm, T tol = 0)
 }
 
 
+template<MemSpace_kind MEM>
+const auto&
+getMeshForKokkos(const Mesh& mesh) {
+  if constexpr(MEM == MemSpace_kind::HOST) {
+    return mesh;
+  } else {
+    return mesh.getCache();
+  }
+}
+
 //
 // Tests geometry given expected values
 //
-template <class Mesh_type>
+template <class MeshOrCache_type>
 bool
-testMeshGeometry_(const Teuchos::RCP<Mesh_type>& mesh,
-                  const typename Mesh_type::cPoint_View& exp_cell_centroids,
-                  const typename Mesh_type::cDouble_View& exp_cell_volumes,
-                  const typename Mesh_type::cPoint_View& exp_face_centroids,
-                  const typename Mesh_type::cDouble_View& exp_face_areas,
-                  const typename Mesh_type::cPoint_View& exp_face_normals,
-                  const typename Mesh_type::cPoint_View& exp_node_coordinates)
+testMeshGeometry_(const Mesh& mesh,
+                  const MeshOrCache_type& m,
+                  const typename std::remove_pointer<MeshOrCache_type>::type::cPoint_View& exp_cell_centroids,
+                  const typename std::remove_pointer<MeshOrCache_type>::type::cDouble_View& exp_cell_volumes,
+                  const typename std::remove_pointer<MeshOrCache_type>::type::cPoint_View& exp_face_centroids,
+                  const typename std::remove_pointer<MeshOrCache_type>::type::cDouble_View& exp_face_areas,
+                  const typename std::remove_pointer<MeshOrCache_type>::type::cPoint_View& exp_face_normals,
+                  const typename std::remove_pointer<MeshOrCache_type>::type::cPoint_View& exp_node_coordinates)
 {
   bool test_error = false;
-  const Mesh_type& m = *mesh;
+  using MeshOrCache_noptr_type = typename std::remove_pointer<MeshOrCache_type>::type;
 
   // test cell-based quantities
   {
     std::cout << "Checking cell geometry ..." << std::endl;
-    int ncells = mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
-    typename Mesh_type::Entity_ID_View test1("testMeshGeometry cells 1", ncells);
-    typename Mesh_type::Entity_ID_View test2("testMeshGeometry cells 2", ncells);
-    typename Mesh_type::Entity_ID_View test3("testMeshGeometry cells 3", ncells);
+    int ncells = mesh.getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+    typename MeshOrCache_noptr_type::Entity_ID_View test1("testMeshGeometry cells 1", ncells);
+    typename MeshOrCache_noptr_type::Entity_ID_View test2("testMeshGeometry cells 2", ncells);
+    typename MeshOrCache_noptr_type::Entity_ID_View test3("testMeshGeometry cells 3", ncells);
 
     using Range_type =
-      Kokkos::RangePolicy<LO, typename Mesh_type::cEntity_ID_View::execution_space>;
+      Kokkos::RangePolicy<LO, typename MeshOrCache_noptr_type::cEntity_ID_View::execution_space>;
 
     Kokkos::parallel_for(
-      "GeometryHarnesses::testMeshGeometry", Range_type{ 0, ncells }, KOKKOS_LAMBDA(const LO c) {
+      "GeometryHarnesses::testMeshGeometry",
+      Range_type{ 0, ncells },
+      KOKKOS_LAMBDA(const LO c) {
         test1(c) = 1;
-        auto centroid = m.getCellCentroid(c);
+        auto centroid = AmanziMesh::Impl::get(m).getCellCentroid(c);
 
         // Search for a cell with the same centroid in the expected list of centroids
         int j = 0;
@@ -96,21 +125,20 @@ testMeshGeometry_(const Teuchos::RCP<Mesh_type>& mesh,
         }
 
         // check cell volume matches
-        if (fabs(exp_cell_volumes[j] - m.getCellVolume(c)) > 1e-10) { test2(c) = 1; }
+        if (fabs(exp_cell_volumes[j] - AmanziMesh::Impl::get(m).getCellVolume(c)) > 1e-10) { test2(c) = 1; }
 
         // check that the outward normals sum to 0
-        typename Mesh_type::cEntity_ID_View cfaces;
-        m.getCellFaces(c, cfaces);
-        AmanziGeometry::Point normal_sum(m.getSpaceDimension());
+        auto cfaces = AmanziMesh::Impl::get(m).getCellFaces(c);
+        AmanziGeometry::Point normal_sum(AmanziMesh::Impl::get(m).getSpaceDimension());
         for (int k = 0; k < cfaces.size(); k++) {
-          auto normal = m.getFaceNormal(cfaces[k], c);
+          auto normal = AmanziMesh::Impl::get(m).getFaceNormal(cfaces[k], c);
           normal_sum = normal_sum + normal;
         }
         double val = AmanziGeometry::norm(normal_sum);
         if (val > 1.e-10) {
           test3(c) = 1;
           // for (int k = 0; k < cfaces.size(); k++) {
-          //   auto normal = m.getFaceNormal(cfaces[k], c);
+          //   auto normal = AmanziMesh::Impl::get(m).getFaceNormal(cfaces[k], c);
           //   std::cout << "fail cell " << i << " normal (" << k << ") " << cfaces[k] << " = " << normal
           //             << std::endl;
           // }
@@ -123,24 +151,24 @@ testMeshGeometry_(const Teuchos::RCP<Mesh_type>& mesh,
       test2, "GeometryHarnesses::testMeshGeometry bad cell volume", std::cerr);
     error |= AmanziMesh::Impl::checkErrorList(
       test3, "GeometryHarnesses::testMeshGeometry cell normals don't sum to 0", std::cerr);
-    test_error = AmanziMesh::Impl::globalAny(*m.getComm(), error);
+    test_error = AmanziMesh::Impl::globalAny(*mesh.getComm(), error);
   }
 
   // test face-based quantities
   {
     std::cout << "Checking face geometry ..." << std::endl;
-    int nfaces = mesh->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
-    typename Mesh_type::Entity_ID_View test1("testMeshGeometry faces 1", nfaces);
-    typename Mesh_type::Entity_ID_View test2("testMeshGeometry faces 2", nfaces);
-    typename Mesh_type::Entity_ID_View test3("testMeshGeometry faces 3", nfaces);
-    typename Mesh_type::Entity_ID_View test4("testMeshGeometry faces 4", nfaces);
+    int nfaces = mesh.getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+    typename MeshOrCache_noptr_type::Entity_ID_View test1("testMeshGeometry faces 1", nfaces);
+    typename MeshOrCache_noptr_type::Entity_ID_View test2("testMeshGeometry faces 2", nfaces);
+    typename MeshOrCache_noptr_type::Entity_ID_View test3("testMeshGeometry faces 3", nfaces);
+    typename MeshOrCache_noptr_type::Entity_ID_View test4("testMeshGeometry faces 4", nfaces);
 
     using Range_type =
-      Kokkos::RangePolicy<LO, typename Mesh_type::cEntity_ID_View::execution_space>;
+      Kokkos::RangePolicy<LO, typename MeshOrCache_noptr_type::cEntity_ID_View::execution_space>;
     Kokkos::parallel_for(
       "GeometryHarnesses::testMeshGeometry", Range_type{ 0, nfaces }, KOKKOS_LAMBDA(const LO f) {
         test1(f) = 1;
-        AmanziGeometry::Point centroid = m.getFaceCentroid(f);
+        AmanziGeometry::Point centroid = AmanziMesh::Impl::get(m).getFaceCentroid(f);
 
         int j = 0;
         for (; j < exp_face_centroids.size(); ++j) {
@@ -152,19 +180,18 @@ testMeshGeometry_(const Teuchos::RCP<Mesh_type>& mesh,
         }
 
         // compare face areas
-        if (fabs(exp_face_areas[j] - m.getFaceArea(f)) > 1.e-10) { test2(f) = 1; }
+        if (fabs(exp_face_areas[j] - AmanziMesh::Impl::get(m).getFaceArea(f)) > 1.e-10) { test2(f) = 1; }
 
         // Natural normal is well-posed
-        AmanziGeometry::Point natural_normal = m.getFaceNormal(f);
+        AmanziGeometry::Point natural_normal = AmanziMesh::Impl::get(m).getFaceNormal(f);
 
         // Check the normal with respect to each connected cell is given as the
         // natural times the orientation.
-        typename Mesh_type::cEntity_ID_View cellids;
-        m.getFaceCells(f, cellids);
+        auto cellids = AmanziMesh::Impl::get(m).getFaceCells(f);
 
         for (int k = 0; k < cellids.size(); k++) {
           int orientation = 0;
-          auto normal_wrt_cell = m.getFaceNormal(f, cellids[k], &orientation);
+          auto normal_wrt_cell = AmanziMesh::Impl::get(m).getFaceNormal(f, cellids[k], &orientation);
           if (natural_normal * orientation != normal_wrt_cell) {
             test3(f) = 1;
             //   std::cout << "Fail face: " << i << " wrt cell " << cellids[k] << std::endl
@@ -174,8 +201,8 @@ testMeshGeometry_(const Teuchos::RCP<Mesh_type>& mesh,
           }
 
           // check the cell's outward normal is indeed outward (assumes star-convex)
-          AmanziGeometry::Point cellcentroid = m.getCellCentroid(cellids[k]);
-          AmanziGeometry::Point facecentroid = m.getFaceCentroid(f);
+          AmanziGeometry::Point cellcentroid = AmanziMesh::Impl::get(m).getCellCentroid(cellids[k]);
+          AmanziGeometry::Point facecentroid = AmanziMesh::Impl::get(m).getFaceCentroid(f);
           AmanziGeometry::Point outvec = facecentroid - cellcentroid;
 
           double dp = outvec * normal_wrt_cell;
@@ -195,22 +222,22 @@ testMeshGeometry_(const Teuchos::RCP<Mesh_type>& mesh,
       std::cerr);
     error |= AmanziMesh::Impl::checkErrorList(
       test4, "GeometryHarnesses::testMeshGeometry face normal wrt cell not outward", std::cerr);
-    test_error |= AmanziMesh::Impl::globalAny(*m.getComm(), error);
+    test_error |= AmanziMesh::Impl::globalAny(*mesh.getComm(), error);
   }
 
   // test the node-based quantities
   {
     std::cout << "Checking node geometry ..." << std::endl;
-    int nnodes = mesh->getNumEntities(Entity_kind::NODE, Parallel_kind::OWNED);
-    typename Mesh_type::Entity_ID_View test1("testMeshGeometry nodes 1", nnodes);
+    int nnodes = mesh.getNumEntities(Entity_kind::NODE, Parallel_kind::OWNED);
+    typename MeshOrCache_noptr_type::Entity_ID_View test1("testMeshGeometry nodes 1", nnodes);
 
     using Range_type =
-      Kokkos::RangePolicy<LO, typename Mesh_type::cEntity_ID_View::execution_space>;
+      Kokkos::RangePolicy<LO, typename MeshOrCache_noptr_type::cEntity_ID_View::execution_space>;
     Kokkos::parallel_for(
       "GeometryHarnesses::testMeshGeometry", Range_type{ 0, nnodes }, KOKKOS_LAMBDA(const LO n) {
         test1(n) = 1;
 
-        AmanziGeometry::Point centroid = m.getNodeCoordinate(n);
+        AmanziGeometry::Point centroid = AmanziMesh::Impl::get(m).getNodeCoordinate(n);
         int j = 0;
         for (; j < exp_node_coordinates.size(); ++j) {
           auto diff = exp_node_coordinates[j] - centroid;
@@ -223,15 +250,16 @@ testMeshGeometry_(const Teuchos::RCP<Mesh_type>& mesh,
 
     bool error = AmanziMesh::Impl::checkErrorList(
       test1, "GeometryHarnesses::testMeshGeometry cannot find matching node coordinate", std::cerr);
-    test_error |= AmanziMesh::Impl::globalAny(*m.getComm(), error);
+    test_error |= AmanziMesh::Impl::globalAny(*mesh.getComm(), error);
   }
   return test_error;
 }
 
 
-template <class Mesh_type>
+template <class MeshOrCache_type>
 bool
-testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
+testMeshGeometry(const Mesh& mesh,
+                 const MeshOrCache_type& mesh_or_cache,
                  const Point_List& exp_cell_centroids,
                  const Double_List& exp_cell_volumes,
                  const Point_List& exp_face_centroids,
@@ -241,6 +269,7 @@ testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
 {
   // run the testing
   return testMeshGeometry_(mesh,
+                           mesh_or_cache,
                            toNonOwningView(exp_cell_centroids),
                            toNonOwningView(exp_cell_volumes),
                            toNonOwningView(exp_face_centroids),
@@ -251,7 +280,8 @@ testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
 
 template <>
 inline bool
-testMeshGeometry<AmanziMesh::Mesh>(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
+testMeshGeometry<AmanziMesh::MeshCache>(const AmanziMesh::Mesh& mesh,
+                                   const AmanziMesh::MeshCache& mesh_or_cache,
                                    const Point_List& exp_cell_centroids,
                                    const Double_List& exp_cell_volumes,
                                    const Point_List& exp_face_centroids,
@@ -259,24 +289,25 @@ testMeshGeometry<AmanziMesh::Mesh>(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                                    const Point_List& exp_face_normals,
                                    const Point_List& exp_node_coordinates)
 {
-  AmanziMesh::Mesh::Point_View exp_cell_centroids_d("expected cell centroids",
+  AmanziMesh::MeshCache::Point_View exp_cell_centroids_d("expected cell centroids",
                                                     exp_cell_centroids.size());
   Kokkos::deep_copy(exp_cell_centroids_d, toNonOwningView(exp_cell_centroids));
-  AmanziMesh::Mesh::Double_View exp_cell_volumes_d("expected cell volumes",
+  AmanziMesh::MeshCache::Double_View exp_cell_volumes_d("expected cell volumes",
                                                    exp_cell_volumes.size());
   Kokkos::deep_copy(exp_cell_volumes_d, toNonOwningView(exp_cell_volumes));
-  AmanziMesh::Mesh::Point_View exp_face_centroids_d("expected face centroids",
+  AmanziMesh::MeshCache::Point_View exp_face_centroids_d("expected face centroids",
                                                     exp_face_centroids.size());
   Kokkos::deep_copy(exp_face_centroids_d, toNonOwningView(exp_face_centroids));
-  AmanziMesh::Mesh::Double_View exp_face_areas_d("expected face areas", exp_face_areas.size());
+  AmanziMesh::MeshCache::Double_View exp_face_areas_d("expected face areas", exp_face_areas.size());
   Kokkos::deep_copy(exp_face_areas_d, toNonOwningView(exp_face_areas));
-  AmanziMesh::Mesh::Point_View exp_face_normals_d("expected face normals", exp_face_normals.size());
+  AmanziMesh::MeshCache::Point_View exp_face_normals_d("expected face normals", exp_face_normals.size());
   Kokkos::deep_copy(exp_face_normals_d, toNonOwningView(exp_face_normals));
-  AmanziMesh::Mesh::Point_View exp_node_coordinates_d("expected node coordinates",
+  AmanziMesh::MeshCache::Point_View exp_node_coordinates_d("expected node coordinates",
                                                       exp_node_coordinates.size());
   Kokkos::deep_copy(exp_node_coordinates_d, toNonOwningView(exp_node_coordinates));
 
   return testMeshGeometry_(mesh,
+                           mesh_or_cache,
                            exp_cell_centroids_d,
                            exp_cell_volumes_d,
                            exp_face_centroids_d,
@@ -286,26 +317,38 @@ testMeshGeometry<AmanziMesh::Mesh>(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
 }
 
 
+template <class Mesh_type>
+void
+testGeometryQuadBasics(const Mesh_type& mesh,
+                       int nx, int ny)
+{
+  // test the basic dimensionality
+  CHECK_EQUAL(2, mesh.getSpaceDimension());
+  int ncells = mesh.getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+  int ncells_test = nx * ny;
+  CHECK_CLOSE_SUMALL(ncells_test, ncells, *mesh.getComm());
+
+  int nfaces = mesh.getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+  int nfaces_test = ny * (nx + 1) + nx * (ny + 1);
+  CHECK_CLOSE_SUMALL(nfaces_test, nfaces, *mesh.getComm());
+
+  int nnodes = mesh.getNumEntities(Entity_kind::NODE, Parallel_kind::OWNED);
+  int nnodes_test = (ny + 1) * (nx + 1);
+  CHECK_CLOSE_SUMALL(nnodes_test, nnodes, *mesh.getComm());
+}
+
 //
 // Form the expected values and call testGeometry for a 2D box
 //
-template <class Mesh_type>
+template <class MeshOrCache_type>
 void
-testGeometryQuad(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny)
+testGeometryQuad(const Mesh& mesh,
+                 const MeshOrCache_type& mesh_or_cache,
+                 int nx, int ny)
 {
-  // test the basic dimensionality
-  CHECK_EQUAL(2, mesh->getSpaceDimension());
-  int ncells = mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+  testGeometryQuadBasics(mesh, nx, ny);
+
   int ncells_test = nx * ny;
-  CHECK_CLOSE_SUMALL(ncells_test, ncells, *mesh->getComm());
-
-  int nfaces = mesh->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
-  int nfaces_test = ny * (nx + 1) + nx * (ny + 1);
-  CHECK_CLOSE_SUMALL(nfaces_test, nfaces, *mesh->getComm());
-
-  int nnodes = mesh->getNumEntities(Entity_kind::NODE, Parallel_kind::OWNED);
-  int nnodes_test = (ny + 1) * (nx + 1);
-  CHECK_CLOSE_SUMALL(nnodes_test, nnodes, *mesh->getComm());
 
   // construct expected cell volumes, centroids
   Double_List exp_cell_volumes(ncells_test, 1. / nx * 1. / ny);
@@ -344,6 +387,7 @@ testGeometryQuad(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny)
   }
 
   bool result = testMeshGeometry(mesh,
+                                 mesh_or_cache,
                                  exp_cell_centroids,
                                  exp_cell_volumes,
                                  exp_face_centroids,
@@ -354,25 +398,35 @@ testGeometryQuad(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny)
 }
 
 
+template <class Mesh_type>
+void
+testGeometryCubeBasics(const Mesh_type& mesh, int nx, int ny, int nz)
+{
+  // test the basic dimensionality
+  CHECK_EQUAL(3, mesh.getSpaceDimension());
+  int ncells = mesh.getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+  int ncells_test = nx * ny * nz;
+  CHECK_CLOSE_SUMALL(ncells_test, ncells, *mesh.getComm());
+  int nfaces = mesh.getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+  int nfaces_test = nx * ny * (nz + 1) + nx * (ny + 1) * nz + (nx + 1) * ny * nz;
+  CHECK_CLOSE_SUMALL(nfaces_test, nfaces, *mesh.getComm());
+  int nnodes = mesh.getNumEntities(Entity_kind::NODE, Parallel_kind::OWNED);
+  int nnodes_test = (nx + 1) * (ny + 1) * (nz + 1);
+  CHECK_CLOSE_SUMALL(nnodes_test, nnodes, *mesh.getComm());
+}
+
+
 //
 // Form the expected values and call testGeometry for a 3D cube
 //
 template <class Mesh_type>
 void
-testGeometryCube(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz)
+testGeometryCube(const Mesh& mesh, const Mesh_type& mesh_or_cache,
+                 int nx, int ny, int nz)
 {
-  // test the basic dimensionality
-  CHECK_EQUAL(3, mesh->getSpaceDimension());
-  int ncells = mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
-  int ncells_test = nx * ny * nz;
-  CHECK_CLOSE_SUMALL(ncells_test, ncells, *mesh->getComm());
-  int nfaces = mesh->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
-  int nfaces_test = nx * ny * (nz + 1) + nx * (ny + 1) * nz + (nx + 1) * ny * nz;
-  CHECK_CLOSE_SUMALL(nfaces_test, nfaces, *mesh->getComm());
-  int nnodes = mesh->getNumEntities(Entity_kind::NODE, Parallel_kind::OWNED);
-  int nnodes_test = (nx + 1) * (ny + 1) * (nz + 1);
-  CHECK_CLOSE_SUMALL(nnodes_test, nnodes, *mesh->getComm());
+  testGeometryCubeBasics(mesh, nx, ny, nz);
 
+  int ncells_test = nx * ny * nz;
   // construct expected cell volumes, centroids
   Double_List exp_cell_volumes(ncells_test, 1. / nx * 1. / ny * 1. / nz);
   Point_List exp_cell_centroids;
@@ -433,6 +487,7 @@ testGeometryCube(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz)
 
   // run the testing
   bool res = testMeshGeometry(mesh,
+                              mesh_or_cache,
                               exp_cell_centroids,
                               exp_cell_volumes,
                               exp_face_centroids,
@@ -452,12 +507,12 @@ testGeometryCube(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz)
 //
 // Note this is valid on 2D quads too with default value nz = -1
 //
-template <class Mesh_type>
+template <class MeshOrCache_type>
 void
-testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz = -1)
+testExteriorMapsUnitBox(const Mesh& mesh, const MeshOrCache_type& m, int nx, int ny, int nz = -1)
 {
   // check faces are on the boundary
-  int nbfaces = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)->getGlobalNumElements();
+  int nbfaces = mesh.getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false)->getGlobalNumElements();
   int nbfaces_test;
   if (nz < 0) {
     nbfaces_test = 2 * nx + 2 * ny;
@@ -466,17 +521,15 @@ testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int
   }
   CHECK_EQUAL(nbfaces_test, nbfaces);
 
-  auto& bfaces = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
-  auto& faces = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
-  auto bface_ids = mesh->getBoundaryFaces();
+  const auto& bfaces = *mesh.getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
+  const auto& faces = *mesh.getMap(AmanziMesh::Entity_kind::FACE, true);
 
   Kokkos::parallel_for(
-    "for: testExteriorMapsUnitBox", bfaces->getLocalNumElements(), KOKKOS_LAMBDA(const int j) {
-      auto bf = faces->getLocalElement(bfaces->getGlobalElement(j));
-      //CHECK_EQUAL(bface_ids[j], bf);
-      auto f_centroid = mesh->getFaceCentroid(bf);
+    "for: testExteriorMapsUnitBox", bfaces.getLocalNumElements(), KOKKOS_LAMBDA(const int j) {
+      auto bf = faces.getLocalElement(bfaces.getGlobalElement(j));
+      auto f_centroid = AmanziMesh::Impl::get(m).getFaceCentroid(bf);
       bool found = false;
-      for (int i = 0; i != mesh->getManifoldDimension(); ++i) {
+      for (int i = 0; i != AmanziMesh::Impl::get(m).getManifoldDimension(); ++i) {
         if (std::abs(f_centroid[i]) < 1e-10 || std::abs(f_centroid[i] - 1) < 1e-10) {
           found = true;
           break;
@@ -493,7 +546,7 @@ testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int
   // check nodes are on the boundary
   //
   // NOTE: this appears broken in current master, see #583
-  int nbnodes = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_NODE, false)->getGlobalNumElements();
+  int nbnodes = mesh.getMap(AmanziMesh::Entity_kind::BOUNDARY_NODE, false)->getGlobalNumElements();
   int nbnodes_test;
   if (nz < 0) {
     nbnodes_test = 2 * (nx - 1) + 2 * (ny - 1) + 4; // don't double count the corners
@@ -503,18 +556,18 @@ testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int
   }
   CHECK_EQUAL(nbnodes_test, nbnodes);
 
-  auto& bnodes = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_NODE, true);
-  auto& nodes = mesh->getMap(AmanziMesh::Entity_kind::NODE, true);
+  const auto& bnodes = *mesh.getMap(AmanziMesh::Entity_kind::BOUNDARY_NODE, true);
+  const auto& nodes = *mesh.getMap(AmanziMesh::Entity_kind::NODE, true);
   Kokkos::parallel_for(
-    "for: testExteriorMapUnitBox", bnodes->getLocalNumElements(), KOKKOS_LAMBDA(const int j) {
+    "for: testExteriorMapUnitBox", bnodes.getLocalNumElements(), KOKKOS_LAMBDA(const int j) {
       printf(" bnode %d GID %d LID %d\n",
              j,
-             bnodes->getGlobalElement(j),
-             nodes->getLocalElement(bnodes->getGlobalElement(j)));
+             bnodes.getGlobalElement(j),
+             nodes.getLocalElement(bnodes.getGlobalElement(j)));
 
-      auto bn = nodes->getLocalElement(bnodes->getGlobalElement(j));
+      auto bn = nodes.getLocalElement(bnodes.getGlobalElement(j));
       AmanziGeometry::Point nc;
-      nc = mesh->getNodeCoordinate(bn);
+      nc = AmanziMesh::Impl::get(m).getNodeCoordinate(bn);
       bool found = false;
       if (std::abs(nc[0]) < 1e-10 || std::abs(nc[0] - 1) < 1e-10 || std::abs(nc[1]) < 1e-10 ||
           std::abs(nc[1] - 1) < 1e-10 || std::abs(nc[2]) < 1e-10 || std::abs(nc[2] - 1) < 1e-10) {
@@ -529,12 +582,11 @@ testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int
 //
 // Test a columnar system
 //
-template <class MeshType>
 inline void
-testColumnsUniformDz(const MeshType& mesh, double dz)
+testColumnsUniformDz(const Mesh& mesh, double dz)
 {
   // tests the columnar structure of cells
-  int n_columns = mesh.columns.num_columns_all;
+  int n_columns = mesh.columns->num_columns_all;
   CHECK(n_columns > 0);
 
   // also tests that cols with ghost entities are listed first
@@ -543,7 +595,7 @@ testColumnsUniformDz(const MeshType& mesh, double dz)
   bool owned = true;
 
   for (int col = 0; col != n_columns; ++col) {
-    const auto& cells = mesh.columns.cells_.template getRowUnmanaged<MeshType::MEM>(col);
+    const auto& cells = mesh.columns->cells_.template getRowUnmanaged<MemSpace_kind::HOST>(col);
 
     // check all owned cells first, then all ghosted
     if (owned) {
@@ -558,7 +610,7 @@ testColumnsUniformDz(const MeshType& mesh, double dz)
     }
 
     // check geometry
-    const auto& faces = mesh.columns.faces_.template getRowUnmanaged<MeshType::MEM>(col);
+    const auto& faces = mesh.columns->faces_.template getRowUnmanaged<MemSpace_kind::HOST>(col);
     CHECK(faces.size() == (cells.size() + 1));
     for (int i = 0; i != cells.size(); ++i) {
       Entity_ID c = cells[i];

@@ -313,18 +313,18 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
     // vector field
     const auto& vec = S->GetRecord(variable_, tag_).Get<CompositeVector>();
     AMANZI_ASSERT(vec.hasComponent(location_));
+    auto mesh = vec.getMesh();
 
     // get the region
     AmanziMesh::Entity_kind entity = AmanziMesh::createEntityKind(location_);
-    auto mesh_on_host = AmanziMesh::onMemHost(vec.getMesh());
 
     { // get the vector component
-      auto ids = mesh_on_host->getSetEntities(region_, entity, AmanziMesh::Parallel_kind::OWNED);
+      auto ids = mesh->getSetEntities<MemSpace_kind::HOST>(region_, entity, AmanziMesh::Parallel_kind::OWNED);
       auto subvec = vec.viewComponent<MemSpace_kind::HOST>(location_, false);
 
       if (entity == AmanziMesh::Entity_kind::CELL) {
         for (auto id : ids) {
-          double vol = mesh_on_host->getCellVolume(id);
+          double vol = mesh->getCellVolume(id);
 
           if (dof_ < 0) {
             for (int i = 0; i != get_num_vectors(); ++i) {
@@ -350,24 +350,24 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
 
       } else if (entity == AmanziMesh::Entity_kind::FACE) {
         for (auto id : ids) {
-          double vol = mesh_on_host->getFaceArea(id);
+          double vol = mesh->getFaceArea(id);
 
           // hack to orient flux to outward-normal along a boundary only
           double sign = 1;
           if (flux_normalize_) {
             if (direction_.get()) {
               // normalize to the provided vector
-              AmanziGeometry::Point normal = mesh_on_host->getFaceNormal(id);
+              AmanziGeometry::Point normal = mesh->getFaceNormal(id);
               sign = (normal * (*direction_)) / AmanziGeometry::norm(normal);
 
             } else if (!flux_normalize_region_.empty()) {
               // normalize to outward normal relative to a volumetric region
-              auto vol_cells = mesh_on_host->getSetEntities(flux_normalize_region_,
+              auto vol_cells = mesh->getSetEntities<MemSpace_kind::HOST>(flux_normalize_region_,
                                                              AmanziMesh::Entity_kind::CELL,
                                                              AmanziMesh::Parallel_kind::ALL);
 
               // which cell of the face is "inside" the volume
-              auto cells = mesh_on_host->getFaceCells(id);
+              auto cells = mesh->getFaceCells(id);
               AmanziMesh::Entity_ID c = -1;
               for (const auto& cc : cells) {
                 if (std::find(vol_cells.begin(), vol_cells.end(), cc) != vol_cells.end()) {
@@ -388,15 +388,15 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
               }
 
               // normalize with respect to that cell's direction
-              auto [faces, dirs] = mesh_on_host->getCellFacesAndDirections(c);
+              auto [faces, dirs] = mesh->getCellFacesAndDirections(c);
               int i = std::find(faces.begin(), faces.end(), id) - faces.begin();
 
               sign = dirs[i];
 
             } else {
               // normalize to outward normal
-              auto cells = mesh_on_host->getFaceCells(id);
-              auto [faces, dirs] = mesh_on_host->getCellFacesAndDirections(cells[0]);
+              auto cells = mesh->getFaceCells(id);
+              auto [faces, dirs] = mesh->getCellFacesAndDirections(cells[0]);
               int i = std::find(faces.begin(), faces.end(), id) - faces.begin();
               sign = dirs[i];
             }

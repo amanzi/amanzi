@@ -98,7 +98,7 @@ class MeshFrameworkFactory {
   //    Frameworks that extract often need to assume the parent_mesh is the same
   //    type as the constructed mesh in order to use internal information.  Note
   //    this could likely be relaxed, but is easiest to require for now.
-  Teuchos::RCP<MeshFramework> create(const Teuchos::RCP<const MeshHost>& parent_mesh,
+  Teuchos::RCP<MeshFramework> create(const Teuchos::RCP<const Mesh>& parent_mesh,
                                      const MeshFramework::cEntity_ID_View& setids,
                                      const Entity_kind setkind,
                                      const bool flatten = false);
@@ -117,7 +117,7 @@ class MeshFrameworkFactory {
   //
   //    If expert paraeter "extraction method" is present, then the specified
   //    value is use to build a new mesh.
-  Teuchos::RCP<MeshFramework> create(const Teuchos::RCP<const MeshHost>& parent_mesh,
+  Teuchos::RCP<MeshFramework> create(const Teuchos::RCP<const Mesh>& parent_mesh,
                                      const std::vector<std::string>& setnames,
                                      const Entity_kind setkind,
                                      const bool flatten = false);

@@ -178,7 +178,7 @@ EvaluatorModelCVByMaterial<Model, Device_type>::Evaluate_(
     // loop over region/model pairs and execute the model
     for (const auto& region_model : models_) {
       // get a view of the entities to execute over
-      auto mat_ids = results[0]->getMap()->getMesh()->getSetEntities(
+      auto mat_ids = results[0]->getMap()->getMesh()->getSetEntities<MemSpace_kind::DEVICE>(
         region_model.first, mesh_location, AmanziMesh::Parallel_kind::OWNED);
 
       // set up the model and range and then dispatch
@@ -235,7 +235,7 @@ EvaluatorModelCVByMaterial<Model, Device_type>::EvaluatePartialDerivative_(
     // loop over region/model pairs and execute the model
     for (const auto& region_model : models_) {
       // get a view of the entities to execute over
-      auto mat_ids = results[0]->getMap()->getMesh()->getSetEntities(
+      auto mat_ids = results[0]->getMap()->getMesh()->getSetEntities<MemSpace_kind::DEVICE>(
         region_model.first, mesh_location, AmanziMesh::Parallel_kind::OWNED);
 
       // set up the model and range and then dispatch

@@ -74,9 +74,9 @@ struct PatchSpace {
                                       AmanziMesh::Parallel_kind::OWNED);
   }
 
-  AmanziMesh::Mesh::cEntity_ID_View getIDs() const
+  AmanziMesh::MeshCache::cEntity_ID_View getIDs() const
   {
-    return mesh->getSetEntities(region,
+    return mesh->getSetEntities<MemSpace_kind::DEVICE>(region,
                                 entity_kind,
                                 ghosted ? AmanziMesh::Parallel_kind::ALL :
                                           AmanziMesh::Parallel_kind::OWNED);

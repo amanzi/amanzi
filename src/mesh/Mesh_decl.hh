@@ -22,7 +22,7 @@ Goals:
 2. Allow the underlying MeshFramework to be deleted.
 3. Avoid caching everything.
 4. Allow things not cached to still be calculated, even if the framework has
-   been deleted, from existing cached data.
+   been deleted, from existing cached data_.
 
 Effectively this set of requirements means there are two or three ways of
 getting each piece of information:
@@ -171,25 +171,30 @@ for layering in the various capabilities that make this a fully-featured mesh.
 
 #include "AmanziComm.hh"
 #include "AmanziMap.hh"
-#include "GeometricModel.hh"
 
+#include "GeometryDefs.hh"
 #include "MeshDefs.hh"
-#include "MeshSets.hh"
-#include "MeshColumns.hh"
-#include "MeshCacheBase.hh"
+#include "MeshCacheData.hh"
 
 namespace Amanzi {
+
+// -- forward declarations
+namespace AmanziGeometry { class GeometricModel; }
+
 namespace AmanziMesh {
 
 class MeshFramework;
 struct MeshAlgorithms;
-struct MeshCacheDevice;
+class MeshMaps;
+class MeshColumns;
+struct MeshCache;
 
-// forward declaration of MeshAudit to friend
 template <class Mesh_type>
 class MeshAudit_Sets;
+// -- end forward declarations
 
-struct MeshCacheHost : public MeshCacheBase {
+class Mesh {
+ public:
   // view types
   static const MemSpace_kind MEM = MemSpace_kind::HOST;
   using Entity_ID_View = View_type<Entity_ID, MEM>;
@@ -203,77 +208,42 @@ struct MeshCacheHost : public MeshCacheBase {
   using Double_View = View_type<double, MEM>;
   using cDouble_View = View_type<const double, MEM>;
 
-  MeshCacheHost() : MeshCacheBase() {}
-
   //
   // To be used by non-framework meshes
   //
-  explicit MeshCacheHost(const Teuchos::RCP<Teuchos::ParameterList>& plist) : MeshCacheBase(plist)
-  {}
+  explicit Mesh(const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
   //
   // Standard constructor, used by the factory
   //
-  MeshCacheHost(const Teuchos::RCP<MeshFramework>& framework_mesh,
-                const Teuchos::RCP<MeshAlgorithms>& algorithms,
-                const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    : MeshCacheBase(framework_mesh, algorithms, plist)
-  {
-    setMeshFramework(framework_mesh);
-  }
+  Mesh(const Teuchos::RCP<MeshFramework>& framework_mesh,
+       const Teuchos::RCP<MeshAlgorithms>& algorithms,
+       const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
-  // copy constructor
-  MeshCacheHost(const MeshCacheHost& other) = default;
-
-  //
-  // Memory-transfer constructor -- used for getting HOST-view meshes from
-  // DEVICE-view meshes, and visa versa.
-  //
-  explicit MeshCacheHost(const MeshCacheDevice& other);
-
-  void setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_mesh);
-
-  Entity_GID getEntityGID(const Entity_kind kind, const Entity_ID lid) const
-  {
-    return getMap(kind, true)->getGlobalElement(lid);
-  }
-  cEntity_GID_View getEntityGIDs(const Entity_kind kind, bool ghosted) const
-  {
-    return getMap(kind, ghosted)->getMyGlobalIndices();
-  }
-  Entity_ID getEntityLID(const Entity_kind kind, const Entity_GID gid, bool ghosted = true) const
-  {
-    return getMap(kind, ghosted)->getLocalElement(gid);
-  }
-
-  Teuchos::RCP<const MeshAlgorithms> getAlgorithms() const { return algorithms_; }
+  // delete the copy constructor
+  //  Mesh(const Mesh& other) = delete;
 
   //
   // Build the cache, fine grained control
   // =============================================
-
-  // cell centroid, volume
-  void cacheCellGeometry();
+  void cacheCellGeometry();  // cell centroid, volume
   void cacheCellFaces();
   void cacheCellEdges();
   void cacheCellNodes();
   void cacheCellCoordinates();
 
-  // // face centroid, area, normals
-  void cacheFaceGeometry();
+  void cacheFaceGeometry(); // centroid, area, normal
   void cacheFaceCells();
   void cacheFaceEdges();
   void cacheFaceNodes();
   void cacheFaceCoordinates();
 
-  // // edge centroid, length, vector
-  void cacheEdgeGeometry();
+  void cacheEdgeGeometry();  // edge centroid, length, vector
   void cacheEdgeCells();
   void cacheEdgeFaces();
   void cacheEdgeNodes();
   void cacheEdgeCoordinates();
 
-  // // node-cell adjacencies
   void cacheNodeCells();
   void cacheNodeFaces();
   void cacheNodeEdges();
@@ -282,10 +252,20 @@ struct MeshCacheHost : public MeshCacheBase {
   // Parent entities may need to be cached too
   void cacheParentEntities();
 
-  // // Note that regions are cached on demand the first time they are requested,
-  // // but labeled sets must be pre-cached if the framework mesh is to be
-  // // destroyed.
-  // void precacheLabeledSets();
+  // Note that regions are cached on demand the first time they are requested,
+  // but labeled sets must be pre-cached if the framework mesh is to be
+  // destroyed.
+  void precacheLabeledSets();
+
+  // lumped caching
+  void cacheDefault();
+  void cacheAll();
+  void recacheGeometry();
+  void syncCache(); // call after all other cache* functions are done!
+
+  // Columnar semi-structured meshes
+  void buildColumns();
+  void buildColumns(const std::vector<std::string>& regions);
 
   //
   // Baseline mesh functionality
@@ -293,72 +273,117 @@ struct MeshCacheHost : public MeshCacheBase {
   // ----------------------
   // Accessors and Mutators
   // ----------------------
+  // MPI_Comm for multi-node parallelism
+  Comm_ptr_type getComm() const { return comm_; }
+  void setComm(const Comm_ptr_type& comm) { comm_ = comm; }
+
+  // Geometric model describes regions
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> getGeometricModel() const { return gm_; }
+  void setGeometricModel(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) { gm_ = gm; }
+
+  // The Host-only CPU based, slow (virtual) mesh framework
+  Teuchos::RCP<const MeshFramework> getMeshFramework() const { return framework_mesh_; }
+  Teuchos::RCP<MeshFramework> getMeshFramework() { return framework_mesh_; }
+  void destroyFramework() { framework_mesh_ = Teuchos::null; }
+  void setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_mesh);
+
+  // Algorithms for computing quantities rather than caching them
+  Teuchos::RCP<const MeshAlgorithms> getAlgorithms() const { return algorithms_; }
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList() const { return plist_; }
+
   // Some meshes are subsets of or derived from a parent mesh.
   // Usually this is null, but some meshes may provide it.
-  Teuchos::RCP<const MeshCacheHost> getParentMesh() const { return parent_; }
-  void setParentMesh(const Teuchos::RCP<const MeshCacheHost>& parent);
+  Teuchos::RCP<const Mesh> getParentMesh() const { return parent_; }
+  void setParentMesh(const Teuchos::RCP<const Mesh>& parent);
 
-  // Some meshes have a corresponding mesh that is better for visualization.
-  const MeshCacheHost& getVisMesh() const
-  {
-    if (vis_mesh_.get()) return *vis_mesh_;
-    return *this;
-  }
-  Teuchos::RCP<const MeshCacheHost> getVisMeshPtr() const { return vis_mesh_; }
-  void setVisMesh(const Teuchos::RCP<const MeshCacheHost>& vis_mesh) { vis_mesh_ = vis_mesh; }
+  // Some meshes have a corresponding mesh that is better for visualization,
+  // e.g. 3D surface meshes.
+  const Mesh& getVisMesh() const;
+  Teuchos::RCP<const Mesh> getVisMeshPtr() const { return vis_mesh_; }
+  void setVisMesh(const Teuchos::RCP<const Mesh>& vis_mesh) { vis_mesh_ = vis_mesh; }
 
+  // get the cache for use on device
+  const MeshCache& getCache() const { return *cache_; }
+
+  // basic info written to vo
+  void printMeshStatistics() const;
+
+  // ----------------
+  // mesh properties
+  // ----------------
+  int getSpaceDimension() const { return data_.space_dim_; }
+  int getManifoldDimension() const { return data_.manifold_dim_; }
+  bool isOrdered() const { return data_.is_ordered_; }
+  bool isLogical() const { return data_.is_logical_; }
+  bool isSFM() const { return data_.is_sfm_; } // single face mesh -- special case
+
+  bool hasNodes() const { return data_.has_nodes_; }
+  bool hasEdges() const { return data_.has_edges_; }
+  bool hasNodeFaces() const { return data_.has_node_faces_; }
 
   // -------------------
-  // Access map objects
+  // Map objects
   // -------------------
   //
-  // a list of ALL face LIDs that are on the boundary
-  cEntity_ID_View getBoundaryFaces() const { return maps.getBoundaryFaces<MEM>(); }
-
-  // a list of ALL node LIDs that are on the boundary
-  cEntity_ID_View getBoundaryNodes() const { return maps.getBoundaryNodes<MEM>(); }
-
   // maps define GIDs of each Entity_kind
-  const Map_ptr_type& getMap(const Entity_kind kind, bool is_ghosted) const
-  {
-    return maps.getMap(kind, is_ghosted);
-  }
+  const Map_ptr_type& getMap(const Entity_kind kind, bool is_ghosted) const;
+
+  Entity_GID getEntityGID(const Entity_kind kind, const Entity_ID lid) const;
+  cEntity_GID_View getEntityGIDs(const Entity_kind kind, bool ghosted) const;
+  Entity_ID getEntityLID(const Entity_kind kind, const Entity_GID gid, bool ghosted = true) const;
+
 
   // importers allow scatter/gather operations
-  const Import_type& getImporter(const Entity_kind kind) const { return maps.getImporter(kind); }
+  const Import_type& getImporter(const Entity_kind kind) const;
+
+  // a list of ALL face LIDs that are on the boundary
+  inline cEntity_ID_View getBoundaryFaces() const;
+
+  // given a bounday face, return the corresponding face
+  inline Entity_ID getBoundaryFaceFace(const Entity_ID bf) const;
+
+  // a list of ALL node LIDs that are on the boundary
+  inline cEntity_ID_View getBoundaryNodes() const;
+
+  // given a bounday node, return the corresponding node
+  inline Entity_ID getBoundaryNodeNode(const Entity_ID bn) const;
 
   // an importer from FACE-indexed objects to BOUNDARY_FACE-indexed objects
   //
   // Note this is not the same as getImporter(BOUNDARY_FACE), which
   // communicates BOUNDARY_FACE-indexed objects to other BOUNDARY_FACE-indexed
   // objects.
-  const Import_type& getBoundaryFaceImporter() const { return maps.getBoundaryFaceImporter(); }
+  const Import_type& getBoundaryFaceImporter() const;
 
   // an importer from NODE-indexed objects to BOUNDARY_NODE-indexed objects
-  const Import_type& getBoundaryNodeImporter() const { return maps.getBoundaryNodeImporter(); }
+  const Import_type& getBoundaryNodeImporter() const;
 
   // an importer from CELL-indexed objects to BOUNDARY_FACE-indexed objects
-  const Import_type& getBoundaryFaceInternalCellImporter() const
-  {
-    return maps.getBoundaryFaceInternalCellImporter();
-  }
+  const Import_type& getBoundaryFaceInternalCellImporter() const;
 
   // ----------------
   // sets of entities
   // ----------------
-  // NOTE: no test for this -- unclear exactly the semantic of what is and is not valid.  FIXME!
-  bool isValidSetName(const std::string& name, const Entity_kind kind) const { return true; }
+  // Sets are only stored on the Host mesh -- to use them on device, call:
+  //   mesh.getSetEntities<MemSpace_kind::DEVICE(...)
+  // before launching the kernel, then capture the resulting view in the lambda.
   bool isValidSetType(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const;
+
+  // NOTE: unclear exactly the semantic of what is and is not valid.  FIXME!
+  bool isValidSetName(const std::string& name, const Entity_kind kind) const { return true; }
 
   int getSetSize(const std::string& region_name,
                  const Entity_kind kind,
                  const Parallel_kind ptype) const;
 
-  cEntity_ID_View getSetEntities(const std::string& region_name,
-                                 const Entity_kind kind,
-                                 const Parallel_kind ptype) const;
+  template<MemSpace_kind MEM>
+  auto // cEntity_ID_View on MEM
+  getSetEntities(const std::string& region_name,
+                 const Entity_kind kind,
+                 const Parallel_kind ptype) const;
 
-  Kokkos::pair<cEntity_ID_View, cDouble_View>
+  template<MemSpace_kind MEM>
+  auto // Kokkos::pair<cEntity_ID_View, cDouble_View> on MEM
   getSetEntitiesAndVolumeFractions(const std::string& region_name,
                                    const Entity_kind kind,
                                    const Parallel_kind ptype) const;
@@ -366,51 +391,43 @@ struct MeshCacheHost : public MeshCacheBase {
   // ----------------
   // Entity meta-data
   // ----------------
-
   Entity_ID getNumEntities(const Entity_kind kind, const Parallel_kind ptype) const;
 
-  // // corresponding entity in the parent mesh
-  // //
-  // // Note the kind refers to the kind in _this_ mesh -- for some lifted meshes,
-  // // this may not be the same as the entity kind in the parent mesh.  That
-  // // logic is left to the user of this class -- we simply store the IDs.
-
-
+  // corresponding entity in the parent mesh
+  //
+  // Note the kind refers to the kind in _this_ mesh -- for some lifted meshes,
+  // this may not be the same as the entity kind in the parent mesh.  That
+  // logic is left to the user of this class -- we simply store the IDs.
   Entity_ID getEntityParent(const Entity_kind kind, const Entity_ID entid) const;
-
   cEntity_ID_View getEntityParents(const Entity_kind kind) const;
 
+  Cell_kind getCellKind(const Entity_ID c) const;
+  Parallel_kind getParallelKind(const Entity_kind& kind, const Entity_ID id) const;
 
-  Cell_kind getCellType(const Entity_ID c) const;
-
-
-  Parallel_kind getParallelType(const Entity_kind& kind, const Entity_ID id) const;
-  //---------------------
-  // Geometry
-  //---------------------
-  // node locations
-  template <AccessPattern_kind = AccessPattern_kind::DEFAULT>
+  //-----------------------
+  // Geometry: coordinates
+  //-----------------------
   AmanziGeometry::Point getNodeCoordinate(const Entity_ID n) const;
-
 
   void setNodeCoordinate(const Entity_ID n, const AmanziGeometry::Point& coord);
   void setNodeCoordinates(const cEntity_ID_View& nodes, const cPoint_View& new_coords);
 
   // coordinate views
   template <AccessPattern_kind = AccessPattern_kind::DEFAULT>
-  cPoint_View getEdgeCoordinates(const Entity_ID e) const;
+  cPoint_View getCellCoordinates(const Entity_ID c) const;
 
   template <AccessPattern_kind = AccessPattern_kind::DEFAULT>
   cPoint_View getFaceCoordinates(const Entity_ID f) const;
 
   template <AccessPattern_kind = AccessPattern_kind::DEFAULT>
-  cPoint_View getCellCoordinates(const Entity_ID c) const;
+  cPoint_View getEdgeCoordinates(const Entity_ID e) const;
 
-  // cell centroids
+  //-----------------------
+  // Geometry: centroids
+  //-----------------------
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   AmanziGeometry::Point getCellCentroid(const Entity_ID c) const;
 
-  // face centroids
   template <AccessPattern_kind = AccessPattern_kind::DEFAULT>
   AmanziGeometry::Point getFaceCentroid(const Entity_ID f) const;
 
@@ -419,15 +436,17 @@ struct MeshCacheHost : public MeshCacheBase {
 
   // at run-time, calls one of get*Centroid
   template <AccessPattern_kind = AccessPattern_kind::DEFAULT>
-  AmanziGeometry::Point getCentroid(const Entity_kind kind, const Entity_ID ent) const;
+  AmanziGeometry::Point
+  getCentroid(const Entity_kind kind, const Entity_ID ent) const;
 
   // at compile-time, calls one of get*Centroid
   template <Entity_kind, AccessPattern_kind = AccessPattern_kind::DEFAULT>
   AmanziGeometry::Point getCentroid(const Entity_ID ent) const;
 
-  // extent
+  //-----------------------
+  // Geometry: extents
+  //-----------------------
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  // double
   double getCellVolume(const Entity_ID c) const;
 
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
@@ -444,7 +463,10 @@ struct MeshCacheHost : public MeshCacheBase {
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   double getExtent(const Entity_kind kind, const Entity_ID e) const;
 
-  // // Normal vector of a face
+  //-----------------------
+  // Geometry: other
+  //-----------------------
+  // Normal vector of a face
   template <AccessPattern_kind = AccessPattern_kind::DEFAULT>
   AmanziGeometry::Point getFaceNormal(const Entity_ID f) const;
 
@@ -456,7 +478,6 @@ struct MeshCacheHost : public MeshCacheBase {
   // The orientation is 1 if the outward normal is the same direction as the
   // natural normal, -1 if in opposite directions, and 0 if there is no natural
   // normal.
-
   template <AccessPattern_kind = AccessPattern_kind::DEFAULT>
   AmanziGeometry::Point
   getFaceNormal(const Entity_ID f, const Entity_ID c, int* orientation = nullptr) const;
@@ -467,6 +488,8 @@ struct MeshCacheHost : public MeshCacheBase {
   // node 1 with respect to edge_node adjacency information.
   template <AccessPattern_kind = AccessPattern_kind::DEFAULT>
   AmanziGeometry::Point getEdgeVector(const Entity_ID e) const;
+
+  bool isPointInCell(const AmanziGeometry::Point& p, const Entity_ID cellid) const;
 
   //---------------------
   // Downward adjacencies
@@ -490,312 +513,179 @@ struct MeshCacheHost : public MeshCacheBase {
   // than those that return void and expect the return value as an argument --
   // this new-style interface works better with Kokkos and should be more
   // efficient in all cases.
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   size_type getCellNumFaces(const Entity_ID c) const;
 
-  // note, no AccessPattern_kind -- as this creates a view there is no need
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  cEntity_ID_View getCellFaces(const Entity_ID c) const;
 
   // note, no AccessPattern_kind -- only works on cached
-
   const Entity_ID& getCellFace(const Entity_ID c, const size_type i) const;
 
+  cEntity_ID_View getCellFaces(const Entity_ID c) const;
+  void getCellFaces(const Entity_ID c, cEntity_ID_View& cfaces) const;
 
   Kokkos::pair<cEntity_ID_View, cDirection_View> getCellFacesAndDirections(const Entity_ID c) const;
-
+  void getCellFacesAndDirs(const Entity_ID c,
+                           cEntity_ID_View& faces,
+                           cDirection_View* const dirs) const;
 
   Kokkos::pair<cEntity_ID_View, cPoint_View> getCellFacesAndBisectors(const Entity_ID c) const;
-
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  void getCellFaces(const Entity_ID c, cEntity_ID_View& faces) const;
-
-
-  void
-  getCellFacesAndDirs(const Entity_ID c, cEntity_ID_View& faces, cDirection_View* const dirs) const;
+  void getCellFacesAndBisectors(const Entity_ID c, cEntity_ID_View& cfaces,
+          cPoint_View* const bisectors) const;
 
 
-  void getCellFacesAndBisectors(const Entity_ID c,
-                                cEntity_ID_View& faces,
-                                cPoint_View* const bisectors) const;
-
-  // //
-  // // Downward adjacency -- edges of a cell
-  // //
-  template <AccessPattern_kind = AccessPattern_kind::DEFAULT>
+  //
+  // Downward adjacency
+  //
+  // Get edges of a cell
   size_type getCellNumEdges(const Entity_ID c) const;
+
+  const Entity_ID& getCellEdge(const Entity_ID c, const size_type i) const;
 
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   cEntity_ID_View getCellEdges(const Entity_ID c) const;
 
-
-  const Entity_ID& getCellEdge(const Entity_ID c, const size_type i) const;
-
-  //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  void getCellEdges(const Entity_ID c, cEntity_ID_View& edges) const;
-
   // Get nodes of a cell.
-  template <AccessPattern_kind = AccessPattern_kind::DEFAULT>
   size_type getCellNumNodes(const Entity_ID c) const;
 
+  const Entity_ID& getCellNode(const Entity_ID c, const size_type i) const;
 
+  template <AccessPattern_kind = AccessPattern_kind::DEFAULT>
   cEntity_ID_View getCellNodes(const Entity_ID c) const;
 
-
-  Entity_ID getCellNode(const Entity_ID c, const size_type i) const;
-
-  //[[deprecated("Prefer to use non-void variant that returns nodes directly")]]
-
+  template <AccessPattern_kind = AccessPattern_kind::DEFAULT>
   void getCellNodes(const Entity_ID c, cEntity_ID_View& nodes) const;
-
-
-  Entity_ID getCellCellBelow(const Entity_ID cellid) const;
-
 
   std::size_t getCellMaxNodes() const;
 
-  // // Get edges of a face and directions in which the face uses the edges.
-  // //
-  // // In 3D, edge direction is 1 when it is oriented counter clockwise
-  // // with respect to the face natural normal.
-  // //
-  // // On a distributed mesh, this will return all the edges of the
-  // // face, OWNED or GHOST. If the framework supports it, the edges will be
-  // // returned in a ccw order around the face as it is naturally defined.
-  // //
-  // // IMPORTANT NOTE IN 2D: In meshes where the cells are two
-  // // dimensional, faces and edges are identical. For such cells, this
-  // // operator will return a single edge and a direction of 1. However,
-  // // this direction cannot be relied upon to compute, say, a contour
-  // // integral around the 2D cell.
-  // template<AccessPattern_kind = AccessPattern_kind::DEFAULT>
+  // Get edges of a face and directions in which the face uses the edges.
   //
-  // size_type getFaceNumEdges(const Entity_ID f) const;
-
-
-  cEntity_ID_View getFaceEdges(const Entity_ID f) const;
-
+  // In 3D, edge direction is 1 when it is oriented counter clockwise
+  // with respect to the face natural normal.
+  //
+  // On a distributed mesh, this will return all the edges of the
+  // face, OWNED or GHOST. If the framework supports it, the edges will be
+  // returned in a ccw order around the face as it is naturally defined.
+  //
+  // IMPORTANT NOTE IN 2D: In meshes where the cells are two
+  // dimensional, faces and edges are identical. For such cells, this
+  // operator will return a single edge and a direction of 1. However,
+  // this direction cannot be relied upon to compute, say, a contour
+  // integral around the 2D cell.
+  size_type getFaceNumEdges(const Entity_ID f) const;
 
   const Entity_ID& getFaceEdge(const Entity_ID f, const size_type i) const;
 
+  cEntity_ID_View getFaceEdges(const Entity_ID f) const;
 
-  Kokkos::pair<cEntity_ID_View, cDirection_View> getFaceEdgesAndDirections(const Entity_ID f) const;
-
-  //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
-
-  void getFaceEdges(const Entity_ID f, cEntity_ID_View& fedges) const;
-
-  //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
+  Kokkos::pair<cEntity_ID_View, cDirection_View>
+  getFaceEdgesAndDirections(const Entity_ID f) const;
 
   void getFaceEdgesAndDirs(const Entity_ID f,
-                           cEntity_ID_View& edges,
-                           cDirection_View* const dirs = nullptr) const;
+          cEntity_ID_View& edges,
+          cDirection_View* const dirs) const;
 
-
-  std::vector<int> getFaceCellEdgeMap(const Entity_ID faceid, const Entity_ID cellid) const;
-
-  // // Get nodes of face
-  // //
-  // // In 3D, the nodes of the face are returned in ccw order consistent
-  // // with the face normal.
-  // template<AccessPattern_kind = AccessPattern_kind::DEFAULT>
+  // Get nodes of face
   //
-  // size_type getFaceNumNodes(const Entity_ID f) const;
-
-
-  cEntity_ID_View getFaceNodes(const Entity_ID f) const;
-
+  // In 3D, the nodes of the face are returned in ccw order consistent
+  // with the face normal.
+  size_type getFaceNumNodes(const Entity_ID f) const;
 
   const Entity_ID& getFaceNode(const Entity_ID f, const size_type i) const;
 
+  cEntity_ID_View getFaceNodes(const Entity_ID f) const;
 
-  void getFaceNodes(const Entity_ID f, cEntity_ID_View& nodes) const;
+  // Get nodes of edge
+  size_type getEdgeNumNodes(const Entity_ID e) const;
 
-  // //
-  // // NOT CURRENTLY IMPLEMENTED, here to satisfy the interface
-  // //
+  const Entity_ID& getEdgeNode(const Entity_ID e, const size_type i) const;
 
-  cPoint_View getFaceHOCoordinates(const Entity_ID f) const { return cPoint_View(); }
-
-  // // Get nodes of edge
-  // template<AccessPattern_kind = AccessPattern_kind::DEFAULT>
-  //
-  // size_type getEdgeNumNodes(const Entity_ID e) const;
-
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   cEntity_ID_View getEdgeNodes(const Entity_ID e) const;
-
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  Entity_ID getEdgeNode(const Entity_ID e, const size_type i) const;
-
-  // //
-  // // NOT CURRENTLY IMPLEMENTED, here to satisfy the interface
-  // //
-  // // NOTE: user code is incorrect too, and requires this to return
-  // // non-const.  When or if this gets implemented, it needs to return const so
-  // // that user code does not change the entries in the View!
-
-  Point_View getEdgeHOCoordinates(const Entity_ID e) const { return Point_View(); }
-
-  //[[deprecated("Prefer to use non-void variant that returns nodes directly")]]
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   void getEdgeNodes(const Entity_ID e, cEntity_ID_View& nodes) const;
+
+  // max sizes for discretizations
+  std::size_t getCellMaxFaces() const;
+  std::size_t getCellMaxEdges() const;
 
   //-------------------
   // Upward adjacencies
   //-------------------
+  // Face --> Cell
   // The cells are returned in no particular order. Also, the order of cells
   // is not guaranteed to be the same for corresponding faces on different
   // processors
-
-  // template<AccessPattern_kind = AccessPattern_kind::DEFAULT>
-  //
-  // size_type getFaceNumCells(const Entity_ID f, const Parallel_kind ptype) const;
-
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  size_type getFaceNumCells(const Entity_ID f, const Parallel_kind ptype) const;
-
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  cEntity_ID_View getFaceCells(const Entity_ID f) const;
+  size_type getFaceNumCells(const Entity_ID f) const;
 
   const Entity_ID& getFaceCell(const Entity_ID f, const size_type i) const;
 
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
+  cEntity_ID_View getFaceCells(const Entity_ID f) const;
   void getFaceCells(const Entity_ID f, cEntity_ID_View& cells) const;
 
-
-  std::size_t getCellMaxFaces() const;
-
-
-  std::size_t getCellMaxEdges() const;
-
-  // Cells of a given Parallel_kind connected to an edge
+  // Edge --> Cell
   //
   // The order of cells is not guaranteed to be the same for corresponding
   // edges on different processors
+  size_type getEdgeNumCells(const Entity_ID f) const;
+
+  const Entity_ID& getEdgeCell(const Entity_ID f, const size_type i) const;
+
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   cEntity_ID_View getEdgeCells(const Entity_ID e) const;
 
-
-  //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  void getEdgeCells(const Entity_ID e, cEntity_ID_View& cells) const;
-
-  // Faces of type 'ptype' connected to an edge
+  // Edge --> Face
   // NOTE: The order of faces is not guaranteed to be the same for
   // corresponding edges on different processors
+  size_type getEdgeNumFaces(const Entity_ID f) const;
 
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
+  const Entity_ID& getEdgeFace(const Entity_ID f, const size_type i) const;
+
   cEntity_ID_View getEdgeFaces(const Entity_ID e) const;
 
-  //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  void getEdgeFaces(const Entity_ID edgeid, cEntity_ID_View& faces) const;
-
-  // Cells of type 'ptype' connected to a node
+  // Node --> Cell
   // NOTE: The order of cells is not guaranteed to be the same for
   // corresponding nodes on different processors
   template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   cEntity_ID_View
-  getNodeCells(const Entity_ID n, const Parallel_kind ptype = Parallel_kind::OWNED) const;
+  getNodeCells(const Entity_ID n) const;
 
-  //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  void getNodeCells(const Entity_ID n, const Parallel_kind ptype, cEntity_ID_View& cells) const;
-
+  // Node --> Face
   // Faces of type parallel 'ptype' connected to a node
   // NOTE: The order of faces is not guarnateed to be the same for
   // corresponding nodes on different processors
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   cEntity_ID_View getNodeFaces(const Entity_ID n) const;
 
-  //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  void getNodeFaces(const Entity_ID n, cEntity_ID_View& faces) const;
-
-  void PrintMeshStatistics() const;
-
-  bool isPointInCell(const AmanziGeometry::Point& p, const Entity_ID cellid) const;
-
-  // Edges of type 'ptype' connected to a node
+  // Node --> Edge
   //
   // The order of edges is not guaranteed to be the same for corresponding
   // node on different processors
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
   cEntity_ID_View getNodeEdges(const Entity_ID n) const;
-
-  //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
-  template <AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
-  void getNodeEdges(const Entity_ID n, cEntity_ID_View& edgeids) const;
-
-
-  // Columnar semi-structured meshes
-  inline void buildColumns() { columns.initialize(*this); }
-  inline void buildColumns(const std::vector<std::string>& regions)
-  {
-    columns.initialize(*this, regions);
-  }
-
-  void recacheGeometry();
 
  protected:
   // common error messaging
   void throwAccessError_(const std::string& func_name) const;
 
-  // these are kept here, not in base, because they are device-specific
-  Teuchos::RCP<const MeshCacheHost> parent_;
-  Teuchos::RCP<const MeshCacheHost> vis_mesh_;
+ public:
+  Teuchos::RCP<MeshColumns> columns;
+
+ protected:
+  Comm_ptr_type comm_;
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
+
+  Teuchos::RCP<MeshFramework> framework_mesh_;
+  Teuchos::RCP<MeshAlgorithms> algorithms_;
+  Teuchos::RCP<MeshMaps> maps_;
+  Teuchos::RCP<MeshSets> sets_;
+  Teuchos::RCP<MeshSetVolumeFractions> set_vol_fracs_;
+
+  Teuchos::RCP<const Mesh> parent_;
+  Teuchos::RCP<const Mesh> vis_mesh_;
+
+  MeshCacheData data_;
+  Teuchos::RCP<MeshCache> cache_;
 
   // friend MeshAudit_Sets so it can check any existing MeshSets
-  friend MeshAudit_Sets<MeshCacheHost>;
+  // friend MeshAudit_Sets<Mesh>;
 };
 
-
-// -----------------------------------------------------------------------------
-// Caching algorithms
-// -----------------------------------------------------------------------------
-inline void
-cacheDefault(MeshCacheHost& mesh)
-{
-  if (mesh.hasNodes()) { mesh.cacheNodeCoordinates(); }
-  mesh.cacheCellFaces();
-  mesh.cacheFaceCells();
-  if (mesh.hasNodes()) { mesh.cacheFaceNodes(); }
-  mesh.cacheCellGeometry();
-  mesh.cacheFaceGeometry();
-  if (mesh.hasEdges()) {
-    mesh.cacheFaceEdges();
-    mesh.cacheEdgeFaces();
-    mesh.cacheEdgeGeometry();
-  }
-}
-
-
-inline void
-cacheAll(MeshCacheHost& mesh)
-{
-  mesh.cacheCellFaces();
-  mesh.cacheFaceCells();
-  mesh.cacheCellCoordinates();
-  mesh.cacheFaceCoordinates();
-  if (mesh.hasNodes()) {
-    mesh.cacheNodeCoordinates();
-    mesh.cacheCellNodes();
-    mesh.cacheNodeCells();
-    mesh.cacheFaceNodes();
-    mesh.cacheNodeFaces();
-  }
-  if (mesh.hasEdges()) {
-    mesh.cacheCellEdges();
-    mesh.cacheEdgeCells();
-    mesh.cacheNodeEdges();
-    mesh.cacheEdgeNodes();
-    mesh.cacheEdgeCoordinates();
-  }
-}
-
-using MeshHost = Amanzi::AmanziMesh::MeshCacheHost;
 
 } // namespace AmanziMesh
 } // namespace Amanzi

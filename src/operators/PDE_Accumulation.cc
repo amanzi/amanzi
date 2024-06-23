@@ -50,7 +50,7 @@ PDE_Accumulation::AddAccumulationTerm(const CompositeVector& du,
   Teuchos::RCP<Op> op = FindOp_(name);
 
   if (volume) {
-    const AmanziMesh::Mesh& m = *du.getMesh();
+    const AmanziMesh::MeshCache& m = du.getMesh()->getCache();
     AmanziMesh::Entity_kind ent_kind = AmanziMesh::createEntityKind(name);
     auto diag_v = op->diag->getLocalViewDevice(Tpetra::Access::ReadWrite);
     auto du_v = du.viewComponent(name, false);

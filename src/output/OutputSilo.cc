@@ -25,7 +25,7 @@
 namespace Amanzi {
 
 OutputSilo::OutputSilo(Teuchos::ParameterList& plist,
-                       const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh)
+                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   : count_(0), mesh_(mesh), fid_(nullptr)
 {
   if (mesh_->getVisMesh().getSpaceDimension() != 3 ||

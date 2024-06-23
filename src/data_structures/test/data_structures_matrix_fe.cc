@@ -67,14 +67,13 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
-  auto mesh_host = onMemHost(mesh);
   //  Teuchos::RCP<const Mesh> mesh =
   //  meshfactory.create("test/median32x33.exo");
 
   // grab the maps
-  int ncells = mesh_host->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  auto cell_map = mesh_host->getMap(Entity_kind::CELL, false);
-  auto cell_map_ghosted = mesh_host->getMap(Entity_kind::CELL, true);
+  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  auto cell_map = mesh->getMap(Entity_kind::CELL, false);
+  auto cell_map_ghosted = mesh->getMap(Entity_kind::CELL, true);
 
   // create the graph
   auto graph = Teuchos::rcp(new GraphFE(cell_map, cell_map_ghosted, cell_map_ghosted, 5));
@@ -84,9 +83,9 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
     neighbor_cells.resize(0);
     neighbor_cells.push_back(c);
 
-    auto faces = mesh_host->getCellFaces(c);
+    auto faces = mesh->getCellFaces(c);
     for (int n = 0; n != faces.size(); ++n) {
-      auto face_cells = mesh_host->getFaceCells(faces[n]);
+      auto face_cells = mesh->getFaceCells(faces[n]);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
       }
@@ -107,9 +106,9 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
     neighbor_cells.resize(0);
     neighbor_cells.push_back(c);
 
-    auto faces = mesh_host->getCellFaces(c);
+    auto faces = mesh->getCellFaces(c);
     for (int n = 0; n != faces.size(); ++n) {
-      auto face_cells = mesh_host->getFaceCells(faces[n]);
+      auto face_cells = mesh->getFaceCells(faces[n]);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
       }
@@ -190,19 +189,18 @@ TEST(FE_MATRIX_FACE_FACE)
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference({ Framework::MSTK });
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
-  auto mesh_host = onMemHost(mesh);
 
   // grab the maps
-  int ncells = mesh_host->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  auto face_map = mesh_host->getMap(Entity_kind::FACE, false);
-  auto face_map_ghosted = mesh_host->getMap(Entity_kind::FACE, true);
+  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  auto face_map = mesh->getMap(Entity_kind::FACE, false);
+  auto face_map_ghosted = mesh->getMap(Entity_kind::FACE, true);
 
   // create the graph
   Teuchos::RCP<GraphFE> graph =
     Teuchos::rcp(new GraphFE(face_map, face_map_ghosted, face_map_ghosted, 7));
 
   for (int c = 0; c != ncells; ++c) {
-    auto faces = mesh_host->getCellFaces(c);
+    auto faces = mesh->getCellFaces(c);
     for (int n = 0; n != faces.size(); ++n) {
       graph->insertLocalIndices(faces[n], faces.size(), &faces(0));
     }
@@ -217,7 +215,7 @@ TEST(FE_MATRIX_FACE_FACE)
   Matrix_type control(graph->getGraph());
 
   for (int c = 0; c != ncells; ++c) {
-    auto faces = mesh_host->getCellFaces(c);
+    auto faces = mesh->getCellFaces(c);
 
     Teuchos::SerialDenseVector<int, GO> face_gids(faces.size());
     for (int n = 0; n != faces.size(); ++n) {
@@ -238,7 +236,7 @@ TEST(FE_MATRIX_FACE_FACE)
   control.fillComplete(graph->getDomainMap(), graph->getRangeMap());
 
   // check matrix equality
-  int nfaces = mesh_host->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f != nfaces; ++f) {
     MatrixFE::cValues_host_view_type mat_vals, ctrl_vals;
     MatrixFE::cLocalIndices_host_view_type mat_inds, ctrl_inds;

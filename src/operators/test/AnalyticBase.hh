@@ -118,7 +118,7 @@ class AnalyticBase { //: public WhetStone::WhetStoneFunction {
 * Exterior normal
 ****************************************************************** */
 inline AmanziGeometry::Point
-FaceNormalExterior(const AmanziMesh::MeshHost& mesh, int f, bool* flag)
+FaceNormalExterior(const AmanziMesh::Mesh& mesh, int f, bool* flag)
 {
   auto cells = mesh.getFaceCells(f);
   *flag = (cells.extent(0) == 1);
@@ -149,7 +149,7 @@ GlobalOp(const Comm_type& comm, std::string op, double* val, int n)
 ****************************************************************** */
 inline void
 ComputeCellError(const AnalyticBase& ana,
-                 const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh,
+                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                  const CompositeVector& p_vec,
                  double t,
                  double& pnorm,
@@ -192,7 +192,7 @@ ComputeCellError(const AnalyticBase& ana,
 ****************************************************************** */
 inline void
 ComputeFaceError(const AnalyticBase& ana,
-                 const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh,
+                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                  const CompositeVector& u_vec,
                  double t,
                  double& unorm,
@@ -367,7 +367,7 @@ ComputeEdgeError(const AnalyticBase& ana,
 ****************************************************************** */
 // inline void
 // ComputeEdgeMomentsError(const AnalyticBase& ana,
-//                         const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh,
+//                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 //                         const CompositeVector& p_vec,
 //                         double t,
 //                         int ngauss,

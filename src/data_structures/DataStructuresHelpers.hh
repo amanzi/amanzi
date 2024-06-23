@@ -25,7 +25,7 @@ copyPatchToCompositeVector(const Patch<T>& p, const std::string& component, Comp
   auto cv_c = cv.viewComponent(component, p.space->ghosted);
 
   const auto& mesh = cv.getMesh();
-  auto ids = mesh->getSetEntities(p.space->region,
+  auto ids = mesh->template getSetEntities<MemSpace_kind::DEVICE>(p.space->region,
                                   p.space->entity_kind,
                                   p.space->ghosted ? AmanziMesh::Parallel_kind::ALL :
                                                      AmanziMesh::Parallel_kind::OWNED);
@@ -58,10 +58,10 @@ copyPatchToCompositeVector(const Patch<T>& p,
                            CompositeVector_<T>& cv,
                            CompositeVector_<int>& flag_cv)
 {
-  auto ids = cv.getMesh()->getSetEntities(p.space->region,
-                                          p.space->entity_kind,
-                                          p.space->ghosted ? AmanziMesh::Parallel_kind::ALL :
-                                                             AmanziMesh::Parallel_kind::OWNED);
+  auto ids = cv.getMesh()->template getSetEntities<MemSpace_kind::DEVICE>(p.space->region,
+          p.space->entity_kind,
+          p.space->ghosted ? AmanziMesh::Parallel_kind::ALL :
+          AmanziMesh::Parallel_kind::OWNED);
 
   if (component != "boundary_face") {
     // AMANZI_ASSERT(ids.extent(0) == p.data.extent(0));
@@ -189,7 +189,7 @@ copyMeshCoordinatesToVector(const AmanziMesh::Mesh& mesh,
                             AmanziMesh::Entity_kind kind,
                             CompositeVector& vec);
 void
-copyVectorToMeshCoordinates(const CompositeVector& vec, AmanziMesh::MeshHost& mesh);
+copyVectorToMeshCoordinates(const CompositeVector& vec, AmanziMesh::Mesh& mesh);
 
 } // namespace Amanzi
 

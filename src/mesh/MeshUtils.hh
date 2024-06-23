@@ -79,7 +79,7 @@ struct ComputeFunction {
 //
 // See MeshCache::getCellVolume() for an example.
 //
-template <MemSpace_kind MEM, AccessPattern_kind AP>
+template <MemSpace_kind MEM, AccessPattern_kind AP = AccessPattern_kind::DEFAULT>
 struct Getter {
   // DATA: the View-type storing the quantity to be got
   // MF: the MeshFramework-like object
@@ -105,7 +105,6 @@ struct Getter {
 // Getters for DEVICE
 template <>
 struct Getter<MemSpace_kind::DEVICE, AccessPattern_kind::DEFAULT> {
-  DISABLE_CUDA_WARNING
   template <typename DATA, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto) get(bool cached, DATA& d, CF&& c, const Entity_ID i)
   {
@@ -119,7 +118,6 @@ struct Getter<MemSpace_kind::DEVICE, AccessPattern_kind::DEFAULT> {
 
 template <>
 struct Getter<MemSpace_kind::DEVICE, AccessPattern_kind::CACHE> {
-  DISABLE_CUDA_WARNING
   template <typename DATA, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto) get(bool cached, DATA& d, CF&&, const Entity_ID i)
   {
@@ -130,7 +128,6 @@ struct Getter<MemSpace_kind::DEVICE, AccessPattern_kind::CACHE> {
 
 template <>
 struct Getter<MemSpace_kind::DEVICE, AccessPattern_kind::COMPUTE> {
-  DISABLE_CUDA_WARNING
   template <typename DATA, typename CF>
   static KOKKOS_INLINE_FUNCTION decltype(auto) get(bool, DATA&, CF&& c, const Entity_ID i)
   {

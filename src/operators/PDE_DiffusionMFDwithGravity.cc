@@ -57,7 +57,7 @@ PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
 
       bool have_K = K_ != Teuchos::null;
       const TensorVector& K = have_K ? *K_ : K_alternative;
-      const AmanziMesh::Mesh& mesh = *mesh_;
+      const auto& mesh = mesh_->getCache();
       AmanziGeometry::Point g(g_);
       bool gravity_special_projection(gravity_special_projection_);
       auto& Wff_cells = Wff_cells_;
@@ -157,7 +157,7 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
     auto rho_c = DensityCells(true);
     auto grav_flux_v = grav_flux.viewComponent("face", false);
 
-    const AmanziMesh::Mesh& mesh = *mesh_;
+    const auto& mesh = mesh_->getCache();
     AmanziGeometry::Point g(g_);
     bool have_K = K_ != Teuchos::null;
     const TensorVector& K = have_K ? *K_ : K_alternative;
