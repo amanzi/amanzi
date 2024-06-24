@@ -387,13 +387,13 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 
     const auto dKdP_cell = dkdp_->viewComponent("cell", true);
 
-    const AmanziMesh::Mesh* mesh = mesh_.get();
+    const AmanziMesh::Mesh& m = *mesh_;
     DenseMatrix_Vector& A = jac_op_->A;
     int little_k_type = little_k_type_;
 
     Kokkos::parallel_for(
       "PDE_DiffusionFV::AnalyticJacobian_", nfaces_owned, KOKKOS_LAMBDA(const int& f) {
-        auto cells = mesh->getFaceCells(f);
+        auto cells = m.getFaceCells(f);
         int mcells = cells.size();
 
         auto Aface = A[f];
