@@ -208,7 +208,7 @@ Energy_PK::Setup()
     *S_->Require<CV_t, CVS_t>(mol_flowrate_key_, Tags::DEFAULT, passwd_)
        .SetMesh(mesh_)
        ->SetGhosted(true) = cvs;
-    S_->RequireEvaluator(mol_flowrate_key_, Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_, Tags::DEFAULT);
   }
 
   // -- effective fracture conductivity
@@ -260,6 +260,7 @@ Energy_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
+std::cout << "AAA: Require Eval" << std::endl;
     S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
   }
 

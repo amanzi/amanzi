@@ -81,7 +81,10 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
   // domain and primary evaluators
   domain_ = fp_list_->template get<std::string>("domain name", "domain");
   pressure_key_ = Keys::getKey(domain_, "pressure");
+  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
+
   AddDefaultPrimaryEvaluator(S_, pressure_key_);
+  AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_);
 
   vo_ = Teuchos::null;
 }
@@ -110,7 +113,10 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   // domain and primary evaluators
   domain_ = fp_list_->template get<std::string>("domain name", "domain");
   pressure_key_ = Keys::getKey(domain_, "pressure");
+  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
+
   AddDefaultPrimaryEvaluator(S_, pressure_key_);
+  AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_);
 
   ms_itrs_ = 0;
   vo_ = Teuchos::null;
