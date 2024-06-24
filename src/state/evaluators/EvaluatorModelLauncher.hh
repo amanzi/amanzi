@@ -74,8 +74,9 @@ class EvaluatorModelLauncher {
   {
     if (wrt_ == dependencies_[I]) {
       Kokkos::RangePolicy<typename Device_type::execution_space> range(0, material_ids.extent(0));
+      const Model_type& model = model_;
       Kokkos::parallel_for(
-        name_, range, KOKKOS_CLASS_LAMBDA(const int i) { model_(Deriv<I>(), material_ids(i)); });
+        name_, range, KOKKOS_LAMBDA(const int i) { model(Deriv<I>(), material_ids(i)); });
     } else {
       EvaluatorModelLauncher<I - 1, Model_type, Device_type> launcher(
         name_, wrt_, dependencies_, model_);
