@@ -37,7 +37,7 @@ applyDirichletBCs(const Operators::BCs& bcs, CompositeVector& u)
     auto bc_value = bcs.bc_value();
     auto bc_model = bcs.bc_model();
     Kokkos::parallel_for(
-      "applyDirichletBCs", u_f.extent(0), KOKKOS_LAMBDA(const int& f) {
+      "applyDirichletBCs_face", u_f.extent(0), KOKKOS_LAMBDA(const int& f) {
         if (bc_model(f) == Operators::OPERATOR_BC_DIRICHLET) { u_f(f, 0) = bc_value(f); }
       });
   }
@@ -47,11 +47,11 @@ applyDirichletBCs(const Operators::BCs& bcs, CompositeVector& u)
     auto bc_value = bcs.bc_value();
     auto bc_model = bcs.bc_model();
 
-    const AmanziMesh::Mesh* mesh = u.getMesh().get();
+    const AmanziMesh::Mesh& mesh = *u.getMesh();
 
     Kokkos::parallel_for(
-      "applyDirichletBCs", u_f.extent(0), KOKKOS_LAMBDA(const int& bf) {
-        auto f = getBoundaryFaceFace(*mesh, bf);
+      "applyDirichletBCs_boundary_face", u_f.extent(0), KOKKOS_LAMBDA(const int& bf) {
+        auto f = getBoundaryFaceFace(mesh, bf);
         if (bc_model(f) == Operators::OPERATOR_BC_DIRICHLET) { u_f(bf, 0) = bc_value(f); }
       });
   }
