@@ -120,7 +120,7 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
       // partial F / partial x
       std::vector<CompositeVector> tmp_data;
       tmp_data.reserve(my_keys_.size());
-      for (int i = 0; i!= my_keys_.size() ++i)
+      for (int i = 0; i != my_keys_.size(); ++i)
         tmp_data.emplace_back(CompositeVector(results[i]->getMap()));
 
       std::vector<CompositeVector*> tmp(my_keys_.size());
@@ -141,7 +141,7 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
       // -- partial F / partial dep
       std::vector<CompositeVector> tmp_data;
       tmp_data.reserve(my_keys_.size());
-      for (int i = 0; i!= my_keys_.size() ++i)
+      for (int i = 0; i != my_keys_.size(); ++i)
         tmp_data.emplace_back(CompositeVector(results[i]->getMap()));
 
       std::vector<CompositeVector*> tmp(my_keys_.size(), nullptr);
