@@ -1,6 +1,6 @@
-============================================================
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Native XML Input Specification for Amanzi-U, version 1.6-dev
-============================================================
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 .. contents:: **Table of Contents**
    :depth: 3
@@ -2625,7 +2625,8 @@ Diagonal
 { PreconditionerDiagonal }
 
 
-Mesh
+====
+MESH
 ====
 Amanzi supports both structured and unstructured numerical solution approaches.
 This flexibility has a direct impact on the selection and design of the underlying 

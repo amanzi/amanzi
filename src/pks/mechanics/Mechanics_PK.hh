@@ -128,6 +128,8 @@ class Mechanics_PK : public PK_PhysicalBDF {
   void AddPressureGradient(CompositeVector& rhs);
   void AddTemperatureGradient(CompositeVector& rhs);
 
+  void InitializeBCs();
+
  public:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> ec_list_;
