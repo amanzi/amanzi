@@ -401,50 +401,50 @@ Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
     });
 }
 
-#if 0
-/* ******************************************************************
-* Visit methods for assemble: Face
-****************************************************************** */
-void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
-                                         const SuperMap& map, MatrixFE& mat,
-                                         int my_block_row, int my_block_col) const
-{
-  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  std::vector<int> lid_r(cell_max_faces + 1);
-  std::vector<int> lid_c(cell_max_faces + 1);
+// /* ******************************************************************
+// * Visit methods for assemble: Face
+// ****************************************************************** */
+// void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
+//                                          const SuperMap& map, MatrixFE& mat,
+//                                          int my_block_row, int my_block_col) const
+// {
+//   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  // ELEMENT: cell, DOFS: face and cell
-  const std::vector<int>& face_row_inds = map.viewGhostIndices(my_block_row, "face", 0);
-  const std::vector<int>& face_col_inds = map.viewGhostIndices(my_block_col, "face", 0);
+//   std::vector<int> lid_r(cell_max_faces + 1);
+//   std::vector<int> lid_c(cell_max_faces + 1);
 
-  Teuchos::RCP<const Epetra_BlockMap> face_gh_map = map.ComponentGhostedMap(my_block_row, "face");
+//   // ELEMENT: cell, DOFS: face and cell
+//   const std::vector<int>& face_row_inds = map.viewGhostIndices(my_block_row, "face", 0);
+//   const std::vector<int>& face_col_inds = map.viewGhostIndices(my_block_col, "face", 0);
 
-  int ierr(0);
-  AmanziMesh::Entity_ID_List faces;
-  for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, &faces);
-    int nfaces = faces.size();
+//   Teuchos::RCP<const Epetra_BlockMap> face_gh_map = map.ComponentGhostedMap(my_block_row, "face");
 
-    int k = 0;
-    for (int n = 0; n != nfaces; ++n) {
-      int f = faces[n];
-      int face_dof_size = face_gh_map->ElementSize(f);
-      int first = face_gh_map->FirstPointInElement(f);
+//   int ierr(0);
+//   AmanziMesh::Entity_ID_List faces;
+//   for (int c = 0; c != ncells_owned; ++c) {
+//     mesh_->cell_get_faces(c, &faces);
+//     int nfaces = faces.size();
 
-      for (int m = 0; m != face_dof_size; ++m) {
-        lid_r[k] = face_row_inds[first + m];
-        lid_c[k] = face_col_inds[first + m];
-        k++;
-      }
-    }
+//     int k = 0;
+//     for (int n = 0; n != nfaces; ++n) {
+//       int f = faces[n];
+//       int face_dof_size = face_gh_map->ElementSize(f);
+//       int first = face_gh_map->FirstPointInElement(f);
 
-    ierr |= mat.sumIntoValues(lid_r.data(), lid_c.data(), op.matrices[c]);
-  }
+//       for (int m = 0; m != face_dof_size; ++m) {
+//         lid_r[k] = face_row_inds[first + m];
+//         lid_c[k] = face_col_inds[first + m];
+//         k++;
+//       }
+//     }
 
-  AMANZI_ASSERT(!ierr);
-}
-#endif
+//     ierr |= mat.sumIntoValues(lid_r.data(), lid_c.data(), op.matrices[c]);
+//   }
+
+//   AMANZI_ASSERT(!ierr);
+// }
+
 
 /* ******************************************************************
 * Visit methods for assemble: Surface

@@ -32,12 +32,7 @@ MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs)
   if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
     size_t i = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
 
-    int row_size = 0;
-    Kokkos::parallel_reduce("OperatorUtils::MaxRowSize",
-                            mesh.getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED),
-                            KOKKOS_LAMBDA(const int c, int& i){
-        i = mesh.getCellNumFaces(c);
-      }, Kokkos::Max<int>(row_size));
+    int row_size = mesh.getCellMaxFaces();
     row_size += 2 * i;
   }
 

@@ -126,7 +126,7 @@ struct Extent {
   {
     std::string compname = AmanziMesh::to_string(EntityKind);
     auto vv = v->viewComponent(compname, false);
-    const auto& m = mesh;
+    const AmanziMesh::MeshCache& m = mesh.getCache();
     Kokkos::parallel_for(
       "EvaluatorMeshedEntityExtent", vv.extent(0), KOKKOS_LAMBDA(const int c) {
         vv(c, 0) = m.template getExtent<EntityKind>(c);
@@ -150,7 +150,7 @@ struct Elevation {
   {
     std::string compname = AmanziMesh::to_string(EntityKind);
     auto vv = v->viewComponent(compname, false);
-    const auto& m = mesh;
+    const AmanziMesh::MeshCache& m = mesh.getCache();
     int d = mesh.getSpaceDimension() - 1;
 
     Kokkos::parallel_for(
@@ -179,9 +179,9 @@ struct SlopeMagnitude {
     AMANZI_ASSERT(EntityKind == AmanziMesh::Entity_kind::CELL);
     AMANZI_ASSERT(mesh.getParentMesh() != Teuchos::null);
 
-    const AmanziMesh::Mesh& parent = *mesh.getParentMesh();
+    const AmanziMesh::MeshCache& parent = mesh.getParentMesh()->getCache();
     auto vv = v->viewComponent("cell", false);
-    const auto& m = mesh;
+    const AmanziMesh::MeshCache& m = mesh.getCache();
 
     Kokkos::parallel_for(
       "EvaluatorMeshedCellSlopeMagnitude", vv.extent(0), KOKKOS_LAMBDA(const int& c) {
@@ -211,9 +211,9 @@ struct Aspect {
     AMANZI_ASSERT(EntityKind == AmanziMesh::Entity_kind::CELL);
     AMANZI_ASSERT(mesh.getParentMesh() != Teuchos::null);
 
-    const AmanziMesh::Mesh& parent = *mesh.getParentMesh();
+    const AmanziMesh::MeshCache& parent = mesh.getParentMesh()->getCache();
     auto vv = v->viewComponent("cell", false);
-    const auto& m = mesh;
+    const AmanziMesh::MeshCache& m = mesh.getCache();
 
     Kokkos::parallel_for(
       "EvaluatorMeshedCellAspect", vv.extent(0), KOKKOS_LAMBDA(const int& c) {

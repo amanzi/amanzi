@@ -122,7 +122,7 @@ class DenseVector {
   void assign(const DenseVector<MEMSPACE>& other)
   {
     if (this != &other) {
-      AMANZI_ASSERT(m_ == other.m_);
+      assert(m_ == other.m_);
       // if (m_ != other.m_) reshape(other.m_);
       for (int i = 0; i < m_; ++i) { data_[i] = other.data_[i]; }
     }

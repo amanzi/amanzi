@@ -25,7 +25,7 @@ DeriveFaceValuesFromCellValues(CompositeVector& cv)
 
     const auto cv_c = cv.viewComponent("cell", true);
     auto cv_f = cv.viewComponent("face", false);
-    const AmanziMesh::Mesh& mesh = *cv.getMesh();
+    const AmanziMesh::MeshCache& mesh = cv.getMesh()->getCache();
 
     Kokkos::parallel_for(
       "CompositeVector::DeriveFaceValuesFromCellValues loop 1",
@@ -51,9 +51,10 @@ copyMeshCoordinatesToVector(const AmanziMesh::Mesh& mesh,
 {
   auto view = vec.viewComponent(to_string(kind), false);
   int ndim = mesh.getSpaceDimension();
+  const AmanziMesh::MeshCache& mc = mesh.getCache();
   Kokkos::parallel_for(
     "copyMeshCoordinatesToVector", view.extent(0), KOKKOS_LAMBDA(const int& i) {
-      auto nc = mesh.getCentroid(kind, i);
+      auto nc = mc.getCentroid(kind, i);
       for (int j = 0; j != ndim; ++j) view(i, j) = nc[j];
     });
 }

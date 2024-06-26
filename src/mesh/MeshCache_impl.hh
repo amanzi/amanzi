@@ -270,7 +270,7 @@ MeshCache::getExtent(const Entity_kind kind, const Entity_ID ent) const
   case (Entity_kind::EDGE):
     return getEdgeLength<AP>(ent);
   default:
-    AMANZI_ASSERT(false);
+    assert(false);
   }
   return -1.0;
 }

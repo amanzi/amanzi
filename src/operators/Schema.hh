@@ -34,8 +34,6 @@ class Schema {
   Schema(AmanziMesh::Entity_kind kind, int nvec) { Init(kind, nvec); }
   Schema(int schema_old) { Init(schema_old); } // old schema must go away FIXME
 
-  KOKKOS_INLINE_FUNCTION ~Schema(){};
-
   // member functions
   void Init(int schema_old);
   void Init(AmanziMesh::Entity_kind kind, int nvec);

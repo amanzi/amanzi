@@ -42,10 +42,11 @@ class FunctionConstant : public Function {
              const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
   {
     if (ids) {
-      auto ids_loc = *ids;
+      const auto& ids_loc = *ids;
+      double c(c_);
       Kokkos::parallel_for(
-        "FunctionConstant::apply", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(ids_loc(i)) = c_;
+        "FunctionConstant::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(ids_loc(i)) = c;
         });
     } else {
       Kokkos::deep_copy(out, c_);

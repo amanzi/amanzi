@@ -264,7 +264,7 @@ PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
     auto k_face = ScalarCoefficientFaces(false);
     const auto rhs_cell = global_op_->rhs()->viewComponent("cell", true);
     auto trans_face = transmissibility_->viewComponent("face", true);
-    const Amanzi::AmanziMesh::Mesh& m = *mesh_;
+    const Amanzi::AmanziMesh::MeshCache& m = mesh_->getCache();
     const auto bc_model = bcs_trial_[0]->bc_model();
     const auto bc_value = bcs_trial_[0]->bc_value();
     Kokkos::parallel_for(
@@ -322,7 +322,7 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
 
   solution->scatterMasterToGhosted("cell");
   const auto p = solution->viewComponent("cell", true);
-  const Amanzi::AmanziMesh::Mesh& m = *mesh_;
+  const Amanzi::AmanziMesh::MeshCache& m = mesh_->getCache();
   int lnfaces_owned(nfaces_owned);
 
   Kokkos::View<int*> flag("flags", nfaces_wghost); // initialized to 0 by default
@@ -387,7 +387,7 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 
     const auto dKdP_cell = dkdp_->viewComponent("cell", true);
 
-    const AmanziMesh::Mesh& m = *mesh_;
+    const Amanzi::AmanziMesh::MeshCache& m = mesh_->getCache();
     DenseMatrix_Vector& A = jac_op_->A;
     int little_k_type = little_k_type_;
 
@@ -456,19 +456,6 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 }
 
 
-#if 0
-/* ******************************************************************
-* Computation of a local submatrix of the analytical Jacobian
-* (its nonlinear part) on face f.
-****************************************************************** */
-void PDE_DiffusionFV::ComputeJacobianLocal_(
-    int mcells, int f, int face_dir_0to1, int bc_model_f, double bc_value_f,
-    double *pres, double *dkdp_cell, WhetStone::DenseMatrix<>& Jpp)
-{
-  const Epetra_MultiVector& trans_face = *transmissibility_->viewComponent("face", true);
-}
-#endif
-
 /* ******************************************************************
 * Compute transmissibilities on faces
 ****************************************************************** */
@@ -494,7 +481,7 @@ PDE_DiffusionFV::ComputeTransmissibility_()
   }
   {
     auto trans_face = transmissibility_->viewComponent("face", true);
-    const Amanzi::AmanziMesh::Mesh& m = *mesh_;
+    const Amanzi::AmanziMesh::MeshCache& m = mesh_->getCache();
     const int space_dimension = mesh_->getSpaceDimension();
 
     const TensorVector& K = *K_;

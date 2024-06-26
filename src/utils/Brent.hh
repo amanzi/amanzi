@@ -13,7 +13,18 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+
 #include "dbc.hh"
+#include "Kokkos_Core.hpp"
+
+namespace Kokkos {
+KOKKOS_INLINE_FUNCTION
+void swap(double a, double b) {
+  double tmp(a);
+  a = b;
+  b = a;
+}
+}
 
 namespace Amanzi {
 namespace Utils {
@@ -35,10 +46,11 @@ namespace Utils {
 *   otherwise, *itr is the number of iterations to convergence.
 ****************************************************************** */
 template <class F>
+KOKKOS_INLINE_FUNCTION
 double
 findRootBrent(const F& f, double a, double b, double tol, int* itr, double ftol = -1.0)
 {
-  AMANZI_ASSERT(*itr > 0);
+  assert(*itr > 0);
   int itr_max(*itr);
   double c, d, s, fa, fb, fc, fs;
   bool flag(true);
@@ -49,11 +61,11 @@ findRootBrent(const F& f, double a, double b, double tol, int* itr, double ftol 
     *itr = -1;
     return 0.0;
   }
-  if (ftol < 0.0) ftol = (1.0 + std::fabs(fa) + std::fabs(fb)) * tol;
+  if (ftol < 0.0) ftol = (1.0 + Kokkos::abs(fa) + Kokkos::abs(fb)) * tol;
 
-  if (std::fabs(fa) < std::fabs(fb)) {
-    std::swap(a, b);
-    std::swap(fa, fb);
+  if (Kokkos::abs(fa) < Kokkos::abs(fb)) {
+    Kokkos::swap(a, b);
+    Kokkos::swap(fa, fb);
   }
 
   c = a;
@@ -70,9 +82,9 @@ findRootBrent(const F& f, double a, double b, double tol, int* itr, double ftol 
     }
 
     if ((s - (3 * a + b) / 4) * (s - b) >= 0.0 ||
-        (flag && std::fabs(s - b) >= std::fabs(b - c) / 2) ||
-        (!flag && std::fabs(s - b) >= std::fabs(c - d) / 2) || (flag && std::fabs(b - c) < tol) ||
-        (!flag && std::fabs(c - d) < tol)) {
+        (flag && Kokkos::abs(s - b) >= Kokkos::abs(b - c) / 2) ||
+        (!flag && Kokkos::abs(s - b) >= Kokkos::abs(c - d) / 2) || (flag && Kokkos::abs(b - c) < tol) ||
+        (!flag && Kokkos::abs(c - d) < tol)) {
       s = (a + b) / 2;
       flag = true;
     } else {
@@ -92,13 +104,13 @@ findRootBrent(const F& f, double a, double b, double tol, int* itr, double ftol 
       fa = fs;
     }
 
-    if (std::fabs(fa) < std::fabs(fb)) {
-      std::swap(a, b);
-      std::swap(fa, fb);
+    if (Kokkos::abs(fa) < Kokkos::abs(fb)) {
+      Kokkos::swap(a, b);
+      Kokkos::swap(fa, fb);
     }
-    if (std::fabs(fb) <= ftol) return b;
-    if (std::fabs(fs) <= ftol) return s;
-    if (std::fabs(b - a) < tol) return s;
+    if (Kokkos::abs(fb) <= ftol) return b;
+    if (Kokkos::abs(fs) <= ftol) return s;
+    if (Kokkos::abs(b - a) < tol) return s;
   }
 
   (*itr)++; // indicate nonconvergence
@@ -133,16 +145,16 @@ bracketRoot(const F& f, double start, double delta, int* itrs)
       return std::make_pair(b, b);
     else if (fa * fb < 0.)
       return std::make_pair(a, b);
-    else if (std::fabs(fa) > std::fabs(fb)) {
+    else if (Kokkos::abs(fa) > Kokkos::abs(fb)) {
       // root to the right of b
-      std::swap(a, b);
-      std::swap(fa, fb);
+      Kokkos::swap(a, b);
+      Kokkos::swap(fa, fb);
       b = a + delta;
       fb = f(b);
     } else {
       // root to the left of a
-      std::swap(a, b);
-      std::swap(fa, fb);
+      Kokkos::swap(a, b);
+      Kokkos::swap(fa, fb);
       a = b - delta;
       fa = f(a);
     }
@@ -170,11 +182,11 @@ findMinimumBrent(const F& f, double a, double b, double tol, int* itr)
 
   *itr = 0;
   while (*itr < itr_max) {
-    xtol = tol * std::fabs(x) + tol;
+    xtol = tol * Kokkos::abs(x) + tol;
     xtol2 = 2 * xtol;
 
     c = (a + b) / 2; // called m in the video
-    if (std::fabs(x - c) <= xtol2 - (b - a) / 2) return c;
+    if (Kokkos::abs(x - c) <= xtol2 - (b - a) / 2) return c;
 
     (*itr)++;
 
@@ -185,19 +197,19 @@ findMinimumBrent(const F& f, double a, double b, double tol, int* itr)
     //   current p/q > 1/2 or previous p/q
     p = q = r = 0.0;
 
-    if (std::fabs(e) > xtol) {
+    if (Kokkos::abs(e) > xtol) {
       r = (x - w) * (fx - fv);
       q = (x - v) * (fx - fw);
       p = (x - v) * q - (x - w) * r;
       q = 2.0 * (q - r);
       if (q > 0.0) p = -p;
-      q = std::fabs(q);
+      q = Kokkos::abs(q);
       r = e;
       e = d;
     }
 
     // parabolic interpolation
-    if (std::fabs(p) < std::fabs(0.5 * q * r) && q * (a - x) < p && p < q * (b - x)) {
+    if (Kokkos::abs(p) < Kokkos::abs(0.5 * q * r) && q * (a - x) < p && p < q * (b - x)) {
       d = p / q;
       u = x + d;
 
@@ -211,7 +223,7 @@ findMinimumBrent(const F& f, double a, double b, double tol, int* itr)
     }
 
     // minumum estimate is too close to end points
-    if (xtol <= std::fabs(d)) {
+    if (xtol <= Kokkos::abs(d)) {
       u = x + d;
     } else if (d > 0.0) {
       u = x + xtol;

@@ -35,8 +35,7 @@ Example:
   </ParameterList>
 */
 
-#ifndef AMANZI_MULTIPLICATIVE_FUNCTION_HH_
-#define AMANZI_MULTIPLICATIVE_FUNCTION_HH_
+#pragma once
 
 #include <memory>
 
@@ -67,31 +66,29 @@ class FunctionMultiplicative : public Function {
              Kokkos::View<double*>& out,
              const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
   {
-    Kokkos::View<double*> out_1("result", in.extent(1));
+    f1_->apply(in, out, ids);
+
     Kokkos::View<double*> out_2("result", in.extent(1));
-    f1_->apply(in, out_1);
-    f2_->apply(in, out_2);
+    f2_->apply(in, out_2, ids);
 
     // Sum result
     if (ids) {
-      auto ids_loc = *ids;
+      const auto& ids_loc = *ids;
       Kokkos::parallel_for(
-        "FunctionAdditive::apply", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(ids_loc(i)) = out_1(i) * out_2(i);
+        "FunctionAdditive::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(ids_loc(i)) = out(ids_loc(i)) * out_2(ids_loc(i));
         });
     } else {
       Kokkos::parallel_for(
-        "FunctionAdditive::apply", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(i) = out_1(i) * out_2(i);
+        "FunctionAdditive::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(i) = out(i) * out_2(i);
         });
     }
   }
 
  private:
   std::unique_ptr<Function> f1_, f2_;
-  // Function *f1_, *f2_;
 };
 
 } // namespace Amanzi
 
-#endif // AMANZI_MULTIPLICATIVE_FUNCTION_HH_

@@ -152,7 +152,7 @@ class DenseMatrix {
   void assign(const DenseMatrix<MEMSPACE>& other)
   {
     if (this != &other) {
-      AMANZI_ASSERT(n_ == other.n_ && m_ == other.m_);
+      assert(n_ == other.n_ && m_ == other.m_);
       //if (n_ != other.n_ || m_ != other.m_) reshape(other.m_, other.n_);
       for (int i = 0; i < n_ * m_; ++i) { data_(i) = other.data_(i); }
     }
@@ -260,11 +260,11 @@ class DenseMatrix {
   int Multiply(const DenseVector<MEMSPACE>& A, DenseVector<MEMSPACE>& B, bool transpose) const
   {
     if (transpose) {
-      AMANZI_ASSERT(B.NumRows() == NumCols());
-      AMANZI_ASSERT(A.NumRows() == NumRows());
+      assert(B.NumRows() == NumCols());
+      assert(A.NumRows() == NumRows());
     } else {
-      AMANZI_ASSERT(A.NumRows() == NumCols());
-      AMANZI_ASSERT(B.NumRows() == NumRows());
+      assert(A.NumRows() == NumCols());
+      assert(B.NumRows() == NumRows());
     }
 
     int mrowsA = A.NumRows();
@@ -635,8 +635,8 @@ PrintMatrix(const DenseMatrix<MEMSPACE>& A, const char* format = "%12.5f", int m
   int n = A.NumCols();
 
   if (mmax > 0) {
-    m = std::min(mmax, m);
-    n = std::min(mmax, n);
+    m = Kokkos::min(mmax, m);
+    n = Kokkos::min(mmax, n);
   }
 
   for (int i = 0; i < m; i++) {

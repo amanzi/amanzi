@@ -79,32 +79,31 @@ Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   auto Yc = Y.viewComponent("cell", true);
   auto Xc = X.viewComponent("cell", true);
 
-  const AmanziMesh::Mesh& m = *op.mesh;
-
   // Allocate the first time
   if (op.v.size() != op.A.size()) { op.PreallocateWorkVectors(); }
+  {
+    auto local_A = op.A;
+    auto local_Av = op.Av;
+    auto local_v = op.v;
+    const AmanziMesh::MeshCache& m = op.mesh->getCache();
 
-  auto local_A = op.A;
-  auto local_Av = op.Av;
-  auto local_v = op.v;
+    // parallel matrix-vector product
+    Kokkos::parallel_for(
+      "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell COMPUTE",
+      nfaces_owned,
+      KOKKOS_LAMBDA(const int f) {
+        auto cells = m.getFaceCells(f);
 
-  // parallel matrix-vector product
-  Kokkos::parallel_for(
-    "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell COMPUTE",
-    nfaces_owned,
-    KOKKOS_LAMBDA(const int f) {
-      auto cells = m.getFaceCells(f);
+        int ncells = cells.extent(0);
+        auto lv = local_v[f];
+        auto lAv = local_Av[f];
+        auto lA = local_A[f];
+        for (int n = 0; n != ncells; ++n) { lv(n) = Xc(cells[n], 0); }
+        lA.Multiply(lv, lAv, false);
 
-      int ncells = cells.extent(0);
-      auto lv = local_v[f];
-      auto lAv = local_Av[f];
-      auto lA = local_A[f];
-      for (int n = 0; n != ncells; ++n) { lv(n) = Xc(cells[n], 0); }
-      lA.Multiply(lv, lAv, false);
-
-      for (int n = 0; n != ncells; ++n) { Kokkos::atomic_add(&Yc(cells[n], 0), lAv(n)); }
-    });
-
+        for (int n = 0; n != ncells; ++n) { Kokkos::atomic_add(&Yc(cells[n], 0), lAv(n)); }
+      });
+  }
   return 0;
 }
 

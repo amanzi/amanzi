@@ -185,8 +185,8 @@ namespace Impl {
 Kokkos::View<double**>
 getMeshFunctionCoordinates(double time, const PatchSpace& ps)
 {
-  const AmanziMesh::Mesh& mesh = *ps.mesh;
-  int dim = mesh.getSpaceDimension();
+  int dim = ps.mesh->getSpaceDimension();
+  const AmanziMesh::MeshCache& mesh = ps.mesh->getCache();
   Kokkos::View<double**> txyz("txyz", dim + 1, ps.size());
 
   auto ids = ps.getIDs();

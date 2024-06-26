@@ -83,7 +83,7 @@ class Op_Cell_Face : public Op {
 
   virtual void Rescale(const CompositeVector& scaling)
   {
-    const Amanzi::AmanziMesh::Mesh& m = *mesh;
+    const Amanzi::AmanziMesh::MeshCache& m = mesh->getCache();
     if (scaling.hasComponent("face")) {
       const auto s_c = scaling.viewComponent("face", true);
       Kokkos::parallel_for(
