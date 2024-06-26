@@ -101,10 +101,7 @@ class Darcy_PK : public Flow_PK {
   ModifyCorrection(double dt,
                    Teuchos::RCP<const TreeVector> res,
                    Teuchos::RCP<const TreeVector> u,
-                   Teuchos::RCP<TreeVector> du) override
-  {
-    return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
-  }
+                   Teuchos::RCP<TreeVector> du) override;
 
   // -- experimental approach -- calling this indicates that the time
   //    integration scheme is changing the value of the solution in state.

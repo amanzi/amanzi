@@ -125,6 +125,44 @@ Darcy_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, doub
 
 
 /* ******************************************************************
+* Clip pressure changed
+****************************************************************** */
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+Darcy_PK::ModifyCorrection(double dt,
+                           Teuchos::RCP<const TreeVector> res,
+                           Teuchos::RCP<const TreeVector> u,
+                           Teuchos::RCP<TreeVector> du)
+{
+  int nclipped(0);
+
+  // clipping pressure
+  for (auto comp = u->Data()->begin(); comp != u->Data()->end(); ++comp) {
+    const auto& uc = *u->Data()->ViewComponent(*comp);
+    auto& duc = *du->Data()->ViewComponent(*comp);
+
+    int ncomp = u->Data()->size(*comp, false);
+    for (int i = 0; i < ncomp; ++i) {
+      double tmp0 = uc[0][i] / 2.0;
+      double tmp1 = std::min(tmp0, uc[0][i] - atm_pressure_);
+      if (duc[0][i] < -tmp0) {
+        nclipped++;
+        duc[0][i] = -tmp0;
+      } else if (duc[0][i] > tmp1) {
+        nclipped++;
+        duc[0][i] = tmp1;
+      }
+    }
+  }
+
+  int tmp(nclipped);
+  u->Data()->Comm()->SumAll(&tmp, &nclipped, 1); // find the global clipping
+
+  return (nclipped) > 0 ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED :
+                          AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+}
+
+
+/* ******************************************************************
 * Check difference du between the predicted and converged solutions.
 ****************************************************************** */
 double
