@@ -72,7 +72,7 @@ InputConverterU::TranslateState_()
   gravity[dim_ - 1] = -const_gravity_;
   out_ic.sublist("gravity").set<Teuchos::Array<double>>("value", gravity);
 
-  double viscosity(0.0);
+  double viscosity(0.0), molar_rho(55508.0);
   rho_ = 1000.0;
   if (phases_[LIQUID].active) {
     // --- constant viscosities
@@ -80,10 +80,14 @@ InputConverterU::TranslateState_()
     viscosity = GetTextContentD_(node, "Pa*s");
     out_ic.sublist("const_fluid_viscosity").set<double>("value", viscosity);
 
-    // --- constant density
+    // --- constant densities
     node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag, true);
     rho_ = GetTextContentD_(node, "kg/m^3");
     out_ic.sublist("const_fluid_density").set<double>("value", rho_);
+
+    node = GetUniqueElementByTagsString_("phases, liquid_phase, molar_mass", flag, true);
+    molar_rho = GetTextContentD_(node);
+    out_ic.sublist("const_fluid_molar_mass").set<double>("value", molar_rho);
 
     // --- constant compressibility
     node = GetUniqueElementByTagsString_("phases, liquid_phase, compressibility", flag, false);

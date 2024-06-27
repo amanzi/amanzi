@@ -42,6 +42,7 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 set(mechanics_src_files Mechanics_PK.cc
                         MechanicsElasticity_PK.cc MechanicsElasticity_TI.cc
                         MechanicsSmallStrain_PK.cc MechanicsSmallStrain_TI.cc
+                        MechanicsFracturedMatrix_PK.cc
                         MechanicsBoundaryFunction.cc
                         HydrostaticStressEvaluator.cc
                         VolumetricStrainEvaluator.cc
@@ -66,6 +67,7 @@ add_amanzi_library(mechanics SOURCE ${mechanics_src_files}
 set(mechanics_inc_files 
   MechanicsElasticity_PK.hh
   MechanicsSmallStrain_PK.hh
+  MechanicsFracturedMatrix_PK.hh
   MechanicsBoundaryFunction.hh
   HydrostaticStressEvaluator.hh
   VolumetricStrainEvaluator.hh

@@ -96,7 +96,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="5.55082707324418225e+04"/>
+                <Parameter name="value" type="double" value="55509.29780738274"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -176,6 +176,9 @@
       </ParameterList>
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1000.0"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="poisson_ratio">
         <ParameterList name="function">

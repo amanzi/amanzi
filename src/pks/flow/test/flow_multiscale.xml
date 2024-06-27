@@ -85,7 +85,7 @@
             <Parameter name="components" type="Array(string)" value="{cell, boundary_face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="55397.25419097694"/>
+                <Parameter name="value" type="double" value="55409.38107132945"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -130,6 +130,9 @@
       </ParameterList>
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.2"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="1.01325e+05"/>

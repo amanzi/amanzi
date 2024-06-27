@@ -186,6 +186,7 @@
 
     <ParameterList name="energy evaluator">
       <Parameter name="tag" type="string" value=""/>
+      <Parameter name="liquid molar mass" type="double" value="0.018015"/>
     </ParameterList>
 
     <ParameterList name="time integrator">
@@ -339,6 +340,9 @@
       </ParameterList>
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.2"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.0e-3"/>

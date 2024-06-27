@@ -14,7 +14,6 @@
   Process kernel that couples flow in matrix and fracture network.
 */
 
-#include "CommonDefs.hh"
 #include "EvaluatorPrimary.hh"
 #include "InverseFactory.hh"
 #include "PDE_CouplingFlux.hh"
@@ -166,7 +165,9 @@ FlowMatrixFracture_PK::Initialize()
 
   FractureInsertion fi(mesh_matrix_, mesh_fracture_);
   fi.InitMatrixFaceToFractureCell(Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap));
-  double scale = (sub_pks_[0]->name() == "darcy") ? 1.0 : 1.0 / CommonDefs::MOLAR_MASS_H2O;
+
+  double molar_mass = S_->Get<double>("const_fluid_molar_mass");
+  double scale = (sub_pks_[0]->name() == "darcy") ? 1.0 : 1.0 / molar_mass;
   fi.SetValues(kn, scale / gravity);
 
   // -- operators

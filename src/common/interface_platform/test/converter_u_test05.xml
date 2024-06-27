@@ -44,6 +44,7 @@
     <liquid_phase name="water">
       <viscosity>1.0</viscosity>
       <density>1.0</density>
+      <molar_mass>0.018015</molar_mass>
       <dissolved_components>
         <solutes>
           <solute coefficient_of_diffusion="0.0">tracer</solute>

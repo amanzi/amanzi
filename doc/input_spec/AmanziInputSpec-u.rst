@@ -1448,7 +1448,7 @@ The ``liquid_phase`` has the following elements
 .. code-block:: xml
 
   <liquid_phase>
-      Required Elements: viscosity, density
+      Required Elements: viscosity, density, molar_mass
       Optional Elements: dissolved_components
   </liquid_phase>
 
@@ -1457,6 +1457,8 @@ Here is more info on the ``liquid_phase`` elements:
     * ``viscosity`` = "double"
 
     * ``density`` = "double"
+
+    * ``molar_mass`` = "double"
 
     * ``dissolved_components`` has the following elements
 

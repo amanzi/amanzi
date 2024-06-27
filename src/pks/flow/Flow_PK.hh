@@ -352,7 +352,7 @@ class Flow_PK : public PK_PhysicalBDF {
   // Stationary physical quantatities
   std::vector<WhetStone::Tensor> K;
   AmanziGeometry::Point gravity_;
-  double g_, rho_, molar_rho_, atm_pressure_;
+  double g_, rho_, molar_rho_, molar_mass_, atm_pressure_;
   double flux_units_; // scaling for flux units from kg to moles.
 
   Teuchos::RCP<Epetra_MultiVector> Kxy;

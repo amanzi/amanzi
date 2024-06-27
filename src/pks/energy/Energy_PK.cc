@@ -113,6 +113,7 @@ Energy_PK::Setup()
   // require constant fields
   S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
   S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
+  S_->Require<double>("const_fluid_molar_mass", Tags::DEFAULT, "state");
 
   // require primary state variables
   std::vector<std::string> names({ "cell", "face" });

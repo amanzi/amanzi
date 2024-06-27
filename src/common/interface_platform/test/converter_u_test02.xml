@@ -47,6 +47,7 @@
       <eos>0-30C</eos>
       <viscosity>1.002E-03</viscosity>
       <density>998.2</density>
+      <molar_mass>0.018015</molar_mass>
       <dissolved_components>
         <solutes>
           <solute coefficient_of_diffusion="1.0e-9">Tc-99</solute>

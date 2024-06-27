@@ -413,6 +413,8 @@ Multiphase_PK::Setup()
 
   // non-isothermal model
   if (system_["energy eqn"]) {
+    double molar_mass = S_->ICList().sublist("const_fluid_molar_mass").get<double>("value");
+
     if (!S_->HasRecord(energy_key_)) {
       S_->Require<CV_t, CVS_t>(energy_key_, Tags::DEFAULT, energy_key_)
         .SetMesh(mesh_)
@@ -423,6 +425,7 @@ Multiphase_PK::Setup()
       elist.set<std::string>("energy key", energy_key_)
         .set<std::string>("tag", "")
         .set<bool>("vapor diffusion", true)
+        .set<double>("liquid molar mass", molar_mass)
         .set<std::string>("particle density key", particle_density_key_)
         .set<std::string>("internal energy rock key", ie_rock_key_);
       elist.setName(energy_key_);
@@ -494,7 +497,8 @@ Multiphase_PK::Setup()
         .set<std::string>("internal energy key", ie_liquid_key_)
         .set<bool>("include work term", false)
         .set<std::string>("pressure key", pressure_liquid_key_)
-        .set<std::string>("molar density key", mol_density_liquid_key_);
+        .set<std::string>("molar density key", mol_density_liquid_key_)
+        .set<double>("liquid molar mass", molar_mass);
       elist.setName(enthalpy_liquid_key_);
 
       auto enth = Teuchos::rcp(new Energy::EnthalpyEvaluator(elist));

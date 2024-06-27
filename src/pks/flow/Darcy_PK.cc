@@ -241,7 +241,8 @@ Darcy_PK::Setup()
 
   // -- molar and volumetric flow rates
   double rho = S_->ICList().sublist("const_fluid_density").get<double>("value");
-  double molar_rho = rho / CommonDefs::MOLAR_MASS_H2O;
+  molar_mass_ = S_->ICList().sublist("const_fluid_molar_mass").get<double>("value");
+  double molar_rho = rho / molar_mass_;
   Setup_FlowRates_(true, molar_rho);
 
   // -- fracture dynamics

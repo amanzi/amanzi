@@ -62,6 +62,8 @@ EnergyTwoPhase_PK::Setup()
   // basic class setup
   Energy_PK::Setup();
 
+  double molar_mass = S_->ICList().sublist("const_fluid_molar_mass").get<double>("value");
+
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
   if (!S_->HasRecord(energy_key_)) {
@@ -75,6 +77,7 @@ EnergyTwoPhase_PK::Setup()
       .set<std::string>("particle density key", particle_density_key_)
       .set<std::string>("internal energy rock key", ie_rock_key_)
       .set<bool>("vapor diffusion", true)
+      .set<double>("liquid molar mass", molar_mass)
       .set<std::string>("tag", "");
     elist.setName(energy_key_);
     if (flow_on_manifold_) elist.set<std::string>("aperture key", aperture_key_);
@@ -96,7 +99,9 @@ EnergyTwoPhase_PK::Setup()
       ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
     Teuchos::ParameterList elist = ep_list_->sublist("enthalpy evaluator");
-    elist.set("enthalpy key", enthalpy_key_).set<std::string>("tag", "");
+    elist.set("enthalpy key", enthalpy_key_)
+         .set<double>("liquid molar mass", molar_mass)
+         .set<std::string>("tag", "");
     elist.setName(enthalpy_key_);
 
     auto enth = Teuchos::rcp(new EnthalpyEvaluator(elist));

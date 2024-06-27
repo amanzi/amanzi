@@ -48,6 +48,7 @@ TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist)
 
   vapor_diffusion_ = plist_.get<bool>("vapor diffusion");
   include_potential_ = plist_.get<bool>("include potential term", false);
+  liquid_molar_mass_ = plist_.get<double>("liquid molar mass");
 
   dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(sat_liquid_key_, Tags::DEFAULT));
@@ -133,7 +134,7 @@ TotalEnergyEvaluator::Evaluate_(const State& S, const std::vector<CompositeVecto
 
     int d = mesh->getSpaceDimension();
     double g = std::fabs(std::fabs((S.Get<AmanziGeometry::Point>("gravity"))[d - 1]));
-    g *= CommonDefs::MOLAR_MASS_H2O;
+    g *= liquid_molar_mass_;
 
     for (int c = 0; c != ncells; ++c) {
       const auto& xc = mesh->getCellCentroid(c);
