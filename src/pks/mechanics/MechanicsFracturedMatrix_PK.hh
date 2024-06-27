@@ -17,6 +17,9 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
+// Amanzi
+#include "Mesh.hh"
+
 // Amanzi::Mechanics
 #include "MechanicsSmallStrain_PK.hh"
 
@@ -31,6 +34,15 @@ class MechanicsFracturedMatrix_PK : public MechanicsSmallStrain_PK {
                               const Teuchos::RCP<TreeVector>& soln);
 
   ~MechanicsFracturedMatrix_PK(){};
+
+  // methods required for PK interface
+  virtual void Setup() final;
+
+ private:
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_fracture_;
+
+ private:
+  static RegisteredPKFactory<MechanicsFracturedMatrix_PK> reg_;
 };
 
 } // namespace Mechanics

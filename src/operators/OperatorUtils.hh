@@ -30,7 +30,7 @@ namespace Operators {
 class SuperMap;
 class Schema;
 
-// -- complex schema version (deprecated?)
+// complex schema version (deprecated?)
 int
 CopyCompositeVectorToSuperVector(const SuperMap& map,
                                  const CompositeVector& cv,

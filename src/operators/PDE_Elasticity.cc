@@ -258,7 +258,7 @@ PDE_Elasticity::Init(Teuchos::ParameterList& plist)
       AmanziMesh::Entity_kind kind;
       std::tie(kind, std::ignore, num) = *it;
 
-      std::string name(my_schema.KindToString(kind));
+      std::string name(AmanziMesh::to_string(kind));
       cvs->AddComponent(name, kind, num);
     }
 

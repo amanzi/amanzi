@@ -228,7 +228,7 @@ Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
     for (auto it = op.schema_col().begin(); it != op.schema_col().end(); ++it) {
       std::tie(kind, std::ignore, num) = *it;
 
-      std::string name = schema_row_.KindToString(kind);
+      std::string name = AmanziMesh::to_string(kind);
       WhetStone::cell_get_entities(*mesh_, c, kind, &entities);
       int nents = entities.size();
       AMANZI_ASSERT(nents > 0);
@@ -253,7 +253,7 @@ Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
     for (auto it = op.schema_row().begin(); it != op.schema_row().end(); ++it) {
       std::tie(kind, std::ignore, num) = *it;
 
-      std::string name = schema_row_.KindToString(kind);
+      std::string name = AmanziMesh::to_string(kind);
       WhetStone::cell_get_entities(*mesh_, c, kind, &entities);
       int nents = entities.size();
       AMANZI_ASSERT(nents > 0);
@@ -463,7 +463,7 @@ Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
     for (auto it = op.schema_col().begin(); it != op.schema_col().end(); ++it) {
       std::tie(kind, std::ignore, num) = *it;
 
-      std::string name = schema_row_.KindToString(kind);
+      std::string name = AmanziMesh::to_string(kind);
       WhetStone::cell_get_entities(*mesh_, c, kind, &entities);
       int nents = entities.size();
       AMANZI_ASSERT(nents > 0);
@@ -488,7 +488,7 @@ Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
     for (auto it = op.schema_row().begin(); it != op.schema_row().end(); ++it) {
       std::tie(kind, std::ignore, num) = *it;
 
-      std::string name = schema_row_.KindToString(kind);
+      std::string name = AmanziMesh::to_string(kind);
       WhetStone::cell_get_entities(*mesh_, c, kind, &entities);
       int nents = entities.size();
       AMANZI_ASSERT(nents > 0);

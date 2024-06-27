@@ -173,7 +173,7 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(const BCs& bc,
   AmanziMesh::Entity_kind kind = bc.kind();
   Teuchos::RCP<Epetra_MultiVector> rhs_kind;
   if (primary) {
-    std::string name = schema_row.KindToString(kind);
+    std::string name = AmanziMesh::to_string(kind);
     if (!rhs.HasComponent(name)) return;
     rhs_kind = rhs.ViewComponent(name, true);
   }
@@ -412,7 +412,7 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(const BCs& bc,
   AmanziMesh::Entity_kind kind = bc.kind();
   AMANZI_ASSERT(kind == AmanziMesh::Entity_kind::FACE || kind == AmanziMesh::Entity_kind::EDGE);
   Teuchos::RCP<Epetra_MultiVector> rhs_kind;
-  if (primary) rhs_kind = rhs.ViewComponent(schema_row.KindToString(kind), true);
+  if (primary) rhs_kind = rhs.ViewComponent(AmanziMesh::to_string(kind), true);
 
   for (int c = 0; c != ncells_owned; ++c) {
     WhetStone::DenseMatrix& Acell = op->matrices[c];
@@ -650,16 +650,16 @@ CreateFracturedMatrixCVS_Node(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 Teuchos::RCP<CompositeVectorSpace>
 CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                          const Teuchos::RCP<const AmanziMesh::Mesh>& fracture,
-                         const Schema& schema)
+                         const std::vector<WhetStone::SchemaItem>& items)
 {
   bool flag_face(false), flag_node(false);
 
-  for (auto it = schema.begin(); it != schema.end(); ++it) {
+  for (auto it = items.begin(); it != items.end(); ++it) {
     int num;
     AmanziMesh::Entity_kind kind;
     std::tie(kind, std::ignore, num) = *it;
 
-    std::string name(schema.KindToString(kind));
+    std::string name(AmanziMesh::to_string(kind));
     if (name == "face") flag_face = true;
     if (name == "node") flag_node = true;
   }

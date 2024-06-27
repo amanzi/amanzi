@@ -365,7 +365,7 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
       std::tie(kind, std::ignore, num) = *it;
 
       Teuchos::RCP<Op> op;
-      auto cvs = CreateCompositeVectorSpace(mesh_, schema.KindToString(kind), kind, num);
+      auto cvs = CreateCompositeVectorSpace(mesh_, AmanziMesh::to_string(kind), kind, num);
 
       if (kind == AmanziMesh::Entity_kind::CELL) {
         int old_schema = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;
@@ -388,7 +388,7 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
         op = Teuchos::rcp(new Op_Node_Node(name, mesh_, num));
 
       } else {
-        msg << "Accumulation operator: Unknown kind \"" << schema.KindToString(kind) << "\".\n";
+        msg << "Accumulation operator: Unknown kind \"" << AmanziMesh::to_string(kind) << "\".\n";
         Exceptions::amanzi_throw(msg);
       }
 
@@ -434,7 +434,7 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
         op = Teuchos::rcp(new Op_Node_Node(name, mesh_, num));
 
       } else {
-        msg << "Accumulation operator: Unknown kind \"" << schema.KindToString(kind) << "\".\n";
+        msg << "Accumulation operator: Unknown kind \"" << AmanziMesh::to_string(kind) << "\".\n";
         Exceptions::amanzi_throw(msg);
       }
 
@@ -495,7 +495,7 @@ PDE_Accumulation::FindOp_(const std::string& name) const
 {
   for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
     const Schema& schema = (*it)->schema_row();
-    if (schema.KindToString(schema.get_base()) == name) return *it;
+    if (AmanziMesh::to_string(schema.get_base()) == name) return *it;
   }
   return Teuchos::null;
 }

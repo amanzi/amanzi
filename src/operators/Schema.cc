@@ -188,27 +188,6 @@ Schema::OldSchema() const
 
 
 /* ******************************************************************
-* Returns standard name for geometric location of DOF.
-****************************************************************** */
-std::string
-Schema::KindToString(AmanziMesh::Entity_kind kind) const
-{
-  if (kind == AmanziMesh::Entity_kind::NODE) {
-    return "node";
-  } else if (kind == AmanziMesh::Entity_kind::EDGE) {
-    return "edge";
-  } else if (kind == AmanziMesh::Entity_kind::FACE) {
-    return "face";
-  } else if (kind == AmanziMesh::Entity_kind::CELL) {
-    return "cell";
-  } else if (kind == AmanziMesh::Entity_kind::BOUNDARY_FACE) {
-    return "boundary_face";
-  }
-  return "null";
-}
-
-
-/* ******************************************************************
 * Returns standard mesh id for geometric location of DOF.
 ****************************************************************** */
 AmanziMesh::Entity_kind
@@ -245,14 +224,14 @@ Schema::StringToType(const std::string& name) const
 std::string
 Schema::CreateUniqueName() const
 {
-  std::string name(KindToString(base_)), c("_");
+  std::string name(AmanziMesh::to_string(base_)), c("_");
   for (auto it = items_.begin(); it != items_.end(); ++it) {
     int num;
     AmanziMesh::Entity_kind kind;
     std::tie(kind, std::ignore, num) = *it;
 
     name.append(c);
-    name.append(KindToString(kind));
+    name.append(AmanziMesh::to_string(kind));
     name.append(std::to_string(num));
   }
 

@@ -44,7 +44,7 @@ CopyCompositeVectorToSuperVector(const SuperMap& smap,
     AmanziMesh::Entity_kind kind;
     std::tie(kind, std::ignore, num) = *it;
 
-    std::string name(schema.KindToString(kind));
+    std::string name(AmanziMesh::to_string(kind));
 
     for (int k = 0; k < num; ++k) {
       const std::vector<int>& inds = smap.Indices(block_num, name, k);
@@ -73,7 +73,7 @@ CopySuperVectorToCompositeVector(const SuperMap& smap,
     AmanziMesh::Entity_kind kind;
     std::tie(kind, std::ignore, num) = *it;
 
-    std::string name(schema.KindToString(kind));
+    std::string name(AmanziMesh::to_string(kind));
 
     for (int k = 0; k < num; ++k) {
       const std::vector<int>& inds = smap.Indices(block_num, name, k);

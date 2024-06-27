@@ -55,7 +55,7 @@ PDE_ElasticityFracturedMatrix::Init(Teuchos::ParameterList& plist)
   fracture_ = meshfactory.create(mesh_, names, AmanziMesh::Entity_kind::FACE);
 
   // create global and local operators
-  cvs_ = CreateFracturedMatrixCVS(mesh_, fracture_, my_schema);
+  cvs_ = CreateFracturedMatrixCVS(mesh_, fracture_, my_schema.get_items());
   global_op_ = Teuchos::rcp(new Operator_Schema(cvs_, plist, my_schema));
 
   local_op_ = Teuchos::rcp(new Op_Cell_Schema(my_schema, my_schema, mesh_));

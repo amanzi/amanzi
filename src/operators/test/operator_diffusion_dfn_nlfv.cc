@@ -79,7 +79,6 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
 
   // modify diffusion coefficient
   int ncells_owned = surfmesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_owned = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
 
   AmanziGeometry::Point v(3);
