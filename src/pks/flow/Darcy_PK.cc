@@ -396,9 +396,9 @@ Darcy_PK::Initialize()
   // Initialize lambdas. It may be used by boundary conditions.
   auto& pressure = S_->GetW<CompositeVector>(pressure_key_, Tags::DEFAULT, passwd_);
 
-  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")) {
+  if (ti_list_->isSublist("dae constraint") && solution->HasComponent("face")) {
     std::string method =
-      ti_list_->sublist("pressure-lambda constraints").get<std::string>("method");
+      ti_list_->sublist("dae constraint").get<std::string>("method");
     if (method == "projection") {
       Epetra_MultiVector& p = *solution->ViewComponent("cell");
       Epetra_MultiVector& lambda = *solution->ViewComponent("face");

@@ -586,7 +586,19 @@ Richards_PK::ModifyCorrection(double dt,
       // std::cout << "pressure change: " << uc[0][c] << " -> " << unew << std::endl;
       duc[0][c] = tmp * damping_factor;
       npre_clipped++;
+    } 
+    /* else {
+      double tmp0 = uc[0][c] / 2;
+      double tmp1 = std::min(tmp0, uc[0][c] - atm_pressure_ * 0.99);
+      if (duc[0][c] < -tmp0) {
+        npre_clipped++;
+        duc[0][c] = -tmp0;
+      } else if (duc[0][c] > tmp1) {
+        npre_clipped++;
+        duc[0][c] = tmp1;
+      }
     }
+    */
   }
 
   // output statistics

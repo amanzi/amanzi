@@ -20,6 +20,7 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "MeshFactory.hh"
+#include "MFD3D.hh"
 #include "Op_Cell_Schema.hh"
 #include "Operator_Schema.hh"
 #include "PDE_ElasticityFracturedMatrix.hh"
@@ -157,9 +158,10 @@ PDE_ElasticityFracturedMatrix::ApplyBCs(bool primary, bool eliminate, bool essen
   const std::vector<int>& bcv_model_test = bcs_test_[0]->bc_model();
   const std::vector<AmanziGeometry::Point>& bcv_value = bcs_trial_[0]->bc_value_point();
 
-  const std::vector<int>& bcf_model_trial = bcs_trial_[1]->bc_model();
-  const std::vector<int>& bcf_model_test = bcs_test_[1]->bc_model();
-  const std::vector<double>& bcf_value = bcs_trial_[1]->bc_value();
+  AMANZI_ASSERT(bcs_trial_.size() > 3 && bcs_test_.size() > 3);
+  const std::vector<int>& bcf_model_trial = bcs_trial_[3]->bc_model();
+  const std::vector<int>& bcf_model_test = bcs_test_[3]->bc_model();
+  const std::vector<double>& bcf_value = bcs_trial_[3]->bc_value();
 
   global_op_->rhs()->PutScalarGhosted(0.0);
   Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
@@ -347,6 +349,65 @@ PDE_ElasticityFracturedMatrix::UpdateFlux(const Teuchos::Ptr<const CompositeVect
   for (int g = 0; g != ndofs_owned; ++g) { flux_data[0][g] /= hits[g]; }
 
   flux->GatherGhostedToMaster();
+}
+
+
+/* ******************************************************************
+* Supporting function
+****************************************************************** */
+WhetStone::Tensor
+PDE_ElasticityFracturedMatrix::ComputeCellStrain(const CompositeVector& u, int c)
+{
+  WhetStone::Tensor Tc;
+
+  // nodal DoFs go first
+  const auto& nodes = mesh_->getCellNodes(c);
+  int nnodes = nodes.size();
+
+  int nrows = local_op_->matrices[c].NumRows();
+  WhetStone::DenseVector dofs(nrows);
+
+  const auto& u_n = *u.ViewComponent("node", true);
+  const auto& nmap = *u.ComponentMap("node", true);
+
+  int np(0);
+  for (int n = 0; n < nnodes; ++n) {
+    int v = nodes[n];
+    int first = nmap.FirstPointInElement(v);
+    int ndofs = nmap.ElementSize(v);
+
+    int shift(0);
+    if (ndofs > 1) shift = UniqueIndexNodeToCells(*mesh_, *fracture_, v, node_to_node_[v], c);
+
+    for (int k = 0; k < 3; ++k) {
+      dofs(np++) = u_n[k][first + shift];
+    }
+  }
+
+  // optional face DoFs
+  if (u.HasComponent("face")) {
+    const auto& u_f = *u.ViewComponent("face", true);
+    const auto& fmap = *u.ComponentMap("face", true);
+
+    const auto& faces = mesh_->getCellFaces(c);
+    int nfaces = faces.size();
+
+    for (int n = 0; n < nfaces; ++n) {
+      int f = faces[n];
+      int first = fmap.FirstPointInElement(f);
+      int ndofs = fmap.ElementSize(f);
+
+      int shift(0);
+      if (ndofs == 2) shift = UniqueIndexFaceToCells(*mesh_, f, c);
+
+      dofs(np++) = u_f[0][first + shift];
+    }
+  }
+
+  auto mfd3d = Teuchos::rcp_dynamic_cast<WhetStone::MFD3D>(mfd_);
+  mfd3d->H1Cell(c, dofs, Tc);
+
+  return Tc;
 }
 
 } // namespace Operators

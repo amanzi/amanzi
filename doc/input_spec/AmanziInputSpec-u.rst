@@ -553,8 +553,8 @@ of the converged solution.
 +-------------------------------------------------------+---------------+------------------------------------------+
 | preconditioner                                        | string        | ``trilinos_ml, hypre_amg, block_ilu``    |
 +-------------------------------------------------------+---------------+------------------------------------------+
-| initialize_with_darcy                                 | boolean       | | ``true, false``                        |
-|                                                       |               | | *default = false*                      |
+| enforce_dae_constraint                                | boolean       | | ``true, false``                        |
+|                                                       |               | | *default = true*                       |
 +-------------------------------------------------------+---------------+------------------------------------------+
 | timestep_controller                                   | name          | | ``standard``, ``fixed``, ``adaptive``, |
 |                                                       |               | | ``smarter``, ``from_file``             |
@@ -738,7 +738,6 @@ An example ``unstructured_controls`` section would look as the following:
                 <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
                 <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
                 <max_divergent_iterations>3</max_divergent_iterations>
-                <initialize_with_darcy>true</initialize_with_darcy>
                 <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
                 <preconditioner>hypre_amg</preconditioner>
             </unstr_steady-state_controls>
@@ -754,7 +753,6 @@ An example ``unstructured_controls`` section would look as the following:
                 <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
                 <error_control_options>pressure,residual</error_control_options>
                 <preconditioner>hypre_amg</preconditioner>
-                <initialize_with_darcy>true</initialize_with_darcy>
             </unstr_transient_controls>
             <unstr_preconditioners>
                 <hypre_amg>

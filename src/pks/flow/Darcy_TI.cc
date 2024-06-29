@@ -142,8 +142,8 @@ Darcy_PK::ModifyCorrection(double dt,
 
     int ncomp = u->Data()->size(*comp, false);
     for (int i = 0; i < ncomp; ++i) {
-      double tmp0 = uc[0][i] / 2.0;
-      double tmp1 = std::min(tmp0, uc[0][i] - atm_pressure_);
+      double tmp0 = uc[0][i] / 2;
+      double tmp1 = std::min(tmp0, uc[0][i] - atm_pressure_ * 0.99);
       if (duc[0][i] < -tmp0) {
         nclipped++;
         duc[0][i] = -tmp0;
@@ -159,6 +159,25 @@ Darcy_PK::ModifyCorrection(double dt,
 
   return (nclipped) > 0 ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED :
                           AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+}
+
+
+/* ******************************************************************
+* Modify preconditior as needed.
+****************************************************************** */
+bool
+Darcy_PK::ModifyPredictor(double dt,
+                          Teuchos::RCP<const TreeVector> u0,
+                          Teuchos::RCP<TreeVector> u)
+{
+  Teuchos::RCP<TreeVector> du = Teuchos::rcp(new TreeVector(*u));
+  du->Update(-1.0, *u0, 1.0);
+
+  ModifyCorrection(dt, Teuchos::null, u0, du);
+
+  *u = *u0;
+  u->Update(1.0, *du, 1.0);
+  return true;
 }
 
 

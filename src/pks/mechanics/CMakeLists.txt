@@ -132,6 +132,12 @@ if (BUILD_TESTS)
                   SOURCE test/Main.cc test/mechanics_cook_small_strain.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+  # Test: fractured matrix
+  add_amanzi_test(mechanics_fractured_matrix mechanics_fractured_matrix
+                  KIND int
+                  SOURCE test/Main.cc test/mechanics_fractured_matrix.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
   # Test: spring test
   # add_amanzi_test(mechanics_springs mechanics_springs
   #                 KIND int

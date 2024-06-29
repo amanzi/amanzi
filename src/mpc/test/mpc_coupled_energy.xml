@@ -588,7 +588,7 @@
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -674,7 +674,7 @@
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -754,7 +754,7 @@
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -800,7 +800,7 @@
         <Parameter name="error control options" type="Array(string)" value="{energy}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -880,7 +880,7 @@
         <Parameter name="error control options" type="Array(string)" value="{energy}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -947,7 +947,7 @@
         <Parameter name="error control options" type="Array(string)" value="{energy}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>

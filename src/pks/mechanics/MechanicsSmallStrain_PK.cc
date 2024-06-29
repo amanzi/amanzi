@@ -14,7 +14,9 @@
 
 #include <vector>
 
+// Amanzi
 #include "InverseFactory.hh"
+#include "PDE_ElasticityFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PorosityEvaluator.hh"
 #include "StateArchive.hh"
@@ -141,8 +143,8 @@ MechanicsSmallStrain_PK::Initialize()
   // Initialize matrix and preconditioner
   // -- create elastic block
   auto tmp1 = ec_list_->sublist("operators").sublist("elasticity operator");
-  op_matrix_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
-  op_matrix_elas_->Init(tmp1);
+  Operators::PDE_ElasticityFactory factory;
+  op_matrix_elas_ = factory.Create(tmp1, mesh_);
 
   op_matrix_ = op_matrix_elas_->global_operator();
 
@@ -157,8 +159,7 @@ MechanicsSmallStrain_PK::Initialize()
   if (split_undrained_) {
     std::string method = tmp1.sublist("schema").get<std::string>("method");
     tmp1.sublist("schema").set<std::string>("method", method + " graddiv");
-    op_matrix_graddiv_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
-    op_matrix_graddiv_->Init(tmp1);
+    op_matrix_graddiv_ = factory.Create(tmp1, mesh_);
 
     op_matrix_->OpPushBack(op_matrix_graddiv_->local_op());
   }

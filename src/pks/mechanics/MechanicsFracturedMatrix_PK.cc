@@ -63,8 +63,10 @@ MechanicsFracturedMatrix_PK::MechanicsFracturedMatrix_PK(Teuchos::ParameterList&
 void
 MechanicsFracturedMatrix_PK::Setup()
 {
-  int d = mesh_->getSpaceDimension();
+  mesh_ = S_->GetMesh("domain");
   mesh_fracture_ = S_->GetMesh("fracture");
+
+  int d = mesh_->getSpaceDimension();
 
   // displacement field
   std::vector<WhetStone::SchemaItem> items;
@@ -76,6 +78,9 @@ MechanicsFracturedMatrix_PK::Setup()
   if (!S_->HasRecord(displacement_key_)) {
     *S_->Require<CV_t, CVS_t>(displacement_key_, Tags::DEFAULT)
       .SetMesh(mesh_)->SetGhosted(true) = *cvs;
+
+    eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+      S_->GetEvaluatorPtr(displacement_key_, Tags::DEFAULT));
   }
 
   MechanicsSmallStrain_PK::Setup();

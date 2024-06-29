@@ -59,7 +59,7 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   out_list.set<Teuchos::Array<std::string>>("error control options", tmp);
 
   // linear solver
-  bool flag;
+  bool flag, flag2;
   std::string prec(TI_PRECONDITIONER);
   node = GetUniqueElementByTagsString_(controls + ", preconditioner", flag);
   if (flag) prec = mm.transcode(node->getTextContent());
@@ -68,9 +68,12 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   out_list.set<std::string>("preconditioner", prec);
   // out_list.set<std::string>("preconditioner enhancement", "none");
 
-  // pressure-lambda constraints
-  if (!fracture_network_) {
-    Teuchos::ParameterList& plamb = out_list.sublist("pressure-lambda constraints");
+  // DAE constraints
+  node = GetUniqueElementByTagsString_(controls + ", enforce_dae_constraint", flag);
+  flag2 = (flag) ? GetTextContentL_(node) : true;
+
+  if (!fracture_network_ && flag2) {
+    Teuchos::ParameterList& plamb = out_list.sublist("dae constraint");
     plamb.set<std::string>("method", "projection");
     plamb.set<bool>("inflow krel correction", true);
     plamb.set<std::string>("linear solver", TI_PLAMBDA_SOLVER);

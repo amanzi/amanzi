@@ -51,6 +51,9 @@ class PDE_ElasticityFracturedMatrix : public PDE_Elasticity {
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
 
+  // -- cell-based algorithms
+  virtual WhetStone::Tensor ComputeCellStrain(const CompositeVector& u, int c) final;
+
  private:
   Teuchos::RCP<CompositeVectorSpace> cvs_;
   Teuchos::RCP<const AmanziMesh::Mesh> fracture_;

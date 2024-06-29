@@ -170,7 +170,7 @@
         <Parameter name="error control options" type="Array(string)" value="{displacement}"/>
         <Parameter name="linear solver" type="string" value="PCG for elasticity"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>

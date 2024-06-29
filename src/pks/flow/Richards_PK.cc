@@ -663,7 +663,7 @@ Richards_PK::Initialize()
   // Conditional initialization of lambdas from pressures.
   auto& pressure = S_->GetW<CV_t>(pressure_key_, Tags::DEFAULT, passwd_);
 
-  if (ti_list_->isSublist("pressure-lambda constraints") && pressure.HasComponent("face")) {
+  if (ti_list_->isSublist("dae constraint") && pressure.HasComponent("face")) {
     DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
                                    *pressure.ViewComponent("face"));
     S_->GetRecordW(pressure_key_, passwd_).set_initialized(true);
@@ -819,11 +819,8 @@ Richards_PK::Initialize()
   }
 
   // Subspace entering: re-initialize lambdas.
-  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face") &&
+  if (ti_list_->isSublist("dae constraint") && solution->HasComponent("face") &&
       !flow_on_manifold_) {
-    solver_name_constraint_ =
-      ti_list_->sublist("pressure-lambda constraints").get<std::string>("linear solver");
-
     if (S_->get_position() == Amanzi::TIME_PERIOD_START) {
       EnforceConstraints(t_ini, solution);
       pressure_eval_->SetChanged();

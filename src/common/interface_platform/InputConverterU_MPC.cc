@@ -1225,7 +1225,7 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
         }
 
         if (!fracture_network_ && (pk == "flow" || pk == "flow fracture")) {
-          tmp.sublist("pressure-lambda constraints").set<std::string>("method", "projection");
+          tmp.sublist("dae constraint").set<std::string>("method", "projection");
         }
 
         // cannot upwind nonlinear coefficient at the moment

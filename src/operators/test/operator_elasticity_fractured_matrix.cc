@@ -70,7 +70,7 @@ RunTest(double mu, double lambda, double tol = 1e-10)
 
   MeshFactory meshfactory(comm, gm, mesh_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 4);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
 
   // -- general information about mesh
   int ncells_owned =
@@ -132,7 +132,7 @@ RunTest(double mu, double lambda, double tol = 1e-10)
       bcf_value[f] = (ana.velocity_exact(xf, 0.0) * normal) / area;
     }
   }
-  op->AddBCs(bcf, bcf);
+  for (int i = 0; i < 3; ++i) op->AddBCs(bcf, bcf); // FIXME logic of BCs should be simplified
 
   // create and initialize solution
   auto global_op = op->global_operator();
@@ -185,6 +185,12 @@ RunTest(double mu, double lambda, double tol = 1e-10)
     std::cout << "elasticity solver (PCG): ||r||=" << global_op->residual()
               << " itr=" << global_op->num_itrs() << " code=" << global_op->returned_code()
               << std::endl;
+  }
+
+  // verify shear strain
+  for (int c = 0; c < ncells_owned; ++c) {
+    auto Tc = op->ComputeCellStrain(solution, c);
+    CHECK_CLOSE(Tc.Trace(), -1.0, 1e-12);
   }
 
   // compute displacement error

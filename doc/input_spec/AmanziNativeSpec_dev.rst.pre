@@ -1325,7 +1325,7 @@ Initialization and constraints
   The option  `"saturation`" is always active during transient time integration.
 
 * `"linear solver`" ``[string]`` refers to a generic linear solver from list `"solvers`".
-  It is used in all cases except for `"initialization`" and `"enforce pressure-lambda constraints`".
+  It is used in all cases except for `"initialization`" and `"dae constraint`".
   Currently, it is used by the Darcy PK only.
 
 * `"preconditioner`" ``[string]`` specifies preconditioner for linear and nonlinear solvers.
@@ -1360,7 +1360,7 @@ Initialization and constraints
     after pressure initialization to cut-off small values of pressure below the provided
     value.
 
-* `"enforce pressure-lambda constraints`" ``[list]`` each time the time integrator is 
+* `"dae constraint`" ``[list]`` each time the time integrator is 
   restarted, we need to re-enforce the pressure-lambda relationship for new boundary conditions. 
   Default is empty list.
 
@@ -1397,7 +1397,7 @@ Initialization and constraints
        </ParameterList>
      </ParameterList>
 
-     <ParameterList name="pressure-lambda constraints">
+     <ParameterList name="dae constraint">
        <Parameter name="method" type="string" value="projection"/>
        <Parameter name="inflow krel correction" type="bool" value="false"/>
        <Parameter name="linear solver" type="string" value="_PCG_WITH_AMG"/>

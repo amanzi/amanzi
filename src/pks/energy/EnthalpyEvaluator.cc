@@ -10,7 +10,7 @@
 /*
   Energy
 
-  Field evaluator for specific menthalpy, h = u + p / eta + g z.
+  Field evaluator for specific methalpy, h = u + p / eta + g z.
 */
 
 #include "CommonDefs.hh"

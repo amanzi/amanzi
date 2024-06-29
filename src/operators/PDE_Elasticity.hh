@@ -113,12 +113,12 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
                           const Teuchos::Ptr<CompositeVector>& u) override{};
 
-  // -- processing: calculate stesses from displacement
+  // -- cell-based algorithms
+  virtual WhetStone::Tensor ComputeCellStrain(const CompositeVector& u, int c);
+
+  // -- calculate stesses from displacement
   void ComputeHydrostaticStress(const CompositeVector& u, CompositeVector& p);
   void ComputeVolumetricStrain(const CompositeVector& u, CompositeVector& e);
-
-  // -- cell-based algorithms
-  WhetStone::Tensor ComputeCellStrain(const CompositeVector& u, int c);
 
  protected:
   WhetStone::Tensor computeElasticityTensorEnu_(int c);
