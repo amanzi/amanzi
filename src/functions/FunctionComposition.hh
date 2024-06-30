@@ -37,8 +37,7 @@ where :math:`f_1` is defined by the `"function1`" sublist, and
   </ParameterList>
 */
 
-#ifndef AMANZI_COMPOSITION_FUNCTION_HH_
-#define AMANZI_COMPOSITION_FUNCTION_HH_
+#pragma once
 
 #include <memory>
 
@@ -50,22 +49,24 @@ class FunctionComposition : public Function {
  public:
   FunctionComposition(std::unique_ptr<Function> f1, std::unique_ptr<Function> f2)
     : f1_(std::move(f1)), f2_(std::move(f2)){};
+
   FunctionComposition(const Function& f1, const Function& f2) : f1_(f1.Clone()), f2_(f2.Clone()) {}
+
   FunctionComposition(const FunctionComposition& source)
     : f1_(source.f1_->Clone()), f2_(source.f2_->Clone())
   {}
-  ~FunctionComposition() {} //{ if (f1_) delete f1_; if (f2_) delete f2_; }
+
   std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionComposition>(*this); }
 
-  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const
   {
-    Kokkos::View<double*, Kokkos::HostSpace> y("y", x.extent(0));
+    Kokkos::View<double**, Kokkos::HostSpace> y("y", x.extent(0), 1);
     Kokkos::deep_copy(y, x);
-    y(0) = (*f2_)(x);
+    y(0,0) = (*f2_)(x);
     return (*f1_)(y);
   }
 
-  void apply(const Kokkos::View<double**>& in,
+  void apply(const Kokkos::View<const double**>& in,
              Kokkos::View<double*>& out,
              const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
   {
@@ -82,4 +83,4 @@ class FunctionComposition : public Function {
 
 } // namespace Amanzi
 
-#endif // AMANZI_COMPOSITION_FUNCTION_HH_
+

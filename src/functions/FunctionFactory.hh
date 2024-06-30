@@ -41,7 +41,6 @@ class FunctionFactory {
   std::unique_ptr<Function> create_standard_math(Teuchos::ParameterList&) const;
   std::unique_ptr<Function> create_bilinear(Teuchos::ParameterList&) const;
   std::unique_ptr<Function> create_distance(Teuchos::ParameterList&) const;
-  std::unique_ptr<Function> create_squaredistance(Teuchos::ParameterList&) const;
   std::unique_ptr<Function> create_bilinear_and_time(Teuchos::ParameterList&) const;
   std::unique_ptr<Function> create_exprtk(Teuchos::ParameterList&) const;
 };

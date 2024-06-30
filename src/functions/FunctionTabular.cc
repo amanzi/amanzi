@@ -8,8 +8,11 @@
 */
 
 //!
-#include "FunctionTabular.hh"
+
 #include "errors.hh"
+#include "ViewUtils.hh"
+
+#include "FunctionTabular.hh"
 
 namespace Amanzi {
 
@@ -18,19 +21,13 @@ FunctionTabular::FunctionTabular(const Kokkos::View<double*, Kokkos::HostSpace>&
                                  const int xi)
   : xi_(xi)
 {
-  Kokkos::resize(x_, x.extent(0));
-  Kokkos::resize(y_, y.extent(0));
+  Kokkos::View<Form_kind*, Kokkos::HostSpace> forms("forms", x.size()-1);
+  Kokkos::deep_copy(forms, Form_kind::LINEAR);
+  check_args(x, y, forms);
 
-  Kokkos::deep_copy(x_.view_host(), x);
-  Kokkos::deep_copy(y_.view_host(), y);
-
-  Kokkos::resize(form_, x.extent(0) - 1);
-  for (int i = 0; i < form_.extent(0); ++i) { form_.view_host()(i) = Form_kind::LINEAR; }
-  check_args(x, y, form_.view_host());
-
-  Kokkos::deep_copy(x_.view_device(), x_.view_host());
-  Kokkos::deep_copy(y_.view_device(), y_.view_host());
-  Kokkos::deep_copy(form_.view_device(), form_.view_host());
+  x_ = asDualView(x);
+  y_ = asDualView(y);
+  forms_ = asDualView(forms);
 }
 
 FunctionTabular::FunctionTabular(const Kokkos::View<double*, Kokkos::HostSpace>& x,
@@ -39,39 +36,12 @@ FunctionTabular::FunctionTabular(const Kokkos::View<double*, Kokkos::HostSpace>&
                                  const Kokkos::View<Form_kind*, Kokkos::HostSpace>& form)
   : xi_(xi)
 {
-  Kokkos::resize(x_, x.extent(0));
-  Kokkos::resize(y_, y.extent(0));
-  Kokkos::resize(form_, form.extent(0));
-
-  Kokkos::deep_copy(x_.view_host(), x);
-  Kokkos::deep_copy(y_.view_host(), y);
-  Kokkos::deep_copy(form_.view_host(), form);
   check_args(x, y, form);
-
-
-  Kokkos::deep_copy(x_.view_device(), x_.view_host());
-  Kokkos::deep_copy(y_.view_device(), y_.view_host());
-  Kokkos::deep_copy(form_.view_device(), form_.view_host());
+  x_ = asDualView(x);
+  y_ = asDualView(y);
+  forms_ = asDualView(forms);
 }
 
-FunctionTabular::FunctionTabular(const Kokkos::View<double*, Kokkos::HostSpace>& x,
-                                 const Kokkos::View<double*, Kokkos::HostSpace>& y,
-                                 const int xi,
-                                 const Kokkos::View<Form_kind*, Kokkos::HostSpace>& form,
-                                 std::vector<std::unique_ptr<Function>> func)
-  : xi_(xi), func_(std::move(func))
-{
-  Kokkos::resize(x_, x.extent(0));
-  Kokkos::resize(y_, y.extent(0));
-  Kokkos::resize(form_, form.extent(0));
-  Kokkos::deep_copy(x_.view_host(), x);
-  Kokkos::deep_copy(y_.view_host(), y);
-  Kokkos::deep_copy(form_.view_host(), form);
-  check_args(x, y, form);
-  Kokkos::deep_copy(x_.view_device(), x_.view_host());
-  Kokkos::deep_copy(y_.view_device(), y_.view_host());
-  Kokkos::deep_copy(form_.view_device(), form_.view_host());
-}
 
 void
 FunctionTabular::check_args(const Kokkos::View<double*, Kokkos::HostSpace>& x,
@@ -102,46 +72,32 @@ FunctionTabular::check_args(const Kokkos::View<double*, Kokkos::HostSpace>& x,
   }
 }
 
-double
-FunctionTabular::operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
+
+void
+FunctionTabular::apply(const Kokkos::View<const double**>& in,
+                       Kokkos::View<double*>& out,
+                       const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override
 {
-  double y;
-  double xv = x[xi_];
-  int n = x_.extent(0);
-  if (xv <= x_.view_host()[0]) {
-    y = y_.view_host()[0];
-  } else if (xv > x_.view_host()[n - 1]) {
-    y = y_.view_host()[n - 1];
+  auto f = Impl::FunctionTabularFunctor(x_.view_device(), y_.view_device(), forms_.view_device(), xi_, in);
+
+  if (ids) {
+    auto ids_loc = *ids;
+    Kokkos::parallel_for(
+      "FunctionBilinear::apply1", ids_loc.extent(0), KOKKOS_LAMBDA(const int i) {
+        out(ids_loc(i)) = f(ids_loc(i));
+      });
   } else {
-    // binary search to find interval containing xv
-    int j1 = 0, j2 = n - 1;
-    while (j2 - j1 > 1) {
-      int j = (j1 + j2) / 2;
-      // if (xv >= x_[j]) { // right continuous
-      if (xv > x_.view_host()[j]) { // left continuous
-        j1 = j;
-      } else {
-        j2 = j;
-      }
-    }
-    // Now have x_[j1] <= xv < x_[j2], if right continuous
-    // or x_[j1] < xv <= x_[j2], if left continuous
-    switch (form_.view_host()[j1]) {
-    case Form_kind::LINEAR:
-      // Linear interpolation between x[j1] and x[j2]
-      y = y_.view_host()[j1] +
-          ((y_.view_host()[j2] - y_.view_host()[j1]) / (x_.view_host()[j2] - x_.view_host()[j1])) *
-            (xv - x_.view_host()[j1]);
-      break;
-    case Form_kind::CONSTANT:
-      y = y_.view_host()[j1];
-      break;
-    case Form_kind::FUNCTION:
-      assert(false && "Not implemented for FUNCTION");
-      // y = (*func_[j1])(xv);
+    Kokkos::parallel_for("FunctionBilinear::apply2", in.extent(1), KOKKOS_LAMBDA(const int i) {
+        out(i) = f(i);
+      });
     }
   }
-  return y;
+
+double
+FunctionTabular::operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const
+{
+  auto f = Impl::FunctionTabularFunctor(x_.view_device(), y_.view_device(), forms_.view_device(), xi_, x);
+  return f(0);
 }
 
 } // namespace Amanzi

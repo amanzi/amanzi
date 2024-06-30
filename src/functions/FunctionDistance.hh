@@ -43,52 +43,81 @@ Example:
 
 namespace Amanzi {
 
-class FunctionDistance : public Function {
- public:
-  FunctionDistance(const Kokkos::View<double*, Kokkos::HostSpace>& x0,
-                   const Kokkos::View<double*, Kokkos::HostSpace>& metric);
-  ~FunctionDistance() {}
-  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionDistance>(*this); }
-  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>&) const;
+namespace Impl {
 
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
-  {
-    double tmp(0.0), y(0.0);
-    if (x.extent(0) < x0_.extent(0)) {
-      assert(false && "FunctionDistance expects higher-dimension argument.");
-      // Errors::Message m;
-      // m << "FunctionDistance expects higher-dimensional argument.";
-      // Exceptions::amanzi_throw(m);
-    }
+template <class ParView_type,
+          class InView_type>
+class FunctionDistanceFunctor {
+ public:
+  FunctionDistanceFunctor(const ParView_type& x0,
+                          const ParView_type& metric,
+                          bool squared,
+                          const InView_type& in)
+    : x0_(x0), metric_(metric), in_(in), squared_(squared_)  {}
+
+  KOKKOS_INLINE_FUNCTION
+  double operator()(const int i) {
+    double y(0.);
     for (int j = 0; j < x0_.extent(0); ++j) {
-      tmp = x(j, i) - x0_.view_device()[j];
-      y += metric_.view_device()[j] * tmp * tmp;
+      double tmp = in_(j, i) - x0_[j];
+      y += metric_[j] * tmp * tmp;
     }
-    y = sqrt(y);
-    return y;
+    return squared_ ? y : Kokkos::sqrt(y);
   }
 
-  void apply(const Kokkos::View<double**>& in,
+ private:
+  ParView_type x0_, metric_;
+  bool squared_;
+
+};
+
+} // namespace Impl
+
+
+
+class FunctionDistance : public Function {
+ public:
+  FunctionDistance(const Kokkos::View<const double*, Kokkos::HostSpace>& x0,
+                   const Kokkos::View<const double*, Kokkos::HostSpace>& metric,
+                   bool squared);
+
+  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionDistance>(*this); }
+
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>&) const override;
+
+  void apply(const Kokkos::View<const double**>& in,
              Kokkos::View<double*>& out,
              const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
   {
-    if (ids) {
-      auto ids_loc = *ids;
-      Kokkos::parallel_for(
-        "FunctionBilinear::apply1", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(ids_loc(i)) = apply_gpu(in, i);
+    AMANZI_ASSERT(in.extent(1) == out.extent(0));
+    if (in.extent(0) < x0_.extent(0)) {
+      Errors::Message m;
+      m << "FunctionDistance expects higher-dimensional argument.";
+      Exceptions::amanzi_throw(m);
+    }
+
+    {
+      auto f = Impl::FunctionDistanceFunctor(x0_.view_device(), metric_.view_device(), squared_, in);
+
+      if (ids) {
+        auto ids_loc = *ids;
+        Kokkos::parallel_for(
+          "FunctionBilinear::apply1", ids_loc.extent(0), KOKKOS_LAMBDA(const int& i) {
+            out(ids_loc(i)) = f.compute(ids_loc(i));
         });
-    } else {
-      assert(in.extent(1) == out.extent(0));
-      Kokkos::parallel_for(
-        "FunctionBilinear::apply2", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(i) = apply_gpu(in, i);
-        });
+
+      } else {
+        Kokkos::parallel_for(
+          "FunctionBilinear::apply2", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+            out(i) = f.compute(i);
+          });
+      }
     }
   }
 
  private:
-  Kokkos::DualView<double*> x0_, metric_;
+  Kokkos::DualView<const double*> x0_, metric_;
+  bool squared_;
 };
 
 } // namespace Amanzi

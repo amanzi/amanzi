@@ -56,12 +56,12 @@ class FunctionAdditive : public Function {
 
   std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionAdditive>(*this); }
 
-  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const
   {
     return (*f1_)(x) + (*f2_)(x);
   }
 
-  void apply(const Kokkos::View<double**>& in,
+  void apply(const Kokkos::View<const double**>& in,
              Kokkos::View<double*>& out,
              const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
   {
@@ -75,13 +75,13 @@ class FunctionAdditive : public Function {
       const auto& ids_loc = *ids;
       Kokkos::parallel_for(
         "FunctionAdditive::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
-          out(ids_loc(i)) = out(ids_loc(i)) + out_2(ids_loc(i));
+          out(ids_loc(i)) += out_2(ids_loc(i));
         });
 
     } else {
       Kokkos::parallel_for(
         "FunctionAdditive::apply", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(i) = out(i) + out_2(i);
+          out(i) += out_2(i);
         });
     }
   }

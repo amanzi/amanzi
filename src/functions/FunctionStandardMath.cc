@@ -160,6 +160,27 @@ FunctionStandardMath::operator()(const Kokkos::View<double*, Kokkos::HostSpace>&
 
 
 void
+FunctionStandardMath::apply(const Kokkos::View<const double**>& in,
+                            Kokkos::View<double*>& out,
+                            const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+{
+  auto f = Impl::FunctionStandardMathFunctor(op_, parameter_, amplitude_, shift_, in);
+  if (ids) {
+    auto ids_loc = *ids;
+    Kokkos::parallel_for(
+      "FunctionStandardMath::apply1", ids_loc.extent(0), KOKKOS_CLASS_LAMBDA(const int& i) {
+        out(ids_loc(i)) = f(ids_loc(i));
+      });
+  } else {
+    Kokkos::parallel_for(
+      "FunctionStandardMath::apply2", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
+        out(i) = f(i);
+      });
+  }
+}
+
+
+void
 FunctionStandardMath::InvalidDomainError_(double x) const
 {
   std::stringstream m;
@@ -167,5 +188,7 @@ FunctionStandardMath::InvalidDomainError_(double x) const
   Errors::Message message(m.str());
   Exceptions::amanzi_throw(message);
 }
+
+
 
 } // namespace Amanzi

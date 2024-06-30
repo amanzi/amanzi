@@ -20,7 +20,6 @@
 #include "FunctionConstant.hh"
 #include "FunctionDistance.hh"
 #include "FunctionExprTK.hh"
-#include "FunctionSquareDistance.hh"
 #include "FunctionFactory.hh"
 #include "FunctionLinear.hh"
 #include "FunctionMonomial.hh"
@@ -70,8 +69,9 @@ FunctionFactory::Create(const std::string& function_type,
     f = create_bilinear_and_time(function_params);
   else if (function_type == "distance")
     f = create_distance(function_params);
-  else if (function_type == "squaredistance")
-    f = create_squaredistance(function_params);
+  else if (function_type == "squaredistance") {
+    function_params.set("squared", true);
+    f = create_distance(function_params);
   else if (function_type == "exprtk")
     f = create_exprtk(function_params);
   else { // I don't recognize this function type
@@ -660,7 +660,9 @@ FunctionFactory::create_distance(Teuchos::ParameterList& params) const
     Kokkos::View<double*, Kokkos::HostSpace> metric("metric", metric_vec.size());
     for (int i = 0; i < metric.extent(0); ++i) metric(i) = metric_vec[i];
 
-    f = std::make_unique<FunctionDistance>(x0, metric);
+    bool squared = params.get<bool>("squared", false);
+
+    f = std::make_unique<FunctionDistance>(x0, metric, squared);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-distance parameter error: " << msg.what();

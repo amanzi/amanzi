@@ -46,8 +46,7 @@ Example:
   </ParameterList>
 
 */
-#ifndef AMANZI_BILINEAR_FUNCTION_HH_
-#define AMANZI_BILINEAR_FUNCTION_HH_
+#pragma once
 
 #include <vector>
 
@@ -56,35 +55,56 @@ Example:
 
 namespace Amanzi {
 
+
+class FunctionBilinear : public Function {
+ public:
+  FunctionBilinear(const Kokkos::View<const double*, Kokkos::HostSpace>& x,
+                   const Kokkos::View<const double*, Kokkos::HostSpace>& y,
+                   const Kokkos::View<const double**, Kokkos::HostSpace>& v,
+                   const int xi,
+                   const int yi);
+
+  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionBilinear>(*this); }
+
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& in) const override;
+
+  void apply(const Kokkos::View<const double**>& in,
+             Kokkos::View<double*>& out,
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override;
+
+ private:
+  Kokkos::DualView<const double*> x_, y_;
+  Kokkos::DualView<const double**> v_;
+  int xi_, yi_;
+
+ private: // helper functions
+  void checkArgs_(const Kokkos::View<const double*, Kokkos::HostSpace>&,
+                  const Kokkos::View<const double*, Kokkos::HostSpace>&,
+                  const Kokkos::View<const double**, Kokkos::HostSpace>&) const;
+};
+
+
 namespace Impl {
 
 template<class XYView_type,
          class VView_type,
-         class InView_type,
-         class OutView_type>
-class FunctionBilinear_ {
+         class InView_type>
+class FunctionBilinearFunctor {
  public:
-  FunctionBilinear_(const XYView_type& x,
-                    const XYView_type& y,
-                    size_t xi,
-                    size_t yi,
-                    const VView_type& v)
-    : x_(x), y_(y), xi_(xi), yi_(yi), v_(v) {}
-
-  void setViews(const InView_type& in, const OutView_type& out) {
-    in_ = in;
-    out_ = out;
-  }
+  FunctionBilinearFunctor(const XYView_type& x,
+                          const XYView_type& y,
+                          size_t xi,
+                          size_t yi,
+                          const VView_type& v,
+                          const InView_type& in)
+    : x_(x), y_(y), xi_(xi), yi_(yi), v_(v), in_(in) {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const int i) const {
-    out_(i) = compute(in_(xi_, i), in_(yi_, i));
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  double compute(const double xv, const double yv) const {
+  double operator()(const int i) const {
     int nx = x_.extent(0);
     int ny = y_.extent(0);
+    double xv = in_(xi_, i);
+    double yv = in_(yi_, i);
 
     // if xv and yv are out of bounds
     double v = 0.;
@@ -132,66 +152,8 @@ class FunctionBilinear_ {
   int xi_, yi_;
   VView_type v_;
   InView_type in_;
-  OutView_type out_;
 };
 
 } // namespace Impl
-
-
-class FunctionBilinear : public Function {
-  using HostFunctor_type = Impl::FunctionBilinear_<Kokkos::DualView<double*>::host_view_type,
-                                                   Kokkos::DualView<double**>::host_view_type,
-                                                   Kokkos::View<double**, Kokkos::HostSpace>,
-                                                   Kokkos::View<double*, Kokkos::HostSpace>>;
-  using DeviceFunctor_type = Impl::FunctionBilinear_<Kokkos::DualView<double*>::device_view,
-                                                     Kokkos::DualView<double**>::device_view,
-                                                   Kokkos::View<double**>,
-                                                   Kokkos::View<double*>>;
-
- public:
-  FunctionBilinear(const Kokkos::View<double*, Kokkos::HostSpace>& x,
-                   const Kokkos::View<double*, Kokkos::HostSpace>& y,
-                   const Kokkos::View<double**, Kokkos::HostSpace>& v,
-                   const int xi,
-                   const int yi);
-
-  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionBilinear>(*this); }
-
-  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>& in) const {
-    HostFunctor_type f(x_.view_host(), y_.view_host(), xi_, yi_, v_.view_host());
-    return f.compute(in(xi_), in(yi_));
-  }
-
-  void apply(const Kokkos::View<double**>& in,
-             Kokkos::View<double*>& out,
-             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
-  {
-    assert(in.extent(1) == out.extent(0));
-    DeviceFunctor_type f(x_.view_device(), y_.view_device(), xi_, yi_, v_.view_device());
-    f.setViews(in, out);
-
-    if (ids) {
-      auto ids_loc = *ids;
-      Kokkos::parallel_for(
-        "FunctionBilinear::apply1", ids_loc.extent(0), KOKKOS_LAMBDA(const int& i) {
-          f(ids_loc(i));
-        });
-    } else {
-      Kokkos::parallel_for("FunctionBilinear::apply2", in.extent(1), f);
-    }
-  }
-
- private:
-  Kokkos::DualView<double*> x_, y_;
-  Kokkos::DualView<double**> v_;
-  int xi_, yi_;
-
- private: // helper functions
-  void checkArgs_(const Kokkos::View<double*, Kokkos::HostSpace>&,
-                  const Kokkos::View<double*, Kokkos::HostSpace>&,
-                  const Kokkos::View<double**, Kokkos::HostSpace>&) const;
-};
-
 } // namespace Amanzi
 
-#endif // AMANZI_BILINEAR_FUNCTION_HH_

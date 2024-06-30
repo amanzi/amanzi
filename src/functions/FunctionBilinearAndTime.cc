@@ -69,7 +69,7 @@ FunctionBilinearAndTime::FunctionBilinearAndTime(const FunctionBilinearAndTime& 
 
 
 double
-FunctionBilinearAndTime::operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
+FunctionBilinearAndTime::operator()(const Kokkos::View<const double*, Kokkos::HostSpace>& x) const
 {
   int interval;
   double s;
@@ -87,7 +87,7 @@ FunctionBilinearAndTime::operator()(const Kokkos::View<double*, Kokkos::HostSpac
 
 void
 FunctionBilinearAndTime::apply(
-  const Kokkos::View<double**>& in,
+  const Kokkos::View<const double**>& in,
   Kokkos::View<double*>& out,
   const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
 {
@@ -106,11 +106,10 @@ FunctionBilinearAndTime::apply(
 
     if (ids) {
       auto& ids_loc = *ids;
-      Kokkos::View<double*> out_copy(out);
       Kokkos::parallel_for(
-        "FunctionBilinearAndTime::apply", out2.extent(0), KOKKOS_LAMBDA(const int& i) {
+        "FunctionBilinearAndTime::apply", ids_loc.extent(0), KOKKOS_LAMBDA(const int& i) {
           int j = ids_loc(i);
-          out_copy(j) *= (1 - s) * out(j) + s * out2(j);
+          out(j) = (1 - s) * out(j) + s * out2(j);
         });
     } else {
       Kokkos::parallel_for(

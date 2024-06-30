@@ -8,27 +8,27 @@
 */
 
 //! <MISSING_ONELINE_DOCSTRING>
-#include "FunctionDistance.hh"
 #include "errors.hh"
-#include <cmath>
+#include "FunctionDistance.hh"
+#include "ViewUtils.hh"
 
 namespace Amanzi {
 
-FunctionDistance::FunctionDistance(const Kokkos::View<double*, Kokkos::HostSpace>& x0,
-                                   const Kokkos::View<double*, Kokkos::HostSpace>& metric)
+FunctionDistance::FunctionDistance(const Kokkos::View<const double*, Kokkos::HostSpace>& x0,
+        const Kokkos::View<const double*, Kokkos::HostSpace>& metric,
+        bool squared)
+  : squared_(squared)
 {
   if (x0.extent(0) != metric.extent(0)) {
     Errors::Message m;
     m << "Mismatch of metric and point dimensions.";
     Exceptions::amanzi_throw(m);
   }
-  Kokkos::resize(x0_, x0.extent(0));
-  Kokkos::resize(metric_, metric.extent(0));
-  Kokkos::deep_copy(x0_.view_host(), x0);
-  Kokkos::deep_copy(x0_.view_device(), x0);
-  Kokkos::deep_copy(metric_.view_host(), metric);
-  Kokkos::deep_copy(metric_.view_device(), metric);
+
+  x0_ = asDualView(x0);
+  metric_ = asDualView(metric);
 }
+
 
 double
 FunctionDistance::operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const

@@ -44,8 +44,7 @@ Here is an example of monomial of degree 6 in three variables:
 
 */
 
-#ifndef AMANZI_MONOMIAL_FUNCTION_HH_
-#define AMANZI_MONOMIAL_FUNCTION_HH_
+#pragma once
 
 #include <vector>
 
@@ -53,51 +52,56 @@ Here is an example of monomial of degree 6 in three variables:
 
 namespace Amanzi {
 
-class FunctionMonomial : public Function {
- public:
-  FunctionMonomial(double c,
-                   const Kokkos::View<double*, Kokkos::HostSpace>& x0,
-                   const Kokkos::View<int*, Kokkos::HostSpace>& p);
-  ~FunctionMonomial() {}
-  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionMonomial>(*this); }
-  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>&) const;
+namespace Impl {
 
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
+template<typename View_type, typename IntView_type, typename InView_type>
+class FunctionMonomialFunctor {
+ public:
+  FunctionMonomialFunctor(double c,
+                          const View_type& x0,
+                          const IntView_type& p,
+                          const InView_type& in)
+    : c_(c), x0_(x0), p_(p), in_(in) {}
+
+  KOKKOS_INLINE_FUNCTION
+  double
+  operator()(const int i) const
   {
     double y = c_;
-    if (x.extent(0) < x0_.extent(0)) {
-      assert(false && "FunctionMonomial expects higher-dimensional argument.");
-    }
     for (int j = 0; j < x0_.extent(0); ++j)
-      y *= pow(x(j, i) - x0_.view_device()[j], p_.view_device()[j]);
+      y *= Kokkos::pow(in_(j, i) - x0_[j], p_[j]);
     return y;
   }
 
-  void apply(const Kokkos::View<double**>& in,
+ private:
+  View_type::const_type x0_;
+  IntView_type::const_type p_;
+  double c_;
+
+  InView_type::const_type in_;
+
+} // namespace Impl
+
+
+class FunctionMonomial : public Function {
+ public:
+  FunctionMonomial(double c,
+                   const Kokkos::View<const double*, Kokkos::HostSpace>& x0,
+                   const Kokkos::View<const int*, Kokkos::HostSpace>& p);
+  ~FunctionMonomial() {}
+  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionMonomial>(*this); }
+
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& in) const;
+
+  void apply(const Kokkos::View<const double**>& in,
              Kokkos::View<double*>& out,
-             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
-  {
-    if (ids) {
-      auto ids_loc = *ids;
-      Kokkos::parallel_for(
-        "FunctionBilinear::apply1", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(ids_loc(i)) = apply_gpu(in, i);
-        });
-    } else {
-      assert(in.extent(1) == out.extent(0));
-      Kokkos::parallel_for(
-        "FunctionBilinear::apply2", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(i) = apply_gpu(in, i);
-        });
-    }
-  }
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const;
 
  private:
   double c_;
-  Kokkos::DualView<double*> x0_;
-  Kokkos::DualView<int*> p_;
+  Kokkos::DualView<const double*> x0_;
+  Kokkos::DualView<const int*> p_;
 };
 
 } // namespace Amanzi
 
-#endif

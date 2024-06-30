@@ -153,7 +153,7 @@ struct MultiPatchSpace {
 //
 template <typename T>
 struct Patch {
-  using View_type = Kokkos::View<T**, Kokkos::LayoutLeft>;
+  using View_type = typename MultiVector_type_<Scalar>::device_view_type;
 
   Patch(const Teuchos::RCP<const PatchSpace>& space_) : space(space_)
   {

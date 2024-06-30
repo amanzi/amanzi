@@ -86,14 +86,14 @@ class FunctionBilinearAndTime : public Function {
 
   FunctionBilinearAndTime(const FunctionBilinearAndTime& other);
 
-  ~FunctionBilinearAndTime(){};
   std::unique_ptr<Function> Clone() const
   {
     return std::make_unique<FunctionBilinearAndTime>(*this);
   }
 
-  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const;
-  void apply(const Kokkos::View<double**>& in,
+  double operator()(const Kokkos::View<const double*, Kokkos::HostSpace>& x) const;
+
+  void apply(const Kokkos::View<const double**>& in,
              Kokkos::View<double*>& out,
              const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids = nullptr) const;
 

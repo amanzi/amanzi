@@ -50,7 +50,6 @@ set(funcs_inc_files
   FunctionConstant.hh
   FunctionLinear.hh
   FunctionPolynomial.hh
-  FunctionSquareDistance.hh
   FunctionTabular.hh
   FunctionBilinear.hh
   FunctionDistance.hh
@@ -60,7 +59,6 @@ set(funcs_inc_files
   FunctionBilinearAndTime.hh
   FunctionFactory.hh
   MultiFunction.hh
-  FunctionTabularString.hh
   )
 
 set(funcs_src_files
@@ -72,12 +70,10 @@ set(funcs_src_files
   FunctionDistance.cc
   FunctionLinear.cc
   FunctionPolynomial.cc
-  FunctionSquareDistance.cc
   FunctionTabular.cc
   FunctionBilinearAndTime.cc
   FunctionFactory.cc
   MultiFunction.cc
-  FunctionTabularString.cc
   )
 
 set(funcs_link_libs error_handling atk

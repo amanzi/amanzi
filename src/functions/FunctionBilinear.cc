@@ -8,39 +8,30 @@
 */
 
 //!
-#include "FunctionBilinear.hh"
 #include "errors.hh"
+#include "FunctionBilinear.hh"
+#include "ViewUtils.hh"
 
 namespace Amanzi {
 
-FunctionBilinear::FunctionBilinear(const Kokkos::View<double*, Kokkos::HostSpace>& x,
-                                   const Kokkos::View<double*, Kokkos::HostSpace>& y,
-                                   const Kokkos::View<double**, Kokkos::HostSpace>& v,
+FunctionBilinear::FunctionBilinear(const Kokkos::View<const double*, Kokkos::HostSpace>& x,
+                                   const Kokkos::View<const double*, Kokkos::HostSpace>& y,
+                                   const Kokkos::View<const double**, Kokkos::HostSpace>& v,
                                    const int xi,
                                    const int yi)
   : xi_(xi), yi_(yi)
 {
   checkArgs_(x, y, v);
-
-  Kokkos::resize(x_, x.extent(0));
-  Kokkos::resize(y_, y.extent(0));
-  Kokkos::resize(v_, v.extent(0), v.extent(1));
-
-  Kokkos::deep_copy(x_.view_host(), x);
-  Kokkos::deep_copy(y_.view_host(), y);
-  Kokkos::deep_copy(v_.view_host(), v);
-
-  Kokkos::deep_copy(x_.view_device(), x_.view_host());
-  Kokkos::deep_copy(y_.view_device(), y_.view_host());
-  Kokkos::deep_copy(v_.view_device(), v_.view_host());
-
+  x_ = asDualView(x);
+  y_ = asDualView(y);
+  v_ = asDualView(v);
 }
 
 
 void
-FunctionBilinear::checkArgs_(const Kokkos::View<double*, Kokkos::HostSpace>& x,
-                             const Kokkos::View<double*, Kokkos::HostSpace>& y,
-                             const Kokkos::View<double**, Kokkos::HostSpace>& v) const
+FunctionBilinear::checkArgs_(const Kokkos::View<const double*, Kokkos::HostSpace>& x,
+                             const Kokkos::View<const double*, Kokkos::HostSpace>& y,
+                             const Kokkos::View<const double**, Kokkos::HostSpace>& v) const
 {
   if (x.extent(0) != v.extent(0)) {
     Errors::Message m;
@@ -77,5 +68,33 @@ FunctionBilinear::checkArgs_(const Kokkos::View<double*, Kokkos::HostSpace>& x,
     }
   }
 }
+
+
+double
+FunctionBilinear::operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& in) const {
+  auto f = Impl::FunctionBilinearFunctor(x_.view_host(), y_.view_host(), xi_, yi_, v_.view_host(), in);
+  return f(0);
+}
+
+
+void
+FunctionBilinear::apply(const Kokkos::View<const double**>& in,
+           Kokkos::View<double*>& out,
+           const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+{
+  auto f = Impl::FunctionBilinearFunctor(x_.view_device(), y_.view_device(), xi_, yi_, v_.view_device(), in);
+
+  if (ids) {
+    auto ids_loc = *ids;
+    Kokkos::parallel_for(
+      "FunctionBilinear::apply1", ids_loc.extent(0), KOKKOS_LAMBDA(const int i) {
+        out(ids_loc(i)) = f(ids_loc(i));
+      });
+  } else {
+    Kokkos::parallel_for("FunctionBilinear::apply2", in.extent(1), KOKKOS_LAMBDA(const int i) {
+        out(i) = f(i);
+      });
+    }
+  }
 
 } // namespace Amanzi

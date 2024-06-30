@@ -51,6 +51,9 @@ namespace Amanzi {
 
 class MultiFunction {
  public:
+  using View_type = typename MultiVector_type_<Scalar>::device_view_type;
+  using HostView_type = typename MultiVector_type_<Scalar>::host_view_type;
+
   MultiFunction(const std::vector<Teuchos::RCP<const Function>>& functions);
   MultiFunction(const Teuchos::RCP<const Function>& function);
   MultiFunction(Teuchos::ParameterList& plist);
@@ -73,11 +76,12 @@ class MultiFunction {
   // contiguous.  Likely this is important for performance anyway, so I doubt
   // we're losing much generality, and may even be making performance more
   // robust.
-  void apply(const Kokkos::View<double**>& in,
+  void apply(const Kokkos::View<const double**>& in,
              Kokkos::View<double**, Kokkos::LayoutLeft>& out,
              const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids = nullptr) const
   {
     for (int i = 0; i < size(); ++i) {
+      // note, this is not strided because Tpetra::MultiVector view is Kokkos::LayoutLeft
       Kokkos::View<double*> out_i = Kokkos::subview(out, Kokkos::ALL, i);
       functions_[i]->apply(in, out_i, ids);
     }
