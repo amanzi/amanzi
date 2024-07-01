@@ -41,7 +41,7 @@
 * Exactness test for diffusion solver on meshes with curved faces.
 ***************************************************************** */
 void
-RunTestDiffusionCurved()
+RunTestDiffusionCurved(const std::string& filename)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -51,7 +51,7 @@ RunTestDiffusionCurved()
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: elliptic solver, mesh with curved faces\n";
+  if (MyPID == 0) std::cout << "\nTest: elliptic solver, mesh with curved faces: " << filename << "\n";
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_curved.xml";
@@ -65,7 +65,7 @@ RunTestDiffusionCurved()
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   // RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 1.0,1.0,1.0, 2,2,2);
-  RCP<const Mesh> mesh = meshfactory.create("test/random3D_05.exo");
+  RCP<const Mesh> mesh = meshfactory.create(filename);
 
   // populate diffusion coefficient using the problem with analytic solution.
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
@@ -176,7 +176,8 @@ RunTestDiffusionCurved()
   CHECK_CLOSE(1.0, totvol, 1e-12);
 
   if (MyPID == 0) {
-    std::cout << "Domain center:" << center << std::endl;
+    std::cout << "Number of cells: " << ncells_owned << std::endl;
+    std::cout << "Domain center: " << center << std::endl;
     std::cout << "Volume error: " << 1.0 - totvol << std::endl;
 
     pl2_err /= pnorm;
@@ -196,5 +197,6 @@ RunTestDiffusionCurved()
 
 TEST(OPERATOR_DIFFUSION_CURVED)
 {
-  RunTestDiffusionCurved();
+  RunTestDiffusionCurved("test/random3D_05.exo");
+  RunTestDiffusionCurved("test/voronoi1.exo");
 }
