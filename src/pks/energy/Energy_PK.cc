@@ -261,7 +261,6 @@ Energy_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-std::cout << "AAA: Require Eval" << std::endl;
     S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
   }
 

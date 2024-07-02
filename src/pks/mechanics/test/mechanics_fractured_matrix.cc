@@ -48,7 +48,7 @@ TEST(MECHANICS_FRACTURED_MATRIX)
 
   MeshFactory factory(comm, gm);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
+  auto mesh = factory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 5, 6);
 
   // derive a fracture mesh
   std::vector<std::string> names;
