@@ -490,7 +490,7 @@ PreconditionerHypre::SetCoordinates_(Teuchos::RCP<Epetra_MultiVector> coords)
   int ilower = GloballyContiguousNodeRowMap_->MinMyGID();
   int iupper = GloballyContiguousNodeRowMap_->MaxMyGID();
 
-  assert(NumEntries != iupper - ilower + 1);
+  assert(NumEntries == iupper - ilower + 1);
 
   HYPRE_IJVectorCreate(comm, ilower, iupper, &xHypre_);
   HYPRE_IJVectorSetObjectType(xHypre_, HYPRE_PARCSR);
