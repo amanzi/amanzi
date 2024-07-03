@@ -161,6 +161,20 @@ PipeFlow_PK::NumericalSourceFriction(double h,
   return S1;
 }
 
+
+void PipeFlow_PK::CommitStep(double t_old, double t_new, const Tag& tag_next) {
+
+  AMANZI_ASSERT(tag_next == tag_next_ || tag_next == Tags::NEXT);
+  Tag tag_current = tag_next == tag_next_ ? tag_current_ : Tags::CURRENT;
+  
+  // also save pressure_head
+  assign(pressure_head_key_, tag_current, tag_next, *S_);
+  
+  ShallowWater_PK::CommitStep(t_old, t_new, tag_next);
+
+
+}
+
 //--------------------------------------------------------------------
 // Discretization of the bed slope source term
 //--------------------------------------------------------------------

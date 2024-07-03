@@ -30,6 +30,8 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual void Setup() override;
 
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag_next) override;
+
   virtual double get_dt() override;
 
   virtual void FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector& f) override;
