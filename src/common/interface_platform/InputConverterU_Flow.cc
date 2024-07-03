@@ -80,6 +80,12 @@ InputConverterU::TranslateFlow_(const std::string& mode,
     out_list.set<Teuchos::Array<std::string>>("optional fields", fields);
   }
 
+  node = GetUniqueElementByTagsString_(
+    "unstructured_controls, unstr_nonlinear_solver, max_correction_change", flag);
+  double change(-1.0);
+  if (flag) change = GetTextContentD_(node, "", true);
+  out_list.sublist("clipping parameters").set<double>("maximum correction change", change);
+
   // create flow header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
 

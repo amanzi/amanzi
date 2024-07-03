@@ -282,6 +282,9 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="clipping parameters">
+        <Parameter name="maximum correction change" type="double" value="-1.0"/>
+      </ParameterList>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
@@ -454,6 +457,9 @@
             <Parameter name="number of points" type="int" value="1000"/>
           </ParameterList>
         </ParameterList>
+      </ParameterList>
+      <ParameterList name="clipping parameters">
+        <Parameter name="maximum correction change" type="double" value="-1.0"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>

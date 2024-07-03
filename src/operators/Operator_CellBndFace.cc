@@ -281,7 +281,6 @@ Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell&
     ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
   }
   AMANZI_ASSERT(!ierr);
-  //   exit(0);
 }
 
 

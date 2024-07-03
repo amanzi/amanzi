@@ -528,6 +528,9 @@
           <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="clipping parameters">
+        <Parameter name="maximum correction change" type="double" value="-1.0"/>
+      </ParameterList>
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
           <ParameterList name="matrix">
@@ -873,6 +876,9 @@
           <Parameter name="water retention model" type="string" value="saturated"/>
           <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
         </ParameterList>
+      </ParameterList>
+      <ParameterList name="clipping parameters">
+        <Parameter name="maximum correction change" type="double" value="-1.0"/>
       </ParameterList>
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">

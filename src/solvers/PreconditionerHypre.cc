@@ -393,7 +393,6 @@ PreconditionerHypre::InitializeInverse()
 
   MPI_Comm comm = dynamic_cast<const Epetra_MpiComm*>(&A_->Comm())->GetMpiComm();
 
-
   // Next create vectors that will be used when ApplyInverse() is called
   int ilower = GloballyContiguousRowMap_->MinMyGID();
   int iupper = GloballyContiguousRowMap_->MaxMyGID();
@@ -412,6 +411,9 @@ PreconditionerHypre::InitializeInverse()
   HYPRE_IJVectorAssemble(YHypre_);
   HYPRE_IJVectorGetObject(YHypre_, (void**)&ParY_);
   YVec_ = Teuchos::rcp((hypre_ParVector*)hypre_IJVectorObject(((hypre_IJVector*)YHypre_)), false);
+
+  // A in AX = Y
+  HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_);
 
   std::string method_name = plist_.get<std::string>("method");
   if (method_name == "boomer amg") {
@@ -445,11 +447,6 @@ void
 PreconditionerHypre::ComputeInverse()
 {
 #ifdef HAVE_HYPRE
-  MPI_Comm comm = dynamic_cast<const Epetra_MpiComm*>(&A_->Comm())->GetMpiComm();
-
-  int ilower = GloballyContiguousRowMap_->MinMyGID();
-  int iupper = GloballyContiguousRowMap_->MaxMyGID();
-  HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_);
   HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR);
   HYPRE_IJMatrixInitialize(HypreA_);
   copy_matrix_();

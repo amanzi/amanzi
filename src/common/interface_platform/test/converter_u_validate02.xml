@@ -425,6 +425,9 @@
           <Parameter name="saturation" type="Array(double)" value="{1.0, 0.7, 0.2, 0.05}"/>
 	</ParameterList>
       </ParameterList>
+      <ParameterList name="clipping parameters">
+        <Parameter name="maximum correction change" type="double" value="-1.0"/>
+      </ParameterList>
       <ParameterList name="operators">
 	<ParameterList name="diffusion operator">
 	  <ParameterList name="matrix">
@@ -678,6 +681,9 @@
           <Parameter name="permeability" type="Array(double)" value="{1.0, 0.7, 0.2, 0.05}"/>
           <Parameter name="saturation" type="Array(double)" value="{1.0, 0.7, 0.2, 0.05}"/>
         </ParameterList>
+      </ParameterList>
+      <ParameterList name="clipping parameters">
+        <Parameter name="maximum correction change" type="double" value="-1.0"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>

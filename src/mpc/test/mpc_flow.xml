@@ -338,6 +338,11 @@
       	  <Parameter name="relative permeability model" type="string" value="Mualem"/>
       	</ParameterList>
       </ParameterList>
+
+      <!--ParameterList name="clipping parameters">
+      	<Parameter name="maximum correction change" type="double" value="-1.0"/>
+      </ParameterList-->
+
       <ParameterList name="operators">
       	<ParameterList name="diffusion operator">
       	  <ParameterList name="matrix">

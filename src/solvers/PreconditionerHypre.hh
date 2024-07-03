@@ -143,6 +143,7 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
   {
     HYPRE_IJVectorDestroy(XHypre_);
     HYPRE_IJVectorDestroy(YHypre_);
+    HYPRE_IJMatrixDestroy(HypreA_);
     if (method_type_ == Boomer) {
       HYPRE_BoomerAMGDestroy(method_);
     } else if (method_type_ == ILU) {

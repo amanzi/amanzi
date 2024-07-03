@@ -164,9 +164,6 @@ RunTest(double mu, double lambda, double tol = 1e-10)
   // populate the elasticity operator
   op->SetTensorCoefficient(K);
   op->UpdateMatrices();
-// global_op->SymbolicAssembleMatrix();
-// global_op->AssembleMatrix();
-// std::cout << *global_op->A() << std::endl; exit(0);
 
   // get and assemble the global operator
   global_op->UpdateRHS(source, true); // FIXME volume is missing but RHS is zero

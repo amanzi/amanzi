@@ -696,6 +696,10 @@
 	<Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
 
+      <ParameterList name="clipping parameters">
+        <Parameter name="maximum correction change" type="double" value="-1.0"/>
+      </ParameterList>
+
       <ParameterList name="operators">
 	<ParameterList name="diffusion operator">
 	  <ParameterList name="matrix">
@@ -776,6 +780,10 @@
 
       <ParameterList name="absolute permeability">
 	<Parameter name="coordinate system" type="string" value="cartesian"/>
+      </ParameterList>
+
+      <ParameterList name="clipping parameters">
+        <Parameter name="maximum correction change" type="double" value="-1.0"/>
       </ParameterList>
 
       <ParameterList name="fracture permeability models">
