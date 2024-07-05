@@ -65,8 +65,12 @@ MechanicsFracturedMatrix_PK::Setup()
 {
   mesh_ = S_->GetMesh("domain");
   mesh_fracture_ = S_->GetMesh("fracture");
-
   int d = mesh_->getSpaceDimension();
+
+  aperture_key_ = Keys::getKey("fracture", "aperture");
+  ref_aperture_key_ = Keys::getKey("fracture", "ref_aperture");
+  aperture_stiffness_key_ = Keys::getKey("fracture", "aperture_stiffness");
+  pressure_key_ = Keys::getKey("fracture", "pressure");
 
   // displacement field
   std::vector<WhetStone::SchemaItem> items;
@@ -83,7 +87,156 @@ MechanicsFracturedMatrix_PK::Setup()
       S_->GetEvaluatorPtr(displacement_key_, Tags::DEFAULT));
   }
 
+  // aperture fields
+  if (!S_->HasRecord(aperture_key_)) {
+    S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT)
+      .SetMesh(mesh_fracture_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+  }
+
+  if (!S_->HasRecord(ref_aperture_key_)) {
+    S_->Require<CV_t, CVS_t>(ref_aperture_key_, Tags::DEFAULT)
+      .SetMesh(mesh_fracture_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+  }
+
+  if (!S_->HasRecord(aperture_stiffness_key_)) {
+    S_->Require<CV_t, CVS_t>(aperture_stiffness_key_, Tags::DEFAULT)
+      .SetMesh(mesh_fracture_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+  }
+
+  if (!S_->HasRecord(pressure_key_)) {
+    S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT)
+      .SetMesh(mesh_fracture_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+  }
+
   MechanicsSmallStrain_PK::Setup();
+}
+
+
+/* ******************************************************************
+* Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
+****************************************************************** */
+void
+MechanicsFracturedMatrix_PK::FunctionalResidual(double t_old,
+                                                double t_new,
+                                                Teuchos::RCP<TreeVector> u_old,
+                                                Teuchos::RCP<TreeVector> u_new,
+                                                Teuchos::RCP<TreeVector> f)
+{
+  UpdateSourceBoundaryData(t_old, t_new);
+
+  S_->GetEvaluator(shear_modulus_key_).Update(*S_, passwd_);
+
+  op_matrix_elas_->global_operator()->Init();
+
+  // add external forces
+  auto rhs = op_matrix_->rhs();
+  if (use_gravity_) AddGravityTerm(*rhs);
+  if (poroelasticity_) AddPressureGradient(*rhs);
+  if (thermoelasticity_) AddTemperatureGradient(*rhs);
+
+  // assemble local matrices for fractures
+  op_matrix_elas_->UpdateMatrices();
+  AddFractureMatrices_(*rhs);
+
+  op_matrix_elas_->ApplyBCs(true, true, true);
+
+  // compute negative residual, A u - f
+  op_matrix_->ComputeNegativeResidual(*u_new->Data(), *f->Data());
+}
+
+
+/* *******************************************************************
+* Updates after successful time steps
+******************************************************************* */
+void
+MechanicsFracturedMatrix_PK::CommitStep(double t_old, double t_new, const Tag& tag)
+{
+  MechanicsSmallStrain_PK::Setup();
+
+  // compute aperture as diference of twin face DoFs
+  auto& a_c = *S_->GetW<CV_t>(aperture_key_, Tags::DEFAULT, "").ViewComponent("cell");
+  const auto& u_f = *S_->Get<CV_t>(displacement_key_).ViewComponent("face", true);
+  const auto& fmap = *S_->Get<CV_t>(displacement_key_).ComponentMap("face", true);
+
+  auto kind = AmanziMesh::Entity_kind::CELL;
+  int ncells = mesh_fracture_->getNumEntities(kind, AmanziMesh::Parallel_kind::OWNED);
+
+  for (int c = 0; c < ncells; ++c) {
+    int f = mesh_fracture_->getEntityParent(kind, c);
+    const auto& cells = mesh_->getFaceCells(f);
+
+    int c1 = cells[0];
+    if (c1 > ncells_owned_) c1 = cells[1];
+    const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c1);
+
+    int pos = std::distance(faces.begin(), std::find(faces.begin(), faces.end(), f));
+    int g = fmap.FirstPointInElement(f);
+  
+    a_c[0][c] = (u_f[0][g] - u_f[0][g + 1]) * dirs[pos];
+  }
+}
+
+
+/* ******************************************************************
+* Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
+****************************************************************** */
+void
+MechanicsFracturedMatrix_PK::AddFractureMatrices_(CompositeVector& rhs)
+{
+  const auto& E_c = *S_->Get<CV_t>(aperture_stiffness_key_).ViewComponent("cell");
+  const auto& a0_c = *S_->Get<CV_t>(ref_aperture_key_).ViewComponent("cell");
+  const auto& p_c = *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
+  const auto& rhs_f = *rhs.ViewComponent("face");
+
+  const auto& fmap = *rhs.ComponentMap("face", true);
+
+  auto kind = AmanziMesh::Entity_kind::CELL;
+  int ncells = mesh_fracture_->getNumEntities(kind, AmanziMesh::Parallel_kind::OWNED);
+
+  int pos, np, i1, i2;
+  for (int c = 0; c < ncells; ++c) {
+    int f = mesh_fracture_->getEntityParent(kind, c);
+    const auto& cells = mesh_->getFaceCells(f);
+
+    int c1 = cells[0];
+    if (c1 > ncells_owned_) c1 = cells[1];
+    const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c1);
+    int nfaces = faces.size(); 
+
+    auto& Acell = op_matrix_elas_->local_op()->matrices[c1];
+    int nrows = Acell.NumRows();
+
+    np = 0;
+    pos = 0;
+    for (int i = 0; i < nfaces; ++i) {
+      if (f == faces[i]) { pos = i; i1 = np; }
+      np += fmap.ElementSize(faces[i]);
+    }
+    i1 = nrows - np + i1;
+    i2 = i1 + 1;
+
+    double area = mesh_fracture_->getCellVolume(c);
+    double force = area * E_c[0][c] / a0_c[0][c];
+    Acell(i1, i1) += force;
+    Acell(i2, i2) += force;
+
+    Acell(i1, i2) -= force;
+    Acell(i2, i1) -= force;
+
+    // update RHS using fluid pressure in fracture
+    int g = fmap.FirstPointInElement(f);
+
+    rhs_f[0][g] += area * p_c[0][c] * dirs[pos];
+    rhs_f[0][g + 1] -= area * p_c[0][c] * dirs[pos];
+  }
 }
 
 } // namespace Mechanics

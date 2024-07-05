@@ -63,9 +63,9 @@ PDE_ElasticityFracturedMatrix::Init(Teuchos::ParameterList& plist)
   global_op_->OpPushBack(local_op_);
 
   // create reverse node map
-  int nnodes = fracture_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  int nnodes = fracture_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
-  node_to_node_.resize(nnodes_owned, -1);
+  node_to_node_.resize(nnodes_wghost, -1);
   for (int n = 0; n < nnodes; ++n) {
     int v = fracture_->getEntityParent(AmanziMesh::Entity_kind::NODE, n);
     node_to_node_[v] = n;
@@ -257,7 +257,7 @@ PDE_ElasticityFracturedMatrix::ApplyBCs(bool primary, bool eliminate, bool essen
         if (essential_eqn) {
           if (n < np0) {
             rhs_node[comp[n]][lid[n]] = value;
-            auto cells = mesh_->getNodeCells(ids[n]);
+            auto cells = mesh_->getNodeCells(ids[n], AmanziMesh::Parallel_kind::ALL);
             Acell(n, n) = 1.0 / cells.size();
           } else {
             rhs_face[0][lid[n]] = value;
@@ -367,6 +367,7 @@ PDE_ElasticityFracturedMatrix::ComputeCellStrain(const CompositeVector& u, int c
   int nrows = local_op_->matrices[c].NumRows();
   WhetStone::DenseVector dofs(nrows);
 
+  u.ScatterMasterToGhosted();
   const auto& u_n = *u.ViewComponent("node", true);
   const auto& nmap = *u.ComponentMap("node", true);
 

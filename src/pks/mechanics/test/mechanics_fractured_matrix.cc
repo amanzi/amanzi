@@ -48,7 +48,7 @@ TEST(MECHANICS_FRACTURED_MATRIX)
 
   MeshFactory factory(comm, gm);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 5, 6);
+  auto mesh = factory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 8, 8);
 
   // derive a fracture mesh
   std::vector<std::string> names;
@@ -91,9 +91,9 @@ TEST(MECHANICS_FRACTURED_MATRIX)
   // initialize I/O
   Teuchos::ParameterList iolist;
   iolist.get<std::string>("file name base", "plot");
-  OutputXDMF io(iolist, mesh, true, false);
+  OutputXDMF io(iolist, mesh_fracture, true, false);
 
-  const auto& s = *S->Get<CompositeVector>("shear_strain").ViewComponent("cell");
+  const auto& a = *S->Get<CompositeVector>("fracture-aperture").ViewComponent("cell");
   const auto& u = S->Get<CompositeVector>("displacement");
   const auto& nmap = *u.Map().Map("node", true);
   int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
@@ -107,10 +107,9 @@ TEST(MECHANICS_FRACTURED_MATRIX)
   }
 
   io.InitializeCycle(T, 1, "");
-  io.WriteVector(*u_short(0), "displacement-x", AmanziMesh::NODE);
-  io.WriteVector(*u_short(1), "displacement-y", AmanziMesh::NODE);
-  io.WriteVector(*u_short(2), "displacement-z", AmanziMesh::NODE);
-  io.WriteVector(*s(0), "shear_strain", AmanziMesh::CELL);
+  io.WriteVector(*a(0), "fracture-aperture", AmanziMesh::CELL);
+  // io.WriteVector(*u_short(0), "displacmenet-x", AmanziMesh::NODE);
+  // io.WriteVector(*s(0), "shear_strain", AmanziMesh::CELL);
   io.FinalizeCycle();
 
   // summary

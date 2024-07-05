@@ -90,7 +90,7 @@ class MechanicsSmallStrain_PK : public Mechanics_PK {
   virtual void Initialize() final;
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) final;
-  virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
 
   virtual std::string name() override { return "mechanics"; }
 
@@ -116,7 +116,7 @@ class MechanicsSmallStrain_PK : public Mechanics_PK {
 
   Teuchos::RCP<ShearStrainEvaluator> eval_shear_strain_;
 
- private:
+ protected:
   double dt_next_;
   Key shear_strain_key_, shear_modulus_key_, bulk_modulus_key_;
 

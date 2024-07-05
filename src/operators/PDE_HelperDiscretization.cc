@@ -562,7 +562,7 @@ CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   }
 
   ParallelCommunication pp(mesh);
-  pp.CopyMasterFace2GhostFace(*points);
+  pp.CopyMasterEntity2GhostEntity(AmanziMesh::Entity_kind::FACE, *points);
 
   // create ghosted map with two points on each fracture face
   auto& gfmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
@@ -615,7 +615,7 @@ CreateFracturedMatrixCVS_Node(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   }
 
   ParallelCommunication pp(mesh);
-  pp.CopyMasterFace2GhostFace(*points);
+  pp.CopyMasterEntity2GhostEntity(AmanziMesh::Entity_kind::NODE, *points);
 
   // create ghosted map with two points on each fracture face
   auto& gnmap = mesh->getMap(AmanziMesh::Entity_kind::NODE, true);
@@ -691,11 +691,9 @@ CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 Teuchos::RCP<CompositeVectorSpace>
 CreateManifoldCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
-  int nfaces =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-
-  auto points =
-    Teuchos::rcp(new Epetra_IntVector(mesh->getMap(AmanziMesh::Entity_kind::FACE, true)));
+  const AmanziMesh::Entity_kind kind = AmanziMesh::Entity_kind::FACE;
+  int nfaces = mesh->getNumEntities(kind, AmanziMesh::Parallel_kind::OWNED);
+  auto points = Teuchos::rcp(new Epetra_IntVector(mesh->getMap(kind, true)));
   points->PutValue(1);
 
   for (int f = 0; f < nfaces; ++f) {
@@ -704,7 +702,7 @@ CreateManifoldCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   }
 
   ParallelCommunication pp(mesh);
-  pp.CopyMasterFace2GhostFace(*points);
+  pp.CopyMasterEntity2GhostEntity(kind, *points);
 
   // create ghosted map with multiple points on each fracture face
   auto& gfmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
@@ -727,7 +725,7 @@ CreateManifoldCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   std::string compname("face");
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh)->SetGhosted(true);
-  cvs->AddComponent(compname, AmanziMesh::Entity_kind::FACE, mmap, gmap, 1);
+  cvs->AddComponent(compname, kind, mmap, gmap, 1);
 
   return cvs;
 }

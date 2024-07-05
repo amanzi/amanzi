@@ -37,9 +37,22 @@ class MechanicsFracturedMatrix_PK : public MechanicsSmallStrain_PK {
 
   // methods required for PK interface
   virtual void Setup() final;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
+
+  // -- computes the non-linear functional f = f(t,u,udot) and related norm.
+  void FunctionalResidual(const double t_old,
+                          double t_new,
+                          Teuchos::RCP<TreeVector> u_old,
+                          Teuchos::RCP<TreeVector> u_new,
+                          Teuchos::RCP<TreeVector> f) final;
 
  private:
+  void AddFractureMatrices_(CompositeVector& rhs);
+
+ protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_fracture_;
+
+  Key aperture_key_, ref_aperture_key_, aperture_stiffness_key_, pressure_key_;
 
  private:
   static RegisteredPKFactory<MechanicsFracturedMatrix_PK> reg_;

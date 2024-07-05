@@ -261,8 +261,7 @@ MechanicsSmallStrain_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 
 /* *******************************************************************
-* Performs one time step from time t_old to time t_new either for
-* steady-state or transient simulation.
+* Updates after successful time steps
 ******************************************************************* */
 void
 MechanicsSmallStrain_PK::CommitStep(double t_old, double t_new, const Tag& tag)

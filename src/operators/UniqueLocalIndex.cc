@@ -64,13 +64,13 @@ UniqueIndexNodeToCells(const AmanziMesh::Mesh& mesh,
   std::set<int> gids, faces_all, faces_int;
   const Epetra_BlockMap& cmap = mesh.getMap(AmanziMesh::Entity_kind::CELL, true);
 
-  auto cells = mesh.getNodeCells(vm);
+  auto cells = mesh.getNodeCells(vm, AmanziMesh::Parallel_kind::ALL);
   for (auto c : cells) gids.insert(cmap.GID(c));
 
   auto faces = mesh.getNodeFaces(vm);
   for (auto f : faces) faces_all.insert(f);
 
-  auto cells_f = fracture.getNodeCells(vf);
+  auto cells_f = fracture.getNodeCells(vf, AmanziMesh::Parallel_kind::ALL);
   for (int c : cells_f) {
     int f = fracture.getEntityParent(AmanziMesh::Entity_kind::CELL, c);
     faces_int.insert(f);
@@ -87,8 +87,8 @@ UniqueIndexNodeToCells(const AmanziMesh::Mesh& mesh,
 
     while (!short_list.empty()) {
       int c1 = short_list.extract(short_list.begin()).value();
+      const auto& new_faces = mesh.getCellFaces(cmap.LID(c1));
 
-      const auto& new_faces = mesh.getCellFaces(c1);
       for (int f : new_faces) {
         if (faces_int.find(f) != faces_int.end()) continue;
         if (faces_all.find(f) != faces_all.end()) {
@@ -107,6 +107,8 @@ UniqueIndexNodeToCells(const AmanziMesh::Mesh& mesh,
 
     pos++;  
   }
+
+  return -1;
 }
 
 } // namespace Operators

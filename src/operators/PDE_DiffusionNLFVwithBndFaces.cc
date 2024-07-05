@@ -312,20 +312,18 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
     }
   }
 
-
   // distribute stencils
   stencil_data_->GatherGhostedToMaster("weight");
   stencil_data_->ScatterMasterToGhosted("weight");
 
   ParallelCommunication pp(mesh_);
   for (int i = 0; i < 2 * dim_; ++i) {
-    pp.CombineGhostFace2MasterFace(*stencil_faces_[i], (Epetra_CombineMode)Add);
-    pp.CombineGhostFace2MasterFace(*stencil_cells_[i], (Epetra_CombineMode)Add);
+    pp.CombineGhostEntity2MasterEntity(AmanziMesh::Entity_kind::FACE, *stencil_faces_[i], (Epetra_CombineMode)Add);
+    pp.CombineGhostEntity2MasterEntity(AmanziMesh::Entity_kind::FACE, *stencil_cells_[i], (Epetra_CombineMode)Add);
 
-    pp.CopyMasterFace2GhostFace(*stencil_faces_[i]);
-    pp.CopyMasterFace2GhostFace(*stencil_cells_[i]);
+    pp.CopyMasterEntity2GhostEntity(AmanziMesh::Entity_kind::FACE, *stencil_faces_[i]);
+    pp.CopyMasterEntity2GhostEntity(AmanziMesh::Entity_kind::FACE, *stencil_cells_[i]);
   }
-
 
   stencil_initialized_ = true;
 }
