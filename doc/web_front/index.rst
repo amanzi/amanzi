@@ -105,7 +105,8 @@ build system will download and build all the TPLs for you.  To get
 started you will need a modern Linux/Unix/OSX system with
 
  * CMake (version >= 3.23.0), 
- * A recent GNU >= 7.5, Clang >=5, or Intel compiler >= 19, suporting the C++14 standard.
+ * A recent GNU >= 8.3, Clang >=5, or Intel compiler >= 19, suporting the C++17 standard.
+   * Note: Intel classic compilers are supported, but Intel oneAPI compilers are not yet.
  * MPI (e.g., OpenMPI version > 4.1)
 
 Details are provided in the Installation Instructions in the User Guide.
@@ -116,7 +117,7 @@ Open Source / Open Development
 
 Amanzi is developed and distributed under the three-clause BSD
 open-source license.  Copyright is held jointly by the contributing
-laboratories (LANL,LBNL,ORNL,PNNL). Included in the Amanzi source code is
+laboratories (LANL, LBNL, ORNL, PNNL). Included in the Amanzi source code is
 the growing set of unit, integration, regression, and benchmark tests
 that are used by the development and application teams.
 
