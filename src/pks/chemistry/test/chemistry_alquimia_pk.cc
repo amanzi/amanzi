@@ -167,6 +167,7 @@ TEST(INTERFACE_LIBRARY_ADVANCE)
 }
 #endif
 
+#ifdef CRUNCHTOPE_ENABLED
 TEST(INITIALIZE_CRUNCH)
 {
   using namespace Amanzi;
@@ -207,3 +208,4 @@ TEST(INITIALIZE_CRUNCH)
   CPK2->Setup();
   CPK2->Initialize();
 }
+#endif
