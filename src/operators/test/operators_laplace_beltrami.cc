@@ -66,17 +66,17 @@ LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
   // extract a manifold mesh
-  RCP<const Mesh> surfmesh = meshfactory.create(mesh, surfaces, AmanziMesh::FACE);
+  RCP<const Mesh> surfmesh = meshfactory.create(mesh, surfaces, AmanziMesh::Entity_kind::FACE);
 
-  int ncells_owned = surfmesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int ncells_wghost = surfmesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
-  int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells_owned = surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   std::cout << "pid=" << MyPID << " cells: " << ncells_owned << " " << ncells_wghost << std::endl;
 
   // verify one-to-one map (2D-cell -> 3D-face)
   for (int c = 0; c < ncells_wghost; ++c) {
-    int g = surfmesh->getEntityParent(AmanziMesh::CELL, c);
+    int g = surfmesh->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
     double diff = AmanziGeometry::norm(surfmesh->getCellCentroid(c) - mesh->getFaceCentroid(g));
     CHECK_CLOSE(0.0, diff, 1e-14);
   }
@@ -94,7 +94,7 @@ LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   // create boundary data (no mixed bc)
   Entity_ID_List cells;
   Teuchos::RCP<BCs> bc =
-    Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+    Teuchos::rcp(new BCs(surfmesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 

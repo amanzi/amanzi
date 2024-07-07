@@ -35,7 +35,7 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
     const AmanziMesh::MeshCache& m = mesh->getCache();
     Kokkos::parallel_for(
       "Op_Surfacecell_Surfacecell::SumLocalDiag", diag_v.extent(0), KOKKOS_LAMBDA(const int& sc) {
-        auto f = m.getEntityParent(AmanziMesh::CELL, sc);
+        auto f = m.getEntityParent(AmanziMesh::Entity_kind::CELL, sc);
         Xv(f, 0) += diag_v(sc, 0);
       });
   }
@@ -68,20 +68,20 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
   {
     if (scaling.hasComponent("cell") &&
         scaling.getComponent("cell", false)->getLocalLength() ==
-          mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED)) {
+          mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED)) {
       Op_Cell_Cell::Rescale(scaling);
     }
 
     if (scaling.hasComponent("face") && scaling.getComponent("face", false)->getLocalLength() ==
                                           mesh->getParentMesh()->getNumEntities(
-                                            AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED)) {
+                                            AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED)) {
       const auto s_f = scaling.viewComponent("face", false);
       auto diag_v = diag->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
       const AmanziMesh::MeshCache& m = mesh->getCache();
       Kokkos::parallel_for(
         "Op_SurfaceCell_SurfaceCell::Rescale", diag_v.extent(0), KOKKOS_LAMBDA(const int& sc) {
-          auto f = m.getEntityParent(AmanziMesh::CELL, sc);
+          auto f = m.getEntityParent(AmanziMesh::Entity_kind::CELL, sc);
           diag_v(sc, 0) *= s_f(f, 0);
         });
     }

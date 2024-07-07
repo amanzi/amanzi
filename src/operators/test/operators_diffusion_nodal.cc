@@ -67,8 +67,8 @@ TEST(OPERATOR_DIFFUSION_NODAL)
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic01 ana(mesh);
 
@@ -80,7 +80,7 @@ TEST(OPERATOR_DIFFUSION_NODAL)
 
   // create boundary data
   Point xv(2);
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -227,9 +227,9 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS)
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
-  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::ALL);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic02 ana(mesh);
 
@@ -244,7 +244,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS)
   // create boundary data (no mixed bc)
   Point xv(2);
   Teuchos::RCP<BCs> bc_v =
-    Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::SCALAR));
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model_v = bc_v->bc_model();
   std::vector<double>& bc_value_v = bc_v->bc_value();
 
@@ -257,7 +257,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS)
   }
 
   Teuchos::RCP<BCs> bc_f =
-    Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model_f = bc_f->bc_model();
   std::vector<double>& bc_value_f = bc_f->bc_value();
   std::vector<double>& bc_mixed_f = bc_f->bc_mixed();

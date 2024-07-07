@@ -56,8 +56,8 @@ TEST(RECONSTRUCTION_LINEAR_2D)
     Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
   Epetra_MultiVector grad_exact(mesh->cell_map(false), 2);
 
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
@@ -115,8 +115,8 @@ TEST(RECONSTRUCTION_LINEAR_3D)
     Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
   Epetra_MultiVector grad_exact(mesh->cell_map(false), 3);
 
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);

@@ -45,20 +45,43 @@ Example:
 
 namespace Amanzi {
 
+class FunctionPolynomial : public Function {
+ public:
+  FunctionPolynomial(const Kokkos::View<const double*, Kokkos::HostSpace>& c,
+                     const Kokkos::View<const int*, Kokkos::HostSpace>& p,
+                     double x0 = 0.0);
+
+  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionPolynomial>(*this); }
+
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>&) const override;
+
+  void apply(const Kokkos::View<const double**>& in,
+             Kokkos::View<double*>& out,
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override;
+
+ private:
+  int pmin_;
+  int pmax_;
+  double x0_;
+  Kokkos::DualView<double*> c_;
+};
+
+
 namespace Impl {
 
 template <class DoubleView_type,
           class InView_type>
 class FunctionPolynomialFunctor {
-  FunctionPolynomialFunctor(const DoubleView_type& c
-                            int pmax,
+ public:
+  FunctionPolynomialFunctor(const DoubleView_type& c,
                             int pmin,
+                            int pmax,
                             double x0,
                             const InView_type& in)
-    : c_(c), pmax_(pmax), pmin_(pmin), x0_(x0) {}
+    : c_(c), pmin_(pmin), pmax_(pmax), x0_(x0), in_(in) {}
 
   KOKKOS_INLINE_FUNCTION
-  double operator()(const int i)
+  double operator()(const int i) const
   {
     // Polynomial terms with non-negative exponents
     double y = c_[pmax_ - pmin_];
@@ -70,44 +93,22 @@ class FunctionPolynomialFunctor {
     // Polynomial terms with negative exponents.
     if (pmin_ < 0) {
       double w = c_[0];
-      double z = 1.0 / (x(0, i) - x0_);
+      double z = 1.0 / (in_(0, i) - x0_);
       for (int j = pmin_; j < -1; ++j) w = c_[j + 1 - pmin_] + z * w;
       y += z * w;
     }
     return y;
   }
 
+ private:
   DoubleView_type c_;
-  IntView_type p_;
   double x0_;
-  double pmax_, pmin_;
+  int pmax_, pmin_;
+  InView_type in_;
 };
 
 
 } // namespace Impl
-
-
-class FunctionPolynomial : public Function {
- public:
-  FunctionPolynomial(const Kokkos::View<const double*, Kokkos::HostSpace>& c,
-                     const Kokkos::View<const int*, Kokkos::HostSpace>& p,
-                     double x0 = 0.0);
-
-  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionPolynomial>(*this); }
-
-  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>&) const;
-
-  void apply(const Kokkos::View<const double**>& in,
-             Kokkos::View<double*>& out,
-             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const;
-
- private:
-  int pmin_;
-  int pmax_;
-  double x0_;
-  Kokkos::DualView<double*> c_;
-};
-
 } // namespace Amanzi
 
 

@@ -71,14 +71,14 @@ RunTest(std::string op_list_name)
   // extract surface mesh
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top surface"));
-  RCP<const Mesh> surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::FACE);
+  RCP<const Mesh> surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::Entity_kind::FACE);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffsuion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = surfmesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells_owned = surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -89,7 +89,7 @@ RunTest(std::string op_list_name)
 
   // create boundary data (no mixed bc)
   Teuchos::RCP<BCs> bc =
-    Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+    Teuchos::rcp(new BCs(surfmesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -97,9 +97,9 @@ RunTest(std::string op_list_name)
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(surfmesh);
   cvs->SetGhosted(true);
-  cvs->SetComponent("cell", AmanziMesh::CELL, 1);
+  cvs->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   cvs->SetOwned(false);
-  cvs->AddComponent("face", AmanziMesh::FACE, 1);
+  cvs->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
   // create source and add it to the operator
   CompositeVector source(*cvs);
@@ -131,7 +131,7 @@ RunTest(std::string op_list_name)
   Teuchos::RCP<Operator> global_op = op.global_operator();
 
   // add accumulation terms
-  PDE_Accumulation op_acc(AmanziMesh::CELL, global_op);
+  PDE_Accumulation op_acc(AmanziMesh::Entity_kind::CELL, global_op);
   op_acc.AddAccumulationDelta(solution, phi, phi, dT, "cell");
 
   // apply BCs and assemble

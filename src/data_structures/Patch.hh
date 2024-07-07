@@ -62,7 +62,7 @@ struct PatchSpace {
 
   int size() const
   {
-    if (entity_kind == AmanziMesh::BOUNDARY_FACE) {
+    if (entity_kind == AmanziMesh::Entity_kind::BOUNDARY_FACE) {
       Errors::Message msg("Patch cannot handle BOUNDARY_FACE entities, because "
                           "Mesh does not support sets on these types of "
                           "entities.  Instead use FACE and filter as needed.");
@@ -153,7 +153,7 @@ struct MultiPatchSpace {
 //
 template <typename T>
 struct Patch {
-  using View_type = typename MultiVector_type_<Scalar>::device_view_type;
+  using View_type = typename MultiVector_type_<T>::device_view_type;
 
   Patch(const Teuchos::RCP<const PatchSpace>& space_) : space(space_)
   {

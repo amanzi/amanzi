@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "Kokkos_StdAlgorithms.hpp"
 #include "Tpetra_MultiVector.hpp"
 
 #include "Point.hh"
@@ -33,14 +34,26 @@ namespace AmanziMesh {
 //
 // Given a face ID, get the corresponding boundary face ID (assuming it is a bf)
 //
-template <class Mesh_type>
-Entity_ID
-getFaceOnBoundaryBoundaryFace(const Mesh_type& mesh, Entity_ID f)
+inline Entity_ID
+getFaceOnBoundaryBoundaryFace(const Mesh& mesh, Entity_ID f)
 {
   // should this be deprecated?  It seems likely to not perform well
   const auto& fmap = mesh.getMap(AmanziMesh::Entity_kind::FACE, true);
   const auto& bfmap = mesh.getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
   return bfmap->getLocalElement(fmap->getGlobalElement(f));
+}
+
+KOKKOS_INLINE_FUNCTION
+Entity_ID
+getFaceOnBoundaryBoundaryFace(const MeshCache& mesh, Entity_ID f)
+{
+  // This implementation uses Kokkos::find, but that is host-only.  Instead,
+  // there is a Kokkos::find based on Teams that we could probably use, but for
+  // now we use a very simple hand-rolled for-loop based find.
+  // auto iter = Kokkos::Experimental::find(DefaultExecutionSpace(), mesh.data.boundary_faces.view_device(), f);
+  // assert(iter != Kokkos::Experimental::end(mesh.data.boundary_faces.view_device()));
+  // return static_cast<Entity_ID>(iter - Kokkos::Experimental::begin(mesh.data.boundary_faces.view_device()));
+  return find(mesh.data.boundary_faces.view_device(), f);
 }
 
 

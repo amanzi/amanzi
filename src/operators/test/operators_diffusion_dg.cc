@@ -89,10 +89,10 @@ OperatorDiffusionDG(std::string solver_name,
     mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 2, 3, 3, true, true);
   }
 
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // modify diffusion coefficient
   int d = mesh->space_dimension();
@@ -129,7 +129,7 @@ OperatorDiffusionDG(std::string solver_name,
   int order = op_list.sublist("schema").get<int>("method order");
   int nk = WhetStone::PolynomialSpaceDimension(dim, order);
 
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<std::vector<double>>& bc_value = bc->bc_value_vector(nk);
 

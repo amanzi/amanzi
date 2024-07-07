@@ -126,6 +126,31 @@ asDualView(const Kokkos::MeshView<T*, Args...>& in)
   return dv;
 }
 
+//
+// Conversion between view and dual view through deep copy and sync.
+//
+template <typename T, typename MemSpace = DefaultMemorySpace, typename... Args>
+Kokkos::DualView<typename std::remove_const<T>::type*, MemSpace>
+asDualView(const Kokkos::View<T*, Args...>& in)
+{
+  Kokkos::DualView<typename std::remove_const<T>::type*, MemSpace> dv(in.label(), in.size());
+  Kokkos::deep_copy(dv.h_view, in);
+  Kokkos::deep_copy(dv.d_view, dv.h_view);
+  return dv;
+}
+
+
+template <typename T, typename MemSpace = DefaultMemorySpace, typename... Args>
+Kokkos::DualView<typename std::remove_const<T>::type**, MemSpace>
+asDualView(const Kokkos::View<T**, Args...>& in)
+{
+  Kokkos::DualView<typename std::remove_const<T>::type**, MemSpace> dv(in.label(), in.extent(0), in.extent(1));
+  Kokkos::deep_copy(dv.h_view, in);
+  Kokkos::deep_copy(dv.d_view, dv.h_view);
+  return dv;
+}
+
+
 namespace Impl {
 
 template <class T>
@@ -202,15 +227,28 @@ is_present(const T& v, const List& l)
 // and thus the cache was never directly modified.
 // Using the view interface, a const view is returned from the cache
 // and the behavior of using this view directly is made impossible.
-template <typename VT>
+template <typename View_type>
 auto
-alloc_and_deep_copy(const VT& const_view)
+alloc_and_deep_copy(const View_type& const_view)
 {
   auto non_const_view =
-    Kokkos::MeshView<typename VT::traits::non_const_data_type>("", const_view.size());
+    Kokkos::MeshView<typename View_type::traits::non_const_data_type>("", const_view.size());
   Kokkos::deep_copy(non_const_view, const_view);
   return non_const_view;
 }
+
+
+template<class View_type>
+KOKKOS_INLINE_FUNCTION
+int
+find(const View_type& view, typename View_type::const_value_type& val) {
+  for (int i = 0; i != view.size(); ++i) {
+    if (view(i) == val) return i;
+  }
+  return -1;
+}
+
+
 
 
 } // namespace Amanzi

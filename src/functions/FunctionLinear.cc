@@ -8,8 +8,10 @@
 */
 
 //!
-#include "FunctionLinear.hh"
 #include "errors.hh"
+#include "ViewUtils.hh"
+
+#include "FunctionLinear.hh"
 
 namespace Amanzi {
 
@@ -32,7 +34,8 @@ FunctionLinear::FunctionLinear(double y0,
   grad_ = asDualView(grad);
 }
 
-FunctionLinear::FunctionLinear(double y0, const Kokkos::View<const double*, Kokkos::HostSpace>& grad)
+FunctionLinear::FunctionLinear(double y0,
+        const Kokkos::View<const double*, Kokkos::HostSpace>& grad)
 {
   if (grad.extent(0) < 1) {
     Errors::Message m;
@@ -40,16 +43,20 @@ FunctionLinear::FunctionLinear(double y0, const Kokkos::View<const double*, Kokk
     Exceptions::amanzi_throw(m);
   }
   y0_ = y0;
-
-  std::vector<double> x(grad.extent(0), 0.0);
-  x_ = asDualView(x);
-
   grad_ = asDualView(grad);
+
+  Kokkos::View<double*, Kokkos::HostSpace> x0("x0", grad.extent(0));
+  Kokkos::deep_copy(x0, 0.);
+  x0_ = asDualView(x0);
 }
 
 double
 FunctionLinear::operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const
 {
+  if (x.extent(0) != grad_.extent(0)) {
+    Errors::Message m("Linear function evaluated with point of inconsistent dimension.");
+    Exceptions::amanzi_throw(m);
+  }
   auto f = Impl::FunctionLinearFunctor(y0_, grad_.view_host(), x0_.view_host(), x);
   return f(0);
 }

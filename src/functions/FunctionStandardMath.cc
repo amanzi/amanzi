@@ -19,54 +19,54 @@ FunctionStandardMath::FunctionStandardMath(std::string op,
                                            double amplitude,
                                            double parameter,
                                            double shift)
-  : amplitude_(amplitude), parameter_(parameter), shift_(shift)
+  : op_str_(op), amplitude_(amplitude), parameter_(parameter), shift_(shift)
 {
   if (op == "cos")
-    op_ = COS;
+    op_ = Function_kind::COS;
   else if (op == "sin")
-    op_ = SIN;
+    op_ = Function_kind::SIN;
   else if (op == "tan")
-    op_ = TAN;
+    op_ = Function_kind::TAN;
   else if (op == "acos")
-    op_ = ACOS;
+    op_ = Function_kind::ACOS;
   else if (op == "asin")
-    op_ = ASIN;
+    op_ = Function_kind::ASIN;
   else if (op == "atan")
-    op_ = ATAN;
+    op_ = Function_kind::ATAN;
   else if (op == "cosh")
-    op_ = COSH;
+    op_ = Function_kind::COSH;
   else if (op == "sinh")
-    op_ = SINH;
+    op_ = Function_kind::SINH;
   else if (op == "tanh")
-    op_ = TANH;
+    op_ = Function_kind::TANH;
   else if (op == "exp")
-    op_ = EXP;
+    op_ = Function_kind::EXP;
   else if (op == "log")
-    op_ = LOG;
+    op_ = Function_kind::LOG;
   else if (op == "log10")
-    op_ = LOG10;
+    op_ = Function_kind::LOG10;
   else if (op == "sqrt")
-    op_ = SQRT;
+    op_ = Function_kind::SQRT;
   else if (op == "ceil")
-    op_ = CEIL;
+    op_ = Function_kind::CEIL;
   else if (op == "fabs")
-    op_ = FABS;
+    op_ = Function_kind::FABS;
   else if (op == "abs")
-    op_ = FABS;
+    op_ = Function_kind::FABS;
   else if (op == "floor")
-    op_ = FLOOR;
+    op_ = Function_kind::FLOOR;
   else if (op == "mod")
-    op_ = MOD;
+    op_ = Function_kind::MOD;
   else if (op == "pow")
-    op_ = POW;
+    op_ = Function_kind::POW;
   else if (op == "positive")
-    op_ = POSITIVE;
+    op_ = Function_kind::POSITIVE;
   else if (op == "negative")
-    op_ = NEGATIVE;
+    op_ = Function_kind::NEGATIVE;
   else if (op == "heaviside")
-    op_ = HEAVISIDE;
+    op_ = Function_kind::HEAVISIDE;
   else if (op == "sign")
-    op_ = SIGN;
+    op_ = Function_kind::SIGN;
   else {
     std::stringstream m;
     m << "Invalid or unknown standard math function " << op;
@@ -77,85 +77,10 @@ FunctionStandardMath::FunctionStandardMath(std::string op,
 
 
 double
-FunctionStandardMath::operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
+FunctionStandardMath::operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const
 {
-  double x0 = x[0] - shift_;
-  switch (op_) {
-  case COS:
-    return amplitude_ * cos(parameter_ * x0);
-    break;
-  case SIN:
-    return amplitude_ * sin(parameter_ * x0);
-    break;
-  case TAN:
-    return amplitude_ * tan(parameter_ * x0);
-    break;
-  case ACOS:
-    return amplitude_ * acos(parameter_ * x0);
-    break;
-  case ASIN:
-    return amplitude_ * asin(parameter_ * x0);
-    break;
-  case ATAN:
-    return amplitude_ * atan(parameter_ * x0);
-    break;
-  case COSH:
-    return amplitude_ * cosh(parameter_ * x0);
-    break;
-  case SINH:
-    return amplitude_ * sinh(parameter_ * x0);
-    break;
-  case TANH:
-    return amplitude_ * tanh(parameter_ * x0);
-    break;
-  case EXP:
-    return amplitude_ * exp(parameter_ * x0);
-    break;
-  case LOG:
-    if (x0 <= 0) InvalidDomainError_(x[0]);
-    return amplitude_ * log(parameter_ * x0);
-    break;
-  case LOG10:
-    if (x0 <= 0) InvalidDomainError_(x[0]);
-    return amplitude_ * log10(parameter_ * x0);
-    break;
-  case SQRT:
-    if (x0 < 0) InvalidDomainError_(x[0]);
-    return amplitude_ * sqrt(parameter_ * x0);
-    break;
-  case CEIL:
-    return amplitude_ * ceil(x0);
-    break;
-  case FABS:
-    return amplitude_ * fabs(x0);
-  case FLOOR:
-    return amplitude_ * floor(x0);
-    break;
-  case POW:
-    return amplitude_ * pow(x0, parameter_);
-    break;
-  case MOD:
-    return fmod(x0, parameter_);
-    break;
-  case POSITIVE:
-    return amplitude_ * (x0 > 0 ? x0 : 0);
-    break;
-  case NEGATIVE:
-    return amplitude_ * (x0 < 0 ? x0 : 0);
-    break;
-  case HEAVISIDE:
-    return amplitude_ * (x0 > 0 ? 1 : 0);
-    break;
-  case SIGN:
-    return amplitude_ * (x0 > 0 ? 1 : (x0 < 0 ? -1 : 0));
-    break;
-  default:
-    std::stringstream m;
-    m << "Invalid or unknown standard math function " << op_;
-    Errors::Message message(m.str());
-    Exceptions::amanzi_throw(message);
-  }
-  return 0.0;
+  auto f = Impl::FunctionStandardMathFunctor(op_, parameter_, amplitude_, shift_, x);
+  return f(0);
 }
 
 
@@ -168,12 +93,12 @@ FunctionStandardMath::apply(const Kokkos::View<const double**>& in,
   if (ids) {
     auto ids_loc = *ids;
     Kokkos::parallel_for(
-      "FunctionStandardMath::apply1", ids_loc.extent(0), KOKKOS_CLASS_LAMBDA(const int& i) {
+      "FunctionStandardMath::apply1", ids_loc.extent(0), KOKKOS_LAMBDA(const int& i) {
         out(ids_loc(i)) = f(ids_loc(i));
       });
   } else {
     Kokkos::parallel_for(
-      "FunctionStandardMath::apply2", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
+      "FunctionStandardMath::apply2", in.extent(1), KOKKOS_LAMBDA(const int& i) {
         out(i) = f(i);
       });
   }
@@ -184,7 +109,7 @@ void
 FunctionStandardMath::InvalidDomainError_(double x) const
 {
   std::stringstream m;
-  m << "Value " << x << " is not in the domain of operator " << op_ << ".";
+  m << "Value " << x << " is not in the domain of operator " << op_str_ << ".";
   Errors::Message message(m.str());
   Exceptions::amanzi_throw(message);
 }

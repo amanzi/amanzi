@@ -31,21 +31,42 @@ FunctionDistance::FunctionDistance(const Kokkos::View<const double*, Kokkos::Hos
 
 
 double
-FunctionDistance::operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
+FunctionDistance::operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const
 {
-  double tmp(0.0), y(0.0);
-  if (x.extent(0) < x0_.extent(0)) {
-    assert(false && "FunctionDistance expects higher-dimension argument.");
-    // Errors::Message m;
-    // m << "FunctionDistance expects higher-dimensional argument.";
-    // Exceptions::amanzi_throw(m);
+  auto f = Impl::FunctionDistanceFunctor(x0_.view_host(), metric_.view_host(), squared_, x);
+  return f(0);
+}
+
+
+void
+FunctionDistance::apply(const Kokkos::View<const double**>& in,
+           Kokkos::View<double*>& out,
+           const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+{
+  AMANZI_ASSERT(in.extent(1) == out.extent(0));
+  if (in.extent(0) < x0_.extent(0)) {
+    Errors::Message m;
+    m << "FunctionDistance expects higher-dimensional argument.";
+    Exceptions::amanzi_throw(m);
   }
-  for (int j = 0; j < x0_.extent(0); ++j) {
-    tmp = x[j] - x0_.view_host()[j];
-    y += metric_.view_host()[j] * tmp * tmp;
+
+  {
+    auto f = Impl::FunctionDistanceFunctor(x0_.view_device(), metric_.view_device(), squared_, in);
+
+    if (ids) {
+      auto ids_loc = *ids;
+      Kokkos::parallel_for(
+        "FunctionBilinear::apply1", ids_loc.extent(0), KOKKOS_LAMBDA(const int& i) {
+          out(ids_loc(i)) = f(ids_loc(i));
+        });
+
+    } else {
+      Kokkos::parallel_for(
+        "FunctionBilinear::apply2", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(i) = f(i);
+        });
+    }
   }
-  y = sqrt(y);
-  return y;
 }
 
 } // namespace Amanzi

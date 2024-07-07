@@ -222,7 +222,7 @@ resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
 
   auto rgnpnt = region.point();
 
-  int nnode = mesh.getNumEntities(NODE, Parallel_kind::ALL);
+  int nnode = mesh.getNumEntities(Entity_kind::NODE, Parallel_kind::ALL);
   double mindist2 = 1.e+16;
   int minnode = -1;
   int inode;
@@ -249,7 +249,7 @@ resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
 
   // finally check all cells, typical for anisotropic meshes
   if (result.empty()) {
-    int lncells = mesh.getNumEntities(CELL, ptype);
+    int lncells = mesh.getNumEntities(Entity_kind::CELL, ptype);
     for (int c = 0; c < lncells; ++c)
       if (mesh.isPointInCell(rgnpnt, c)) result.push_back(c);
   }

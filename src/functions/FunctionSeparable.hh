@@ -60,8 +60,6 @@ class FunctionSeparable : public Function {
 
   double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const override
   {
-    // std::vector<double>::const_iterator xb = x.begin(); xb++;
-    // std::vector<double> y(xb, x.end());
     auto y = Kokkos::subview(
       x, Kokkos::make_pair(static_cast<size_t>(1), static_cast<size_t>(x.extent(0))), Kokkos::ALL);
     return (*f1_)(x) * (*f2_)(y);
@@ -72,7 +70,7 @@ class FunctionSeparable : public Function {
              Kokkos::View<double*>& out,
              const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override
   {
-    Kokkos::View<double**> y =
+    Kokkos::View<const double**> y =
       Kokkos::subview(in,
                       Kokkos::make_pair(static_cast<size_t>(1), static_cast<size_t>(in.extent(0))),
                       Kokkos::ALL);

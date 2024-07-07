@@ -74,7 +74,7 @@ TEST(OPERATOR_MIXED_DIFFUSION)
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   Analytic01 ana(mesh);
 
@@ -85,12 +85,12 @@ TEST(OPERATOR_MIXED_DIFFUSION)
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
-  int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
   Point xv(2);
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->getFaceCentroid(f);
@@ -105,9 +105,9 @@ TEST(OPERATOR_MIXED_DIFFUSION)
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh);
   cvs->SetGhosted(true);
-  cvs->SetComponent("cell", AmanziMesh::CELL, 1);
+  cvs->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   cvs->SetOwned(false);
-  cvs->AddComponent("face", AmanziMesh::FACE, 1);
+  cvs->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(*cvs));
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(*cvs));
@@ -240,9 +240,9 @@ TEST(OPERATOR_NODAL_DIFFUSION)
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nnodes_owned = mesh->getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::OWNED);
-  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nnodes_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic01 ana(mesh);
 
@@ -254,7 +254,7 @@ TEST(OPERATOR_NODAL_DIFFUSION)
 
   // create boundary data (no mixed bc)
   Point xv(2);
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -271,7 +271,7 @@ TEST(OPERATOR_NODAL_DIFFUSION)
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh);
   cvs->SetGhosted(true);
-  cvs->SetComponent("node", AmanziMesh::NODE, 1);
+  cvs->SetComponent("node", AmanziMesh::Entity_kind::NODE, 1);
 
   CompositeVector solution(*cvs);
   solution.PutScalar(0.0);

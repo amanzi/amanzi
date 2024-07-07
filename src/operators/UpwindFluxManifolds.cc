@@ -59,7 +59,7 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
   flux_f.MaxValue(&flxmax);
   tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
-  int nfaces_wghost = mesh_->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // multiple DOFs on faces require usage of block map
   const auto& fmap = *flux.ComponentMap("face", true);

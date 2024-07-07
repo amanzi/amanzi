@@ -337,7 +337,7 @@ class make_state {
     S.Require<CompositeVector, CompositeVectorSpace>("fb", Tags::DEFAULT, "fb")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     fb_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(ep_list));
     S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
@@ -346,7 +346,7 @@ class make_state {
     S.Require<CompositeVector, CompositeVectorSpace>("fg", Tags::DEFAULT, "fg")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     fg_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(ep_list));
     S.SetEvaluator("fg", Tags::DEFAULT, fg_eval);
 
@@ -356,7 +356,7 @@ class make_state {
     S.Require<CompositeVector, CompositeVectorSpace>("fd", Tags::DEFAULT, "fd")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     fd_eval = Teuchos::rcp(new DEvaluator(es_list));
     S.SetEvaluator("fd", Tags::DEFAULT, fd_eval);
 
@@ -365,7 +365,7 @@ class make_state {
     S.Require<CompositeVector, CompositeVectorSpace>("fc", Tags::DEFAULT, "fc")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     fc_eval = Teuchos::rcp(new CEvaluator(es_list));
     S.SetEvaluator("fc", Tags::DEFAULT, fc_eval);
 
@@ -374,7 +374,7 @@ class make_state {
     S.Require<CompositeVector, CompositeVectorSpace>("ff", Tags::DEFAULT, "ff")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     ff_eval = Teuchos::rcp(new FEvaluator(es_list));
     S.SetEvaluator("ff", Tags::DEFAULT, ff_eval);
 
@@ -383,7 +383,7 @@ class make_state {
     S.Require<CompositeVector, CompositeVectorSpace>("fe", Tags::DEFAULT, "fe")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
       "fe", Tags::DEFAULT, "fg", Tags::DEFAULT);
     fe_eval = Teuchos::rcp(new EEvaluator(es_list));
@@ -394,7 +394,7 @@ class make_state {
     S.Require<CompositeVector, CompositeVectorSpace>("fh", Tags::DEFAULT, "fh")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     fh_eval = Teuchos::rcp(new HEvaluator(es_list));
     S.SetEvaluator("fh", Tags::DEFAULT, fh_eval);
 
@@ -403,7 +403,7 @@ class make_state {
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
       "fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>(

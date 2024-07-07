@@ -36,8 +36,8 @@ struct test_cv {
     mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 8, 1, 1);
 
     std::vector<Entity_kind> locations(2);
-    locations[0] = CELL;
-    locations[1] = FACE;
+    locations[0] = Entity_kind::CELL;
+    locations[1] = Entity_kind::FACE;
 
     std::vector<std::string> names(2);
     names[0] = "cell";
@@ -68,8 +68,8 @@ struct test_cv_bf {
     mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
     std::vector<Entity_kind> locations(2);
-    locations[0] = CELL;
-    locations[1] = BOUNDARY_FACE;
+    locations[0] = Entity_kind::CELL;
+    locations[1] = Entity_kind::BOUNDARY_FACE;
 
     std::vector<std::string> names(2);
     names[0] = "cell";
@@ -96,8 +96,8 @@ SUITE(COMPOSITE_VECTOR)
     CHECK_EQUAL(2, x->getNumVectors("cell"));
     CHECK(x->getMap()->size() == x->size());
     CHECK(x->getMap()->isSameAs(*x->getMap()));
-    CHECK(x->getMap()->getComponentMap("cell", false)->isSameAs(*mesh->getMap(CELL, false)));
-    CHECK(x->getMap()->getComponentMap("cell", true)->isSameAs(*mesh->getMap(CELL, true)));
+    CHECK(x->getMap()->getComponentMap("cell", false)->isSameAs(*mesh->getMap(Entity_kind::CELL, false)));
+    CHECK(x->getMap()->getComponentMap("cell", true)->isSameAs(*mesh->getMap(Entity_kind::CELL, true)));
 
     if (size == 2) {
       CHECK_EQUAL(4, x->getMap()->getComponentMap("cell", false)->getLocalNumElements());
@@ -240,7 +240,7 @@ SUITE(COMPOSITE_VECTOR)
   {
     int rank = comm->getRank();
     int size = comm->getSize();
-    int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+    int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
     x->putScalar(rank + 1);
     x->scatterMasterToGhosted("cell");
@@ -264,7 +264,7 @@ SUITE(COMPOSITE_VECTOR)
   {
     int rank = comm->getRank();
     int size = comm->getSize();
-    int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
+    int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
     { // scope for x_c
       auto x_c = x->viewComponent<MemSpace_kind::HOST>("cell", 0, true);

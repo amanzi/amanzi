@@ -34,14 +34,32 @@ Example:
 
 */
 
-#ifndef AMANZI_DISTANCE_FUNCTION_HH_
-#define AMANZI_DISTANCE_FUNCTION_HH_
+#pragma once
 
-#include <vector>
-
+#include "dbc.hh"
 #include "Function.hh"
 
 namespace Amanzi {
+
+class FunctionDistance : public Function {
+ public:
+  FunctionDistance(const Kokkos::View<const double*, Kokkos::HostSpace>& x0,
+                   const Kokkos::View<const double*, Kokkos::HostSpace>& metric,
+                   bool squared);
+
+  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionDistance>(*this); }
+
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>&) const override;
+
+  void apply(const Kokkos::View<const double**>& in,
+             Kokkos::View<double*>& out,
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override;
+
+ private:
+  Kokkos::DualView<const double*> x0_, metric_;
+  bool squared_;
+};
+
 
 namespace Impl {
 
@@ -56,7 +74,7 @@ class FunctionDistanceFunctor {
     : x0_(x0), metric_(metric), in_(in), squared_(squared_)  {}
 
   KOKKOS_INLINE_FUNCTION
-  double operator()(const int i) {
+  double operator()(const int i) const {
     double y(0.);
     for (int j = 0; j < x0_.extent(0); ++j) {
       double tmp = in_(j, i) - x0_[j];
@@ -68,58 +86,11 @@ class FunctionDistanceFunctor {
  private:
   ParView_type x0_, metric_;
   bool squared_;
+  InView_type in_;
 
 };
 
 } // namespace Impl
-
-
-
-class FunctionDistance : public Function {
- public:
-  FunctionDistance(const Kokkos::View<const double*, Kokkos::HostSpace>& x0,
-                   const Kokkos::View<const double*, Kokkos::HostSpace>& metric,
-                   bool squared);
-
-  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionDistance>(*this); }
-
-  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>&) const override;
-
-  void apply(const Kokkos::View<const double**>& in,
-             Kokkos::View<double*>& out,
-             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
-  {
-    AMANZI_ASSERT(in.extent(1) == out.extent(0));
-    if (in.extent(0) < x0_.extent(0)) {
-      Errors::Message m;
-      m << "FunctionDistance expects higher-dimensional argument.";
-      Exceptions::amanzi_throw(m);
-    }
-
-    {
-      auto f = Impl::FunctionDistanceFunctor(x0_.view_device(), metric_.view_device(), squared_, in);
-
-      if (ids) {
-        auto ids_loc = *ids;
-        Kokkos::parallel_for(
-          "FunctionBilinear::apply1", ids_loc.extent(0), KOKKOS_LAMBDA(const int& i) {
-            out(ids_loc(i)) = f.compute(ids_loc(i));
-        });
-
-      } else {
-        Kokkos::parallel_for(
-          "FunctionBilinear::apply2", in.extent(1), KOKKOS_LAMBDA(const int& i) {
-            out(i) = f.compute(i);
-          });
-      }
-    }
-  }
-
- private:
-  Kokkos::DualView<const double*> x0_, metric_;
-  bool squared_;
-};
-
 } // namespace Amanzi
 
-#endif
+

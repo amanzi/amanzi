@@ -275,7 +275,7 @@ Operator_FaceCellSff::SymbolicAssembleMatrix()
 {
   // SuperMap for Sff is face only
   CompositeVectorSpace smap_space;
-  smap_space.SetMesh(mesh_)->SetComponent("face", AmanziMesh::FACE, 1);
+  smap_space.SetMesh(mesh_)->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
   smap_ = createSuperMap(smap_space.CreateSpace().ptr());
 
   // create the graph

@@ -470,7 +470,7 @@ viewMeshLogical(const Mesh& m, std::ostream& os)
   // for (auto& r : *m.getGeometricModel()) {
   //   if (r->type() == AmanziGeometry::ENUMERATED) {
   //     AmanziMesh::Entity_ID_View set;
-  //     m.get_set_entities(r->name(), AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED, &set);
+  //     m.get_set_entities(r->name(), AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED, &set);
   //     os << r->name() << " ";
   //     for (auto e : set) os << e << " ";
   //     os << std::endl;

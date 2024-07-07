@@ -91,7 +91,7 @@ SUITE(EVALUATORS_CV)
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
       "fa", Tags::DEFAULT, "fa", Tags::DEFAULT);
     auto fa_eval =
@@ -163,7 +163,7 @@ SUITE(EVALUATORS_CV)
     S.Require<CompositeVector, CompositeVectorSpace>("fb", Tags::DEFAULT, "fb")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     auto fb_eval =
       Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
@@ -177,7 +177,7 @@ SUITE(EVALUATORS_CV)
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
     S.SetEvaluator("fa", Tags::DEFAULT, fa_eval);
@@ -299,7 +299,7 @@ SUITE(EVALUATORS_CV)
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
       "fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
@@ -315,7 +315,7 @@ SUITE(EVALUATORS_CV)
     S.Require<CompositeVector, CompositeVectorSpace>("fc", Tags::DEFAULT, "fc")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 2);
+      ->SetComponent("face", AmanziMesh::Entity_kind::FACE, 2);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
       "fc", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fc_eval = Teuchos::rcp(new AEvaluator(ec_list));
@@ -379,7 +379,7 @@ SUITE(EVALUATORS_CV)
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
       "fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
@@ -409,7 +409,7 @@ SUITE(EVALUATORS_CV)
     es_list->setName("fb");
     S.Require<CompositeVector, CompositeVectorSpace>("fb", Tags::DEFAULT, "fb")
       .SetMesh(mesh)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
+      ->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     auto fb_eval =
       Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
     S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
@@ -422,7 +422,7 @@ SUITE(EVALUATORS_CV)
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
       "fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
@@ -462,7 +462,7 @@ SUITE(EVALUATORS_CV)
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
       "fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
@@ -478,7 +478,7 @@ SUITE(EVALUATORS_CV)
     S.Require<CompositeVector, CompositeVectorSpace>("fc", Tags::DEFAULT, "fc")
       .SetMesh(mesh2)
       ->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 2);
+      ->SetComponent("face", AmanziMesh::Entity_kind::FACE, 2);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
       "fc", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fc_eval = Teuchos::rcp(new AEvaluator(ec_list));
@@ -519,7 +519,7 @@ SUITE(EVALUATORS_CV)
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 2);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 2);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
       "fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
@@ -535,7 +535,7 @@ SUITE(EVALUATORS_CV)
     S.Require<CompositeVector, CompositeVectorSpace>("fc", Tags::DEFAULT, "fc")
       .SetMesh(mesh2)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
       "fc", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fc_eval = Teuchos::rcp(new AEvaluator(ec_list));
@@ -564,7 +564,7 @@ SUITE(EVALUATORS_CV)
     S.Require<CompositeVector, CompositeVectorSpace>("fb", Tags::DEFAULT, "fb")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     auto fb_eval =
       Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
     S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
@@ -610,7 +610,7 @@ SUITE(EVALUATORS_CV)
     S.Require<CompositeVector, CompositeVectorSpace>("fb", Tags::DEFAULT, "fb")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     auto fb_eval =
       Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
     S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);

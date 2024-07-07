@@ -52,6 +52,27 @@ Here is an example of monomial of degree 6 in three variables:
 
 namespace Amanzi {
 
+class FunctionMonomial : public Function {
+ public:
+  FunctionMonomial(double c,
+                   const Kokkos::View<const double*, Kokkos::HostSpace>& x0,
+                   const Kokkos::View<const int*, Kokkos::HostSpace>& p);
+  ~FunctionMonomial() {}
+  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionMonomial>(*this); }
+
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& in) const override;
+
+  void apply(const Kokkos::View<const double**>& in,
+             Kokkos::View<double*>& out,
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override;
+
+ private:
+  double c_;
+  Kokkos::DualView<const double*> x0_;
+  Kokkos::DualView<const int*> p_;
+};
+
+
 namespace Impl {
 
 template<typename View_type, typename IntView_type, typename InView_type>
@@ -74,34 +95,13 @@ class FunctionMonomialFunctor {
   }
 
  private:
-  View_type::const_type x0_;
-  IntView_type::const_type p_;
+  View_type x0_;
+  IntView_type p_;
   double c_;
 
-  InView_type::const_type in_;
-
-} // namespace Impl
-
-
-class FunctionMonomial : public Function {
- public:
-  FunctionMonomial(double c,
-                   const Kokkos::View<const double*, Kokkos::HostSpace>& x0,
-                   const Kokkos::View<const int*, Kokkos::HostSpace>& p);
-  ~FunctionMonomial() {}
-  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionMonomial>(*this); }
-
-  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& in) const;
-
-  void apply(const Kokkos::View<const double**>& in,
-             Kokkos::View<double*>& out,
-             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const;
-
- private:
-  double c_;
-  Kokkos::DualView<const double*> x0_;
-  Kokkos::DualView<const int*> p_;
+  InView_type in_;
 };
 
+} // namespace Impl
 } // namespace Amanzi
 

@@ -67,10 +67,10 @@ RunTestDiffusionNLFV_DMP(double gravity, bool testing)
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic ana(mesh, gravity);
 
@@ -81,7 +81,7 @@ RunTestDiffusionNLFV_DMP(double gravity, bool testing)
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -159,8 +159,8 @@ RunTestDiffusionNLFV_DMP(double gravity, bool testing)
     CompositeVectorSpace cvs_tmp;
     cvs_tmp.SetMesh(mesh)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("face", AmanziMesh::FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs_tmp));
     Epetra_MultiVector& flx = *flux->viewComponent("face", true);
 
@@ -223,10 +223,10 @@ RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing)
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic ana(mesh, gravity);
   Analytic ana_diff(mesh, 0.0);
@@ -238,7 +238,7 @@ RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing)
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -314,8 +314,8 @@ RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing)
     CompositeVectorSpace cvs_tmp;
     cvs_tmp.SetMesh(mesh)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("face", AmanziMesh::FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs_tmp));
     Epetra_MultiVector& flx = *flux->viewComponent("face", true);
 

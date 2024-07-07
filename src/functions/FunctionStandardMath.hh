@@ -74,32 +74,32 @@ This example defines function `1e-7 sqrt(t-0.1)`.
 
 namespace Amanzi {
 
-class FunctionStandardMath : public Function {
-  enum Function_kind : int {
-    COS,
-    SIN,
-    TAN,
-    ACOS,
-    ASIN,
-    ATAN,
-    COSH,
-    SINH,
-    TANH,
-    EXP,
-    LOG,
-    LOG10,
-    SQRT,
-    CEIL,
-    FABS,
-    FLOOR,
-    POW,
-    MOD,
-    POSITIVE,
-    NEGATIVE,
-    HEAVISIDE,
-    SIGN
-  };
+enum class Function_kind : int {
+  COS,
+  SIN,
+  TAN,
+  ACOS,
+  ASIN,
+  ATAN,
+  COSH,
+  SINH,
+  TANH,
+  EXP,
+  LOG,
+  LOG10,
+  SQRT,
+  CEIL,
+  FABS,
+  FLOOR,
+  POW,
+  MOD,
+  POSITIVE,
+  NEGATIVE,
+  HEAVISIDE,
+  SIGN
+};
 
+class FunctionStandardMath : public Function {
  public:
   FunctionStandardMath(std::string op, double amplitude, double parameter, double shift);
 
@@ -115,18 +115,18 @@ class FunctionStandardMath : public Function {
   void InvalidDomainError_(double x) const;
 
  private:
+  std::string op_str_;
+  Function_kind op_;
   double parameter_;
   double amplitude_;
   double shift_;
-  Function_kind op_;
 };
 
 
 
 namespace Impl {
 
-template <class DoubleView_type,
-          class InView_type>
+template <class InView_type>
 class FunctionStandardMathFunctor {
  public:
   FunctionStandardMathFunctor(const Function_kind& op,
@@ -137,80 +137,80 @@ class FunctionStandardMathFunctor {
     : op_(op), parameter_(parameter), amplitude_(amplitude), shift_(shift), in_(in) {}
 
   KOKKOS_INLINE_FUNCTION
-  double operator()(const int i)
+  double operator()(const int i) const
   {
-    double x0 = x(0, i) - shift_;
+    double x0 = in_(0, i) - shift_;
     switch (op_) {
-    case COS:
+    case Function_kind::COS:
       return amplitude_ * Kokkos::cos(parameter_ * x0);
       break;
-    case SIN:
+    case Function_kind::SIN:
       return amplitude_ * Kokkos::sin(parameter_ * x0);
       break;
-    case TAN:
+    case Function_kind::TAN:
       return amplitude_ * Kokkos::tan(parameter_ * x0);
       break;
-    case ACOS:
+    case Function_kind::ACOS:
       return amplitude_ * Kokkos::acos(parameter_ * x0);
       break;
-    case ASIN:
+    case Function_kind::ASIN:
       return amplitude_ * Kokkos::asin(parameter_ * x0);
       break;
-    case ATAN:
+    case Function_kind::ATAN:
       return amplitude_ * Kokkos::atan(parameter_ * x0);
       break;
-    case COSH:
+    case Function_kind::COSH:
       return amplitude_ * Kokkos::cosh(parameter_ * x0);
       break;
-    case SINH:
+    case Function_kind::SINH:
       return amplitude_ * Kokkos::sinh(parameter_ * x0);
       break;
-    case TANH:
+    case Function_kind::TANH:
       return amplitude_ * Kokkos::tanh(parameter_ * x0);
       break;
-    case EXP:
+    case Function_kind::EXP:
       return amplitude_ * Kokkos::exp(parameter_ * x0);
       break;
-    case LOG:
+    case Function_kind::LOG:
       assert(x0 >= 0);
       // if (x0 <= 0) InvalidDomainError_(x[0]);
       return amplitude_ * Kokkos::log(parameter_ * x0);
       break;
-    case LOG10:
+    case Function_kind::LOG10:
       assert(x0 >= 0);
       // if (x0 <= 0) InvalidDomainError_(x[0]);
       return amplitude_ * Kokkos::log10(parameter_ * x0);
       break;
-    case SQRT:
+    case Function_kind::SQRT:
       assert(x0 >= 0);
       // if (x0 < 0) InvalidDomainError_(x[0]);
       return amplitude_ * Kokkos::sqrt(parameter_ * x0);
       break;
-    case CEIL:
+    case Function_kind::CEIL:
       return amplitude_ * Kokkos::ceil(x0);
       break;
-    case FABS:
+    case Function_kind::FABS:
       return amplitude_ * Kokkos::abs(x0);
       break;
-    case FLOOR:
+    case Function_kind::FLOOR:
       return amplitude_ * Kokkos::floor(x0);
       break;
-    case POW:
+    case Function_kind::POW:
       return amplitude_ * Kokkos::pow(x0, parameter_);
       break;
-    case MOD:
+    case Function_kind::MOD:
       return Kokkos::fmod(x0, parameter_);
       break;
-    case POSITIVE:
+    case Function_kind::POSITIVE:
       return amplitude_ * (x0 > 0 ? x0 : 0);
       break;
-    case NEGATIVE:
+    case Function_kind::NEGATIVE:
       return amplitude_ * (x0 < 0 ? x0 : 0);
       break;
-    case HEAVISIDE:
+    case Function_kind::HEAVISIDE:
       return amplitude_ * (x0 > 0 ? 1 : 0);
       break;
-    case SIGN:
+    case Function_kind::SIGN:
       return amplitude_ * (x0 > 0 ? 1 : (x0 < 0 ? -1 : 0));
       break;
     default:
@@ -224,6 +224,8 @@ class FunctionStandardMathFunctor {
   double parameter_;
   double amplitude_;
   double shift_;
+
+  InView_type in_;
 };
 
 } // namespace Impl

@@ -384,8 +384,8 @@ PreconditionerHypre::make_contiguous_(Teuchos::RCP<const RowMatrix_type>& Matrix
   } else {
     assert(false);
   }
-  return ColumnMap;
   nvtxRangePop();
+  return ColumnMap;
 }
 
 /* ******************************************************************

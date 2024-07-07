@@ -147,7 +147,7 @@ AnalyticDGBase::InitialGuess(const Amanzi::WhetStone::DG_Modal& dg,
                              bool inside(const Amanzi::AmanziGeometry::Point&))
 {
   int ncells =
-    mesh_->getNumEntities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_kind::ALL);
+    mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::ALL);
 
   for (int c = 0; c < ncells; ++c) {
     const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
@@ -187,7 +187,7 @@ AnalyticDGBase::ComputeCellError(const Amanzi::WhetStone::DG_Modal& dg,
   Amanzi::WhetStone::NumericalIntegration<Amanzi::AmanziMesh::Mesh> numi(mesh_);
 
   int ncells =
-    mesh_->getNumEntities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
+    mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells; c++) {
     const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     double volume = mesh_->getCellVolume(c);
@@ -263,7 +263,7 @@ AnalyticDGBase::ComputeFaceError(const Amanzi::WhetStone::DG_Modal& dg,
   Amanzi::AmanziMesh::Entity_ID_List cells;
 
   int nfaces =
-    mesh_->getNumEntities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
+    mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces; ++f) {
     const Amanzi::AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
@@ -335,7 +335,7 @@ AnalyticDGBase::ComputeCellErrorRemap(const Amanzi::WhetStone::DG_Modal& dg,
   l20_err = inf0_err = 0.0;
 
   int ncells =
-    mesh_->getNumEntities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
+    mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   for (int c = 0; c < ncells; ++c) {
     const Amanzi::AmanziGeometry::Point& xc = mesh0->getCellCentroid(c);
     const Amanzi::AmanziGeometry::Point& yc = mesh1->getCellCentroid(c);

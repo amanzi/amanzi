@@ -62,8 +62,8 @@ RunTestGravity(std::string op_list_name)
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 3, 3);
 
   // create diffusion coefficient
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   const WhetStone::Tensor Kc(2, 1);
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
@@ -77,7 +77,7 @@ RunTestGravity(std::string op_list_name)
   AmanziGeometry::Point g(0.0, -1.0);
 
   // create homogeneous boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -85,8 +85,8 @@ RunTestGravity(std::string op_list_name)
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh)
     ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1)
-    ->AddComponent("face", AmanziMesh::FACE, 1);
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+    ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
   double rho(2.0);
   Teuchos::RCP<CompositeVector> rho_cv = Teuchos::rcp(new CompositeVector(cvs));

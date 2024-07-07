@@ -69,11 +69,11 @@ FunctionBilinearAndTime::FunctionBilinearAndTime(const FunctionBilinearAndTime& 
 
 
 double
-FunctionBilinearAndTime::operator()(const Kokkos::View<const double*, Kokkos::HostSpace>& x) const
+FunctionBilinearAndTime::operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const
 {
   int interval;
   double s;
-  std::tie(interval, s) = ComputeAndLoadInterval_(x(0));
+  std::tie(interval, s) = ComputeAndLoadInterval_(x(0,0));
 
   if (interval == -1) {
     return (*val_after_)(x);

@@ -45,10 +45,10 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
     //     auto cells = m.getFaceCells(sf);
 
     //     auto lm = A[sf];
-    //     auto f0 = surf_m.getEntityParent(AmanziMesh::CELL, cells(0));
+    //     auto f0 = surf_m.getEntityParent(AmanziMesh::Entity_kind::CELL, cells(0));
     //     Kokkos::atomic_add(&Xv(f0, 0), lm(0, 0));
     //     if (cells.extent(0) > 1) {
-    //       auto f1 = surf_m.getEntityParent(AmanziMesh::CELL, cells(1));
+    //       auto f1 = surf_m.getEntityParent(AmanziMesh::Entity_kind::CELL, cells(1));
     //       Kokkos::atomic_add(&Xv(f1, 0), lm(1, 1));
     //     }
     //   });
@@ -76,14 +76,14 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
   {
     if (scaling.hasComponent("cell") &&
         scaling.getComponent("cell", false)->getLocalLength() ==
-          mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED)) {
+          mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED)) {
       // scaling's cell entry is defined on the surface mesh
       Op_Face_Cell::Rescale(scaling);
     }
 
     if (scaling.hasComponent("face") && scaling.getComponent("face", false)->getLocalLength() ==
                                           mesh->getParentMesh()->getNumEntities(
-                                            AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED)) {
+                                            AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED)) {
       Exceptions::amanzi_throw(
         "Scaling surface cell entities with subsurface face vector not yet implemented");
     }

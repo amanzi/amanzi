@@ -214,13 +214,14 @@ Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
   auto proc_mat = mat.getLocalMatrixDevice();
   auto offproc_mat = mat.getOffProcLocalMatrixDevice();
   int nrows_local = mat.getMatrix()->getLocalNumRows();
-
   const AmanziMesh::MeshCache& m = op.mesh->getCache();
+  const auto& A = op.A;
+
   Kokkos::parallel_for(
     "Operator_Cell::AssembleMatrixOp::Face_Cell", nfaces_owned, KOKKOS_LAMBDA(const int f) {
       auto cells = m.getFaceCells(f);
 
-      auto A_f = op.A[f];
+      auto A_f = A[f];
       int nc = cells.extent(0);
       for (int n = 0; n < nc; ++n) {
         if (cell_row_inds[cells[n]] < nrows_local) {

@@ -55,8 +55,6 @@ class Schema {
   // local converters operators/strings/mesh
   int OldSchema() const;
 
-  std::string KindToString(AmanziMesh::Entity_kind kind) const;
-  AmanziMesh::Entity_kind StringToKind(std::string& name) const;
   WhetStone::DOF_Type StringToType(std::string& name) const;
 
   // fancy io
@@ -73,9 +71,9 @@ class Schema {
   // output
   friend std::ostream& operator<<(std::ostream& os, const Schema& s)
   {
-    os << "base=" << s.KindToString(s.base()) << "\n";
+    os << "base=" << s.base() << "\n";
     for (auto it = s.begin(); it != s.end(); ++it) {
-      os << " item: kind=" << s.KindToString(std::get<0>(*it)) << ", num=" << std::get<2>(*it)
+      os << " item: kind=" << std::get<0>(*it) << ", num=" << std::get<2>(*it)
          << ", type=" << (int)std::get<1>(*it) << "\n";
     }
     return os;

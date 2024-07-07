@@ -174,9 +174,11 @@ class Operator : public Matrix<CompositeVector, CompositeSpace> {
            const Schema& schema)
     : Operator(cvs, cvs, plist, schema, schema){};
 
+  Operator(const Operator& other) = delete;
+
   virtual ~Operator() = default;
 
-  virtual Teuchos::RCP<Operator> clone() const;
+  //virtual Teuchos::RCP<Operator> clone() const;
 
 
   // set all local values to 0.
@@ -555,9 +557,6 @@ class Operator : public Matrix<CompositeVector, CompositeSpace> {
 
   mutable int apply_calls_;
 
- private:
-  Operator(const Operator& op);
-  Operator& operator=(const Operator& op);
 };
 
 } // namespace Operators

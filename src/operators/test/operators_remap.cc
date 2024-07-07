@@ -248,15 +248,15 @@ RemapTestsDualRK(std::string map_name,
     mesh1 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz);
   }
 
-  int ncells_owned = mesh0->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_owned = mesh0->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // create and initialize cell-based field
   CompositeVectorSpace cvs1, cvs2;
-  cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
   Teuchos::RCP<CompositeVector> p1 = Teuchos::rcp(new CompositeVector(cvs1));
   Epetra_MultiVector& p1c = *p1->viewComponent("cell", true);
 
-  cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
   CompositeVector p2(cvs2);
   Epetra_MultiVector& p2c = *p2.viewComponent("cell");
 
@@ -399,8 +399,8 @@ RemapTestsDualRK(std::string map_name,
   OutputXDMF io(iolist, mesh1, true, false);
 
   io.InitializeCycle(t, 1);
-  io.WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
-  io.WriteVector(*q2c(0), "solution-prj", AmanziMesh::CELL);
+  io.WriteVector(*p2c(0), "solution", AmanziMesh::Entity_kind::CELL);
+  io.WriteVector(*q2c(0), "solution-prj", AmanziMesh::Entity_kind::CELL);
   io.FinalizeCycle();
 }
 

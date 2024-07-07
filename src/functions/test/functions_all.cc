@@ -33,17 +33,19 @@ void
 test_values(Function& f, std::vector<double>& values, std::vector<double>& res)
 {
   // CPU
-  Kokkos::View<double*, Kokkos::HostSpace> x("x", 1);
+  Kokkos::View<double**, Kokkos::HostSpace> x("x", 1,1);
   Kokkos::View<double*, Kokkos::HostSpace> tmp_x("tmp_x", values.size());
   for (int i = 0; i < values.size(); ++i) {
-    x(0) = values[i];
+    x(0,0) = values[i];
     CHECK_EQUAL(f(x), res[i]);
     tmp_x(i) = values[i];
   }
   // GPU
   Kokkos::View<double**> x_d("x_d", 1, values.size());
-  auto sv = Kokkos::subview(x_d, 0, Kokkos::ALL);
-  Kokkos::deep_copy(sv, tmp_x);
+  {
+    auto sv = Kokkos::subview(x_d, 0, Kokkos::ALL);
+    Kokkos::deep_copy(sv, tmp_x);
+  }
   Kokkos::View<double*> res_d("res_d", values.size());
   f.apply(x_d, res_d);
   Kokkos::deep_copy(tmp_x, res_d);
@@ -56,11 +58,11 @@ test_values_multi(Function& f, std::vector<std::vector<double>>& values, std::ve
   // CPU
   const int s0 = values.size();
   const int s1 = values[0].size();
-  Kokkos::View<double*, Kokkos::HostSpace> x("x", s1);
+  Kokkos::View<double**, Kokkos::HostSpace> x("x", s1, 1);
   Kokkos::DualView<double**> x_d("tmp_x", s1, s0);
   for (int i = 0; i < s0; ++i) {
     for (int j = 0; j < s1; ++j) {
-      x(j) = values[i][j];
+      x(j,0) = values[i][j];
       x_d.view_host()(j, i) = values[i][j];
     }
     CHECK_EQUAL(res[i], f(x));
@@ -156,6 +158,7 @@ TEST(tabular_test)
 }
 
 
+
 SUITE(polynomial_test)
 {
   TEST(poly1)
@@ -167,19 +170,20 @@ SUITE(polynomial_test)
     Kokkos::View<int*, Kokkos::HostSpace> p("p", 2);
     p(0) = 3;
     p(1) = 1;
-    Kokkos::View<double*, Kokkos::HostSpace> cvec = Kokkos::subview(c, Kokkos::make_pair(0, 2));
-    Kokkos::View<int*, Kokkos::HostSpace> pvec = Kokkos::subview(p, Kokkos::make_pair(0, 2));
-    FunctionPolynomial f(cvec, pvec);
+    {
+      FunctionPolynomial f(c, p);
+      std::vector<double> val = { 2.0, -2.0 };
+      std::vector<double> res = { -4.0, 4.0 };
+      test_values(f, val, res);
 
-    std::vector<double> val = { 2.0, -2.0 };
-    std::vector<double> res = { -4.0, 4.0 };
-    test_values(f, val, res);
-    // same polynomial shifted 2 to the right
-    FunctionPolynomial f2(cvec, pvec, 2.0);
-    std::vector<double> val_2 = { 4.0, 0.0 };
-    std::vector<double> res_2 = { -4.0, 4.0 };
-    test_values(f2, val_2, res_2);
+      // same polynomial shifted 2 to the right
+      FunctionPolynomial f2(c, p, 2.0);
+      std::vector<double> val_2 = { 4.0, 0.0 };
+      std::vector<double> res_2 = { -4.0, 4.0 };
+      test_values(f2, val_2, res_2);
+    }
   }
+
   TEST(poly2)
   {
     // polynomial with positive powers, constant term, and repeated power
@@ -200,6 +204,7 @@ SUITE(polynomial_test)
     std::vector<double> res = { 0.0, 4.0, 8.0 };
     test_values(f, val, res);
   }
+
   TEST(poly3)
   {
     // polynomial with negative powers only
@@ -221,6 +226,7 @@ SUITE(polynomial_test)
     std::vector<double> res = { 0.0, 1.0, -0.5 };
     test_values(f, val, res);
   }
+
   TEST(poly4)
   {
     // polynomial with positive and negative powers
@@ -241,6 +247,7 @@ SUITE(polynomial_test)
     std::vector<double> res = { -5.0, 3.0, 1.0, 3.0 };
     test_values(f, val, res);
   }
+
   TEST(poly_clone)
   {
     // polynomial with positive and negative powers
@@ -266,48 +273,76 @@ SUITE(polynomial_test)
 }
 
 
-TEST(linear_test)
+SUITE(linear_test)
 {
-  double y0 = 1.0;
-  Kokkos::View<double*, Kokkos::HostSpace> grad("grad", 3);
-  grad(0) = 1.0;
-  grad(1) = 2.0;
-  grad(2) = -3.0;
-  Kokkos::View<double*, Kokkos::HostSpace> gradvec = Kokkos::subview(grad, Kokkos::make_pair(0, 3));
-  // Three variable linear function.
-  FunctionLinear f(y0, gradvec);
+  TEST(linear1)
+  {
+    double y0 = 1.0;
+    Kokkos::View<double*, Kokkos::HostSpace> grad("grad", 3);
+    grad(0) = 1.0;
+    grad(1) = 2.0;
+    grad(2) = -3.0;
 
-  std::vector<std::vector<double>> val = { { 3., 2., 1. }, { 1., -1., 1. } };
-  std::vector<double> res = { 5.0, -3.0 };
-  test_values_multi(f, val, res);
-  auto g = f.Clone();
-  test_values_multi(*g, val, res);
-  // Two variable linear function with x0.
-  Kokkos::View<double*, Kokkos::HostSpace> x0("x0", 3);
-  x0(0) = 1.0;
-  x0(1) = 2.0;
-  x0(2) = 3.0;
-  Kokkos::View<double*, Kokkos::HostSpace> x0vec = Kokkos::subview(x0, Kokkos::make_pair(0, 2));
-  gradvec = Kokkos::subview(grad, Kokkos::make_pair(0, 2));
-  FunctionLinear f2(y0, gradvec, x0vec);
-  std::vector<double> res_2 = { 3., -5. };
-  test_values_multi(f2, val, res_2);
-  // -- check error in case of point smaller than gradient
-  Kokkos::View<double*, Kokkos::HostSpace> c("c", 1);
-  c(0) = 1.;
-  CHECK_THROW(f(c), Errors::Message);
+    // Three variable linear function.
+    FunctionLinear f(y0, grad);
 
-  // Single variable linear function.
-  gradvec = Kokkos::subview(grad, Kokkos::make_pair(0, 1));
-  FunctionLinear f3(y0, gradvec);
-  std::vector<double> res_3 = { 4., 2. };
-  test_values_multi(f3, val, res_3);
+    std::vector<std::vector<double>> val = { { 3., 2., 1. }, { 1., -1., 1. } };
+    std::vector<double> res = { 5.0, -3.0 };
+    test_values_multi(f, val, res);
+    auto g = f.Clone();
+    test_values_multi(*g, val, res);
+  }
+
+  TEST(linear2)
+  {
+    double y0 = 1.0;
+    Kokkos::View<double*, Kokkos::HostSpace> grad("grad", 2);
+    grad(0) = 1.0;
+    grad(1) = 2.0;
+
+    // Two variable linear function with x0.
+    Kokkos::View<double*, Kokkos::HostSpace> x0("x0", 2);
+    x0(0) = 1.0;
+    x0(1) = 2.0;
+
+    FunctionLinear f2(y0, grad, x0);
+
+    std::vector<std::vector<double>> val = { { 3., 2.}, { 1., -1.} };
+    std::vector<double> res = { 3., -5. };
+    test_values_multi(f2, val, res);
+
+    // -- check error in case of point smaller than gradient
+    Kokkos::View<double**, Kokkos::HostSpace> c("c", 1, 1);
+    c(0, 0) = 1.;
+    CHECK_THROW(f2(c), Errors::Message);
+  }
+
+
+  TEST(linear3)
+  {
+    double y0 = 1.0;
+    Kokkos::View<double*, Kokkos::HostSpace> grad("grad", 1);
+    grad(0) = 1.0;
+
+    FunctionLinear f3(y0, grad);
+
+    std::vector<std::vector<double>> val = { { 3., }, { 1., } };
+    std::vector<double> res = { 4., 2. };
+    test_values_multi(f3, val, res);
+  }
+
   // Check exception handling.
-  gradvec = Kokkos::subview(grad, Kokkos::make_pair(0, 0));
-  CHECK_THROW(auto f4 = new FunctionLinear(y0, gradvec), Errors::Message);
-  CHECK_THROW(auto f5 = new FunctionLinear(y0, gradvec, x0vec), Errors::Message);
-  gradvec = Kokkos::subview(grad, Kokkos::make_pair(0, 1));
-  CHECK_THROW(auto f6 = new FunctionLinear(y0, gradvec, x0vec), Errors::Message);
+  TEST(linear_errors)
+  {
+    double y0 = 1.0;
+    Kokkos::View<double*, Kokkos::HostSpace> grad("grad", 0);
+    Kokkos::View<double*, Kokkos::HostSpace> x0("x0", 2);
+    CHECK_THROW(auto f4 = new FunctionLinear(y0, grad), Errors::Message);
+    CHECK_THROW(auto f5 = new FunctionLinear(y0, grad, x0), Errors::Message);
+
+    Kokkos::View<double*, Kokkos::HostSpace> grad2("grad", 1);
+    CHECK_THROW(auto f6 = new FunctionLinear(y0, grad, x0), Errors::Message);
+  }
 }
 
 
@@ -346,16 +381,17 @@ SUITE(separable_test)
   }
 }
 
+
 TEST(static_head_test)
 {
   // txy-linear height function
   double y0 = 1.0;
-  Kokkos::View<double*, Kokkos::HostSpace> grad("grad", 3);
+  Kokkos::View<double*, Kokkos::HostSpace> grad("grad", 4);
   grad(0) = 0.0;
   grad(1) = 2.0;
   grad(2) = 3.0;
-  Kokkos::View<double*, Kokkos::HostSpace> gradvec = Kokkos::subview(grad, Kokkos::make_pair(0, 3));
-  auto h = std::make_unique<FunctionLinear>(y0, gradvec);
+  grad(3) = 0.;
+  auto h = std::make_unique<FunctionLinear>(y0, grad);
   double patm = -1.0, rho = 0.5, g = 4.0;
   auto f = std::make_unique<FunctionStaticHead>(patm, rho, g, std::move(h), 3);
   std::vector<std::vector<double>> val = { { 0., 1., .5, 2. }, { 1., 2., 1., 1. } };
@@ -367,42 +403,6 @@ TEST(static_head_test)
   test_values_multi(*ff, val, res);
 }
 
-// SUITE(separable_test) {
-//  TEST(separable1)
-//  {
-//    // First function a smooth step function
-//    std::auto_ptr<Function> f1(new FunctionSmoothStep(1.0, 1.0, 3.0, 0.0));
-//    // Second function a linear function
-//    double grad[3] = {1.0, 2.0, 3.0};
-//    std::vector<double> gradvec(grad, grad+3);
-//    std::auto_ptr<Function> f2(new FunctionLinear(1.0, gradvec));
-//    Function *f = new FunctionSeparable(f1, f2);
-//    double x[4] = {0.0, 1.0, 2.0, -1.0}; // t, x, y, z
-//    CHECK_EQUAL(3.0, (*f)(x));
-//    x[0] = 5.0;
-//    CHECK_EQUAL(0.0, (*f)(x));
-//  }
-//
-//  TEST(separable2)
-//  {
-//    // separable built from separable
-//    std::auto_ptr<Function> fx(new FunctionSmoothStep(0.0, 1.0, 1.0, 2.0));
-//    std::auto_ptr<Function> fy(new FunctionSmoothStep(0.0, 1.0, 1.0, 3.0));
-//    std::auto_ptr<Function> fz(new FunctionSmoothStep(0.0, 1.0, 1.0, 4.0));
-//    std::auto_ptr<Function> fyz(new FunctionSeparable(fy, fz));
-//    Function *fxyz = new FunctionSeparable(fx, fyz);
-//    double x0[3] = {0.0, 0.0, 0.0};
-//    double x1[3] = {1.0, 0.0, 0.0};
-//    double x2[3] = {0.0, 1.0, 0.0};
-//    double x3[3] = {0.0, 0.0, 1.0};
-//    double x4[3] = {0.5, 0.5, 0.5};
-//    CHECK_EQUAL(1.0, (*fxyz)(x0));
-//    CHECK_EQUAL(2.0, (*fxyz)(x1));
-//    CHECK_EQUAL(3.0, (*fxyz)(x2));
-//    CHECK_EQUAL(4.0, (*fxyz)(x3));
-//    CHECK_EQUAL(7.5, (*fxyz)(x4));
-//  }
-//}
 
 TEST(bilinear_test)
 {
@@ -436,20 +436,6 @@ TEST(bilinear_test)
   test_values_multi(*f, val, res);
 }
 
-double
-f_using_no_params(const Kokkos::View<double*, Kokkos::HostSpace>& x,
-                  const Kokkos::View<double*, Kokkos::HostSpace>& p)
-{
-  return x[1] - x[0];
-}
-
-double
-f_using_params(const Kokkos::View<double*, Kokkos::HostSpace>& x,
-               const Kokkos::View<double*, Kokkos::HostSpace>& p)
-{
-  return p[1] * x[1] - p[0] * x[0];
-}
-
 
 TEST(composition_test)
 {
@@ -480,3 +466,4 @@ TEST(composition_test)
   std::vector<double> res = { 2., 1. };
   test_values_multi(f, val, res);
 }
+

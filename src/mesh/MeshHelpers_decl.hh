@@ -41,9 +41,11 @@ class MeshCache;
 //
 // Given a face ID, get the corresponding boundary face ID (assuming it is a bf)
 //
-template <class Mesh_type>
-Entity_ID
-getFaceOnBoundaryBoundaryFace(const Mesh_type& mesh, Entity_ID f);
+inline Entity_ID
+getFaceOnBoundaryBoundaryFace(const Mesh& mesh, Entity_ID f);
+
+KOKKOS_INLINE_FUNCTION Entity_ID
+getFaceOnBoundaryBoundaryFace(const MeshCache& mesh, Entity_ID f);
 
 
 //

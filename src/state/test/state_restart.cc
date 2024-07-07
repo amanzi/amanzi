@@ -198,7 +198,7 @@ SUITE(RESTART)
     S0.Require<CompositeVector, CompositeVectorSpace>("celldata", Tags::DEFAULT, "state_restart")
       .SetMesh(Mesh)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     S0.Setup();
     S0.set_time(1.02);
@@ -214,7 +214,7 @@ SUITE(RESTART)
     S1.Require<CompositeVector, CompositeVectorSpace>("celldata", Tags::DEFAULT, "state_restart")
       .SetMesh(Mesh)
       ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     S1.Setup();
 

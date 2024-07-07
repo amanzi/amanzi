@@ -63,8 +63,8 @@ MeshExtractedManifold::MeshExtractedManifold(
 void
 MeshExtractedManifold::InitMaps()
 {
-  std::vector<Entity_kind> kinds_extracted({ CELL, FACE, NODE });
-  std::vector<Entity_kind> kinds_parent({ FACE, EDGE, NODE });
+  std::vector<Entity_kind> kinds_extracted({ Entity_kind::CELL, Entity_kind::FACE, Entity_kind::NODE });
+  std::vector<Entity_kind> kinds_parent({ Entity_kind::FACE, Entity_kind::EDGE, Entity_kind::NODE });
 
   for (int i = 0; i < 3; ++i) {
     auto kind_d = kinds_extracted[i];

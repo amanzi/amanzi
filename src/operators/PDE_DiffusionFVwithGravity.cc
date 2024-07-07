@@ -244,13 +244,13 @@ PDE_DiffusionFVwithGravity::ComputeTransmissibility_(Teuchos::RCP<CompositeVecto
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_);
   cvs.SetGhosted(true);
-  cvs.SetComponent("face", AmanziMesh::FACE, 1);
+  cvs.SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
   auto h = cvs.Create();
 
   {
     if (!K_.get()) {
       CompositeVectorSpace cvs;
-      cvs.SetMesh(mesh_)->SetGhosted(false)->AddComponent("cell", AmanziMesh::CELL, 1);
+      cvs.SetMesh(mesh_)->SetGhosted(false)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
       auto K = Teuchos::rcp(new TensorVector(cvs, false));
       for (int c = 0; c != ncells_owned; ++c) { K->set_shape(c, mesh_->getSpaceDimension(), 1); }
       K->Init();

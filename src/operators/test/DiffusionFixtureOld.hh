@@ -81,7 +81,7 @@ struct DiffusionFixture {
     int mem = ana->TensorDiffusivity_host(xc0, 0.0).mem();
     CompositeVectorSpace K_map;
     K_map.SetMesh(mesh);
-    K_map.AddComponent("cell", AmanziMesh::CELL, mem);
+    K_map.AddComponent("cell", AmanziMesh::Entity_kind::CELL, mem);
     auto K = Teuchos::rcp(new TensorVector(K_map));
     K->Init(K->size(),
             //size function: size of element c
@@ -112,7 +112,7 @@ struct DiffusionFixture {
     // modify diffusion coefficient
     CompositeVectorSpace K_map;
     K_map.SetMesh(mesh);
-    K_map.AddComponent("cell", AmanziMesh::CELL, 1);
+    K_map.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     auto K = Teuchos::rcp(new TensorVector(K_map));
 
     K->Init(K->size(),
@@ -134,16 +134,16 @@ struct DiffusionFixture {
     CompositeVectorSpace space;
     space.SetMesh(mesh)->SetGhosted();
     Teuchos::RCP<CompositeVector> kr;
-    if (kind == AmanziMesh::CELL) {
-      space.SetComponent("cell", AmanziMesh::CELL, 1);
+    if (kind == AmanziMesh::Entity_kind::CELL) {
+      space.SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
       kr = space.Create();
       auto vec = kr->viewComponent<MemSpace_kind::HOST>("cell", true);
       for (int i = 0; i != mesh->getNumEntities(kind, AmanziMesh::Parallel_kind::ALL); ++i) {
         vec(i, 0) = ana->ScalarDiffusivity(mesh->getCellCentroid(i), 0.0);
       }
 
-    } else if (kind == AmanziMesh::FACE) {
-      space.SetComponent("face", AmanziMesh::FACE, 1);
+    } else if (kind == AmanziMesh::Entity_kind::FACE) {
+      space.SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
       kr = space.Create();
       auto vec = kr->viewComponent<MemSpace_kind::HOST>("face", true);
       for (int i = 0; i != mesh->getNumEntities(kind, AmanziMesh::Parallel_kind::ALL); ++i) {
@@ -158,9 +158,9 @@ struct DiffusionFixture {
     auto bc_value = bc->bc_value<MemSpace_kind::HOST>();
     auto bc_model = bc->bc_model<MemSpace_kind::HOST>();
 
-    if (bc->kind() == AmanziMesh::FACE) {
-      const auto& bf_map = *mesh->getMap(AmanziMesh::BOUNDARY_FACE, false);
-      const auto& f_map = *mesh->getMap(AmanziMesh::FACE, false);
+    if (bc->kind() == AmanziMesh::Entity_kind::FACE) {
+      const auto& bf_map = *mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false);
+      const auto& f_map = *mesh->getMap(AmanziMesh::Entity_kind::FACE, false);
 
       for (int bf = 0; bf != bf_map.getLocalNumElements(); ++bf) {
         auto f = f_map.getLocalElement(bf_map.getGlobalElement(bf));
@@ -177,9 +177,9 @@ struct DiffusionFixture {
     auto bc_value = bc->bc_value<MemSpace_kind::HOST>();
     auto bc_model = bc->bc_model<MemSpace_kind::HOST>();
 
-    if (bc->kind() == AmanziMesh::FACE) {
-      const auto& bf_map = *mesh->getMap(AmanziMesh::BOUNDARY_FACE, false);
-      const auto& f_map = *mesh->getMap(AmanziMesh::FACE, false);
+    if (bc->kind() == AmanziMesh::Entity_kind::FACE) {
+      const auto& bf_map = *mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false);
+      const auto& f_map = *mesh->getMap(AmanziMesh::Entity_kind::FACE, false);
 
       for (int bf = 0; bf != bf_map.getLocalNumElements(); ++bf) {
         auto f = f_map.getLocalElement(bf_map.getGlobalElement(bf));

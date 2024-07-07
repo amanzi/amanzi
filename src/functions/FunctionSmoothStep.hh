@@ -33,39 +33,11 @@ Example:
 
 */
 
-#ifndef AMANZI_SMOOTH_STEP_FUNCTION_HH_
-#define AMANZI_SMOOTH_STEP_FUNCTION_HH_
+#pragma once
 
 #include "Function.hh"
 
 namespace Amanzi {
-
-namespace Impl {
-
-template <class InView_type>
-class FunctionSmoothStepFunctor {
-  FunctionSmoothStepFunctor(double x0, double y0, double x1, double y1, const InView_type& in)
-    : x0_(x0), y0_(y0), x1_(x1), y1_(y1), in_(in) {}
-
-  KOKKOS_INLINE_FUNCTION
-  double operator()(const int i)
-  {
-    double y;
-    if (in(0, i) <= x0_) {
-      y = y0_;
-    } else if (in(0, i) >= x1_) {
-      y = y1_;
-    } else {
-      double s = (in(0, i) - x0_) / (x1_ - x0_);
-      y = y0_ + (y1_ - y0_) * s * s * (3 - 2 * s);
-    }
-    return y;
-  }
-};
-
-} // namespace Impl
-
-
 
 class FunctionSmoothStep : public Function {
  public:
@@ -83,6 +55,35 @@ class FunctionSmoothStep : public Function {
   double x0_, y0_, x1_, y1_;
 };
 
+
+namespace Impl {
+
+template <class InView_type>
+class FunctionSmoothStepFunctor {
+ public:
+  FunctionSmoothStepFunctor(double x0, double y0, double x1, double y1, const InView_type& in)
+    : x0_(x0), y0_(y0), x1_(x1), y1_(y1), in_(in) {}
+
+  KOKKOS_INLINE_FUNCTION
+  double operator()(const int i) const
+  {
+    double y;
+    if (in_(0, i) <= x0_) {
+      y = y0_;
+    } else if (in_(0, i) >= x1_) {
+      y = y1_;
+    } else {
+      double s = (in_(0, i) - x0_) / (x1_ - x0_);
+      y = y0_ + (y1_ - y0_) * s * s * (3 - 2 * s);
+    }
+    return y;
+  }
+
+ private:
+  double x0_, y0_, x1_, y1_;
+  InView_type in_;
+};
+
+} // namespace Impl
 } // namespace Amanzi
 
-#endif // AMANZI_SMOOTH_STEP_FUNCTION_HH_

@@ -72,10 +72,10 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF)
   Analytic04 ana(mesh);
 
   // vector spaces
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
-  int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   Teuchos::RCP<CompositeVectorSpace> cell_space = Teuchos::rcp(new CompositeVectorSpace());
   cell_space->SetMesh(mesh)->SetComponent("cell", CELL, 1)->SetGhosted();
@@ -127,7 +127,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF)
   std::vector<double> bc_mixed;
 
   AmanziMesh::Entity_ID_List left;
-  mesh->get_set_entities("Left side", AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL, &left);
+  mesh->get_set_entities("Left side", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL, &left);
   for (int f = 0; f != left.size(); ++f) {
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     mesh->getFaceCentroid(f, &xv);
@@ -135,7 +135,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF)
   }
 
   AmanziMesh::Entity_ID_List right;
-  mesh->get_set_entities("Right side", AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL, &right);
+  mesh->get_set_entities("Right side", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL, &right);
   for (int f = 0; f != right.size(); ++f) {
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     mesh->getFaceCentroid(f, &xv);

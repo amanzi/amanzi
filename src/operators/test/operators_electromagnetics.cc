@@ -88,7 +88,7 @@ CurlCurl(double c_t,
 
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
@@ -97,11 +97,11 @@ CurlCurl(double c_t,
   }
 
   // create boundary data
-  int nedges_owned = mesh->getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::OWNED);
-  int nedges_wghost = mesh->getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::ALL);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nedges_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::OWNED);
+  int nedges_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::EDGE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -181,7 +181,7 @@ CurlCurl(double c_t,
 
   Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
   Teuchos::RCP<PDE_Accumulation> op_acc =
-    Teuchos::rcp(new PDE_Accumulation(AmanziMesh::EDGE, global_op));
+    Teuchos::rcp(new PDE_Accumulation(AmanziMesh::Entity_kind::EDGE, global_op));
 
   double dT = 1.0;
   op_acc->AddAccumulationDelta(solution, phi, phi, dT, "edge");

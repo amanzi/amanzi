@@ -68,7 +68,7 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
   // consistent parallel data are needed for the random mesh deformation
   AmanziMesh::Entity_ID_List bnd_ids;
   CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh1)->SetGhosted(true)->AddComponent("node", AmanziMesh::NODE, d);
+  cvs.SetMesh(mesh1)->SetGhosted(true)->AddComponent("node", AmanziMesh::Entity_kind::NODE, d);
   CompositeVector random(cvs);
   Epetra_MultiVector& random_n = *random.viewComponent("node", true);
 
@@ -82,7 +82,7 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
 
     std::vector<double> vofs;
     mesh1->get_set_entities_and_vofs(
-      "Boundary", AmanziMesh::NODE, AmanziMesh::Parallel_kind::ALL, &bnd_ids, &vofs);
+      "Boundary", AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL, &bnd_ids, &vofs);
   }
 
   // relocate mesh nodes
@@ -90,7 +90,7 @@ DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
   AmanziMesh::Entity_ID_List nodeids;
   AmanziGeometry::Point_List new_positions, final_positions;
 
-  int nnodes = mesh1->getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::ALL);
+  int nnodes = mesh1->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   for (int v = 0; v < nnodes; ++v) {
     if (mesh0.get())
@@ -129,7 +129,7 @@ DeformMeshCurved(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
 
   int dim = mesh1->space_dimension();
   if (order > 1) {
-    int nfaces = mesh0->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+    int nfaces = mesh0->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
     auto ho_nodes0f = std::make_shared<std::vector<AmanziGeometry::Point_List>>(nfaces);
     auto ho_nodes1f = std::make_shared<std::vector<AmanziGeometry::Point_List>>(nfaces);
 
@@ -145,7 +145,7 @@ DeformMeshCurved(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
     Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1)->set_face_ho_nodes(ho_nodes1f);
 
     if (dim == 3) {
-      int nedges = mesh0->getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::ALL);
+      int nedges = mesh0->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::ALL);
       auto ho_nodes0e = std::make_shared<std::vector<AmanziGeometry::Point_List>>(nedges);
       auto ho_nodes1e = std::make_shared<std::vector<AmanziGeometry::Point_List>>(nedges);
 

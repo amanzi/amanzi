@@ -44,13 +44,13 @@ class FunctionExprTK : public Function {
  public:
   FunctionExprTK(int n, const std::string& formula);
 
-  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionExprTK>(*this); }
+  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionExprTK>(*this); }
 
-  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const;
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const override;
 
   void apply(const Kokkos::View<const double**>& in,
              Kokkos::View<double*>& out,
-             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override
   {
     // NOTE ExprTK cannot be used on device!
     assert(in.extent(1) == out.extent(0));

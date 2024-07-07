@@ -83,7 +83,7 @@ test(const Teuchos::RCP<AnalyticBase>& ana,
             << "--------------------------------------------------------------------------------"
             << std::endl;
   nvtxRangePushA("Discretize fix");
-  fix.discretize<PDE_Diffusion_type, AmanziMesh::FACE>(disc_type);
+  fix.discretize<PDE_Diffusion_type, AmanziMesh::Entity_kind::FACE>(disc_type);
   nvtxRangePop();
   if (scalar_coef != AmanziMesh::Entity_kind::UNKNOWN) fix.scalarCoefficient(scalar_coef);
   if (bc_type == "Dirichlet") {

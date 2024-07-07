@@ -82,13 +82,13 @@ RunTest(double FunExact(const AmanziGeometry::Point& xp))
     std::string setname("fractures");
     auto mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
     auto mesh_fw =
-      Teuchos::rcp(new MeshExtractedManifold(mesh3D, setname, AmanziMesh::FACE, comm, gm, plist));
+      Teuchos::rcp(new MeshExtractedManifold(mesh3D, setname, AmanziMesh::Entity_kind::FACE, comm, gm, plist));
     auto mesh = Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
 
-    int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-    int ncells_wghost = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
-    int nfaces_owned = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-    int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+    int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+    int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+    int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+    int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
     // create boundary data
     std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
@@ -103,7 +103,7 @@ RunTest(double FunExact(const AmanziGeometry::Point& xp))
 
     // create and initialize cell-based field
     auto cvs = Operators::CreateManifoldCVS(mesh);
-    cvs->AddComponent("cell", AmanziMesh::CELL, 1);
+    cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     CompositeVector field(*cvs);
     auto& field_c = *field.viewComponent("cell", true);

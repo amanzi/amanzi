@@ -73,8 +73,8 @@ SUITE(_VECTOR)
     CHECK_EQUAL(2, x->getNumVectors("cell"));
     CHECK(x->getMap()->size() == x->size());
     CHECK(x->getMap()->isSameAs(*x->getMap()));
-    CHECK(x->getMap()->getComponentMap("cell", false)->isSameAs(*mesh->getMap(CELL, false)));
-    CHECK(x->getMap()->getComponentMap("cell", true)->isSameAs(*mesh->getMap(CELL, true)));
+    CHECK(x->getMap()->getComponentMap("cell", false)->isSameAs(*mesh->getMap(Entity_kind::CELL, false)));
+    CHECK(x->getMap()->getComponentMap("cell", true)->isSameAs(*mesh->getMap(Entity_kind::CELL, true)));
 
     if (size == 2) {
       CHECK_EQUAL(4, x->getMap()->getComponentMap("cell", false)->getLocalNumElements());
@@ -213,7 +213,7 @@ SUITE(_VECTOR)
   {
     int rank = comm->getRank();
     int size = comm->getSize();
-    int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+    int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
     x->putScalar(rank + 1);
     x->scatterMasterToGhosted("cell");
@@ -237,7 +237,7 @@ SUITE(_VECTOR)
   {
     int rank = comm->getRank();
     int size = comm->getSize();
-    int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
+    int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
     { // scope for x_c
       auto x_c = x->viewComponent<MemSpace_kind::HOST>("cell", 0, true);

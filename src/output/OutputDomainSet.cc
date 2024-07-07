@@ -22,7 +22,7 @@ OutputDomainSet::write(const Teuchos::ParameterList& attrs, const MultiVector_ty
 {
   std::vector<std::string> names = OutputUtils::getNames(attrs, vec.getNumVectors());
   AmanziMesh::Entity_kind entity_kind = attrs.get<AmanziMesh::Entity_kind>("location");
-  if (entity_kind != AmanziMesh::CELL) return;
+  if (entity_kind != AmanziMesh::Entity_kind::CELL) return;
 
   // replace names[0] domain index with a *
   KeyTriple dset_triple;
@@ -56,7 +56,7 @@ OutputDomainSet::write(const Teuchos::ParameterList& attrs, const IntMultiVector
 {
   std::vector<std::string> names = OutputUtils::getNames(attrs, vec.getNumVectors());
   AmanziMesh::Entity_kind entity_kind = attrs.get<AmanziMesh::Entity_kind>("location");
-  if (entity_kind != AmanziMesh::CELL) return;
+  if (entity_kind != AmanziMesh::Entity_kind::CELL) return;
 
   // replace names[0] domain index with a *
   KeyTriple dset_triple;

@@ -157,7 +157,7 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
     auto rho_c = DensityCells(true);
     auto grav_flux_v = grav_flux.viewComponent("face", false);
 
-    const MeshCache& mesh = mesh_->getCache();
+    const AmanziMesh::MeshCache& mesh = mesh_->getCache();
     AmanziGeometry::Point g(g_);
     bool have_K = K_ != Teuchos::null;
     const TensorVector& K = have_K ? *K_ : K_alternative;

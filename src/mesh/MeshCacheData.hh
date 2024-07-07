@@ -84,7 +84,7 @@ struct MeshCacheData {
   // Need GIDs for referencing faces
   Entity_GID_DualView cell_global_indices;
 
-  // Need boundary entities for converting to standard entities
+  // Need boundary entities for converting to and from standard entities.
   Entity_ID_DualView boundary_faces;
   Entity_ID_DualView boundary_nodes;
 

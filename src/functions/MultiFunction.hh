@@ -51,9 +51,6 @@ namespace Amanzi {
 
 class MultiFunction {
  public:
-  using View_type = typename MultiVector_type_<Scalar>::device_view_type;
-  using HostView_type = typename MultiVector_type_<Scalar>::host_view_type;
-
   MultiFunction(const std::vector<Teuchos::RCP<const Function>>& functions);
   MultiFunction(const Teuchos::RCP<const Function>& function);
   MultiFunction(Teuchos::ParameterList& plist);
@@ -62,7 +59,7 @@ class MultiFunction {
 
   int size() const;
   Kokkos::View<double*, Kokkos::HostSpace>
-  operator()(const Kokkos::View<double*, Kokkos::HostSpace>& xt) const;
+  operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& xt) const;
 
   //
   // NOTE: this requirement of the out to be LayoutLeft is because of the
@@ -77,7 +74,7 @@ class MultiFunction {
   // we're losing much generality, and may even be making performance more
   // robust.
   void apply(const Kokkos::View<const double**>& in,
-             Kokkos::View<double**, Kokkos::LayoutLeft>& out,
+             const Kokkos::View<double**, Kokkos::LayoutLeft>& out,
              const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids = nullptr) const
   {
     for (int i = 0; i < size(); ++i) {

@@ -27,7 +27,7 @@ class Op_Cell_FaceCell : public Op {
          name,
          mesh)
   {
-    int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+    int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     A = DenseMatrix_Vector(ncells_owned);
 
     for (int c = 0; c != ncells_owned; ++c) {
@@ -45,15 +45,17 @@ class Op_Cell_FaceCell : public Op {
     const AmanziMesh::MeshCache& m = mesh->getCache();
     auto Xf = X.viewComponent("face", true);
     auto Xc = X.viewComponent("cell", false);
+    auto& lA = A;
+
     Kokkos::parallel_for(
-      "Op_Cell_FaceCell::GetLocalDiagCopy", A.size(), KOKKOS_CLASS_LAMBDA(const int c) {
+      "Op_Cell_FaceCell::GetLocalDiagCopy", A.size(), KOKKOS_LAMBDA(const int c) {
         // Extract matrix
-        auto lA = A[c];
+        auto lAc = lA[c];
 
         auto faces = m.getCellFaces(c);
         int nfaces = faces.extent(0);
-        for (int m = 0; m != nfaces; ++m) Kokkos::atomic_add(&Xf(faces(m), 0), lA(m, m));
-        Kokkos::atomic_add(&Xc(c, 0), lA(nfaces, nfaces));
+        for (int m = 0; m != nfaces; ++m) Kokkos::atomic_add(&Xf(faces(m), 0), lAc(m, m));
+        Kokkos::atomic_add(&Xc(c, 0), lAc(nfaces, nfaces));
       });
   }
 
@@ -87,24 +89,26 @@ class Op_Cell_FaceCell : public Op {
 
     if (scaling.hasComponent("face")) {
       const auto s_c = scaling.viewComponent("face", true);
+      auto& lA = A;
       Kokkos::parallel_for(
-        "Op_Cell_FaceCell::Rescale(face)", A.size(), KOKKOS_CLASS_LAMBDA(const int& c) {
+        "Op_Cell_FaceCell::Rescale(face)", A.size(), KOKKOS_LAMBDA(const int& c) {
           auto faces = m.getCellFaces(c);
-          auto lA = A[c];
+          auto lAc = lA[c];
           for (int n = 0; n != faces.size(); ++n) {
-            for (int m = 0; m != faces.size(); ++m) { lA(n, m) *= s_c(0, faces[n]); }
-            lA(n, faces.size()) *= s_c(0, faces[n]);
+            for (int m = 0; m != faces.size(); ++m) { lAc(n, m) *= s_c(0, faces[n]); }
+            lAc(n, faces.size()) *= s_c(0, faces[n]);
           }
         });
     }
     if (scaling.hasComponent("cell")) {
       const auto s_c = scaling.viewComponent("cell", true);
+      auto& lA = A;
       Kokkos::parallel_for(
-        "Op_Cell_FaceCell::Rescale(cell)", A.size(), KOKKOS_CLASS_LAMBDA(const int& c) {
-          auto lA = A[c];
+        "Op_Cell_FaceCell::Rescale(cell)", A.size(), KOKKOS_LAMBDA(const int& c) {
+          auto lAc = lA[c];
           int nfaces = m.getCellNumFaces(c);
-          for (int m = 0; m != nfaces; ++m) { lA(nfaces, m) *= s_c(0, c); }
-          lA(nfaces, nfaces) *= s_c(0, c);
+          for (int m = 0; m != nfaces; ++m) { lAc(nfaces, m) *= s_c(0, c); }
+          lAc(nfaces, nfaces) *= s_c(0, c);
         });
     }
   }

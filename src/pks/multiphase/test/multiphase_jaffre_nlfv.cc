@@ -110,7 +110,7 @@ run_test(const std::string& domain, const std::string& filename)
   S->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
     .SetMesh(mesh)
     ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1);
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
   MPK->Setup();
   S->Setup();

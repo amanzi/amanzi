@@ -304,8 +304,8 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
   if (has_record && S->GetRecord(variable_, tag_).ValidType<double>()) {
     // scalars, just return the value
     value[0] = S->GetRecord(variable_, tag_).Get<double>();
-    Kokkos::View<double*, DefaultHostMemorySpace> args("observation args", 1);
-    args(0) = value[0];
+    Kokkos::View<double**, DefaultHostMemorySpace> args("observation args", 1, 1);
+    args(0,0) = value[0];
     if (modifier_) value[0] = (*modifier_)(args);
     value[1] = 1;
 
@@ -330,8 +330,8 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
             for (int i = 0; i != get_num_vectors(); ++i) {
               double val = subvec(id, i);
               if (modifier_) {
-                Kokkos::View<double*, DefaultHostMemorySpace> obs_val("observation val", 1);
-                obs_val(0) = val;
+                Kokkos::View<double**, DefaultHostMemorySpace> obs_val("observation val", 1, 1);
+                obs_val(0,0) = val;
                 val = (*modifier_)(obs_val);
               }
               value[i] = (*reducer_)(value[i], val, vol);
@@ -339,8 +339,8 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
           } else {
             double val = subvec(id, dof_);
             if (modifier_) {
-              Kokkos::View<double*, DefaultHostMemorySpace> obs_val("observation val", 1);
-              obs_val(0) = val;
+              Kokkos::View<double**, DefaultHostMemorySpace> obs_val("observation val", 1, 1);
+              obs_val(0, 0) = val;
               val = (*modifier_)(obs_val);
             }
             value[0] = (*reducer_)(value[0], val, vol);
@@ -406,8 +406,8 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
             for (int i = 0; i != get_num_vectors(); ++i) {
               double val = sign * subvec(id, i);
               if (modifier_) {
-                Kokkos::View<double*, DefaultHostMemorySpace> obs_val("observation val", 1);
-                obs_val(0) = val;
+                Kokkos::View<double**, DefaultHostMemorySpace> obs_val("observation val", 1, 1);
+                obs_val(0,0) = val;
                 val = (*modifier_)(obs_val);
               }
               value[i] = (*reducer_)(value[i], val, vol);
@@ -415,8 +415,8 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
           } else {
             double val = sign * subvec(id, dof_);
             if (modifier_) {
-              Kokkos::View<double*, DefaultHostMemorySpace> obs_val("observation val", 1);
-              obs_val(0) = val;
+              Kokkos::View<double**, DefaultHostMemorySpace> obs_val("observation val", 1, 1);
+              obs_val(0, 0) = val;
               val = (*modifier_)(obs_val);
             }
             value[0] = (*reducer_)(value[0], val, vol);
@@ -432,8 +432,8 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
             for (int i = 0; i != get_num_vectors(); ++i) {
               double val = subvec(id, i);
               if (modifier_) {
-                Kokkos::View<double*, DefaultHostMemorySpace> obs_val("observation val", 1);
-                obs_val(0) = val;
+                Kokkos::View<double**, DefaultHostMemorySpace> obs_val("observation val", 1, 1);
+                obs_val(0, 0) = val;
                 val = (*modifier_)(obs_val);
               }
               value[i] = (*reducer_)(value[i], val, vol);
@@ -441,8 +441,8 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
           } else {
             double val = subvec(id, dof_);
             if (modifier_) {
-              Kokkos::View<double*, DefaultHostMemorySpace> obs_val("observation val", 1);
-              obs_val(0) = val;
+              Kokkos::View<double**, DefaultHostMemorySpace> obs_val("observation val", 1, 1);
+              obs_val(0,0) = val;
               val = (*modifier_)(obs_val);
             }
             value[0] = (*reducer_)(value[0], val, vol);

@@ -94,7 +94,7 @@ OutputSilo::createTimestep(double time, int cycle)
 
       // -- nodal coordinates
       int nnodes =
-        mesh_->getVisMesh().getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::ALL);
+        mesh_->getVisMesh().getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
       std::vector<double> x(nnodes), y(nnodes), z(nnodes);
 
       for (int i = 0; i != nnodes; ++i) {
@@ -110,7 +110,7 @@ OutputSilo::createTimestep(double time, int cycle)
 
       // -- write the base mesh UCD object
       int ncells =
-        mesh_->getVisMesh().getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+        mesh_->getVisMesh().getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
       ierr |= DBPutUcdmesh(fid_,
                            "mesh",
                            mesh_->getVisMesh().getSpaceDimension(),
@@ -128,7 +128,7 @@ OutputSilo::createTimestep(double time, int cycle)
       // We rely on the mesh having the faces nodes arranged counter-clockwise
       // around the face.  This should be satisfied by AmanziMesh.
       int nfaces =
-        mesh_->getVisMesh().getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+        mesh_->getVisMesh().getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
       std::vector<int> face_node_counts(nfaces);
       std::vector<char> ext_faces(nfaces, 0x0);
       std::vector<int> face_node_list;

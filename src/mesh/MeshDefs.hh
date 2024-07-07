@@ -94,7 +94,7 @@ to_string(const MemSpace_kind mem)
 // Entity_kind::BOUNDARY_FACE is a special type of entity that is need so that process
 // kernels can define composite vectors (see src/data_structures) on
 // exterior boundary faces of the mesh only
-enum Entity_kind : int {
+enum class Entity_kind : int {
   UNKNOWN = 0,
   NODE = 1,
   EDGE = 2,
@@ -154,8 +154,16 @@ to_string(const Entity_kind kind)
   }
 }
 
+inline std::ostream&
+operator<<(std::ostream& os, const Entity_kind& p)
+{
+  os << to_string(p);
+  return os;
+}
+
+
 // Parallel status of entity
-enum class Parallel_kind {
+enum class Parallel_kind : int {
   UNKNOWN = 0,
   OWNED = 1, // Owned by this processor
   GHOST = 2, // Owned by another processor

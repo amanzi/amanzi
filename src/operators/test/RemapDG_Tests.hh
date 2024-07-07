@@ -208,7 +208,7 @@ RemapDG_Tests<AnalyticDG>::DeformMesh(int deform, double t)
 {
   // create distributed random vector
   CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("node", AmanziMesh::NODE, dim_);
+  cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("node", AmanziMesh::Entity_kind::NODE, dim_);
   CompositeVector random(cvs);
 
   int gid = mesh0_->node_map(false).MaxAllGID();
@@ -224,7 +224,7 @@ RemapDG_Tests<AnalyticDG>::DeformMesh(int deform, double t)
   AmanziMesh::Entity_ID_List nodeids;
   AmanziGeometry::Point_List new_positions, final_positions;
 
-  int nnodes = mesh0_->getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::ALL);
+  int nnodes = mesh0_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   for (int v = 0; v < nnodes; ++v) {
     for (int i = 0; i < dim_; ++i) rv[i] = random_n[i][v];

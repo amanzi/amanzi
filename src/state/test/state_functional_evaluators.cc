@@ -73,7 +73,7 @@ SUITE(EVALS)
     S->Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     auto fa_eval = Teuchos::rcp(new EvaluatorIndependentFunction(A_list));
     S->SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
@@ -139,7 +139,7 @@ SUITE(EVALS)
     S->Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     auto fa_eval = Teuchos::rcp(new EvaluatorIndependentFunction(A_list));
     S->SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
@@ -164,7 +164,7 @@ SUITE(EVALS)
     S->Require<CompositeVector, CompositeVectorSpace>("fb", Tags::DEFAULT, "fb")
       .SetMesh(mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     auto fb_eval = Teuchos::rcp(new EvaluatorSecondaryMonotypeFromFunction(B_list));
     S->SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 

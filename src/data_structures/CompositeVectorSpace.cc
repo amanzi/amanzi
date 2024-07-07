@@ -543,7 +543,8 @@ CompositeVectorSpace::UnionAndConsistent_(
         n2_it = std::find(names2.begin(), names2.end(), std::string("face"));
         if (n2_it != names2.end()) {
           int j = n2_it - names2.begin();
-          if ((locations1[i] != AmanziMesh::BOUNDARY_FACE) || (locations2[j] != AmanziMesh::FACE)) {
+          if ((locations1[i] != AmanziMesh::Entity_kind::BOUNDARY_FACE) ||
+              (locations2[j] != AmanziMesh::Entity_kind::FACE)) {
             return false;
           }
           if (num_dofs1[i] != num_dofs2[j]) { return false; }
@@ -560,7 +561,8 @@ CompositeVectorSpace::UnionAndConsistent_(
         n2_it = std::find(names2.begin(), names2.end(), std::string("boundary_face"));
         if (n2_it != names2.end()) {
           int j = n2_it - names2.begin();
-          if ((locations1[i] != AmanziMesh::FACE) || (locations2[j] != AmanziMesh::BOUNDARY_FACE)) {
+          if ((locations1[i] != AmanziMesh::Entity_kind::FACE) ||
+              (locations2[j] != AmanziMesh::Entity_kind::BOUNDARY_FACE)) {
             return false;
           }
           if (num_dofs1[i] != num_dofs2[j]) { return false; }

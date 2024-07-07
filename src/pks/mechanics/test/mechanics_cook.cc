@@ -106,8 +106,8 @@ TEST(COOK_MEMBRANE_2D)
   OutputXDMF io(iolist, mesh, true, false);
 
   io.InitializeCycle(T, 1, "");
-  io.WriteVector(*u(0), "displacement-x", AmanziMesh::NODE);
-  io.WriteVector(*u(1), "displacement-y", AmanziMesh::NODE);
+  io.WriteVector(*u(0), "displacement-x", AmanziMesh::Entity_kind::NODE);
+  io.WriteVector(*u(1), "displacement-y", AmanziMesh::Entity_kind::NODE);
   io.FinalizeCycle();
 
   // summary

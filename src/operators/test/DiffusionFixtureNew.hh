@@ -128,7 +128,7 @@ DiffusionFixture::Discretize(const std::string& name, AmanziMesh::Entity_kind sc
   // modify diffusion coefficient
   CompositeVectorSpace K_map;
   K_map.SetMesh(mesh);
-  K_map.AddComponent("cell", AmanziMesh::CELL, 1);
+  K_map.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   auto K = Teuchos::rcp(new TensorVector(K_map));
   const AnalyticBase* a = ana.get();
   K->Init(K->size(),
@@ -144,7 +144,7 @@ DiffusionFixture::Discretize(const std::string& name, AmanziMesh::Entity_kind sc
     int nents = mesh->getNumEntities(scalar_coef, AmanziMesh::Parallel_kind::ALL);
 
     CompositeVectorSpace cvs;
-    cvs.SetMesh(mesh)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+    cvs.SetMesh(mesh)->SetGhosted()->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     Teuchos::RCP<CompositeVector> kr = cvs.Create();
     auto vec = kr->viewComponent<MemSpace_kind::HOST>("face", true);
     for (int f = 0; f != nents; ++f) {
@@ -154,7 +154,7 @@ DiffusionFixture::Discretize(const std::string& name, AmanziMesh::Entity_kind sc
   }
 
   // boundary condition
-  bc = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  bc = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   op->SetBCs(bc, bc);
   nvtxRangePop();
 }
@@ -210,16 +210,16 @@ DiffusionFixture::SetScalarCoefficient(Operators::PDE_DiffusionFactory& opfactor
   cvs.SetMesh(mesh)->SetGhosted();
   Teuchos::RCP<CompositeVector> kr;
 
-  if (kind == AmanziMesh::CELL) {
-    cvs.SetComponent("cell", AmanziMesh::CELL, 1);
+  if (kind == AmanziMesh::Entity_kind::CELL) {
+    cvs.SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     kr = cvs.Create();
     auto vec = kr->viewComponent<MemSpace_kind::HOST>("cell", true);
     for (int c = 0; c != nents; ++c) {
       vec(c, 0) = ana->ScalarDiffusivity(mesh->getCellCentroid(c), 0.0);
     }
 
-  } else if (kind == AmanziMesh::FACE) {
-    cvs.SetComponent("face", AmanziMesh::FACE, 1);
+  } else if (kind == AmanziMesh::Entity_kind::FACE) {
+    cvs.SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     kr = cvs.Create();
     auto vec = kr->viewComponent<MemSpace_kind::HOST>("face", true);
     for (int f = 0; f != nents; ++f) {
@@ -240,9 +240,9 @@ DiffusionFixture::SetBCsDirichlet()
   auto bc_value = bc->bc_value<MemSpace_kind::HOST>();
   auto bc_model = bc->bc_model<MemSpace_kind::HOST>();
 
-  if (bc->kind() == AmanziMesh::FACE) {
-    const auto& bf_map = *mesh->getMap(AmanziMesh::BOUNDARY_FACE, false);
-    const auto& f_map = *mesh->getMap(AmanziMesh::FACE, false);
+  if (bc->kind() == AmanziMesh::Entity_kind::FACE) {
+    const auto& bf_map = *mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false);
+    const auto& f_map = *mesh->getMap(AmanziMesh::Entity_kind::FACE, false);
 
     for (int bf = 0; bf != bf_map.getLocalNumElements(); ++bf) {
       auto f = f_map.getLocalElement(bf_map.getGlobalElement(bf));

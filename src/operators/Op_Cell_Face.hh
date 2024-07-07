@@ -25,7 +25,7 @@ class Op_Cell_Face : public Op {
   Op_Cell_Face(const std::string& name, const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : Op(OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE, name, mesh)
   {
-    int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+    int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     A = DenseMatrix_Vector(ncells_owned);
 
     for (int c = 0; c != ncells_owned; ++c) {
@@ -45,15 +45,16 @@ class Op_Cell_Face : public Op {
     const AmanziMesh::MeshCache& m = mesh->getCache();
     auto Xf = X.viewComponent("face", true);
     auto Xc = X.viewComponent("cell", false);
+    const auto& lA = A;
 
     Kokkos::parallel_for(
-      "Op_Cell_Face::GetLocalDiagCopy", A.size(), KOKKOS_CLASS_LAMBDA(const int c) {
+      "Op_Cell_Face::GetLocalDiagCopy", A.size(), KOKKOS_LAMBDA(const int c) {
         // Extract matrix
-        auto lA = A[c];
+        auto lAc = lA[c];
 
         auto faces = m.getCellFaces(c);
         int nfaces = faces.extent(0);
-        for (int m = 0; m != nfaces; ++m) Kokkos::atomic_add(&Xf(faces(m), 0), lA(m, m));
+        for (int m = 0; m != nfaces; ++m) Kokkos::atomic_add(&Xf(faces(m), 0), lAc(m, m));
       });
   }
 
@@ -86,12 +87,14 @@ class Op_Cell_Face : public Op {
     const Amanzi::AmanziMesh::MeshCache& m = mesh->getCache();
     if (scaling.hasComponent("face")) {
       const auto s_c = scaling.viewComponent("face", true);
+      auto& lA = A;
+
       Kokkos::parallel_for(
-        "Op_Cell_FaceCell::Rescale", A.size(), KOKKOS_CLASS_LAMBDA(const int& c) {
+        "Op_Cell_FaceCell::Rescale", A.size(), KOKKOS_LAMBDA(const int& c) {
           auto faces = m.getCellFaces(c);
-          auto lA = A[c];
+          auto lAc = lA[c];
           for (int n = 0; n != faces.size(); ++n) {
-            for (int m = 0; m != faces.size(); ++m) { lA(n, m) *= s_c(0, faces[n]); }
+            for (int m = 0; m != faces.size(); ++m) { lAc(n, m) *= s_c(0, faces[n]); }
           }
         });
     }

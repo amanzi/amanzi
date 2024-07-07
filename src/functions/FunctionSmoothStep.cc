@@ -37,9 +37,10 @@ FunctionSmoothStep::operator()(const Kokkos::View<const double**, Kokkos::HostSp
 void
 FunctionSmoothStep::apply(const Kokkos::View<const double**>& in,
            Kokkos::View<double*>& out,
-           const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override
+           const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
 {
   auto f = Impl::FunctionSmoothStepFunctor(x0_, y0_, x1_, y1_, in);
+
   if (ids) {
     auto ids_loc = *ids;
     Kokkos::parallel_for(

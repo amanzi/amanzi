@@ -8,16 +8,15 @@
 */
 
 //! <MISSING_ONELINE_DOCSTRING>
-#include <math.h>
-
 #include "errors.hh"
+#include "ViewUtils.hh"
 #include "FunctionMonomial.hh"
 
 namespace Amanzi {
 
 FunctionMonomial::FunctionMonomial(double c,
-                                   const Kokkos::View<double*, Kokkos::HostSpace>& x0,
-                                   const Kokkos::View<int*, Kokkos::HostSpace>& p)
+                                   const Kokkos::View<const double*, Kokkos::HostSpace>& x0,
+                                   const Kokkos::View<const int*, Kokkos::HostSpace>& p)
 {
   if (x0.extent(0) != p.extent(0)) {
     Errors::Message m;

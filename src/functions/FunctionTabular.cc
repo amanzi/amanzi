@@ -16,37 +16,37 @@
 
 namespace Amanzi {
 
-FunctionTabular::FunctionTabular(const Kokkos::View<double*, Kokkos::HostSpace>& x,
-                                 const Kokkos::View<double*, Kokkos::HostSpace>& y,
+FunctionTabular::FunctionTabular(const Kokkos::View<const double*, Kokkos::HostSpace>& x,
+                                 const Kokkos::View<const double*, Kokkos::HostSpace>& y,
                                  const int xi)
   : xi_(xi)
 {
-  Kokkos::View<Form_kind*, Kokkos::HostSpace> forms("forms", x.size()-1);
-  Kokkos::deep_copy(forms, Form_kind::LINEAR);
-  check_args(x, y, forms);
+  Kokkos::View<Form_kind*, Kokkos::HostSpace> form("form", x.size()-1);
+  Kokkos::deep_copy(form, Form_kind::LINEAR);
+  check_args(x, y, form);
 
   x_ = asDualView(x);
   y_ = asDualView(y);
-  forms_ = asDualView(forms);
+  form_ = asDualView(form);
 }
 
-FunctionTabular::FunctionTabular(const Kokkos::View<double*, Kokkos::HostSpace>& x,
-                                 const Kokkos::View<double*, Kokkos::HostSpace>& y,
+FunctionTabular::FunctionTabular(const Kokkos::View<const double*, Kokkos::HostSpace>& x,
+                                 const Kokkos::View<const double*, Kokkos::HostSpace>& y,
                                  const int xi,
-                                 const Kokkos::View<Form_kind*, Kokkos::HostSpace>& form)
+                                 const Kokkos::View<const Form_kind*, Kokkos::HostSpace>& form)
   : xi_(xi)
 {
   check_args(x, y, form);
   x_ = asDualView(x);
   y_ = asDualView(y);
-  forms_ = asDualView(forms);
+  form_ = asDualView(form);
 }
 
 
 void
-FunctionTabular::check_args(const Kokkos::View<double*, Kokkos::HostSpace>& x,
-                            const Kokkos::View<double*, Kokkos::HostSpace>& y,
-                            const Kokkos::View<Form_kind*, Kokkos::HostSpace>& form) const
+FunctionTabular::check_args(const Kokkos::View<const double*, Kokkos::HostSpace>& x,
+                            const Kokkos::View<const double*, Kokkos::HostSpace>& y,
+                            const Kokkos::View<const Form_kind*, Kokkos::HostSpace>& form) const
 {
   if (x.extent(0) != y.extent(0)) {
     Errors::Message m;
@@ -76,9 +76,9 @@ FunctionTabular::check_args(const Kokkos::View<double*, Kokkos::HostSpace>& x,
 void
 FunctionTabular::apply(const Kokkos::View<const double**>& in,
                        Kokkos::View<double*>& out,
-                       const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override
+                       const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
 {
-  auto f = Impl::FunctionTabularFunctor(x_.view_device(), y_.view_device(), forms_.view_device(), xi_, in);
+  auto f = Impl::FunctionTabularFunctor(x_.view_device(), y_.view_device(), form_.view_device(), xi_, in);
 
   if (ids) {
     auto ids_loc = *ids;
@@ -96,7 +96,7 @@ FunctionTabular::apply(const Kokkos::View<const double**>& in,
 double
 FunctionTabular::operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const
 {
-  auto f = Impl::FunctionTabularFunctor(x_.view_device(), y_.view_device(), forms_.view_device(), xi_, x);
+  auto f = Impl::FunctionTabularFunctor(x_.view_device(), y_.view_device(), form_.view_device(), xi_, x);
   return f(0);
 }
 

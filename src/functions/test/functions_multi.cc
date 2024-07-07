@@ -33,7 +33,6 @@
 #include "FunctionMonomial.hh"
 #include "FunctionPolynomial.hh"
 #include "FunctionSmoothStep.hh"
-#include "FunctionSquareDistance.hh"
 #include "FunctionStandardMath.hh"
 #include "FunctionStaticHead.hh"
 #include "FunctionTabular.hh"
@@ -49,22 +48,23 @@ TEST_FIXTURE(test, values1)
   constexpr size_t dims = 3;
   constexpr size_t nvalues = 20;
   size_t nfunctions = 0;
-  Kokkos::DualView<double**> xyz_nolayout("xyz_nolayout", dims, nvalues);
-  for (int i = 0; i < xyz_nolayout.extent(0); ++i) {
-    for (int j = 0; j < xyz_nolayout.extent(1); ++j) {
+
+  Kokkos::DualView<double**> xyz("xyz_device", dims, nvalues);
+  for (int i = 0; i < xyz.extent(0); ++i) {
+    for (int j = 0; j < xyz.extent(1); ++j) {
       // Values between [0-10]
-      xyz_nolayout.view_host()(i, j) =
+      xyz.view_host()(i, j) =
         (static_cast<double>(rand()) / static_cast<double>(RAND_MAX)) * 10.;
     }
   }
-  Kokkos::deep_copy(xyz_nolayout.view_device(), xyz_nolayout.view_host());
+  Kokkos::deep_copy(xyz.view_device(), xyz.view_host());
 
-  Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::HostSpace> xyz_layout_left_h(
-    "xyz_layout_left_h", dims, nvalues);
-  for (int i = 0; i < xyz_layout_left_h.extent(0); ++i) {
-    for (int j = 0; j < xyz_layout_left_h.extent(1); ++j) {
+  Kokkos::View<double**, Kokkos::HostSpace> xyz_h(
+    "xyz_h", dims, nvalues);
+  for (int i = 0; i < xyz_h.extent(0); ++i) {
+    for (int j = 0; j < xyz_h.extent(1); ++j) {
       // Values between [0-10]
-      xyz_layout_left_h(i, j) = xyz_nolayout.view_host()(i, j);
+      xyz_h(i, j) = xyz.view_host()(i, j);
     }
   }
 
@@ -110,10 +110,10 @@ TEST_FIXTURE(test, values1)
   metric(0) = 1;
   metric(1) = 1;
   metric(2) = 1;
-  x0(0) = xyz_nolayout.view_host()(0, 0);
-  x0(1) = xyz_nolayout.view_host()(1, 0);
-  x0(2) = xyz_nolayout.view_host()(2, 0);
-  functions.push_back(Teuchos::rcp(new FunctionDistance(x0, metric)));
+  x0(0) = xyz.view_host()(0, 0);
+  x0(1) = xyz.view_host()(1, 0);
+  x0(2) = xyz.view_host()(2, 0);
+  functions.push_back(Teuchos::rcp(new FunctionDistance(x0, metric, false)));
 
 
   // Function Linear ---------------------------------------------
@@ -151,7 +151,7 @@ TEST_FIXTURE(test, values1)
   functions.push_back(Teuchos::rcp(new FunctionSmoothStep(1, 2, 3, 4)));
 
   // Function SquareDistance -------------------------------------
-  functions.push_back(Teuchos::rcp(new FunctionSquareDistance(x0, metric)));
+  functions.push_back(Teuchos::rcp(new FunctionDistance(x0, metric, true)));
 
   // Function standard maths -------------------------------------
   functions.push_back(Teuchos::rcp(new FunctionStandardMath("cos", 1., 1., 0.)));
@@ -170,8 +170,8 @@ TEST_FIXTURE(test, values1)
   Kokkos::View<int*, Kokkos::HostSpace> p_l("p_l", dims - 1);
   p_l(0) = 1;
   p_l(1) = 2;
-  x0_l(0) = xyz_nolayout.view_host()(0, 0);
-  x0_l(1) = xyz_nolayout.view_host()(1, 0);
+  x0_l(0) = xyz.view_host()(0, 0);
+  x0_l(1) = xyz.view_host()(1, 0);
   std::unique_ptr<Function> f8(new FunctionMonomial(1., x0_l, p_l));
   functions.push_back(Teuchos::rcp(new FunctionSeparable(std::move(f7), std::move(f8))));
 
@@ -191,29 +191,28 @@ TEST_FIXTURE(test, values1)
   // Create the multifunction
   MultiFunction mf = MultiFunction(functions);
 
-  Kokkos::View<double**, Kokkos::HostSpace> result("result", nvalues, nfunctions);
-  Kokkos::View<double**, Kokkos::LayoutLeft> result_gpu("result", nvalues, nfunctions);
+  // evaluate on device, copy to host
+  Kokkos::View<double**, Kokkos::LayoutLeft> result_device("result_device", nvalues, nfunctions);
+  mf.apply(xyz.view_device(), result_device);
+  auto result_device_h = Kokkos::create_mirror_view_and_copy(DefaultExecutionSpace(), result_device);
 
-  mf.apply(xyz_nolayout.view_device(), result_gpu);
 
+  Kokkos::View<double**, Kokkos::HostSpace> result_host("result_host", nvalues, nfunctions);
   for (int i = 0; i < nvalues; ++i) {
-    Kokkos::View<double*, Kokkos::HostSpace> t = Kokkos::subview(xyz_layout_left_h, Kokkos::ALL, i);
-    Kokkos::View<double*, Kokkos::HostSpace> tmp_res = mf(t);
-    for (int j = 0; j < tmp_res.extent(0); ++j) { result(i, j) = tmp_res(j); }
+    auto t = Kokkos::subview(xyz_h, Kokkos::ALL, Kokkos::pair(i,i+1));
+    auto tmp_res = mf(t);
+    for (int j = 0; j < tmp_res.extent(0); ++j) { result_host(i, j) = tmp_res(j); }
   }
-  // Copy GPU computation back
-  Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::HostSpace> result_gpu_host(
-    "result gpu host", nvalues, nfunctions);
-  Kokkos::deep_copy(result_gpu_host, result_gpu);
+
 
   for (int j = 0; j < nfunctions; ++j) {
     for (int i = 0; i < nvalues; ++i) {
-      if (fabs(result_gpu_host(i, j) - result(i, j)) >= 1.0e-10) {
+      if (std::abs(result_device_h(i, j) - result_host(i, j)) >= 1.0e-10) {
         std::cerr << "Function: " << j << " ";
-        std::cerr << result(i, j) << " == ";
-        std::cerr << result_gpu_host(i, j) << " ; ";
+        std::cerr << result_host(i, j) << " == ";
+        std::cerr << result_device_h(i, j) << " ; ";
       }
-      CHECK_CLOSE(result(i, j), result_gpu_host(i, j), 1.0e-10);
+      CHECK_CLOSE(result_host(i, j), result_device_h(i, j), 1.0e-10);
     }
   }
 }

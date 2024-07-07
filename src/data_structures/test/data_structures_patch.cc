@@ -41,7 +41,7 @@ SUITE(PATCH)
 {
   TEST_FIXTURE(test_mesh, PATCH_CREATE)
   {
-    PatchSpace space{ mesh, false, "box1", CELL, 2, -1 };
+    PatchSpace space{ mesh, false, "box1", Entity_kind::CELL, 2, -1 };
     CHECK_EQUAL(2, space.size());
   }
 
@@ -51,8 +51,8 @@ SUITE(PATCH)
     space->mesh = mesh;
     space->ghosted = false;
 
-    space->addPatch("box1", CELL, 2);
-    space->addPatch("box2", CELL, 2);
+    space->addPatch("box1", Entity_kind::CELL, 2);
+    space->addPatch("box2", Entity_kind::CELL, 2);
     auto mp = Teuchos::rcp(new MultiPatch<double>(space));
 
     auto p1 = (*mp)[0];

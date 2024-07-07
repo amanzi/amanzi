@@ -19,9 +19,9 @@ class HeatConduction {
     auto cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("face", AmanziMesh::FACE, 1)
-      ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1)
+      ->AddComponent("dirichlet_faces", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
     values_ = cvs->Create();
     derivatives_ = cvs->Create();
@@ -37,7 +37,7 @@ class HeatConduction {
     auto bc_value = bcs.bc_value();
     auto bc_model = bcs.bc_model();
 
-    int ncells = mesh_->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
+    int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
     for (int c = 0; c < ncells; c++) {
       values_c(c, 0) = std::pow(uc(c, 0), 3.0);
       derivs_c(c, 0) = 3.0 * std::pow(uc(c, 0), 2.0);

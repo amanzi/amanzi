@@ -71,7 +71,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
   //  meshfactory.create("test/median32x33.exo");
 
   // grab the maps
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   auto cell_map = mesh->getMap(Entity_kind::CELL, false);
   auto cell_map_ghosted = mesh->getMap(Entity_kind::CELL, true);
 
@@ -191,7 +191,7 @@ TEST(FE_MATRIX_FACE_FACE)
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
 
   // grab the maps
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   auto face_map = mesh->getMap(Entity_kind::FACE, false);
   auto face_map_ghosted = mesh->getMap(Entity_kind::FACE, true);
 
@@ -236,7 +236,7 @@ TEST(FE_MATRIX_FACE_FACE)
   control.fillComplete(graph->getDomainMap(), graph->getRangeMap());
 
   // check matrix equality
-  int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f != nfaces; ++f) {
     MatrixFE::cValues_host_view_type mat_vals, ctrl_vals;
     MatrixFE::cLocalIndices_host_view_type mat_inds, ctrl_inds;

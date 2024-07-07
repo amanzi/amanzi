@@ -74,7 +74,7 @@ RunTest(int icase, double gravity)
     std::vector<std::string> setnames;
     setnames.push_back("fracture 1");
     setnames.push_back("fracture 2");
-    surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::FACE);
+    surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::Entity_kind::FACE);
   } else {
     surfmesh = meshfactory.create("test/fractures.exo");
   }
@@ -82,8 +82,8 @@ RunTest(int icase, double gravity)
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = surfmesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells_owned = surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -95,7 +95,7 @@ RunTest(int icase, double gravity)
   Analytic02 ana(surfmesh, v, gravity);
 
   // create boundary data (no mixed bc)
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::Entity_kind::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -115,8 +115,8 @@ RunTest(int icase, double gravity)
   // create solution
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(surfmesh)->SetGhosted(true);
-  cvs->SetComponent("cell", AmanziMesh::CELL, 1)->SetOwned(false);
-  cvs->AddComponent("face", AmanziMesh::FACE, 1);
+  cvs->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1)->SetOwned(false);
+  cvs->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
   CompositeVector solution(*cvs);
   solution.putScalar(0.0);

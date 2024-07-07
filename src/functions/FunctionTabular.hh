@@ -130,26 +130,24 @@ class FunctionTabular : public Function {
   FunctionTabular(const Kokkos::View<const double*, Kokkos::HostSpace>& x,
                   const Kokkos::View<const double*, Kokkos::HostSpace>& y,
                   const int xi,
-                  const Kokkos::View<Form_kind*, Kokkos::HostSpace>& form);
+                  const Kokkos::View<const Form_kind*, Kokkos::HostSpace>& form);
 
   FunctionTabular(const FunctionTabular& other)
     : x_(other.x_), y_(other.y_), form_(other.form_), xi_(other.xi_)
-  {
-    for (const auto& f : other.func_) func_.emplace_back(f->Clone());
-  }
+  {}
 
   std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionTabular>(*this); }
 
-  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>&) const override;
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>&) const override;
 
   void apply(const Kokkos::View<const double**>& in,
              Kokkos::View<double*>& out,
              const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override;
 
  private:
-  Kokkos::DualView<double*, Amanzi::DeviceOnlyMemorySpace> x_;
-  Kokkos::DualView<double*, Amanzi::DeviceOnlyMemorySpace> y_;
-  Kokkos::DualView<Form_kind*, Amanzi::DeviceOnlyMemorySpace> form_;
+  Kokkos::DualView<const double*> x_;
+  Kokkos::DualView<const double*> y_;
+  Kokkos::DualView<const Form_kind*> form_;
   int xi_;
 
  private: // helper functions
@@ -159,6 +157,7 @@ class FunctionTabular : public Function {
 };
 
 
+namespace Impl {
 
 template <class DoubleView_type,
           class FormView_type,
@@ -167,22 +166,22 @@ class FunctionTabularFunctor {
  public:
   FunctionTabularFunctor(const DoubleView_type& x,
                         const DoubleView_type& y,
-                        const FormView_type& forms,
+                        const FormView_type& form,
                         int xi,
                         const InView_type& in)
-    : x_(x), y_(y), forms_(forms), xi_(xi), in_(in) {}
+    : x_(x), y_(y), form_(form), xi_(xi), in_(in) {}
 
   KOKKOS_INLINE_FUNCTION
-  double operator()(const int i)
+  double operator()(const int i) const
   {
     double xv = in_(xi_, i);
-    int n = x_.extent(0);
+    int nx = x_.extent(0);
 
     double y(0.);
     if (xv <= x_[0]) {
       y = y_[0];
-    } else if (xv > x_[n - 1]) {
-      y = y_[n - 1];
+    } else if (xv > x_[nx - 1]) {
+      y = y_[nx - 1];
     } else {
       int j2 = 0;
       while ((j2 < nx) && (xv > x_[j2])) ++j2;
@@ -212,11 +211,10 @@ class FunctionTabularFunctor {
   DoubleView_type x_, y_;
   FormView_type form_;
   int xi_;
+  InView_type in_;
 };
 
-
-
-
+} // namespace Impl
 } // namespace Amanzi
 
 

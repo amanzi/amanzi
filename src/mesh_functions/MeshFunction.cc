@@ -194,7 +194,7 @@ getMeshFunctionCoordinates(double time, const PatchSpace& ps)
   // if empty, nothing to do
   if (ids.size() == 0) return Kokkos::View<double**>();
 
-  if (ps.entity_kind == AmanziMesh::NODE) {
+  if (ps.entity_kind == AmanziMesh::Entity_kind::NODE) {
     Kokkos::parallel_for(
       "computeMeshFunction txyz init node", ps.size(), KOKKOS_LAMBDA(const int& i) {
         txyz(0, i) = time;
@@ -204,7 +204,7 @@ getMeshFunctionCoordinates(double time, const PatchSpace& ps)
         if (mesh.getSpaceDimension() == 3) txyz(3, i) = cc[2];
       });
 
-  } else if (ps.entity_kind == AmanziMesh::CELL) {
+  } else if (ps.entity_kind == AmanziMesh::Entity_kind::CELL) {
     Kokkos::parallel_for(
       "computeMeshFunction txyz init cell", ps.size(), KOKKOS_LAMBDA(const int& i) {
         txyz(0, i) = time;
@@ -214,7 +214,7 @@ getMeshFunctionCoordinates(double time, const PatchSpace& ps)
         if (dim == 3) txyz(3, i) = cc[2];
       });
 
-  } else if (ps.entity_kind == AmanziMesh::FACE) {
+  } else if (ps.entity_kind == AmanziMesh::Entity_kind::FACE) {
     Kokkos::parallel_for(
       "computeMeshFunction txyz init face", ps.size(), KOKKOS_LAMBDA(const int& i) {
         txyz(0, i) = time;

@@ -71,15 +71,15 @@ writeMarshakMatrix(std::string op_list_name, double floor, bool jac)
   double t = 2.0;
 
   // set the diffusion coefficient
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
-  int nfaces_owned = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int nbfaces = mesh->getNumEntities(AmanziMesh::BOUNDARY_FACE, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nbfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE, AmanziMesh::Parallel_kind::OWNED);
 
   // modify diffusion coefficient
   CompositeVectorSpace K_map;
   K_map.SetMesh(mesh);
-  K_map.AddComponent("cell", AmanziMesh::CELL, 1);
+  K_map.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   auto K = Teuchos::rcp(new TensorVector(K_map));
 
   std::vector<WhetStone::Tensor<DefaultHostMemorySpace>> host_tensors(K->size());
@@ -90,14 +90,14 @@ writeMarshakMatrix(std::string op_list_name, double floor, bool jac)
   K->Init(host_tensors);
 
   // create boundary data (no mixed bc)
-  auto bc = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
 
   {
     auto bc_value = bc->bc_value();
     auto bc_model = bc->bc_model();
 
-    const auto& bf_map = *mesh->getMap(AmanziMesh::BOUNDARY_FACE, false);
-    const auto& f_map = *mesh->getMap(AmanziMesh::FACE, false);
+    const auto& bf_map = *mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false);
+    const auto& f_map = *mesh->getMap(AmanziMesh::Entity_kind::FACE, false);
 
     for (int bf = 0; bf != bf_map.getLocalNumElements(); ++bf) {
       auto f = f_map.getLocalElement(bf_map.getGlobalElement(bf));
@@ -120,8 +120,8 @@ writeMarshakMatrix(std::string op_list_name, double floor, bool jac)
 
   // Create and initialize solution (temperature) field.
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
-  if (op_list_name != "fv: default") { cvs->AddComponent("face", AmanziMesh::FACE, 1); }
+  cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+  if (op_list_name != "fv: default") { cvs->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1); }
 
   auto solution = cvs->Create();
   {
@@ -205,7 +205,7 @@ writeMarshakMatrix(std::string op_list_name, double floor, bool jac)
 
   // flux vector
   auto cvs_flux = Teuchos::rcp(new CompositeVectorSpace());
-  cvs_flux->SetMesh(mesh)->SetComponent("face", AmanziMesh::FACE, 1)->SetGhosted(true);
+  cvs_flux->SetMesh(mesh)->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1)->SetGhosted(true);
   auto flux = cvs_flux->Create();
   op->UpdateFlux(solution.ptr(), flux.ptr());
   if (jac) op->UpdateMatricesNewtonCorrection(flux.ptr(), solution.ptr());

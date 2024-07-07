@@ -97,19 +97,19 @@ TreeOperator::TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& tvs) : Tre
 /* ******************************************************************
 * Copy constructor does a deep copy.
 ****************************************************************** */
-TreeOperator::TreeOperator(const TreeOperator& other) : TreeOperator(other.row_map_, other.col_map_)
-{
-  vo_ = other.vo_;
-  inv_plist_ = other.inv_plist_;
+// TreeOperator::TreeOperator(const TreeOperator& other) : TreeOperator(other.row_map_, other.col_map_)
+// {
+//   vo_ = other.vo_;
+//   inv_plist_ = other.inv_plist_;
 
-  for (int i = 0; i != row_size_; ++i) {
-    for (int j = 0; j != col_size_; ++j) {
-      if (other.blocks_[i][j] != Teuchos::null) { blocks_[i][j] = other.blocks_[i][j]->clone(); }
-    }
-  }
+//   for (int i = 0; i != row_size_; ++i) {
+//     for (int j = 0; j != col_size_; ++j) {
+//       if (other.blocks_[i][j] != Teuchos::null) { blocks_[i][j] = other.blocks_[i][j]->clone(); }
+//     }
+//   }
 
-  if (other.data_ != Teuchos::null) { data_ = other.data_->clone(); }
-}
+//   if (other.data_ != Teuchos::null) { data_ = other.data_->clone(); }
+// }
 
 
 /* ******************************************************************

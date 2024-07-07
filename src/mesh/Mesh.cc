@@ -78,7 +78,7 @@ Mesh::cacheCellFaces()
   assert(framework_mesh_.get());
   if (data_.cell_faces_cached) return;
   int num_cells =
-    framework_mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+    framework_mesh_->getNumEntities(Entity_kind::CELL, Parallel_kind::ALL);
   auto lambda1 = [this](Entity_ID c, MeshFramework::cEntity_ID_View& cfaces) {
     this->framework_mesh_->getCellFaces(c, cfaces);
   };
@@ -111,7 +111,7 @@ Mesh::cacheCellNodes()
   assert(framework_mesh_.get());
   if (data_.cell_nodes_cached) return;
   int num_cells =
-    framework_mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+    framework_mesh_->getNumEntities(Entity_kind::CELL, Parallel_kind::ALL);
   auto lambda = [this](Entity_ID c, MeshFramework::cEntity_ID_View& cnodes) {
     this->framework_mesh_->getCellNodes(c, cnodes);
   };
@@ -406,21 +406,21 @@ Mesh::cacheParentEntities()
   data_.parent_cells.resize(data_.ncells_all);
   for (Entity_ID i = 0; i != data_.ncells_all; ++i) {
     view<MemSpace_kind::HOST>(data_.parent_cells)[i] =
-      framework_mesh_->getEntityParent(AmanziMesh::Entity_kind::CELL, i);
+      framework_mesh_->getEntityParent(Entity_kind::CELL, i);
   }
   Kokkos::deep_copy(data_.parent_cells.d_view, data_.parent_cells.h_view);
 
   data_.parent_faces.resize(data_.nfaces_all);
   for (Entity_ID i = 0; i != data_.nfaces_all; ++i) {
     view<MemSpace_kind::HOST>(data_.parent_faces)[i] =
-      framework_mesh_->getEntityParent(AmanziMesh::Entity_kind::FACE, i);
+      framework_mesh_->getEntityParent(Entity_kind::FACE, i);
   }
   Kokkos::deep_copy(data_.parent_faces.d_view, data_.parent_faces.h_view);
 
   data_.parent_nodes.resize(data_.nnodes_all);
   for (Entity_ID i = 0; i != data_.nnodes_all; ++i) {
     view<MemSpace_kind::HOST>(data_.parent_nodes)[i] =
-      framework_mesh_->getEntityParent(AmanziMesh::Entity_kind::NODE, i);
+      framework_mesh_->getEntityParent(Entity_kind::NODE, i);
   }
   Kokkos::deep_copy(data_.parent_nodes.d_view, data_.parent_nodes.h_view);
 
@@ -431,17 +431,34 @@ Mesh::cacheParentEntities()
 void
 Mesh::cacheDefault()
 {
-  if (hasNodes()) { cacheNodeCoordinates(); }
+  // topology
   cacheCellFaces();
   cacheFaceCells();
-  if (hasNodes()) { cacheFaceNodes(); }
-  cacheCellGeometry();
-  cacheFaceGeometry();
+  if (hasEdges()) cacheFaceEdges();
+  if (hasNodes()) cacheFaceNodes();
+
   if (hasEdges()) {
-    cacheFaceEdges();
     cacheEdgeFaces();
-    cacheEdgeGeometry();
+    if (hasNodes()) cacheEdgeNodes();
   }
+
+  if (hasNodes()) {
+    cacheNodeFaces();
+    if (hasEdges()) cacheNodeEdges();
+  }
+
+  // geometry
+  if (hasNodes()) {
+    cacheNodeCoordinates();
+    // if (hasEdges()) cacheEdgeCoordinates();
+    // cacheFaceCoordinates();
+    // cacheCellCoordinates();
+  }
+
+  if (hasEdges()) cacheEdgeGeometry();  // edge centroid, length, vector
+  cacheFaceGeometry(); // centroid, area, normal
+  cacheCellGeometry();  // cell centroid, volume
+
   syncCache();
 }
 
@@ -449,24 +466,40 @@ Mesh::cacheDefault()
 void
 Mesh::cacheAll()
 {
+  // topology
   cacheCellFaces();
+  if (hasEdges()) cacheCellEdges();
+  if (hasNodes()) cacheCellNodes();
+
   cacheFaceCells();
-  cacheCellCoordinates();
-  cacheFaceCoordinates();
+  if (hasEdges()) cacheFaceEdges();
+  if (hasNodes()) cacheFaceNodes();
+
+  if (hasEdges()) {
+    cacheEdgeCells();
+    cacheEdgeFaces();
+    if (hasNodes()) cacheEdgeNodes();
+  }
+
+  if (hasNodes()) {
+    cacheNodeCells();
+    cacheNodeFaces();
+    if (hasEdges()) cacheNodeEdges();
+  }
+
+  // geometry
   if (hasNodes()) {
     cacheNodeCoordinates();
-    cacheCellNodes();
-    cacheNodeCells();
-    cacheFaceNodes();
-    cacheNodeFaces();
+    if (hasEdges()) cacheEdgeCoordinates();
+    cacheFaceCoordinates();
+    cacheCellCoordinates();
   }
-  if (hasEdges()) {
-    cacheCellEdges();
-    cacheEdgeCells();
-    cacheNodeEdges();
-    cacheEdgeNodes();
-    cacheEdgeCoordinates();
-  }
+
+  if (hasEdges()) cacheEdgeGeometry();  // edge centroid, length, vector
+  cacheFaceGeometry(); // centroid, area, normal
+  cacheCellGeometry();  // cell centroid, volume
+
+  // sync host to device
   syncCache();
 }
 
@@ -565,6 +598,7 @@ Mesh::setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_mesh)
     data_.nboundary_nodes_owned = maps_->getNBoundaryNodes(Parallel_kind::OWNED);
     data_.nboundary_nodes_all = maps_->getNBoundaryNodes(Parallel_kind::ALL);
   }
+
   data_.boundary_faces = maps_->boundary_faces;
   data_.boundary_nodes = maps_->boundary_nodes;
 
@@ -609,11 +643,11 @@ Mesh::printMeshStatistics() const
 {
   auto vo_ = Teuchos::rcp(new VerboseObject("Mesh Output", *plist_));
   if (vo_.get() && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
-    int ncells = getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-    int nfaces = getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-    int nnodes = getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::OWNED);
+    int ncells = getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+    int nfaces = getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+    int nnodes = getNumEntities(Entity_kind::NODE, Parallel_kind::OWNED);
     int nedges(0);
-    if (data_.has_edges_) nedges = getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::OWNED);
+    if (data_.has_edges_) nedges = getNumEntities(Entity_kind::EDGE, Parallel_kind::OWNED);
 
     int min_out[4], max_out[4], sum_out[4], tmp_in[4] = { ncells, nfaces, nedges, nnodes };
     Teuchos::reduceAll(*getComm(), Teuchos::REDUCE_MIN, 4, tmp_in, min_out);

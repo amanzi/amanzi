@@ -37,8 +37,8 @@ struct test_cv_vandelay {
     MeshFactory meshfactory(comm);
     mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
-    std::vector<Entity_kind> locations = { CELL, FACE };
-    std::vector<Entity_kind> locations_v = { CELL, BOUNDARY_FACE };
+    std::vector<Entity_kind> locations = { Entity_kind::CELL, Entity_kind::FACE };
+    std::vector<Entity_kind> locations_v = { Entity_kind::CELL, Entity_kind::BOUNDARY_FACE };
     std::vector<std::string> names = { "cell", "face" };
     std::vector<std::string> names_v = { "cell", "boundary_face" };
 

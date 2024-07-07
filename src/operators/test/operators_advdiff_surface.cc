@@ -73,13 +73,13 @@ TEST(ADVECTION_DIFFUSION_SURFACE)
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top surface"));
 
-  RCP<Mesh> surfmesh = meshfactory.create(mesh_mstk, setnames, AmanziMesh::FACE);
+  RCP<Mesh> surfmesh = meshfactory.create(mesh_mstk, setnames, AmanziMesh::Entity_kind::FACE);
 
   /* modify diffusion coefficient */
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = surfmesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells_owned = surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -89,7 +89,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE)
 
   // create boundary data
   Teuchos::RCP<BCs> bc =
-    Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+    Teuchos::rcp(new BCs(surfmesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
 
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
@@ -127,7 +127,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE)
   // get a flux field
   Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& uf = *u->viewComponent("face");
-  int nfaces = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces = surfmesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   Point vel(4.0, 4.0, 0.0);
   for (int f = 0; f < nfaces; f++) { uf[0][f] = vel * surfmesh->face_normal(f); }
 
@@ -143,7 +143,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE)
 
   double dT = 0.02;
   Teuchos::RCP<PDE_Accumulation> op_acc =
-    Teuchos::rcp(new PDE_Accumulation(AmanziMesh::CELL, global_op));
+    Teuchos::rcp(new PDE_Accumulation(AmanziMesh::Entity_kind::CELL, global_op));
   op_acc->AddAccumulationDelta(solution, phi, phi, dT, "cell");
 
   // BCs and assemble

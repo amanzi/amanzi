@@ -8,16 +8,17 @@
 */
 
 //!
-#include <algorithm>
+#include "errors.hh"
+#include "ViewUtils.hh"
 
 #include "FunctionPolynomial.hh"
-#include "errors.hh"
 
 namespace Amanzi {
 
 FunctionPolynomial::FunctionPolynomial(const Kokkos::View<const double*, Kokkos::HostSpace>& c,
                                        const Kokkos::View<const int*, Kokkos::HostSpace>& p,
-                                       double x0)
+        double x0) :
+  x0_(x0)
 {
   if (c.extent(0) < 1) {
     Errors::Message m;
@@ -30,8 +31,6 @@ FunctionPolynomial::FunctionPolynomial(const Kokkos::View<const double*, Kokkos:
     Exceptions::amanzi_throw(m);
   }
 
-  x0_ = x0;
-
   // Find min and max
   pmin_ = p(0);
   pmax_ = p(0);
@@ -43,13 +42,15 @@ FunctionPolynomial::FunctionPolynomial(const Kokkos::View<const double*, Kokkos:
   pmax_ = std::max(0, pmax_);
 
   int n = pmax_ - pmin_ + 1;
-  std::vector<double> c(n, 0.);
-  for (int j = 0; j < c.size(); ++j) c_[p[j] - pmin_] += c[j];
-  c_ = asDualView(c);
+  Kokkos::View<double*, Kokkos::HostSpace> c2(c.label(), n);
+  Kokkos::deep_copy(c2, 0.);
+
+  for (int j = 0; j < c.extent(0); ++j) c2[p[j] - pmin_] += c[j];
+  c_ = asDualView(c2);
 }
 
 double
-FunctionPolynomial::operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
+FunctionPolynomial::operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const
 {
   auto f = Impl::FunctionPolynomialFunctor(c_.view_host(), pmin_, pmax_, x0_, x);
   return f(0);

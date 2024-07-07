@@ -60,10 +60,11 @@ class FunctionStaticHead : public Function {
   {}
 
   std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionStaticHead>(*this); }
+
   // The array (t,x,y,z) is passed as *x, so that x[dim_] is z in 3D, y in 2D
   double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const override
   {
-    return patm_ + rho_g_ * ((*h_)(x)-x(dim_));
+    return patm_ + rho_g_ * ((*h_)(x) - x(dim_,0));
   }
 
   void apply(const Kokkos::View<const double**>& in,
@@ -71,17 +72,20 @@ class FunctionStaticHead : public Function {
              const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
   {
     h_->apply(in, out, ids);
+    double patm(patm_);
+    double rho_g(rho_g_);
+    int dim(dim_);
 
     if (ids) {
       const auto& ids_loc = *ids;
       Kokkos::parallel_for(
         "FunctionStaticHead::apply", ids_loc.extent(0), KOKKOS_LAMBDA(const int& i) {
-          out(ids_loc(i)) = patm_ + rho_g_ * (out(ids_loc(i)) - in(dim_, i));
+          out(ids_loc(i)) = patm + rho_g * (out(ids_loc(i)) - in(dim, i));
         });
     } else {
       Kokkos::parallel_for(
         "FunctionStaticHead::apply", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(i) = patm_ + rho_g_ * (out(i) - in(dim_, i));
+          out(i) = patm + rho_g * (out(i) - in(dim, i));
         });
     }
   }

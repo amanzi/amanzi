@@ -52,37 +52,6 @@ Example:
 
 namespace Amanzi {
 
-namespace Impl {
-
-template <class DoubleView_type,
-          class InView_type>
-class FunctionLinearFunctor {
- public:
-  FunctionLinearFunctor(double y0,
-                        const DoubleView_type& grad,
-                        const DoubleView_type& x0,
-                        const InView_type& in)
-    : y0_(y0), grad_(grad), in_(in) {}
-
-  KOKKOS_INLINE_FUNCTION
-  double operator()(const int i)
-  {
-    double y = y0_;
-    for (int j = 0; j < grad_.extent(0); ++j)
-      y += grad_[j] * (in_(j, i) - x0_[j]);
-    return y;
-  }
-
- private:
-  double y0_;
-  DoubleView_type grad_;
-  DoubleView_type x0_;
-  InView_type in_;
-};
-
-} // namespace Impl
-
-
 class FunctionLinear : public Function {
  public:
   FunctionLinear(double y0,
@@ -104,5 +73,35 @@ class FunctionLinear : public Function {
   Kokkos::DualView<const double*> grad_, x0_;
 };
 
+
+namespace Impl {
+
+template <class DoubleView_type,
+          class InView_type>
+class FunctionLinearFunctor {
+ public:
+  FunctionLinearFunctor(double y0,
+                        const DoubleView_type& grad,
+                        const DoubleView_type& x0,
+                        const InView_type& in)
+    : y0_(y0), grad_(grad), x0_(x0), in_(in) {}
+
+  KOKKOS_INLINE_FUNCTION
+  double operator()(const int i) const
+  {
+    double y = y0_;
+    for (int j = 0; j < grad_.extent(0); ++j)
+      y += grad_[j] * (in_(j, i) - x0_[j]);
+    return y;
+  }
+
+ private:
+  double y0_;
+  DoubleView_type grad_;
+  DoubleView_type x0_;
+  InView_type in_;
+};
+
+} // namespace Impl
 } // namespace Amanzi
 

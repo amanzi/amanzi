@@ -63,7 +63,7 @@ TEST(STATE_CONTAINS_FACTORIES_WITH_CREATE)
     ->SetGhosted();
 
   s.Require<CompositeVector, CompositeVectorSpace>("my_vec", Tags::DEFAULT)
-    .SetComponent("cell", AmanziMesh::CELL, 1);
+    .SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
   // putting TreeVectors into state is a little tricky because they are
   // typically created from existing CompositeVectors.  We setup first, then
@@ -143,7 +143,7 @@ TEST(STATE_HETEROGENEOUS_DATA)
   // require data with factory
   s.Require<CompositeVector, CompositeVectorSpace>("my_vec", Tags::DEFAULT, "my_vec_owner")
     .SetMesh(s.GetMesh())
-    ->SetComponent("cell", AmanziMesh::CELL, 1)
+    ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
     ->SetGhosted();
 
   // require patch data

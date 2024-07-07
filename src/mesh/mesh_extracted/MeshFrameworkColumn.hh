@@ -160,8 +160,20 @@ class MeshFrameworkColumn : public MeshFramework {
   // different processors
   virtual void getNodeFaces(const Entity_ID nodeid, cEntity_ID_View& faceids) const override
   {
-    Errors::Message mesg("Not implemented");
-    Exceptions::amanzi_throw(mesg);
+    cEntity_ID_View cells;
+    getNodeCells(nodeid, cells);
+    Entity_ID_View faces("node_faces", 1);
+    if (cells.size() == 1) {
+      if (cells(0) == 0) {
+        faces(0) = 0;
+      } else {
+        faces(0) = getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED) - 1;
+      }
+    } else {
+      AMANZI_ASSERT(cells.size() == 2);
+      faces(0) = std::max(cells(0), cells(1));
+    }
+    faceids = faces;
   }
 
   //

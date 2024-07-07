@@ -63,7 +63,7 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA)
   //  meshfactory.create("test/median32x33.exo");
 
   // grab the maps
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells = mesh->getNumEntities(Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   auto cell_map = mesh->getMap(Entity_kind::CELL, false);
   auto cell_map_ghosted = mesh->getMap(Entity_kind::CELL, true);
 
@@ -134,7 +134,7 @@ TEST(FE_GRAPH_FACE_FACE)
   //  meshfactory.create("test/median32x33.exo");
 
   // grab the maps
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells = mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
   auto face_map = mesh->getMap(Entity_kind::FACE, false);
   auto face_map_ghosted = mesh->getMap(Entity_kind::FACE, true);
 

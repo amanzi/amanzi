@@ -75,9 +75,9 @@ class Upwind {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1)
-      ->AddComponent("face", AmanziMesh::FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("dirichlet_faces", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1)
+      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     return cvs;
   }
 

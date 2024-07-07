@@ -30,7 +30,7 @@ FunctionExprTK::FunctionExprTK(int n, const std::string& formula)
 
 
 double
-FunctionExprTK::operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
+FunctionExprTK::operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const
 {
   return (*exprtk_)(x);
 }

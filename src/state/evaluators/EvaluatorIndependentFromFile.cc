@@ -97,15 +97,15 @@ EvaluatorIndependentFromFile::EnsureCompatibility(State& S)
     if (locname_ == "cell") {
       S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
         .SetMesh(mesh)
-        ->AddComponent(compname_, AmanziMesh::CELL, ndofs_);
+        ->AddComponent(compname_, AmanziMesh::Entity_kind::CELL, ndofs_);
     } else if (locname_ == "face") {
       S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
         .SetMesh(mesh)
-        ->AddComponent(compname_, AmanziMesh::FACE, ndofs_);
+        ->AddComponent(compname_, AmanziMesh::Entity_kind::FACE, ndofs_);
     } else if (locname_ == "boundary_face") {
       S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
         .SetMesh(mesh)
-        ->AddComponent(compname_, AmanziMesh::BOUNDARY_FACE, ndofs_);
+        ->AddComponent(compname_, AmanziMesh::Entity_kind::BOUNDARY_FACE, ndofs_);
     } else {
       Errors::Message m;
       m << "IndependentVariableFromFile: invalid location name: \"" << locname_ << "\"";
@@ -151,8 +151,8 @@ EvaluatorIndependentFromFile::Update_(State& S)
 
   double t = S.get_time();
   if (time_func_ != Teuchos::null) {
-    Kokkos::View<double*, Kokkos::HostSpace> point("time", 1);
-    point(0) = t;
+    Kokkos::View<double**, Kokkos::HostSpace> point("time", 1, 1);
+    point(0,0) = t;
     t = (*time_func_)(point);
   }
 

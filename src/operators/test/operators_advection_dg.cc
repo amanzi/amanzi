@@ -107,10 +107,10 @@ AdvectionSteady(int dim,
     pk_name = "PK operator 3D";
   }
 
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // create global operator
   // -- flux term
@@ -141,7 +141,7 @@ AdvectionSteady(int dim,
   // -- reaction function
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh)->SetGhosted(true);
-  cvs->AddComponent("cell", AmanziMesh::CELL, 1);
+  cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
   auto K = Teuchos::rcp(new CompositeVector(*cvs));
   auto Kc = K->viewComponent("cell", true);
@@ -216,7 +216,7 @@ AdvectionSteady(int dim,
   }
 
   // -- boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<std::vector<double>>& bc_value = bc->bc_value_vector(nk);
 
