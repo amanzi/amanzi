@@ -9,8 +9,8 @@ rc=$?
 
 echo "copying data to install"
 
-cp -r @ECOSIM_source_dir@ ../../../amanzi_tpls-install-master-Debug
-cd ../../../amanzi_tpls-install-master-Debug
+cp -r @ECOSIM_source_dir@ @TPL_INSTALL_PREFIX@
+cd @TPL_INSTALL_PREFIX@
 
 mv ecosim--source/ ecosim/
 
