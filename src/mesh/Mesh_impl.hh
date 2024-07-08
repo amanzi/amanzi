@@ -49,7 +49,6 @@ Mesh::getSetEntities(const std::string& region_name,
 {
   auto key = std::make_tuple(region_name, kind, ptype);
   auto key_all = std::make_tuple(region_name, kind, Parallel_kind::ALL);
-  bool check_new = false;
 
   if (!sets_->count(key_all)) {
     auto region = getGeometricModel()->FindRegion(region_name);
@@ -60,7 +59,6 @@ Mesh::getSetEntities(const std::string& region_name,
     }
 
     (*sets_)[key_all] = asDualView(resolveMeshSet(*region, kind, Parallel_kind::ALL, *this));
-    check_new = true;
   }
 
   if (!sets_->count(key)) {
@@ -84,7 +82,6 @@ Mesh::getSetEntities(const std::string& region_name,
     } else {
       AMANZI_ASSERT(false);
     }
-    check_new = true;
   }
 
   return view<MEM>(sets_->at(key));
