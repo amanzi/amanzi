@@ -107,7 +107,7 @@ createMapToParent(const AmanziMesh::Mesh& subdomain_mesh,
 // Creates an importer from a surface mesh lifted from an extracted subdomain
 // mesh to the global surface mesh (which itself was lifted from the extracted
 // subdomain's parent mesh).
-Mesh::Entity_ID_View
+MeshCache::Entity_ID_View
 createMapSurfaceToSurface(const AmanziMesh::Mesh& subdomain_mesh,
                           const AmanziMesh::Mesh& parent_mesh);
 

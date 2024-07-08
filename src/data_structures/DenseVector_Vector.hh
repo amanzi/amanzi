@@ -18,14 +18,6 @@
 
 namespace Amanzi {
 
-template<class MemorySpace>
-struct DenseVector_VectorData : CSR<double, 1, MemorySpace> {
-  template <typename MEM>
-  using Value_type = WhetStone::DenseVector<MEM>;
-
-}
-
-
 //
 // A simple data structure that keeps a vector of WhetStone Tensors and a
 // CompositeVectorSpace to describe the layout/ghosting/entities those tensors

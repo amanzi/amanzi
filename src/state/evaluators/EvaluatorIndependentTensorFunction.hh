@@ -22,23 +22,6 @@ namespace Functions {
 class CompositeVectorFunction;
 }
 
-namespace Impl {
-
-//
-// Hides need parallel_for in a function to avoid issues with public/protected access.
-//
-template <class View_type>
-void
-assignViewToTensorVectorDiag(const View_type& v, int j, TensorVector& tv)
-{
-  Kokkos::parallel_for(
-    "TensorFunctionUpdate", v.extent(0), KOKKOS_LAMBDA(const int& i) {
-      auto Ti = tv.at(j + i);
-      Ti(0, 0) = v(i, 0);
-    });
-}
-} // namespace Impl
-
 class EvaluatorIndependentTensorFunction
   : public EvaluatorIndependent<TensorVector, TensorVector_Factory> {
  public:
@@ -71,5 +54,24 @@ class EvaluatorIndependentTensorFunction
  private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentTensorFunction> reg_;
 };
+
+
+namespace Impl {
+
+//
+// Hides need parallel_for in a function to avoid issues with public/protected access.
+//
+template <class View_type>
+void
+assignViewToTensorVectorDiag(const View_type& v, int j, TensorVector& tv)
+{
+  Kokkos::parallel_for(
+    "TensorFunctionUpdate", v.extent(0), KOKKOS_LAMBDA(const int& i) {
+      auto Ti = tv.at(j + i);
+      Ti(0, 0) = v(i, 0);
+    });
+}
+} // namespace Impl
+
 
 } // namespace Amanzi

@@ -29,17 +29,17 @@ namespace Amanzi {
 struct TensorVector {
   TensorVector() {}
 
-  TensorVector(const CompositeVectorSpace& map_, bool ghosted_ = false)
-    : map(map_), ghosted(ghosted_), inited(false)
+  TensorVector(const CompositeVectorSpace& map, bool ghosted_ = false)
+    : ghosted(ghosted_), inited(false)
   {
-    prealloc_();
+    prealloc_(map);
   }
 
 
-  TensorVector(const CompositeVectorSpace& map_, int dim_, int rank_, bool ghosted_ = false)
-    : map(map_), ghosted(ghosted_), inited(false)
+  TensorVector(const CompositeVectorSpace& map, int dim_, int rank_, bool ghosted_ = false)
+    : ghosted(ghosted_), inited(false)
   {
-    prealloc_();
+    prealloc_(map);
     for (int i = 0; i != size(); ++i) set_shape(i, dim_, rank_);
     Init();
   }
@@ -145,12 +145,11 @@ struct TensorVector {
   }
 
   CSR_Tensor data;
-  CompositeVectorSpace map;
   bool ghosted;
   bool inited;
 
  private:
-  void prealloc_()
+  void prealloc_(const CompositeVectorSpace& map)
   {
     // how many entities?
     int count = 0;
