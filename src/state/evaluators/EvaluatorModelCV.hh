@@ -155,7 +155,6 @@ EvaluatorModelCV<Model, Device_type>::Evaluate_(const State& S,
     model_->setViews(dependency_views, result_views, S);
     Kokkos::RangePolicy<typename Device_type::execution_space> range(0, result_views[0].extent(0));
     Kokkos::parallel_for(name_, range, *model_);
-    Kokkos::fence();
 
     // must clear the views -- this tells tpetra's dual view that it can sync
     // if needed.
@@ -191,7 +190,6 @@ EvaluatorModelCV<Model, Device_type>::EvaluatePartialDerivative_(
     Impl::EvaluatorModelLauncher<Model_type::n_dependencies - 1, Model_type, Device_type> launcher(
       name_, wrt, dependencies_, *model_);
     launcher.launch(result_views[0].extent(0));
-    Kokkos::fence();
 
     // Reset views
     model_->freeViews();

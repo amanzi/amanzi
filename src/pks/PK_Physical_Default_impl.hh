@@ -116,13 +116,11 @@ PK_Physical_Default<PK_type>::initialize()
       message << PK_type::getName() << " has no initial condition parameter list.";
       Exceptions::amanzi_throw(message);
     }
-    Kokkos::fence();
 
     // -- Calculate the IC.
     Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
     ic_plist.setName(key_);
     record.Initialize(ic_plist);
-    Kokkos::fence();
 
     // debug
     db_->WriteVector(key_ + " IC", record.GetPtr<CompositeVector>().ptr(), true);

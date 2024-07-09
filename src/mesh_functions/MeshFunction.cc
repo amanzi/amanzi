@@ -236,7 +236,6 @@ void
 computeFunction(const MultiFunction& f, double time, Patch<double>& p)
 {
   auto txyz = getMeshFunctionCoordinates(time, *p.space);
-  Kokkos::fence();
   f.apply(txyz, p.data);
 }
 
@@ -253,7 +252,6 @@ computeFunction(const MultiFunction& f, double time, const PatchSpace& ps, Compo
 
   auto ids = ps.getIDs();
 
-  Kokkos::fence();
   Kokkos::View<double**, Kokkos::LayoutLeft> cv_v =
     cv.viewComponent(AmanziMesh::to_string(ps.entity_kind), ps.ghosted);
   f.apply(txyz, cv_v, &ids);

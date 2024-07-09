@@ -143,7 +143,6 @@ EvaluatorModelPatch<Model, Device_type>::Update_(State& S)
     Kokkos::RangePolicy<typename Device_type::execution_space> range(0, result_views[0].extent(0));
 
     Kokkos::parallel_for(name_, range, *model_);
-    Kokkos::fence();
 
     // Reset views
     model_ = Teuchos::rcp<Model_type>(new Model_type(plist_));
