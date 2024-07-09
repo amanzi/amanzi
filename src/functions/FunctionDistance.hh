@@ -71,7 +71,7 @@ class FunctionDistanceFunctor {
                           const ParView_type& metric,
                           bool squared,
                           const InView_type& in)
-    : x0_(x0), metric_(metric), in_(in), squared_(squared_)  {}
+    : x0_(x0), metric_(metric), in_(in), squared_(squared)  {}
 
   KOKKOS_INLINE_FUNCTION
   double operator()(const int i) const {

@@ -650,7 +650,7 @@ SUITE(distance_factory)
     Kokkos::View<double**, Kokkos::HostSpace> x("x", 2, 1);
     x(0,0) = 2.;
     x(1,0) = 2.;
-    CHECK_EQUAL((*f)(x), 5.0);
+    CHECK_EQUAL(5.0, (*f)(x));
   }
   TEST(missing_parameter)
   {

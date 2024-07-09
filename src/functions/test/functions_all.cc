@@ -33,8 +33,8 @@ void
 test_values(Function& f, std::vector<double>& values, std::vector<double>& res)
 {
   // CPU
-  Kokkos::View<double**, Kokkos::HostSpace> x("x", 1,1);
-  Kokkos::View<double*, Kokkos::HostSpace> tmp_x("tmp_x", values.size());
+  Kokkos::View<double**, Kokkos::HostSpace> x("txyz", 1,1);
+  Kokkos::View<double*, Kokkos::HostSpace> tmp_x("tmp_txyz", values.size());
   for (int i = 0; i < values.size(); ++i) {
     x(0,0) = values[i];
     CHECK_EQUAL(f(x), res[i]);
@@ -142,7 +142,6 @@ TEST(tabular_test)
   // Verify the constructor fails with only a single table entry.
   xvec = Kokkos::subview(x, Kokkos::make_pair(0, 1));
   yvec = Kokkos::subview(y, Kokkos::make_pair(0, 1));
-  // f = new FunctionTabular(xvec, yvec);
   CHECK_THROW(auto f3 = new FunctionTabular(xvec, yvec, xi), Errors::Message);
   // Verify the constructor fails when the x values are not strictly increasing.
   xvec = Kokkos::subview(x, Kokkos::make_pair(0, 5));

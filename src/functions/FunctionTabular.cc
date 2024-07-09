@@ -96,7 +96,7 @@ FunctionTabular::apply(const Kokkos::View<const double**>& in,
 double
 FunctionTabular::operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const
 {
-  auto f = Impl::FunctionTabularFunctor(x_.view_device(), y_.view_device(), form_.view_device(), xi_, x);
+  auto f = Impl::FunctionTabularFunctor(x_.view_host(), y_.view_host(), form_.view_host(), xi_, x);
   return f(0);
 }
 
