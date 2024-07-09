@@ -196,7 +196,7 @@ struct obs_domain_set_test : public obs_test {
     S->RegisterMesh("surface", surface_mesh);
 
     // create domain set
-    AMANZI_ASSERT(parent->columns->num_columns_owned * parent->columns->getCells(0).extent(0) ==
+    AMANZI_ASSERT(parent->columns->num_columns_owned * parent->columns->getCells<MemSpace_kind::HOST>(0).extent(0) ==
                   parent->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED));
     std::vector<std::string> cols;
     for (int i = 0; i != parent->columns->num_columns_owned; ++i) {

@@ -57,14 +57,14 @@ struct MeshColumns {
   //
   // View all cells or faces
   //
-  template <MemSpace_kind MEM = MemSpace_kind::HOST>
+  template <MemSpace_kind MEM>
   KOKKOS_INLINE_FUNCTION decltype(auto) // cEntity_ID_View
   getCells(int col) const
   {
     return cells_.getRow<MEM>(col);
   }
 
-  template <MemSpace_kind MEM = MemSpace_kind::HOST>
+  template <MemSpace_kind MEM>
   KOKKOS_INLINE_FUNCTION decltype(auto) // cEntity_ID_View
   getFaces(int col) const
   {
