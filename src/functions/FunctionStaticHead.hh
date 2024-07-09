@@ -69,7 +69,7 @@ class FunctionStaticHead : public Function {
 
   void apply(const Kokkos::View<const double**>& in,
              Kokkos::View<double*>& out,
-             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override
   {
     h_->apply(in, out, ids);
     double patm(patm_);

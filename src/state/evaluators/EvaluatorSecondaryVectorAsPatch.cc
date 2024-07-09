@@ -45,9 +45,7 @@ EvaluatorSecondaryVectorAsPatch::Update_(State& S)
     dependencies_.front().first, dependencies_.front().second, dependencies_.front().first);
   AMANZI_ASSERT(cv.hasComponent("cell"));
   auto cv_view = cv.viewComponent("cell", false);
-  AMANZI_ASSERT(patch.data.extent(0) == cv_view.extent(0));
-  AMANZI_ASSERT(patch.data.extent(1) == cv_view.extent(1));
-  patch.data = cv_view;
+  Kokkos::deep_copy(patch.data, cv_view);
 }
 
 } // namespace Amanzi

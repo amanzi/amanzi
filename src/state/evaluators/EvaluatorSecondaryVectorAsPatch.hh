@@ -17,7 +17,9 @@ coupled surface-subsurface problem, and (2) when moving a field on one mesh to
 provide a source/sink on another mesh, e.g. the subgrid hyporheic exchange flux
 source to the surface system.
 
-Note this does not really store twice the memory -- the views are copied.
+This stores duplicate memory, only because otherwise the View in the Vector is
+persistent -- if we keep a copy of that view in the Patch, the DualView in the
+vector cannot be synced.
 
 */
 
