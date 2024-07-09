@@ -399,7 +399,10 @@ class Mesh {
   // this may not be the same as the entity kind in the parent mesh.  That
   // logic is left to the user of this class -- we simply store the IDs.
   Entity_ID getEntityParent(const Entity_kind kind, const Entity_ID entid) const;
-  cEntity_ID_View getEntityParents(const Entity_kind kind) const;
+
+  template<MemSpace_kind MEM>
+  auto // cEntity_ID_View
+  getEntityParents(const Entity_kind kind) const;
 
   Cell_kind getCellKind(const Entity_ID c) const;
   Parallel_kind getParallelKind(const Entity_kind& kind, const Entity_ID id) const;

@@ -830,28 +830,6 @@ Mesh::getEntityParent(const Entity_kind kind, const Entity_ID entid) const
   return -1;
 }
 
-typename Mesh::cEntity_ID_View
-Mesh::getEntityParents(const Entity_kind kind) const
-{
-  AMANZI_ASSERT(data_.parent_entities_cached);
-  switch (kind) {
-  case Entity_kind::CELL:
-    return view<MEM>(data_.parent_cells);
-    break;
-  case Entity_kind::FACE:
-    return view<MEM>(data_.parent_faces);
-    break;
-  case Entity_kind::EDGE:
-    return view<MEM>(data_.parent_edges);
-    break;
-  case Entity_kind::NODE:
-    return view<MEM>(data_.parent_nodes);
-  default: {
-  }
-  }
-  return Mesh::cEntity_ID_View();
-}
-
 
 Cell_kind
 Mesh::getCellKind(const Entity_ID c) const

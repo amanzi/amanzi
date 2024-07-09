@@ -115,6 +115,36 @@ Mesh::getSetEntitiesAndVolumeFractions(const std::string& region_name,
 
 
 // ----------------------
+// Entity meta-data
+// ----------------------
+template<MemSpace_kind MEM>
+auto
+Mesh::getEntityParents(const Entity_kind kind) const
+{
+  AMANZI_ASSERT(data_.parent_entities_cached);
+  switch (kind) {
+  case Entity_kind::CELL:
+    return view<MEM>(data_.parent_cells);
+    break;
+  case Entity_kind::FACE:
+    return view<MEM>(data_.parent_faces);
+    break;
+  case Entity_kind::EDGE:
+    return view<MEM>(data_.parent_edges);
+    break;
+  case Entity_kind::NODE:
+    return view<MEM>(data_.parent_nodes);
+    break;
+  default: {
+  }
+  }
+  AMANZI_ASSERT(false);
+  return view<MEM>(data_.parent_cells);
+}
+
+
+
+// ----------------------
 // Entity relations
 // ----------------------
 // a list of ALL face LIDs that are on the boundary
