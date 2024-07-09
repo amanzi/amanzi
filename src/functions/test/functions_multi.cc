@@ -192,10 +192,9 @@ TEST_FIXTURE(test, values1)
   MultiFunction mf = MultiFunction(functions);
 
   // evaluate on device, copy to host
-  Kokkos::View<double**, Kokkos::LayoutLeft> result_device("result_device", nvalues, nfunctions);
+  Kokkos::View<double**, Kokkos::LayoutLeft, DefaultMemorySpace> result_device("result_device", nvalues, nfunctions);
   mf.apply(xyz.view_device(), result_device);
-  auto result_device_h = Kokkos::create_mirror_view_and_copy(DefaultExecutionSpace(), result_device);
-
+  auto result_device_h = Kokkos::create_mirror_view_and_copy(DefaultHostMemorySpace(), result_device);
 
   Kokkos::View<double**, Kokkos::HostSpace> result_host("result_host", nvalues, nfunctions);
   for (int i = 0; i < nvalues; ++i) {
@@ -203,7 +202,6 @@ TEST_FIXTURE(test, values1)
     auto tmp_res = mf(t);
     for (int j = 0; j < tmp_res.extent(0); ++j) { result_host(i, j) = tmp_res(j); }
   }
-
 
   for (int j = 0; j < nfunctions; ++j) {
     for (int i = 0; i < nvalues; ++i) {

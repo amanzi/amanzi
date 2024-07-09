@@ -59,7 +59,7 @@ TEST_FIXTURE(reference_mesh, MESH_FUNCTION)
   CHECK_EQUAL(2, mp.size());
 
   mf.Compute(0.0, mp);
-  auto mp_host = Kokkos::create_mirror_view_and_copy(DefaultMemorySpace(), mp[0].data);
+  auto mp_host = Kokkos::create_mirror_view_and_copy(DefaultHostMemorySpace(), mp[0].data);
   CHECK_CLOSE(1.0, mp_host(2,0), 1.e-8);
 }
 
@@ -77,8 +77,8 @@ TEST_FIXTURE(reference_mesh, BOUNDARY_CONDITION_PLIST)
   MultiPatch<double> mp(mf.createMPS(false));
   mf.Compute(0.0, mp);
 
-  auto mp0_host = Kokkos::create_mirror_view_and_copy(DefaultMemorySpace(), mp[0].data);
-  auto mp1_host = Kokkos::create_mirror_view_and_copy(DefaultMemorySpace(), mp[1].data);
+  auto mp0_host = Kokkos::create_mirror_view_and_copy(DefaultHostMemorySpace(), mp[0].data);
+  auto mp1_host = Kokkos::create_mirror_view_and_copy(DefaultHostMemorySpace(), mp[1].data);
   CHECK_CLOSE(0.5, mp0_host(0,0), 1.e-8);
   CHECK_CLOSE(2.0, mp1_host(0,0), 1.e-8);
 }
