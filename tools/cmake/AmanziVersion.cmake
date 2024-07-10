@@ -200,11 +200,11 @@ else()
   #
   # For releases and snapshots, set static information before creating the tarball.
   #
-  set(AMANZI_GIT_BRANCH master )
+  set(AMANZI_GIT_BRANCH amanzi-1.5 )
   set(AMANZI_GIT_GLOBAL_HASH )
 
   set(AMANZI_VERSION_MAJOR 1)
-  set(AMANZI_VERSION_MINOR 0)
+  set(AMANZI_VERSION_MINOR 5)
   set(AMANZI_VERSION_PATCH 0)
   set(AMANZI_VERSION_HASH ${AMANZI_GIT_GLOBAL_HASH})
 

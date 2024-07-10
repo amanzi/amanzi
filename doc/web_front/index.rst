@@ -46,20 +46,38 @@ integrated hydrology coupling surface and subsurface processes; and an
 intermediate scale thermal hydrology model of polygonal tundra based
 on one-dimensional columns coupled to the two-dimensional surface.
 
-Release Schedule
-================
+Releases and Documentation
+==========================
 
-The current version of Amanzi is |version|
+Current Release
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Older Versions
-~~~~~~~~~~~~~~
+ * Amanzi |release|: `<UserGuide>`_
+   | `Branch on Github <https://github.com/amanzi/amanzi/tree/amanzi-1.5>`_
+   | `amanzi-1.5.0.tar.gz <https://github.com/amanzi/amanzi/archive/refs/tags/amanzi-1.5.0.tar.gz>`_
 
- * Amanzi 1.0
+ 
+Previous Releases
+~~~~~~~~~~~~~~~~~
 
-Future Releases
-~~~~~~~~~~~~~~~
+ * Amanzi 1.4.1:
+   `UserGuide <1.4.1/UserGuide>`_
+   | `Branch on Github <https://github.com/amanzi/amanzi/tree/amanzi-1.4>`_
+   | `amanzi-1.4.1.tar.gz <https://github.com/amanzi/amanzi/archive/refs/tags/amanzi-1.4.1.tar.gz>`_
+ * Amanzi 1.2.0:
+   `UserGuide <1.2.0/UserGuide>`_
+   | `Branch on Github <https://github.com/amanzi/amanzi/tree/amanzi-1.2>`_
+   | `amanzi-1.2.0.tar.gz <https://github.com/amanzi/amanzi/archive/refs/tags/amanzi-1.2.0.tar.gz>`_
 
- * Coming soon: Prototype of Non-isothermal Multiphase flow with phase disappearence
+
+Ongoing Development
+~~~~~~~~~~~~~~~~~~~
+
+You can track and contribute to development of the next release.  Capabilities we are working on include a prototype of non-isothermal multiphase flow with phase disappearence.  
+
+ * Amanzi 1.6-dev:
+   `UserGuide <dev/UserGuide>`_
+   | `Branch on Github <https://github.com/amanzi/amanzi/>`_
  
 
 User Guide
@@ -86,9 +104,10 @@ Libraries that it uses, so to make the build process easier Amanzi's
 build system will download and build all the TPLs for you.  To get
 started you will need a modern Linux/Unix/OSX system with
 
- * CMake (version >= 3.17.0), 
- * A recent GNU >= 7.5, Clang >=5, or Intel compiler >= 19, suporting the C++14 standard.
- * MPI (e.g., OpenMPI version > 3.1)
+ * CMake (version >= 3.23.0), 
+ * A recent GNU >= 8.3, Clang >=5, or Intel compiler >= 19, suporting the C++17 standard.
+   * Note: Intel classic compilers are supported, but Intel oneAPI compilers are not yet.
+ * MPI (e.g., OpenMPI version > 4.1)
 
 Details are provided in the Installation Instructions in the User Guide.
 
@@ -98,7 +117,7 @@ Open Source / Open Development
 
 Amanzi is developed and distributed under the three-clause BSD
 open-source license.  Copyright is held jointly by the contributing
-laboratories (LANL,LBNL,ORNL,PNNL). Included in the Amanzi source code is
+laboratories (LANL, LBNL, ORNL, PNNL). Included in the Amanzi source code is
 the growing set of unit, integration, regression, and benchmark tests
 that are used by the development and application teams.
 

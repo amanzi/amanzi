@@ -9,9 +9,7 @@ Overview
 
 The present document describes how to specify the data required to execute Amanzi and perform a simulation.  This specification should be regarded as a companion to the mathematical requirements document entitled *Mathematical Formulation Requirements and Specifications for the Process Models* (see :ref:`ASCEM Overview <ASCEM Overview>`), and parameterizations of the individual submodels are consistent between Amanzi, the mathematical requirements document and this document.
 
-The open-source, platform independent Akuna_ user environment can generate *Amanzi* models and generate corresponding valid, human-readable XML input files that can then be executed by *Amanzi*.  Example input files are available in the Amanzi source repository.
-
-XML Schema 2.3.0
+XML Schema 1.5.0
 ++++++++++++++++
 
 Amanzi solves a set of parameterized models for multiphase flow in porous media. An Amanzi simulation is specified by providing:
@@ -34,6 +32,8 @@ The following is a description of each of the sections with the XML input schema
 
 Please note, many attributes within the XML list a limited set of specified values.  During validation of the input file or initialization of Amanzi the values in the user provided input file will be compared against the limited set provided in the XML Schema document.  Errors will occur is the values do not match exactly.  These values are CASE SENSITIVE.  The Amanzi schema has been designed will all LOWER CASE values.  Please note this when writing input file.  In particular, `"Exodus II`" will be evaluated as `"exodus ii`".
 
+**Note:** The versioning convention for the Amanzi input specification is to synchronize it with the version of Amanzi itself (i.e., Amanzi version 1.5.0 works with input files that conform to version 1.5.0 of the input specification).  
+
 Amanzi Input
 ------------
 
@@ -43,7 +43,7 @@ For an unstructured simulations the root tag would looks as the following.
 
 .. code-block:: xml
 
-    <amanzi_input version="2.3.0" type="unstructured">
+    <amanzi_input version="1.5.0" type="unstructured">
     </amanzi_input>
 
 Model Description
@@ -1009,7 +1009,7 @@ Amanzi current employees three process kernels that need to be defined in the in
 Flow
 ____
 
-Currently three scenarios are available for calculated the flow field.  `"richards`" is a single phase, variably saturated flow assuming constant gas pressure.  `"saturated`" is a single phase, fully saturated flow.  `"constant`" is equivalent to the flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
+Currently three scenarios are available for calculated the flow field.  `"richards`" is a single phase, variably saturated flow assuming constant gas pressure.  `"saturated`" is a single phase, fully saturated flow.  `"constant`" is equivalent to the flow model of single phase (saturated) with the time integration mode of transient with static flow.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
 
 .. code-block:: xml
 

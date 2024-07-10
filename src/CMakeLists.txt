@@ -17,6 +17,12 @@ if (ENABLE_ALQUIMIA)
   # Use Alquimia as a chemistry engine.
   add_definitions(-DALQUIMIA_ENABLED)
   add_subdirectory(common/alquimia)
+  if (ENABLE_PFLOTRAN)
+    add_definitions(-DPFLOTRAN_ENABLED)
+  endif()
+  if (ENABLE_CRUNCHTOPE)
+    add_definitions(-DCRUNCHTOPE_ENABLED)
+  endif()
 endif()
 
 if (ENABLE_Unstructured)
