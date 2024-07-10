@@ -19,10 +19,10 @@
 
 namespace Kokkos {
 KOKKOS_INLINE_FUNCTION
-void swap(double a, double b) {
+void swap(double& a, double& b) {
   double tmp(a);
   a = b;
-  b = a;
+  b = tmp;
 }
 }
 
