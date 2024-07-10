@@ -63,7 +63,8 @@ class AModel {
   static const std::string eval_type;
 
   AModel(const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    : alpha_(plist->sublist("model parameters").get<double>("alpha"))
+    : alpha_(plist->sublist("model parameters").get<double>("alpha")),
+      my_key_({ "A", Tags::DEFAULT })
   {}
 
   void setViews(const std::vector<cView_type>& dependency_views,
@@ -93,7 +94,7 @@ class AModel {
   {
     // NOTE, a real Model would parse the parameter list to get these
     return {
-      { "A", Tags::DEFAULT },
+      my_key_,
     };
   };
 
@@ -142,6 +143,8 @@ class AModel {
   cView_type E_;
   cView_type H_;
   double alpha_;
+
+  KeyTag my_key_;
 };
 
 

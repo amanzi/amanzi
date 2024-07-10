@@ -214,11 +214,11 @@ RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
     mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
   }
 
-  int ncells_owned = mesh0->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_owned = mesh0->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // create and initialize cell-based fields
   auto cvs1 = Teuchos::rcp(new CompositeVectorSpace());
-  cvs1->SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs1->SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
 
   Teuchos::RCP<TreeVectorSpace> tvs0 = Teuchos::rcp(new TreeVectorSpace());
   Teuchos::RCP<TreeVectorSpace> tvs1 = Teuchos::rcp(new TreeVectorSpace());
@@ -231,7 +231,7 @@ RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   Epetra_MultiVector& j1c = *p1->SubVector(1)->Data()->viewComponent("cell", true);
 
   auto cvs2 = Teuchos::rcp(new CompositeVectorSpace());
-  cvs2->SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs2->SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
 
   Teuchos::RCP<TreeVectorSpace> tvs2 = Teuchos::rcp(new TreeVectorSpace());
   tvs0->SetData(cvs2);
@@ -354,7 +354,7 @@ RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   OutputXDMF io(iolist, mesh1, true, false);
 
   io.InitializeCycle(t, 1);
-  io.WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
+  io.WriteVector(*p2c(0), "solution", AmanziMesh::Entity_kind::CELL);
   io.FinalizeCycle();
 }
 

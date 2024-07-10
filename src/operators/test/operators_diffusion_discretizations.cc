@@ -83,7 +83,7 @@ test(const Teuchos::RCP<AnalyticBase>& ana,
             << ana->name() << ", " << pc_type << ", " << mesh_type << std::endl
             << "--------------------------------------------------------------------------------"
             << std::endl;
-  fix.discretize<PDE_Diffusion_type, AmanziMesh::FACE>(disc_type);
+  fix.discretize<PDE_Diffusion_type, AmanziMesh::Entity_kind::FACE>(disc_type);
   if (scalar_coef != AmanziMesh::Entity_kind::UNKNOWN) fix.scalarCoefficient(scalar_coef);
 
   if (bc_type == "Dirichlet") {
@@ -128,7 +128,7 @@ testWGravity(const Teuchos::RCP<AnalyticBase>& ana,
             << ana->name() << ", " << pc_type << ", " << mesh_type << std::endl
             << "--------------------------------------------------------------------------------"
             << std::endl;
-  fix.discretizeWithGravity<PDE_Diffusion_type, AmanziMesh::FACE>(disc_type, gravity);
+  fix.discretizeWithGravity<PDE_Diffusion_type, AmanziMesh::Entity_kind::FACE>(disc_type, gravity);
   if (scalar_coef != AmanziMesh::Entity_kind::UNKNOWN) fix.scalarCoefficient(scalar_coef);
   if (bc_type == "Dirichlet") {
     fix.setBCsDirichlet();
@@ -188,7 +188,7 @@ SUITE(DIFFUSION)
               << std::endl;
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
     DiffusionFixture fix(ana, "Generate1D");
-    fix.discretize<Operators::PDE_DiffusionFV, AmanziMesh::FACE>("fv");
+    fix.discretize<Operators::PDE_DiffusionFV, AmanziMesh::Entity_kind::FACE>("fv");
     fix.setBCsDirichlet();
     fix.setup("diagonal", "PCG");
 
@@ -245,7 +245,7 @@ SUITE(DIFFUSION)
               << std::endl;
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
     DiffusionFixture fix(ana, "Generate1D");
-    fix.discretize<Operators::PDE_DiffusionMFD, AmanziMesh::FACE>("mixed");
+    fix.discretize<Operators::PDE_DiffusionMFD, AmanziMesh::Entity_kind::FACE>("mixed");
     fix.setBCsDirichlet();
     fix.setup("diagonal", "PCG");
 

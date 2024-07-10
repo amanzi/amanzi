@@ -60,30 +60,30 @@ TEST(MESH_VOLUME_EXTRACTION_GENERATED)
               << "------------------------------------------------" << std::endl;
     auto parent_mesh =
       createStructuredUnitHex(Preference{ frm }, 6, 6, 3, comm, gm, Teuchos::null, 2, 2, 1);
-    cacheAll(*parent_mesh);
+    parent_mesh->cacheAll();
 
     // extract the volume
     MeshFrameworkFactory fac(comm, gm);
     fac.set_preference({ frm });
 
-    auto unit_hex_cells = parent_mesh->getSetEntities(
+    auto unit_hex_cells = parent_mesh->getSetEntities<MemSpace_kind::HOST>(
       "Unit Hex", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     auto vol_framework_mesh =
       fac.create(parent_mesh, unit_hex_cells, AmanziMesh::Entity_kind::CELL);
 
     // make a MeshCache
-    auto mesh = Teuchos::rcp(new MeshHost(
+    auto mesh = Teuchos::rcp(new Mesh(
       vol_framework_mesh, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
     mesh->setParentMesh(parent_mesh);
-    cacheAll(*mesh);
+    mesh->cacheAll();
 
     // test the surface mesh as a 3x3 quad mesh
     // -- mesh audit
-    testMeshAudit<MeshAuditHost, MeshHost>(mesh);
+    testMeshAuditHost<MeshAudit>(Teuchos::RCP<const Mesh>(mesh));
     // -- geometry
-    testGeometryCube(mesh, 3, 3, 3);
+    testGeometryCube(*mesh, mesh.get(), 3, 3, 3);
     // -- exterior maps
-    testExteriorMapsUnitBox(mesh, 3, 3, 3);
+    testExteriorMapsUnitBox(*mesh, mesh.get(), 3, 3, 3);
     // -- sets, which should inherit from the parent mesh
     testHexMeshSets3x3x3(mesh, false, frm);
 
@@ -154,16 +154,16 @@ TEST(MESH_VOLUME_EXTRACTION_EXO)
     auto parent_mesh = createUnstructured(Preference{ frm }, filename, comm, gm, Teuchos::null);
 
     // make sure we can get sets on the mesh
-    auto set_ids = parent_mesh->getSetEntities(
+    auto set_ids = parent_mesh->getSetEntities<MemSpace_kind::HOST>(
       "Region 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
     CHECK_EQUAL(9, set_ids.size());
     parent_mesh->buildColumns();
 
     int ncells = 3;
-    auto cell_list = parent_mesh->columns.cells_.getRowUnmanaged<MemSpace_kind::HOST>(0);
+    auto cell_list = parent_mesh->columns->cells_.getRowUnmanaged<MemSpace_kind::HOST>(0);
     CHECK_EQUAL(ncells, cell_list.size());
 
-    auto face_list = parent_mesh->columns.faces_.getRowUnmanaged<MemSpace_kind::HOST>(0);
+    auto face_list = parent_mesh->columns->faces_.getRowUnmanaged<MemSpace_kind::HOST>(0);
     CHECK_EQUAL(ncells + 1, face_list.size());
 
     // construct a column mesh by extracting from mesh
@@ -172,7 +172,7 @@ TEST(MESH_VOLUME_EXTRACTION_EXO)
     fac.set_preference({ frm });
     auto column_mesh_fw = fac.create(parent_mesh, cell_list, AmanziMesh::Entity_kind::CELL);
     auto column_mesh = Teuchos::rcp(
-      new MeshHost(column_mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+      new Mesh(column_mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
 
     // Number of cells in column mesh
     int ncells_col =
@@ -193,19 +193,19 @@ TEST(MESH_VOLUME_EXTRACTION_EXO)
     // check we can still get sets
     bool is_valid = column_mesh->isValidSetName("Region 1", AmanziMesh::Entity_kind::CELL);
     CHECK(is_valid);
-    auto set_ids2 = column_mesh->getSetEntities(
+    auto set_ids2 = column_mesh->getSetEntities<MemSpace_kind::HOST>(
       "Region 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
     CHECK_EQUAL(1, set_ids2.size());
 
     is_valid = column_mesh->isValidSetName("Top Surface", AmanziMesh::Entity_kind::FACE);
     CHECK(is_valid);
-    set_ids2 = column_mesh->getSetEntities(
+    set_ids2 = column_mesh->getSetEntities<MemSpace_kind::HOST>(
       "Top Surface", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
     CHECK_EQUAL(1, set_ids2.size());
 
     is_valid = column_mesh->isValidSetName("Side Surface", AmanziMesh::Entity_kind::FACE);
     CHECK(is_valid);
-    set_ids2 = column_mesh->getSetEntities(
+    set_ids2 = column_mesh->getSetEntities<MemSpace_kind::HOST>(
       "Side Surface", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
     CHECK_EQUAL(3, set_ids2.size());
   }

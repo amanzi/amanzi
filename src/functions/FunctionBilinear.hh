@@ -46,8 +46,7 @@ Example:
   </ParameterList>
 
 */
-#ifndef AMANZI_BILINEAR_FUNCTION_HH_
-#define AMANZI_BILINEAR_FUNCTION_HH_
+#pragma once
 
 #include <vector>
 
@@ -56,112 +55,105 @@ Example:
 
 namespace Amanzi {
 
+
 class FunctionBilinear : public Function {
  public:
-  FunctionBilinear(const Kokkos::View<double*, Kokkos::HostSpace>& x,
-                   const Kokkos::View<double*, Kokkos::HostSpace>& y,
-                   const Kokkos::View<double**, Kokkos::HostSpace>& v,
+  FunctionBilinear(const Kokkos::View<const double*, Kokkos::HostSpace>& x,
+                   const Kokkos::View<const double*, Kokkos::HostSpace>& y,
+                   const Kokkos::View<const double**, Kokkos::HostSpace>& v,
                    const int xi,
                    const int yi);
-  ~FunctionBilinear(){};
-  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionBilinear>(*this); }
-  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>&) const;
 
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int& i) const
-  {
-    double v;
+  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionBilinear>(*this); }
+
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& in) const override;
+
+  void apply(const Kokkos::View<const double**>& in,
+             Kokkos::View<double*>& out,
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override;
+
+ private:
+  Kokkos::DualView<const double*> x_, y_;
+  Kokkos::DualView<const double**> v_;
+  int xi_, yi_;
+
+ private: // helper functions
+  void checkArgs_(const Kokkos::View<const double*, Kokkos::HostSpace>&,
+                  const Kokkos::View<const double*, Kokkos::HostSpace>&,
+                  const Kokkos::View<const double**, Kokkos::HostSpace>&) const;
+};
+
+
+namespace Impl {
+
+template<class XYView_type,
+         class VView_type,
+         class InView_type>
+class FunctionBilinearFunctor {
+ public:
+  FunctionBilinearFunctor(const XYView_type& x,
+                          const XYView_type& y,
+                          size_t xi,
+                          size_t yi,
+                          const VView_type& v,
+                          const InView_type& in)
+    : x_(x), y_(y), xi_(xi), yi_(yi), v_(v), in_(in) {}
+
+  KOKKOS_INLINE_FUNCTION
+  double operator()(const int i) const {
     int nx = x_.extent(0);
     int ny = y_.extent(0);
-    double xv = x(xi_, i);
-    double yv = x(yi_, i);
-    auto vv = v_.view_device();
-    auto vx = x_.view_device();
-    auto vy = y_.view_device();
+    double xv = in_(xi_, i);
+    double yv = in_(yi_, i);
+
     // if xv and yv are out of bounds
-    if (xv <= vx[0] && yv <= vy[0]) {
-      v = vv(0, 0);
-    } else if (xv >= vx[nx - 1] && yv <= vy[0]) {
-      v = vv(nx - 1, 0);
-    } else if (xv >= vx[nx - 1] && yv >= vy[ny - 1]) {
-      v = vv(nx - 1, ny - 1);
-    } else if (xv <= vx[0] && yv >= vy[ny - 1]) {
-      v = vv(0, ny - 1);
+    double v = 0.;
+    if (xv <= x_[0] && yv <= y_[0]) {
+      v = v_(0, 0);
+    } else if (xv >= x_[nx - 1] && yv <= y_[0]) {
+      v = v_(nx - 1, 0);
+    } else if (xv >= x_[nx - 1] && yv >= y_[ny - 1]) {
+      v = v_(nx - 1, ny - 1);
+    } else if (xv <= x_[0] && yv >= y_[ny - 1]) {
+      v = v_(0, ny - 1);
     } else {
-      // binary search to find interval containing xv
-      int j1 = 0, j2 = nx - 1;
-      while (j2 - j1 > 1) {
-        int j = (j1 + j2) / 2;
-        if (xv >= vx[j]) { // right continuous
-                           // if (xv > vx[j]) { // left continuous
-          j1 = j;
-        } else {
-          j2 = j;
-        }
-      }
-      // binary search to find interval containing yv
-      int k1 = 0, k2 = ny - 1;
-      while (k2 - k1 > 1) {
-        int k = (k1 + k2) / 2;
-        if (yv >= vy[k]) { // right continuous
-                           // if (yv > vy[k]) { // left continuous
-          k1 = k;
-        } else {
-          k2 = k;
-        }
-      }
+      // find interval containing xv, yv
+      int j2 = 0;
+      while ((j2 < nx) && (xv > x_[j2])) ++j2;
+      int j1 = j2 - 1;
+
+      int k2 = 0;
+      while ((k2 < ny) && (yv > y_[k2])) ++k2;
+      int k1 = k2 - 1;
+
       // if only xv is out of bounds, linear interpolation
-      if (xv <= vx[0] && yv > vy[0] && yv < vy[ny - 1]) {
-        v = vv(0, k1) + ((vv(0, k2) - vv(0, k1)) / (vy[k2] - vy[k1])) * (yv - vy[k1]);
-      } else if (xv > vx[nx - 1] && yv > vy[0] && yv < vy[ny - 1]) {
-        v =
-          vv(nx - 1, k1) + ((vv(nx - 1, k2) - vv(nx - 1, k1)) / (vy[k2] - vy[k1])) * (yv - vy[k1]);
+      if (j2 == 0) {
+        v = v_(j2, k1) + ((v_(j2, k2) - v_(j2, k1)) / (y_[k2] - y_[k1])) * (yv - y_[k1]);
+      } else if (j2 == nx) {
+        v = v_(j1, k1) + ((v_(j1, k2) - v_(j1, k1)) / (y_[k2] - y_[k1])) * (yv - y_[k1]);
         // if only yv is out of bounds, linear interpolation
-      } else if (yv <= vy[0] && xv > vx[0] && xv < vx[nx - 1]) {
-        v = vv(j1, 0) + ((vv(j2, 0) - vv(j1, 0)) / (vx[j2] - vx[j1])) * (xv - vx[j1]);
-      } else if (yv > vy[ny - 1] && xv > vx[0] && xv < vx[nx - 1]) {
-        v =
-          vv(j1, ny - 1) + ((vv(j2, ny - 1) - vv(j1, ny - 1)) / (vx[j2] - vx[j1])) * (xv - vx[j1]);
+      } else if (k2 == 0) {
+        v = v_(j1, k2) + ((v_(j2, k2) - v_(j1, k2)) / (x_[j2] - x_[j1])) * (xv - x_[j1]);
+      } else if (k2 == ny) {
+        v = v_(j1, k1) + ((v_(j2, k1) - v_(j1, k1)) / (x_[j2] - x_[j1])) * (xv - x_[j1]);
       } else {
         // bilinear interpolation
-        v = vv(j1, k1) * (vx[j2] - xv) * (vy[k2] - yv) +
-            vv(j2, k1) * (xv - vx[j1]) * (vy[k2] - yv) +
-            vv(j1, k2) * (vx[j2] - xv) * (yv - vy[k1]) + vv(j2, k2) * (xv - vx[j1]) * (yv - vy[k1]);
-        v = v / ((vx[j2] - vx[j1]) * (vy[k2] - vy[k1]));
+        v = v_(j1, k1) * (x_[j2] - xv) * (y_[k2] - yv) +
+            v_(j2, k1) * (xv - x_[j1]) * (y_[k2] - yv) +
+            v_(j1, k2) * (x_[j2] - xv) * (yv - y_[k1]) + v_(j2, k2) * (xv - x_[j1]) * (yv - y_[k1]);
+        v = v / ((x_[j2] - x_[j1]) * (y_[k2] - y_[k1]));
       }
     }
     return v;
   }
 
-  void apply(const Kokkos::View<double**>& in,
-             Kokkos::View<double*>& out,
-             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
-  {
-    if (ids) {
-      auto ids_loc = *ids;
-      Kokkos::parallel_for(
-        "FunctionBilinear::apply1", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(ids_loc(i)) = apply_gpu(in, i);
-        });
-    } else {
-      assert(in.extent(1) == out.extent(0));
-      Kokkos::parallel_for(
-        "FunctionBilinear::apply2", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(i) = apply_gpu(in, i);
-        });
-    }
-  }
-
  private:
-  Kokkos::DualView<double*> x_, y_;
-  Kokkos::DualView<double**> v_;
+  XYView_type x_, y_;
   int xi_, yi_;
-
- private: // helper functions
-  void check_args(const Kokkos::View<double*, Kokkos::HostSpace>&,
-                  const Kokkos::View<double*, Kokkos::HostSpace>&,
-                  const Kokkos::View<double**, Kokkos::HostSpace>&) const;
+  VView_type v_;
+  InView_type in_;
 };
 
+} // namespace Impl
 } // namespace Amanzi
 
-#endif // AMANZI_BILINEAR_FUNCTION_HH_

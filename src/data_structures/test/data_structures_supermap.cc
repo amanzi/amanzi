@@ -332,17 +332,17 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR)
   names.push_back("face");
   std::vector<int> dofs{ 2, 2 };
   std::vector<Entity_kind> locs;
-  locs.push_back(CELL);
-  locs.push_back(FACE);
+  locs.push_back(Entity_kind::CELL);
+  locs.push_back(Entity_kind::FACE);
   cv.SetMesh(mesh)->SetGhosted()->SetComponents(names, locs, dofs);
 
   // create a SuperMapLumped from this space
   Teuchos::RCP<SuperMap> map = createSuperMap(cv);
 
-  int ncells_owned = mesh->getNumEntities(CELL, Parallel_kind::OWNED);
-  int nfaces_owned = mesh->getNumEntities(FACE, Parallel_kind::OWNED);
-  int ncells_used = mesh->getNumEntities(CELL, Parallel_kind::ALL);
-  int nfaces_used = mesh->getNumEntities(FACE, Parallel_kind::ALL);
+  int ncells_owned = mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+  int nfaces_owned = mesh->getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
+  int ncells_used = mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::ALL);
+  int nfaces_used = mesh->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL);
 
   // check basic sizes
   CHECK_EQUAL(2 * ncells_owned + 2 * nfaces_owned, map->getMap()->getLocalNumElements());
@@ -436,28 +436,28 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS)
   names.push_back("cellB");
   std::vector<int> dofs{ 1, 1 };
   std::vector<Entity_kind> locs;
-  locs.push_back(CELL);
-  locs.push_back(CELL);
+  locs.push_back(Entity_kind::CELL);
+  locs.push_back(Entity_kind::CELL);
   cv.SetMesh(mesh)->SetGhosted()->SetComponents(names, locs, dofs);
 
   // create a SuperMapLumped from this space
   Teuchos::RCP<SuperMap> map = createSuperMap(cv);
 
-  int ncells_owned = mesh->getNumEntities(CELL, Parallel_kind::OWNED);
-  int ncells_used = mesh->getNumEntities(CELL, Parallel_kind::ALL);
+  int ncells_owned = mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::OWNED);
+  int ncells_used = mesh->getNumEntities(Entity_kind::CELL, Parallel_kind::ALL);
 
   // check basic sizes
   CHECK_EQUAL(2 * ncells_owned, map->getMap()->getLocalNumElements());
   CHECK_EQUAL(2 * ncells_used, map->getGhostedMap()->getLocalNumElements());
 
   // check CompMaps
-  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, false)
+  CHECK(mesh->getMap(Entity_kind::CELL, false)
           ->isSameAs(*map->getComponentMap(0, "cellA")));
-  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, true)
+  CHECK(mesh->getMap(Entity_kind::CELL, true)
           ->isSameAs(*map->getComponentGhostedMap(0, "cellA")));
-  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, false)
+  CHECK(mesh->getMap(Entity_kind::CELL, false)
           ->isSameAs(*map->getComponentMap(0, "cellB")));
-  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, true)
+  CHECK(mesh->getMap(Entity_kind::CELL, true)
           ->isSameAs(*map->getComponentGhostedMap(0, "cellB")));
 
   // check ordering is as expected
@@ -497,7 +497,7 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS)
   CompositeVectorSpace cv2;
   std::vector<std::string> names2{ "cell" };
   std::vector<int> dofs2{ 2 };
-  std::vector<Entity_kind> locs2{ CELL };
+  std::vector<Entity_kind> locs2{ Entity_kind::CELL };
   cv2.SetMesh(mesh)->SetGhosted()->SetComponents(names2, locs2, dofs2);
 
   // create a SuperMapLumped from this space
@@ -525,9 +525,9 @@ TEST(SUPERMAP_FROM_TWO_IDENTICAL_COMPOSITEVECTORS)
 
   // create a CVSpace
   CompositeVectorSpace cvA;
-  cvA.SetMesh(mesh)->SetGhosted()->SetComponents({ "cell" }, { CELL }, { 1 });
+  cvA.SetMesh(mesh)->SetGhosted()->SetComponents({ "cell" }, { Entity_kind::CELL }, { 1 });
   CompositeVectorSpace cvB;
-  cvB.SetMesh(mesh)->SetGhosted()->SetComponents({ "cell" }, { CELL }, { 1 });
+  cvB.SetMesh(mesh)->SetGhosted()->SetComponents({ "cell" }, { Entity_kind::CELL }, { 1 });
 
   // create a SuperMapLumped from this space
   Teuchos::RCP<SuperMap> map =
@@ -535,7 +535,7 @@ TEST(SUPERMAP_FROM_TWO_IDENTICAL_COMPOSITEVECTORS)
 
   // now create another with one CV, 2 dofs
   CompositeVectorSpace cv2;
-  cv2.SetMesh(mesh)->SetGhosted()->SetComponents({ "cell" }, { CELL }, { 2 });
+  cv2.SetMesh(mesh)->SetGhosted()->SetComponents({ "cell" }, { Entity_kind::CELL }, { 2 });
   Teuchos::RCP<SuperMap> map2 = createSuperMap(cv2);
 
   // same map!
@@ -572,13 +572,13 @@ TEST(SUPERMAP_FROM_CELL_PLUS_FACE_IS_CELLFACE)
   // create a CVSpace
   CompositeVectorSpace cvA;
   cvA.SetMesh(mesh)->SetGhosted()->SetComponents(
-    std::vector<std::string>{ "cell" }, std::vector<Entity_kind>{ CELL }, std::vector<int>{ 1 });
+    std::vector<std::string>{ "cell" }, std::vector<Entity_kind>{ Entity_kind::CELL }, std::vector<int>{ 1 });
   CompositeVectorSpace cvB;
   cvB.SetMesh(mesh)->SetGhosted()->SetComponents(
-    std::vector<std::string>{ "face" }, std::vector<Entity_kind>{ FACE }, std::vector<int>{ 1 });
+    std::vector<std::string>{ "face" }, std::vector<Entity_kind>{ Entity_kind::FACE }, std::vector<int>{ 1 });
   CompositeVectorSpace cv2;
   cv2.SetMesh(mesh)->SetGhosted()->SetComponents(std::vector<std::string>{ "cell", "face" },
-                                                 std::vector<Entity_kind>{ CELL, FACE },
+                                                 std::vector<Entity_kind>{ Entity_kind::CELL, Entity_kind::FACE },
                                                  std::vector<int>{ 1, 1 });
 
   // create a SuperMapLumped from this space
@@ -619,13 +619,13 @@ TEST(SUPERMAP_FROM_SAME_NAME_DIFFERENT_MAP)
   // create a CVSpace
   CompositeVectorSpace cvA;
   cvA.SetMesh(mesh)->SetGhosted()->SetComponents(
-    std::vector<std::string>{ "cell" }, std::vector<Entity_kind>{ CELL }, std::vector<int>{ 1 });
+    std::vector<std::string>{ "cell" }, std::vector<Entity_kind>{ Entity_kind::CELL }, std::vector<int>{ 1 });
   CompositeVectorSpace cvB;
   cvB.SetMesh(mesh)->SetGhosted()->SetComponents(
-    std::vector<std::string>{ "cell" }, std::vector<Entity_kind>{ FACE }, std::vector<int>{ 1 });
+    std::vector<std::string>{ "cell" }, std::vector<Entity_kind>{ Entity_kind::FACE }, std::vector<int>{ 1 });
   CompositeVectorSpace cv2;
   cv2.SetMesh(mesh)->SetGhosted()->SetComponents(std::vector<std::string>{ "cell", "face" },
-                                                 std::vector<Entity_kind>{ CELL, FACE },
+                                                 std::vector<Entity_kind>{ Entity_kind::CELL, Entity_kind::FACE },
                                                  std::vector<int>{ 1, 1 });
 
   // create a SuperMapLumped from this space

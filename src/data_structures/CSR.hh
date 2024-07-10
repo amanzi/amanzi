@@ -111,7 +111,6 @@ class CSR {
       "", row_map_.view_device().extent(0), KOKKOS_CLASS_LAMBDA(const int i) {
         printf("%d - ", row_map_.d_view(i));
       });
-    Kokkos::fence();
 
     Kokkos::parallel_scan(
       row_map_.view_device().extent(0), KOKKOS_CLASS_LAMBDA(const int i, int& update, bool final) {
@@ -119,12 +118,10 @@ class CSR {
         if (final) { row_map_.d_view(i) = update; }
       });
 
-    Kokkos::fence();
     Kokkos::parallel_for(
       "", row_map_.view_device().extent(0), KOKKOS_CLASS_LAMBDA(const int i) {
         printf("%d - ", row_map_.d_view(i));
       });
-    Kokkos::fence();
     exit(0);
 
     // int tmp1 = row_map_.view_host()(0);

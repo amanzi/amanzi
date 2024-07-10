@@ -100,7 +100,7 @@ using namespace Amanzi;
 
 struct output_test_harness {
   Comm_ptr_type comm;
-  Teuchos::RCP<AmanziMesh::MeshHost> mesh;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh;
   Teuchos::RCP<Vector_type> cell_quantity;
   Teuchos::RCP<Vector_type> node_quantity;
   Teuchos::RCP<MultiVector_type> multi;
@@ -154,7 +154,7 @@ struct output_test_harness {
                                  AmanziMesh::Framework::MOAB };
     meshfactory.set_preference(pref);
 
-    mesh = meshfactory.create<MemSpace_kind::HOST>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1);
   }
 
   void create_mesh_polyhedral()
@@ -162,27 +162,27 @@ struct output_test_harness {
     AmanziMesh::MeshFactory meshfactory(comm);
     AmanziMesh::Preference pref{ AmanziMesh::Framework::MSTK, AmanziMesh::Framework::MOAB };
     meshfactory.set_preference(pref);
-    mesh = meshfactory.create<MemSpace_kind::HOST>("./test/four_polygon.exo");
+    mesh = meshfactory.create("./test/four_polygon.exo");
   }
 
   void test_write(const Output& out)
   {
     Teuchos::ParameterList node_plist("node_quantity");
-    node_plist.set("location", AmanziMesh::NODE);
+    node_plist.set("location", AmanziMesh::Entity_kind::NODE);
     out.write(node_plist, *node_quantity);
 
     Teuchos::ParameterList cell_plist("cell_quantity");
-    cell_plist.set("location", AmanziMesh::CELL);
+    cell_plist.set("location", AmanziMesh::Entity_kind::CELL);
     out.write(cell_plist, *cell_quantity);
 
     Teuchos::ParameterList multi_plist("multivector");
-    multi_plist.set("location", AmanziMesh::CELL);
+    multi_plist.set("location", AmanziMesh::Entity_kind::CELL);
     std::vector<std::string> subfieldnames{ "one", "two" };
     multi_plist.set<Teuchos::Array<std::string>>("subfieldnames", subfieldnames);
     out.write(multi_plist, *multi);
 
     Teuchos::ParameterList int_plist("int_quantity");
-    int_plist.set("location", AmanziMesh::CELL);
+    int_plist.set("location", AmanziMesh::Entity_kind::CELL);
     out.write(int_plist, *indices);
 
     out.write(Teuchos::ParameterList("six_one"), 6.1);
@@ -205,7 +205,7 @@ struct output_test_harness {
     CHECK_CLOSE(6.1, db, 1.e-12);
 
     Teuchos::ParameterList cell_plist("cell_quantity");
-    cell_plist.set("location", AmanziMesh::CELL);
+    cell_plist.set("location", AmanziMesh::Entity_kind::CELL);
     Vector_type cells(*cell_quantity);
     cells.putScalar(0.);
     in.read(cell_plist, cells);
@@ -213,7 +213,7 @@ struct output_test_harness {
     CHECK_CLOSE(0, cells.normInf(), 1e-10);
 
     Teuchos::ParameterList node_plist("node_quantity");
-    node_plist.set("location", AmanziMesh::NODE);
+    node_plist.set("location", AmanziMesh::Entity_kind::NODE);
     Vector_type nodes(*node_quantity);
     nodes.putScalar(0.);
     in.read(node_plist, nodes);

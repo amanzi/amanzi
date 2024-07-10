@@ -95,7 +95,7 @@ MagneticDiffusion2D(double dt,
 
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
@@ -104,14 +104,14 @@ MagneticDiffusion2D(double dt,
   }
 
   // create miscalleneous data
-  int nnodes_owned = mesh->getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::OWNED);
-  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::ALL);
+  int nnodes_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
-  int nfaces_owned = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   Teuchos::RCP<BCs> bc1 =
-    Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::SCALAR));
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::SCALAR));
 
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("electromagnetics operator");
@@ -124,7 +124,7 @@ MagneticDiffusion2D(double dt,
   const CompositeVectorSpace& cvs_e = global_op->DomainMap();
 
   Teuchos::RCP<CompositeVectorSpace> cvs_b = Teuchos::rcp(new CompositeVectorSpace());
-  cvs_b->SetMesh(mesh)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
+  cvs_b->SetMesh(mesh)->SetGhosted(true)->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
   CompositeVector E(cvs_e);
   CompositeVector B(*cvs_b);
@@ -170,7 +170,7 @@ MagneticDiffusion2D(double dt,
     phi.PutScalar(1.0 / Kc(0, 0));
 
     Teuchos::RCP<PDE_Accumulation> op_acc =
-      Teuchos::rcp(new PDE_Accumulation(AmanziMesh::NODE, global_op));
+      Teuchos::rcp(new PDE_Accumulation(AmanziMesh::Entity_kind::NODE, global_op));
     op_acc->SetBCs(bc1, bc1);
     op_acc->AddAccumulationTerm(phi, 1.0, "node");
 
@@ -222,7 +222,7 @@ MagneticDiffusion2D(double dt,
 
     // reconstruction
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 2);
+    cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 2);
 
     CompositeVector Bvec(*cvs);
     Epetra_MultiVector& sol = *Bvec.viewComponent("cell");
@@ -356,7 +356,7 @@ MagneticDiffusion3D(double dt,
     mesh = meshfactory.create(name, request_faces, request_edges);
   // mesh = meshfactory.create("test/hex_split_faces5.exo", request_faces, request_edges);
 
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   Analytic ana(mesh);
 
@@ -385,16 +385,16 @@ MagneticDiffusion3D(double dt,
   }
 
   // create boundary data
-  int nedges_owned = mesh->getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::OWNED);
-  int nedges_wghost = mesh->getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::ALL);
+  int nedges_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::OWNED);
+  int nedges_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::ALL);
 
-  int nfaces_owned = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   Teuchos::RCP<BCs> bc1 =
-    Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, WhetStone::DOF_Type::SCALAR));
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::EDGE, WhetStone::DOF_Type::SCALAR));
   Teuchos::RCP<BCs> bc2 =
-    Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
 
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("electromagnetics operator");
@@ -407,7 +407,7 @@ MagneticDiffusion3D(double dt,
   const CompositeVectorSpace& cvs_e = global_op->DomainMap();
 
   Teuchos::RCP<CompositeVectorSpace> cvs_b = Teuchos::rcp(new CompositeVectorSpace());
-  cvs_b->SetMesh(mesh)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
+  cvs_b->SetMesh(mesh)->SetGhosted(true)->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
   CompositeVector E(cvs_e);
   CompositeVector B(*cvs_b);
@@ -514,7 +514,7 @@ MagneticDiffusion3D(double dt,
 
     // -- magnetic field
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 3);
+    cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 3);
 
     CompositeVector Bvec(*cvs);
     Epetra_MultiVector& sol_b = *Bvec.viewComponent("cell");

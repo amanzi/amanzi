@@ -8,16 +8,17 @@
 */
 
 //!
-#include <algorithm>
+#include "errors.hh"
+#include "ViewUtils.hh"
 
 #include "FunctionPolynomial.hh"
-#include "errors.hh"
 
 namespace Amanzi {
 
-FunctionPolynomial::FunctionPolynomial(const Kokkos::View<double*, Kokkos::HostSpace>& c,
-                                       const Kokkos::View<int*, Kokkos::HostSpace>& p,
-                                       double x0)
+FunctionPolynomial::FunctionPolynomial(const Kokkos::View<const double*, Kokkos::HostSpace>& c,
+                                       const Kokkos::View<const int*, Kokkos::HostSpace>& p,
+        double x0) :
+  x0_(x0)
 {
   if (c.extent(0) < 1) {
     Errors::Message m;
@@ -30,10 +31,6 @@ FunctionPolynomial::FunctionPolynomial(const Kokkos::View<double*, Kokkos::HostS
     Exceptions::amanzi_throw(m);
   }
 
-  // Minimum and maximum powers.
-  // pmin_ = std::min(0, *(std::min_element(p.begin(), p.end())));
-  // pmax_ = std::max(0, *(std::max_element(p.begin(), p.end())));
-
   // Find min and max
   pmin_ = p(0);
   pmax_ = p(0);
@@ -45,31 +42,40 @@ FunctionPolynomial::FunctionPolynomial(const Kokkos::View<double*, Kokkos::HostS
   pmax_ = std::max(0, pmax_);
 
   int n = pmax_ - pmin_ + 1;
-  Kokkos::resize(c_, n);
-  for (int i = 0; i < n; ++i) { c_.view_host()(i) = 0.0; }
-  // c_.resize(n);
-  // c_.assign(n, 0.0);
-  for (int j = 0; j < c.extent(0); ++j) c_.view_host()[p[j] - pmin_] += c[j];
-  x0_ = x0;
-  Kokkos::deep_copy(c_.view_device(), c_.view_host());
+  Kokkos::View<double*, Kokkos::HostSpace> c2(c.label(), n);
+  Kokkos::deep_copy(c2, 0.);
+
+  for (int j = 0; j < c.extent(0); ++j) c2[p[j] - pmin_] += c[j];
+  c_ = asDualView(c2);
 }
 
 double
-FunctionPolynomial::operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
+FunctionPolynomial::operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const
 {
-  // Polynomial terms with non-negative exponents
-  double y = c_.view_host()[pmax_ - pmin_];
-  if (pmax_ > 0) {
-    double z = x[0] - x0_;
-    for (int j = pmax_; j > 0; --j) y = c_.view_host()[j - 1 - pmin_] + z * y;
-  }
-  // Polynomial terms with negative exponents.
-  if (pmin_ < 0) {
-    double w = c_.view_host()[0];
-    double z = 1.0 / (x[0] - x0_);
-    for (int j = pmin_; j < -1; ++j) w = c_.view_host()[j + 1 - pmin_] + z * w;
-    y += z * w;
-  }
-  return y;
+  auto f = Impl::FunctionPolynomialFunctor(c_.view_host(), pmin_, pmax_, x0_, x);
+  return f(0);
 }
+
+
+void
+FunctionPolynomial::apply(const Kokkos::View<const double**>& in,
+                          Kokkos::View<double*>& out,
+           const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+{
+  auto f = Impl::FunctionPolynomialFunctor(c_.view_device(), pmin_, pmax_, x0_, in);
+
+  if (ids) {
+    auto ids_loc = *ids;
+    Kokkos::parallel_for(
+      "FunctionPolynomial::apply1", ids_loc.extent(0), KOKKOS_LAMBDA(const int& i) {
+        out(ids_loc(i)) = f(ids_loc(i));
+      });
+  } else {
+    Kokkos::parallel_for(
+      "FunctionPolynomial::apply2", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+        out(i) = f(i);
+      });
+  }
+}
+
 } // namespace Amanzi

@@ -43,15 +43,16 @@ namespace Amanzi {
 class FunctionExprTK : public Function {
  public:
   FunctionExprTK(int n, const std::string& formula);
-  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionExprTK>(*this); }
-  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const;
 
-  void apply(const Kokkos::View<double**>& in,
+  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionExprTK>(*this); }
+
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const override;
+
+  void apply(const Kokkos::View<const double**>& in,
              Kokkos::View<double*>& out,
-             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override
   {
     // NOTE ExprTK cannot be used on device!
-    // NOTE: if this throws, ETC screwed up, fixthe subview below!
     assert(in.extent(1) == out.extent(0));
 
     Kokkos::View<double**, Kokkos::HostSpace> in_host(
@@ -59,7 +60,7 @@ class FunctionExprTK : public Function {
     Kokkos::deep_copy(in_host, in);
     Kokkos::View<double*, Kokkos::HostSpace> out_host("ExpTK work space out", in.extent(1));
     for (int i = 0; i != out.extent(0); ++i) {
-      out_host(i) = operator()(Kokkos::subview(in_host, Kokkos::ALL, i));
+      out_host(i) = operator()(Kokkos::subview(in_host, Kokkos::ALL, Kokkos::pair{i,i+1}));
     }
 
     if (ids) {

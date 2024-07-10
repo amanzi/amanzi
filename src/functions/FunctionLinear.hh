@@ -46,10 +46,7 @@ Example:
 
 */
 
-#ifndef AMANZI_LINEAR_FUNCTION_HH_
-#define AMANZI_LINEAR_FUNCTION_HH_
-
-#include <vector>
+#pragma once
 
 #include "Function.hh"
 
@@ -57,49 +54,54 @@ namespace Amanzi {
 
 class FunctionLinear : public Function {
  public:
-  FunctionLinear(double y0, const Kokkos::View<double*, Kokkos::HostSpace>& grad);
   FunctionLinear(double y0,
-                 const Kokkos::View<double*, Kokkos::HostSpace>& grad,
-                 const Kokkos::View<double*, Kokkos::HostSpace>& x0);
-  ~FunctionLinear() {}
-  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionLinear>(*this); }
-  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>&) const;
+                 const Kokkos::View<const double*, Kokkos::HostSpace>& grad);
+  FunctionLinear(double y0,
+                 const Kokkos::View<const double*, Kokkos::HostSpace>& grad,
+                 const Kokkos::View<const double*, Kokkos::HostSpace>& x0);
 
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
+  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionLinear>(*this); }
+
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>&) const override;
+
+  void apply(const Kokkos::View<const double**>& in,
+             Kokkos::View<double*>& out,
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override;
+
+ private:
+  double y0_;
+  Kokkos::DualView<const double*> grad_, x0_;
+};
+
+
+namespace Impl {
+
+template <class DoubleView_type,
+          class InView_type>
+class FunctionLinearFunctor {
+ public:
+  FunctionLinearFunctor(double y0,
+                        const DoubleView_type& grad,
+                        const DoubleView_type& x0,
+                        const InView_type& in)
+    : y0_(y0), grad_(grad), x0_(x0), in_(in) {}
+
+  KOKKOS_INLINE_FUNCTION
+  double operator()(const int i) const
   {
     double y = y0_;
-    if (x.extent(0) < grad_.extent(0)) {
-      assert(false && "FunctionLinear expects higher-dimensional argument.");
-    }
     for (int j = 0; j < grad_.extent(0); ++j)
-      y += grad_.view_device()[j] * (x(j, i) - x0_.view_device()[j]);
+      y += grad_[j] * (in_(j, i) - x0_[j]);
     return y;
-  }
-
-  void apply(const Kokkos::View<double**>& in,
-             Kokkos::View<double*>& out,
-             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
-  {
-    if (ids) {
-      auto ids_loc = *ids;
-      Kokkos::parallel_for(
-        "FunctionBilinear::apply1", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(ids_loc(i)) = apply_gpu(in, i);
-        });
-    } else {
-      assert(in.extent(1) == out.extent(0));
-      Kokkos::parallel_for(
-        "FunctionBilinear::apply2", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(i) = apply_gpu(in, i);
-        });
-    }
   }
 
  private:
   double y0_;
-  Kokkos::DualView<double*> grad_, x0_;
+  DoubleView_type grad_;
+  DoubleView_type x0_;
+  InView_type in_;
 };
 
+} // namespace Impl
 } // namespace Amanzi
 
-#endif

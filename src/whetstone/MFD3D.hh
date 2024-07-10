@@ -44,7 +44,7 @@ namespace WhetStone {
 
 class MFD3D : public BilinearForm {
  public:
-  MFD3D(const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh);
+  MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   // access members
   double simplex_functional() { return simplex_functional_; }
@@ -86,7 +86,7 @@ class MFD3D : public BilinearForm {
 
 // non-member functions
 void
-AddGradient(const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh, int c, DenseMatrix<>& N);
+AddGradient(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, DenseMatrix<>& N);
 
 } // namespace WhetStone
 } // namespace Amanzi

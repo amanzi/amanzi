@@ -84,9 +84,9 @@ RunTestUpwind(std::string method)
   for (int n = 4; n < 17; n *= 2) {
     Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
 
-    int ncells_wghost = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
-    int nfaces_owned = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-    int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+    int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+    int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+    int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
     // create model of nonlinearity
     Teuchos::RCP<Model> model = Teuchos::rcp(new Model(mesh));
@@ -107,9 +107,9 @@ RunTestUpwind(std::string method)
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1)
-      ->AddComponent("face", AmanziMesh::FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("dirichlet_faces", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1)
+      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
     CompositeVector field(*cvs);
     Epetra_MultiVector& fcells = *field.viewComponent("cell", true);
@@ -136,7 +136,7 @@ RunTestUpwind(std::string method)
 
 
     // create and initialize face-based flux field
-    cvs = CreateCompositeVectorSpace(mesh, "face", AmanziMesh::FACE, 1, true);
+    cvs = CreateCompositeVectorSpace(mesh, "face", AmanziMesh::Entity_kind::FACE, 1, true);
 
     CompositeVector flux(*cvs), solution(*cvs);
     Epetra_MultiVector& u = *flux.viewComponent("face", true);

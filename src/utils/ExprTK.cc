@@ -47,12 +47,12 @@ ExprTK::operator()(const std::vector<double>& txyz)
 }
 
 double
-ExprTK::operator()(const Kokkos::View<double*, Kokkos::HostSpace>& txyz)
+ExprTK::operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& txyz)
 {
-  t = txyz(0);
-  if (n_ > 1) x = txyz(1);
-  if (n_ > 2) y = txyz(2);
-  if (n_ > 3) z = txyz(3);
+  t = txyz(0,0);
+  if (n_ > 1) x = txyz(1,0);
+  if (n_ > 2) y = txyz(2,0);
+  if (n_ > 3) z = txyz(3,0);
   return expression_.value();
 }
 

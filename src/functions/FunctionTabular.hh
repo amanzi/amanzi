@@ -111,8 +111,7 @@ Example:
 
 */
 
-#ifndef AMANZI_TABULAR_FUNCTION_HH_
-#define AMANZI_TABULAR_FUNCTION_HH_
+#pragma once
 
 #include <memory>
 #include <vector>
@@ -124,102 +123,98 @@ namespace Amanzi {
 
 class FunctionTabular : public Function {
  public:
-  FunctionTabular(const Kokkos::View<double*, Kokkos::HostSpace>& x,
-                  const Kokkos::View<double*, Kokkos::HostSpace>& y,
+  FunctionTabular(const Kokkos::View<const double*, Kokkos::HostSpace>& x,
+                  const Kokkos::View<const double*, Kokkos::HostSpace>& y,
                   const int xi);
-  FunctionTabular(const Kokkos::View<double*, Kokkos::HostSpace>& x,
-                  const Kokkos::View<double*, Kokkos::HostSpace>& y,
+
+  FunctionTabular(const Kokkos::View<const double*, Kokkos::HostSpace>& x,
+                  const Kokkos::View<const double*, Kokkos::HostSpace>& y,
                   const int xi,
-                  const Kokkos::View<Form_kind*, Kokkos::HostSpace>& form);
-  FunctionTabular(const Kokkos::View<double*, Kokkos::HostSpace>& x,
-                  const Kokkos::View<double*, Kokkos::HostSpace>& y,
-                  const int xi,
-                  const Kokkos::View<Form_kind*, Kokkos::HostSpace>& form,
-                  std::vector<std::unique_ptr<Function>> func);
+                  const Kokkos::View<const Form_kind*, Kokkos::HostSpace>& form);
+
   FunctionTabular(const FunctionTabular& other)
     : x_(other.x_), y_(other.y_), form_(other.form_), xi_(other.xi_)
-  {
-    for (const auto& f : other.func_) func_.emplace_back(f->Clone());
-  }
+  {}
 
-  ~FunctionTabular(){};
-  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionTabular>(*this); }
-  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>&) const;
+  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionTabular>(*this); }
 
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>&) const override;
+
+  void apply(const Kokkos::View<const double**>& in,
+             Kokkos::View<double*>& out,
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override;
+
+ private:
+  Kokkos::DualView<const double*> x_;
+  Kokkos::DualView<const double*> y_;
+  Kokkos::DualView<const Form_kind*> form_;
+  int xi_;
+
+ private: // helper functions
+  void check_args(const Kokkos::View<const double*, Kokkos::HostSpace>&,
+                  const Kokkos::View<const double*, Kokkos::HostSpace>&,
+                  const Kokkos::View<const Form_kind*, Kokkos::HostSpace>&) const;
+};
+
+
+namespace Impl {
+
+template <class DoubleView_type,
+          class FormView_type,
+          class InView_type>
+class FunctionTabularFunctor {
+ public:
+  FunctionTabularFunctor(const DoubleView_type& x,
+                        const DoubleView_type& y,
+                        const FormView_type& form,
+                        int xi,
+                        const InView_type& in)
+    : x_(x), y_(y), form_(form), xi_(xi), in_(in) {}
+
+  KOKKOS_INLINE_FUNCTION
+  double operator()(const int i) const
   {
-    double y;
-    double xv = x(xi_, i);
-    int n = x_.extent(0);
-    if (xv <= x_.view_device()[0]) {
-      y = y_.view_device()[0];
-    } else if (xv > x_.view_device()[n - 1]) {
-      y = y_.view_device()[n - 1];
+    double xv = in_(xi_, i);
+    int nx = x_.extent(0);
+
+    double y(0.);
+    if (xv <= x_[0]) {
+      y = y_[0];
+    } else if (xv > x_[nx - 1]) {
+      y = y_[nx - 1];
     } else {
-      // binary search to find interval containing xv
-      int j1 = 0, j2 = n - 1;
-      while (j2 - j1 > 1) {
-        int j = (j1 + j2) / 2;
-        // if (xv >= x_[j]) { // right continuous
-        if (xv > x_.view_device()[j]) { // left continuous
-          j1 = j;
-        } else {
-          j2 = j;
-        }
-      }
+      int j2 = 0;
+      while ((j2 < nx) && (xv > x_[j2])) ++j2;
+      int j1 = j2 - 1;
+
       // Now have x_[j1] <= xv < x_[j2], if right continuous
       // or x_[j1] < xv <= x_[j2], if left continuous
-      switch (form_.view_device()[j1]) {
+      switch (form_[j1]) {
       case Form_kind::LINEAR:
         // Linear interpolation between x[j1] and x[j2]
-        y = y_.view_device()[j1] + ((y_.view_device()[j2] - y_.view_device()[j1]) /
-                                    (x_.view_device()[j2] - x_.view_device()[j1])) *
-                                     (xv - x_.view_device()[j1]);
+        y = y_[j1] + ((y_[j2] - y_[j1]) /
+                                    (x_[j2] - x_[j1])) *
+                                     (xv - x_[j1]);
         break;
       case Form_kind::CONSTANT:
-        y = y_.view_device()[j1];
+        y = y_[j1];
         break;
       case Form_kind::FUNCTION:
         assert(false && "Not implemented for FUNCTION");
-        //  y = (*func_[j1])(x);
       }
     }
     return y;
   }
 
 
-  void apply(const Kokkos::View<double**>& in,
-             Kokkos::View<double*>& out,
-             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
-  {
-    if (ids) {
-      auto ids_loc = *ids;
-      Kokkos::parallel_for(
-        "FunctionTabular::apply1", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(ids_loc(i)) = apply_gpu(in, i);
-        });
-    } else {
-      assert(in.extent(1) == out.extent(0));
-      Kokkos::parallel_for(
-        "FunctionTabular::apply2", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(i) = apply_gpu(in, i);
-        });
-    }
-  }
-
  private:
-  Kokkos::DualView<double*, Amanzi::DeviceOnlyMemorySpace> x_;
-  Kokkos::DualView<double*, Amanzi::DeviceOnlyMemorySpace> y_;
-  Kokkos::DualView<Form_kind*, Amanzi::DeviceOnlyMemorySpace> form_;
-  std::vector<std::unique_ptr<Function>> func_;
+  DoubleView_type x_, y_;
+  FormView_type form_;
   int xi_;
-
- private: // helper functions
-  void check_args(const Kokkos::View<double*, Kokkos::HostSpace>&,
-                  const Kokkos::View<double*, Kokkos::HostSpace>&,
-                  const Kokkos::View<Form_kind*, Kokkos::HostSpace>&) const;
+  InView_type in_;
 };
 
+} // namespace Impl
 } // namespace Amanzi
 
-#endif // AMANZI_TABULAR_FUNCTION_HH_
+

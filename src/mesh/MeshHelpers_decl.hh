@@ -25,10 +25,12 @@
 
 #include "Point.hh"
 #include "MeshDefs.hh"
-#include "MeshCache_decl.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
+
+class Mesh;
+class MeshCache;
 
 // -----------------------------------------------------------------------------
 // Derived topological relationships
@@ -37,19 +39,13 @@ namespace AmanziMesh {
 // -----------------------------------------------------------------------------
 
 //
-// Given a boundary face ID, get the corresponding face ID
-//
-template <class Mesh_type>
-KOKKOS_INLINE_FUNCTION Entity_ID
-getBoundaryFaceFace(const Mesh_type& mesh, Entity_ID bf);
-
-
-//
 // Given a face ID, get the corresponding boundary face ID (assuming it is a bf)
 //
-template <class Mesh_type>
-Entity_ID
-getFaceOnBoundaryBoundaryFace(const Mesh_type& mesh, Entity_ID f);
+inline Entity_ID
+getFaceOnBoundaryBoundaryFace(const Mesh& mesh, Entity_ID f);
+
+KOKKOS_INLINE_FUNCTION Entity_ID
+getFaceOnBoundaryBoundaryFace(const MeshCache& mesh, Entity_ID f);
 
 
 //
@@ -63,9 +59,12 @@ getBoundaryFaceInternalCell(const Mesh_type& mesh, Entity_ID bf);
 //
 // Given a face ID, and assuming it is a boundary face, get the cell internal.
 //
-template <class Mesh_type>
+inline Entity_ID
+getFaceOnBoundaryInternalCell(const Mesh& mesh, Entity_ID f);
+
 KOKKOS_INLINE_FUNCTION Entity_ID
-getFaceOnBoundaryInternalCell(const Mesh_type& mesh, Entity_ID f);
+getFaceOnBoundaryInternalCell(const MeshCache& mesh, Entity_ID f);
+
 
 //
 // Given a boundary face f, return the exterior normal. If f is an interior face,

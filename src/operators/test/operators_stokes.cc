@@ -60,11 +60,11 @@ TEST(OPERATOR_STOKES_EXACTNESS)
   meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 16, 20);
 
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nnodes = mesh->getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
-  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   // populate diffusion coefficient using an analytic solution
   AnalyticElasticity02 ana(mesh);
@@ -80,7 +80,7 @@ TEST(OPERATOR_STOKES_EXACTNESS)
   // populate boundary data for Bernardi-Raugel-type element
   // -- Dirichlet condition on faces for the normal velocity component
   Teuchos::RCP<BCs> bcf =
-    Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bcf_model = bcf->bc_model();
   std::vector<double>& bcf_value = bcf->bc_value();
 
@@ -98,7 +98,7 @@ TEST(OPERATOR_STOKES_EXACTNESS)
 
   // -- Dirichlet condition at nodes for the normal velocity component
   Point xv(2);
-  Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::POINT));
+  Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::POINT));
   std::vector<int>& bcv_model = bcv->bc_model();
   std::vector<Point>& bcv_value = bcv->bc_value_point();
 
@@ -137,7 +137,7 @@ TEST(OPERATOR_STOKES_EXACTNESS)
   op01->AddBCs(bcv, bcv);
 
   // create identity type operator: pressure block for preconditioner
-  Teuchos::RCP<PDE_Accumulation> pc11 = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::CELL, mesh));
+  Teuchos::RCP<PDE_Accumulation> pc11 = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh));
   Teuchos::RCP<Operator> global11 = pc11->global_operator();
 
   // create a tree operator for the discrete Stokes PDE. It is a 2x2 block operator

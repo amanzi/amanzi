@@ -25,13 +25,13 @@ DeriveFaceValuesFromCellValues(CompositeVector& cv)
 
     const auto cv_c = cv.viewComponent("cell", true);
     auto cv_f = cv.viewComponent("face", false);
-    const AmanziMesh::Mesh& mesh = *cv.getMesh();
+    const AmanziMesh::MeshCache& mesh = cv.getMesh()->getCache();
 
     Kokkos::parallel_for(
       "CompositeVector::DeriveFaceValuesFromCellValues loop 1",
       cv_f.extent(0),
       KOKKOS_LAMBDA(decltype(cv_f)::size_type f) {
-        int ncells = mesh.getFaceNumCells(f, AmanziMesh::Parallel_kind::ALL);
+        int ncells = mesh.getFaceNumCells(f);
         double face_value = 0.0;
         for (int n = 0; n != ncells; ++n) { face_value += cv_c(mesh.getFaceCell(f, n), 0); }
         cv_f(f, 0) = face_value / ncells;
@@ -51,22 +51,23 @@ copyMeshCoordinatesToVector(const AmanziMesh::Mesh& mesh,
 {
   auto view = vec.viewComponent(to_string(kind), false);
   int ndim = mesh.getSpaceDimension();
+  const AmanziMesh::MeshCache& mc = mesh.getCache();
   Kokkos::parallel_for(
     "copyMeshCoordinatesToVector", view.extent(0), KOKKOS_LAMBDA(const int& i) {
-      auto nc = mesh.getCentroid(kind, i);
+      auto nc = mc.getCentroid(kind, i);
       for (int j = 0; j != ndim; ++j) view(i, j) = nc[j];
     });
 }
 
 
 void
-copyVectorToMeshCoordinates(const CompositeVector& vec, AmanziMesh::MeshHost& mesh)
+copyVectorToMeshCoordinates(const CompositeVector& vec, AmanziMesh::Mesh& mesh)
 {
   const auto nodes = vec.viewComponent<MemSpace_kind::HOST>("node", true);
   int ndim = mesh.getSpaceDimension();
 
-  AmanziMesh::MeshHost::Entity_ID_View node_ids("node ids", nodes.extent(0));
-  AmanziMesh::MeshHost::Point_View new_positions("new pos", nodes.extent(0));
+  AmanziMesh::Mesh::Entity_ID_View node_ids("node ids", nodes.extent(0));
+  AmanziMesh::Mesh::Point_View new_positions("new pos", nodes.extent(0));
 
   for (int n=0; n!=nodes.extent(0); ++n) {
     node_ids[n] = n;

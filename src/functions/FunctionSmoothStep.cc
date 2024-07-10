@@ -27,18 +27,33 @@ FunctionSmoothStep::FunctionSmoothStep(double x0, double y0, double x1, double y
 }
 
 double
-FunctionSmoothStep::operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
+FunctionSmoothStep::operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const
 {
-  double y;
-  if (x[0] <= x0_) {
-    y = y0_;
-  } else if (x[0] >= x1_) {
-    y = y1_;
-  } else {
-    double s = (x[0] - x0_) / (x1_ - x0_);
-    y = y0_ + (y1_ - y0_) * s * s * (3 - 2 * s);
-  }
-  return y;
+  auto f = Impl::FunctionSmoothStepFunctor(x0_, y0_, x1_, y1_, x);
+  return f(0);
 }
+
+
+void
+FunctionSmoothStep::apply(const Kokkos::View<const double**>& in,
+           Kokkos::View<double*>& out,
+           const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+{
+  auto f = Impl::FunctionSmoothStepFunctor(x0_, y0_, x1_, y1_, in);
+
+  if (ids) {
+    auto ids_loc = *ids;
+    Kokkos::parallel_for(
+      "FunctionSmoothStep::apply1", ids_loc.extent(0), KOKKOS_LAMBDA(const int& i) {
+        out(ids_loc(i)) = f(ids_loc(i));
+      });
+  } else {
+    Kokkos::parallel_for(
+      "FunctionSmoothStep::apply2", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+        out(i) = f(i);
+      });
+  }
+}
+
 
 } // namespace Amanzi

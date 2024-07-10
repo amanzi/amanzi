@@ -16,7 +16,6 @@ These are implemented using the remainder of the Mesh API.
 #pragma once
 
 #include "MeshDefs.hh"
-#include "MeshCache_decl.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -29,68 +28,9 @@ namespace Impl {
 //
 // topology algorithms
 //
-DISABLE_CUDA_WARNING
 template <class Mesh_type>
-KOKKOS_INLINE_FUNCTION Cell_kind
-getCellType(const Mesh_type& mesh, const Entity_ID c)
-{
-  auto faces = mesh.getCellFaces(c);
-  if (mesh.getManifoldDimension() == 2) {
-    switch (faces.size()) {
-    case 3:
-      return Cell_kind::TRI;
-      break;
-    case 4:
-      return Cell_kind::QUAD;
-      break;
-    default:
-      return Cell_kind::POLYGON;
-    }
-  } else if (mesh.getManifoldDimension() == 3) {
-    int nquads = 0;
-    for (const auto& f : faces) {
-      typename Mesh_type::cEntity_ID_View fnodes;
-      mesh.getFaceNodes(f, fnodes);
-      if (fnodes.size() == 4) nquads++;
-    }
-
-    switch (faces.size()) {
-    case 4:
-      if (nquads == 0)
-        return Cell_kind::TET;
-      else
-        return Cell_kind::POLYHED;
-      break;
-    case 5:
-      if (nquads == 1)
-        return Cell_kind::PYRAMID;
-      else if (nquads == 3)
-        return Cell_kind::PRISM;
-      else
-        return Cell_kind::POLYHED;
-      break;
-    case 6:
-      if (nquads == 6)
-        return Cell_kind::HEX;
-      else
-        return Cell_kind::POLYHED;
-      break;
-    default:
-      return Cell_kind::POLYHED;
-    }
-  } else {
-    if (!std::is_same_v<Mesh_type, AmanziMesh::MeshCacheDevice>) {
-      assert(false && "Mesh not supported");
-      //Errors::Message msg;
-      //msg << "Mesh of manifold_dimension = " << mesh.getManifoldDimension() << " not supported";
-      //Exceptions::amanzi_throw(msg);
-    } else {
-      assert(false); // "Invalid mesh manifold dimension");
-    }
-  }
-  return Cell_kind::UNKNOWN;
-}
-
+Cell_kind
+computeCellKind(const Mesh_type& mesh, const Entity_ID c);
 
 template <class Mesh_type>
 int
@@ -155,19 +95,19 @@ computeCellCoordinates(const Mesh_type& mesh, const Entity_ID c);
 
 template <class Mesh_type>
 std::size_t
-getMaxCellNumNodes(const Mesh_type& mesh);
+computeMaxCellNumNodes(const Mesh_type& mesh);
 
 template <class Mesh_type>
 std::size_t
-getMaxCellNumFaces(const Mesh_type& mesh);
+computeMaxCellNumFaces(const Mesh_type& mesh);
 
 template <class Mesh_type>
 std::size_t
-getMaxCellNumEdges(const Mesh_type& mesh);
+computeMaxCellNumEdges(const Mesh_type& mesh);
 
 template <class Mesh_type>
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
-getFaceCentroid(const Mesh_type& mesh, const Entity_ID f);
+computeFaceCentroid(const Mesh_type& mesh, const Entity_ID f);
 
 } // namespace Impl
 } // namespace AmanziMesh

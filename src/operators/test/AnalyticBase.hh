@@ -118,7 +118,7 @@ class AnalyticBase { //: public WhetStone::WhetStoneFunction {
 * Exterior normal
 ****************************************************************** */
 inline AmanziGeometry::Point
-FaceNormalExterior(const AmanziMesh::MeshHost& mesh, int f, bool* flag)
+FaceNormalExterior(const AmanziMesh::Mesh& mesh, int f, bool* flag)
 {
   auto cells = mesh.getFaceCells(f);
   *flag = (cells.extent(0) == 1);
@@ -149,7 +149,7 @@ GlobalOp(const Comm_type& comm, std::string op, double* val, int n)
 ****************************************************************** */
 inline void
 ComputeCellError(const AnalyticBase& ana,
-                 const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh,
+                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                  const CompositeVector& p_vec,
                  double t,
                  double& pnorm,
@@ -160,7 +160,7 @@ ComputeCellError(const AnalyticBase& ana,
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   auto p = p_vec.viewComponent<MemSpace_kind::HOST>("cell", false);
 
 
@@ -192,7 +192,7 @@ ComputeCellError(const AnalyticBase& ana,
 ****************************************************************** */
 inline void
 ComputeFaceError(const AnalyticBase& ana,
-                 const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh,
+                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                  const CompositeVector& u_vec,
                  double t,
                  double& unorm,
@@ -203,7 +203,7 @@ ComputeFaceError(const AnalyticBase& ana,
   l2_err = 0.0;
   inf_err = 0.0;
   auto u = u_vec.viewComponent<MemSpace_kind::HOST>("face", false);
-  int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces; f++) {
     double area = mesh->getFaceArea(f);
     const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
@@ -257,7 +257,7 @@ ComputeFaceError(const AnalyticBase& ana,
 //   auto mesh = AmanziMesh::onMemHost(mesh_dev);
 
 //   WhetStone::Polynomial<> poly(ana.dimension(), 1);
-//   int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+//   int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
 //   auto p = p_vec.viewComponent<MemSpace_kind::HOST>("node", false);
 //   for (int c = 0; c < ncells; c++) {
@@ -329,7 +329,7 @@ ComputeEdgeError(const AnalyticBase& ana,
   h1_err = 0.0;
 
   AmanziGeometry::Point grad(ana.dimension());
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   auto p = p_vec.viewComponent<MemSpace_kind::HOST>("edge", false);
   for (int c = 0; c < ncells; c++) {
@@ -367,7 +367,7 @@ ComputeEdgeError(const AnalyticBase& ana,
 ****************************************************************** */
 // inline void
 // ComputeEdgeMomentsError(const AnalyticBase& ana,
-//                         const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh,
+//                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 //                         const CompositeVector& p_vec,
 //                         double t,
 //                         int ngauss,
@@ -380,7 +380,7 @@ ComputeEdgeError(const AnalyticBase& ana,
 //   inf_err = 0.0;
 
 //   AmanziMesh::Entity_ID n0, n1;
-//   int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+//   int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
 //   auto p = p_vec.viewComponent<MemSpace_kind::HOST>(
 //     "edge_moments", false); // likely this will fail, not sure what it sould be.  fix when it fails.

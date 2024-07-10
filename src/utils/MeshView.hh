@@ -154,11 +154,11 @@ struct MeshDualView : public Kokkos::ViewTraits<DataType, Arg1Type, Arg2Type, Ar
   }
 };
 
-template <class ViewType>
+template <class View_type>
 void
-sort(ViewType view)
+sort(View_type view)
 {
-  Kokkos::sort(static_cast<typename ViewType::baseView>(view), 0, view.size());
+  Kokkos::sort(static_cast<typename View_type::baseView>(view), 0, view.size());
 }
 
 

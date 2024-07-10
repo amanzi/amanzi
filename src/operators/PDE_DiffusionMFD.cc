@@ -220,7 +220,7 @@ PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
   }
 
   DenseMatrix_Vector& A = local_op_->A;
-  const AmanziMesh::Mesh& m = *mesh_;
+  const AmanziMesh::MeshCache& m = mesh_->getCache();
   Preallocate_little_k_();
 
   auto& Wff_cells = Wff_cells_;
@@ -385,14 +385,14 @@ PDE_DiffusionMFD::UpdateMatricesTPFA_()
   //CompositeVectorSpace cv_space;
   //cv_space.SetMesh(mesh_);
   //cv_space.SetGhosted(true);
-  //cv_space.SetComponent("face", AmanziMesh::FACE, 1);
+  //cv_space.SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
   //Teuchos::RCP<CompositeVector> T = cv_space.Create(); //Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
   //const auto Ttmp = T->viewComponent("face", true);
 
   //WhetStone::Tensor<> Kc(mesh_->space_dimension(), 1);
   //Kc(0, 0) = 1.0;
-  //const Amanzi::AmanziMesh::Mesh& m = *mesh_;
+  // const AmanziMesh::MeshCache& m = mesh_->getCache();
 
   //AmanziMesh::Entity_ID_View cells, faces;
   //Ttmp.PutScalar(0.0);
@@ -477,9 +477,9 @@ PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
       assert(false);
       //Teuchos::Ptr<const BCs> bc_f, bc_n;
       //for (const auto& bc : bcs_trial_) {
-      //  if (bc->kind() == AmanziMesh::FACE) {
+      //  if (bc->kind() == AmanziMesh::Entity_kind::FACE) {
       //    bc_f = bc.ptr();
-      //  } else if (bc->kind() == AmanziMesh::NODE) {
+      //  } else if (bc->kind() == AmanziMesh::Entity_kind::NODE) {
       //    bc_n = bc.ptr();
       //  }
       //}
@@ -518,7 +518,7 @@ PDE_DiffusionMFD::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
 
   { // context for views
     // apply diffusion type BCs to FACE-CELL system
-    const Amanzi::AmanziMesh::Mesh& m = *mesh_;
+    const AmanziMesh::MeshCache& m = mesh_->getCache();
     DenseMatrix_Vector& A = local_op_->A;
 
     const auto bc_model_trial = bc_trial->bc_model();
@@ -777,7 +777,7 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
   // only works on upwinded methods
   if (little_k_type_ == OPERATOR_UPWIND_NONE) return;
 
-  const AmanziMesh::Mesh& m = *mesh_;
+  const AmanziMesh::MeshCache& m = mesh_->getCache();
   DenseMatrix_Vector& A = jac_op_->A;
 
   { // context for views
@@ -946,7 +946,7 @@ PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
     auto flux_data = flux->viewComponent("face", true);
     auto hits_data = hits.viewComponent("face", true);
 
-    const Amanzi::AmanziMesh::Mesh& m = *mesh_;
+    const AmanziMesh::MeshCache& m = mesh_->getCache();
 
     auto local_A = local_op_->A;
     auto local_Av = local_op_->Av;
@@ -1051,7 +1051,7 @@ PDE_DiffusionMFD::UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector
 void
 PDE_DiffusionMFD::CreateMassMatrices_()
 {
-  WhetStone::MFD3D_Diffusion mfd(AmanziMesh::onMemHost(mesh_));
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
   WhetStone::DenseMatrix<> Wff;
   bool surface_mesh = (mesh_->getManifoldDimension() != mesh_->getSpaceDimension());
 
@@ -1257,13 +1257,13 @@ PDE_DiffusionMFD::Init()
     cvs->SetMesh(mesh_)->SetGhosted(true);
 
     if (global_op_schema & OPERATOR_SCHEMA_DOFS_CELL) {
-      cvs->AddComponent("cell", AmanziMesh::CELL, 1);
+      cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     }
     if (global_op_schema & OPERATOR_SCHEMA_DOFS_FACE) {
-      cvs->AddComponent("face", AmanziMesh::FACE, 1);
+      cvs->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     }
     if (global_op_schema & OPERATOR_SCHEMA_DOFS_NODE) {
-      cvs->AddComponent("node", AmanziMesh::NODE, 1);
+      cvs->AddComponent("node", AmanziMesh::Entity_kind::NODE, 1);
     }
 
     // choose the Operator from the prec schema
@@ -1272,12 +1272,12 @@ PDE_DiffusionMFD::Init()
       //global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist_));
     } else if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_CELL) {
       assert(false);
-      // cvs->AddComponent("face", AmanziMesh::FACE, 1);
+      // cvs->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
       // global_op_ = Teuchos::rcp(new Operator_FaceCellScc(cvs, plist_));
       //global_op_ = Teuchos::rcp(new Operator_Cell(cvs->CreateSpace(), plist_, schema_prec_dofs_));
     } else if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_FACE) {
       //assert(false);
-      cvs->AddComponent("cell", AmanziMesh::CELL, 1);
+      cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
       global_op_ = Teuchos::rcp(new Operator_FaceCellSff(cvs, plist_));
     } else if (schema_prec_dofs_ == (OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       global_op_ = Teuchos::rcp(new Operator_FaceCell(cvs->CreateSpace(), plist_));
@@ -1415,7 +1415,7 @@ PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
   // create the op
   //  Teuchos::RCP<CompositeVectorSpace> cface_cvs = Teuchos::rcp(new CompositeVectorSpace());
   //  cface_cvs->SetMesh(mesh_)->SetGhosted()
-  //      ->AddComponent("face", AmanziMesh::FACE, 1);
+  //      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
   //  consistent_face_op_ = Teuchos::rcp(new Operator_ConsistentFace(cface_cvs, plist_.sublist("consistent faces")));
   //  consistent_face_op_->OpPushBack(local_op_);
@@ -1475,7 +1475,7 @@ PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 double
 PDE_DiffusionMFD::ComputeTransmissibility(int f) const
 {
-  WhetStone::MFD3D_Diffusion mfd(AmanziMesh::onMemHost(mesh_));
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
   auto cells = mesh_->getFaceCells(f);
   int c = cells[0];
 

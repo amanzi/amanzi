@@ -60,7 +60,7 @@ RunTest(std::string filename, std::string basis, double& l2norm)
   // create and initialize cell-based field
   int nk(6), dim(2);
   CompositeVectorSpace cvs1;
-  cvs1.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs1.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
   auto field = Teuchos::rcp(new CompositeVector(cvs1));
   auto field_c = field->viewComponent("cell", true);
 
@@ -75,13 +75,13 @@ RunTest(std::string filename, std::string basis, double& l2norm)
   ana.InitialGuess(dg, *field_c, 0.0);
   field->ScatterMasterToGhosted("cell");
 
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // memory for gradient
   CompositeVectorSpace cvs2;
-  cvs2.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim);
+  cvs2.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, dim);
   auto grad = Teuchos::rcp(new CompositeVector(cvs2));
   Epetra_MultiVector& grad_c = *grad->viewComponent("cell");
 
@@ -237,7 +237,7 @@ RunTestGaussPoints(const std::string& limiter_name)
   // create and initialize cell-based field
   int nk(6), dim(2);
   CompositeVectorSpace cvs1;
-  cvs1.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs1.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
   auto field = Teuchos::rcp(new CompositeVector(cvs1));
   auto field_c = field->viewComponent("cell", true);
 
@@ -252,13 +252,13 @@ RunTestGaussPoints(const std::string& limiter_name)
   ana.InitialGuess(dg, *field_c, 0.0);
   field->ScatterMasterToGhosted("cell");
 
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int ncells_wghost = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // memory for gradient
   CompositeVectorSpace cvs2;
-  cvs2.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim);
+  cvs2.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, dim);
   auto grad = Teuchos::rcp(new CompositeVector(cvs2));
   Epetra_MultiVector& grad_c = *grad->viewComponent("cell");
 

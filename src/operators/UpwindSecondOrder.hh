@@ -55,10 +55,10 @@ class UpwindSecondOrder : public Upwind<Model> {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1)
-      ->AddComponent("face", AmanziMesh::FACE, 1)
-      ->AddComponent("grad", AmanziMesh::CELL, mesh_->space_dimension());
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("dirichlet_faces", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1)
+      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1)
+      ->AddComponent("grad", AmanziMesh::Entity_kind::CELL, mesh_->space_dimension());
     return cvs;
   }
 
@@ -124,7 +124,7 @@ UpwindSecondOrder<Model>::Compute(const CompositeVector& flux,
   AmanziGeometry::Point grad(dim);
   AmanziMesh::Entity_ID_List faces;
 
-  int ncells_wghost = mesh_->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
+  int ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();

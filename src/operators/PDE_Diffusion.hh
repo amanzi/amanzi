@@ -70,6 +70,8 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   PDE_Diffusion(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : PDE_HelperDiscretization(mesh), plist_(plist){};
 
+  PDE_Diffusion(const PDE_Diffusion& other) = delete;
+
   virtual ~PDE_Diffusion() = default;
   virtual void Init() = 0;
 
@@ -190,17 +192,17 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
     out.SetGhosted();
     if (little_k_type_ == OPERATOR_LITTLE_K_NONE) { return out; }
     if (little_k_type_ != OPERATOR_LITTLE_K_UPWIND) {
-      out.AddComponent("cell", AmanziMesh::CELL, 1);
+      out.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     }
     if (little_k_type_ != OPERATOR_LITTLE_K_STANDARD) {
-      out.AddComponent("face", AmanziMesh::FACE, 1);
+      out.AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     }
     if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN ||
         little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
-      out.AddComponent("twin", AmanziMesh::FACE, 1);
+      out.AddComponent("twin", AmanziMesh::Entity_kind::FACE, 1);
     }
     if (little_k_type_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
-      out.AddComponent("grad", AmanziMesh::CELL, mesh_->getSpaceDimension());
+      out.AddComponent("grad", AmanziMesh::Entity_kind::CELL, mesh_->getSpaceDimension());
     }
     return out;
   }

@@ -45,27 +45,26 @@ struct DiffusionFixture {
   DiffusionFixture(const Teuchos::RCP<AnalyticBase>& ana_,
                    const std::string& mesh_file,
                    Teuchos::RCP<const AmanziMesh::Mesh> mesh_ = Teuchos::null)
-    : comm(Amanzi::getDefaultComm()), ana(ana_), mesh_dev(mesh_)
+    : comm(Amanzi::getDefaultComm()), ana(ana_), mesh(mesh_)
   {
     plist = Teuchos::getParametersFromXmlFile("test/operator_diffusion_discretizations.xml");
 
-    if (mesh_dev == Teuchos::null) {
+    if (mesh == Teuchos::null) {
       auto gm = Teuchos::rcp(
         new AmanziGeometry::GeometricModel(ana->dimension(), plist->sublist("regions"), *comm));
       AmanziMesh::MeshFactory meshfactory(comm, gm);
       if (mesh_file == "Generate1D") {
-        mesh_dev = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 1);
+        mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 1);
       } else if (mesh_file == "Generate2D") {
-        mesh_dev = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 10);
+        mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 10);
       } else if (mesh_file == "Generate2D_HiRes") {
-        mesh_dev = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 100);
+        mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 100);
       } else if (mesh_file == "Generate3D") {
-        mesh_dev = meshfactory.create(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 4, 5, 6);
+        mesh = meshfactory.create(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 4, 5, 6);
       } else {
-        mesh_dev = meshfactory.create(mesh_file);
+        mesh = meshfactory.create(mesh_file);
       }
     }
-    mesh = AmanziMesh::onMemHost(mesh_dev);
   }
 
   template <class PDE_Diffusion_type, AmanziMesh::Entity_kind Boundary_kind>
@@ -73,7 +72,7 @@ struct DiffusionFixture {
   {
     // construct the operator
     op =
-      Teuchos::rcp(new PDE_Diffusion_type(plist->sublist("PK operator").sublist(name), mesh_dev));
+      Teuchos::rcp(new PDE_Diffusion_type(plist->sublist("PK operator").sublist(name), mesh));
     op->Init();
 
     // modify diffusion coefficient
@@ -81,8 +80,8 @@ struct DiffusionFixture {
     int rank = ana->TensorDiffusivity_host(xc0, 0.0).rank();
     int mem = ana->TensorDiffusivity_host(xc0, 0.0).mem();
     CompositeVectorSpace K_map;
-    K_map.SetMesh(mesh_dev);
-    K_map.AddComponent("cell", AmanziMesh::CELL, mem);
+    K_map.SetMesh(mesh);
+    K_map.AddComponent("cell", AmanziMesh::Entity_kind::CELL, mem);
     auto K = Teuchos::rcp(new TensorVector(K_map));
     K->Init(K->size(),
             //size function: size of element c
@@ -93,7 +92,7 @@ struct DiffusionFixture {
     op->SetTensorCoefficient(K);
 
     // boundary condition
-    bc = Teuchos::rcp(new Operators::BCs(mesh_dev, Boundary_kind, WhetStone::DOF_Type::SCALAR));
+    bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, WhetStone::DOF_Type::SCALAR));
     op->SetBCs(bc, bc);
   }
 
@@ -104,7 +103,7 @@ struct DiffusionFixture {
     g[mesh->getSpaceDimension() - 1] = -gravity;
     Teuchos::ParameterList op_list = plist->sublist("PK operator").sublist(name);
     op_list.set("gravity", true);
-    auto op_grav = Teuchos::rcp(new PDE_Diffusion_type(op_list, mesh_dev));
+    auto op_grav = Teuchos::rcp(new PDE_Diffusion_type(op_list, mesh));
     op_grav->SetDensity(1.0);
     op_grav->SetGravity(g);
     op_grav->Init();
@@ -112,8 +111,8 @@ struct DiffusionFixture {
 
     // modify diffusion coefficient
     CompositeVectorSpace K_map;
-    K_map.SetMesh(mesh_dev);
-    K_map.AddComponent("cell", AmanziMesh::CELL, 1);
+    K_map.SetMesh(mesh);
+    K_map.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     auto K = Teuchos::rcp(new TensorVector(K_map));
 
     K->Init(K->size(),
@@ -126,25 +125,25 @@ struct DiffusionFixture {
     op->SetTensorCoefficient(K);
 
     // boundary condition
-    bc = Teuchos::rcp(new Operators::BCs(mesh_dev, Boundary_kind, WhetStone::DOF_Type::SCALAR));
+    bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, WhetStone::DOF_Type::SCALAR));
     op->SetBCs(bc, bc);
   }
 
   void scalarCoefficient(AmanziMesh::Entity_kind kind)
   {
     CompositeVectorSpace space;
-    space.SetMesh(mesh_dev)->SetGhosted();
+    space.SetMesh(mesh)->SetGhosted();
     Teuchos::RCP<CompositeVector> kr;
-    if (kind == AmanziMesh::CELL) {
-      space.SetComponent("cell", AmanziMesh::CELL, 1);
+    if (kind == AmanziMesh::Entity_kind::CELL) {
+      space.SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
       kr = space.Create();
       auto vec = kr->viewComponent<MemSpace_kind::HOST>("cell", true);
       for (int i = 0; i != mesh->getNumEntities(kind, AmanziMesh::Parallel_kind::ALL); ++i) {
         vec(i, 0) = ana->ScalarDiffusivity(mesh->getCellCentroid(i), 0.0);
       }
 
-    } else if (kind == AmanziMesh::FACE) {
-      space.SetComponent("face", AmanziMesh::FACE, 1);
+    } else if (kind == AmanziMesh::Entity_kind::FACE) {
+      space.SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
       kr = space.Create();
       auto vec = kr->viewComponent<MemSpace_kind::HOST>("face", true);
       for (int i = 0; i != mesh->getNumEntities(kind, AmanziMesh::Parallel_kind::ALL); ++i) {
@@ -159,9 +158,9 @@ struct DiffusionFixture {
     auto bc_value = bc->bc_value<MemSpace_kind::HOST>();
     auto bc_model = bc->bc_model<MemSpace_kind::HOST>();
 
-    if (bc->kind() == AmanziMesh::FACE) {
-      const auto& bf_map = *mesh->getMap(AmanziMesh::BOUNDARY_FACE, false);
-      const auto& f_map = *mesh->getMap(AmanziMesh::FACE, false);
+    if (bc->kind() == AmanziMesh::Entity_kind::FACE) {
+      const auto& bf_map = *mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false);
+      const auto& f_map = *mesh->getMap(AmanziMesh::Entity_kind::FACE, false);
 
       for (int bf = 0; bf != bf_map.getLocalNumElements(); ++bf) {
         auto f = f_map.getLocalElement(bf_map.getGlobalElement(bf));
@@ -178,9 +177,9 @@ struct DiffusionFixture {
     auto bc_value = bc->bc_value<MemSpace_kind::HOST>();
     auto bc_model = bc->bc_model<MemSpace_kind::HOST>();
 
-    if (bc->kind() == AmanziMesh::FACE) {
-      const auto& bf_map = *mesh->getMap(AmanziMesh::BOUNDARY_FACE, false);
-      const auto& f_map = *mesh->getMap(AmanziMesh::FACE, false);
+    if (bc->kind() == AmanziMesh::Entity_kind::FACE) {
+      const auto& bf_map = *mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false);
+      const auto& f_map = *mesh->getMap(AmanziMesh::Entity_kind::FACE, false);
 
       for (int bf = 0; bf != bf_map.getLocalNumElements(); ++bf) {
         auto f = f_map.getLocalElement(bf_map.getGlobalElement(bf));
@@ -222,7 +221,7 @@ struct DiffusionFixture {
     global_op->initializeInverse();
 
     CompositeVectorSpace flux_space;
-    flux_space.SetMesh(mesh_dev)->SetGhosted(true)->SetComponent(
+    flux_space.SetMesh(mesh)->SetGhosted(true)->SetComponent(
       "face", AmanziMesh::Entity_kind::FACE, 1);
     flux = flux_space.Create();
   }
@@ -291,8 +290,7 @@ struct DiffusionFixture {
   Comm_ptr_type comm;
   ParameterList_ptr_type plist;
   Teuchos::ParameterList inverse_list;
-  Teuchos::RCP<const AmanziMesh::MeshHost> mesh;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_dev;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh;
 
   Teuchos::RCP<Operators::BCs> bc;
   Teuchos::RCP<AnalyticBase> ana;

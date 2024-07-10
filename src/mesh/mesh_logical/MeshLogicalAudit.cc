@@ -23,7 +23,7 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 
-MeshLogicalAudit::MeshLogicalAudit(const Teuchos::RCP<const MeshHost>& mesh_, std::ostream& os)
+MeshLogicalAudit::MeshLogicalAudit(const Teuchos::RCP<const Mesh>& mesh_, std::ostream& os)
   : mesh(mesh_),
     comm_(mesh_->getComm()),
     nfaces_all_(mesh_->getNumEntities(Entity_kind::FACE, Parallel_kind::ALL)),
@@ -168,9 +168,9 @@ MeshLogicalAudit::check_entity_counts() const
 // Returns true if the values in the list are distinct -- no repeats.
 
 bool
-MeshLogicalAudit::distinct_values(const MeshHost::cEntity_ID_View& list) const
+MeshLogicalAudit::distinct_values(const Mesh::cEntity_ID_View& list) const
 {
-  MeshHost::Entity_ID_View copy;
+  Mesh::Entity_ID_View copy;
   copy.fromConst(list);
   sort(copy.begin(), copy.end());
   return (adjacent_find(copy.begin(), copy.end()) == copy.end());
@@ -186,7 +186,7 @@ bool
 MeshLogicalAudit::check_cell_to_faces() const
 {
   Entity_ID_List bad_cells, bad_cells1;
-  MeshHost::cEntity_ID_View cface;
+  Mesh::cEntity_ID_View cface;
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
     try {
@@ -227,7 +227,7 @@ MeshLogicalAudit::check_cell_to_faces() const
 bool
 MeshLogicalAudit::check_face_refs_by_cells() const
 {
-  MeshHost::cEntity_ID_View cface;
+  Mesh::cEntity_ID_View cface;
   vector<unsigned int> refs(nfaces_all_, 0);
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
@@ -267,8 +267,8 @@ MeshLogicalAudit::check_face_refs_by_cells() const
 bool
 MeshLogicalAudit::check_faces_cell_consistency() const
 {
-  MeshHost::cEntity_ID_View cface;
-  MeshHost::cEntity_ID_View fcell;
+  Mesh::cEntity_ID_View cface;
+  Mesh::cEntity_ID_View fcell;
 
   Entity_ID_List bad_cells;
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
@@ -312,8 +312,8 @@ MeshLogicalAudit::check_faces_cell_consistency() const
 bool
 MeshLogicalAudit::check_cell_to_face_dirs() const
 {
-  MeshHost::cEntity_ID_View faces;
-  MeshHost::cDirection_View fdirs;
+  Mesh::cEntity_ID_View faces;
+  Mesh::cDirection_View fdirs;
   Entity_ID_List bad_cells, bad_cells_exc;
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
@@ -354,7 +354,7 @@ MeshLogicalAudit::check_cell_degeneracy() const
 {
   os_ << "Checking cells for topological degeneracy ..." << std::endl;
 
-  MeshHost::cEntity_ID_View cface;
+  Mesh::cEntity_ID_View cface;
   Entity_ID_List bad_cells;
 
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
@@ -431,8 +431,8 @@ MeshLogicalAudit::check_cell_face_bisector_geometry() const
   os_ << "Checking cell-to-face bisector geometry ..." << std::endl;
   Entity_ID_List bad_cells;
 
-  MeshHost::cEntity_ID_View cface;
-  MeshHost::cPoint_View bisectors;
+  Mesh::cEntity_ID_View cface;
+  Mesh::cPoint_View bisectors;
   for (Entity_ID j = 0; j < ncells_all_; ++j) {
     mesh->getCellFacesAndBisectors(j, cface, &bisectors);
     if (cface.size() != bisectors.size()) {
@@ -587,7 +587,7 @@ MeshLogicalAudit::check_cell_to_faces_ghost_data() const
   // int ncell_own = cell_map_own->getLocalNumElements();
   // int ncell_use = cell_map_use->getLocalNumElements();
 
-  // MeshHost::cEntity_ID_View cface;
+  // Mesh::cEntity_ID_View cface;
   // Entity_ID_List bad_cells;
 
   // // Create a matrix of the GIDs for all owned cells.
@@ -650,7 +650,7 @@ MeshLogicalAudit::check_face_partition() const
   // Mark all the faces contained by owned cells.
   bool owned[nfaces_all_];
   for (int j = 0; j < nfaces_all_; ++j) owned[j] = false;
-  MeshHost::cEntity_ID_View cface;
+  Mesh::cEntity_ID_View cface;
   for (Entity_ID j = 0; j < mesh->getMap(Entity_kind::CELL, false)->getLocalNumElements(); ++j) {
     mesh->getCellFaces(j, cface);
     for (int k = 0; k < cface.size(); ++k) owned[cface[k]] = true;
@@ -678,8 +678,8 @@ MeshLogicalAudit::check_face_partition() const
 // reliable otherwise.
 
 int
-MeshLogicalAudit::same_face(const MeshHost::Entity_ID_View fnode1,
-                            const MeshHost::Entity_ID_View fnode2) const
+MeshLogicalAudit::same_face(const Mesh::Entity_ID_View fnode1,
+                            const Mesh::Entity_ID_View fnode2) const
 {
   int nn = fnode1.size();
 

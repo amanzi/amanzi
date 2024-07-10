@@ -37,8 +37,7 @@ Example:
 
 */
 
-#ifndef AMANZI_POLYNOMIAL_FUNCTION_HH_
-#define AMANZI_POLYNOMIAL_FUNCTION_HH_
+#pragma once
 
 #include <vector>
 
@@ -48,50 +47,17 @@ namespace Amanzi {
 
 class FunctionPolynomial : public Function {
  public:
-  FunctionPolynomial(const Kokkos::View<double*, Kokkos::HostSpace>& c,
-                     const Kokkos::View<int*, Kokkos::HostSpace>& p,
+  FunctionPolynomial(const Kokkos::View<const double*, Kokkos::HostSpace>& c,
+                     const Kokkos::View<const int*, Kokkos::HostSpace>& p,
                      double x0 = 0.0);
-  ~FunctionPolynomial() {}
-  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionPolynomial>(*this); }
-  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>&) const;
 
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
-  {
-    auto vc = c_.view_device();
-    // Polynomial terms with non-negative exponents
-    double y = vc[pmax_ - pmin_];
-    if (pmax_ > 0) {
-      double z = x(0, i) - x0_;
-      for (int j = pmax_; j > 0; --j) y = vc[j - 1 - pmin_] + z * y;
-    }
-    // Polynomial terms with negative exponents.
-    if (pmin_ < 0) {
-      double w = vc[0];
-      double z = 1.0 / (x(0, i) - x0_);
-      for (int j = pmin_; j < -1; ++j) w = vc[j + 1 - pmin_] + z * w;
-      y += z * w;
-    }
-    return y;
-  }
+  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionPolynomial>(*this); }
 
-  void apply(const Kokkos::View<double**>& in,
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>&) const override;
+
+  void apply(const Kokkos::View<const double**>& in,
              Kokkos::View<double*>& out,
-             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
-  {
-    if (ids) {
-      auto ids_loc = *ids;
-      Kokkos::parallel_for(
-        "FunctionPolynomial::apply1", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(ids_loc(i)) = apply_gpu(in, i);
-        });
-    } else {
-      assert(in.extent(1) == out.extent(0));
-      Kokkos::parallel_for(
-        "FunctionPolynomial::apply2", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(i) = apply_gpu(in, i);
-        });
-    }
-  }
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override;
 
  private:
   int pmin_;
@@ -100,6 +66,49 @@ class FunctionPolynomial : public Function {
   Kokkos::DualView<double*> c_;
 };
 
+
+namespace Impl {
+
+template <class DoubleView_type,
+          class InView_type>
+class FunctionPolynomialFunctor {
+ public:
+  FunctionPolynomialFunctor(const DoubleView_type& c,
+                            int pmin,
+                            int pmax,
+                            double x0,
+                            const InView_type& in)
+    : c_(c), pmin_(pmin), pmax_(pmax), x0_(x0), in_(in) {}
+
+  KOKKOS_INLINE_FUNCTION
+  double operator()(const int i) const
+  {
+    // Polynomial terms with non-negative exponents
+    double y = c_[pmax_ - pmin_];
+    if (pmax_ > 0) {
+      double z = in_(0, i) - x0_;
+      for (int j = pmax_; j > 0; --j) y = c_[j - 1 - pmin_] + z * y;
+    }
+
+    // Polynomial terms with negative exponents.
+    if (pmin_ < 0) {
+      double w = c_[0];
+      double z = 1.0 / (in_(0, i) - x0_);
+      for (int j = pmin_; j < -1; ++j) w = c_[j + 1 - pmin_] + z * w;
+      y += z * w;
+    }
+    return y;
+  }
+
+ private:
+  DoubleView_type c_;
+  double x0_;
+  int pmax_, pmin_;
+  InView_type in_;
+};
+
+
+} // namespace Impl
 } // namespace Amanzi
 
-#endif // AMANZI_POLYNOMIAL_FUNCTION_HH_
+

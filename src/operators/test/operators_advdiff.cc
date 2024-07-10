@@ -65,8 +65,8 @@ AdvectionDiffusion2D(int nx, double* error)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, nx);
 
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // populate diffusion coefficient
   AmanziGeometry::Point vel(1.0, 1.0);
@@ -84,8 +84,8 @@ AdvectionDiffusion2D(int nx, double* error)
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh)
     ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1)
-    ->AddComponent("face", AmanziMesh::FACE, 1);
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+    ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
 
   CompositeVector source(*cvs);
   Epetra_MultiVector& src = *source.viewComponent("cell");
@@ -98,7 +98,7 @@ AdvectionDiffusion2D(int nx, double* error)
   // create flux field
   auto u = Teuchos::rcp(new CompositeVector(*cvs));
   Epetra_MultiVector& uf = *u->viewComponent("face");
-  int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   for (int f = 0; f < nfaces; f++) {
     auto tmp = ana.advection_exact(mesh->getFaceCentroid(f), 0.0);
     uf[0][f] = tmp * mesh->face_normal(f);
@@ -108,7 +108,7 @@ AdvectionDiffusion2D(int nx, double* error)
   // Neumann on outflow boundary is needed for perator's positive-definitness
   bool flag;
   double diff_flux, adv_flux;
-  auto bcd = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bcd = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   {
     std::vector<int>& bc_model = bcd->bc_model();
     std::vector<double>& bc_value = bcd->bc_value();
@@ -141,7 +141,7 @@ AdvectionDiffusion2D(int nx, double* error)
   // Dirichlet on the outlow boundary is ignored by upwind operator
   // Neumann condition on inflow violates monotonicity; it generates negative
   //   contribution to diagonal
-  auto bca = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bca = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   {
     std::vector<int>& bc_model = bca->bc_model();
     std::vector<double>& bc_value = bca->bc_value();

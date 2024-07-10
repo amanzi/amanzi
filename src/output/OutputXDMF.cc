@@ -19,7 +19,7 @@
 namespace Amanzi {
 
 OutputXDMF::OutputXDMF(Teuchos::ParameterList& plist,
-                       const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh)
+                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   : mesh_(mesh), is_dynamic_(plist.get<bool>("dynamic mesh", false)), init_(false)
 {
   filenamebase_ = plist.get<std::string>("file name base");
@@ -106,13 +106,13 @@ OutputXDMF::writeMesh_(int cycle)
   // count total connections
   Tpetra::global_size_t local_conns(0); // length of MixedElements
   for (AmanziMesh::Entity_ID c = 0; c != cell_map->getLocalNumElements(); ++c) {
-    AmanziMesh::Cell_kind ctype = vis_mesh.getCellType(c);
+    AmanziMesh::Cell_kind ctype = vis_mesh.getCellKind(c);
     if (ctype != AmanziMesh::Cell_kind::POLYGON) {
-      int nnodes = vis_mesh.getCellNumNodes(c);
+      int nnodes = vis_mesh.getCellNodes(c).size();
       local_conns += nnodes + 1;
 
     } else if (manifold_dim == 2) {
-      int nnodes = vis_mesh.getCellNumNodes(c);
+      int nnodes = vis_mesh.getCellNodes(c).size();
       local_conns += nnodes + 2;
 
     } else {
@@ -168,7 +168,7 @@ OutputXDMF::writeMesh_(int cycle)
     auto connv = conns.getLocalViewHost(Tpetra::Access::ReadWrite);
 
     for (int c = 0; c != cell_map->getLocalNumElements(); ++c) {
-      AmanziMesh::Cell_kind ctype = vis_mesh.getCellType(c);
+      AmanziMesh::Cell_kind ctype = vis_mesh.getCellKind(c);
       if (ctype != AmanziMesh::Cell_kind::POLYGON) {
         // store cell type id
         connv(lcv++, 0) = XDMFCellTypeID(ctype);
@@ -229,7 +229,7 @@ OutputXDMF::writeDualMesh_(int cycle)
   std::array<GO, 2> local_conn_ents = { 0, 0 };
   auto face_map = vis_mesh.getMap(AmanziMesh::Entity_kind::FACE, false);
   for (AmanziMesh::Entity_ID f = 0; f != face_map->getLocalNumElements(); ++f) {
-    auto nfcells = vis_mesh.getFaceNumCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto nfcells = vis_mesh.getFaceNumCells(f);
     if (nfcells > 1) {
       local_conn_ents[0] += nfcells;
       local_conn_ents[1]++;

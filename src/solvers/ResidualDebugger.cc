@@ -48,8 +48,7 @@ ResidualDebugger::StartIteration<TreeVectorSpace>(double time,
         filename << filebasename_ << cycle << "_a" << attempt << "_v" << i;
         Teuchos::ParameterList plist;
         plist.set<std::string>("file name base", filename.str());
-        vis_[i] = OutputFactory::createForVis(
-          plist, AmanziMesh::onMemHost(leaves[i]->getData()->getMesh()));
+        vis_[i] = OutputFactory::createForVis(plist, leaves[i]->getData()->getMesh());
       }
     }
   }

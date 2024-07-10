@@ -24,8 +24,6 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "MultiFunction.hh"
-#include "FunctionConstant.hh"
-#include "FunctionLinear.hh"
 #include "CompositeVectorFunction.hh"
 #include "errors.hh"
 #include "CompositeVectorSpace.hh"
@@ -77,9 +75,9 @@ TEST_FIXTURE(reference_mesh, MESH_FUNCTION)
   for (int i = 0; i != crit_depth.size(); ++i) {
     auto ps = (*crit_depth.space)[i];
     auto ids = ps->getIDs();
-    auto& patch = crit_depth[i];
+    auto& patch_v = crit_depth[i].data;
     Kokkos::parallel_for(
-      "crit_depth", ids.extent(0), KOKKOS_LAMBDA(const int& i) { patch.data(i, 0) = 3.14; });
+      "crit_depth", ids.extent(0), KOKKOS_LAMBDA(const int& i) { patch_v(i, 0) = 3.14; });
   }
 
   // finally, one for a seepage-like condition, which may switch dynamically in
@@ -95,21 +93,21 @@ TEST_FIXTURE(reference_mesh, MESH_FUNCTION)
   MultiPatch<double> seepage(mf_s.createMPS(false));
   MultiPatch<int> seepage_flags(mf_s.createMPS(false));
   mf_s.Compute(1.0, seepage);
-  const auto& m = *mesh;
+  const AmanziMesh::MeshCache& m = mesh->getCache();
 
   for (int i = 0; i != seepage.size(); ++i) {
     auto ps = (*seepage.space)[i];
     auto ids = ps->getIDs();
-    auto& patch = seepage[i];
-    auto& flags = seepage_flags[i];
+    auto& patch_v = seepage[i].data;
+    auto& flags_v = seepage_flags[i].data;
     Kokkos::parallel_for(
       "seepage", ids.extent(0), KOKKOS_LAMBDA(const int& i) {
         auto fc = m.getFaceCentroid(ids(i));
         if (fc[2] > 2.0) {
-          patch.data(i, 0) = 0.0;
-          flags.data(i, 0) = OPERATOR_BC_NEUMANN;
+          patch_v(i, 0) = 0.0;
+          flags_v(i, 0) = OPERATOR_BC_NEUMANN;
         } else {
-          flags.data(i, 0) = OPERATOR_BC_DIRICHLET;
+          flags_v(i, 0) = OPERATOR_BC_DIRICHLET;
         }
       });
   }
@@ -141,9 +139,9 @@ TEST_FIXTURE(reference_mesh, MESH_FUNCTION)
   {
     auto vals = bc_values.viewComponent<MemSpace_kind::HOST>("face", false);
     auto markers = bc_markers.viewComponent<MemSpace_kind::HOST>("face", false);
-    auto mh = onMemHost(mesh);
+
     for (int f = 0; f != vals.extent(0); ++f) {
-      auto fc = mh->getFaceCentroid(f);
+      auto fc = mesh->getFaceCentroid(f);
       std::cout << "Checking " << f << " at " << fc << std::endl;
       if (fc[0] == 0.0) {
         // left

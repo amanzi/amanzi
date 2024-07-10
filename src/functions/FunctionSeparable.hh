@@ -35,8 +35,7 @@ where :math:`f_1` is defined by the `"function1`" sublist, and
 
 */
 
-#ifndef AMANZI_SEPARABLE_FUNCTION_HH_
-#define AMANZI_SEPARABLE_FUNCTION_HH_
+#pragma once
 
 #include <memory>
 #include <algorithm>
@@ -47,56 +46,56 @@ namespace Amanzi {
 
 class FunctionSeparable : public Function {
  public:
+
   FunctionSeparable(std::unique_ptr<Function> f1, std::unique_ptr<Function> f2)
-    : f1_(std::move(f1)), f2_(std::move(f2)){};
+    : f1_(std::move(f1)), f2_(std::move(f2)) {};
+
   FunctionSeparable(const Function& f1, const Function& f2) : f1_(f1.Clone()), f2_(f2.Clone()) {}
+
   FunctionSeparable(const FunctionSeparable& source)
     : f1_(source.f1_->Clone()), f2_(source.f2_->Clone())
   {}
-  ~FunctionSeparable() {} //{ if (f1_) delete f1_; if (f2_) delete f2_; }
-  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionSeparable>(*this); }
 
-  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
+  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionSeparable>(*this); }
+
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const override
   {
-    // std::vector<double>::const_iterator xb = x.begin(); xb++;
-    // std::vector<double> y(xb, x.end());
     auto y = Kokkos::subview(
-      x, Kokkos::make_pair(static_cast<size_t>(1), static_cast<size_t>(x.extent(0))));
+      x, Kokkos::make_pair(static_cast<size_t>(1), static_cast<size_t>(x.extent(0))), Kokkos::ALL);
     return (*f1_)(x) * (*f2_)(y);
   }
 
 
-  void apply(const Kokkos::View<double**>& in,
+  void apply(const Kokkos::View<const double**>& in,
              Kokkos::View<double*>& out,
-             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override
   {
-    Kokkos::View<double**> y =
+    Kokkos::View<const double**> y =
       Kokkos::subview(in,
                       Kokkos::make_pair(static_cast<size_t>(1), static_cast<size_t>(in.extent(0))),
                       Kokkos::ALL);
-    Kokkos::View<double*> out_1("out_1", in.extent(1));
-    f1_->apply(in, out_1);
-    f2_->apply(y, out, ids);
+
+    f1_->apply(in, out, ids);
+
+    Kokkos::View<double*> out_2("out_2", in.extent(1));
+    f2_->apply(y, out_2, ids);
 
     if (ids) {
       auto ids_loc = *ids;
       Kokkos::parallel_for(
-        "FunctionSeparable::apply", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(ids_loc(i)) *= out_1(i);
+        "FunctionSeparable::apply", ids_loc.extent(0), KOKKOS_LAMBDA(const int& i) {
+          out(ids_loc(i)) *= out_2(ids_loc(i));
         });
     } else {
       Kokkos::parallel_for(
-        "FunctionSeparable::apply", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(i) *= out_1(i);
+        "FunctionSeparable::apply", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+          out(i) *= out_2(i);
         });
     }
   }
 
  private:
   std::unique_ptr<Function> f1_, f2_;
-  // Function *f1_, *f2_;
 };
 
 } // namespace Amanzi
-
-#endif // AMANZI_SEPARABLE_FUNCTION_HH_

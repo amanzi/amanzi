@@ -23,14 +23,14 @@ class AnalyticElasticityBase {
   AnalyticElasticityBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh)
   {
     nnodes_owned =
-      mesh_->getNumEntities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
+      mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
     ncells_owned =
-      mesh_->getNumEntities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
+      mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
     nnodes_wghost =
-      mesh_->getNumEntities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_kind::ALL);
+      mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE, Amanzi::AmanziMesh::Parallel_kind::ALL);
     ncells_wghost =
-      mesh_->getNumEntities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_kind::ALL);
+      mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE, Amanzi::AmanziMesh::Parallel_kind::ALL);
   };
   ~AnalyticElasticityBase(){};
 
@@ -98,7 +98,7 @@ AnalyticElasticityBase::VectorNodeError(Amanzi::CompositeVector& u,
   Amanzi::AmanziMesh::Entity_ID_List nodes;
 
   Teuchos::RCP<Amanzi::CompositeVectorSpace> cvs = Teuchos::rcp(new Amanzi::CompositeVectorSpace());
-  cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent("node", Amanzi::AmanziMesh::NODE, 1);
+  cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent("node", Amanzi::AmanziMesh::Entity_kind::NODE, 1);
 
   Amanzi::CompositeVector vol(*cvs);
   Epetra_MultiVector& vol_node = *vol.viewComponent("node", true);

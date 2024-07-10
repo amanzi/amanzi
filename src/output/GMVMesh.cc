@@ -14,7 +14,7 @@ namespace Amanzi {
 namespace GMV {
 
 static inline void
-write_mesh_to_file_(const AmanziMesh::MeshHost& mesh, std::string filename)
+write_mesh_to_file_(const AmanziMesh::Mesh& mesh, std::string filename)
 {
   int dim = mesh.getSpaceDimension();
   int dim_cell = mesh.getManifoldDimension();
@@ -93,7 +93,7 @@ write_mesh_to_file_(const AmanziMesh::MeshHost& mesh, std::string filename)
 
 
 void
-create_mesh_file(const AmanziMesh::MeshHost& mesh, std::string filename)
+create_mesh_file(const AmanziMesh::Mesh& mesh, std::string filename)
 {
   write_mesh_to_file_(mesh, filename);
   gmvwrite_closefile();
@@ -154,14 +154,14 @@ open_data_file(std::string meshfile,
 
 
 void
-open_data_file(const AmanziMesh::MeshHost& mesh, const std::string& filename)
+open_data_file(const AmanziMesh::Mesh& mesh, const std::string& filename)
 {
   write_mesh_to_file_(mesh, filename);
 }
 
 
 void
-open_data_file(const AmanziMesh::MeshHost& mesh,
+open_data_file(const AmanziMesh::Mesh& mesh,
                std::string filename,
                unsigned int cycleno,
                unsigned int digits)

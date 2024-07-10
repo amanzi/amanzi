@@ -31,7 +31,7 @@ namespace Amanzi {
 
 class OutputSilo : public Output {
  public:
-  OutputSilo(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh);
+  OutputSilo(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   // destructor must release file resource on non-finalized
   ~OutputSilo();
@@ -69,7 +69,7 @@ class OutputSilo : public Output {
   int count_;
   FilenameFormatter formatter_;
 
-  Teuchos::RCP<const AmanziMesh::MeshHost> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   mutable DBfile* fid_;
 };
 

@@ -73,21 +73,21 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx);
   std::string setname = "fracture 1";
   auto surfmesh_fw =
-    Teuchos::rcp(new MeshExtractedManifold(mesh, setname, AmanziMesh::FACE, comm, gm, plist));
+    Teuchos::rcp(new MeshExtractedManifold(mesh, setname, AmanziMesh::Entity_kind::FACE, comm, gm, plist));
   Teuchos::RCP<Mesh> surfmesh = Teuchos::rcp(
     new Mesh(surfmesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
 
   // modify diffusion coefficient
-  int ncells_owned = surfmesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_owned = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells_owned = surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_owned = surfmesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   AmanziGeometry::Point v(3);
   Teuchos::RCP<AnalyticBase> ana;
   ana = Teuchos::rcp(new Analytic00b(surfmesh, 1.0, 2.0, 0.0, 1, v, gravity));
 
   // create boundary data (Dirichlet everywhere)
-  auto bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -107,7 +107,7 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
   // allocate memory for solution
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(surfmesh)->SetGhosted(true);
-  cvs->SetComponent("cell", AmanziMesh::CELL, 1)->SetOwned(false);
+  cvs->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1)->SetOwned(false);
 
   auto solution = Teuchos::rcp(new CompositeVector(*cvs));
   solution->PutScalar(0.0);

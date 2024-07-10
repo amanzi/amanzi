@@ -37,21 +37,19 @@ TEST(MESH_CACHE_GEOMETRY_PLANAR)
               << "Testing 2D geometry with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
 
-    Teuchos::RCP<AmanziMesh::MeshHost> mesh = createStructuredUnitQuad(Preference{ frm }, 2, 2);
+    auto mesh = createStructuredUnitQuad(Preference{ frm }, 2, 2);
     // cache, pitch the framework, repeat
-    AmanziMesh::cacheAll(*mesh);
+    mesh->cacheAll();
     mesh->destroyFramework();
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh_c = mesh;
 
-    testMeshAudit<MeshAuditHost>(mesh);
+    testMeshAuditHost<MeshAudit>(mesh_c);
+    testGeometryQuad(*mesh, mesh.get(), 2, 2);
+    testExteriorMapsUnitBox(*mesh, mesh.get(), 2, 2);
 
-    testGeometryQuad(mesh, 2, 2);
-    testExteriorMapsUnitBox(mesh, 2, 2);
-
-    auto mesh_dev = AmanziMesh::onMemDevice(mesh);
-    testMeshAudit<MeshAudit>(mesh_dev);
-
-    testGeometryQuad(mesh_dev, 2, 2);
-    testExteriorMapsUnitBox(mesh_dev, 2, 2);
+    testMeshAuditDevice<MeshAuditCache>(mesh_c);
+    testGeometryQuad(*mesh, mesh->getCache(), 2, 2);
+    testExteriorMapsUnitBox(*mesh, mesh->getCache(), 2, 2);
   }
 }
 
@@ -72,16 +70,17 @@ TEST(MESH_CACHE_GEOMETRY_1CUBE_GENERATED)
               << "Testing 3D geometry with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createStructuredUnitHex(Preference{ frm }, 1, 1, 1);
-    AmanziMesh::cacheAll(*mesh);
+    mesh->cacheAll();
     mesh->destroyFramework();
-    testMeshAudit<MeshAuditHost>(mesh);
-    testGeometryCube(mesh, 1, 1, 1);
-    if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(mesh, 1, 1, 1);
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh_c = mesh;
 
-    auto mesh_dev = AmanziMesh::onMemDevice(mesh);
-    testMeshAudit<MeshAudit>(mesh_dev);
-    testGeometryCube(mesh, 1, 1, 1);
-    if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(mesh, 1, 1, 1);
+    testMeshAuditHost<MeshAudit>(mesh_c);
+    testGeometryCube(*mesh, mesh.get(), 1, 1, 1);
+    if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(*mesh, mesh.get(), 1, 1, 1);
+
+    testMeshAuditDevice<MeshAuditCache>(mesh_c);
+    testGeometryCube(*mesh, mesh->getCache(), 1, 1, 1);
+    if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(*mesh, mesh->getCache(), 1, 1, 1);
   }
 }
 
@@ -103,16 +102,17 @@ TEST(MESH_CACHE_GEOMETRY_1CUBE_EXO)
               << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createUnstructured(Preference{ frm }, "test/hex_1x1x1_sets.exo");
-    AmanziMesh::cacheAll(*mesh);
+    mesh->cacheAll();
     mesh->destroyFramework();
-    testMeshAudit<MeshAuditHost>(mesh);
-    testGeometryCube(mesh, 1, 1, 1);
-    if (frm == Framework::MSTK) testExteriorMapsUnitBox(mesh, 1, 1, 1);
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh_c = mesh;
 
-    auto mesh_dev = AmanziMesh::onMemDevice(mesh);
-    testMeshAudit<MeshAudit>(mesh_dev);
-    testGeometryCube(mesh_dev, 1, 1, 1);
-    if (frm == Framework::MSTK) testExteriorMapsUnitBox(mesh_dev, 1, 1, 1);
+    testMeshAuditHost<MeshAudit>(mesh_c);
+    testGeometryCube(*mesh, mesh.get(), 1, 1, 1);
+    if (frm == Framework::MSTK) testExteriorMapsUnitBox(*mesh, mesh.get(), 1, 1, 1);
+
+    testMeshAuditDevice<MeshAuditCache>(mesh_c);
+    testGeometryCube(*mesh, mesh->getCache(), 1, 1, 1);
+    if (frm == Framework::MSTK) testExteriorMapsUnitBox(*mesh, mesh->getCache(), 1, 1, 1);
   }
 }
 
@@ -131,17 +131,17 @@ TEST(MESH_CACHE_GEOMETRY_3CUBE)
               << "------------------------------------------------" << std::endl;
     auto mesh = createStructuredUnitHex(Preference{ frm }, 3, 3, 3);
     // cache, pitch the framework, repeat
-    AmanziMesh::cacheAll(*mesh);
+    mesh->cacheAll();
     mesh->destroyFramework();
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh_c = mesh;
 
-    testMeshAudit<MeshAuditHost>(mesh);
-    testGeometryCube(mesh, 3, 3, 3);
-    if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh, 3, 3, 3); }
+    testMeshAuditHost<MeshAudit>(mesh_c);
+    testGeometryCube(*mesh, mesh.get(), 3, 3, 3);
+    if (frm == Framework::MSTK) { testExteriorMapsUnitBox(*mesh, mesh.get(), 3, 3, 3); }
 
-    auto mesh_dev = AmanziMesh::onMemDevice(mesh);
-    testMeshAudit<MeshAudit>(mesh_dev);
-    testGeometryCube(mesh_dev, 3, 3, 3);
-    if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh_dev, 3, 3, 3); }
+    testMeshAuditDevice<MeshAuditCache>(mesh_c);
+    testGeometryCube(*mesh, mesh->getCache(), 3, 3, 3);
+    if (frm == Framework::MSTK) { testExteriorMapsUnitBox(*mesh, mesh->getCache(), 3, 3, 3); }
   }
 }
 
@@ -163,17 +163,17 @@ TEST(MESH_CACHE_GEOMETRY_3CUBE_EXO)
               << "------------------------------------------------" << std::endl;
     auto mesh = createUnstructured(Preference{ frm }, "test/hex_3x3x3_sets.exo");
     // cache, pitch the framework, repeat
-    AmanziMesh::cacheAll(*mesh);
+    mesh->cacheAll();
     mesh->destroyFramework();
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh_c = mesh;
 
-    testMeshAudit<MeshAuditHost>(mesh);
-    testGeometryCube(mesh, 3, 3, 3);
-    if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh, 3, 3, 3); }
+    testMeshAuditHost<MeshAudit>(mesh_c);
+    testGeometryCube(*mesh, mesh.get(), 3, 3, 3);
+    if (frm == Framework::MSTK) { testExteriorMapsUnitBox(*mesh, mesh.get(), 3, 3, 3); }
 
-    auto mesh_dev = AmanziMesh::onMemDevice(mesh);
-    testMeshAudit<MeshAudit>(mesh_dev);
-    testGeometryCube(mesh_dev, 3, 3, 3);
-    if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh_dev, 3, 3, 3); }
+    testMeshAuditDevice<MeshAuditCache>(mesh_c);
+    testGeometryCube(*mesh, mesh->getCache(), 3, 3, 3);
+    if (frm == Framework::MSTK) { testExteriorMapsUnitBox(*mesh, mesh->getCache(), 3, 3, 3); }
   }
 }
 
@@ -202,10 +202,11 @@ TEST(MESH_CACHE_GEOMETRY_3CUBE_EXO)
 //               << "------------------------------------------------" << std::endl;
 //     auto mesh = createUnstructured(Preference{frm}, "test/hex_3x3x3.par");
 // // cache, pitch the framework, repeat
-// AmanziMesh::cacheAll(*mesh);
+// mesh->cacheAll();
 // mesh->destroyFramework();
-//     testMeshAudit<MeshAudit, Mesh>(mesh);
-//     testGeometryCube(mesh,3,3,3);
+//    Teuchos::RCP<const AmanziMesh::Mesh> mesh_c = mesh;
+//     testMeshAuditHost<MeshAudit>(mesh_c);
+//     testGeometryCube(*mesh, mesh.get(), ,3,3,3);
 //     if (frm == Framework::MSTK) {
 //       testExteriorMapsUnitBox(mesh,3,3,3);
 //     }
@@ -227,17 +228,17 @@ TEST(MESH_CACHE_GEOMETRY_2x3CUBE)
               << "------------------------------------------------" << std::endl;
     auto mesh = createStructuredUnitHex(Preference{ frm }, 2, 2, 3);
     // cache, pitch the framework, repeat
-    AmanziMesh::cacheAll(*mesh);
+    mesh->cacheAll();
     mesh->destroyFramework();
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh_c = mesh;
 
-    testMeshAudit<MeshAuditHost>(mesh);
-    testGeometryCube(mesh, 2, 2, 3);
-    if (frm == Framework::MSTK) testExteriorMapsUnitBox(mesh, 2, 2, 3);
+    testMeshAuditHost<MeshAudit>(mesh_c);
+    testGeometryCube(*mesh, mesh.get(), 2, 2, 3);
+    if (frm == Framework::MSTK) testExteriorMapsUnitBox(*mesh, mesh.get(), 2, 2, 3);
 
-    auto mesh_dev = AmanziMesh::onMemDevice(mesh);
-    testMeshAudit<MeshAudit>(mesh_dev);
-    testGeometryCube(mesh, 2, 2, 3);
-    if (frm == Framework::MSTK) testExteriorMapsUnitBox(mesh, 2, 2, 3);
+    testMeshAuditDevice<MeshAuditCache>(mesh_c);
+    testGeometryCube(*mesh, mesh->getCache(), 2, 2, 3);
+    if (frm == Framework::MSTK) testExteriorMapsUnitBox(*mesh, mesh->getCache(), 2, 2, 3);
   }
 }
 
@@ -261,12 +262,12 @@ TEST(MESH_CACHE_GEOMETRY_FRACTURE_EXO)
               << "------------------------------------------------" << std::endl;
     auto mesh = createUnstructured(Preference{ frm }, "test/fractures.exo");
     // cache, pitch the framework, repeat
-    AmanziMesh::cacheAll(*mesh);
+    mesh->cacheAll();
     mesh->destroyFramework();
-    testMeshAudit<MeshAuditHost>(mesh);
 
-    auto mesh_dev = AmanziMesh::onMemDevice(mesh);
-    testMeshAudit<MeshAudit>(mesh_dev);
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh_c = mesh;
+    testMeshAuditHost<MeshAudit>(mesh_c);
+    testMeshAuditDevice<MeshAuditCache>(mesh_c);
   }
 }
 
@@ -283,11 +284,12 @@ TEST(MESH_CACHE_GEOMETRY_PINCHOUTS)
               << "------------------------------------------------" << std::endl;
     auto mesh = createUnstructured(Preference{ frm }, "test/test_pri_pinchout_mesh.exo");
     // cache, pitch the framework, repeat
-    AmanziMesh::cacheAll(*mesh);
+    mesh->cacheAll();
     mesh->destroyFramework();
-    testMeshAudit<MeshAuditHost>(mesh);
 
-    auto mesh_dev = AmanziMesh::onMemDevice(mesh);
-    testMeshAudit<MeshAudit>(mesh_dev);
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh_c = mesh;
+    testMeshAuditHost<MeshAudit>(mesh_c);
+    testMeshAuditDevice<MeshAuditCache>(mesh_c);
   }
 }
+

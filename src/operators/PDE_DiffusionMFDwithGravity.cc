@@ -57,7 +57,7 @@ PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
 
       bool have_K = K_ != Teuchos::null;
       const TensorVector& K = have_K ? *K_ : K_alternative;
-      const AmanziMesh::Mesh& mesh = *mesh_;
+      const auto& mesh = mesh_->getCache();
       AmanziGeometry::Point g(g_);
       bool gravity_special_projection(gravity_special_projection_);
       auto& Wff_cells = Wff_cells_;
@@ -157,7 +157,7 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
     auto rho_c = DensityCells(true);
     auto grav_flux_v = grav_flux.viewComponent("face", false);
 
-    const AmanziMesh::Mesh& mesh = *mesh_;
+    const AmanziMesh::MeshCache& mesh = mesh_->getCache();
     AmanziGeometry::Point g(g_);
     bool have_K = K_ != Teuchos::null;
     const TensorVector& K = have_K ? *K_ : K_alternative;
@@ -191,7 +191,7 @@ PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector
               if (gravity_special_projection) {
                 const AmanziGeometry::Point& xcc = Impl::GravitySpecialDirection(mesh, f);
                 double sign = normal * xcc;
-                double tmp = copysign(norm(normal) / norm(xcc), sign);
+                double tmp = std::copysign(norm(normal) / norm(xcc), sign);
                 Kokkos::atomic_add(&grav_flux_v(f, 0), (Kcg * xcc) * rho_c(c, 0) * kr(n) * tmp);
               } else {
                 Kokkos::atomic_add(&grav_flux_v(f, 0), (Kcg * normal) * rho_c(c, 0) * kr(n));

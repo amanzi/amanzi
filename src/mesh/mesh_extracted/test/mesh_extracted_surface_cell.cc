@@ -44,7 +44,7 @@ TEST(SURFACE_COLUMN_MESH_3D)
   // Create the mesh
   Teuchos::RCP<AmanziMesh::MeshFramework> mesh_fw =
     Teuchos::rcp(new AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, lx, ly, lz, nx, ny, nz, comm, gm));
-  Teuchos::RCP<AmanziMesh::MeshHost> mesh = Teuchos::rcp(new AmanziMesh::MeshHost(
+  Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp(new AmanziMesh::Mesh(
     mesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
   mesh->buildColumns();
 
@@ -62,7 +62,7 @@ TEST(SURFACE_COLUMN_MESH_3D)
   // Create a column mesh from one of the columns
   Teuchos::RCP<AmanziMesh::MeshFramework> colmesh_ext = Teuchos::rcp(
     new AmanziMesh::Mesh_MSTK(mesh_fw,
-                              mesh->columns.cells_.getRowUnmanaged<MemSpace_kind::HOST>(10),
+                              mesh->columns->cells_.getRowUnmanaged<MemSpace_kind::HOST>(10),
                               AmanziMesh::Entity_kind::CELL,
                               false,
                               getCommSelf(),
@@ -72,13 +72,13 @@ TEST(SURFACE_COLUMN_MESH_3D)
   // Create the MeshColumn object
   Teuchos::RCP<AmanziMesh::MeshFramework> colmesh_fw =
     Teuchos::rcp(new AmanziMesh::MeshFrameworkColumn(colmesh_ext, Teuchos::null));
-  AmanziMesh::MeshHost colmesh(
+  AmanziMesh::Mesh colmesh(
     colmesh_fw, Teuchos::rcp(new AmanziMesh::MeshColumnAlgorithms()), Teuchos::null);
 
   // Extract the surface from this column
   Teuchos::RCP<AmanziMesh::MeshSurfaceCell> col_surf_fw =
     Teuchos::rcp(new AmanziMesh::MeshSurfaceCell(colmesh_fw));
-  AmanziMesh::MeshHost col_surf(
+  AmanziMesh::Mesh col_surf(
     col_surf_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null);
 
   // -- check basic mesh structure

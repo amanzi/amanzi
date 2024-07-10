@@ -165,7 +165,7 @@ EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility(State& S)
       (plist_->isParameter("debug cells") || plist_->isParameter("debug faces"))) {
     Key name = my_keys_.front().first + "evaluator";
     db_mesh_ = S.GetMesh(Keys::getDomain(my_keys_.front().first));
-    db_ = Teuchos::rcp(new Debugger(AmanziMesh::onMemHost(db_mesh_), name, *plist_));
+    db_ = Teuchos::rcp(new Debugger(db_mesh_, name, *plist_));
   }
 
   // Calls Require, setting the data type

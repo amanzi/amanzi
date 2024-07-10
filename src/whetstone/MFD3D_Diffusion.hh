@@ -41,9 +41,9 @@ namespace WhetStone {
 class MFD3D_Diffusion : public DeRham_Face {
  public:
   // constructor for backward compatibility
-  MFD3D_Diffusion(const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh) : DeRham_Face(mesh){};
+  MFD3D_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : DeRham_Face(mesh){};
   MFD3D_Diffusion(const Teuchos::ParameterList& plist,
-                  const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh)
+                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : DeRham_Face(mesh){};
 
   // main methods

@@ -5,6 +5,35 @@
   provided in the top-level COPYRIGHT file.
 */
 
+/*
+Developer note: This is a bit odd.  In MeshAudit tests, we will write Kokkos
+parallel operations on eihter host or device, depending upon the
+MemSpace_kind of MeshOrCache_type.  In either case, we will write
+KOKKOS_LAMBDA which always captures its closure variables by VALUE.  If we
+are on DEVICE, then MeshOrCache_type is MeshCache, which can be captured by
+value and is intended to be.  If we are on HOST, then we have either a Mesh,
+which we don't really need to capture by value because by reference would be
+better, or a MeshFramework, which actually CAN'T be captured by value
+because it is a virtual base class, and so does not have a copy constructor
+(or only a virtual Clone instead).  So in those cases, MeshOrCache_type is
+actually passed a POINTER to a Mesh or MeshFramework, and the pointer is
+captured by value (valid on host).
+
+So, when creating a MeshAudit_Base or similar type, create:
+  1. MeshAudit_Base<MeshFramework, MeshFramework*>
+  2. MeshAudit_Base<Mesh, Mesh*>
+  3. MeshAudit_Base<Mesh, MeshCache>  (note no pointer)
+
+Then, all tests capture the value-or-pointer, and must be either used
+directly or dereferenced before being used.  The above get() function does
+exactly this.  So, inside all KOKKOS_LAMBDAs, this object should be placed
+inside get(), e.g.:
+
+  get(m).getCellCentroid();
+
+*/
+
+
 #pragma once
 
 #include "Teuchos_RCP.hpp"
@@ -14,28 +43,41 @@ namespace AmanziMesh {
 
 namespace Impl {
 
+template<typename T>
+KOKKOS_INLINE_FUNCTION
+auto&
+get(const T& t) {
+  if constexpr(std::is_pointer<T>::value) return *t;
+  else return t;
+}
+
+// helpers for doing the testing
+template<class View_type>
+KOKKOS_INLINE_FUNCTION bool areDistinctValues(const View_type& list);
+
+template <class View1_type, class View2_type>
+KOKKOS_INLINE_FUNCTION int isSameFace(const View1_type& l1, const View2_type& l2);
+
+
 // base class for MeshAudit mixins
-template <class Mesh_type>
+//
+template <class Mesh_type, class MeshOrCache_type>
 class MeshAudit_Base {
- protected:
-  using cEntity_ID_View = typename Mesh_type::cEntity_ID_View;
-  using Entity_ID_View = typename Mesh_type::Entity_ID_View;
-
  public:
-  MeshAudit_Base(const Teuchos::RCP<const Mesh_type>& mesh, std::ostream& os);
+  using cEntity_ID_View = typename std::remove_pointer<MeshOrCache_type>::type::cEntity_ID_View;
+  using Entity_ID_View = typename std::remove_pointer<MeshOrCache_type>::type::Entity_ID_View;
+
+  MeshAudit_Base(const Teuchos::RCP<const Mesh_type>& mesh,
+                 const MeshOrCache_type& mesh_or_cache,
+                 std::ostream& os);
+  MeshAudit_Base(const MeshAudit_Base& other) = delete;
 
  protected:
-  // helpers for doing the testing
-  KOKKOS_INLINE_FUNCTION
-  bool areDistinctValues_(const cEntity_ID_View& list) const;
-
-  template <class View1_type, class View2_type>
-  KOKKOS_INLINE_FUNCTION int isSameFace_(const View1_type& l1, const View2_type& l2) const;
-
   bool globalAny_(bool) const;
 
  protected:
   Teuchos::RCP<const Mesh_type> mesh_;
+  const MeshOrCache_type& mc_;
   Comm_ptr_type comm_;
 
   const int nnodes_all_;
@@ -49,22 +91,20 @@ class MeshAudit_Base {
 };
 
 
-template <class Mesh_type>
-class MeshAudit_Geometry : public MeshAudit_Base<Mesh_type> {
-  using cEntity_ID_View = typename Mesh_type::cEntity_ID_View;
-  using Entity_ID_View = typename Mesh_type::Entity_ID_View;
-
+template <class Mesh_type, class MeshOrCache_type>
+class MeshAudit_Topology : public MeshAudit_Base<Mesh_type, MeshOrCache_type> {
  public:
-  MeshAudit_Geometry(const Teuchos::RCP<const Mesh_type>& mesh, std::ostream& os = std::cout)
-    : MeshAudit_Base<Mesh_type>(mesh, os)
-  {}
+  using cEntity_ID_View = typename std::remove_pointer<MeshOrCache_type>::type::cEntity_ID_View;
+  using Entity_ID_View = typename std::remove_pointer<MeshOrCache_type>::type::Entity_ID_View;
 
-  // The individual tests are also available.  While the tests are all formally
-  // independent, there is an implicit order dependence of the tests in that a
-  // test may assume certain mesh data has been verified, and that verification
-  // is done by other tests.
+  MeshAudit_Topology(const Teuchos::RCP<const Mesh_type>& mesh,
+                     const MeshOrCache_type& mesh_or_cache,
+                     std::ostream& os = std::cout)
+    : MeshAudit_Base<Mesh_type, MeshOrCache_type>(mesh, mesh_or_cache, os)
+  {}
+  MeshAudit_Topology(const MeshAudit_Topology& other) = delete;
+
   bool checkEntityCounts() const;
-  DISABLE_CUDA_WARNING
   bool checkCellToNodes() const;
   bool checkCellToFaces() const;
   bool checkFaceToNodes() const;
@@ -73,42 +113,75 @@ class MeshAudit_Geometry : public MeshAudit_Base<Mesh_type> {
   bool checkFaceRefsByCells() const;
   bool checkNodeRefsByFaces() const;
   bool checkCellDegeneracy() const;
-  bool checkCellGeometry() const;
   bool checkCellToFacesToNodes() const;
   bool checkNodeToCoordinates() const;
   bool checkCellToCoordinates() const;
   bool checkFaceToCoordinates() const;
   bool checkFaceCellAdjacencyConsistency() const;
+
+ protected:
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::mesh_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::mc_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::os_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::globalAny_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::ncells_all_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::nfaces_all_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::nnodes_all_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::ncells_owned_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::nfaces_owned_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::nnodes_owned_;
+};
+
+
+template <class Mesh_type, class MeshOrCache_type>
+class MeshAudit_Geometry : public MeshAudit_Topology<Mesh_type, MeshOrCache_type> {
+ public:
+  using cEntity_ID_View = typename std::remove_pointer<MeshOrCache_type>::type::cEntity_ID_View;
+  using Entity_ID_View = typename std::remove_pointer<MeshOrCache_type>::type::Entity_ID_View;
+
+  MeshAudit_Geometry(const Teuchos::RCP<const Mesh_type>& mesh,
+                     const MeshOrCache_type& mesh_or_cache,
+                     std::ostream& os = std::cout)
+    : MeshAudit_Topology<Mesh_type, MeshOrCache_type>(mesh, mesh_or_cache, os)
+  {}
+  MeshAudit_Geometry(const MeshAudit_Geometry& other) = delete;
+
+  // The individual tests are also available.  While the tests are all formally
+  // independent, there is an implicit order dependence of the tests in that a
+  // test may assume certain mesh data has been verified, and that verification
+  // is done by other tests.
+  bool checkCellGeometry() const;
   bool checkFaceNormalReltoCell() const;
   bool checkFaceNormalOrientation() const;
 
  protected:
-  using MeshAudit_Base<Mesh_type>::mesh_;
-  using MeshAudit_Base<Mesh_type>::os_;
-  using MeshAudit_Base<Mesh_type>::globalAny_;
-  using MeshAudit_Base<Mesh_type>::ncells_all_;
-  using MeshAudit_Base<Mesh_type>::nfaces_all_;
-  using MeshAudit_Base<Mesh_type>::nnodes_all_;
-  using MeshAudit_Base<Mesh_type>::ncells_owned_;
-  using MeshAudit_Base<Mesh_type>::nfaces_owned_;
-  using MeshAudit_Base<Mesh_type>::nnodes_owned_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::mesh_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::mc_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::os_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::globalAny_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::ncells_all_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::nfaces_all_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::nnodes_all_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::ncells_owned_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::nfaces_owned_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::nnodes_owned_;
 };
 
 
-template <class Mesh_type>
-class MeshAudit_Maps : public MeshAudit_Geometry<Mesh_type> {
- protected:
-  using cEntity_ID_View = typename Mesh_type::cEntity_ID_View;
-  using Entity_ID_View = typename Mesh_type::Entity_ID_View;
-
+template <class Mesh_type, class MeshOrCache_type>
+class MeshAudit_Maps : public MeshAudit_Geometry<Mesh_type, MeshOrCache_type> {
  public:
-  MeshAudit_Maps(const Teuchos::RCP<const Mesh_type>& mesh, std::ostream& os = std::cout)
-    : MeshAudit_Geometry<Mesh_type>(mesh, os)
+  using cEntity_ID_View = typename std::remove_pointer<MeshOrCache_type>::type::cEntity_ID_View;
+  using Entity_ID_View = typename std::remove_pointer<MeshOrCache_type>::type::Entity_ID_View;
+
+  MeshAudit_Maps(const Teuchos::RCP<const Mesh_type>& mesh,
+                 const MeshOrCache_type& mesh_or_cache,
+                 std::ostream& os = std::cout)
+    : MeshAudit_Geometry<Mesh_type, MeshOrCache_type>(mesh, mesh_or_cache, os)
   {}
+  MeshAudit_Maps(const MeshAudit_Maps& other) = delete;
 
-  // This is the main method.
-  void create_test_dependencies();
-
+  bool checkEntityCountsAgainstMaps() const;
   bool checkNodeMaps() const;
   bool checkFaceMaps() const;
   bool checkCellMaps() const;
@@ -124,28 +197,31 @@ class MeshAudit_Maps : public MeshAudit_Geometry<Mesh_type> {
   bool checkMaps_(const Map_type&, const Map_type&) const;
 
 
-  using MeshAudit_Base<Mesh_type>::mesh_;
-  using MeshAudit_Base<Mesh_type>::os_;
-  using MeshAudit_Base<Mesh_type>::globalAny_;
-  using MeshAudit_Base<Mesh_type>::ncells_all_;
-  using MeshAudit_Base<Mesh_type>::nfaces_all_;
-  using MeshAudit_Base<Mesh_type>::nnodes_all_;
-  using MeshAudit_Base<Mesh_type>::ncells_owned_;
-  using MeshAudit_Base<Mesh_type>::nfaces_owned_;
-  using MeshAudit_Base<Mesh_type>::nnodes_owned_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::mesh_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::mc_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::os_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::globalAny_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::ncells_all_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::nfaces_all_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::nnodes_all_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::ncells_owned_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::nfaces_owned_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::nnodes_owned_;
 };
 
 
-template <class Mesh_type>
-class MeshAudit_Sets : public MeshAudit_Maps<Mesh_type> {
- protected:
-  using cEntity_ID_View = typename Mesh_type::cEntity_ID_View;
-  using Entity_ID_View = typename Mesh_type::Entity_ID_View;
-
+template <class Mesh_type, class MeshOrCache_type>
+class MeshAudit_Sets : public MeshAudit_Maps<Mesh_type, MeshOrCache_type> {
  public:
-  MeshAudit_Sets(const Teuchos::RCP<const Mesh_type>& mesh, std::ostream& os = std::cout)
-    : MeshAudit_Maps<Mesh_type>(mesh, os)
+  using cEntity_ID_View = typename std::remove_pointer<MeshOrCache_type>::type::cEntity_ID_View;
+  using Entity_ID_View = typename std::remove_pointer<MeshOrCache_type>::type::Entity_ID_View;
+
+  MeshAudit_Sets(const Teuchos::RCP<const Mesh_type>& mesh,
+                 const MeshOrCache_type& mesh_or_cache,
+                 std::ostream& os = std::cout)
+    : MeshAudit_Maps<Mesh_type, MeshOrCache_type>(mesh, mesh_or_cache, os)
   {}
+  MeshAudit_Sets(const MeshAudit_Sets& other) = delete;
 
   bool checkNodeSetIDs() const;
   bool checkFaceSetIDs() const;
@@ -174,15 +250,16 @@ class MeshAudit_Sets : public MeshAudit_Maps<Mesh_type> {
                      const Map_type&) const;
 
  protected:
-  using MeshAudit_Base<Mesh_type>::mesh_;
-  using MeshAudit_Base<Mesh_type>::os_;
-  using MeshAudit_Base<Mesh_type>::globalAny_;
-  using MeshAudit_Base<Mesh_type>::ncells_all_;
-  using MeshAudit_Base<Mesh_type>::nfaces_all_;
-  using MeshAudit_Base<Mesh_type>::nnodes_all_;
-  using MeshAudit_Base<Mesh_type>::ncells_owned_;
-  using MeshAudit_Base<Mesh_type>::nfaces_owned_;
-  using MeshAudit_Base<Mesh_type>::nnodes_owned_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::mesh_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::mc_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::os_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::globalAny_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::ncells_all_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::nfaces_all_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::nnodes_all_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::ncells_owned_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::nfaces_owned_;
+  using MeshAudit_Base<Mesh_type, MeshOrCache_type>::nnodes_owned_;
 };
 
 
@@ -316,7 +393,12 @@ createTestDependencies_Base(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_
 
 template <class MeshAudit_type>
 void
+createTestDependencies_Topology(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph);
+
+template <class MeshAudit_type>
+void
 createTestDependencies_Geometry(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph);
+
 
 template <class MeshAudit_type>
 void
@@ -327,31 +409,38 @@ void
 createTestDependencies_Sets(MeshAudit_type& audit, AuditDirectedGraph<MeshAudit_type>& graph);
 
 // Call these instead
-template <class Mesh_type>
+template <class Mesh_type, class MeshOrCache_type>
 void
-createTestDependencies(MeshAudit_Base<Mesh_type>& audit,
-                       AuditDirectedGraph<MeshAudit_Base<Mesh_type>>& graph)
+createTestDependencies(MeshAudit_Base<Mesh_type, MeshOrCache_type>& audit,
+                       AuditDirectedGraph<MeshAudit_Base<Mesh_type, MeshOrCache_type>>& graph)
 {
   createTestDependencies_Base(audit, graph);
 }
-template <class Mesh_type>
+template <class Mesh_type, class MeshOrCache_type>
 void
-createTestDependencies(MeshAudit_Geometry<Mesh_type>& audit,
-                       AuditDirectedGraph<MeshAudit_Geometry<Mesh_type>>& graph)
+createTestDependencies(MeshAudit_Topology<Mesh_type, MeshOrCache_type>& audit,
+                       AuditDirectedGraph<MeshAudit_Topology<Mesh_type, MeshOrCache_type>>& graph)
+{
+  createTestDependencies_Topology(audit, graph);
+}
+template <class Mesh_type, class MeshOrCache_type>
+void
+createTestDependencies(MeshAudit_Geometry<Mesh_type, MeshOrCache_type>& audit,
+                       AuditDirectedGraph<MeshAudit_Geometry<Mesh_type, MeshOrCache_type>>& graph)
 {
   createTestDependencies_Geometry(audit, graph);
 }
-template <class Mesh_type>
+template <class Mesh_type, class MeshOrCache_type>
 void
-createTestDependencies(MeshAudit_Maps<Mesh_type>& audit,
-                       AuditDirectedGraph<MeshAudit_Maps<Mesh_type>>& graph)
+createTestDependencies(MeshAudit_Maps<Mesh_type, MeshOrCache_type>& audit,
+                       AuditDirectedGraph<MeshAudit_Maps<Mesh_type, MeshOrCache_type>>& graph)
 {
   createTestDependencies_Maps(audit, graph);
 }
-template <class Mesh_type>
+template <class Mesh_type, class MeshOrCache_type>
 void
-createTestDependencies(MeshAudit_Sets<Mesh_type>& audit,
-                       AuditDirectedGraph<MeshAudit_Sets<Mesh_type>>& graph)
+createTestDependencies(MeshAudit_Sets<Mesh_type, MeshOrCache_type>& audit,
+                       AuditDirectedGraph<MeshAudit_Sets<Mesh_type, MeshOrCache_type>>& graph)
 {
   createTestDependencies_Sets(audit, graph);
 }
@@ -376,11 +465,14 @@ globalAny(const Comm_type& comm, bool value)
 } // namespace Impl
 
 
-template <class Mesh_type, template <typename T> class MeshAudit_type>
+template <class Mesh_type, class MeshOrCache_type,
+          template <typename T1, typename T2> class MeshAudit_type>
 class MeshAudit_ {
  public:
-  MeshAudit_(const Teuchos::RCP<const Mesh_type>& mesh, std::ostream& os = std::cout)
-    : os_(os), audit_(mesh, os), graph_()
+  MeshAudit_(const Teuchos::RCP<const Mesh_type>& mesh,
+             const MeshOrCache_type& mc,
+             std::ostream& os = std::cout)
+    : os_(os), audit_(mesh, mc, os), graph_()
   {
     Impl::createTestDependencies(audit_, graph_);
   }
@@ -389,8 +481,8 @@ class MeshAudit_ {
 
  private:
   std::ostream& os_;
-  MeshAudit_type<Mesh_type> audit_;
-  Impl::AuditDirectedGraph<MeshAudit_type<Mesh_type>> graph_;
+  MeshAudit_type<Mesh_type, MeshOrCache_type> audit_;
+  Impl::AuditDirectedGraph<MeshAudit_type<Mesh_type, MeshOrCache_type>> graph_;
 };
 
 

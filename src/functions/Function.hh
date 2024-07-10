@@ -79,10 +79,10 @@ class Function {
   virtual std::unique_ptr<Function> Clone() const = 0;
 
   // Keep host version working
-  virtual double operator()(const Kokkos::View<double*, Kokkos::HostSpace>&) const = 0;
+  virtual double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>&) const = 0;
 
   virtual void
-  apply(const Kokkos::View<double**>&,
+  apply(const Kokkos::View<const double**>&,
         Kokkos::View<double*>&,
         const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* = nullptr) const = 0;
 };

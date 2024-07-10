@@ -185,8 +185,8 @@ namespace Impl {
 Kokkos::View<double**>
 getMeshFunctionCoordinates(double time, const PatchSpace& ps)
 {
-  const AmanziMesh::Mesh& mesh = *ps.mesh;
-  int dim = mesh.getSpaceDimension();
+  int dim = ps.mesh->getSpaceDimension();
+  const AmanziMesh::MeshCache& mesh = ps.mesh->getCache();
   Kokkos::View<double**> txyz("txyz", dim + 1, ps.size());
 
   auto ids = ps.getIDs();
@@ -194,7 +194,7 @@ getMeshFunctionCoordinates(double time, const PatchSpace& ps)
   // if empty, nothing to do
   if (ids.size() == 0) return Kokkos::View<double**>();
 
-  if (ps.entity_kind == AmanziMesh::NODE) {
+  if (ps.entity_kind == AmanziMesh::Entity_kind::NODE) {
     Kokkos::parallel_for(
       "computeMeshFunction txyz init node", ps.size(), KOKKOS_LAMBDA(const int& i) {
         txyz(0, i) = time;
@@ -204,7 +204,7 @@ getMeshFunctionCoordinates(double time, const PatchSpace& ps)
         if (mesh.getSpaceDimension() == 3) txyz(3, i) = cc[2];
       });
 
-  } else if (ps.entity_kind == AmanziMesh::CELL) {
+  } else if (ps.entity_kind == AmanziMesh::Entity_kind::CELL) {
     Kokkos::parallel_for(
       "computeMeshFunction txyz init cell", ps.size(), KOKKOS_LAMBDA(const int& i) {
         txyz(0, i) = time;
@@ -214,7 +214,7 @@ getMeshFunctionCoordinates(double time, const PatchSpace& ps)
         if (dim == 3) txyz(3, i) = cc[2];
       });
 
-  } else if (ps.entity_kind == AmanziMesh::FACE) {
+  } else if (ps.entity_kind == AmanziMesh::Entity_kind::FACE) {
     Kokkos::parallel_for(
       "computeMeshFunction txyz init face", ps.size(), KOKKOS_LAMBDA(const int& i) {
         txyz(0, i) = time;
@@ -236,7 +236,6 @@ void
 computeFunction(const MultiFunction& f, double time, Patch<double>& p)
 {
   auto txyz = getMeshFunctionCoordinates(time, *p.space);
-  Kokkos::fence();
   f.apply(txyz, p.data);
 }
 
@@ -253,7 +252,6 @@ computeFunction(const MultiFunction& f, double time, const PatchSpace& ps, Compo
 
   auto ids = ps.getIDs();
 
-  Kokkos::fence();
   Kokkos::View<double**, Kokkos::LayoutLeft> cv_v =
     cv.viewComponent(AmanziMesh::to_string(ps.entity_kind), ps.ghosted);
   f.apply(txyz, cv_v, &ids);

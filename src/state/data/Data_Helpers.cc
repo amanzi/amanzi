@@ -190,7 +190,7 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist, CompositeVector& t)
       {
         auto dat_f = t.viewComponent("face", false);
         const auto vel_f = vel_vec->viewComponent("face", false);
-        const AmanziMesh::Mesh& mesh = *t.getMesh();
+        const AmanziMesh::MeshCache& mesh = t.getMesh()->getCache();
         Kokkos::parallel_for(
           "CV::Initialize, velocity dot-with-normal",
           mesh.getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED),

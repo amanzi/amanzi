@@ -62,7 +62,7 @@ class MFD3D_Diffusion_Edge : public MFD3D {
   // -- symmetric schema
   virtual std::vector<SchemaItem> schema() const override
   {
-    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::EDGE, DOF_Type::SCALAR, 1));
+    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::Entity_kind::EDGE, DOF_Type::SCALAR, 1));
   }
 
   // -- mass matrices (not implemented)

@@ -70,9 +70,9 @@ RunTest(double gravity)
   meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<const Mesh> mesh = meshfactory.create("test/fractures.exo");
 
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_owned = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // create Darcy flux
   auto cvsf = Operators::CreateNonManifoldCVS(mesh);
@@ -101,7 +101,7 @@ RunTest(double gravity)
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -115,7 +115,7 @@ RunTest(double gravity)
 
   // create solution
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+  cvs->SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
   CompositeVector solution(*cvs), solution_new(*cvs);
   solution.PutScalar(0.0);
@@ -129,7 +129,7 @@ RunTest(double gravity)
   // add accumulation operator
   double dt(0.1);
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc =
-    Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, global_op));
+    Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, global_op));
   op_acc->AddAccumulationDelta(solution, dt, "cell");
 
   // populate advection operator
@@ -183,7 +183,7 @@ RunTest(double gravity)
     }
 
     io.InitializeCycle(t, nstep);
-    io.WriteVector(*new_c(0), "solution", AmanziMesh::CELL);
+    io.WriteVector(*new_c(0), "solution", AmanziMesh::Entity_kind::CELL);
     io.FinalizeCycle();
 
     // verify solution bounds and monotone decrease away from sources at x=0

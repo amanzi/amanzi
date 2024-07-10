@@ -45,14 +45,15 @@ set(mesh_inc_files
   MeshCache.hh
   MeshCache_decl.hh
   MeshCache_impl.hh
-  MeshCacheDevice_decl.hh
-  MeshCacheDevice_impl.hh
-  MeshCacheHost_decl.hh
-  MeshCacheHost_impl.hh
+  MeshCacheData.hh
+  MeshCache_decl.hh
+  MeshCache_impl.hh
   MeshSets.hh
   MeshColumns.hh
   MeshUtils.hh
   Mesh.hh
+  Mesh_decl.hh
+  Mesh_impl.hh
   MeshAlgorithms.hh
   SingleFaceMesh.hh
 )
@@ -64,8 +65,7 @@ set(mesh_src_files
   MeshSets.cc
   MeshColumns.cc
   DomainSet.cc
-  MeshCacheHost.cc
-  MeshCacheDevice.cc
+  Mesh.cc
 )
 
 #
@@ -143,7 +143,15 @@ if (BUILD_TESTS)
       list(APPEND mesh_test_link_libs mesh_mstk)
     endif()    
 
-    # Test: tests MeshCache geometry without a cache on a variety of meshes
+    # Test: tests MeshFramework without a Mesh
+    add_amanzi_test(mesh_framework_geometry mesh_framework_geometry
+                    KIND unit
+                    SOURCE test/Main.cc test/mesh_framework_geometry.cc
+                    LINK_LIBS ${mesh_test_link_libs})
+    add_amanzi_test(mesh_framework_geometry_np2 mesh_framework_geometry NPROCS 2 KIND unit)
+    add_amanzi_test(mesh_framework_geometry_np4 mesh_framework_geometry NPROCS 4 KIND unit)
+
+    # Test: tests Mesh geometry without a cache on a variety of meshes
     add_amanzi_test(mesh_geometry mesh_geometry
                     KIND unit
                     SOURCE test/Main.cc test/mesh_geometry.cc
@@ -151,7 +159,7 @@ if (BUILD_TESTS)
     add_amanzi_test(mesh_geometry_np2 mesh_geometry NPROCS 2 KIND unit)
     add_amanzi_test(mesh_geometry_np4 mesh_geometry NPROCS 4 KIND unit)
 
-    # Test: tests MeshCace geometry with a cache and no framework on a variety of meshes
+    # Test: tests Mesh geometry with a cache and no framework on a variety of meshes
     add_amanzi_test(mesh_cache_geometry mesh_cache_geometry
                     KIND unit
                     SOURCE test/Main.cc test/mesh_cache_geometry.cc

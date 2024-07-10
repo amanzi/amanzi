@@ -29,7 +29,7 @@ namespace WhetStone {
 /* ******************************************************************
 * Constructors
 ****************************************************************** */
-MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh) : BilinearForm(mesh)
+MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : BilinearForm(mesh)
 {
   stability_method_ = WHETSTONE_STABILITY_GENERIC;
   scaling_factor_ = 1.0;
@@ -660,7 +660,7 @@ MFD3D::SimplexExchangeVariables_(DenseMatrix<>& T, int kp, int ip)
 * Modify the stability space by extending matrix N.
 ****************************************************************** */
 void
-AddGradient(const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh, int c, DenseMatrix<>& N)
+AddGradient(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, DenseMatrix<>& N)
 {
   const auto& edges = mesh->getCellEdges(c);
   int nedges = edges.size();

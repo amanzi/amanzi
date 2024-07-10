@@ -37,8 +37,7 @@ Example:
 
 */
 
-#ifndef AMANZI_STATIC_HEAD_FUNCTION_HH_
-#define AMANZI_STATIC_HEAD_FUNCTION_HH_
+#pragma once
 
 namespace Amanzi {
 
@@ -51,35 +50,42 @@ class FunctionStaticHead : public Function {
   FunctionStaticHead(double patm, double rho, double g, std::unique_ptr<Function> h, int dim)
     : patm_(patm), rho_g_(rho * g), h_(std::move(h)), dim_(dim)
   {}
+
   FunctionStaticHead(double patm, double rho, double g, const Function& h, int dim)
     : patm_(patm), rho_g_(rho * g), h_(h.Clone()), dim_(dim)
   {}
+
   FunctionStaticHead(const FunctionStaticHead& src)
     : patm_(src.patm_), rho_g_(src.rho_g_), h_(src.h_->Clone()), dim_(src.dim_)
   {}
-  ~FunctionStaticHead() {}
-  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionStaticHead>(*this); }
+
+  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionStaticHead>(*this); }
+
   // The array (t,x,y,z) is passed as *x, so that x[dim_] is z in 3D, y in 2D
-  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const override
   {
-    return patm_ + rho_g_ * ((*h_)(x)-x(dim_));
+    return patm_ + rho_g_ * ((*h_)(x) - x(dim_,0));
   }
 
-  void apply(const Kokkos::View<double**>& in,
+  void apply(const Kokkos::View<const double**>& in,
              Kokkos::View<double*>& out,
-             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override
   {
     h_->apply(in, out, ids);
+    double patm(patm_);
+    double rho_g(rho_g_);
+    int dim(dim_);
+
     if (ids) {
-      auto ids_loc = *ids;
+      const auto& ids_loc = *ids;
       Kokkos::parallel_for(
-        "FunctionStaticHead::apply", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(ids_loc(i)) = patm_ + rho_g_ * (out(ids_loc(i)) - in(dim_, i));
+        "FunctionStaticHead::apply", ids_loc.extent(0), KOKKOS_LAMBDA(const int& i) {
+          out(ids_loc(i)) = patm + rho_g * (out(ids_loc(i)) - in(dim, i));
         });
     } else {
       Kokkos::parallel_for(
         "FunctionStaticHead::apply", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(i) = patm_ + rho_g_ * (out(i) - in(dim_, i));
+          out(i) = patm + rho_g * (out(i) - in(dim, i));
         });
     }
   }
@@ -92,4 +98,4 @@ class FunctionStaticHead : public Function {
 
 } // namespace Amanzi
 
-#endif // AMANZI_STATIC_HEAD_FUNCTION_HH_
+

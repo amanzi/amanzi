@@ -136,14 +136,13 @@ EvaluatorModelPatch<Model, Device_type>::Update_(State& S)
     // set up the model and range and then dispatch
     model_->setViews(dependency_views, result_views, S);
 
-    auto mat_ids = result.space->mesh->getSetEntities(
+    auto mat_ids = result.space->mesh->getSetEntities<MemSpace_kind::DEVICE>(
       res_patch.space->region, entity_kind, AmanziMesh::Parallel_kind::OWNED);
     model_->setAccessor(mat_ids);
 
     Kokkos::RangePolicy<typename Device_type::execution_space> range(0, result_views[0].extent(0));
 
     Kokkos::parallel_for(name_, range, *model_);
-    Kokkos::fence();
 
     // Reset views
     model_ = Teuchos::rcp<Model_type>(new Model_type(plist_));

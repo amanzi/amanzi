@@ -72,7 +72,7 @@ class PDE_Accumulation : public PDE_HelperBCsList {
     std::string name = plist_.get<std::string>("entity kind");
     int n_vecs = plist_.get<int>("number of vectors", 1);
 
-    schema.Init(schema.StringToKind(name), n_vecs);
+    schema.Init(AmanziMesh::createEntityKind(name), n_vecs);
     InitAccumulation_(schema, plist_.get<bool>("surface operator", false));
   }
 
@@ -83,7 +83,7 @@ class PDE_Accumulation : public PDE_HelperBCsList {
     std::string name = plist_.get<std::string>("entity kind");
     int n_vecs = plist_.get<int>("number of vectors", 1);
 
-    schema.Init(schema.StringToKind(name), n_vecs);
+    schema.Init(AmanziMesh::createEntityKind(name), n_vecs);
     InitAccumulation_(schema, plist_.get<bool>("surface operator", false));
   }
 
@@ -94,7 +94,7 @@ class PDE_Accumulation : public PDE_HelperBCsList {
     std::string name = plist_.get<std::string>("entity kind");
     int n_vecs = plist_.get<int>("number of vectors", 1);
 
-    schema.Init(schema.StringToKind(name), n_vecs);
+    schema.Init(AmanziMesh::createEntityKind(name), n_vecs);
 
     bool surface = plist_.get<bool>("surface operator", false);
     InitAccumulation_(schema, surface);

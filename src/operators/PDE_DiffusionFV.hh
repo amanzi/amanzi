@@ -106,7 +106,7 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
     CompositeVectorSpace out;
     out.SetMesh(mesh_);
     out.SetGhosted();
-    if (little_k_type_ != OPERATOR_LITTLE_K_NONE) { out.AddComponent("cell", AmanziMesh::CELL, 1); }
+    if (little_k_type_ != OPERATOR_LITTLE_K_NONE) { out.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1); }
     return out;
   }
 

@@ -50,7 +50,7 @@ PDE_Accumulation::AddAccumulationTerm(const CompositeVector& du,
   Teuchos::RCP<Op> op = FindOp_(name);
 
   if (volume) {
-    const AmanziMesh::Mesh& m = *du.getMesh();
+    const AmanziMesh::MeshCache& m = du.getMesh()->getCache();
     AmanziMesh::Entity_kind ent_kind = AmanziMesh::createEntityKind(name);
     auto diag_v = op->diag->getLocalViewDevice(Tpetra::Access::ReadWrite);
     auto du_v = du.viewComponent(name, false);
@@ -308,9 +308,9 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
       Teuchos::RCP<Op> op;
       Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
       cvs->SetMesh(mesh_)->SetGhosted(true);
-      cvs->AddComponent(schema.KindToString(kind), kind, num);
+      cvs->AddComponent(AmanziMesh::to_string(kind), kind, num);
 
-      if (kind == AmanziMesh::CELL) {
+      if (kind == AmanziMesh::Entity_kind::CELL) {
         int old_schema = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;
         global_op_ = Teuchos::rcp(new Operator_Cell(cvs->CreateSpace(), plist_, old_schema));
         if (surf) {
@@ -322,26 +322,26 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
         }
 
         /*
-      } else if (kind == AmanziMesh::FACE) {
+      } else if (kind == AmanziMesh::Entity_kind::FACE) {
         global_op_ = Teuchos::rcp(new Operator_Face(cvs, plist_));
         std::string name("FACE_FACE");
         op = Teuchos::rcp(new Op_Face_Face(name, mesh_));
       */
 
-      } else if (kind == AmanziMesh::EDGE) {
+      } else if (kind == AmanziMesh::Entity_kind::EDGE) {
         assert(false);
         //global_op_ = Teuchos::rcp(new Operator_Edge(cvs, plist_));
         //std::string name("EDGE_EDGE");
         //op = Teuchos::rcp(new Op_Edge_Edge(name, mesh_));
 
-      } else if (kind == AmanziMesh::NODE) {
+      } else if (kind == AmanziMesh::Entity_kind::NODE) {
         assert(false);
         //global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist_));
         //std::string name("NODE_NODE");
         //op = Teuchos::rcp(new Op_Node_Node(name, mesh_, num));
 
       } else {
-        msg << "Accumulation operator: Unknown kind \"" << schema.KindToString(kind) << "\".\n";
+        msg << "Accumulation operator: Unknown kind \"" << AmanziMesh::to_string(kind) << "\".\n";
         Exceptions::amanzi_throw(msg);
       }
 
@@ -360,7 +360,7 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
       int old_schema;
       Teuchos::RCP<Op> op;
 
-      if (kind == AmanziMesh::CELL) {
+      if (kind == AmanziMesh::Entity_kind::CELL) {
         old_schema = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;
         std::string name("CELL_CELL");
         if (surf) {
@@ -370,26 +370,26 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
         }
 
         /*
-      } else if (kind == AmanziMesh::FACE) {
+      } else if (kind == AmanziMesh::Entity_kind::FACE) {
         old_schema = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_FACE;
         std::string name("FACE_FACE");
         op = Teuchos::rcp(new Op_Face_Face(name, mesh_));
       */
 
-      } else if (kind == AmanziMesh::EDGE) {
+      } else if (kind == AmanziMesh::Entity_kind::EDGE) {
         assert(false);
         //old_schema = OPERATOR_SCHEMA_BASE_EDGE | OPERATOR_SCHEMA_DOFS_EDGE;
         //std::string name("EDGE_EDGE");
         //op = Teuchos::rcp(new Op_Edge_Edge(name, mesh_));
 
-      } else if (kind == AmanziMesh::NODE) {
+      } else if (kind == AmanziMesh::Entity_kind::NODE) {
         assert(false);
         //old_schema = OPERATOR_SCHEMA_BASE_NODE | OPERATOR_SCHEMA_DOFS_NODE;
         //std::string name("NODE_NODE");
         //op = Teuchos::rcp(new Op_Node_Node(name, mesh_, num));
 
       } else {
-        msg << "Accumulation operator: Unknown kind \"" << schema.KindToString(kind) << "\".\n";
+        msg << "Accumulation operator: Unknown kind \"" << AmanziMesh::to_string(kind) << "\".\n";
         Exceptions::amanzi_throw(msg);
       }
 
@@ -401,9 +401,9 @@ PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
   }
 
   // mesh info
-  ncells_owned = mesh_->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  nfaces_owned = mesh_->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  nnodes_owned = mesh_->getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::OWNED);
+  ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  nfaces_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  nnodes_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
 }
 
 
@@ -441,7 +441,7 @@ PDE_Accumulation::FindOp_(const std::string& name) const
 {
   for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
     const Schema& schema = local_op_schema_; //(*it)->schema_row();
-    if (schema.KindToString(schema.base()) == name) return *it;
+    if (AmanziMesh::to_string(schema.base()) == name) return *it;
   }
   return Teuchos::null;
 }

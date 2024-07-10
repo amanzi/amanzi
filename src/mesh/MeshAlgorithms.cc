@@ -20,22 +20,22 @@ overriding them for special meshes (MeshLogical).
 */
 
 #include "MeshAlgorithms.hh"
-#include "MeshInternals_impl.hh"
-#include "MeshCache_impl.hh"
+#include "MeshInternals.hh"
+#include "Mesh.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
 
 
 AmanziGeometry::Point
-MeshAlgorithms::computeFaceNormal(const MeshHost& mesh,
+MeshAlgorithms::computeFaceNormal(const Mesh& mesh,
                                   const Entity_ID f,
                                   const Entity_ID c,
                                   int* const orientation) const
 {
   auto geom = Impl::computeFaceGeometry(mesh, f);
 
-  MeshHost::cEntity_ID_View fcells = mesh.getFaceCells(f);
+  Mesh::cEntity_ID_View fcells = mesh.getFaceCells(f);
   if (orientation) *orientation = 0;
 
   Entity_ID cc;
@@ -84,7 +84,7 @@ MeshAlgorithms::computeFaceNormal(const MeshHost& mesh,
 
 
 AmanziGeometry::Point
-MeshAlgorithms::computeEdgeVector(const MeshHost& mesh,
+MeshAlgorithms::computeEdgeVector(const Mesh& mesh,
                                   const Entity_ID e,
                                   const Entity_ID n,
                                   int* const orientation) const
@@ -107,10 +107,10 @@ MeshAlgorithms::computeEdgeVector(const MeshHost& mesh,
 
 
 void
-MeshAlgorithms::computeCellFacesAndBisectors(const MeshHost& mesh,
+MeshAlgorithms::computeCellFacesAndBisectors(const Mesh& mesh,
                                              const Entity_ID cellid,
-                                             typename MeshHost::cEntity_ID_View& faceids,
-                                             typename MeshHost::cPoint_View* const bisectors) const
+                                             typename Mesh::cEntity_ID_View& faceids,
+                                             typename Mesh::cPoint_View* const bisectors) const
 {
   mesh.getCellFaces(cellid, faceids);
   if (bisectors) *bisectors = Impl::computeBisectors(mesh, cellid, faceids);

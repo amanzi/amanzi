@@ -120,7 +120,7 @@ PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     } else if (comp == "face") {
       // error in flux -- relative to cell's extensive conserved quantity
       int nfaces = dvec_v.extent(0);
-      auto& m = *mesh_;
+      const AmanziMesh::MeshCache& m = mesh_->getCache();
       double fluxtol(fluxtol_);
 
       Kokkos::parallel_reduce(
@@ -129,13 +129,13 @@ PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         KOKKOS_LAMBDA(const int& f, Reductions::MaxLoc<double, GO>& lval) {
           auto cells = m.getFaceCells(f);
           double cv_min =
-            cells.size() == 1 ? cv(cells[0], 0) : fmin(cv(cells[0], 0), cv(cells[1], 0));
+            cells.size() == 1 ? cv(cells[0], 0) : Kokkos::min(cv(cells[0], 0), cv(cells[1], 0));
           double conserved_min = cells.size() == 1 ?
                                    conserved(cells[0], 0) :
-                                   fmin(conserved(cells[0], 0), conserved(cells[1], 0));
+                                   Kokkos::min(conserved(cells[0], 0), conserved(cells[1], 0));
 
-          double enorm_f = fluxtol * h * fabs(dvec_v(f, 0)) /
-                           (atol * cv_min + rtol * fabs(conserved_min));
+          double enorm_f = fluxtol * h * Kokkos::abs(dvec_v(f, 0)) /
+            (atol * cv_min + rtol * Kokkos::abs(conserved_min));
           lval += Reductions::MaxLoc<double, GO>(enorm_f, f);
         },
         enorm_comp);

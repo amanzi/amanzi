@@ -61,6 +61,7 @@ set(mesh_factory_files
     FileFormat.cc
     MeshFrameworkTraits.cc
     MeshFrameworkFactory.cc
+    MeshFactory.cc
     ) 
 
 set(mesh_factory_inc_files
@@ -68,8 +69,6 @@ set(mesh_factory_inc_files
     FileFormat.hh
     MeshFrameworkTraits.hh
     MeshFrameworkFactory.hh
-    MeshFactory_decl.hh
-    MeshFactory_impl.hh
     MeshFactory.hh
     )
 

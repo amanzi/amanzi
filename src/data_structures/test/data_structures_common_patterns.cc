@@ -75,7 +75,7 @@ SUITE(COMMON_MESH_OPERATIONS)
       auto sl_view = sl_c->viewComponent("cell", 0, false);
       auto poro_view = poro_c->viewComponent("cell", 0, false);
       auto wc_view = wc->viewComponent("cell", 0, false);
-      const Mesh& m = *mesh;
+      const MeshCache& m = mesh->getCache();
 
       Kokkos::parallel_for(
         "data_structures_common_patterns::FOR_EACH_CELL_VOLUME_LAMBDA",
@@ -102,7 +102,7 @@ SUITE(COMMON_MESH_OPERATIONS)
     auto trans = CreateVec("face", Entity_kind::FACE, 1);
     {
       auto trans_view = trans->viewComponent("face", 0, false);
-      const Mesh& m = *mesh;
+      const MeshCache& m = mesh->getCache();
 
       typedef Kokkos::RangePolicy<DefaultDevice, LO> Policy_type;
       Kokkos::parallel_for(

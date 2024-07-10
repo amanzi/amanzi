@@ -12,7 +12,7 @@
 
 #include "MeshUtils.hh"
 #include "MeshColumns.hh"
-#include "MeshCache.hh"
+#include "Mesh.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -21,14 +21,14 @@ namespace AmanziMesh {
 // Constructor that guesses how to infer columnar structure.
 //
 void
-MeshColumns::initialize(const MeshHost& mesh)
+MeshColumns::initialize(const Mesh& mesh)
 {
   AMANZI_ASSERT(mesh.getSpaceDimension() == 3);
   AMANZI_ASSERT(mesh.getManifoldDimension() == 3);
 
   // loop over all boundary faces and look for those whose normal z component
   // is not zero and whose opposing face is below them.
-  MeshHost::Entity_ID_View surface_faces("surface_faces", mesh.getBoundaryFaces().size());
+  Mesh::Entity_ID_View surface_faces("surface_faces", mesh.getBoundaryFaces().size());
   int sf = 0;
   for (const Entity_ID f : mesh.getBoundaryFaces()) {
     auto f_normal = mesh.getFaceNormal(f);
@@ -44,7 +44,7 @@ MeshColumns::initialize(const MeshHost& mesh)
 // Constructor that infers columnar structure from a mesh set.
 //
 void
-MeshColumns::initialize(const MeshHost& mesh, const std::vector<std::string>& regions)
+MeshColumns::initialize(const Mesh& mesh, const std::vector<std::string>& regions)
 {
   AMANZI_ASSERT(mesh.getSpaceDimension() == 3);
   AMANZI_ASSERT(mesh.getManifoldDimension() == 3);
@@ -57,11 +57,11 @@ MeshColumns::initialize(const MeshHost& mesh, const std::vector<std::string>& re
   // collect faces in all regions, keeping the collection sorted
   Entity_ID_List vsurface_faces;
   for (const auto& r : regions) {
-    auto r_faces = mesh.getSetEntities(r, Entity_kind::FACE, Parallel_kind::ALL);
+    auto r_faces = mesh.getSetEntities<MemSpace_kind::HOST>(r, Entity_kind::FACE, Parallel_kind::ALL);
     for (Entity_ID f : r_faces)
       vsurface_faces.insert(std::upper_bound(vsurface_faces.begin(), vsurface_faces.end(), f), f);
   }
-  MeshHost::Entity_ID_View surface_faces;
+  Mesh::Entity_ID_View surface_faces;
   vectorToView(surface_faces, vsurface_faces);
 
   // build columns for each face
@@ -70,7 +70,7 @@ MeshColumns::initialize(const MeshHost& mesh, const std::vector<std::string>& re
 
 
 void
-MeshColumns::initialize(const MeshHost& mesh, const MeshHost::Entity_ID_View& surface_faces)
+MeshColumns::initialize(const Mesh& mesh, const Mesh::Entity_ID_View& surface_faces)
 {
   // figure out the correct size
   // Note, this is done to make life easier for Kokkos
@@ -96,9 +96,10 @@ MeshColumns::initialize(const MeshHost& mesh, const MeshHost::Entity_ID_View& su
 
   // fill
   i = 0;
+  Entity_ID nfaces_owned = mesh.getNumEntities(Entity_kind::FACE, Parallel_kind::OWNED);
   for (Entity_ID f : surface_faces) {
     buildColumn_(mesh, f, i++);
-    if (f < mesh.nfaces_owned) num_columns_owned = i;
+    if (f < nfaces_owned) num_columns_owned = i;
   }
   num_columns_all = i;
 
@@ -111,12 +112,12 @@ MeshColumns::initialize(const MeshHost& mesh, const MeshHost::Entity_ID_View& su
 // Actually does the work of building the column, starting at f.
 //
 void
-MeshColumns::buildColumn_(const MeshHost& mesh, Entity_ID f, int col)
+MeshColumns::buildColumn_(const Mesh& mesh, Entity_ID f, int col)
 {
-  Parallel_kind ptype = mesh.getParallelType(Entity_kind::FACE, f);
+  Parallel_kind ptype = mesh.getParallelKind(Entity_kind::FACE, f);
 
   Entity_ID c = mesh.getFaceCells(f)[0]; // guaranteed size 1
-  if (mesh.getParallelType(Entity_kind::CELL, c) != ptype) {
+  if (mesh.getParallelKind(Entity_kind::CELL, c) != ptype) {
     Errors::Message msg(
       "MeshColumns::buildColumn() mesh was not partitioned vertically using zoltan_rcb");
     Exceptions::amanzi_throw(msg);
@@ -128,7 +129,7 @@ MeshColumns::buildColumn_(const MeshHost& mesh, Entity_ID f, int col)
     faces_.get<MemSpace_kind::HOST>(col, i) = f;
 
     Entity_ID f_opp = Impl::findDownFace(mesh, c);
-    if (mesh.getParallelType(Entity_kind::FACE, f_opp) != ptype) {
+    if (mesh.getParallelKind(Entity_kind::FACE, f_opp) != ptype) {
       Errors::Message msg(
         "MeshColumns::buildColumn() mesh was not partitioned vertically using zoltan_rcb");
       Exceptions::amanzi_throw(msg);
@@ -140,7 +141,7 @@ MeshColumns::buildColumn_(const MeshHost& mesh, Entity_ID f, int col)
       faces_.get<MemSpace_kind::HOST>(col, i + 1) = f_opp;
       done = true;
     } else {
-      if (mesh.getParallelType(Entity_kind::CELL, c_opp) != ptype) {
+      if (mesh.getParallelKind(Entity_kind::CELL, c_opp) != ptype) {
         Errors::Message msg(
           "MeshColumns::buildColumn() mesh was not partitioned vertically using zoltan_rcb");
         Exceptions::amanzi_throw(msg);
@@ -155,7 +156,7 @@ MeshColumns::buildColumn_(const MeshHost& mesh, Entity_ID f, int col)
 namespace Impl {
 
 int
-orientFace(const MeshHost& mesh, const Entity_ID f, const Entity_ID c)
+orientFace(const Mesh& mesh, const Entity_ID f, const Entity_ID c)
 {
   auto normal = mesh.getFaceNormal(f, c);
   normal /= AmanziGeometry::norm(normal);
@@ -173,7 +174,7 @@ orientFace(const MeshHost& mesh, const Entity_ID f, const Entity_ID c)
 // Assumes this is well posed... e.g. that there is only one face of c that
 // shares no nodes with f.   Returns -1 if this is not possible.
 Entity_ID
-findDownFace(const MeshHost& mesh, const Entity_ID c)
+findDownFace(const Mesh& mesh, const Entity_ID c)
 {
   auto cfaces = mesh.getCellFaces(c);
   // find the one that is down
@@ -187,7 +188,7 @@ findDownFace(const MeshHost& mesh, const Entity_ID c)
 // Finds the cell in face cells that is not c, returning -1 if not possible.
 //
 Entity_ID
-findOpposingCell(const MeshHost& mesh, const Entity_ID c, const Entity_ID f)
+findOpposingCell(const Mesh& mesh, const Entity_ID c, const Entity_ID f)
 {
   auto fcells = mesh.getFaceCells(f);
   if (fcells.size() == 1)
@@ -202,7 +203,7 @@ findOpposingCell(const MeshHost& mesh, const Entity_ID c, const Entity_ID f)
 // Helper function for counting column size
 //
 std::size_t
-countCellsInColumn(const MeshHost& mesh, Entity_ID f)
+countCellsInColumn(const Mesh& mesh, Entity_ID f)
 {
   std::size_t count = 0;
   Entity_ID c = mesh.getFaceCells(f)[0]; // guaranteed size 1

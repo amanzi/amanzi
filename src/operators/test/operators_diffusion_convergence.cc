@@ -54,9 +54,9 @@ RunForwardProblem(const std::string& discretization, int nx, int ny)
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic06 ana(mesh);
 
@@ -67,7 +67,7 @@ RunForwardProblem(const std::string& discretization, int nx, int ny)
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -127,7 +127,7 @@ RunForwardProblem(const std::string& discretization, int nx, int ny)
   }
 
   if (u.hasComponent("face")) {
-    int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
+    int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     Epetra_MultiVector& u_f = *u.viewComponent("face", false);
 
     for (int f = 0; f != nfaces; ++f) {
@@ -138,7 +138,7 @@ RunForwardProblem(const std::string& discretization, int nx, int ny)
 
   if (u.hasComponent("boundary_face")) {
     int nboundary_faces =
-      mesh->getNumEntities(AmanziMesh::BOUNDARY_FACE, AmanziMesh::Parallel_kind::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE, AmanziMesh::Parallel_kind::OWNED);
     Epetra_MultiVector& u_f = *u.viewComponent("boundary_face", false);
 
     for (int bf = 0; bf != nboundary_faces; ++bf) {
@@ -183,9 +183,9 @@ RunInverseProblem(const std::string& discretization, int nx, int ny, bool write_
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
     Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   Analytic06 ana(mesh);
 
@@ -196,7 +196,7 @@ RunInverseProblem(const std::string& discretization, int nx, int ny, bool write_
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -256,7 +256,7 @@ RunInverseProblem(const std::string& discretization, int nx, int ny, bool write_
   }
 
   if (u.hasComponent("face")) {
-    int nfaces = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
+    int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     Epetra_MultiVector& u_f = *u.viewComponent("face", false);
 
     for (int f = 0; f != nfaces; ++f) {
@@ -267,7 +267,7 @@ RunInverseProblem(const std::string& discretization, int nx, int ny, bool write_
 
   if (u.hasComponent("boundary_face")) {
     int nboundary_faces =
-      mesh->getNumEntities(AmanziMesh::BOUNDARY_FACE, AmanziMesh::Parallel_kind::OWNED);
+      mesh->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE, AmanziMesh::Parallel_kind::OWNED);
     Epetra_MultiVector& u_f = *u.viewComponent("boundary_face", false);
 
     for (int bf = 0; bf != nboundary_faces; ++bf) {

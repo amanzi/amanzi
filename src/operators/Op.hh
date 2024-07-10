@@ -70,6 +70,8 @@ class Op {
       schema_string(name)
   {}
 
+  Op(const Op& other) = delete;
+
   virtual ~Op() = default;
 
   // Clean the operator without destroying memory

@@ -62,7 +62,7 @@ struct PatchSpace {
 
   int size() const
   {
-    if (entity_kind == AmanziMesh::BOUNDARY_FACE) {
+    if (entity_kind == AmanziMesh::Entity_kind::BOUNDARY_FACE) {
       Errors::Message msg("Patch cannot handle BOUNDARY_FACE entities, because "
                           "Mesh does not support sets on these types of "
                           "entities.  Instead use FACE and filter as needed.");
@@ -74,9 +74,9 @@ struct PatchSpace {
                                       AmanziMesh::Parallel_kind::OWNED);
   }
 
-  AmanziMesh::Mesh::cEntity_ID_View getIDs() const
+  AmanziMesh::MeshCache::cEntity_ID_View getIDs() const
   {
-    return mesh->getSetEntities(region,
+    return mesh->getSetEntities<MemSpace_kind::DEVICE>(region,
                                 entity_kind,
                                 ghosted ? AmanziMesh::Parallel_kind::ALL :
                                           AmanziMesh::Parallel_kind::OWNED);
@@ -153,7 +153,7 @@ struct MultiPatchSpace {
 //
 template <typename T>
 struct Patch {
-  using View_type = Kokkos::View<T**, Kokkos::LayoutLeft>;
+  using View_type = typename MultiVector_type_<T>::device_view_type;
 
   Patch(const Teuchos::RCP<const PatchSpace>& space_) : space(space_)
   {

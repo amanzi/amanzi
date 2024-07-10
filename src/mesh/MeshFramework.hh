@@ -35,13 +35,14 @@ if the Framework itself is deleted (hence the split).
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "AmanziComm.hh"
 #include "GeometryDefs.hh"
 #include "MeshDefs.hh"
-#include "AmanziComm.hh"
 
 namespace Amanzi {
 
 class VerboseObject;
+
 namespace AmanziGeometry {
 class Point;
 class RegionLabeledSet;
@@ -63,16 +64,17 @@ class MeshFramework {
  public:
   virtual ~MeshFramework() = default;
 
-  using Entity_ID_View = View_type<Entity_ID, MemSpace_kind::HOST>;
-  using cEntity_ID_View = View_type<const Entity_ID, MemSpace_kind::HOST>;
-  using Entity_GID_View = View_type<Entity_GID, MemSpace_kind::HOST>;
-  using cEntity_GID_View = View_type<const Entity_GID, MemSpace_kind::HOST>;
-  using Direction_View = View_type<Direction_type, MemSpace_kind::HOST>;
-  using cDirection_View = View_type<const Direction_type, MemSpace_kind::HOST>;
-  using Point_View = View_type<AmanziGeometry::Point, MemSpace_kind::HOST>;
-  using cPoint_View = View_type<const AmanziGeometry::Point, MemSpace_kind::HOST>;
-  using Double_View = View_type<double, MemSpace_kind::HOST>;
-  using cDouble_View = View_type<const double, MemSpace_kind::HOST>;
+  static const MemSpace_kind MEM = MemSpace_kind::HOST;
+  using Entity_ID_View = View_type<Entity_ID, MEM>;
+  using cEntity_ID_View = View_type<const Entity_ID, MEM>;
+  using Entity_GID_View = View_type<Entity_GID, MEM>;
+  using cEntity_GID_View = View_type<const Entity_GID, MEM>;
+  using Direction_View = View_type<Direction_type, MEM>;
+  using cDirection_View = View_type<const Direction_type, MEM>;
+  using Point_View = View_type<AmanziGeometry::Point, MEM>;
+  using cPoint_View = View_type<const AmanziGeometry::Point, MEM>;
+  using Double_View = View_type<double, MEM>;
+  using cDouble_View = View_type<const double, MEM>;
 
   // ----------------------
   // Accessors and Mutators
@@ -198,6 +200,18 @@ class MeshFramework {
   {
     getCellFacesAndDirs(c, faces, nullptr);
   }
+  cEntity_ID_View getCellFaces(const Entity_ID c) const {
+    cEntity_ID_View cfaces;
+    getCellFaces(c, cfaces);
+    return cfaces;
+  }
+
+  Kokkos::pair<cEntity_ID_View, cDirection_View> getCellFacesAndDirections(const Entity_ID c) const {
+    cEntity_ID_View cfaces;
+    cDirection_View dirs;
+    getCellFacesAndDirs(c, cfaces, &dirs);
+    return Kokkos::pair<cEntity_ID_View, cDirection_View>(cfaces, dirs);
+  }
 
   void getCellFaceDirs(const Entity_ID c, cDirection_View& dirs) const
   {
@@ -222,6 +236,12 @@ class MeshFramework {
 
   virtual void getCellEdges(const Entity_ID c, cEntity_ID_View& edges) const;
   virtual void getCellNodes(const Entity_ID c, cEntity_ID_View& nodes) const;
+
+  cEntity_ID_View getCellNodes(const Entity_ID c) const {
+    cEntity_ID_View cnodes;
+    getCellNodes(c, cnodes);
+    return cnodes;
+  }
 
   void getFaceEdges(const Entity_ID f, cEntity_ID_View& edges) const
   {
@@ -251,6 +271,11 @@ class MeshFramework {
   // In 3D, the nodes of the face are returned in ccw order consistent
   // with the face normal.
   virtual void getFaceNodes(const Entity_ID f, cEntity_ID_View& nodes) const = 0;
+  cEntity_ID_View getFaceNodes(const Entity_ID f) const {
+    cEntity_ID_View fnodes;
+    getFaceNodes(f, fnodes);
+    return fnodes;
+  }
 
   virtual void getEdgeNodes(const Entity_ID e, cEntity_ID_View& nodes) const;
 

@@ -106,7 +106,7 @@ SUITE(VISUALIZATION)
                                                                       Amanzi::Tags::DEFAULT)
       .SetMesh(Mesh)
       ->SetGhosted(false)
-      ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
+      ->SetComponent("cell", Amanzi::AmanziMesh::Entity_kind::CELL, 1);
     S0.Setup();
     S0.InitializeFields();
 

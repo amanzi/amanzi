@@ -35,7 +35,7 @@ Operator_Factory::Create()
       // build the CVS from the global schema
       CompositeVectorSpace cvs;
       cvs.SetMesh(mesh_)->SetGhosted(true);
-      cvs.AddComponent("cell", AmanziMesh::CELL, 1);
+      cvs.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
       return Teuchos::rcp(new Operator_Cell(cvs.CreateSpace(), *plist_, OPERATOR_SCHEMA_DOFS_CELL));
 
     } else {

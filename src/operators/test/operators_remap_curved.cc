@@ -383,16 +383,16 @@ RemapTestsCurved(std::string file_name,
     mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
   }
 
-  int ncells_owned = mesh0->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = mesh0->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells_owned = mesh0->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = mesh0->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // create and initialize cell-based field
   CompositeVectorSpace cvs1, cvs2;
-  cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
   auto p1 = Teuchos::rcp(new CompositeVector(cvs1));
   Epetra_MultiVector& p1c = *p1->viewComponent("cell", true);
 
-  cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
   CompositeVector p2(cvs2);
   Epetra_MultiVector& p2c = *p2.viewComponent("cell");
 
@@ -413,7 +413,7 @@ RemapTestsCurved(std::string file_name,
   p2c = *p1->viewComponent("cell");
 
   io->InitializeCycle(0.0, 0);
-  io->WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
+  io->WriteVector(*p2c(0), "solution", AmanziMesh::Entity_kind::CELL);
   io->FinalizeCycle();
 
   // create remap object
@@ -460,15 +460,15 @@ RemapTestsCurved(std::string file_name,
     // visualize solution on mesh1
     // io = Teuchos::rcp(new OutputXDMF(iolist, mesh1, true, false));
     io->InitializeCycle(t, iloop + 1);
-    io->WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
+    io->WriteVector(*p2c(0), "solution", AmanziMesh::Entity_kind::CELL);
     if (order > 0) {
-      io->WriteVector(*p2c(1), "gradx", AmanziMesh::CELL);
-      io->WriteVector(*p2c(2), "grady", AmanziMesh::CELL);
+      io->WriteVector(*p2c(1), "gradx", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*p2c(2), "grady", AmanziMesh::Entity_kind::CELL);
     }
     if (order > 1) {
-      io->WriteVector(*p2c(3), "hesxx", AmanziMesh::CELL);
-      io->WriteVector(*p2c(4), "hesxy", AmanziMesh::CELL);
-      io->WriteVector(*p2c(5), "hesyy", AmanziMesh::CELL);
+      io->WriteVector(*p2c(3), "hesxx", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*p2c(4), "hesxy", AmanziMesh::Entity_kind::CELL);
+      io->WriteVector(*p2c(5), "hesyy", AmanziMesh::Entity_kind::CELL);
     }
     io->FinalizeCycle();
   }

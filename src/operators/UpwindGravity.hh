@@ -98,7 +98,7 @@ UpwindGravity<Model>::Compute(const CompositeVector& flux,
   Epetra_MultiVector& upw_face = *field.viewComponent(face_comp_, true);
   // const Epetra_MultiVector& sol_face = *solution.viewComponent("face", true);
 
-  int nfaces_wghost = mesh_->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int nfaces_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
   AmanziMesh::Entity_ID_List cells;
 
   int c1, c2, dir;

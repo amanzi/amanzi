@@ -125,7 +125,7 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
     CompositeVectorSpace out;
     out.SetMesh(mesh_);
     out.SetGhosted();
-    if (little_k_type_ != OPERATOR_LITTLE_K_NONE) { out.AddComponent("face", AmanziMesh::FACE, 1); }
+    if (little_k_type_ != OPERATOR_LITTLE_K_NONE) { out.AddComponent("face", AmanziMesh::Entity_kind::FACE, 1); }
     return out;
   }
 

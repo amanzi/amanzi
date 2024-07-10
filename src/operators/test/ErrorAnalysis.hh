@@ -29,9 +29,9 @@ ComputeGradError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 {
   int dim = mesh->space_dimension();
   int ncells_owned =
-    mesh->getNumEntities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   int nfaces_owned =
-    mesh->getNumEntities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   std::vector<int> flag(ncells_owned, 0);
 
   Amanzi::AmanziMesh::Entity_ID_List cells;

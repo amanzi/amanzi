@@ -8,14 +8,16 @@
 */
 
 //!
-#include "FunctionLinear.hh"
 #include "errors.hh"
+#include "ViewUtils.hh"
+
+#include "FunctionLinear.hh"
 
 namespace Amanzi {
 
 FunctionLinear::FunctionLinear(double y0,
-                               const Kokkos::View<double*, Kokkos::HostSpace>& grad,
-                               const Kokkos::View<double*, Kokkos::HostSpace>& x0)
+                               const Kokkos::View<const double*, Kokkos::HostSpace>& grad,
+                               const Kokkos::View<const double*, Kokkos::HostSpace>& x0)
 {
   if (grad.extent(0) < 1) {
     Errors::Message m;
@@ -28,18 +30,12 @@ FunctionLinear::FunctionLinear(double y0,
     Exceptions::amanzi_throw(m);
   }
   y0_ = y0;
-
-  Kokkos::resize(x0_, x0.extent(0));
-  Kokkos::resize(grad_, grad.extent(0));
-
-  Kokkos::deep_copy(x0_.view_host(), x0);
-  Kokkos::deep_copy(grad_.view_host(), grad);
-
-  Kokkos::deep_copy(x0_.view_device(), x0);
-  Kokkos::deep_copy(grad_.view_device(), grad);
+  x0_ = asDualView(x0);
+  grad_ = asDualView(grad);
 }
 
-FunctionLinear::FunctionLinear(double y0, const Kokkos::View<double*, Kokkos::HostSpace>& grad)
+FunctionLinear::FunctionLinear(double y0,
+        const Kokkos::View<const double*, Kokkos::HostSpace>& grad)
 {
   if (grad.extent(0) < 1) {
     Errors::Message m;
@@ -47,27 +43,44 @@ FunctionLinear::FunctionLinear(double y0, const Kokkos::View<double*, Kokkos::Ho
     Exceptions::amanzi_throw(m);
   }
   y0_ = y0;
+  grad_ = asDualView(grad);
 
-  Kokkos::resize(x0_, grad.extent(0));
-  for (int i = 0; i < x0_.extent(0); ++i) { x0_.view_host()(i) = 0.0; }
-
-  Kokkos::resize(grad_, grad.extent(0));
-  Kokkos::deep_copy(grad_.view_host(), grad);
-  Kokkos::deep_copy(x0_.view_device(), x0_.view_host());
-  Kokkos::deep_copy(grad_.view_device(), grad);
+  Kokkos::View<double*, Kokkos::HostSpace> x0("x0", grad.extent(0));
+  Kokkos::deep_copy(x0, 0.);
+  x0_ = asDualView(x0);
 }
 
 double
-FunctionLinear::operator()(const Kokkos::View<double*, Kokkos::HostSpace>& x) const
+FunctionLinear::operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& x) const
 {
-  double y = y0_;
-  if (x.extent(0) < grad_.extent(0)) {
-    Errors::Message m;
-    m << "FunctionLinear expects higher-dimensional argument.";
+  if (x.extent(0) != grad_.extent(0)) {
+    Errors::Message m("Linear function evaluated with point of inconsistent dimension.");
     Exceptions::amanzi_throw(m);
   }
-  for (int j = 0; j < grad_.extent(0); ++j) y += grad_.view_host()[j] * (x[j] - x0_.view_host()[j]);
-  return y;
+  auto f = Impl::FunctionLinearFunctor(y0_, grad_.view_host(), x0_.view_host(), x);
+  return f(0);
 }
+
+
+void
+FunctionLinear::apply(const Kokkos::View<const double**>& in,
+           Kokkos::View<double*>& out,
+           const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
+{
+  auto f = Impl::FunctionLinearFunctor(y0_, grad_.view_device(), x0_.view_device(), in);
+  if (ids) {
+    auto ids_loc = *ids;
+    Kokkos::parallel_for(
+      "FunctionBilinear::apply1", ids_loc.extent(0), KOKKOS_LAMBDA(const int& i) {
+        out(ids_loc(i)) = f(ids_loc[i]);
+      });
+  } else {
+    Kokkos::parallel_for(
+      "FunctionBilinear::apply2", in.extent(1), KOKKOS_LAMBDA(const int& i) {
+        out(i) = f(i);
+      });
+  }
+}
+
 
 } // namespace Amanzi

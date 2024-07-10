@@ -37,10 +37,10 @@ TEST(MESH_GEOMETRY_PLANAR)
               << "Testing 2D geometry with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
 
-    auto mesh = createStructuredUnitQuad(Preference{ frm }, 2, 2);
-    testMeshAudit<MeshAuditHost>(mesh);
-    testGeometryQuad(mesh, 2, 2);
-    testExteriorMapsUnitBox(mesh, 2, 2);
+    Teuchos::RCP<const Mesh> mesh = createStructuredUnitQuad(Preference{ frm }, 2, 2);
+    testMeshAuditHost<MeshAudit>(mesh);
+    testGeometryQuad(*mesh, mesh.get(), 2, 2);
+    testExteriorMapsUnitBox(*mesh, mesh.get(), 2, 2);
   }
 }
 
@@ -59,12 +59,12 @@ TEST(MESH_GEOMETRY_1CUBE_GENERATED)
     std::cout << std::endl
               << "Testing 3D geometry with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createStructuredUnitHex(Preference{ frm }, 1, 1, 1);
-    testMeshAudit<MeshAuditHost>(mesh);
-    testGeometryCube(mesh, 1, 1, 1);
+    Teuchos::RCP<const Mesh> mesh = createStructuredUnitHex(Preference{ frm }, 1, 1, 1);
+    testMeshAuditHost<MeshAudit>(mesh);
+    testGeometryCube(*mesh, mesh.get(), 1, 1, 1);
 
     // Exterior maps not supported by SIMPLE
-    if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(mesh, 1, 1, 1);
+    if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(*mesh, mesh.get(), 1, 1, 1);
   }
 }
 
@@ -85,10 +85,10 @@ TEST(MESH_GEOMETRY_1CUBE_EXO)
               << "Testing 3D Box 1x1x1 Exo geometry with " << AmanziMesh::to_string(frm)
               << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createUnstructured(Preference{ frm }, "test/hex_1x1x1_sets.exo");
-    testMeshAudit<MeshAuditHost>(mesh);
-    testGeometryCube(mesh, 1, 1, 1);
-    if (frm == Framework::MSTK) testExteriorMapsUnitBox(mesh, 1, 1, 1);
+    Teuchos::RCP<const Mesh> mesh = createUnstructured(Preference{ frm }, "test/hex_1x1x1_sets.exo");
+    testMeshAuditHost<MeshAudit>(mesh);
+    testGeometryCube(*mesh, mesh.get(), 1, 1, 1);
+    if (frm == Framework::MSTK) testExteriorMapsUnitBox(*mesh, mesh.get(), 1, 1, 1);
   }
 }
 
@@ -105,10 +105,10 @@ TEST(MESH_GEOMETRY_3CUBE)
     std::cout << std::endl
               << "Testing 3D Box 3x3x3 with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createStructuredUnitHex(Preference{ frm }, 3, 3, 3);
-    testMeshAudit<MeshAuditHost>(mesh);
-    testGeometryCube(mesh, 3, 3, 3);
-    if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh, 3, 3, 3); }
+    Teuchos::RCP<const Mesh> mesh = createStructuredUnitHex(Preference{ frm }, 3, 3, 3);
+    testMeshAuditHost<MeshAudit>(mesh);
+    testGeometryCube(*mesh, mesh.get(), 3, 3, 3);
+    if (frm == Framework::MSTK) { testExteriorMapsUnitBox(*mesh, mesh.get(), 3, 3, 3); }
   }
 }
 
@@ -128,10 +128,10 @@ TEST(MESH_GEOMETRY_3CUBE_EXO)
     std::cout << std::endl
               << "Testing 3D Box 3x3x3 Exo with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createUnstructured(Preference{ frm }, "test/hex_3x3x3_sets.exo");
-    testMeshAudit<MeshAuditHost>(mesh);
-    testGeometryCube(mesh, 3, 3, 3);
-    if (frm == Framework::MSTK) { testExteriorMapsUnitBox(mesh, 3, 3, 3); }
+    Teuchos::RCP<const Mesh> mesh = createUnstructured(Preference{ frm }, "test/hex_3x3x3_sets.exo");
+    testMeshAuditHost<MeshAudit>(mesh);
+    testGeometryCube(*mesh, mesh.get(), 3, 3, 3);
+    if (frm == Framework::MSTK) { testExteriorMapsUnitBox(*mesh, mesh.get(), 3, 3, 3); }
   }
 }
 
@@ -158,11 +158,11 @@ TEST(MESH_GEOMETRY_3CUBE_EXO)
 //     std::cout << std::endl
 //               << "Testing 3D Box 3x3x3 Par file with " << AmanziMesh::to_string(frm) << std::endl
 //               << "------------------------------------------------" << std::endl;
-//     auto mesh = createUnstructured(Preference{frm}, "test/hex_3x3x3.par");
-//     testMeshAudit<MeshAuditHost, Mesh>(mesh);
-//     testGeometryCube(mesh,3,3,3);
+//     Teuchos::RCP<const Mesh> mesh = createUnstructured(Preference{frm}, "test/hex_3x3x3.par");
+//     testMeshAuditHost<MeshAudit, Mesh>(mesh);
+//     testGeometryCube(*mesh,mesh.get(), 3,3,3);
 //     if (frm == Framework::MSTK) {
-//       testExteriorMapsUnitBox(mesh,3,3,3);
+//       testExteriorMapsUnitBox(*mesh,mesh.get(), 3,3,3);
 //     }
 //   }
 // }
@@ -180,11 +180,11 @@ TEST(MESH_GEOMETRY_2x3CUBE)
     std::cout << std::endl
               << "Testing 3D Box 2x2x3 with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createStructuredUnitHex(Preference{ frm }, 2, 2, 3);
-    testMeshAudit<MeshAuditHost, MeshHost>(mesh);
-    testGeometryCube(mesh, 2, 2, 3);
+    Teuchos::RCP<const Mesh> mesh = createStructuredUnitHex(Preference{ frm }, 2, 2, 3);
+    testMeshAuditHost<MeshAudit, Mesh>(mesh);
+    testGeometryCube(*mesh, mesh.get(), 2, 2, 3);
 
-    if (frm == Framework::MSTK) testExteriorMapsUnitBox(mesh, 2, 2, 3);
+    if (frm == Framework::MSTK) testExteriorMapsUnitBox(*mesh, mesh.get(), 2, 2, 3);
   }
 }
 
@@ -206,8 +206,8 @@ TEST(MESH_GEOMETRY_FRACTURE_EXO)
     std::cout << std::endl
               << "Testing 3D Fracture Exo with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createUnstructured(Preference{ frm }, "test/fractures.exo");
-    testMeshAudit<MeshAuditHost, MeshHost>(mesh);
+    Teuchos::RCP<const Mesh> mesh = createUnstructured(Preference{ frm }, "test/fractures.exo");
+    testMeshAuditHost<MeshAudit, Mesh>(mesh);
   }
 }
 
@@ -222,8 +222,8 @@ TEST(MESH_GEOMETRY_PINCHOUTS)
     std::cout << std::endl
               << "Testing 3D Pinchout with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createUnstructured(Preference{ frm }, "test/test_pri_pinchout_mesh.exo");
-    testMeshAudit<MeshAuditHost, MeshHost>(mesh);
+    Teuchos::RCP<const Mesh> mesh = createUnstructured(Preference{ frm }, "test/test_pri_pinchout_mesh.exo");
+    testMeshAuditHost<MeshAudit, Mesh>(mesh);
   }
 }
 
@@ -238,10 +238,10 @@ TEST(MESH_CONST_DANGER)
     std::cout << std::endl
               << "Testing const correctness of mesh views" << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createStructuredUnitQuad(Preference{ frm }, 2, 2);
-    MeshHost::Entity_ID_View cfaces2;
+    Teuchos::RCP<const Mesh> mesh = createStructuredUnitQuad(Preference{ frm }, 2, 2);
+    Mesh::Entity_ID_View cfaces2;
     {
-      auto cfaces = mesh->getCellFaces<AccessPattern_kind::CACHE>(0);
+      auto cfaces = mesh->getCellFaces(0);
       Kokkos::resize(cfaces2, cfaces.size());
       Kokkos::deep_copy(cfaces2, cfaces);
       CHECK(cfaces2(0) != -1);

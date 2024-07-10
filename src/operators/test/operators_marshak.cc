@@ -67,13 +67,13 @@ RunTestMarshak(std::string op_list_name, double TemperatureFloor)
   // Create nonlinear coefficient.
   Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh, TemperatureFloor));
 
-  int ncells_owned = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   // modify diffusion coefficient
   CompositeVectorSpace K_map;
   K_map.SetMesh(mesh);
-  K_map.AddComponent("cell", AmanziMesh::CELL, 1);
+  K_map.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   auto K = Teuchos::rcp(new TensorVector(K_map));
 
   std::vector<WhetStone::Tensor<DefaultHostMemorySpace>> host_tensors(K->size());
@@ -84,7 +84,7 @@ RunTestMarshak(std::string op_list_name, double TemperatureFloor)
   K->Init(host_tensors);
 
   // create boundary data (no mixed bc)
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   auto bc_model = bc->bc_model();
   auto bc_value = bc->bc_value();
 
@@ -108,17 +108,17 @@ RunTestMarshak(std::string op_list_name, double TemperatureFloor)
   if (op_list_name == "diffusion operator Sff") {
     cvs->SetMesh(mesh)
       ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("face", AmanziMesh::FACE, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
   } else {
-    cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+    cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(cvs->CreateSpace()));
   solution->putScalar(knc->TemperatureFloor); // solution at time T=0
   // Create and initialize flux field.
   Teuchos::RCP<CompositeVectorSpace> cvs_flux = Teuchos::rcp(new CompositeVectorSpace());
-  cvs_flux->SetMesh(mesh)->SetComponent("face", AmanziMesh::FACE, 1)->SetGhosted(true);
+  cvs_flux->SetMesh(mesh)->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1)->SetGhosted(true);
   auto flux = cvs_flux->Create();
   //op->UpdateFlux(solution.ptr(), flux.ptr());
 
@@ -160,7 +160,7 @@ RunTestMarshak(std::string op_list_name, double TemperatureFloor)
     Teuchos::RCP<Operator> global_op = op->global_operator();
 
     // add accumulation terms
-    PDE_Accumulation op_acc(AmanziMesh::CELL, global_op);
+    PDE_Accumulation op_acc(AmanziMesh::Entity_kind::CELL, global_op);
     op_acc.AddAccumulationDelta(*solution, heat_capacity, heat_capacity, dt, "cell");
 
     // apply BCs and assemble

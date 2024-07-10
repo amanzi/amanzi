@@ -12,9 +12,10 @@
 
 #include "FIFO_Set.hh"
 #include "RegionLabeledSet.hh"
-#include "MeshCache.hh"
 #include "MeshHelpers.hh"
 #include "MeshSets.hh"
+#include "Mesh.hh"
+#include "MeshCache.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -27,7 +28,7 @@ View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSet(const AmanziGeometry::Region& region,
                const Entity_kind kind,
                const Parallel_kind ptype,
-               const MeshHost& mesh)
+               const Mesh& mesh)
 {
   // special function to deal with BOUNDARY_*, so no other function needs to
   // deal with them.
@@ -70,17 +71,17 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
                               const Entity_kind kind,
                               const Parallel_kind ptype,
                               View_type<double, MemSpace_kind::HOST>& vol_fracs,
-                              const MeshHost& mesh)
+                              const Mesh& mesh)
 {
   Kokkos::resize(vol_fracs, 0);
-  MeshHost::cEntity_ID_View ret_ents;
+  Mesh::cEntity_ID_View ret_ents;
   auto ents_cpt = 0;
   auto vol_fracs_cpt = 0;
 
   if ((AmanziGeometry::RegionType::BOX_VOF == region.get_type() ||
        AmanziGeometry::RegionType::LINE_SEGMENT == region.get_type()) &&
       (kind == Entity_kind::CELL || kind == Entity_kind::FACE)) {
-    MeshHost::Entity_ID_View ents;
+    Mesh::Entity_ID_View ents;
 
     if (kind == Entity_kind::CELL) {
       auto ncells = mesh.getNumEntities(Entity_kind::CELL, ptype);
@@ -143,7 +144,7 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
 
     ret_ents = ents;
   } else {
-    ret_ents = mesh.getSetEntities(region.get_name(), kind, ptype);
+    ret_ents = mesh.getSetEntities<MemSpace_kind::HOST>(region.get_name(), kind, ptype);
   }
   return ret_ents;
 }
@@ -170,7 +171,7 @@ View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSet_(const AmanziGeometry::Region& region,
                 const Entity_kind kind,
                 const Parallel_kind ptype,
-                const MeshHost& mesh)
+                const Mesh& mesh)
 {
   View_type<const Entity_ID, MemSpace_kind::HOST> result;
   if (AmanziGeometry::RegionType::ENUMERATED == region.get_type()) {
@@ -186,7 +187,7 @@ resolveMeshSet_(const AmanziGeometry::Region& region,
   } else if (AmanziGeometry::RegionType::LABELEDSET == region.get_type()) {
     auto region_ls = dynamic_cast<const AmanziGeometry::RegionLabeledSet*>(&region);
     AMANZI_ASSERT(region_ls);
-    MeshHost::Entity_ID_View lresult;
+    Mesh::Entity_ID_View lresult;
     result = resolveMeshSetLabeledSet(*region_ls, kind, ptype, mesh);
     // labeled sets may not be sorted, though all other types are.  Sort labeled sets.
     lresult.fromConst(result);
@@ -215,13 +216,13 @@ View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
                     const Entity_kind kind,
                     const Parallel_kind ptype,
-                    const MeshHost& mesh)
+                    const Mesh& mesh)
 {
   std::vector<Entity_ID> result;
 
   auto rgnpnt = region.point();
 
-  int nnode = mesh.getNumEntities(NODE, Parallel_kind::ALL);
+  int nnode = mesh.getNumEntities(Entity_kind::NODE, Parallel_kind::ALL);
   double mindist2 = 1.e+16;
   int minnode = -1;
   int inode;
@@ -236,7 +237,7 @@ resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
     }
   }
 
-  auto cells = mesh.getNodeCells(minnode, ptype);
+  auto cells = mesh.getNodeCells(minnode);
 
   int ncells = cells.size();
   for (int ic = 0; ic < ncells; ic++) {
@@ -248,7 +249,7 @@ resolveMeshSetPoint(const AmanziGeometry::RegionPoint& region,
 
   // finally check all cells, typical for anisotropic meshes
   if (result.empty()) {
-    int lncells = mesh.getNumEntities(CELL, ptype);
+    int lncells = mesh.getNumEntities(Entity_kind::CELL, ptype);
     for (int c = 0; c < lncells; ++c)
       if (mesh.isPointInCell(rgnpnt, c)) result.push_back(c);
   }
@@ -271,17 +272,17 @@ View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveBoundaryEntityMeshSet(const AmanziGeometry::Region& region,
                              const Entity_kind kind,
                              const Parallel_kind ptype,
-                             const MeshHost& mesh)
+                             const Mesh& mesh)
 {
   if (kind == Entity_kind::BOUNDARY_FACE) {
     View_type<const Entity_ID, MemSpace_kind::HOST> ents;
     bool is_faces = false;
     try {
       // get face entities, then filter for boundary faces.
-      ents = mesh.getSetEntities(region.get_name(), Entity_kind::FACE, ptype);
+      ents = mesh.getSetEntities<MemSpace_kind::HOST>(region.get_name(), Entity_kind::FACE, ptype);
       is_faces = true;
     } catch (...) {
-      ents = mesh.getSetEntities(region.get_name(), Entity_kind::CELL, ptype);
+      ents = mesh.getSetEntities<MemSpace_kind::HOST>(region.get_name(), Entity_kind::CELL, ptype);
     }
 
     Utils::FIFO_Set<Entity_ID> bfs;
@@ -308,7 +309,7 @@ resolveBoundaryEntityMeshSet(const AmanziGeometry::Region& region,
     Errors::Message msg;
     msg << "Resolving " << to_string(kind) << " not yet implemented...";
     Exceptions::amanzi_throw(msg);
-    return MeshHost::cEntity_ID_View();
+    return Mesh::cEntity_ID_View();
   }
 }
 
@@ -321,8 +322,8 @@ View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveIDMeshSetFromParent(const AmanziGeometry::Region& region,
                            const Entity_kind kind,
                            const Parallel_kind ptype,
-                           const MeshHost& mesh,
-                           const MeshHost& parent_mesh)
+                           const Mesh& mesh,
+                           const Mesh& parent_mesh)
 {
   // Enumerated or Labeled sets that have IDs, and so also have Entity_kind as
   // a region property.
@@ -411,7 +412,7 @@ resolveIDMeshSetFromParent(const AmanziGeometry::Region& region,
       << " from a parent mesh region \"" << region.get_name()
       << "\" which supplies entities of type " << to_string(parent_kind);
   Exceptions::amanzi_throw(msg);
-  return MeshHost::cEntity_ID_View();
+  return Mesh::cEntity_ID_View();
 }
 
 
@@ -425,8 +426,8 @@ View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveGeometricMeshSetFromParent(const AmanziGeometry::Region& region,
                                   const Entity_kind kind,
                                   const Parallel_kind ptype,
-                                  const MeshHost& mesh,
-                                  const MeshHost& parent_mesh)
+                                  const Mesh& mesh,
+                                  const Mesh& parent_mesh)
 {
   if (mesh.getManifoldDimension() == (parent_mesh.getManifoldDimension() - 1)) {
     // extracted surface mesh
@@ -470,7 +471,7 @@ resolveGeometricMeshSetFromParent(const AmanziGeometry::Region& region,
         << parent_mesh.getManifoldDimension();
     Exceptions::amanzi_throw(msg);
   }
-  return MeshHost::cEntity_ID_View();
+  return Mesh::cEntity_ID_View();
 }
 
 //
@@ -480,7 +481,7 @@ View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetAll(const AmanziGeometry::Region& region,
                   const Entity_kind kind,
                   const Parallel_kind ptype,
-                  const MeshHost& mesh)
+                  const Mesh& mesh)
 {
   auto num_ents = mesh.getNumEntities(kind, ptype);
   View_type<Entity_ID, MemSpace_kind::HOST> ents(getUniqueName(region, kind, ptype), num_ents);
@@ -496,7 +497,7 @@ View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetBoundary(const AmanziGeometry::Region& region,
                        const Entity_kind kind,
                        const Parallel_kind ptype,
-                       const MeshHost& mesh)
+                       const Mesh& mesh)
 {
   AMANZI_ASSERT(AmanziGeometry::RegionType::BOUNDARY == region.get_type());
   View_type<const Entity_ID, MemSpace_kind::HOST> ents;
@@ -509,7 +510,7 @@ resolveMeshSetBoundary(const AmanziGeometry::Region& region,
     boundary_kind = Entity_kind::BOUNDARY_NODE;
   } else {
     Errors::Message msg;
-    msg << "Developer Error: MeshCacheHost::getSetEntities() on region \"" << region.get_name()
+    msg << "Developer Error: Mesh::getSetEntities() on region \"" << region.get_name()
         << "\" of type BOUNDARY was requested with invalid type " << to_string(kind);
     Exceptions::amanzi_throw(msg);
   }
@@ -532,7 +533,7 @@ View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
                          const Entity_kind kind,
                          const Parallel_kind ptype,
-                         const MeshHost& mesh)
+                         const Mesh& mesh)
 {
   if (kind == createEntityKind(region.entity_str())) {
     Entity_ID_List region_entities = region.entities();
@@ -541,8 +542,8 @@ resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
 
     // note that we have to sort these by owned, then ghosted
     std::size_t cpt = 0, cpt_g = 0;
-    MeshHost::Entity_ID_View result(getUniqueName(region, kind, ptype), mesh_map->getLocalNumElements());
-    MeshHost::Entity_ID_View result_g("ghosted SetEnumerated", mesh_map->getLocalNumElements());
+    Mesh::Entity_ID_View result(getUniqueName(region, kind, ptype), mesh_map->getLocalNumElements());
+    Mesh::Entity_ID_View result_g("ghosted SetEnumerated", mesh_map->getLocalNumElements());
     Entity_ID nowned = mesh.getNumEntities(kind, Parallel_kind::OWNED);
     for (Entity_GID gid : region_entities) {
       Entity_ID lid = mesh_map->getLocalElement(gid);
@@ -561,7 +562,7 @@ resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
     Kokkos::resize(result, cpt);
     return result;
   } else {
-    return MeshHost::Entity_ID_View();
+    return Mesh::Entity_ID_View();
   }
 }
 
@@ -570,7 +571,7 @@ View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetGeometric(const AmanziGeometry::Region& region,
                         const Entity_kind kind,
                         const Parallel_kind ptype,
-                        const MeshHost& mesh)
+                        const Mesh& mesh)
 {
   AMANZI_ASSERT(region.is_geometric());
   AMANZI_ASSERT(region.get_space_dimension() == mesh.getSpaceDimension());
@@ -586,7 +587,7 @@ resolveMeshSetGeometric(const AmanziGeometry::Region& region,
   }
 
   // check whether centroid is inside region
-  MeshHost::Entity_ID_View entities(getUniqueName(region, kind, ptype), end - begin);
+  Mesh::Entity_ID_View entities(getUniqueName(region, kind, ptype), end - begin);
   int lcv = 0;
   for (Entity_ID i = begin; i != end; ++i) {
     if (region.inside(mesh.getCentroid(kind, i))) { entities[lcv++] = i; }
@@ -600,11 +601,11 @@ View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetLabeledSet(const AmanziGeometry::RegionLabeledSet& region,
                          const Entity_kind kind,
                          const Parallel_kind ptype,
-                         const MeshHost& mesh)
+                         const Mesh& mesh)
 {
   if (!mesh.getMeshFramework().get()) {
     Errors::Message msg;
-    msg << "Developer Error: MeshCacheHost::getSetEntities() on region \"" << region.get_name()
+    msg << "Developer Error: Mesh::getSetEntities() on region \"" << region.get_name()
         << "\" of type LABLEDSET was requested for the first time after the framework mesh was "
            "deleted.";
     Exceptions::amanzi_throw(msg);
@@ -619,7 +620,7 @@ View_type<const Entity_ID, MemSpace_kind::HOST>
 resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
                       const Entity_kind kind,
                       const Parallel_kind ptype,
-                      const MeshHost& mesh)
+                      const Mesh& mesh)
 {
   View_type<const Entity_ID, MemSpace_kind::HOST> result;
   switch (region.get_operation()) {
@@ -633,7 +634,7 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
 
     // then iterate and subtract
     for (const auto& rname : region.get_component_regions()) {
-      auto comp_ents = mesh.getSetEntities(rname, kind, ptype);
+      auto comp_ents = mesh.getSetEntities<MemSpace_kind::HOST>(rname, kind, ptype);
 
       Entity_ID_List lresult;
       lresult.reserve(result.size());
@@ -648,7 +649,7 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
   } break;
   case (AmanziGeometry::BoolOpType::UNION): {
     for (const auto& rname : region.get_component_regions()) {
-      auto comp_ents = mesh.getSetEntities(rname, kind, ptype);
+      auto comp_ents = mesh.getSetEntities<MemSpace_kind::HOST>(rname, kind, ptype);
 
       Entity_ID_List lresult;
       lresult.reserve(result.size() + comp_ents.size());
@@ -665,9 +666,9 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
   case (AmanziGeometry::BoolOpType::INTERSECT): {
     const auto& rnames = region.get_component_regions();
     AMANZI_ASSERT(rnames.size() > 1);
-    result = mesh.getSetEntities(rnames[0], kind, ptype);
+    result = mesh.getSetEntities<MemSpace_kind::HOST>(rnames[0], kind, ptype);
     for (int i = 1; i != rnames.size(); ++i) {
-      auto comp_ents = mesh.getSetEntities(rnames[i], kind, ptype);
+      auto comp_ents = mesh.getSetEntities<MemSpace_kind::HOST>(rnames[i], kind, ptype);
 
       Entity_ID_List lresult;
       lresult.reserve(std::max(result.size(), comp_ents.size()));
@@ -684,9 +685,9 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
   case (AmanziGeometry::BoolOpType::SUBTRACT): {
     const auto& rnames = region.get_component_regions();
     AMANZI_ASSERT(rnames.size() > 1);
-    result = mesh.getSetEntities(rnames[0], kind, ptype);
+    result = mesh.getSetEntities<MemSpace_kind::HOST>(rnames[0], kind, ptype);
     for (int i = 1; i != rnames.size(); ++i) {
-      auto comp_ents = mesh.getSetEntities(rnames[i], kind, ptype);
+      auto comp_ents = mesh.getSetEntities<MemSpace_kind::HOST>(rnames[i], kind, ptype);
 
       Entity_ID_List lresult;
       lresult.reserve(result.size());
@@ -711,7 +712,7 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
 //
 // Filter for the direct parent entity.
 View_type<const Entity_ID, MemSpace_kind::HOST>
-filterParentEntities(const MeshHost& mesh,
+filterParentEntities(const Mesh& mesh,
                      Entity_kind kind,
                      Parallel_kind ptype,
                      const View_type<const Entity_ID, MemSpace_kind::HOST>& parent_entities)
@@ -743,7 +744,7 @@ filterParentEntities(const MeshHost& mesh,
 
 View_type<const Entity_ID, MemSpace_kind::HOST>
 filterParentEntities_SurfaceCellToCell(
-  const MeshHost& mesh,
+  const Mesh& mesh,
   Parallel_kind ptype,
   const View_type<const Entity_ID, MemSpace_kind::HOST>& parent_entities)
 {
@@ -779,7 +780,7 @@ filterParentEntities_SurfaceCellToCell(
 
 View_type<const Entity_ID, MemSpace_kind::HOST>
 filterParentEntities_SurfaceFaceToFace(
-  const MeshHost& mesh,
+  const Mesh& mesh,
   Parallel_kind ptype,
   const View_type<const Entity_ID, MemSpace_kind::HOST>& parent_entities)
 {

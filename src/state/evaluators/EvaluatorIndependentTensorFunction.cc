@@ -88,17 +88,17 @@ EvaluatorIndependentTensorFunction::EnsureCompatibility(State& S)
 void
 EvaluatorIndependentTensorFunction::Update_(State& S)
 {
+  const auto& fac = S.GetFactoryW<TensorVector, TensorVector_Factory>(my_key_);
   if (!computed_once_) {
     // Create the function.
-    auto& tv = S.Get<TensorVector>(my_key_, my_tag_);
     AMANZI_ASSERT(plist_->isSublist("function"));
 
     func_ = Teuchos::rcp(
-      new Functions::CompositeVectorFunction(plist_->sublist("function"), tv.map.getMesh()));
+      new Functions::CompositeVectorFunction(plist_->sublist("function"), fac->getMap().getMesh()));
   }
 
   auto& tv = S.GetW<TensorVector>(my_key_, my_tag_, my_key_);
-  CompositeVector cv(tv.map.CreateSpace());
+  CompositeVector cv(fac->getMap().CreateSpace());
 
   time_ = S.get_time(my_tag_);
   func_->Compute(time_, cv);
@@ -107,7 +107,7 @@ EvaluatorIndependentTensorFunction::Update_(State& S)
 
   // move data into tensor vector
   int j = 0;
-  for (auto name : tv.map) {
+  for (auto name : fac->getMap()) {
     auto vec = cv.viewComponent(name, tv.ghosted);
     Impl::assignViewToTensorVectorDiag(vec, j, tv);
     j += vec.extent(0);

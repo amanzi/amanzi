@@ -46,7 +46,7 @@ Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
   auto Yc = Y.viewComponent("cell", false);
 
   const auto& map = Y.getMap();
-  const AmanziMesh::Mesh& m = *mesh_;
+  const AmanziMesh::MeshCache& m = mesh_->getCache();
 
   // Allocate the first time
   if (op.v.size() != op.A.size()) { op.PreallocateWorkVectors(); }
@@ -90,7 +90,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_Face& op,
   auto Xf = X.viewComponent("face", true);
   auto Yf = Y.viewComponent("face", true);
 
-  const AmanziMesh::Mesh& m = *mesh_;
+  const AmanziMesh::MeshCache& m = mesh_->getCache();
 
   // Allocate the first time
   if (op.v.size() != op.A.size()) {
@@ -134,18 +134,18 @@ Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
                                      const CompositeVector& X,
                                      CompositeVector& Y) const
 {
-  int nsurf_cells = op.mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nsurf_cells = op.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   auto Xf = X.viewComponent<>("face", false);
   auto Yf = Y.viewComponent<>("face", false);
   auto diag = op.diag->getLocalViewDevice(Tpetra::Access::ReadOnly);
-  const AmanziMesh::Mesh& m = *op.mesh;
+  const AmanziMesh::MeshCache& m = op.mesh->getCache();
 
   Kokkos::parallel_for(
     "Operator_FaceCell::ApplyMatrixFreeOp Op_SurfaceCell_SurfaceCell",
     nsurf_cells,
     KOKKOS_LAMBDA(const int& sc) {
-      auto f = m.getEntityParent(AmanziMesh::CELL, sc);
+      auto f = m.getEntityParent(AmanziMesh::Entity_kind::CELL, sc);
       // atomic not needed
       Yf(f, 0) += diag(sc, 0) * Xf(f, 0);
     });
@@ -161,11 +161,11 @@ Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
                                      const CompositeVector& X,
                                      CompositeVector& Y) const
 {
-  int nsurf_faces = op.mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nsurf_faces = op.mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
   auto Xf = X.viewComponent("face", true);
   auto Yf = Y.viewComponent("face", true);
-  const AmanziMesh::Mesh& m = *op.mesh;
+  const AmanziMesh::MeshCache& m = op.mesh->getCache();
 
   // Allocate the first time
   if (op.v.size() != op.A.size()) { op.PreallocateWorkVectors(); }
@@ -186,12 +186,12 @@ Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
       auto lAv = local_Av[sf];
 
       for (int n = 0; n != ncells; ++n) {
-        lv(n) = Xf(m.getEntityParent(AmanziMesh::CELL, cells(n)), 0);
+        lv(n) = Xf(m.getEntityParent(AmanziMesh::Entity_kind::CELL, cells(n)), 0);
       }
       lA.Multiply(lv, lAv, false);
 
       for (int n = 0; n != ncells; ++n) {
-        Kokkos::atomic_add(&Yf(m.getEntityParent(AmanziMesh::CELL, cells(n)), 0), lAv(n));
+        Kokkos::atomic_add(&Yf(m.getEntityParent(AmanziMesh::Entity_kind::CELL, cells(n)), 0), lAv(n));
       }
     });
   return 0;
@@ -217,9 +217,8 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   const auto cell_col_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_col, "cell", 0);
 
   AMANZI_ASSERT(mesh_ == op.mesh);
-  auto mesh = AmanziMesh::onMemHost(op.mesh);
   for (int c = 0; c != ncells_owned; ++c) {
-    auto faces = mesh->getCellFaces(c);
+    auto faces = op.mesh->getCellFaces(c);
     int nfaces = faces.size();
 
     for (int n = 0; n != nfaces; ++n) {
@@ -251,10 +250,9 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
   const auto face_row_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_row, "face", 0);
   const auto face_col_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_col, "face", 0);
   AMANZI_ASSERT(mesh_ == op.mesh);
-  auto mesh = AmanziMesh::onMemHost(op.mesh);
 
   for (int c = 0; c != ncells_owned; ++c) {
-    auto faces = mesh->getCellFaces(c);
+    auto faces = op.mesh->getCellFaces(c);
     int nfaces = faces.size();
 
     for (int n = 0; n != nfaces; ++n) {
@@ -275,13 +273,13 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op
                                             int my_block_row,
                                             int my_block_col) const
 {
-  int nsurf_cells = op.mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nsurf_cells = op.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   auto face_row_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_row, "face", 0);
   auto face_col_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_col, "face", 0);
 
   for (int sc = 0; sc != nsurf_cells; ++sc) {
-    auto f = op.mesh->getEntityParent(AmanziMesh::CELL, sc);
+    auto f = op.mesh->getEntityParent(AmanziMesh::Entity_kind::CELL, sc);
     auto lid_r = face_row_inds[f];
     auto lid_c = face_col_inds[f];
     graph.insertLocalIndices(lid_r, 1, &lid_c);
@@ -299,21 +297,20 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op
                                             int my_block_row,
                                             int my_block_col) const
 {
-  int nsurf_faces = op.mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nsurf_faces = op.mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   int lid_r[2];
   int lid_c[2];
 
   // ELEMENT: cell, DOFS: cell and face
   auto face_row_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_row, "face", 0);
   auto face_col_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_col, "face", 0);
-  auto mesh = AmanziMesh::onMemHost(op.mesh);
 
   int ierr = 0;
   for (int sf = 0; sf != nsurf_faces; ++sf) {
-    auto cells = mesh->getFaceCells(sf);
+    auto cells = op.mesh->getFaceCells(sf);
     int ncells = cells.size();
     for (int n = 0; n != ncells; ++n) {
-      int f = mesh->getEntityParent(AmanziMesh::CELL, cells[n]);
+      int f = op.mesh->getEntityParent(AmanziMesh::Entity_kind::CELL, cells[n]);
       lid_r[n] = face_row_inds[f];
       lid_c[n] = face_col_inds[f];
     }
@@ -346,7 +343,8 @@ Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
   int nrows_local = mat.getMatrix()->getLocalNumRows();
 
   AMANZI_ASSERT(mesh_ == op.mesh);
-  const AmanziMesh::Mesh& m = *op.mesh;
+  const AmanziMesh::MeshCache& m = op.mesh->getCache();
+  const auto& A = op.A;
 
   Kokkos::parallel_for(
     "Operator_FaceCell::AssembleMatrixOp::Cell_FaceCell",
@@ -355,7 +353,7 @@ Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
       auto faces = m.getCellFaces(c);
       int nfaces = faces.extent(0);
 
-      auto A_c = op.A[c];
+      auto A_c = A[c];
 
       for (int n = 0; n != nfaces; ++n) {
         if (face_row_inds[faces[n]] < nrows_local) {
@@ -404,50 +402,50 @@ Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
     });
 }
 
-#if 0
-/* ******************************************************************
-* Visit methods for assemble: Face
-****************************************************************** */
-void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
-                                         const SuperMap& map, MatrixFE& mat,
-                                         int my_block_row, int my_block_col) const
-{
-  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  std::vector<int> lid_r(cell_max_faces + 1);
-  std::vector<int> lid_c(cell_max_faces + 1);
+// /* ******************************************************************
+// * Visit methods for assemble: Face
+// ****************************************************************** */
+// void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
+//                                          const SuperMap& map, MatrixFE& mat,
+//                                          int my_block_row, int my_block_col) const
+// {
+//   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  // ELEMENT: cell, DOFS: face and cell
-  const std::vector<int>& face_row_inds = map.viewGhostIndices(my_block_row, "face", 0);
-  const std::vector<int>& face_col_inds = map.viewGhostIndices(my_block_col, "face", 0);
+//   std::vector<int> lid_r(cell_max_faces + 1);
+//   std::vector<int> lid_c(cell_max_faces + 1);
 
-  Teuchos::RCP<const Epetra_BlockMap> face_gh_map = map.ComponentGhostedMap(my_block_row, "face");
+//   // ELEMENT: cell, DOFS: face and cell
+//   const std::vector<int>& face_row_inds = map.viewGhostIndices(my_block_row, "face", 0);
+//   const std::vector<int>& face_col_inds = map.viewGhostIndices(my_block_col, "face", 0);
 
-  int ierr(0);
-  AmanziMesh::Entity_ID_List faces;
-  for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, &faces);
-    int nfaces = faces.size();
+//   Teuchos::RCP<const Epetra_BlockMap> face_gh_map = map.ComponentGhostedMap(my_block_row, "face");
 
-    int k = 0;
-    for (int n = 0; n != nfaces; ++n) {
-      int f = faces[n];
-      int face_dof_size = face_gh_map->ElementSize(f);
-      int first = face_gh_map->FirstPointInElement(f);
+//   int ierr(0);
+//   AmanziMesh::Entity_ID_List faces;
+//   for (int c = 0; c != ncells_owned; ++c) {
+//     mesh_->cell_get_faces(c, &faces);
+//     int nfaces = faces.size();
 
-      for (int m = 0; m != face_dof_size; ++m) {
-        lid_r[k] = face_row_inds[first + m];
-        lid_c[k] = face_col_inds[first + m];
-        k++;
-      }
-    }
+//     int k = 0;
+//     for (int n = 0; n != nfaces; ++n) {
+//       int f = faces[n];
+//       int face_dof_size = face_gh_map->ElementSize(f);
+//       int first = face_gh_map->FirstPointInElement(f);
 
-    ierr |= mat.sumIntoValues(lid_r.data(), lid_c.data(), op.matrices[c]);
-  }
+//       for (int m = 0; m != face_dof_size; ++m) {
+//         lid_r[k] = face_row_inds[first + m];
+//         lid_c[k] = face_col_inds[first + m];
+//         k++;
+//       }
+//     }
 
-  AMANZI_ASSERT(!ierr);
-}
-#endif
+//     ierr |= mat.sumIntoValues(lid_r.data(), lid_c.data(), op.matrices[c]);
+//   }
+
+//   AMANZI_ASSERT(!ierr);
+// }
+
 
 /* ******************************************************************
 * Visit methods for assemble: Surface
@@ -459,7 +457,7 @@ Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
                                     int my_block_row,
                                     int my_block_col) const
 {
-  int nsurf_cells = op.mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int nsurf_cells = op.mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
 
   // ELEMENT: cell, DOFS: cell and face
   auto face_row_inds = map.viewGhostIndices(my_block_row, "face", 0);
@@ -468,13 +466,13 @@ Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
 
   auto proc_mat = mat.getLocalMatrixDevice();
 
-  const AmanziMesh::Mesh& m = *op.mesh;
+  const AmanziMesh::MeshCache& m = op.mesh->getCache();
 
   Kokkos::parallel_for(
     "Operator_FaceCell::AssembleMatrixOp::SurfaceCell_SurfaceCell",
     nsurf_cells,
     KOKKOS_LAMBDA(const int& sc) {
-      auto f = m.getEntityParent(AmanziMesh::CELL, sc);
+      auto f = m.getEntityParent(AmanziMesh::Entity_kind::CELL, sc);
       auto lid_r = face_row_inds[f];
       auto lid_c = face_col_inds[f];
       proc_mat.sumIntoValues(lid_r, &lid_c, 1, &diag(sc, 0), true, false);
@@ -489,7 +487,7 @@ Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
                                     int my_block_row,
                                     int my_block_col) const
 {
-  int nsurf_faces = op.mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
+  int nsurf_faces = op.mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
   auto face_row_inds = map.viewGhostIndices(my_block_row, "face", 0);
   auto face_col_inds = map.viewGhostIndices(my_block_col, "face", 0);
@@ -498,8 +496,9 @@ Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
   auto proc_mat = mat.getLocalMatrixDevice();
   auto offproc_mat = mat.getOffProcLocalMatrixDevice();
   int nrows_local = mat.getMatrix()->getLocalNumRows();
+  const auto& A = op.A;
 
-  const AmanziMesh::Mesh& mesh = *op.mesh;
+  const AmanziMesh::MeshCache& mesh = op.mesh->getCache();
 
   Kokkos::parallel_for(
     "Operator_FaceCell::AssembleMatrixOp SurfaceFace_SurfaceCell",
@@ -507,14 +506,14 @@ Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
     KOKKOS_LAMBDA(const int& sf) {
       auto cells = mesh.getFaceCells(sf);
 
-      auto A_f = op.A[sf];
+      auto A_f = A[sf];
 
       for (int n = 0; n != cells.extent(0); ++n) {
-        if (face_row_inds[mesh.getEntityParent(AmanziMesh::CELL, cells(n))] < nrows_local) {
+        if (face_row_inds[mesh.getEntityParent(AmanziMesh::Entity_kind::CELL, cells(n))] < nrows_local) {
           for (int m = 0; m != cells.extent(0); ++m) {
             proc_mat.sumIntoValues(
-              face_row_inds(mesh.getEntityParent(AmanziMesh::CELL, cells(n))),
-              &face_col_inds(mesh.getEntityParent(AmanziMesh::CELL, cells(m))),
+              face_row_inds(mesh.getEntityParent(AmanziMesh::Entity_kind::CELL, cells(n))),
+              &face_col_inds(mesh.getEntityParent(AmanziMesh::Entity_kind::CELL, cells(m))),
               1,
               &A_f(n, m),
               true,
@@ -523,8 +522,8 @@ Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
         } else {
           for (int m = 0; m != cells.extent(0); ++m) {
             offproc_mat.sumIntoValues(
-              face_row_inds(mesh.getEntityParent(AmanziMesh::CELL, cells(n))) - nrows_local,
-              &face_col_inds(mesh.getEntityParent(AmanziMesh::CELL, cells(m))),
+              face_row_inds(mesh.getEntityParent(AmanziMesh::Entity_kind::CELL, cells(n))) - nrows_local,
+              &face_col_inds(mesh.getEntityParent(AmanziMesh::Entity_kind::CELL, cells(m))),
               1,
               &A_f(n, m),
               true,

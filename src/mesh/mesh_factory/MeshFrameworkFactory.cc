@@ -300,7 +300,7 @@ MeshFrameworkFactory::create(const Teuchos::ParameterList& parameter_list)
 // dimension or (in the future) extruding it when it makes sense
 // -------------------------------------------------------------
 Teuchos::RCP<MeshFramework>
-MeshFrameworkFactory::create(const Teuchos::RCP<const MeshHost>& inmesh,
+MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
                              const MeshFramework::cEntity_ID_View& setids,
                              const Entity_kind setkind,
                              const bool flatten)
@@ -370,7 +370,7 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const MeshHost>& inmesh,
 // future) extruding it when it makes sense
 // -------------------------------------------------------------
 Teuchos::RCP<MeshFramework>
-MeshFrameworkFactory::create(const Teuchos::RCP<const MeshHost>& inmesh,
+MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
                              const std::vector<std::string>& setnames,
                              const Entity_kind setkind,
                              const bool flatten)
@@ -395,7 +395,7 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const MeshHost>& inmesh,
   } else {
     MeshFramework::Entity_ID_View ids;
     for (auto name : setnames) {
-      auto ids_l = inmesh->getSetEntities(name, setkind, Parallel_kind::OWNED);
+      auto ids_l = inmesh->getSetEntities<MemSpace_kind::HOST>(name, setkind, Parallel_kind::OWNED);
       ids.insert(ids.end(), ids_l.begin(), ids_l.end());
     }
     return create(inmesh, ids, setkind, flatten);

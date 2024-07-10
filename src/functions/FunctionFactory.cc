@@ -20,7 +20,6 @@
 #include "FunctionConstant.hh"
 #include "FunctionDistance.hh"
 #include "FunctionExprTK.hh"
-#include "FunctionSquareDistance.hh"
 #include "FunctionFactory.hh"
 #include "FunctionLinear.hh"
 #include "FunctionMonomial.hh"
@@ -70,9 +69,10 @@ FunctionFactory::Create(const std::string& function_type,
     f = create_bilinear_and_time(function_params);
   else if (function_type == "distance")
     f = create_distance(function_params);
-  else if (function_type == "squaredistance")
-    f = create_squaredistance(function_params);
-  else if (function_type == "exprtk")
+  else if (function_type == "squaredistance") {
+    function_params.set("squared", true);
+    f = create_distance(function_params);
+  } else if (function_type == "exprtk")
     f = create_exprtk(function_params);
   else { // I don't recognize this function type
     Errors::Message m;
@@ -240,7 +240,6 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
         int nforms = form_strings.size();
         Kokkos::View<Form_kind*, Kokkos::HostSpace> form("form", nforms);
 
-        bool flag_func(false);
         std::vector<std::unique_ptr<Function>> func(nforms);
 
         for (int i = 0; i < nforms; ++i) {
@@ -248,29 +247,15 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
             form[i] = Form_kind::LINEAR;
           else if (form_strings[i] == "constant")
             form[i] = Form_kind::CONSTANT;
-          else {
+          else if (form_strings[i] == "function")
             form[i] = Form_kind::FUNCTION;
-            if (params.isSublist(form_strings[i])) {
-              Teuchos::ParameterList& f1_params = params.sublist(form_strings[i]);
-
-              std::unique_ptr<Function> f1;
-              FunctionFactory factory;
-              f1 = factory.Create(f1_params);
-
-              func[i] = std::move(f1);
-              flag_func = true;
-            } else {
-              Errors::Message m;
-              m << "unknown form \"" << form_strings[i].c_str() << "\"";
-              Exceptions::amanzi_throw(m);
-            }
+          else {
+            Errors::Message m;
+            m << "FunctionFactory: function-tabular form \"" << form_strings[i] << "\" is invalid.";
+            Exceptions::amanzi_throw(m);
           }
         }
-        if (flag_func) {
-          f = std::make_unique<FunctionTabular>(x, y, xi, form, std::move(func));
-        } else {
-          f = std::make_unique<FunctionTabular>(x, y, xi, form);
-        }
+        f = std::make_unique<FunctionTabular>(x, y, xi, form);
       } else {
         f = std::make_unique<FunctionTabular>(x, y, xi);
       }
@@ -660,7 +645,9 @@ FunctionFactory::create_distance(Teuchos::ParameterList& params) const
     Kokkos::View<double*, Kokkos::HostSpace> metric("metric", metric_vec.size());
     for (int i = 0; i < metric.extent(0); ++i) metric(i) = metric_vec[i];
 
-    f = std::make_unique<FunctionDistance>(x0, metric);
+    bool squared = params.get<bool>("squared", false);
+
+    f = std::make_unique<FunctionDistance>(x0, metric, squared);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-distance parameter error: " << msg.what();
@@ -672,33 +659,6 @@ FunctionFactory::create_distance(Teuchos::ParameterList& params) const
   }
   return f;
 }
-
-std::unique_ptr<Function>
-FunctionFactory::create_squaredistance(Teuchos::ParameterList& params) const
-{
-  std::unique_ptr<Function> f;
-  try {
-    std::vector<double> x0_vec(params.get<Teuchos::Array<double>>("x0").toVector());
-    std::vector<double> metric_vec(params.get<Teuchos::Array<double>>("metric").toVector());
-
-    Kokkos::View<double*, Kokkos::HostSpace> x0("x0", x0_vec.size());
-    for (int i = 0; i < x0.extent(0); ++i) x0(i) = x0_vec[i];
-    Kokkos::View<double*, Kokkos::HostSpace> metric("metric", metric_vec.size());
-    for (int i = 0; i < metric.extent(0); ++i) metric(i) = metric_vec[i];
-
-    f = std::make_unique<FunctionSquareDistance>(x0, metric);
-  } catch (Teuchos::Exceptions::InvalidParameter& msg) {
-    Errors::Message m;
-    m << "FunctionFactory: function-squaredistance parameter error: " << msg.what();
-    Exceptions::amanzi_throw(m);
-  } catch (Errors::Message& msg) {
-    Errors::Message m;
-    m << "FunctionFactory: function-squaredistance parameter error: " << msg.what();
-    Exceptions::amanzi_throw(m);
-  }
-  return f;
-}
-
 
 std::unique_ptr<Function>
 FunctionFactory::create_bilinear_and_time(Teuchos::ParameterList& params) const

@@ -25,12 +25,11 @@ class Op_Face_Cell : public Op {
   Op_Face_Cell(const std::string& name, const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : Op(OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL, name, mesh)
   {
-    int nfaces_owned = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
+    int nfaces_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
     A = DenseMatrix_Vector(nfaces_owned);
-    auto mesh_host = onMemHost(mesh);
 
     for (int f = 0; f != nfaces_owned; ++f) {
-      auto cells = mesh_host->getFaceCells(f); // This performs the prefix_sum
+      auto cells = mesh->getFaceCells(f); // This performs the prefix_sum
       int ncells = cells.extent(0);
       A.set_shape(f, ncells, ncells);
     }
@@ -39,15 +38,16 @@ class Op_Face_Cell : public Op {
 
   virtual void SumLocalDiag(CompositeVector& X) const
   {
-    const AmanziMesh::Mesh& m = *mesh;
+    const AmanziMesh::MeshCache& m = mesh->getCache();
     auto Xv = X.viewComponent("cell", true);
+    const auto& lA = A;
     Kokkos::parallel_for(
-      "Op_Face_Cell::GetLocalDiagCopy", A.size(), KOKKOS_CLASS_LAMBDA(const int f) {
+      "Op_Face_Cell::GetLocalDiagCopy", A.size(), KOKKOS_LAMBDA(const int f) {
         // Extract matrix
-        auto lA = A[f];
+        auto lAf = lA[f];
         auto cells = m.getFaceCells(f);
-        Kokkos::atomic_add(&Xv(cells(0), 0), lA(0, 0));
-        if (cells.extent(0) > 1) { Kokkos::atomic_add(&Xv(cells(1), 0), lA(1, 1)); }
+        Kokkos::atomic_add(&Xv(cells(0), 0), lAf(0, 0));
+        if (cells.extent(0) > 1) { Kokkos::atomic_add(&Xv(cells(1), 0), lAf(1, 1)); }
       });
   }
 
@@ -79,16 +79,17 @@ class Op_Face_Cell : public Op {
   {
     if (scaling.hasComponent("cell")) {
       const auto s_c = scaling.viewComponent("cell", true);
-      const AmanziMesh::Mesh& m = *mesh;
+      auto& lA = A;
+      const AmanziMesh::MeshCache& m = mesh->getCache();
       Kokkos::parallel_for(
-        "Op_Face_Cell::Rescale", A.size(), KOKKOS_CLASS_LAMBDA(const int& f) {
+        "Op_Face_Cell::Rescale", A.size(), KOKKOS_LAMBDA(const int& f) {
           auto cells = m.getFaceCells(f);
-          auto lA = A[f];
-          lA(0, 0) *= s_c(cells(0), 0);
+          auto lAf = lA[f];
+          lAf(0, 0) *= s_c(cells(0), 0);
           if (cells.size() > 1) {
-            lA(0, 1) *= s_c(cells(1), 0);
-            lA(1, 0) *= s_c(cells(0), 0);
-            lA(1, 1) *= s_c(cells(1), 0);
+            lAf(0, 1) *= s_c(cells(1), 0);
+            lAf(1, 0) *= s_c(cells(0), 0);
+            lAf(1, 1) *= s_c(cells(1), 0);
           }
         });
     }

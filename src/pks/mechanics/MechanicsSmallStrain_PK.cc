@@ -99,7 +99,7 @@ MechanicsSmallStrain_PK::Setup()
   S_->Require<CV_t, CVS_t>(bulk_modulus_key_, Tags::DEFAULT, passwd_)
     .SetMesh(mesh_)
     ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, 1);
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 }
 
 
@@ -174,18 +174,18 @@ MechanicsSmallStrain_PK::Initialize()
 
         // nodal dofs
         auto bc =
-          bc_factory.Create(spec, "no slip", AmanziMesh::NODE, Teuchos::null, Tags::DEFAULT, true);
+          bc_factory.Create(spec, "no slip", AmanziMesh::Entity_kind::NODE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("no slip");
         bc->set_type(WhetStone::DOF_Type::POINT);
-        bc->set_kind(AmanziMesh::NODE);
+        bc->set_kind(AmanziMesh::Entity_kind::NODE);
         bcs_.push_back(bc);
 
         // bubble dofs
         auto bc2 =
-          bc_factory.Create(spec, "no slip", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
+          bc_factory.Create(spec, "no slip", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true);
         bc2->set_bc_name("no slip");
         bc2->set_type(WhetStone::DOF_Type::POINT);
-        bc2->set_kind(AmanziMesh::FACE);
+        bc2->set_kind(AmanziMesh::Entity_kind::FACE);
         bcs_.push_back(bc2);
       }
     }
@@ -202,18 +202,18 @@ MechanicsSmallStrain_PK::Initialize()
 
         // nodal dofs
         auto bc = bc_factory.Create(
-          spec, "kinematic", AmanziMesh::NODE, Teuchos::null, Tags::DEFAULT, true);
+          spec, "kinematic", AmanziMesh::Entity_kind::NODE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("kinematic");
         bc->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
-        bc->set_kind(AmanziMesh::NODE);
+        bc->set_kind(AmanziMesh::Entity_kind::NODE);
         bcs_.push_back(bc);
 
         // bubble dofs
         auto bc2 = bc_factory.Create(
-          spec, "kinematic", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
+          spec, "kinematic", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true);
         bc2->set_bc_name("kinematic");
         bc2->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
-        bc2->set_kind(AmanziMesh::FACE);
+        bc2->set_kind(AmanziMesh::Entity_kind::FACE);
         bcs_.push_back(bc2);
       }
     }
@@ -229,10 +229,10 @@ MechanicsSmallStrain_PK::Initialize()
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
         auto bc =
-          bc_factory.Create(spec, "traction", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
+          bc_factory.Create(spec, "traction", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("traction");
         bc->set_type(WhetStone::DOF_Type::POINT);
-        bc->set_kind(AmanziMesh::FACE);
+        bc->set_kind(AmanziMesh::Entity_kind::FACE);
         bcs_.push_back(bc);
       }
     }
@@ -248,10 +248,10 @@ MechanicsSmallStrain_PK::Initialize()
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
         auto bc = bc_factory.Create(
-          spec, "normal traction", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
+          spec, "normal traction", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("normal traction");
         bc->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
-        bc->set_kind(AmanziMesh::FACE);
+        bc->set_kind(AmanziMesh::Entity_kind::FACE);
         bcs_.push_back(bc);
       }
     }

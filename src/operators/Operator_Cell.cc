@@ -79,32 +79,31 @@ Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   auto Yc = Y.viewComponent("cell", true);
   auto Xc = X.viewComponent("cell", true);
 
-  const AmanziMesh::Mesh& m = *op.mesh;
-
   // Allocate the first time
   if (op.v.size() != op.A.size()) { op.PreallocateWorkVectors(); }
+  {
+    auto local_A = op.A;
+    auto local_Av = op.Av;
+    auto local_v = op.v;
+    const AmanziMesh::MeshCache& m = op.mesh->getCache();
 
-  auto local_A = op.A;
-  auto local_Av = op.Av;
-  auto local_v = op.v;
+    // parallel matrix-vector product
+    Kokkos::parallel_for(
+      "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell COMPUTE",
+      nfaces_owned,
+      KOKKOS_LAMBDA(const int f) {
+        auto cells = m.getFaceCells(f);
 
-  // parallel matrix-vector product
-  Kokkos::parallel_for(
-    "Operator_Cell::ApplyMatrixFreeOp Op_Face_Cell COMPUTE",
-    nfaces_owned,
-    KOKKOS_LAMBDA(const int f) {
-      auto cells = m.getFaceCells(f);
+        int ncells = cells.extent(0);
+        auto lv = local_v[f];
+        auto lAv = local_Av[f];
+        auto lA = local_A[f];
+        for (int n = 0; n != ncells; ++n) { lv(n) = Xc(cells[n], 0); }
+        lA.Multiply(lv, lAv, false);
 
-      int ncells = cells.extent(0);
-      auto lv = local_v[f];
-      auto lAv = local_Av[f];
-      auto lA = local_A[f];
-      for (int n = 0; n != ncells; ++n) { lv(n) = Xc(cells[n], 0); }
-      lA.Multiply(lv, lAv, false);
-
-      for (int n = 0; n != ncells; ++n) { Kokkos::atomic_add(&Yc(cells[n], 0), lAv(n)); }
-    });
-
+        for (int n = 0; n != ncells; ++n) { Kokkos::atomic_add(&Yc(cells[n], 0), lAv(n)); }
+      });
+  }
   return 0;
 }
 
@@ -149,9 +148,8 @@ Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
   const auto cell_row_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_row, "cell", 0);
   const auto cell_col_inds = map.viewGhostIndices<MemSpace_kind::HOST>(my_block_col, "cell", 0);
 
-  auto mesh = AmanziMesh::onMemHost(op.mesh);
   for (int f = 0; f != nfaces_owned; ++f) {
-    auto cells = mesh->getFaceCells(f);
+    auto cells = op.mesh->getFaceCells(f);
 
     int ncells = cells.size();
     for (int n = 0; n != ncells; ++n) {
@@ -216,13 +214,14 @@ Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
   auto proc_mat = mat.getLocalMatrixDevice();
   auto offproc_mat = mat.getOffProcLocalMatrixDevice();
   int nrows_local = mat.getMatrix()->getLocalNumRows();
+  const AmanziMesh::MeshCache& m = op.mesh->getCache();
+  const auto& A = op.A;
 
-  const AmanziMesh::Mesh& m = *op.mesh;
   Kokkos::parallel_for(
     "Operator_Cell::AssembleMatrixOp::Face_Cell", nfaces_owned, KOKKOS_LAMBDA(const int f) {
       auto cells = m.getFaceCells(f);
 
-      auto A_f = op.A[f];
+      auto A_f = A[f];
       int nc = cells.extent(0);
       for (int n = 0; n < nc; ++n) {
         if (cell_row_inds[cells[n]] < nrows_local) {

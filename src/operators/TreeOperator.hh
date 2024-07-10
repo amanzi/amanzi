@@ -63,8 +63,8 @@ class TreeOperator : public Matrix<TreeVector, TreeVectorSpace> {
   //
   // It is deep in the sense that it calls Clone on all leaf Operator objects,
   // but those Clone() methods themselves are shallow!
-  TreeOperator(const TreeOperator& other);
-  Teuchos::RCP<TreeOperator> clone() const { return Teuchos::rcp(new TreeOperator(*this)); }
+  // TreeOperator(const TreeOperator& other);
+  // Teuchos::RCP<TreeOperator> clone() const { return Teuchos::rcp(new TreeOperator(*this)); }
 
   // accessors
   virtual const Teuchos::RCP<const TreeVectorSpace> getDomainMap() const override

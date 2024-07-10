@@ -40,17 +40,17 @@ PDE_HelperDiscretization::PDE_HelperDiscretization(const Teuchos::RCP<const Aman
 void
 PDE_HelperDiscretization::PopulateDimensions_()
 {
-  ncells_owned = mesh_->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  nfaces_owned = mesh_->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  nnodes_owned = mesh_->getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::OWNED);
+  ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  nfaces_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  nnodes_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
 
-  ncells_wghost = mesh_->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
-  nfaces_wghost = mesh_->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
-  nnodes_wghost = mesh_->getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::ALL);
+  ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  nfaces_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  nnodes_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   if (mesh_->hasEdges()) {
-    nedges_owned = mesh_->getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::OWNED);
-    nedges_wghost = mesh_->getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::ALL);
+    nedges_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::OWNED);
+    nedges_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::ALL);
   }
 }
 
@@ -108,7 +108,7 @@ PDE_HelperDiscretization::SetBCs(const Teuchos::RCP<const BCs>& bc_trial,
 //   AmanziMesh::Entity_kind kind = bc.kind();
 //   Teuchos::RCP<Epetra_MultiVector> rhs_kind;
 //   if (primary) {
-//     std::string name = schema_row.KindToString(kind);
+//     std::string name = AmanziMesh::to_string(kind);
 //     if (!rhs.HasComponent(name)) return;
 //     rhs_kind = rhs.ViewComponent(name, true);
 //   }
@@ -347,7 +347,7 @@ PDE_HelperDiscretization::SetBCs(const Teuchos::RCP<const BCs>& bc_trial,
 //   AmanziMesh::Entity_kind kind = bc.kind();
 //   AMANZI_ASSERT(kind == AmanziMesh::Entity_kind::FACE || kind == AmanziMesh::Entity_kind::EDGE);
 //   Teuchos::RCP<Epetra_MultiVector> rhs_kind;
-//   if (primary) rhs_kind = rhs.ViewComponent(schema_row.KindToString(kind), true);
+//   if (primary) rhs_kind = rhs.ViewComponent(AmanziMesh::to_string(kind), true);
 
 //   for (int c = 0; c != ncells_owned; ++c) {
 //     WhetStone::DenseMatrix& Acell = op->matrices[c];

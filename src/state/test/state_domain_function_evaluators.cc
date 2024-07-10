@@ -63,7 +63,6 @@ SUITE(DOMAIN_FUNCTIONS)
 
     MeshFactory meshfac(comm, gm);
     auto mesh = meshfac.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
-    auto mesh_on_host = AmanziMesh::onMemHost(mesh);
     auto S = Teuchos::rcp(new State());
     S->RegisterDomainMesh(mesh);
 
@@ -165,7 +164,6 @@ SUITE(DOMAIN_FUNCTIONS)
 
     MeshFactory meshfac(comm, gm);
     auto mesh = meshfac.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
-    auto mesh_on_host = AmanziMesh::onMemHost(mesh);
     auto S = Teuchos::rcp(new State());
     S->RegisterDomainMesh(mesh);
 
@@ -256,12 +254,12 @@ SUITE(DOMAIN_FUNCTIONS)
         S->Get<Operators::BCs>("diffusion_bcs", Tags::DEFAULT).bc_value<MemSpace_kind::HOST>();
 
       int nfaces =
-        mesh_on_host->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+        mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
       CHECK_EQUAL(nfaces, bc_markers.extent(0));
       CHECK_EQUAL(nfaces, bc_values.extent(0));
 
       for (int f = 0; f != nfaces; ++f) {
-        auto fc = mesh_on_host->getFaceCentroid(f);
+        auto fc = mesh->getFaceCentroid(f);
         if (std::abs(fc[0]) < 1.e-10) {
           // should be a Dirichlet face, value of 3.14
           CHECK_EQUAL(Operators::OPERATOR_BC_DIRICHLET, bc_markers(f));

@@ -31,10 +31,10 @@ class HeatConduction {
     int dim = mesh_->space_dimension();
     cvs_.SetMesh(mesh_);
     cvs_.SetGhosted(true);
-    cvs_.AddComponent("cell", AmanziMesh::CELL, 1);
-    cvs_.AddComponent("face", AmanziMesh::FACE, 1);
-    cvs_.AddComponent("grad", AmanziMesh::CELL, dim);
-    cvs_.AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
+    cvs_.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    cvs_.AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
+    cvs_.AddComponent("grad", AmanziMesh::Entity_kind::CELL, dim);
+    cvs_.AddComponent("dirichlet_faces", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
     values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
     derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
@@ -47,7 +47,7 @@ class HeatConduction {
                     const std::vector<double>& bc_value)
   {
     Epetra_MultiVector& vcell = *values_->viewComponent("cell", true);
-    int ncells = mesh_->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
+    int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
 
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
@@ -88,7 +88,7 @@ class HeatConduction {
     int dim = mesh_->space_dimension();
 
     if (!values_->hasComponent("twin")) {
-      cvs_.AddComponent("twin", AmanziMesh::FACE, 1);
+      cvs_.AddComponent("twin", AmanziMesh::Entity_kind::FACE, 1);
       Teuchos::RCP<CompositeVector> tmp =
         Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
 
@@ -105,7 +105,7 @@ class HeatConduction {
     Epetra_MultiVector& vgrad = *values_->viewComponent("grad", true);
 
     vtwin = vface;
-    int nfaces = mesh_->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+    int nfaces = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
     for (int f = 0; f < nfaces; f++) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_kind::ALL, &cells);
@@ -138,7 +138,7 @@ class HeatConduction {
     int dim = mesh_->space_dimension();
 
     if (!values_->hasComponent("twin")) {
-      cvs_.AddComponent("twin", AmanziMesh::FACE, 1);
+      cvs_.AddComponent("twin", AmanziMesh::Entity_kind::FACE, 1);
       Teuchos::RCP<CompositeVector> tmp =
         Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
 
@@ -154,7 +154,7 @@ class HeatConduction {
     Epetra_MultiVector& vgrad = *values_->viewComponent("grad", true);
     Epetra_MultiVector& vtwin = *values_->viewComponent("twin", true);
 
-    int nfaces = mesh_->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
+    int nfaces = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
     AmanziGeometry::Point grad(dim), xc(dim);
 
     for (int f = 0; f < nfaces; f++) {

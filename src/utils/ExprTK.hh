@@ -27,7 +27,7 @@ class ExprTK {
   bool Initialize(int n, const std::string& formula);
 
   double operator()(const std::vector<double>& txyz);
-  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>& txyz);
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& txyz);
 
  private:
   int n_;

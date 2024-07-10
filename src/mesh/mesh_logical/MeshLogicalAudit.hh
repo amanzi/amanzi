@@ -21,7 +21,7 @@ class MeshLogicalAudit {
  public:
   enum Status_kind : int { NONE = 0, GOOD = 1, FAIL = 2, SKIP = 3 };
 
-  MeshLogicalAudit(const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh_,
+  MeshLogicalAudit(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_,
                    std::ostream& os = std::cout);
 
   // This is the main method.
@@ -48,7 +48,7 @@ class MeshLogicalAudit {
   bool check_cell_face_bisector_geometry() const;
 
  private:
-  Teuchos::RCP<const AmanziMesh::MeshHost> mesh;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh;
 
   Comm_ptr_type comm_;
   const int nfaces_all_;
@@ -57,9 +57,9 @@ class MeshLogicalAudit {
   std::ostream& os_;
   unsigned int MAX_OUT;
 
-  bool distinct_values(const MeshHost::cEntity_ID_View& list) const;
+  bool distinct_values(const Mesh::cEntity_ID_View& list) const;
   void write_list(const Entity_ID_List&, unsigned int) const;
-  int same_face(const MeshHost::Entity_ID_View, const MeshHost::Entity_ID_View) const;
+  int same_face(const Mesh::Entity_ID_View, const Mesh::Entity_ID_View) const;
   bool globalAny_(bool) const;
 
   bool check_maps(const Map_type&, const Map_type&) const;

@@ -24,9 +24,9 @@ TEST(SILO_STRUCTURED)
   auto Mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh(
     MeshFramework, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), Teuchos::null));
   int ncells =
-    Mesh->getNumEntities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
+    Mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_kind::OWNED);
   int nnodes =
-    Mesh->getNumEntities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
+    Mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE, Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   Teuchos::RCP<Epetra_Vector> node_quantity;
   Teuchos::RCP<Epetra_Vector> cell_quantity;
@@ -71,7 +71,7 @@ TEST(SILO_STRUCTURED)
     // write time step data
     io.InitializeCycle(time, i, "");
     io.WriteVector(*cell_quantity, "cell_quantity", Amanzi::AmanziMesh::Entity_kind::CELL);
-    io.WriteVector(*fake_pressure, "pressure", Amanzi::AmanziMesh::CELL);
+    io.WriteVector(*fake_pressure, "pressure", Amanzi::AmanziMesh::Entity_kind::CELL);
     io.WriteVector(*node_quantity, "node_quantity", Amanzi::AmanziMesh::Entity_kind::NODE);
 
     // advance time and values

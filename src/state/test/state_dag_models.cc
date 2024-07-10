@@ -107,7 +107,7 @@ class make_state {
     if (name == "A") { es_list->sublist("model parameters").set("alpha", 2.0); }
     S.Require<CompositeVector, CompositeVectorSpace>(name, Tags::DEFAULT, name)
       .SetMesh(S.GetMesh())
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     for (const auto& deriv : derivs)
       S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
@@ -134,7 +134,7 @@ class make_state {
 
     S.Require<CompositeVector, CompositeVectorSpace>(name, Tags::DEFAULT, name)
       .SetMesh(S.GetMesh())
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     for (const auto& deriv : derivs)
       S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
@@ -153,7 +153,7 @@ class make_state {
     es_list->set("tag", "");
     S.Require<CompositeVector, CompositeVectorSpace>(name, Tags::DEFAULT, name)
       .SetMesh(S.GetMesh())
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     //  S.RequireDerivative<double>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     //  S.RequireDerivative<double>("fa", Tags::DEFAULT, "fg", Tags::DEFAULT);

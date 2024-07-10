@@ -41,7 +41,7 @@ PDE_DiffusionFV::Init()
     // build the CVS from the global schema
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true);
-    cvs->AddComponent("cell", AmanziMesh::CELL, 1);
+    cvs->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     global_op_ = Teuchos::rcp(new Operator_Cell(cvs->CreateSpace(), plist_, global_op_schema_));
 
@@ -126,7 +126,7 @@ PDE_DiffusionFV::Init()
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_);
   cvs.SetGhosted(true);
-  cvs.SetComponent("face", AmanziMesh::FACE, 1);
+  cvs.SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
   transmissibility_ = cvs.Create();
 }
 
@@ -264,9 +264,10 @@ PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
     auto k_face = ScalarCoefficientFaces(false);
     const auto rhs_cell = global_op_->rhs()->viewComponent("cell", true);
     auto trans_face = transmissibility_->viewComponent("face", true);
-    const Amanzi::AmanziMesh::Mesh& m = *mesh_;
+    const Amanzi::AmanziMesh::MeshCache& m = mesh_->getCache();
     const auto bc_model = bcs_trial_[0]->bc_model();
     const auto bc_value = bcs_trial_[0]->bc_value();
+
     Kokkos::parallel_for(
       "PDE_DiffusionFV::ApplyBCs", nfaces_owned, KOKKOS_LAMBDA(const int f) {
         auto cells = m.getFaceCells(f);
@@ -322,7 +323,7 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
 
   solution->scatterMasterToGhosted("cell");
   const auto p = solution->viewComponent("cell", true);
-  const Amanzi::AmanziMesh::Mesh& m = *mesh_;
+  const Amanzi::AmanziMesh::MeshCache& m = mesh_->getCache();
   int lnfaces_owned(nfaces_owned);
 
   Kokkos::View<int*> flag("flags", nfaces_wghost); // initialized to 0 by default
@@ -387,7 +388,7 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 
     const auto dKdP_cell = dkdp_->viewComponent("cell", true);
 
-    const AmanziMesh::Mesh& m = *mesh_;
+    const Amanzi::AmanziMesh::MeshCache& m = mesh_->getCache();
     DenseMatrix_Vector& A = jac_op_->A;
     int little_k_type = little_k_type_;
 
@@ -456,19 +457,6 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 }
 
 
-#if 0
-/* ******************************************************************
-* Computation of a local submatrix of the analytical Jacobian
-* (its nonlinear part) on face f.
-****************************************************************** */
-void PDE_DiffusionFV::ComputeJacobianLocal_(
-    int mcells, int f, int face_dir_0to1, int bc_model_f, double bc_value_f,
-    double *pres, double *dkdp_cell, WhetStone::DenseMatrix<>& Jpp)
-{
-  const Epetra_MultiVector& trans_face = *transmissibility_->viewComponent("face", true);
-}
-#endif
-
 /* ******************************************************************
 * Compute transmissibilities on faces
 ****************************************************************** */
@@ -478,26 +466,29 @@ PDE_DiffusionFV::ComputeTransmissibility_()
   transmissibility_->putScalarMasterAndGhosted(0.);
   if (!K_.get()) {
     CompositeVectorSpace cvs;
-    cvs.SetMesh(mesh_)->SetGhosted(false)->AddComponent("cell", AmanziMesh::CELL, 1);
+    cvs.SetMesh(mesh_)->SetGhosted(false)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
     auto K = Teuchos::rcp(new TensorVector(cvs, false));
     for (int c = 0; c != ncells_owned; ++c) { K->set_shape(c, mesh_->getSpaceDimension(), 1); }
     K->Init();
 
     {
-      TensorVector& Kc = *K;
+      TensorVector& lK = *K;
       Kokkos::parallel_for(
         "PDE_DiffusionFV::ComputeTrans Init Tensor Ceof",
         ncells_owned,
-        KOKKOS_LAMBDA(const int& c) { Kc.at(c)(0, 0) = 1.0; });
+        KOKKOS_LAMBDA(const int& c) {
+          lK.at(c)(0, 0) = 1.0;
+        });
     }
     K_ = K;
   }
   {
     auto trans_face = transmissibility_->viewComponent("face", true);
-    const Amanzi::AmanziMesh::Mesh& m = *mesh_;
+    const Amanzi::AmanziMesh::MeshCache& m = mesh_->getCache();
     const int space_dimension = mesh_->getSpaceDimension();
 
-    const TensorVector& K = *K_;
+    const auto& K = *K_;
 
     Kokkos::parallel_for(
       "PDE_DiffusionFV::ComputeTransmissibility", ncells_owned, KOKKOS_LAMBDA(const int c) {

@@ -32,12 +32,7 @@ MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs)
   if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
     size_t i = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
 
-    int row_size = 0;
-    Kokkos::parallel_reduce("OperatorUtils::MaxRowSize",
-                            mesh.getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED),
-                            KOKKOS_LAMBDA(const int c, int& i){
-        i = mesh.getCellNumFaces(c);
-      }, Kokkos::Max<int>(row_size));
+    int row_size = mesh.getCellMaxFaces();
     row_size += 2 * i;
   }
 
@@ -72,13 +67,13 @@ MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema)
     AmanziMesh::Entity_kind kind;
     std::tie(kind, std::ignore, num) = *it;
 
-    if (kind == AmanziMesh::FACE) {
+    if (kind == AmanziMesh::Entity_kind::FACE) {
       ndofs = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
-    } else if (kind == AmanziMesh::CELL) {
+    } else if (kind == AmanziMesh::Entity_kind::CELL) {
       ndofs = 1;
-    } else if (kind == AmanziMesh::NODE) {
+    } else if (kind == AmanziMesh::Entity_kind::NODE) {
       ndofs = (dim == 2) ? OPERATOR_QUAD_NODES : OPERATOR_HEX_NODES;
-    } else if (kind == AmanziMesh::EDGE) {
+    } else if (kind == AmanziMesh::Entity_kind::EDGE) {
       ndofs = (dim == 2) ? OPERATOR_QUAD_EDGES : OPERATOR_HEX_EDGES;
     }
 

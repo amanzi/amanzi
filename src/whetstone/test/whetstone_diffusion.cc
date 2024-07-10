@@ -41,7 +41,7 @@ TEST(DARCY_MASS_2D)
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = meshfactory.create<MemSpace_kind::HOST>(0.0, 0.0, 0.5, 1.0, 1, 1);
+  auto mesh = meshfactory.create(0.0, 0.0, 0.5, 1.0, 1, 1);
 
   MFD3D_Diffusion mfd(mesh);
   DeRham_Face drc(mfd);
@@ -123,7 +123,7 @@ TEST(DARCY_MASS_3D)
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(pref);
-  auto mesh = meshfactory.create<MemSpace_kind::HOST>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1);
+  auto mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1);
 
   MFD3D_Diffusion mfd(mesh);
   DeRham_Face drc(mfd);
@@ -190,7 +190,7 @@ TEST(DARCY_MASS_3D)
 
 //   MeshFactory meshfactory(comm);
 //   meshfactory.set_preference(Preference({ Framework::MSTK }));
-//   auto mesh = meshfactory.create<MemSpace_kind::HOST>("test/hex_random.exo");
+//   auto mesh = meshfactory.create("test/hex_random.exo");
 
 //   Teuchos::ParameterList plist;
 //   MFD3D_GeneralizedDiffusion mfd(plist, mesh);
@@ -249,7 +249,7 @@ TEST(DARCY_INVERSE_MASS_3D)
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(pref);
-  auto mesh = meshfactory.create<MemSpace_kind::HOST>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3);
+  auto mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3);
 
   MFD3D_Diffusion mfd(mesh);
   DeRham_Face drc(mfd);
@@ -326,7 +326,7 @@ TEST(DARCY_FULL_TENSOR_2D)
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = meshfactory.create<MemSpace_kind::HOST>("test/two_cell2.exo");
+  auto mesh = meshfactory.create("test/two_cell2.exo");
 
   DenseMatrix<> W;
   MFD3D_Diffusion mfd(mesh);
@@ -425,7 +425,7 @@ TEST(DARCY_FULL_TENSOR_3D)
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(pref);
-  auto mesh = meshfactory.create<MemSpace_kind::HOST>(0.0, 0.0, 0.0, 1.1, 1.0, 1.0, 3, 2, 1);
+  auto mesh = meshfactory.create(0.0, 0.0, 0.0, 1.1, 1.0, 1.0, 3, 2, 1);
 
   MFD3D_Diffusion mfd(mesh);
   DeRham_Face drc(mfd);
@@ -509,7 +509,7 @@ TEST(DARCY_STIFFNESS_2D_NODE)
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = meshfactory.create<MemSpace_kind::HOST>("test/one_pentagon.exo");
+  auto mesh = meshfactory.create("test/one_pentagon.exo");
 
   MFD3D_Diffusion mfd(mesh);
 
@@ -583,7 +583,7 @@ TEST(DARCY_STIFFNESS_2D_NODE)
 //   factory_plist->set<bool>("request faces", true);
 //   MeshFactory meshfactory(comm, Teuchos::null, factory_plist);
 //   meshfactory.set_preference(Preference({ Framework::MSTK }));
-//   auto mesh = meshfactory.create<MemSpace_kind::HOST>("test/one_pentagon.exo");
+//   auto mesh = meshfactory.create("test/one_pentagon.exo");
 
 //   Teuchos::ParameterList plist;
 //   plist.set<int>("method order", 1);
@@ -648,7 +648,7 @@ TEST(DARCY_STIFFNESS_3D)
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = meshfactory.create<MemSpace_kind::HOST>("test/dodecahedron.exo");
+  auto mesh = meshfactory.create("test/dodecahedron.exo");
 
   MFD3D_Diffusion mfd(mesh);
 
@@ -711,7 +711,7 @@ TEST(RECOVER_GRADIENT_MIXED)
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = meshfactory.create<MemSpace_kind::HOST>("test/one_trapezoid.exo");
+  auto mesh = meshfactory.create("test/one_trapezoid.exo");
 
   MFD3D_Diffusion mfd(mesh);
 
@@ -759,7 +759,7 @@ TEST(RECOVER_GRADIENT_MIXED)
 
 //   MeshFactory meshfactory(comm);
 //   meshfactory.set_preference(Preference({ Framework::MSTK }));
-//   auto mesh = meshfactory.create<MemSpace_kind::HOST>("test/one_trapezoid.exo");
+//   auto mesh = meshfactory.create("test/one_trapezoid.exo");
 
 //   Teuchos::ParameterList plist;
 //   plist.set<int>("method order", 1).set<bool>("use low-order scheme", true);
@@ -809,7 +809,7 @@ TEST(DARCY_INVERSE_MASS_2D)
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = meshfactory.create<MemSpace_kind::HOST>("test/dodecahedron.exo");
+  auto mesh = meshfactory.create("test/dodecahedron.exo");
 
   MFD3D_Diffusion mfd(mesh);
 

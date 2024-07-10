@@ -83,17 +83,17 @@ Operator::Operator(const Teuchos::RCP<const CompositeSpace>& cvs_row,
   mesh_ = cvs_col_->getMesh();
   rhs_ = Teuchos::rcp(new CompositeVector(cvs_row_));
 
-  ncells_owned = mesh_->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  nfaces_owned = mesh_->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
-  nnodes_owned = mesh_->getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::OWNED);
+  ncells_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  nfaces_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
+  nnodes_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
 
-  ncells_wghost = mesh_->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
-  nfaces_wghost = mesh_->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
-  nnodes_wghost = mesh_->getNumEntities(AmanziMesh::NODE, AmanziMesh::Parallel_kind::ALL);
+  ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+  nfaces_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  nnodes_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
 
   if (mesh_->hasEdges()) {
-    nedges_owned = mesh_->getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::OWNED);
-    nedges_wghost = mesh_->getNumEntities(AmanziMesh::EDGE, AmanziMesh::Parallel_kind::ALL);
+    nedges_owned = mesh_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::OWNED);
+    nedges_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_kind::ALL);
   } else {
     nedges_owned = 0;
     nedges_wghost = 0;
@@ -1181,13 +1181,13 @@ Operator::AssembleVectorCellOp(int c,
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<Operator>
-Operator::clone() const
-{
-  Errors::Message msg("Cloning of a derived Operator class is missing");
-  Exceptions::amanzi_throw(msg);
-  return Teuchos::null;
-}
+// Teuchos::RCP<Operator>
+// Operator::clone() const
+// {
+//   Errors::Message msg("Cloning of a derived Operator class is missing");
+//   Exceptions::amanzi_throw(msg);
+//   return Teuchos::null;
+// }
 
 void
 Operator::WriteMatrix(const std::string& fname_base) const

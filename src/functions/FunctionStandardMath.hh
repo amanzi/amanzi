@@ -65,8 +65,7 @@ Example:
 This example defines function `1e-7 sqrt(t-0.1)`.
  */
 
-#ifndef AMANZI_STANDARD_MATH_FUNCTION_HH_
-#define AMANZI_STANDARD_MATH_FUNCTION_HH_
+#pragma once
 
 #include <vector>
 #include <string>
@@ -75,152 +74,160 @@ This example defines function `1e-7 sqrt(t-0.1)`.
 
 namespace Amanzi {
 
-class FunctionStandardMath : public Function {
-  enum Function_kind : int {
-    COS,
-    SIN,
-    TAN,
-    ACOS,
-    ASIN,
-    ATAN,
-    COSH,
-    SINH,
-    TANH,
-    EXP,
-    LOG,
-    LOG10,
-    SQRT,
-    CEIL,
-    FABS,
-    FLOOR,
-    POW,
-    MOD,
-    POSITIVE,
-    NEGATIVE,
-    HEAVISIDE,
-    SIGN
-  };
+enum class Function_kind : int {
+  COS,
+  SIN,
+  TAN,
+  ACOS,
+  ASIN,
+  ATAN,
+  COSH,
+  SINH,
+  TANH,
+  EXP,
+  LOG,
+  LOG10,
+  SQRT,
+  CEIL,
+  FABS,
+  FLOOR,
+  POW,
+  MOD,
+  POSITIVE,
+  NEGATIVE,
+  HEAVISIDE,
+  SIGN
+};
 
+class FunctionStandardMath : public Function {
  public:
   FunctionStandardMath(std::string op, double amplitude, double parameter, double shift);
-  ~FunctionStandardMath() {}
-  std::unique_ptr<Function> Clone() const { return std::make_unique<FunctionStandardMath>(*this); }
-  double operator()(const Kokkos::View<double*, Kokkos::HostSpace>&) const;
 
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
-  {
-    double x0 = x(0, i) - shift_;
-    switch (op_) {
-    case COS:
-      return amplitude_ * cos(parameter_ * x0);
-      break;
-    case SIN:
-      return amplitude_ * sin(parameter_ * x0);
-      break;
-    case TAN:
-      return amplitude_ * tan(parameter_ * x0);
-      break;
-    case ACOS:
-      return amplitude_ * acos(parameter_ * x0);
-      break;
-    case ASIN:
-      return amplitude_ * asin(parameter_ * x0);
-      break;
-    case ATAN:
-      return amplitude_ * atan(parameter_ * x0);
-      break;
-    case COSH:
-      return amplitude_ * cosh(parameter_ * x0);
-      break;
-    case SINH:
-      return amplitude_ * sinh(parameter_ * x0);
-      break;
-    case TANH:
-      return amplitude_ * tanh(parameter_ * x0);
-      break;
-    case EXP:
-      return amplitude_ * exp(parameter_ * x0);
-      break;
-    case LOG:
-      assert(x0 >= 0);
-      // if (x0 <= 0) InvalidDomainError_(x[0]);
-      return amplitude_ * log(parameter_ * x0);
-      break;
-    case LOG10:
-      assert(x0 >= 0);
-      // if (x0 <= 0) InvalidDomainError_(x[0]);
-      return amplitude_ * log10(parameter_ * x0);
-      break;
-    case SQRT:
-      assert(x0 >= 0);
-      // if (x0 < 0) InvalidDomainError_(x[0]);
-      return amplitude_ * sqrt(parameter_ * x0);
-      break;
-    case CEIL:
-      return amplitude_ * ceil(x0);
-      break;
-    case FABS:
-      return amplitude_ * fabs(x0);
-      break;
-    case FLOOR:
-      return amplitude_ * floor(x0);
-      break;
-    case POW:
-      return amplitude_ * pow(x0, parameter_);
-      break;
-    case MOD:
-      return fmod(x0, parameter_);
-      break;
-    case POSITIVE:
-      return amplitude_ * (x0 > 0 ? x0 : 0);
-      break;
-    case NEGATIVE:
-      return amplitude_ * (x0 < 0 ? x0 : 0);
-      break;
-    case HEAVISIDE:
-      return amplitude_ * (x0 > 0 ? 1 : 0);
-      break;
-    case SIGN:
-      return amplitude_ * (x0 > 0 ? 1 : (x0 < 0 ? -1 : 0));
-      break;
-    default:
-      printf("Invalid or unknown standard math function %d\n", op_);
-      assert(false);
-    }
-    return 0.0;
-  }
+  std::unique_ptr<Function> Clone() const override { return std::make_unique<FunctionStandardMath>(*this); }
 
+  double operator()(const Kokkos::View<const double**, Kokkos::HostSpace>&) const override;
 
-  void apply(const Kokkos::View<double**>& in,
+  void apply(const Kokkos::View<const double**>& in,
              Kokkos::View<double*>& out,
-             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
-  {
-    if (ids) {
-      auto ids_loc = *ids;
-      Kokkos::parallel_for(
-        "FunctionStandardMath::apply1", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(ids_loc(i)) = apply_gpu(in, i);
-        });
-    } else {
-      assert(in.extent(1) == out.extent(0));
-      Kokkos::parallel_for(
-        "FunctionStandardMath::apply2", in.extent(1), KOKKOS_CLASS_LAMBDA(const int& i) {
-          out(i) = apply_gpu(in, i);
-        });
-    }
-  }
+             const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override;
 
  private:
   void InvalidDomainError_(double x) const;
 
  private:
+  std::string op_str_;
+  Function_kind op_;
   double parameter_;
   double amplitude_;
   double shift_;
-  Function_kind op_;
-  // char op_[10];
 };
 
+
+
+namespace Impl {
+
+template <class InView_type>
+class FunctionStandardMathFunctor {
+ public:
+  FunctionStandardMathFunctor(const Function_kind& op,
+          double parameter,
+          double amplitude,
+          double shift,
+          const InView_type& in)
+    : op_(op), parameter_(parameter), amplitude_(amplitude), shift_(shift), in_(in) {}
+
+  KOKKOS_INLINE_FUNCTION
+  double operator()(const int i) const
+  {
+    double x0 = in_(0, i) - shift_;
+    switch (op_) {
+    case Function_kind::COS:
+      return amplitude_ * Kokkos::cos(parameter_ * x0);
+      break;
+    case Function_kind::SIN:
+      return amplitude_ * Kokkos::sin(parameter_ * x0);
+      break;
+    case Function_kind::TAN:
+      return amplitude_ * Kokkos::tan(parameter_ * x0);
+      break;
+    case Function_kind::ACOS:
+      return amplitude_ * Kokkos::acos(parameter_ * x0);
+      break;
+    case Function_kind::ASIN:
+      return amplitude_ * Kokkos::asin(parameter_ * x0);
+      break;
+    case Function_kind::ATAN:
+      return amplitude_ * Kokkos::atan(parameter_ * x0);
+      break;
+    case Function_kind::COSH:
+      return amplitude_ * Kokkos::cosh(parameter_ * x0);
+      break;
+    case Function_kind::SINH:
+      return amplitude_ * Kokkos::sinh(parameter_ * x0);
+      break;
+    case Function_kind::TANH:
+      return amplitude_ * Kokkos::tanh(parameter_ * x0);
+      break;
+    case Function_kind::EXP:
+      return amplitude_ * Kokkos::exp(parameter_ * x0);
+      break;
+    case Function_kind::LOG:
+      assert(x0 >= 0);
+      // if (x0 <= 0) InvalidDomainError_(x[0]);
+      return amplitude_ * Kokkos::log(parameter_ * x0);
+      break;
+    case Function_kind::LOG10:
+      assert(x0 >= 0);
+      // if (x0 <= 0) InvalidDomainError_(x[0]);
+      return amplitude_ * Kokkos::log10(parameter_ * x0);
+      break;
+    case Function_kind::SQRT:
+      assert(x0 >= 0);
+      // if (x0 < 0) InvalidDomainError_(x[0]);
+      return amplitude_ * Kokkos::sqrt(parameter_ * x0);
+      break;
+    case Function_kind::CEIL:
+      return amplitude_ * Kokkos::ceil(x0);
+      break;
+    case Function_kind::FABS:
+      return amplitude_ * Kokkos::abs(x0);
+      break;
+    case Function_kind::FLOOR:
+      return amplitude_ * Kokkos::floor(x0);
+      break;
+    case Function_kind::POW:
+      return amplitude_ * Kokkos::pow(x0, parameter_);
+      break;
+    case Function_kind::MOD:
+      return Kokkos::fmod(x0, parameter_);
+      break;
+    case Function_kind::POSITIVE:
+      return amplitude_ * (x0 > 0 ? x0 : 0);
+      break;
+    case Function_kind::NEGATIVE:
+      return amplitude_ * (x0 < 0 ? x0 : 0);
+      break;
+    case Function_kind::HEAVISIDE:
+      return amplitude_ * (x0 > 0 ? 1 : 0);
+      break;
+    case Function_kind::SIGN:
+      return amplitude_ * (x0 > 0 ? 1 : (x0 < 0 ? -1 : 0));
+      break;
+    default:
+      assert(false);
+    }
+    return 0.0;
+  }
+
+ private:
+  Function_kind op_;
+  double parameter_;
+  double amplitude_;
+  double shift_;
+
+  InView_type in_;
+};
+
+} // namespace Impl
 } // namespace Amanzi
 
-#endif // AMANZI_STANDARD_MATH_FUNCTION_HH_

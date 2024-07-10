@@ -50,7 +50,7 @@ createDirectoryFormatter(Teuchos::ParameterList& plist)
 
 
 std::unique_ptr<Output>
-createForVis(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh)
+createForVis(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
   // set the filename base based on domain if needed
   std::string domain_name = Keys::cleanName(Keys::cleanPListName(plist));

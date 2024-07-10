@@ -76,7 +76,6 @@ struct DiffusionFixture {
   Comm_ptr_type comm;
   Teuchos::RCP<Teuchos::ParameterList> plist;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
-  Teuchos::RCP<const AmanziMesh::MeshHost> mesh_host;
 
   Teuchos::RCP<AnalyticBase> ana;
 
@@ -113,7 +112,6 @@ DiffusionFixture::Init(int d, int nx, const std::string& mesh_file)
     mesh = meshfactory.create(mesh_file);
   }
   nvtxRangePop();
-  mesh_host = AmanziMesh::onMemHost(mesh);
 }
 
 
@@ -130,13 +128,13 @@ DiffusionFixture::Discretize(const std::string& name, AmanziMesh::Entity_kind sc
   // modify diffusion coefficient
   CompositeVectorSpace K_map;
   K_map.SetMesh(mesh);
-  K_map.AddComponent("cell", AmanziMesh::CELL, 1);
+  K_map.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   auto K = Teuchos::rcp(new TensorVector(K_map));
   const AnalyticBase* a = ana.get();
   K->Init(K->size(),
           //size function: size of element c
           [&](int c) -> const Amanzi::WhetStone::Tensor<Kokkos::HostSpace>& {
-            const AmanziGeometry::Point& xc = mesh_host->getCellCentroid(c);
+            const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
             return a->TensorDiffusivity_host(xc, 0.0);
           });
 
@@ -146,17 +144,17 @@ DiffusionFixture::Discretize(const std::string& name, AmanziMesh::Entity_kind sc
     int nents = mesh->getNumEntities(scalar_coef, AmanziMesh::Parallel_kind::ALL);
 
     CompositeVectorSpace cvs;
-    cvs.SetMesh(mesh)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+    cvs.SetMesh(mesh)->SetGhosted()->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     Teuchos::RCP<CompositeVector> kr = cvs.Create();
     auto vec = kr->viewComponent<MemSpace_kind::HOST>("face", true);
     for (int f = 0; f != nents; ++f) {
-      vec(f, 0) = ana->ScalarDiffusivity(mesh_host->getFaceCentroid(f), 0.0);
+      vec(f, 0) = ana->ScalarDiffusivity(mesh->getFaceCentroid(f), 0.0);
     }
     op->SetScalarCoefficient(kr, Teuchos::null);
   }
 
   // boundary condition
-  bc = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  bc = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   op->SetBCs(bc, bc);
   nvtxRangePop();
 }
@@ -212,20 +210,20 @@ DiffusionFixture::SetScalarCoefficient(Operators::PDE_DiffusionFactory& opfactor
   cvs.SetMesh(mesh)->SetGhosted();
   Teuchos::RCP<CompositeVector> kr;
 
-  if (kind == AmanziMesh::CELL) {
-    cvs.SetComponent("cell", AmanziMesh::CELL, 1);
+  if (kind == AmanziMesh::Entity_kind::CELL) {
+    cvs.SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     kr = cvs.Create();
     auto vec = kr->viewComponent<MemSpace_kind::HOST>("cell", true);
     for (int c = 0; c != nents; ++c) {
-      vec(c, 0) = ana->ScalarDiffusivity(mesh_host->getCellCentroid(c), 0.0);
+      vec(c, 0) = ana->ScalarDiffusivity(mesh->getCellCentroid(c), 0.0);
     }
 
-  } else if (kind == AmanziMesh::FACE) {
-    cvs.SetComponent("face", AmanziMesh::FACE, 1);
+  } else if (kind == AmanziMesh::Entity_kind::FACE) {
+    cvs.SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     kr = cvs.Create();
     auto vec = kr->viewComponent<MemSpace_kind::HOST>("face", true);
     for (int f = 0; f != nents; ++f) {
-      vec(f, 0) = ana->ScalarDiffusivity(mesh_host->getFaceCentroid(f), 0.0);
+      vec(f, 0) = ana->ScalarDiffusivity(mesh->getFaceCentroid(f), 0.0);
     }
   }
   op->SetScalarCoefficient(kr, Teuchos::null);
@@ -242,14 +240,14 @@ DiffusionFixture::SetBCsDirichlet()
   auto bc_value = bc->bc_value<MemSpace_kind::HOST>();
   auto bc_model = bc->bc_model<MemSpace_kind::HOST>();
 
-  if (bc->kind() == AmanziMesh::FACE) {
-    const auto& bf_map = *mesh->getMap(AmanziMesh::BOUNDARY_FACE, false);
-    const auto& f_map = *mesh->getMap(AmanziMesh::FACE, false);
+  if (bc->kind() == AmanziMesh::Entity_kind::FACE) {
+    const auto& bf_map = *mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false);
+    const auto& f_map = *mesh->getMap(AmanziMesh::Entity_kind::FACE, false);
 
     for (int bf = 0; bf != bf_map.getLocalNumElements(); ++bf) {
       auto f = f_map.getLocalElement(bf_map.getGlobalElement(bf));
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value[f] = ana->pressure_exact(mesh_host->getFaceCentroid(f), 0.0);
+      bc_value[f] = ana->pressure_exact(mesh->getFaceCentroid(f), 0.0);
     }
   } else {
     Exceptions::amanzi_throw("OperatorDiffusion test harness not implemented for this kind.");
@@ -275,7 +273,7 @@ DiffusionFixture::Go(double tol, bool initial_guess)
   {
     auto rhs_c = rhs.viewComponent<MemSpace_kind::HOST>("cell", false);
     for (int c = 0; c != ncells; ++c) {
-      const auto& xc = mesh_host->getCellCentroid(c);
+      const auto& xc = mesh->getCellCentroid(c);
       rhs_c(c, 0) += ana->source_exact(xc, 0.0) * mesh->getCellVolume(c);
     }
   }
@@ -295,14 +293,14 @@ DiffusionFixture::Go(double tol, bool initial_guess)
   if (tol > 0.0) {
     // compute pressure error
     double pnorm(0.0), pl2_err(0.0), pinf_err(0.0);
-    ComputeCellError(*ana, mesh_host, *solution, 0.0, pnorm, pl2_err, pinf_err);
+    ComputeCellError(*ana, mesh, *solution, 0.0, pnorm, pl2_err, pinf_err);
 
     // calculate flux error
     op->UpdateMatrices(Teuchos::null, solution.ptr());
     op->UpdateFlux(solution.ptr(), flux.ptr());
 
     double unorm, ul2_err, uinf_err;
-    ComputeFaceError(*ana, mesh_host, *flux, 0.0, unorm, ul2_err, uinf_err);
+    ComputeFaceError(*ana, mesh, *flux, 0.0, unorm, ul2_err, uinf_err);
 
     auto MyPID = comm->getRank();
     if (MyPID == 0) {

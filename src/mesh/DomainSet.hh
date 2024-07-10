@@ -35,6 +35,7 @@ actual mesh, this works with State.
 #include "AmanziTypes.hh"
 #include "MeshDefs.hh"
 #include "Mesh.hh"
+#include "MeshCache_decl.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -54,7 +55,7 @@ class DomainSet {
             const Teuchos::RCP<const Mesh>& indexing_parent,
             const std::vector<std::string>& indices,
             const Teuchos::RCP<const Mesh>& referencing_parent,
-            const std::map<std::string, Mesh::cEntity_ID_View> maps);
+            const std::map<std::string, MeshCache::cEntity_ID_View> maps);
 
   // iterate over mesh names
   using const_iterator = std::vector<std::string>::const_iterator;
@@ -68,24 +69,10 @@ class DomainSet {
   Teuchos::RCP<const Mesh> getReferencingParent() const { return referencing_parent_; }
 
   // exporters and maps to/from the parent
-  const Mesh::cEntity_ID_View& getSubdomainMap(const std::string& subdomain) const
-  {
-    if (maps_.size() == 0) {
-      Errors::Message msg("DomainSet: subdomain map was requested, but no reference maps were "
-                          "created on construction.");
-      Exceptions::amanzi_throw(msg);
-    } else if (!maps_.count(subdomain)) {
-      Errors::Message msg("DomainSet: subdomain map \"");
-      msg << subdomain << "\" requested, but no such subdomain map exists.";
-      Exceptions::amanzi_throw(msg);
-    }
-    return maps_.at(subdomain);
-  }
-  void setSubdomainMap(const std::string& subdomain, const Mesh::cEntity_ID_View& map)
-  {
-    maps_[subdomain] = map;
-  }
-  const std::map<std::string, Mesh::cEntity_ID_View>& getSubdomainMaps() const { return maps_; }
+  MeshCache::cEntity_ID_View getSubdomainMap(const std::string& subdomain) const;
+
+  void setSubdomainMap(const std::string& subdomain, const MeshCache::cEntity_ID_View& map);
+  const std::map<std::string, MeshCache::cEntity_ID_View>& getSubdomainMaps() const { return maps_; }
 
   // import from subdomain to parent domain
   template <typename scalar_type>
@@ -105,14 +92,14 @@ class DomainSet {
   Teuchos::RCP<const Mesh> referencing_parent_;
   std::vector<std::string> meshes_;
 
-  std::map<std::string, Mesh::cEntity_ID_View> maps_;
+  std::map<std::string, MeshCache::cEntity_ID_View> maps_;
 };
 
 //
 // helper functions to create importers
 //
 // Creates an importer from an extracted mesh entity to its parent entities.
-Mesh::Entity_ID_View
+MeshCache::Entity_ID_View
 createMapToParent(const AmanziMesh::Mesh& subdomain_mesh,
                   const AmanziMesh::Entity_kind& src_kind = AmanziMesh::Entity_kind::CELL);
 
@@ -120,7 +107,7 @@ createMapToParent(const AmanziMesh::Mesh& subdomain_mesh,
 // Creates an importer from a surface mesh lifted from an extracted subdomain
 // mesh to the global surface mesh (which itself was lifted from the extracted
 // subdomain's parent mesh).
-Mesh::Entity_ID_View
+MeshCache::Entity_ID_View
 createMapSurfaceToSurface(const AmanziMesh::Mesh& subdomain_mesh,
                           const AmanziMesh::Mesh& parent_mesh);
 

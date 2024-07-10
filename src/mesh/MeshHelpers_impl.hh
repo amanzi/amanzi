@@ -10,14 +10,17 @@
 
 #pragma once
 
+#include "Kokkos_StdAlgorithms.hpp"
+#include "Tpetra_MultiVector.hpp"
+
 #include "Point.hh"
 #include "Geometry.hh"
 #include "MeshDefs.hh"
 #include "ViewUtils.hh"
-#include "MeshUtils.hh"
-#include "MeshCache_decl.hh"
 
 #include "MeshHelpers_decl.hh"
+#include "Mesh_decl.hh"
+#include "MeshCache_decl.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -29,22 +32,10 @@ namespace AmanziMesh {
 // -----------------------------------------------------------------------------
 
 //
-// Given a boundary face ID, get the corresponding face ID
-//
-template <class Mesh_type>
-KOKKOS_INLINE_FUNCTION Entity_ID
-getBoundaryFaceFace(const Mesh_type& mesh, Entity_ID bf)
-{
-  return view<Mesh_type::MEM>(mesh.maps.boundary_faces)(bf);
-}
-
-
-//
 // Given a face ID, get the corresponding boundary face ID (assuming it is a bf)
 //
-template <class Mesh_type>
-Entity_ID
-getFaceOnBoundaryBoundaryFace(const Mesh_type& mesh, Entity_ID f)
+inline Entity_ID
+getFaceOnBoundaryBoundaryFace(const Mesh& mesh, Entity_ID f)
 {
   // should this be deprecated?  It seems likely to not perform well
   const auto& fmap = mesh.getMap(AmanziMesh::Entity_kind::FACE, true);
@@ -52,41 +43,53 @@ getFaceOnBoundaryBoundaryFace(const Mesh_type& mesh, Entity_ID f)
   return bfmap->getLocalElement(fmap->getGlobalElement(f));
 }
 
+KOKKOS_INLINE_FUNCTION
+Entity_ID
+getFaceOnBoundaryBoundaryFace(const MeshCache& mesh, Entity_ID f)
+{
+  // This implementation uses Kokkos::find, but that is host-only.  Instead,
+  // there is a Kokkos::find based on Teams that we could probably use, but for
+  // now we use a very simple hand-rolled for-loop based find.
+  // auto iter = Kokkos::Experimental::find(DefaultExecutionSpace(), mesh.data.boundary_faces.view_device(), f);
+  // assert(iter != Kokkos::Experimental::end(mesh.data.boundary_faces.view_device()));
+  // return static_cast<Entity_ID>(iter - Kokkos::Experimental::begin(mesh.data.boundary_faces.view_device()));
+  return find(mesh.data.boundary_faces.view_device(), f);
+}
+
 
 //
 // Given a boundary face ID, get the cell internal to that face.
 //
-template <class Mesh_type>
-KOKKOS_INLINE_FUNCTION Entity_ID
-getBoundaryFaceInternalCell(const Mesh_type& mesh, Entity_ID bf)
+inline Entity_ID
+getBoundaryFaceInternalCell(const Mesh& mesh, Entity_ID bf)
 {
-  return getFaceOnBoundaryInternalCell(mesh, getBoundaryFaceFace(mesh, bf));
+  return getFaceOnBoundaryInternalCell(mesh, mesh.getBoundaryFaceFace(bf));
+}
+
+KOKKOS_INLINE_FUNCTION
+Entity_ID
+getBoundaryFaceInternalCell(const MeshCache& mesh, Entity_ID bf)
+{
+  return getFaceOnBoundaryInternalCell(mesh, mesh.getBoundaryFaceFace(bf));
 }
 
 //
 // Given a face ID, and assuming it is a boundary face, get the cell internal.
 //
-DISABLE_CUDA_WARNING
-template <class Mesh_type>
-KOKKOS_INLINE_FUNCTION Entity_ID
-getFaceOnBoundaryInternalCell(const Mesh_type& mesh, Entity_ID f)
-{
-  if constexpr (std::is_same_v<Mesh_type, Mesh>) {
-    assert(mesh.getFaceNumCells(f, Parallel_kind::ALL) == 1 &&
-           "getFaceOnBoundaryInternalCell() requires a face on the boundary.");
-  } else {
-    if (mesh.getFaceNumCells(f, Parallel_kind::ALL) != 1) {
-      assert(false && "getFaceOnBoundaryInternalCell called with non-internal face");
-      //AmanziGeometry::Point fc = mesh.getFaceCentroid(f);
-      //std::stringstream msgs;
-      //msgs << "getFaceOnBoundaryInternalCell called with non-internal face GID "
-      //     << mesh.getMap(AmanziMesh::Entity_kind::FACE, true)->getGlobalElement(f) << " at " << fc;
-      //Errors::Message msg(msgs.str());
-      //Exceptions::amanzi_throw(msg);
-    }
-  }
+inline Entity_ID
+getFaceOnBoundaryInternalCell(const Mesh& mesh, Entity_ID f) {
+  assert(mesh.getFaceNumCells(f) == 1);
   return mesh.getFaceCell(f, 0);
 }
+
+KOKKOS_INLINE_FUNCTION
+Entity_ID
+getFaceOnBoundaryInternalCell(const MeshCache& mesh, const Entity_ID f)
+{
+  assert(mesh.getFaceNumCells(f) == 1);
+  return mesh.getFaceCell(f, 0);
+}
+
 
 
 //
@@ -124,7 +127,8 @@ template <class Mesh_type>
 typename Mesh_type::Entity_ID_View
 getCellFaceAdjacentCells(const Mesh_type& mesh, Entity_ID c, Parallel_kind ptype)
 {
-  static_assert(!std::is_same_v<Mesh_type, MeshHost>);
+  static_assert(Mesh_type::MEM == MemSpace_kind::HOST);
+
   auto cfaces = mesh.getCellFaces(c);
   typename Mesh_type::Entity_ID_View adj_cells;
   Entity_ID_List vadj_cells;

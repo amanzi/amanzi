@@ -22,7 +22,7 @@
 namespace Amanzi {
 
 // Constructor
-Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::MeshHost>& mesh,
+Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                    std::string name,
                    Teuchos::ParameterList& plist,
                    Teuchos::EVerbosityLevel verb_level)

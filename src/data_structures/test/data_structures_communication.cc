@@ -279,13 +279,13 @@ TEST(COMMUNICATION_INTERMEDIATE)
       CHECK_CLOSE(1.0, ghost_v(0, 0), 1.e-6);
       CHECK_CLOSE(
         2.0,
-        ghost_v(mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED), 0),
+        ghost_v(mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED), 0),
         1.e-6);
     } else {
       CHECK_CLOSE(2.0, ghost_v(0, 0), 1.e-6);
       CHECK_CLOSE(
         1.0,
-        ghost_v(mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED), 0),
+        ghost_v(mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED), 0),
         1.e-6);
     }
   }

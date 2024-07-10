@@ -60,11 +60,11 @@ SUITE(RESTART2)
     S->Require<CompositeVector, CompositeVectorSpace>("my_field", Tags::DEFAULT, "my_field")
       .SetMesh(domain_mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S->Require<CompositeVector, CompositeVectorSpace>(serial_fname, Tags::DEFAULT, serial_fname)
       .SetMesh(serial_mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     S->Setup();
     S->set_cycle(0);
@@ -103,11 +103,11 @@ SUITE(RESTART2)
     S2.Require<CompositeVector, CompositeVectorSpace>("my_field", Tags::DEFAULT, "my_field")
       .SetMesh(domain_mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S2.Require<CompositeVector, CompositeVectorSpace>(serial_fname, Tags::DEFAULT, serial_fname)
       .SetMesh(domain_mesh)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     S2.Setup();
 
     Checkpoint chkp2("checkpoint00000", comm);

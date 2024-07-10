@@ -59,7 +59,7 @@ class MultiFunction {
 
   int size() const;
   Kokkos::View<double*, Kokkos::HostSpace>
-  operator()(const Kokkos::View<double*, Kokkos::HostSpace>& xt) const;
+  operator()(const Kokkos::View<const double**, Kokkos::HostSpace>& xt) const;
 
   //
   // NOTE: this requirement of the out to be LayoutLeft is because of the
@@ -73,11 +73,12 @@ class MultiFunction {
   // contiguous.  Likely this is important for performance anyway, so I doubt
   // we're losing much generality, and may even be making performance more
   // robust.
-  void apply(const Kokkos::View<double**>& in,
-             Kokkos::View<double**, Kokkos::LayoutLeft>& out,
+  void apply(const Kokkos::View<const double**>& in,
+             const Kokkos::View<double**, Kokkos::LayoutLeft>& out,
              const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids = nullptr) const
   {
     for (int i = 0; i < size(); ++i) {
+      // note, this is not strided because Tpetra::MultiVector view is Kokkos::LayoutLeft
       Kokkos::View<double*> out_i = Kokkos::subview(out, Kokkos::ALL, i);
       functions_[i]->apply(in, out_i, ids);
     }

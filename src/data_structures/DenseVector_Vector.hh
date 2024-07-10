@@ -25,7 +25,7 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 struct DenseVector_Vector {
   template <typename MEM>
-  using type_t = WhetStone::DenseVector<MEM>;
+  using Value_type = WhetStone::DenseVector<MEM>;
 
  public:
   using memory_space = CSR_Vector::memory_space;
@@ -52,29 +52,29 @@ struct DenseVector_Vector {
 
   // The operator[] return the value on device
   KOKKOS_INLINE_FUNCTION
-  type_t<DeviceOnlyMemorySpace> operator[](const int& i) const
+  Value_type<DeviceOnlyMemorySpace> operator[](const int& i) const
   {
     assert(inited);
-    return std::move(type_t<DeviceOnlyMemorySpace>(data.at(i)));
+    return std::move(Value_type<DeviceOnlyMemorySpace>(data.at(i)));
   }
 
   KOKKOS_INLINE_FUNCTION
-  type_t<Kokkos::HostSpace> at_host(const int& i) const
+  Value_type<Kokkos::HostSpace> at_host(const int& i) const
   {
     // FIXME -- not const correct, but to do so needs a const-correct
     // WhetStone::Tensor, e.g. a WhetStone::Tensor that takes a
     // Kokkos::View<const double*> --etc
-    return std::move(type_t<Kokkos::HostSpace>(data.at_host(i)));
+    return std::move(Value_type<Kokkos::HostSpace>(data.at_host(i)));
   }
 
 
   KOKKOS_INLINE_FUNCTION
-  type_t<DeviceOnlyMemorySpace> at(const int& i) const
+  Value_type<DeviceOnlyMemorySpace> at(const int& i) const
   {
     // FIXME -- not const correct, but to do so needs a const-correct
     // WhetStone::Tensor, e.g. a WhetStone::Tensor that takes a
     // Kokkos::View<const double*> --etc
-    return std::move(type_t<DeviceOnlyMemorySpace>(data.at(i)));
+    return std::move(Value_type<DeviceOnlyMemorySpace>(data.at(i)));
   }
 
   CSR_Vector data;

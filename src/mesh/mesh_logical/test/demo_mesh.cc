@@ -359,7 +359,7 @@ demoMeshLogicalYEmbedded()
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<MeshFramework> m_log_fw = demoMeshLogicalYManual();
-  Teuchos::RCP<MeshHost> m_log = Teuchos::rcp(new MeshHost(
+  Teuchos::RCP<Mesh> m_log = Teuchos::rcp(new Mesh(
     m_log_fw, Teuchos::rcp(new Amanzi::AmanziMesh::MeshLogicalAlgorithms()), Teuchos::null));
 
   Point X0(-1.75, -1.75, -3.);
@@ -379,7 +379,7 @@ demoMeshLogicalYEmbedded()
                                                                m_log->getGeometricModel(),
                                                                Teuchos::null));
   auto m_bg = Teuchos::rcp(
-    new MeshHost(m_bg_fw, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), Teuchos::null));
+    new Mesh(m_bg_fw, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), Teuchos::null));
 
   // make the new connections, 1 per logical cell
   int ncells_log = m_log->getNumEntities(Entity_kind::CELL, Parallel_kind::ALL);
@@ -394,8 +394,8 @@ demoMeshLogicalYEmbedded()
 
   // cross-sectional areas and lengths given by root class
   // relatively made up numbers, this could be done formally if we wanted to.
-  auto coarse_roots = m_log->getSetEntities("coarse_root", Entity_kind::CELL, Parallel_kind::ALL);
-  auto fine_roots = m_log->getSetEntities("fine_root", Entity_kind::CELL, Parallel_kind::ALL);
+  auto coarse_roots = m_log->getSetEntities<MemSpace_kind::HOST>("coarse_root", Entity_kind::CELL, Parallel_kind::ALL);
+  auto fine_roots = m_log->getSetEntities<MemSpace_kind::HOST>("fine_root", Entity_kind::CELL, Parallel_kind::ALL);
 
   std::vector<Double_List> face_cell_lengths(ncells_log);
   Point_List face_area_normals(ncells_log);
