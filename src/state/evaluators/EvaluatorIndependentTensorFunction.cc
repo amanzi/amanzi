@@ -102,7 +102,13 @@ EvaluatorIndependentTensorFunction::Update_(State& S)
 
   time_ = S.get_time(my_tag_);
   func_->Compute(time_, cv);
-  if (rescaling_ != 1.0) cv.scale(rescaling_);
+
+  double rescaling = rescaling_;
+  if (S.HasRecord(my_key_+"_rescaling")) {
+    rescaling *= S.Get<double>(my_key_+"_rescaling");
+  }
+
+  if (rescaling != 1.0) cv.scale(rescaling);
   if (tv.ghosted) cv.scatterMasterToGhosted();
 
   // move data into tensor vector
