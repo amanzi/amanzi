@@ -150,6 +150,16 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
       HYPRE_ILUDestroy(method_);
     } else if (method_type_ == AMS) {
       HYPRE_AMSDestroy(method_);
+      if(plist_.isParameter("graph coordinates") &&
+         plist_.isType<Teuchos::RCP<Epetra_MultiVector>>("graph coordinates")) {
+        HYPRE_IJVectorDestroy(xHypre_);
+        HYPRE_IJVectorDestroy(yHypre_);
+        HYPRE_IJVectorDestroy(zHypre_);
+      }
+      if (plist_.isParameter("discrete gradient operator") &&
+          plist_.isType<Teuchos::RCP<Epetra_CrsMatrix>>("discrete gradient operator")) {
+        HYPRE_IJMatrixDestroy(HypreG_);
+      }
     } else if (method_type_ == MGR) {
       HYPRE_MGRDestroy(method_);
     }
