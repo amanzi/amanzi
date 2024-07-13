@@ -14,6 +14,10 @@
 
 #include <vector>
 
+// Amanzi
+#include "UniqueLocalIndex.hh"
+
+// Amanzi::Mechanics
 #include "MechanicsFracturedMatrix_PK.hh"
 
 namespace Amanzi {
@@ -25,10 +29,11 @@ using CVS_t = CompositeVectorSpace;
 /* ******************************************************************
 * New constructor: extracts lists and requires fields.
 ****************************************************************** */
-MechanicsFracturedMatrix_PK::MechanicsFracturedMatrix_PK(Teuchos::ParameterList& pk_tree,
-                                                         const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                                                         const Teuchos::RCP<State>& S,
-                                                         const Teuchos::RCP<TreeVector>& soln)
+MechanicsFracturedMatrix_PK::MechanicsFracturedMatrix_PK(
+  Teuchos::ParameterList& pk_tree,
+  const Teuchos::RCP<Teuchos::ParameterList>& glist,
+  const Teuchos::RCP<State>& S,
+  const Teuchos::RCP<TreeVector>& soln)
   : MechanicsSmallStrain_PK(pk_tree, glist, S, soln)
 {
   S_ = S;
@@ -75,13 +80,20 @@ MechanicsFracturedMatrix_PK::Setup()
   // displacement field
   std::vector<WhetStone::SchemaItem> items;
   items.push_back(std::make_tuple(AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::POINT, d));
-  items.push_back(std::make_tuple(AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::NORMAL_COMPONENT, 1));
+  items.push_back(
+    std::make_tuple(AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::NORMAL_COMPONENT, 1));
 
-  auto cvs = Operators::CreateFracturedMatrixCVS(mesh_, mesh_fracture_, items);
+  std::vector<std::string> names = ec_list_->sublist("operators")
+                                     .sublist("elasticity operator")
+                                     .sublist("schema")
+                                     .get<Teuchos::Array<std::string>>("fracture")
+                                     .toVector();
+  AMANZI_ASSERT(names.size() == 1);
+  auto cvs = Operators::CreateFracturedMatrixCVS(mesh_, mesh_fracture_, names[0], items);
 
   if (!S_->HasRecord(displacement_key_)) {
-    *S_->Require<CV_t, CVS_t>(displacement_key_, Tags::DEFAULT)
-      .SetMesh(mesh_)->SetGhosted(true) = *cvs;
+    *S_->Require<CV_t, CVS_t>(displacement_key_, Tags::DEFAULT).SetMesh(mesh_)->SetGhosted(true) =
+      *cvs;
 
     eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
       S_->GetEvaluatorPtr(displacement_key_, Tags::DEFAULT));
@@ -179,8 +191,9 @@ MechanicsFracturedMatrix_PK::CommitStep(double t_old, double t_new, const Tag& t
 
     int pos = std::distance(faces.begin(), std::find(faces.begin(), faces.end(), f));
     int g = fmap.FirstPointInElement(f);
-  
-    a_c[0][c] = (u_f[0][g] - u_f[0][g + 1]) * dirs[pos];
+    int shift = Operators::UniqueIndexFaceToCells(*mesh_, f, c1);
+
+    a_c[0][c] = (u_f[0][g + shift] - u_f[0][g + 1 - shift]) * dirs[pos];
   }
 }
 
@@ -197,6 +210,7 @@ MechanicsFracturedMatrix_PK::AddFractureMatrices_(CompositeVector& rhs)
   const auto& rhs_f = *rhs.ViewComponent("face");
 
   const auto& fmap = *rhs.ComponentMap("face", true);
+  rhs.PutScalarGhosted(0.0);
 
   auto kind = AmanziMesh::Entity_kind::CELL;
   int ncells = mesh_fracture_->getNumEntities(kind, AmanziMesh::Parallel_kind::OWNED);
@@ -207,9 +221,9 @@ MechanicsFracturedMatrix_PK::AddFractureMatrices_(CompositeVector& rhs)
     const auto& cells = mesh_->getFaceCells(f);
 
     int c1 = cells[0];
-    if (c1 > ncells_owned_) c1 = cells[1];
+    if (c1 >= ncells_owned_) c1 = cells[1];
     const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c1);
-    int nfaces = faces.size(); 
+    int nfaces = faces.size();
 
     auto& Acell = op_matrix_elas_->local_op()->matrices[c1];
     int nrows = Acell.NumRows();
@@ -217,7 +231,10 @@ MechanicsFracturedMatrix_PK::AddFractureMatrices_(CompositeVector& rhs)
     np = 0;
     pos = 0;
     for (int i = 0; i < nfaces; ++i) {
-      if (f == faces[i]) { pos = i; i1 = np; }
+      if (f == faces[i]) {
+        pos = i;
+        i1 = np;
+      }
       np += fmap.ElementSize(faces[i]);
     }
     i1 = nrows - np + i1;
@@ -233,12 +250,14 @@ MechanicsFracturedMatrix_PK::AddFractureMatrices_(CompositeVector& rhs)
 
     // update RHS using fluid pressure in fracture
     int g = fmap.FirstPointInElement(f);
+    int shift = Operators::UniqueIndexFaceToCells(*mesh_, f, c1);
 
-    rhs_f[0][g] += area * p_c[0][c] * dirs[pos];
-    rhs_f[0][g + 1] -= area * p_c[0][c] * dirs[pos];
+    rhs_f[0][g + shift] += area * p_c[0][c] * dirs[pos];
+    rhs_f[0][g + 1 - shift] -= area * p_c[0][c] * dirs[pos];
   }
+
+  rhs.GatherGhostedToMaster("face", Add);
 }
 
 } // namespace Mechanics
 } // namespace Amanzi
-

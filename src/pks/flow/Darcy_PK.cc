@@ -173,7 +173,7 @@ Darcy_PK::Setup()
   }
 
   // require additional fields and evaluators
-  // Many fields/evaluators have a simple struncture. They are ghosted
+  // Many fields/evaluators have a simple structure. They are ghosted
   //   cell-based fields. We use a helper function that reruires a field
   //   and returns a parameter list populated with standard values.
   // -- water storage
@@ -397,8 +397,7 @@ Darcy_PK::Initialize()
   auto& pressure = S_->GetW<CompositeVector>(pressure_key_, Tags::DEFAULT, passwd_);
 
   if (ti_list_->isSublist("dae constraint") && solution->HasComponent("face")) {
-    std::string method =
-      ti_list_->sublist("dae constraint").get<std::string>("method");
+    std::string method = ti_list_->sublist("dae constraint").get<std::string>("method");
     if (method == "projection") {
       Epetra_MultiVector& p = *solution->ViewComponent("cell");
       Epetra_MultiVector& lambda = *solution->ViewComponent("face");

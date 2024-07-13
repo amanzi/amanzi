@@ -19,10 +19,14 @@
 
 // Amanzi
 #include "CompositeVector.hh"
+#include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
 #include "MFD3D.hh"
+
+// Amanzi::Operators
 #include "Op_Cell_Schema.hh"
 #include "Operator_Schema.hh"
+#include "ParallelCommunication.hh"
 #include "PDE_ElasticityFracturedMatrix.hh"
 #include "UniqueLocalIndex.hh"
 
@@ -48,27 +52,57 @@ PDE_ElasticityFracturedMatrix::Init(Teuchos::ParameterList& plist)
   global_schema_row_ = my_schema;
 
   // extract mesh in fractures
-  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(*mesh_->getGeometricModel().get()));
-  AmanziMesh::MeshFactory meshfactory(mesh_->getComm(), gm);
-  meshfactory.set_preference(AmanziMesh::Preference({ AmanziMesh::Framework::MSTK }));
+  auto mesh_list = Teuchos::rcp(new Teuchos::ParameterList());
+  mesh_list->set<bool>("request edges", true);
+  mesh_list->set<bool>("request faces", true);
 
-  std::vector<std::string> names = plist.sublist("schema").get<Teuchos::Array<std::string>>("fracture").toVector();
-  fracture_ = meshfactory.create(mesh_, names, AmanziMesh::Entity_kind::FACE);
+  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(*mesh_->getGeometricModel().get()));
+  std::vector<std::string> names =
+    plist.sublist("schema").get<Teuchos::Array<std::string>>("fracture").toVector();
+
+  auto fracture_fw = Teuchos::rcp(new AmanziMesh::MeshExtractedManifold(
+    mesh_, names[0], AmanziMesh::Entity_kind::FACE, mesh_->getComm(), gm, mesh_list));
+  fracture_ = Teuchos::rcp(
+    new AmanziMesh::Mesh(fracture_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), mesh_list));
 
   // create global and local operators
-  cvs_ = CreateFracturedMatrixCVS(mesh_, fracture_, my_schema.get_items());
+  cvs_ = CreateFracturedMatrixCVS(mesh_, fracture_, names[0], my_schema.get_items());
   global_op_ = Teuchos::rcp(new Operator_Schema(cvs_, plist, my_schema));
 
   local_op_ = Teuchos::rcp(new Op_Cell_Schema(my_schema, my_schema, mesh_));
   global_op_->OpPushBack(local_op_);
 
-  // create reverse node map
-  int nnodes = fracture_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
+  // compute a map c->{v
+  cell_to_nodes_.resize(ncells_owned);
 
-  node_to_node_.resize(nnodes_wghost, -1);
-  for (int n = 0; n < nnodes; ++n) {
-    int v = fracture_->getEntityParent(AmanziMesh::Entity_kind::NODE, n);
-    node_to_node_[v] = n;
+  std::set<AmanziMesh::Entity_ID> setents;
+  auto allfaces =
+    mesh_->getSetEntities(names[0], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  for (int f : allfaces) setents.insert(f);
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    const auto& nodes = mesh_->getCellNodes(c);
+    int nnodes = nodes.size();
+    cell_to_nodes_[c].resize(nnodes, 0);
+
+    for (int i = 0; i < nnodes; ++i) {
+      int v = nodes[i];
+      const auto& faces = mesh_->getNodeFaces(v);
+      int nfaces = faces.size();
+
+      // extract subset of fracture faces
+      std::set<int> faces_int;
+      for (int n = 0; n < nfaces; ++n) {
+        int f = faces[n];
+        if (setents.find(f) != setents.end()) faces_int.insert(f);
+      }
+
+      if (faces_int.size() > 0) {
+        const auto& shifts = UniqueIndexNodeToCells(*mesh_, faces_int, v, c);
+        int nshifts = shifts.size();
+        cell_to_nodes_[c][i] = shifts[nshifts - 1];
+      }
+    }
   }
 
   // other parameters
@@ -104,15 +138,10 @@ PDE_ElasticityFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Composite
     // create maps from nodes to DOFs
     int np(0);
     for (int n = 0; n < nnodes; ++n) {
-      int v = nodes[n];
-      int ndofs = nmap.ElementSize(v);
+      int ndofs = nmap.ElementSize(nodes[n]);
+      int shift = cell_to_nodes_[c][n];
 
-      int shift(0);
-      if (ndofs > 1) shift = UniqueIndexNodeToCells(*mesh_, *fracture_, v, node_to_node_[v], c);
-
-      for (int k = 0; k < 3; ++k) {
-        map[3 * n + k] = np + ndofs * k + shift;
-      }
+      for (int k = 0; k < 3; ++k) { map[3 * n + k] = np + ndofs * k + shift; }
       np += 3 * ndofs;
     }
 
@@ -228,8 +257,7 @@ PDE_ElasticityFracturedMatrix::ApplyBCs(bool primary, bool eliminate, bool essen
           flag = false;
         }
         for (int m = 0; m < nrows; m++) Acell(n, m) = 0.0;
-      }
-      else if (bctest[n] != OPERATOR_BC_NONE) {
+      } else if (bctest[n] != OPERATOR_BC_NONE) {
         AMANZI_ASSERT(true);
       }
     }
@@ -246,9 +274,9 @@ PDE_ElasticityFracturedMatrix::ApplyBCs(bool primary, bool eliminate, bool essen
 
         if (eliminate) {
           for (int m = 0; m < np; m++) {
-            if (m < np0) 
+            if (m < np0)
               rhs_node[comp[m]][lid[m]] -= Acell(m, n) * value;
-            else 
+            else
               rhs_face[0][lid[m]] -= Acell(m, n) * value;
             Acell(m, n) = 0.0;
           }
@@ -256,7 +284,8 @@ PDE_ElasticityFracturedMatrix::ApplyBCs(bool primary, bool eliminate, bool essen
 
         if (essential_eqn) {
           if (n < np0) {
-            rhs_node[comp[n]][lid[n]] = value;
+            if (ids[n] < nnodes_owned) rhs_node[comp[n]][lid[n]] = value;
+
             auto cells = mesh_->getNodeCells(ids[n], AmanziMesh::Parallel_kind::ALL);
             Acell(n, n) = 1.0 / cells.size();
           } else {
@@ -311,8 +340,7 @@ PDE_ElasticityFracturedMatrix::UpdateFlux(const Teuchos::Ptr<const CompositeVect
       int first = fmap.FirstPointInElement(f);
       int ndofs = fmap.ElementSize(f);
 
-      int shift(0);
-      if (ndofs == 2) shift = UniqueIndexFaceToCells(*mesh_, f, c);
+      int shift = cell_to_nodes_[c][n];
       map[n] = np + shift;
 
       for (int k = 0; k < ndofs; ++k) {
@@ -375,14 +403,9 @@ PDE_ElasticityFracturedMatrix::ComputeCellStrain(const CompositeVector& u, int c
   for (int n = 0; n < nnodes; ++n) {
     int v = nodes[n];
     int first = nmap.FirstPointInElement(v);
-    int ndofs = nmap.ElementSize(v);
+    int shift = cell_to_nodes_[c][n];
 
-    int shift(0);
-    if (ndofs > 1) shift = UniqueIndexNodeToCells(*mesh_, *fracture_, v, node_to_node_[v], c);
-
-    for (int k = 0; k < 3; ++k) {
-      dofs(np++) = u_n[k][first + shift];
-    }
+    for (int k = 0; k < 3; ++k) { dofs(np++) = u_n[k][first + shift]; }
   }
 
   // optional face DoFs

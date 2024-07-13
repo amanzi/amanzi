@@ -1156,7 +1156,8 @@ InputConverterU::TranslateFieldEvaluator_(DOMNode* node,
       .set<std::string>("variable name", field)
       .set<int>("number of dofs", 1)
       .set<bool>("constant in time", temporal);
-  } else if (model == "constant" || model == "linearized") { // FIXME: some overlap between "constant" and ""
+  } else if (model == "constant" ||
+             model == "linearized") { // FIXME: some overlap between "constant" and ""
     double val =
       GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
 
@@ -1425,9 +1426,7 @@ InputConverterU::AddSecondaryFieldEvaluator_(Teuchos::ParameterList& out_ev,
   }
 
   // dependencies
-  for (auto dep : deps) {
-    out_ev.sublist(field).set<std::string>(dep.first, dep.second);
-  } 
+  for (auto dep : deps) { out_ev.sublist(field).set<std::string>(dep.first, dep.second); }
 
   // extensions
   Key prefix = Keys::split(field, '-').first;

@@ -21,6 +21,7 @@
 #include "SchemaUtils.hh"
 #include "ParallelCommunication.hh"
 #include "PDE_HelperDiscretization.hh"
+#include "UniqueLocalIndex.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -597,20 +598,36 @@ CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 ****************************************************************** */
 Teuchos::RCP<CompositeVectorSpace>
 CreateFracturedMatrixCVS_Node(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                              const Teuchos::RCP<const AmanziMesh::Mesh>& fracture)
+                              const Teuchos::RCP<const AmanziMesh::Mesh>& fracture,
+                              const std::string& region)
 {
-  int nfaces_f = fracture->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-  auto points = Teuchos::rcp(new Epetra_IntVector(mesh->getMap(AmanziMesh::Entity_kind::NODE, true)));
+  auto points =
+    Teuchos::rcp(new Epetra_IntVector(mesh->getMap(AmanziMesh::Entity_kind::NODE, true)));
   points->PutValue(1);
 
-  // number of cells sharing an edge identifie number of copies/points
-  for (int f = 0; f < nfaces_f; ++f) {
-    const auto& cells = fracture->getFaceCells(f);
-    int ncells = std::max(2, (int)cells.size());
-    const auto& nodes = fracture->getFaceNodes(f);
-    for (int n : nodes) {
-      int v = fracture->getEntityParent(AmanziMesh::Entity_kind::NODE, n);
-      (*points)[v] = std::max((*points)[v], ncells);
+  // number of simply-connected regions in a vertex superelement equals
+  // to the number of node duplicates, i.e. "points" in a nodal block map
+  std::set<AmanziMesh::Entity_ID> setents;
+  auto faces =
+    mesh->getSetEntities(region, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  for (int f : faces) setents.insert(f);
+
+  int nnodes_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  for (int v = 0; v < nnodes_owned; ++v) {
+    const auto& faces = mesh->getNodeFaces(v);
+    int nfaces = faces.size();
+
+    // extract subset of fracture faces
+    std::set<int> faces_int;
+    for (int n = 0; n < nfaces; ++n) {
+      int f = faces[n];
+      if (setents.find(f) != setents.end()) faces_int.insert(f);
+    }
+
+    if (faces_int.size() > 0) {
+      const auto& shifts = UniqueIndexNodeToCells(*mesh, faces_int, v, -1);
+      (*points)[v] = *std::max_element(shifts.begin(), shifts.end()) + 1;
     }
   }
 
@@ -650,6 +667,7 @@ CreateFracturedMatrixCVS_Node(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 Teuchos::RCP<CompositeVectorSpace>
 CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                          const Teuchos::RCP<const AmanziMesh::Mesh>& fracture,
+                         const std::string& region,
                          const std::vector<WhetStone::SchemaItem>& items)
 {
   bool flag_face(false), flag_node(false);
@@ -675,7 +693,7 @@ CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   }
 
   if (flag_node) {
-    auto tmp = CreateFracturedMatrixCVS_Node(mesh, fracture);
+    auto tmp = CreateFracturedMatrixCVS_Node(mesh, fracture, region);
     auto mmap = tmp->Map("node", false);
     auto gmap = tmp->Map("node", true);
     cvs->AddComponent("node", AmanziMesh::Entity_kind::NODE, mmap, gmap, 3);

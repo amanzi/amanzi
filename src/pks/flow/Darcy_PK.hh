@@ -87,8 +87,9 @@ class Darcy_PK : public Flow_PK {
 
   // -- possibly modifies the predictor that is going to be used as a
   //    starting value for the nonlinear solve in the time integrator
-  virtual bool
-  ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) override;
+  virtual bool ModifyPredictor(double dt,
+                               Teuchos::RCP<const TreeVector> u0,
+                               Teuchos::RCP<TreeVector> u) override;
 
   // -- possibly modifies the correction, after the nonlinear solver (i.e., NKA)
   //    has computed it, will return true if it did change the correction,

@@ -24,21 +24,21 @@ namespace Amanzi {
 * WARNING: vector vghost must contain ghosts.
 ******************************************************************* */
 void
-ParallelCommunication::CopyMasterEntity2GhostEntity(
-  const AmanziMesh::Entity_kind& kind, Epetra_IntVector& vghost)
+ParallelCommunication::CopyMasterEntity2GhostEntity(const AmanziMesh::Entity_kind& kind,
+                                                    Epetra_IntVector& vghost)
 {
 #ifdef HAVE_MPI
-  const Epetra_BlockMap& source_cmap = mesh_->getMap(kind, false);
-  const Epetra_BlockMap& target_cmap = mesh_->getMap(kind, true);
+  const Epetra_BlockMap& source_map = mesh_->getMap(kind, false);
+  const Epetra_BlockMap& target_map = mesh_->getMap(kind, true);
 
   if (importer_initialized_.find(kind) == importer_initialized_.end()) {
-    importer_[kind] = Teuchos::rcp(new Epetra_Import(target_cmap, source_cmap));
+    importer_[kind] = Teuchos::rcp(new Epetra_Import(target_map, source_map));
     importer_initialized_[kind] = true;
   }
 
   int* vdata;
   vghost.ExtractView(&vdata);
-  Epetra_IntVector vv(View, source_cmap, vdata);
+  Epetra_IntVector vv(View, source_map, vdata);
 
   vghost.Import(vv, *importer_[kind], Insert);
 #endif
@@ -46,26 +46,26 @@ ParallelCommunication::CopyMasterEntity2GhostEntity(
 
 
 /* *******************************************************************
-* Transfers face-based data from ghost to master positions and
-* performs the operation 'mode' there.
+* Transfer data from ghost to master positions and perform operation 'mode'.
 * WARNING: Vector vghost must contain ghost faces.
 ******************************************************************* */
 void
-ParallelCommunication::CombineGhostEntity2MasterEntity(
-  const AmanziMesh::Entity_kind& kind, Epetra_IntVector& vghost, Epetra_CombineMode mode)
+ParallelCommunication::CombineGhostEntity2MasterEntity(const AmanziMesh::Entity_kind& kind,
+                                                       Epetra_IntVector& vghost,
+                                                       Epetra_CombineMode mode)
 {
 #ifdef HAVE_MPI
-  const Epetra_BlockMap& source_fmap = mesh_->getMap(kind, false);
-  const Epetra_BlockMap& target_fmap = mesh_->getMap(kind, true);
+  const Epetra_BlockMap& source_map = mesh_->getMap(kind, false);
+  const Epetra_BlockMap& target_map = mesh_->getMap(kind, true);
 
   if (importer_initialized_.find(kind) == importer_initialized_.end()) {
-    importer_[kind] = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
+    importer_[kind] = Teuchos::rcp(new Epetra_Import(target_map, source_map));
     importer_initialized_[kind] = true;
   }
 
   int* vdata;
   vghost.ExtractView(&vdata);
-  Epetra_IntVector vv(View, source_fmap, vdata);
+  Epetra_IntVector vv(View, source_map, vdata);
 
   vv.Export(vghost, *importer_[kind], mode);
 #endif

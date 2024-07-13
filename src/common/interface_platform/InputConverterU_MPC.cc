@@ -1061,7 +1061,8 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
       if (pk.find("transport") == std::string::npos && pk.find("chemistry") == std::string::npos) {
         bool modify_correction(false);
         node = GetUniqueElementByTagsString_(
-          "numerical_controls, unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
+          "numerical_controls, unstructured_controls, unstr_nonlinear_solver, modify_correction",
+          flag);
         if (flag) modify_correction = GetTextContentL_(node);
 
         if (!out_list.sublist(pk).isSublist("time integrator")) {

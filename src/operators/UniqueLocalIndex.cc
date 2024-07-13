@@ -27,6 +27,8 @@
 
 #include "Mesh.hh"
 
+#include "UniqueLocalIndex.hh"
+
 namespace Amanzi {
 namespace Operators {
 
@@ -54,14 +56,12 @@ UniqueIndexFaceToCells(const AmanziMesh::Mesh& mesh, int f, int c)
 
 
 /* ******************************************************************
-* Local indix of cell cm for a common internal node vm/vf
+* Counting of duplicates of node vm in a patch of cells around it
 ****************************************************************** */
-int
-UniqueIndexNodeToCells(const AmanziMesh::Mesh& mesh, 
-                       const AmanziMesh::Mesh& fracture,
-                       int vm, int vf, int cm)
+std::vector<int>
+UniqueIndexNodeToCells(const AmanziMesh::Mesh& mesh, const std::set<int>& faces_int, int vm, int cm)
 {
-  std::set<int> gids, faces_all, faces_int;
+  std::set<int> gids, faces_all;
   const Epetra_BlockMap& cmap = mesh.getMap(AmanziMesh::Entity_kind::CELL, true);
 
   auto cells = mesh.getNodeCells(vm, AmanziMesh::Parallel_kind::ALL);
@@ -70,18 +70,14 @@ UniqueIndexNodeToCells(const AmanziMesh::Mesh& mesh,
   auto faces = mesh.getNodeFaces(vm);
   for (auto f : faces) faces_all.insert(f);
 
-  auto cells_f = fracture.getNodeCells(vf, AmanziMesh::Parallel_kind::ALL);
-  for (int c : cells_f) {
-    int f = fracture.getEntityParent(AmanziMesh::Entity_kind::CELL, c);
-    faces_int.insert(f);
-  }
-  
+  int cg = (cm < 0) ? -1 : cmap.GID(cm);
   int pos(0);
-  int cg = cmap.GID(cm);
+  std::vector<int> position;
 
   while (!gids.empty()) {
     int c0 = gids.extract(gids.begin()).value();
-    if (c0 == cg) return pos;
+    position.push_back(pos);
+    if (c0 == cg) return position;
 
     std::set<int> short_list({ c0 });
 
@@ -95,20 +91,23 @@ UniqueIndexNodeToCells(const AmanziMesh::Mesh& mesh,
           auto new_cells = mesh.getFaceCells(f);
           if (new_cells.size() > 1) {
             int c2 = cmap.GID(new_cells[0]) + cmap.GID(new_cells[1]) - c1;
-            if (c2 == cg) return pos;
+            if (gids.find(c2) != gids.end()) {
+              position.push_back(pos);
+              if (c2 == cg) return position;
 
-            faces_all.erase(f);
-            short_list.insert(c2);
-            gids.erase(c2);
+              faces_all.erase(f);
+              short_list.insert(c2);
+              gids.erase(c2);
+            }
           }
-        }  
+        }
       }
     }
 
-    pos++;  
+    pos++;
   }
 
-  return -1;
+  return position;
 }
 
 } // namespace Operators

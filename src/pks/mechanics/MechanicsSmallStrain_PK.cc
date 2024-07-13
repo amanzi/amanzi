@@ -147,7 +147,6 @@ MechanicsSmallStrain_PK::Initialize()
   op_matrix_elas_ = factory.Create(tmp1, mesh_);
 
   op_matrix_ = op_matrix_elas_->global_operator();
-
   // For a quasi-static problem, we update PC every non-linear iteration.
   // op_preconditioner_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
   // op_preconditioner_elas_->Init(tmp1);
