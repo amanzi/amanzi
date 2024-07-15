@@ -159,7 +159,7 @@ OutputXDMF::writeMesh_(int cycle)
 
   // Get and write connectivity information
   // nodes are written to h5 out of order, need the natural node map
-  auto [unused, ghosted_natural_nodes] =
+  auto [ghosted_natural_nodes, unused] =
     AmanziMesh::createMapsFromContiguousGIDs(vis_mesh, AmanziMesh::Entity_kind::NODE);
 
   // create a map and vector to store connection info
@@ -209,11 +209,12 @@ OutputXDMF::writeMesh_(int cycle)
         auto nodes = vis_mesh.getCellNodes(c);
 
         for (int i = 0; i != nodes.size(); ++i) {
-          connv(lcv++, 0) = ghosted_natural_nodes->getGlobalElement(nodes[i]);
+          GO gid = ghosted_natural_nodes->getGlobalElement(nodes[i]);
+          AMANZI_ASSERT(gid >= 0);
+          connv(lcv++, 0) = gid;
         }
+      }
 
-
-    }
     }
   }
 
