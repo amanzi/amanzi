@@ -209,7 +209,7 @@ SUITE(DOMAIN_FUNCTIONS)
       auto& ps = S->Require<MultiPatch<double>, MultiPatchSpace>("D", Tags::DEFAULT, "D");
       // ps.set_mesh(mesh);
       // ps.set_entity_kind(AmanziMesh::Entity_kind::FACE); // these two set by BCs?
-      ps.set_flag(Operators::OPERATOR_BC_NEUMANN);
+      ps.set_flag(Operators::OPERATOR_BC_NEUMANN); // but we must set the flag
       // ps.addPatch("right", AmanziMesh::Entity_kind::FACE, 1);
       ps.addPatch("right", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 

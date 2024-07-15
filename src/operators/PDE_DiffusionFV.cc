@@ -360,6 +360,7 @@ PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
               flux(f, 0) = dirs(n) * trans_face(f, 0) * (p(c2, 0) - p(c1, 0)) * k_face(f, 0);
             }
           }
+          assert(!Kokkos::isnan(flux(f,0)));
         }
       }
     });

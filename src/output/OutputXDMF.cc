@@ -107,18 +107,21 @@ OutputXDMF::writeMesh_(int cycle)
   Tpetra::global_size_t local_conns(0); // length of MixedElements
   for (AmanziMesh::Entity_ID c = 0; c != cell_map->getLocalNumElements(); ++c) {
     AmanziMesh::Cell_kind ctype = vis_mesh.getCellKind(c);
-    if (ctype != AmanziMesh::Cell_kind::POLYGON) {
-      int nnodes = vis_mesh.getCellNodes(c).size();
-      local_conns += nnodes + 1;
-
-    } else if (manifold_dim == 2) {
+    if (ctype == AmanziMesh::Cell_kind::POLYGON) {
       int nnodes = vis_mesh.getCellNodes(c).size();
       local_conns += nnodes + 2;
 
+    } else if (ctype == AmanziMesh::Cell_kind::POLYHED) {
+      int my_conns = 2; // POLYHED indicator + nfaces
+      auto faces = vis_mesh.getCellFaces(c);
+      for (auto f : faces) {
+        my_conns += vis_mesh.getFaceNodes(f).size() + 1;
+      }
+      local_conns += my_conns;
+
     } else {
-      Errors::Message message("OutputXDMF: Polyhedral meshes cannot yet be "
-                              "visualized in XDMF (try SILO instead).");
-      throw(message);
+      int nnodes = vis_mesh.getCellNodes(c).size();
+      local_conns += nnodes + 1;
     }
   }
 
@@ -169,18 +172,24 @@ OutputXDMF::writeMesh_(int cycle)
 
     for (int c = 0; c != cell_map->getLocalNumElements(); ++c) {
       AmanziMesh::Cell_kind ctype = vis_mesh.getCellKind(c);
-      if (ctype != AmanziMesh::Cell_kind::POLYGON) {
-        // store cell type id
+      if (ctype == AmanziMesh::Cell_kind::POLYHED) {
+        std::cout << "Writing conn of type POLYHEDRON" << std::endl;
+        auto faces = vis_mesh.getCellFaces(c);
         connv(lcv++, 0) = XDMFCellTypeID(ctype);
+        connv(lcv++, 0) = faces.size();
 
-        // store nodes in the correct order
-        auto nodes = vis_mesh.getCellNodes(c);
+        for (auto f : faces) {
+          // store node count, then nodes in the correct order
+          auto nodes = vis_mesh.getFaceNodes(f);
+          connv(lcv++, 0) = nodes.size();
 
-        for (int i = 0; i != nodes.size(); ++i) {
-          connv(lcv++, 0) = ghosted_natural_nodes->getGlobalElement(nodes[i]);
+          for (int i = 0; i != nodes.size(); ++i) {
+            connv(lcv++, 0) = ghosted_natural_nodes->getGlobalElement(nodes(i));
+          }
         }
 
-      } else if (space_dim == 2) {
+      } else if (ctype == AmanziMesh::Cell_kind::POLYGON) {
+        std::cout << "Writing conn of type POLYGON" << std::endl;
         // store cell type id
         connv(lcv++, 0) = XDMFCellTypeID(ctype);
 
@@ -191,7 +200,20 @@ OutputXDMF::writeMesh_(int cycle)
         for (int i = 0; i != nodes.size(); ++i) {
           connv(lcv++, 0) = ghosted_natural_nodes->getGlobalElement(nodes[i]);
         }
-      }
+
+      } else {
+        // store cell type id
+        connv(lcv++, 0) = XDMFCellTypeID(ctype);
+
+        // store nodes in the correct order
+        auto nodes = vis_mesh.getCellNodes(c);
+
+        for (int i = 0; i != nodes.size(); ++i) {
+          connv(lcv++, 0) = ghosted_natural_nodes->getGlobalElement(nodes[i]);
+        }
+
+
+    }
     }
   }
 

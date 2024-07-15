@@ -150,8 +150,10 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
       }
 
       // sum
-      for (int i = 0; i != my_keys_.size(); ++i)
+      for (int i = 0; i != my_keys_.size(); ++i) {
         results[i]->elementWiseMultiply(1., ddep, *tmp_data[i], 1.);
+        assert(!Kokkos::isnan(results[i]->normInf()));
+      }
     }
   }
 

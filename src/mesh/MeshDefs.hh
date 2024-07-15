@@ -206,23 +206,23 @@ to_string(const Cell_kind ctype)
 {
   switch (ctype) {
   case (Cell_kind::TRI):
-    return "cell type: triangle";
+    return "triangle";
   case (Cell_kind::QUAD):
-    return "cell type: quadrilateral";
+    return "quadrilateral";
   case (Cell_kind::POLYGON):
-    return "cell type: polygon";
+    return "polygon";
   case (Cell_kind::TET):
-    return "cell type: tetrahedron";
+    return "tetrahedron";
   case (Cell_kind::PRISM):
-    return "cell type: prism";
+    return "prism";
   case (Cell_kind::PYRAMID):
-    return "cell type: pyramid";
+    return "pyramid";
   case (Cell_kind::HEX):
-    return "cell type: hexahedron";
+    return "hexahedron";
   case (Cell_kind::POLYHED):
-    return "cell type: polyhedron";
+    return "polyhedron";
   default:
-    return "cell type: unknown";
+    return "unknown";
   }
 }
 
