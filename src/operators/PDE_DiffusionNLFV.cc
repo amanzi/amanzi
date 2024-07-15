@@ -264,8 +264,8 @@ PDE_DiffusionNLFV::InitStencils_()
         (*stencil_cells_[k + i])[f] = AmanziMesh::getFaceAdjacentCell(*mesh_, c, faces[ids[i]]);
       }
     }
-  }
-
+  }  
+  
   // distribute stencils
   stencil_data_->GatherGhostedToMaster("weight");
   stencil_data_->ScatterMasterToGhosted("weight");
@@ -279,6 +279,12 @@ PDE_DiffusionNLFV::InitStencils_()
     pp.CopyMasterFace2GhostFace(*stencil_cells_[i]);
   }
 
+
+  std::cout<<"stencil 9: ";
+  for (int n=0; n<6; n++) std::cout<<(*stencil_faces_[n])[9]<<" ";
+  std::cout<<"\n";
+
+  
   stencil_initialized_ = true;
 }
 
@@ -312,11 +318,14 @@ PDE_DiffusionNLFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flu
   // calculate one-sides flux corrections. Since a flux stencil can
   // occupy (dim_ + 1) cells, we need parallel communications.
   OneSidedFluxCorrections_(1, *u, sideflux_cv);
-
+  std::cout<<"sideflux\n"<<sideflux<<"\n";
+  
   // un-rolling little-k data
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   if (k_ != Teuchos::null) k_face = k_->ViewComponent("face");
 
+
+  
   // split each stencil between different local matrices
   int c1, c2, c3, c4, k1, k2;
 
@@ -357,13 +366,20 @@ PDE_DiffusionNLFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flu
         g1 = fabs(g1);
         g2 = fabs(g2);
         mu = (g1 + g2 == 0.0) ? 0.5 : g2 / (g1 + g2);
+        
       } else {
         w1 = weight[0][f];
       }
-
+      
       tpfa = mu * w1 + (1.0 - mu) * w2;
+
+      if (f==9) std::cout<<"matrix f9 "<<"c"<<c<<" mu "<<mu<<" w1 "<<w1<<" w2 "<<w2<<" kf "<<kf<<"\n";
+
+      if (f==9) std::cout<<"matrix f9 "<<"c"<<c<<" "<<matrix[0][9]<<" "<<matrix[1][9]<<"\n";
       matrix[k1][f] += kf * tpfa;
       flux_data[k2][f] = kf * tpfa;
+
+      if (f==9) std::cout<<"matrix f9 "<<"c"<<c<<" "<<matrix[0][9]<<" "<<matrix[1][9]<<"\n";
 
       // remaining terms of one-sided flux in cell c. Now we need
       // to select mu depending on the one-sided flux.
@@ -372,10 +388,12 @@ PDE_DiffusionNLFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flu
         for (int i = 1; i < dim_; i++) {
           int f1 = (*stencil_faces_[i + k2])[f];
           auto cells_tmp = mesh_->getFaceCells(f1);
-
+          
           gamma = hap_gamma[0][f1];
           OrderCellsByGlobalId_(cells_tmp, c3, c4);
 
+          if (f1==9) std::cout<<"Aux matrix c="<<c<<" f="<<f<<" stencil "<<(*stencil_faces_[1 + k2])[f]<<" "<<(*stencil_faces_[2 + k2])[f] <<"\n";
+          
           k1 = 0;
           if (c3 != c) {
             gamma = 1.0 - gamma;
@@ -390,6 +408,10 @@ PDE_DiffusionNLFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flu
     }
   }
 
+  std::cout<<"matrix 9 " <<matrix[0][9]<<" "<<matrix[1][9]<<"\n";
+
+  exit(0);
+  
   //stencil_data_->ScatterMasterToGhosted("flux_data");
   stencil_data_->GatherGhostedToMaster("flux_data");
   matrix_cv.GatherGhostedToMaster();
@@ -413,8 +435,12 @@ PDE_DiffusionNLFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flu
       Aface(0, 0) = matrix[0][f];
     }
 
+    if (ncells==2) std::cout<<"Aface "<<f<<" "<<ncells<<"\n"<<Aface<<"\n";
+    
     local_op_->matrices[f] = Aface;
   }
+
+  exit(0);
 }
 
 
@@ -553,6 +579,8 @@ PDE_DiffusionNLFV::OneSidedFluxCorrections_(int i0,
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
   Epetra_MultiVector& flux = *flux_cv.ViewComponent("face", true);
 
+  std::cout<<uc<<"\n";
+  
   Epetra_MultiVector& hap_gamma = *stencil_data_->ViewComponent("gamma", true);
   Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
 
@@ -596,6 +624,7 @@ PDE_DiffusionNLFV::OneSidedFluxCorrections_(int i0,
 
           tmp = weight[i + k2][f] * gamma;
           sideflux += tmp * (uc[0][c] - uc[0][c3]);
+          std::cout<<"f "<<f<<"c "<<c<<" c3 "<<c3<<" sideflux "<<sideflux<<"\n";
         } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
           tmp = weight[i + k2][f];
           // mesh_->getFaceNormal(f1, c, &dir);

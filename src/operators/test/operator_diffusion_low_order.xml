@@ -281,8 +281,8 @@
     </ParameterList>
 
     <ParameterList name="nlfv with bfaces">
-      <Parameter name="discretization primary" type="string" value="nlfv: default"/>
-      <Parameter name="discretization secondary" type="string" value="nlfv: default"/>
+      <Parameter name="discretization primary" type="string" value="nlfv: bnd"/>
+      <Parameter name="discretization secondary" type="string" value="nlfv: bnd"/>
       <Parameter name="schema" type="Array(string)" value="{cell,boundary_face}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{cell,boundary_face}"/>
     </ParameterList>
