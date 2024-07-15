@@ -71,8 +71,13 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
 
-  // computational domain
+  // domain and primary evaluators
   domain_ = fp_list_->template get<std::string>("domain name", "domain");
+  pressure_key_ = Keys::getKey(domain_, "pressure");
+  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
+
+  AddDefaultPrimaryEvaluator(S_, pressure_key_);
+  AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_);
 }
 
 
@@ -96,8 +101,13 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
 
-  // domain name
+  // domain and primary evaluators
   domain_ = fp_list_->template get<std::string>("domain name", "domain");
+  pressure_key_ = Keys::getKey(domain_, "pressure");
+  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
+
+  AddDefaultPrimaryEvaluator(S_, pressure_key_);
+  AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_);
 }
 
 
@@ -160,7 +170,6 @@ Darcy_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
-    AddDefaultPrimaryEvaluator(S_, pressure_key_);
   }
 
   // require additional fields and evaluators
@@ -232,7 +241,8 @@ Darcy_PK::Setup()
 
   // -- molar and volumetric flow rates
   double rho = S_->ICList().sublist("const_fluid_density").get<double>("value");
-  double molar_rho = rho / CommonDefs::MOLAR_MASS_H2O;
+  molar_mass_ = S_->ICList().sublist("const_fluid_molar_mass").get<double>("value");
+  double molar_rho = rho / molar_mass_;
   Setup_FlowRates_(true, molar_rho);
 
   // -- fracture dynamics
@@ -255,15 +265,7 @@ Darcy_PK::Setup()
       S_->GetRecordW(ref_pressure_key_, passwd_).set_io_vis(false);
       S_->GetRecordW(ref_pressure_key_, passwd_).set_io_checkpoint(false);
 
-      Teuchos::ParameterList elist(aperture_key_);
-      elist.set<std::string>("reference aperture key", ref_aperture_key_)
-        .set<std::string>("reference pressure key", ref_pressure_key_)
-        .set<std::string>("pressure key", pressure_key_)
-        .set<std::string>("compliance key", compliance_key_)
-        .set<std::string>("tag", "");
-
-      auto eval = Teuchos::rcp(new ApertureDarcyEvaluator(elist));
-      S_->SetEvaluator(aperture_key_, Tags::DEFAULT, eval);
+      S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
     } else {
       S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
     }
@@ -394,9 +396,9 @@ Darcy_PK::Initialize()
   // Initialize lambdas. It may be used by boundary conditions.
   auto& pressure = S_->GetW<CompositeVector>(pressure_key_, Tags::DEFAULT, passwd_);
 
-  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")) {
+  if (ti_list_->isSublist("dae constraint") && solution->HasComponent("face")) {
     std::string method =
-      ti_list_->sublist("pressure-lambda constraints").get<std::string>("method");
+      ti_list_->sublist("dae constraint").get<std::string>("method");
     if (method == "projection") {
       Epetra_MultiVector& p = *solution->ViewComponent("cell");
       Epetra_MultiVector& lambda = *solution->ViewComponent("face");

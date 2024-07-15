@@ -129,6 +129,7 @@ SUITE(OPERATOR_STOKES)
     // -- discretization method.
     Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("elasticity operator");
     Teuchos::RCP<PDE_Elasticity> op00 = Teuchos::rcp(new PDE_Elasticity(op_list, mesh));
+    op00->Init(op_list);
     op00->SetTensorCoefficient(K);
     // -- add boundary conditions to the discrete PDE: Lame equation
     op00->SetBCs(bcf, bcf);
@@ -317,6 +318,7 @@ SUITE(OPERATOR_STOKES)
     // -- discretization method.
     Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("elasticity operator");
     Teuchos::RCP<PDE_Elasticity> op00 = Teuchos::rcp(new PDE_Elasticity(op_list, mesh));
+    op00->Init(op_list);
     op00->SetTensorCoefficient(K);
     // -- add boundary conditions to the discrete PDE: Lame equation
     op00->SetBCs(bcf, bcf);

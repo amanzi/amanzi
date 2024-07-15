@@ -55,8 +55,9 @@ using namespace Amanzi::Operators;
 /* ****************************************************************
 * Analysis of Failure/Recovery 
 * ************************************************************** */
-template<class PK>
-void Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt, int iTP, int icase = -1)
+template <class PK>
+void
+Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt, int iTP, int icase = -1)
 {
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
@@ -94,23 +95,30 @@ void Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt,
   // create additional mesh for fracture
   if (has_submesh) {
     auto names = aux.sublist("submesh").get<Teuchos::Array<std::string>>("regions").toVector();
-    auto submesh_fr = Teuchos::rcp(new MeshExtractedManifold(mesh, names[0], AmanziMesh::Entity_kind::FACE, comm, gm, plist));
-    submesh = Teuchos::rcp(new Mesh(submesh_fr, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), plist));
+    auto submesh_fr = Teuchos::rcp(
+      new MeshExtractedManifold(mesh, names[0], AmanziMesh::Entity_kind::FACE, comm, gm, plist));
+    submesh =
+      Teuchos::rcp(new Mesh(submesh_fr, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), plist));
   }
 
   // create a simple state and populate it
-  std::vector<Teuchos::RCP<State>> S(2); 
-  std::vector<Teuchos::RCP<PK>> pk(2); 
-  std::vector<Teuchos::RCP<TreeVector>> soln(2); 
+  std::vector<Teuchos::RCP<State>> S(2);
+  std::vector<Teuchos::RCP<PK>> pk(2);
+  std::vector<Teuchos::RCP<TreeVector>> soln(2);
 
   for (int i = 0; i < 2; ++i) {
     std::string sTP = "TP " + std::to_string(iTP);
-    Teuchos::ParameterList tmp = plist->sublist("cycle driver").sublist("time periods").sublist(sTP).sublist("PK tree");
+    Teuchos::ParameterList tmp =
+      plist->sublist("cycle driver").sublist("time periods").sublist(sTP).sublist("PK tree");
     std::string name = tmp.begin()->first;
     Teuchos::ParameterList pk_tree = tmp.sublist(name);
 
-    if (i == 1) plist->sublist("PKs").sublist(name).sublist("time integrator").sublist("BDF1")
-                      .set<int>("report failure on step", 1);
+    if (i == 1)
+      plist->sublist("PKs")
+        .sublist(name)
+        .sublist("time integrator")
+        .sublist("BDF1")
+        .set<int>("report failure on step", 1);
 
     Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
     state_list.sublist("verbose object").set<std::string>("verbosity level", "none");
@@ -121,14 +129,20 @@ void Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt,
       S[i]->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(submesh));
 
       Key key("mass_density_gas");
-      S[i]->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
-        .SetMesh(submesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+      S[i]
+        ->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
+        .SetMesh(submesh)
+        ->SetGhosted(true)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
     } else if (icase == 6) {
       S[i]->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
       Key key("mass_density_gas");
-      S[i]->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
-        .SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+      S[i]
+        ->Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key)
+        .SetMesh(mesh)
+        ->SetGhosted(true)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
     } else {
       S[i]->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
       if (has_submesh) S[i]->RegisterMesh("fracture", Teuchos::rcp_const_cast<Mesh>(submesh));
@@ -174,9 +188,7 @@ void Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt,
   }
 
   // compare states
-  for (int i = 0; i < 2; ++i) {
-    pk[i]->CalculateDiagnostics(Tags::DEFAULT);
-  }
+  for (int i = 0; i < 2; ++i) { pk[i]->CalculateDiagnostics(Tags::DEFAULT); }
 
   double err, fnorm;
   for (auto r = S[0]->data_begin(); r != S[0]->data_end(); ++r) {
@@ -203,29 +215,36 @@ void Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt,
   // WriteStateStatistics(*S[1]);
 }
 
-TEST(MPC_RECOVERY_FLOW_RICHARDS) {
+TEST(MPC_RECOVERY_FLOW_RICHARDS)
+{
   ::Run<Flow::Richards_PK>("test/mpc_flow.xml", 2, { 15.0, 15.0, 15.0 }, 0);
 }
 
-TEST(MPC_RECOVERY_THERMAL_FLOW) {
+TEST(MPC_RECOVERY_THERMAL_FLOW)
+{
   ::Run<FlowEnergy_PK>("test/mpc_thermal_richards.xml", 2, { 1.0e+4, 1.0e+4, 1.0e+4 }, 0);
 }
 
-TEST(MPC_RECOVERY_COUPLED_FLOW) {
+TEST(MPC_RECOVERY_COUPLED_FLOW)
+{
   ::Run<FlowMatrixFracture_PK>("test/mpc_coupled_flow.xml", 3, { 1.0e+6, 1.0e+6, 1.0e+6 }, 0);
 }
 
-TEST(MPC_RECOVERY_COUPLED_THERMAL_FLOW) {
+TEST(MPC_RECOVERY_COUPLED_THERMAL_FLOW)
+{
   // ::Run<FlowEnergyMatrixFracture_PK>("test/mpc_coupled_thermal_flow.xml", 3, { 100.0, 100.0, 100.0 }, 1);
-  ::Run<FlowEnergyMatrixFracture_PK>("test/mpc_coupled_thermal_flow_richards.xml", 3, { 10.0, 10.0, 10.0 }, 1);
+  ::Run<FlowEnergyMatrixFracture_PK>(
+    "test/mpc_coupled_thermal_flow_richards.xml", 3, { 10.0, 10.0, 10.0 }, 1);
 }
 
-TEST(MPC_RECOVERY_MULTIPHASE_FRACTURES) {
-  ::Run<Multiphase::Multiphase_PK>("test/mpc_multiphase_fractures.xml", 3, { 2.0e+11, 2.0e+11, 2.0e+11 }, 0, 5);
+TEST(MPC_RECOVERY_MULTIPHASE_FRACTURES)
+{
+  ::Run<Multiphase::Multiphase_PK>(
+    "test/mpc_multiphase_fractures.xml", 3, { 2.0e+11, 2.0e+11, 2.0e+11 }, 0, 5);
 }
 
-TEST(MPC_RECOVERY_MULTIPHASE_THERMAL_3D) {
-  ::Run<Multiphase::Multiphase_PK>("test/mpc_multiphase_thermal.xml", 3, { 2.0e+7, 2.0e+7, 2.0e+7 }, 0, 6);
+TEST(MPC_RECOVERY_MULTIPHASE_THERMAL_3D)
+{
+  ::Run<Multiphase::Multiphase_PK>(
+    "test/mpc_multiphase_thermal.xml", 3, { 2.0e+7, 2.0e+7, 2.0e+7 }, 0, 6);
 }
-
-

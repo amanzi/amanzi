@@ -93,23 +93,54 @@
        ncp_g, total_water_storage, total_component_storage, advection_water, advection_liquid, 
        advection_gas, diffusion_liquid, diffusion_gas, diffusion_vapor,
        mole_fraction_liquid, mole_fraction_vapor, adv_energy_liquid}"/>
+
     <ParameterList name="system">
       <ParameterList name="pressure eqn">
+        <ParameterList name="terms">
+          <ParameterList name="advection 0">
+            <Parameter name="coefficient" type="string" value="advection_water"/>
+            <Parameter name="argument" type="string" value="pressure_liquid"/>
+            <Parameter name="scaling factor" type="double" value="1.00000000000000000e+00"/>
+            <Parameter name="phase" type="int" value="0"/>
+          </ParameterList>
+          <ParameterList name="diffusion 1">
+            <Parameter name="coefficient" type="string" value="diffusion_vapor"/>
+            <Parameter name="argument" type="string" value="mole_fraction_vapor"/>
+            <Parameter name="scaling factor" type="double" value="1.00000000000000000e+00"/>
+            <Parameter name="phase" type="int" value="1"/>
+          </ParameterList>
+        </ParameterList>
         <Parameter name="primary unknown" type="string" value="pressure_liquid"/>
-        <Parameter name="advection liquid" type="Array(string)" value="{advection_water, pressure_liquid}"/>
-        <Parameter name="advection factors" type="Array(double)" value="{1.0, 1.0}"/>
-        <Parameter name="diffusion gas" type="Array(string)" value="{diffusion_vapor, mole_fraction_vapor}"/>
-        <Parameter name="diffusion factors" type="Array(double)" value="{1.0, 1.0}"/>
         <Parameter name="accumulation" type="string" value="total_water_storage"/>
       </ParameterList>
       <ParameterList name="solute eqn">
+        <ParameterList name="terms">
+          <ParameterList name="advection 0">
+            <Parameter name="coefficient" type="string" value="advection_liquid"/>
+            <Parameter name="argument" type="string" value="pressure_liquid"/>
+            <Parameter name="scaling factor" type="double" value="1.00000000000000000e+00"/>
+            <Parameter name="phase" type="int" value="0"/>
+          </ParameterList>
+          <ParameterList name="advection 1">
+            <Parameter name="coefficient" type="string" value="advection_gas"/>
+            <Parameter name="argument" type="string" value="pressure_gas"/>
+            <Parameter name="scaling factor" type="double" value="1.00000000000000000e+00"/>
+            <Parameter name="phase" type="int" value="1"/>
+          </ParameterList>
+          <ParameterList name="diffusion 2">
+            <Parameter name="coefficient" type="string" value="diffusion_liquid"/>
+            <Parameter name="argument" type="string" value="mole_fraction_liquid"/>
+            <Parameter name="scaling factor" type="double" value="1.00000000000000000e+00"/>
+            <Parameter name="phase" type="int" value="0"/>
+          </ParameterList>
+          <ParameterList name="diffusion 3">
+            <Parameter name="coefficient" type="string" value="diffusion_gas"/>
+            <Parameter name="argument" type="string" value="mole_fraction_gas"/>
+            <Parameter name="scaling factor" type="double" value="1.00000000000000000e+00"/>
+            <Parameter name="phase" type="int" value="1"/>
+          </ParameterList>
+        </ParameterList>
         <Parameter name="primary unknown" type="string" value="mole_fraction_gas"/>
-        <Parameter name="advection liquid" type="Array(string)" value="{advection_liquid, pressure_liquid}"/>
-        <Parameter name="advection gas" type="Array(string)" value="{advection_gas, pressure_gas}"/>
-        <Parameter name="advection factors" type="Array(double)" value="{1.0, 1.0}"/>
-        <Parameter name="diffusion liquid" type="Array(string)" value="{diffusion_liquid, mole_fraction_liquid}"/>
-        <Parameter name="diffusion gas" type="Array(string)" value="{diffusion_gas, mole_fraction_gas}"/>
-        <Parameter name="diffusion factors" type="Array(double)" value="{1.0, 1.0}"/>
         <Parameter name="accumulation" type="string" value="total_component_storage"/>
       </ParameterList>
       <ParameterList name="constraint eqn">
@@ -117,11 +148,21 @@
         <Parameter name="ncp evaluators" type="Array(string)" value="{ncp_f, ncp_g}"/>
       </ParameterList>
       <ParameterList name="energy eqn">
+        <ParameterList name="terms">
+          <ParameterList name="advection 0">
+            <Parameter name="coefficient" type="string" value="adv_energy_liquid"/>
+            <Parameter name="argument" type="string" value="pressure_liquid"/>
+            <Parameter name="scaling factor" type="double" value="1.00000000000000000e+00"/>
+            <Parameter name="phase" type="int" value="0"/>
+          </ParameterList>
+          <ParameterList name="diffusion 2">
+            <Parameter name="coefficient" type="string" value="thermal_conductivity"/>
+            <Parameter name="argument" type="string" value="temperature"/>
+            <Parameter name="scaling factor" type="double" value="1.00000000000000000e+00"/>
+            <Parameter name="phase" type="int" value="0"/>
+          </ParameterList>
+        </ParameterList>
         <Parameter name="primary unknown" type="string" value="temperature"/>
-        <Parameter name="advection liquid" type="Array(string)" value="{adv_energy_liquid, pressure_liquid}"/>
-        <Parameter name="advection factors" type="Array(double)" value="{1.0, 1.0}"/>
-        <Parameter name="diffusion liquid" type="Array(string)" value="{thermal_conductivity, temperature}"/>
-        <Parameter name="diffusion factors" type="Array(double)" value="{1.0, 1.0}"/>
         <Parameter name="accumulation" type="string" value="energy"/>
       </ParameterList>
     </ParameterList>
@@ -187,7 +228,7 @@
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="preconditioner enhancement" type="string" value="GMRES for Newton-0"/>
 
-      <ParameterList name="pressure-lambda constraints">
+      <ParameterList name="dae constraint">
         <Parameter name="method" type="string" value="projection"/>
         <Parameter name="inflow krel correction" type="bool" value="true"/>
         <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -347,6 +388,9 @@
       </ParameterList>
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.2"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.0e-3"/>

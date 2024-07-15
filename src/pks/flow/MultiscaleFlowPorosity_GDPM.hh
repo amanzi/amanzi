@@ -15,9 +15,11 @@ single-porosity model correspond now to the fracture continuum.
 Example: pressure = pressure in the fracture continuum;
 pressure_msp = pressure in the matrix continuum.
 
-* `"number of matrix nodes`" [int] defines number of matrix layers.
-* `"matrix depth`" [double] is the characteristic length for matrix continuum.
-* `"matrix volume fraction`" [double] defines relative volume of matrix continuum.
+.. admonition:: generalized_dual_porosity-spec
+
+  * `"number of matrix nodes`" [int] defines number of matrix layers.
+  * `"matrix depth`" [double] is the characteristic length for matrix continuum.
+  * `"matrix volume fraction`" [double] defines relative volume of matrix continuum.
 
 .. code-block:: xml
 
@@ -27,7 +29,7 @@ pressure_msp = pressure in the matrix continuum.
       <Parameter name="regions" type="Array(string)" value="{_TOP HALF}"/>
       <Parameter name="multiscale model" type="string" value="dual porosity"/>
       <ParameterList name="dual porosity parameters">
-        <Paramater name="mass transfer coefficient" type="double" value="4.0e-5"/>
+        <Paramater name="mass transfer coefficient" type="double" value="4e-5"/>
         <Paramater name="tolerance" type="double" value="1e-8"/>
       </ParameterList>
 

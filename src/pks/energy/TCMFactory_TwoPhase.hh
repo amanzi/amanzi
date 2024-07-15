@@ -16,23 +16,25 @@ The structure of the thermal conductivity list resembles that of a field
 evaluator list in state.
 The two-phase model accepts the following parameters.
 
-* `"thermal conductivity parameters`" [list] defines a model and its parameters.
+.. admonition:: tcm_two_phase-spec
 
-* `"thermal conductivity type`" [string] is the name of a conductivity model in the
-  list of registered models. Available two-phase models are `"two-phase Peters-Lidard`",
-  and `"two-phase wet/dry`". Available one-phase model is `"one-phase polynomial`".
+  * `"thermal conductivity parameters`" ``[list]`` defines a model and its parameters.
 
-* `"thermal conductivity of rock`" [double] defines constant conductivity of rock.
+  * `"thermal conductivity type`" ``[string]`` is the name of a conductivity model in the
+    list of registered models. Available two-phase models are `"two-phase Peters-Lidard`",
+    and `"two-phase wet/dry`". Available one-phase model is `"one-phase polynomial`".
 
-* `"thermal conductivity of gas`" [double] defines constant conductivity of gas.
+  * `"thermal conductivity of rock`" ``[double]`` defines constant conductivity of rock.
 
-* `"thermal conductivity of liquid`" [double] defines constant conductivity of fluid.
-  Default value is 0.6065 [W/m/K].
+  * `"thermal conductivity of gas`" ``[double]`` defines constant conductivity of gas.
 
-* `"unsaturated alpha`" [double] is used to define the Kersten number to interpolate
-  between saturated and dry conductivities.
+  * `"thermal conductivity of liquid`" ``[double]`` defines constant conductivity of fluid.
+    Default value is 0.6065 [W/m/K].
 
-* `"epsilon`" [double] is needed for the case of zero saturation. Default is `"1.0e-10`".
+  * `"unsaturated alpha`" ``[double]`` is used to define the Kersten number to interpolate
+    between saturated and dry conductivities.
+
+  * `"epsilon`" ``[double]`` is needed for the case of zero saturation. Default is `"1.0e-10`".
 
 .. code-block:: xml
 
@@ -53,11 +55,13 @@ The two-phase model accepts the following parameters.
 The single-phase model accepts some of the parameters defined above (see the example)
 and a few additional parameters.
 
-* `"reference temperature`" [double] defines temperature at which reference conductivity
-  of liquid is calculated. Default value is 298.15 [K].
+.. admonition:: tcm_one_phase-spec
 
-* `"polynomial expansion`" [Array(double)] collect coefficients in the quadratic representation of the
-  thermal conductivity of liquid with respect to the dimensionless parameter T/Tref.
+  * `"reference temperature`" ``[double]`` defines temperature at which reference conductivity
+    of liquid is calculated. Default value is 298.15 [K].
+
+  * `"polynomial expansion`" ``[Array(double)]`` collect coefficients in the quadratic representation
+    of the thermal conductivity of liquid with respect to the dimensionless parameter T/Tref.
 
 .. code-block:: xml
 

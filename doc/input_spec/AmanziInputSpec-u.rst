@@ -1,5 +1,5 @@
 ===================================================
-Unstructured Input Specification for Amanzi 1.5-dev
+Unstructured Input Specification for Amanzi 1.6-dev
 ===================================================
 
 .. contents:: **Table of Contents**
@@ -372,7 +372,7 @@ However, no options within the sections are required.  The list of available opt
   <unstructured_controls>
       Required Elements: none
       Optional Elements: unstr_flow_controls, unstr_transport_controls, unstr_chemistry_controls,
-                         unstr_steady-state_controls, unstr_transient_controls, 
+                         unstr_mechanics_controls, unstr_steady-state_controls, unstr_transient_controls, 
                          unstr_linear_solver, unstr_nonlinear_solver, unstr_preconditioners,
                          saturated_linear_solver, constraints_linear_solver, dispersion_linear_solver
   </unstructured_controls>
@@ -500,6 +500,22 @@ The subelements pertaining to the pflotran chemistry engine are:
 | read_chemistry_engine_inputfile        | string       |                                   |
 +----------------------------------------+--------------+-----------------------------------+
 
+Unstr_mechanics_controls
+________________________
+
+``unstr_mechanics_controls`` specifies numerical controls for the mechanics process kernel available under the unstructured algorithm.
+It has the following subelements:
+
++----------------------------------+--------------+--------------------------------------------------------+
+| Element Names                    | Content Type | Content Value                                          |
++==================================+==============+========================================================+
+| biot_model                       | string       | ``fixed_stress_split``, ``undrained_split``            |
++----------------------------------+--------------+--------------------------------------------------------+
+| elasticity_linear_solver         | sublist      | | ``pcg``, ``max_iterations``                          |
+|                                  |              | | ``tolerance``, ``convergence_criteria``              |
++----------------------------------+--------------+--------------------------------------------------------+
+
+
 Unstr_steady-state_controls and unstr_transient_controls
 ________________________________________________________
 
@@ -537,8 +553,8 @@ of the converged solution.
 +-------------------------------------------------------+---------------+------------------------------------------+
 | preconditioner                                        | string        | ``trilinos_ml, hypre_amg, block_ilu``    |
 +-------------------------------------------------------+---------------+------------------------------------------+
-| initialize_with_darcy                                 | boolean       | | ``true, false``                        |
-|                                                       |               | | *default = false*                      |
+| enforce_dae_constraint                                | boolean       | | ``true, false``                        |
+|                                                       |               | | *default = true*                       |
 +-------------------------------------------------------+---------------+------------------------------------------+
 | timestep_controller                                   | name          | | ``standard``, ``fixed``, ``adaptive``, |
 |                                                       |               | | ``smarter``, ``from_file``             |
@@ -722,7 +738,6 @@ An example ``unstructured_controls`` section would look as the following:
                 <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
                 <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
                 <max_divergent_iterations>3</max_divergent_iterations>
-                <initialize_with_darcy>true</initialize_with_darcy>
                 <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
                 <preconditioner>hypre_amg</preconditioner>
             </unstr_steady-state_controls>
@@ -738,7 +753,6 @@ An example ``unstructured_controls`` section would look as the following:
                 <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
                 <error_control_options>pressure,residual</error_control_options>
                 <preconditioner>hypre_amg</preconditioner>
-                <initialize_with_darcy>true</initialize_with_darcy>
             </unstr_transient_controls>
             <unstr_preconditioners>
                 <hypre_amg>
@@ -1088,7 +1102,9 @@ _____________________
   <mechanical_properties>
       Required Elements: porosity
       Optional Elements: particle_density, specific_storage, specific_yield,
-                         dispersion_tensor, tortuosity, tortuosity_gas, transport_porosity
+                         dispersion_tensor, tortuosity, tortuosity_gas, transport_porosity,
+                         poisson_ratio, young_modulus, biot_coefficient,
+                         rock_thermal_dilation, liquid_thermal_dilation
   </mechanical_properties>
 
 The ``mechanical_properties`` has multiple elements that can be either values or specified as files.
@@ -1110,7 +1126,6 @@ It has the following requirements.
     * ``specific_yeild`` is defined in-line using attributes.
       It is specified as a value greater than 0 using ``value`` or through a file using type="file" and filename="<filename>".
       
-
     * ``dispersion_tensor`` is defined in-line using attributes.  The attribute ``type`` is used to specify either the model to utilize.
       The available options are: ``isotropic``, ``bear``, ``burnett_frind``, or ``lichtner_kelkar_robinson``.
       For ``isotropic`` values are specified using  attribute ``alpha`` [m].
@@ -1123,6 +1138,15 @@ It has the following requirements.
 
     * ``tortuosity_gas`` is defined in-line using attribute. It is specified as a value using ``value``.
 
+    * ``poisson_ratio`` is defined in-line using an attribute. It is specified as a value between 0 and 0.5 using ``value``.
+
+    * ``young_modulus`` is defined in-line using an attribute. It is specified as a positive value using ``value``. 
+
+    * ``biot_coefficient`` is defined in-line using an attribute. It is specified as a politive number less than 1 using ``value``.
+
+    * ``rock_thermal_dilation`` is defined in-line using an attribute. It is specified as positive number using ``value``.
+
+    * ``liquid_thermal_dilation`` is defined in-line using an attribute. It is specified as positive number using ``value``.
 
 .. code-block:: xml
 
@@ -1133,6 +1157,11 @@ It has the following requirements.
       <specific_yield value="double"/>
       <dispersion_tensor type="bear" alpha_l="double" alpha_t="double"/>
       <tortuosity value="double"/>
+      <poisson_ratio value="double"/>
+      <young_modulus value="double"/>
+      <biot_coefficient value="double"/>
+      <rock_thermal_dilation value="double"/>
+      <liquid_thermal_dilation value="double"/>
   </mechanical_properties>
 
 Assigned_regions
@@ -1309,7 +1338,7 @@ The ``process_kernels`` block specifies which PKs are active.  This block is req
 .. code-block:: xml
 
   <process_kernels>
-      Required Elements: flow, transport, chemistry, energy
+      Required Elements: flow, transport, chemistry, energy, mechanics
       Optional Elements: comments
   </process_kernels>
 
@@ -1384,6 +1413,19 @@ Currently three scenarios are available for calculated the flow field.
 *  ``two-phase energy`` is a two-phase (liquid, water-vapor) thermal flow.
 
 
+Mechanics
+---------
+
+The ``mechanics`` has the following attributes, 
+      
+      * ``state`` = "on | off"
+
+      *  ``model`` = " elastic" 
+
+Currently only elastic model is support at this level. A small strain model is supported 
+in the Native Spec.
+
+
 Phases
 ======
 
@@ -1404,7 +1446,7 @@ The ``liquid_phase`` has the following elements
 .. code-block:: xml
 
   <liquid_phase>
-      Required Elements: viscosity, density
+      Required Elements: viscosity, density, molar_mass
       Optional Elements: dissolved_components
   </liquid_phase>
 
@@ -1413,6 +1455,8 @@ Here is more info on the ``liquid_phase`` elements:
     * ``viscosity`` = "double"
 
     * ``density`` = "double"
+
+    * ``molar_mass`` = "double"
 
     * ``dissolved_components`` has the following elements
 
@@ -1563,7 +1607,7 @@ The following is a description of the ``boundary_condition`` element.
 
   <boundary_condition>
       Required Elements: assigned_regions, liquid_phase
-      Optional Elements: thermal_component, comments
+      Optional Elements: thermal_component, mechanics_component, comments
   </boundary_condition>
 
 Assigned_regions
@@ -1687,6 +1731,34 @@ The ``thermal_component`` has the following elements:
 .. code-block:: xml
 
      <uniform_temperature start="time" function="constant" value="double" />
+
+Mechanics_component
+-------------------
+
+The ``mechanics_component`` has the following elements:
+
+    * ``displacement`` is defined in-line using attributes.
+      The attributes include ``function``, ``start``, and ``vector``. 
+      The ``function`` specifies linear or constant temporal functional form during each time interval.
+      The ``start`` is a value at which time intervals start.
+      The ``vector`` is the displacement vector during the time interval. 
+
+    * ``traction`` is defined in-line using attributes.
+      The attributes include ``function``, ``start``, and ``vector``. 
+      The ``function`` specifies linear or constant temporal functional form during each time interval.
+      The ``start`` is a value at which time intervals start.
+      The ``vector`` is the traction vector during the time interval. 
+
+    * ``kinematic`` is defined in-line using attributes.
+      The attributes include ``function``, ``start``, and ``value``. 
+      The ``function`` specifies linear or constant temporal functional form during each time interval.
+      The ``start`` is a value at which time intervals start.
+      The ``value`` is the normal displacement value during the time interval. 
+
+.. code-block:: xml
+
+     <displacement function="linear" start="time" vector="double, double"/>
+     <traction function="constant" start="time" vector="double, double, double"/>
 
 
 Sources

@@ -175,10 +175,10 @@ PDE_DiffusionNLFV::InitStencils_()
   // instantiate variables to access supporting tools
   WhetStone::NLFV nlfv(mesh_);
 
-  // distribute diffusion tensor FIXME 
+  // distribute diffusion tensor FIXME
   WhetStone::Tensor Kdefault(dim_, 1);
-  Kdefault(0, 0) = 1.0; 
-  
+  Kdefault(0, 0) = 1.0;
+
   WhetStone::DenseVector data(dim_ * dim_);
   for (int c = 0; c < ncells_owned; ++c) {
     const auto& Kc = K_.get() ? (*K_)[c] : Kdefault;
@@ -278,11 +278,11 @@ PDE_DiffusionNLFV::InitStencils_()
 
   ParallelCommunication pp(mesh_);
   for (int i = 0; i < 2 * dim_; ++i) {
-    pp.CombineGhostFace2MasterFace(*stencil_faces_[i], (Epetra_CombineMode)Add);
-    pp.CombineGhostFace2MasterFace(*stencil_cells_[i], (Epetra_CombineMode)Add);
+    pp.CombineGhostEntity2MasterEntity(AmanziMesh::Entity_kind::FACE, *stencil_faces_[i], (Epetra_CombineMode)Add);
+    pp.CombineGhostEntity2MasterEntity(AmanziMesh::Entity_kind::FACE, *stencil_cells_[i], (Epetra_CombineMode)Add);
 
-    pp.CopyMasterFace2GhostFace(*stencil_faces_[i]);
-    pp.CopyMasterFace2GhostFace(*stencil_cells_[i]);
+    pp.CopyMasterEntity2GhostEntity(AmanziMesh::Entity_kind::FACE, *stencil_faces_[i]);
+    pp.CopyMasterEntity2GhostEntity(AmanziMesh::Entity_kind::FACE, *stencil_cells_[i]);
   }
 
   stencil_initialized_ = true;
@@ -705,8 +705,7 @@ PDE_DiffusionNLFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
         double kf(1.0);
         if (k_face.get()) kf = (*k_face)[0][f];
 
-        if (kf != 0.0) 
-          rhs_cell[0][c] -= (Aface(0, 0) / kf) * bc_value[f] * mesh_->getFaceArea(f);
+        if (kf != 0.0) rhs_cell[0][c] -= (Aface(0, 0) / kf) * bc_value[f] * mesh_->getFaceArea(f);
         Aface = 0.0;
       }
     }
@@ -746,8 +745,8 @@ PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
       auto cells = mesh_->getFaceCells(f);
       mesh_->getFaceNormal(f, cells[0], &dir);
       flux_data[0][f] = wgt_sideflux[0][f] * dir;
-    // } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-    //   flux_data[0][f] = bc_value[f] * mesh_->getFaceArea(f);
+      // } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+      //   flux_data[0][f] = bc_value[f] * mesh_->getFaceArea(f);
     } else if (bc_model[f] == OPERATOR_BC_NONE) {
       auto cells = mesh_->getFaceCells(f);
       OrderCellsByGlobalId_(cells, c1, c2);

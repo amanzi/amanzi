@@ -110,7 +110,10 @@
         <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
       </ParameterList>
       <ParameterList name="const_fluid_density">
-        <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
+        <Parameter name="value" type="double" value="998.2"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="1.01325000000000000e+05"/>
@@ -167,7 +170,7 @@
         <Parameter name="error control options" type="Array(string)" value="{displacement}"/>
         <Parameter name="linear solver" type="string" value="PCG for elasticity"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>

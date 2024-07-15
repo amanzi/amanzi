@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.5-dev">
+<amanzi_input type="unstructured" version="1.6-dev">
   <echo_translated_input format="unstructured_native" file_name="native.xml"/>
 
   <model_description name="Thermal Richards">
@@ -38,6 +38,7 @@
       <eos>FEHM</eos>
       <viscosity>1.0e-03</viscosity>
       <density>998.2</density>
+      <molar_mass>0.018015</molar_mass>
       <primary>H2O</primary>
       <dissolved_components>
         <primaries>

@@ -33,6 +33,7 @@ class LookupTable_FEHM : public LookupTable {
   ~LookupTable_FEHM(){};
 
   virtual double Function(double T, double p, int* ierr) override;
+  virtual int Location(double T, double p, int* ierr) override;
 
  private:
   std::string ReadBlock_(std::ifstream& ifs, int nP, int nT, bool flag);
@@ -41,7 +42,6 @@ class LookupTable_FEHM : public LookupTable {
   void ComputeDownwardMap_(int nP, int nT, int nS);
 
  private:
-  double M_;
   std::string field_;
 
   std::vector<std::vector<int>> map_;

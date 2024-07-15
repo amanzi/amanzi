@@ -35,7 +35,7 @@ where
 :math:`x` is molar fraction of component [-], and
 :math:`s` is phase saturation [-].
 
-The flux includes advective and diffusion terms:
+The flux includes advective (wrt volumetric flux) and diffusive terms:
 
 .. math::
   \boldsymbol{\Psi}
@@ -48,16 +48,74 @@ where
 The nonlinear algebraic constraint may have different forms. One of the available forms is
 
 .. math::
-  min (s_g, 1 - x_l - x_g) = 0.
+  min (s_g, 1 - \sum\limits_i x_g^i) = 0.
 
-It implies that if gas compounent is present then we must have :math:`x_l + x_g = 1`.
+It implies that if gas compounent is present, then the sum of component
+mole fractions on the gas phase must be equal to 1.
 
-The PK provides three choices of primary variables.
+The test examples illustrate three choices of primary variables for various models.
 The first one includes pressure liquid, mole gas fraction, and saturation liquid.
 The second one includes pressure liquid, molar gas density, and saturation liquid.
-The third one is used for verification purposes and is based on the model in Jaffre's paper.
-This model describes two-phase two-component system with water and hydrogen.
+The third one is based on the model in Jaffre's paper.
+This model describes the two-phase two-component system with water and hydrogen.
 
+The structure of a system of multiphase equations is described by sublist `"system`" which 
+contains as many blocks as there are equations. The names of blocks are currently reserved 
+and cannot be changed. Each block except for the "constraint eqn" has the following parameters:
+
+.. admonition:: multiphase_pk-spec
+
+  * `"primary unknown`" ``[string]`` defines a name of the primary variable which goes into 
+    a solution vector.
+
+  * `"accumulation`" ``[string]`` defines an evaluator for the accumulattion (or storage) term 
+    in this equation.
+
+  * `"terms`" [list] specifies details of underluing PDE operators. The list constains as 
+    many sublists as there are operators. Some of the operators can be considered either as 
+    diffusion operators with respect to particular fields or as advection operators associate 
+    with a Darcy velocities. We input parameters follow the diffusion viewpoint for 
+    all operators.
+
+    * `"coefficient`" ``[string]`` defined the diffusion coefficient. 
+
+    * `"argument`" ``[string]`` defines a field for which the operator has the diffusion structure. 
+
+    * `"scaling factor`" ``[double]`` defines a scalar multiplier for the operator.
+
+    * `"phase`" ``[int]`` specifies a phase accosiated with the operator. It is used to upwind 
+      the diffusion coefficient w.r.t. to the corresponding Darcy velocity.
+
+.. code-block:: xml
+
+  <ParameterList name="system">
+    <ParameterList name="pressure eqn">
+      <Parameter name="primary unknown" type="string" value="pressure_liquid"/>
+      <Parameter name="accumulation" type="string" value="total_water_storage"/>
+
+      <ParameterList name="terms">
+        <ParameterList name="advection">
+          <Parameter name="coefficient" type="string" value="advection_water"/>
+          <Parameter name="argument" type="string" value="pressure_liquid"/>
+          <Parameter name="scaling factor" type="double" value="1.0"/>
+          <Parameter name="phase" type="int" value="0"/>
+        </ParameterList>
+        <ParameterList name="diffusion">
+          <Parameter name="coefficient" type="string" value="diffusion_liquid"/>
+          <Parameter name="argument" type="string" value="molar_density_liquid"/>
+          <Parameter name="scaling factor" type="double" value="-0.2"/>
+          <Parameter name="phase" type="int" value="0"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="constraint eqn">
+      <Parameter name="primary unknown" type="string" value="saturation_liquid"/>
+      <Parameter name="ncp evaluators" type="Array(string)" value="{ ncp_f, ncp_g }"/>
+    </ParameterList>
+  </ParameterList>
+
+The available boundary conditions include the prescibed pressure, total influx, and saturation.
 */
 
 #ifndef AMANZI_MULTIPHASE_PK_HH_
@@ -166,7 +224,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
   virtual int ReportStatistics() override { return num_ls_itrs_; }
 
   // multiphase submodels
-  void PopulateBCs(int icomp, bool flag);
+  void PopulateBCs(int comp_id, bool flag);
   void CheckCompatibilityBCs(const Key& keyr, const Key& gname);
   void ModifyEvaluators(int neqn);
 

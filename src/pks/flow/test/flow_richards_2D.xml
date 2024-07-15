@@ -97,7 +97,7 @@
 	  <Parameter name="clipping saturation value" type="double" value="0.6"/>
 	</ParameterList>
 
-	<ParameterList name="pressure-lambda constraints">
+	<ParameterList name="dae constraint">
 	  <Parameter name="method" type="string" value="projection"/>
 	  <Parameter name="linear solver" type="string" value="AztecOO"/>
 	</ParameterList>
@@ -214,7 +214,7 @@
             <Parameter name="components" type="Array(string)" value="{cell, boundary_face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="555.083"/>
+                <Parameter name="value" type="double" value="555.0929780738273"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -253,6 +253,9 @@
     <ParameterList name="initial conditions">
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="10.0"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="0.001"/>

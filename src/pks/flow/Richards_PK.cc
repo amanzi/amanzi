@@ -78,8 +78,13 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator");
 
-  // domain name
+  // domain and primary evaluators
   domain_ = fp_list_->template get<std::string>("domain name", "domain");
+  pressure_key_ = Keys::getKey(domain_, "pressure");
+  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
+
+  AddDefaultPrimaryEvaluator(S_, pressure_key_);
+  AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_);
 
   vo_ = Teuchos::null;
 }
@@ -105,8 +110,13 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator");
 
-  // domain name
+  // domain and primary evaluators
   domain_ = fp_list_->template get<std::string>("domain name", "domain");
+  pressure_key_ = Keys::getKey(domain_, "pressure");
+  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
+
+  AddDefaultPrimaryEvaluator(S_, pressure_key_);
+  AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_);
 
   ms_itrs_ = 0;
   vo_ = Teuchos::null;
@@ -180,7 +190,6 @@ Richards_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
-    AddDefaultPrimaryEvaluator(S_, pressure_key_);
   }
 
   // Require conserved quantity.
@@ -654,7 +663,7 @@ Richards_PK::Initialize()
   // Conditional initialization of lambdas from pressures.
   auto& pressure = S_->GetW<CV_t>(pressure_key_, Tags::DEFAULT, passwd_);
 
-  if (ti_list_->isSublist("pressure-lambda constraints") && pressure.HasComponent("face")) {
+  if (ti_list_->isSublist("dae constraint") && pressure.HasComponent("face")) {
     DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
                                    *pressure.ViewComponent("face"));
     S_->GetRecordW(pressure_key_, passwd_).set_initialized(true);
@@ -810,11 +819,8 @@ Richards_PK::Initialize()
   }
 
   // Subspace entering: re-initialize lambdas.
-  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face") &&
+  if (ti_list_->isSublist("dae constraint") && solution->HasComponent("face") &&
       !flow_on_manifold_) {
-    solver_name_constraint_ =
-      ti_list_->sublist("pressure-lambda constraints").get<std::string>("linear solver");
-
     if (S_->get_position() == Amanzi::TIME_PERIOD_START) {
       EnforceConstraints(t_ini, solution);
       pressure_eval_->SetChanged();

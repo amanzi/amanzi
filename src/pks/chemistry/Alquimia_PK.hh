@@ -13,14 +13,17 @@ The Alquimia chemistry process kernel only requires the *Engine* and *Engine Inp
 entries, but will also accept and respect the value given for *max time step (s)*.
 Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
 
-* `"minerals`" [Array(string)] is the list of mineral names.
+.. admonition:: alquimia-spec
 
-* `"sorption sites`" [Array(string)] is the list of sorption sites.
+  * `"minerals`" ``[Array(string)]`` is the list of mineral names.
 
-* `"auxiliary data`" [Array(string)] defines additional chemistry related data that the user
-  can request be saved to vis files.
+  * `"sorption sites`" ``[Array(string)]`` is the list of sorption sites.
 
-* `"min time step (s)`" [double] is the minimum time step that chemistry will allow the MPC to take.
+  * `"auxiliary data`" ``[Array(string)]`` defines additional chemistry related data that the user
+    can request be saved to vis files.
+
+  * `"min time step (s)`" ``[double]`` is the minimum time step that chemistry will allow 
+    the MPC to take.
 
 .. code-block:: xml
 

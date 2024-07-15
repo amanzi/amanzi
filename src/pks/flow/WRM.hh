@@ -17,29 +17,31 @@ This list is required for the Richards problem only.
 The water retention models are associated with non-overlapping regions. Each of the sublists (e.g. *Soil 1*)
 includes a few mandatory parameters: region name, model name, and parameters for the selected model.
 
-* `"water retention model`" [string] specifies a model for the soil.
-  The available models are `"van Genuchten`", `"Brooks Corey`", and `"fake`".
-  The later is used only to set up a simple analytic solution for convergence study.
+.. admonition:: wrm-spec
 
-  * The model `"van Genuchten`" requires `"van Genuchten alpha`" [double],
-    `"van Genuchten m`" [double], `"van Genuchten l`" [double], `"residual saturation liquid`" [double],
-    and `"relative permeability model`" [string].
+  * `"water retention model`" [string] specifies a model for the soil.
+    The available models are `"van Genuchten`", `"Brooks Corey`", and `"fake`".
+    The later is used only to set up a simple analytic solution for convergence study.
 
-  * The model `"Brooks-Corey`" requires `"Brooks Corey lambda`" [double], `"Brooks Corey alpha`" [double],
-    `"Brooks Corey l`" [double], `"residual saturation liquid`" [double],
-    and `"relative permeability model`" [string].
+    * The model `"van Genuchten`" requires `"van Genuchten alpha`" [double],
+      `"van Genuchten m`" [double], `"van Genuchten l`" [double], `"residual saturation liquid`" [double],
+      and `"relative permeability model`" [string].
 
-  * The model `"saturated`" does not require any parameters. It is equaivalent to the Darcy model if
-    all other parameters (e.g. porosity) are constant
+    * The model `"Brooks-Corey`" requires `"Brooks Corey lambda`" [double], `"Brooks Corey alpha`" [double],
+      `"Brooks Corey l`" [double], `"residual saturation liquid`" [double],
+      and `"relative permeability model`" [string].
 
-  * The model `"linear`" requires `"alpha`" [double] and `"residual saturation liquid`" [double].
+    * The model `"saturated`" does not require any parameters. It is equaivalent to the Darcy model if
+      all other parameters (e.g. porosity) are constant
 
-* `"relative permeability model`" [string] The available options are `"Mualem`" (default)
-  and `"Burdine`".
+    * The model `"linear`" requires `"alpha`" [double] and `"residual saturation liquid`" [double].
 
-* `"regularization interval`" [double] removes the kink in the water retention curve at the
-  saturation point using a cubic spline. The parameter specifies the regularization region [Pa].
-  Default value is 0.
+  * `"relative permeability model`" [string] The available options are `"Mualem`" (default)
+    and `"Burdine`".
+
+  * `"regularization interval`" [double] removes the kink in the water retention curve at the
+    saturation point using a cubic spline. The parameter specifies the regularization region [Pa].
+    Default value is 0.
 
 Amanzi performs rudimentary checks of validity of the provided parameters.
 The relative permeability curves can be calculated and saved in an ASCI file

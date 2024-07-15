@@ -1,7 +1,7 @@
  nonuniform                                                Grid type
     32    7     9                                          Array dimensions
-    1.000000        0.000000                               Temperature factor and offset
-    1.000000        0.000000                               Pressure factor and offset
+    1.000000        273.1500                               Temperature factor and offset
+    1.0e+6          0.000000                               Pressure factor and offset
     19                                                     Saturation line closeness flag
  Table temperatures --->
   -200.0000      -195.0000      -190.0000      -185.0000      -180.0000      -175.0000      -170.0000      -165.0000    

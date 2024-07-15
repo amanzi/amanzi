@@ -189,7 +189,7 @@ AnalyticBase::ComputeFaceError(Epetra_MultiVector& u,
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; ++n) {
-      int f = faces[n]; 
+      int f = faces[n];
       double area = mesh_->getFaceArea(f);
       const auto& xf = mesh_->getFaceCentroid(f);
       const auto& normal = mesh_->getFaceNormal(f, c, &dir);
@@ -198,7 +198,8 @@ AnalyticBase::ComputeFaceError(Epetra_MultiVector& u,
       double tmp = (velocity * normal) * dir;
 
       int g = fmap.FirstPointInElement(f);
-      int k = (fmap.ElementSize() == 1) ? 0 : Amanzi::Operators::UniqueIndexFaceToCells(*mesh_, f, c);
+      int k =
+        (fmap.ElementSize() == 1) ? 0 : Amanzi::Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
       l2_err += std::pow((tmp - u[0][g + k]) / area, 2.0);
       inf_err = std::max(inf_err, fabs(tmp - u[0][g + k]) / area);

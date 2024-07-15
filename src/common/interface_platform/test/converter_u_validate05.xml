@@ -384,6 +384,9 @@
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
+      </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
@@ -693,6 +696,10 @@
 	<Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
 
+      <ParameterList name="clipping parameters">
+        <Parameter name="maximum correction change" type="double" value="-1.0"/>
+      </ParameterList>
+
       <ParameterList name="operators">
 	<ParameterList name="diffusion operator">
 	  <ParameterList name="matrix">
@@ -768,10 +775,15 @@
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="physical models and assumptions">
 	<Parameter name="flow and transport in fractures" type="bool" value="true"/>
+        <Parameter name="external aperture" type="bool" value="false"/>
       </ParameterList>
 
       <ParameterList name="absolute permeability">
 	<Parameter name="coordinate system" type="string" value="cartesian"/>
+      </ParameterList>
+
+      <ParameterList name="clipping parameters">
+        <Parameter name="maximum correction change" type="double" value="-1.0"/>
       </ParameterList>
 
       <ParameterList name="fracture permeability models">

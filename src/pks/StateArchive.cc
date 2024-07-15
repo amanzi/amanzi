@@ -36,8 +36,7 @@ StateArchive::Restore(const std::string& passwd)
     std::string owner(passwd);
     if (S_->HasEvaluator(it->first, tag_)) {
       auto type = S_->GetEvaluatorPtr(it->first, tag_)->get_type();
-      if (type == EvaluatorType::SECONDARY || type == EvaluatorType::INDEPENDENT)
-        owner = it->first;
+      if (type == EvaluatorType::SECONDARY || type == EvaluatorType::INDEPENDENT) owner = it->first;
     }
     S_->GetW<CompositeVector>(it->first, tag_, owner) = it->second;
 

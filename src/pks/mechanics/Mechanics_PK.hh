@@ -17,11 +17,16 @@ The conceptual PDE model for the quasi-static elastic deformation is
   \rho \boldsymbol{g}
 
 where 
-:math:`\boldsymbol{\d}` is the displacement [m],
+:math:`\boldsymbol{d}` is the displacement [m],
 :math:`\rho` is the rock density [kg/m^3],
 :math:`\boldsymbol{\varepsilon}` is the strain tensor,
 and
 :math:`\boldsymbol{g}` is the gravity vector [:math:`m/s^2`].
+
+For a linear elasticity problem, the stress tensor :math:`C` is a linear operator 
+acting on the strain tensor.
+For a small-strain problem, this stress tensor becomes a nonlinear operator. 
+Currently, the only available option is the Hardin-Drnevich model.
 
 */
 
@@ -122,6 +127,8 @@ class Mechanics_PK : public PK_PhysicalBDF {
   void AddGravityTerm(CompositeVector& rhs);
   void AddPressureGradient(CompositeVector& rhs);
   void AddTemperatureGradient(CompositeVector& rhs);
+
+  void InitializeBCs();
 
  public:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;

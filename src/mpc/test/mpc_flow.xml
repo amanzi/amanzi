@@ -144,7 +144,7 @@
             <Parameter name="components" type="Array(string)" value="{cell, boundary_face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="55397.25419097694"/>
+                <Parameter name="value" type="double" value="55409.38107132945"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -172,6 +172,9 @@
       </ParameterList>
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.2"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="0.001"/>
@@ -335,6 +338,11 @@
       	  <Parameter name="relative permeability model" type="string" value="Mualem"/>
       	</ParameterList>
       </ParameterList>
+
+      <!--ParameterList name="clipping parameters">
+      	<Parameter name="maximum correction change" type="double" value="-1.0"/>
+      </ParameterList-->
+
       <ParameterList name="operators">
       	<ParameterList name="diffusion operator">
       	  <ParameterList name="matrix">
@@ -385,7 +393,7 @@
       	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
       	<Parameter name="linear solver" type="string" value="AztecOO"/>
       	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-      	<ParameterList name="pressure-lambda constraints">
+      	<ParameterList name="dae constraint">
       	  <Parameter name="method" type="string" value="projection"/>
       	  <Parameter name="inflow krel correction" type="bool" value="true"/>
       	  <Parameter name="linear solver" type="string" value="AztecOO"/>

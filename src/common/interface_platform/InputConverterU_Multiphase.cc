@@ -221,21 +221,27 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
   }
 
   // system of equations (fixed at the moment)
-  // -- equations
+  // -- equation for pressure
   std::string pl(pressure_liquid_key), pg(pressure_gas_key), xg(mole_xg_key);
-  std::vector<double> ones({ 1.0, 1.0 });
 
   // liquid phase: primary component
   Teuchos::ParameterList& peqn = out_list.sublist("system").sublist("pressure eqn");
-  peqn.set<std::string>("primary unknown", pl)
-    .set<Teuchos::Array<std::string>>("advection liquid",
-                                      std::vector<std::string>({ adv_water_key, pl }))
-    .set<Teuchos::Array<double>>("advection factors", ones)
-    .set<Teuchos::Array<double>>("diffusion factors", ones)
-    .set<std::string>("accumulation", storage_water_key);
-  if (phases_[GAS].model != "") {
-    peqn.set<Teuchos::Array<std::string>>(
-      "diffusion gas", std::vector<std::string>({ diff_vapor_key, mole_xv_key }));
+  Teuchos::ParameterList& pterms = peqn.sublist("terms");
+
+  peqn.set<std::string>("primary unknown", pl).set<std::string>("accumulation", storage_water_key);
+
+  pterms.sublist("advection 0")
+    .set<std::string>("coefficient", adv_water_key)
+    .set<std::string>("argument", pl)
+    .set<double>("scaling factor", 1.0)
+    .set<int>("phase", 0);
+
+  if (phases_[GAS].active) {
+    pterms.sublist("diffusion 1")
+      .set<std::string>("coefficient", diff_vapor_key)
+      .set<std::string>("argument", mole_xv_key)
+      .set<double>("scaling factor", 1.0)
+      .set<int>("phase", 1);
 
     fev.sublist(storage_water_key)
       .set<std::string>("evaluator type", "storage water")
@@ -264,21 +270,36 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
     AddIndependentFieldEvaluator_(fev, mole_xv_key, "All", "cell", 0.0);
   }
 
+  // -- equation for solute
   Teuchos::ParameterList& seqn = out_list.sublist("system").sublist("solute eqn");
-  seqn.set<std::string>("primary unknown", xg)
-    .set<Teuchos::Array<std::string>>("advection liquid",
-                                      std::vector<std::string>({ adv_liquid_key, pl }))
-    .set<Teuchos::Array<std::string>>("advection gas",
-                                      std::vector<std::string>({ adv_gas_key, pg }))
-    .set<Teuchos::Array<double>>("advection factors", ones)
-    .set<Teuchos::Array<std::string>>("diffusion liquid",
-                                      std::vector<std::string>({ diff_liquid_key, mole_xl_key }))
-    .set<Teuchos::Array<std::string>>("diffusion gas",
-                                      std::vector<std::string>({ diff_gas_key, mole_xg_key }))
-    .set<Teuchos::Array<double>>("diffusion factors", ones)
-    .set<std::string>("accumulation", storage_tcc_key);
+  Teuchos::ParameterList& sterms = seqn.sublist("terms");
+  seqn.set<std::string>("primary unknown", xg).set<std::string>("accumulation", storage_tcc_key);
 
+  sterms.sublist("advection 0")
+    .set<std::string>("coefficient", adv_liquid_key)
+    .set<std::string>("argument", pl)
+    .set<double>("scaling factor", 1.0)
+    .set<int>("phase", 0);
 
+  sterms.sublist("advection 1")
+    .set<std::string>("coefficient", adv_gas_key)
+    .set<std::string>("argument", pg)
+    .set<double>("scaling factor", 1.0)
+    .set<int>("phase", 1);
+
+  sterms.sublist("diffusion 2")
+    .set<std::string>("coefficient", diff_liquid_key)
+    .set<std::string>("argument", mole_xl_key)
+    .set<double>("scaling factor", 1.0)
+    .set<int>("phase", 0);
+
+  sterms.sublist("diffusion 3")
+    .set<std::string>("coefficient", diff_gas_key)
+    .set<std::string>("argument", mole_xg_key)
+    .set<double>("scaling factor", 1.0)
+    .set<int>("phase", 1);
+
+  // -- equation for constraints
   Teuchos::ParameterList& ceqn = out_list.sublist("system").sublist("constraint eqn");
   ceqn.set<std::string>("primary unknown", sat_liquid_key)
     .set<Teuchos::Array<std::string>>("ncp evaluators",
@@ -289,19 +310,29 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
     *vo_->os() << "primary unknwons:" << pl << ", " << xg << ", " << sat_liquid_key << std::endl;
   }
 
+  // -- equation for energy
   if (isothermal_ == false) {
     Teuchos::ParameterList& teqn = out_list.sublist("system").sublist("energy eqn");
-    teqn.set<std::string>("primary unknown", temperature_key)
-      .set<Teuchos::Array<std::string>>("advection liquid",
-                                        std::vector<std::string>({ adv_energy_liquid_key, pl }))
-      // .set<Teuchos::Array<std::string>>("advection gas",
-      //                                   std::vector<std::string>({ adv_energy_gas_key, pg }))
-      .set<Teuchos::Array<double>>("advection factors", ones)
+    Teuchos::ParameterList& tterms = teqn.sublist("terms");
 
-      .set<Teuchos::Array<std::string>>(
-        "diffusion liquid", std::vector<std::string>({ conductivity_key, temperature_key }))
-      .set<Teuchos::Array<double>>("diffusion factors", ones)
+    teqn.set<std::string>("primary unknown", temperature_key)
       .set<std::string>("accumulation", energy_key);
+
+    tterms.sublist("advection 0")
+      .set<std::string>("coefficient", adv_energy_liquid_key)
+      .set<std::string>("argument", pl)
+      .set<double>("scaling factor", 1.0)
+      .set<int>("phase", 0);
+
+    // tterms.sublist("advection 1")
+    //   .set<std::string>("coefficient", adv_energy_gas_key).set<std::string>("argument", pg)
+    //   .set<double>("scaling factor", 1.0).set<int>("phase", 1);
+
+    tterms.sublist("diffusion 2")
+      .set<std::string>("coefficient", conductivity_key)
+      .set<std::string>("argument", temperature_key)
+      .set<double>("scaling factor", 1.0)
+      .set<int>("phase", 0);
 
     Teuchos::ParameterList& thermal =
       out_list.sublist("thermal conductivity evaluator").sublist("thermal conductivity parameters");

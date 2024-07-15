@@ -72,7 +72,6 @@ class InputConverterU : public InputConverter {
       fracture_network_(false),
       flow_single_phase_(false),
       compressibility_(false),
-      compliance_(false),
       beta_(0.0),
       mesh_rectangular_(false),
       use_transport_porosity_(false),
@@ -99,7 +98,6 @@ class InputConverterU : public InputConverter {
       fracture_network_(false),
       flow_single_phase_(false),
       compressibility_(false),
-      compliance_(false),
       beta_(0.0),
       mesh_rectangular_(false),
       use_transport_porosity_(false),
@@ -130,6 +128,7 @@ class InputConverterU : public InputConverter {
   void ParseFractureNetwork_();
   void ModifyDefaultPhysicalConstants_();
   void ParseGlobalNumericalControls_();
+  void ParseMisc_();
 
   BCs ParseCondList_(DOMNode* node,
                      double vmin,
@@ -223,7 +222,8 @@ class InputConverterU : public InputConverter {
                                    const Key& field,
                                    const Key& key,
                                    const std::string& type,
-                                   const std::string& eos_table_name);
+                                   const std::string& eos_table_name,
+                                   const std::vector<KeyPair>& deps = {});
 
   void AddConstantFieldInitialization_(Teuchos::ParameterList& out_ev,
                                        const std::string& field,
@@ -361,7 +361,7 @@ class InputConverterU : public InputConverter {
   // global flow constants
   std::string flow_model_; // global value
   bool flow_single_phase_; // runtime value
-  bool compressibility_, compliance_;
+  bool compressibility_, linearized_aperture_;
   double rho_, beta_;
 
   // global mesh data

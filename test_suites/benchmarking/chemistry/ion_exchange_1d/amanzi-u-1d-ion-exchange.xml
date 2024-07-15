@@ -1,4 +1,4 @@
-<amanzi_input version="1.5-dev" type="unstructured">
+<amanzi_input version="1.6-dev" type="unstructured">
 
   <model_description name="1D Flow and Transport w/ ion exchange">
     <units>

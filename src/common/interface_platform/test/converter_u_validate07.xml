@@ -145,7 +145,7 @@
             <Parameter name="regions" type="Array(string)" value="{BottomRegion}"/>
             <ParameterList name="IEM parameters">
               <Parameter name="iem type" type="string" value="lookup table"/>
-              <Parameter name="heat capacity" type="double" value="7.62e+01"/>
+              <Parameter name="heat capacity" type="double" value="7.62000000000000028e+01"/>
               <Parameter name="table name" type="string" value="h2o.eos"/>
               <Parameter name="field name" type="string" value="internal_energy"/>
               <Parameter name="format" type="string" value="Amanzi"/>
@@ -275,6 +275,9 @@
       </ParameterList>
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="9.982e+02"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="permeability">
         <Parameter name="write checkpoint" type="bool" value="false"/>
@@ -576,6 +579,9 @@
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
+      <ParameterList name="clipping parameters">
+        <Parameter name="maximum correction change" type="double" value="-1.0"/>
+      </ParameterList>
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
           <ParameterList name="matrix">
@@ -664,6 +670,9 @@
 
     <ParameterList name="steady:flow fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
+      <ParameterList name="clipping parameters">
+        <Parameter name="maximum correction change" type="double" value="-1.0"/>
+      </ParameterList>
       <ParameterList name="fracture permeability models">
         <ParameterList name="FPM for fracture">
           <Parameter name="region" type="string" value="fracture"/>
@@ -674,6 +683,7 @@
       <ParameterList name="physical models and assumptions">
         <Parameter name="flow and transport in fractures" type="bool" value="true"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
+        <Parameter name="external aperture" type="bool" value="false"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
@@ -793,6 +803,9 @@
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
+      </ParameterList>
+      <ParameterList name="clipping parameters">
+        <Parameter name="maximum correction change" type="double" value="-1.0"/>
       </ParameterList>
       <ParameterList name="relative permeability">
         <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
@@ -1036,6 +1049,9 @@
 
     <ParameterList name="transient:flow fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
+      <ParameterList name="clipping parameters">
+        <Parameter name="maximum correction change" type="double" value="-1.0"/>
+      </ParameterList>
       <ParameterList name="fracture permeability models">
         <ParameterList name="FPM for fracture">
           <Parameter name="region" type="string" value="fracture"/>

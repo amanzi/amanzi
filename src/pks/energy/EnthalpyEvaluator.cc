@@ -10,7 +10,7 @@
 /*
   Energy
 
-  Field evaluator for specific menthalpy, h = u + p / eta + g z.
+  Field evaluator for specific methalpy, h = u + p / eta + g z.
 */
 
 #include "CommonDefs.hh"
@@ -38,6 +38,7 @@ EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist)
 
   include_work_ = plist_.get<bool>("include work term", true);
   include_potential_ = plist_.get<bool>("include potential term", false);
+  liquid_molar_mass_ = plist_.get<double>("liquid molar mass");
 
   // Set up my dependencies.
   // -- internal energy
@@ -106,7 +107,7 @@ EnthalpyEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>
 
     int d = mesh->getSpaceDimension();
     double g = std::fabs(std::fabs((S.Get<AmanziGeometry::Point>("gravity", tag_))[d - 1]));
-    g *= CommonDefs::MOLAR_MASS_H2O;
+    g *= liquid_molar_mass_;
 
     for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
       Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);

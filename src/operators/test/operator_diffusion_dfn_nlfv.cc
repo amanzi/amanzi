@@ -79,7 +79,6 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
 
   // modify diffusion coefficient
   int ncells_owned = surfmesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
-  int nfaces_owned = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
 
   AmanziGeometry::Point v(3);
@@ -165,8 +164,7 @@ RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
   if (MyPID == 0) {
     std::cout << "pressure solver"
               << ": ||r||=" << global_op->residual() << " itr=" << global_op->num_itrs()
-              << "  ||f||=" << fnorm << "  #dofs=" << ndofs 
-              << std::endl;
+              << "  ||f||=" << fnorm << "  #dofs=" << ndofs << std::endl;
   }
 
   // calculate error in potential
@@ -200,4 +198,3 @@ TEST(DIFFUSION_FRACTURES_NLFV_NO_K)
 {
   RunTest(0, 0.0);
 }
-

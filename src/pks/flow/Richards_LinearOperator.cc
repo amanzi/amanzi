@@ -143,7 +143,8 @@ Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u)
   op_preconditioner_diff_->ModifyMatrices(*u);
 
   // solve non-symmetric problem
-  Teuchos::ParameterList lin_op_list = linear_operator_list_->sublist(solver_name_constraint_);
+  std::string solver_name = ti_list_->sublist("dae constraint").get<std::string>("linear solver");
+  Teuchos::ParameterList lin_op_list = linear_operator_list_->sublist(solver_name);
   auto solver = AmanziSolvers::createIterativeMethod(lin_op_list, op_matrix_, op_preconditioner_);
   solver->InitializeInverse();
   solver->ComputeInverse();

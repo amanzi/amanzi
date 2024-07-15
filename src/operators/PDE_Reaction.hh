@@ -13,12 +13,14 @@ A reaction operator may represent either reaction of identity operator.
 It is symmetric so far and requires one schema.
 The structure of the schema is described in the previous section.
 
-* `"pks operator name`" [list] a PK specific name for the advection operator.
+.. admonition:: reaction_op-spec
 
-  * `"method`" [string] defines a discretization method. The only supported
-    option is `"dg nodal`".
+  * `"pks operator name`" ``[list]`` a PK specific name for the advection operator.
 
-  * `"schema`" [list] defines a discretization schema for the operator domain.
+    * `"method`" ``[string]`` defines a discretization method. The only supported
+      option is `"dg nodal`".
+
+    * `"schema`" ``[list]`` defines a discretization schema for the operator domain.
 
 .. code-block:: xml
 

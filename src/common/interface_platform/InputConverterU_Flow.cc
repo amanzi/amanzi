@@ -80,6 +80,12 @@ InputConverterU::TranslateFlow_(const std::string& mode,
     out_list.set<Teuchos::Array<std::string>>("optional fields", fields);
   }
 
+  node = GetUniqueElementByTagsString_(
+    "unstructured_controls, unstr_nonlinear_solver, max_correction_change", flag);
+  double change(-1.0);
+  if (flag) change = GetTextContentD_(node, "", true);
+  out_list.sublist("clipping parameters").set<double>("maximum correction change", change);
+
   // create flow header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
 
@@ -100,9 +106,11 @@ InputConverterU::TranslateFlow_(const std::string& mode,
         .set<std::string>("multiscale model", "dual continuum discontinuous matrix");
     }
 
-    if (domain == "fracture" && compliance_) {
+    TranslateFAM_(domain);
+
+    if (domain == "fracture") {
       flow_list->sublist("physical models and assumptions")
-        .set<bool>("external aperture", compliance_);
+        .set<bool>("external aperture", linearized_aperture_);
     }
 
   } else if (pk_model == "richards") {
@@ -736,6 +744,7 @@ InputConverterU::TranslateFAM_(const std::string& domain)
     // get optional compressibility
     node = GetUniqueElementByTagsString_(inode, "aperture", flag);
     std::string model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
+    linearized_aperture_ = (model == "linearized");
 
     std::stringstream ss;
     ss << "FAM " << i;
@@ -767,6 +776,14 @@ InputConverterU::TranslateFAM_(const std::string& domain)
         .set<double>("overburden pressure", p0)
         .set<double>("BartonBandis A", A)
         .set<double>("BartonBandis B", B);
+    } else if (model == "linearized") {
+      auto& field_ev = glist_->sublist("state").sublist("evaluators").sublist("fracture-aperture");
+      field_ev.set<std::string>("evaluator type", "linearized aperture")
+        .set<std::string>("reference aperture key", "fracture-ref_aperture")
+        .set<std::string>("reference pressure key", "fracture-ref_pressure")
+        .set<std::string>("pressure key", "fracture-pressure")
+        .set<std::string>("compliance key", "fracture-compliance")
+        .set<std::string>("tag", "");
     } else {
       other = true;
     }

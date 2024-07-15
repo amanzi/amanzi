@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.5-dev">
+<amanzi_input type="unstructured" version="1.6-dev">
   <model_description name="DVZ 3layer 2D">
     <author>Konstantin Lipnikov</author>
     <!-- default SI units -->
@@ -48,6 +48,7 @@
     <liquid_phase name="water">
       <viscosity>1.002E-03</viscosity>
       <density>998.2</density>
+      <molar_mass>0.018015</molar_mass>
       <dissolved_components>
         <primaries>
           <primary coefficient_of_diffusion="1.0e-9  m^2/s " molar_mass="98.906255e-3 kg/mol">Tc-99</primary>

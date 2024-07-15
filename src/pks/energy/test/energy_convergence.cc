@@ -136,6 +136,7 @@ TEST(ENERGY_CONVERGENCE)
     Teuchos::ParameterList ev_list;
     ev_list.set<std::string>("enthalpy key", "enthalpy")
       .set<bool>("include work term", false)
+      .set<double>("liquid molar mass", 0.018015)
       .set<std::string>("tag", "");
     ev_list.setName("enthalpy");
 
@@ -257,6 +258,7 @@ TEST(ENERGY_PRECONDITIONER)
     Teuchos::ParameterList ev_list;
     ev_list.set<std::string>("enthalpy key", "enthalpy")
       .set<bool>("include work term", false)
+      .set<double>("liquid molar mass", 0.018015)
       .set<std::string>("tag", "");
     ev_list.setName("enthalpy");
 

@@ -380,6 +380,9 @@
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.2"/>
       </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
+      </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="0.001"/>
       </ParameterList>
@@ -1002,7 +1005,7 @@
 	<Parameter name="error control options" type="Array(string)" value="{temperature}"/>
 	<Parameter name="linear solver" type="string" value="none"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<ParameterList name="pressure-lambda constraints">
+	<ParameterList name="dae constraint">
 	  <Parameter name="method" type="string" value="none"/>
 	  <Parameter name="inflow krel correction" type="bool" value="true"/>
 	  <Parameter name="linear solver" type="string" value="AztecOO"/>
@@ -1073,7 +1076,7 @@
 	<Parameter name="error control options" type="Array(string)" value="{temperature}"/>
 	<Parameter name="linear solver" type="string" value="none"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<ParameterList name="pressure-lambda constraints">
+	<ParameterList name="dae constraint">
 	  <Parameter name="method" type="string" value="none"/>
 	  <Parameter name="inflow krel correction" type="bool" value="true"/>
 	  <Parameter name="linear solver" type="string" value="AztecOO"/>

@@ -117,6 +117,7 @@ set(operators_inc_files
     PDE_DiffusionFracturedMatrix.hh
     PDE_DiffusionCurvedFace.hh
     PDE_Elasticity.hh
+    PDE_ElasticityFracturedMatrix.hh
     PDE_Electromagnetics.hh
     PDE_MagneticDiffusion.hh
     PDE_MagneticDiffusion_TM.hh
@@ -183,6 +184,7 @@ set(operators_src_files
   PDE_DiffusionFactory.cc
   PDE_HelperDiscretization.cc
   PDE_Elasticity.cc
+  PDE_ElasticityFracturedMatrix.cc
   PDE_Electromagnetics.cc
   PDE_MagneticDiffusion.cc PDE_MagneticDiffusion_TM.cc
   PDE_Reaction.cc
@@ -439,6 +441,12 @@ if (ENABLE_TESTS)
     add_amanzi_test(operators_elasticity_weak_symmetry operators_elasticity_weak_symmetry
                     KIND unit
                     SOURCE test/Main.cc test/operator_elasticity_weak_symmetry.cc
+                    LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(operators_elasticity_fractured_matrix operators_elasticity_fractured_matrix
+                    KIND unit
+                    NPROCS 1
+                    SOURCE test/Main.cc test/operator_elasticity_fractured_matrix.cc
                     LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_stokes operators_stokes

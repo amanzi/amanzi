@@ -68,7 +68,7 @@ PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 
     for (auto it = global_schema_row_.begin(); it != global_schema_row_.end(); ++it) {
       std::tie(kind, std::ignore, num) = *it;
-      std::string name(local_schema_row_.KindToString(kind));
+      std::string name(AmanziMesh::to_string(kind));
       cvs_row->AddComponent(name, kind, num);
     }
 
@@ -81,7 +81,7 @@ PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 
     for (auto it = global_schema_col_.begin(); it != global_schema_col_.end(); ++it) {
       std::tie(kind, std::ignore, num) = *it;
-      std::string name(local_schema_col_.KindToString(kind));
+      std::string name(AmanziMesh::to_string(kind));
       cvs_col->AddComponent(name, kind, num);
     }
 

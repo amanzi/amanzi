@@ -32,14 +32,16 @@ Global parameters
 Global parameters are placed in the sublist `"shallow water`".
 The list of global parameters include:
 
-* `"domain name`" [string] specifies mesh name that defined domain of this PK.
-  Default is `"domain`".
+.. admonition:: shallow_water_params-spec
 
-* `"cfl`" [double] is a safety factor (less than 1) applied to a stable
-  time step estimate. Default value is 1.
+  * `"domain name`" ``[string]`` specifies mesh name that defined domain of this PK.
+    Default is `"domain`".
 
-* `"use limiter`" [bool] turns on/off limiters on all linear constructions.
-  Default value is *false*.
+  * `"cfl`" ``[double]`` is a safety factor (less than 1) applied to a stable
+    time step estimate. Default value is 1.
+
+  * `"use limiter`" ``[bool]`` turns on/off limiters on all linear constructions.
+    Default value is *false*.
 
 */
 

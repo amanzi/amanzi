@@ -184,25 +184,27 @@ Second, the developers may use it instead of a factory of evaluators such as
 creation of primary and secondary evaluators for rock porosity models.
 Combination of both approaches may lead to a more efficient code.
 
-* `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
-  e.g. by EnergyFlow PK. The default value is `"false`".
+.. admonition:: flow_assumptions-spec
 
-* `"flow and transport in fractures`" [bool] indicates that Darcy flow is calculated in fractures.
-  This option is ignored is mesh dimentionaly equals to manifold dimensionality.
+  * `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
+    e.g. by EnergyFlow PK. The default value is `"false`".
 
-* `"multiscale model`" [string] specifies a multiscale model.
-  Available options are `"single porosity`" (default) and `"dual continuum discontinum matrix`".
+  * `"flow and transport in fractures`" [bool] indicates that Darcy flow is calculated in fractures.
+    This option is ignored is mesh dimentionaly equals to manifold dimensionality.
 
-* `"viscosity model`" [string] changes the evaluator for liquid viscosity.
-  Available options are `"generic`" and `"constant viscosity`" (default).
+  * `"multiscale model`" [string] specifies a multiscale model.
+    Available options are `"single porosity`" (default) and `"dual continuum discontinum matrix`".
 
-* `"porosity model`" [string] specifies an isothermal porosity model.
-  Available options are `"compressible`" and `"constant`" (default).
+  * `"viscosity model`" [string] changes the evaluator for liquid viscosity.
+    Available options are `"generic`" and `"constant viscosity`" (default).
 
-* `"coupled matrix fracture flow`" [string] specifies PK's role in the strong
-  coupling of two flow PKs. The value is either `"matrix`" or `"fracture`".
+  * `"porosity model`" [string] specifies an isothermal porosity model.
+    Available options are `"compressible`" and `"constant`" (default).
 
-* `"eos lookup table`" [string] provides the name for optional EOS lookup table.
+  * `"coupled matrix fracture flow`" [string] specifies PK's role in the strong
+    coupling of two flow PKs. The value is either `"matrix`" or `"fracture`".
+
+  * `"eos lookup table`" [string] provides the name for optional EOS lookup table.
 
 .. code-block:: xml
 
@@ -350,7 +352,7 @@ class Flow_PK : public PK_PhysicalBDF {
   // Stationary physical quantatities
   std::vector<WhetStone::Tensor> K;
   AmanziGeometry::Point gravity_;
-  double g_, rho_, molar_rho_, atm_pressure_;
+  double g_, rho_, molar_rho_, molar_mass_, atm_pressure_;
   double flux_units_; // scaling for flux units from kg to moles.
 
   Teuchos::RCP<Epetra_MultiVector> Kxy;

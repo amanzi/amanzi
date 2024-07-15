@@ -23,8 +23,6 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-const double EOS_TABULAR_TOL = 2e-10;
-
 /* ******************************************************************
 * Populate internal structures
 ****************************************************************** */
@@ -32,7 +30,6 @@ LookupTable_FEHM::LookupTable_FEHM(Teuchos::ParameterList& plist) : LookupTable(
 {
   std::string filename = plist.get<std::string>("table name");
   field_ = plist.get<std::string>("field name");
-  M_ = plist.get<double>("molar weight");
 
   std::ifstream ifs;
   ifs.open(filename, std::ifstream::in);
@@ -69,7 +66,7 @@ LookupTable_FEHM::LookupTable_FEHM(Teuchos::ParameterList& plist) : LookupTable(
   axisT_.resize(nT);
   for (int i = 0; i < nT; ++i) {
     ifs >> value;
-    axisT_[i] = scaleT_ * value + shiftT_ + 273.15;
+    axisT_[i] = scaleT_ * value + shiftT_;
   }
   ifs.getline(line, 100);
 
@@ -77,7 +74,7 @@ LookupTable_FEHM::LookupTable_FEHM(Teuchos::ParameterList& plist) : LookupTable(
   axisP_.resize(nP);
   for (int i = 0; i < nP; ++i) {
     ifs >> value;
-    axisP_[i] = (scaleP_ * value + shiftP_) * 1.0e+6;
+    axisP_[i] = scaleP_ * value + shiftP_;
   }
   ifs.getline(line, 100);
 
@@ -144,46 +141,94 @@ LookupTable_FEHM::LookupTable_FEHM(Teuchos::ParameterList& plist) : LookupTable(
 double
 LookupTable_FEHM::Function(double T, double p, int* ierr)
 {
-  int ip, jp, n, m(0);
-  *ierr = FindBox_(T, p, &ip, &jp);
+  int ip, jt, n, m(0);
+  *ierr = FindBox_(T, p, &ip, &jt);
   if (*ierr > 0) return 0.0;
 
-  double f00(F_[ip - 1][jp - 1]), f01(F_[ip - 1][jp]);
-  double f10(F_[ip][jp - 1]), f11(F_[ip][jp]);
+  double f00, f01, f10, f11, g00, g11;
+  f00 = g00 = F_[ip - 1][jt - 1];
+  f01 = F_[ip - 1][jt];
+  f10 = F_[ip][jt - 1];
+  f11 = g11 = F_[ip][jt];
 
-  n = map_[ip - 1][jp - 1];
-  if (n >= 0) { f00 = satFl_[n][0]; m++; }
+  n = map_[ip - 1][jt - 1];
+  if (n >= 0) {
+    f00 = satFl_[n][0];
+    g00 = satFg_[n][0];
+    m++;
+  }
 
-  n = map_[ip - 1][jp];
-  if (n >= 0) { f01 = satFl_[n][0]; m++; }
+  n = map_[ip - 1][jt];
+  if (n >= 0) {
+    f01 = satFg_[n][0];
+    m++;
+  }
 
-  n = map_[ip][jp - 1];
-  if (n >= 0) { f10 = satFl_[n][0]; m++; }
+  n = map_[ip][jt - 1];
+  if (n >= 0) {
+    f10 = satFl_[n][0];
+    m++;
+  }
 
-  n = map_[ip][jp];
-  if (n >= 0) { f11 = satFl_[n][0]; m++; }
+  n = map_[ip][jt];
+  if (n >= 0) {
+    f11 = satFl_[n][0];
+    g11 = satFg_[n][0];
+    m++;
+  }
 
   // bilinear and linear interpolations
-  double a, b, dp, dT, D, val;
+  double a, b, dp, dT, val;
   if (m < 2) {
     a = (axisP_[ip] - p) / (axisP_[ip] - axisP_[ip - 1]);
-    b = (axisT_[jp] - T) / (axisT_[jp] - axisT_[jp - 1]);
+    b = (axisT_[jt] - T) / (axisT_[jt] - axisT_[jt - 1]);
 
     val = (1.0 - a) * ((1.0 - b) * f11 + b * f10) + a * ((1.0 - b) * f01 + b * f00);
   } else if (m == 2) {
     dp = axisP_[ip] - axisP_[ip - 1];
-    dT = axisT_[jp] - axisT_[jp - 1];
-    D = dp * dT;
+    dT = axisT_[jt] - axisT_[jt - 1];
 
-    a = dT * (p - axisP_[ip - 1]) / D;
-    b = dp * (T - axisT_[jp - 1]) / D;
+    a = (p - axisP_[ip - 1]) / dp;
+    b = (T - axisT_[jt - 1]) / dT;
 
-    val = a * f00 + b * f11 + (1.0 - a - b) * f10;
+    if (a + b <= 1.0) {
+      val = a * f11 + b * f00 + (1.0 - a - b) * f10;
+    } else {
+      val = (1.0 - a) * g00 + (1.0 - b) * g11 + (a + b - 1.0) * f01;
+    }
   } else {
     AMANZI_ASSERT(false);
     val = 0.0;
   }
   return val;
+}
+
+
+/* ******************************************************************
+* Function evaluation
+****************************************************************** */
+int LookupTable_FEHM::Location(double T, double p, int* ierr)
+{
+  int ip, jt, m(0);
+  *ierr = FindBox_(T, p, &ip, &jt);
+  if (*ierr > 0) return EOS_TABLE_UNKNOWN;
+
+  if (map_[ip - 1][jt - 1] >= 0) m++;
+  if (map_[ip][jt] >= 0) m++;
+  if (m < 2) return map_[ip - 1][jt - 1];
+
+  double dp, dT, a, b, tol;
+  dp = axisP_[ip] - axisP_[ip - 1];
+  dT = axisT_[jt] - axisT_[jt - 1];
+
+  a = (p - axisP_[ip - 1]) / dp;
+  b = (T - axisT_[jt - 1]) / dT;
+  tol = b - a;
+
+  if (tol > EOS_TABLE_TOL) return EOS_TABLE_GAS;
+  else if (tol < -EOS_TABLE_TOL) return EOS_TABLE_LIQUID;
+
+  return EOS_TABLE_SATURATION_CURVE;
 }
 
 
@@ -257,24 +302,24 @@ LookupTable_FEHM::ComputeDownwardMap_(int nP, int nT, int nS)
   map_.resize(nP);
   for (int i = 0; i < nP; ++i) {
     map_[i].resize(nT);
-    for (int j = 0; j < nT; ++j) map_[i][j] = -1;
+    for (int j = 0; j < nT; ++j) map_[i][j] = EOS_TABLE_UNKNOWN;
   }
 
   int i0, j0;
   double p, T;
   for (int n = 0; n < nS; ++n) {
-    p = (scaleP_ * satP_[n] + shiftP_) * 1.0e+6;
-    T = scaleT_ * satT_[n] + shiftT_ + 273.15;
+    p = scaleP_ * satP_[n] + shiftP_;
+    T = scaleT_ * satT_[n] + shiftT_;
 
     i0 = j0 = -1;
     for (int i = 0; i < nT; ++i) {
-      if (std::fabs(T - axisT_[i]) / scaleT_ < EOS_TABULAR_TOL) {
+      if (std::fabs(T - axisT_[i]) / scaleT_ < EOS_TABLE_TOL) {
         i0 = i;
         break;
       }
     }
     for (int i = 0; i < nP; ++i) {
-      if (std::fabs(p - axisP_[i]) / scaleP_ < EOS_TABULAR_TOL) {
+      if (std::fabs(p - axisP_[i]) / scaleP_ < EOS_TABLE_TOL) {
         j0 = i;
         break;
       }
@@ -282,6 +327,18 @@ LookupTable_FEHM::ComputeDownwardMap_(int nP, int nT, int nS)
     if (i0 < 0 || j0 < 0) AMANZI_ASSERT(false);
 
     map_[j0][i0] = n;
+  }
+
+  // mark gases
+  int phase = EOS_TABLE_LIQUID;
+  for (int i = 0; i < nP; ++i) {
+    for (int j = 0; j < nT; ++j) {
+      if (map_[i][j] == EOS_TABLE_UNKNOWN) {
+        map_[i][j] = phase;
+      } else if (map_[i][j] >= 0) {
+        phase = EOS_TABLE_GAS;
+      }
+    }
   }
 }
 

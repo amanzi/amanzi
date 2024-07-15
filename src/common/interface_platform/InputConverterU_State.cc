@@ -72,7 +72,7 @@ InputConverterU::TranslateState_()
   gravity[dim_ - 1] = -const_gravity_;
   out_ic.sublist("gravity").set<Teuchos::Array<double>>("value", gravity);
 
-  double viscosity(0.0);
+  double viscosity(0.0), molar_rho(55508.0);
   rho_ = 1000.0;
   if (phases_[LIQUID].active) {
     // --- constant viscosities
@@ -80,10 +80,14 @@ InputConverterU::TranslateState_()
     viscosity = GetTextContentD_(node, "Pa*s");
     out_ic.sublist("const_fluid_viscosity").set<double>("value", viscosity);
 
-    // --- constant density
+    // --- constant densities
     node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag, true);
     rho_ = GetTextContentD_(node, "kg/m^3");
     out_ic.sublist("const_fluid_density").set<double>("value", rho_);
+
+    node = GetUniqueElementByTagsString_("phases, liquid_phase, molar_mass", flag, true);
+    molar_rho = GetTextContentD_(node);
+    out_ic.sublist("const_fluid_molar_mass").set<double>("value", molar_rho);
 
     // --- constant compressibility
     node = GetUniqueElementByTagsString_("phases, liquid_phase, compressibility", flag, false);
@@ -327,7 +331,6 @@ InputConverterU::TranslateState_()
       // -- fracture compliance
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, compliance", flag);
       if (flag) {
-        compliance_ = true;
         TranslateFieldEvaluator_(node,
                                  "fracture-compliance",
                                  "m*Pa^-1",
@@ -342,11 +345,20 @@ InputConverterU::TranslateState_()
       // -- aperture
       node = GetUniqueElementByTagsString_(inode, "aperture", flag);
       if (flag) {
-        std::string key = (compliance_) ? "fracture-ref_aperture" : "fracture-aperture";
+        std::string model = GetAttributeValueS_(node, "model", TYPE_NONE, false, "");
+        std::string key = (model == "linearized") ? "fracture-ref_aperture" : "fracture-aperture";
         TranslateFieldEvaluator_(
           node, key, "m", reg_str, regions, out_ic, out_ev, "value", "fracture");
         if (out_ev.sublist(key).isParameter("variable name"))
           out_ev.sublist(key).set<std::string>("variable name", "fracture-aperture");
+        if (model == "linearized") {
+          out_ev.sublist("fracture-aperture")
+            .set<std::string>("reference aperture key", "fracture-ref_aperture")
+            .set<std::string>("reference pressure key", "fracture-ref_pressure")
+            .set<std::string>("pressure key", "fracture-pressure")
+            .set<std::string>("compliance key", "fracture-compliance")
+            .set<std::string>("evaluator type", "linearized aperture");
+        }
       } else {
         msg << "Element \"aperture\" must be specified for all materials.";
         Exceptions::amanzi_throw(msg);
@@ -960,6 +972,28 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
       .set<double>("heat capacity", cv);
   }
 
+  /*
+  if (eos_model_ != "") {
+    if (phases_[LIQUID].active) {
+      AddSecondaryFieldEvaluator_(out_ev,
+                                  Keys::getKey("domain", "internal_energy_liquid"),
+                                  "internal energy key",
+                                  "eos",
+                                  "internal_energy",
+                                  { {"molar density key", "molar_density_liquid"} });
+    }
+
+    if (phases_[GAS].active) {
+      AddSecondaryFieldEvaluator_(out_ev,
+                                  Keys::getKey("domain", "internal_energy_gas"),
+                                  "internal energy key",
+                                  "eos",
+                                  "internal_energy",
+                                  { {"molar density key", "molar_density_gas"} });
+    }
+  }
+  */
+
   if (domain == "domain") {
     DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("materials"));
     children = node_list->item(0)->getChildNodes();
@@ -1122,7 +1156,7 @@ InputConverterU::TranslateFieldEvaluator_(DOMNode* node,
       .set<std::string>("variable name", field)
       .set<int>("number of dofs", 1)
       .set<bool>("constant in time", temporal);
-  } else if (model == "constant") { // FIXME: some overlap between "constant" and ""
+  } else if (model == "constant" || model == "linearized") { // FIXME: some overlap between "constant" and ""
     double val =
       GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
 
@@ -1371,7 +1405,8 @@ InputConverterU::AddSecondaryFieldEvaluator_(Teuchos::ParameterList& out_ev,
                                              const Key& field,
                                              const Key& key,
                                              const std::string& type,
-                                             const std::string& eos_table_name)
+                                             const std::string& eos_table_name,
+                                             const std::vector<KeyPair>& deps)
 {
   out_ev.sublist(field).set<std::string>("evaluator type", type).set<std::string>(key, field);
 
@@ -1388,6 +1423,11 @@ InputConverterU::AddSecondaryFieldEvaluator_(Teuchos::ParameterList& out_ev,
       .set<std::string>("field name", eos_table_name)
       .set<std::string>("format", "Amanzi");
   }
+
+  // dependencies
+  for (auto dep : deps) {
+    out_ev.sublist(field).set<std::string>(dep.first, dep.second);
+  } 
 
   // extensions
   Key prefix = Keys::split(field, '-').first;

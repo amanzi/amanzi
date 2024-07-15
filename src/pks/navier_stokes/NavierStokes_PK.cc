@@ -44,13 +44,18 @@ NavierStokes_PK::NavierStokes_PK(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   ns_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
-  // We also need iscaleneous sublists
+  // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_solver_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(ns_list_, "time integrator", true);
 
   // domain name
   domain_ = ns_list_->get<std::string>("domain name", "domain");
+
+  pressure_key_ = Keys::getKey(domain_, "pressure");
+  velocity_key_ = Keys::getKey(domain_, "fluid_velocity");
+  AddDefaultPrimaryEvaluator(S_, pressure_key_);
+  AddDefaultPrimaryEvaluator(S_, velocity_key_);
 }
 
 
@@ -74,6 +79,14 @@ NavierStokes_PK::NavierStokes_PK(const Teuchos::RCP<Teuchos::ParameterList>& gli
   linear_solver_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(ns_list_, "time integrator");
 
+  // domain and primary evaluators
+  domain_ = ns_list_->get<std::string>("domain name", "domain");
+
+  pressure_key_ = Keys::getKey(domain_, "pressure");
+  velocity_key_ = Keys::getKey(domain_, "fluid_velocity");
+  AddDefaultPrimaryEvaluator(S_, pressure_key_);
+  AddDefaultPrimaryEvaluator(S_, velocity_key_);
+
   vo_ = Teuchos::null;
 }
 
@@ -91,9 +104,6 @@ NavierStokes_PK::Setup()
   mesh_ = S_->GetMesh();
   dim = mesh_->getSpaceDimension();
 
-  pressure_key_ = Keys::getKey(domain_, "pressure");
-  velocity_key_ = Keys::getKey(domain_, "fluid_velocity");
-
   // primary fields
   // -- pressure
   if (!S_->HasRecord(pressure_key_)) {
@@ -102,10 +112,8 @@ NavierStokes_PK::Setup()
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
-    Teuchos::ParameterList elist(pressure_key_);
-    elist.set<std::string>("evaluator name", pressure_key_);
-    pressure_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S_->SetEvaluator(pressure_key_, Tags::DEFAULT, pressure_eval_);
+    pressure_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+      S_->GetEvaluatorPtr(pressure_key_, Tags::DEFAULT));
   }
 
   // -- velocity
@@ -120,10 +128,8 @@ NavierStokes_PK::Setup()
       ->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
 
-    Teuchos::ParameterList elist(velocity_key_);
-    elist.set<std::string>("evaluator name", velocity_key_);
-    fluid_velocity_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S_->SetEvaluator(velocity_key_, Tags::DEFAULT, fluid_velocity_eval_);
+    fluid_velocity_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+      S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT));
   }
 
   // -- viscosity: if not requested by any PK, we request its constant value.
@@ -199,6 +205,9 @@ NavierStokes_PK::Initialize()
   Teuchos::ParameterList& tmp1 = ns_list_->sublist("operators").sublist("elasticity operator");
   op_matrix_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
   op_preconditioner_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
+
+  op_matrix_elas_->Init(tmp1);
+  op_preconditioner_elas_->Init(tmp1);
 
   // -- create divergence block
   Teuchos::ParameterList& tmp2 = ns_list_->sublist("operators").sublist("divergence operator");

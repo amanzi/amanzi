@@ -86,12 +86,10 @@ Flow_PK::Setup()
   // keys and tags
   Tag tag = Tags::DEFAULT;
 
-  pressure_key_ = Keys::getKey(domain_, "pressure");
   hydraulic_head_key_ = Keys::getKey(domain_, "hydraulic_head");
   darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity");
 
   vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate");
-  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
   permeability_key_ = Keys::getKey(domain_, "permeability");
   permeability_eff_key_ = Keys::getKey(domain_, "permeability_effective");
   aperture_key_ = Keys::getKey(domain_, "aperture");
@@ -110,6 +108,7 @@ Flow_PK::Setup()
 
   // constant fields
   S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
+  S_->Require<double>("const_fluid_molar_mass", Tags::DEFAULT, "state");
   S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
   S_->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT, "state");
 
@@ -323,7 +322,8 @@ Flow_PK::Initialize()
   rho_ = S_->Get<double>("const_fluid_density");
 
   // -- molar rescaling of some quantatities.
-  molar_rho_ = rho_ / CommonDefs::MOLAR_MASS_H2O;
+  molar_mass_ = S_->Get<double>("const_fluid_molar_mass");
+  molar_rho_ = rho_ / molar_mass_;
   flux_units_ = 0.0; // scaling from kg to moles
 
   // parallel execution data
@@ -596,7 +596,7 @@ Flow_PK::ComputeMolarFlowRate_(bool mass_to_molar)
   auto flux = S_->GetPtrW<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT, passwd_);
 
   my_pde(Operators::PDE_DIFFUSION)->UpdateFlux(p.ptr(), flux.ptr());
-  if (mass_to_molar) flux->Scale(1.0 / CommonDefs::MOLAR_MASS_H2O);
+  if (mass_to_molar) flux->Scale(1.0 / molar_mass_);
 
   auto eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
     S_->GetEvaluatorPtr(mol_flowrate_key_, Tags::DEFAULT));

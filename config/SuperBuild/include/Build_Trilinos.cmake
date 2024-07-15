@@ -129,6 +129,12 @@ if (ENABLE_Tpetra)
   message(STATUS "Kokkos Serial enabled")
   list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_SERIAL:BOOL=ON")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=ON")
+
+  # NOTE: this should probably get turned off if anything BUT serial is turned on...
+  if (NOT (ENABLE_CUDA OR ENABLE_OpenMP))
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_ATOMICS_BYPASS=ON")
+  endif()
+
     
 else() 
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Tpetra:BOOL=OFF")
@@ -336,8 +342,12 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     TMP_DIR   ${Trilinos_tmp_dir}                     # Temporary files directory
                     STAMP_DIR ${Trilinos_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
-                    GIT_REPOSITORY ${Trilinos_GIT_REPOSITORY_TEMP}              
-                    GIT_TAG        ${Trilinos_GIT_TAG}      
+                    DOWNLOAD_DIR  ${TPL_DOWNLOAD_DIR}
+                    URL           ${Trilinos_URL}                # URL may be a web site OR a local file
+                    URL_MD5       ${Trilinos_MD5_SUM}            # md5sum of the archive file
+                    DOWNLOAD_NAME ${Trilinos_SAVEAS_FILE}        # file name to store (if not end of URL)
+                    #GIT_REPOSITORY ${Trilinos_GIT_REPOSITORY_TEMP}              
+                    #GIT_TAG        ${Trilinos_GIT_TAG}      
                     # -- Update (one way to skip this step is use null command)
                     UPDATE_COMMAND ""
                     # -- Patch

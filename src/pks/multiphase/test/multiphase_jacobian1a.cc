@@ -166,7 +166,6 @@ TEST(MULTIPHASE_MODEL_I)
       norm_pk(i, j) = Jpk.SubMatrix(ib, ie, jb, je).Norm2();
       norm_diff(i, j) = diff.SubMatrix(ib, ie, jb, je).Norm2();
 
-      // if (i == 0 && j == 0) { std::cout << Jpk.SubMatrix(ib, ie, jb, je) << std::endl; exit(0); }
       if (norm_pk(i, j) > 0.0) {
         rel_diff(i, j) = norm_diff(i, j) / norm_pk(i, j);
         CHECK(rel_diff(i, j) < 1e-2);

@@ -62,6 +62,7 @@ InputConverterU::Translate(int rank, int num_proc)
   ParseModelDescription_();
   ParseFractureNetwork_();
   ParseGlobalNumericalControls_();
+  ParseMisc_();
 
   out_list.set<bool>("Native Unstructured Input", "true");
 
@@ -468,6 +469,22 @@ InputConverterU::ParseGlobalNumericalControls_()
   if (flag) {
     std::string text = GetTextContentS_(node, "on, off");
     gravity_on_ = (text == "on");
+  }
+}
+
+
+/* ******************************************************************
+* Simulation-wide control parameters
+****************************************************************** */
+void
+InputConverterU::ParseMisc_()
+{
+  try {
+    bool flag;
+    GetUniqueElementByTagsString_("process_kernels, pk, multiphase", flag);
+    if (flag) multiphase_ = true;
+  } catch (...) {
+    // do nothing
   }
 }
 

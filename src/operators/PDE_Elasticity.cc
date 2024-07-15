@@ -231,7 +231,7 @@ PDE_Elasticity::ComputeVolumetricStrain(const CompositeVector& u, CompositeVecto
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
 void
-PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
+PDE_Elasticity::Init(Teuchos::ParameterList& plist)
 {
   // generate schema for the mimetic discretization method
   Teuchos::ParameterList& schema_list = plist.sublist("schema");
@@ -258,7 +258,7 @@ PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
       AmanziMesh::Entity_kind kind;
       std::tie(kind, std::ignore, num) = *it;
 
-      std::string name(my_schema.KindToString(kind));
+      std::string name(AmanziMesh::to_string(kind));
       cvs->AddComponent(name, kind, num);
     }
 

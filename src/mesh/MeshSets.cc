@@ -599,6 +599,26 @@ resolveMeshSetLabeledSet(const AmanziGeometry::RegionLabeledSet& region,
   }
   View_type<const Entity_ID, MemSpace_kind::HOST> ents;
   mesh.getMeshFramework()->getSetEntities(region, kind, ptype, ents);
+
+  // if not supported by mesh framework, we extract entities here
+  if (ents.size() == 0 && region.entity_str() == "CELL") {
+    if (kind == AmanziMesh::Entity_kind::FACE) {
+      View_type<const Entity_ID, MemSpace_kind::HOST> cells;
+      mesh.getMeshFramework()->getSetEntities(region, AmanziMesh::Entity_kind::CELL, ptype, cells);
+
+      std::set<Entity_ID> faces;
+      for (Entity_ID c : cells) {
+        auto tmp = mesh.getCellFaces(c);
+        for (const auto& f : tmp) faces.insert(f);
+      }
+
+      MeshCache<MemSpace_kind::HOST>::Entity_ID_View ents2("entities", faces.size());
+      int lcv(0);
+      for (const auto& f : faces) ents2[lcv++] = f;
+      Kokkos::resize(ents2, lcv);
+      return ents2;
+    }
+  }
   return ents;
 }
 

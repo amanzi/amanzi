@@ -61,6 +61,7 @@
 
       <ParameterList name="energy evaluator">
 	<Parameter name="vapor diffusion" type="bool" value="false"/>
+	<Parameter name="liquid molar mass" type="double" value="0.018015"/>
 	<ParameterList name="verbose object">
 	  <Parameter name="verbosity level" type="string" value="high"/>
 	</ParameterList>
@@ -68,6 +69,7 @@
 
       <ParameterList name="enthalpy evaluator">
 	<Parameter name="include work term" type="bool" value="false"/>
+	<Parameter name="liquid molar mass" type="double" value="0.018015"/>
 	<ParameterList name="verbose object">
 	  <Parameter name="verbosity level" type="string" value="high"/>
 	</ParameterList>
@@ -334,6 +336,9 @@
     <ParameterList name="initial conditions">
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1000.0"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="0.001"/>
