@@ -53,9 +53,9 @@ XDMFCellTypeID(AmanziMesh::Cell_kind type)
   case AmanziMesh::Cell_kind::HEX:
     return 9;
   case AmanziMesh::Cell_kind::POLYHED:
-    return 3; // for now same as polygon
+    return 16;
   default:
-    return 3; // unknown, for now same as polygon
+    return -1; // unknown, for now same as polygon
   }
 }
 

@@ -36,7 +36,13 @@ struct PatchSpace {
   int num_vectors;
   int flag_type;
 
-  PatchSpace() : ghosted(false) {}
+  PatchSpace()
+    : ghosted(false),
+      entity_kind(AmanziMesh::Entity_kind::UNKNOWN),
+      num_vectors(-1),
+      flag_type(0)
+  {}
+
   PatchSpace(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_,
              bool ghosted_,
              const std::string& region_,
@@ -50,6 +56,7 @@ struct PatchSpace {
       num_vectors(num_vectors_),
       flag_type(flag_type_)
   {}
+
   PatchSpace(const PatchSpace& other) = default;
   PatchSpace& operator=(const PatchSpace&) = default;
   ~PatchSpace() = default;
@@ -98,9 +105,18 @@ struct MultiPatchSpace {
   bool ghosted;
   int flag_type;
 
-  MultiPatchSpace() : ghosted(false), entity_kind(AmanziMesh::Entity_kind::UNKNOWN) {}
-  MultiPatchSpace(bool ghosted_) : ghosted(ghosted_), entity_kind(AmanziMesh::Entity_kind::UNKNOWN)
+  MultiPatchSpace()
+    : ghosted(false),
+      entity_kind(AmanziMesh::Entity_kind::UNKNOWN),
+      flag_type(0)
   {}
+
+  MultiPatchSpace(bool ghosted_)
+    : ghosted(ghosted_),
+      entity_kind(AmanziMesh::Entity_kind::UNKNOWN),
+      flag_type(0)
+  {}
+
   MultiPatchSpace(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_,
                   bool ghosted_,
                   AmanziMesh::Entity_kind entity_kind_ = AmanziMesh::Entity_kind::UNKNOWN,

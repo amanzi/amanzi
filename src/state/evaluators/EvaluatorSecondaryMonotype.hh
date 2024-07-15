@@ -100,9 +100,6 @@ class EvaluatorSecondaryMonotype : public EvaluatorSecondary {
   // Called in Basics
   virtual void EnsureCompatibility_DepDerivs_(State& S);
 
-  // helper function -- calls EnsureCompatibility on all dependency evaluators
-  virtual void EnsureCompatibility_DepEnsureCompatibility_(State& S);
-
   // NOTE: the following helper functions are only implemented for
   // CompositeVectors.  They deal with the mesh and vector structure, and how
   // those relate between my_keys and dependencies.
@@ -368,18 +365,6 @@ EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility_DepDerivs
       }
     }
   }
-}
-
-
-// ---------------------------------------------------------------------------
-// Helper function that recurses, calling EnsureCompatibility of dependencies.
-// ---------------------------------------------------------------------------
-template <typename Data_t, typename DataFactory_t>
-inline void
-EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility_DepEnsureCompatibility_(
-  State& S)
-{
-  for (auto& dep : dependencies_) { S.GetEvaluator(dep.first, dep.second).EnsureCompatibility(S); }
 }
 
 

@@ -384,6 +384,16 @@ EvaluatorSecondary::EnsureCompatibility_Flags_(State& S)
 }
 
 
+// ---------------------------------------------------------------------------
+// Helper function that recurses, calling EnsureCompatibility of dependencies.
+// ---------------------------------------------------------------------------
+void
+EvaluatorSecondary::EnsureCompatibility_DepEnsureCompatibility_(State& S)
+{
+  for (auto& dep : dependencies_) { S.GetEvaluator(dep.first, dep.second).EnsureCompatibility(S); }
+}
+
+
 std::ostream&
 EvaluatorSecondary::writeInfo(std::ostream& os) const
 {

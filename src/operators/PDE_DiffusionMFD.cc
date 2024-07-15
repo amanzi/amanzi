@@ -777,10 +777,10 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
   // only works on upwinded methods
   if (little_k_type_ == OPERATOR_UPWIND_NONE) return;
 
-  const AmanziMesh::MeshCache& m = mesh_->getCache();
-  DenseMatrix_Vector& A = jac_op_->A;
-
   { // context for views
+    const AmanziMesh::MeshCache& m = mesh_->getCache();
+    DenseMatrix_Vector& A = jac_op_->A;
+
     const auto dkdp_f = dkdp_->viewComponent("face");
     const auto flux_f = flux->viewComponent("face");
     const auto kf = k_->viewComponent("face");
@@ -795,8 +795,8 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
         Aface.putScalar(0.);
 
         // We use the upwind discretization of the generalized flux.
-        double v = fabs(kf(f, 0)) > 0.0 ? flux_f(f, 0) * dkdp_f(f, 0) / kf(f, 0) : 0.0;
-        double vmod = fabs(v);
+        double v = Kokkos::abs(kf(f, 0)) > 0.0 ? flux_f(f, 0) * dkdp_f(f, 0) / kf(f, 0) : 0.0;
+        double vmod = Kokkos::abs(v);
 
         // prototype for future limiters (external or internal ?)
         vmod *= scalar_factor;
@@ -804,7 +804,7 @@ PDE_DiffusionMFD::AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVec
         // define the upwind cell, index i in this case
         int i, dir, c1;
         c1 = cells[0];
-        const AmanziGeometry::Point& normal = m.getFaceNormal(f, c1, &dir);
+        const AmanziGeometry::Point normal = m.getFaceNormal(f, c1, &dir);
         i = (v * dir >= 0.0) ? 0 : 1;
 
         if (ncells == 2) {

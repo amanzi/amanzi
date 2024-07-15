@@ -81,6 +81,9 @@ class EvaluatorSecondary : public Evaluator {
   // some may override this to force checkpointing
   virtual void EnsureCompatibility_Flags_(State& S);
 
+  // helper function -- calls EnsureCompatibility on all dependency evaluators
+  virtual void EnsureCompatibility_DepEnsureCompatibility_(State& S);
+
  protected:
   KeyTagVector my_keys_;
   KeyTagSet dependencies_;
