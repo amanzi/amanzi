@@ -207,7 +207,8 @@ LookupTable_FEHM::Function(double T, double p, int* ierr)
 /* ******************************************************************
 * Function evaluation
 ****************************************************************** */
-int LookupTable_FEHM::Location(double T, double p, int* ierr)
+int
+LookupTable_FEHM::Location(double T, double p, int* ierr)
 {
   int ip, jt, m(0);
   *ierr = FindBox_(T, p, &ip, &jt);
@@ -225,8 +226,10 @@ int LookupTable_FEHM::Location(double T, double p, int* ierr)
   b = (T - axisT_[jt - 1]) / dT;
   tol = b - a;
 
-  if (tol > EOS_TABLE_TOL) return EOS_TABLE_GAS;
-  else if (tol < -EOS_TABLE_TOL) return EOS_TABLE_LIQUID;
+  if (tol > EOS_TABLE_TOL)
+    return EOS_TABLE_GAS;
+  else if (tol < -EOS_TABLE_TOL)
+    return EOS_TABLE_LIQUID;
 
   return EOS_TABLE_SATURATION_CURVE;
 }

@@ -587,7 +587,7 @@ Richards_PK::ModifyCorrection(double dt,
       // std::cout << "pressure change: " << uc[0][c] << " -> " << unew << std::endl;
       duc[0][c] = tmp * damping_factor;
       npre_clipped++;
-    } 
+    }
   }
 
   // clipping grow rate

@@ -41,11 +41,6 @@ class Darcy_PK : public Flow_PK {
            const Teuchos::RCP<State>& S,
            const Teuchos::RCP<TreeVector>& soln);
 
-  Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-           const std::string& pk_list_name,
-           Teuchos::RCP<State> S,
-           const Teuchos::RCP<TreeVector>& soln);
-
   ~Darcy_PK(){};
 
   // methods required for PK interface

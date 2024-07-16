@@ -342,7 +342,9 @@ Multiphase_PK::Setup()
   }
 
   // viscosities
-  S_->FEList().sublist(viscosity_liquid_key_).set<std::string>("pressure key", pressure_liquid_key_);
+  S_->FEList()
+    .sublist(viscosity_liquid_key_)
+    .set<std::string>("pressure key", pressure_liquid_key_);
   S_->FEList().sublist(viscosity_gas_key_).set<std::string>("pressure key", pressure_gas_key_);
 
   if (!S_->HasRecord(viscosity_liquid_key_)) {

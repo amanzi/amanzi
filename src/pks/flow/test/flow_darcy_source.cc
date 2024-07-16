@@ -68,8 +68,9 @@ RunTestDarcySource(const std::string& xmlFileName)
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
+  Teuchos::ParameterList pk_tree("flow");
   auto soln = Teuchos::rcp(new TreeVector());
-  auto DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
+  auto DPK = Teuchos::rcp(new Darcy_PK(pk_tree, plist, S, soln));
   DPK->Setup();
   S->Setup();
   S->InitializeFields();

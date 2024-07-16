@@ -147,9 +147,9 @@ Darcy_PK::ModifyCorrection(double dt,
       if (duc[0][i] < -tmp0) {
         nclipped++;
         duc[0][i] = -tmp0;
-      // } else if (duc[0][i] > tmp1) {
-      //   nclipped++;
-      //   duc[0][i] = tmp1;
+        // } else if (duc[0][i] > tmp1) {
+        //   nclipped++;
+        //   duc[0][i] = tmp1;
       }
     }
   }
@@ -166,9 +166,7 @@ Darcy_PK::ModifyCorrection(double dt,
 * Modify preconditior as needed.
 ****************************************************************** */
 bool
-Darcy_PK::ModifyPredictor(double dt,
-                          Teuchos::RCP<const TreeVector> u0,
-                          Teuchos::RCP<TreeVector> u)
+Darcy_PK::ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u)
 {
   Teuchos::RCP<TreeVector> du = Teuchos::rcp(new TreeVector(*u));
   du->Update(-1.0, *u0, 1.0);

@@ -105,6 +105,8 @@ MechanicsFracturedMatrix_PK::Setup()
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+    S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
   }
 
   if (!S_->HasRecord(ref_aperture_key_)) {
@@ -125,7 +127,7 @@ MechanicsFracturedMatrix_PK::Setup()
     S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
   MechanicsSmallStrain_PK::Setup();
@@ -174,7 +176,7 @@ MechanicsFracturedMatrix_PK::CommitStep(double t_old, double t_new, const Tag& t
   MechanicsSmallStrain_PK::Setup();
 
   // compute aperture as diference of twin face DoFs
-  auto& a_c = *S_->GetW<CV_t>(aperture_key_, Tags::DEFAULT, "").ViewComponent("cell");
+  auto& a_c = *S_->GetW<CV_t>(aperture_key_, Tags::DEFAULT, aperture_key_).ViewComponent("cell");
   const auto& u_f = *S_->Get<CV_t>(displacement_key_).ViewComponent("face", true);
   const auto& fmap = *S_->Get<CV_t>(displacement_key_).ComponentMap("face", true);
 

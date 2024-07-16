@@ -273,6 +273,6 @@ TEST(HARMONIC_AVERAGING_POINT_MANIFOLD)
   nlfv.HarmonicAveragingPoint(f, c1, c2, p, w);
   std::cout << "hap: " << p << " weight=" << w << std::endl;
   v = w * xc1 + (1.0 - w) * xc2;
-  
+
   CHECK_CLOSE(w, 0.172583, 1e-6);
 }

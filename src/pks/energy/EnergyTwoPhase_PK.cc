@@ -100,8 +100,8 @@ EnergyTwoPhase_PK::Setup()
 
     Teuchos::ParameterList elist = ep_list_->sublist("enthalpy evaluator");
     elist.set("enthalpy key", enthalpy_key_)
-         .set<double>("liquid molar mass", molar_mass)
-         .set<std::string>("tag", "");
+      .set<double>("liquid molar mass", molar_mass)
+      .set<std::string>("tag", "");
     elist.setName(enthalpy_key_);
 
     auto enth = Teuchos::rcp(new EnthalpyEvaluator(elist));

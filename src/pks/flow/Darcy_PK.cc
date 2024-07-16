@@ -82,36 +82,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
 
 
 /* ******************************************************************
-* Old constructor for unit tests.
-****************************************************************** */
-Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                   const std::string& pk_list_name,
-                   Teuchos::RCP<State> S,
-                   const Teuchos::RCP<TreeVector>& soln)
-  : Flow_PK(), soln_(soln)
-{
-  S_ = S;
-
-  // We need the flow list
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  fp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
-
-  // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
-  linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
-  ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
-
-  // domain and primary evaluators
-  domain_ = fp_list_->template get<std::string>("domain name", "domain");
-  pressure_key_ = Keys::getKey(domain_, "pressure");
-  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
-
-  AddDefaultPrimaryEvaluator(S_, pressure_key_);
-  AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_);
-}
-
-
-/* ******************************************************************
 * Define structure of this PK.
 ****************************************************************** */
 void
