@@ -372,8 +372,7 @@ EnergyMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
                                              Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
-  int ok = op_tree_pc_->ApplyInverse(*X, *Y);
-  return ok;
+  return op_tree_pc_->ApplyInverse(*X, *Y);
 }
 
 } // namespace Amanzi

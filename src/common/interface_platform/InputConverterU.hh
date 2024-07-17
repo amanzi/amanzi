@@ -362,7 +362,7 @@ class InputConverterU : public InputConverter {
   std::string flow_model_; // global value
   bool flow_single_phase_; // runtime value
   bool compressibility_, linearized_aperture_;
-  double rho_, beta_;
+  double rho_, molar_mass_, beta_;
 
   // global mesh data
   bool mesh_rectangular_;

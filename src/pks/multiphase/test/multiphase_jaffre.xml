@@ -580,7 +580,8 @@
         <Parameter name="pressure key" type="string" value="pressure_gas"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="ideal gas"/>
-          <Parameter name="molar mass of gas" type="double" value="2.0e-3"/>
+          <Parameter name="molar mass" type="double" value="2.0e-3"/>
+          <Parameter name="density" type="double" value="1.0"/>
         </ParameterList>
         <!--ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>

@@ -602,9 +602,6 @@ Richards_PK::ModifyCorrection(double dt,
         if (dpc[0][i] < -tmp0) {
           npre_clipped++;
           dpc[0][i] = -tmp0;
-        } else if (dpc[0][i] > tmp0) {
-          npre_clipped++;
-          dpc[0][i] = tmp0;
         }
       }
     }

@@ -72,7 +72,7 @@ InputConverterU::TranslateState_()
   gravity[dim_ - 1] = -const_gravity_;
   out_ic.sublist("gravity").set<Teuchos::Array<double>>("value", gravity);
 
-  double viscosity(0.0), molar_rho(55508.0);
+  double viscosity(0.0);
   rho_ = 1000.0;
   if (phases_[LIQUID].active) {
     // --- constant viscosities
@@ -86,8 +86,8 @@ InputConverterU::TranslateState_()
     out_ic.sublist("const_fluid_density").set<double>("value", rho_);
 
     node = GetUniqueElementByTagsString_("phases, liquid_phase, molar_mass", flag, true);
-    molar_rho = GetTextContentD_(node);
-    out_ic.sublist("const_fluid_molar_mass").set<double>("value", molar_rho);
+    molar_mass_ = GetTextContentD_(node);
+    out_ic.sublist("const_fluid_molar_mass").set<double>("value", molar_mass_);
 
     // --- constant compressibility
     node = GetUniqueElementByTagsString_("phases, liquid_phase, compressibility", flag, false);
@@ -1413,7 +1413,9 @@ InputConverterU::AddSecondaryFieldEvaluator_(Teuchos::ParameterList& out_ev,
 
   out_ev.sublist(field)
     .sublist("EOS parameters")
-    .set<std::string>("eos type", "liquid water " + eos_model_);
+    .set<std::string>("eos type", "liquid water " + eos_model_)
+    .set<double>("molar mass", molar_mass_)
+    .set<double>("density", rho_);
 
   // modifies
   if (eos_lookup_table_ != "") {
@@ -1422,7 +1424,8 @@ InputConverterU::AddSecondaryFieldEvaluator_(Teuchos::ParameterList& out_ev,
       .set<std::string>("eos type", "lookup table")
       .set<std::string>("table name", eos_lookup_table_)
       .set<std::string>("field name", eos_table_name)
-      .set<std::string>("format", "Amanzi");
+      .set<double>("molar mass", molar_mass_)
+      .set<double>("density", rho_);
   }
 
   // dependencies

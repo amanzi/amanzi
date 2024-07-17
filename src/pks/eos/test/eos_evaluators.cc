@@ -36,6 +36,8 @@ TEST(DensityEOS)
   using namespace Amanzi::AmanziEOS;
 
   Teuchos::ParameterList plist;
+  plist.set<double>("molar mass", 18.0153e-03)
+       .set<double>("density", 997.0);
   H2O_Density eos(plist);
 
   double p(101325.0), T0(273.15), d0, d1;
@@ -84,6 +86,8 @@ TEST(ViscosityEOS)
   using namespace Amanzi::AmanziEOS;
 
   Teuchos::ParameterList plist;
+  plist.set<double>("molar mass", 18.0153e-03)
+       .set<double>("density", 997.0);
   H2O_ViscosityFEHM eos(plist);
 
   double p(101325.0), T0(273.15), nu0, nu1;
@@ -182,8 +186,8 @@ TEST(TabularEOS_FEHM)
     Teuchos::ParameterList plist;
     plist.set<std::string>("table name", "test/air.eos")
       .set<std::string>("field name", fields[loop])
-      .set<double>("molar weight", 0.02896)
-      .set<std::string>("format", "FEHM");
+      .set<double>("molar mass", 0.02896)
+      .set<std::string>("format", "FEHM"); // not used
 
     LookupTable_FEHM eos(plist);
 
@@ -225,7 +229,8 @@ TEST(FactoryEOS)
     plist.set<std::string>("table name", "test/h2o.eos")
       .set<std::string>("field name", "density")
       .set<std::string>("eos type", name)
-      .set<std::string>("format", "Amanzi");
+      .set<double>("molar mass", 18.0153e-03)
+      .set<double>("density", 997.0);
 
     EOSFactory<EOS_Density> factory;
     auto eos = factory.Create(plist);
@@ -264,7 +269,8 @@ TEST(Exceptions)
     plist.set<std::string>("table name", "test/h2o.eos")
       .set<std::string>("field name", "density")
       .set<std::string>("eos type", name)
-      .set<std::string>("format", "Amanzi");
+      .set<double>("molar mass", 0.02896)
+      .set<double>("density", 997.0);
 
     // density
     {

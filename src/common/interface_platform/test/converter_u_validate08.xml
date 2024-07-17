@@ -611,6 +611,8 @@
         <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water FEHM"/>
+          <Parameter name="molar mass" type="double" value="1.80149999999999998e-02"/>
+          <Parameter name="density" type="double" value="9.98200000000000045e+02"/>
         </ParameterList>
       </ParameterList>
 
@@ -638,7 +640,8 @@
         <Parameter name="pressure key" type="string" value="pressure_gas"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="ideal gas"/>
-          <Parameter name="molar mass of gas" type="double" value="2.89646999999999995e-02"/>
+          <Parameter name="molar mass" type="double" value="2.89646999999999995e-02"/>
+          <Parameter name="density" type="double" value="1.0"/>
         </ParameterList>
       </ParameterList>
 
@@ -647,6 +650,8 @@
         <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water FEHM"/>
+          <Parameter name="molar mass" type="double" value="1.80149999999999998e-02"/>
+          <Parameter name="density" type="double" value="9.98200000000000045e+02"/>
         </ParameterList>
         <Parameter name="eos basis" type="string" value="both"/>
         <Parameter name="mass density key" type="string" value="mass_density_liquid"/>

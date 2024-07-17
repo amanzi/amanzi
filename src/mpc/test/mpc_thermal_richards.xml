@@ -187,6 +187,8 @@
         <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
+          <Parameter name="molar mass" type="double" value="0.018015"/>
+          <Parameter name="density" type="double" value="998.2"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="internal_energy_liquid">
@@ -230,9 +232,10 @@
         <Parameter name="molar density key" type="string" value="molar_density_gas"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="vapor in gas"/>
-          <ParameterList name="gas EOS parameters">
+          <ParameterList name="EOS parameters">
             <Parameter name="eos type" type="string" value="ideal gas"/>
-            <Parameter name="molar mass of gas" type="double" value="28.9647e-03"/>  <!-- dry air -->
+            <Parameter name="molar mass" type="double" value="28.9647e-03"/>  <!-- dry air -->
+            <Parameter name="density" type="double" value="1.0"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>

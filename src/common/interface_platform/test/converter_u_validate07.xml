@@ -193,9 +193,10 @@
         <Parameter name="molar density key" type="string" value="fracture-molar_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="lookup table"/>
-          <Parameter name="format" type="string" value="Amanzi"/>
           <Parameter name="table name" type="string" value="h2o.eos"/>
           <Parameter name="field name" type="string" value="density"/>
+          <Parameter name="molar mass" type="double" value="1.8015e-02"/>
+          <Parameter name="density" type="double" value="998.2"/>
         </ParameterList>
         <Parameter name="eos basis" type="string" value="both"/>
         <Parameter name="mass density key" type="string" value="fracture-mass_density_liquid"/>
@@ -205,9 +206,10 @@
         <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="lookup table"/>
-          <Parameter name="format" type="string" value="Amanzi"/>
           <Parameter name="table name" type="string" value="h2o.eos"/>
           <Parameter name="field name" type="string" value="density"/>
+          <Parameter name="molar mass" type="double" value="1.8015e-02"/>
+          <Parameter name="density" type="double" value="998.2"/>
         </ParameterList>
         <Parameter name="eos basis" type="string" value="both"/>
         <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
@@ -218,9 +220,10 @@
         <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="lookup table"/>
-          <Parameter name="format" type="string" value="Amanzi"/>
           <Parameter name="table name" type="string" value="h2o.eos"/>
           <Parameter name="field name" type="string" value="viscosity"/>
+          <Parameter name="molar mass" type="double" value="1.8015e-02"/>
+          <Parameter name="density" type="double" value="998.2"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-viscosity_liquid">
@@ -228,9 +231,10 @@
         <Parameter name="viscosity key" type="string" value="fracture-viscosity_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="lookup table"/>
-          <Parameter name="format" type="string" value="Amanzi"/>
           <Parameter name="table name" type="string" value="h2o.eos"/>
           <Parameter name="field name" type="string" value="viscosity"/>
+          <Parameter name="molar mass" type="double" value="1.8015e-02"/>
+          <Parameter name="density" type="double" value="998.2"/>
         </ParameterList>
       </ParameterList>
 

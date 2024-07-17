@@ -33,7 +33,17 @@ H2O_ThermalConductivity::H2O_ThermalConductivity(Teuchos::ParameterList& plist)
     kref_(0.6065),
     Tref_(298.15)
 {
-  InitializeFromPlist_();
+  kref_ = plist_.get<double>("thermal conductivity of liquid", kref_);
+  Tref_ = plist_.get<double>("reference temperature", Tref_);
+
+  if (plist_.isParameter("polynomial expansion")) {
+    Teuchos::Array<double> kai = plist_.get<Teuchos::Array<double>>("polynomial expansion");
+    AMANZI_ASSERT(kai.size() == 3);
+
+    ka0_ = kai[0];
+    ka1_ = kai[1];
+    ka2_ = kai[2];
+  }
 
   ka0_ *= kref_;
   ka1_ *= kref_;
@@ -71,26 +81,6 @@ H2O_ThermalConductivity::DThermalConductivityDT(double T, double p)
   double dkdT = (ka1_ + 2 * ka2_ * Ts) / Tref_;
 
   return dkdT;
-}
-
-
-/* *******************************************************************
-* Here we can override some parameters.
-******************************************************************* */
-void
-H2O_ThermalConductivity::InitializeFromPlist_()
-{
-  kref_ = plist_.get<double>("thermal conductivity of liquid", kref_);
-  Tref_ = plist_.get<double>("reference temperature", Tref_);
-
-  if (plist_.isParameter("polynomial expansion")) {
-    Teuchos::Array<double> kai = plist_.get<Teuchos::Array<double>>("polynomial expansion");
-    AMANZI_ASSERT(kai.size() == 3);
-
-    ka0_ = kai[0];
-    ka1_ = kai[1];
-    ka2_ = kai[2];
-  }
 }
 
 } // namespace AmanziEOS

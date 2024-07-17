@@ -143,13 +143,9 @@ Darcy_PK::ModifyCorrection(double dt,
     int ncomp = u->Data()->size(*comp, false);
     for (int i = 0; i < ncomp; ++i) {
       double tmp0 = uc[0][i] / 2;
-      // double tmp1 = std::min(tmp0, uc[0][i] - atm_pressure_ * 0.99);
       if (duc[0][i] < -tmp0) {
         nclipped++;
         duc[0][i] = -tmp0;
-        // } else if (duc[0][i] > tmp1) {
-        //   nclipped++;
-        //   duc[0][i] = tmp1;
       }
     }
   }

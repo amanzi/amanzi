@@ -38,8 +38,6 @@ class IdealGas_Density : public EOS_Density {
   virtual double DDensityDp(double T, double p) { return DMolarDensityDp(T, p) * M_; }
 
  protected:
-  virtual void InitializeFromPlist_();
-
   double R_;
 
  private:
