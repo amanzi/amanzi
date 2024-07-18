@@ -1111,7 +1111,7 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
             .set<std::string>("iem type", "lookup table")
             .set<std::string>("table name", eos_lookup_table_)
             .set<std::string>("field name", "internal_energy")
-            .set<std::string>("format", "Amanzi");
+            .set<double>("molar mass", molar_mass_);
         }
       }
     }

@@ -74,7 +74,7 @@ FlowEnergy_PK::Setup()
 
   pressure_key_ = Keys::getKey(domain_, "pressure");
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
-  wc_key_ = Keys::getKey(domain_, "water_storage");
+  ws_key_ = Keys::getKey(domain_, "water_storage");
 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
@@ -126,8 +126,15 @@ FlowEnergy_PK::Setup()
     glist_->sublist("PKs").sublist(pks[1]).sublist("physical models and assumptions");
   energy.set<bool>("vapor diffusion", vapor_diff);
 
-  // process other PKs.
+  // process other PKs
   PK_MPCStrong<PK_BDF>::Setup();
+
+  // extend state structure
+  S_->RequireDerivative<CV_t, CVS_t>(
+    energy_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, energy_key_).SetGhosted();
+
+  S_->RequireDerivative<CV_t, CVS_t>(
+    ws_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, ws_key_).SetGhosted();
 }
 
 
@@ -137,6 +144,8 @@ FlowEnergy_PK::Setup()
 void
 FlowEnergy_PK::Initialize()
 {
+  include_pt_coupling_ = my_list_->sublist("time integrator").get<bool>("include coupling terms", false);
+
   Amanzi::PK_MPCStrong<PK_BDF>::Initialize();
 
   // MPC_PKs that build on top of this may need a tree operator. Since
@@ -161,6 +170,21 @@ FlowEnergy_PK::Initialize()
   op_tree_rhs_ = Teuchos::rcp(new TreeVector());
   op_tree_rhs_->PushBack(CreateTVwithOneLeaf(op0->rhs()));
   op_tree_rhs_->PushBack(CreateTVwithOneLeaf(op1->rhs()));
+
+  // full preconditioner
+  if (include_pt_coupling_) {
+    op10_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
+    op_tree_pc_->set_operator_block(1, 0, op10_acc_->global_operator());
+
+    op01_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
+    op_tree_pc_->set_operator_block(0, 1, op01_acc_->global_operator());
+
+    std::string pc_name = Teuchos::sublist(my_list_, "time integrator", true)->get<std::string>("preconditioner");
+    auto& pc_list = Teuchos::sublist(glist_, "preconditioners", true)->sublist(pc_name);
+    op_tree_pc_->set_inverse_parameters(pc_list);
+
+    op_tree_pc_->SymbolicAssembleMatrix();
+  }
 
   // output of initialization statistics
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -188,7 +212,7 @@ FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // save a copy of conservative fields
   std::vector<std::string> fields(
     { pressure_key_, temperature_key_, sat_liquid_key_, energy_key_ });
-  if (S_->HasRecord(wc_key_)) fields.push_back(wc_key_);
+  if (S_->HasRecord(ws_key_)) fields.push_back(ws_key_);
 
   StateArchive archive(S_, vo_);
   archive.Add(fields, Tags::DEFAULT);
@@ -234,5 +258,52 @@ FlowEnergy_PK::FunctionalResidual(double t_old,
   auto f1 = f->SubVector(1);
   sub_pks_[1]->FunctionalResidual(t_old, t_new, u_old1, u_new1, f1);
 }
+
+
+/* *******************************************************************
+* Preconditioner update
+******************************************************************* */
+void
+FlowEnergy_PK::UpdatePreconditioner(double t,
+                                    Teuchos::RCP<const TreeVector> up,
+                                    double dt)
+{
+  PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
+
+  if (include_pt_coupling_) {
+    std::string passwd("");
+    S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd, pressure_key_, Tags::DEFAULT);
+    const auto& dEdP = S_->GetDerivative<CV_t>(energy_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
+
+    S_->GetEvaluator(ws_key_).UpdateDerivative(*S_, passwd, temperature_key_, Tags::DEFAULT);
+    const auto& dws_dT = S_->GetDerivative<CV_t>(ws_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
+
+    if (dt > 0.0) {
+      op10_acc_->AddAccumulationDelta(*up->SubVector(0)->Data(), dEdP, dEdP, dt, "cell");
+      op01_acc_->AddAccumulationDelta(*up->SubVector(1)->Data(), dws_dT, dws_dT, dt, "cell");
+    }
+
+    op_tree_pc_->AssembleMatrix();
+    op_tree_pc_->InitializeInverse();
+    op_tree_pc_->ComputeInverse();
+  }
+}
+
+
+/* *******************************************************************
+* Selection of default or full preconditioner
+******************************************************************* */
+int
+FlowEnergy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
+                                   Teuchos::RCP<TreeVector> Y)
+{
+  if (include_pt_coupling_) {
+    Y->PutScalar(0.0);
+    return op_tree_pc_->ApplyInverse(*X, *Y);
+  } else {
+    return PK_MPCStrong<PK_BDF>::ApplyPreconditioner(X, Y);
+  }
+}
+
 
 } // namespace Amanzi

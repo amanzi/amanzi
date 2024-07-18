@@ -138,7 +138,7 @@
               <Parameter name="heat capacity" type="double" value="7.60999999999999943e+01"/>
               <Parameter name="table name" type="string" value="h2o.eos"/>
               <Parameter name="field name" type="string" value="internal_energy"/>
-              <Parameter name="format" type="string" value="Amanzi"/>
+              <Parameter name="molar mass" type="double" value="1.8015e-02"/>
             </ParameterList>
           </ParameterList>
           <ParameterList name="BottomRegion">
@@ -148,7 +148,7 @@
               <Parameter name="heat capacity" type="double" value="7.62000000000000028e+01"/>
               <Parameter name="table name" type="string" value="h2o.eos"/>
               <Parameter name="field name" type="string" value="internal_energy"/>
-              <Parameter name="format" type="string" value="Amanzi"/>
+              <Parameter name="molar mass" type="double" value="1.8015e-02"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
