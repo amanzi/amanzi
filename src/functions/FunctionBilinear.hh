@@ -104,11 +104,6 @@ class FunctionBilinearFunctor {
     int nx = x_.extent(0);
     int ny = y_.extent(0);
     double xv = in_(xi_, i);
-
-    if (!(yi_ >= 0 && yi_ < in_.extent(0))) {
-      std::cout << "yi = " << yi_ << ", in dim = " << in_.extent(0) << std::endl;
-      assert(false);
-    }
     double yv = in_(yi_, i);
 
     // if xv and yv are out of bounds
