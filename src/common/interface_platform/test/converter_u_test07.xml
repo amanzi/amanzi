@@ -44,9 +44,7 @@
 
   <phases>
     <liquid_phase name="water">
-      <eos>h2o.eos</eos>
-      <viscosity>1.002E-03</viscosity>
-      <density>998.2</density>
+      <eos model="tabular" filename="h2o.eos" format="Amanzi"/>
       <molar_mass>0.018015</molar_mass>
       <dissolved_components>
         <solutes>

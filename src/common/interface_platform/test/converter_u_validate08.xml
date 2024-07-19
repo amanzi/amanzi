@@ -386,14 +386,8 @@
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.80664999999999942}"/>
       </ParameterList>
-      <ParameterList name="const_fluid_density">
-        <Parameter name="value" type="double" value="998.2"/>
-      </ParameterList>
       <ParameterList name="const_fluid_molar_mass">
         <Parameter name="value" type="double" value="0.018015"/>
-      </ParameterList>
-      <ParameterList name="const_fluid_viscosity">
-        <Parameter name="value" type="double" value="1.0e-3"/>
       </ParameterList>
       <ParameterList name="const_gas_viscosity">
         <Parameter name="value" type="double" value="9.0e-6"/>
