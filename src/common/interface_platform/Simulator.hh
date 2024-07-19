@@ -38,6 +38,8 @@ class Simulator {
   virtual Amanzi::Simulator::ReturnType
   Run(const Comm_ptr_type& mpi_comm, Amanzi::ObservationData& output_observations) = 0;
 
+  virtual void Summarize() = 0;
+
  private:
   // Disallowed operations.
   Simulator(const Simulator&);
