@@ -94,7 +94,6 @@ FunctionBilinearAndTime::apply(
   int interval;
   double s;
   auto t_view = Kokkos::create_mirror_view_and_copy(Amanzi::DefaultHostMemorySpace(), Kokkos::subview(in, 0, 0));
-  std::cout << "LOADING FUNCTIONBILINEARANDTIME INTERVAL AT TIME = " << t_view() << std::endl;
   std::tie(interval, s) = ComputeAndLoadInterval_(t_view());
 
   if (interval == -1) {
@@ -137,7 +136,6 @@ FunctionBilinearAndTime::ComputeAndLoadInterval_(double time) const
     // seconds
     interval++;
   }
-  std::cout << "LOADING FUNCTIONBILINEARANDTIME INTERVAL AT INTERVAL = " << interval << std::endl;
 
   if (interval != current_interval_) {
     if ((current_interval_ == -2) || (interval != current_interval_ + 1)) {
