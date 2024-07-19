@@ -174,6 +174,8 @@ class FunctionTabularFunctor {
   KOKKOS_INLINE_FUNCTION
   double operator()(const int i) const
   {
+    assert(xi_ >= 0 && xi_ < in_.extent(0));
+    assert(i >= 0 && i < in_.extent(1));
     double xv = in_(xi_, i);
     int nx = x_.extent(0);
 

@@ -94,7 +94,7 @@ FunctionStandardMath::apply(const Kokkos::View<const double**>& in,
     auto ids_loc = *ids;
     Kokkos::parallel_for(
       "FunctionStandardMath::apply1", ids_loc.extent(0), KOKKOS_LAMBDA(const int& i) {
-        out(ids_loc(i)) = f(ids_loc(i));
+        out(ids_loc(i)) = f(i);
       });
   } else {
     Kokkos::parallel_for(

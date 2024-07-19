@@ -53,13 +53,11 @@ class FunctionExprTK : public Function {
              const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const override
   {
     // NOTE ExprTK cannot be used on device!
-    assert(in.extent(1) == out.extent(0));
-
     Kokkos::View<double**, Kokkos::HostSpace> in_host(
       "ExpTK work space in", in.extent(0), in.extent(1));
     Kokkos::deep_copy(in_host, in);
     Kokkos::View<double*, Kokkos::HostSpace> out_host("ExpTK work space out", in.extent(1));
-    for (int i = 0; i != out.extent(0); ++i) {
+    for (int i = 0; i != out_host.extent(0); ++i) {
       out_host(i) = operator()(Kokkos::subview(in_host, Kokkos::ALL, Kokkos::pair{i,i+1}));
     }
 

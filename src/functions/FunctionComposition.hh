@@ -70,10 +70,12 @@ class FunctionComposition : public Function {
              Kokkos::View<double*>& out,
              const Kokkos::MeshView<const int*, Amanzi::DefaultMemorySpace>* ids) const
   {
-    f2_->apply(in, out, ids);
+    Kokkos::View<double*> out_2("out2", in.extent(1));
+    f2_->apply(in, out_2);
 
-    Kokkos::View<double**> in_1("in", 1, in.extent(1));
-    Kokkos::deep_copy(Kokkos::subview(in_1, 0, Kokkos::ALL), out);
+    Kokkos::View<double**> in_1("in1", in.extent(0), in.extent(1));
+    Kokkos::deep_copy(in_1, in);
+    Kokkos::deep_copy(Kokkos::subview(in_1, 0, Kokkos::ALL), out_2);
     f1_->apply(in_1, out, ids);
   }
 
