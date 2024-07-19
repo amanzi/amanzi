@@ -46,7 +46,7 @@ dflt_install_prefix=`pwd`
 amanzi_build_dir="${dflt_build_prefix}/build/amanzi"
 amanzi_install_prefix="${dflt_install_prefix}/install/amanzi"
 
-# Git 
+# Git
 git_binary=`which git`
 
 # CURL
@@ -142,6 +142,9 @@ amanzi_physics=${TRUE}
 ats_physics=${FALSE}
 clm=${FALSE}
 
+# -- ats components
+elm_ats_api=${FALSE}
+
 # -- mesh frameworks
 #    stk framewotk was deprecated and removed
 mesh_mstk=$TRUE
@@ -196,7 +199,7 @@ function status_message()
     echo "[`date`] $1"
   else
     echo -e "[`date`]\033[$GREEN $1\033[m"
-  fi  
+  fi
 }
 
 function error_message()
@@ -204,8 +207,8 @@ function error_message()
   local RED='31m'
   if [ "${no_color}" -eq "${TRUE}" ]; then
     echo "Amanzi Bootstrap ERROR: $1" 1>&2
-  else  
-    echo -e "Amanzi Bootstrap ERROR:\033[$RED $1\033[m" 1>&2 
+  else
+    echo -e "Amanzi Bootstrap ERROR:\033[$RED $1\033[m" 1>&2
   fi
 }
 
@@ -214,7 +217,7 @@ function warning_message()
   local PINK='35m'
   if [ "${no_color}" -eq "${TRUE}" ]; then
     echo "Amanzi Bootstrap Warning: $1" 1>&2
-  else  
+  else
     echo -e "Amanzi Bootstrap Warning:\033[$PINK $1\033[m" 1>&2
   fi
 }
@@ -325,11 +328,11 @@ Options: [defaults in brackets after descriptions]
 Configuration:
 
   --help                  print this message
-  
+
   --parallel=n            build in parallel, where n is
                           number of maximum make jobs ['"${parallel_jobs}"']
 
-  --no-color              deactivate color-coded status output ['"${no_color}"']                        
+  --no-color              deactivate color-coded status output ['"${no_color}"']
 
   --tpl-config-file=FILE  define a CMake TPL configuration file. If this
                           option is selected, '"$0"' will NOT build the TPLs.
@@ -349,12 +352,14 @@ Configuration:
   --branch_ats=BRANCH     build ATS found in BRANCH ['"${ats_branch}"']
   --branch_ats_tests=BRAN build ATS found in BRANCH ['"${ats_tests_branch}"']
   --ats_dev               prevent cloning remote repository when building ATS ['"${ats_devs}"']
-  
+
+  --elm_ats_api           build ELM-ATS API feature
+
   --spacedim=DIM          dimension of structured build (DIM=2 or 3) ['"${spacedim}"']
 
   --dry_run               show the configuration commands (but do not execute them) ['"${dry_run}"']
 
-  --arch                  define the architecture for the build (Summit|NERSC|Chicoma) 
+  --arch                  define the architecture for the build (Summit|NERSC|Chicoma)
 
 
 Build features:
@@ -386,10 +391,10 @@ Value in brackets indicates default setting.
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi or ATS Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
-  external_downloads      allow TPL tar balls or git repos to be downloaded directly from 
+  external_downloads      allow TPL tar balls or git repos to be downloaded directly from
                           external sites ['"${external_downloads}"']
   Spack                   build TPLs using the Spack package manager when appropriate ['"${Spack}"']
-  xsdk                    build TPLs available in xSDK first, then supplement with additional 
+  xsdk                    build TPLs available in xSDK first, then supplement with additional
                           individual TPL builds ['"${xsdk}"']
 
   epetra                  build Amanzi using the Epetra stack of TPLs ['"${epetra}"']
@@ -403,6 +408,8 @@ Value in brackets indicates default setting.
 
   build_amanzi            build TPLs and Amanzi ['"${build_amanzi}"']
   build_user_guide        build TPLs, Amanzi, and UserGuide ['"${build_user_guide}"']
+
+  elm_ats_api             build ATS interface for ELM
 
 
 Tool definitions:
@@ -437,7 +444,7 @@ Bootstrap builds community supported TPLs, however, some TPLs have vendor or com
 and are provided on the system.  Some of these libraries may be in nonstandard locations.
 
   --with-blas=DIR                Search for the BLAS libraries only in DIR
-                                 [default is blank so CMake searches in system directories] 
+                                 [default is blank so CMake searches in system directories]
 
   --blas-vendor=VENDOR           Specify the vendor (usually the system name) for the BLAS and LAPACK libraries
                                  [default All] is implicit in findBLAS.cmake and will search all supported names.
@@ -445,12 +452,12 @@ and are provided on the system.  Some of these libraries may be in nonstandard l
                                  VENDOR names include, Generic, OpenBLAS, CRAYSCI, Apple, FLAME, and NAS.
 
   --with-lapack=DIR              Search for the LAPACK libraries only in DIR
-                                 [default is blank so CMake searches in system directories] 
+                                 [default is blank so CMake searches in system directories]
 
   --debug_find_blas              Turn on additional CMake messages to help resolve system configuration
                                  problems that cause the automatic search mechanism to fail [default: '"${debug_find_blas}"']
 
-Directories and file names: 
+Directories and file names:
 
   --prefix=PREFIX                install ALL files in tree rooted at PREFIX
                                  ['"${dflt_install_prefix}"']
@@ -463,7 +470,7 @@ Directories and file names:
 
   --tpl-install-prefix=DIR       install Amanzi TPLs in tree rooted at DIR
                                  ['"${tpl_install_prefix}"']
-  
+
   --tpl-build-dir=DIR            build Amanzi TPLs in DIR
                                  ['"${tpl_build_dir}"']
 
@@ -473,7 +480,7 @@ Directories and file names:
   --tools-install-prefix=DIR     install Amanzi tools in tree rooted at DIR
                                  ['"${tools_install_prefix}"']. The list of tools includes
                                  currently OpenMPI and MPICH.
-  
+
   --tools-build-dir=DIR          build Amanzi tools in DIR
                                  ['"${tools_build_dir}"']
 
@@ -488,21 +495,21 @@ Example with pre-existing MPI installation that builds dynamic libraries
 and executables for external packages (TPLs) and then for Amanzi:
 
   ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-0.96.3-clang-9.0.0-ompi-3.1.4
-                 --with-mpi=/opt/local 
-                 --parallel=8 
+                 --with-mpi=/opt/local
+                 --parallel=8
                  --enable-shared
-                 --enable-alquimia --enable-pflotran --enable-crunchtope 
+                 --enable-alquimia --enable-pflotran --enable-crunchtope
                  --enable-petsc
 
-Example that builds first OpenMPI, then TPLs, and finally Amanzi. It uses 
+Example that builds first OpenMPI, then TPLs, and finally Amanzi. It uses
 OSX C and C++ compilers and Fortran compiler from MacPorts:
 
   ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-0.96.3-clang-9.0.0-ompi-3.1.4
                  --with-c-compiler=/usr/bin/clang
                  --with-cxx-compiler=/usr/bin/clang++
                  --with-fort-compiler=/opt/local/bin/gfortran-mp-6
-                 --parallel=8 
-                 --enable-alquimia --enable-pflotran --enable-crunchtope 
+                 --parallel=8
+                 --enable-alquimia --enable-pflotran --enable-crunchtope
                  --enable-petsc
                  --tools-mpi=openmpi
 
@@ -515,7 +522,7 @@ turns on debugging to find BLAS and LAPACK libraries, builds the TPLs
                  --with-blas=/usr/local/lib
                  --with-lapack=/usr/local/lib
                  --debug_find_blas
-                 --parallel=8 
+                 --parallel=8
                  --enable-geochemistry
 
 Example that builds a set of TPLs that can support main-branch
@@ -568,7 +575,7 @@ Build configuration:
     debug_find_blas     = '"${debug_find_blas}"'
     amanzi_arch         = '"${amanzi_arch}"'
 
-Amanzi Components:   
+Amanzi Components:
     structured     = '"${structured}"'
     spacedim       = '"${spacedim}"'
     unstructured   = '"${unstructured}"'
@@ -576,6 +583,9 @@ Amanzi Components:
     ats_physics    = '"${ats_physics}"'
     clm            = '"${clm}"'
     geochemistry   = '"${geochemistry}"'
+
+ATS Components:
+    elm_ats_api    = '"${elm_ats_api}"'
 
 Amanzi TPLs:
     alquimia     = '"${alquimia}"'
@@ -618,9 +628,9 @@ Directories:
     tools_install_prefix  = '"${tools_install_prefix}"'
     tools_build_dir       = '"${tools_build_dir}"'
     tools_download_dir    = '"${tpl_download_dir}"'
-    
-'    
-}  
+
+'
+}
 
 function parse_argv()
 {
@@ -653,7 +663,7 @@ List of INPUT parameters
       --parallel=[0-9]*)
                  parallel_jobs=`parse_option_with_equal "${opt}" 'parallel'`
                  ;;
-      
+
       --opt)
                  build_type=Release
                  ;;
@@ -716,6 +726,10 @@ List of INPUT parameters
 
       --ats_dev)
                  ats_dev=${TRUE}
+                 ;;
+
+      --elm_ats_api)
+                 elm_ats_api=${TRUE}
                  ;;
 
       --spacedim=*)
@@ -786,7 +800,7 @@ List of INPUT parameters
                  tmp=`parse_option_with_equal "${opt}" 'with-python'`
                  python_exec=$tmp
                  ;;
-      
+
       --with-xsdk=*)
                  tmp=`parse_option_with_equal "${opt}" 'with-xsdk'`
                  xsdk_root_dir=`make_fullpath $tmp`
@@ -832,7 +846,7 @@ List of INPUT parameters
                  tmp=`parse_option_with_equal "${opt}" 'tpl-download-dir'`
                  tpl_download_dir=`make_fullpath $tmp`
                  ;;
-      
+
       --tpl-config-file=*)
                  tmp=`parse_option_with_equal "${opt}" 'tpl-config-file'`
                  tpl_config_file=`make_fullpath $tmp`
@@ -856,7 +870,7 @@ List of INPUT parameters
                  tmp=`parse_option_with_equal "${opt}" 'tools-download-dir'`
                  tools_download_dir=`make_fullpath $tmp`
                  ;;
-      
+
       --tools-mpi=*)
                  tools_mpi=`parse_option_with_equal "${opt}" 'tools-mpi'`
                  ;;
@@ -880,7 +894,7 @@ List of INPUT parameters
   else
       disable_external_downloads=${TRUE}
   fi
-  
+
 # ---------------------------------------------------------------------------- #
 # Enforce implicit TPL dependencies
 # ---------------------------------------------------------------------------- #
@@ -905,7 +919,7 @@ List of INPUT parameters
           warning_message "Disabling 'superlu' as it is not used when disabling 'epetra' and 'hypre'"
           superlu=${FALSE}
       fi
-      
+
       if [ "${tpetra}" -eq "${FALSE}" ]; then
         error_message "One of 'epetra' or 'tpetra' must be enabled"
         exit_now 30
@@ -991,14 +1005,14 @@ List of INPUT parameters
   else
       debug_find_blas_tmp=-DTPL_DEBUG_FIND_BLAS:BOOL=${FALSE}
   fi
-  
+
   # LAPACK
   if [ ! -z "${lapack_dir}" ]; then
       lapack_opts=-DTPL_LAPACK_DIR:FILEPATH=${lapack_dir}
   fi
 
   blas_lapack_opts="${blas_opts} ${blas_vendor_opts} ${debug_find_blas_tmp} ${lapack_opts}"
-  
+
   # deprecated options
   if [ "${tpls_only}" ]; then
     error_message "Option 'tpls_only' has been deprecated"
@@ -1033,7 +1047,7 @@ curl_test_protocol()
   else
     echo ${FALSE}
   fi
-}  
+}
 
 
 # ---------------------------------------------------------------------------- #
@@ -1075,7 +1089,7 @@ function unpack_cmake
   mkdir_now ${final_source_dir}
   cd ${final_source_dir}
 
-  # Untar the archive file removing the leading path component  
+  # Untar the archive file removing the leading path component
   tar -z -x -f ${archive} --strip-components 1
 
   if [ $? -ne 0 ]; then
@@ -1155,7 +1169,7 @@ function build_cmake
   # Configure (bootstrap) CMake
   configure_cmake ${cmake_source_dir} ${cmake_build_dir} ${root_install_dir}
 
-  # Build CMake 
+  # Build CMake
   cd ${cmake_build_dir}
   make -j ${parallel_jobs}
   if [ $? -ne 0 ]; then
@@ -1163,7 +1177,7 @@ function build_cmake
     exit_now 30
   fi
 
-  # Install CMake 
+  # Install CMake
   make install
   if [ $? -ne 0 ]; then
     error_message "Failed to install CMake"
@@ -1322,7 +1336,7 @@ function check_Spack
       fi
       cd ${tpl_install_prefix}
       git clone https://github.com/LLNL/spack.git
-      
+
 
       if [ ${xsdk} == ${TRUE} ]; then
         cd ${tpl_install_prefix}/spack/bin
@@ -1351,7 +1365,7 @@ function check_Spack
 function define_c_compiler
 {
   if [ -z "${build_c_compiler}" ]; then
- 
+
     status_message "Searching for a C compiler"
 
     # build a list to search
@@ -1359,8 +1373,8 @@ function define_c_compiler
     if [ -n "${mpi_root_dir}" ]; then
       c_search_list="${mpi_root_dir}/bin/mpicc"
     fi
-    
-    if [ -n "${CC}" ]; then 
+
+    if [ -n "${CC}" ]; then
       c_search_list="${c_search_list} ${CC}"
     fi
 
@@ -1388,7 +1402,7 @@ function define_c_compiler
 function define_cxx_compiler
 {
   if [ -z "${build_cxx_compiler}" ]; then
- 
+
     status_message "Searching for a C++ compiler"
 
     # build a list to search
@@ -1397,8 +1411,8 @@ function define_cxx_compiler
       cxx_search_list="${mpi_root_dir}/bin/mpiCC"
       cxx_search_list="${mpi_root_dir}/bin/mpicxx ${cxx_search_list}"
     fi
-    
-    if [ -n "${CXX}" ]; then 
+
+    if [ -n "${CXX}" ]; then
       cxx_search_list="${cxx_search_list} ${CXX}"
     fi
 
@@ -1426,7 +1440,7 @@ function define_cxx_compiler
 function define_fort_compiler
 {
    if [ -z "${build_fort_compiler}" ]; then
- 
+
     status_message "Searching for a Fortran compiler"
 
     # build a list to search
@@ -1434,8 +1448,8 @@ function define_fort_compiler
     if [ -n "${mpi_root_dir}" ]; then
       fort_search_list="${mpi_root_dir}/bin/mpif90"
     fi
-    
-    if [ -n "${FC}" ]; then 
+
+    if [ -n "${FC}" ]; then
       fort_search_list="${fort_search_list} ${FC}"
     fi
 
@@ -1483,7 +1497,7 @@ version_compare()
   A=(${1//./ })
   B=(${2//./ })
   i=0
-  while (( i < ${#A[@]} )) && (( i < ${#B[@]})); 
+  while (( i < ${#A[@]} )) && (( i < ${#B[@]}));
   do
     version_compare_element "${A[i]}" "${B[i]}"
     result=$?
@@ -1508,7 +1522,7 @@ function check_tools
   fi
   status_message "Git binary: ${git_binary}"
 
-  # Check CURL 
+  # Check CURL
   if [ ! -e "${curl_binary}" ]; then
     error_message "CURL binary does not exist"
     exit_now 10
@@ -1516,13 +1530,13 @@ function check_tools
   status_message "CURL binary: ${curl_binary}"
 
   # Check CMake and CTest
-  if [ -z "${cmake_binary}" ]; then 
+  if [ -z "${cmake_binary}" ]; then
     status_message "CMake not defined. Will build"
-    build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir} 
+    build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir}
   fi
   if [ ! -e "${cmake_binary}" ]; then
     error_message "CMake binary does not exist. Will build."
-    build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir} 
+    build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir}
   else
     # CMake binary does exist, not check the version number
     ver_string=`${cmake_binary} --version | sed 's/cmake version[ ]*//'`
@@ -1531,7 +1545,7 @@ function check_tools
     result=$?
     if [ ${result} -eq 2 ]; then
       status_message "CMake version is less than required version. Will build CMake version ≥ ${cmake_version}"
-      build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir} 
+      build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir}
     fi
   fi
   if [ ! -e "${ctest_binary}" ]; then
@@ -1592,7 +1606,7 @@ function define_install_directories
 
   status_message "Amanzi installation: ${amanzi_install_prefix}"
   status_message "TPL installation: ${tpl_install_prefix}"
-}    
+}
 
 # ---------------------------------------------------------------------------- #
 # Arch-specific functions
@@ -1605,15 +1619,15 @@ function define_nersc_options
     prefer_static=$TRUE
     exec_static=$TRUE
     prg_env="gnu"
-    
+
     libsci_file=${tpl_build_src_dir}/include/trilinos-blas-libsci-${prg_env}.cmake
     arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
                    -DMPI_EXEC:STRING=srun \
                    -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
                    -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
-                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}" 
+                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}"
 #                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
-  
+
    arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
                      -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
 
@@ -1622,7 +1636,7 @@ function define_nersc_options
     prefer_static=$FALSE
     exec_static=$FALSE
     prg_env="gnu"
-    
+
     libsci_file=${tpl_build_src_dir}/include/trilinos-blas-libsci-${prg_env}.cmake
     arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
                    -DMPI_EXEC:STRING=srun \
@@ -1630,7 +1644,7 @@ function define_nersc_options
                    -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
                    -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}"
 #                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
-  
+
     arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
                       -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
 
@@ -1652,13 +1666,13 @@ function define_chicoma_options
     prefer_static=$TRUE
     exec_static=$TRUE
     prg_env="gnu"
-    
+
     arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
                    -DMPI_EXEC:STRING=srun \
                    -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
                    -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
-                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}" 
-  
+                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}"
+
    arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
                      -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
 
@@ -1667,13 +1681,13 @@ function define_chicoma_options
     prefer_static=$FALSE
     exec_static=$FALSE
     prg_env="gnu"
-    
+
     arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
                    -DMPI_EXEC:STRING=srun \
                    -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
                    -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
                    -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}"
-  
+
     arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
                       -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
 
@@ -1694,7 +1708,7 @@ function define_summit_options
   elif [ "${openmp}" -eq "${TRUE}" ]; then
     mpi_exec_args="-a 1 -c 7" # 7 cpus per mpi rank, max 6 ranks
   fi
-  
+
   arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
                  -DMPI_EXEC:STRING=jsrun \
                  -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
@@ -1706,11 +1720,11 @@ function define_summit_options
   echo "Setting ARCH for: Summit"
   echo "ARCH TPL OPTS = " ${arch_tpl_opts}
   echo "ARCH AMANZI OPTS = " ${arch_amanzi_opts}
-}    
+}
 
 
 # ---------------------------------------------------------------------------- #
-#  Main 
+#  Main
 # ---------------------------------------------------------------------------- #
 
 # Parse the command line arguments
@@ -1721,7 +1735,7 @@ print_variable_values
 # Define the TPL build source directory
 tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
 
-# Define the install directories 
+# Define the install directories
 define_install_directories
 
 # Create the build directories
@@ -1744,7 +1758,7 @@ elif [ "${amanzi_arch}" != "" ]; then
   error_message "ARCH ${amanzi_arch} not supported -- valid are Summit, NERSC, and Chicoma"
   exit_now 10
 fi
-    
+
 
 
 
@@ -1786,13 +1800,13 @@ if [ ! -n "${mpi_root_dir}" ]; then
     exit_now 30
   fi
   status_message "Tools configure complete"
- 
+
   # Tools parameters
   # OpenMPI 3.x requires more slots to run Amanzi tests
   if [ "${tools_mpi}" = "openmpi" ]; then
     mpi_exec_args+="--oversubscribe"
-  fi 
-  
+  fi
+
   # Tools install
   cd ${tools_build_dir}
   make install
@@ -1800,7 +1814,7 @@ if [ ! -n "${mpi_root_dir}" ]; then
     error_message "Failed to install configure script"
     exit_now 30
   fi
-      
+
   tools_config_file=${tools_install_prefix}/share/cmake/amanzi-tools-config.cmake
   mpi_root_dir=${tools_install_prefix}
   build_c_compiler=${tools_install_prefix}/bin/mpicc
@@ -1808,15 +1822,15 @@ if [ ! -n "${mpi_root_dir}" ]; then
   build_fort_compiler=${tools_install_prefix}/bin/mpif90
 
  cd ${pwd_save}
-      
+
   status_message "Tools build complete: new MPI root=${mpi_root_dir}"
   status_message "  new MPI root=${mpi_root_dir}"
   status_message "  new C compiler=${build_c_compiler}"
   status_message "For future Amanzi builds use ${tools_config_file}"
 fi
-  
 
-# Check the MPI root value 
+
+# Check the MPI root value
 check_mpi_root
 
 # Define the compilers
@@ -1838,7 +1852,7 @@ if [ -z "${tpl_config_file}" ]; then
   fi
 
   # Are we using xSDK?  If so, make sure Spack in enabled
-  if [ "${xsdk}" -eq "${TRUE}" ]; then 
+  if [ "${xsdk}" -eq "${TRUE}" ]; then
     status_message "Building with xSDK"
 
     if [ "${Spack}" -eq "${FALSE}" ]; then
@@ -1851,8 +1865,8 @@ if [ -z "${tpl_config_file}" ]; then
   if [ "${build_amanzi}" -eq "${FALSE}" ]; then
     status_message "Only building TPLs, stopping before building Amanzi itself"
   fi
- 
- 
+
+
   # Configure the TPL build
   cmd_configure="${cmake_binary} \
       -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
@@ -1899,7 +1913,7 @@ if [ -z "${tpl_config_file}" ]; then
 
   # TPL build will create this configuration file
   tpl_config_file=${tpl_install_prefix}/share/cmake/amanzi-tpl-config.cmake
-  
+
   # Echo or execute configure command
   if [ ${dry_run} == "${TRUE}" ] ; then
     status_message "TPL configure command: \n"
@@ -1917,15 +1931,15 @@ if [ -z "${tpl_config_file}" ]; then
 
   if [ ${dry_run} == "${FALSE}" ]; then
     status_message "TPL configure complete"
-  
-    # TPL make 
+
+    # TPL make
     cd ${tpl_build_dir}
     make -j ${parallel_jobs}
     if [ $? -ne 0 ]; then
       error_message "Failed to build TPLs"
       exit_now 30
     fi
-  
+
     # TPL Install
     cd ${tpl_build_dir}
     make install
@@ -1933,17 +1947,17 @@ if [ -z "${tpl_config_file}" ]; then
       error_message "Failed to install configure script"
       exit_now 30
     fi
-      
+
     cd ${pwd_save}
-      
+
     status_message "TPL build complete"
     status_message "For future Amanzi builds use ${tpl_config_file}"
 
   else
     status_message "To execute this TPL build remove the --dry_run option."
   fi
-  
-else 
+
+else
   status_message "Checking configuration file ${tpl_config_file}"
 
   if [ ! -e "${tpl_config_file}" ]; then
@@ -2016,6 +2030,7 @@ cmd_configure="${cmake_binary} \
     -DENABLE_OpenMP:BOOL=${openmp} \
     -DENABLE_AmanziPhysicsModule:BOOL=${amanzi_physics} \
     -DENABLE_ATSPhysicsModule:BOOL=${ats_physics} \
+    -DBUILD_ATS_ELM_API:BOOL=${elm_ats_api} \
     -DENABLE_DBC:BOOL=${dbc} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
