@@ -173,7 +173,6 @@ OutputXDMF::writeMesh_(int cycle)
     for (int c = 0; c != cell_map->getLocalNumElements(); ++c) {
       AmanziMesh::Cell_kind ctype = vis_mesh.getCellKind(c);
       if (ctype == AmanziMesh::Cell_kind::POLYHED) {
-        std::cout << "Writing conn of type POLYHEDRON" << std::endl;
         auto faces = vis_mesh.getCellFaces(c);
         connv(lcv++, 0) = XDMFCellTypeID(ctype);
         connv(lcv++, 0) = faces.size();
@@ -189,7 +188,6 @@ OutputXDMF::writeMesh_(int cycle)
         }
 
       } else if (ctype == AmanziMesh::Cell_kind::POLYGON) {
-        std::cout << "Writing conn of type POLYGON" << std::endl;
         // store cell type id
         connv(lcv++, 0) = XDMFCellTypeID(ctype);
 
