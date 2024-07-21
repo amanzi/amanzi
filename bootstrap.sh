@@ -140,10 +140,10 @@ unstructured=$TRUE
 geochemistry=$TRUE
 amanzi_physics=${TRUE}
 ats_physics=${FALSE}
-clm=${FALSE}
 
 # -- ats components
 elm_ats_api=${FALSE}
+clm=${FALSE}
 
 # -- mesh frameworks
 #    stk framewotk was deprecated and removed
@@ -385,6 +385,7 @@ Value in brackets indicates default setting.
   amanzi_physics          build Amanzi native physics package ['"${amanzi_physics}"']
   ats_physics             build ATS physics package (currently mutually exclusive) ['"${ats_physics}"']
   clm                     build CLM library for surface processes (currently only ATS) ['"${clm}"']
+  elm_ats_api             build ATS interface for ELM
 
   dbc                     design-by-contract.  Extra (potentially time-consuming) error-checking
                           intended for developers ['"${dbc}"']
@@ -409,7 +410,7 @@ Value in brackets indicates default setting.
   build_amanzi            build TPLs and Amanzi ['"${build_amanzi}"']
   build_user_guide        build TPLs, Amanzi, and UserGuide ['"${build_user_guide}"']
 
-  elm_ats_api             build ATS interface for ELM
+
 
 
 Tool definitions:
@@ -581,11 +582,11 @@ Amanzi Components:
     unstructured   = '"${unstructured}"'
     amanzi_physics = '"${amanzi_physics}"'
     ats_physics    = '"${ats_physics}"'
-    clm            = '"${clm}"'
     geochemistry   = '"${geochemistry}"'
 
 ATS Components:
     elm_ats_api    = '"${elm_ats_api}"'
+    clm            = '"${clm}"'
 
 Amanzi TPLs:
     alquimia     = '"${alquimia}"'
@@ -726,10 +727,6 @@ List of INPUT parameters
 
       --ats_dev)
                  ats_dev=${TRUE}
-                 ;;
-
-      --elm_ats_api)
-                 elm_ats_api=${TRUE}
                  ;;
 
       --spacedim=*)
@@ -1895,6 +1892,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
       -DENABLE_Silo:BOOL=${silo} \
       -DENABLE_CLM:BOOL=${clm} \
+      -DENABLE_ELM_ATS_API:BOOL=${elm_ats_api} \
       -DENABLE_SPACK:BOOL=${Spack} \
       -DENABLE_Epetra:BOOL=${epetra} \
       -DENABLE_Tpetra:BOOL=${tpetra} \
@@ -2023,6 +2021,7 @@ cmd_configure="${cmake_binary} \
     -DENABLE_PFLOTRAN:BOOL=${pflotran} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
     -DENABLE_CLM:BOOL=${clm} \
+    -DENABLE_ELM_ATS_API:BOOL=${elm_ats_api} \
     -DENABLE_Silo:BOOL=${silo} \
     -DENABLE_Epetra:BOOL=${epetra} \
     -DENABLE_Tpetra:BOOL=${tpetra} \
