@@ -2029,7 +2029,6 @@ cmd_configure="${cmake_binary} \
     -DENABLE_OpenMP:BOOL=${openmp} \
     -DENABLE_AmanziPhysicsModule:BOOL=${amanzi_physics} \
     -DENABLE_ATSPhysicsModule:BOOL=${ats_physics} \
-    -DBUILD_ATS_ELM_API:BOOL=${elm_ats_api} \
     -DENABLE_DBC:BOOL=${dbc} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
