@@ -46,8 +46,7 @@
 
   <phases>
     <liquid_phase name="water">
-      <viscosity>1.002E-03</viscosity>
-      <density>998.2</density>
+      <eos model="ideal gas" ref_viscosity="1.716e-5" ref_temperature="273.0" sutherland_constant="111.0"/>
       <molar_mass>0.018015</molar_mass>
       <dissolved_components>
         <primaries>

@@ -70,8 +70,9 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA)
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
+  Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Richards_PK* RPK = new Richards_PK(plist, "flow", S, soln);
+  Richards_PK* RPK = new Richards_PK(pk_tree, plist, S, soln);
 
   RPK->Setup();
   S->Setup();

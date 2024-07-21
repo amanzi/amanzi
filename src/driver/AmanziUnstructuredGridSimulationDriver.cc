@@ -300,8 +300,10 @@ AmanziUnstructuredGridSimulationDriver::InitMesh(
     throw std::exception();
   }
 
-  Teuchos::OSTab tab = mesh_vo->getOSTab();
-  *mesh_vo->os() << "CPU time stamp: " << mesh_vo->clock() << std::endl;
+  if (mesh_vo.get() && mesh_vo->os_OK(Teuchos::VERB_LOW)) {
+    Teuchos::OSTab tab = mesh_vo->getOSTab();
+    *mesh_vo->os() << "CPU time stamp: " << mesh_vo->clock() << std::endl;
+  }
   AMANZI_ASSERT(!mesh.is_null());
 
   // Verify mesh and geometric model compatibility

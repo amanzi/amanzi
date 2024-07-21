@@ -53,16 +53,21 @@ InputConverterU::TranslateState_()
   char* tagname;
   char* text_content;
 
-  // --- eos lookup table
+  // --- EOS and supporting parameters
   bool flag;
-  DOMNode* node = GetUniqueElementByTagsString_("phases, liquid_phase, eos", flag);
+  DOMNode* node = GetUniqueElementByTagsString_("phases, liquid_phase, eos", flag, true);
   if (flag) {
-    eos_model_ = GetTextContentS_(node, "", false);
-    if (eos_model_ == "false" || eos_model_ == "False") {
+    eos_model_ = GetAttributeValueS_(node, "model", TYPE_NONE);
+    if (eos_model_ == "constant") {
       eos_model_.clear();
-    } else if (eos_model_ != "FEHM" && eos_model_ != "0-30C") {
-      eos_lookup_table_ = eos_model_;
-      eos_model_ = "tabular";
+    } else if (eos_model_ == "tabular") {
+      eos_lookup_table_ = GetAttributeValueS_(node, "filename");
+    } else if (eos_model_ == "ideal gas") {
+      ref_mu_ = GetAttributeValueD_(node, "ref_viscosity", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa*s");
+      ref_temp_ = GetAttributeValueD_(node, "ref_temperature", TYPE_NUMERICAL, 0.0, DVAL_MAX, "K");
+      ref_sutherland_ = GetAttributeValueD_(node, "sutherland_constant", TYPE_NUMERICAL, 0.0, DVAL_MAX, "K");
+    } else {
+      eos_model_ = "liquid water " + eos_model_;
     }
   }
 
@@ -72,29 +77,31 @@ InputConverterU::TranslateState_()
   gravity[dim_ - 1] = -const_gravity_;
   out_ic.sublist("gravity").set<Teuchos::Array<double>>("value", gravity);
 
-  double viscosity(0.0), molar_rho(55508.0);
-  rho_ = 1000.0;
+  double viscosity(1.002e-03);
+  rho_ = 9.982e+02;
   if (phases_[LIQUID].active) {
-    // --- constant viscosities
-    node = GetUniqueElementByTagsString_("phases, liquid_phase, viscosity", flag, true);
-    viscosity = GetTextContentD_(node, "Pa*s");
-    out_ic.sublist("const_fluid_viscosity").set<double>("value", viscosity);
+    node = GetUniqueElementByTagsString_("phases, liquid_phase, eos", flag, true);
 
-    // --- constant densities
-    node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag, true);
-    rho_ = GetTextContentD_(node, "kg/m^3");
-    out_ic.sublist("const_fluid_density").set<double>("value", rho_);
+    if (eos_model_ == "") {
+      // --- constant viscosities
+      viscosity = GetAttributeValueD_(node, "viscosity", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa*s");
+      out_ic.sublist("const_fluid_viscosity").set<double>("value", viscosity);
 
-    node = GetUniqueElementByTagsString_("phases, liquid_phase, molar_mass", flag, true);
-    molar_rho = GetTextContentD_(node);
-    out_ic.sublist("const_fluid_molar_mass").set<double>("value", molar_rho);
+      // --- constant densities
+      rho_ = GetAttributeValueD_(node, "density", TYPE_NUMERICAL, 0.0, DVAL_MAX, "kg/m^3");
+      out_ic.sublist("const_fluid_density").set<double>("value", rho_);
+    }
 
     // --- constant compressibility
-    node = GetUniqueElementByTagsString_("phases, liquid_phase, compressibility", flag, false);
-    if (flag) {
+    xercesc::DOMElement* element = static_cast<xercesc::DOMElement*>(node);
+    if (HasAttribute_(element, "compressibility")) {
       beta_ = GetTextContentD_(node, "Pa^-1");
       out_ic.sublist("const_fluid_compressibility").set<double>("value", beta_);
     }
+
+    node = GetUniqueElementByTagsString_("phases, liquid_phase, molar_mass", flag, true);
+    molar_mass_ = GetTextContentD_(node);
+    out_ic.sublist("const_fluid_molar_mass").set<double>("value", molar_mass_);
   }
 
   if (eos_model_ == "") {
@@ -1111,7 +1118,7 @@ InputConverterU::TranslateCommonContinuumFields_(const std::string& domain,
             .set<std::string>("iem type", "lookup table")
             .set<std::string>("table name", eos_lookup_table_)
             .set<std::string>("field name", "internal_energy")
-            .set<std::string>("format", "Amanzi");
+            .set<double>("molar mass", molar_mass_);
         }
       }
     }
@@ -1156,7 +1163,8 @@ InputConverterU::TranslateFieldEvaluator_(DOMNode* node,
       .set<std::string>("variable name", field)
       .set<int>("number of dofs", 1)
       .set<bool>("constant in time", temporal);
-  } else if (model == "constant" || model == "linearized") { // FIXME: some overlap between "constant" and ""
+  } else if (model == "constant" ||
+             model == "linearized") { // FIXME: some overlap between "constant" and ""
     double val =
       GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
 
@@ -1412,22 +1420,31 @@ InputConverterU::AddSecondaryFieldEvaluator_(Teuchos::ParameterList& out_ev,
 
   out_ev.sublist(field)
     .sublist("EOS parameters")
-    .set<std::string>("eos type", "liquid water " + eos_model_);
+    .set<std::string>("eos type", eos_model_)
+    .set<double>("molar mass", molar_mass_)
+    .set<double>("density", rho_);
 
   // modifies
+  if (eos_model_ == "ideal gas") {
+    out_ev.sublist(field)
+      .sublist("EOS parameters")
+      .set<double>("reference viscosity", ref_mu_)
+      .set<double>("reference temperature", ref_temp_)
+      .set<double>("Sutherland constant", ref_sutherland_);
+  }
+
   if (eos_lookup_table_ != "") {
     out_ev.sublist(field)
       .sublist("EOS parameters")
       .set<std::string>("eos type", "lookup table")
       .set<std::string>("table name", eos_lookup_table_)
       .set<std::string>("field name", eos_table_name)
-      .set<std::string>("format", "Amanzi");
+      .set<double>("molar mass", molar_mass_)
+      .set<double>("density", rho_);
   }
 
   // dependencies
-  for (auto dep : deps) {
-    out_ev.sublist(field).set<std::string>(dep.first, dep.second);
-  } 
+  for (auto dep : deps) { out_ev.sublist(field).set<std::string>(dep.first, dep.second); }
 
   // extensions
   Key prefix = Keys::split(field, '-').first;

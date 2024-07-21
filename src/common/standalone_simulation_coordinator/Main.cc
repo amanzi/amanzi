@@ -15,7 +15,6 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
-#include "Teuchos_TimeMonitor.hpp"
 
 #include "ErrorHandler.hpp"
 #include "SimulatorFactory.hh"
@@ -29,7 +28,8 @@
 #include "AmanziComm.hh"
 
 #ifdef ENABLE_Unstructured
-#  include "state_evaluators_registration.hh"
+#include "state_evaluators_registration.hh"
+#include "AmanziUnstructuredGridSimulationDriver.hh"
 #endif
 
 #include "tpl_versions.h"
@@ -253,7 +253,7 @@ main(int argc, char* argv[])
     auto comm = Amanzi::getDefaultComm();
     Amanzi::ObservationData observations_data;
     Amanzi::Simulator::ReturnType ret = simulator->Run(comm, observations_data);
-    Teuchos::TimeMonitor::summarize();
+    simulator->Summarize();
 
     if (ret == Amanzi::Simulator::FAIL) {
       amanzi_throw(Errors::Message("The amanzi simulator returned an error code, this is most "

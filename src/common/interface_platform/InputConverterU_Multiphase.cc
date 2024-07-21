@@ -182,7 +182,8 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
     .set<std::string>("pressure key", pressure_gas_key);
   tmp.sublist("EOS parameters")
     .set<std::string>("eos type", "ideal gas")
-    .set<double>("molar mass of gas", 28.9647e-03); // dry air (not used ?)
+    .set<double>("molar mass", 28.9647e-03) // dry air (not used ?)
+    .set<double>("density", 1.0); // not used ? 
 
   fev.sublist(mol_density_liquid_key).set<std::string>("pressure key", pressure_liquid_key);
 

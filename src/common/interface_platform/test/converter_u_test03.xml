@@ -49,8 +49,7 @@
 
   <phases>
     <liquid_phase name="water">
-      <viscosity>1.002E-03</viscosity>
-      <density>998.2</density>
+      <eos model="constant" viscosity="1.002E-03" density="998.2"/>
       <molar_mass>0.018015</molar_mass>
       <dissolved_components>
         <solutes>

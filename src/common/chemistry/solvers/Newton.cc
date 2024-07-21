@@ -12,6 +12,7 @@
 
 */
 
+#include "dbc.hh"
 #include "Newton.hh"
 
 namespace Amanzi {
@@ -29,7 +30,7 @@ Newton::Newton(const int n)
 void
 Newton::solve()
 {
-  std::cout << "Solved!\n";
+  AMANZI_ASSERT(false);
 }
 
 } // namespace AmanziChemistry

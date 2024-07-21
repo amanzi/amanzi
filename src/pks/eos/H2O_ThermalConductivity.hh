@@ -40,9 +40,6 @@ class H2O_ThermalConductivity : public EOS_ThermalConductivity {
   }
 
  protected:
-  virtual void InitializeFromPlist_();
-
- protected:
   // constants for water, hard-coded
   double ka0_, ka1_, ka2_;
   double kref_, Tref_;

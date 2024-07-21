@@ -186,15 +186,6 @@ Multiphase_PK::Setup()
   if (!S_->HasRecord("gravity"))
     S_->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT, "state");
 
-  if (!S_->HasRecord("const_fluid_density"))
-    S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
-
-  if (!S_->HasRecord("const_fluid_viscosity"))
-    S_->Require<double>("const_fluid_viscosity", Tags::DEFAULT, "state");
-
-  if (!S_->HasRecord("const_gas_viscosity"))
-    S_->Require<double>("const_gas_viscosity", Tags::DEFAULT, "state");
-
   if (!S_->HasRecord("atmospheric_pressure"))
     S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
 
@@ -342,7 +333,9 @@ Multiphase_PK::Setup()
   }
 
   // viscosities
-  S_->FEList().sublist(viscosity_liquid_key_).set<std::string>("pressure key", pressure_liquid_key_);
+  S_->FEList()
+    .sublist(viscosity_liquid_key_)
+    .set<std::string>("pressure key", pressure_liquid_key_);
   S_->FEList().sublist(viscosity_gas_key_).set<std::string>("pressure key", pressure_gas_key_);
 
   if (!S_->HasRecord(viscosity_liquid_key_)) {
@@ -653,11 +646,6 @@ Multiphase_PK::Initialize()
   // fundamental physical quantities
   gravity_ = S_->Get<AmanziGeometry::Point>("gravity");
   g_ = fabs(gravity_[dim_ - 1]);
-
-  rho_l_ = S_->Get<double>("const_fluid_density");
-  eta_l_ = rho_l_ / mol_mass_H2O_;
-  mu_l_ = S_->Get<double>("const_fluid_viscosity");
-  mu_g_ = S_->Get<double>("const_gas_viscosity");
 
   // process CPR list
   cpr_enhanced_ = mp_list_->isSublist("CPR enhancement");

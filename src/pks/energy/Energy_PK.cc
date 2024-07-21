@@ -108,11 +108,10 @@ Energy_PK::Setup()
 
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
-  Key pressure_key = Keys::getKey(domain_, "pressure");
+  pressure_key_ = Keys::getKey(domain_, "pressure");
 
   // require constant fields
   S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
-  S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
   S_->Require<double>("const_fluid_molar_mass", Tags::DEFAULT, "state");
 
   // require primary state variables
@@ -246,13 +245,13 @@ Energy_PK::Setup()
   }
 
   // -- pressure
-  if (!S_->HasRecord(pressure_key)) {
-    S_->Require<CV_t, CVS_t>(pressure_key, Tags::DEFAULT, pressure_key)
+  if (!S_->HasRecord(pressure_key_)) {
+    S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, pressure_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-    // S_->RequireEvaluator(pressure_key, Tags::DEFAULT);
-    AddDefaultPrimaryEvaluator(S_, pressure_key);
+    // S_->RequireEvaluator(pressure_key_, Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator(S_, pressure_key_);
   }
 
   // -- fracture aperture

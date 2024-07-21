@@ -93,12 +93,12 @@ RunTest(const std::string xmlInFileName)
 
   // create mesh
   int nx(30), ny(45);
-  double L(6.0);
+  double L(6.0), H(9.0);
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   mesh_list->set<bool>("request faces", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create(0.0, 0.0, L, 9.0, nx, ny);
+  auto mesh = factory.create(0.0, 0.0, L, H, nx, ny);
 
   Teuchos::ParameterList state_plist = plist->sublist("state");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
@@ -107,7 +107,7 @@ RunTest(const std::string xmlInFileName)
   Amanzi::ObservationData obs_data;
   Amanzi::CycleDriver cd(plist, S, comm, obs_data);
 
-  double dt(0.02);
+  double dt(0.02), dt_max(0.1);
 
   cd.Init_PK(0);
   cd.Setup();
@@ -127,7 +127,7 @@ RunTest(const std::string xmlInFileName)
   for (int c = 0; c < ncells; ++c) {
     const AmanziGeometry::Point xc = mesh->getCellCentroid(c);
 
-    double x1(xc[0] - a), x2(xc[0] + a), y(9.0 - xc[1]);
+    double x1(xc[0] - a), x2(xc[0] + a), y(H - xc[1]);
     double tmp = std::asin(2 * a * y / std::sqrt((x1 * x1 + y * y) * (x2 * x2 + y * y)));
     if (x1 * x2 + y * y > 0.0)
       p_c[0][c] = factor * tmp;
@@ -140,7 +140,7 @@ RunTest(const std::string xmlInFileName)
   for (int f = 0; f < nfaces; ++f) {
     const AmanziGeometry::Point xf = mesh->getFaceCentroid(f);
 
-    double x1(xf[0] - a), x2(xf[0] + a), y(9.0 - xf[1]);
+    double x1(xf[0] - a), x2(xf[0] + a), y(H - xf[1]);
     double tmp = std::asin(2 * a * y / std::sqrt((x1 * x1 + y * y) * (x2 * x2 + y * y)));
     if (x1 * x2 + y * y > 0.0)
       p_f[0][f] = factor * tmp;
@@ -181,6 +181,7 @@ RunTest(const std::string xmlInFileName)
     S->set_position(0);
 
     dt = cd.Advance(dt);
+    // dt = std::min(dt, dt_max);
   }
 
   // compute analytic solution
@@ -189,8 +190,8 @@ RunTest(const std::string xmlInFileName)
 
   for (auto& quad : obs_data[label]) {
     params[0] = quad.time;
-    params[1] = 0.1;
-    params[2] = 2.1;
+    params[1] = L / (2 * nx); // half of mesh size
+    params[2] = 2.0 + H / (2 * ny);
     double p = P0 * AdaptiveIntegral(&fun, params, 1.0e-10, 10.0, 1e-5, 100);
     // std::cout << quad.time << " p=" << p << " " << quad.value << std::endl;
 

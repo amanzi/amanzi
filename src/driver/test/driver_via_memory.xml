@@ -43,9 +43,7 @@
 
   <phases>
     <liquid_phase name="water">
-      <eos>FEHM</eos>
-      <viscosity>0.001</viscosity>
-      <density>1000.0</density>
+      <eos model="FEHM"/>
       <molar_mass>0.018015</molar_mass>
     </liquid_phase>
   </phases>

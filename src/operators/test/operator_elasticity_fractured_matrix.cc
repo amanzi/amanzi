@@ -70,7 +70,7 @@ RunTest(double mu, double lambda, double tol = 1e-10)
 
   MeshFactory meshfactory(comm, gm, mesh_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 6, 6, 6);
 
   // -- general information about mesh
   int ncells_owned =
@@ -187,7 +187,7 @@ RunTest(double mu, double lambda, double tol = 1e-10)
   // verify shear strain
   for (int c = 0; c < ncells_owned; ++c) {
     auto Tc = op->ComputeCellStrain(solution, c);
-    // CHECK_CLOSE(Tc.Trace(), -1.0, 1e-12);
+    CHECK_CLOSE(Tc.Trace(), -1.0, 1e-12);
   }
 
   // compute displacement error

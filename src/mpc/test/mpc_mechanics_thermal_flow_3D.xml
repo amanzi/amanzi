@@ -132,6 +132,8 @@
         <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water FEHM"/>
+          <Parameter name="molar mass" type="double" value="0.018015"/>
+          <Parameter name="density" type="double" value="1000.0"/>
         </ParameterList>
         <Parameter name="eos basis" type="string" value="both"/>
         <Parameter name="mass density key" type="string" value="mass_density_liquid"/>

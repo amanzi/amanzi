@@ -282,9 +282,9 @@ PreconditionerHypre::InitMGR_()
 #ifdef HAVE_HYPRE
   method_type_ = MGR;
 
-  // Set up block data with information about coarse indexes for reduction. 
-  // Here, the user specifies the number of reduction levels, as well as the 
-  // coarse nodes for each level of the reduction. These coarse nodes are 
+  // Set up block data with information about coarse indexes for reduction.
+  // Here, the user specifies the number of reduction levels, as well as the
+  // coarse nodes for each level of the reduction. These coarse nodes are
   // indexed by their index in the block of unknowns. This is used internally
   // to tag the appropriate indexes of the linear system matrix as coarse nodes.
   // HYPRE_MGRSetCpointsByBlock(
@@ -294,14 +294,14 @@ PreconditionerHypre::InitMGR_()
   // These nodes are transferred onto the coarsest grid of the BoomerAMG coarse grid solver.
   // HYPRE_MGRSetReservedCoarseNodes(method_, reserved_coarse_size, *reserved_coarse_nodes);
 
-  // Set points not prescribed as C points to be fixed as F points for intermediate levels. 
-  // Setting this to 1 uses the user input to define the C/F splitting. Otherwise, a 
+  // Set points not prescribed as C points to be fixed as F points for intermediate levels.
+  // Setting this to 1 uses the user input to define the C/F splitting. Otherwise, a
   // BoomerAMG coarsening routine is used to determine the C/F splitting for intermediate levels.
   // HYPRE_MGRSetNonCpointsToFpoints(method_, nonCptToFptFlag);
 
-  // This function sets the BoomerAMG solver to be used for the solve on the coarse grid. 
-  // The user can define their own BoomerAMG solver with their preferred options and pass 
-  // this to the MGR solver. Otherwise, an internal BoomerAMG solver is used as the coarse 
+  // This function sets the BoomerAMG solver to be used for the solve on the coarse grid.
+  // The user can define their own BoomerAMG solver with their preferred options and pass
+  // this to the MGR solver. Otherwise, an internal BoomerAMG solver is used as the coarse
   // grid solver instead.
   // HYPRE_MGRSetCoarseSolver(
   //   method_, coarse_grid_solver_solve, coarse_grid_solver_setup, coarse_grid_solver);

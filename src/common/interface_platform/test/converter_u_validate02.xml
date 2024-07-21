@@ -168,6 +168,8 @@
         <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
+          <Parameter name="molar mass" type="double" value="1.8015e-02"/>
+          <Parameter name="density" type="double" value="998.2"/>
         </ParameterList>
         <Parameter name="eos basis" type="string" value="both"/>
         <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
@@ -177,6 +179,8 @@
         <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
+          <Parameter name="molar mass" type="double" value="1.8015e-02"/>
+          <Parameter name="density" type="double" value="998.2"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="temperature">
@@ -199,12 +203,6 @@
     <ParameterList name="initial conditions">
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0e+00, -9.80665e+00}"/>
-      </ParameterList>
-      <ParameterList name="const_fluid_viscosity">
-        <Parameter name="value" type="double" value="1.002e-03"/>
-      </ParameterList>
-      <ParameterList name="const_fluid_density">
-        <Parameter name="value" type="double" value="9.982e+02"/>
       </ParameterList>
       <ParameterList name="const_fluid_molar_mass">
         <Parameter name="value" type="double" value="0.018015"/>

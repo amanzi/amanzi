@@ -62,4 +62,3 @@ class MechanicsFracturedMatrix_PK : public MechanicsSmallStrain_PK {
 } // namespace Amanzi
 
 #endif
-

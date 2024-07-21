@@ -667,8 +667,10 @@ CycleDriver::Observations(bool force, bool integrate)
     if (observations_->DumpRequested(S_->get_cycle(), S_->get_time()) || force) {
       // continuous observations are not updated here
       int n = observations_->MakeObservations(*S_);
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "writing observations... " << n << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "writing observations... " << n << std::endl;
+      }
     }
   }
 }
@@ -692,8 +694,10 @@ CycleDriver::Visualize(bool force, const Tag& tag)
   for (const auto& vis : visualization_) {
     if (force || vis->DumpRequested(S_->get_cycle(), S_->get_time())) {
       WriteVis(*vis, *S_);
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "writing visualization file: " << vis->get_name() << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "writing visualization file: " << vis->get_name() << std::endl;
+      }
     }
   }
 }
@@ -867,10 +871,12 @@ CycleDriver::Go()
           if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
             if (S_->get_cycle() % io_frequency_ == 0 && S_->get_cycle() > 0) {
               WriteStateStatistics(*S_, *vo_);
-              Teuchos::OSTab tab = vo_->getOSTab();
-              *vo_->os() << "\nSimulation end time: " << tp_end_[time_period_id_] << " sec."
-                         << std::endl;
-              *vo_->os() << "CPU time stamp: " << vo_->clock() << std::endl;
+              if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+                Teuchos::OSTab tab = vo_->getOSTab();
+                *vo_->os() << "\nSimulation end time: " << tp_end_[time_period_id_] << " sec."
+                           << std::endl;
+                *vo_->os() << "CPU time stamp: " << vo_->clock() << std::endl;
+              }
             }
             Utils::Units units("molar");
             Teuchos::OSTab tab = vo_->getOSTab();

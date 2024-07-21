@@ -91,8 +91,9 @@ class DarcyProblem {
     S = Teuchos::rcp(new State(state_list));
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
+    Teuchos::ParameterList pk_tree("flow");
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-    DPK = new Darcy_PK(plist, "flow", S, soln);
+    DPK = new Darcy_PK(pk_tree, plist, S, soln);
     DPK->Setup();
     S->Setup();
     S->set_time(0.0);

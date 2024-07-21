@@ -308,6 +308,29 @@ MeshExtractedManifold::getNodeFaces(const Entity_ID n, cEntity_ID_View& nfaces) 
 
 
 /* ******************************************************************
+* Connectivity list: node -> cells
+****************************************************************** */
+void
+MeshExtractedManifold::getNodeCells(const Entity_ID n, cEntity_ID_View& ncells) const
+{
+  auto parent_nodes = entid_to_parent_.at(Entity_kind::NODE);
+  auto parent_faces = entid_to_parent_.at(Entity_kind::CELL);
+
+  auto my_parent_node = parent_nodes(n);
+  auto my_parent_faces = parent_mesh_->getNodeFaces(my_parent_node);
+  Entity_ID_View cells("faces", my_parent_faces.size());
+
+  int i = 0;
+  for (auto f : my_parent_faces) {
+    for (auto pf : parent_faces)
+      if (f == pf) cells(i++) = parent_to_entid_[Entity_kind::CELL].at(f);
+  }
+  Kokkos::resize(cells, i);
+  ncells = cells;
+}
+
+
+/* ******************************************************************
 * Create internal maps for child->parent
 ****************************************************************** */
 void
@@ -416,7 +439,7 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
                                                 Entity_kind kind,
                                                 Entity_ID_View_Type* setents) const
 {
-  // base set is the set of master cells
+  // base set is the set of all manifold cells
   cEntity_ID_View fullset;
   if (kind != Entity_kind::FACE) {
     cDouble_View vofs;

@@ -249,6 +249,11 @@ if (BUILD_TESTS)
                       SOURCE    test/Main.cc test/mpc_benchmark_single.cc
                       LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
 
+      # add_amanzi_test(mpc_coupled_mechanics_flow mpc_coupled_mechanics_flow
+      #                 KIND      int
+      #                 SOURCE    test/Main.cc test/mpc_coupled_mechanics_flow.cc
+      #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     endif()
 
     add_amanzi_test(mpc_coupled_thermal_flow mpc_coupled_thermal_flow

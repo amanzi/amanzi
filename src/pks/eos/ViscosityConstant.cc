@@ -18,16 +18,9 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-ViscosityConstant::ViscosityConstant(Teuchos::ParameterList& eos_plist) : EOS_Viscosity(eos_plist)
+ViscosityConstant::ViscosityConstant(Teuchos::ParameterList& plist) : EOS_Viscosity(plist)
 {
-  InitializeFromPlist_();
-};
-
-
-void
-ViscosityConstant::InitializeFromPlist_()
-{
-  visc_ = eos_plist_.get<double>("viscosity", 8.9e-4);
+  visc_ = plist.get<double>("viscosity", 8.9e-4);
 };
 
 } // namespace AmanziEOS

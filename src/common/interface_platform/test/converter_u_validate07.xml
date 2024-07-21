@@ -138,7 +138,7 @@
               <Parameter name="heat capacity" type="double" value="7.60999999999999943e+01"/>
               <Parameter name="table name" type="string" value="h2o.eos"/>
               <Parameter name="field name" type="string" value="internal_energy"/>
-              <Parameter name="format" type="string" value="Amanzi"/>
+              <Parameter name="molar mass" type="double" value="1.8015e-02"/>
             </ParameterList>
           </ParameterList>
           <ParameterList name="BottomRegion">
@@ -148,7 +148,7 @@
               <Parameter name="heat capacity" type="double" value="7.62000000000000028e+01"/>
               <Parameter name="table name" type="string" value="h2o.eos"/>
               <Parameter name="field name" type="string" value="internal_energy"/>
-              <Parameter name="format" type="string" value="Amanzi"/>
+              <Parameter name="molar mass" type="double" value="1.8015e-02"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -193,9 +193,10 @@
         <Parameter name="molar density key" type="string" value="fracture-molar_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="lookup table"/>
-          <Parameter name="format" type="string" value="Amanzi"/>
           <Parameter name="table name" type="string" value="h2o.eos"/>
           <Parameter name="field name" type="string" value="density"/>
+          <Parameter name="molar mass" type="double" value="1.8015e-02"/>
+          <Parameter name="density" type="double" value="998.2"/>
         </ParameterList>
         <Parameter name="eos basis" type="string" value="both"/>
         <Parameter name="mass density key" type="string" value="fracture-mass_density_liquid"/>
@@ -205,9 +206,10 @@
         <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="lookup table"/>
-          <Parameter name="format" type="string" value="Amanzi"/>
           <Parameter name="table name" type="string" value="h2o.eos"/>
           <Parameter name="field name" type="string" value="density"/>
+          <Parameter name="molar mass" type="double" value="1.8015e-02"/>
+          <Parameter name="density" type="double" value="998.2"/>
         </ParameterList>
         <Parameter name="eos basis" type="string" value="both"/>
         <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
@@ -218,9 +220,10 @@
         <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="lookup table"/>
-          <Parameter name="format" type="string" value="Amanzi"/>
           <Parameter name="table name" type="string" value="h2o.eos"/>
           <Parameter name="field name" type="string" value="viscosity"/>
+          <Parameter name="molar mass" type="double" value="1.8015e-02"/>
+          <Parameter name="density" type="double" value="998.2"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-viscosity_liquid">
@@ -228,9 +231,10 @@
         <Parameter name="viscosity key" type="string" value="fracture-viscosity_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="lookup table"/>
-          <Parameter name="format" type="string" value="Amanzi"/>
           <Parameter name="table name" type="string" value="h2o.eos"/>
           <Parameter name="field name" type="string" value="viscosity"/>
+          <Parameter name="molar mass" type="double" value="1.8015e-02"/>
+          <Parameter name="density" type="double" value="998.2"/>
         </ParameterList>
       </ParameterList>
 
@@ -269,12 +273,6 @@
     <ParameterList name="initial conditions">
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.80664999999999942}"/>
-      </ParameterList>
-      <ParameterList name="const_fluid_viscosity">
-        <Parameter name="value" type="double" value="1.002e-03"/>
-      </ParameterList>
-      <ParameterList name="const_fluid_density">
-        <Parameter name="value" type="double" value="9.982e+02"/>
       </ParameterList>
       <ParameterList name="const_fluid_molar_mass">
         <Parameter name="value" type="double" value="0.018015"/>

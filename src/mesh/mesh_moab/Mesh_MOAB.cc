@@ -519,11 +519,13 @@ Mesh_MOAB::init_pface_dirs()
         result = mbcore_->tag_get_data(gid_tag, &face, 1, &face_gid);
         ErrorCheck_(result, "Problem getting tag data");
 
-        std::cout << "Face cells mismatch between master and ghost (processor " << mbcomm_->rank()
-                  << ")" << std::endl;
-        std::cout << " Face " << face_gid << std::endl;
-        std::cout << "Master cells " << master_cell0_gid << " " << master_cell1_gid << std::endl;
-        std::cout << "Ghost cells " << ghost_cell0_gid << " " << ghost_cell1_gid << std::endl;
+        if (vo_.get() && vo_->os_OK(Teuchos::VERB_LOW)) {
+          *vo_->os() << "Face cells mismatch between master and ghost (processor " << mbcomm_->rank()
+                     << ")" << std::endl;
+          *vo_->os() << " Face " << face_gid << std::endl;
+          *vo_->os() << "Master cells " << master_cell0_gid << " " << master_cell1_gid << std::endl;
+          *vo_->os() << "Ghost cells " << ghost_cell0_gid << " " << ghost_cell1_gid << std::endl;
+        }
       }
     }
   }

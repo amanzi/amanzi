@@ -201,6 +201,8 @@
         <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
+          <Parameter name="molar mass" type="double" value="0.018015"/>
+          <Parameter name="density" type="double" value="998.2"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-molar_density_liquid">
@@ -210,6 +212,8 @@
         <Parameter name="mass density key" type="string" value="fracture-mass_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
+          <Parameter name="molar mass" type="double" value="0.018015"/>
+          <Parameter name="density" type="double" value="998.2"/>
         </ParameterList>
       </ParameterList>
 

@@ -21,6 +21,7 @@
 // Amanzi
 #include "IO.hh"
 #include "Mesh.hh"
+#include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
 #include "OutputXDMF.hh"
 
@@ -46,14 +47,21 @@ TEST(MECHANICS_FRACTURED_MATRIX)
   Teuchos::ParameterList regions_list = plist->sublist("regions");
   auto gm = Teuchos::rcp(new GeometricModel(3, regions_list, *comm));
 
-  MeshFactory factory(comm, gm);
+  auto mesh_list = Teuchos::rcp(new Teuchos::ParameterList());
+  mesh_list->set<bool>("request edges", true);
+  mesh_list->set<bool>("request faces", true);
+
+  MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({ Framework::MSTK }));
-  auto mesh = factory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 8, 8);
+  auto mesh = factory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 6, 6, 6);
 
   // derive a fracture mesh
   std::vector<std::string> names;
   names.push_back("fracture");
-  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
+  auto mesh_fracture_fw = Teuchos::rcp(new AmanziMesh::MeshExtractedManifold(
+    mesh, names[0], AmanziMesh::Entity_kind::FACE, mesh->getComm(), gm, mesh_list));
+  auto mesh_fracture = Teuchos::rcp(new AmanziMesh::Mesh(
+    mesh_fracture_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), mesh_list));
 
   // create a simple state and populate it
   Teuchos::ParameterList state_list = plist->sublist("state");
@@ -96,7 +104,8 @@ TEST(MECHANICS_FRACTURED_MATRIX)
   const auto& a = *S->Get<CompositeVector>("fracture-aperture").ViewComponent("cell");
   const auto& u = S->Get<CompositeVector>("displacement");
   const auto& nmap = *u.Map().Map("node", true);
-  int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  int nnodes =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
 
   Epetra_MultiVector u_long = *u.ViewComponent("node", true);
   Epetra_MultiVector u_short(mesh->getMap(AmanziMesh::Entity_kind::NODE, true), 3);

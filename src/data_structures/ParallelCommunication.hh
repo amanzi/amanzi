@@ -28,7 +28,7 @@ namespace Amanzi {
 
 class ParallelCommunication {
  public:
-  ParallelCommunication(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
+  ParallelCommunication(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh){};
   ~ParallelCommunication(){};
 
   // data management

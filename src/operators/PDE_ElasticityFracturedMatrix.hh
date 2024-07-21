@@ -57,7 +57,7 @@ class PDE_ElasticityFracturedMatrix : public PDE_Elasticity {
  private:
   Teuchos::RCP<CompositeVectorSpace> cvs_;
   Teuchos::RCP<const AmanziMesh::Mesh> fracture_;
-  std::vector<AmanziMesh::Entity_ID> node_to_node_;
+  std::vector<std::vector<int>> cell_to_nodes_;
 };
 
 } // namespace Operators

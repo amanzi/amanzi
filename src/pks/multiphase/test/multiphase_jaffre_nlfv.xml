@@ -325,15 +325,6 @@
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0}"/>
       </ParameterList>
-      <ParameterList name="const_fluid_density">
-        <Parameter name="value" type="double" value="1000.0"/>
-      </ParameterList>
-      <ParameterList name="const_fluid_viscosity">
-        <Parameter name="value" type="double" value="1.0e-3"/>
-      </ParameterList>
-      <ParameterList name="const_gas_viscosity">
-        <Parameter name="value" type="double" value="9.0e-6"/>
-      </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
@@ -562,7 +553,8 @@
         <Parameter name="pressure key" type="string" value="pressure_gas"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="ideal gas"/>
-          <Parameter name="molar mass of gas" type="double" value="2.0e-3"/>
+          <Parameter name="molar mass" type="double" value="2.0e-3"/>
+          <Parameter name="density" type="double" value="1.0"/>
         </ParameterList>
         <!--ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>

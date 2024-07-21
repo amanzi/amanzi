@@ -20,6 +20,7 @@ project(MECHANICS)
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
+
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
@@ -27,6 +28,7 @@ include_directories(${FLOW_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_EXTRACTED_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
@@ -135,6 +137,7 @@ if (BUILD_TESTS)
   # Test: fractured matrix
   add_amanzi_test(mechanics_fractured_matrix mechanics_fractured_matrix
                   KIND int
+                  NPROCS 2
                   SOURCE test/Main.cc test/mechanics_fractured_matrix.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
