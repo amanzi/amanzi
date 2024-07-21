@@ -147,7 +147,7 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
 
   // insert boundary conditions and source terms
   out_list.sublist("boundary conditions") = TranslateEnergyBCs_(domain);
-  out_list.sublist("source terms") = TranslateSources_(domain, "energy");
+  out_list.sublist("source terms") = TranslateSources_(domain, "energy", "");
 
   // insert internal evaluators
   out_list.sublist("energy evaluator").set<bool>("include potential term", include_potential);

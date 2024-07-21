@@ -203,6 +203,12 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/flow_richards_newton_tpfa.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
  
+    # Test: various sources
+    add_amanzi_test(flow_richards_source flow_richards_source
+                    KIND int
+                    SOURCE test/Main.cc test/flow_richards_source.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     # Test: miscaleneous Darcy flow routines
     add_amanzi_test(flow_darcy_misc flow_darcy_misc 
                     KIND int

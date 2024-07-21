@@ -46,6 +46,7 @@
             <ParameterList name="field">
               <Parameter name="field key" type="string" value="source_constant"/>
               <Parameter name="component" type="string" value="cell"/>
+              <Parameter name="scaling factor" type="double" value="1.0"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
