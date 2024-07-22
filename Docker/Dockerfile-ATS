@@ -45,19 +45,19 @@ RUN git fetch
 # commits (and therefore fail) if a merge is required to do the pull
 # (if the local branch already exists and diverges from the remote
 # branch)
-RUN if [[ -n "$amanzi_branch" ]] ; then git checkout $amanzi_branch; git reset --hard origin/$amanzi_branch; fi
+RUN if [ -n "$amanzi_branch" ] ; then git checkout $amanzi_branch; git reset --hard origin/$amanzi_branch; fi
 RUN git rev-parse --short HEAD
 
 # Checkout ATS at the right branch
 RUN git submodule update --init
 WORKDIR /home/amanzi_user/amanzi/src/physics/ats
-RUN if [[ -n "$ats_branch" ]] ; then git fetch; git checkout $ats_branch; git reset --hard origin/$ats_branch; fi
+RUN if [ -n "$ats_branch" ] ; then git fetch; git checkout $ats_branch; git reset --hard origin/$ats_branch; fi
 RUN git rev-parse --short HEAD
 
 # Checkout ats-regression-tests at the right branch
 RUN git submodule update --init 
 WORKDIR /home/amanzi_user/amanzi/src/physics/ats/testing/ats-regression-tests
-RUN if [[ -n "$ats_tests_branch" ]] ; then git fetch; git checkout $ats_tests_branch; git reset --hard origin/$ats_tests_branch; fi
+RUN if [ -n "$ats_tests_branch" ] ; then git fetch; git checkout $ats_tests_branch; git reset --hard origin/$ats_tests_branch; fi
 RUN git rev-parse --short HEAD
 WORKDIR /home/amanzi_user/amanzi
 
