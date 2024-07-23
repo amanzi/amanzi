@@ -18,7 +18,6 @@
 
 #include <vector>
 #include "Teuchos_RCP.hpp"
-#include "Iterators.hh"
 #include "Mesh.hh"
 
 namespace Amanzi {
@@ -47,12 +46,19 @@ class TreeVectorSpace {
   Comm_ptr_type Comm() const { return comm_; }
 
   // Access to SubVectors
-  typedef std::vector<Teuchos::RCP<TreeVectorSpace>> SubVectorsContainer;
-  typedef Utils::iterator<SubVectorsContainer, TreeVectorSpace> iterator;
-  typedef Utils::const_iterator<SubVectorsContainer, const TreeVectorSpace> const_iterator;
+  using iterator = std::vector<Teuchos::RCP<TreeVectorSpace>>::iterator;
+  using const_iterator = Teuchos::RCP<const TreeVectorSpace> const* const;
 
-  const_iterator begin() const { return const_iterator(subvecs_.begin()); }
-  const_iterator end() const { return const_iterator(subvecs_.end()); }
+  // this is a very poor-man's hacky replacement for an iterator_adaptor
+  // which aims to make const_iterators iterate over pointers to const objects.
+  const_iterator begin() const
+  {
+    return reinterpret_cast<const Teuchos::RCP<const TreeVectorSpace>*>(&*subvecs_.begin());
+  }
+  const_iterator end() const
+  {
+    return reinterpret_cast<const Teuchos::RCP<const TreeVectorSpace>*>(&*subvecs_.end());
+  }
 
   iterator begin() { return iterator(subvecs_.begin()); }
   iterator end() { return iterator(subvecs_.end()); }

@@ -42,10 +42,10 @@ class PK_DomainFunctionSubgrid : public FunctionBase {
             AmanziMesh::Entity_kind kind);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "hyporheic exchange"; }
+  virtual void Compute(double t0, double t1) override;
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::SUBGRID; }
 
-  virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
+  virtual void set_state(const Teuchos::RCP<State>& S) final { S_ = S; }
 
  protected:
   using FunctionBase::value_;
@@ -126,7 +126,7 @@ PK_DomainFunctionSubgrid<FunctionBase>::Compute(double t0, double t1)
   std::vector<double> val(num_vec);
 
   AmanziMesh::Entity_ID entity_lid_out =
-    vec_out.Mesh()->getMap(AmanziMesh::Entity_kind::CELL, "false").LID(entity_gid_out_);
+    vec_out.Mesh()->getMap(AmanziMesh::Entity_kind::CELL, false).LID(entity_gid_out_);
   AMANZI_ASSERT(entity_lid_out >= 0);
   for (int k = 0; k < num_vec; ++k) val[k] = field_out[k][entity_lid_out];
   value_[entity_lid_] = val;

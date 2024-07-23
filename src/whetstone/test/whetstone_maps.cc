@@ -68,7 +68,7 @@ TEST(DG_MAP_DETERMINANT_CELL)
     nodeids[v] = v;
     new_positions[v] = xv;
   }
-  Amanzi::AmanziMesh::MeshAlgorithms::deform(*mesh1, nodeids, new_positions);
+  Amanzi::AmanziMesh::deform(*mesh1, nodeids, new_positions);
 
   // cell-baced velocities and Jacobian matrices
   // test piecewise linear deformation (part II)
@@ -176,7 +176,7 @@ TEST(DG_MAP_LEAST_SQUARE_CELL)
     nodeids[v] = v;
     new_positions[v] = yv;
   }
-  Amanzi::AmanziMesh::MeshAlgorithms::deform(*mesh1, nodeids, new_positions);
+  Amanzi::AmanziMesh::deform(*mesh1, nodeids, new_positions);
 
   // least-square calculation
   Teuchos::ParameterList plist;
@@ -324,7 +324,7 @@ TEST(DG_MAP_VELOCITY_CELL)
     nodeids[v] = v;
     new_positions[v] = yv;
   }
-  Amanzi::AmanziMesh::MeshAlgorithms::deform(*mesh1, nodeids, new_positions);
+  Amanzi::AmanziMesh::deform(*mesh1, nodeids, new_positions);
 
   // velocity calculation
   // -- on edges

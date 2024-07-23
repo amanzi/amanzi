@@ -170,7 +170,7 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
       if (diag_ops_.size() > i_schur) {
         // get existing
         diag_op = diag_ops_[i_schur];
-        schur_ops_[i_schur];
+        schur_op = schur_ops_[i_schur];
       } else {
         // create and fill
         AMANZI_ASSERT(i_schur == diag_ops_.size());
@@ -182,7 +182,7 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
         schur_op = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
         schur_ops_.push_back(schur_op);
         for (int f = 0; f != nfaces_owned; ++f) {
-          auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+          auto cells = mesh_->getFaceCells(f);
           int ncells = cells.size();
           schur_op->matrices[f] = WhetStone::DenseMatrix(ncells, ncells);
         }
@@ -220,7 +220,7 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
         WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
         for (int n = 0; n < nfaces; n++) {
           int f = faces[n];
-          auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+          auto cells = mesh_->getFaceCells(f);
 
           if (cells.size() == 1) {
             Ttmp[0][f] = Acell(n, nfaces);
@@ -243,7 +243,7 @@ Operator_FaceCellScc::AssembleMatrix(const SuperMap& map,
       for (int f = 0; f < nfaces_owned; f++) {
         WhetStone::DenseMatrix& mat = mats[f];
 
-        auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+        auto cells = mesh_->getFaceCells(f);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) { gid[n] = cmap_wghost.GID(cells[n]); }

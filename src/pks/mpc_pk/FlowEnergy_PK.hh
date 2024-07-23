@@ -79,6 +79,7 @@ and :math:`c_r` is specific heat of rock [J/kg/K].
 
 #include "EvaluatorIndependentFunction.hh"
 #include "EvaluatorSecondaryMonotype.hh"
+#include "PDE_Accumulation.hh"
 #include "PK_BDF.hh"
 #include "PK_MPCStrong.hh"
 #include "PK_Factory.hh"
@@ -103,6 +104,21 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   // -- advance each sub pk from t_old to t_new.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
 
+  // -- computes non-linear functional f = f(t,u)
+  virtual void FunctionalResidual(double t_old,
+                                  double t_new,
+                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<TreeVector> u_new,
+                                  Teuchos::RCP<TreeVector> f) override;
+
+  // -- preconditioner
+  virtual void
+  UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) override;
+
+  virtual int
+  ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
+
+  // -- error norm for coupled system
   std::string name() override { return "thermal flow"; }
 
  private:
@@ -111,17 +127,14 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Key domain_; // computational domain
 
-  Teuchos::RCP<EvaluatorIndependentFunction> particle_density_eval;
-  Teuchos::RCP<EvaluatorIndependentFunction> porosity_eval;
-  Teuchos::RCP<EvaluatorIndependentFunction> saturation_liquid_eval;
+  bool include_pt_coupling_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op10_acc_, op01_acc_;
 
   // keys
   Key pressure_key_, temperature_key_;
-  Key ie_rock_key_, ie_gas_key_, ie_liquid_key_, energy_key_, prev_energy_key_;
-  Key particle_density_key_;
-  Key mol_density_liquid_key_, mol_density_gas_key_, mass_density_liquid_key_;
-  Key sat_liquid_key_, prev_sat_liquid_key_, viscosity_liquid_key_;
-  Key wc_key_, prev_wc_key_;
+  Key ie_liquid_key_, energy_key_, particle_density_key_;
+  Key mol_density_liquid_key_, mass_density_liquid_key_;
+  Key sat_liquid_key_, ws_key_;
 
   // eos
   std::string eos_table_;

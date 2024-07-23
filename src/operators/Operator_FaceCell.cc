@@ -151,7 +151,7 @@ Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
   Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
 
   for (int sf = 0; sf != nsurf_faces; ++sf) {
-    auto cells = op.surf_mesh->getFaceCells(sf, AmanziMesh::Parallel_kind::ALL);
+    auto cells = op.surf_mesh->getFaceCells(sf);
     int ncells = cells.size();
 
     WhetStone::DenseVector v(ncells), av(ncells);
@@ -314,7 +314,7 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op
 
   int ierr = 0;
   for (int sf = 0; sf != nsurf_faces; ++sf) {
-    auto cells = op.surf_mesh->getFaceCells(sf, AmanziMesh::Parallel_kind::ALL);
+    auto cells = op.surf_mesh->getFaceCells(sf);
     int ncells = cells.size();
     for (int n = 0; n != ncells; ++n) {
       int f = op.surf_mesh->getEntityParent(AmanziMesh::Entity_kind::CELL, cells[n]);
@@ -474,7 +474,7 @@ Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 
   int ierr = 0;
   for (int sf = 0; sf != nsurf_faces; ++sf) {
-    auto cells = op.surf_mesh->getFaceCells(sf, AmanziMesh::Parallel_kind::ALL);
+    auto cells = op.surf_mesh->getFaceCells(sf);
     int ncells = cells.size();
     for (int n = 0; n != ncells; ++n) {
       int f = op.surf_mesh->getEntityParent(AmanziMesh::Entity_kind::CELL, cells[n]);

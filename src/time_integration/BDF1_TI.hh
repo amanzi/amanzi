@@ -156,6 +156,7 @@ class BDF1_TI {
   // Report statistics
   int number_nonlinear_steps() { return state_->solve_itrs; }
   void ReportStatistics_();
+  int number_solver_iterations() { return solver_->num_itrs(); }
 
  protected:
   Teuchos::RCP<TimestepController> ts_control_; // timestep controller
@@ -211,7 +212,7 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
 
   // timestep controller
   TimestepControllerFactory<Vector> fac;
-  ts_control_ = fac.Create(plist, udot_, udot_prev_, S);
+  ts_control_ = fac.Create(plist_, udot_, udot_prev_, S);
 
   // misc internal parameters
   tol_solver_ = solver_->tolerance();
@@ -398,6 +399,13 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
 
     ReportStatistics_();
   }
+
+  // debug tool: forcing step to report failure
+  if (state_->report_failure == state_->seq) {
+    ierr = 1;
+    state_->report_failure = -1;
+  }
+
   return (ierr != 0); // Returns true when it fails.
 }
 

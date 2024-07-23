@@ -22,6 +22,7 @@
 // Amanzi
 #include "amanzi_version.hh"
 #include "errors.hh"
+#include "HDF5Reader.hh"
 
 #include "InputConverterU.hh"
 
@@ -61,6 +62,7 @@ InputConverterU::Translate(int rank, int num_proc)
   ParseModelDescription_();
   ParseFractureNetwork_();
   ParseGlobalNumericalControls_();
+  ParseMisc_();
 
   out_list.set<bool>("Native Unstructured Input", "true");
 
@@ -472,6 +474,22 @@ InputConverterU::ParseGlobalNumericalControls_()
 
 
 /* ******************************************************************
+* Simulation-wide control parameters
+****************************************************************** */
+void
+InputConverterU::ParseMisc_()
+{
+  try {
+    bool flag;
+    GetUniqueElementByTagsString_("process_kernels, pk, multiphase", flag);
+    if (flag) multiphase_ = true;
+  } catch (...) {
+    // do nothing
+  }
+}
+
+
+/* ******************************************************************
 * Extract generic verbosity object for all sublists.
 ****************************************************************** */
 Teuchos::ParameterList
@@ -742,6 +760,17 @@ InputConverterU::PrintStatistics_()
     }
     *vo_->os() << std::endl;
   }
+}
+
+
+/* ******************************************************************
+* Verify that file and variable exist.
+****************************************************************** */
+bool
+InputConverterU::CheckVariableName_(const std::string& filename, const std::string& varname)
+{
+  HDF5Reader reader(filename);
+  return reader.CheckVariableName(varname);
 }
 
 } // namespace AmanziInput

@@ -14,14 +14,24 @@ It contains as many sublists, e.g. _SOIL1 and _SOIL2, as there are different soi
 The porosity models are associated with non-overlapping regions. Each of the sublists (e.g. _SOIL1)
 includes a few mandatory parameters: *regions names*, *model name*, and parameters for the selected model.
 
-* `"porosity model`" [string] specifies a model for the soil.
-  The available models are `"compressible`" and `"constant`".
+.. admonition:: porosity_model-spec
 
-  * The model `"compressible`" requires `"underformed soil porosity"`" [double],
-    `"reference pressure`" [double], and `"pore compressibility`" [string] [Pa^-1].
-    Default value for `"reference pressure`" is 101325.0 [Pa].
+  * `"porosity model`" [string] specifies a model for the soil.
+    The available models are `"compressible`" and `"constant`".
 
-  * The model `"constant`" requires `"value`" [double].
+    * The model `"compressible`" requires mandatory parameters:
+
+      * `"underformed soil porosity"`" [double]
+      * `"reference pressure`" [double]. Default value is 101325.0 Pa.
+      * `"pore compressibility`" [double] [Pa^-1]
+
+      Additional physics introduces more parameters:
+
+      * `"Biot coefficient`" [double] [-]
+      * `"volumetric thermal dilation`" [double] [K^-1]
+      * `"reference temperature`" [double] [K]. Default value is 20 C.
+
+    * The model `"constant`" requires `"value`" [double].
 
 .. code-block:: xml
 
@@ -60,6 +70,8 @@ class Porosity {
   virtual ~Porosity(){};
   virtual double PorosityValue(double p) = 0;
   virtual double dPorositydPressure(double p) = 0; // derivative wrt to pressure
+
+  virtual std::pair<double, double> getThermalCoefficients() = 0;
 };
 
 } // namespace Flow

@@ -24,10 +24,10 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "GMVMesh.hh"
+#include "LeastSquare.hh"
 #include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "VerboseObject.hh"
 
 // Operators
@@ -37,9 +37,16 @@
 #include "UpwindFluxManifolds.hh"
 
 double
-Value(const Amanzi::AmanziGeometry::Point& xyz)
+FunLinear(const Amanzi::AmanziGeometry::Point& xyz)
 {
-  return 1e-5 + xyz[0] + 0 * xyz[1] + 0 * xyz[2];
+  return 1e-5 + xyz[0] + 2 * xyz[1] + 3 * xyz[2];
+}
+
+
+double
+FunNonlinear(const Amanzi::AmanziGeometry::Point& xyz)
+{
+  return 1.0 + std::sin(xyz[0] + 2 * xyz[1] + 3 * xyz[2]);
 }
 
 
@@ -51,7 +58,8 @@ using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Operators;
 
-TEST(UPWIND_FLUX_MANIFOLDS)
+void
+RunTest(double FunExact(const AmanziGeometry::Point& xp))
 {
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
@@ -74,13 +82,13 @@ TEST(UPWIND_FLUX_MANIFOLDS)
   MeshFactory meshfactory(comm, gm, flist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
-  for (int n = 4; n < 17; n *= 2) {
+  std::vector<double> h, err;
+  for (int n = 5; n < 21; n *= 2) {
     std::string setname("fractures");
     auto mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
     auto mesh_fw =
       Teuchos::rcp(new MeshExtractedManifold(mesh3D, setname, AmanziMesh::FACE, comm, gm, plist));
-    auto mesh =
-      Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new MeshFrameworkAlgorithms()), Teuchos::null));
+    auto mesh = Teuchos::rcp(new Mesh(mesh_fw, Teuchos::rcp(new MeshAlgorithms()), Teuchos::null));
 
     int ncells_wghost = mesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
     int nfaces_owned = mesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
@@ -94,7 +102,7 @@ TEST(UPWIND_FLUX_MANIFOLDS)
       if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
           fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6)
         bc_model[f] = OPERATOR_BC_DIRICHLET;
-      bc_value[f] = Value(xf);
+      bc_value[f] = FunExact(xf);
     }
 
     // create and initialize cell-based field
@@ -107,7 +115,7 @@ TEST(UPWIND_FLUX_MANIFOLDS)
 
     for (int c = 0; c < ncells_wghost; c++) {
       const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
-      field_c[0][c] = Value(xc);
+      field_c[0][c] = FunExact(xc);
     }
 
     // add boundary face component
@@ -132,7 +140,7 @@ TEST(UPWIND_FLUX_MANIFOLDS)
       int g = fmap.FirstPointInElement(f);
       int ndofs = fmap.ElementSize(f);
 
-      auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh->getFaceCells(f);
       AMANZI_ASSERT(cells.size() == ndofs);
 
       for (int i = 0; i < ndofs; ++i) {
@@ -151,10 +159,10 @@ TEST(UPWIND_FLUX_MANIFOLDS)
     // calculate errors
     double error(0.0);
     for (int f = 0; f < nfaces_owned; f++) {
-      auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh->getFaceCells(f);
 
       const Point& xf = mesh->getFaceCentroid(f);
-      double exact = Value(xf);
+      double exact = FunExact(xf);
 
       int g = fmap.FirstPointInElement(f);
       int ndofs = fmap.ElementSize(f);
@@ -173,6 +181,22 @@ TEST(UPWIND_FLUX_MANIFOLDS)
 #endif
     error /= nfaces_owned;
 
-    if (comm->MyPID() == 0) printf("n=%2d  dirichlet faces=%5d  error=%7.4f\n", n, ndir, error);
+    if (comm->MyPID() == 0) printf("n=%2d  dirichlet faces=%5d  error=%8.5f\n", n, ndir, error);
+
+    h.push_back(1.0 / n);
+    err.push_back(error);
   }
+
+  if (err[0] > 1.0e-6) {
+    double rate = Utils::bestLSfit(h, err);
+    std::cout << "rate=" << rate << std::endl;
+    CHECK(rate > 0.9);
+  }
+}
+
+
+TEST(UPWIND_FLUX_MANIFOLDS)
+{
+  RunTest(FunLinear);
+  RunTest(FunNonlinear);
 }

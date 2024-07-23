@@ -56,6 +56,7 @@ class ATS_Richards : public Richards {
     S_->RequireEvaluator("saturation_liquid", Tags::DEFAULT);
 
     S_->Require<double>("time", Tags::CURRENT, "time");
+
     S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "coordinator");
     S_->Require<Amanzi::AmanziGeometry::Point>("gravity", Tags::DEFAULT, "coordinator");
   }
@@ -64,7 +65,7 @@ class ATS_Richards : public Richards {
   {
     Richards::Initialize();
 
-    S_->GetRecordW("darcy_flux", Tags::DEFAULT, "state").set_initialized();
+    S_->GetRecordW("volumetric_flow_rate", Tags::DEFAULT, "state").set_initialized();
   }
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override
@@ -87,7 +88,7 @@ class ATS_Richards : public Richards {
   {
     Richards::CommitStep(t_old, t_new, Tags::NEXT);
 
-    S_->GetW<CompositeVector>("darcy_flux", Tags::DEFAULT, "state") =
+    S_->GetW<CompositeVector>("volumetric_flow_rate", Tags::DEFAULT, "state") =
       S_->Get<CompositeVector>("water_flux", Tags::NEXT);
 
     // reset time to beginning of time step as expected by Amanzi FIXME
@@ -153,4 +154,6 @@ TEST(INTEROPERABILITY_FLOW_TRANSPORT)
       CHECK(false);
     }
   }
+
+  WriteStateStatistics(*S);
 }

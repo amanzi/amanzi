@@ -164,8 +164,6 @@ namespace Amanzi {
       // FIXME: This multiplier should be input
       geometry_eps = 1.e-6*max_size;
 
-      const ParameterList& eclist = parameter_list.sublist("Execution Control");
-
       ParameterList& alist = struc_list.sublist("amr");
       alist.set("n_cell",n_cell);
 
@@ -253,11 +251,8 @@ namespace Amanzi {
       ParameterList& prob_out_list    = struc_out_list.sublist("prob");
       ParameterList& cg_out_list      = struc_out_list.sublist("cg");
       ParameterList& mg_out_list      = struc_out_list.sublist("mg");
-      ParameterList& mac_out_list     = struc_out_list.sublist("mac");
-      ParameterList& diffuse_out_list = struc_out_list.sublist("diffuse");
       ParameterList& io_out_list      = struc_out_list.sublist("vismf");
       ParameterList& fabarr_out_list  = struc_out_list.sublist("fabarray");
-      ParameterList& fab_out_list     = struc_out_list.sublist("fab");
 
       bool echo_inputs = false;
       std::string echo_str = "Echo Inputs";
@@ -266,7 +261,7 @@ namespace Amanzi {
       }
       struc_out_list.set<bool>("echo_inputs",echo_inputs);
 
-      int prob_v, mg_v, cg_v, amr_v, diffuse_v, io_v, fab_v;
+      int prob_v, mg_v, cg_v, amr_v, io_v, fab_v;
       //
       // Set flow model
       //
@@ -707,19 +702,19 @@ namespace Amanzi {
       // Verbosity implementation
       //
       if (lc(v_val) == "none") {
-        prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0; io_v = 0; fab_v = 0;
+        prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; io_v = 0; fab_v = 0;
       }
       else if (lc(v_val) == "low") {
-        prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0; io_v = 0; fab_v = 0;
+        prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1; io_v = 0; fab_v = 0;
       }
       else if (lc(v_val) == "medium") {
-        prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 0; io_v = 0; fab_v = 0;
+        prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2; io_v = 0; fab_v = 0;
       }
       else if (lc(v_val) == "high") {
-        prob_v = 2; mg_v = 0; cg_v = 0; amr_v = 3;  diffuse_v = 0; io_v = 0; fab_v = 0;
+        prob_v = 2; mg_v = 0; cg_v = 0; amr_v = 3; io_v = 0; fab_v = 0;
       }
       else if (lc(v_val) == "extreme") {
-        prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1; io_v = 1; fab_v = 1;
+        prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3; io_v = 1; fab_v = 1;
       }
       //
       // Optional lists
@@ -1262,7 +1257,8 @@ namespace Amanzi {
     {
       const ParameterList& rsslist = rslist.sublist(rlabel);
       std::string dir = rsslist.get<std::string>("Direction");
-      std::pair<bool,int> o = orient(dir); bool is_lo=o.first; int coord=o.second;
+      std::pair<bool,int> o = orient(dir); 
+      int coord = o.second;
 
       // FIXME: Ignores sign of direction
 
@@ -2532,7 +2528,6 @@ namespace Amanzi {
             const std::string& p=pit->first;
             StateDef::CompMap& comps = state[p];
             for (StateDef::CompMap::iterator cit=comps.begin(); cit!=comps.end(); ++cit) {
-              const std::string& c=cit->first;
               const Array<TRACER>& solutes = cit->second.getTracerArray();
               for (int i=0; i<solutes.size(); ++i) {
                 const std::string& s=solutes[i].name;
@@ -2621,7 +2616,6 @@ namespace Amanzi {
       for (int i=0; i<phaseLabels.size(); ++i) {
         const std::string& phaseLabel = phaseLabels[i];
         const ParameterList& pplist = plist.sublist(phaseLabel);
-        const ParameterList& psublist = plist.sublist(phaseLabel);
 
         if (phaseLabel=="Solid") {
           PLoptions optP1(pplist,nullList,nullList,true,false);
@@ -3014,7 +3008,6 @@ namespace Amanzi {
                                         int             do_chem)
     {
       const ParameterList& fPLin = solute_ic.PList();
-      const std::string& solute_ic_Amanzi_type = solute_ic.Amanzi_Type();
       const std::string& solute_ic_label = solute_ic.Label();
 
       const std::string geo_name="Geochemical Condition";
@@ -3342,7 +3335,6 @@ namespace Amanzi {
                                         ParameterList&     fPLout)
     {
       const ParameterList& fPLin = solute_bc.PList();
-      const std::string& solute_bc_Amanzi_type = solute_bc.Amanzi_Type();
       const std::string& solute_bc_label = solute_bc.Label();
 
       const std::string geo_name="Geochemical Condition";
@@ -3575,7 +3567,6 @@ namespace Amanzi {
         for (int i=0; i<regions.size(); ++i) {
           _regions.push_back(underscore(regions[i]));
         }
-        const std::string& Amanzi_type = state_bc.Amanzi_Type();
 
         //
         // Scan through all phases, comps to find solute BCs organized by solute
@@ -3592,7 +3583,6 @@ namespace Amanzi {
 
               ICBCFunc& solute_bc = state_bc[phaseName][compName][soluteName];
 
-              const ParameterList& fPLin = solute_bc.PList();
               const std::string& solute_bc_Amanzi_type = solute_bc.Amanzi_Type();
               const std::string& solute_bc_label = solute_bc.Label();
               //const std::string& solute_bc_units = solute_bc.Units();
@@ -3679,7 +3669,7 @@ namespace Amanzi {
         for (int i=0; i<regions.size(); ++i) {
           _regions.push_back(regions[i]);
         }
-        const std::string& Amanzi_type = state_ic.Amanzi_Type();
+
         //
         // Scan through all phases, comps to find solute ICs organized by solute
         //
@@ -3828,7 +3818,6 @@ namespace Amanzi {
                                 bool&                do_chem)
     {
       ParameterList& phase_list  = struc_list.sublist("phase");
-      ParameterList& comp_list   = struc_list.sublist("comp");
       ParameterList& solute_list = struc_list.sublist("tracer");
 
       typedef StateDef::PhaseCompMap PhaseCompMap;
@@ -3919,7 +3908,6 @@ namespace Amanzi {
         for (StateDef::Phases::const_iterator pit = phases.begin(); pit!=phases.end() && !found_solute; ++pit)
         {
           const std::string& phaseLabel = pit->first;
-          PHASE& phase = stateDef.getPhases()[phaseLabel];
           const CompMap comp_map = stateDef[phaseLabel];
           for (CompMap::const_iterator cit = comp_map.begin(); cit!=comp_map.end() && !found_solute; ++cit)
           {

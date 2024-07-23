@@ -99,9 +99,12 @@ class Verification {
     op_->ApplyAssembled(x, r);
     r.Update(1.0, b, -1.0);
 
-    double tmp, xnorm;
+    double tmp, xnorm, bnorm;
     r.Dot(r, &tmp);
     x.Dot(x, &xnorm);
+
+    b.Norm2(&bnorm);
+    xnorm = std::max(xnorm, bnorm);
     CHECK_CLOSE(0.0, tmp, tol * tol * xnorm * xnorm);
   }
 

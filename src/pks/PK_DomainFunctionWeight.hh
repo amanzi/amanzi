@@ -37,7 +37,7 @@ class PK_DomainFunctionWeight : public FunctionBase, public Functions::UniqueMes
  public:
   PK_DomainFunctionWeight(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           AmanziMesh::Entity_kind kind)
-    : UniqueMeshFunction(mesh), kind_(kind){};
+    : UniqueMeshFunction(mesh, AmanziMesh::Parallel_kind::OWNED), kind_(kind){};
   ~PK_DomainFunctionWeight(){};
 
   // member functions
@@ -46,8 +46,8 @@ class PK_DomainFunctionWeight : public FunctionBase, public Functions::UniqueMes
             Teuchos::RCP<const Epetra_MultiVector> weight);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "weight"; }
+  virtual void Compute(double t0, double t1) override;
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::WEIGHT; }
 
  protected:
   using FunctionBase::value_;

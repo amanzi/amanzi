@@ -117,6 +117,7 @@ set(operators_inc_files
     PDE_DiffusionFracturedMatrix.hh
     PDE_DiffusionCurvedFace.hh
     PDE_Elasticity.hh
+    PDE_ElasticityFracturedMatrix.hh
     PDE_Electromagnetics.hh
     PDE_MagneticDiffusion.hh
     PDE_MagneticDiffusion_TM.hh
@@ -183,6 +184,7 @@ set(operators_src_files
   PDE_DiffusionFactory.cc
   PDE_HelperDiscretization.cc
   PDE_Elasticity.cc
+  PDE_ElasticityFracturedMatrix.cc
   PDE_Electromagnetics.cc
   PDE_MagneticDiffusion.cc PDE_MagneticDiffusion_TM.cc
   PDE_Reaction.cc
@@ -278,6 +280,11 @@ if (ENABLE_TESTS)
                         SOURCE test/Main.cc test/operator_diffusion_dfn_fv.cc
                         LINK_LIBS mesh_extracted ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+        add_amanzi_test(operators_diffusion_dfn_nlfv operators_diffusion_dfn_nlfv
+                        KIND unit
+                        SOURCE test/Main.cc test/operator_diffusion_dfn_nlfv.cc
+                        LINK_LIBS mesh_extracted ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
         add_amanzi_test(operators_coupled_diffusion operators_coupled_diffusion
                         KIND unit
                         SOURCE test/Main.cc test/operator_coupled_diffusion.cc
@@ -297,7 +304,6 @@ if (ENABLE_TESTS)
                         SOURCE test/Main.cc test/operator_advdiff_surface.cc
                         LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-        if(0)
         # Test: electromagnetics 
         add_amanzi_test(operators_electromagnetics operators_electromagnetics
                         KIND unit
@@ -329,7 +335,6 @@ if (ENABLE_TESTS)
                         SOURCE test/Main.cc test/operator_advection_dg.cc
                                             test/operator_advection_dg_transient.cc
                         LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-        endif()
     endif()
 
     add_amanzi_test(operators_diffusion_curved_face operators_diffusion_curved_face
@@ -429,7 +434,19 @@ if (ENABLE_TESTS)
     # Test: elasticity methods
     add_amanzi_test(operators_elasticity operators_elasticity
                     KIND unit
+                    NPROCS 2
                     SOURCE test/Main.cc test/operator_elasticity.cc
+                    LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(operators_elasticity_weak_symmetry operators_elasticity_weak_symmetry
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_elasticity_weak_symmetry.cc
+                    LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(operators_elasticity_fractured_matrix operators_elasticity_fractured_matrix
+                    KIND unit
+                    NPROCS 1
+                    SOURCE test/Main.cc test/operator_elasticity_fractured_matrix.cc
                     LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_stokes operators_stokes

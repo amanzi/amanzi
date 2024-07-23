@@ -55,16 +55,12 @@ int main(int argc, char* argv[])
   Array<Real> blo3(BL_SPACEDIM); D_EXPR(blo3[0]=20, blo3[1]=0,  blo3[2]=0);
   Array<Real> bhi3(BL_SPACEDIM); D_EXPR(bhi3[0]=30, bhi3[1]=10, bhi3[2]=10);
   BoxRegion region3(name3,purpose3,blo3,bhi3);
-  Real vol3=1;
-  for (int i=0; i<BL_SPACEDIM; ++i) vol3 *= bhi3[i] - blo3[i];
 
   std::string name4 = "Bob";
   std::string purpose4 = "Test";
   Array<Real> blo4(BL_SPACEDIM); D_EXPR(blo4[0]=7,  blo4[1]=0,  blo4[2]=0);
   Array<Real> bhi4(BL_SPACEDIM); D_EXPR(bhi4[0]=12, bhi4[1]=10, bhi4[2]=10);
   BoxRegion region4(name4,purpose4,blo4,bhi4);
-  Real vol4=1;
-  for (int i=0; i<BL_SPACEDIM; ++i) vol4 *= bhi4[i] - blo4[i];
 
   AllRegion regionA;
   Real volA=1;
@@ -99,7 +95,6 @@ int main(int argc, char* argv[])
   UnionRegion compound1(cname,cpurpose,set2);
   fab.setVal(0);
   compound1.setVal(fab,vol,0,dx.dataPtr(),0);
-  Real res1 = fab.sum(0);
   pass &= std::abs(fab.sum(0) - (vol1 + vol2)) < sum_eps;
   if (ioproc && !pass) {
     std::cout << "Test 1 fail: fab.sum(): " << fab.sum(0) << std::endl;

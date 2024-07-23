@@ -89,6 +89,14 @@ class UnstructuredObservations : public IOEvent {
   std::unique_ptr<std::ofstream> fid_;
 };
 
+
+// non-member functions
+bool
+portable_name(const std::string& name);
+bool
+portable_filename(const std::string& filename);
+
+
 } // namespace Amanzi
 
 

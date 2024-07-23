@@ -22,13 +22,17 @@
 #include "EOS_Viscosity.hh"
 #include "Factory.hh"
 #include "LookupTable.hh"
+#include "LookupTableFactory.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
 class ViscosityTabular : public EOS_Viscosity {
  public:
-  explicit ViscosityTabular(Teuchos::ParameterList& eos_plist);
+  ViscosityTabular(Teuchos::ParameterList& plist) : EOS_Viscosity(plist)
+  {
+    table_ = CreateLookupTable(plist);
+  }
 
   virtual double Viscosity(double T, double p) override
   {

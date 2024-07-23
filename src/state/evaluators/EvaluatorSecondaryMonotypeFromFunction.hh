@@ -23,15 +23,17 @@ For example, one might write a dependency:
 .. _secondary-variable-from-function-evaluator-spec:
 .. admonition:: secondary-variable-from-function-evaluator-spec
 
-   ONE OF:
+   ONE OF
 
    * `"functions`" ``[composite-vector-function-spec-list]`` Note this is used
      for multiple Degress of Freedom.
 
-   OR:
+   OR
 
    * `"function`" ``[composite-vector-function-spec]`` Used for a single degree
      of freedom.
+
+   END
 
 Example:
 

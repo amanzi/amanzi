@@ -36,7 +36,7 @@
 #include "State.hh"
 
 
-TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE)
+void RunTest(int icase)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -64,6 +64,8 @@ TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE)
   Amanzi::ObservationData obs_data;
 
   Teuchos::ParameterList state_plist = plist->sublist("state");
+  if (icase == 1) state_plist.sublist("evaluators").sublist("fracture-aperture") =
+    state_plist.sublist("evaluators").sublist("fracture-aperture-dynamic");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
 
@@ -73,10 +75,8 @@ TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE)
   // auto mesh_fracture = factory.create(mesh, names, AmanziMesh::Entity_kind::FACE);
   auto mesh_fracture_framework = Teuchos::rcp(new MeshExtractedManifold(
     mesh, "fracture", AmanziMesh::Entity_kind::FACE, comm, gm, mesh_list));
-  auto mesh_fracture =
-    Teuchos::rcp(new Mesh(mesh_fracture_framework,
-                          Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()),
-                          mesh_list));
+  auto mesh_fracture = Teuchos::rcp(new Mesh(
+    mesh_fracture_framework, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), mesh_list));
 
   S->RegisterMesh("fracture", mesh_fracture);
 
@@ -126,4 +126,9 @@ TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE)
     }
     CHECK(std::fabs(uf[0][g] - flux) < 1e-8 * std::fabs(q0) + 1e-14);
   }
+}
+
+TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE) {
+  RunTest(0);
+  RunTest(1);
 }

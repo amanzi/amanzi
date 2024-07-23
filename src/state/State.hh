@@ -35,6 +35,9 @@ various fields.
      that `"initial conditions`" is not a particularly descriptive name here --
      PDE initial conditions are generally not here.  This list consists of
 
+   * `"model parameters`" ``[list]`` A list of shared model parameters that can
+     be used across all evaluators.
+
 .. _evaluator-typedinline-spec:
 .. admonition:: evaluator-typedinline-spec
 

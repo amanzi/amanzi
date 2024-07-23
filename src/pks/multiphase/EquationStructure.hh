@@ -38,11 +38,17 @@ typedef std::pair<Key, Key> EquationTerm;
 
 struct EquationStructure {
  public:
-  std::vector<EquationTerm> advection, diffusion;
-  std::vector<double> adv_factors, diff_factors;
+  std::vector<EquationTerm> terms;
+  std::vector<double> factors;
+  std::vector<int> types, phases;
 
   Key storage;
   EquationTerm constraint;
+
+  bool has_component = false;
+  int component_id; // Water has component_id = -1; other solutes have
+  // component_id \in \{0, 1, \dots}, sorted in the order as in
+  // "molecular diffusion"
 };
 
 } // namespace Multiphase

@@ -1,4 +1,4 @@
-<amanzi_input version="2.3.0" type="unstructured">
+<amanzi_input version="1.6-dev" type="unstructured">
 
   <model_description name="BC Cribs">
     <comments>Three homogeneous layers in 2D with two cribs discharging Tc-99</comments>
@@ -218,6 +218,7 @@
         </liquid_component>
         <solute_component name = "Tc-99" value = "0" function="uniform"/>
       </liquid_phase>
+      <temperature formula="300.0"/>
     </initial_condition>
   </initial_conditions>
 

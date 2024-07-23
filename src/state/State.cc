@@ -633,7 +633,7 @@ State::Initialize(const State& other)
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab1 = vo_->getOSTab();
-    *vo_->os() << "copying fields to new state.." << std::endl;
+    *vo_->os() << "copying fields to new state..." << std::endl;
   }
 
   for (auto& e : data_) {
@@ -724,7 +724,7 @@ State::InitializeFields(const Tag& tag)
       auto owner = GetRecord(it->first, tag).owner();
       auto& r = GetRecordW(it->first, tag, owner);
       if (r.ValidType<CompositeVector>()) {
-        r.ReadCheckpoint(file_input, tag);
+        r.ReadCheckpoint(file_input, tag, it->second->subfieldnames());
 
         // this is pretty hacky -- why are these ICs not in the PK's list?  And
         // if they aren't owned by a PK, they should be independent variables
@@ -860,7 +860,7 @@ State::GetEvaluator(const Key& key, const Tag& tag) const
 {
   try {
     return *evaluators_.at(key).at(tag);
-  } catch (std::out_of_range) {
+  } catch (const std::out_of_range&) {
     std::stringstream ss;
     ss << "Evaluator for field \"" << key << "\" at tag \"" << tag
        << "\" does not exist in the state.";
@@ -875,7 +875,7 @@ State::GetEvaluatorPtr(const Key& key, const Tag& tag)
 {
   try {
     return evaluators_.at(key).at(tag);
-  } catch (std::out_of_range) {
+  } catch (const std::out_of_range&) {
     std::stringstream ss;
     ss << "Evaluator for field \"" << key << "\" at tag \"" << tag
        << "\" does not exist in the state.";

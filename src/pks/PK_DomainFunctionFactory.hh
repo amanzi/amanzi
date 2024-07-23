@@ -35,7 +35,7 @@
 namespace Amanzi {
 
 template <class FunctionBase>
-class PK_DomainFunctionFactory : public FunctionBase {
+class PK_DomainFunctionFactory {
  public:
   PK_DomainFunctionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                            const Teuchos::RCP<State>& S)
@@ -45,13 +45,15 @@ class PK_DomainFunctionFactory : public FunctionBase {
   Teuchos::RCP<FunctionBase> Create(Teuchos::ParameterList& plist,
                                     AmanziMesh::Entity_kind kind,
                                     Teuchos::RCP<const Epetra_MultiVector> weight,
-                                    const Tag& tag = Tags::DEFAULT);
+                                    const Tag& tag = Tags::DEFAULT,
+                                    bool ghosted = false);
 
   Teuchos::RCP<FunctionBase> Create(Teuchos::ParameterList& plist,
                                     const std::string& keyword,
                                     AmanziMesh::Entity_kind kind,
                                     Teuchos::RCP<const Epetra_MultiVector> weight,
-                                    const Tag& tag = Tags::DEFAULT);
+                                    const Tag& tag = Tags::DEFAULT,
+                                    bool ghosted = false);
 
 
  protected:
@@ -66,7 +68,8 @@ PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
                                                const std::string& keyword,
                                                AmanziMesh::Entity_kind kind,
                                                Teuchos::RCP<const Epetra_MultiVector> weight,
-                                               const Tag& tag)
+                                               const Tag& tag,
+                                               bool ghosted)
 {
   // verify completeness of the list
   Errors::Message msg;
@@ -152,7 +155,7 @@ PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
     return func;
   } else {
     Teuchos::RCP<PK_DomainFunctionSimple<FunctionBase>> func =
-      Teuchos::rcp(new PK_DomainFunctionSimple<FunctionBase>(mesh_, plist, kind));
+      Teuchos::rcp(new PK_DomainFunctionSimple<FunctionBase>(mesh_, plist, kind, ghosted));
     func->Init(plist, keyword);
     return func;
   }
@@ -166,7 +169,8 @@ Teuchos::RCP<FunctionBase>
 PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
                                                AmanziMesh::Entity_kind kind,
                                                Teuchos::RCP<const Epetra_MultiVector> weight,
-                                               const Tag& tag)
+                                               const Tag& tag,
+                                               bool ghosted)
 {
   int n(0);
   std::string keyword;
@@ -182,7 +186,7 @@ PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
     Exceptions::amanzi_throw(msg);
   }
 
-  return Create(plist, keyword, kind, weight, tag);
+  return Create(plist, keyword, kind, weight, tag, ghosted);
 }
 
 } // namespace Amanzi

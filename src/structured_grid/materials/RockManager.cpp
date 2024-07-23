@@ -10,6 +10,8 @@
 #include <fstream>
 #include <iomanip>
 
+#include "dbc.hh"
+
 #include <RockManager.H>
 #include <RockManager_F.H>
 
@@ -253,8 +255,6 @@ RockManager::BuildInterpolators()
   static IntVect iv(D_DECL(0,0,0));
   static Box bx(iv,iv);
   FArrayBox pc_params(bx,nComp);
-  int level=0; //not really used
-  int dComp=0;
   Real time = 0;
 
   for (int n=0; n<rock.size(); ++n) {
@@ -357,7 +357,6 @@ RockManager::FillBoundary(Real      time,
       if ( !(domain.contains(gbox)) ) {
         for (int d=0; d<BL_SPACEDIM; ++d) {
           Box adjCellLo = BoxLib::adjCellLo(vbox,d,1);
-          Box intCellLo = Box(adjCellLo).shift(d,1);
           for (int i=0; i<nGrow; ++i) {
             Box ladjCellLo = Box(adjCellLo).shift(d,-i);
             for (int dd=0; dd<d; ++dd) {
@@ -368,7 +367,6 @@ RockManager::FillBoundary(Real      time,
           }
 
           Box adjCellHi = BoxLib::adjCellHi(vbox,d,1);
-          Box intCellHi = Box(adjCellHi).shift(d,-1);
           for (int i=0; i<nGrow; ++i) {
             Box ladjCellHi = Box(adjCellHi).shift(d,i);
             for (int dd=0; dd<d; ++dd) {
@@ -380,9 +378,9 @@ RockManager::FillBoundary(Real      time,
         }
       }
     }
-    bool local = false;
     bool corner=true;
     mf.FillBoundary(dComp,nComp,!corner);
+    // bool local = false;
     // materialFiller->Geom(level).FillPeriodicBoundary(mf,dComp,nComp,corner,local);
   }
 }
@@ -492,14 +490,9 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     const std::string prefix("rock." + rname);
     ParmParse ppr(prefix.c_str());
 
-    bool generate_porosity_gslib_file = false;
-    bool generate_perm_gslib_file = false;
-
     static Property::CoarsenRule arith_crsn = Property::Arithmetic;
     static Property::CoarsenRule harm_crsn = Property::ComponentHarmonic;
     static Property::RefineRule pc_refine = Property::PiecewiseConstant;
-
-    Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
 
     Property* Dmolec_func = 0;
 
@@ -576,7 +569,6 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     else {
       // phi_dist == gslib
       std::string gslib_param_file, gslib_data_file;
-      generate_porosity_gslib_file = (pprp.countval(PorosityGSParamFileName.c_str()) != 0);
       if (pprp.countval(PorosityGSDataFileName.c_str()) == 0) {
         pprp.get(PorosityGSParamFileName.c_str(),gslib_param_file);
         gslib_data_file="porosity.gslib";
@@ -778,7 +770,6 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     else {
       // K_dist == gslib
       std::string gslib_param_file, gslib_data_file;
-      generate_perm_gslib_file = (pprK.countval(KGSParamFileName.c_str()) != 0);
       if (pprK.countval(KGSDataFileName.c_str()) == 0) {
         pprK.get(KGSParamFileName.c_str(),gslib_param_file);
         gslib_data_file="permeability.gslib";
@@ -898,7 +889,7 @@ RockManager::Initialize(const Array<std::string>* solute_names)
 
 	// Convert input alpa values to invAtm, if necessary
 	if (Capillary_Pressure_alpha_in_invPa) {
-	  BL_ASSERT(!Capillary_Pressure_alpha_in_invAtm);
+	  AMANZI_ASSERT(!Capillary_Pressure_alpha_in_invAtm);
 	  alpha *= 1.01325e5;
 	}
 
@@ -1203,7 +1194,6 @@ RockManager::GetProperty(Real               time,
     if (gslib_prop != 0) {
       const AmrData* this_const_amrData = gslib_prop->GetAmrData();
       AmrData* this_amrData = const_cast<AmrData*>(this_const_amrData);
-      const Geometry& geom = materialFiller->Geom(level);
 
       Array<int> destFillComps(nComp);
       for (int n=0; n<nComp; ++n) {
@@ -1322,7 +1312,6 @@ RockManager::CapillaryPressure(const Real* saturation, int* matID, Real time, Re
         Real mI     = 1/m;
         Real omSrI  = 1/(1-Sr);
         Real alphaI = 1/alpha;
-        Real n      = 1/(1-m);
         Real nI     = 1-m;
 
         for (int i=0; i<N; ++i) {
@@ -1662,7 +1651,6 @@ RockManager::RelativePermeability(const Real* saturation, int* matID, Real time,
     } else if (is_BC) {
 
       Real lambda = pc_params[BC_LAMBDA];
-      Real alpha  = pc_params[BC_ALPHA];
       Real Sr     = pc_params[BC_SR];
       Real ell    = pc_params[BC_ELL];
       Real omSrI  = 1/(1 - Sr);
@@ -1670,7 +1658,7 @@ RockManager::RelativePermeability(const Real* saturation, int* matID, Real time,
       bool is_Mualem  = Is_Kr_model_XX(pc_params[VG_KR_MODEL_ID],Kr_model_BC_Mualem);
       bool is_Burdine = Is_Kr_model_XX(pc_params[VG_KR_MODEL_ID],Kr_model_BC_Burdine);
 
-      BL_ASSERT(is_Mualem || is_Burdine);
+      AMANZI_ASSERT(is_Mualem || is_Burdine);
       Real f = (is_Mualem ? ell + 2 + 2/lambda : ell + 1 + 2/lambda);
 
       for (int i=0, End=mat_pts[j].size(); i<End; ++i) {

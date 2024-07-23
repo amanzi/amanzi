@@ -15,10 +15,12 @@ model correspond now to the fracture continuum.
 Example: tcc = total component concentration in the fracture continuum;
 tcc_matrix = total component concentration in the matrix continuum.
 
-* `"number of matrix nodes`" [int] defines number of matrix layers.
-* `"matrix depth`" [double] is the characteristic length for matrix continuum.
-* `"tortousity`" [double] defines tortuosity to correct diffusivity of a liquid solute.
-* `"matrix volume fraction`" [double] defines relative volume of matrix continuum.
+.. admonition:: transport_generalized_dual_porosity-spec
+
+  * `"number of matrix nodes`" ``[int]`` defines number of matrix layers.
+  * `"matrix depth`" ``[double]`` is the characteristic length for matrix continuum.
+  * `"tortousity`" ``[double]`` defines tortuosity to correct diffusivity of a liquid solute.
+  * `"matrix volume fraction`" ``[double]`` defines relative volume of matrix continuum.
 
 .. code-block:: xml
 

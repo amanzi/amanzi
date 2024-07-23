@@ -89,6 +89,6 @@ if (BUILD_TESTS)
                   KIND unit
                   SOURCE test/composite_vector_function.cc
                   LINK_LIBS  mesh_functions mesh_factory data_structures 
-                             ${UnitTest_LIBRARIES} ${Boost_LIBRARIES} 
+                             ${UnitTest_LIBRARIES}
                              ${MSTK_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
 endif()

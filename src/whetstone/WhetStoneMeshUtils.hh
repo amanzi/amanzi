@@ -143,7 +143,7 @@ getNodeUnitNormal(const AmanziMesh::Mesh& mesh, int v)
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    auto cells = mesh.getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh.getFaceCells(f);
     if (cells.size() == 1) normal += mesh.getFaceNormal(faces[n]);
   }
   return normal / norm(normal);

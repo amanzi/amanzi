@@ -22,19 +22,21 @@ bilinear interpolation on
 are out of those bounds, and constant at the corner value if both are out of
 bounds.
 
-* `"file`" ``[string]`` HDF5 filename of the data
-* `"time header`" ``[string]`` **time** Name of the temporal dimension indices, the :math:`t_i`.
-* `"row header`" ``[string]`` **x** name of the row dataset, the :math:`x_i`
-* `"row coordinate`" ``[string]`` **x** one of `"x`",`"y`",`"z`"
-* `"column header`" ``[string]`` **y** name of the column dataset, the :math:`y_i`
-* `"column coordinate`" ``[string]`` **y** one of `"x`",`"y`",`"z`"
-* `"value header`" ``[string]`` name of the values dataset, the :math:`u_{{i,j}}`
-* `"forms`" ``[string]`` **linear** Describes the temporal interpolant, one
-  of `"linear`" or `"constant`", where `"linear`" is therefore trilinear
-  interpolation (2x space and time) and `"constant`" indicates that the value
-  on an interval is provided by the left point's (earlier in time) value.
+.. admonition:: function_bilinear-spec
 
-Example1:
+  * `"file`" ``[string]`` HDF5 filename of the data
+  * `"time header`" ``[string]`` **time** Name of the temporal dimension indices, the :math:`t_i`.
+  * `"row header`" ``[string]`` **x** name of the row dataset, the :math:`x_i`
+  * `"row coordinate`" ``[string]`` **x** one of `"x`",`"y`",`"z`"
+  * `"column header`" ``[string]`` **y** name of the column dataset, the :math:`y_i`
+  * `"column coordinate`" ``[string]`` **y** one of `"x`",`"y`",`"z`"
+  * `"value header`" ``[string]`` name of the values dataset, the :math:`u_{{i,j}}`
+  * `"forms`" ``[string]`` **linear** Describes the temporal interpolant, one
+    of `"linear`" or `"constant`", where `"linear`" is therefore trilinear
+    interpolation (2x space and time) and `"constant`" indicates that the value
+    on an interval is provided by the left point's (earlier in time) value.
+
+Example:
 
 .. code-block:: xml
 

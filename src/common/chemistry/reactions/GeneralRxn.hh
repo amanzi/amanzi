@@ -11,24 +11,31 @@
 
 The `"general kinetics`" section describes kinetic (slow) reactions in the form
 
-.. code-block:: txt
+.. code-block:: asc
 
   3 A(aq) + 2 B(aq) <-> C(aq) + 3 D(aq) + 4 E(aq)
 
 where a number (stoichiometic coefficient) is followed by a species name.
+Implementation of the generalized kinetic formulation is based of publication
+"Multicomponent reactive transport modeling in variably saturated porous media 
+using a generalized formulation for kinetically controlled reactions" by K. Ulrich 
+Mayer (Water Res. Research, Vol.38:9, 1174, doi:10.1029/2001WR000862, 2002).
+
 The list of parameters for each reaction includes
 
-* `"reactants`" [string] is the left-hand side of the above equation.
+.. admonition:: general_kinetics-spec
 
-* `"products`" [string] is the right-hand side of the above equation.
+  * `"reactants`" ``[string]`` is the left-hand side of the above equation.
 
-* `"forward rate`" [double] is the forward reaction rate.
+  * `"products`" ``[string]`` is the right-hand side of the above equation.
 
-* `"backward rate`" [double] is the reverse reaction rate.
+  * `"forward rate`" ``[double]`` is the forward reaction rate.
 
-* `"reaction orders (reactants/products)`" [Array(double)] is the list of
-  reaction orders with respect to activies of dissolved species. The list
-  includes orders for reactants (first) and products (second).
+  * `"backward rate`" ``[double]`` is the reverse reaction rate.
+
+  * `"reaction orders (reactants/products)`" ``[Array(double)]`` is the list of
+    reaction orders with respect to activies of dissolved species. The list
+    includes orders for reactants (first) and products (second).
 
 .. code-block:: xml
 

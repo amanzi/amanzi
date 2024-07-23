@@ -13,7 +13,7 @@ RegionData::RegionData(const std::string&    label,
                        const Array<const Region*>& regions,
                        const std::string&    typeStr,
                        const Array<Real>&    vals)
-    : label(label), type(typeStr), vals(vals), nComp(vals.size())
+    : nComp(vals.size()), type(typeStr), label(label), vals(vals)
 {
     setRegions(regions);
 }
@@ -22,7 +22,7 @@ RegionData::RegionData(const std::string&    label,
                        const Array<const Region*>& regions,
                        const std::string&    typeStr,
                        Real                  val)
-    : label(label), type(typeStr), nComp(1), vals(Array<Real>(nComp,val))
+    : nComp(1), type(typeStr), label(label), vals(Array<Real>(nComp,val))
 {
     setRegions(regions);
 }

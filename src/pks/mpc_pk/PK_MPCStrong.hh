@@ -156,7 +156,7 @@ PK_MPCStrong<PK_Base>::Setup()
   PK_MPC<PK_Base>::Setup();
 
   // Set the initial timestep as the min of the sub-pk sizes.
-  dt_ = get_dt();
+  dt_ = 1e+99;
 }
 
 

@@ -26,7 +26,7 @@
 #include "Point.hh"
 
 #include "DenseMatrix.hh"
-#include "MeshMaps.hh"
+#include "MeshMapsBase.hh"
 #include "Polynomial.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
@@ -34,12 +34,12 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MeshMaps_FEM : public MeshMaps {
+class MeshMaps_FEM : public MeshMapsBase {
  public:
-  MeshMaps_FEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : MeshMaps(mesh){};
+  MeshMaps_FEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : MeshMapsBase(mesh){};
   MeshMaps_FEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
                Teuchos::RCP<const AmanziMesh::Mesh> mesh1)
-    : MeshMaps(mesh0, mesh1){};
+    : MeshMapsBase(mesh0, mesh1){};
   ~MeshMaps_FEM(){};
 
   // remap pseudo velocity

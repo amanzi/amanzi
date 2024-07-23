@@ -170,11 +170,12 @@ SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec)
 
     // require time deltas
     for (int j = 0; j < mvec; j++) {
-      S_->Require<Vector>(initvec.Map(), name_, Tag(std::to_string(j)), name_);
-      S_->SetPtr<Vector>(name_, Tag(std::to_string(j)), name_, d_[j]);
-      S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_initialized();
-      S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_io_checkpoint();
-      S_->GetRecordW(name_, Tag(std::to_string(j)), name_).set_io_vis(false);
+      std::string sh_name = name_ + "_solution_history";
+      S_->Require<Vector>(initvec.Map(), sh_name, Tag(std::to_string(j)), name_);
+      S_->SetPtr<Vector>(sh_name, Tag(std::to_string(j)), name_, d_[j]);
+      S_->GetRecordW(sh_name, Tag(std::to_string(j)), name_).set_initialized();
+      S_->GetRecordW(sh_name, Tag(std::to_string(j)), name_).set_io_checkpoint();
+      S_->GetRecordW(sh_name, Tag(std::to_string(j)), name_).set_io_vis(false);
     }
   }
 }
@@ -234,7 +235,7 @@ SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, Vector const*
     if (d_.size() > 1) {
       // shift the divided differences, except the first; the new vector and
       // time index are the same as the most recent.
-      Teuchos::RCP<Vector> tmp = d_[(*nvec_) - 1];
+      Teuchos::RCP<Vector> tmp2 = d_[(*nvec_) - 1];
       for (unsigned int j = (*nvec_) - 1; j >= 2; j--) {
         (*times_)[j] = (*times_)[j - 1];
         d_[j] = d_[j - 1];
@@ -242,7 +243,7 @@ SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, Vector const*
 
       // the first divided difference (same time index) is the specified derivative.
       (*times_)[1] = (*times_)[0];
-      d_[1] = tmp;
+      d_[1] = tmp2;
       *d_[1] = *xdot;
 
       // update the rest of the divided differences
@@ -317,9 +318,10 @@ template <class Vector>
 void
 SolutionHistory<Vector>::MoveToState()
 {
+  std::string sh_name = name_ + "_solution_history";
   if (S_ != Teuchos::null) {
     for (int j = 0; j != d_.size(); ++j) {
-      S_->SetPtr<Vector>(name_, Tag(std::to_string(j)), name_, d_[j]);
+      S_->SetPtr<Vector>(sh_name, Tag(std::to_string(j)), name_, d_[j]);
     }
   }
 }

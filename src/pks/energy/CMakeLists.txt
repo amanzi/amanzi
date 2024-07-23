@@ -69,7 +69,7 @@ add_amanzi_library(energy SOURCE ${energy_src_files}
 #
 # Install Targets
 #
-set(flow_inc_files 
+set(energy_inc_files 
   Energy_PK.hh
   EnergyDefs.hh
   EnergyOnePhase_PK.hh
@@ -139,6 +139,12 @@ if (BUILD_TESTS)
     add_amanzi_test(energy_convergence_src energy_convergence_src
                     KIND int
                     SOURCE test/Main.cc test/energy_convergence_src.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+                    
+    # Test: 6
+    add_amanzi_test(energy_jacobian energy_jacobian
+                    KIND int
+                    SOURCE test/Main.cc test/energy_jacobian.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
                     
 endif()

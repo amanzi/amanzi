@@ -79,6 +79,10 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const MeshFramework>& parent
 
 // Number of entities of any kind (cell, face, node) and in a
 // particular category (OWNED, GHOST, ALL)
+//
+// This is currently conceptually inconsistent -- it should be a 0D,
+// e.g. cell-only, mesh with no faces/edges/nodes.  But that change may break
+// things, so it should be done alone first.
 std::size_t
 MeshSurfaceCell::getNumEntities(const Entity_kind kind, const Parallel_kind ptype) const
 {
@@ -87,7 +91,6 @@ MeshSurfaceCell::getNumEntities(const Entity_kind kind, const Parallel_kind ptyp
   case Entity_kind::CELL:
     count = 1;
     break;
-
   default: // num_nodes == num_faces == num_boundary_faces
     count = nodes_.size();
     break;
@@ -130,9 +133,7 @@ MeshSurfaceCell::getFaceNodes(const Entity_ID faceid, cEntity_ID_View& nodeids) 
 // not guaranteed to be the same for corresponding nodes on
 // different processors
 void
-MeshSurfaceCell::getNodeCells(const Entity_ID nodeid,
-                              const Parallel_kind ptype,
-                              cEntity_ID_View& cellids) const
+MeshSurfaceCell::getNodeCells(const Entity_ID nodeid, cEntity_ID_View& cellids) const
 {
   AMANZI_ASSERT(nodeid < nodes_.size());
   Entity_ID_View lcellids("lcellids", 1);
@@ -145,9 +146,7 @@ MeshSurfaceCell::getNodeCells(const Entity_ID nodeid,
 // not guarnateed to be the same for corresponding nodes on
 // different processors
 void
-MeshSurfaceCell::getNodeFaces(const Entity_ID nodeid,
-                              const Parallel_kind ptype,
-                              cEntity_ID_View& faceids) const
+MeshSurfaceCell::getNodeFaces(const Entity_ID nodeid, cEntity_ID_View& faceids) const
 {
   Entity_ID_View lfaceids("lfaceids", 2);
   lfaceids[0] = (nodeid - 1) % (int)nodes_.size();
@@ -163,11 +162,11 @@ MeshSurfaceCell::getNodeFaces(const Entity_ID nodeid,
 void
 MeshSurfaceCell::getCellFacesAndDirs(const Entity_ID cellid,
                                      cEntity_ID_View& faceids,
-                                     cEntity_Direction_View* const face_dirs) const
+                                     cDirection_View* const face_dirs) const
 {
   AMANZI_ASSERT(cellid == 0);
   Entity_ID_View lfaceids("lfaceids", nodes_.size());
-  Entity_Direction_View lface_dirs;
+  Direction_View lface_dirs;
   for (int i = 0; i != nodes_.size(); ++i) lfaceids[i] = i;
   if (face_dirs) {
     Kokkos::resize(lface_dirs, nodes_.size());
@@ -181,9 +180,7 @@ MeshSurfaceCell::getCellFacesAndDirs(const Entity_ID cellid,
 // Cells connected to a face - this function is implemented in each
 // mesh framework. The results are cached in the base class
 void
-MeshSurfaceCell::getFaceCells(const Entity_ID faceid,
-                              const Parallel_kind ptype,
-                              cEntity_ID_View& cellids) const
+MeshSurfaceCell::getFaceCells(const Entity_ID faceid, cEntity_ID_View& cellids) const
 {
   Entity_ID_View lcellids("lcellids", 1);
   lcellids[0] = 0;

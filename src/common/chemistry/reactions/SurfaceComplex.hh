@@ -12,12 +12,14 @@
 The `"surface complexes`" is the list of surface complexation reactions.
 Each reaction is defined by the following parameters:
 
-* `"reaction`" [string] is a surface complexation reaction involing the complex site
-  and primary species.
+.. admonition:: surface_complex-spec
 
-* `"charge`" [int] is the charge of the complex.
+  * `"reaction`" ``[string]`` is a surface complexation reaction involing the complex site
+    and primary species.
 
-* `"equilibrium constant`" [double] is the logarithm of the reaction equilibrium coefficeint.
+  * `"charge`" ``[int]`` is the charge of the complex.
+
+  * `"equilibrium constant`" ``[double]`` is the logarithm of the reaction equilibrium coefficeint.
 
 .. code-block:: xml
 
@@ -108,7 +110,6 @@ class SurfaceComplex {
 
  private:
   std::string name_;
-  int id_;
   double charge_;
 
   double surface_concentration_; // units? ?[mol/m^3 bulk]?

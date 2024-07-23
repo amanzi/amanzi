@@ -38,7 +38,8 @@ MeshMaps_VEM::VelocityCell(int c,
 {
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", method_).set<int>("method order", order_);
-  auto mfd = BilinearFormFactory::Create(plist, mesh0_);
+  auto form = BilinearFormFactory::Create(plist, mesh0_);
+  auto mfd = Teuchos::rcp_dynamic_cast<MFD3D>(form);
 
   vc.resize(d_);
 
@@ -68,15 +69,16 @@ void
 MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
 {
   if (d_ == 2) {
-    MeshMaps::VelocityFace(f, vf);
+    MeshMapsBase::VelocityFace(f, vf);
   } else {
     auto [edges, dirs] = mesh0_->getFaceEdgesAndDirections(f);
     int nedges = edges.size();
 
     Teuchos::ParameterList plist;
     plist.set<std::string>("method", method_).set<int>("method order", order_);
-    auto mfd = BilinearFormFactory::Create(plist, mesh0_);
-    mfd->set_order(order_);
+    auto form = BilinearFormFactory::Create(plist, mesh0_);
+    auto mfd = Teuchos::rcp_dynamic_cast<MFD3D>(form);
+    form->set_order(order_);
 
     vf.resize(d_);
     for (int i = 0; i < d_; ++i) {
@@ -85,7 +87,7 @@ MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
 
       for (int n = 0; n < nedges; ++n) {
         int e = edges[n];
-        MeshMaps::VelocityEdge(e, v);
+        MeshMapsBase::VelocityEdge(e, v);
         ve.push_back(v[i]);
       }
 

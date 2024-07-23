@@ -60,26 +60,54 @@
     <ParameterList name="system">
       <ParameterList name="pressure eqn">
         <Parameter name="primary unknown" type="string" value="pressure_liquid"/>
-        <Parameter name="advection liquid" type="Array(string)" value="{ advection_water, pressure_liquid }"/>
-        <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
-
-        <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_vapor, mole_fraction_vapor }"/>
-        <Parameter name="diffusion factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
-
         <Parameter name="accumulation" type="string" value="total_water_storage"/>
+
+        <ParameterList name="terms">
+          <ParameterList name="advection">
+            <Parameter name="coefficient" type="string" value="advection_water"/>
+            <Parameter name="argument" type="string" value="pressure_liquid"/>
+            <Parameter name="scaling factor" type="double" value="1.0"/>
+            <Parameter name="phase" type="int" value="0"/>
+          </ParameterList>
+          <ParameterList name="diffusion">
+            <Parameter name="coefficient" type="string" value="diffusion_vapor"/>
+            <Parameter name="argument" type="string" value="mole_fraction_vapor"/>
+            <Parameter name="scaling factor" type="double" value="1.0"/>
+            <Parameter name="phase" type="int" value="0"/>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="solute eqn">
         <Parameter name="primary unknown" type="string" value="mole_fraction_gas"/>
-        <Parameter name="advection liquid" type="Array(string)" value="{ advection_liquid, pressure_liquid }"/>
-        <Parameter name="advection gas" type="Array(string)" value="{ advection_gas, pressure_gas }"/>
-        <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
-
-        <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_liquid, mole_fraction_liquid }"/>
-        <Parameter name="diffusion gas" type="Array(string)" value="{ diffusion_gas, mole_fraction_gas }"/>
-        <Parameter name="diffusion factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
-
         <Parameter name="accumulation" type="string" value="total_component_storage"/>
+
+        <ParameterList name="terms">
+          <ParameterList name="advection 0">
+            <Parameter name="coefficient" type="string" value="advection_liquid"/>
+            <Parameter name="argument" type="string" value="pressure_liquid"/>
+            <Parameter name="scaling factor" type="double" value="1.0"/>
+            <Parameter name="phase" type="int" value="0"/>
+          </ParameterList>
+          <ParameterList name="advection 1">
+            <Parameter name="coefficient" type="string" value="advection_gas"/>
+            <Parameter name="argument" type="string" value="pressure_gas"/>
+            <Parameter name="scaling factor" type="double" value="1.0"/>
+            <Parameter name="phase" type="int" value="1"/>
+          </ParameterList>
+          <ParameterList name="diffusion 0">
+            <Parameter name="coefficient" type="string" value="diffusion_liquid"/>
+            <Parameter name="argument" type="string" value="mole_fraction_liquid"/>
+            <Parameter name="scaling factor" type="double" value="1.0"/>
+            <Parameter name="phase" type="int" value="0"/>
+          </ParameterList>
+          <ParameterList name="diffusion 1">
+            <Parameter name="coefficient" type="string" value="diffusion_gas"/>
+            <Parameter name="argument" type="string" value="mole_fraction_gas"/>
+            <Parameter name="scaling factor" type="double" value="1.0"/>
+            <Parameter name="phase" type="int" value="1"/>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="constraint eqn">
@@ -230,7 +258,7 @@
       <ParameterList name="diffusion operator">
         <ParameterList name="upwind">
           <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
-          <ParameterList name="upwind standard parameters">
+          <ParameterList name="upwind parameters">
              <Parameter name="tolerance" type="double" value="1e-12"/>
           </ParameterList>
         </ParameterList>
@@ -276,15 +304,6 @@
     <ParameterList name="initial conditions">
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0}"/>
-      </ParameterList>
-      <ParameterList name="const_fluid_density">
-        <Parameter name="value" type="double" value="998.2"/>
-      </ParameterList>
-      <ParameterList name="const_fluid_viscosity">
-        <Parameter name="value" type="double" value="1.0e-3"/>
-      </ParameterList>
-      <ParameterList name="const_gas_viscosity">
-        <Parameter name="value" type="double" value="9.0e-6"/>
       </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
@@ -563,7 +582,8 @@
         <Parameter name="pressure key" type="string" value="pressure_gas"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="ideal gas"/>
-          <Parameter name="molar mass of gas" type="double" value="2.0e-3"/>
+          <Parameter name="molar mass" type="double" value="2.0e-3"/>
+          <Parameter name="density" type="double" value="1.0"/>
         </ParameterList>
       </ParameterList>
 

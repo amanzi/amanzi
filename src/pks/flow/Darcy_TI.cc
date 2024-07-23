@@ -18,6 +18,8 @@
 namespace Amanzi {
 namespace Flow {
 
+using CV_t = CompositeVector;
+
 /* ******************************************************************
 * Calculate f(u, du/dt) = A*u - rhs.
 ****************************************************************** */
@@ -35,21 +37,13 @@ Darcy_PK::FunctionalResidual(double t_old,
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
 
   // compute accumulation terms
-  double factor = 1.0 / g_;
-
-  S_->GetEvaluator(specific_storage_key_).Update(*S_, "flow");
-  const auto& ss = S_->Get<CompositeVector>(specific_storage_key_);
-  CompositeVector ss_g(ss);
-  ss_g.Update(0.0, ss, factor);
-
-  factor = 1.0 / (g_ * dt_);
+  double factor = 1.0 / (g_ * dt_);
   CompositeVector sy_g(*specific_yield_copy_);
   sy_g.Scale(factor);
 
   if (flow_on_manifold_) {
     S_->GetEvaluator(aperture_key_).Update(*S_, "flow");
-    const auto& aperture = S_->Get<CompositeVector>(aperture_key_, Tags::DEFAULT);
-    ss_g.Multiply(1.0, ss_g, aperture, 0.0);
+    const auto& aperture = S_->Get<CV_t>(aperture_key_, Tags::DEFAULT);
     sy_g.Multiply(1.0, sy_g, aperture, 0.0);
   }
 
@@ -64,7 +58,10 @@ Darcy_PK::FunctionalResidual(double t_old,
     }
   }
 
-  op_acc_->AddAccumulationDelta(*u_old->Data(), ss_g, ss_g, dt_, "cell");
+  S_->GetEvaluator(water_storage_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
+  const auto& dws_dp =
+    S_->GetDerivative<CV_t>(water_storage_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
+  op_acc_->AddAccumulationDelta(*u_old->Data(), dws_dp, dws_dp, dt_, "cell");
   op_acc_->AddAccumulationDeltaNoVolume(*u_old->Data(), sy_g, "cell");
 
   // Peaceman model
@@ -78,13 +75,15 @@ Darcy_PK::FunctionalResidual(double t_old,
     S_->GetEvaluator(compliance_key_).Update(*S_, "flow");
     const auto& compliance = S_->Get<CompositeVector>(compliance_key_, Tags::DEFAULT);
 
-    ss_g.Update(rho_, compliance, 0.0);
+    CompositeVector ss_g(compliance);
+    ss_g.Scale(rho_);
     op_acc_->AddAccumulationDelta(*u_old->Data(), ss_g, ss_g, dt_, "cell");
   } else if (use_bulk_modulus_) {
     S_->GetEvaluator(bulk_modulus_key_).Update(*S_, "flow");
-    const auto& bulk_c =
-      *S_->Get<CompositeVector>(bulk_modulus_key_, Tags::DEFAULT).ViewComponent("cell");
+    const auto& bulk = S_->Get<CV_t>(bulk_modulus_key_, Tags::DEFAULT);
+    const auto& bulk_c = *bulk.ViewComponent("cell");
 
+    CompositeVector ss_g(bulk);
     auto& ss_gc = *ss_g.ViewComponent("cell");
     for (int c = 0; c < ncells_owned; ++c) ss_gc[0][c] = rho_ / bulk_c[0][c];
 
@@ -122,6 +121,57 @@ void
 Darcy_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
   op_->ComputeInverse();
+}
+
+
+/* ******************************************************************
+* Clip pressure changed
+****************************************************************** */
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+Darcy_PK::ModifyCorrection(double dt,
+                           Teuchos::RCP<const TreeVector> res,
+                           Teuchos::RCP<const TreeVector> u,
+                           Teuchos::RCP<TreeVector> du)
+{
+  int nclipped(0);
+
+  // clipping pressure
+  for (auto comp = u->Data()->begin(); comp != u->Data()->end(); ++comp) {
+    const auto& uc = *u->Data()->ViewComponent(*comp);
+    auto& duc = *du->Data()->ViewComponent(*comp);
+
+    int ncomp = u->Data()->size(*comp, false);
+    for (int i = 0; i < ncomp; ++i) {
+      double tmp0 = uc[0][i] / 2;
+      if (duc[0][i] < -tmp0) {
+        nclipped++;
+        duc[0][i] = -tmp0;
+      }
+    }
+  }
+
+  int tmp(nclipped);
+  u->Data()->Comm()->SumAll(&tmp, &nclipped, 1); // find the global clipping
+
+  return (nclipped) > 0 ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED :
+                          AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+}
+
+
+/* ******************************************************************
+* Modify preconditior as needed.
+****************************************************************** */
+bool
+Darcy_PK::ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u)
+{
+  Teuchos::RCP<TreeVector> du = Teuchos::rcp(new TreeVector(*u));
+  du->Update(-1.0, *u0, 1.0);
+
+  ModifyCorrection(dt, Teuchos::null, u0, du);
+
+  *u = *u0;
+  u->Update(1.0, *du, 1.0);
+  return true;
 }
 
 

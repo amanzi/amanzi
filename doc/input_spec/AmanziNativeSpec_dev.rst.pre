@@ -1,19 +1,21 @@
-============================================================
-Native XML Input Specification for Amanzi-U, version 1.5-dev
-============================================================
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Native XML Input Specification for Amanzi-U, version 1.6-dev
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 .. contents:: **Table of Contents**
    :depth: 3
 
 
-Overview
+========
+OVERVIEW
 ========
 This is a continuously evolving specification format used by the code developers. 
 Its main purpose is to develop and test new capabilities without disruption of end-users.
 
   
-ParameterList XML
-=================
+==============
+PARAMETER LIST
+==============
 The Amanzi input file is an ASCII text XML-formatted file that must be framed 
 at the beginning and end by the following statements:
 
@@ -26,7 +28,7 @@ at the beginning and end by the following statements:
 The value of *name* can be anything (*transport* in this example).  
 A ParameterList consists of just two types of entries: Parameter and ParameterList.  
 ParameterLists are labeled with *name* [string], while Parameters have a separate 
-fields called *name* [string], *type* [string] and *value* [TYPE], where TYPE can 
+fields called *name* [string], *type* ``[string]`` and *value* [TYPE], where TYPE can 
 be any of the following: double, int, bool, string, Array(double), Array(int), 
 and Array(string).  
 The value of the parameter is given in quotes (e.g. value="2.7e3").  
@@ -58,11 +60,11 @@ Where Amanzi supports a number of parameterized models for parameter *model*, th
 models will be listed by name, and then will be described in the subsequent section.  
 In the manufactured example below, the specification looks as follows:
 
-* SOIL [list] accepts parameters that describes properties of this soil.
+* SOIL ``[list]`` accepts parameters that describes properties of this soil.
 
-  * `"region`" [string] defines a subdomain of the computational domain.
+  * `"region`" ``[string]`` defines a subdomain of the computational domain.
 
-  * `"model`" [list] specifies a model for the soil. Available options are `"van Genuchten`" 
+  * `"model`" ``[list]`` specifies a model for the soil. Available options are `"van Genuchten`" 
     and `"Brooks-Corey`".
 
 Here SOIL is defined by a *region* and a *model*.  
@@ -70,10 +72,10 @@ The *region* is a string parameter but the *model* is given by a sublist with it
 The parameter for *model* can be described in the same section or in a separate section
 of this document. For instance, the local description may look like:
 
-* `"model`" [list] specifies a model for the soil. Available options are `"van Genuchten`"
+* `"model`" ``[list]`` specifies a model for the soil. Available options are `"van Genuchten`"
   and `"Brooks-Corey`".
   The option `"van Genuchten`" requires `"m`" [double].
-  The option `"Brooks-Corey`" requires `"lambda`" [double] and `"alpha`" [double].
+  The option `"Brooks-Corey`" requires `"lambda`" ``[double]`` and `"alpha`" [double].
 
 Each part of the spec is illustrated by an example followed by optional comments:
 
@@ -90,7 +92,7 @@ Each part of the spec is illustrated by an example followed by optional comments
    </ParameterList>   
  
 This defines soil properties in region TOP_DOMAIN using the
-Brocks-Corey model with parameters *lambda=0.7* and *alpha=1e-3*.
+Brooks-Corey model with parameters *lambda=0.7* and *alpha=1e-3*.
 
 Additional conventions:
 
@@ -98,7 +100,7 @@ Additional conventions:
   These are usually labels or values of parameters 
   in the input file and must match (using XML matching rules) the specified or allowable values.
 
-* User-defined labels are marked with ALL_CAPS in this document.
+* User-defined labels are marked with _ALL_CAPS in this document.
   In practice, no rules are imposed on these names.
 
 * Lists with too many parameters are described using multiple sections and multiple examples.
@@ -108,7 +110,7 @@ Additional conventions:
 Naming convention rule
 ----------------------
 It is hard to overestimate importance of a reasonable naming convention rule for efficient
-code development and its daily usage in reasearch.
+code development and its daily usage in research.
 
 * Camel-case names should *not* be used as names for fixed keywords (parameters and parameter lists).  
   The following is a short list of allowed exceptions. 
@@ -118,7 +120,7 @@ code development and its daily usage in reasearch.
     the underscore symbol.
 
   * Proper names such as an individual person, place, or organization, including their derivatives
-    *should* be spelled using capital letters. Examples: *van Genuchten m*, *Brocks-Corey lambda*, 
+    *should* be spelled using capital letters. Examples: *van Genuchten m*, *Brooks-Corey lambda*, 
     *Jacobian matrix*, and *Newton correction*.
 
   * Names of chemical species (inside fixed keywords) should be capitalized. Examples: *CO2*, *H+*.
@@ -145,15 +147,15 @@ object list. This list can be inserted in almost any significant
 component of this spec to produce a verbose output, see the embedded examples.
 If this list is not specified, the default verbosity value is used.
 
-* `"verbosity level`" [string] Available options are *none*, *low*, *medium*, *high*, and *extreme*.
+* `"verbosity level`" ``[string]`` Available options are *none*, *low*, *medium*, *high*, and *extreme*.
   Option *extreme is used by the developers only. For communication between users and developers, 
   the recommended option is *high*. 
 
-* `"hide line prefix`" [bool] defines prefix for output messages. Default value is *true*.
+* `"hide line prefix`" ``[bool]`` defines prefix for output messages. Default value is *true*.
 
-* `"name`" [string] is the name of the prefix.
+* `"name`" ``[string]`` is the name of the prefix.
 
-* `"write on rank`" [int] is processor rank on which the output is performed. Default is 0.
+* `"write on rank`" ``[int]`` is processor rank on which the output is performed. Default is 0.
 
 .. code-block:: xml
 
@@ -176,16 +178,16 @@ each attempt at a timestep and each cycle is its own file, and writes
 its own mesh file, so this should be considered i/o and runtime
 expensive.
 
-  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, 
+  * `"cycles start period stop`" ``[Array(int)]`` the first entry is the start cycle, 
     the second is the cycle period, and the third is the stop cycle or -1 in which case 
     there is no stop cycle. All iterations shall be written at such cycles that 
     satisfy formula cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
 
-  * `"cycles start period stop n`" [Array(int)] if multiple cycles start-period-stop parameters 
+  * `"cycles start period stop n`" ``[Array(int)]`` if multiple cycles start-period-stop parameters 
     are needed, then use these parameters with n=0,1,2,..., and not the single 
     `"cycles start period stop`" parameter.
 
-  * `"cycles`" [Array(int)] an array of single cycles at which all iterations shall be written. 
+  * `"cycles`" ``[Array(int)]`` an array of single cycles at which all iterations shall be written. 
 
 Note: *cycle* here means the current time integration step and *not* the global cycle.
 
@@ -210,7 +212,8 @@ Symbol index
 .. include:: symbol_table.rst
   
 
-Cycle Driver
+============
+CYCLE DRIVER
 ============
 { CycleDriver }
 
@@ -221,13 +224,15 @@ A set of times that simulation hits exactly can be used to avoid problems with
 sudden change of boundary conditions or source/sink terms.
 This list must *NOT* include start times for time periods *TP #*.
 
-* `"start times`" [Array(double)] is the list of particular times that we want to hit exactly.
+.. admonition:: time_period_controls-spec
 
-* `"initial time step`" [Array(double)] is the size of the first time step after we hit a special
-  time specified above.
+  * `"start times`" ``[Array(double)]`` is the list of particular times that we want to hit exactly.
 
-* `"maximum time step`" [Array(double)] allows the user to limit the time step between
-  two particular times.
+  * `"initial time step`" ``[Array(double)]`` is the size of the first time step after we hit a special
+    time specified above.
+
+  * `"maximum time step`" ``[Array(double)]`` allows the user to limit the time step between
+    two particular times.
 
 .. code-block:: xml
 
@@ -250,9 +255,11 @@ The purpose of restart is to continue the simulation that has been terminated be
 e.g. because its allocation of time ran out.
 The value for the current time and current cycle is read from the checkpoint file.
 
-* `"restart`" [list]
+.. admonition:: restart_from_file-spec
 
-  * `"file name`" [string] provides name of the existing checkpoint data file to restart from.
+  * `"restart`" [list]
+
+    * `"file name`" ``[string]`` provides name of the existing checkpoint data file to restart from.
 
 .. code-block:: xml
   
@@ -266,28 +273,29 @@ In this example, Amanzi is restarted with all state data initialized from file
 CHECK00123.h5. 
 
 
-State
+=====
+STATE
 =====
 { State }
 
-Additional comments:
+.. warning::
 
-* `"initialization filename`" [string] (optional) provides name of the existing checkpoint data 
-  file. The initialization sequence is as follows. First, we try to initialize a
-  field using the provided checkpoint file. Second, regardless of the outcome of the
-  previous step, we try to initialize the field using the sublist `"initial conditions`".
-  By design, the second step allows us to overwrite only part for the
-  field. 
+  * `"initialization filename`" ``[string]`` (optional) provides name of the existing checkpoint data 
+    file. The initialization sequence is as follows. First, we try to initialize a
+    field using the provided checkpoint file. Second, regardless of the outcome of the
+    previous step, we try to initialize the field using the sublist `"initial conditions`".
+    By design, the second step allows us to overwrite only part for the
+    field. 
 
-* `"initial conditions`" [sublist] There are several options available to initialize 
-  fields using this sublist: `"restart file`" - read field
-  from existing HDF55 file, `"exodus file initialization`" - read field
-  from existing Exodus file, `"cells from file`" - read cell
-  components from HDF5 file, `"constant`" - set field values to constant, `"initialize
-  from 1D column`" - initialize 1D column from file and `"function`" -
-  field is initialized by function. Initialization time is specified with `"time`"
-  that defaults to 0.
-
+  * `"initial conditions`" ``[list]`` There are several options available to initialize 
+    fields using this list: `"restart file`" - read field
+    from existing HDF5 file, `"exodus file initialization`" - read field
+    from existing Exodus file, `"cells from file`" - read cell
+    components from HDF5 file, `"constant`" - set field values to constant, `"initialize
+    from 1D column`" - initialize 1D column from file and `"function`" -
+    field is initialized by function. Initialization time is specified with `"time`"
+    that defaults to 0.
+ 
 
 Field evaluators
 ----------------
@@ -295,33 +303,33 @@ There are five different types of field evaluators.
 
 Independent variable field evaluator
 ....................................
-An independent ivariable field evaluator has no dependencies and is specified by a function.
+An independent variable field evaluator has no dependencies and is specified by a function.
 Typically, it is evaluated once per simulation.
 The evaluator has the following control parameters.
 
-* `"field evaluator type`" [string] The value of this parameter is used by the factory
+* `"field evaluator type`" ``[string]`` The value of this parameter is used by the factory
   of evaluators. The available option are `"independent variable`", `"primary variable`",
   and `"secondary variable`".
 
-* `"constant in time`" [bool] specifies time-dependence nature of the field.
+* `"constant in time`" ``[bool]`` specifies time-dependence nature of the field.
 
-* `"function`" [list] defines a piecewise continuous function for calculating the independent variable.
+* `"function`" ``[list]`` defines a piecewise continuous function for calculating the independent variable.
   In may contain multiple sublists `"_DOMAIN`" with identical structure.
   
   * `"_DOMAIN`" [list]
 
-    * `"region`" [string] specifies domain of the function, a single region.
+    * `"region`" ``[string]`` specifies domain of the function, a single region.
 
-    * `"regions`" [Array(string)] is the alternative to option `"region`", domain on 
+    * `"regions`" ``[Array(string)]`` is the alternative to option `"region`", domain on 
       the function consists of many regions.
 
-    * `"component`" [string] specifies geometric object associated with the mesh function.
+    * `"component`" ``[string]`` specifies geometric object associated with the mesh function.
       Available options are `"cell`", `"face`", and `"node`".
 
-    * `"function`" [list] defines an analytic function for calculation. Its structure
+    * `"function`" ``[list]`` defines an analytic function for calculation. Its structure
       is described in the Functions_ section below.
 
-    * `"initialize faces from cells`" [bool] instructs state to initialize face-component
+    * `"initialize faces from cells`" ``[bool]`` instructs state to initialize face-component
       and boundary face-component (if any) of a composite vector from a cell-component 
       using simple averaging. Default is false.
 
@@ -407,14 +415,14 @@ examples below.
 The developer can create a secondary field evaluator using common parameters as well
 as custom parameters (see the examples).
 
-* `"evaluator dependencies`" [Array(string)] provides a list of fields on which this evaluator
+* `"evaluator dependencies`" ``[Array(string)]`` provides a list of fields on which this evaluator
   depends.
 
-* `"check derivatives`" [bool] allows the develop to check derivatives with finite differences.
+* `"check derivatives`" ``[bool]`` allows the develop to check derivatives with finite differences.
   This is the expensive option involving finite difference approximations and is recommended for
   code debugging only. Default is *false*.
 
-* `"finite difference epsilon`" [double] defines the finite difference epsilon.
+* `"finite difference epsilon`" ``[double]`` defines the finite difference epsilon.
   Default is 1e-10.
 
 .. code-block:: xml
@@ -482,10 +490,10 @@ in our example) with non-overlapping domains.
 The required parameters for each function are *region*, *component*,
 and *function*.
 
-* `"regions`" [Array(string)] is list of mesh regions where the function
+* `"regions`" ``[Array(string)]`` is list of mesh regions where the function
   should be applied, the domain of the function.
 
-* `"component`" [string] specifies a mesh object on which the discrete field 
+* `"component`" ``[string]`` specifies a mesh object on which the discrete field 
   is defined.
 
 Optional parameters are *write checkpoint* and *write vis*.
@@ -519,7 +527,7 @@ checkpoints of visualization files. Default values are *true*.
 In this example, the field *pressure* has constant value 90000 [Pa] in 
 each mesh cell of the first region. The second mesh block will define
 the pressure in the second mesh region and so on.
-Note that the names of functions may coinsider with the names of regions.
+Note that the names of functions may coincide with the names of regions.
 
 
 A vector or tensor field
@@ -527,15 +535,17 @@ A vector or tensor field
 A variable tensor (or vector) field is defined similarly to a variable scalar field. 
 The difference lies in the definition of the function which is now a multi-valued function.
 
-* `"number of dofs`" [int] is the number of components in the vector or tensor.
+.. admonition:: tensor_field-spec
 
-* `"Function type`" [string] defines the function type. The only available option 
-  is `"composite function`".
+  * `"number of dofs`" ``[int]`` is the number of components in the vector or tensor.
 
-* `"dot with normal`" [bool] triggers the special initialization of a
-  vector field such as the `"volumetric_flow_rate`". This field is defined by
-  projection of the velocity (a vector field) on face normals.
-  Changing value to *false* will produce the vector field.
+  * `"function type`" ``[string]`` defines the function type. The only available option 
+    is `"composite function`".
+
+  * `"dot with normal`" ``[bool]`` triggers the special initialization of a
+    vector field such as the `"volumetric_flow_rate`". This field is defined by
+    projection of the velocity (a vector field) on face normals.
+    Changing value to *false* will produce the vector field.
 
 Optional parameters are *write checkpoint*,  and *write vis*.
 These parameters define whether the field has to be written into
@@ -578,7 +588,7 @@ normal producing one number per mesh face.
 
 Geochemical constraint
 ......................
-We can define geochemical contraint as follows: 
+We can define geochemical constraint as follows: 
 
 .. code-block:: xml
 
@@ -599,7 +609,7 @@ named sublist of *State* list with the file name and the name of attributes.
 For a serial run, the file extension must be *.exo*. 
 For a parallel run, it must be *.par*.
 
-* `"attributes`" [Array(string)] defines names of attributes. The number of names
+* `"attributes`" ``[Array(string)]`` defines names of attributes. The number of names
   must be equal to the number of components in the field. The names can be repeated.
   Scalar fields (e.g. porosity) require one name, tensorial fields (e.g. permeability)
   require two or three names.
@@ -679,17 +689,17 @@ If so, all material fields, such as *porosity* and *permeability*, will be initi
 
 Data IO control
 ---------------
-Two parameters below allow us to control fields that will go into a visuzalization file.
+Two parameters below allow us to control fields that will go into a visualization file.
 First, we remove all fields matching the patterns specified by *blacklist*.
 Second, we add all fields matching the patterns specified by *whitelist*.
 Both parameters are optional.
 
-* `"blacklist`" [Array(string)] list of fields that should *not* be written to the visualization file.
-  Standard regular expressuion rules can be used, e.g. `"(secondary_)(.*)`" skips all fields 
+* `"blacklist`" ``[Array(string)]`` list of fields that should *not* be written to the visualization file.
+  Standard regular expression rules can be used, e.g. `"(secondary_)(.*)`" skips all fields 
   those names start with `"secondary_`".
 
-* `"whitelist`" [Array(string)] list of fields that should *be* written to the visualization file.
-  Standard regular expressuion rules can be used, e.g. `"(primary_)(.*)`" adds all fields 
+* `"whitelist`" ``[Array(string)]`` list of fields that should *be* written to the visualization file.
+  Standard regular expression rules can be used, e.g. `"(primary_)(.*)`" adds all fields 
   those names start with `"primary_`".
 
 
@@ -787,12 +797,14 @@ The field *permeability* is the piecewise constant diagonal tensor.
   </ParameterList>
 
 
-Pprocess Kernels (PKs)
-======================
+=====================
+PROCESS KERNELS (PKs)
+=====================
 { PK }
 
 
-Base PKs
+========
+BASE PKs
 ========
 There are several types of PKs, and each PK has its own valid input spec.  
 However, there are three main types of PKs, from which nearly all PKs derive.  
@@ -801,7 +813,7 @@ Note that none of these are true PKs and cannot stand alone.
 
 PK_Physical
 -----------
-Physical PKs are the physical capability implemented within Amanzi.
+Physical PKs represent the physics capability implemented within Amanzi.
 
 .. admonition:: pks-typed-spec
 
@@ -815,6 +827,7 @@ Physical PKs are the physical capability implemented within Amanzi.
    - `"shallow water`" See `PK: Shallow Water`_
    - `"navier stokes`" See `PK: Navier-Stokes`_
    - `"multiphase`" See `PK: Multiphase`_
+   - `"mechanics`" See `PK: Mechanics`_
 
 PK_BDF
 ------
@@ -833,7 +846,9 @@ conserved quantity.
 
 By default, the error norm used by solvers is given by:
 
-:math:`ENORM(u, du) = |du| / ( a_{{tol}} + r_{{tol}} * |u| )`
+.. math::
+
+  ENORM(u, du) = |du| / ( a_{{tol}} + r_{{tol}} * |u| )
 
 The defaults here are typically good, or else good defaults are set in the
 code, so usually are not supplied by the user.
@@ -859,9 +874,17 @@ Weight function
 { PK_DomainFunctionWeight }
 
 
-Physical PKs
-============
-Physical PKs are the physical capability implemented within ATS.
+Field function
+..............
+{ PK_DomainFunctionField }
+
+
+===========
+PHYSICS PKs
+===========
+Each PK represents a single physical process implemented within Amanzi
+such as mass transport, solute transport and dispersion, energy transport, 
+rock deformation, and chemical reactions.
 
 
 .. _`PK: Flow`:
@@ -900,12 +923,14 @@ Permeability
 ............
 The available options are
 
-* `"coordinate system`" [string] defines coordinate system
-  for calculating absolute permeability. The available options are `"cartesian`"
-  and `"layer`".
+.. admonition:: permeability-spec
 
-* `"off-diagonal components`" [int] defines additional (typically off-diagonal) 
-  components of the absolute permeability. Deafult is 0.
+  * `"coordinate system`" ``[string]`` defines coordinate system
+    for calculating absolute permeability. The available options are `"cartesian`"
+    and `"layer`".
+
+  * `"off-diagonal components`" ``[int]`` defines additional (typically off-diagonal) 
+    components of the absolute permeability. Default is 0.
 
 .. code-block:: xml
 
@@ -934,34 +959,36 @@ Relative permeability
 This section discusses interface treatment of cell-centered fields such as 
 relative permeability, density and viscosity.
 
-* `"relative permeability`" [list] collects information required for treatment of
-  relative permeability, density and viscosity on mesh faces.
+.. admonition:: rel_perm-spec
 
-  * `"upwind method`" [string] defines a method for calculating the *upwinded* 
-    relative permeability. The available options are: `"upwind: gravity`", 
-    `"upwind: darcy velocity`" (default), `"upwind: second-order`", `"upwind: amanzi`" (experimental), 
-    `"upwind: amanzi new`" (experiemental), `"other: harmonic average`", and `"other: arithmetic average`".
+  * `"relative permeability`" ``[list]`` collects information required for treatment of
+    relative permeability, density and viscosity on mesh faces.
 
-  * `"upwind frequency`" [string] defines frequency of recalculating Darcy flux inside
-    nonlinear solver. The available options are `"every timestep`" and `"every nonlinear iteration`".
-    The first option freezes the Darcy flux for the whole time step. The second option
-    updates it on each iteration of a nonlinear solver. The second option is recommended
-    for the Newton solver. It may impact significantly upwinding of the relative permeability 
-    and convergence rate of this solver.
+    * `"upwind method`" ``[string]`` defines a method for calculating the *upwinded* 
+      relative permeability. The available options are: `"upwind: gravity`", 
+      `"upwind: darcy velocity`" (default), `"upwind: second-order`", `"upwind: amanzi`" (experimental), 
+      `"upwind: amanzi new`" (experiemental), `"other: harmonic average`", and `"other: arithmetic average`".
 
-  * `"upwind parameters`" [list] defines parameters for upwind method specified by `"relative permeability`".
+    * `"upwind frequency`" ``[string]`` defines frequency of recalculating Darcy flux inside
+      nonlinear solver. The available options are `"every timestep`" and `"every nonlinear iteration`".
+      The first option freezes the Darcy flux for the whole time step. The second option
+      updates it on each iteration of a nonlinear solver. The second option is recommended
+      for the Newton solver. It may impact significantly upwinding of the relative permeability 
+      and convergence rate of this solver.
 
-    * `"tolerance`" [double] specifies relative tolerance for almost zero local flux. In such
-      a case the flow is assumed to be parallel to a mesh face. Default value is 1e-12.
+    * `"upwind parameters`" ``[list]`` defines parameters for upwind method specified by `"relative permeability`".
 
-    * `"method`" [string] specifies a reconstruction method. Available option is
-      `"cell-based`" (default).
+      * `"tolerance`" ``[double]`` specifies relative tolerance for almost zero local flux. In such
+        a case the flow is assumed to be parallel to a mesh face. Default value is 1e-12.
 
-    * `"polynomial order`" [int] defines the polynomial order of a reconstructed function. Default is 1.
+      * `"method`" ``[string]`` specifies a reconstruction method. Available option is
+        `"cell-based`" (default).
 
-    * `"limiter`" [string] specifies limiting method for a high-order reconstruction. 
-      Available options are `"Barth-Jespersen`" (default), `"Michalak-Gooch`", `"tensorial`",
-      and `"Kuzmin`". 
+      * `"polynomial order`" ``[int]`` defines the polynomial order of a reconstructed function. Default is 1.
+
+      * `"limiter`" ``[string]`` specifies limiting method for a high-order reconstruction. 
+        Available options are `"Barth-Jespersen`" (default), `"Michalak-Gooch`", `"tensorial`",
+        and `"Kuzmin`". 
 
 .. code-block:: xml
 
@@ -989,21 +1016,23 @@ Diffusion operators
 List *operators* describes the PDE structure of the flow, specifies a discretization
 scheme, and selects assembling schemas for matrices and preconditioners.
 
-* `"operators`" [list] 
+.. admonition:: diffusion_operator-spec
 
-  * `"diffusion operator`" [list] defines parameters for generating and assembling diffusion matrix.
+  * `"operators`" ``[list]`` 
 
-    * `"matrix`" [list] defines parameters for generating and assembling diffusion matrix. See section
-      describing operators. 
-      When the Richards problem is set up, Flow PK sets up proper value for parameter `"upwind method`" of 
-      this sublist.
+    * `"diffusion operator`" ``[list]`` defines parameters for generating and assembling diffusion matrix.
 
-    * `"preconditioner`" [list] defines parameters for generating and assembling diffusion 
-      matrix that is used to create preconditioner. 
-      This sublist is ignored for the saturated problem.
-      Since update of preconditioner can be lagged, we need two objects called `"matrix`" and `"preconditioner`".
-      When the Richards problem is set up, Flow PK sets up proper value for parameter `"upwind method`" of 
-      this sublist.
+      * `"matrix`" ``[list]`` defines parameters for generating and assembling diffusion matrix. See section
+        describing operators. 
+        When the Richards problem is set up, Flow PK sets up proper value for parameter `"upwind method`" of 
+        this sublist.
+
+      * `"preconditioner`" ``[list]`` defines parameters for generating and assembling diffusion 
+        matrix that is used to create preconditioner. 
+        This sublist is ignored for the saturated problem.
+        Since update of preconditioner can be lagged, we need two objects called `"matrix`" and `"preconditioner`".
+        When the Richards problem is set up, Flow PK sets up proper value for parameter `"upwind method`" of 
+        this sublist.
 
 .. code-block:: xml
 
@@ -1045,58 +1074,60 @@ information about a part of the boundary where it is prescribed, a function
 to calculate it, and optional parameters to modify it slightly.
 This modification is referred to as a submodel and requires additional parameters as described below. 
 
-* `"pressure`" [list] is the Dirichlet boundary condition where the pressure is prescribed on a part of the 
-  boundary surface. No submodels is available.
+.. admonition:: boundary_conditions-spec
 
-* `"mass flux`" [list] is the Neumann boundary condition where an outward mass flux is prescribed on a 
-  part of the boundary surface.
-  This is the default boundary condition. If no condition is specified on a mesh face, the zero flux 
-  boundary condition is used. 
+  * `"pressure`" ``[list]`` is the Dirichlet boundary condition where the pressure is prescribed on a part of the 
+    boundary surface. No submodels is available.
 
-  * `"rainfall`" [bool] indicates the submodel where the mass flux is defined with respect to the gravity 
-    vector and the actual flux depends on the boundary slope. Default is `"false`".
+  * `"mass flux`" ``[list]`` is the Neumann boundary condition where an outward mass flux is prescribed on a 
+    part of the boundary surface.
+    This is the default boundary condition. If no condition is specified on a mesh face, the zero flux 
+    boundary condition is used. 
 
-* `"static head`" [list] is the Dirichlet boundary condition where the hydrostatic pressure is prescribed 
-  on a part of the boundary.
+    * `"rainfall`" ``[bool]`` indicates the submodel where the mass flux is defined with respect to the gravity 
+      vector and the actual flux depends on the boundary slope. Default is `"false`".
 
-  * `"relative to top`" [bool] indicates the submodel where the static head is defined with respect
-    to the top boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
-    Default value is `"false`". 
+  * `"static head`" ``[list]`` is the Dirichlet boundary condition where the hydrostatic pressure is prescribed 
+    on a part of the boundary.
 
-  * `"relative to bottom`" [bool] indicates the submodel where the static head is defined with respect
-    to the bottom boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
-    Default value is `"false`". 
+    * `"relative to top`" ``[bool]`` indicates the submodel where the static head is defined with respect
+      to the top boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
+      Default value is `"false`". 
 
-  * `"no flow above water table`" [bool] indicates the submodel where the no-flow boundary condition 
-    has to be used above the water table. This switch uses the pressure value at a face
-    centroid. Default is `"false`".
+    * `"relative to bottom`" ``[bool]`` indicates the submodel where the static head is defined with respect
+      to the bottom boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
+      Default value is `"false`". 
 
-* `"seepage face`" [list] is the seepage face boundary condition, a dynamic combination of the `"pressure`" and 
-  `"mass flux`" boundary conditions over the specified region. 
-  The atmospheric pressure is prescribed if internal pressure is higher it. 
-  Otherwise, the outward mass flux is prescribed. 
+    * `"no flow above water table`" ``[bool]`` indicates the submodel where the no-flow boundary condition 
+      has to be used above the water table. This switch uses the pressure value at a face
+      centroid. Default is `"false`".
 
-  * `"reference pressure`" [double] defaults to the atmospheric pressure. 
+  * `"seepage face`" ``[list]`` is the seepage face boundary condition, a dynamic combination of the `"pressure`" and 
+    `"mass flux`" boundary conditions over the specified region. 
+    The atmospheric pressure is prescribed if internal pressure is higher it. 
+    Otherwise, the outward mass flux is prescribed. 
 
-  * `"rainfall`" [bool] indicates the submodel where the mass flux is defined with respect to the gravity 
-    vector and the actual influx depends on the boundary slope. Default is `"false`".
+    * `"reference pressure`" ``[double]`` defaults to the atmospheric pressure. 
 
-  * `"submodel`" [string] indicates different models for the seepage face boundary condition.
-    It can take values `"PFloTran`" and `"FACT`". The first option leads to a 
-    discontinuous change of the boundary condition type from the infiltration to pressure. 
-    The second option is described in the document on mathematical models. 
-    It employs a smooth transition from the infiltration 
-    to mixed boundary condition. The recommended value is `"PFloTran`".
+    * `"rainfall`" ``[bool]`` indicates the submodel where the mass flux is defined with respect to the gravity 
+      vector and the actual influx depends on the boundary slope. Default is `"false`".
+  
+    * `"submodel`" ``[string]`` indicates different models for the seepage face boundary condition.
+      It can take values `"PFloTran`" and `"FACT`". The first option leads to a 
+      discontinuous change of the boundary condition type from the infiltration to pressure. 
+      The second option is described in the document on mathematical models. 
+      It employs a smooth transition from the infiltration 
+      to mixed boundary condition. The recommended value is `"PFloTran`".
 
-  * `"seepage flux threshold`" [double] sets up the threshold for switching from the pressure 
-    to influx boundary condition in submodel `"PFloTran`". The pressure condition remains 
-    for a small influx value until it exceeds the certain fraction of the `"mass flux`" specified 
-    by this parameter. The admissible range is from 0 to 0.1. Default value is 0. 
+    * `"seepage flux threshold`" ``[double]`` sets up the threshold for switching from the pressure 
+      to influx boundary condition in submodel `"PFloTran`". The pressure condition remains 
+      for a small influx value until it exceeds the certain fraction of the `"mass flux`" specified 
+      by this parameter. The admissible range is from 0 to 0.1. Default value is 0. 
 
 Each boundary condition accepts three parameters: `"regions`", 
 `"use area fractions`", and `"spatial distribution method`". Parameter `"regions`"
 specifies the list of regions where the boundary condition is defined. 
-The boolen parameter `"use area fractions`" instructs the code to use all available volume fractions. 
+The boolean parameter `"use area fractions`" instructs the code to use all available volume fractions. 
 Default value is *false*, it corresponds to :math:`f=1` in the formulas below.
 Parameter `"spatial distribution method`" defines the method for distributing
 data (e.g. the total mass flux) over the specified regions. The available options 
@@ -1108,8 +1139,8 @@ different boundary conditions for the Darcy velocity in the original PDE:
   {{\boldsymbol q}} \cdot {{\boldsymbol n}} = g(x)\, f\, \frac{{1}}{{|B|}},\quad\mbox{{and}}\quad
   {{\boldsymbol q}} \cdot {{\boldsymbol n}} = g(x)\, f,
 
-where :math:`f` is the folume fraction function, and :math:`|B|` is the area of the
-specified regions calculated using the folume fraction function.
+where :math:`f` is the volume fraction function, and :math:`|B|` is the area of the
+specified regions calculated using the volume fraction function.
 
 .. code-block:: xml
 
@@ -1186,94 +1217,7 @@ of the other available functions.
 
 Sources and sinks
 .................
-The sources and sinks are typically associated with wells. 
-Negative source means a producing well. 
-Positive source means an injecting well. 
-The structure of list *source terms* mimics that of list *boundary conditions*. 
-Again, constant functions can be replaced by any of the available functions.
-
-* `"regions`" [Array(string)] is the list of regions where the source is defined.
-
-* `"spatial distribution method`" [string] is the method for distributing
-  source Q over the specified regions. The available options are `"volume`",
-  `"none`", `"permeability`" and `"simple well`".
-  For option `"none`", the source term function Q is measured in [kg/m^3/s]. 
-  For the other options, it is measured in [kg/s]. 
-  When the source function is defined over a few regions, Q is distributed over their union.
-  Option `"volume fraction`" can be used when the region geometric
-  model support volume fractions. Option `"simple well`" implements the Peaceman model. 
-  The well flux is defined as `q_w = WI (p - p_w)` [kg/s], where `WI` is the well index 
-  and `p_w` is the well pressure. The pressure in a well is assumed to be hydrostatic.
-
-* `"use volume fractions`" instructs the code to use all available volume fractions. 
-  Note that the region geometric model supports volume fractions only for a few regions.
-
-* `"submodel`" [string] refines definition of the source. Available options are `"rate`",
-  `"integrated source`" and `"bhp"` (bottom hole pressure). The first option defines the source 
-  in a natural way as the rate of change `q`. The second option defines the indefinite
-  integral `Q` of the rate of change, i.e. the source term is calculated as `q = dQ/dt`. 
-  For most distributions methods, two submodles are available: `"rate`" and `"integrated source`".
-  For distribution method `"simple well`", two submodels are available: `"rate`" and
-  `"bhp`". Submodel `"bhp`" requires `"depth"`, `"well radius`" and 
-  `"bhp`" function. Submodel `"rate`" requires only rate function.
-  Default is `"rate`". 
-
-.. code-block:: xml
-
-  <ParameterList name="flow">  <!-- parent list -->
-  <ParameterList name="source terms">
-    <ParameterList name="_SRC 0">
-      <Parameter name="regions" type="Array(string)" value="{{_WELL_EAST}}"/>
-      <Parameter name="spatial distribution method" type="string" value="volume"/>
-      <Parameter name="submodel" type="string" value="rate"/>
-      <ParameterList name="well">
-        <ParameterList name="function-constant">
-          <Parameter name="value" type="double" value="-0.1"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="_SRC 1">
-      <Parameter name="regions" type="Array(string)" value="{{_WELL_WEST}}"/>
-      <Parameter name="spatial distribution method" type="string" value="permeability"/>
-      <ParameterList name="well">
-        <ParameterList name="function-constant">
-          <Parameter name="value" type="double" value="-0.2"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="_SRC 2">
-      <Parameter name="regions" type="Array(string)" value="{{_WELL_NORTH}}"/>
-        <Parameter name="spatial distribution method" type="string" value="simple well"/>    
-        <ParameterList name="well">
-          <Parameter name="submodel" type="string" value="bhp"/>
-          <Parameter name="depth" type="double" value="-2.5"/>
-          <Parameter name="well radius" type="double" value="0.1"/>
-          <ParameterList name="bhp">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="10.0"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="_SRC 3">
-      <Parameter name="regions" type="Array(string)" value="{{_WELL_SOUTH}}"/>
-        <Parameter name="spatial distribution method" type="string" value="simple well"/>
-        <ParameterList name="well">
-          <Parameter name="submodel" type="string" value="rate"/>
-          <ParameterList name="rate">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="100.0"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-   </ParameterList>
-   </ParameterList>
+{ FlowSourceFunction }
 
 
 Time integrator
@@ -1289,7 +1233,7 @@ We break this long sublist into smaller parts.
 Initialization and constraints
 ``````````````````````````````
 
-* `"error control options`" [Array(string)] lists various error control options. 
+* `"error control options`" ``[Array(string)]`` lists various error control options. 
   A nonlinear solver is terminated when all listed options are passed. 
   The available options are `"pressure`", `"saturation`", and `"residual`". 
   All errors are relative, i.e. dimensionless. 
@@ -1298,52 +1242,52 @@ Initialization and constraints
   The option `"pressure`" is always active during steady-state time integration.
   The option  `"saturation`" is always active during transient time integration.
 
-* `"linear solver`" [string] refers to a generic linear solver from list `"solvers`".
-  It is used in all cases except for `"initialization`" and `"enforce pressure-lambda constraints`".
+* `"linear solver`" ``[string]`` refers to a generic linear solver from list `"solvers`".
+  It is used in all cases except for `"initialization`" and `"dae constraint`".
   Currently, it is used by the Darcy PK only.
 
-* `"preconditioner`" [string] specifies preconditioner for linear and nonlinear solvers.
+* `"preconditioner`" ``[string]`` specifies preconditioner for linear and nonlinear solvers.
 
-* `"preconditioner enhancement`" [string] specifies a linear solver that binds 
+* `"preconditioner enhancement`" ``[string]`` specifies a linear solver that binds 
   the above preconditioner to improve spectral properties. Default is `"none`".
 
-* `"initialization`" [list] defines parameters for calculating initial pressure guess.
+* `"initialization`" ``[list]`` defines parameters for calculating initial pressure guess.
   It can be used to obtain pressure field which is consistent with the boundary conditions.
   Default is empty list.
 
-  * `"method`" [string] specifies an optional initialization methods. The available 
+  * `"method`" ``[string]`` specifies an optional initialization methods. The available 
     options are `"picard`" and `"saturated solver`". The latter option leads to solving 
     a Darcy problem. The former option uses sublist `"picard parameters`".
     *Picard works better if a bounded initial pressure guess is provided.* 
 
-  * `"active wells`" [bool] specifies if wells are active or turned off. Default is *false*.
+  * `"active wells`" ``[bool]`` specifies if wells are active or turned off. Default is *false*.
 
-  * `"picard parameters`" [list] defines control parameters for the Picard solver.
+  * `"picard parameters`" ``[list]`` defines control parameters for the Picard solver.
 
-    * `"convergence tolerance`" [double] specifies nonlinear convergence tolerance. 
+    * `"convergence tolerance`" ``[double]`` specifies nonlinear convergence tolerance. 
       Default is 1e-8.
-    * `"maximum number of iterations`" [int] limits the number of iterations. Default is 400. 
+    * `"maximum number of iterations`" ``[int]`` limits the number of iterations. Default is 400. 
 
-  * `"linear solver`" [string] refers to a solver sublist of the list `"solvers`". 
+  * `"linear solver`" ``[string]`` refers to a solver sublist of the list `"solvers`". 
 
-  * `"clipping saturation value`" [double] is an experimental option. It is used 
+  * `"clipping saturation value`" ``[double]`` is an experimental option. It is used 
     after pressure initialization to cut-off small values of pressure.
     The new pressure is calculated based of the provided saturation value. Default is 0.6.
 
-  * `"clipping pressure value`" [double] is an experimental option. It is used 
+  * `"clipping pressure value`" ``[double]`` is an experimental option. It is used 
     after pressure initialization to cut-off small values of pressure below the provided
     value.
 
-* `"enforce pressure-lambda constraints`" [list] each time the time integrator is 
+* `"dae constraint`" ``[list]`` each time the time integrator is 
   restarted, we need to re-enforce the pressure-lambda relationship for new boundary conditions. 
   Default is empty list.
 
-  * `"method`" [string] is a placeholder for different algorithms. Now, the only 
+  * `"method`" ``[string]`` is a placeholder for different algorithms. Now, the only 
     available option is `"projection`" which is default.
 
-  * `"linear solver`" [string] refers to a solver sublist of the list `"solvers`".
+  * `"linear solver`" ``[string]`` refers to a solver sublist of the list `"solvers`".
 
-  * `"inflow krel correction`" [bool] estimates relative permeability on inflow 
+  * `"inflow krel correction`" ``[bool]`` estimates relative permeability on inflow 
     mesh faces. This estimate is more reliable than the upwinded relative permeability
     value, especially in steady-state calculations.
 
@@ -1371,7 +1315,7 @@ Initialization and constraints
        </ParameterList>
      </ParameterList>
 
-     <ParameterList name="pressure-lambda constraints">
+     <ParameterList name="dae constraint">
        <Parameter name="method" type="string" value="projection"/>
        <Parameter name="inflow krel correction" type="bool" value="false"/>
        <Parameter name="linear solver" type="string" value="_PCG_WITH_AMG"/>
@@ -1454,16 +1398,16 @@ Other parameters
 ................
 The remaining *flow* parameters are
 
-* `"clipping parameters`" [list] defines how solution increment calculated by a nonlinear 
+* `"clipping parameters`" ``[list]`` defines how solution increment calculated by a nonlinear 
   solver is modified e.g., clipped.
 
-  * `"maximum saturation change`" [double] Default is 0.25.
+  * `"maximum saturation change`" ``[double]`` Default is 0.25.
 
-  * `"pressure damping factor`" [double] Default is 0.5.
+  * `"pressure damping factor`" ``[double]`` Default is 0.5.
 
-* `"plot time history`" [bool] produces an ASCII file with the time history. Default is `"false`".
+* `"plot time history`" ``[bool]`` produces an ASCII file with the time history. Default is `"false`".
 
-* `"algebraic water storage balance`" [bool] uses algebraic correction to enforce consistency of 
+* `"algebraic water storage balance`" ``[bool]`` uses algebraic correction to enforce consistency of 
   water storage and Darcy fluxes. It leads to a monotone transport. Default is *false*.
 
 .. code-block:: xml
@@ -1520,8 +1464,10 @@ Material properties
 ...................
 { MDM }
 
-* `"molecular diffusion`" [list] defines names of solutes in aqueous and gaseous phases and related
-  diffusivity values.
+.. admonition:: material_properties-spec
+
+  * `"molecular diffusion`" ``[list]`` defines names of solutes in aqueous and gaseous phases and related
+    diffusivity values.
 
 .. code-block:: xml
 
@@ -1542,12 +1488,14 @@ Dispersion operator
 List *operators* describes the PDE structure of the flow, specifies a discretization
 scheme, and selects assembling schemas for matrices and preconditioners.
 
-* `"operators`" [list] 
+.. admonition:: dispersion-spec
 
-  * `"diffusion operator`" [list] 
+  * `"operators`" ``[list]`` 
 
-    * `"matrix`" [list] defines parameters for generating and assembling dispersion matrix.
-      See section describing operators. 
+    * `"diffusion operator`" ``[list]`` 
+
+      * `"matrix`" ``[list]`` defines parameters for generating and assembling dispersion matrix.
+        See section describing operators. 
 
 .. code-block:: xml
 
@@ -1564,7 +1512,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
   </ParameterList>
   </ParameterList>
 
-This example creates a p-lambda system, i.e. the concentation is
+This example creates a p-lambda system, i.e. the concentration is
 discretized in mesh cells and on mesh faces. The later unknowns are auxiliary unknowns.
 
 
@@ -1592,22 +1540,24 @@ is used. Note that the boundary condition is set up separately for each componen
 The structure of boundary conditions is aligned with that used for flow and
 allows us to define spatially variable boundary conditions. 
 
-* `"boundary conditions`" [list]
+.. admonition:: transport_boundary_conditions-spec
 
-  * `"concentration`" [list] This is a reserved keyword.
+  * `"boundary conditions`" [list]
+
+    * `"concentration`" ``[list]`` This is a reserved keyword.
    
-    * "_SOLUTE" [list] contains a few sublists (e.g. _EAST_CRIB) for boundary conditions.
-      The name _SOLUTE must be the name in the list of solutes.
+      * "_SOLUTE" ``[list]`` contains a few sublists (e.g. _EAST_CRIB) for boundary conditions.
+        The name _SOLUTE must be the name in the list of solutes.
  
-      * "_BC1" [list] defines boundary conditions using arrays of boundary regions and attached
-        functions.
+        * "_BC1" ``[list]`` defines boundary conditions using arrays of boundary regions and attached
+          functions.
    
-      * `"regions`" [Array(string)] defines a list of boundary regions where a boundary condition
-        must be applied.
-      * `"spatial distribution method`" [string] defines the method for distributing
-        data  over the specified regions. The available options are `"area`" or `"none`". 
-      * `"boundary concentration`" [list] defines a function for calculating boundary conditions.
-        The function specification is described in subsection Functions.
+        * `"regions`" ``[Array(string)]`` defines a list of boundary regions where a boundary condition
+          must be applied.
+        * `"spatial distribution method`" ``[string]`` defines the method for distributing
+          data  over the specified regions. The available options are `"area`" or `"none`". 
+        * `"boundary concentration`" ``[list]`` defines a function for calculating boundary conditions.
+          The function specification is described in subsection Functions.
 
 The example below sets constant boundary condition 1e-5 for the duration of transient simulation.
 
@@ -1669,30 +1619,32 @@ The structure of list *source terms* includes only sublists named after componen
 Again, constant functions can be replaced by any available time-function.
 Note that the source values are set up separately for each component.
 
-* `"concentration`" [list] This is a reserved keyword.
+.. admonition:: transport_sources-spec
 
- * "_SOLUTE" [list] contains a few sublists (e.g. _SRC1 and _SRC2) for various sources and sinks.
-   The name _SOLUTE must exist in the list of solutes.
+  * `"concentration`" ``[list]`` This is a reserved keyword.
 
-  * "_SRC1" [list] defines a source using arrays of domain regions, a function, and 
-    a distribution method.
+   * "_SOLUTE" ``[list]`` contains a few sublists (e.g. _SRC1 and _SRC2) for various sources
+     and sinks. The name _SOLUTE must exist in the list of solutes.
+
+    * "_SRC1" ``[list]`` defines a source using arrays of domain regions, a function, and 
+      a distribution method.
    
-   * `"regions`" [Array(string)] defines a list of domain regions where a source term
-     must be applied.
+     * `"regions`" ``[Array(string)]`` defines a list of domain regions where a source term
+       must be applied.
 
-   * `"spatial distribution method`" [string] identifies a method for distributing
-     source Q over the specified regions. The available options are `"volume`",
-     `"none`", and `"permeability`". For option `"none`" the source term Q is measured
-     in [mol/L/s] (if units for concetration is mol/L) or [mol/m^3/s] (otherwise). 
-     For the other options, it is measured in [mol/s]. When the source function
-     is defined over a few regions, Q will be distributed over their union.
+     * `"spatial distribution method`" ``[string]`` identifies a method for distributing
+       source Q over the specified regions. The available options are `"volume`",
+       `"none`", and `"permeability`". For option `"none`" the source term Q is measured
+       in [mol/L/s] (if units for concentration is mol/L) or [mol/m^3/s] (otherwise). 
+       For the other options, it is measured in [mol/s]. When the source function
+       is defined over a few regions, Q will be distributed over their union.
 
-   * `"submodel`" [string] refines definition of source. Available options are `"rate`"
-     and `"integrand`". The first option defines rate of change `q`, the second one 
-     defines integrand `Q` of a rate `Q = dq/dt`. Default is `"rate`".
+     * `"submodel`" ``[string]`` refines definition of source. Available options are `"rate`"
+       and `"integrand`". The first option defines rate of change `q`, the second one 
+       defines integrand `Q` of a rate `Q = dq/dt`. Default is `"rate`".
 
-   * `"sink`" [list] is a function for calculating a source term.
-     The function specification is described in subsection Functions.
+     * `"sink`" ``[list]`` is a function for calculating a source term.
+       The function specification is described in subsection Functions.
 
 This example defines one well and one sink.
 
@@ -1735,18 +1687,18 @@ Developer parameters
 ....................
 The remaining parameters that can be used by a developer include
 
-* `"enable internal tests`" [bool] turns on various internal tests during
+* `"enable internal tests`" ``[bool]`` turns on various internal tests during
   run time. Default value is `"false`".
    
-* `"internal tests tolerance`" [double] tolerance for internal tests such as the 
+* `"internal tests tolerance`" ``[double]`` tolerance for internal tests such as the 
   divergence-free condition. The default value is 1e-6.
 
-* `"runtime diagnostics: solute names`" [Array(string)] defines solutes that will be 
+* `"runtime diagnostics: solute names`" ``[Array(string)]`` defines solutes that will be 
   tracked closely each time step if verbosity `"high`". Default value is the first 
   solute in the global list of `"aqueous names`" and the first gas in the global list 
   of `"gaseous names`".
 
-* `"runtime diagnostics: regions`" [Array(string)] defines a boundary region for 
+* `"runtime diagnostics: regions`" ``[Array(string)]`` defines a boundary region for 
   tracking solutes. Default value is a seepage face boundary, see Flow PK.
 
 
@@ -1821,14 +1773,16 @@ Operators
 This section contains sublist for diffusion and advection operators.
 It also has one global parameter.
 
-* `"operators`" [list] 
+.. admonition:: operators-spec
 
-  * `"include enthalpy in preconditioner`" [bool] allows us to study impact (usually positive) 
-    of including enthalpy term in the preconditioner. Default value is *true*.
+  * `"operators`" ``[list]`` 
+
+    * `"include enthalpy in preconditioner`" ``[bool]`` allows us to study impact (usually positive) 
+      of including enthalpy term in the preconditioner. Default value is *true*.
   
-  * `"diagonal shift`" [double] allows for a constant shift to be applied to
-    the diagonal of the assembled operator, which can b useful for dealing
-    with singular or near-singular matrices.  Default is *0.0*.
+    * `"diagonal shift`" ``[double]`` allows for a constant shift to be applied to
+      the diagonal of the assembled operator, which can b useful for dealing
+      with singular or near-singular matrices.  Default is *0.0*.
 
 
 Diffusion operator
@@ -1836,14 +1790,16 @@ Diffusion operator
 Operators sublist describes the PDE structure of the flow, specifies a discretization
 scheme, and selects assembling schemas for matrices and preconditioners.
 
-* `"diffusion operator`" [list] defines parameters for generating and assembling diffusion matrix.
+.. admonition:: diffusion_op-spec
 
-  * `"matrix`" [list] defines parameters for generating and assembling diffusion matrix. See section
-    describing operators. 
+  * `"diffusion operator`" ``[list]`` defines parameters for generating and assembling diffusion matrix.
 
-  * `"preconditioner`" [list] defines parameters for generating and assembling diffusion 
-    matrix that is used to create preconditioner. 
-    Since update of preconditioner can be lagged, we need two objects called `"matrix`" and `"preconditioner`".
+    * `"matrix`" ``[list]`` defines parameters for generating and assembling diffusion matrix. See section
+      describing operators. 
+
+    * `"preconditioner`" ``[list]`` defines parameters for generating and assembling diffusion 
+      matrix that is used to create preconditioner. 
+      Since update of preconditioner can be lagged, we need two objects called `"matrix`" and `"preconditioner`".
 
 .. code-block:: xml
 
@@ -1851,7 +1807,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
     <Parameter name="include enthalpy in preconditioner" type="boll" value="true"/>
     <ParameterList name="diffusion operator">
       <ParameterList name="matrix">
-        <Parameter name="discretization primary" type="string" value="mdf: optimized for monotonicity"/>
+        <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
         <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
         <Parameter name="schema" type="Array(string)" value="{{face, cell}}"/>
         <Parameter name="preconditioner schema" type="Array(string)" value="{{face}}"/>
@@ -1895,25 +1851,27 @@ Positive source inject energy.
 The structure of list *source terms* mimics that of list *boundary conditions*. 
 Again, constant functions can be replaced by any of the available functions.
 
-* `"regions`" [Array(string)] is the list of regions where the source is defined.
+.. admonition:: sources-spec
 
-* `"spatial distribution method`" [string] is the method for distributing
-  source Q over the specified regions. The available options are `"volume`" and
-  `"none`".
-  For option `"none`", the source term function Q is measured in [J/m^3/s]. 
-  For option `"volume`", it is measured in [J/s]. 
-  When the source function is defined over a few regions, Q is distributed over their union.
-  Option `"volume fraction`" can be used when the region geometric
-  model support volume fractions. 
+  * `"regions`" ``[Array(string)]`` is the list of regions where the source is defined.
 
-* `"use volume fractions`" instructs the code to use all available volume fractions. 
-  Note that the region geometric model supports volume fractions only for a few regions.
+  * `"spatial distribution method`" ``[string]`` is the method for distributing
+    source Q over the specified regions. The available options are `"volume`" and
+    `"none`".
+    For option `"none`", the source term function Q is measured in [J/m^3/s]. 
+    For option `"volume`", it is measured in [J/s]. 
+    When the source function is defined over a few regions, Q is distributed over their union.
+    Option `"volume fraction`" can be used when the region geometric
+    model support volume fractions. 
 
-* `"submodel`" [string] refines definition of the source. Available options are `"rate`",
-  `"integrated source`". The first option defines the source 
-  in a natural way as the rate of change `q`. The second option defines the indefinite
-  integral `Q` of the rate of change, i.e. the source term is calculated as `q = dQ/dt`. 
-  Default is `"rate`". 
+  * `"use volume fractions`" instructs the code to use all available volume fractions. 
+    Note that the region geometric model supports volume fractions only for a few regions.
+
+  * `"submodel`" ``[string]`` refines definition of the source. Available options are `"rate`",
+    `"integrated source`". The first option defines the source 
+    in a natural way as the rate of change `q`. The second option defines the indefinite
+    integral `Q` of the rate of change, i.e. the source term is calculated as `q = dQ/dt`. 
+    Default is `"rate`". 
 
 .. code-block:: xml
 
@@ -1945,7 +1903,9 @@ Operators
 This section contains sublist for diffusion and advection operators.
 It also has one global parameter.
 
-* `"operators`" [list] 
+.. admonition:: ns_operators-spec
+
+  * `"operators`" ``[list]`` 
 
 
 Elasticity operator
@@ -2043,7 +2003,71 @@ sublist, described in Reconstruction_. Here is the example:
   </ParameterList>
 
 
-Coupled PKs (MPCs)
+.. _`PK: Mechanics`:
+
+Mechanics PK
+------------
+{ MechanicsElasticity_PK }
+{ MechanicsSmallStrain_PK }
+
+
+Boundary conditions
+...................
+Boundary conditions are defined in sublist *boundary conditions*. 
+Two types of boundary conditions are supported.
+Each type has a similar structure: a list of identical elements that contain
+information about a part of the boundary where it is prescribed and a function
+to calculate it.
+
+.. admonition:: mechanics_boundary_conditions-spec
+
+  * `"displacement`" ``[list]`` is the Dirichlet boundary condition where the displacement 
+    is prescribed on a part of the boundary surface.
+
+  * `"traction`" ``[list]`` is the Neumann boundary condition where an outward traction 
+    is prescribed on a part of the boundary surface.
+    This is the default boundary condition. 
+
+  * `"kinematic`" ``[list]`` is the kinematic boundary condition, the essential condition
+    for the normal velocity.
+
+.. code-block:: xml
+
+  <ParameterList name="mechanics">  <!-- parent list -->
+  <ParameterList name="boundary conditions">
+    <ParameterList name="displacement">
+      <ParameterList name="BC_0">
+        <Parameter name="regions" type="Array(string)" value="{{_SURFACE_0}}"/>
+        <Parameter name="spatial distribution method" type="string" value="none"/>
+        <ParameterList name="no slip">
+          <Parameter name="number of dofs" type="int" value="2"/>
+          <Parameter name="function type" type="string" value="composite function"/>
+          <ParameterList name="dof 1 function">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.0"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="dof 2 function">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="traction">
+      <ParameterList name="BC_1">
+        <Parameter name="regions" type="Array(string)" value="{{_SURFACE_1}}"/>
+        <Parameter name="spatial distribution method" type="string" value="none"/>
+        <ParameterList name="traction">
+          <!-- similar to the displacement boundary condition -->
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+
+==================
+COUPLED PKs (MPCs)
 ==================
 Coupling of process kernels requires additional parameters for PK 
 described above.
@@ -2105,8 +2129,13 @@ Coupled matrix-fracture Darcy flow PK
 -------------------------------------
 { FlowMatrixFracture_PK }
 
+Thermo-poroelasticity PK
+------------------------
+{ FlowMechanics_PK }
 
-Generic capabilities
+
+====================
+GENERIC CAPABILITIES
 ====================
 Collection of generic tools used by PKs.
 
@@ -2315,7 +2344,8 @@ Thus, the value here is 10 anytime prior to `t=2`. The value increases linearly 
 .. _Solver:
 .. _BDF1 Solver Interface:
 
-Solvers
+=======
+SOLVERS
 =======
 { SolverFactory }
 
@@ -2458,21 +2488,21 @@ Hypre's Block ILU
 The internal parameters for block ILU are as follows (see 
 https://docs.trilinos.org/dev/packages/ifpack/doc/html/index.html for more detail):
 
-* `"fact: level-of-fill`" [int] sets the level of fill used by the level-based ilu(k) strategy.
+* `"fact: level-of-fill`" ``[int]`` sets the level of fill used by the level-based ilu(k) strategy.
   This is based on powers of the graph, so the value 0 means no-fill. Default is 0.
 
-* `"fact: absolute threshold`" [double] defines the value to add to each diagonal element 
+* `"fact: absolute threshold`" ``[double]`` defines the value to add to each diagonal element 
   (times the sign of the actual diagonal element). Default is 0.
 
-* `"fact: relative threshold`" [double] multiplies the diagonal by this value before checking 
+* `"fact: relative threshold`" ``[double]`` multiplies the diagonal by this value before checking 
   the threshold. Default is 1.
 
-* `"fact: relax value`" [double] if nonzero, dropped values are added to the diagonal (times 
+* `"fact: relax value`" ``[double]`` if nonzero, dropped values are added to the diagonal (times 
   this factor). Default is 0.
 
-* `"overlap`" [int] defines overlap of the additive Schwarz. Default is 0.
+* `"overlap`" ``[int]`` defines overlap of the additive Schwarz. Default is 0.
 
-* `"schwarz: combine mode`" [string] defines how values corresponding to overlapping nodes are 
+* `"schwarz: combine mode`" ``[string]`` defines how values corresponding to overlapping nodes are 
   handled. Users should set this value to `"Add`" if interested in a symmetric preconditioner. 
   Otherwise, the default value of `"Zero`" usually results in better convergence.
   If the level of overlap is set to zero, the rows of the user matrix that are stored on a 
@@ -2513,27 +2543,124 @@ Diagonal
 { PreconditionerDiagonal }
 
 
-Mesh
 ====
-{ Mesh }
+MESH
+====
+Amanzi supports both structured and unstructured numerical solution approaches.
+This flexibility has a direct impact on the selection and design of the underlying 
+numerical algorithms, the style of the software implementations, and, ultimately, 
+the complexity of the user-interface.  
+This specification format uses and describes the unstructured mesh only.
+
+.. _mesh-spec:
+.. admonition:: mesh-spec
+
+  * `"mesh`" ``[list]`` accepts `"unstructured`" to indicate the meshing option that Amanzi will use.
+    This instructs Amanzi to use data structures provided in the Trilinos or MSTK software frameworks.
+    To the extent possible, the discretization algorithms implemented under this option 
+    are largely independent of the shape and connectivity of the underlying cells.
+    As a result, this option supports an arbitrarily complex computational mesh structure
+    that enables users to work with numerical meshes that can be aligned with geometrically
+    complex man-made or geostatigraphical features.
+    Under this option, the user typically provides a mesh file that was generated with 
+    an external software package.
+    The following mesh file formats are currently supported: `"Exodus II`" (see example),
+    `"MSTK`" (see example), and `"MOAB`" (obsolete).
+    Amanzi also provides a rudimentary capability to generate unstructured meshes automatically.
+
+    * `"unstructured`" ``[list]`` accepts instructions to either (1) read or, (2) generate an unstructured mesh.
+
+      * `"read mesh file`" ``[list]`` accepts name, format of pre-generated mesh file
+
+        * `"file`" ``[string]`` name of pre-generated mesh file. Note that in the case of an
+          Exodus II mesh file, the suffix of the serial mesh file must be .exo and 
+          the suffix of the parallel mesh file must be .par.
+          When running in serial the code will read this the indicated file directly.
+          When running in parallel and the suffix is .par, the code will instead read
+          the partitioned files, that have been generated with a Nemesis tool and
+          named as filename.par.N.r where N is the number of processors and r is the rank.
+          When running in parallel and the suffix is .exo, the code will partition automatically
+          the serial file.
+     
+        * `"format`" ``[string]`` format of pre-generated mesh file (`"MSTK`", `"MOAB`", or `"Exodus II`")
+
+      * `"generate mesh`" ``[list]`` accepts parameters of generated mesh
+
+        * `"domain low coordinate`" ``[Array(double)]`` Location of low corner of domain
+        * `"domain high coordinate`" ``[Array(double)]`` Location of high corner of domain
+        * `"number of cells`" ``[Array(int)]`` the number of uniform cells in each coordinate direction
+
+      * `"expert`" ``[list]`` accepts parameters that control which particular mesh framework is to be used.
+
+        * `"framework`" ``[string]`` one of `"stk::mesh`", `"MSTK`", `"MOAB`" or `"Simple`". 
+        * `"verify mesh`" ``[bool]`` true or false. 
+
+        * `"partitioner`" ``[string]`` defines the partitioning algorithm for parallel unstructured meshes.
+          The available options are `"metis"` (default), `"zoltan_graph"` and `"zoltan_rcb"`. `"metis"`
+          and `"zoltan_graph"` perform a graph partitioning of the mesh with no regard to the geometry 
+          of the mesh. `"zoltan_rcb"` partitions meshes using Recursive Coordinate Bisection which 
+          can lead to better partitioning in meshes that are thin in a particular direction. 
+          Additionally, the use of `"zoltan_rcb"` with the MSTK framework triggers an option to 
+          detect columns of elements in a mesh and adjust the partitioning such that no column is 
+          split over multiple partitions. If no partitioner is specified, the default one is used.
+
+        * `"request edges`" ``[bool]`` builds support for mesh edges. Only in 3D.
+
+        * `"contiguous global ids`" ``[bool]`` enforces contiguous global ids. Default is *true*.
+
+      * `"submesh`" ``[list]`` parameters for extracted meshes
+ 
+        * `"domain name`" ``[string]`` specifies name of the domain. Available options are
+          `"fracture`" for the fracture network or `"surface`" for surface models.
+
+        * `"extraction method`" ``[string]`` specifies the extraction method. The only available option
+          is `"manifold mesh`". If this parameter is missing, the parent mesh framework is used 
+          for submesh extraction..
+
+        * `"regions`" ``[Array(string)]`` defines a list of regions for submesh. Parameter 
+          `"extraction method`" requires a single name in this list.
+
+Example of *Unstructured* mesh generated internally:
+
+.. code-block:: xml
+
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured"/>
+      <ParameterList name="generate mesh">
+        <Parameter name="number of cells" type="Array(int)" value="{{100, 1, 100}}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{{0.0, 0.0, 0.0}}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{{103.2, 1.0, 103.2}}"/>
+      </ParameterList>   
+
+      <ParameterList name="expert">
+        <Parameter name="framework" type="string" value="MSTK"/>
+        <Parameter name="partitioner" type="string" value="metis"/>
+      </ParameterList>
+    </ParameterList>   
+  </ParameterList>
+
+Example of *Unstructured* mesh read from an external file:
+
+.. code-block:: xml
+
+  <ParameterList name="mesh">  <!-- parent list -->
+  <ParameterList name="unstructured">
+    <ParameterList name="read mesh file">
+      <Parameter name="file" type="string" value="mesh_filename"/>
+      <Parameter name="format" type="string" value="Exodus II"/>
+    </ParameterList>   
+  </ParameterList>   
+  </ParameterList>
 
 
-Geometric model
+===============
+GEOMETRIC MODEL
 ===============
 
 Domain
 ------
-It is not always possible to extract space dimension from provided data.
-Therefore, we require the user to provide simple list *domain* with only 
-one parameter *spatial dimension*.
-
-* `"spatial dimension`" [int] defined space dimenstion. The available values are 2 or 3.
-
-.. code-block:: xml
-
-  <ParameterList name="domain">
-    <Parameter name="spatial dimension" type="int" value="2"/>
-  </ParameterList>
+{ GeometricModel }
 
 
 Regions
@@ -2695,7 +2822,8 @@ file and _OUTFLOW PLANE is a planar region. _BLOODY SAND is a volumetric
 region defined by the value 25 in color function file.
 
 
-Databases
+=========
+DATABASES
 =========
 
 
@@ -2754,7 +2882,8 @@ Radioactive decay
 { RadioactiveDecay }
 
 
-Output data
+===========
+OUTPUT DATA
 ===========
 
 Amanzi uses a few ways to communicate simulation data to the user that includes
@@ -2775,33 +2904,35 @@ by machine round errors and randomness due to execution in a parallel computing 
 Therefore, output controls for *checkpoint data* are limited to file name generation and writing 
 frequency, by numerical cycle number.
 
-* `"checkpoint data`" [list] can accept a file name base [string] and cycle data [list] 
-  used to generate the file base name or directory base name that is used in writing checkpoint data. 
+.. admonition:: checkpoint_file-spec
 
-  * `"file name base`" [string] ("checkpoint")
+  * `"checkpoint data`" ``[list]`` can accept a file name base ``[string]`` and cycle data ``[list]`` 
+    used to generate the file base name or directory base name that is used in writing checkpoint data. 
+
+    * `"file name base`" ``[string]`` ("checkpoint")
   
-  * `"file name digits`" [int] Default value is 5.
+    * `"file name digits`" ``[int]`` Default value is 5.
 
-  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second 
-    is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle.
-    A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, 
-    for n=0,1,2,... and cycle < stop if stop != -1.0.
+    * `"cycles start period stop`" ``[Array(int)]`` the first entry is the start cycle, the second 
+      is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle.
+      A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, 
+      for n=0,1,2,... and cycle < stop if stop != -1.0.
 
-  * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop parameters 
-    are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
+    * `"cycles start period stop n`" ``[Array(int)]`` if multiple cycles start period stop parameters 
+      are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
 
-  * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
+    * `"cycles`" ``[Array(int)]`` an array of discrete cycles that at which a visualization dump shall be written. 
 
-  * `"times start period stop`" [Array(double)] the first entry is the start time, 
-    the second is the time period, and the third is the stop time or -1 in which 
-    case there is no stop time. A visualization dump shall be written at such times 
-    that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+    * `"times start period stop`" ``[Array(double)]`` the first entry is the start time, 
+      the second is the time period, and the third is the stop time or -1 in which 
+      case there is no stop time. A visualization dump shall be written at such times 
+      that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
 
-  * `"times start period stop n`" [Array(double) if multiple start period stop parameters 
-    are needed, then use this these parameters with n=0,1,2,..., and not the 
-    single  `"times start period stop`" parameter.
+    * `"times start period stop n`" ``[Array(double)]`` if multiple start period stop parameters 
+      are needed, then use this these parameters with n=0,1,2,..., and not the 
+      single  `"times start period stop`" parameter.
 
-  * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
+    * `"times`" ``[Array(double)]`` an array of discrete times that at which a visualization dump shall be written.
 
 .. code-block:: xml
 
@@ -2830,53 +2961,60 @@ The user will specify explicitly what is to be included in the file at each snap
 Visualization files can only be written at intervals corresponding to the numerical 
 time step values or intervals corresponding to the cycle number; writes are controlled by time step cycle number.
 
-* `"visualization data`" [list] can accept a file name base [string] and cycle data [list] 
-  that is used to generate the file base name or directory base name that is used in writing visualization data.
-  It can also accept a set of lists to specify which field quantities to write.
-  The file name can contain relative or absolute path to an *existing* directory only. 
+.. admonition:: vis-spec
 
-  * `"file name base`" [string] ("amanzi_vis")
+  * `"visualization data`" ``[list]`` can accept a file name base ``[string]`` and cycle 
+    data ``[list]`` that is used to generate the file base name or directory base name that 
+    is used in writing visualization data.
+    It can also accept a set of lists to specify which field quantities to write.
+    The file name can contain relative or absolute path to an *existing* directory only. 
 
-  * `"file format`" [string] ("XDMF") Amanzi supports two types of
-    visualization files.  XDMF is the default and preferred method, but does
-    not correctly handle general polyhedra.  Serial, 3D general polyhedral
-    support is supported by the "SILO" option.  This will eventually be
-    extended to parallel, 2/3D support, but this is not yet implemented.
+    * `"file name base`" ``[string]`` ("amanzi_vis")
 
-  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, 
-    the second is the cycle period, and the third is the stop cycle or -1 in which case 
-    there is no stop cycle. A visualization dump shall be written at such cycles that 
-    satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
+    * `"file format`" ``[string]`` ("XDMF") Amanzi supports two types of
+      visualization files.  XDMF is the default and preferred method, but does
+      not correctly handle general polyhedra.  Serial, 3D general polyhedral
+      support is supported by the "SILO" option.  This will eventually be
+      extended to parallel, 2/3D support, but this is not yet implemented.
 
-  * `"cycles start period stop n`" [Array(int)] if multiple cycles start-period-stop parameters 
-    are needed, then use these parameters with n=0,1,2,..., and not the single 
-    `"cycles start period stop`" parameter.
+    * `"cycles start period stop`" ``[Array(int)]`` the first entry is the start cycle, 
+      the second is the cycle period, and the third is the stop cycle or -1 in which case 
+      there is no stop cycle. A visualization dump shall be written at such cycles that 
+      satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
 
-  * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
+    * `"cycles start period stop n`" ``[Array(int)]`` if multiple cycles start-period-stop parameters 
+      are needed, then use these parameters with n=0,1,2,..., and not the single 
+      `"cycles start period stop`" parameter.
 
-  * `"times start period stop`" [Array(double)] the first entry is the start time, 
-    the second is the time period, and the third is the stop time or -1 in which case 
-    there is no stop time. A visualization dump shall be written at such times that 
-    satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+    * `"cycles`" ``[Array(int)]`` an array of discrete cycles that at which a visualization dump shall be written. 
 
-  * `"times start period stop n`" [Array(double) if multiple start-period-stop parameters 
-    are needed, then use this these parameters with n=0,1,2,..., and not the single
-    `"times start period stop`" parameter.
+    * `"times start period stop`" ``[Array(double)]`` the first entry is the start time, 
+      the second is the time period, and the third is the stop time or -1 in which case 
+      there is no stop time. A visualization dump shall be written at such times that 
+      satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
 
-  * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
+    * `"times start period stop n`" [Array(double) if multiple start-period-stop parameters 
+      are needed, then use this these parameters with n=0,1,2,..., and not the single
+      `"times start period stop`" parameter.
 
-  * `"dynamic mesh`" [bool] (false) write mesh data for every visualization dump, 
-    this facilitates visualizing deforming meshes.
+    * `"times`" ``[Array(double)]`` an array of discrete times that at which a visualization dump shall be written.
 
-  * `"write regions`" [list] contains auxiliary fields with region ids to write into the visualization file.
+    * `"dynamic mesh`" ``[bool]`` (false) write mesh data for every visualization dump, 
+      this facilitates visualizing deforming meshes.
 
-    * `"REGION_NAME`" [Array(string)] the user-defined field name and the list of assigned regions. 
-      The first entry in the regions array is marked with the value 1.0 in the array, 
-      the second with the value 2.0, and so forth. 
-      The code ignores entries in the regions array that are not valid regions that contain cells.
+    * `"write regions`" ``[list]`` contains auxiliary fields with region ids to write into the visualization file.
 
-  * `"write partitions`" [bool] (false) if this parameter is true, then write an array into 
-    the visualization file that contains the rank number of the processor that owns a mesh cell. 
+      * `"REGION_NAME`" ``[Array(string)]`` the user-defined field name and the list of assigned regions. 
+        The first entry in the regions array is marked with the value 1.0 in the array, 
+        the second with the value 2.0, and so forth. 
+        The code ignores entries in the regions array that are not valid regions that contain cells.
+
+    * `"write partitions`" ``[bool]`` (false) if this parameter is true, then write an array into 
+      the visualization file that contains the rank number of the processor that owns a mesh cell. 
+
+    * `"time units`" ``[string]`` time units, e.g. `"y`" or `"h`".
+
+Example:
 
 .. code-block:: xml
 
@@ -2911,7 +3049,8 @@ Mesh info
 { MeshInfo }
 
 
-Input data
+==========
+INPUT DATA
 ==========
 This section describes format and purpose of various input files.
 In addition it explain how to verify the input information (e.g. regions) using special sublists.
@@ -2922,17 +3061,19 @@ Input analysis
 { InputAnalysis }
 
 
-Tabulated EOS format
---------------------
-The tabulated equation of state uses a free format for integres, doubles and text string; 
+Tabulated EOS format (Amanzi)
+-----------------------------
+The tabulated equation of state uses a free format for integers, doubles and text string; 
 however, the order of block is fixed and string cannot have spaces. 
-The first two line have the following format:
+The first three lines have the following format:
 
 .. code-block:: text
 
-  N scale shift field_name
+  Amanzi
+  N1 scale shift temperature
+  N2 scale shift pressure
 
-where *N* is the number of data points in either T or p directions,
+where *Ni* is the number of data points in either T or p directions,
 *scale* and *shift* are the scale factor and shift required to convert data
 to SI units, and *field_name* is either `"temperature`" or `"pressure`"
 
@@ -2958,7 +3099,8 @@ and enthalpy.
 
 .. code-block:: text
 
-  3 1.0000  0.0 temperature
+  Amanzi
+  3 1.0000 0.0 temperature
   3 1.0e+5 0.0 pressure
 
   9 1.0000 0.0 density
@@ -2970,16 +3112,152 @@ and enthalpy.
   9 1.0 0.0 thermal_conductivity
 
   280.15 0.5  999.879 0.530097 0.530997 75.6574 75.6793 0.00142708 0.574347  l
-  290.15 0.5  998.754  1.28544  1.28634  75.0821  75.4233 0.00107982 0.593025  l
-  300.15  0.5  996.493  2.03905  2.03995  74.3983 75.3170  0.000851  0.610549  l
+  290.15 0.5  998.754  1.28544  1.28634 75.0821 75.4233 0.00107982 0.593025  l
+  300.15 0.5  996.493  2.03905  2.03995 74.3983 75.3170 0.000851   0.610549  l
 
-  280.15  1.0  999.904  0.530085 0.531887 75.6536  75.6756  0.00142701 0.574372  l
-  290.15 1.0  998.777  1.28540  1.28720  75.0787  75.4203  0.00107979  0.593048  l
-  300.15 1.0  996.515  2.03898  2.04078  74.3954  75.3145  0.000850991  0.610572  l
+  280.15 1.0  999.904  0.530085 0.531887 75.6536 75.6756 0.00142701 0.574372  l
+  290.15 1.0  998.777  1.28540  1.28720  75.0787 75.4203 0.00107979  0.593048  l
+  300.15 1.0  996.515  2.03898  2.04078  74.3954 75.3145 0.000850991  0.610572  l
 
-  280.15  1.2 999.913  0.53008 0.532242 75.6521  75.6741  0.00142699  0.574382  l
-  290.15  1.2 998.787  1.28538 1.28754 75.0774  75.4191  0.00107978 0.593058  l
+  280.15 1.2 999.913  0.53008 0.532242 75.6521  75.6741  0.00142699  0.574382  l
+  290.15 1.2 998.787  1.28538 1.28754 75.0774  75.4191  0.00107978 0.593058  l
   300.15 1.2 996.524  2.03895 2.04112 74.3942  75.3135  0.000850987  0.610581 l
+
+
+Tabulated EOS format (FEHM)
+---------------------------
+The tabulated equation of state uses a free format for integers, doubles and text string; 
+however, the order of block is fixed and string cannot have spaces. 
+
+Example for liquid water
+........................
+
+.. code-block:: text
+
+ nonuniform                                                Grid type
+    8    6     9                                          Array dimensions
+    1.000000        0.000000                               Temperature factor and offset
+    1.000000        0.000000                               Pressure factor and offset
+    19                                                     Saturation line closeness flag
+ Table temperatures --->
+  -200.00   -195.00   -190.00   -185.00   -180.00   -175.00   -170.00   -165.00    
+ Table pressures --->
+  6.5074101E-02  0.1195323   0.2031954   0.3243768   0.4918777   0.7149075
+ Array property types --->
+ density
+ dd/dt
+ dd/dp
+ enthalpy
+ dh/dt
+ dh/dp
+ viscosity
+ dv/dt
+ dv/dp
+ Density array --->
+   900.9539  2.986970  2.792525  2.623569  2.474998  2.343097  2.225062  2.118721    
+   901.0682  878.6923  5.241142  4.904944  4.613682  4.357906  4.130922  3.927764    
+   901.2436  878.8931  855.6431  8.584902  8.033060  7.558094  7.142697  6.775020    
+   901.4971  879.1833  855.9796  831.6210  13.32351  12.44936  11.70498  11.05858    
+   901.8464  879.5831  856.4427  832.1661  806.3937  19.82610  18.47106  17.33520    
+   902.3099  880.1130  857.0560  832.8870  807.2585  779.6672  28.56710  26.48487    
+ dD/dT array --->
+  -4.401056  -4.465137  -3.634006E-02 -3.175270E-02 -2.8047204E-02 -2.4993611E-02 -2.2437597E-02 -2.0270992E-02
+  -4.404730  -4.554480  -4.633789     -6.274590E-02 -5.4703809E-02 -4.8275996E-02 -4.3014195E-02 -3.8629483E-02
+  -4.400110  -4.560047  -4.748645     -4.847290     -0.1026809     -8.9036323E-02 -7.8307390E-02 -6.9622092E-02
+  -4.393451  -4.551746  -4.756232     -4.995862     -5.119995      -0.1618524     -0.1390779     -0.1215700    
+  -4.384296  -4.540369  -4.741705     -5.004901     -5.313653      -5.472827      -0.2490898     -0.2111700    
+  -4.372241  -4.525384  -4.722595     -4.979755     -5.321985      -5.728076      -5.937891      -0.3788673    
+ dD/dP array --->
+   1.676756  46.57508  44.38469  41.44989  38.92557  36.72093  34.77290  33.03539    
+   2.097235  1.917826  44.96321  43.16014  40.24044  37.75665  35.60374  33.71167    
+   2.093754  2.396778  2.227240  43.98545  42.51919  39.50047  36.97467  34.81088    
+   2.088050  2.390179  2.769690  2.630571  43.65722  42.49656  39.24163  36.58062    
+   2.081284  2.380574  2.756290  3.241876  3.168733  44.03999  43.17746  39.50084    
+   2.072423  2.367801  2.738755  3.216566  3.853050  3.902956  45.26769  44.73188    
+ Enthalpy array --->
+  -11.08680  202.0743    207.3656  212.5940  217.7786  222.9311  228.0593  233.1689    
+  -11.04795  -1.441901   205.8394  211.2797  216.6258  221.9066  227.1395  232.3360    
+  -10.98825  -1.385264   8.315416  209.1396  214.7777  220.2795  225.6877  231.0275    
+  -10.90171  -1.303152   8.391649  18.23019  211.8896  217.7864  223.4902  229.0631    
+  -10.78201  -1.189503   8.497250  18.32486  28.35650  213.9910  220.2263  226.1903    
+  -10.62244  -1.037911   8.638263  18.45154  28.46319  38.76015  215.3184  222.0043    
+ dH/dT array --->
+   1.917285  1.925377  1.051970  1.041299  1.033711  1.028070  1.023779  1.020430    
+   1.915049  1.933634  1.946059  1.078633  1.062691  1.051370  1.042940  1.036470    
+   1.914508  1.930367  1.957850  1.975565  1.113985  1.091000  1.074800  1.062750    
+   1.913727  1.929336  1.953334  1.991954  2.016201  1.160051  1.127669  1.105069    
+   1.912657  1.927926  1.951436  1.985925  2.038849  2.071369  1.219936  1.174710    
+   1.911247  1.926070  1.948945  1.982493  2.030861  2.102872  2.146351  1.298700    
+ dH/dP array --->
+  0.5700204  -31.36753  -27.58228  -23.85831  -20.98058  -18.67626  -16.78886  -15.21603
+  0.7135022  0.5404872  -28.02403  -25.00951  -21.72656  -19.19770  -17.17040  -15.50379
+  0.7139086  0.6773382  0.5040666  -25.57932  -23.12046  -20.11376  -17.81494  -15.97750
+  0.7144175  0.6781194  0.6298733  0.4559285  -23.83204  -21.78361  -18.91836  -16.75610
+  0.7151018  0.6791806  0.6314830  0.5667921  0.3892052  -22.65932  -20.92485  -18.07487
+  0.7160630  0.6805639  0.6335793  0.5700380  0.4816387  0.2933709  -22.00557  -20.52189
+ Viscosity array --->
+  2.0667833E-04  9.9999997E-06  5.9198064E-06  6.2753802E-06  6.6270109E-06  6.9747775E-06  7.3187521E-06  7.6590040E-06
+  2.0685646E-04  1.7128805E-04  9.9999997E-06  6.2796817E-06  6.6325765E-06  6.9813382E-06  7.3261003E-06  7.6669758E-06
+  2.0713007E-04  1.7152553E-04  1.4429199E-04  6.2892664E-06  6.6436955E-06  6.9936523E-06  7.3393444E-06  7.6809429E-06
+  2.0752632E-04  1.7186940E-04  1.4459844E-04  1.2321399E-04  9.9999997E-06  7.0168890E-06  7.3631581E-06  7.7051855E-06
+  2.0807389E-04  1.7234446E-04  1.4502162E-04  1.2360205E-04  1.0634069E-04  7.0617830E-06  7.4066052E-06  7.7475661E-06
+  2.0880280E-04  1.7297656E-04  1.4558440E-04  1.2411769E-04  1.0682854E-04  9.2474213E-05  9.9999997E-06  7.8235007E-06
+ dV/dT array --->
+ -8.2993447E-06 -7.0931769E-06  7.1518159E-08  7.0720446E-08  6.9939738E-08  6.9174121E-08  6.8422651E-08  6.7684958E-08
+ -8.3128207E-06 -6.2673280E-06 -5.4209727E-06  7.1008344E-08  7.0165655E-08  6.9352382E-08  6.8563757E-08  6.7796513E-08
+ -8.3213863E-06 -6.2838080E-06 -4.8463658E-06 -4.2460219E-06  7.0438588E-08  6.9564884E-08  6.8729058E-08  6.7924752E-08
+ -8.3338045E-06 -6.2927879E-06 -4.8655406E-06 -3.8467074E-06 -3.4165248E-06  6.9696760E-08  6.8829650E-08  6.7998009E-08
+ -8.3509904E-06 -6.3052271E-06 -4.8742413E-06 -3.8680932E-06 -3.1414711E-06 -2.8306706E-06  6.8578309E-08  6.7805061E-08
+ -8.3739160E-06 -6.3218395E-06 -4.8858869E-06 -3.8755861E-06 -3.1643483E-06 -2.6455236E-06 -2.4201813E-06  6.6710982E-08
+ dV/dP array --->
+  2.6134942E-06 -1.4940065E-08  4.0690097E-08  7.1375538E-08  9.5491849E-08  1.1454858E-07  1.2968569E-07  1.4171002E-07
+  3.2705682E-06  2.2667357E-06  4.9334119E-08  1.0053603E-07  1.2079731E-07  1.3665340E-07  1.4908871E-07  1.5883744E-07
+  3.2700600E-06  2.8380018E-06  2.0271643E-06  1.1456318E-07  1.6409528E-07  1.7355011E-07  1.8090707E-07  1.8653024E-07
+  3.2694163E-06  2.8367640E-06  2.5274601E-06  1.8711472E-06  1.8563070E-07  2.3600580E-07  2.3299235E-07  2.3078385E-07
+  3.2685762E-06  2.8350339E-06  2.5246798E-06  2.3140383E-06  1.7851987E-06  2.6802255E-07  3.2196141E-07  3.0296016E-07
+  3.2674695E-06  2.8328298E-06  2.5211041E-06  2.3085806E-06  2.1822507E-06  1.7638789E-06  3.6895875E-07  4.3009413E-07
+ Saturation line intersection array --->
+   F   T   F   F   F   F   F   F
+   F   F   T   F   F   F   F   F
+   F   F   F   T   F   F   F   F
+   F   F   F   F   T   F   F   F
+   F   F   F   F   F   T   F   F
+   F   F   F   F   F   F   T   F
+ Saturation line closeness array --->
+   0  10   0   0   0   0   0   0
+   0   0  11   0   0   0   0   0
+   0   0   0  12   0   0   0   0
+   0   0   0   0  13   0   0   0
+   0   0   0   0   0  14   0   0
+   0   0   0   0   0   0  15   0
+ 
+     6               Number of saturation line vertices
+ Pressure            Temperature         dP/dT               Cell      Intersection_type
+  6.5074101E-02       -195.0000           1.0891641E-02         487        6
+  0.1195323           -190.0000           1.6732618E-02         541        6
+  0.2031954           -185.0000           2.4236280E-02         595        6
+  0.3243768           -180.0000           3.3500183E-02         649        6
+  0.4918777           -175.0000           4.4605963E-02         703        6
+  0.7149075           -170.0000           5.7636499E-02         757        6
+
+
+ Liquid properties at saturation line vertices --->
+ Density     dD/dT      dD/dP      Enthalpy   dH/dT      dH/dP      Viscosity       dV/dT          dV/dP
+   878.6282  -4.465137   1.176809  -1.459917   1.925377  0.3308200  1.7121245E-04  -7.0931769E-06  1.3881693E-06
+   855.5234  -4.633789   1.431348   8.288394   1.946059  0.3229902  1.4418318E-04  -5.4209727E-06  1.3005098E-06
+   831.4067  -4.847290   1.768377   18.19324   1.975565  0.3049078  1.2306188E-04  -4.2460219E-06  1.2552354E-06
+   806.0210  -5.119995   2.224947   28.31119   2.016201  0.2704890  1.0613137E-04  -3.4165248E-06  1.2496769E-06
+   779.0295  -5.472827   2.858964   38.71334   2.071369  0.2098658  9.2187336E-05  -2.8306706E-06  1.2862695E-06
+   749.9777  -5.937891   3.772253   49.49191   2.146351  0.1066512  8.0373306E-05  -2.4201813E-06  1.3734772E-06
+ 
+ Vapour properties at saturation line vertices --->
+ Density     dD/dT           dD/dP     Enthalpy  dH/dT     dH/dP      Viscosity      dV/dT           dV/dP
+   2.986970  -3.8888931E-02  46.57508  202.0743  1.058261  -31.36753  5.5601986E-06  7.1921569E-08  -1.4940065E-08
+   5.241141  -6.7239381E-02  44.96321  205.8395  1.088046  -28.02403  5.9224931E-06  7.1437718E-08   4.9334119E-08
+   8.584903  -0.1103685      43.98545  209.1396  1.127609  -25.57932  6.2892664E-06  7.0885832E-08   1.1456318E-07
+   13.32350  -0.1748287      43.65722  211.8897  1.179343  -23.83204  6.6661905E-06  7.0139684E-08   1.8563070E-07
+   19.82610  -0.2710075      44.03999  213.9910  1.247070  -22.65932  7.0617830E-06  6.8964439E-08   2.6802255E-07
+   28.56710  -0.4164467      45.26769  215.3184  1.337180  -22.00557  7.4888940E-06  6.6921345E-08   3.6895875E-07
 
 
 Tabulated function file format

@@ -55,7 +55,7 @@ UpwindFlux::Compute(const CompositeVector& flux,
   const Epetra_MultiVector& flux_f = *flux.ViewComponent("face", true);
 
   const Epetra_MultiVector& field_c = *field.ViewComponent("cell", true);
-  const Epetra_MultiVector& field_bf = *field.ViewComponent("boundary_face", true);
+  const Epetra_MultiVector& field_bf = *field.ViewComponent("boundary_face");
   Epetra_MultiVector& field_f = *field.ViewComponent(face_comp_, true);
 
   double flxmin, flxmax, tol;
@@ -63,6 +63,8 @@ UpwindFlux::Compute(const CompositeVector& flux,
   flux_f.MaxValue(&flxmax);
   tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
+  int nfaces_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_wghost =
     mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
@@ -72,7 +74,7 @@ UpwindFlux::Compute(const CompositeVector& flux,
   int c1, c2, dir;
   double kc1, kc2;
   for (int f = 0; f < nfaces_wghost; ++f) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     int g = fmap.FirstPointInElement(f);
@@ -109,7 +111,8 @@ UpwindFlux::Compute(const CompositeVector& flux,
       field_f[0][g + 1 - k] = kc2;
 
       // upwind only on inflow dirichlet faces
-    } else {
+      // owned cells have owned boundary faces, so we may safely limit here
+    } else if (f < nfaces_owned) {
       field_f[0][g] = kc1;
       if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
         int bf = getFaceOnBoundaryBoundaryFace(*mesh_, f);

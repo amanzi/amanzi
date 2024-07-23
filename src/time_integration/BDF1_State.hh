@@ -71,11 +71,14 @@ struct BDF1_State {
   int pc_updates;     // counter for the number of preconditioner updates
   double hmin, hmax;  // minimum and maximum dt used on a successful step
 
-  // performane of nonlinear solver
+  // performance of nonlinear solver
   int solve_itrs;
 
   // restart fine constrol
   double tol_multiplier, tol_multiplier_damp;
+
+  // debug tool
+  int report_failure;
 
   void InitializeFromPlist(Teuchos::ParameterList&,
                            const Teuchos::RCP<const Vector>&,
@@ -114,6 +117,9 @@ BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
   // restart fine control
   tol_multiplier = plist.get<double>("restart tolerance relaxation factor", 1.0);
   tol_multiplier_damp = plist.get<double>("restart tolerance relaxation factor damping", 1.0);
+
+  // debug tool
+  report_failure = plist.get<int>("report failure on step", -2);
 }
 
 } // namespace Amanzi

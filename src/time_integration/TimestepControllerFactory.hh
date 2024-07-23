@@ -99,7 +99,7 @@ TimestepControllerFactory<Vector>::Create(const Teuchos::ParameterList& slist,
       std::string name = "TimestepControllerSmarter";
       if (slist.isSublist("verbose object")) {
         if (slist.sublist("verbose object").isParameter("name")) {
-          name = slist.sublist("verbose object").get<std::string>("name");
+          name = Keys::cleanPListName(slist.sublist("verbose object").get<std::string>("name"));
         }
       }
       Teuchos::ParameterList tslist = slist.sublist("timestep controller smarter parameters");

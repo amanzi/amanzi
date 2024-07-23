@@ -54,6 +54,7 @@ EvaluatorCellVolume::Update_(State& S)
       throw message;
     }
   }
+  vec.ScatterMasterToGhosted();
 }
 
 } // namespace Amanzi

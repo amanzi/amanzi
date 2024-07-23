@@ -97,8 +97,14 @@ EOSViscosityEvaluator::EvaluatePartialDerivative_(const State& S,
     Epetra_MultiVector& result_v = *(results[0]->ViewComponent(*comp));
 
     int count = results[0]->size(*comp);
-    for (int i = 0; i != count; ++i) {
-      result_v[0][i] = visc_->DViscosityDT(temp_v[0][i], pres_v[0][i]);
+    if (wrt_key == "temperature") {
+      for (int i = 0; i != count; ++i) {
+        result_v[0][i] = visc_->DViscosityDT(temp_v[0][i], pres_v[0][i]);
+      }
+    } else if (wrt_key == "pressure") {
+      for (int i = 0; i != count; ++i) {
+        result_v[0][i] = visc_->DViscosityDp(temp_v[0][i], pres_v[0][i]);
+      }
     }
   }
 }

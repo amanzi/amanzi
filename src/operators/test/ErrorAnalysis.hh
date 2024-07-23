@@ -41,7 +41,7 @@ ComputePolyError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
   err_bnd = 0.0;
   for (int f = 0; f < nfaces_owned; ++f) {
-    auto cells = mesh->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh->getFaceCells(f);
     int c = cells[0];
     if (cells.size() == 1 && flag[c] == 0) {
       for (int i = 0; i < npoly; ++i) {

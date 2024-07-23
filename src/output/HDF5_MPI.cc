@@ -40,6 +40,7 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type& comm, bool include_io_set)
   NumNodes_ = 0;
   NumElems_ = 0;
   ConnLength_ = 0;
+  Iteration_ = 0;
 }
 
 
@@ -549,7 +550,7 @@ HDF5_MPI::writeDualMesh(const double time, const int iteration)
   int nfaces_local = fmap.NumMyElements();
 
   for (int f = 0; f != nfaces_local; ++f) {
-    auto cells = vis_mesh.getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = vis_mesh.getFaceCells(f);
     if (cells.size() > 1) {
       local_conn += cells.size();
       local_entities++;
@@ -578,7 +579,7 @@ HDF5_MPI::writeDualMesh(const double time, const int iteration)
   int lcv_entity = 0;
   int internal_f = 0;
   for (int f = 0; f != nfaces_local; ++f) {
-    auto cells = vis_mesh.getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = vis_mesh.getFaceCells(f);
     if (cells.size() > 1) {
       // store cell type id
       // conn[lcv++] = 2;
@@ -754,16 +755,17 @@ HDF5_MPI::close_h5file()
 void
 HDF5_MPI::createTimestep(double time, int iteration, const std::string& tag)
 {
+  std::string tag_tmp = (iteration == Iteration() && tag == "" && iteration > 0) ? "ic" : "";
   setIteration(iteration);
   setTime(time);
-  set_tag(tag);
+  set_tag(tag_tmp);
 
   if (TrackXdmf() && viz_comm_->MyPID() == 0) {
     // create single step xdmf file
     Teuchos::XMLObject tmp("Xdmf");
     tmp.addChild(addXdmfHeaderLocal_("Mesh", time, iteration));
     std::stringstream filename;
-    filename << H5DataFilename() << "." << iteration << tag << ".xmf";
+    filename << H5DataFilename() << "." << iteration << tag_tmp << ".xmf";
     of_timestep_.open(filename.str().c_str());
     // channel will be closed when the endTimestep() is called
     setxdmfStepFilename(filename.str());

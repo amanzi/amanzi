@@ -53,14 +53,14 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
 
-  // updates the preconditioner
+  // -- preconditioner
   virtual void
   UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) override;
 
-  // preconditioner application
   virtual int
   ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
 
+  // -- error norm for coupled system
   virtual double
   ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
 
@@ -91,9 +91,8 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
 
+  Key matrix_mol_flowrate_key_;
   Key diffusion_to_matrix_key_, heat_diffusion_to_matrix_key_;
-  Key matrix_vol_flowrate_key_, fracture_vol_flowrate_key_;
-  Key matrix_mol_flowrate_key_, fracture_mol_flowrate_key_;
 
   std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux>> adv_coupling_matrix_, adv_coupling_pc_;
 

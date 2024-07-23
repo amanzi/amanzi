@@ -23,6 +23,7 @@
 #include "EnergyTwoPhase_PK.hh"
 #include "EnthalpyEvaluator.hh"
 #include "IEMEvaluator.hh"
+#include "StateArchive.hh"
 #include "TCMEvaluator_TwoPhase.hh"
 #include "TotalEnergyEvaluator.hh"
 
@@ -61,6 +62,8 @@ EnergyTwoPhase_PK::Setup()
   // basic class setup
   Energy_PK::Setup();
 
+  double molar_mass = S_->ICList().sublist("const_fluid_molar_mass").get<double>("value");
+
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
   if (!S_->HasRecord(energy_key_)) {
@@ -74,6 +77,7 @@ EnergyTwoPhase_PK::Setup()
       .set<std::string>("particle density key", particle_density_key_)
       .set<std::string>("internal energy rock key", ie_rock_key_)
       .set<bool>("vapor diffusion", true)
+      .set<double>("liquid molar mass", molar_mass)
       .set<std::string>("tag", "");
     elist.setName(energy_key_);
     if (flow_on_manifold_) elist.set<std::string>("aperture key", aperture_key_);
@@ -95,7 +99,9 @@ EnergyTwoPhase_PK::Setup()
       ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
     Teuchos::ParameterList elist = ep_list_->sublist("enthalpy evaluator");
-    elist.set("enthalpy key", enthalpy_key_).set<std::string>("tag", "");
+    elist.set("enthalpy key", enthalpy_key_)
+      .set<double>("liquid molar mass", molar_mass)
+      .set<std::string>("tag", "");
     elist.setName(enthalpy_key_);
 
     auto enth = Teuchos::rcp(new EnthalpyEvaluator(elist));
@@ -157,10 +163,13 @@ EnergyTwoPhase_PK::Setup()
       x_gas_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, x_gas_key_)
     .SetGhosted();
 
-  // other evalautors
+  // other evaluators
   if (!S_->HasRecord(particle_density_key_)) {
     S_->Require<CV_t, CVS_t>(particle_density_key_, Tags::DEFAULT, particle_density_key_);
   }
+
+  // units
+  S_->GetRecordSetW(enthalpy_key_).set_units("J/mol");
 }
 
 
@@ -321,16 +330,10 @@ EnergyTwoPhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   dt_ = t_new - t_old;
 
-  // save a copy of temperature
-  CompositeVector temperature_copy(S_->Get<CV_t>(temperature_key_));
-
-  // swap conserved field (i.e., energy) and save
-  S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
-  const auto& e = S_->Get<CV_t>(energy_key_);
-  auto& e_prev = S_->GetW<CV_t>(prev_energy_key_, Tags::DEFAULT, passwd_);
-
-  CompositeVector e_prev_copy(e_prev);
-  e_prev = e;
+  // save a copy of primary and conservative fields
+  std::vector<std::string> fields({ temperature_key_, energy_key_ });
+  StateArchive archive(S_, vo_);
+  archive.Add(fields, Tags::DEFAULT);
 
   // initialization
   if (num_itrs_ == 0) {
@@ -348,16 +351,8 @@ EnergyTwoPhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (failed) {
     dt_ = dt_next_;
 
-    // restore the original primary solution, temperature
-    S_->GetW<CV_t>(temperature_key_, Tags::DEFAULT, passwd_) = temperature_copy;
+    archive.Restore("");
     temperature_eval_->SetChanged();
-
-    // restore the original fields
-    S_->GetW<CV_t>(prev_energy_key_, Tags::DEFAULT, passwd_) = e_prev_copy;
-
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Step failed. Restored temperature, prev_energy." << std::endl;
-
     return failed;
   }
 
@@ -379,6 +374,11 @@ void
 EnergyTwoPhase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   dt_ = dt_next_;
+
+  // update previous fields
+  std::vector<std::string> fields({ energy_key_ });
+  StateArchive archive(S_, vo_);
+  archive.CopyFieldsToPrevFields(fields, "", false);
 }
 
 } // namespace Energy

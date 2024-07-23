@@ -68,7 +68,7 @@ PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 
     for (auto it = global_schema_row_.begin(); it != global_schema_row_.end(); ++it) {
       std::tie(kind, std::ignore, num) = *it;
-      std::string name(local_schema_row_.KindToString(kind));
+      std::string name(AmanziMesh::to_string(kind));
       cvs_row->AddComponent(name, kind, num);
     }
 
@@ -81,7 +81,7 @@ PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 
     for (auto it = global_schema_col_.begin(); it != global_schema_col_.end(); ++it) {
       std::tie(kind, std::ignore, num) = *it;
-      std::string name(local_schema_col_.KindToString(kind));
+      std::string name(AmanziMesh::to_string(kind));
       cvs_col->AddComponent(name, kind, num);
     }
 
@@ -143,7 +143,7 @@ PDE_AdvectionRiemann::UpdateMatrices(const std::vector<WhetStone::Polynomial>& u
   } else if (matrix_ == "flux" && flux_ == "Rusanov") {
     // Polynomial Kc should be distributed here
     for (int f = 0; f < nfaces_owned; ++f) {
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f);
       int c1 = cells[0];
       int c2 = (cells.size() == 2) ? cells[1] : c1;
       dg_->FluxMatrixRusanov(f, (*Kc_)[c1], (*Kc_)[c2], (*Kf_)[f], Aface);
@@ -227,7 +227,7 @@ PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET || bc_model[f] == OPERATOR_BC_DIRICHLET_TYPE2) {
       // common section
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f);
       int c = cells[0];
 
       const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);

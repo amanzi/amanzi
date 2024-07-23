@@ -27,7 +27,7 @@ TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> alquimia_pk,
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
-  : mesh_(mesh), alquimia_pk_(alquimia_pk), chem_engine_(chem_engine)
+  : name_("alquimia bc"), mesh_(mesh), alquimia_pk_(alquimia_pk), chem_engine_(chem_engine)
 {
   // Check arguments.
   if (chem_engine_ != Teuchos::null) {
@@ -82,7 +82,7 @@ TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string>& region
       int f = block[n];
       value_[f].resize(chem_engine_->NumPrimarySpecies());
 
-      const auto& cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      const auto& cells = mesh_->getFaceCells(f);
       AMANZI_ASSERT(cells.size() == 1);
       cell_for_face_[f] = cells[0];
     }

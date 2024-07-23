@@ -14,44 +14,46 @@ The reconstruction can be either unconstrained or limited.
 Amanzi supports a variety of state-of-the-art reconstruction and limiting algorithms
 and their extensions for various PKs.
 
-* `"reconstruction`" [list] describes parameters used by reconstruction algorithms.
+.. admonition:: reconstruction-spec
 
- * `"method`" [string] specifies a reconstruction method. Available option is
-   `"cell-based`" (default).
+  * `"reconstruction`" ``[list]`` describes parameters used by reconstruction algorithms.
 
- * `"polynomial order`" [int] defines the polynomial order of the reconstructed function.
-   Default is 1.
+   * `"method`" ``[string]`` specifies a reconstruction method. Available option is
+     `"cell-based`" (default).
 
- * `"weight`" [string] defines weight for reconstruction. Available options are
-   `"constant`" (default) and `"inverse distance`".
+   * `"polynomial order`" ``[int]`` defines the polynomial order of the reconstructed function.
+     Default is 1.
 
- * `"limiter`" [string] specifies limiting method. Available options are
-   `"Barth-Jespersen`" (default), `"Michalak-Gooch`", `"tensorial`", and `"Kuzmin`".
+   * `"weight`" ``[string]`` defines weight for reconstruction. Available options are
+     `"constant`" (default) and `"inverse distance`".
 
- * `"limiter stencil`" [string] specifies stencil for calculating local bounds. Available
-   options are `"face to cells`", `"cell to closets cells`", `"cell to all cells`",
-   and `"node to cells`".
-   For a square mesh, the above options define stencils of size 2, 5, 9, and 4,
-   respectively.
-   Option `"face to cells`" is default for `"Barth-Jespersen`", `"Michalak-Gooch`",
-   and `"tensorial`".  Option `"node to cells`" is default for `"Kuzmin`".
+   * `"limiter`" ``[string]`` specifies limiting method. Available options are
+     `"Barth-Jespersen`" (default), `"Michalak-Gooch`", `"tensorial`", and `"Kuzmin`".
 
- * `"limiter points`" [int] specifies the number of integration points (Gauss points in 2D)
-   on face where limiting occurs. Default is 1. Limited to 2D.
+   * `"limiter stencil`" ``[string]`` specifies stencil for calculating local bounds. Available
+     options are `"face to cells`", `"cell to closets cells`", `"cell to all cells`",
+     and `"node to cells`".
+     For a square mesh, the above options define stencils of size 2, 5, 9, and 4,
+     respectively.
+     Option `"face to cells`" is default for `"Barth-Jespersen`", `"Michalak-Gooch`",
+     and `"tensorial`".  Option `"node to cells`" is default for `"Kuzmin`".
 
- * `"limiter location`" [string] defines geometry entity where the *limiter points*
-   are located. Available options are `"node`", `"face`", and `"cell`".
-   Option `"node`" is default for `"node to cells`" stencil.
-   Option `"face`" is default for other stencils.
+   * `"limiter points`" ``[int]`` specifies the number of integration points (Gauss points in 2D)
+     on face where limiting occurs. Default is 1. Limited to 2D.
 
- * `"limiter cfl`" [double] is a safety factor (less than 1) applied to the limiter.
-   Default value is 1.
+   * `"limiter location`" ``[string]`` defines geometry entity where the *limiter points*
+     are located. Available options are `"node`", `"face`", and `"cell`".
+     Option `"node`" is default for `"node to cells`" stencil.
+     Option `"face`" is default for other stencils.
 
- * `"use external bounds`" [bool] specifies if bounds for limiters are provided by
-   the hosting application. Default is `"false`".`
+   * `"limiter cfl`" ``[double]`` is a safety factor (less than 1) applied to the limiter.
+     Default value is 1.
 
- * `"limiter extension for transport`" [bool] adds additional corrections to
-   limiters required by the transport PK. Default value is *false*.
+   * `"use external bounds`" ``[bool]`` specifies if bounds for limiters are provided by
+     the hosting application. Default is `"false`".`
+
+   * `"limiter extension for transport`" ``[bool]`` adds additional corrections to
+     limiters required by the transport PK. Default value is *false*.
 
 .. code-block:: xml
 

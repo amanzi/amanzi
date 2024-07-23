@@ -22,19 +22,10 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-/* *******************************************************************
-* Constructor takes a parameter list with EOS parameters.
-******************************************************************* */
-VaporInGas_Density::VaporInGas_Density(Teuchos::ParameterList& eos_plist) : EOS_Density(eos_plist)
+VaporInGas_Density::VaporInGas_Density(Teuchos::ParameterList& plist)
+  : EOS_Density(plist.sublist("EOS parameters"))
 {
-  InitializeFromPlist_();
-}
-
-
-void
-VaporInGas_Density::InitializeFromPlist_()
-{
-  Teuchos::ParameterList gas_plist = eos_plist_.sublist("gas EOS parameters");
+  Teuchos::ParameterList gas_plist = plist.sublist("EOS parameters");
   EOSFactory<EOS_Density> eos_factory;
   gas_eos_ = eos_factory.Create(gas_plist);
 }

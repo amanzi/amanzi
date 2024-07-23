@@ -245,7 +245,6 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
     order[i].resize(nvalid);
 
     srand(int(time(0)));
-    int iuc = rand()%1000000 + i;
 
     max_fab_size = std::max(max_fab_size,nvalid);
     FORT_SGSIM_SETUP(kdat,ARLIM(k_lo),ARLIM(k_hi),
@@ -303,9 +302,8 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
 
   if (TRANSFORM_GSLIB_FIELD) {
     for (MFIter mfi(mfg); mfi.isValid(); ++mfi) {
-      const int  i     = mfi.index();
-      const int* k_lo  = mfg[mfi].loVect();
-      const int* k_hi  = mfg[mfi].hiVect();
+      const int* k_lo = mfg[mfi].loVect();
+      const int* k_hi = mfg[mfi].hiVect();
       const Real* kdat = mfg[mfi].dataPtr();
       const Box& vbox = mfi.validbox();
       FORT_LGNORM(kdat,ARLIM(k_lo),ARLIM(k_hi),&kappaval[0],

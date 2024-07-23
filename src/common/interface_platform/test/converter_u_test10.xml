@@ -1,0 +1,122 @@
+<amanzi_input type="unstructured" version="1.6-dev">
+  <model_description name="Integrated Hydrology">
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>s</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>molar</conc_unit>
+    </units>
+  </model_description>
+
+  <definitions>
+    <macros>
+      <time_macro name="Observation Times">
+        <time>1.2096E+10</time>
+      </time_macro>
+      <time_macro name="EveryHour">
+        <start>0</start>
+        <timestep_interval>2 s</timestep_interval>
+        <stop>40 s</stop>
+      </time_macro>
+    </macros>
+  </definitions>
+
+  <process_kernels>
+    <pk mode="steady">
+      <mechanics model="elastic" state="on" />
+    </pk>
+  </process_kernels>
+
+  <phases>
+    <liquid_phase name="water">
+      <eos model="constant" viscosity="1.002e-03" density="998.2"/>
+      <molar_mass>0.018015</molar_mass>
+    </liquid_phase>
+  </phases>
+
+  <execution_controls>
+    <verbosity level="high" />
+    <execution_control_defaults init_dt="1.0" method="picard" mode="steady" />
+    <execution_control end="0 s" mode="steady" start="0 y" increase_factor="1.25" init_dt="1.0 s"/>
+  </execution_controls>
+
+  <numerical_controls>
+    <unstructured_controls>
+      <unstr_transient_controls>
+        <min_iterations>10</min_iterations>
+        <max_iterations>15</max_iterations>
+        <limit_iterations>20</limit_iterations>
+        <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
+        <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+        <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+        <max_divergent_iterations>3</max_divergent_iterations>
+      </unstr_transient_controls>
+
+      <unstr_mechanics_controls>
+        <elasticity_linear_solver>
+          <method>pcg</method>
+          <max_iterations>400</max_iterations>
+          <tolerance>1.0e-8</tolerance>
+          <convergence_criteria>relative residual,relative rhs,make one iteration</convergence_criteria>
+        </elasticity_linear_solver>
+      </unstr_mechanics_controls>
+    </unstructured_controls>
+  </numerical_controls>
+
+  <mesh framework="mstk">
+    <dimension>3</dimension>
+    <generate>
+      <number_of_cells nx="10" ny="10" nz="10"/>
+      <box high_coordinates="1.0, 1.0, 1.0" low_coordinates="0.0, 0.0, 0.0"/>
+    </generate>
+  </mesh>
+
+  <regions>
+    <region name="All">
+      <box high_coordinates="1.0, 1.0, 1.0" low_coordinates="0.0, 0.0, 0.0"/>
+    </region>
+    <region name="TopSurface">
+      <box high_coordinates="1.0, 1.0, 1.0" low_coordinates="0.0, 0.0, 1.0"/>
+    </region>
+  </regions>
+
+  <materials>
+    <material name="All">
+      <mechanical_properties>
+        <porosity value="0.4"/>
+      </mechanical_properties>
+      <assigned_regions>All</assigned_regions>
+    </material>
+  </materials>
+
+  <initial_conditions>
+    <initial_condition name="All">
+      <assigned_regions>All</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <displacement value="0.0"/>
+        </liquid_component>
+      </liquid_phase>
+    </initial_condition>
+  </initial_conditions>
+
+  <boundary_conditions>
+    <boundary_condition name="BC1">
+      <assigned_regions>TopSurface</assigned_regions>
+      <liquid_phase name="water">
+        <mechanics_component>
+          <uniform_dispacement function="constant" start="0.0" value="1.0e-3 m"/>
+        </mechanics_component>
+      </liquid_phase>
+    </boundary_condition>
+  </boundary_conditions>
+
+  <output>
+    <vis>
+      <base_filename>plot</base_filename>
+      <num_digits>5</num_digits>
+      <time_macros>EveryHour</time_macros>
+    </vis>
+  </output>
+</amanzi_input>
+  

@@ -23,6 +23,7 @@
 #include "EnergyOnePhase_PK.hh"
 #include "EnthalpyEvaluator.hh"
 #include "IEMEvaluator.hh"
+#include "StateArchive.hh"
 #include "TCMEvaluator_OnePhase.hh"
 #include "TotalEnergyEvaluator.hh"
 
@@ -64,6 +65,8 @@ EnergyOnePhase_PK::Setup()
   // basic class setup
   Energy_PK::Setup();
 
+  double molar_mass = S_->ICList().sublist("const_fluid_molar_mass").get<double>("value");
+
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
   if (!S_->HasRecord(energy_key_)) {
@@ -77,6 +80,7 @@ EnergyOnePhase_PK::Setup()
       .set<std::string>("particle density key", particle_density_key_)
       .set<std::string>("internal energy rock key", ie_rock_key_)
       .set<bool>("vapor diffusion", false)
+      .set<double>("liquid molar mass", molar_mass)
       .set<std::string>("tag", "");
     if (flow_on_manifold_) elist.set<std::string>("aperture key", aperture_key_);
 
@@ -98,7 +102,9 @@ EnergyOnePhase_PK::Setup()
       ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
 
     Teuchos::ParameterList elist = ep_list_->sublist("enthalpy evaluator");
-    elist.set("enthalpy key", enthalpy_key_).set<std::string>("tag", "");
+    elist.set("enthalpy key", enthalpy_key_)
+      .set<double>("liquid molar mass", molar_mass)
+      .set<std::string>("tag", "");
     elist.setName(enthalpy_key_);
     auto enth = Teuchos::rcp(new EnthalpyEvaluator(elist));
     S_->SetEvaluator(enthalpy_key_, Tags::DEFAULT, enth);
@@ -119,12 +125,12 @@ EnergyOnePhase_PK::Setup()
     elist.set("thermal conductivity key", conductivity_key_).set<std::string>("tag", "");
     elist.setName(conductivity_key_);
 
-    auto tcm = Teuchos::rcp(new TCMEvaluator_OnePhase(elist));
+    auto tcm = Teuchos::rcp(new TCMEvaluator_OnePhase(mesh_, elist));
     S_->SetEvaluator(conductivity_key_, Tags::DEFAULT, tcm);
   }
 
   // set units
-  S_->GetRecordSetW(energy_key_).set_units("J");
+  S_->GetRecordSetW(energy_key_).set_units("J/m^3");
   S_->GetRecordSetW(enthalpy_key_).set_units("J/mol");
 }
 
@@ -265,8 +271,6 @@ EnergyOnePhase_PK::InitializeFields_()
         *vo_->os() << "initialized prev_energy to previous energy" << std::endl;
     }
   }
-
-  InitializeCVFieldFromCVField(S_, *vo_, prev_aperture_key_, aperture_key_, passwd_);
 }
 
 
@@ -279,16 +283,10 @@ EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   dt_ = t_new - t_old;
 
-  // save a copy of primary unknwon
-  CompositeVector temperature_copy(S_->Get<CV_t>(temperature_key_));
-
-  // swap conserved field (i.e., energy) and save
-  S_->GetEvaluator(energy_key_).Update(*S_, passwd_);
-  const CompositeVector& e = S_->Get<CV_t>(energy_key_);
-  CompositeVector& e_prev = S_->GetW<CV_t>(prev_energy_key_, passwd_);
-
-  CompositeVector e_prev_copy(e_prev);
-  e_prev = e;
+  // save a copy of primary and conservative fields
+  std::vector<std::string> fields({ temperature_key_, energy_key_ });
+  StateArchive archive(S_, vo_);
+  archive.Add(fields, Tags::DEFAULT);
 
   // initialization
   if (num_itrs_ == 0) {
@@ -301,21 +299,12 @@ EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // trying to make a step
-  bool failed(false);
-  failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
+  bool failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
   if (failed) {
     dt_ = dt_next_;
 
-    // restore the original primary solution, temperature
-    S_->GetW<CV_t>(temperature_key_, passwd_) = temperature_copy;
+    archive.Restore("");
     temperature_eval_->SetChanged();
-
-    // restore the original fields
-    S_->GetW<CV_t>(prev_energy_key_, passwd_) = e_prev_copy;
-
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Step failed. Restored temperature, prev_energy." << std::endl;
-
     return failed;
   }
 
@@ -337,6 +326,11 @@ void
 EnergyOnePhase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   dt_ = dt_next_;
+
+  // update previous fields
+  std::vector<std::string> fields({ energy_key_ });
+  StateArchive archive(S_, vo_);
+  archive.CopyFieldsToPrevFields(fields, "", false);
 }
 
 } // namespace Energy

@@ -92,7 +92,7 @@ RunTest(double gravity)
     int g = map->FirstPointInElement(f);
     int ndofs = map->ElementSize(f);
 
-    auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh->getFaceCells(f);
     if (ndofs > 1) CHECK(ndofs == cells.size());
 
     for (int i = 0; i < ndofs; ++i) {
@@ -120,7 +120,7 @@ RunTest(double gravity)
   }
 
   // create solution
-  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
   CompositeVector solution(*cvs), solution_new(*cvs);
@@ -128,8 +128,7 @@ RunTest(double gravity)
 
   // create advection operator
   Teuchos::ParameterList olist = plist->sublist("PK operator").sublist("advection operator");
-  Teuchos::RCP<Operators::PDE_AdvectionUpwindDFN> op_adv =
-    Teuchos::rcp(new PDE_AdvectionUpwindDFN(olist, mesh));
+  auto op_adv = Teuchos::rcp(new PDE_AdvectionUpwindDFN(olist, mesh));
   Teuchos::RCP<Operator> global_op = op_adv->global_operator();
 
   // add accumulation operator

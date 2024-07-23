@@ -13,8 +13,11 @@
   Process kernel for coupling Flow PK with Energy PK.
 */
 
-#include "Energy_PK.hh"
 #include "Flow_PK.hh"
+#include "Energy_PK.hh"
+#include "OperatorDefs.hh"
+#include "StateArchive.hh"
+
 #include "FlowEnergy_PK.hh"
 #include "PK_MPCStrong.hh"
 
@@ -43,8 +46,7 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
   my_list_ = Teuchos::sublist(pk_list, pk_name, true);
   domain_ = my_list_->template get<std::string>("domain name", "domain");
 
-  Teuchos::ParameterList vlist;
-  vo_ = Teuchos::rcp(new VerboseObject("FlowEnergy-" + domain_, vlist));
+  vo_ = Teuchos::rcp(new VerboseObject("FlowEnergy-" + domain_, *my_list_));
 }
 
 
@@ -65,35 +67,17 @@ FlowEnergy_PK::Setup()
   }
 
   // keys
-  particle_density_key_ = Keys::getKey(domain_, "particle_density");
-  ie_rock_key_ = Keys::getKey(domain_, "internal_energy_rock");
-  ie_gas_key_ = Keys::getKey(domain_, "internal_energy_gas");
-  ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
-
   temperature_key_ = Keys::getKey(domain_, "temperature");
   energy_key_ = Keys::getKey(domain_, "energy");
-  prev_energy_key_ = Keys::getKey(domain_, "prev_energy");
-
-  mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
-  mol_density_gas_key_ = Keys::getKey(domain_, "molar_density_gas");
-  mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
+  ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
+  particle_density_key_ = Keys::getKey(domain_, "particle_density");
 
   pressure_key_ = Keys::getKey(domain_, "pressure");
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
-  prev_sat_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid");
+  ws_key_ = Keys::getKey(domain_, "water_storage");
 
-  wc_key_ = Keys::getKey(domain_, "water_storage");
-  prev_wc_key_ = Keys::getKey(domain_, "prev_water_storage");
-
-  viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid");
-
-  // Require primary field for this PK, which is pressure
-  {
-    Teuchos::ParameterList tmp(temperature_key_);
-    tmp.set<std::string>("evaluator name", temperature_key_);
-    auto eval = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(tmp));
-    S_->SetEvaluator(temperature_key_, Tags::DEFAULT, eval);
-  }
+  mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
+  mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
 
   // Fields for solids
   // -- rock
@@ -107,40 +91,26 @@ FlowEnergy_PK::Setup()
 
   // Fields for liquid
   // -- internal energy
-  S_->Require<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT, ie_liquid_key_)
-    .SetMesh(mesh_)
-    ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
-    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(ie_liquid_key_, Tags::DEFAULT);
-
-
-  // -- molar and mass density
-  S_->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
-    .SetMesh(mesh_)
-    ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
-    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(mol_density_liquid_key_, Tags::DEFAULT);
-
-  S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
-  if (S_->GetEvaluator(mass_density_liquid_key_)
-        .IsDifferentiableWRT(*S_, pressure_key_, Tags::DEFAULT)) {
-    S_->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_,
-                                       Tags::DEFAULT,
-                                       pressure_key_,
-                                       Tags::DEFAULT,
-                                       mass_density_liquid_key_)
-      .SetGhosted();
+  if (!S_->HasRecord(ie_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT, ie_liquid_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
+    S_->RequireEvaluator(ie_liquid_key_, Tags::DEFAULT);
   }
 
-  // -- viscosity
-  S_->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, viscosity_liquid_key_)
-    .SetMesh(mesh_)
-    ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
-    ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(viscosity_liquid_key_, Tags::DEFAULT);
+  // -- molar and mass density
+  if (!S_->HasRecord(mol_density_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
+      .SetMesh(mesh_)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1);
+    S_->RequireEvaluator(mol_density_liquid_key_, Tags::DEFAULT);
+  }
+
+  S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
 
   // inform other PKs about strong coupling
   // -- flow
@@ -156,17 +126,15 @@ FlowEnergy_PK::Setup()
     glist_->sublist("PKs").sublist(pks[1]).sublist("physical models and assumptions");
   energy.set<bool>("vapor diffusion", vapor_diff);
 
-  // process other PKs.
+  // process other PKs
   PK_MPCStrong<PK_BDF>::Setup();
 
-  // copies of fields (must be called after PKs)
-  if (S_->HasRecord(prev_wc_key_)) {
-    S_->Require<CV_t, CVS_t>(prev_wc_key_, Tags::COPY, "flow");
-    S_->GetRecordW(prev_wc_key_, Tags::COPY, "flow").set_initialized();
-  }
+  // extend state structure
+  S_->RequireDerivative<CV_t, CVS_t>(
+    energy_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, energy_key_).SetGhosted();
 
-  // set units
-  S_->GetRecordSetW(viscosity_liquid_key_).set_units("Pa*s");
+  S_->RequireDerivative<CV_t, CVS_t>(
+    ws_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT, ws_key_).SetGhosted();
 }
 
 
@@ -176,6 +144,8 @@ FlowEnergy_PK::Setup()
 void
 FlowEnergy_PK::Initialize()
 {
+  include_pt_coupling_ = my_list_->sublist("time integrator").get<bool>("include coupling terms", false);
+
   Amanzi::PK_MPCStrong<PK_BDF>::Initialize();
 
   // MPC_PKs that build on top of this may need a tree operator. Since
@@ -201,6 +171,21 @@ FlowEnergy_PK::Initialize()
   op_tree_rhs_->PushBack(CreateTVwithOneLeaf(op0->rhs()));
   op_tree_rhs_->PushBack(CreateTVwithOneLeaf(op1->rhs()));
 
+  // full preconditioner
+  if (include_pt_coupling_) {
+    op10_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
+    op_tree_pc_->set_operator_block(1, 0, op10_acc_->global_operator());
+
+    op01_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::Entity_kind::CELL, mesh_));
+    op_tree_pc_->set_operator_block(0, 1, op01_acc_->global_operator());
+
+    std::string pc_name = Teuchos::sublist(my_list_, "time integrator", true)->get<std::string>("preconditioner");
+    auto& pc_list = Teuchos::sublist(glist_, "preconditioners", true)->sublist(pc_name);
+    op_tree_pc_->set_inverse_parameters(pc_list);
+
+    op_tree_pc_->SymbolicAssembleMatrix();
+  }
+
   // output of initialization statistics
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -224,51 +209,101 @@ FlowEnergy_PK::Initialize()
 bool
 FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
-  std::string passwd(""); // default treatment of ownership
+  // save a copy of conservative fields
+  std::vector<std::string> fields(
+    { pressure_key_, temperature_key_, sat_liquid_key_, energy_key_ });
+  if (S_->HasRecord(ws_key_)) fields.push_back(ws_key_);
 
-  // flow
-  // -- swap saturations (current and previous)
-  S_->GetEvaluator(sat_liquid_key_).Update(*S_, "flow");
-  const auto& sat = S_->Get<CV_t>(sat_liquid_key_);
-  auto& sat_prev = S_->GetW<CV_t>(prev_sat_liquid_key_, Tags::DEFAULT, passwd);
-
-  CompositeVector sat_prev_copy(sat_prev);
-  sat_prev = sat;
-
-  // -- swap water_contents (current and previous)
-  if (S_->HasRecord(wc_key_)) {
-    S_->Assign(prev_wc_key_, Tags::COPY, Tags::DEFAULT);
-
-    S_->GetEvaluator(wc_key_).Update(*S_, "flow");
-    const auto& wc = S_->Get<CV_t>(wc_key_);
-    auto& wc_prev = S_->GetW<CV_t>(prev_wc_key_, Tags::DEFAULT, passwd);
-    wc_prev = wc;
-  }
-
-  // energy
-  // -- swap conserved energies (current and previous)
-  S_->GetEvaluator(energy_key_).Update(*S_, "thermal");
-  const auto& e = S_->Get<CV_t>(energy_key_);
-  auto& e_prev = S_->GetW<CV_t>(prev_energy_key_, passwd);
-
-  CompositeVector e_prev_copy(e_prev);
-  e_prev = e;
+  StateArchive archive(S_, vo_);
+  archive.Add(fields, Tags::DEFAULT);
 
   // try time step
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
-
-  if (fail) {
-    // recover conserved quantaties at the beginning of time step
-    S_->GetW<CV_t>(prev_sat_liquid_key_, passwd) = sat_prev_copy;
-    S_->GetW<CV_t>(prev_energy_key_, "thermal") = e_prev_copy;
-    if (S_->HasRecord(wc_key_)) { S_->Assign(prev_wc_key_, Tags::DEFAULT, Tags::COPY); }
-
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Step failed. Restored " << prev_sat_liquid_key_ << ", " << prev_wc_key_ << ", "
-               << prev_energy_key_ << std::endl;
-  }
+  if (fail) archive.Restore("");
 
   return fail;
 }
+
+
+/* *******************************************************************
+* Performs one time step.
+******************************************************************* */
+void
+FlowEnergy_PK::FunctionalResidual(double t_old,
+                                  double t_new,
+                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<TreeVector> u_new,
+                                  Teuchos::RCP<TreeVector> f)
+{
+  // flow
+  auto u_old0 = u_old->SubVector(0);
+  auto u_new0 = u_new->SubVector(0);
+  auto f0 = f->SubVector(0);
+  sub_pks_[0]->FunctionalResidual(t_old, t_new, u_old0, u_new0, f0);
+
+  // update molar flux
+  Key key = Keys::getKey(domain_, "molar_flow_rate");
+  auto mol_flowrate = S_->GetPtrW<CV_t>(key, Tags::DEFAULT, "");
+  auto op0 = sub_pks_[0]->my_pde(Operators::PDEType::PDE_DIFFUSION);
+  op0->UpdateFlux(u_new0->Data().ptr(), mol_flowrate.ptr());
+
+  if (Keys::getVarName(sub_pks_[0]->name()) == "darcy") {
+    double molar_mass = S_->Get<double>("const_fluid_molar_mass");
+    mol_flowrate->Scale(1.0 / molar_mass);
+  }
+
+  // energy
+  auto u_old1 = u_old->SubVector(1);
+  auto u_new1 = u_new->SubVector(1);
+  auto f1 = f->SubVector(1);
+  sub_pks_[1]->FunctionalResidual(t_old, t_new, u_old1, u_new1, f1);
+}
+
+
+/* *******************************************************************
+* Preconditioner update
+******************************************************************* */
+void
+FlowEnergy_PK::UpdatePreconditioner(double t,
+                                    Teuchos::RCP<const TreeVector> up,
+                                    double dt)
+{
+  PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
+
+  if (include_pt_coupling_) {
+    std::string passwd("");
+    S_->GetEvaluator(energy_key_).UpdateDerivative(*S_, passwd, pressure_key_, Tags::DEFAULT);
+    const auto& dEdP = S_->GetDerivative<CV_t>(energy_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT);
+
+    S_->GetEvaluator(ws_key_).UpdateDerivative(*S_, passwd, temperature_key_, Tags::DEFAULT);
+    const auto& dws_dT = S_->GetDerivative<CV_t>(ws_key_, Tags::DEFAULT, temperature_key_, Tags::DEFAULT);
+
+    if (dt > 0.0) {
+      op10_acc_->AddAccumulationDelta(*up->SubVector(0)->Data(), dEdP, dEdP, dt, "cell");
+      op01_acc_->AddAccumulationDelta(*up->SubVector(1)->Data(), dws_dT, dws_dT, dt, "cell");
+    }
+
+    op_tree_pc_->AssembleMatrix();
+    op_tree_pc_->InitializeInverse();
+    op_tree_pc_->ComputeInverse();
+  }
+}
+
+
+/* *******************************************************************
+* Selection of default or full preconditioner
+******************************************************************* */
+int
+FlowEnergy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
+                                   Teuchos::RCP<TreeVector> Y)
+{
+  if (include_pt_coupling_) {
+    Y->PutScalar(0.0);
+    return op_tree_pc_->ApplyInverse(*X, *Y);
+  } else {
+    return PK_MPCStrong<PK_BDF>::ApplyPreconditioner(X, Y);
+  }
+}
+
 
 } // namespace Amanzi

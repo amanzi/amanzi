@@ -129,6 +129,35 @@ VerboseObject::VerboseObject(const Comm_ptr_type& comm,
 }
 
 
+std::string
+VerboseObject::getVerbLevelString() const
+{
+  Teuchos::EVerbosityLevel level = getVerbLevel();
+  std::string level_str;
+  switch (level) {
+  case Teuchos::VERB_NONE:
+    level_str = "none";
+    break;
+  case Teuchos::VERB_LOW:
+    level_str = "low";
+    break;
+  case Teuchos::VERB_MEDIUM:
+    level_str = "medium";
+    break;
+  case Teuchos::VERB_HIGH:
+    level_str = "high";
+    break;
+  case Teuchos::VERB_EXTREME:
+    level_str = "extreme";
+    break;
+  case Teuchos::VERB_DEFAULT:
+    level_str = "default";
+    break;
+  }
+  return level_str;
+}
+
+
 void
 VerboseObject::set_name(std::string name, int width)
 {

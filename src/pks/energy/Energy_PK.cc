@@ -20,7 +20,7 @@
 #include "EvaluatorMultiplicativeReciprocal.hh"
 #include "EvaluatorPrimary.hh"
 #include "Mesh.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "State.hh"
 #include "WhetStoneDefs.hh"
@@ -56,6 +56,8 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
 
   // domain name
   domain_ = ep_list_->get<std::string>("domain name", "domain");
+  temperature_key_ = Keys::getKey(domain_, "temperature");
+  AddDefaultPrimaryEvaluator(S_, temperature_key_);
 
   // create verbosity object
   S_ = S;
@@ -84,8 +86,6 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
 void
 Energy_PK::Setup()
 {
-  temperature_key_ = Keys::getKey(domain_, "temperature");
-
   energy_key_ = Keys::getKey(domain_, "energy");
   prev_energy_key_ = Keys::getKey(domain_, "prev_energy");
   enthalpy_key_ = Keys::getKey(domain_, "enthalpy");
@@ -93,7 +93,6 @@ Energy_PK::Setup()
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
 
   aperture_key_ = Keys::getKey(domain_, "aperture");
-  prev_aperture_key_ = Keys::getKey(domain_, "prev_aperture");
   conductivity_eff_key_ = Keys::getKey(domain_, "thermal_conductivity_effective");
   conductivity_gen_key_ = (!flow_on_manifold_) ? conductivity_key_ : conductivity_eff_key_;
 
@@ -107,14 +106,13 @@ Energy_PK::Setup()
   mol_density_gas_key_ = Keys::getKey(domain_, "molar_density_gas");
   x_gas_key_ = Keys::getKey(domain_, "molar_fraction_gas");
 
-  vol_flowrate_key_ = Keys::getKey(domain_, "volumetric_flow_rate");
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
-  Key pressure_key = Keys::getKey(domain_, "pressure");
+  pressure_key_ = Keys::getKey(domain_, "pressure");
 
   // require constant fields
   S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
-  S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
+  S_->Require<double>("const_fluid_molar_mass", Tags::DEFAULT, "state");
 
   // require primary state variables
   std::vector<std::string> names({ "cell", "face" });
@@ -127,15 +125,8 @@ Energy_PK::Setup()
     ->SetGhosted(true)
     ->AddComponents(names, locations, ndofs);
 
-  if (!S_->HasEvaluator(temperature_key_, Tags::DEFAULT)) {
-    Teuchos::ParameterList elist(temperature_key_);
-    elist.set<std::string>("evaluator name", temperature_key_);
-    temperature_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S_->SetEvaluator(temperature_key_, Tags::DEFAULT, temperature_eval_);
-  } else {
-    temperature_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-      S_->GetEvaluatorPtr(temperature_key_, Tags::DEFAULT));
-  }
+  temperature_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+    S_->GetEvaluatorPtr(temperature_key_, Tags::DEFAULT));
 
   // conserved quantity from the last time step.
   if (!S_->HasRecord(prev_energy_key_)) {
@@ -205,18 +196,19 @@ Energy_PK::Setup()
       .SetGhosted();
   }
 
-  // -- volumetric and molar flow rates
-  if (!S_->HasRecord(vol_flowrate_key_)) {
-    S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
-  }
+  // -- molar flow rates as a regular field
   if (!S_->HasRecord(mol_flowrate_key_)) {
-    auto cvs = S_->Require<CV_t, CVS_t>(vol_flowrate_key_, Tags::DEFAULT, passwd_);
+    CompositeVectorSpace cvs;
+    if (flow_on_manifold_) {
+      cvs = *Operators::CreateManifoldCVS(mesh_);
+    } else {
+      cvs.SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
+    }
+
     *S_->Require<CV_t, CVS_t>(mol_flowrate_key_, Tags::DEFAULT, passwd_)
        .SetMesh(mesh_)
        ->SetGhosted(true) = cvs;
+    AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_, Tags::DEFAULT);
   }
 
   // -- effective fracture conductivity
@@ -253,12 +245,13 @@ Energy_PK::Setup()
   }
 
   // -- pressure
-  if (!S_->HasRecord(pressure_key)) {
-    S_->Require<CV_t, CVS_t>(pressure_key, Tags::DEFAULT, pressure_key)
+  if (!S_->HasRecord(pressure_key_)) {
+    S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, pressure_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-    AddDefaultIndependentEvaluator(S_, pressure_key, Tags::DEFAULT, 101325.0);
+    // S_->RequireEvaluator(pressure_key_, Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator(S_, pressure_key_);
   }
 
   // -- fracture aperture
@@ -268,11 +261,6 @@ Energy_PK::Setup()
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
-
-    S_->Require<CV_t, CVS_t>(prev_aperture_key_, Tags::DEFAULT)
-      .SetMesh(mesh_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // set units
@@ -307,8 +295,12 @@ Energy_PK::Initialize()
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        bc_temperature_.push_back(bc_factory.Create(
-          spec, "boundary temperature", AmanziMesh::Entity_kind::FACE, Teuchos::null));
+        bc_temperature_.push_back(bc_factory.Create(spec,
+                                                    "boundary temperature",
+                                                    AmanziMesh::Entity_kind::FACE,
+                                                    Teuchos::null,
+                                                    Tags::DEFAULT,
+                                                    true));
       }
     }
   }
@@ -322,8 +314,12 @@ Energy_PK::Initialize()
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        bc_flux_.push_back(bc_factory.Create(
-          spec, "outward energy flux", AmanziMesh::Entity_kind::FACE, Teuchos::null));
+        bc_flux_.push_back(bc_factory.Create(spec,
+                                             "outward energy flux",
+                                             AmanziMesh::Entity_kind::FACE,
+                                             Teuchos::null,
+                                             Tags::DEFAULT,
+                                             true));
       }
     }
   }
@@ -342,30 +338,9 @@ Energy_PK::Initialize()
     }
   }
 
-  // initialized fields
-  InitializeFields_();
-
   // other parameters
   prec_include_enthalpy_ =
     ep_list_->sublist("operators").get<bool>("include enthalpy in preconditioner", true);
-}
-
-
-/* ****************************************************************
-* This completes initialization of missed fields in the state.
-* This is useful for unit tests.
-**************************************************************** */
-void
-Energy_PK::InitializeFields_()
-{
-  InitializeCVField(S_, *vo_, temperature_key_, Tags::DEFAULT, passwd_, 298.0);
-  InitializeCVField(S_, *vo_, vol_flowrate_key_, Tags::DEFAULT, passwd_, 0.0);
-
-  if (!S_->GetRecord(mol_flowrate_key_, Tags::DEFAULT).initialized()) {
-    InitializeCVFieldFromCVField(S_, *vo_, mol_flowrate_key_, vol_flowrate_key_, passwd_);
-    double factor = S_->Get<double>("const_fluid_density") / CommonDefs::MOLAR_MASS_H2O;
-    S_->GetW<CV_t>(mol_flowrate_key_, passwd_).Scale(factor);
-  }
 }
 
 
@@ -452,7 +427,7 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
   for (int i = 0; i < bc_flux_.size(); ++i) {
     for (auto it = bc_flux_[i]->begin(); it != bc_flux_[i]->end(); ++it) {
       int f = it->first;
-      bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
+      bc_model[f] = Operators::OPERATOR_BC_TOTAL_FLUX;
       bc_value[f] = it->second[0];
     }
   }
@@ -488,13 +463,16 @@ Energy_PK::ComputeBCs(const CompositeVector& u)
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       bc_model_enth_[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value_enth_[f] = enth[0][bf];
+    } else if (bc_model[f] == Operators::OPERATOR_BC_TOTAL_FLUX) {
+      bc_model_enth_[f] = Operators::OPERATOR_BC_TOTAL_FLUX;
+      bc_value_enth_[f] = bc_value[f];
     }
   }
 }
 
 
 /* ******************************************************************
-* Return a pointer to a local operator
+* Clip temperature changed
 ****************************************************************** */
 AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 Energy_PK::ModifyCorrection(double dt,

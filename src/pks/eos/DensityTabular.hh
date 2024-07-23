@@ -23,6 +23,7 @@
 #include "Factory.hh"
 #include "EOS_Density.hh"
 #include "LookupTable.hh"
+#include "LookupTableFactory.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
@@ -30,7 +31,10 @@ namespace AmanziEOS {
 // Equation of State model
 class DensityTabular : public EOS_Density {
  public:
-  explicit DensityTabular(Teuchos::ParameterList& eos_plist);
+  DensityTabular(Teuchos::ParameterList& plist) : EOS_Density(plist)
+  {
+    table_ = CreateLookupTable(plist);
+  }
 
   virtual double Density(double T, double p) override
   {

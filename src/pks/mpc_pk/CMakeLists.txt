@@ -68,6 +68,9 @@ if (ENABLE_AmanziPhysicsModule)
       FlowEnergy_PK.hh
       FlowEnergyMatrixFracture_PK.hh
       FlowMatrixFracture_PK.hh
+      FlowMechanics_PK.hh
+      MechanicsFlow_PK.hh
+      MechanicsFlowMatrixFracture_PK.hh
       MultiphaseMatrixFracture_PK.hh
       TransportMatrixFracture_PK.hh    
       TransportMatrixFractureImplicit_PK.hh
@@ -75,7 +78,8 @@ if (ENABLE_AmanziPhysicsModule)
       ReactiveTransport_PK.hh
       ReactiveTransportMatrixFracture_PK.hh
       ShallowWaterTransport_PK.hh
-      SurfaceSubsurface_PK.hh)
+      SurfaceSubsurface_PK.hh
+      WaterStorageStressSplit.hh)
 
   set(mpc_tree_src_files 
       FractureInsertion.cc
@@ -88,7 +92,10 @@ if (ENABLE_AmanziPhysicsModule)
       FlowEnergy_PK.cc
       FlowEnergyMatrixFracture_PK.cc
       FlowMatrixFracture_PK.cc
+      FlowMechanics_PK.cc
       HeatDiffusionMatrixFracture.cc
+      MechanicsFlow_PK.cc
+      MechanicsFlowMatrixFracture_PK.cc
       MultiphaseMatrixFracture_PK.cc
       TransportMatrixFracture_PK.cc        
       TransportMatrixFractureImplicit_PK.cc
@@ -97,7 +104,9 @@ if (ENABLE_AmanziPhysicsModule)
       ReactiveTransportMatrixFracture_PK.cc
       ShallowWaterTransport_PK.cc
       SoluteDiffusionMatrixFracture.cc
-      SurfaceSubsurface_PK.cc)
+      SurfaceSubsurface_PK.cc
+      WaterStorageDarcyStressSplit.cc
+      WaterStorageStressSplit.cc)
 
   set(mpc_tree_link_libs pks flow transport multiphase shallow_water time_integration data_structures state)
 

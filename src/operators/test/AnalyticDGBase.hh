@@ -269,7 +269,7 @@ AnalyticDGBase::ComputeFaceError(const Amanzi::WhetStone::DG_Modal& dg,
   for (int f = 0; f < nfaces; ++f) {
     const Amanzi::AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
-    auto cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     double err(0.0);
@@ -400,7 +400,7 @@ AnalyticDGBase::ComputeCellErrorRemap(const Amanzi::WhetStone::DG_Modal& dg,
 inline Amanzi::AmanziGeometry::Point
 AnalyticDGBase::face_normal_exterior(int f, bool* flag)
 {
-  auto cells = mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_kind::ALL);
+  auto cells = mesh_->getFaceCells(f);
   *flag = (cells.size() == 1);
 
   int dir;

@@ -13,16 +13,18 @@ An abstract operator is designed for testing new discretization methods.
 It uses the factory of discretization methods and a few control parameters
 required by this factory and/or particular method in it.
 
-* `"method`" [string] defines a discretization method. The available
-  options are `"diffusion`", `"diffusion generalized`", `"BernardiRaugel`",
-  `"CrouzeixRaviart`", `"CrouzeixRaviart serendipity`", `"Lagrange`",
-  `"Lagrange serendipity`", and `"dg modal`".
+.. admonition:: abstract_op-spec
 
-* `"method order`" [int] defines disretization order. It is used by
-  high-order discretization methods such as the discontinuous Galerkin.
+  * `"method`" ``[string]`` defines a discretization method. The available
+    options are `"diffusion`", `"diffusion generalized`", `"BernardiRaugel`",
+    `"CrouzeixRaviart`", `"CrouzeixRaviart serendipity`", `"Lagrange`",
+    `"Lagrange serendipity`", and `"dg modal`".
 
-* `"matrix type`" [string] defines type of local matrix. Available options are
-  `"mass`", `"mass inverse`", `"stiffness`", `"divergence`", and `"advection`".
+  * `"method order`" ``[int]`` defines disretization order. It is used by
+    high-order discretization methods such as the discontinuous Galerkin.
+
+  * `"matrix type`" ``[string]`` defines type of local matrix. Available options are
+    `"mass`", `"mass inverse`", `"stiffness`", `"divergence`", and `"advection`".
 
 .. code-block:: xml
 

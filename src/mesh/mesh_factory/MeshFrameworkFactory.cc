@@ -7,8 +7,6 @@
   Authors: William Perkins, Ethan Coon
 */
 
-#include <boost/format.hpp>
-
 #include "RegionLogical.hh"
 #include "MeshException.hh"
 #include "MeshFrameworkFactory.hh"
@@ -89,8 +87,8 @@ MeshFrameworkFactory::create(const std::string& filename)
   FileFormat fmt = fileFormatFromFilename(*comm_, filename);
 
   if (fmt == FileFormat::UNKNOWN) {
-    FileMessage e(
-      std::string(boost::str(boost::format("%s: unknown file format") % filename)).c_str());
+    FileMessage e;
+    e << "MeshFrameworkFactory: unknown file format for file \"" << filename << "\"";
     Exceptions::amanzi_throw(e);
   }
 
@@ -180,6 +178,7 @@ MeshFrameworkFactory::create(const double x0,
 #ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = vo_->getOSTab();
         *vo_->os() << "Creating 3D block mesh using format \"MSTK\"" << std::endl;
       }
       auto mesh = Teuchos::rcp(new Mesh_MSTK(x0,
@@ -302,7 +301,7 @@ MeshFrameworkFactory::create(const Teuchos::ParameterList& parameter_list)
 // -------------------------------------------------------------
 Teuchos::RCP<MeshFramework>
 MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
-                             const Entity_ID_View& setids,
+                             const MeshFramework::cEntity_ID_View& setids,
                              const Entity_kind setkind,
                              const bool flatten)
 {
@@ -342,8 +341,8 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
   for (auto p : preference_) {
 #ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
-      if (parent_comm->MyPID() == 0) std::cout << "Pref = MSTK" << std::endl;
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = vo_->getOSTab();
         *vo_->os() << "Creating extracted mesh using format \"MSTK\" with " << setids.size()
                    << " local entities." << std::endl;
       }
@@ -391,14 +390,16 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
       Teuchos::rcp(new MeshExtractedManifold(inmesh, setname, setkind, comm, gm, plist_, flatten));
 
     return mesh;
-  }
 
-  Entity_ID_View ids;
-  for (auto name : setnames) {
-    Entity_ID_View ids_l = inmesh->getSetEntities(name, setkind, Parallel_kind::OWNED);
-    ids.insert(ids.end(), ids_l.begin(), ids_l.end());
+  } else {
+    MeshFramework::Entity_ID_View ids;
+    auto inmesh_host = onMemSpace<MemSpace_kind::HOST>(inmesh);
+    for (auto name : setnames) {
+      auto ids_l = inmesh->getSetEntities(name, setkind, Parallel_kind::OWNED);
+      ids.insert(ids.end(), ids_l.begin(), ids_l.end());
+    }
+    return create(inmesh, ids, setkind, flatten);
   }
-  return create(inmesh, ids, setkind, flatten);
 }
 
 

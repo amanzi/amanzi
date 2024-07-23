@@ -25,13 +25,11 @@ class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD, public PDE_Diffusi
                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                double rho,
                                const AmanziGeometry::Point& g)
-    : PDE_Diffusion(mesh),
-      PDE_DiffusionMFD(plist, mesh),
-      PDE_DiffusionWithGravity(mesh),
-      rho_(rho),
-      g_(g)
+    : PDE_Diffusion(mesh), PDE_DiffusionMFD(plist, mesh), PDE_DiffusionWithGravity(mesh)
   {
     pde_type_ = PDE_DIFFUSION_FRACTURED_MATRIX;
+    SetGravity(g);
+    SetDensity(rho);
   }
 
   // main interface members
@@ -59,9 +57,7 @@ class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD, public PDE_Diffusi
  private:
   Teuchos::RCP<CompositeVectorSpace> cvs_;
 
-  double rho_;
   bool gravity_;
-  AmanziGeometry::Point g_;
 };
 
 } // namespace Operators

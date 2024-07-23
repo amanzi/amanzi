@@ -46,6 +46,7 @@ class AnalyticElasticityBase {
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   virtual Amanzi::WhetStone::Tensor
   stress_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual double volumetric_strain_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // -- source term
   virtual Amanzi::AmanziGeometry::Point
@@ -190,12 +191,15 @@ AnalyticElasticityBase::VectorNodeError(Amanzi::CompositeVector& u,
   int d = mesh_->getSpaceDimension();
   Amanzi::AmanziGeometry::Point p(d), ucalc(d);
   Epetra_MultiVector& u_node = *u.ViewComponent("node");
+  const auto& nmap = u_node.Map();
 
   for (int v = 0; v < nnodes_owned; ++v) {
     p = mesh_->getNodeCoordinate(v);
 
     const Amanzi::AmanziGeometry::Point& uexact = velocity_exact(p, t);
-    for (int i = 0; i < d; ++i) ucalc[i] = u_node[i][v];
+
+    int g = nmap.FirstPointInElement(v);
+    for (int i = 0; i < d; ++i) ucalc[i] = u_node[i][g];
 
     double tmp = L22(ucalc - uexact);
     l2_err += tmp * vol_node[0][v];

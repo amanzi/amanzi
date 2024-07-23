@@ -355,7 +355,7 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
                                                         AmanziMesh::Parallel_kind::ALL);
 
             // which cell of the face is "inside" the volume
-            auto cells = vec.Mesh()->getFaceCells(id, AmanziMesh::Parallel_kind::ALL);
+            auto cells = vec.Mesh()->getFaceCells(id);
             AmanziMesh::Entity_ID c = -1;
             for (const auto& cc : cells) {
               if (std::find(vol_cells.begin(), vol_cells.end(), cc) != vol_cells.end()) {
@@ -381,7 +381,7 @@ Observable::Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int 
 
           } else {
             // normalize to outward normal
-            auto cells = vec.Mesh()->getFaceCells(id, AmanziMesh::Parallel_kind::ALL);
+            auto cells = vec.Mesh()->getFaceCells(id);
             auto [faces, dirs] = vec.Mesh()->getCellFacesAndDirections(cells[0]);
             int i = std::find(faces.begin(), faces.end(), id) - faces.begin();
             sign = dirs[i];

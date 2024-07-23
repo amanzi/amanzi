@@ -23,19 +23,23 @@
 
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
-#include "State.hh"
 
 #include "CommonDefs.hh"
 #include "Mesh.hh"
+#include "PKsDefs.hh"
+#include "State.hh"
 
 namespace Amanzi {
 namespace Transport {
 
 class TransportDomainFunction {
  public:
-  TransportDomainFunction() : domain_volume_(-1.0), location_("boundary"){};
+  TransportDomainFunction() : domain_volume_(-1.0), location_("boundary"), name_("undefined"){};
+
   TransportDomainFunction(const Teuchos::ParameterList& plist)
-    : domain_volume_(-1.0), location_("boundary"){};
+    : domain_volume_(-1.0), location_("boundary"), name_(Keys::cleanPListName(plist))
+  {}
+
   virtual ~TransportDomainFunction(){};
 
   // source term on time interval (t0, t1]
@@ -43,8 +47,9 @@ class TransportDomainFunction {
   virtual void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                Teuchos::RCP<CompositeVector> tcc){};
 
-  // model name
-  virtual std::string name() const { return "undefined"; }
+  // model name and type
+  virtual std::string getName() const { return name_; }
+  virtual DomainFunction_kind getType() const = 0;
 
   // location where model is applied (boundary or interface)
   void set_location(const std::string& location) { location_ = location; }
@@ -72,7 +77,7 @@ class TransportDomainFunction {
 
  protected:
   double domain_volume_;
-  std::string location_;
+  std::string location_, name_;
 
   std::map<int, std::vector<double>> value_; // tcc values on boundary faces or
                                              // src values in domain cells

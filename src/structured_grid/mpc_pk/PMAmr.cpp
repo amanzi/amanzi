@@ -290,15 +290,14 @@ PMAmr::LinkFinalCheckpoint (int step)
     bool link_exists = ::lstat(linkName.c_str(), &statbuff) != -1;
     if (link_exists) {
       std::cout << "Unlinking \"" << linkName << "\""<< std::endl;
-      int ret = unlink(linkName.c_str()); BL_ASSERT(ret == 0);
+      BL_ASSERT(unlink(linkName.c_str()) == 0);
     }
 
     std::cout << "Symbolic link, \"" << linkName
 	      << "\" created to final checkpoint, \"" << finalCheckpointName
 	      << "\""<< std::endl;
 
-    int ret = symlink(finalCheck_filePart.c_str(),linkName.c_str());
-    BL_ASSERT(ret == 0);
+    BL_ASSERT(symlink(finalCheck_filePart.c_str(),linkName.c_str()) == );
   }
 }
 
@@ -739,7 +738,6 @@ PMAmr::coarseTimeStep (Real _stop_time)
 
     amr_level[0].postCoarseTimeStep(cumtime);
 
-    static int cnt = 0;
     if (cumtime == ec->end) {
       if (ParallelDescriptor::IOProcessor()) {
 	std::cout << "Exiting Exceution Control Period \"" << ec->label << "\" at time: "
@@ -1325,8 +1323,6 @@ void PMAmr::InitializeControlEvents()
 {
   // Build time macros
   ParmParse ppa("amr");
-
-  EventCoord& event_coord = PMAmr::eventCoord();
 
   int n_cmac = ppa.countval("cycle_macros");
   Array<std::string> cmacroNames;

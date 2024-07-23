@@ -11,6 +11,8 @@
 
 The class for ion exchange complexation reaction
 
+.. code-block:: asc
+
   NaX <===> Na+ + X-
 
 The `"ion exchange complexes`" is the list of ion exchange complexation reactions.
@@ -18,9 +20,10 @@ We assume that the reactions are always written as one complex equals one primar
 species plus one exchange site.
 Each complex is defined by the following parameters:
 
-* `"reaction`" [string] is the exchange reaction.
+.. admonition:: ion_exchange_complex-spec
 
-* `"equilibrium constant`" [double] is the logarithm of the equilibrium constant.
+  * `"reaction`" ``[string]`` is the exchange reaction.
+  * `"equilibrium constant`" ``[double]`` is the logarithm of the equilibrium constant.
 
 .. code-block:: xml
 

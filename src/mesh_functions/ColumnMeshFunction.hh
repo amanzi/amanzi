@@ -23,7 +23,7 @@ Function values u:
 
   /f[:] = (f_0(z_0), f_1(z_1), ..., f_n(z_n))
 
-.. _column-initialization-spec
+.. _column-initialization-spec:
 .. admonition:: column-initialization-spec
 
    * `"file`" ``[string]`` HDF5 filename
@@ -31,17 +31,6 @@ Function values u:
      coordinates (positive downward from the surface), [m]
    * `"f header`" ``[string]`` name of the function data: `f` above.
 
-   ONE OF
-
-   * `"surface sideset`" ``[string]`` Region on the surface domain from which
-     to start to determine columns.
-
-   OR
-
-   * `"surface sidesets`" ``[Array(string)]`` Regions on the surface domain
-     from which to start to determine columns.
-
-   END
 */
 
 
@@ -65,9 +54,7 @@ void
 ReadColumnMeshFunction(Teuchos::ParameterList& plist, CompositeVector& v);
 
 void
-ReadColumnMeshFunction_ByDepth(const Function& func,
-                               const Teuchos::Array<std::string> sidesets,
-                               CompositeVector& v);
+ReadColumnMeshFunction_ByDepth(const Function& func, CompositeVector& v);
 
 } // namespace Functions
 } // namespace Amanzi

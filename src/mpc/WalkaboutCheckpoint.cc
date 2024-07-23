@@ -28,7 +28,7 @@
 #include "errors.hh"
 #include "Darcy_PK.hh"
 #include "Mesh.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
 #include "ParallelCommunication.hh"
 #include "ReconstructionCellLinear.hh"
@@ -230,7 +230,7 @@ WalkaboutCheckpoint::CalculateData(Teuchos::RCP<State>& S,
   }
 
   ParallelCommunication pp(mesh);
-  pp.CopyMasterCell2GhostCell(cell_ids);
+  pp.CopyMasterEntity2GhostEntity(AmanziMesh::Entity_kind::CELL, cell_ids);
 
   // prepare reconstrction data
   Teuchos::ParameterList plist;

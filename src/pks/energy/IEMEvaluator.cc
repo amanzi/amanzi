@@ -222,7 +222,7 @@ IEMEvaluator::MyModel_(AmanziMesh::Entity_kind kind, AmanziMesh::Entity_ID id)
   if (kind == AmanziMesh::Entity_kind::CELL) {
     return id;
   } else if (kind == AmanziMesh::Entity_kind::BOUNDARY_FACE) {
-    auto cells = mesh_->getFaceCells(id, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(id);
     return cells[0];
   }
   return -1;

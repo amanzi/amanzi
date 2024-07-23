@@ -15,7 +15,7 @@
 #include <set>
 
 #include "errors.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "OperatorDefs.hh"
 #include "UniqueLocalIndex.hh"
 
@@ -61,16 +61,16 @@ Flow_PK::VV_FractureConservationLaw() const
 
     // sum into fluxes from matrix
     auto f = mesh_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
-    auto cells = mesh_matrix->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_matrix->getFaceCells(f);
     int pos = Operators::UniqueIndexFaceToCells(*mesh_matrix, f, cells[0]);
 
     for (int j = 0; j != cells.size(); ++j) {
-      auto [faces, fdirs] = mesh_matrix->getCellFacesAndDirections(cells[j]);
+      auto [lfaces, lfdirs] = mesh_matrix->getCellFacesAndDirections(cells[j]);
 
-      for (int i = 0; i < faces.size(); i++) {
-        if (f == faces[i]) {
+      for (int i = 0; i < lfaces.size(); i++) {
+        if (f == lfaces[i]) {
           int g = matrix_map->FirstPointInElement(f);
-          double fln = matrix_flux[0][g + (pos + j) % 2] * fdirs[i];
+          double fln = matrix_flux[0][g + (pos + j) % 2] * lfdirs[i];
           flux_sum -= fln;
           flux_max = std::max<double>(flux_max, std::fabs(fln));
           break;

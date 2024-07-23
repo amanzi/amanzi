@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.5-dev">
+<amanzi_input type="unstructured" version="1.6-dev">
     <model_description name="Richards-1D-infiltration_loam_sand" />
     <definitions>
       <macros>
@@ -129,6 +129,7 @@
             <uniform_pressure value="81747.0" />
           </liquid_component>
         </liquid_phase>
+        <uniform_temperature value="298.0"/>
       </initial_condition>
     </initial_conditions>
     <boundary_conditions>

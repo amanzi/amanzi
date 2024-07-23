@@ -19,6 +19,7 @@
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "TreeOperator.hh"
+#include "StateArchive.hh"
 #include "SuperMap.hh"
 #include "UniqueLocalIndex.hh"
 
@@ -46,8 +47,6 @@ FlowEnergyMatrixFracture_PK::FlowEnergyMatrixFracture_PK(
     Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln),
     glist_(glist)
 {
-  Teuchos::ParameterList vlist;
-  vo_ = Teuchos::rcp(new VerboseObject("CoupledThermalFlow_PK", vlist));
   Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(glist, "PKs");
   if (pks_list->isSublist(name_)) {
     plist_ = Teuchos::sublist(pks_list, name_);
@@ -61,6 +60,10 @@ FlowEnergyMatrixFracture_PK::FlowEnergyMatrixFracture_PK(
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(plist_, "time integrator", true);
+
+  Teuchos::ParameterList vlist;
+  vlist.sublist("verbose object") = plist_->sublist("verbose object");
+  vo_ = Teuchos::rcp(new VerboseObject("CoupledThermalFlow_PK", vlist));
 }
 
 
@@ -74,18 +77,13 @@ FlowEnergyMatrixFracture_PK::Setup()
   mesh_fracture_ = S_->GetMesh("fracture");
 
   // keys
+  matrix_mol_flowrate_key_ = "molar_flow_rate";
   diffusion_to_matrix_key_ = "fracture-diffusion_to_matrix";
   heat_diffusion_to_matrix_key_ = "fracture-heat_diffusion_to_matrix";
 
-  matrix_vol_flowrate_key_ = "volumetric_flow_rate";
-  fracture_vol_flowrate_key_ = "fracture-volumetric_flow_rate";
-
-  matrix_mol_flowrate_key_ = "molar_flow_rate";
-  fracture_mol_flowrate_key_ = "fracture-molar_flow_rate";
-
   // primary and secondary fields for matrix affected by non-uniform
   // distribution of DOFs, so we need to define them here
-  // -- pressure
+  // -- flow: pressure and flux
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
   if (!S_->HasRecord("pressure")) {
     *S_->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT).SetMesh(mesh_domain_)->SetGhosted(true) =
@@ -93,6 +91,17 @@ FlowEnergyMatrixFracture_PK::Setup()
     AddDefaultPrimaryEvaluator(S_, "pressure", Tags::DEFAULT);
   }
 
+  if (!S_->HasRecord(matrix_mol_flowrate_key_)) {
+    auto mmap = cvs->Map("face", false);
+    auto gmap = cvs->Map("face", true);
+    S_->Require<CV_t, CVS_t>(matrix_mol_flowrate_key_, Tags::DEFAULT)
+      .SetMesh(mesh_domain_)
+      ->SetGhosted(true)
+      ->SetComponent("face", AmanziMesh::Entity_kind::FACE, mmap, gmap, 1);
+    AddDefaultPrimaryEvaluator(S_, matrix_mol_flowrate_key_, Tags::DEFAULT);
+  }
+
+  // -- energy: temperature
   if (!S_->HasRecord("temperature")) {
     *S_->Require<CV_t, CVS_t>("temperature", Tags::DEFAULT)
        .SetMesh(mesh_domain_)
@@ -100,41 +109,7 @@ FlowEnergyMatrixFracture_PK::Setup()
     AddDefaultPrimaryEvaluator(S_, "temperature", Tags::DEFAULT);
   }
 
-  // -- molar and volumetric fluxes
-  if (!S_->HasRecord(matrix_vol_flowrate_key_)) {
-    auto mmap = cvs->Map("face", false);
-    auto gmap = cvs->Map("face", true);
-    S_->Require<CV_t, CVS_t>(matrix_vol_flowrate_key_, Tags::DEFAULT)
-      .SetMesh(mesh_domain_)
-      ->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::Entity_kind::FACE, mmap, gmap, 1);
-    AddDefaultPrimaryEvaluator(S_, matrix_vol_flowrate_key_, Tags::DEFAULT);
-  }
-
-  if (!S_->HasRecord(matrix_vol_flowrate_key_)) {
-    auto mmap = cvs->Map("face", false);
-    auto gmap = cvs->Map("face", true);
-    S_->Require<CV_t, CVS_t>(matrix_mol_flowrate_key_, Tags::DEFAULT)
-      .SetMesh(mesh_domain_)
-      ->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
-  }
-
-  // -- molar and volumetric fluxes for fracture
-  auto cvs2 = Operators::CreateManifoldCVS(mesh_fracture_);
-  if (!S_->HasRecord(fracture_vol_flowrate_key_)) {
-    *S_->Require<CV_t, CVS_t>(fracture_vol_flowrate_key_, Tags::DEFAULT)
-       .SetMesh(mesh_fracture_)
-       ->SetGhosted(true) = *cvs2;
-  }
-
-  if (!S_->HasRecord(fracture_vol_flowrate_key_)) {
-    *S_->Require<CV_t, CVS_t>(fracture_mol_flowrate_key_, Tags::DEFAULT)
-       .SetMesh(mesh_fracture_)
-       ->SetGhosted(true) = *cvs2;
-  }
-
-  // Require additional fields and evaluators
+  // additional fields and evaluators
   if (!S_->HasRecord(diffusion_to_matrix_key_)) {
     S_->Require<CV_t, CVS_t>(diffusion_to_matrix_key_, Tags::DEFAULT)
       .SetMesh(mesh_fracture_)
@@ -344,19 +319,17 @@ FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
   auto counter = Teuchos::TimeMonitor::getNewCounter("Flow-Energy MPC PK");
   Teuchos::TimeMonitor tm(*counter);
 
-  // make copy of evaluators
-  std::vector<Key> names = { "saturation_liquid", "water_storage", "energy" };
-  Teuchos::RCP<CompositeVector> copies[6];
-
-  int k(0), nnames(names.size());
-  for (int i = 0; i < nnames; ++i) {
-    SwapEvaluatorField_(names[i], copies[k], copies[k + 1]);
-    k += 2;
-  }
-
-  // make copy of primary unknowns
-  // save a copy of solution, i.e. primary variables
-  TreeVector solution_copy(*solution_);
+  // make copy of conservative fields
+  std::vector<Key> names = {
+    "pressure", "temperature", "fracture-pressure", "fracture-temperature"
+  };
+  std::vector<Key> fields = {
+    "saturation_liquid",          "water_storage",          "energy",
+    "fracture-saturation_liquid", "fracture-water_storage", "fracture-energy"
+  };
+  StateArchive archive(S_, vo_);
+  archive.Add(names, Tags::DEFAULT);
+  archive.CopyFieldsToPrevFields(fields, "", true);
 
   bool fail;
   try {
@@ -368,26 +341,7 @@ FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
     }
     fail = false;
   }
-
-  if (fail) {
-    std::string passwd("");
-    k = 0;
-    for (int i = 0; i < nnames; ++i) {
-      if (S_->HasRecord(names[i])) {
-        S_->GetW<CV_t>("prev_" + names[i], passwd) = *(copies[k]);
-        S_->GetW<CV_t>("fracture-prev_" + names[i], passwd) = *(copies[k + 1]);
-      }
-      k += 2;
-    }
-
-    // recover the original solution
-    *solution_ = solution_copy;
-    ChangedSolution();
-
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Step failed. Restored [fracture-]{ " << names[0] << ", " << names[1] << ", "
-               << names[2] << ", pressure, temperature }" << std::endl;
-  }
+  if (fail) archive.Restore("");
 
   return fail;
 }
@@ -407,7 +361,7 @@ FlowEnergyMatrixFracture_PK::FunctionalResidual(double t_old,
   PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
 
   // add contribution of coupling terms to the residual
-  UpdateEnthalpyCouplingFluxes(S_, mesh_domain_, mesh_fracture_, adv_coupling_matrix_);
+  UpdateEnthalpyCouplingFluxes(S_, mesh_domain_, mesh_fracture_, adv_coupling_matrix_, true);
   op_tree_matrix_->Apply(*u_new, *f, 1.0);
 
   // convergence control
@@ -426,7 +380,7 @@ FlowEnergyMatrixFracture_PK::UpdatePreconditioner(double t,
   // generate local matrices and apply boundary conditions
   PK_MPCStrong<PK_BDF>::UpdatePreconditioner(t, up, dt);
 
-  UpdateEnthalpyCouplingFluxes(S_, mesh_domain_, mesh_fracture_, adv_coupling_pc_);
+  UpdateEnthalpyCouplingFluxes(S_, mesh_domain_, mesh_fracture_, adv_coupling_pc_, false);
 
   std::string pc_name = ti_list_->get<std::string>("preconditioner");
   Teuchos::ParameterList pc_list = preconditioner_list_->sublist(pc_name);
@@ -595,16 +549,16 @@ FlowEnergyMatrixFracture_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   // residual control for energy (note that we cannot do it at
   // the lower level due to coupling terms.
   const auto mesh_f = S_->GetMesh("fracture");
-  const auto& mol_fc = *S_->Get<CV_t>("fracture-molar_density_liquid").ViewComponent("cell");
+  const auto& energy_fc = *S_->Get<CV_t>("fracture-energy").ViewComponent("cell");
 
-  int ncells = mol_fc.MyLength();
-  double mean_energy, error_r(0.0), mass(0.0);
+  int ncells = energy_fc.MyLength();
+  double mean_energy, error_r(0.0), energy(0.0);
 
   for (int c = 0; c < ncells; ++c) {
-    mass += mol_fc[0][c] * mesh_f->getCellVolume(c); // reference cell energy
+    energy += energy_fc[0][c] * mesh_f->getCellVolume(c); // reference cell energy
   }
   if (ncells > 0) {
-    mean_energy = 76.0 * mass / ncells;
+    mean_energy = energy / ncells;
     error_r = (residual_norm_ * dt_) / mean_energy;
   }
 

@@ -22,7 +22,6 @@ include_directories(${ATK_SOURCE_DIR})
 
 # External (TPL) directories
 include_directories(${Epetra_INCLUDE_DIRS})
-include_directories(${Boost_INCLUDE_DIRS})
 
 #
 # Set files
@@ -33,15 +32,15 @@ set(mesh_inc_files
   KDTree.hh
   MeshDefs.hh
   MeshFramework.hh
-  Mesh_Helpers_decl.hh
-  Mesh_Helpers_impl.hh
-  Mesh_Helpers.hh
+  MeshHelpers_decl.hh
+  MeshHelpers_impl.hh
+  MeshHelpers.hh
+  MeshAudit.hh
   MeshAudit_decl.hh
   MeshAudit_impl.hh
   MeshFrameworkAudit.hh
-  MeshAudit.hh
-  MeshMaps_decl.hh
-  MeshMaps_impl.hh
+  MeshInternals_decl.hh
+  MeshInternals_impl.hh
   MeshMaps.hh
   MeshCache.hh
   MeshCache_decl.hh
@@ -50,15 +49,16 @@ set(mesh_inc_files
   MeshColumns.hh
   MeshUtils.hh
   Mesh.hh
-  Mesh_Algorithms.hh
+  MeshAlgorithms.hh
   SingleFaceMesh.hh
 )
 
 set(mesh_src_files
   MeshFramework.cc
+  MeshAlgorithms.cc
+  MeshMaps.cc
   MeshSets.cc
   MeshColumns.cc
-  Mesh_Algorithms.cc
   DomainSet.cc
 )
 

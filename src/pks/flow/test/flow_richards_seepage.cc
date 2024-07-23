@@ -73,7 +73,7 @@ Flow2D_SeepageTest(std::string filename, bool deform)
       xv[1] *= (xv[0] * 0.4 + (100.0 - xv[0])) / 100.0;
       new_positions[v] = xv;
     }
-    AmanziMesh::MeshAlgorithms::deform(*mesh, nodeids, new_positions);
+    AmanziMesh::deform(*mesh, nodeids, new_positions);
   }
 
   // create a simple state and populate it
@@ -83,8 +83,9 @@ Flow2D_SeepageTest(std::string filename, bool deform)
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
+  Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Richards_PK* RPK = new Richards_PK(plist, "flow", S, soln);
+  Richards_PK* RPK = new Richards_PK(pk_tree, plist, S, soln);
 
   RPK->Setup();
   S->Setup();

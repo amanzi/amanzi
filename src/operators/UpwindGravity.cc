@@ -24,7 +24,7 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "Mesh.hh"
-#include "Mesh_Algorithms.hh"
+#include "MeshAlgorithms.hh"
 #include "Point.hh"
 
 // Operators
@@ -62,16 +62,18 @@ UpwindGravity::Compute(const CompositeVector& flux,
 
   field.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& field_c = *field.ViewComponent("cell", true);
-  const Epetra_MultiVector& field_bf = *field.ViewComponent("boundary_face", true);
+  const Epetra_MultiVector& field_bf = *field.ViewComponent("boundary_face");
   Epetra_MultiVector& field_f = *field.ViewComponent(face_comp_, true);
 
+  int nfaces_owned =
+    mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_wghost =
     mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   int c1, c2, dir;
   double kc1, kc2;
   for (int f = 0; f < nfaces_wghost; ++f) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     c1 = cells[0];
@@ -97,7 +99,8 @@ UpwindGravity::Compute(const CompositeVector& flux,
       }
 
       // We upwind only on inflow dirichlet faces.
-    } else {
+      // owned cells have owned boundary faces, so we may safely limit here
+    } else if (f < nfaces_owned) {
       field_f[0][f] = kc1;
       if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
         int bf = getFaceOnBoundaryBoundaryFace(*mesh_, f);

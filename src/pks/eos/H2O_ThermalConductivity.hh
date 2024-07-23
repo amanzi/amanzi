@@ -39,20 +39,10 @@ class H2O_ThermalConductivity : public EOS_ThermalConductivity {
     return 0.0;
   }
 
-  // error messages  FIXME (move to factory that includes LookupTable)
-  int error_code() { return ierr_; }
-  std::string error_msg() { return error_msg_; }
-
- protected:
-  virtual void InitializeFromPlist_();
-
  protected:
   // constants for water, hard-coded
   double ka0_, ka1_, ka2_;
   double kref_, Tref_;
-
-  int ierr_;
-  std::string error_msg_;
 
  private:
   static Utils::RegisteredFactory<EOS_ThermalConductivity, H2O_ThermalConductivity> reg_;

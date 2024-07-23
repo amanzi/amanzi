@@ -17,9 +17,9 @@
 #include <cmath>
 #include <vector>
 
-#include "PK_DomainFunctionFactory.hh"
-
 #include "CompositeVector.hh"
+#include "PK_DomainFunctionFactory.hh"
+#include "StateArchive.hh"
 
 // Amanzi::ShallowWater
 #include "DischargeEvaluator.hh"
@@ -50,8 +50,13 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   sw_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
-  // domain name
+  // domain and primary evaluators
   domain_ = sw_list_->template get<std::string>("domain name", "surface");
+
+  ponded_depth_key_ = Keys::getKey(domain_, "ponded_depth");
+  velocity_key_ = Keys::getKey(domain_, "velocity");
+  AddDefaultPrimaryEvaluator(S_, ponded_depth_key_);
+  AddDefaultPrimaryEvaluator(S_, velocity_key_);
 
   cfl_ = sw_list_->get<double>("cfl", 0.1);
   max_iters_ = sw_list_->get<int>("number of reduced cfl cycles", 10);
@@ -74,10 +79,8 @@ ShallowWater_PK::Setup()
   dim_ = mesh_->getSpaceDimension();
 
   // domain name
-  velocity_key_ = Keys::getKey(domain_, "velocity");
   discharge_key_ = Keys::getKey(domain_, "discharge");
   total_depth_key_ = Keys::getKey(domain_, "total_depth");
-  ponded_depth_key_ = Keys::getKey(domain_, "ponded_depth");
   prev_ponded_depth_key_ = Keys::getKey(domain_, "prev_ponded_depth");
   bathymetry_key_ = Keys::getKey(domain_, "bathymetry");
   hydrostatic_pressure_key_ = Keys::getKey(domain_, "ponded_pressure");
@@ -109,7 +112,6 @@ ShallowWater_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    AddDefaultPrimaryEvaluator(S_, ponded_depth_key_);
   }
 
   // -- total depth
@@ -126,7 +128,6 @@ ShallowWater_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 2);
-    AddDefaultPrimaryEvaluator(S_, velocity_key_);
   }
 
   // -- discharge
@@ -216,7 +217,8 @@ ShallowWater_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        bc = bc_factory.Create(spec, "velocity", AmanziMesh::Entity_kind::FACE, Teuchos::null);
+        bc = bc_factory.Create(
+          spec, "velocity", AmanziMesh::Entity_kind::FACE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("velocity");
         bc->set_type(WhetStone::DOF_Type::VECTOR);
         bcs_.push_back(bc);
@@ -234,7 +236,8 @@ ShallowWater_PK::Initialize()
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
-        bc = bc_factory.Create(spec, "ponded depth", AmanziMesh::Entity_kind::NODE, Teuchos::null);
+        bc = bc_factory.Create(
+          spec, "ponded depth", AmanziMesh::Entity_kind::NODE, Teuchos::null, Tags::DEFAULT, true);
         bc->set_bc_name("ponded depth");
         bc->set_type(WhetStone::DOF_Type::SCALAR);
         bcs_.push_back(bc);

@@ -10,7 +10,6 @@
 #include <RStdata.H>
 
 Real RStdata::Pa_per_ATM = 101325;
-static bool saturated = false;
 
 RStdata::RStdata(int slev, int nlevs, Layout& layout, NLScontrol& nlsc, RStstruct& _inputs, const RockManager* rm)
   : RSdata(slev,nlevs,layout,nlsc,rm), inputs(_inputs)
@@ -81,15 +80,11 @@ static int CPL_MODEL_ID = 0;
 static int VG_M                   = 1;
 static int VG_ALPHA               = 2;
 static int VG_SR                  = 3;
-static int VG_ELL                 = 4;
-static int VG_KR_MODEL_ID         = 5;
 static int VG_KR_SMOOTHING_MAX_PC = 6;
 
 static int BC_LAMBDA              = 1;
 static int BC_ALPHA               = 2;
 static int BC_SR                  = 3;
-static int BC_ELL                 = 4;
-static int BC_KR_MODEL_ID         = 5;
 static int BC_KR_SMOOTHING_MAX_PC = 6;
 
 void
@@ -259,9 +254,8 @@ RStdata::FillStateBndry (MFTower& press,
     const int* domhi = domain.hiVect();
     const Real* dx = geom.CellSize();
     MultiFab& mf = press[lev];
-    const BoxArray& ba = mf.boxArray();
+
     for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
-      int         i       = mfi.index();
       RealBox     gridloc = RealBox(mfi.validbox(),geom.CellSize(),geom.ProbLo());
       FArrayBox&  fab     = mf[mfi];
       const int*  flo     = fab.loVect();
@@ -315,10 +309,6 @@ RStdata::calcInvPressure (MFTower&       N,
   }
 }
 
-static Real vgKr(Real seff, Real m, Real ell) {
-  return std::pow(seff, ell) * std::pow(1-std::pow(1-std::pow(seff,1/m),m),2);
-}
-
 void
 RStdata::calcLambda (MFTower&       Lambda,
                      const MFTower& N,
@@ -368,14 +358,6 @@ RStdata::calcRichardAlpha (MFTower&       Alpha,
     }
   }
 }
-
-Array<int>&
-RStdata::rinflowBCLo()
-{}
-
-Array<int>&
-RStdata::rinflowBCHi()
-{}
 
 const MFTower*
 RStdata::GetKappaCCdir(Real t)

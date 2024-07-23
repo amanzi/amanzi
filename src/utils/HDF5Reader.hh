@@ -28,6 +28,8 @@ class HDF5Reader {
   explicit HDF5Reader(const std::string& filename);
   ~HDF5Reader();
 
+  bool CheckVariableName(const std::string& varname);
+
   void ReadData(std::string varname, std::vector<double>& vec);
   void ReadData(std::string varname, std::vector<int>& vec);
   void ReadMatData(std::string varname, Epetra_SerialDenseMatrix& mat);

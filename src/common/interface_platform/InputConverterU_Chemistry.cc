@@ -203,17 +203,16 @@ InputConverterU::TranslateChemistry_(const std::string& domain)
           ss << "dof " << j + 1 << " function";
 
           node = GetUniqueElementByTagsString_(inode, "aqueous_reactions", flag);
-          double arc(0.0);
           if (flag) {
             element = GetUniqueChildByAttribute_(node, "name", aqueous_reactions[j], flag, true);
-            arc = GetAttributeValueD_(element,
-                                      "first_order_rate_constant",
-                                      TYPE_NUMERICAL,
-                                      DVAL_MIN,
-                                      DVAL_MAX,
-                                      "",
-                                      false,
-                                      0.0);
+            GetAttributeValueD_(element,
+                                "first_order_rate_constant",
+                                TYPE_NUMERICAL,
+                                DVAL_MIN,
+                                DVAL_MAX,
+                                "",
+                                false,
+                                0.0);
           }
           aux3_list.sublist(ss.str())
             .sublist("function-constant")

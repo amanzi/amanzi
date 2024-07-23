@@ -3,30 +3,6 @@
 
   <!--  REGIONS  -->
   <ParameterList name="regions">
-    <ParameterList name="Left side">
-      <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Right side">
-      <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{1.0,1.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Bottom side">
-      <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,-1.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Top side">
-      <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{1.0,1.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,1.0}"/>
-      </ParameterList>
-    </ParameterList>
   </ParameterList>
 
   <!-- SOLVERS -->
@@ -56,7 +32,6 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="discretization method" type="string" value="generic mfd"/>
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="cycle applications" type="int" value="2"/>

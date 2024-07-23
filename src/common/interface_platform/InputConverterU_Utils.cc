@@ -84,6 +84,7 @@ InputConverterU::ParseCondList_(std::vector<DOMNode*>& same_list,
   int nlist = same_list.size();
   std::map<double, double> tp_values, tp_fluxes;
   std::map<double, std::string> tp_forms, tp_formulas;
+  std::map<double, std::vector<double>> tp_vectors;
   DOMElement* element;
   BCs bcs;
 
@@ -120,6 +121,13 @@ InputConverterU::ParseCondList_(std::vector<DOMNode*>& same_list,
 
         if (is_bc)
           tp_forms[t0] = GetAttributeValueS_(same_list[j], "function", "constant, linear, uniform");
+      } else if (HasAttribute_(element, "vector")) {
+        tp_vectors[t0] = GetAttributeVectorD_(element, "vector", dim_, "m");
+        if (is_bc)
+          tp_forms[t0] = GetAttributeValueS_(same_list[j], "function", "constant, linear, uniform");
+      } else if (HasAttribute_(element, "inward_mass_flux")) {
+        tp_fluxes[t0] = GetAttributeValueD_(
+          element, "inward_mass_flux", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false);
       } else if (HasAttribute_(element, "inward_mass_flux")) {
         tp_fluxes[t0] = GetAttributeValueD_(
           element, "inward_mass_flux", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false);
@@ -149,6 +157,7 @@ InputConverterU::ParseCondList_(std::vector<DOMNode*>& same_list,
   for (auto it = tp_values.begin(); it != tp_values.end(); ++it) {
     bcs.times.push_back(it->first);
     bcs.values.push_back(it->second);
+    bcs.vectors.push_back(tp_vectors[it->second]);
     bcs.fluxes.push_back(tp_fluxes[it->first]);
     bcs.forms.push_back(tp_forms[it->first]);
     bcs.formulas.push_back(tp_formulas[it->first]);

@@ -8,7 +8,7 @@
 */
 
 /*
-  This is the mpc_pk component of the Amanzi code.
+  MPC PK
 
   Interface for the derived PK_MPCWeak class.  Provides only the Advance() method
   missing from MPC.hh.  In weak coupling, we simply loop over the sub-PKs,

@@ -29,6 +29,11 @@ HDF5Reader::~HDF5Reader()
   if (file_ >= 0) H5Fclose(file_);
 }
 
+bool
+HDF5Reader::CheckVariableName(const std::string& varname)
+{
+  return (H5Lexists(file_, varname.c_str(), H5P_DEFAULT) > 0);
+}
 
 void
 HDF5Reader::ReadData(std::string varname, std::vector<double>& vec)

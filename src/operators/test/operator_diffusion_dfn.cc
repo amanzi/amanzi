@@ -91,7 +91,7 @@ RunTest(int icase, double gravity)
     auto sm = Teuchos::rcp(
       new MeshExtractedManifold(mesh, setname, AmanziMesh::Entity_kind::FACE, comm, gm, plist));
     surfmesh = Teuchos::rcp(
-      new Mesh(sm, Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+      new Mesh(sm, Teuchos::rcp(new Amanzi::AmanziMesh::MeshAlgorithms()), Teuchos::null));
   }
 
   // modify diffusion coefficient
@@ -105,7 +105,7 @@ RunTest(int icase, double gravity)
     surfmesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
 
   WhetStone::Tensor Kc(2, 1);
-  Kc(0, 0) = 1.0;
+  Kc(0, 0) = 2.0;
   for (int c = 0; c < ncells_owned; c++) K->push_back(Kc);
 
   AmanziGeometry::Point v(1.0, 2.0, 3.0);

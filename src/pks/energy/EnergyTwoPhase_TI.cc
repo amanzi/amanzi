@@ -37,6 +37,7 @@ EnergyTwoPhase_PK::FunctionalResidual(double t_old,
   temperature_eval_->SetChanged();
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
 
+  S_->GetEvaluator(mol_flowrate_key_).Update(*S_, passwd_);
   auto flux = S_->GetPtr<CompositeVector>(mol_flowrate_key_, Tags::DEFAULT);
 
   S_->GetEvaluator(conductivity_gen_key_).Update(*S_, passwd_);
@@ -79,6 +80,7 @@ EnergyTwoPhase_PK::FunctionalResidual(double t_old,
   S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
   const auto& enthalpy = S_->Get<CompositeVector>(enthalpy_key_);
 
+  op_advection_->Init();
   op_matrix_advection_->Setup(*flux);
   op_matrix_advection_->UpdateMatrices(flux.ptr());
   op_matrix_advection_->ApplyBCs(false, true, false);

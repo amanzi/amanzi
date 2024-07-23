@@ -38,6 +38,9 @@ LookupTable_Amanzi::LookupTable_Amanzi(Teuchos::ParameterList& plist) : LookupTa
   msg << "\nFailed to open/read data from file: " << filename;
   if (ifs.fail()) Exceptions::amanzi_throw(msg);
 
+  char line[100];
+  ifs.getline(line, 100);
+
   // primary variables are T and p
   ReadMetaData_(ifs, "temperature", &nT, &scaleT_, &shiftT_);
   ReadMetaData_(ifs, "pressure", &nP, &scaleP_, &shiftP_);

@@ -11,7 +11,7 @@
 /*
   Operators
 
-  Advection operator on a fracture network.
+  Upwind-based scalar advection operator on manifolds.
 */
 
 #include <vector>
@@ -50,7 +50,7 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     WhetStone::DenseMatrix Aface(ncells, ncells);
@@ -87,7 +87,7 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
 
       for (int m = 0; m < nupwind; m++) {
         double v = upwind_flux_dfn_[f][m];
-        for (int j = 0; j < cells.size(); j++) {
+        for (int j = 0; j < ncells; j++) {
           if (cells[j] == c) {
             Aface(j, upwind_loc[m]) = (u / flux_in) * v;
             break;
@@ -95,6 +95,7 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
         }
       }
     }
+
     matrix[f] = Aface;
   }
 }
@@ -117,7 +118,7 @@ PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>
   const auto& dHdT_c = *dHdT->ViewComponent("cell", true);
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
 
     WhetStone::DenseMatrix Aface(ncells, ncells);
@@ -286,7 +287,7 @@ PDE_AdvectionUpwindDFN::IdentifyUpwindCells_(const CompositeVector& u)
       int ndofs = map->ElementSize(f);
       if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
-      double flux = u_f[0][g] * dirs[i]; // exterior flux
+      double flux = u_f[0][g] * dirs[i]; // exterior flux. Note that dirs could be negative
       if (flux >= 0.0) {
         upwind_cells_dfn_[f].push_back(c);
         upwind_flux_dfn_[f].push_back(flux);

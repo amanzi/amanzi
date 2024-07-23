@@ -119,7 +119,7 @@ RunTest(int n, int d)
 
   double dt(0.03 / n);
   for (int f = 0; f < nfaces_owned; f++) {
-    auto cells = mesh->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+    auto cells = mesh->getFaceCells(f);
 
     if (cells.size() == 2) {
       const auto& xf = mesh->getFaceCentroid(f);

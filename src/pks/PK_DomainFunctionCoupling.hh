@@ -9,31 +9,31 @@
 
 /*!
 
-This provide coupling of fields located on matching manifold and
-space meshes. For the space, the coupling creates a list of boundary
-conditions. For the manifold, the coupling creates a list of sources.
+This provides coupling of fields located on conforming manifold and 3D meshes. 
+For the 3D mesh, the coupling generates a list of boundary conditions. 
+For the manifold mesh, the coupling creates a list of sources. The manifold 
+mesh has a child to parent map, e.g. a manifold cell to a 3D mesh face.
+For the 3D mesh, we need the reverse map.
+There are a few coupling submodels:
 
-Typically, the manifold mesh provides map manifold (cell) -> space (face).
-In space, we need the reverse map.
+ * `"rate`" computes data using the following formulas:
 
-There are three submodels.
-(A) submodel="rate". The computed data are given by formulas:
+   .. math::
+      \begin{array}{l}
+        value[i][c] = value[i][c] + flux[f] * external\_field[i][cc] / V_c \\
+        value[N][c] = value[N][c] - \Delta t * flux[f]
+      \end{array}
 
-      value[i][c] += flux[f] * external_field[i][cc] / V_c
+   where cc is a space cell incident to face f, and N is the auxiliary
+   value added to the result. Note that an internal face f (resp., boundary
+   face f) is shared by two (resp. one) space cells.
 
-      value[N][c] -= dt * flux[f]
+ * `"field`" computes data using the following formula:
 
-where cc is the space cell attached to face f, and N is the auxiliary
-value added to the result. Note that internal face f (resp., boundary
-face f) is shared by two (resp. one) space cells.
+   .. math::
+      value[i][f] = external\_field[i][c]
 
-  (B) submodel="field". The computed data are given by the formula:
-
-      value[i][f] = external_field[i][c];
-
-  (C) submodel="conserved quantity". Not used in Amanzi.
-
-  (D) submodel="".
+ * `"conserved quantity`" is **not** used in Amanzi.
 
 */
 
@@ -66,6 +66,7 @@ The following parameter names were changed:
 #include "CommonDefs.hh"
 #include "DenseVector.hh"
 #include "Mesh.hh"
+#include "PKsDefs.hh"
 #include "State.hh"
 #include "UniqueLocalIndex.hh"
 
@@ -90,7 +91,7 @@ class PK_DomainFunctionCoupling : public FunctionBase {
 
   // required member functions
   virtual void Compute(double t0, double t1) override;
-  virtual std::string name() const override { return "domain coupling"; }
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::COUPLING; }
 
  protected:
   using FunctionBase::value_;
@@ -246,7 +247,7 @@ PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     for (auto c : *entity_ids_) {
       AmanziMesh::Entity_ID f = mesh_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
 
-      auto cells = mesh_out_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_out_->getFaceCells(f);
 
       if (cells.size() != flux_map->ElementSize(f)) {
         msg << "Number of flux DOFs doesn't equal to the number of cells sharing a face: "
@@ -293,7 +294,7 @@ PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     for (auto c : *entity_ids_) {
       AmanziMesh::Entity_ID f = mesh_->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
 
-      auto cells = mesh_out_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_out_->getFaceCells(f);
 
       if (cells.size() != flux_map->ElementSize(f)) {
         msg << "Number of flux DOFs doesn't equal to the number of cells sharing a face: "
@@ -355,7 +356,7 @@ PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
       int sc = it->second;
 
       // accept it all
-      auto cells = mesh_->getFaceCells(f, AmanziMesh::Parallel_kind::ALL);
+      auto cells = mesh_->getFaceCells(f);
       AMANZI_ASSERT(cells.size() == 1);
 
       auto [faces, dirs] = mesh_->getCellFacesAndDirections(cells[0]);

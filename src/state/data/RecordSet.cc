@@ -78,7 +78,7 @@ RecordSet::GetRecord(const Tag& tag)
     return *records_.at(tag);
   } catch (const std::out_of_range& e) {
     Errors::Message msg;
-    msg << "Record: \"" << fieldname_ << "\" << does not have tag \"" << tag.get() << "\"";
+    msg << "Record: \"" << fieldname_ << "\" does not have tag \"" << tag.get() << "\"";
     throw(msg);
   }
 }
@@ -90,7 +90,7 @@ RecordSet::GetRecord(const Tag& tag) const
     return *records_.at(tag);
   } catch (const std::out_of_range& e) {
     Errors::Message msg;
-    msg << "Record: \"" << fieldname_ << "\" << does not have tag \"" << tag.get() << "\"";
+    msg << "Record: \"" << fieldname_ << "\" does not have tag \"" << tag.get() << "\"";
     throw(msg);
   }
 }

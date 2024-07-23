@@ -107,7 +107,7 @@
         <Parameter name="evaluator type" type="string" value="specific storage"/>
 	<ParameterList name="specific storage parameters">
           <ParameterList name="Material 1">
-            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="model" type="string" value="constant"/>
             <Parameter name="value" type="double" value="0.1"/>
           </ParameterList>
@@ -117,7 +117,7 @@
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -131,7 +131,7 @@
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="All">
-            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -144,6 +144,12 @@
     </ParameterList>
 
     <ParameterList name="initial conditions">
+      <ParameterList name="const_fluid_density">
+        <Parameter name="value" type="double" value="1000.0"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
+      </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="0.0"/>
       </ParameterList>
@@ -184,7 +190,7 @@
 
   <!--  REGIONS  -->
   <ParameterList name="regions">
-    <ParameterList name="Computational domain">
+    <ParameterList name="All">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-10,-5.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{10,5.0}"/>

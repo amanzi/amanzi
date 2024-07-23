@@ -21,7 +21,8 @@ the domain function.
 .. admonition:: domain-function-field-spec
 
    * `"field key`" ``[string]`` Field used in the domain function.
-   * `"component`" ``[string]`` **cell** Component of the field.
+   * `"component`" ``[string]`` Component of the field. Default is `"cell`".
+   * `"scaling factor`" ``[double]`` Constant multiplication factor. Default is 1.
 
 */
 
@@ -36,10 +37,10 @@ the domain function.
 
 #include "CommonDefs.hh"
 #include "Mesh.hh"
-#include "UniqueMeshFunction.hh"
 #include "Evaluator.hh"
 
 #include "PK_Utils.hh"
+#include "PKsDefs.hh"
 
 namespace Amanzi {
 
@@ -68,8 +69,8 @@ class PK_DomainFunctionField : public FunctionBase {
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "field"; }
+  virtual void Compute(double t0, double t1) override;
+  virtual DomainFunction_kind getType() const override { return DomainFunction_kind::FIELD; }
 
  protected:
   using FunctionBase::value_;
@@ -80,10 +81,11 @@ class PK_DomainFunctionField : public FunctionBase {
  private:
   std::string submodel_;
   Teuchos::RCP<MeshIDs> entity_ids_;
-  AmanziMesh::Entity_kind kind_;
   Key field_key_;
   Tag tag_;
-  Key component_key_;
+  AmanziMesh::Entity_kind kind_;
+  std::string component_;
+  double factor_;
 };
 
 
@@ -107,7 +109,8 @@ PK_DomainFunctionField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
     Teuchos::ParameterList flist = plist.sublist(keyword);
     field_key_ = flist.get<std::string>("field key");
     tag_ = Keys::readTag(flist, "tag");
-    component_key_ = flist.get<std::string>("component", "cell");
+    component_ = flist.get<std::string>("component", "cell");
+    factor_ = flist.get<double>("scaling factor", 1.0);
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "error in source sublist : " << msg.what();
@@ -144,13 +147,13 @@ PK_DomainFunctionField<FunctionBase>::Compute(double t0, double t1)
     S_->GetEvaluator(field_key_, tag_).Update(*S_, field_key_);
   }
 
-  const auto& field_vec = *S_->Get<CompositeVector>(field_key_, tag_).ViewComponent("cell", false);
-  int nvalues = field_vec.NumVectors();
-  std::vector<double> val_vec(nvalues);
+  const auto& field = *S_->Get<CompositeVector>(field_key_, tag_).ViewComponent(component_);
+  int nvalues = field.NumVectors();
+  std::vector<double> values(nvalues);
 
   for (auto c : *entity_ids_) {
-    for (int i = 0; i < nvalues; ++i) { val_vec[i] = field_vec[i][c]; }
-    value_[c] = val_vec;
+    for (int i = 0; i < nvalues; ++i) { values[i] = factor_ * field[i][c]; }
+    value_[c] = values;
   }
 }
 

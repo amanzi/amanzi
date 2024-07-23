@@ -95,7 +95,7 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
@@ -144,7 +144,7 @@
             <Parameter name="components" type="Array(string)" value="{cell, boundary_face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="55397.25419097694"/>
+                <Parameter name="value" type="double" value="55409.38107132945"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -164,20 +164,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="temperature">
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="*"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="298.15"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
@@ -186,6 +172,9 @@
       </ParameterList>
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.2"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="0.001"/>
@@ -267,6 +256,19 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="temperature">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="298.15"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="total_component_concentration">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -336,6 +338,11 @@
       	  <Parameter name="relative permeability model" type="string" value="Mualem"/>
       	</ParameterList>
       </ParameterList>
+
+      <!--ParameterList name="clipping parameters">
+      	<Parameter name="maximum correction change" type="double" value="-1.0"/>
+      </ParameterList-->
+
       <ParameterList name="operators">
       	<ParameterList name="diffusion operator">
       	  <ParameterList name="matrix">
@@ -385,8 +392,8 @@
 	<Parameter name="maximal time step" type="double" value="1.0e+07"/>
       	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
       	<Parameter name="linear solver" type="string" value="AztecOO"/>
-      	<Parameter name="preconditioner" type="string" value="Trilinos ML"/>
-      	<ParameterList name="pressure-lambda constraints">
+      	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      	<ParameterList name="dae constraint">
       	  <Parameter name="method" type="string" value="projection"/>
       	  <Parameter name="inflow krel correction" type="bool" value="true"/>
       	  <Parameter name="linear solver" type="string" value="AztecOO"/>
@@ -480,16 +487,6 @@
     <ParameterList name="AztecOO">
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
-        <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="PCG with Hypre AMG">
-      <Parameter name="iterative method" type="string" value="pcg"/>
-      <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <ParameterList name="verbose object">

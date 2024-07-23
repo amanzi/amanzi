@@ -57,7 +57,8 @@ struct MeshView : public Kokkos::View<DataType, Properties...> {
 
   KOKKOS_INLINE_FUNCTION const_iterator cend() const { return const_iterator(*this, this->size()); }
 
-  void insert(iterator v0_e, iterator v1_b, iterator v1_e)
+  template <typename other_iterator>
+  void insert(iterator v0_e, other_iterator v1_b, other_iterator v1_e)
   {
     //assert(v0_e - *this->end() != 0 && "Only insert at end supported for MeshViews");
     std::size_t size = v1_e - v1_b;

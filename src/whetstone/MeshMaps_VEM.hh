@@ -24,7 +24,7 @@
 #include "Point.hh"
 
 #include "DenseMatrix.hh"
-#include "MeshMaps.hh"
+#include "MeshMapsBase.hh"
 #include "Polynomial.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
@@ -32,17 +32,17 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MeshMaps_VEM : public MeshMaps {
+class MeshMaps_VEM : public MeshMapsBase {
  public:
   MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh, const Teuchos::ParameterList& plist)
-    : MeshMaps(mesh)
+    : MeshMapsBase(mesh)
   {
     ParseInputParameters_(plist);
   }
   MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
                Teuchos::RCP<const AmanziMesh::Mesh> mesh1,
                const Teuchos::ParameterList& plist)
-    : MeshMaps(mesh0, mesh1)
+    : MeshMapsBase(mesh0, mesh1)
   {
     ParseInputParameters_(plist);
   }

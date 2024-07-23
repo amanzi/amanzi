@@ -148,7 +148,7 @@ InputConverter::ParseVersion_()
   if (node_list->getLength() > 0) {
     std::string version = GetAttributeValueS_(node_list->item(0), "version");
 
-    int major, minor, micro;
+    int major, minor;
 
     std::stringstream ss;
     ss << version;
@@ -964,8 +964,7 @@ InputConverter::GetTextContentD_(DOMNode* node,
   } else if (!exception) {
     val = default_val;
   } else {
-    char* tagname = mm.transcode(node->getNodeName());
-    ThrowErrorMisschild_("unknown", tagname, "unknwon");
+    ThrowErrorMisschild_("unknown", "unknown", "unknwon");
   }
 
   return val;

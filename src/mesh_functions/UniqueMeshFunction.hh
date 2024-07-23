@@ -31,7 +31,10 @@ namespace Functions {
 class UniqueMeshFunction : public MeshFunction {
  public:
   // Constructor
-  UniqueMeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : MeshFunction(mesh){};
+  UniqueMeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                     AmanziMesh::Parallel_kind parallel_kind)
+    : MeshFunction(mesh), parallel_kind_(parallel_kind)
+  {}
 
   // Overload the AddSpec method to check uniqueness.
   virtual void AddSpec(const Teuchos::RCP<Spec>& spec);
@@ -42,6 +45,7 @@ class UniqueMeshFunction : public MeshFunction {
   typedef std::vector<Teuchos::RCP<UniqueSpec>> UniqueSpecList;
 
   std::map<AmanziMesh::Entity_kind, Teuchos::RCP<UniqueSpecList>> unique_specs_;
+  AmanziMesh::Parallel_kind parallel_kind_;
 };
 
 } //namespace Functions

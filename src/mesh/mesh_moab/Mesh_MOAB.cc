@@ -519,11 +519,13 @@ Mesh_MOAB::init_pface_dirs()
         result = mbcore_->tag_get_data(gid_tag, &face, 1, &face_gid);
         ErrorCheck_(result, "Problem getting tag data");
 
-        std::cout << "Face cells mismatch between master and ghost (processor " << mbcomm_->rank()
-                  << ")" << std::endl;
-        std::cout << " Face " << face_gid << std::endl;
-        std::cout << "Master cells " << master_cell0_gid << " " << master_cell1_gid << std::endl;
-        std::cout << "Ghost cells " << ghost_cell0_gid << " " << ghost_cell1_gid << std::endl;
+        if (vo_.get() && vo_->os_OK(Teuchos::VERB_LOW)) {
+          *vo_->os() << "Face cells mismatch between master and ghost (processor " << mbcomm_->rank()
+                     << ")" << std::endl;
+          *vo_->os() << " Face " << face_gid << std::endl;
+          *vo_->os() << "Master cells " << master_cell0_gid << " " << master_cell1_gid << std::endl;
+          *vo_->os() << "Ghost cells " << ghost_cell0_gid << " " << ghost_cell1_gid << std::endl;
+        }
       }
     }
   }
@@ -1211,10 +1213,8 @@ Mesh_MOAB::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
 //--------------------------------------------------------------------
 void
 Mesh_MOAB::getNodeCells(const Entity_ID nodeid,
-                        const Parallel_kind ptype,
                         View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const
 {
-  unsigned char pstatus;
   std::vector<EntityHandle> ids;
   View_type<Entity_ID, MemSpace_kind::HOST> lcellids;
 
@@ -1224,15 +1224,7 @@ Mesh_MOAB::getNodeCells(const Entity_ID nodeid,
   Entity_ID_List vcellids;
   for (int i = 0; i < nids; ++i) {
     mbcore_->tag_get_data(lid_tag, &(ids[i]), 1, &lid);
-
-    if (ptype == Parallel_kind::ALL) { vcellids.push_back(lid); }
-    if (ptype == Parallel_kind::OWNED) {
-      mbcomm_->get_pstatus(ids[i], pstatus);
-      if ((pstatus & PSTATUS_NOT_OWNED) == 0) { vcellids.push_back(lid); }
-    } else if (ptype == Parallel_kind::GHOST) {
-      mbcomm_->get_pstatus(ids[i], pstatus);
-      if ((pstatus & PSTATUS_NOT_OWNED) == 1) { vcellids.push_back(lid); }
-    }
+    vcellids.push_back(lid);
   }
   vectorToView(lcellids, vcellids);
   cellids = lcellids;
@@ -1244,10 +1236,21 @@ Mesh_MOAB::getNodeCells(const Entity_ID nodeid,
 //--------------------------------------------------------------------
 void
 Mesh_MOAB::getNodeFaces(const Entity_ID nodeid,
-                        const Parallel_kind ptype,
                         View_type<const Entity_ID, MemSpace_kind::HOST>& faceids) const
 {
-  throw std::exception();
+  std::vector<EntityHandle> ids;
+  View_type<Entity_ID, MemSpace_kind::HOST> lfaceids;
+
+  mbcore_->get_adjacencies(&(node_id_to_handle[nodeid]), 1, facedim, true, ids);
+  int lid, nids = ids.size();
+
+  Entity_ID_List vfaceids;
+  for (int i = 0; i < nids; ++i) {
+    mbcore_->tag_get_data(lid_tag, &(ids[i]), 1, &lid);
+    vfaceids.push_back(lid);
+  }
+  vectorToView(lfaceids, vfaceids);
+  faceids = lfaceids;
 }
 
 
@@ -1256,7 +1259,6 @@ Mesh_MOAB::getNodeFaces(const Entity_ID nodeid,
 //--------------------------------------------------------------------
 void
 Mesh_MOAB::getFaceCells(const Entity_ID faceid,
-                        const Parallel_kind ptype,
                         View_type<const Entity_ID, MemSpace_kind::HOST>& cellids) const
 {
   int result;
@@ -1279,40 +1281,11 @@ Mesh_MOAB::getFaceCells(const Entity_ID faceid,
   Kokkos::resize(lcellids, 2);
   auto it = lcellids.begin();
 
-  unsigned char pstatus;
   int n = 0;
-  switch (ptype) {
-  case Parallel_kind::ALL:
-    for (int i = 0; i < nc; i++) {
-      *it = fcellids[i];
-      ++it;
-      ++n;
-    }
-    break;
-  case Parallel_kind::OWNED:
-    for (int i = 0; i < nc; i++) {
-      result = mbcomm_->get_pstatus(fcells[i], pstatus);
-      if ((pstatus & PSTATUS_NOT_OWNED) == 0) {
-        *it = fcellids[i];
-        ++it;
-        ++n;
-      }
-    }
-    break;
-  case Parallel_kind::GHOST:
-    for (int i = 0; i < nc; i++) {
-      result = mbcomm_->get_pstatus(fcells[i], pstatus);
-      if ((pstatus & PSTATUS_NOT_OWNED) == 1) {
-        *it = fcellids[i];
-        ++it;
-        ++n;
-      }
-    }
-    break;
-  default:
-    Errors::Message mesg("Unknown geometric entity");
-    amanzi_throw(mesg);
-    break;
+  for (int i = 0; i < nc; i++) {
+    *it = fcellids[i];
+    ++it;
+    ++n;
   }
 
   Kokkos::resize(lcellids, n);

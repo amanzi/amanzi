@@ -242,23 +242,6 @@ AA_Base<Vector, VectorSpace>::QRdelete()
 
   first_f_ = (first_f_ + 1) % (mvec_ + 1);
   num_vec_--;
-
-
-  // for (int i=0;i<m-1;i++) {
-  //   //int I = (first_f_ + i)%(mvec_ + 1);
-  //   std::cout<<"Q "<<i<<"\n";
-  //   Q_[i]->Print(std::cout);
-  // }
-
-  // std::cout<<"R matrix "<<"\n";
-  // for (int i=0;i<m-1; i++) {
-  //   for (int j=i;j<m-1; j++) {
-  //     int loc_id=j*(j+1)/2 + i;
-  //     std::cout<<R_[loc_id]<<" ";
-  //   }
-  //   std::cout<<"\n";
-  // }
-  //exit(0);
 }
 
 
@@ -289,7 +272,9 @@ AA_Base<Vector, VectorSpace>::TestQR(int nv)
     std::cout << "norm2 " << norm2 << "\n";
   }
 
-  if (norm2 > 0.0001) exit(0);
+  if (norm2 > 0.0001) {
+    Exceptions::amanzi_throw("AAA: norm2 is too small.");
+  }
 }
 
 
@@ -340,7 +325,6 @@ AA_Base<Vector, VectorSpace>::Correction(const Vector& f,
     }
   } else if (num_vec_ > 1) {
     if (num_vec_ == mvec_) {
-      // Delete old Vector
       QRdelete();
       //TestQR(num_vec_ - 1);
     }
@@ -361,7 +345,6 @@ AA_Base<Vector, VectorSpace>::Correction(const Vector& f,
       if (norm2 < 1e-12) {
         QRdelete();
         //TestQR(num_vec_ - 1);
-        //exit(0);
       }
     }
 

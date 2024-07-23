@@ -46,7 +46,7 @@ Utils::RegisteredFactory<Evaluator, IEM_WaterVaporEvaluator>
   IEM_WaterVaporEvaluator::reg_("iem water vapor");
 
 Utils::RegisteredFactory<IEM, IEM_Linear> IEM_Linear::reg_("linear");
-Utils::RegisteredFactory<IEM, IEM_Tabular> IEM_Tabular::reg_("tabular");
+Utils::RegisteredFactory<IEM, IEM_Tabular> IEM_Tabular::reg_("lookup table");
 
 
 // linear interpolant of thermal conductivity.

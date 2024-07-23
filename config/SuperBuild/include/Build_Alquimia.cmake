@@ -19,9 +19,11 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 set(Alquimia_patch_file alquimia-cmake.patch
                         alquimia-FindPETSc.patch
                         alquimia-MPIlocation.patch
-                        alquimia-undefined_ierr.patch
-                        alquimia-clang-void.patch
-                      )
+                        )
+#                      
+#                       alquimia-undefined_ierr.patch  -looks like it is not needed
+#                       alquimia-clang-void.patch - Ethan committed this to Alquimia
+                     
 set(Alquimia_sh_patch ${Alquimia_prefix_dir}/alquimia-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-patch-step.sh.in
                ${Alquimia_sh_patch}

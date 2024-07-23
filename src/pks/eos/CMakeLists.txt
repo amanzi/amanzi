@@ -22,7 +22,6 @@ include_directories(${ATK_SOURCE_DIR})
 #
 set(eos_src_files 
     COM_MillingtonQuirk.cc
-    DensityTabular.cc
     EOSDensityEvaluator.cc
     EOSViscosityEvaluator.cc
     H2O_Density.cc
@@ -33,6 +32,8 @@ set(eos_src_files
     H2O_ViscosityFEHM.cc
     Henry_Solubility.cc
     IdealGas_Density.cc
+    IdealGas_ThermalConductivity.cc
+    IdealGas_Viscosity.cc
     IsobaricEOSEvaluator.cc
     LookupTable.cc
     LookupTable_Amanzi.cc
@@ -42,7 +43,6 @@ set(eos_src_files
     VaporInGas_Diffusion.cc
     VaporLiquid_Tabular.cc
     ViscosityConstant.cc
-    ViscosityTabular.cc
    )
 
 add_amanzi_library(eos
@@ -75,10 +75,13 @@ set(eos_inc_files
     H2O_ViscosityFEHM.hh
     Henry_Solubility.hh
     IdealGas_Density.hh
+    IdealGas_ThermalConductivity.hh
+    IdealGas_Viscosity.hh
     IsobaricEOSEvaluator.hh
     LookupTable.hh
     LookupTable_Amanzi.hh
     LookupTable_FEHM.hh
+    LookupTableFactory.hh
     MolarFractionGasEvaluator.hh
     VaporInGas_Density.hh
     VaporInGas_Diffusion.hh

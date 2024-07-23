@@ -33,6 +33,8 @@
 
 // Amanzi::Operators
 #include "Analytic00b.hh"
+#include "Analytic01c.hh"
+#include "Analytic03b.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFVonManifolds.hh"
@@ -43,7 +45,7 @@
 * TBW.
 * **************************************************************** */
 void
-RunTest(int icase, double gravity)
+RunTest(int icase, double gravity, int nx = 10, double tol = 1e-12)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -55,7 +57,7 @@ RunTest(int icase, double gravity)
   int MyPID = comm->MyPID();
 
   if (MyPID == 0)
-    std::cout << "\nTest: FV scheme for diffusion in fractures g=" << gravity << std::endl;
+    std::cout << "\nTest: FV scheme for diffusion in fractures, icase=" << icase << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_dfn_fv.xml";
@@ -71,20 +73,34 @@ RunTest(int icase, double gravity)
   MeshFactory meshfactory(comm, gm, flist);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
 
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
-  std::string setname("fractures");
-  auto surfmesh_fw =
-    Teuchos::rcp(new MeshExtractedManifold(mesh, setname, AmanziMesh::FACE, comm, gm, plist));
-  Teuchos::RCP<Mesh> surfmesh = Teuchos::rcp(
-    new Mesh(surfmesh_fw, Teuchos::rcp(new AmanziMesh::MeshFrameworkAlgorithms()), Teuchos::null));
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx);
+  Teuchos::RCP<Mesh> surfmesh;
+  if (icase != 1) {
+    std::string setname = (icase == 0 || icase == 1) ? "fractures" : "fracture 1";
+    auto surfmesh_fw =
+      Teuchos::rcp(new MeshExtractedManifold(mesh, setname, AmanziMesh::FACE, comm, gm, plist));
+    surfmesh = Teuchos::rcp(
+      new Mesh(surfmesh_fw, Teuchos::rcp(new AmanziMesh::MeshAlgorithms()), Teuchos::null));
+  } else {
+    surfmesh = meshfactory.create("test/fractures.exo");
+  }
 
   // modify diffusion coefficient
+  int ncells_owned = surfmesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_wghost = surfmesh->getNumEntities(AmanziMesh::CELL, AmanziMesh::Parallel_kind::ALL);
   int nfaces_owned = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::OWNED);
   int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::FACE, AmanziMesh::Parallel_kind::ALL);
 
   double rho(1.0);
   AmanziGeometry::Point v(3);
-  Analytic00b ana(surfmesh, 1.0, 2.0, 3.0, 1, v, gravity);
+  Teuchos::RCP<AnalyticBase> ana;
+  if (icase == 0 || icase == 1) {
+    ana = Teuchos::rcp(new Analytic00b(surfmesh, 1.1, 2.2, 3.3, 1, v, gravity));
+  } else if (icase == 2) {
+    ana = Teuchos::rcp(new Analytic03(surfmesh));
+  } else {
+    ana = Teuchos::rcp(new Analytic01c(surfmesh));
+  }
 
   // create boundary data (Dirichlet everywhere)
   Teuchos::RCP<BCs> bc =
@@ -97,11 +113,11 @@ RunTest(int icase, double gravity)
     if (fabs(xf[2] - 0.5) < 1e-6 && (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
                                      fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6)) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
-      bc_value[f] = ana.pressure_exact(xf, 0.0);
+      bc_value[f] = ana->pressure_exact(xf, 0.0);
     } else if (fabs(xf[1] - 0.5) < 1e-6 && (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
                                             fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6)) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
-      bc_value[f] = ana.pressure_exact(xf, 0.0);
+      bc_value[f] = ana->pressure_exact(xf, 0.0);
     }
   }
 
@@ -130,14 +146,51 @@ RunTest(int icase, double gravity)
     op->SetScalarCoefficient(k, Teuchos::null);
     op->SetDensity(rho);
     op->SetGravity(gvec);
+  } else if (icase == 2) {
+    WhetStone::Tensor T(3, 1);
+    auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>(ncells_wghost, T));
+    for (int c = 0; c < ncells_wghost; ++c) {
+      const Point& xc = surfmesh->getCellCentroid(c);
+      (*K)[c](0, 0) = ana->ScalarDiffusivity(xc, 0.0);
+    }
+    op->SetTensorCoefficient(K);
+    op->SetDensity(0.);
+    op->SetGravity(gvec);
+  } else if (icase == 3) {
+    auto k = Teuchos::rcp(new CompositeVector(*cvs2));
+    auto& k_f = *k->ViewComponent("face");
+    const auto& fmap = *k->Map().Map("face", true);
+
+    for (int f = 0; f < nfaces_owned; ++f) {
+      const Point& xf = surfmesh->getFaceCentroid(f);
+
+      int g = fmap.FirstPointInElement(f);
+      int ndofs = fmap.ElementSize(f);
+      for (int i = 0; i < ndofs; ++i) k_f[0][g + i] = ana->ScalarDiffusivity(xf, 0.0);
+    }
+    op->SetScalarCoefficient(k, Teuchos::null);
+    op->SetDensity(0.);
+    op->SetGravity(gvec);
   }
 
+  // create optional source term
+  CompositeVector src(*cvs);
+  auto& src_c = *src.ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned; c++) {
+    const Point& xc = surfmesh->getCellCentroid(c);
+    src_c[0][c] = ana->source_exact(xc, 0.0);
+  }
+
+  // populate diffusion operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->Init();
 
-  // populate diffusion operator
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
   op->ApplyBCs(true, true, true);
+
+  // add source term
+  global_op->UpdateRHS(src, false);
 
   // create preconditoner
   global_op->set_inverse_parameters(
@@ -146,7 +199,7 @@ RunTest(int icase, double gravity)
   global_op->ComputeInverse();
 
   VerificationCV ver(global_op);
-  ver.CheckMatrixSPD(true, true, 5);
+  ver.CheckMatrixSPD(true, true, 3);
   ver.CheckPreconditionerSPD(1e-12, true, true);
 
   CompositeVector rhs = *global_op->rhs();
@@ -171,31 +224,24 @@ RunTest(int icase, double gravity)
   double pnorm, l2_err, inf_err;
   Epetra_MultiVector& p = *solution->ViewComponent("cell");
 
-  ana.ComputeCellError(p, 0.0, pnorm, l2_err, inf_err);
-  CHECK(l2_err < 1e-12 * pnorm);
+  ana->ComputeCellError(p, 0.0, pnorm, l2_err, inf_err);
+  CHECK(l2_err < tol * pnorm);
 
-  // calculate flux error. To reuse the standard tools, we need to
-  // collapse flux on fracture interface
+  // calculate flux error
   double unorm, ul2_err, uinf_err;
-  Epetra_MultiVector& flx_long = *flux->ViewComponent("face", true);
-  Epetra_MultiVector flx_short(surfmesh->getMap(AmanziMesh::FACE, false), 1);
+  Epetra_MultiVector& flux_f = *flux->ViewComponent("face", true);
+  flux->ScatterMasterToGhosted();
 
-  const auto& fmap = *flux->Map().Map("face", true);
-  for (int f = 0; f < nfaces_owned; ++f) {
-    int g = fmap.FirstPointInElement(f);
-    flx_short[0][f] = flx_long[0][g];
-  }
-
-  ana.ComputeFaceError(flx_short, 0.0, unorm, ul2_err, uinf_err);
-  CHECK(ul2_err < 1e-12 * unorm);
+  ana->ComputeFaceError(flux_f, 0.0, unorm, ul2_err, uinf_err);
+  CHECK(ul2_err < tol * unorm);
 
   if (MyPID == 0) {
     l2_err /= pnorm;
-    printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  norms=%9.6f %9.6f\n",
-           l2_err,
-           inf_err,
-           ul2_err,
-           uinf_err,
+    printf("rel norms: L2(p)=%9.6f Inf(p)=%9.6f L2(u)=%9.6g Inf(u)=%9.6f norms=%9.6f %9.6f\n",
+           l2_err / pnorm,
+           inf_err / pnorm,
+           ul2_err / unorm,
+           uinf_err / unorm,
            pnorm,
            unorm);
   }
@@ -210,4 +256,14 @@ TEST(DIFFUSION_FRACTURES_FV_NO_K)
 TEST(DIFFUSION_FRACTURES_FV_K)
 {
   RunTest(1, 1.0);
+}
+
+TEST(DIFFUSION_FRACTURE1_FV_GENERAL_K)
+{
+  RunTest(2, 0.0, 10, 1e-2);
+}
+
+TEST(DIFFUSION_FRACTURE1_FV_GENERAL_LITTLE_K)
+{
+  RunTest(3, 0.0, 10, 1e-1);
 }

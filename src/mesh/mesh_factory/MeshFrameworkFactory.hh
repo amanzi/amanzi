@@ -99,7 +99,7 @@ class MeshFrameworkFactory {
   //    type as the constructed mesh in order to use internal information.  Note
   //    this could likely be relaxed, but is easiest to require for now.
   Teuchos::RCP<MeshFramework> create(const Teuchos::RCP<const Mesh>& parent_mesh,
-                                     const Entity_ID_View& setids,
+                                     const MeshFramework::cEntity_ID_View& setids,
                                      const Entity_kind setkind,
                                      const bool flatten = false);
 

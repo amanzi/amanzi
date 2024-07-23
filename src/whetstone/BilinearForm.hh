@@ -135,57 +135,6 @@ class BilinearForm {
     return 1;
   }
 
-  // Projectors is a special type of bilinear form (P(u), v) = (u, v) for any v
-  // where coef = 1. If different operators are supported by the derived class,
-  // different projectors can be computed.
-  // NOTE: we need both (1) action on a function u and (2) matrix form of the
-  //       project; hence, the interface will be extended.
-  // -- L2 projectors
-  virtual void L2Cell(int c,
-                      const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf,
-                      const Polynomial* moments,
-                      Polynomial& vc)
-  {
-    Errors::Message msg("L2 projector is not supported.");
-    Exceptions::amanzi_throw(msg);
-  }
-  virtual void
-  L2Face(int f, const std::vector<Polynomial>& ve, const Polynomial* moments, Polynomial& vf)
-  {
-    Errors::Message msg("L2 face projector is not supported.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  virtual void L2Cell(int c, const DenseVector& dofs, Polynomial& vc)
-  {
-    Errors::Message msg("L2 projector (from DOFs) is not supported.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  // -- H1 projectors
-  virtual void H1Cell(int c,
-                      const std::vector<Polynomial>& ve,
-                      const std::vector<Polynomial>& vf,
-                      const Polynomial* moments,
-                      Polynomial& vc)
-  {
-    Errors::Message msg("H1 cell projector is not supported.");
-    Exceptions::amanzi_throw(msg);
-  }
-  virtual void
-  H1Face(int f, const std::vector<Polynomial>& ve, const Polynomial* moments, Polynomial& vf)
-  {
-    Errors::Message msg("H1 face projector is not supported.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  virtual void H1Cell(int c, const DenseVector& dofs, Polynomial& vc)
-  {
-    Errors::Message msg("H1 cell projector (from DOFs) is not supported.");
-    Exceptions::amanzi_throw(msg);
-  }
-
   // miscalleneous
   int get_order() const { return order_; }
   void set_order(int order) { order_ = order; }

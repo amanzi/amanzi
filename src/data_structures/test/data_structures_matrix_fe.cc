@@ -96,7 +96,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
 
     auto faces = mesh->getCellFaces(c);
     for (int n = 0; n != faces.size(); ++n) {
-      auto face_cells = mesh->getFaceCells(faces[n], AmanziMesh::Parallel_kind::ALL);
+      auto face_cells = mesh->getFaceCells(faces[n]);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
       }
@@ -121,7 +121,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA)
 
     auto faces = mesh->getCellFaces(c);
     for (int n = 0; n != faces.size(); ++n) {
-      auto face_cells = mesh->getFaceCells(faces[n], AmanziMesh::Parallel_kind::ALL);
+      auto face_cells = mesh->getFaceCells(faces[n]);
       if (face_cells.size() > 1) {
         neighbor_cells.push_back(c == face_cells[0] ? face_cells[1] : face_cells[0]);
       }
