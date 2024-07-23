@@ -107,14 +107,13 @@ SUITE(OPERATOR_STOKES)
     }
 
     // -- Dirichlet condition at nodes for the normal velocity component
-    Point xv(2);
     Teuchos::RCP<BCs> bcv =
       Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::POINT));
     std::vector<int>& bcv_model = bcv->bc_model();
     std::vector<Point>& bcv_value = bcv->bc_value_point();
 
     for (int v = 0; v < nnodes_wghost; ++v) {
-      xv = mesh->getNodeCoordinate(v);
+      const auto xv = mesh->getNodeCoordinate(v);
 
       if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1]) < 1e-6 ||
           fabs(xv[1] - 1.0) < 1e-6) {
@@ -171,7 +170,7 @@ SUITE(OPERATOR_STOKES)
     Epetra_MultiVector& src = *source.ViewComponent("node");
 
     for (int v = 0; v < nnodes; v++) {
-      xv = mesh->getNodeCoordinate(v);
+      const auto xv = mesh->getNodeCoordinate(v);
       Point tmp(ana.source_exact(xv, 0.0));
       for (int k = 0; k < 2; ++k) src[k][v] = tmp[k];
     }
@@ -296,14 +295,13 @@ SUITE(OPERATOR_STOKES)
     }
 
     // -- Dirichlet condition at nodes for the normal velocity component
-    Point xv(2);
     Teuchos::RCP<BCs> bcv =
       Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::POINT));
     std::vector<int>& bcv_model = bcv->bc_model();
     std::vector<Point>& bcv_value = bcv->bc_value_point();
 
     for (int v = 0; v < nnodes_wghost; ++v) {
-      xv = mesh->getNodeCoordinate(v);
+      const auto xv = mesh->getNodeCoordinate(v);
 
       if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1]) < 1e-6 ||
           fabs(xv[1] - 1.0) < 1e-6) {
@@ -369,7 +367,7 @@ SUITE(OPERATOR_STOKES)
     Epetra_MultiVector& src = *source.ViewComponent("node");
 
     for (int v = 0; v < nnodes; v++) {
-      xv = mesh->getNodeCoordinate(v);
+      const auto xv = mesh->getNodeCoordinate(v);
       Point tmp(ana.source_exact(xv, 0.0));
       for (int k = 0; k < 2; ++k) src[k][v] = tmp[k];
     }

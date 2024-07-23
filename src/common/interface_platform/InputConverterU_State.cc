@@ -655,7 +655,7 @@ InputConverterU::TranslateState_()
       // -- solute concentation or fraction (gas phase)
       node = GetUniqueElementByTagsString_(inode, "gas_phase, solute_component", flag);
       if (flag) {
-        int noffset;
+        int noffset(0);
         std::string field_name;
         std::vector<double> vals(ncomp_g, 0.0);
 

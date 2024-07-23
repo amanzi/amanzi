@@ -2240,16 +2240,9 @@ The function-specification is one of the following parameter lists.
 { Function}
 
 
-Constant function
+Additive function
 .................
-{ FunctionConstant }
-
-
-.. _tabular function:
-
-Tabular function
-................
-{ FunctionTabular }
+{ FunctionAdditive }
 
 
 Bilinear function
@@ -2262,9 +2255,14 @@ Bilinear is space-time function
 { FunctionBilinearAndTime }
 
 
-Smooth step function
+Composition function
 ....................
-{ FunctionSmoothStep }
+{ FunctionComposition }
+
+
+Constant function
+.................
+{ FunctionConstant }
 
 
 Distance function
@@ -2272,14 +2270,19 @@ Distance function
 { FunctionDistance }
 
 
+Expression function
+...................
+{ FunctionExprTK }
+
+
+Multiplicative function
+........................
+{ FunctionMultiplicative }
+
+
 Multi-variable linear function
 ..............................
 { FunctionLinear }
-
-
-Polynomial function
-...................
-{ FunctionPolynomial }
 
 
 Multi-variable monomial function
@@ -2287,10 +2290,19 @@ Multi-variable monomial function
 { FunctionMonomial }
 
 
+Polynomial function
+...................
+{ FunctionPolynomial }
+
+
 Separable function
 ..................
 { FunctionSeparable }
 
+
+Smooth step function
+....................
+{ FunctionSmoothStep }
 
 
 Standard math functions
@@ -2298,29 +2310,16 @@ Standard math functions
 { FunctionStandardMath }
 
 
-Additive function
-.................
-{ FunctionAdditive }
-
-
-Composition function
-....................
-{ FunctionComposition }
-
-
-Multiplicative function
-.......................
-{ FunctionMultiplicative }
-
-
 Static head function
 ....................
 { FunctionStaticHead }
 
 
-Expression function
-...................
-{ FunctionExprTK }
+.. _tabular function:
+
+Tabular function
+................
+{ FunctionTabular }
 
 
 Time functions

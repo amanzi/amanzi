@@ -723,15 +723,18 @@ AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
 bool
 inside1(const Amanzi::AmanziGeometry::Point& p)
 {
-  Amanzi::AmanziGeometry::Point c(0.5, 0.5);
+  Amanzi::AmanziGeometry::Point c(p.dim());
+  c[0] = 0.5;
+  c[1] = 0.5;
+  if (p.dim() == 3) c[2] = 0.0;
   return (norm(p - c) < 0.06);
 }
-bool
-inside2(const Amanzi::AmanziGeometry::Point& p)
-{
-  Amanzi::AmanziGeometry::Point c(1.0, 0.0);
-  return (norm(p) < 0.06 || norm(p - c) < 0.06);
-}
+// bool
+// inside2(const Amanzi::AmanziGeometry::Point& p)
+// {
+//   Amanzi::AmanziGeometry::Point c(1.0, 0.0);
+//   return (norm(p) < 0.06 || norm(p - c) < 0.06);
+// }
 
 // support function for visualization: extrapolation to mesh nodes
 Teuchos::RCP<Epetra_MultiVector>
@@ -741,7 +744,6 @@ InterpolateCellToNode(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 {
   int order = dg.get_order();
   int nk = uc.NumVectors();
-  Amanzi::AmanziGeometry::Point xv(mesh->getSpaceDimension());
 
   int nnodes_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
                                           Amanzi::AmanziMesh::Parallel_kind::OWNED);
@@ -749,7 +751,7 @@ InterpolateCellToNode(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     new Epetra_MultiVector(mesh->getMap(Amanzi::AmanziMesh::Entity_kind::NODE, false), 1));
 
   for (int v = 0; v < nnodes_owned; ++v) {
-    xv = mesh->getNodeCoordinate(v);
+    const auto xv = mesh->getNodeCoordinate(v);
     const auto& cells = mesh->getNodeCells(v, Amanzi::AmanziMesh::Parallel_kind::ALL);
     int ncells = cells.size();
 

@@ -107,8 +107,6 @@ RunTest(const std::string xmlInFileName)
   Amanzi::ObservationData obs_data;
   Amanzi::CycleDriver cd(plist, S, comm, obs_data);
 
-  double dt(0.02), dt_max(0.1);
-
   cd.Init_PK(0);
   cd.Setup();
 
@@ -117,8 +115,7 @@ RunTest(const std::string xmlInFileName)
   S->set_position(0);
 
   // compute initial pressure
-  double biot(1.0), P0(7000.0), a(1.0);
-  double rho(1e+3), mu(1e-3), k(1e-12), phi_cp(0.0);
+  double dt(0.02), P0(7000.0), a(1.0);
   double factor(P0 / M_PI);
   double params[3];
 

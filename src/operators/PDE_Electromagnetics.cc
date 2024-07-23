@@ -290,9 +290,8 @@ PDE_Electromagnetics::GraphGeometry()
   auto map = mesh_->getMap(AmanziMesh::Entity_kind::NODE, false);
   auto xyz = Teuchos::rcp(new Epetra_MultiVector(map, d));
 
-  AmanziGeometry::Point xv;
   for (int n = 0; n < nnodes_owned; ++n) {
-    xv = mesh_->getNodeCoordinate(n);
+    const auto xv = mesh_->getNodeCoordinate(n);
     for (int i = 0; i < d; ++i) (*xyz)[i][n] = xv[i];
   }
 

@@ -429,7 +429,7 @@ LimiterCell::LimiterScalar_(const AmanziMesh::cEntity_ID_View& ids,
   limiter->PutScalar(1.0);
 
   double u1, u1x, u1_add, umin, umax;
-  AmanziGeometry::Point gradient_c(dim), xv(dim);
+  AmanziGeometry::Point gradient_c(dim);
   AmanziMesh::cEntity_ID_View ents;
 
   // limiting gradient inside domain
@@ -470,7 +470,7 @@ LimiterCell::LimiterScalar_(const AmanziMesh::cEntity_ID_View& ids,
         u1_add = lifting_->getValueSlope(c, xf);
       } else if (location_ == AmanziMesh::Entity_kind::NODE) {
         x = ents[i];
-        xv = mesh_->getNodeCoordinate(x);
+        const auto& xv = mesh_->getNodeCoordinate(x);
         u1_add = lifting_->getValueSlope(c, xv);
       }
 
