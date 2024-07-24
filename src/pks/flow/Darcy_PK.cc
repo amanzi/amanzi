@@ -121,14 +121,12 @@ Darcy_PK::Setup()
   std::string name = list3->get<std::string>("discretization primary");
 
   // primary field: pressure
-  if (!S_->HasRecord(pressure_key_)) {
-    std::vector<std::string> names;
-    std::vector<AmanziMesh::Entity_kind> locations;
-    std::vector<int> ndofs;
-
-    names.push_back("cell");
-    locations.push_back(AmanziMesh::Entity_kind::CELL);
-    ndofs.push_back(1);
+  // A new component is NOT added if its name and number of dofs are the same.
+  // Face components for matrix and fractured matrix are considered the same.
+  {
+    std::vector<std::string> names({ "cell" });
+    std::vector<AmanziMesh::Entity_kind> locations({ AmanziMesh::Entity_kind::CELL });
+    std::vector<int> ndofs({ 1 });
 
     if (name != "fv: default" && name != "nlfv: default") {
       names.push_back("face");
@@ -139,7 +137,7 @@ Darcy_PK::Setup()
     S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponents(names, locations, ndofs);
+      ->AddComponents(names, locations, ndofs);
   }
 
   // require additional fields and evaluators
