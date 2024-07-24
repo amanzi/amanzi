@@ -37,7 +37,8 @@
 #include "pks_transport_reg.hh"
 #include "State.hh"
 
-void CreateApertureFile(int ncells, double time);
+// Amanzi::MPC
+#include "mpc_utils.hh"
 
 TEST(MPC_DRIVER_THERMAL_FLOW_MATRIX_FRACTURE_RICHARDS)
 {
@@ -90,42 +91,5 @@ TEST(MPC_DRIVER_THERMAL_FLOW_MATRIX_FRACTURE_RICHARDS)
   // run simulation
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   cycle_driver.Go();
-}
-
-
-/* ******************************************************************
-* Write data to an HDF5 file.
-****************************************************************** */
-void CreateApertureFile(int ncells, double time)
-{
-  hid_t hout = H5Fcreate("test/aperture_dynamic_test.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-  hid_t gout = H5Gcreate(hout, "fracture-aperture.cell.0", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-  // times for aperture are hardcoded
-  std::vector<double> aperture0(ncells, 4.6416e-4);
-  std::vector<double> aperture1(ncells, 5.6416e-4);
-
-  std::vector<double> times = { 0.0, time };
-
-  hsize_t dims[2] = { (hsize_t)ncells, 1 };
-  hid_t dataspace = H5Screate_simple(2, dims, NULL);
-  hid_t dataset0 = H5Dcreate(gout, "0", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  H5Dwrite(dataset0, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, aperture0.data());
-  H5Dclose(dataset0);
-
-  hid_t dataset1 = H5Dcreate(gout, "1", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  H5Dwrite(dataset1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, aperture1.data());
-  H5Dclose(dataset1);
-
-  hsize_t time_dims[1] = {2};
-  hid_t time_dataspace = H5Screate_simple(1, time_dims, NULL);
-  hid_t time_dataset = H5Dcreate(hout, "time", H5T_NATIVE_DOUBLE, time_dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  H5Dwrite(time_dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, times.data());
-  H5Dclose(time_dataset);
-
-  H5Sclose(dataspace);
-  H5Sclose(time_dataspace);
-  H5Gclose(gout);
-  H5Fclose(hout);
 }
 
