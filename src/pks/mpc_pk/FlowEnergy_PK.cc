@@ -62,6 +62,7 @@ FlowEnergy_PK::Setup()
   // Our decision can be affected by the list of models
   auto physical_models = Teuchos::sublist(my_list_, "physical models and assumptions");
   bool vapor_diff = physical_models->get<bool>("vapor diffusion");
+  bool thermoelasticity = physical_models->get<bool>("thermoelasticity", false);
 
   if (physical_models->isParameter("eos lookup table")) {
     eos_table_ = physical_models->get<std::string>("eos lookup table");
@@ -120,7 +121,8 @@ FlowEnergy_PK::Setup()
   std::string model = (vapor_diff) ? "two-phase" : "one-phase";
   Teuchos::ParameterList& flow =
     glist_->sublist("PKs").sublist(pks[0]).sublist("physical models and assumptions");
-  flow.set<bool>("vapor diffusion", vapor_diff);
+  flow.set<bool>("vapor diffusion", vapor_diff)
+      .set<bool>("thermoelasticity", thermoelasticity);
 
   // -- energy
   Teuchos::ParameterList& energy =
