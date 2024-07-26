@@ -468,7 +468,7 @@ Mechanics_PK::AddTemperatureGradient(CompositeVector& rhs)
     rhs.PutScalarGhosted(0.0);
 
     for (int c = 0; c < ncells_owned_; ++c) {
-      // pressure gradient
+      // compute temperature gradient
       double vol = mesh_->getCellVolume(c);
       const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
       const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
