@@ -331,10 +331,30 @@ Mechanics_PK::ComputeOperatorBCs()
       std::vector<int>& bc_model = op_bcs_[1]->bc_model();
       std::vector<double>& bc_value = op_bcs_[1]->bc_value();
 
-      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-        int n = it->first;
-        bc_model[n] = Operators::OPERATOR_BC_KINEMATIC;
-        bc_value[n] = it->second[0];
+      if (bcs_[i]->plane_strain_direction() == "x") {
+        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+          int n = it->first;
+          bc_model[n] |= Operators::OPERATOR_BC_PLANE_STRAIN_X;
+          bc_value[n] = it->second[0];
+        }
+      } else if (bcs_[i]->plane_strain_direction() == "y") {
+        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+          int n = it->first;
+          bc_model[n] |= Operators::OPERATOR_BC_PLANE_STRAIN_Y;
+          bc_value[n] = it->second[0];
+        }
+      } else if (bcs_[i]->plane_strain_direction() == "z") {
+        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+          int n = it->first;
+          bc_model[n] |= Operators::OPERATOR_BC_PLANE_STRAIN_Z;
+          bc_value[n] = it->second[0];
+        }
+      } else {
+        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+          int n = it->first;
+          bc_model[n] = Operators::OPERATOR_BC_KINEMATIC;
+          bc_value[n] = it->second[0];
+        }
       }
     }
   }

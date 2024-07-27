@@ -57,6 +57,8 @@ struct BCs {
 
   std::string filename, xheader, yheader, variable;
   double mol_mass;
+
+  std::string kinematic;
 };
 
 

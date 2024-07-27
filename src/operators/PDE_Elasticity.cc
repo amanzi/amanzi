@@ -419,8 +419,9 @@ PDE_Elasticity::ApplyBCs_Kinematic_(const BCs& bc, bool primary, bool eliminate,
   const auto& bc_value = bc.bc_value();
 
   auto rhs = global_op_->rhs();
-  Teuchos::RCP<Epetra_MultiVector> rhs_node;
+  Teuchos::RCP<Epetra_MultiVector> rhs_node, rhs_face;
   if (rhs()->HasComponent("node")) rhs_node = rhs->ViewComponent("node", true);
+  if (rhs()->HasComponent("face")) rhs_face = rhs->ViewComponent("face", true);
 
   rhs->PutScalarGhosted(0.0);
 
@@ -457,6 +458,33 @@ PDE_Elasticity::ApplyBCs_Kinematic_(const BCs& bc, bool primary, bool eliminate,
 
         if (eliminate) {
           // AMANZI_ASSERT(false);
+        }
+
+      } else if (bc_model[v] == OPERATOR_BC_PLANE_STRAIN_X ||
+                 bc_model[v] == OPERATOR_BC_PLANE_STRAIN_Y ||
+                 bc_model[v] == OPERATOR_BC_PLANE_STRAIN_Z) {
+        int k(0);
+        if (bc_model[v] == OPERATOR_BC_PLANE_STRAIN_Y) k = 1;
+        if (bc_model[v] == OPERATOR_BC_PLANE_STRAIN_Z) k = 2;
+        double value = (mesh_->getNodeCoordinate(v))[k];
+
+        int noff = d * n + k;
+
+        if (eliminate) {
+          for (int m = 0; m < ncols; m++) {
+            if (m < d * nnodes) 
+              (*rhs_node)[k][m % d] -= Acell(m, noff) * value;
+            else
+              (*rhs_face)[0][m - d * nnodes] -= Acell(m, noff) * value;
+            Acell(m, noff) = 0.0;
+            Acell(noff, m) = 0.0;
+          }
+        }
+
+        if (essential_eqn) {
+          const auto& cells = mesh_->getNodeCells(v);
+          Acell(noff, noff) = 1.0 / cells.size();
+          if (v < nnodes_owned) (*rhs_node)[k][v] = value;
         }
       }
     }
