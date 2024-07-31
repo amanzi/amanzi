@@ -31,12 +31,12 @@ class ThermalConductivityConstant : public EOS_ThermalConductivity {
   explicit ThermalConductivityConstant(Teuchos::ParameterList& plist)
     : EOS_ThermalConductivity(plist)
   {
-    tc_ = plist.get<double>("thermal conductivity");
+    tc_ = plist_.get<double>("reference conductivity");
   }
 
-  virtual double ThermalConductivity(double T, double p) override { return tc_; }
-  virtual double DThermalConductivityDT(double T, double p) override { return 0.0; }
-  virtual double DThermalConductivityDP(double T, double p) override { return 0.0; }
+  virtual double ThermalConductivity(double T, double phi) override { return tc_; }
+  virtual double DThermalConductivityDT(double T, double phi) override { return 0.0; }
+  virtual double DThermalConductivityDPhi(double T, double phi) override { return 0.0; }
 
  protected:
   double tc_;

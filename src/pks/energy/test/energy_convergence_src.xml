@@ -81,12 +81,18 @@
       <ParameterList name="thermal conductivity evaluator">
 	<ParameterList name="ALL">
 	  <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-	  <Parameter name="thermal conductivity of rock" type="double" value="0."/>
-	  <Parameter name="thermal conductivity of liquid" type="double" value="4.0"/>
-	  <Parameter name="reference temperature" type="double" value="1.0"/>
-	  <Parameter name="polynomial expansion" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
-	  <Parameter name="eos type" type="string" value="liquid water"/>
 	  <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <ParameterList name="solid phase">
+            <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="0.0"/>
+            <Parameter name="reference temperature" type="double" value="1.0"/>
+          </ParameterList>
+          <ParameterList name="liquid phase">
+            <Parameter name="eos type" type="string" value="liquid water"/>
+            <Parameter name="reference conductivity" type="double" value="4.0"/>
+            <Parameter name="reference temperature" type="double" value="1.0"/>
+	    <Parameter name="polynomial expansion" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
+	  </ParameterList>
 	</ParameterList>
       </ParameterList>
 

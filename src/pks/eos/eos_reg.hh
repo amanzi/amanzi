@@ -30,6 +30,7 @@
 #include "IdealGas_ThermalConductivity.hh"
 #include "IsobaricEOSEvaluator.hh"
 #include "MolarFractionGasEvaluator.hh"
+#include "NaCl_ThermalConductivity.hh"
 #include "ThermalConductivityConstant.hh"
 #include "VaporInGas_Density.hh"
 #include "VaporInGas_Diffusion.hh"
@@ -75,6 +76,8 @@ Utils::RegisteredFactory<EOS_ThermalConductivity, H2O_ThermalConductivity>
   H2O_ThermalConductivity::reg_("liquid water");
 Utils::RegisteredFactory<EOS_ThermalConductivity, ThermalConductivityConstant>
   ThermalConductivityConstant::reg_("constant");
+Utils::RegisteredFactory<EOS_ThermalConductivity, NaCl_ThermalConductivity>
+  NaCl_ThermalConductivity::reg_("salt");
 
 } // namespace AmanziEOS
 } // namespace Amanzi

@@ -868,12 +868,17 @@
       <ParameterList name="thermal conductivity evaluator">
         <ParameterList name="All">
           <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-          <Parameter name="thermal conductivity of liquid" type="double" value="0.0"/>
-          <Parameter name="thermal conductivity of rock" type="double" value="2.59399999999999986e+00"/>
-          <Parameter name="reference temperature" type="double" value="2.98149999999999977e+02"/>
-          <Parameter name="eos type" type="string" value="constant"/>
-          <Parameter name="thermal conductivity" type="double" value="2.59399999999999986e+00"/>
 	  <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <ParameterList name="solid phase">
+            <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="2.594"/>
+            <Parameter name="reference temperature" type="double" value="298.15"/>
+          </ParameterList>
+          <ParameterList name="liquid phase">
+	    <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="2.594"/>
+            <Parameter name="reference temperature" type="double" value="298.15"/>
+	  </ParameterList>
         </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">
@@ -935,12 +940,17 @@
       <ParameterList name="thermal conductivity evaluator">
         <ParameterList name="All">
           <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-          <Parameter name="thermal conductivity of liquid" type="double" value="0.0"/>
-          <Parameter name="thermal conductivity of rock" type="double" value="0.0"/>
-          <Parameter name="reference temperature" type="double" value="2.98149999999999977e+02"/>
-          <Parameter name="eos type" type="string" value="constant"/>
-          <Parameter name="thermal conductivity" type="double" value="0.0"/>
 	  <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <ParameterList name="solid phase">
+            <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="0.0"/>
+            <Parameter name="reference temperature" type="double" value="298.15"/>
+          </ParameterList>
+          <ParameterList name="liquid phase">
+	    <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="0.0"/>
+            <Parameter name="reference temperature" type="double" value="298.15"/>
+	  </ParameterList>
         </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">

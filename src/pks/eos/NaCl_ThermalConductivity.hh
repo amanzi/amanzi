@@ -10,11 +10,11 @@
 /*
   EOS
 
-  Thermal conductivity for liquid water.
+  Thermal conductivity for salt.
 */
 
-#ifndef AMANZI_EOS_H2O_THERMAL_CONDUCTIVITY_HH_
-#define AMANZI_EOS_H2O_THERMAL_CONDUCTIVITY_HH_
+#ifndef AMANZI_EOS_SALT_THERMAL_CONDUCTIVITY_HH_
+#define AMANZI_EOS_SALT_THERMAL_CONDUCTIVITY_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -26,26 +26,21 @@ namespace Amanzi {
 namespace AmanziEOS {
 
 // Equation of State model
-class H2O_ThermalConductivity : public EOS_ThermalConductivity {
+class NaCl_ThermalConductivity : public EOS_ThermalConductivity {
  public:
-  explicit H2O_ThermalConductivity(Teuchos::ParameterList& plist);
-  virtual ~H2O_ThermalConductivity(){};
+  explicit NaCl_ThermalConductivity(Teuchos::ParameterList& plist);
+  virtual ~NaCl_ThermalConductivity(){};
 
   virtual double ThermalConductivity(double T, double phi);
   virtual double DThermalConductivityDT(double T, double phi);
-  virtual double DThermalConductivityDPhi(double T, double phi)
-  {
-    AMANZI_ASSERT(false);
-    return 0.0;
-  }
+  virtual double DThermalConductivityDPhi(double T, double phi);
 
  protected:
-  // constants for water, hard-coded
-  double ka0_, ka1_, ka2_;
   double kref_, Tref_;
+  bool clipping_;
 
  private:
-  static Utils::RegisteredFactory<EOS_ThermalConductivity, H2O_ThermalConductivity> reg_;
+  static Utils::RegisteredFactory<EOS_ThermalConductivity, NaCl_ThermalConductivity> reg_;
 };
 
 } // namespace AmanziEOS

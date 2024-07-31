@@ -1765,7 +1765,7 @@ Molar enthalpy
 
 Thermal conductivity
 ....................
-{ TCMFactory_TwoPhase }
+{ TCMEvaluator_OnePhase }
 
 
 Operators

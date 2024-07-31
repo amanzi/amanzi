@@ -33,7 +33,7 @@ H2O_ThermalConductivity::H2O_ThermalConductivity(Teuchos::ParameterList& plist)
     kref_(0.6065),
     Tref_(298.15)
 {
-  kref_ = plist_.get<double>("thermal conductivity of liquid", kref_);
+  kref_ = plist_.get<double>("reference conductivity", kref_);
   Tref_ = plist_.get<double>("reference temperature", Tref_);
 
   if (plist_.isParameter("polynomial expansion")) {
@@ -55,7 +55,7 @@ H2O_ThermalConductivity::H2O_ThermalConductivity(Teuchos::ParameterList& plist)
 * Main routine uses pre-computed coefficients.
 ******************************************************************* */
 double
-H2O_ThermalConductivity::ThermalConductivity(double T, double p)
+H2O_ThermalConductivity::ThermalConductivity(double T, double phi)
 {
   double Ts = T / Tref_;
   double k = ka0_ + (ka1_ + ka2_ * Ts) * Ts;
@@ -75,7 +75,7 @@ H2O_ThermalConductivity::ThermalConductivity(double T, double p)
 * Main routine uses pre-computed coefficients.
 ******************************************************************* */
 double
-H2O_ThermalConductivity::DThermalConductivityDT(double T, double p)
+H2O_ThermalConductivity::DThermalConductivityDT(double T, double phi)
 {
   double Ts = T / Tref_;
   double dkdT = (ka1_ + 2 * ka2_ * Ts) / Tref_;

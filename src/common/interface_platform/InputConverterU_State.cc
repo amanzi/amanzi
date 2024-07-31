@@ -246,7 +246,7 @@ InputConverterU::TranslateState_()
       }
 
       // -- rock heat capacity
-      node = GetUniqueElementByTagsString_(inode, "thermal_properties, rock_heat_capacity", flag);
+      node = GetUniqueElementByTagsString_(inode, "thermal_properties, solid_heat_capacity", flag);
       if (flag) {
         double cv =
           GetAttributeValueD_(node, "cv", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "m^2/s^2/K");
@@ -452,7 +452,7 @@ InputConverterU::TranslateState_()
       }
 
       // -- rock heat capacity
-      node = GetUniqueElementByTagsString_(inode, "thermal_properties, rock_heat_capacity", flag);
+      node = GetUniqueElementByTagsString_(inode, "thermal_properties, solid_heat_capacity", flag);
       if (flag) {
         double cv =
           GetAttributeValueD_(node, "cv", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "m^2/s^2/K");

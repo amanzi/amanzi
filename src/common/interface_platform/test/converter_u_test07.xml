@@ -145,7 +145,7 @@
       <permeability x="6.9365E-11 m^2" z="6.9365E-12 m^2" />
       <thermal_properties model="constant">
         <liquid_heat_capacity cv="76.1" model="linear"/>
-        <rock_heat_capacity cv="620.1 J/K/kg" model="linear"/>
+        <solid_heat_capacity cv="620.1 J/K/kg" model="linear"/>
       </thermal_properties>
       <assigned_regions>TopRegion</assigned_regions>
     </material>
@@ -160,7 +160,7 @@
       <rel_perm model="mualem"/>
       <thermal_properties model="constant">
         <liquid_heat_capacity cv="76.2" model="linear"/>
-        <rock_heat_capacity cv="620.2 J/K/kg" model="linear"/>
+        <solid_heat_capacity cv="620.2 J/K/kg" model="linear"/>
       </thermal_properties>
       <assigned_regions>BottomRegion</assigned_regions>
     </material>

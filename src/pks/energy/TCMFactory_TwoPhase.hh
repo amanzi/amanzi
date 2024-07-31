@@ -52,30 +52,6 @@ The two-phase model accepts the following parameters.
   </ParameterList>
   </ParameterList>
 
-The single-phase model accepts some of the parameters defined above (see the example)
-and a few additional parameters.
-
-.. admonition:: tcm_one_phase-spec
-
-  * `"reference temperature`" ``[double]`` defines temperature at which reference conductivity
-    of liquid is calculated. Default value is 298.15 [K].
-
-  * `"polynomial expansion`" ``[Array(double)]`` collect coefficients in the quadratic representation
-    of the thermal conductivity of liquid with respect to the dimensionless parameter T/Tref.
-
-.. code-block:: xml
-
-  <ParameterList name="_ENERGY">  <!-- parent list -->
-  <ParameterList name="thermal conductivity evaluator">
-    <ParameterList name="thermal conductivity parameters">
-      <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-      <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
-      <Parameter name="reference temperature" type="double" value="298.15"/>
-      <Parameter name="polynomial expansion" type="Array(double)" value="{-1.48445, 4.12292, -1.63866}"/>
-    </ParameterList>
-  </ParameterList>
-  </ParameterList>
-
 */
 
 #ifndef PK_ENERGY_TCM_FACTORY_TWOPHASE_HH_

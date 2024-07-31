@@ -504,7 +504,7 @@ Mechanics_PK::AddTemperatureGradient(CompositeVector& rhs)
       grad /= vol;
 
       double a = eval->getThermalCoefficients(c).second;
-      a *= (d == 3) ? E[0][c] / (1 + nu[0][c]) / (1 - 2 * nu[0][c]) : E[0][c] / (1 - nu[0][c]);
+      a *= (d == 3) ? E[0][c] / (1 - 2 * nu[0][c]) / 3 : E[0][c] / (1 - nu[0][c]) / 2;
 
       // temperature gradient
       auto nodes = mesh_->getCellNodes(c);
