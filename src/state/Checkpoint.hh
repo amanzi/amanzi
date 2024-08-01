@@ -183,14 +183,18 @@ Checkpoint::Read<int>(const std::string& name, int& t) const
 {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
   if (!output_.count(domain)) domain = "domain";
-  std::string fname = std::string("./err.") + std::to_string(output_.at("domain")->Comm()->MyPID());
-  std::fstream str(fname);
-  str << "rank (" << output_.at("domain")->Comm()->MyPID() << "/"
-      << output_.at("domain")->Comm()->NumProc() << ") on comm ("
-      << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
-      << ") reading \"" << name << "\" from domain \"" << domain << "\" in file \""
-      << output_.at(domain)->H5DataFilename() << std::endl;
-  output_.at(domain)->readAttrInt(t, name);
+  for (auto& o : output_) {
+    if (o.first == "domain") {
+      std::string fname = std::string("./err.") + std::to_string(output_.at("domain")->Comm()->MyPID());
+      std::fstream str(fname);
+      str << "rank (" << output_.at("domain")->Comm()->MyPID() << "/"
+          << output_.at("domain")->Comm()->NumProc() << ") on comm ("
+          << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
+          << ") reading \"" << name << "\" from domain \"" << domain << "\" in file \""
+          << output_.at(domain)->H5DataFilename() << std::endl;
+      output_.at(domain)->readAttrInt(t, name);
+    }
+  }
   return true; // FIXME
 }
 
