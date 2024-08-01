@@ -889,7 +889,7 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
     }
 
     // -- process global and local BC separately
-    double refv;
+    double refv(0.0);
     std::vector<double> grad, refc, data, data_tmp;
     BCs bcs;
 

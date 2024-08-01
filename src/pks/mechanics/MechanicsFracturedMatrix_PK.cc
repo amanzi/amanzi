@@ -74,7 +74,7 @@ MechanicsFracturedMatrix_PK::Setup()
 
   aperture_key_ = Keys::getKey("fracture", "aperture");
   ref_aperture_key_ = Keys::getKey("fracture", "ref_aperture");
-  aperture_stiffness_key_ = Keys::getKey("fracture", "aperture_stiffness");
+  fracture_stiffness_key_ = Keys::getKey("fracture", "fracture_stiffness");
   pressure_key_ = Keys::getKey("fracture", "pressure");
 
   // displacement field
@@ -116,8 +116,8 @@ MechanicsFracturedMatrix_PK::Setup()
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
-  if (!S_->HasRecord(aperture_stiffness_key_)) {
-    S_->Require<CV_t, CVS_t>(aperture_stiffness_key_, Tags::DEFAULT)
+  if (!S_->HasRecord(fracture_stiffness_key_)) {
+    S_->Require<CV_t, CVS_t>(fracture_stiffness_key_, Tags::DEFAULT)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
@@ -206,7 +206,7 @@ MechanicsFracturedMatrix_PK::CommitStep(double t_old, double t_new, const Tag& t
 void
 MechanicsFracturedMatrix_PK::AddFractureMatrices_(CompositeVector& rhs)
 {
-  const auto& E_c = *S_->Get<CV_t>(aperture_stiffness_key_).ViewComponent("cell");
+  const auto& E_c = *S_->Get<CV_t>(fracture_stiffness_key_).ViewComponent("cell");
   const auto& a0_c = *S_->Get<CV_t>(ref_aperture_key_).ViewComponent("cell");
   const auto& p_c = *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
   const auto& rhs_f = *rhs.ViewComponent("face");

@@ -7,10 +7,8 @@
   Authors: Ethan Coon (coonet@ornl.gov)
 */
 
-//! FunctionNDLinear: a piecewise ND-linear function.
+//! A piecewise bilinear function that is additionally linear interpolated in time.
 /*!
-
-A piecewise bilinear function that is additionally linear interpolated in time.
 
 Define :math:`i(x) = i : x_i < x <= x_{{i+1}}` and similarly :math:`j(y) = j : y_j < y <= y_{{j+1}}`
 for monotonically increasing :math:`x_i` and :math:`y_j`.
@@ -22,7 +20,8 @@ bilinear interpolation on
 are out of those bounds, and constant at the corner value if both are out of
 bounds.
 
-.. admonition:: function_bilinear-spec
+.. _function-bilinear-and-time-spec:
+.. admonition:: function-bilinear-and-time-spec
 
   * `"file`" ``[string]`` HDF5 filename of the data
   * `"time header`" ``[string]`` **time** Name of the temporal dimension indices, the :math:`t_i`.
@@ -40,7 +39,7 @@ Example:
 
 .. code-block:: xml
 
-  <ParameterList name="function-nd-linear">
+  <ParameterList name="function-bilinear-and-time">
     <Parameter name="file" type="string" value="head.h5"/>
     <Parameter name="time header" type="string" value="time"/>
     <Parameter name="row header" type="string" value="x"/>

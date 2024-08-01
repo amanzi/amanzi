@@ -297,7 +297,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="fracture-aperture_stiffness">
+      <ParameterList name="fracture-fracture_stiffness">
         <ParameterList name="function">
           <ParameterList name="ALL">
             <Parameter name="regions" type="Array(string)" value="{fracture}"/>

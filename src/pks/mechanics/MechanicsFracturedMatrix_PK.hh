@@ -52,7 +52,7 @@ class MechanicsFracturedMatrix_PK : public MechanicsSmallStrain_PK {
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_fracture_;
 
-  Key aperture_key_, ref_aperture_key_, aperture_stiffness_key_, pressure_key_;
+  Key aperture_key_, ref_aperture_key_, fracture_stiffness_key_, pressure_key_;
 
  private:
   static RegisteredPKFactory<MechanicsFracturedMatrix_PK> reg_;

@@ -127,9 +127,9 @@ SUITE(GeochemistryTestsChemistryPK)
     // up a chemistry process kernel....
     try {
       cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
-    } catch (Exceptions::Amanzi_exception chem_error) {
+    } catch (Exceptions::Amanzi_exception& chem_error) {
       std::cout << "ERROR test1 " << chem_error.what() << std::endl;
-    } catch (std::exception e) {
+    } catch (std::exception& e) {
       std::cout << "ERROR test1a " << e.what() << std::endl;
     }
   }
@@ -146,7 +146,7 @@ SUITE(GeochemistryTestsChemistryPK)
       state_->InitializeFields();
       state_->InitializeEvaluators();
       cpk_->Initialize();
-    } catch (std::exception e) {
+    } catch (std::exception& e) {
       std::cout << "ERROR test2 " << e.what() << std::endl;
       throw e;
     }
@@ -164,7 +164,7 @@ SUITE(GeochemistryTestsChemistryPK)
       state_->InitializeFields();
       state_->InitializeEvaluators();
       cpk_->Initialize();
-    } catch (std::exception e) {
+    } catch (std::exception& e) {
       std::cout << "ERROR test3 " << e.what() << std::endl;
       throw e;
     }

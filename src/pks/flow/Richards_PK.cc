@@ -152,11 +152,11 @@ Richards_PK::Setup()
     ndofs.push_back(1);
   }
 
-  if (!S_->HasRecord(pressure_key_)) {
+  {
     S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponents(names, locations, ndofs);
+      ->AddComponents(names, locations, ndofs);
   }
 
   // Require conserved quantity.

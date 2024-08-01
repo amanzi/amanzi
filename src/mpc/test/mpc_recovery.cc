@@ -47,6 +47,9 @@
 #include "State.hh"
 #include "VerboseObject.hh"
 
+// Amanzi::MPC
+#include "mpc_utils.hh"
+
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
@@ -233,6 +236,8 @@ TEST(MPC_RECOVERY_COUPLED_FLOW)
 TEST(MPC_RECOVERY_COUPLED_THERMAL_FLOW)
 {
   // ::Run<FlowEnergyMatrixFracture_PK>("test/mpc_coupled_thermal_flow.xml", 3, { 100.0, 100.0, 100.0 }, 1);
+  CreateApertureFile(144, 300.0);
+
   ::Run<FlowEnergyMatrixFracture_PK>(
     "test/mpc_coupled_thermal_flow_richards.xml", 3, { 10.0, 10.0, 10.0 }, 1);
 }

@@ -235,7 +235,6 @@ AnalyticBase::ComputeNodeError(Epetra_MultiVector& p,
   hnorm = 0.0;
   h1_err = 0.0;
 
-  Amanzi::AmanziGeometry::Point xv(d_);
   Amanzi::AmanziGeometry::Point grad(d_);
 
   Teuchos::ParameterList plist;
@@ -258,7 +257,7 @@ AnalyticBase::ComputeNodeError(Epetra_MultiVector& p,
       cell_solution[k].Reshape(d_, 0);
       cell_solution[k](0) = p[0][v];
 
-      xv = mesh_->getNodeCoordinate(v);
+      const auto xv = mesh_->getNodeCoordinate(v);
       double tmp = pressure_exact(xv, t);
 
       if (std::abs(tmp - p[0][v]) > .01) {
