@@ -51,7 +51,7 @@ NaCl_ThermalConductivity::ThermalConductivity(double T, double phi)
 
   if (clipping_ && phi > 0.38815868) coef2 = 0.600967458596102;
 
-  return coef1 * coef2;
+  return coef1 * coef2 / 5.0;
 }
 
 
@@ -69,7 +69,7 @@ NaCl_ThermalConductivity::DThermalConductivityDT(double T, double phi)
   double phi4 = phi3 * phi;
   double coef2 = 5.0 + 1.5 * phi - 136.0 * phi2 + 370.0 * phi3 - 270 * phi4;
 
-  return coef1 * coef2;
+  return coef1 * coef2 / 5.0;
 }
 
 
@@ -88,7 +88,7 @@ NaCl_ThermalConductivity::DThermalConductivityDPhi(double T, double phi)
 
   if (clipping_ && phi > 0.38815868) coef2 = 0.0;
 
-  return coef1 * coef2;
+  return coef1 * coef2 / 5.0;
 }
 
 } // namespace AmanziEOS

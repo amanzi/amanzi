@@ -99,7 +99,7 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
     std::string model_l, model_s;
     node = GetUniqueElementByTagsString_(materials[i], "thermal_properties, liquid_conductivity", flag);
     if (flag) { 
-      model_l = GetAttributeValueS_(node, "model", "constant, liquid water");
+      model_l = GetAttributeValueS_(node, "model", "constant, liquid water, ideal gas");
       cv_l = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX,  "W/m/K");
     }
 
@@ -132,7 +132,8 @@ InputConverterU::TranslateEnergy_(const std::string& domain, const std::string& 
       tmp.sublist("liquid phase")
         .set<std::string>("eos type", model_l)
         .set<double>("reference conductivity", cv_l)
-        .set<double>("reference temperature", 298.15);
+        .set<double>("reference temperature", 298.15)
+        .set<double>("Sutherland constant", ref_sutherland_);
     }
   }
 

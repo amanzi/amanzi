@@ -980,6 +980,7 @@
             <Parameter name="eos type" type="string" value=""/>
             <Parameter name="reference conductivity" type="double" value="0.00000000000000000e+00"/>
             <Parameter name="reference temperature" type="double" value="2.98149999999999977e+02"/>
+            <Parameter name="Sutherland constant" type="double" value="111.0"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="TCM_1">
@@ -994,6 +995,7 @@
             <Parameter name="eos type" type="string" value=""/>
             <Parameter name="reference conductivity" type="double" value="0.00000000000000000e+00"/>
             <Parameter name="reference temperature" type="double" value="2.98149999999999977e+02"/>
+            <Parameter name="Sutherland constant" type="double" value="111.0"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -1206,6 +1208,7 @@
             <Parameter name="eos type" type="string" value=""/>
             <Parameter name="reference conductivity" type="double" value="0.00000000000000000e+00"/>
             <Parameter name="reference temperature" type="double" value="2.98149999999999977e+02"/>
+            <Parameter name="Sutherland constant" type="double" value="111.0"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
