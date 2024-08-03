@@ -129,6 +129,8 @@ Checkpoint::Checkpoint(const std::string& filename,
                        const std::string& domain)
   : IOEvent()
 {
+  int num_procs(-1);
+  bool is_num_procs(false);
   // if provided a directory, use new style
   if (std::filesystem::is_directory(filename)) {
     Key domain_name = Keys::replace_all(domain, ":", "-");
@@ -136,11 +138,26 @@ Checkpoint::Checkpoint(const std::string& filename,
     single_file_ = false;
     output_[domain] = Teuchos::rcp(new HDF5_MPI(comm, chkp_file.string()));
     output_[domain]->open_h5file(true);
-
+    for (auto& o : output_) {
+      if (o.first == "domain") {
+        try {
+          Read("mpi_num_procs", num_procs);
+        } catch (const std::out_of_range& e) {
+          Read("mpi_comm_world_rank", num_procs); // old, deprecated name
+        }
+        is_num_procs = true;
+      }
+    }
   } else if (std::filesystem::is_regular_file(filename)) {
     single_file_ = true;
     output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, filename));
     output_["domain"]->open_h5file(true);
+    try {
+      Read("mpi_num_procs", num_procs);
+    } catch (const std::out_of_range& e) {
+      Read("mpi_comm_world_rank", num_procs); // old, deprecated name
+    }
+    is_num_procs = true;
   } else {
     Errors::Message message;
     message << "Checkpoint::Read: location \"" << filename << "\" does not exist.";
@@ -148,14 +165,7 @@ Checkpoint::Checkpoint(const std::string& filename,
   }
 
   // check the comm_size for consistency
-  int num_procs(-1);
-  Read("mpi_num_procs", num_procs);
-  if (num_procs == 0) {
-    // checkpoint file has no attribute of that name
-    Read("mpi_comm_world_rank", num_procs); // old, deprecated name
-  }
-
-  if (comm->NumProc() != num_procs) {
+  if (is_num_procs && comm->NumProc() != num_procs) {
     Errors::Message msg;
     msg << "Requested checkpoint file " << filename << " was created on " << num_procs
         << " processes, making it incompatible with this run on " << comm->NumProc()
