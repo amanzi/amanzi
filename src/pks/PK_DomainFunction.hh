@@ -28,6 +28,9 @@ its functionality.
 #include "Key.hh"
 #include "PKsDefs.hh"
 
+#include "CompositeVector.hh"
+
+
 namespace Amanzi {
 
 class PK_DomainFunction {
@@ -58,6 +61,9 @@ class PK_DomainFunction {
   typename std::map<int, std::vector<double>>::iterator end() { return value_.end(); }
   typename std::map<int, std::vector<double>>::size_type size() { return value_.size(); }
 
+  // typename std::map<int, std::vector<double>>::const_iterator begin() const { return value_.begin(); }
+  // typename std::map<int, std::vector<double>>::const_iterator end() const { return value_.end(); }
+
  protected:
   std::map<int, std::vector<double>> value_;
   std::map<int, double> linear_term_;
@@ -65,6 +71,18 @@ class PK_DomainFunction {
   std::string keyword_;
   std::string name_;
 };
+
+// void inline copyToCompositeVector(const PK_DomainFunction& df, CompositeVector& cv, const std::string& compname)
+//   {
+//     Epetra_MultiVector& mv = *cv.ViewComponent("cell", true);
+//     for (const auto& val : df) {
+//       AMANZI_ASSERT(val.second.size() == mv.NumVectors());
+//       for (int j=0; j!=mv.NumVectors(); ++j) {
+//         mv[j][val.first] = val.second[j];
+//       }
+//     }
+//   }
+
 
 } // namespace Amanzi
 
