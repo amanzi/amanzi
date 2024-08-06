@@ -1,0 +1,269 @@
+ WARNING: Card (NONISOTHERMAL) not found in input file.
+
+ ! ************************************************************************** !
+
+ Initial Basis
+
+ Primary Species:
+  Na+
+    Charge:   1.00
+    Molar Mass:   22.9898 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+
+  Ca++
+    Charge:   2.00
+    Molar Mass:   40.0780 [g/mol]
+    Debye-Huckel a0:    6.0000 [Angstrom]
+
+  Mg++
+    Charge:   2.00
+    Molar Mass:   24.3050 [g/mol]
+    Debye-Huckel a0:    8.0000 [Angstrom]
+
+  Cl-
+    Charge:  -1.00
+    Molar Mass:   35.4527 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+
+
+ Secondary Species: None
+
+ Gas Components: None
+
+ Minerals: None
+
+ Surface Complexation Reactions: None
+
+   Surface Complexes: None
+
+ Ion Exchange Reactions:
+   Mineral: 
+      CEC:  7.5000E+02
+   Cations:
+      Na+ 1.0000E+00
+      Ca++ 3.3864E+00
+      Mg++ 6.0024E+00
+
+
+ ! ************************************************************************** !
+
+
+ ! ************************************************************************** !
+
+ Final Basis
+
+ Primary Species:
+  Na+
+    Charge:   1.00
+    Molar Mass:   22.9898 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+
+  Ca++
+    Charge:   2.00
+    Molar Mass:   40.0780 [g/mol]
+    Debye-Huckel a0:    6.0000 [Angstrom]
+
+  Mg++
+    Charge:   2.00
+    Molar Mass:   24.3050 [g/mol]
+    Debye-Huckel a0:    8.0000 [Angstrom]
+
+  Cl-
+    Charge:  -1.00
+    Molar Mass:   35.4527 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+
+
+ Secondary Species: None
+
+ Gas Components: None
+
+ Minerals: None
+
+ Surface Complexation Reactions: None
+
+   Surface Complexes: None
+
+ Ion Exchange Reactions:
+   Mineral: 
+      CEC:  7.5000E+02
+   Cations:
+      Na+ 1.0000E+00
+      Ca++ 3.3864E+00
+      Mg++ 6.0024E+00
+
+
+ ! ************************************************************************** !
+
+--------------------------------------------------------------------------------
+
+     4  Primary Species
+
+              Na+                   Ca++                  Mg++                
+              Cl-                 
+
+     0  Secondary Complex Species
+
+
+
+     0  Active Gas Species
+
+
+
+     0  Passive Gas Species
+
+
+
+     0  Reference Minerals
+
+
+
+     0  Kinetic Mineral Reactions
+
+
+
+     1  Ion Exchange Reactions
+
+     3  Ion Exchange Cations
+--------------------------------------------------------------------------------
+Constraint Species: Na+
+Constraint Species: Ca++
+Constraint Species: Mg++
+Constraint Species: Cl-
+Constraint Species: Na+
+Constraint Species: Ca++
+Constraint Species: Mg++
+Constraint Species: Cl-
+Constraint Species: Na+
+Constraint Species: Ca++
+Constraint Species: Mg++
+Constraint Species: Cl-
+processing : initial
+Looking for pflotran constraint : initial
+initializing constraint : initial
+equilibrate constraint : initial
+
+  Constraint: initial
+  ----------------------------------------------------------------------------
+        iterations:     9
+    ionic strength:   1.7471E-01 [mol/L]
+    charge balance:   0.0000E+00
+          pressure:   6.8000E+01 [Pa]
+       temperature:    25.00 [C]
+       density H2O:   997.16 [kg/m^3]
+ ln / activity H2O:   0.0000E+00  1.0000E+00    [---]
+ mole fraction H2O:   9.9531E-01    [---]
+ mass fraction H2O:   9.9192E-01    [---]
+  ----------------------------------------------------------------------------
+
+  primary                   free        total
+  species                   molal       molal       act coef     constraint
+  ----------------------------------------------------------------------------
+  Na+                       8.6656E-02  8.6746E-02  1.0000E+00    total aq
+  Ca++                      1.8233E-02  1.8252E-02  1.0000E+00    total aq
+  Mg++                      1.1120E-02  1.1132E-02  1.0000E+00    total aq
+  Cl-                       1.4536E-01  1.4551E-01  1.0000E+00    chrg
+
+  ion-exchange reactions
+  ----------------------------------------------------------------------------
+  CEC =   7.5000E+02
+  cation    selectivity coef.   sorbed conc.     Kd
+                              [mol/m^3]
+  ----------------------------------------------------------------------------
+  Na+         1.0000E+00      1.6072E+02      7.4319E+00
+  Ca++        3.3864E+00      1.4158E+02      3.1117E+01
+  Mg++        6.0024E+00      1.5306E+02      5.5156E+01
+
+  primary species         total(aq+sorbed)    total retardation
+                             [mol/L]               1+Kd
+  ----------------------------------------------------------------------------
+  Na+                       7.2936E-01          8.4319E+00
+  Ca++                      5.8454E-01          3.2117E+01
+  Mg++                      6.2333E-01          5.6156E+01
+  Cl-                       1.4510E-01          1.0000E+00
+processing : west
+Looking for pflotran constraint : west
+initializing constraint : west
+equilibrate constraint : west
+
+  Constraint: west
+  ----------------------------------------------------------------------------
+        iterations:     9
+    ionic strength:   1.7321E-02 [mol/L]
+    charge balance:   0.0000E+00
+          pressure:   0.0000E+00 [Pa]
+       temperature:    25.00 [C]
+       density H2O:   997.16 [kg/m^3]
+ ln / activity H2O:   0.0000E+00  1.0000E+00    [---]
+ mole fraction H2O:   9.9952E-01    [---]
+ mass fraction H2O:   9.9919E-01    [---]
+  ----------------------------------------------------------------------------
+
+  primary                   free        total
+  species                   molal       molal       act coef     constraint
+  ----------------------------------------------------------------------------
+  Na+                       9.4170E-03  9.4268E-03  1.0000E+00    total aq
+  Ca++                      5.0090E-04  5.0142E-04  1.0000E+00    total aq
+  Mg++                      2.1338E-03  2.1361E-03  1.0000E+00    total aq
+  Cl-                       1.4686E-02  1.4702E-02  1.0000E+00    chrg
+
+  ion-exchange reactions
+  ----------------------------------------------------------------------------
+  CEC =   7.5000E+02
+  cation    selectivity coef.   sorbed conc.     Kd
+                              [mol/m^3]
+  ----------------------------------------------------------------------------
+  Na+         1.0000E+00      5.6396E+01      2.3998E+01
+  Ca++        3.3864E+00      4.0557E+01      3.2446E+02
+  Mg++        6.0024E+00      3.0624E+02      5.7511E+02
+
+  primary species         total(aq+sorbed)    total retardation
+                             [mol/L]               1+Kd
+  ----------------------------------------------------------------------------
+  Na+                       2.3498E-01          2.4998E+01
+  Ca++                      1.6273E-01          3.2546E+02
+  Mg++                      1.2271E+00          5.7611E+02
+  Cl-                       1.4660E-02          1.0000E+00
+processing : east
+Looking for pflotran constraint : east
+initializing constraint : east
+equilibrate constraint : east
+
+  Constraint: east
+  ----------------------------------------------------------------------------
+        iterations:     9
+    ionic strength:   1.7471E-01 [mol/L]
+    charge balance:   0.0000E+00
+          pressure:   0.0000E+00 [Pa]
+       temperature:    25.00 [C]
+       density H2O:   997.16 [kg/m^3]
+ ln / activity H2O:   0.0000E+00  1.0000E+00    [---]
+ mole fraction H2O:   9.9531E-01    [---]
+ mass fraction H2O:   9.9192E-01    [---]
+  ----------------------------------------------------------------------------
+
+  primary                   free        total
+  species                   molal       molal       act coef     constraint
+  ----------------------------------------------------------------------------
+  Na+                       8.6656E-02  8.6746E-02  1.0000E+00    total aq
+  Ca++                      1.8233E-02  1.8252E-02  1.0000E+00    total aq
+  Mg++                      1.1120E-02  1.1132E-02  1.0000E+00    total aq
+  Cl-                       1.4536E-01  1.4551E-01  1.0000E+00    chrg
+
+  ion-exchange reactions
+  ----------------------------------------------------------------------------
+  CEC =   7.5000E+02
+  cation    selectivity coef.   sorbed conc.     Kd
+                              [mol/m^3]
+  ----------------------------------------------------------------------------
+  Na+         1.0000E+00      1.6072E+02      7.4319E+00
+  Ca++        3.3864E+00      1.4158E+02      3.1117E+01
+  Mg++        6.0024E+00      1.5306E+02      5.5156E+01
+
+  primary species         total(aq+sorbed)    total retardation
+                             [mol/L]               1+Kd
+  ----------------------------------------------------------------------------
+  Na+                       7.2936E-01          8.4319E+00
+  Ca++                      5.8454E-01          3.2117E+01
+  Mg++                      6.2333E-01          5.6156E+01
+  Cl-                       1.4510E-01          1.0000E+00

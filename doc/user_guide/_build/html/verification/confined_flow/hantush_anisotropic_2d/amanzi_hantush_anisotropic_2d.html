@@ -1,0 +1,822 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Transient Flow to a Pumping Well in an Anisotropic Aquifer (Hantush) &#8212; Amanzi Version 1.6-dev_4296b1813 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/fix_eq_position.css?v=19b1522f" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=fc1b861d"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'verification/confined_flow/hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Transient Drawdown due to Pumping Wells in a Bounded Domain" href="../boundedDomain_2d/amanzi_boundedDomain_2d.html" />
+    <link rel="prev" title="Transient Flow in a 2D Confined Aquifer with a Linear Strip" href="../butler_strip_2d/amanzi_butler_strip_2d.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+<!--<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="../../../index.html"><img src="../../../_static/logo.png" border="0" alt="py4sci"/></a>
+</div>-->
+
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/Amanzi-color.png" class="logo__image only-light" alt="Amanzi Version 1.6-dev_4296b1813 documentation - Home"/>
+    <script>document.write(`<img src="../../../_static/Amanzi-Dark.png" class="logo__image only-dark" alt="Amanzi Version 1.6-dev_4296b1813 documentation - Home"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/index.html">
+    Background
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/getting_started.html">
+    Getting Started with Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../capabilities/index.html">
+    Amanzi Features and Capabilities
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../input/index.html">
+    Amanzi Input Description
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install/index.html">
+    Building Amanzi
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../tutorial/index.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="../../index.html">
+    Verification Testing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../benchmarking/index.html">
+    Benchmark Testing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/index.html">
+    Background
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/getting_started.html">
+    Getting Started with Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../capabilities/index.html">
+    Amanzi Features and Capabilities
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../input/index.html">
+    Amanzi Input Description
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install/index.html">
+    Building Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorial/index.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../index.html">
+    Verification Testing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../benchmarking/index.html">
+    Benchmark Testing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">Confined Flow Tests</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../linear_head_head_1d/amanzi_linear_head_head_1d.html">Steady-State One-Dimensional Flow with Head Boundary Conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linear_flux_head_1d/amanzi_linear_flux_head_1d.html">Steady-State One-Dimensional Flow with Flux and Head Boundary Conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linear_materials_serial_1d/amanzi_linear_materials_serial_1d.html">Steady-State One-Dimensional Flow: Materials in Serial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linear_materials_parallel_1d/amanzi_linear_materials_parallel_1d.html">Steady-State One-Dimensional Flow: Materials in Parallel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../theis_isotropic_1d/amanzi_theis_isotropic_1d.html">Transient One-Dimensional Confined Flow to a Pumping Well (Theis)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../butler_pod_2d/amanzi_butler_pod_2d.html">Transient Flow in a 2D Confined Aquifer with a Disc Embedded in A Matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../butler_strip_2d/amanzi_butler_strip_2d.html">Transient Flow in a 2D Confined Aquifer with a Linear Strip</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Transient Flow to a Pumping Well in an Anisotropic Aquifer (Hantush)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../boundedDomain_2d/amanzi_boundedDomain_2d.html">Transient Drawdown due to Pumping Wells in a Bounded Domain</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../unconfined_flow/index.html">Unconfined Flow Tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../unconfined_flow/unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d.html">Steady-State Flow in an Unconfined Aquifer: Head, and Flux Boundary Conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../unconfined_flow/unconfined_seepage_1d/amanzi_unconfined_seepage_1d.html">Steady-State Unconfined Flow with a Seepage Boundary Condition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../unconfined_flow/unconfined_layered_2d/amanzi_unconfined_layered_2d.html">Steady-State Flow in an Unconfined Multi-Aquifer System</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../infiltration/index.html">Infiltration Flow Tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../infiltration/infiltration_1d/amanzi_infiltration_1d.html">Infiltration 1D</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../transport/index.html">Transport of Solutes: Advection, Dispersion and Diffusion</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/dispersion_aligned_point_2d/amanzi_dispersion_aligned_point_2d.html">2D Dispersive Transport in a Uniform Flow Field (aligned)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/dispersion_45_point_2d/amanzi_dispersion_45_point_2d.html">2D Dispersive Transport in a Uniform Flow Field (diagonal)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/dual_porosity_1d/amanzi_dual_porosity_1d.html">1D Dispersive Transport with Dual Porosity Model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../mechanics/index.html">Mechanics</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../mechanics/consolidation_1d/amanzi_consolidation_1d.html">Soil Consolidation</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Verification Testing</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Confined Flow Tests</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Transient...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="transient-flow-to-a-pumping-well-in-an-anisotropic-aquifer-hantush">
+<h1>Transient Flow to a Pumping Well in an Anisotropic Aquifer (Hantush)<a class="headerlink" href="#transient-flow-to-a-pumping-well-in-an-anisotropic-aquifer-hantush" title="Link to this heading">#</a></h1>
+<section id="capabilities-tested">
+<h2>Capabilities Tested<a class="headerlink" href="#capabilities-tested" title="Link to this heading">#</a></h2>
+<p>This transient two-dimensional flow problem in a non-leaky aquifer with constant pumping tests the Amanzi saturated flow process kernel in anistropic media.
+Capabilities tested include:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>single-phase, two-dimensional flow</p></li>
+<li><p>transient flow</p></li>
+<li><p>saturated flow</p></li>
+<li><p>constant-rate pumping well</p></li>
+<li><p>constant-head (Dirichlet) boundary conditions</p></li>
+<li><p>specified volumetric flux (Neumann) boundary conditions</p></li>
+<li><p>homogeneous porous medium</p></li>
+<li><p>anisotropic porous medium</p></li>
+<li><p>non-uniform mesh (statically refined)</p></li>
+</ul>
+</div></blockquote>
+<p>For details on this test, see <a class="reference internal" href="#about-hantush-anisotropic"><span class="std std-ref">About</span></a>.</p>
+</section>
+<section id="background">
+<h2>Background<a class="headerlink" href="#background" title="Link to this heading">#</a></h2>
+<p>An aquifer is homogeneous and anisotropic when the hydraulic conductivity is a function of
+direction only. Because of this, the transmissivity of such an aquifer varies with direction.
+The transmissivity in the major direction of anisotropy may be 2 - 10 times greater than
+in the minor direction of anisotripy. Estimates of groundwater flow may be in significant error
+if the effect of such anisotropy is not accounted for. The in-place determination of the
+hydraulic properties of anisotropic aquifers, then, is of great practical importance.</p>
+<p>Hantush and Thomas <span id="id1">[<a class="reference internal" href="#id24" title="M. S. Hantush and R. G. Thomas. A method for analyzing a drawdown test in anisotropic aquifers. Water Resour. Res., 2(2):281–285, 1966.">HT66</a>]</span> developed an analytical solution for measuring
+drawdown during constant discharge for a completely penetrating well in a
+homogenous anisotropic, nonleaky confined aquifer of infinite extent. Their work follows
+Hantush’s previously published work <span id="id2">[<a class="reference internal" href="#id23" title="M. S. Hantush. Wells in homogeneous anisotropic aquifers. Water Resour. Res., 2(2):273–279, 1966.">Han66</a>]</span>, extending it by describing
+a method for obtaining the transmissivity in any direction and storativity of a homogeneous
+anisotropic non-leaky aquifer by delineating the expected elliptical shape of an equal residual
+drawdown curve.</p>
+</section>
+<section id="model">
+<h2>Model<a class="headerlink" href="#model" title="Link to this heading">#</a></h2>
+<p>The soil permeabilty varies in the <em>x</em> and <em>y</em> directions; thus, anisotropic
+condictions exist. Hantush and Thomas simplifies to the Theis solution <span id="id3">[<a class="reference internal" href="#id22" title="C. V. Theis. The relation between the lowering of the piezometric surface and the rate and duration of discharge of a well using groundwater storage. Eos, Trans. Am. Geophys. Un., 16(2):519–524, 1935.">The35</a>]</span>, which
+assumes isotropic soil profile, when the permeabilty is equal in all
+directions for all times. This solution will yield contour lines of
+equal draw down by an elliptical shape. The problem is described by the following
+governing groundwater equation:</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial }{\partial x} (T_x \frac{\partial h}{\partial x})+\frac{\partial }{\partial y} (T_y \frac{\partial h}{\partial y})
+= S \frac{\partial h}{\partial t} + Q,\]</div>
+<p>where <span class="math notranslate nohighlight">\(T_i\)</span> is transmissivity in the direction <span class="math notranslate nohighlight">\(i\)</span> [L<sup>2</sup>/T], <span class="math notranslate nohighlight">\(h\)</span> is hydraulic head [L], <span class="math notranslate nohighlight">\(S\)</span> is the storativity of the aquifer [-], and <span class="math notranslate nohighlight">\(Q\)</span> is the volumetric pumping rate of the well [L<sup>3</sup>/T].
+Mathematically, <span class="math notranslate nohighlight">\(Q\)</span> is the point source.</p>
+<p>The initial condition is</p>
+<div class="math notranslate nohighlight">
+\[h(x,y,0)=h_0\]</div>
+<p>where initial head <span class="math notranslate nohighlight">\(h_0\)</span> is often prescribed as hydrostatic head [L].</p>
+<p>Due to the directionally-varying hydraulic conductivity, two transmissivities are
+defined as:</p>
+<div class="math notranslate nohighlight">
+\[T_x = K_xb \; \; and \;\; T_y=K_yb,\]</div>
+<p>where <span class="math notranslate nohighlight">\(K_i\)</span> is the hydraulic conductivity in the direction <span class="math notranslate nohighlight">\(i\)</span> [L/T] and <span class="math notranslate nohighlight">\(b\)</span> is the aquifer thickness [L].</p>
+<p>Hantush and Thomas <span id="id4">[<a class="reference internal" href="#id23" title="M. S. Hantush. Wells in homogeneous anisotropic aquifers. Water Resour. Res., 2(2):273–279, 1966.">Han66</a>]</span> found the following solution to the governing equation in terms of drawdown <span class="math notranslate nohighlight">\(s\)</span> [L]:</p>
+<div class="math notranslate nohighlight">
+\[s=h_0-h(r,t)=\frac{Q}{4 \pi \sqrt{T_x T_y}} \int_\phi^\infty
+\frac{e^{-\psi}}{\psi} d\psi = \frac{Q}{4 \pi \sqrt{T_x T_y}} \; W(\phi),\]</div>
+<p>where</p>
+<div class="math notranslate nohighlight">
+\[\phi = \frac{(x^2T_t + y^2T_x)\;S}{4T_xT_yt}\]</div>
+<p>Notice that when <span class="math notranslate nohighlight">\(T_x=T_y\)</span> (isotropic conditions), <span class="math notranslate nohighlight">\(\phi\)</span> is now equal
+to <span class="math notranslate nohighlight">\(u\)</span> and the problem simplifies to the Theis solution <span id="id5">[<a class="reference internal" href="#id22" title="C. V. Theis. The relation between the lowering of the piezometric surface and the rate and duration of discharge of a well using groundwater storage. Eos, Trans. Am. Geophys. Un., 16(2):519–524, 1935.">The35</a>]</span>.  The variables in the equations above are defined in <a class="reference internal" href="../theis_isotropic_1d/amanzi_theis_isotropic_1d.html#variables"><span class="std std-ref">Variables</span></a> with subtle
+differences.  We have now defined transmissivity in two directions and
+redefined the well function, <span class="math notranslate nohighlight">\(W\)</span>, to apply to <span class="math notranslate nohighlight">\(\phi\)</span> instead of
+<span class="math notranslate nohighlight">\(u\)</span>.  The integral is still solved as a negative exponential integral.</p>
+</section>
+<section id="problem-specification">
+<h2>Problem Specification<a class="headerlink" href="#problem-specification" title="Link to this heading">#</a></h2>
+<section id="schematic">
+<h3>Schematic<a class="headerlink" href="#schematic" title="Link to this heading">#</a></h3>
+<figure class="align-center align-default" id="id63">
+<a class="reference internal image-reference" href="../../../_images/ellipse.png"><img alt="../../../_images/ellipse.png" src="../../../_images/ellipse.png" style="width: 600px;" />
+</a>
+<figcaption>
+<p><span class="caption-text"><strong>Schematic of an equal drawdown curve around a well in an anisotropic aquifer.</strong></span><a class="headerlink" href="#id63" title="Link to this image">#</a></p>
+</figcaption>
+</figure>
+</section>
+<section id="mesh">
+<h3>Mesh<a class="headerlink" href="#mesh" title="Link to this heading">#</a></h3>
+<p>The mesh consists of 12,208 cells. There is a single cell in the z-direction, which is uniform <span class="math notranslate nohighlight">\(\Delta z=5.0\)</span> m everywhere.</p>
+<figure class="align-center align-default" id="id64">
+<img alt="../../../_images/mesh.png" src="../../../_images/mesh.png" />
+<figcaption>
+<p><span class="caption-text"><strong>Unstructured computational mesh with 12208 cells.</strong></span><a class="headerlink" href="#id64" title="Link to this image">#</a></p>
+</figcaption>
+</figure>
+</section>
+<section id="variables">
+<h3>Variables<a class="headerlink" href="#variables" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Domain:</p>
+<ul>
+<li><p><span class="math notranslate nohighlight">\(x_{min} = y_{min} = -1200\)</span>, <span class="math notranslate nohighlight">\(z_{min} = 0 \text{ [m]}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(x_{max} = y_{max} =1200\)</span>, <span class="math notranslate nohighlight">\(z_{max} = 5 \text{ [m]}\)</span></p></li>
+<li><p>aquifer thickness:    <span class="math notranslate nohighlight">\(b=z_{max}-z_{min}=5 \text{ [m]}\)</span></p></li>
+<li><p>pumping well location:    <span class="math notranslate nohighlight">\((x,y) = (0,0) \text{ [m]}\)</span>, spanning entire aquifer thickness</p></li>
+<li><p>observation well locations:</p>
+<ul>
+<li><p><span class="math notranslate nohighlight">\((x_{obs1},y_{obs1},z_{obs1}) = (55.0, 0.0, 2.0) \text{ [m]}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\((x_{obs2},y_{obs2},z_{obs2}) = (0.0, 55.0, 2.0) \text{ [m]}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\((x_{obs3},y_{obs3},z_{obs3}) = (55.0, 55.0, 2.0) \text{ [m]}\)</span></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Boundary and initial conditions:</p>
+<ul>
+<li><p>initial hydraulic head:   <span class="math notranslate nohighlight">\(h(x,y,0)=h_0 \: \text{[m]}\)</span>, where <span class="math notranslate nohighlight">\(h_0\)</span> is hydrostatic (i.e. drawdown <span class="math notranslate nohighlight">\(s=0 \text{ [m]}\)</span>)</p></li>
+<li><p>constant-head (Dirichlet) lateral boundary conditions:   <span class="math notranslate nohighlight">\(h(x_{min,max},y_{min,max},t)=h_0 \: \text{[m]}\)</span></p></li>
+<li><p>no-flow (Neumann) upper and lower boundary conditions</p></li>
+<li><p>well-head pumping rate:   <span class="math notranslate nohighlight">\(Q=2.0 \: \text{[m}^3\text{/s]}\)</span></p>
+<ul>
+<li><p>duration of pumping:    <span class="math notranslate nohighlight">\(t_{max}=86400\: \text{[s]} = 1 \text{ [day]}\)</span></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Material properties:</p>
+<ul>
+<li><p>storativity:    <span class="math notranslate nohighlight">\(S=3.75 \times 10^{-4} \: \text{[-]}\)</span></p>
+<ul>
+<li><p>derived from:    <span class="math notranslate nohighlight">\(S=S_s b\)</span>, where <span class="math notranslate nohighlight">\(S_s=7.5 \times 10^{-5} \: \text{[m}^{-1} \text{]}\)</span> and <span class="math notranslate nohighlight">\(b=5 \: \text{[m]}\)</span></p></li>
+</ul>
+</li>
+<li><p>porosity:    <span class="math notranslate nohighlight">\(\phi = 0.3\)</span></p></li>
+<li><p>transmissivity:    <span class="math notranslate nohighlight">\(T_x= 1.15 \times 10^{-3}, T_y= 1.15 \times 10^{-4} \: \text{[m}^2\text{/s]}\)</span></p>
+<ul>
+<li><p>derived from:    <span class="math notranslate nohighlight">\(T=Kb\)</span>, where <span class="math notranslate nohighlight">\(K=\frac{k \rho g}{\mu}\)</span></p>
+<ul>
+<li><p>intrinsic permeability tensor:    <span class="math notranslate nohighlight">\(k_x = 2.3543 \times 10^{-11},  k_y = k_z = 2.3543 \times 10^{-12} \: \text{[m}^2\text{]}\)</span></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>fluid density:    <span class="math notranslate nohighlight">\(\rho = 998.2 \: \text{[kg/m}^3\text{]}\)</span></p></li>
+<li><p>dynamic viscosity:    <span class="math notranslate nohighlight">\(\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}\)</span></p></li>
+<li><p>gravitational acceleration:    <span class="math notranslate nohighlight">\(g = 9.807 \: \text{[m/s}^2\text{]}\)</span></p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+<section id="results-and-comparison">
+<h2>Results and Comparison<a class="headerlink" href="#results-and-comparison" title="Link to this heading">#</a></h2>
+<p>Results are in good agreement with the analytic solution.</p>
+<p>(<a class="reference download internal" download="" href="../../../_downloads/ed8ac01c58f2922d0881b398f780659c/amanzi_hantush_anisotropic_2d.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/9095a8fd47fe744db7ab8d83dc98c0d8/amanzi_hantush_anisotropic_2d.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/83e427e68a63070429fa44740464e818/amanzi_hantush_anisotropic_2d.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/59da4d4ce1897c05fc7edae61367d311/amanzi_hantush_anisotropic_2d.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-center">
+<img alt="../../../_images/amanzi_hantush_anisotropic_2d.png" class="plot-directive" src="../../../_images/amanzi_hantush_anisotropic_2d.png" />
+</figure>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h2>
+<div class="docutils container" id="id6">
+<div role="list" class="citation-list">
+<div class="citation" id="id23" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>Han66<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id2">1</a>,<a role="doc-backlink" href="#id4">2</a>)</span>
+<p>M. S. Hantush. Wells in homogeneous anisotropic aquifers. <em>Water Resour. Res.</em>, 2(2):273–279, 1966.</p>
+</div>
+<div class="citation" id="id24" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">HT66</a><span class="fn-bracket">]</span></span>
+<p>M. S. Hantush and R. G. Thomas. A method for analyzing a drawdown test in anisotropic aquifers. <em>Water Resour. Res.</em>, 2(2):281–285, 1966.</p>
+</div>
+<div class="citation" id="id22" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>The35<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id3">1</a>,<a role="doc-backlink" href="#id5">2</a>)</span>
+<p>C. V. Theis. The relation between the lowering of the piezometric surface and the rate and duration of discharge of a well using groundwater storage. <em>Eos, Trans. Am. Geophys. Un.</em>, 16(2):519–524, 1935.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="about">
+<span id="about-hantush-anisotropic"></span><h2>About<a class="headerlink" href="#about" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Directory: testing/verification/flow/saturated/transient/hantush_anisotropic_2d</p></li>
+<li><p>Authors: Alec Thomas, Konstantin Lipnikov</p></li>
+<li><p>Maintainer: David Moulton (<a class="reference external" href="mailto:moulton&#37;&#52;&#48;lanl&#46;gov">moulton<span>&#64;</span>lanl<span>&#46;</span>gov</a>)</p></li>
+<li><p>Input Files:</p>
+<ul>
+<li><p>amanzi_hantush_anisotropic_2d-u.xml</p>
+<ul>
+<li><p>Spec Version 2.3, unstructured mesh framework</p></li>
+<li><p>Mesh:  porflow4_6.exo</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul class="simple">
+<li><p>Analytic Solution:</p></li>
+</ul>
+<div class="admonition-todo admonition" id="id62">
+<p class="admonition-title">Todo</p>
+<ul class="simple">
+<li><p>Documentation:</p>
+<ul>
+<li><p>Fix governing equation in Model to be homogeneous? [jpo]</p></li>
+<li><p>Decide whether to keep structured run</p></li>
+<li><p>Include info about analytic solution calculation?</p></li>
+<li><p>convert units in Variables to be same as in Model?</p></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../butler_strip_2d/amanzi_butler_strip_2d.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Transient Flow in a 2D Confined Aquifer with a Linear Strip</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../boundedDomain_2d/amanzi_boundedDomain_2d.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Transient Drawdown due to Pumping Wells in a Bounded Domain</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#capabilities-tested">Capabilities Tested</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#background">Background</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model">Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#problem-specification">Problem Specification</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#schematic">Schematic</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mesh">Mesh</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#variables">Variables</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#results-and-comparison">Results and Comparison</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#about">About</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../../../_sources/verification/confined_flow/hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

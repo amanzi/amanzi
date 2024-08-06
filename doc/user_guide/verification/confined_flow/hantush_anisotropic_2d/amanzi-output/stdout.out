@@ -1,0 +1,1183 @@
+[pn2401379.lanl.gov:62576] shmem: mmap: an error occurred while determining whether or not /var/folders/36/xt3jx8554vj0_03sz682d5_800074q/T//ompi.pn2401379.7319/jf.0/1187315712/sm_segment.pn2401379.7319.46c50000.0 could be created.
+InputConverter-u   |  Amanzi executable tag: 1.6-dev_01c79db22
+InputConverter-u   |  Verify high-level XML structure
+InputConverter-u   |  Liquid phase has 0 solutes
+InputConverter-u   |  AUTHOR: Alec Thomas, Konstantin Lipnikov
+InputConverter-u   |  Translating units: m s kg molar K
+InputConverter-u   |  Translating unstructured mesh
+InputConverter-u   |  Translating regions
+InputConverter-u   |   found 10 regions plus region "All".
+InputConverter-u   |  Translating state
+InputConverter-u   |  Translating output
+InputConverter-u   |   Found 1 cycle macros and 1 time macros.
+InputConverter-u   |   Translating output: visualization
+InputConverter-u   |   Translating output: observations
+InputConverter-u   |   Found 3 liquid observations
+InputConverter-u   |   Found 0 gas observations
+InputConverter-u   |  Translating cycle driver
+InputConverter-u   |   Translating time period controls
+InputConverter-u   |   created 0 special times
+InputConverter-u   |  Translating process kernels
+InputConverter-u   |   TP: PK name="transient:flow", factory: "darcy"
+InputConverter-u   |   Next PK is "transient:flow"
+InputConverter-u   |   Translating flow, mode=transient domain=matrix
+InputConverter-u   |    Translating optional fracture models, domain=matrix
+InputConverter-u   |    Translating time integrator
+InputConverter-u   |    Translating boundary conditions
+InputConverter-u   |     active BCs: static head, no flow (default)
+InputConverter-u   |  Translating solvers
+InputConverter-u   |   pcg: itrs=1000, tol=1e-16, pc=Hypre AMG
+InputConverter-u   |   pcg: itrs=1000, tol=1e-16, pc=Hypre AMG
+InputConverter-u   |   pcg: itrs=1000, tol=1e-16, pc=Hypre AMG
+InputConverter-u   |   pcg: itrs=1000, tol=1e-16, pc=Hypre AMG
+InputConverter-u   |  Translating preconditioners
+InputConverter-u   |  Final comments:
+InputConverter-u   |   found units: 
+InputConverter-u   |   Writing the translated XML to oldspec.xml
+InputConverter-u   |  CPU time stamp: [00:00:01]
+Amanzi::MeshFactor |  Creating mesh from file "porflow4_6.exo" using format "MSTK"
+Mesh Output        |  cells, tot/min/max: 12208/12208/12208
+Mesh Output        |  faces, tot/min/max: 42774/42774/42774
+Mesh Output        |  nodes, tot/min/max: 12302/12302/12302
+Mesh Output        |  
+Mesh               |  CPU time stamp: [00:00:06]
+InputAnalysis:doma |  src: "Well" has 6 cells of 15.5796 [m^3]
+InputAnalysis:doma |  bc: "Left" has 23 faces of 12000 [m^2]
+InputAnalysis:doma |  bc: "Right" has 23 faces of 12000 [m^2]
+InputAnalysis:doma |  bc: "Front" has 23 faces of 12000 [m^2]
+InputAnalysis:doma |  bc: "Back" has 23 faces of 12000 [m^2]
+InputAnalysis:doma |  obs: "Obs_x" has 1 cells, size: 38.0764
+InputAnalysis:doma |  obs: "Obs_y" has 1 cells, size: 39.6098
+InputAnalysis:doma |  obs: "Obs_xy" has 1 cells, size: 78.8283
+State              |  ------------------------------------------
+State              |  Dependency & Structure list for evaluators
+State              |  ------------------------------------------
+State              |  darcy_velocity
+State              |    type: secondary
+State              |    dep: volumetric_flow_rate, tag=""
+State              |    comp=cell location=4 dofs=3
+State              |    
+State              |  mass_density_liquid
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    comp=boundary_face location=13 dofs=1
+State              |    
+State              |  molar_flow_rate
+State              |    Type: primary
+State              |    comp=face location=3 dofs=1
+State              |    
+State              |  porosity
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  pressure
+State              |    Type: primary
+State              |    comp=cell location=4 dofs=1
+State              |    comp=face location=3 dofs=1
+State              |    
+State              |  saturation_liquid
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  specific_storage
+State              |    type: secondary
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  volumetric_flow_rate
+State              |    type: secondary
+State              |    dep: molar_flow_rate, tag=""
+State              |    comp=face location=3 dofs=1
+State              |    
+State              |  water_content
+State              |    type: secondary
+State              |    dep: porosity, tag=""
+State              |    dep: saturation_liquid, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  water_storage
+State              |    type: secondary
+State              |    dep: pressure, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  ------------------------------
+State              |  Structure list for derivatives
+State              |  ------------------------------
+State              |  Dwater_storage/D{ pressure }
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  Setup is complete.
+State              |  
+CycleDriver        |  Setup is complete.
+State              |  initializing data through initial conditions...
+State              |  initializing "atmospheric_pressure" [ok]
+State              |  initializing "const_fluid_density" [ok]
+State              |  initializing "const_fluid_viscosity" [ok]
+State              |  initializing "cycle" ... skipped
+State              |  initializing "darcy_velocity" ... skipped
+State              |  initializing "dt" ... skipped
+State              |  initializing "gravity" [ok]
+State              |  initializing "hydraulic_head" ... skipped
+State              |  initializing "mass_density_liquid" ... skipped
+State              |  initializing "molar_flow_rate" ... skipped
+State              |  initializing "permeability" [ok]
+State              |  initializing "porosity" ... skipped
+State              |  initializing "position" ... skipped
+State              |  initializing "pressure" [ok]
+State              |  initializing "prev_saturation_liquid" ... skipped
+State              |  initializing "prev_water_storage" ... skipped
+State              |  initializing "saturation_liquid" [ok]
+State              |  initializing "specific_storage" ... skipped
+State              |  initializing "specific_yield" ... skipped
+State              |  initializing "time" ... skipped
+State              |  initializing "volumetric_flow_rate" ... skipped
+State              |  initializing "water_content" ... skipped
+State              |  initializing "water_storage" ... skipped
+State              |  initializing eval: "darcy_velocity" @ ""
+State              |  initializing eval: "mass_density_liquid" @ ""
+State              |  initializing eval: "molar_flow_rate" @ ""
+State              |  initializing eval: "porosity" @ ""
+State              |  initializing eval: "pressure" @ ""
+State              |  initializing eval: "saturation_liquid" @ ""
+State              |  initializing eval: "specific_storage" @ ""
+State              |  initializing eval: "volumetric_flow_rate" @ ""
+State              |  initializing eval: "water_content" @ ""
+State              |  initializing eval: "water_storage" @ ""
+DarcyPK            |   initialized "specific_yield" to value 0
+DarcyPK            |   initialized "hydraulic_head" to value 0
+DarcyPK            |   initialized "prev_saturation_liquid" to value 1
+DarcyPK            |   initialized prev_water_storage to water_storage
+DarcyPK            |  pressure solver (AztecOO): ||r||_H=8.15037e-11 itr=7 code=1
+DarcyPK            |  
+DarcyPK            |  TI:"BDF1" dt:standard LS:"AztecOO" PC:"Hypre AMG"
+DarcyPK            |  matrix: <Diffusion: CELL_FACE+CELL> <CELL_CELL> 
+DarcyPK            |  constant viscosity model, mu=0.001002
+DarcyPK            |  initial pressure guess: "from saturated solver"
+DarcyPK            |  
+DarcyPK            |  pressure BC assigned to 92 faces
+DarcyPK            |  default (no-flow) BC assigned to 24416 faces
+DarcyPK            |  
+DarcyPK            |   boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |   domain head (cells): min=5 m, max=5 m
+DarcyPK            |   domain head (cells + faces): min=5 m, max=5 m
+DarcyPK            |   sources: total min/max: -0.128373/-0.128373
+DarcyPK            |    src #0: volume=15.5796 m^3, rate=-2 kg/s
+DarcyPK            |  [1;32mInitialization of PK is complete, T=0 dT=1e+99[0m
+DarcyPK            |  
+TimeStepManager    |  Proposed dT=3.64 s, is near equal to next event time remaining 3.64 s.
+TimeStepManager    |  Proposed dT=3.64 s, is near equal to next event time remaining 3.64 s.
+State              |  initializing eval: "darcy_velocity" @ ""
+State              |  initializing eval: "mass_density_liquid" @ ""
+State              |  initializing eval: "molar_flow_rate" @ ""
+State              |  initializing eval: "porosity" @ ""
+State              |  initializing eval: "pressure" @ ""
+State              |  initializing eval: "saturation_liquid" @ ""
+State              |  initializing eval: "specific_storage" @ ""
+State              |  initializing eval: "volumetric_flow_rate" @ ""
+State              |  initializing eval: "water_content" @ ""
+State              |  initializing eval: "water_storage" @ ""
+CycleDriver        |  writing visualization file: domain
+CycleDriver        |  writing observations... 3
+CycleDriver        |  
+CycleDriver        |  Field                                    Min/Max/Avg
+CycleDriver        |  atmospheric_pressure.................... 101325
+CycleDriver        |  const_fluid_density..................... 998.2
+CycleDriver        |  const_fluid_viscosity................... 0.001002
+CycleDriver        |  darcy_velocity.......................... -2.81414e-17 / 3.32684e-17 / 1.54254e-20
+CycleDriver        |  dt...................................... 3.64
+CycleDriver        |  gravity................................. 0 0 -9.80665
+CycleDriver        |  hydraulic_head.......................... 5 / 5 / 5 [m]
+CycleDriver        |  mass_density_liquid.bnd_face............ 998.2 / 998.2 / 998.2
+CycleDriver        |  mass_density_liquid.cell................ 998.2 / 998.2 / 998.2
+CycleDriver        |  molar_flow_rate......................... -1.24081e-09 / 1.00575e-09 / 9.24318e-13
+CycleDriver        |  permeability............................ 2.3543e-12 / 2.3543e-11 / 9.4172e-12 [m^2]
+CycleDriver        |  porosity................................ 0.3 / 0.3 / 0.3 [-]
+CycleDriver        |  pressure.cell........................... 125797 / 125797 / 125797 [Pa]
+CycleDriver        |  pressure.face........................... 101325 / 150270 / 125797 [Pa]
+CycleDriver        |  prev_saturation_liquid.................. 1 / 1 / 1
+CycleDriver        |  prev_water_storage...................... 0.962083 / 0.962083 / 0.962083
+CycleDriver        |  saturation_liquid....................... 1 / 1 / 1 [-]
+CycleDriver        |  specific_storage........................ 7.5e-05 / 7.5e-05 / 7.5e-05 [m]
+CycleDriver        |  specific_yield.......................... 0 / 0 / 0
+CycleDriver        |  time.................................... 0
+CycleDriver        |  time@current............................ 0
+CycleDriver        |  volumetric_flow_rate.................... -2.2394e-14 / 1.81515e-14 / 1.66819e-17 [m^3/s]
+CycleDriver        |  water_content........................... 0.3 / 0.3 / 0.3 [-]
+CycleDriver        |  water_storage........................... 0.962083 / 0.962083 / 0.962083
+CycleDriver        |  
+CycleDriver        |  Simulation end time: 86400 sec.
+CycleDriver        |  CPU time stamp: [00:00:07]
+CycleDriver        |  
+CycleDriver        |  Cycle 0: time = 0 s, dt = 3.64 s
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.97378e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=3.94306 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=3.822 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=4.004 s
+CycleDriver        |  New time = 3.64 s
+CycleDriver        |  
+CycleDriver        |  Cycle 1: time = 3.64 s, dt = 4.004 s
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.97315e+07  itrs=2
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=3.54307 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=3.4086 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=4.4044 s
+CycleDriver        |  New time = 7.644 s
+CycleDriver        |  
+CycleDriver        |  Cycle 2: time = 7.644 s, dt = 4.4044 s
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.97249e+07  itrs=2
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=3.31131 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=3.17392 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=4.84484 s
+CycleDriver        |  New time = 0.200807 min
+CycleDriver        |  
+CycleDriver        |  Cycle 3: time = 0.200807 min, dt = 4.84484 s
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.97181e+07  itrs=2
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=3.14633 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=3.00786 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=5.32932 s
+CycleDriver        |  New time = 0.281554 min
+CycleDriver        |  
+CycleDriver        |  Cycle 4: time = 0.281554 min, dt = 5.32932 s
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.9711e+07  itrs=2
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=3.01596 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=2.87693 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=5.86226 s
+CycleDriver        |  New time = 0.370376 min
+CycleDriver        |  
+CycleDriver        |  Cycle 5: time = 0.370376 min, dt = 5.86226 s
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.97036e+07  itrs=2
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=2.90652 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=2.76716 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=6.44848 s
+CycleDriver        |  New time = 0.46808 min
+CycleDriver        |  
+CycleDriver        |  Cycle 6: time = 0.46808 min, dt = 6.44848 s
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.96959e+07  itrs=2
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=2.81105 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=2.67147 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=7.09333 s
+CycleDriver        |  New time = 0.575555 min
+CycleDriver        |  
+CycleDriver        |  Cycle 7: time = 0.575555 min, dt = 7.09333 s
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.96879e+07  itrs=2
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=2.72551 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=2.58577 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.130044 min
+CycleDriver        |  New time = 0.693777 min
+CycleDriver        |  
+CycleDriver        |  Cycle 8: time = 0.693777 min, dt = 0.130044 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.96794e+07  itrs=2
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=2.64735 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=2.5075 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.143049 min
+CycleDriver        |  New time = 0.823822 min
+CycleDriver        |  
+CycleDriver        |  Cycle 9: time = 0.823822 min, dt = 0.143049 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.96706e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=2.57488 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=2.43494 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.157354 min
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 0.96687 min
+CycleDriver        |  
+CycleDriver        |  Cycle 10: time = 0.96687 min, dt = 0.157354 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.96614e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=2.50691 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=2.3669 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.173089 min
+CycleDriver        |  New time = 1.12422 min
+CycleDriver        |  
+CycleDriver        |  Cycle 11: time = 1.12422 min, dt = 0.173089 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.96517e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=2.44258 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=2.30251 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.190398 min
+CycleDriver        |  New time = 1.29731 min
+CycleDriver        |  
+CycleDriver        |  Cycle 12: time = 1.29731 min, dt = 0.190398 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.96416e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=2.38121 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=2.2411 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.209438 min
+CycleDriver        |  New time = 1.48771 min
+CycleDriver        |  
+CycleDriver        |  Cycle 13: time = 1.48771 min, dt = 0.209438 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.96311e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=2.32233 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=2.18218 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.230382 min
+CycleDriver        |  New time = 1.69715 min
+CycleDriver        |  
+CycleDriver        |  Cycle 14: time = 1.69715 min, dt = 0.230382 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.962e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=2.26553 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=2.12534 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.25342 min
+CycleDriver        |  New time = 1.92753 min
+CycleDriver        |  
+CycleDriver        |  Cycle 15: time = 1.92753 min, dt = 0.25342 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.96085e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=2.2105 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=2.07028 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.278762 min
+CycleDriver        |  New time = 2.18095 min
+CycleDriver        |  
+CycleDriver        |  Cycle 16: time = 2.18095 min, dt = 0.278762 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.95965e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=2.15698 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=2.01674 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.306638 min
+CycleDriver        |  New time = 2.45971 min
+CycleDriver        |  
+CycleDriver        |  Cycle 17: time = 2.45971 min, dt = 0.306638 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.95839e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=2.10477 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.96451 m, max=5 m
+TimeStepManager    |   Proposed dT=0.337302 min, events limit it to 6.81901 s
+CycleDriver        |  New time = 2.76635 min
+CycleDriver        |  
+CycleDriver        |  Cycle 18: time = 2.76635 min, dt = 6.81901 s
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.95793e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=2.08625 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.94599 m, max=5 m
+TimeStepManager    |   Proposed dT=7.50091 s, stability from previous step changes it to 0.337302 min
+TimeStepManager    |   Accepted proposed dT=0.337302 min
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 2.88 min
+CycleDriver        |  
+CycleDriver        |  Cycle 19: time = 2.88 min, dt = 0.337302 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.95665e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=2.03715 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.89687 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.371032 min
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 3.2173 min
+CycleDriver        |  
+CycleDriver        |  Cycle 20: time = 3.2173 min, dt = 0.371032 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.9553e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.98879 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.8485 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.408135 min
+CycleDriver        |  New time = 3.58833 min
+CycleDriver        |  
+CycleDriver        |  Cycle 21: time = 3.58833 min, dt = 0.408135 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.9539e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.9411 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.80079 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.448948 min
+CycleDriver        |  New time = 3.99647 min
+CycleDriver        |  
+CycleDriver        |  Cycle 22: time = 3.99647 min, dt = 0.448948 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.95244e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.89399 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.75367 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.493843 min
+CycleDriver        |  New time = 4.44542 min
+CycleDriver        |  
+CycleDriver        |  Cycle 23: time = 4.44542 min, dt = 0.493843 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.95092e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.8474 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.70707 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.543228 min
+CycleDriver        |  New time = 4.93926 min
+CycleDriver        |  
+CycleDriver        |  Cycle 24: time = 4.93926 min, dt = 0.543228 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.94933e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.80127 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.66093 m, max=5 m
+TimeStepManager    |   Proposed dT=0.59755 min, events limit it to 0.277512 min
+CycleDriver        |  New time = 5.48249 min
+CycleDriver        |  
+CycleDriver        |  Cycle 25: time = 5.48249 min, dt = 0.277512 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.94855e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.77891 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.63857 m, max=5 m
+TimeStepManager    |   Proposed dT=0.305263 min, stability from previous step changes it to 0.59755 min
+TimeStepManager    |   Accepted proposed dT=0.59755 min
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 5.76 min
+CycleDriver        |  
+CycleDriver        |  Cycle 26: time = 5.76 min, dt = 0.59755 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.94694e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.73531 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.59496 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.657305 min
+CycleDriver        |  New time = 6.35755 min
+CycleDriver        |  
+CycleDriver        |  Cycle 27: time = 6.35755 min, dt = 0.657305 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.94526e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.69187 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.55152 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.723036 min
+CycleDriver        |  New time = 7.01486 min
+CycleDriver        |  
+CycleDriver        |  Cycle 28: time = 7.01486 min, dt = 0.723036 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.94352e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.64858 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.50822 m, max=5 m
+TimeStepManager    |   Proposed dT=0.79534 min, events limit it to 0.451054 min
+CycleDriver        |  New time = 7.73789 min
+CycleDriver        |  
+CycleDriver        |  Cycle 29: time = 7.73789 min, dt = 0.451054 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.94247e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.62312 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.48276 m, max=5 m
+TimeStepManager    |   Proposed dT=0.496159 min, stability from previous step changes it to 0.79534 min
+TimeStepManager    |   Proposed dT=0.79534 min, events limit it to 0.451054 min
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 0.136482 h
+CycleDriver        |  
+CycleDriver        |  Cycle 30: time = 0.136482 h, dt = 0.451054 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.94145e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.59904 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.45867 m, max=5 m
+TimeStepManager    |   Proposed dT=0.496159 min, stability from previous step changes it to 0.79534 min
+TimeStepManager    |   Accepted proposed dT=0.79534 min
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 0.144 h
+CycleDriver        |  
+CycleDriver        |  Cycle 31: time = 0.144 h, dt = 0.79534 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.93974e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.56018 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.41981 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.874874 min
+CycleDriver        |  New time = 0.157256 h
+CycleDriver        |  
+CycleDriver        |  Cycle 32: time = 0.157256 h, dt = 0.874874 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.93796e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.52107 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.3807 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.962361 min
+CycleDriver        |  New time = 0.171837 h
+CycleDriver        |  
+CycleDriver        |  Cycle 33: time = 0.171837 h, dt = 0.962361 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.9361e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.48174 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.34136 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=1.0586 min
+CycleDriver        |  New time = 0.187876 h
+CycleDriver        |  
+CycleDriver        |  Cycle 34: time = 0.187876 h, dt = 1.0586 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.93416e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.44219 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.30181 m, max=5 m
+TimeStepManager    |   Proposed dT=1.16446 min, events limit it to 0.628829 min
+CycleDriver        |  New time = 0.20552 h
+CycleDriver        |  
+CycleDriver        |  Cycle 35: time = 0.20552 h, dt = 0.628829 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.93305e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.41988 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.2795 m, max=5 m
+TimeStepManager    |   Proposed dT=0.691712 min, stability from previous step changes it to 1.16446 min
+TimeStepManager    |   Accepted proposed dT=1.16446 min
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 0.216 h
+CycleDriver        |  
+CycleDriver        |  Cycle 36: time = 0.216 h, dt = 1.16446 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.93109e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.38198 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.24159 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=1.2809 min
+CycleDriver        |  New time = 0.235408 h
+CycleDriver        |  
+CycleDriver        |  Cycle 37: time = 0.235408 h, dt = 1.2809 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.92906e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.34375 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.20336 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=1.40899 min
+CycleDriver        |  New time = 0.256756 h
+CycleDriver        |  
+CycleDriver        |  Cycle 38: time = 0.256756 h, dt = 1.40899 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.92694e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.30523 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.16483 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=1.54989 min
+CycleDriver        |  New time = 0.280239 h
+CycleDriver        |  
+CycleDriver        |  Cycle 39: time = 0.280239 h, dt = 1.54989 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.92473e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.26642 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.12603 m, max=5 m
+TimeStepManager    |   Proposed dT=1.70488 min, events limit it to 0.897878 min
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 0.306071 h
+CycleDriver        |  
+CycleDriver        |  Cycle 40: time = 0.306071 h, dt = 0.897878 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.9235e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.24503 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.10463 m, max=5 m
+TimeStepManager    |   Proposed dT=0.987666 min, stability from previous step changes it to 1.70488 min
+TimeStepManager    |   Proposed dT=1.70488 min, events limit it to 0.897878 min
+CycleDriver        |  New time = 0.321035 h
+CycleDriver        |  
+CycleDriver        |  Cycle 41: time = 0.321035 h, dt = 0.897878 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.9223e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.22462 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.08422 m, max=5 m
+TimeStepManager    |   Proposed dT=0.987666 min, stability from previous step changes it to 1.70488 min
+TimeStepManager    |   Accepted proposed dT=1.70488 min
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 0.336 h
+CycleDriver        |  
+CycleDriver        |  Cycle 42: time = 0.336 h, dt = 1.70488 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.92014e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.18888 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.04848 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=1.87537 min
+CycleDriver        |  New time = 0.364415 h
+CycleDriver        |  
+CycleDriver        |  Cycle 43: time = 0.364415 h, dt = 1.87537 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.91789e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.15267 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.01227 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=2.06291 min
+CycleDriver        |  New time = 0.395671 h
+CycleDriver        |  
+CycleDriver        |  Cycle 44: time = 0.395671 h, dt = 2.06291 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.91555e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.11602 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.975623 m, max=5 m
+TimeStepManager    |   Proposed dT=2.2692 min, events limit it to 1.49842 min
+CycleDriver        |  New time = 0.430053 h
+CycleDriver        |  
+CycleDriver        |  Cycle 45: time = 0.430053 h, dt = 1.49842 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.91391e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.0909 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.03947 yd, max=5 m
+TimeStepManager    |   Proposed dT=1.64826 min, stability from previous step changes it to 2.2692 min
+TimeStepManager    |   Proposed dT=2.2692 min, events limit it to 1.49842 min
+CycleDriver        |  New time = 0.455026 h
+CycleDriver        |  
+CycleDriver        |  Cycle 46: time = 0.455026 h, dt = 1.49842 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.91234e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.0671 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.01345 yd, max=5 m
+TimeStepManager    |   Proposed dT=1.64826 min, stability from previous step changes it to 2.2692 min
+TimeStepManager    |   Accepted proposed dT=2.2692 min
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 0.48 h
+CycleDriver        |  
+CycleDriver        |  Cycle 47: time = 0.48 h, dt = 2.2692 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.91007e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.0337 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.976922 yd, max=5 m
+TimeStepManager    |   Accepted proposed dT=2.49612 min
+CycleDriver        |  New time = 0.51782 h
+CycleDriver        |  
+CycleDriver        |  Cycle 48: time = 0.51782 h, dt = 2.49612 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.90771e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.999691 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.939726 yd, max=5 m
+TimeStepManager    |   Accepted proposed dT=2.74573 min
+CycleDriver        |  New time = 0.559422 h
+CycleDriver        |  
+CycleDriver        |  Cycle 49: time = 0.559422 h, dt = 2.74573 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.90524e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.965103 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.901898 yd, max=5 m
+TimeStepManager    |   Proposed dT=3.0203 min, events limit it to 2.00448 min
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 0.605184 h
+CycleDriver        |  
+CycleDriver        |  Cycle 50: time = 0.605184 h, dt = 2.00448 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.90352e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.02931 yd, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.875756 yd, max=5 m
+TimeStepManager    |   Proposed dT=2.20493 min, stability from previous step changes it to 3.0203 min
+TimeStepManager    |   Proposed dT=3.0203 min, events limit it to 2.00448 min
+CycleDriver        |  New time = 0.638592 h
+CycleDriver        |  
+CycleDriver        |  Cycle 51: time = 0.638592 h, dt = 2.00448 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.90185e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.00449 yd, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.850939 yd, max=5 m
+TimeStepManager    |   Proposed dT=2.20493 min, stability from previous step changes it to 3.0203 min
+TimeStepManager    |   Accepted proposed dT=3.0203 min
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 0.672 h
+CycleDriver        |  
+CycleDriver        |  Cycle 52: time = 0.672 h, dt = 3.0203 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.89946e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.969705 yd, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.816152 yd, max=5 m
+TimeStepManager    |   Accepted proposed dT=3.32233 min
+CycleDriver        |  New time = 0.722338 h
+CycleDriver        |  
+CycleDriver        |  Cycle 53: time = 0.722338 h, dt = 3.32233 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.89697e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.93416 yd, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.780607 yd, max=5 m
+TimeStepManager    |   Accepted proposed dT=3.65456 min
+CycleDriver        |  New time = 0.777711 h
+CycleDriver        |  
+CycleDriver        |  Cycle 54: time = 0.777711 h, dt = 3.65456 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.89437e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.897894 yd, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.744339 yd, max=5 m
+TimeStepManager    |   Proposed dT=4.02002 min, events limit it to 2.9628 min
+CycleDriver        |  New time = 0.83862 h
+CycleDriver        |  
+CycleDriver        |  Cycle 55: time = 0.83862 h, dt = 2.9628 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.89235e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.870148 yd, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.716593 yd, max=5 m
+TimeStepManager    |   Proposed dT=3.25908 min, stability from previous step changes it to 4.02002 min
+TimeStepManager    |   Accepted proposed dT=4.02002 min
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 0.888 h
+CycleDriver        |  
+CycleDriver        |  Cycle 56: time = 0.888 h, dt = 4.02002 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.88975e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.83514 yd, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.681584 yd, max=5 m
+TimeStepManager    |   Accepted proposed dT=4.42202 min
+CycleDriver        |  New time = 0.955 h
+CycleDriver        |  
+CycleDriver        |  Cycle 57: time = 0.955 h, dt = 4.42202 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.88705e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.799382 yd, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.645826 yd, max=5 m
+TimeStepManager    |   Accepted proposed dT=4.86422 min
+CycleDriver        |  New time = 1.0287 h
+CycleDriver        |  
+CycleDriver        |  Cycle 58: time = 1.0287 h, dt = 4.86422 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.88423e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.762912 yd, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.609355 yd, max=5 m
+TimeStepManager    |   Proposed dT=5.35065 min, events limit it to 2.70687 min
+CycleDriver        |  New time = 1.10977 h
+CycleDriver        |  
+CycleDriver        |  Cycle 59: time = 1.10977 h, dt = 2.70687 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.88271e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.743433 yd, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.589876 yd, max=5 m
+TimeStepManager    |   Proposed dT=2.97755 min, stability from previous step changes it to 5.35065 min
+TimeStepManager    |   Proposed dT=5.35065 min, events limit it to 2.70687 min
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 1.15489 h
+CycleDriver        |  
+CycleDriver        |  Cycle 60: time = 1.15489 h, dt = 2.70687 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.88123e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.724707 yd, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.71345 ft, max=5 m
+TimeStepManager    |   Proposed dT=2.97755 min, stability from previous step changes it to 5.35065 min
+TimeStepManager    |   Accepted proposed dT=5.35065 min
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 1.2 h
+CycleDriver        |  
+CycleDriver        |  Cycle 61: time = 1.2 h, dt = 5.35065 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.87846e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.690243 yd, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.61005 ft, max=5 m
+TimeStepManager    |   Accepted proposed dT=5.88571 min
+CycleDriver        |  New time = 1.28918 h
+CycleDriver        |  
+CycleDriver        |  Cycle 62: time = 1.28918 h, dt = 5.88571 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.87557e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.655001 yd, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.50433 ft, max=5 m
+TimeStepManager    |   Accepted proposed dT=6.47428 min
+CycleDriver        |  New time = 1.38727 h
+CycleDriver        |  
+CycleDriver        |  Cycle 63: time = 1.38727 h, dt = 6.47428 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.87257e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.619019 yd, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.39638 ft, max=5 m
+TimeStepManager    |   Proposed dT=7.12171 min, events limit it to 6.76936 min
+CycleDriver        |  New time = 1.49518 h
+CycleDriver        |  
+CycleDriver        |  Cycle 64: time = 1.49518 h, dt = 6.76936 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.8696e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.584028 yd, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.29141 ft, max=5 m
+TimeStepManager    |   Proposed dT=7.44629 min, stability from previous step changes it to 7.12171 min
+TimeStepManager    |   Accepted proposed dT=7.12171 min
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 1.608 h
+CycleDriver        |  
+CycleDriver        |  Cycle 65: time = 1.608 h, dt = 7.12171 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.86664e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.64923 ft, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.18855 ft, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.130565 h
+CycleDriver        |  New time = 1.7267 h
+CycleDriver        |  
+CycleDriver        |  Cycle 66: time = 1.7267 h, dt = 0.130565 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.86355e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.54403 ft, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.08335 ft, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.143621 h
+CycleDriver        |  New time = 1.85726 h
+CycleDriver        |  
+CycleDriver        |  Cycle 67: time = 1.85726 h, dt = 0.143621 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.86035e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.43658 ft, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.975902 ft, max=5 m
+TimeStepManager    |   Proposed dT=0.157983 h, events limit it to 0.135119 h
+CycleDriver        |  New time = 2.00088 h
+CycleDriver        |  
+CycleDriver        |  Cycle 68: time = 2.00088 h, dt = 0.135119 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.85748e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.34192 ft, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.881239 ft, max=5 m
+TimeStepManager    |   Proposed dT=0.148631 h, stability from previous step changes it to 0.157983 h
+TimeStepManager    |   Accepted proposed dT=0.157983 h
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 2.136 h
+CycleDriver        |  
+CycleDriver        |  Cycle 69: time = 2.136 h, dt = 0.157983 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.85431e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.23886 ft, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.778173 ft, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.173782 h
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 2.29398 h
+CycleDriver        |  
+CycleDriver        |  Cycle 70: time = 2.29398 h, dt = 0.173782 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.85102e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.13345 ft, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.672766 ft, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.19116 h
+CycleDriver        |  New time = 2.46776 h
+CycleDriver        |  
+CycleDriver        |  Cycle 71: time = 2.46776 h, dt = 0.19116 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.84759e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.02581 ft, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.565128 ft, max=5 m
+TimeStepManager    |   Proposed dT=0.210276 h, events limit it to 7.49785 min
+CycleDriver        |  New time = 2.65892 h
+CycleDriver        |  
+CycleDriver        |  Cycle 72: time = 2.65892 h, dt = 7.49785 min
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.84544e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.958677 ft, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.497992 ft, max=5 m
+TimeStepManager    |   Proposed dT=0.137461 h, stability from previous step changes it to 0.210276 h
+TimeStepManager    |   Accepted proposed dT=0.210276 h
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 2.78389 h
+CycleDriver        |  
+CycleDriver        |  Cycle 73: time = 2.78389 h, dt = 0.210276 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.84201e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.853618 ft, max=5 m
+DarcyPK            |    domain head (cells + faces): min=0.392933 ft, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.231303 h
+CycleDriver        |  New time = 2.99416 h
+CycleDriver        |  
+CycleDriver        |  Cycle 74: time = 2.99416 h, dt = 0.231303 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.83845e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.746308 ft, max=5 m
+DarcyPK            |    domain head (cells + faces): min=3.42746 in, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.254434 h
+CycleDriver        |  New time = 3.22547 h
+CycleDriver        |  
+CycleDriver        |  Cycle 75: time = 3.22547 h, dt = 0.254434 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.83476e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.636856 ft, max=5 m
+DarcyPK            |    domain head (cells + faces): min=2.11404 in, max=5 m
+TimeStepManager    |   Proposed dT=0.279877 h, events limit it to 0.216209 h
+CycleDriver        |  New time = 3.4799 h
+CycleDriver        |  
+CycleDriver        |  Cycle 76: time = 3.4799 h, dt = 0.216209 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.83177e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.549337 ft, max=5 m
+DarcyPK            |    domain head (cells + faces): min=1.0638 in, max=5 m
+TimeStepManager    |   Proposed dT=0.23783 h, stability from previous step changes it to 0.279877 h
+TimeStepManager    |   Accepted proposed dT=0.279877 h
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 3.69611 h
+CycleDriver        |  
+CycleDriver        |  Cycle 77: time = 3.69611 h, dt = 0.279877 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.82812e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.444 ft, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.00508636 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.307865 h
+CycleDriver        |  New time = 3.97599 h
+CycleDriver        |  
+CycleDriver        |  Cycle 78: time = 3.97599 h, dt = 0.307865 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.82434e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=0.336426 ft, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.0378751 m, max=5 m
+TimeStepManager    |   Accepted proposed dT=0.338651 h
+CycleDriver        |  New time = 4.28385 h
+CycleDriver        |  
+CycleDriver        |  Cycle 79: time = 4.28385 h, dt = 0.338651 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.82042e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=2.7207 in, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.0713119 m, max=5.00001 m
+TimeStepManager    |   Proposed dT=0.372516 h, events limit it to 0.24944 h
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 4.6225 h
+CycleDriver        |  
+CycleDriver        |  Cycle 80: time = 4.6225 h, dt = 0.24944 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.81765e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.80153 in, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.0946589 m, max=5.00001 m
+TimeStepManager    |   Proposed dT=0.274384 h, stability from previous step changes it to 0.372516 h
+TimeStepManager    |   Accepted proposed dT=0.372516 h
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 4.87194 h
+CycleDriver        |  
+CycleDriver        |  Cycle 81: time = 4.87194 h, dt = 0.372516 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.81376e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=1.33608 cm, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.127057 m, max=5.00001 m
+TimeStepManager    |   Accepted proposed dT=0.409768 h
+CycleDriver        |  New time = 0.218519 d
+CycleDriver        |  
+CycleDriver        |  Cycle 82: time = 0.218519 d, dt = 0.409768 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.80972e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.0197052 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.160123 m, max=5.00002 m
+TimeStepManager    |   Accepted proposed dT=0.450745 h
+CycleDriver        |  New time = 0.235593 d
+CycleDriver        |  
+CycleDriver        |  Cycle 83: time = 0.235593 d, dt = 0.450745 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.80555e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.0534053 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.193824 m, max=5.00003 m
+TimeStepManager    |   Proposed dT=0.495819 h, events limit it to 0.255026 h
+CycleDriver        |  New time = 0.254374 d
+CycleDriver        |  
+CycleDriver        |  Cycle 84: time = 0.254374 d, dt = 0.255026 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.80327e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.0716869 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.212105 m, max=5.00003 m
+TimeStepManager    |   Proposed dT=0.280529 h, stability from previous step changes it to 0.495819 h
+TimeStepManager    |   Accepted proposed dT=0.495819 h
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 0.265 d
+CycleDriver        |  
+CycleDriver        |  Cycle 85: time = 0.265 d, dt = 0.495819 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.7991e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.104672 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.24509 m, max=5.00004 m
+TimeStepManager    |   Accepted proposed dT=0.545401 h
+CycleDriver        |  New time = 0.285659 d
+CycleDriver        |  
+CycleDriver        |  Cycle 86: time = 0.285659 d, dt = 0.545401 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.79479e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.138296 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.278714 m, max=5.00005 m
+TimeStepManager    |   Accepted proposed dT=0.599941 h
+CycleDriver        |  New time = 0.308384 d
+CycleDriver        |  
+CycleDriver        |  Cycle 87: time = 0.308384 d, dt = 0.599941 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.79033e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.172525 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.312943 m, max=5.00006 m
+TimeStepManager    |   Proposed dT=0.659935 h, events limit it to 0.350783 h
+CycleDriver        |  New time = 0.333382 d
+CycleDriver        |  
+CycleDriver        |  Cycle 88: time = 0.333382 d, dt = 0.350783 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.78782e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.191676 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.332095 m, max=5.00007 m
+TimeStepManager    |   Proposed dT=0.385861 h, stability from previous step changes it to 0.659935 h
+TimeStepManager    |   Accepted proposed dT=0.659935 h
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 0.347998 d
+CycleDriver        |  
+CycleDriver        |  Cycle 89: time = 0.347998 d, dt = 0.659935 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.78337e+07  itrs=4
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.225082 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.365501 m, max=5.00007 m
+TimeStepManager    |   Accepted proposed dT=0.725929 h
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 0.375495 d
+CycleDriver        |  
+CycleDriver        |  Cycle 90: time = 0.375495 d, dt = 0.725929 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.77879e+07  itrs=4
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.259105 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.399524 m, max=5.00008 m
+TimeStepManager    |   Accepted proposed dT=0.798522 h
+CycleDriver        |  New time = 0.405742 d
+CycleDriver        |  
+CycleDriver        |  Cycle 91: time = 0.405742 d, dt = 0.798522 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.77406e+07  itrs=4
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.293711 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.434129 m, max=5.00009 m
+TimeStepManager    |   Proposed dT=0.878374 h, events limit it to 0.311725 h
+CycleDriver        |  New time = 0.439014 d
+CycleDriver        |  
+CycleDriver        |  Cycle 92: time = 0.439014 d, dt = 0.311725 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.77226e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.306816 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.447235 m, max=5.0001 m
+TimeStepManager    |   Proposed dT=0.342897 h, stability from previous step changes it to 0.878374 h
+TimeStepManager    |   Accepted proposed dT=0.878374 h
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 0.452002 d
+CycleDriver        |  
+CycleDriver        |  Cycle 93: time = 0.452002 d, dt = 0.878374 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.7675e+07  itrs=4
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.340995 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.481414 m, max=5.00011 m
+TimeStepManager    |   Accepted proposed dT=0.966212 h
+CycleDriver        |  New time = 0.488601 d
+CycleDriver        |  
+CycleDriver        |  Cycle 94: time = 0.488601 d, dt = 0.966212 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.7626e+07  itrs=4
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.375746 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.516165 m, max=5.00013 m
+TimeStepManager    |   Proposed dT=1.06283 h, events limit it to 0.601735 h
+CycleDriver        |  New time = 0.52886 d
+CycleDriver        |  
+CycleDriver        |  Cycle 95: time = 0.52886 d, dt = 0.601735 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.75966e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.396385 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.536804 m, max=5.00014 m
+TimeStepManager    |   Proposed dT=0.661908 h, stability from previous step changes it to 1.06283 h
+TimeStepManager    |   Proposed dT=1.06283 h, events limit it to 0.601735 h
+CycleDriver        |  New time = 0.553932 d
+CycleDriver        |  
+CycleDriver        |  Cycle 96: time = 0.553932 d, dt = 0.601735 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.75684e+07  itrs=3
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.416109 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.556527 m, max=5.00015 m
+TimeStepManager    |   Proposed dT=0.661908 h, stability from previous step changes it to 1.06283 h
+TimeStepManager    |   Accepted proposed dT=1.06283 h
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 0.579005 d
+CycleDriver        |  
+CycleDriver        |  Cycle 97: time = 0.579005 d, dt = 1.06283 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.75214e+07  itrs=4
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.448474 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.588893 m, max=5.00015 m
+TimeStepManager    |   Accepted proposed dT=1.16912 h
+CycleDriver        |  New time = 0.623289 d
+CycleDriver        |  
+CycleDriver        |  Cycle 98: time = 0.623289 d, dt = 1.16912 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.7473e+07  itrs=4
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.481496 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.621915 m, max=5.00014 m
+TimeStepManager    |   Accepted proposed dT=1.28603 h
+CycleDriver        |  New time = 0.672002 d
+CycleDriver        |  
+CycleDriver        |  Cycle 99: time = 0.672002 d, dt = 1.28603 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.74231e+07  itrs=4
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.515131 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.65555 m, max=5.00012 m
+TimeStepManager    |   Proposed dT=1.41463 h, events limit it to 0.922024 h
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 0.725587 d
+CycleDriver        |  
+CycleDriver        |  Field                                    Min/Max/Avg
+CycleDriver        |  atmospheric_pressure.................... 101325
+CycleDriver        |  const_fluid_density..................... 998.2
+CycleDriver        |  const_fluid_viscosity................... 0.001002
+CycleDriver        |  darcy_velocity.......................... -8.95583e-05 / 8.92966e-05 / 3.06957e-09
+CycleDriver        |  dt...................................... 4629.7
+CycleDriver        |  gravity................................. 0 0 -9.80665
+CycleDriver        |  hydraulic_head.......................... -0.515131 / 5 / 3.93322 [m]
+CycleDriver        |  mass_density_liquid.bnd_face............ 998.2 / 998.2 / 998.2
+CycleDriver        |  mass_density_liquid.cell................ 998.2 / 998.2 / 998.2
+CycleDriver        |  molar_flow_rate......................... -10.0625 / 26.9794 / 0.26868
+CycleDriver        |  permeability............................ 2.3543e-12 / 2.3543e-11 / 9.4172e-12 [m^2]
+CycleDriver        |  porosity................................ 0.3 / 0.3 / 0.3 [-]
+CycleDriver        |  pressure.cell........................... 71809.9 / 125797 / 115355 [Pa]
+CycleDriver        |  pressure.face........................... 47337.4 / 150270 / 115366 [Pa]
+CycleDriver        |  prev_saturation_liquid.................. 1 / 1 / 1
+CycleDriver        |  prev_water_storage...................... 0.549193 / 0.962083 / 0.882219
+CycleDriver        |  saturation_liquid....................... 1 / 1 / 1 [-]
+CycleDriver        |  specific_storage........................ 7.5e-05 / 7.5e-05 / 7.5e-05 [m]
+CycleDriver        |  specific_yield.......................... 0 / 0 / 0
+CycleDriver        |  time.................................... 62690.7
+CycleDriver        |  time@current............................ 0
+CycleDriver        |  volumetric_flow_rate.................... -0.000181606 / 0.00048692 / 4.84908e-06 [m^3/s]
+CycleDriver        |  water_content........................... 0.3 / 0.3 / 0.3 [-]
+CycleDriver        |  water_storage........................... 0.549193 / 0.962083 / 0.882219
+CycleDriver        |  
+CycleDriver        |  Simulation end time: 86400 sec.
+CycleDriver        |  CPU time stamp: [00:00:37]
+CycleDriver        |  
+CycleDriver        |  Cycle 100: time = 0.725587 d, dt = 0.922024 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.73889e+07  itrs=4
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.538 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.678419 m, max=5.0001 m
+TimeStepManager    |   Proposed dT=1.01423 h, stability from previous step changes it to 1.41463 h
+TimeStepManager    |   Accepted proposed dT=1.41463 h
+CycleDriver        |   writing observations... 3
+CycleDriver        |  New time = 0.764005 d
+CycleDriver        |  
+CycleDriver        |  Cycle 101: time = 0.764005 d, dt = 1.41463 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.73397e+07  itrs=4
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.570543 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.710962 m, max=5.00006 m
+TimeStepManager    |   Accepted proposed dT=1.55609 h
+CycleDriver        |  New time = 0.822948 d
+CycleDriver        |  
+CycleDriver        |  Cycle 102: time = 0.822948 d, dt = 1.55609 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.72891e+07  itrs=4
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.603678 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.744098 m, max=5.00001 m
+TimeStepManager    |   Accepted proposed dT=1.7117 h
+CycleDriver        |  New time = 0.887785 d
+CycleDriver        |  
+CycleDriver        |  Cycle 103: time = 0.887785 d, dt = 1.7117 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.72371e+07  itrs=4
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.637341 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.77776 m, max=5.00002 m
+TimeStepManager    |   Proposed dT=1.88287 h, events limit it to 0.981463 h
+CycleDriver        |  New time = 0.959106 d
+CycleDriver        |  
+CycleDriver        |  Cycle 104: time = 0.959106 d, dt = 0.981463 h
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=2.72084e+07  itrs=4
+DarcyPK            |    boundary head (BCs): min=5 m, max=5 m
+DarcyPK            |    domain head (cells): min=-0.655798 m, max=5 m
+DarcyPK            |    domain head (cells + faces): min=-0.796218 m, max=5.00002 m
+TimeStepManager    |   Proposed dT=1.07961 h, stability from previous step changes it to 1.88287 h
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |   writing observations... 3
+CycleDriver        |   writing checkpoint file
+CycleDriver        |  New time = 1 d
+CycleDriver        |  
+CycleDriver        |  Field                                    Min/Max/Avg
+CycleDriver        |  atmospheric_pressure.................... 101325
+CycleDriver        |  const_fluid_density..................... 998.2
+CycleDriver        |  const_fluid_viscosity................... 0.001002
+CycleDriver        |  darcy_velocity.......................... -8.95584e-05 / 8.92967e-05 / 3.13846e-09
+CycleDriver        |  dt...................................... 3533.27
+CycleDriver        |  gravity................................. 0 0 -9.80665
+CycleDriver        |  hydraulic_head.......................... -0.655798 / 5 / 3.83476 [m]
+CycleDriver        |  mass_density_liquid.bnd_face............ 998.2 / 998.2 / 998.2
+CycleDriver        |  mass_density_liquid.cell................ 998.2 / 998.2 / 998.2
+CycleDriver        |  molar_flow_rate......................... -10.0625 / 26.9794 / 0.279137
+CycleDriver        |  permeability............................ 2.3543e-12 / 2.3543e-11 / 9.4172e-12 [m^2]
+CycleDriver        |  porosity................................ 0.3 / 0.3 / 0.3 [-]
+CycleDriver        |  pressure.cell........................... 70432.9 / 125798 / 114391 [Pa]
+CycleDriver        |  pressure.face........................... 45960.4 / 150270 / 114403 [Pa]
+CycleDriver        |  prev_saturation_liquid.................. 1 / 1 / 1
+CycleDriver        |  prev_water_storage...................... 0.538662 / 0.962083 / 0.874847
+CycleDriver        |  saturation_liquid....................... 1 / 1 / 1 [-]
+CycleDriver        |  specific_storage........................ 7.5e-05 / 7.5e-05 / 7.5e-05 [m]
+CycleDriver        |  specific_yield.......................... 0 / 0 / 0
+CycleDriver        |  time.................................... 86400
+CycleDriver        |  time@current............................ 0
+CycleDriver        |  volumetric_flow_rate.................... -0.000181607 / 0.00048692 / 5.03782e-06 [m^3/s]
+CycleDriver        |  water_content........................... 0.3 / 0.3 / 0.3 [-]
+CycleDriver        |  water_storage........................... 0.538662 / 0.962083 / 0.874847
+CycleDriver        |  ======================================================================
+CycleDriver        |  Simulation made 105 cycles.
+CycleDriver        |  All meshes combined have 12208 cells.
+CycleDriver        |  Memory usage (high water mark):
+CycleDriver        |    Maximum per core:     666.8 MBytes,  maximum per cell: 57268.8 Bytes
+CycleDriver        |    Minumum per core:     666.8 MBytes,  minimum per cell: 57268.8 Bytes
+CycleDriver        |    Total:                666.8 MBytes,  total per cell:   57268.8 Bytes
+CycleDriver        |  Doubles allocated in state fields 
+CycleDriver        |    Maximum per core:   2.74937 MBytes
+CycleDriver        |    Minimum per core:   2.74937 MBytes
+CycleDriver        |    Total:              2.74937 MBytes
+================================================================================
+
+                      TimeMonitor results over 1 processor
+
+Timer Name                  Global time (num calls)    
+--------------------------------------------------------------------------------
+Full Simulation             39.05 (1)                  
+Geometric Model Creation    2.4e-05 (1)                
+Mesh Creation               5.799 (1)                  
+================================================================================
+Amanzi::SIMULATION_SUCCESSFUL
+

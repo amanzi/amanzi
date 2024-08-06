@@ -1,0 +1,483 @@
+[pn2401379.lanl.gov:76825] shmem: mmap: an error occurred while determining whether or not /var/folders/36/xt3jx8554vj0_03sz682d5_800074q/T//ompi.pn2401379.7319/jf.0/2627600384/sm_segment.pn2401379.7319.9c9e0000.0 could be created.
+InputConverter-u   |  Amanzi executable tag: 1.6-dev_01c79db22
+InputConverter-u   |  Verify high-level XML structure
+InputConverter-u   |  Liquid phase has 1 solutes
+InputConverter-u   |   solute: tracer
+InputConverter-u   |  AUTHOR: Konstantin Lipnikov
+InputConverter-u   |  Translating units: m s kg SI K
+InputConverter-u   |  Translating unstructured mesh
+InputConverter-u   |  Translating regions
+InputConverter-u   |   found 6 regions plus region "All".
+InputConverter-u   |  Translating state
+InputConverter-u   |  Translating output
+InputConverter-u   |   Found 1 cycle macros and 3 time macros.
+InputConverter-u   |   Translating output: visualization
+InputConverter-u   |   Translating output: observations
+InputConverter-u   |   Found 3 liquid observations
+InputConverter-u   |   Found 0 gas observations
+InputConverter-u   |  Translating cycle driver
+InputConverter-u   |   Translating time period controls
+InputConverter-u   |   created 0 special times
+InputConverter-u   |  Translating process kernels
+InputConverter-u   |   TP: PK name="steady:coupled flow", factory: "darcy matrix fracture"
+InputConverter-u   |   TP: PK name="transient:coupled transport", factory: "transport matrix fracture implicit"
+InputConverter-u   |   Next PK is "transient:transport fracture"
+InputConverter-u   |   Translating transport, domain=fracture
+InputConverter-u   |    Translating molecular diffusion data
+InputConverter-u   |    Translating multiscale models
+InputConverter-u   |    Translating boundary conditions
+InputConverter-u   |    Translating source terms
+InputConverter-u   |   Next PK is "transient:transport matrix"
+InputConverter-u   |   Translating transport, domain=matrix
+InputConverter-u   |    Translating molecular diffusion data
+InputConverter-u   |    Translating multiscale models
+InputConverter-u   |    Translating boundary conditions
+InputConverter-u   |    Translating source terms
+InputConverter-u   |   Next PK is "transient:coupled transport"
+InputConverter-u   |    Translating time integrator
+InputConverter-u   |   Next PK is "steady:flow fracture"
+InputConverter-u   |   Translating flow, mode=steady domain=fracture
+InputConverter-u   |    Translating optional fracture models, domain=fracture
+InputConverter-u   |    Translating time integrator
+InputConverter-u   |    Translating boundary conditions
+InputConverter-u   |   Next PK is "steady:flow matrix"
+InputConverter-u   |   Translating flow, mode=steady domain=matrix
+InputConverter-u   |    Translating optional fracture models, domain=matrix
+InputConverter-u   |    Translating time integrator
+InputConverter-u   |    Translating boundary conditions
+InputConverter-u   |     active BCs: static head, no flow (default)
+InputConverter-u   |   Next PK is "steady:coupled flow"
+InputConverter-u   |    Translating time integrator
+InputConverter-u   |  Translating solvers
+InputConverter-u   |   pcg: itrs=20, tol=1e-14, pc=Hypre AMG
+InputConverter-u   |   pcg: itrs=20, tol=1e-14, pc=Hypre AMG
+InputConverter-u   |   pcg: itrs=20, tol=1e-14, pc=Hypre AMG
+InputConverter-u   |   pcg: itrs=20, tol=1e-14, pc=Hypre AMG
+InputConverter-u   |  Translating preconditioners
+InputConverter-u   |  Final comments:
+InputConverter-u   |   found units: h s^-1 
+InputConverter-u   |   Writing the translated XML to amanzi_single_fracture_native.xml
+InputConverter-u   |  CPU time stamp: [00:00:01]
+Amanzi::MeshFactor |  Creating mesh from file "single_fracture.exo" using format "MSTK"
+Mesh Output        |  cells, tot/min/max: 8000/8000/8000
+Mesh Output        |  faces, tot/min/max: 25200/25200/25200
+Mesh Output        |  edges, tot/min/max: 26460/26460/26460
+Mesh Output        |  nodes, tot/min/max: 9261/9261/9261
+Mesh Output        |  
+Mesh               |  CPU time stamp: [00:00:02]
+Mesh Output        |   cells, tot/min/max: 400/400/400
+Mesh Output        |   faces, tot/min/max: 840/840/840
+Mesh Output        |   nodes, tot/min/max: 441/441/441
+Mesh Output        |   
+InputAnalysis:doma |  bc: "SurfaceInlet" has 40 faces of 1000 [m^2]
+InputAnalysis:doma |  bc: "SurfaceOutlet" has 160 faces of 1000 [m^2]
+InputAnalysis:doma |  obs: "RegionBottom" has 3200 cells, size: 100000
+InputAnalysis:doma |  obs: "EntireDomain" has 8000 cells, size: 1e+06
+InputAnalysis:doma |  obs: "SurfaceOutlet" has 160 faces, size: 1000
+State              |  ------------------------------------------
+State              |  Dependency & Structure list for evaluators
+State              |  ------------------------------------------
+State              |  darcy_velocity
+State              |    type: secondary
+State              |    dep: volumetric_flow_rate, tag=""
+State              |    comp=cell location=4 dofs=3
+State              |    
+State              |  fracture-aperture
+State              |    type: secondary
+State              |    dep: fracture-pressure, tag=""
+State              |    dep: fracture-ref_aperture, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  fracture-compliance
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  fracture-darcy_velocity
+State              |    type: secondary
+State              |    dep: fracture-volumetric_flow_rate, tag=""
+State              |    comp=cell location=4 dofs=3
+State              |    
+State              |  fracture-mass_density_liquid
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    comp=boundary_face location=13 dofs=1
+State              |    
+State              |  fracture-molar_flow_rate
+State              |    Type: primary
+State              |    comp=face location=3 dofs=1
+State              |    
+State              |  fracture-permeability
+State              |    type: secondary
+State              |    dep: fracture-aperture, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  fracture-permeability_effective
+State              |    type: secondary
+State              |    dep: fracture-aperture, tag=""
+State              |    dep: fracture-permeability, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  fracture-porosity
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  fracture-pressure
+State              |    Type: primary
+State              |    comp=cell location=4 dofs=1
+State              |    comp=face location=3 dofs=1
+State              |    
+State              |  fracture-ref_aperture
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  fracture-saturation_liquid
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  fracture-specific_storage
+State              |    type: secondary
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  fracture-volumetric_flow_rate
+State              |    type: secondary
+State              |    dep: fracture-molar_flow_rate, tag=""
+State              |    comp=face location=3 dofs=1
+State              |    
+State              |  fracture-water_content
+State              |    type: secondary
+State              |    dep: fracture-porosity, tag=""
+State              |    dep: fracture-saturation_liquid, tag=""
+State              |    dep: fracture-aperture, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  fracture-water_storage
+State              |    type: secondary
+State              |    dep: fracture-pressure, tag=""
+State              |    dep: fracture-aperture, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  mass_density_liquid
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    comp=boundary_face location=13 dofs=1
+State              |    
+State              |  molar_flow_rate
+State              |    Type: primary
+State              |    comp=face location=3 dofs=1
+State              |    
+State              |  porosity
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  pressure
+State              |    Type: primary
+State              |    comp=face location=3 dofs=1
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  saturation_liquid
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  specific_storage
+State              |    type: secondary
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  volumetric_flow_rate
+State              |    type: secondary
+State              |    dep: molar_flow_rate, tag=""
+State              |    comp=face location=3 dofs=1
+State              |    
+State              |  water_content
+State              |    type: secondary
+State              |    dep: porosity, tag=""
+State              |    dep: saturation_liquid, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  water_storage
+State              |    type: secondary
+State              |    dep: pressure, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  ------------------------------
+State              |  Structure list for derivatives
+State              |  ------------------------------
+State              |  Dfracture-aperture/D{ fracture-pressure }
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  Dfracture-water_storage/D{ fracture-pressure }
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  Dwater_storage/D{ pressure }
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  Setup is complete.
+State              |  
+CycleDriver        |  Setup is complete.
+State              |  initializing data through initial conditions...
+State              |  initializing "atmospheric_pressure" [ok]
+State              |  initializing "const_fluid_density" [ok]
+State              |  initializing "const_fluid_viscosity" [ok]
+State              |  initializing "cycle" ... skipped
+State              |  initializing "darcy_velocity" ... skipped
+State              |  initializing "dt" ... skipped
+State              |  initializing "fracture-aperture" ... skipped
+State              |  initializing "fracture-compliance" ... skipped
+State              |  initializing "fracture-darcy_velocity" ... skipped
+State              |  initializing "fracture-diffusion_to_matrix" [ok]
+State              |  initializing "fracture-hydraulic_head" ... skipped
+State              |  initializing "fracture-mass_density_liquid" ... skipped
+State              |  initializing "fracture-molar_flow_rate" ... skipped
+State              |  initializing "fracture-permeability" ... skipped
+State              |  initializing "fracture-permeability_effective" ... skipped
+State              |  initializing "fracture-porosity" ... skipped
+State              |  initializing "fracture-pressure" [ok]
+State              |  initializing "fracture-prev_saturation_liquid" ... skipped
+State              |  initializing "fracture-prev_water_storage" ... skipped
+State              |  initializing "fracture-ref_aperture" ... skipped
+State              |  initializing "fracture-ref_pressure" ... skipped
+State              |  initializing "fracture-saturation_liquid" [ok]
+State              |  initializing "fracture-specific_storage" ... skipped
+State              |  initializing "fracture-specific_yield" ... skipped
+State              |  initializing "fracture-volumetric_flow_rate" ... skipped
+State              |  initializing "fracture-water_content" ... skipped
+State              |  initializing "fracture-water_storage" ... skipped
+State              |  initializing "gravity" [ok]
+State              |  initializing "hydraulic_head" ... skipped
+State              |  initializing "mass_density_liquid" ... skipped
+State              |  initializing "molar_flow_rate" ... skipped
+State              |  initializing "permeability" [ok]
+State              |  initializing "porosity" ... skipped
+State              |  initializing "position" ... skipped
+State              |  initializing "pressure" [ok]
+State              |  initializing "prev_saturation_liquid" ... skipped
+State              |  initializing "prev_water_storage" ... skipped
+State              |  initializing "saturation_liquid" [ok]
+State              |  initializing "specific_storage" ... skipped
+State              |  initializing "specific_yield" ... skipped
+State              |  initializing "time" ... skipped
+State              |  initializing "volumetric_flow_rate" ... skipped
+State              |  initializing "water_content" ... skipped
+State              |  initializing "water_storage" ... skipped
+State              |  initializing eval: "darcy_velocity" @ ""
+State              |  initializing eval: "fracture-aperture" @ ""
+State              |  initializing eval: "fracture-compliance" @ ""
+State              |  initializing eval: "fracture-darcy_velocity" @ ""
+State              |  initializing eval: "fracture-mass_density_liquid" @ ""
+State              |  initializing eval: "fracture-molar_flow_rate" @ ""
+State              |  initializing eval: "fracture-permeability" @ ""
+State              |  initializing eval: "fracture-permeability_effective" @ ""
+State              |  initializing eval: "fracture-porosity" @ ""
+State              |  initializing eval: "fracture-pressure" @ ""
+State              |  initializing eval: "fracture-ref_aperture" @ ""
+State              |  initializing eval: "fracture-saturation_liquid" @ ""
+State              |  initializing eval: "fracture-specific_storage" @ ""
+State              |  initializing eval: "fracture-volumetric_flow_rate" @ ""
+State              |  initializing eval: "fracture-water_content" @ ""
+State              |  initializing eval: "fracture-water_storage" @ ""
+State              |  initializing eval: "mass_density_liquid" @ ""
+State              |  initializing eval: "molar_flow_rate" @ ""
+State              |  initializing eval: "porosity" @ ""
+State              |  initializing eval: "pressure" @ ""
+State              |  initializing eval: "saturation_liquid" @ ""
+State              |  initializing eval: "specific_storage" @ ""
+State              |  initializing eval: "volumetric_flow_rate" @ ""
+State              |  initializing eval: "water_content" @ ""
+State              |  initializing eval: "water_storage" @ ""
+DarcyPK            |   initialized "specific_yield" to value 0
+DarcyPK            |   initialized "hydraulic_head" to value 0
+DarcyPK            |   initialized "prev_saturation_liquid" to value 1
+DarcyPK            |   initialized prev_water_storage to water_storage
+DarcyPK            |  WARNING: BDF1 time integration list is missing...
+DarcyPK            |  
+DarcyPK            |  TI:"none" dt:timestep controller is not defined LS:"AztecOO" PC:"Hypre AMG"
+DarcyPK            |  matrix: <DiffusionFracturedMatrix: CELL_FACE+CELL> <CELL_CELL> 
+DarcyPK            |  constant viscosity model, mu=0.001
+DarcyPK            |  initial pressure guess: "from State"
+DarcyPK            |  
+DarcyPK            |  pressure BC assigned to 200 faces
+DarcyPK            |  default (no-flow) BC assigned to 2200 faces
+DarcyPK            |  
+DarcyPK            |   boundary head (BCs): min=1 m, max=4 m
+DarcyPK            |   domain head (cells): min=-9.50733 m, max=0.0871758 km
+DarcyPK            |   domain head (cells + faces): min=-10.1323 m, max=0.0898677 km
+DarcyPK            |  [1;32mInitialization of PK is complete, T=0 dT=1e+99[0m
+DarcyPK            |  
+DarcyPK-fracture   |   initialized "fracture-specific_yield" to value 0
+DarcyPK-fracture   |   initialized "fracture-hydraulic_head" to value 0
+DarcyPK-fracture   |   initialized "fracture-prev_saturation_liquid" to value 1
+DarcyPK-fracture   |   initialized fracture-ref_pressure to fracture-pressure
+DarcyPK-fracture   |   initialized fracture-prev_water_storage to fracture-water_storage
+DarcyPK-fracture   |  WARNING: BDF1 time integration list is missing...
+DarcyPK-fracture   |  
+DarcyPK-fracture   |  TI:"none" dt:timestep controller is not defined LS:"AztecOO" PC:"Hypre AMG"
+DarcyPK-fracture   |  matrix: <Diffusion: CELL_FACE+CELL> <CELL_CELL> 
+DarcyPK-fracture   |  constant viscosity model, mu=0.001
+DarcyPK-fracture   |  initial pressure guess: "from State"
+DarcyPK-fracture   |  
+DarcyPK-fracture   |  pressure BC assigned to 0 faces
+DarcyPK-fracture   |  default (no-flow) BC assigned to 80 faces
+DarcyPK-fracture   |  
+DarcyPK-fracture   |   domain head (cells): min=11.3677 m, max=0.0683677 km
+DarcyPK-fracture   |   domain head (cells + faces): min=9.86768 m, max=0.0698677 km
+DarcyPK-fracture   |  [1;32mInitialization of PK is complete, T=0 dT=1e+99[0m
+DarcyPK-fracture   |  
+TI::BDF1           |  step 0 T = 0 [sec]  dT = -1e+98
+TI::BDF1           |  preconditioner lag is 0 out of 5
+Solver::NKA        |  0: error=1.70769e+07  l2-error=1.70769e+07
+Solver::NKA        |  1: error=144.511  l2-error=144.511
+Solver::NKA        |  2: error=0.00290581  l2-error=0.00290581
+Solver::NKA        |  3: error=9.54699e-05  l2-error=9.54699e-05
+Solver::NKA        |  4: error=7.6559e-07  l2-error=7.6559e-07
+Solver::NKA        |  Solver converged: 4 itrs, error=7.6559e-07
+TI::BDF1           |  success: 4 nonlinear itrs error=7.6559e-07
+TI::BDF1           |  TS:0 FS:0 NS:4 PC:4 4 LS:0 dt:-1.0000e+98 2.2251e-308
+CoupledFlow_PK     |  coupling matrix:
+CoupledFlow_PK     |    block 0 0: <Coupling_DIAGONAL> 
+CoupledFlow_PK     |    block 0 1: <Coupling_DIAGONAL> 
+CoupledFlow_PK     |    block 1 0: <Coupling_DIAGONAL> 
+CoupledFlow_PK     |    block 1 1: <Coupling_DIAGONAL> 
+CoupledFlow_PK     |  
+CoupledFlow_PK     |  preconditioner:
+CoupledFlow_PK     |    block 0 0: <DiffusionFracturedMatrix: CELL_FACE+CELL> <CELL_CELL> <Coupling_DIAGONAL> 
+CoupledFlow_PK     |    block 0 1: <Coupling_DIAGONAL> 
+CoupledFlow_PK     |    block 1 0: <Coupling_DIAGONAL> 
+CoupledFlow_PK     |    block 1 1: <Diffusion: CELL_FACE+CELL> <CELL_CELL> <Coupling_DIAGONAL> 
+CoupledFlow_PK     |  
+CoupledFlow_PK     |  [1;32mInitialization of PK is complete: my dT=1e+99[0m
+CoupledFlow_PK     |  
+DarcyPK-fracture   |  maximum error in conservation law:2.23242e-10 flux_max=6.31882e-06
+TimeStepManager    |  Proposed dT=0.317098 noleap, is near equal to next event time remaining 0.317098 noleap.
+TimeStepManager    |  Proposed dT=0.317098 noleap, is near equal to next event time remaining 0.317098 noleap.
+CycleDriver        |  Resetting time step to the maximum allowed of 1 s
+State              |  initializing eval: "darcy_velocity" @ ""
+State              |  initializing eval: "fracture-aperture" @ ""
+State              |  initializing eval: "fracture-compliance" @ ""
+State              |  initializing eval: "fracture-darcy_velocity" @ ""
+State              |  initializing eval: "fracture-mass_density_liquid" @ ""
+State              |  initializing eval: "fracture-molar_flow_rate" @ ""
+State              |  initializing eval: "fracture-permeability" @ ""
+State              |  initializing eval: "fracture-permeability_effective" @ ""
+State              |  initializing eval: "fracture-porosity" @ ""
+State              |  initializing eval: "fracture-pressure" @ ""
+State              |  initializing eval: "fracture-ref_aperture" @ ""
+State              |  initializing eval: "fracture-saturation_liquid" @ ""
+State              |  initializing eval: "fracture-specific_storage" @ ""
+State              |  initializing eval: "fracture-volumetric_flow_rate" @ ""
+State              |  initializing eval: "fracture-water_content" @ ""
+State              |  initializing eval: "fracture-water_storage" @ ""
+State              |  initializing eval: "mass_density_liquid" @ ""
+State              |  initializing eval: "molar_flow_rate" @ ""
+State              |  initializing eval: "porosity" @ ""
+State              |  initializing eval: "pressure" @ ""
+State              |  initializing eval: "saturation_liquid" @ ""
+State              |  initializing eval: "specific_storage" @ ""
+State              |  initializing eval: "volumetric_flow_rate" @ ""
+State              |  initializing eval: "water_content" @ ""
+State              |  initializing eval: "water_storage" @ ""
+CycleDriver        |  writing visualization file: domain
+CycleDriver        |  writing visualization file: fracture
+CycleDriver        |  writing observations... 3
+CycleDriver        |  
+CycleDriver        |  Field                                    Min/Max/Avg
+CycleDriver        |  atmospheric_pressure.................... 101325
+CycleDriver        |  const_fluid_density..................... 1000
+CycleDriver        |  const_fluid_viscosity................... 0.001
+CycleDriver        |  darcy_velocity.......................... -2.20882e-07 / 1.34951e-07 / -1.33209e-08
+CycleDriver        |  dt...................................... 1
+CycleDriver        |  fracture-aperture....................... 0.01 / 0.01 / 0.01 [m]
+CycleDriver        |  fracture-compliance..................... 0 / 0 / 0
+CycleDriver        |  fracture-darcy_velocity................. -6.48584e-07 / 1.08097e-06 / 5.81908e-08
+CycleDriver        |  fracture-diffusion_to_matrix............ 0.002 / 0.002 / 0.002
+CycleDriver        |  fracture-hydraulic_head................. 1.90211 / 1.90211 / 1.90211 [m]
+CycleDriver        |  fracture-mass_density_liquid.bnd_face... 1000 / 1000 / 1000
+CycleDriver        |  fracture-mass_density_liquid.cell....... 1000 / 1000 / 1000
+CycleDriver        |  fracture-molar_flow_rate................ -0.350747 / 0.350746 / -4.38227e-10
+CycleDriver        |  fracture-permeability................... 0.01 / 0.01 / 0.01 [m^2]
+CycleDriver        |  fracture-permeability_eff............... 0.0001 / 0.0001 / 0.0001 [m^3]
+CycleDriver        |  fracture-porosity....................... 0.4 / 0.4 / 0.4 [-]
+CycleDriver        |  fracture-pressure.cell.................. -664654 / -94653.9 / -379654 [Pa]
+CycleDriver        |  fracture-pressure.face.................. -679654 / -79653.9 / -379654 [Pa]
+CycleDriver        |  fracture-prev_saturation_liquid......... 1 / 1 / 1
+CycleDriver        |  fracture-prev_water_storage............. -0 / -0 / 0
+CycleDriver        |  fracture-ref_aperture................... 0.01 / 0.01 / 0.01
+CycleDriver        |  fracture-ref_pressure................... 1.8 / 1.8 / 1.8
+CycleDriver        |  fracture-saturation_liquid.............. 1 / 1 / 1 [-]
+CycleDriver        |  fracture-specific_storage............... 0 / 0 / 0 [m]
+CycleDriver        |  fracture-specific_yield................. 0 / 0 / 0
+CycleDriver        |  fracture-volumetric_flow_rate........... -6.31882e-06 / 6.31881e-06 / -7.89481e-15 [m^3/s]
+CycleDriver        |  fracture-water_content.................. 0.004 / 0.004 / 0.004 [m]
+CycleDriver        |  fracture-water_storage.................. -0 / -0 / 0
+CycleDriver        |  gravity................................. 0 0 -10
+CycleDriver        |  hydraulic_head.......................... 1.03113 / 3.65723 / 1.66609 [m]
+CycleDriver        |  mass_density_liquid.bnd_face............ 1000 / 1000 / 1000
+CycleDriver        |  mass_density_liquid.cell................ 1000 / 1000 / 1000
+CycleDriver        |  molar_flow_rate......................... -0.268062 / 0.162025 / -0.00381374
+CycleDriver        |  permeability............................ 1e-13 / 1e-12 / 4.6e-13 [m^2]
+CycleDriver        |  porosity................................ 0.2 / 0.25 / 0.22 [-]
+CycleDriver        |  pressure.cell........................... -836431 / 111595 / -172045 [Pa]
+CycleDriver        |  pressure.face........................... -878888 / 117845 / -178519 [Pa]
+CycleDriver        |  prev_saturation_liquid.................. 1 / 1 / 1
+CycleDriver        |  prev_water_storage...................... 0 / 0 / 0
+CycleDriver        |  saturation_liquid....................... 1 / 1 / 1 [-]
+CycleDriver        |  specific_storage........................ 0 / 0 / 0 [m]
+CycleDriver        |  specific_yield.......................... 0 / 0 / 0
+CycleDriver        |  time.................................... 0
+CycleDriver        |  time@current............................ 0
+CycleDriver        |  volumetric_flow_rate.................... -4.82922e-06 / 2.91893e-06 / -6.87058e-08 [m^3/s]
+CycleDriver        |  water_content........................... 0.2 / 0.25 / 0.22 [-]
+CycleDriver        |  water_storage........................... 0 / 0 / 0
+CycleDriver        |  
+CycleDriver        |  Simulation end time: 0 sec.
+CycleDriver        |  CPU time stamp: [00:00:04]
+CycleDriver        |  
+CycleDriver        |  Field                                    Min/Max/Avg
+CycleDriver        |  atmospheric_pressure.................... 101325
+CycleDriver        |  const_fluid_density..................... 1000
+CycleDriver        |  const_fluid_viscosity................... 0.001
+CycleDriver        |  darcy_velocity.......................... -2.20882e-07 / 1.34951e-07 / -1.33209e-08
+CycleDriver        |  dt...................................... 1
+CycleDriver        |  fracture-aperture....................... 0.01 / 0.01 / 0.01 [m]
+CycleDriver        |  fracture-compliance..................... 0 / 0 / 0
+CycleDriver        |  fracture-darcy_velocity................. -6.48584e-07 / 1.08097e-06 / 5.81908e-08
+CycleDriver        |  fracture-diffusion_to_matrix............ 0.002 / 0.002 / 0.002
+CycleDriver        |  fracture-hydraulic_head................. 1.90211 / 1.90211 / 1.90211 [m]
+CycleDriver        |  fracture-mass_density_liquid.bnd_face... 1000 / 1000 / 1000
+CycleDriver        |  fracture-mass_density_liquid.cell....... 1000 / 1000 / 1000
+CycleDriver        |  fracture-molar_flow_rate................ -0.350747 / 0.350746 / -4.38227e-10
+CycleDriver        |  fracture-permeability................... 0.01 / 0.01 / 0.01 [m^2]
+CycleDriver        |  fracture-permeability_eff............... 0.0001 / 0.0001 / 0.0001 [m^3]
+CycleDriver        |  fracture-porosity....................... 0.4 / 0.4 / 0.4 [-]
+CycleDriver        |  fracture-pressure.cell.................. -664654 / -94653.9 / -379654 [Pa]
+CycleDriver        |  fracture-pressure.face.................. -679654 / -79653.9 / -379654 [Pa]
+CycleDriver        |  fracture-prev_saturation_liquid......... 1 / 1 / 1
+CycleDriver        |  fracture-prev_water_storage............. -0 / -0 / 0
+CycleDriver        |  fracture-ref_aperture................... 0.01 / 0.01 / 0.01
+CycleDriver        |  fracture-ref_pressure................... 1.8 / 1.8 / 1.8
+CycleDriver        |  fracture-saturation_liquid.............. 1 / 1 / 1 [-]
+CycleDriver        |  fracture-specific_storage............... 0 / 0 / 0 [m]
+CycleDriver        |  fracture-specific_yield................. 0 / 0 / 0
+CycleDriver        |  fracture-volumetric_flow_rate........... -6.31882e-06 / 6.31881e-06 / -7.89481e-15 [m^3/s]
+CycleDriver        |  fracture-water_content.................. 0.004 / 0.004 / 0.004 [m]
+CycleDriver        |  fracture-water_storage.................. -0 / -0 / 0
+CycleDriver        |  gravity................................. 0 0 -10
+CycleDriver        |  hydraulic_head.......................... 1.03113 / 3.65723 / 1.66609 [m]
+CycleDriver        |  mass_density_liquid.bnd_face............ 1000 / 1000 / 1000
+CycleDriver        |  mass_density_liquid.cell................ 1000 / 1000 / 1000
+CycleDriver        |  molar_flow_rate......................... -0.268062 / 0.162025 / -0.00381374
+CycleDriver        |  permeability............................ 1e-13 / 1e-12 / 4.6e-13 [m^2]
+CycleDriver        |  porosity................................ 0.2 / 0.25 / 0.22 [-]
+CycleDriver        |  pressure.cell........................... -836431 / 111595 / -172045 [Pa]
+CycleDriver        |  pressure.face........................... -878888 / 117845 / -178519 [Pa]
+CycleDriver        |  prev_saturation_liquid.................. 1 / 1 / 1
+CycleDriver        |  prev_water_storage...................... 0 / 0 / 0
+CycleDriver        |  saturation_liquid....................... 1 / 1 / 1 [-]
+CycleDriver        |  specific_storage........................ 0 / 0 / 0 [m]
+CycleDriver        |  specific_yield.......................... 0 / 0 / 0
+CycleDriver        |  time.................................... 0
+CycleDriver        |  time@current............................ 0
+CycleDriver        |  volumetric_flow_rate.................... -4.82922e-06 / 2.91893e-06 / -6.87058e-08 [m^3/s]
+CycleDriver        |  water_content........................... 0.2 / 0.25 / 0.22 [-]
+CycleDriver        |  water_storage........................... 0 / 0 / 0
+CycleDriver        |  Reseting CD: TP 0 -> TP 1.
+Evaluator "fracture-aperture@" cannot be created in State. Verify (1) SetEvaluator is called or (2) name exists in state->evaluators.
+Amanzi::SIMULATION_FAILED

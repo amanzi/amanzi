@@ -1,0 +1,5 @@
+/Users/elm/Documents/GitHub/amanzi/doc/user_guide/benchmarking/transport/single_fracture/single_fracture.py:42: RuntimeWarning: divide by zero encountered in log10
+  axes1.scatter(obs.times, numpy.log10(obs.data), marker='o', s=25, c=color, label=legend)
+/Users/elm/Documents/GitHub/amanzi/doc/user_guide/benchmarking/transport/single_fracture/single_fracture.py:76: RuntimeWarning: divide by zero encountered in log10
+  y = numpy.log10(data[:,i])
+  trying  amanzi_single_fracture.xml

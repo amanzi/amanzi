@@ -1,0 +1,57 @@
+<Xdmf Version="2.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <Domain>
+    <Grid CollectionType="Temporal" GridType="Collection">
+      <xi:include href="calcite_data.h5.0.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.18.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.22.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.25.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.27.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.29.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.31.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.33.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.35.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.37.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.39.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.41.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.43.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.45.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.47.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.49.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.51.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.53.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.55.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.57.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.59.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.61.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.63.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.65.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.67.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.69.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.71.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.73.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.75.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.77.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.79.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.81.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.83.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.85.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.87.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.89.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.91.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.93.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.95.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.97.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.99.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.101.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.103.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.105.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.107.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.109.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.111.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.113.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.115.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.117.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="calcite_data.h5.119.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+    </Grid>
+  </Domain>
+</Xdmf>

@@ -1,0 +1,2573 @@
+[pn2401379.lanl.gov:76486] shmem: mmap: an error occurred while determining whether or not /var/folders/36/xt3jx8554vj0_03sz682d5_800074q/T//ompi.pn2401379.7319/jf.0/3396141056/sm_segment.pn2401379.7319.ca6d0000.0 could be created.
+InputConverter-u   |  Amanzi executable tag: 1.6-dev_01c79db22
+InputConverter-u   |  Verify high-level XML structure
+InputConverter-u   |  Liquid phase has 2 solutes
+InputConverter-u   |   solute: Tritium
+InputConverter-u   |   solute: Daughter
+InputConverter-u   |  AUTHOR: Sergi Molins
+InputConverter-u   |  Translating units: m s kg molar K
+InputConverter-u   |  Translating unstructured mesh
+InputConverter-u   |  Translating regions
+InputConverter-u   |   found 3 regions plus region "All".
+InputConverter-u   |  Translating state
+InputConverter-u   |   Compatibility mode: translating ICs for native chemistry: domain
+InputConverter-u   |  Translating output
+InputConverter-u   |   Found 0 cycle macros and 2 time macros.
+InputConverter-u   |   Translating output: visualization
+InputConverter-u   |   Found 0 liquid observations
+InputConverter-u   |   Found 0 gas observations
+InputConverter-u   |  Translating cycle driver
+InputConverter-u   |   Translating time period controls
+InputConverter-u   |   created 0 special times
+InputConverter-u   |  Translating process kernels
+InputConverter-u   |   TP: PK name="steady:flow", factory: "darcy"
+InputConverter-u   |   TP: PK name="transient:flow and reactive transport", factory: "flow reactive transport"
+InputConverter-u   |   Next PK is "transient:flow"
+InputConverter-u   |   Translating flow, mode=transient domain=matrix
+InputConverter-u   |    Translating optional fracture models, domain=matrix
+InputConverter-u   |    Translating time integrator
+InputConverter-u   |    Translating boundary conditions
+InputConverter-u   |     active BCs: mass flux, pressure, no flow (default)
+InputConverter-u   |   Next PK is "transient:chemistry"
+InputConverter-u   |   Translating chemistry, domain=matrix
+InputConverter-u   |    using file:1d-tritium-crunch.in
+InputConverter-u   |   Next PK is "transient:transport"
+InputConverter-u   |   Translating transport, domain=domain
+InputConverter-u   |    Translating molecular diffusion data
+InputConverter-u   |    Translating multiscale models
+InputConverter-u   |    Translating boundary conditions
+InputConverter-u   |    Translating source terms
+InputConverter-u   |   Next PK is "transient:reactive transport"
+InputConverter-u   |   Next PK is "transient:flow and reactive transport"
+InputConverter-u   |   Next PK is "steady:flow"
+InputConverter-u   |   Translating flow, mode=steady domain=matrix
+InputConverter-u   |    Translating optional fracture models, domain=matrix
+InputConverter-u   |    Translating time integrator
+InputConverter-u   |    Translating boundary conditions
+InputConverter-u   |     active BCs: mass flux, pressure, no flow (default)
+InputConverter-u   |  Translating solvers
+InputConverter-u   |   gmres: itrs=100, tol=1e-22, pc=Hypre AMG
+InputConverter-u   |   pcg: itrs=100, tol=1e-22, pc=Hypre AMG
+InputConverter-u   |   pcg: itrs=100, tol=1e-22, pc=Hypre AMG
+InputConverter-u   |   gmres: itrs=100, tol=1e-22, pc=Hypre AMG
+InputConverter-u   |  Translating preconditioners
+InputConverter-u   |  Final comments:
+InputConverter-u   |   found units: 
+InputConverter-u   |   Writing the translated XML to amanzi-u-1d-tritium-alq-crunch_native.xml
+InputConverter-u   |  CPU time stamp: [00:00:01]
+Amanzi::MeshFactor |  Creating 3D block mesh using format "MSTK"
+Mesh Output        |  cells, tot/min/max: 100/100/100
+Mesh Output        |  faces, tot/min/max: 501/501/501
+Mesh Output        |  nodes, tot/min/max: 404/404/404
+Mesh Output        |  
+Mesh               |  CPU time stamp: [00:00:01]
+InputAnalysis:doma |  bc: "west" has 1 faces of 1 [m^2]
+InputAnalysis:doma |  bc: "east" has 1 faces of 1 [m^2]
+State              |  ------------------------------------------
+State              |  Dependency & Structure list for evaluators
+State              |  ------------------------------------------
+State              |  darcy_velocity
+State              |    type: secondary
+State              |    dep: volumetric_flow_rate, tag=""
+State              |    comp=cell location=4 dofs=3
+State              |    
+State              |  mass_density_liquid
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    comp=boundary_face location=13 dofs=1
+State              |    
+State              |  molar_flow_rate
+State              |    Type: primary
+State              |    comp=face location=3 dofs=1
+State              |    
+State              |  porosity
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  pressure
+State              |    Type: primary
+State              |    comp=cell location=4 dofs=1
+State              |    comp=face location=3 dofs=1
+State              |    
+State              |  saturation_liquid
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  specific_storage
+State              |    type: secondary
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  volumetric_flow_rate
+State              |    type: secondary
+State              |    dep: molar_flow_rate, tag=""
+State              |    comp=face location=3 dofs=1
+State              |    
+State              |  water_content
+State              |    type: secondary
+State              |    dep: porosity, tag=""
+State              |    dep: saturation_liquid, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  water_storage
+State              |    type: secondary
+State              |    dep: pressure, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  ------------------------------
+State              |  Structure list for derivatives
+State              |  ------------------------------
+State              |  Dwater_storage/D{ pressure }
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  Setup is complete.
+State              |  
+CycleDriver        |  Setup is complete.
+State              |  initializing data through initial conditions...
+State              |  initializing "atmospheric_pressure" [ok]
+State              |  initializing "const_fluid_density" [ok]
+State              |  initializing "const_fluid_viscosity" [ok]
+State              |  initializing "cycle" ... skipped
+State              |  initializing "darcy_velocity" ... skipped
+State              |  initializing "dt" ... skipped
+State              |  initializing "gravity" [ok]
+State              |  initializing "hydraulic_head" ... skipped
+State              |  initializing "mass_density_liquid" ... skipped
+State              |  initializing "molar_flow_rate" ... skipped
+State              |  initializing "permeability" [ok]
+State              |  initializing "porosity" ... skipped
+State              |  initializing "position" ... skipped
+State              |  initializing "pressure" [ok]
+State              |  initializing "prev_saturation_liquid" ... skipped
+State              |  initializing "prev_water_storage" ... skipped
+State              |  initializing "saturation_liquid" [ok]
+State              |  initializing "specific_storage" ... skipped
+State              |  initializing "specific_yield" ... skipped
+State              |  initializing "time" ... skipped
+State              |  initializing "volumetric_flow_rate" ... skipped
+State              |  initializing "water_content" ... skipped
+State              |  initializing "water_storage" ... skipped
+State              |  initializing eval: "darcy_velocity" @ ""
+State              |  initializing eval: "mass_density_liquid" @ ""
+State              |  initializing eval: "molar_flow_rate" @ ""
+State              |  initializing eval: "porosity" @ ""
+State              |  initializing eval: "pressure" @ ""
+State              |  initializing eval: "saturation_liquid" @ ""
+State              |  initializing eval: "specific_storage" @ ""
+State              |  initializing eval: "volumetric_flow_rate" @ ""
+State              |  initializing eval: "water_content" @ ""
+State              |  initializing eval: "water_storage" @ ""
+DarcyPK            |   initialized "specific_yield" to value 0
+DarcyPK            |   initialized "hydraulic_head" to value 0
+DarcyPK            |   initialized "prev_saturation_liquid" to value 1
+DarcyPK            |   initialized prev_water_storage to water_storage
+DarcyPK            |  
+DarcyPK            |  TI:"BDF1" dt:standard LS:"AztecOO" PC:"Hypre AMG"
+DarcyPK            |  matrix: <Diffusion: CELL_FACE+CELL> <CELL_CELL> 
+DarcyPK            |  constant viscosity model, mu=0.001002
+DarcyPK            |  initial pressure guess: "from State"
+DarcyPK            |  
+DarcyPK            |  pressure BC assigned to 1 faces
+DarcyPK            |  default (no-flow) BC assigned to 400 faces
+DarcyPK            |  
+DarcyPK            |   boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |   domain head (cells): min=10.7156 m, max=10.7156 m
+DarcyPK            |   domain head (cells + faces): min=10.2156 m, max=11.2156 m
+DarcyPK            |  [1;32mInitialization of PK is complete, T=0 dT=1e+99[0m
+DarcyPK            |  
+TimeStepManager    |  Proposed dT=1 s, is near equal to next event time remaining 1 s.
+TimeStepManager    |  Proposed dT=1 s, is near equal to next event time remaining 1 s.
+State              |  initializing eval: "darcy_velocity" @ ""
+State              |  initializing eval: "mass_density_liquid" @ ""
+State              |  initializing eval: "molar_flow_rate" @ ""
+State              |  initializing eval: "porosity" @ ""
+State              |  initializing eval: "pressure" @ ""
+State              |  initializing eval: "saturation_liquid" @ ""
+State              |  initializing eval: "specific_storage" @ ""
+State              |  initializing eval: "volumetric_flow_rate" @ ""
+State              |  initializing eval: "water_content" @ ""
+State              |  initializing eval: "water_storage" @ ""
+CycleDriver        |  writing visualization file: domain
+CycleDriver        |  
+CycleDriver        |  Field                                    Min/Max/Avg
+CycleDriver        |  atmospheric_pressure.................... 101325
+CycleDriver        |  const_fluid_density..................... 998.2
+CycleDriver        |  const_fluid_viscosity................... 0.001002
+CycleDriver        |  darcy_velocity.......................... -9.76946e-06 / 6.31031e-20 / -3.25649e-06
+CycleDriver        |  dt...................................... 1
+CycleDriver        |  gravity................................. 0 0 -9.80665
+CycleDriver        |  hydraulic_head.......................... 10.7156 / 10.7156 / 10.7156 [m]
+CycleDriver        |  mass_density_liquid.bnd_face............ 998.2 / 998.2 / 998.2
+CycleDriver        |  mass_density_liquid.cell................ 998.2 / 998.2 / 998.2
+CycleDriver        |  molar_flow_rate......................... -0.54131 / 6.27799e-15 / -0.216092
+CycleDriver        |  permeability............................ 1e-12 / 1e-12 / 1e-12 [m^2]
+CycleDriver        |  porosity................................ 0.25 / 0.25 / 0.25 [-]
+CycleDriver        |  pressure.cell........................... 201325 / 201325 / 201325 [Pa]
+CycleDriver        |  pressure.face........................... 201325 / 201325 / 201325 [Pa]
+CycleDriver        |  prev_saturation_liquid.................. 1 / 1 / 1
+CycleDriver        |  prev_water_storage...................... 0 / 0 / 0
+CycleDriver        |  saturation_liquid....................... 1 / 1 / 1 [-]
+CycleDriver        |  specific_storage........................ 0 / 0 / 0 [m]
+CycleDriver        |  specific_yield.......................... 0 / 0 / 0
+CycleDriver        |  time.................................... 0
+CycleDriver        |  time@current............................ 0
+CycleDriver        |  volumetric_flow_rate.................... -9.76946e-06 / 1.13304e-19 / -3.89998e-06 [m^3/s]
+CycleDriver        |  water_content........................... 0.25 / 0.25 / 0.25 [-]
+CycleDriver        |  water_storage........................... 0 / 0 / 0
+CycleDriver        |  
+CycleDriver        |  Simulation end time: 1 sec.
+CycleDriver        |  CPU time stamp: [00:00:01]
+CycleDriver        |  
+CycleDriver        |  Cycle 0: time = 0 s, dt = 1 s
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=8
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+TimeStepManager    |   Accepted proposed dT=1.25 s
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |   writing checkpoint file
+CycleDriver        |  New time = 1 s
+CycleDriver        |  
+CycleDriver        |  Field                                    Min/Max/Avg
+CycleDriver        |  atmospheric_pressure.................... 101325
+CycleDriver        |  const_fluid_density..................... 998.2
+CycleDriver        |  const_fluid_viscosity................... 0.001002
+CycleDriver        |  darcy_velocity.......................... -3.82327e-20 / 7.92745e-09 / 2.64248e-09
+CycleDriver        |  dt...................................... 1
+CycleDriver        |  gravity................................. 0 0 -9.80665
+CycleDriver        |  hydraulic_head.......................... 10.716 / 10.7963 / 10.7561 [m]
+CycleDriver        |  mass_density_liquid.bnd_face............ 998.2 / 998.2 / 998.2
+CycleDriver        |  mass_density_liquid.cell................ 998.2 / 998.2 / 998.2
+CycleDriver        |  molar_flow_rate......................... -5.19974e-15 / 0.000439247 / 8.85508e-05
+CycleDriver        |  permeability............................ 1e-12 / 1e-12 / 1e-12 [m^2]
+CycleDriver        |  porosity................................ 0.25 / 0.25 / 0.25 [-]
+CycleDriver        |  pressure.cell........................... 201329 / 202115 / 201722 [Pa]
+CycleDriver        |  pressure.face........................... 196434 / 207010 / 201722 [Pa]
+CycleDriver        |  prev_saturation_liquid.................. 1 / 1 / 1
+CycleDriver        |  prev_water_storage...................... 0 / 0 / 0
+CycleDriver        |  saturation_liquid....................... 1 / 1 / 1 [-]
+CycleDriver        |  specific_storage........................ 0 / 0 / 0 [m]
+CycleDriver        |  specific_yield.......................... 0 / 0 / 0
+CycleDriver        |  time.................................... 1
+CycleDriver        |  time@current............................ 0
+CycleDriver        |  volumetric_flow_rate.................... -9.3844e-20 / 7.92745e-09 / 1.59815e-09 [m^3/s]
+CycleDriver        |  water_content........................... 0.25 / 0.25 / 0.25 [-]
+CycleDriver        |  water_storage........................... 0 / 0 / 0
+CycleDriver        |  Reseting CD: TP 0 -> TP 1.
+State              |  ------------------------------------------
+State              |  Dependency & Structure list for evaluators
+State              |  ------------------------------------------
+State              |  darcy_velocity
+State              |    type: secondary
+State              |    dep: volumetric_flow_rate, tag=""
+State              |    comp=cell location=4 dofs=3
+State              |    
+State              |  mass_density_liquid
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    comp=boundary_face location=13 dofs=1
+State              |    
+State              |  molar_flow_rate
+State              |    Type: primary
+State              |    comp=face location=3 dofs=1
+State              |    
+State              |  porosity
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  pressure
+State              |    Type: primary
+State              |    comp=cell location=4 dofs=1
+State              |    comp=face location=3 dofs=1
+State              |    
+State              |  saturation_liquid
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  specific_storage
+State              |    type: secondary
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  volumetric_flow_rate
+State              |    type: secondary
+State              |    dep: molar_flow_rate, tag=""
+State              |    comp=face location=3 dofs=1
+State              |    
+State              |  water_content
+State              |    type: secondary
+State              |    dep: porosity, tag=""
+State              |    dep: saturation_liquid, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  water_storage
+State              |    type: secondary
+State              |    dep: pressure, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  ------------------------------
+State              |  Structure list for derivatives
+State              |  ------------------------------
+State              |  Dwater_storage/D{ pressure }
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  Setup is complete.
+State              |  
+State              |  initializing data through initial conditions...
+State              |  initializing "alquimia_aux_data" ... skipped
+State              |  initializing "atmospheric_pressure" [ok]
+State              |  initializing "const_fluid_density" [ok]
+State              |  initializing "const_fluid_viscosity" [ok]
+State              |  initializing "cycle" ... skipped
+State              |  initializing "darcy_velocity" ... skipped
+State              |  initializing "dt" ... skipped
+State              |  initializing "first_order_decay_constant" [ok]
+State              |  initializing "free_ion_species" ... skipped
+State              |  initializing "gravity" [ok]
+State              |  initializing "hydraulic_head" ... skipped
+State              |  initializing "mass_density_liquid" ... skipped
+State              |  initializing "molar_flow_rate" ... skipped
+State              |  initializing "pH" ... skipped
+State              |  initializing "permeability" [ok]
+State              |  initializing "porosity" ... skipped
+State              |  initializing "position" ... skipped
+State              |  initializing "pressure" [ok]
+State              |  initializing "prev_saturation_liquid" ... skipped
+State              |  initializing "prev_water_content" ... skipped
+State              |  initializing "prev_water_storage" ... skipped
+State              |  initializing "primary_activity_coeff" ... skipped
+State              |  initializing "primary_free_ion_concentration" ... skipped
+State              |  initializing "saturation_liquid" [ok]
+State              |  initializing "specific_storage" ... skipped
+State              |  initializing "specific_yield" ... skipped
+State              |  initializing "time" ... skipped
+State              |  initializing "tortuosity" ... skipped
+State              |  initializing "total_component_concentration" ... skipped
+State              |  initializing "volumetric_flow_rate" ... skipped
+State              |  initializing "water_content" ... skipped
+State              |  initializing "water_storage" ... skipped
+State              |  initializing eval: "darcy_velocity" @ ""
+State              |  initializing eval: "mass_density_liquid" @ ""
+State              |  initializing eval: "molar_flow_rate" @ ""
+State              |  initializing eval: "porosity" @ ""
+State              |  initializing eval: "pressure" @ ""
+State              |  initializing eval: "saturation_liquid" @ ""
+State              |  initializing eval: "specific_storage" @ ""
+State              |  initializing eval: "volumetric_flow_rate" @ ""
+State              |  initializing eval: "water_content" @ ""
+State              |  initializing eval: "water_storage" @ ""
+State              |   initializing data through initial conditions...
+State              |   initializing "alquimia_aux_data" ... skipped
+State              |   initializing "atmospheric_pressure" ... skipped
+State              |   initializing "const_fluid_density" ... skipped
+State              |   initializing "const_fluid_viscosity" ... skipped
+State              |   initializing "cycle" ... skipped
+State              |   initializing "darcy_velocity" ... skipped
+State              |   initializing "dt" ... skipped
+State              |   initializing "first_order_decay_constant" ... skipped
+State              |   initializing "free_ion_species" ... skipped
+State              |   initializing "gravity" ... skipped
+State              |   initializing "hydraulic_head" ... skipped
+State              |   initializing "mass_density_liquid" ... skipped
+State              |   initializing "molar_flow_rate" ... skipped
+State              |   initializing "pH" ... skipped
+State              |   initializing "permeability" ... skipped
+State              |   initializing "porosity" ... skipped
+State              |   initializing "position" ... skipped
+State              |   initializing "pressure" ... skipped
+State              |   initializing "prev_saturation_liquid" ... skipped
+State              |   initializing "prev_water_content" ... skipped
+State              |   initializing "prev_water_storage" ... skipped
+State              |   initializing "primary_activity_coeff" ... skipped
+State              |   initializing "primary_free_ion_concentration" ... skipped
+State              |   initializing "saturation_liquid" ... skipped
+State              |   initializing "specific_storage" ... skipped
+State              |   initializing "specific_yield" ... skipped
+State              |   initializing "time" ... skipped
+State              |   initializing "tortuosity" ... skipped
+State              |   initializing "total_component_concentration" ... skipped
+State              |   initializing "volumetric_flow_rate" ... skipped
+State              |   initializing "water_content" ... skipped
+State              |   initializing "water_storage" ... skipped
+State              |   initializing eval: "darcy_velocity" @ ""
+State              |   initializing eval: "mass_density_liquid" @ ""
+State              |   initializing eval: "molar_flow_rate" @ ""
+State              |   initializing eval: "porosity" @ ""
+State              |   initializing eval: "pressure" @ ""
+State              |   initializing eval: "saturation_liquid" @ ""
+State              |   initializing eval: "specific_storage" @ ""
+State              |   initializing eval: "volumetric_flow_rate" @ ""
+State              |   initializing eval: "water_content" @ ""
+State              |   initializing eval: "water_storage" @ ""
+DarcyPK            |  
+DarcyPK            |  TI:"BDF1" dt:standard LS:"AztecOO" PC:"Hypre AMG"
+DarcyPK            |  matrix: <Diffusion: CELL_FACE+CELL> <CELL_CELL> 
+DarcyPK            |  constant viscosity model, mu=0.001002
+DarcyPK            |  initial pressure guess: "from State"
+DarcyPK            |  
+DarcyPK            |  pressure BC assigned to 1 faces
+DarcyPK            |  default (no-flow) BC assigned to 400 faces
+DarcyPK            |  
+DarcyPK            |   boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |   domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |   domain head (cells + faces): min=10.216 m, max=11.2963 m
+DarcyPK            |  [1;32mInitialization of PK is complete, T=1 dT=1e+99[0m
+DarcyPK            |  
+Alquimia_PK:domain |  initialized "total_component_concentration" to value 0
+Alquimia_PK:domain |  initialized "primary_activity_coeff" to value 1
+Alquimia_PK:domain |  initialized "free_ion_species" to value 1e-09
+Alquimia_PK:domain |  initialized "alquimia_aux_data" to value 0
+Alquimia_PK:domain |  initialized "pH" to value 0
+Alquimia_PK:domain |  initialized "primary_free_ion_concentration" to value 0
+Alquimia_PK:domain |  enforcing geochemical condition "initial" in region "All"
+Alquimia_PK:domain |  [1;32mInitialization of PK was successful, T=1[0m
+Alquimia_PK:domain |  
+Transport-domain   |   initialized "tortuosity" to value 1
+Transport-domain   |   initialized prev_water_content to water_content
+Transport-domain   |  Number of components: 2
+Transport-domain   |  cfl=1 spatial/temporal discretization: 2 2
+Transport-domain   |  using transport porosity: 0
+Transport-domain   |  [1;32mInitialization of PK is complete.[0m
+Transport-domain   |  
+CycleDriver        |  
+CycleDriver        |  Field                                    Min/Max/Avg
+CycleDriver        |  alquimia_aux_data....................... -43.2017 / 1 / -6.08238
+CycleDriver        |  atmospheric_pressure.................... 101325
+CycleDriver        |  const_fluid_density..................... 998.2
+CycleDriver        |  const_fluid_viscosity................... 0.001002
+CycleDriver        |  darcy_velocity.......................... -3.82327e-20 / 7.92745e-09 / 2.64248e-09
+CycleDriver        |  dt...................................... 1
+CycleDriver        |  first_order_decay_constant.............. 1.78577e-09 / 1.78577e-09 / 1.78577e-09
+CycleDriver        |  free_ion_species........................ 0 / 0 / 0
+CycleDriver        |  gravity................................. 0 0 -9.80665
+CycleDriver        |  hydraulic_head.......................... 10.716 / 10.7963 / 10.7561 [m]
+CycleDriver        |  mass_density_liquid.bnd_face............ 998.2 / 998.2 / 998.2
+CycleDriver        |  mass_density_liquid.cell................ 998.2 / 998.2 / 998.2
+CycleDriver        |  molar_flow_rate......................... -5.19974e-15 / 0.000439247 / 8.85508e-05
+CycleDriver        |  pH...................................... -999.9 / -999.9 / -999.9
+CycleDriver        |  permeability............................ 1e-12 / 1e-12 / 1e-12 [m^2]
+CycleDriver        |  porosity................................ 0.25 / 0.25 / 0.25 [-]
+CycleDriver        |  pressure.cell........................... 201329 / 202115 / 201722 [Pa]
+CycleDriver        |  pressure.face........................... 201329 / 202115 / 201722 [Pa]
+CycleDriver        |  prev_saturation_liquid.................. 1 / 1 / 1
+CycleDriver        |  prev_water_content...................... 0.25 / 0.25 / 0.25
+CycleDriver        |  prev_water_storage...................... 0 / 0 / 0
+CycleDriver        |  primary_activity_coeff.................. 0 / 0 / 0
+CycleDriver        |  primary_free_ion_concentration.......... 0 / 0 / 0
+CycleDriver        |  saturation_liquid....................... 1 / 1 / 1 [-]
+CycleDriver        |  specific_storage........................ 0 / 0 / 0 [m]
+CycleDriver        |  specific_yield.......................... 0 / 0 / 0
+CycleDriver        |  time.................................... 1
+CycleDriver        |  time@current............................ 0
+CycleDriver        |  tortuosity.............................. 1 / 1 / 1
+CycleDriver        |  total_component_concentration........... 1.72378e-19 / 1.72378e-19 / 1.72378e-19
+CycleDriver        |  total_component_concentration@copy...... 1.72378e-19 / 1.72378e-19 / 1.72378e-19
+CycleDriver        |  volumetric_flow_rate.................... -9.3844e-20 / 7.92745e-09 / 1.59815e-09 [m^3/s]
+CycleDriver        |  water_content........................... 0.25 / 0.25 / 0.25 [-]
+CycleDriver        |  water_storage........................... 0 / 0 / 0
+CycleDriver        |  writing visualization file: domain
+TimeStepManager    |  Proposed dT=1.825 d, is near equal to next event time remaining 1.825 d.
+CycleDriver        |  
+CycleDriver        |  Cycle 1: time = 1 s, dt = 1.825 d
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=8
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=1.825 d
+Transport-domain   |   Tritium: min=1.72378e-19 mol/L max=4.97914e-06 mol/L, total=0.00124634 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 0
+TimeStepManager    |   Accepted proposed dT=2.28125 d
+CycleDriver        |  New time = 1.82501 d
+CycleDriver        |  
+CycleDriver        |  Cycle 2: time = 1.82501 d, dt = 2.28125 d
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=2.28125 d
+Transport-domain   |   Tritium: min=1.72329e-19 mol/L max=1.11842e-05 mol/L, total=0.00280392 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 1
+TimeStepManager    |   Accepted proposed dT=2.85156 d
+CycleDriver        |  New time = 4.10626 d
+CycleDriver        |  
+CycleDriver        |  Cycle 3: time = 4.10626 d, dt = 2.85156 d
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=2.85156 d
+Transport-domain   |   Tritium: min=1.72269e-19 mol/L max=1.89109e-05 mol/L, total=0.00475035 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 0
+TimeStepManager    |   Accepted proposed dT=3.56445 d
+CycleDriver        |  New time = 6.95782 d
+CycleDriver        |  
+CycleDriver        |  Cycle 4: time = 6.95782 d, dt = 3.56445 d
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=3.56445 d
+Transport-domain   |   Tritium: min=1.72193e-19 mol/L max=2.85231e-05 mol/L, total=0.00718253 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 0
+TimeStepManager    |   Accepted proposed dT=4.45557 d
+CycleDriver        |  New time = 10.5223 d
+CycleDriver        |  
+CycleDriver        |  Cycle 5: time = 10.5223 d, dt = 4.45557 d
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=4.45557 d
+Transport-domain   |   Tritium: min=1.72099e-19 mol/L max=4.04664e-05 mol/L, total=0.0102214 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 0
+TimeStepManager    |   Accepted proposed dT=5.56946 d
+CycleDriver        |  New time = 14.9778 d
+CycleDriver        |  
+CycleDriver        |  Cycle 6: time = 14.9778 d, dt = 5.56946 d
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=5.56946 d
+Transport-domain   |   Tritium: min=1.7198e-19 mol/L max=5.5283e-05 mol/L, total=0.0140179 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 0
+TimeStepManager    |   Accepted proposed dT=6.96182 d
+CycleDriver        |  New time = 0.056294 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 7: time = 0.056294 noleap, dt = 6.96182 d
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 18 centered at (18.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=6.96182 d
+Transport-domain   |   Tritium: min=1.71833e-19 mol/L max=7.36283e-05 mol/L, total=0.0187603 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 0
+TimeStepManager    |   Accepted proposed dT=8.70228 d
+CycleDriver        |  New time = 0.0753675 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 8: time = 0.0753675 noleap, dt = 8.70228 d
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 20 centered at (20.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=8.70228 d
+Transport-domain   |   Tritium: min=1.71649e-19 mol/L max=9.62862e-05 mol/L, total=0.0246833 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 0
+TimeStepManager    |   Accepted proposed dT=10.8778 d
+CycleDriver        |  New time = 0.0992093 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 9: time = 0.0992093 noleap, dt = 10.8778 d
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=10.8778 d
+Transport-domain   |   Tritium: min=1.71419e-19 mol/L max=0.000124182 mol/L, total=0.032079 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 0
+TimeStepManager    |   Accepted proposed dT=13.5973 d
+CycleDriver        |  New time = 0.129012 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 10: time = 0.129012 noleap, dt = 13.5973 d
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=13.5973 d
+Transport-domain   |   Tritium: min=1.71132e-19 mol/L max=0.000158386 mol/L, total=0.0413113 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 0
+TimeStepManager    |   Accepted proposed dT=16.9966 d
+CycleDriver        |  New time = 0.166265 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 11: time = 0.166265 noleap, dt = 16.9966 d
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 26 centered at (26.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=16.9966 d
+Transport-domain   |   Tritium: min=1.70775e-19 mol/L max=0.000200105 mol/L, total=0.0528324 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 0
+TimeStepManager    |   Accepted proposed dT=0.0582077 noleap
+CycleDriver        |  New time = 0.212831 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 12: time = 0.212831 noleap, dt = 0.0582077 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 16 centered at (16.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.0582077 noleap
+Transport-domain   |   Tritium: min=1.70329e-19 mol/L max=0.00025064 mol/L, total=0.0672036 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 0
+TimeStepManager    |   Accepted proposed dT=0.0727596 noleap
+CycleDriver        |  New time = 0.271038 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 13: time = 0.271038 noleap, dt = 0.0727596 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.0727596 noleap
+Transport-domain   |   Tritium: min=1.69774e-19 mol/L max=0.000311302 mol/L, total=0.085121 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 0
+TimeStepManager    |   Accepted proposed dT=0.0909495 noleap
+CycleDriver        |  New time = 0.343798 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 14: time = 0.343798 noleap, dt = 0.0909495 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 14 centered at (14.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.0909495 noleap
+Transport-domain   |   Tritium: min=1.69083e-19 mol/L max=0.000383234 mol/L, total=0.107445 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/27, the maximum is in cell 2
+TimeStepManager    |   Accepted proposed dT=0.113687 noleap
+CycleDriver        |  New time = 0.434747 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 15: time = 0.434747 noleap, dt = 0.113687 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 27 centered at (27.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.113687 noleap
+Transport-domain   |   Tritium: min=1.68225e-19 mol/L max=0.00046711 mol/L, total=0.135236 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 0
+TimeStepManager    |   Accepted proposed dT=0.142109 noleap
+CycleDriver        |  New time = 0.548434 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 16: time = 0.548434 noleap, dt = 0.142109 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.142109 noleap
+Transport-domain   |   Tritium: min=1.67159e-19 mol/L max=0.000562608 mol/L, total=0.1698 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 2
+TimeStepManager    |   Accepted proposed dT=0.177636 noleap
+CycleDriver        |  New time = 0.690543 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 17: time = 0.690543 noleap, dt = 0.177636 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 19 centered at (19.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.177636 noleap
+Transport-domain   |   Tritium: min=1.65838e-19 mol/L max=0.000667549 mol/L, total=0.212732 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 2
+TimeStepManager    |   Proposed dT=0.222045 noleap, events limit it to 0.132485 noleap
+CycleDriver        |  New time = 0.868178 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 18: time = 0.868178 noleap, dt = 0.132485 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.132485 noleap
+Transport-domain   |   Tritium: min=1.64205e-19 mol/L max=0.000732964 mol/L, total=0.243652 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 2
+TimeStepManager    |   Proposed dT=0.165606 noleap, stability from previous step changes it to 0.222045 noleap
+TimeStepManager    |   Accepted proposed dT=0.222045 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 0.999979 y
+CycleDriver        |  
+CycleDriver        |  Cycle 19: time = 0.999979 y, dt = 0.222045 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 16 centered at (16.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.222045 noleap
+Transport-domain   |   Tritium: min=1.62995e-19 mol/L max=0.000819228 mol/L, total=0.297198 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 2
+TimeStepManager    |   Accepted proposed dT=0.277556 noleap
+CycleDriver        |  New time = 1.22187 y
+CycleDriver        |  
+CycleDriver        |  Cycle 20: time = 1.22187 y, dt = 0.277556 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.277556 noleap
+Transport-domain   |   Tritium: min=1.60996e-19 mol/L max=0.000884497 mol/L, total=0.362717 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/32, the maximum is in cell 3
+TimeStepManager    |   Accepted proposed dT=0.346945 noleap
+CycleDriver        |  New time = 1.49924 y
+CycleDriver        |  
+CycleDriver        |  Cycle 21: time = 1.49924 y, dt = 0.346945 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.5854e-19 mol/L max=0.000925544 mol/L, total=0.436182 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 3
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=10.8941 d
+Transport-domain   |   Tritium: min=1.55785e-19 mol/L max=0.000914403 mol/L, total=0.435977 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 3
+TimeStepManager    |   Proposed dT=0.433681 noleap, events limit it to 0.154119 noleap
+CycleDriver        |  New time = 1.84594 y
+CycleDriver        |  
+CycleDriver        |  Cycle 22: time = 1.84594 y, dt = 0.154119 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.154119 noleap
+Transport-domain   |   Tritium: min=1.55524e-19 mol/L max=0.000934825 mol/L, total=0.473663 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 3
+TimeStepManager    |   Proposed dT=0.192648 noleap, stability from previous step changes it to 0.433681 noleap
+TimeStepManager    |   Accepted proposed dT=0.433681 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 1.99996 y
+CycleDriver        |  
+CycleDriver        |  Cycle 23: time = 1.99996 y, dt = 0.433681 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 16 centered at (16.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.54193e-19 mol/L max=0.00095723 mol/L, total=0.548634 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/30, the maximum is in cell 4
+Transport-domain   |   cell 16 centered at (16.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.116583 noleap
+Transport-domain   |   Tritium: min=1.51514e-19 mol/L max=0.000952115 mol/L, total=0.568078 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/7, the maximum is in cell 4
+TimeStepManager    |   Proposed dT=0.542101 noleap, events limit it to 0.283491 noleap
+CycleDriver        |  New time = 2.43334 y
+CycleDriver        |  
+CycleDriver        |  Cycle 24: time = 2.43334 y, dt = 0.283491 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.283491 noleap
+Transport-domain   |   Tritium: min=1.5053e-19 mol/L max=0.000966696 mol/L, total=0.635042 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/35, the maximum is in cell 4
+TimeStepManager    |   Proposed dT=0.354364 noleap, stability from previous step changes it to 0.542101 noleap
+TimeStepManager    |   Proposed dT=0.542101 noleap, events limit it to 0.283491 noleap
+CycleDriver        |  New time = 2.71664 y
+CycleDriver        |  
+CycleDriver        |  Cycle 25: time = 2.71664 y, dt = 0.283491 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.283491 noleap
+Transport-domain   |   Tritium: min=1.48185e-19 mol/L max=0.000970026 mol/L, total=0.695737 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 3
+TimeStepManager    |   Proposed dT=0.354364 noleap, stability from previous step changes it to 0.542101 noleap
+TimeStepManager    |   Accepted proposed dT=0.542101 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 2.99994 y
+CycleDriver        |  
+CycleDriver        |  Cycle 26: time = 2.99994 y, dt = 0.542101 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.45877e-19 mol/L max=0.000973076 mol/L, total=0.763857 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/32, the maximum is in cell 5
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.225003 noleap
+Transport-domain   |   Tritium: min=1.43342e-19 mol/L max=0.000969714 mol/L, total=0.806555 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 5
+TimeStepManager    |   Proposed dT=0.677626 noleap, events limit it to 0.458562 noleap
+CycleDriver        |  New time = 3.54167 y
+CycleDriver        |  
+CycleDriver        |  Cycle 27: time = 3.54167 y, dt = 0.458562 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.41561e-19 mol/L max=0.000973993 mol/L, total=0.875515 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/8, the maximum is in cell 5
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.141465 noleap
+Transport-domain   |   Tritium: min=1.39102e-19 mol/L max=0.000965222 mol/L, total=0.895432 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 5
+TimeStepManager    |   Proposed dT=0.573203 noleap, stability from previous step changes it to 0.677626 noleap
+TimeStepManager    |   Accepted proposed dT=0.677626 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 3.99991 y
+CycleDriver        |  
+CycleDriver        |  Cycle 28: time = 3.99991 y, dt = 0.677626 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.38008e-19 mol/L max=0.000973718 mol/L, total=0.967404 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 6
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.3561e-19 mol/L max=0.000973035 mol/L, total=1.02949 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/36, the maximum is in cell 6
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=15.8521 d
+Transport-domain   |   Tritium: min=1.33253e-19 mol/L max=0.000958617 mol/L, total=1.02227 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 6
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.323037 noleap
+CycleDriver        |  New time = 4.67708 y
+CycleDriver        |  
+CycleDriver        |  Cycle 29: time = 4.67708 y, dt = 0.323037 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.32929e-19 mol/L max=0.000972802 mol/L, total=1.09882 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 6
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=2.16784 d
+Transport-domain   |   Tritium: min=1.30619e-19 mol/L max=0.000956122 mol/L, total=1.08104 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/3, the maximum is in cell 0
+TimeStepManager    |   Proposed dT=0.403797 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 4.99989 y
+CycleDriver        |  
+CycleDriver        |  Cycle 30: time = 4.99989 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 20 centered at (20.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.30576e-19 mol/L max=0.00097252 mol/L, total=1.15972 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 7
+Transport-domain   |   cell 20 centered at (20.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.28307e-19 mol/L max=0.000966181 mol/L, total=1.18507 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/35, the maximum is in cell 7
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 5.49988 y
+CycleDriver        |  
+CycleDriver        |  Cycle 31: time = 5.49988 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.27004e-19 mol/L max=0.000972926 mol/L, total=1.25202 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 7
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.24798e-19 mol/L max=0.000966674 mol/L, total=1.27575 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/29, the maximum is in cell 8
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 5.99987 y
+CycleDriver        |  
+CycleDriver        |  Cycle 32: time = 5.99987 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 18 centered at (18.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.23531e-19 mol/L max=0.000973284 mol/L, total=1.34178 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/32, the maximum is in cell 8
+Transport-domain   |   cell 18 centered at (18.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.21384e-19 mol/L max=0.000967044 mol/L, total=1.36393 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/7, the maximum is in cell 8
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 6.49986 y
+CycleDriver        |  
+CycleDriver        |  Cycle 33: time = 6.49986 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.20152e-19 mol/L max=0.000973537 mol/L, total=1.42906 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/7, the maximum is in cell 8
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.18064e-19 mol/L max=0.000967269 mol/L, total=1.44968 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/32, the maximum is in cell 9
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 6.99985 y
+CycleDriver        |  
+CycleDriver        |  Cycle 34: time = 6.99985 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 16 centered at (16.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.16866e-19 mol/L max=0.000973681 mol/L, total=1.51393 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 9
+Transport-domain   |   cell 16 centered at (16.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.14835e-19 mol/L max=0.000967375 mol/L, total=1.53307 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 9
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 7.49984 y
+CycleDriver        |  
+CycleDriver        |  Cycle 35: time = 7.49984 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 23 centered at (23.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.13669e-19 mol/L max=0.000973742 mol/L, total=1.59647 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 9
+Transport-domain   |   cell 23 centered at (23.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.11694e-19 mol/L max=0.000967405 mol/L, total=1.61416 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/32, the maximum is in cell 10
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 7.99983 y
+CycleDriver        |  
+CycleDriver        |  Cycle 36: time = 7.99983 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.10561e-19 mol/L max=0.000973754 mol/L, total=1.67673 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/35, the maximum is in cell 10
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.0864e-19 mol/L max=0.000967397 mol/L, total=1.69302 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 10
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 8.49982 y
+CycleDriver        |  
+CycleDriver        |  Cycle 37: time = 8.49982 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.07537e-19 mol/L max=0.000973743 mol/L, total=1.75479 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 10
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.05668e-19 mol/L max=0.000967378 mol/L, total=1.7697 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 11
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 8.99981 y
+CycleDriver        |  
+CycleDriver        |  Cycle 38: time = 8.99981 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 22 centered at (22.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.04595e-19 mol/L max=0.000973727 mol/L, total=1.83069 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 11
+Transport-domain   |   cell 22 centered at (22.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.02778e-19 mol/L max=0.00096736 mol/L, total=1.84427 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 10
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 9.4998 y
+CycleDriver        |  
+CycleDriver        |  Cycle 39: time = 9.4998 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.01735e-19 mol/L max=0.000973715 mol/L, total=1.9045 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 10
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=9.9967e-20 mol/L max=0.00096735 mol/L, total=1.91679 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 12
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 9.99979 y
+CycleDriver        |  
+CycleDriver        |  Cycle 40: time = 9.99979 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 14 centered at (14.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=9.89521e-20 mol/L max=0.000973708 mol/L, total=1.97628 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/35, the maximum is in cell 12
+Transport-domain   |   cell 14 centered at (14.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=9.72328e-20 mol/L max=0.000967345 mol/L, total=1.98731 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 12
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 10.4998 y
+CycleDriver        |  
+CycleDriver        |  Cycle 41: time = 10.4998 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=9.62457e-20 mol/L max=0.000973706 mol/L, total=2.04607 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 11
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=9.45734e-20 mol/L max=0.000967344 mol/L, total=2.05589 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 13
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 10.9998 y
+CycleDriver        |  
+CycleDriver        |  Cycle 42: time = 10.9998 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 16 centered at (16.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=9.36133e-20 mol/L max=0.000973706 mol/L, total=2.11395 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/36, the maximum is in cell 13
+Transport-domain   |   cell 16 centered at (16.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=9.19868e-20 mol/L max=0.000967345 mol/L, total=2.12257 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 12
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 11.4998 y
+CycleDriver        |  
+CycleDriver        |  Cycle 43: time = 11.4998 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 18 centered at (18.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=9.10529e-20 mol/L max=0.000973707 mol/L, total=2.17996 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/31, the maximum is in cell 14
+Transport-domain   |   cell 18 centered at (18.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=8.94709e-20 mol/L max=0.000967347 mol/L, total=2.18742 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 14
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 11.9997 y
+CycleDriver        |  
+CycleDriver        |  Cycle 44: time = 11.9997 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=8.85626e-20 mol/L max=0.000973708 mol/L, total=2.24414 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/7, the maximum is in cell 14
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=8.70238e-20 mol/L max=0.000967348 mol/L, total=2.25048 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 13
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 12.4997 y
+CycleDriver        |  
+CycleDriver        |  Cycle 45: time = 12.4997 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=8.61403e-20 mol/L max=0.000973709 mol/L, total=2.30656 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/32, the maximum is in cell 15
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=8.46436e-20 mol/L max=0.000967349 mol/L, total=2.31181 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 15
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 12.9997 y
+CycleDriver        |  
+CycleDriver        |  Cycle 46: time = 12.9997 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 5 centered at (5.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=8.37843e-20 mol/L max=0.000973709 mol/L, total=2.36726 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/7, the maximum is in cell 15
+Transport-domain   |   cell 5 centered at (5.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=8.23285e-20 mol/L max=0.000967349 mol/L, total=2.37144 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 14
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 13.4997 y
+CycleDriver        |  
+CycleDriver        |  Cycle 47: time = 13.4997 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 21 centered at (21.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=8.14927e-20 mol/L max=0.000973709 mol/L, total=2.42629 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/32, the maximum is in cell 16
+Transport-domain   |   cell 21 centered at (21.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=8.00768e-20 mol/L max=0.000967349 mol/L, total=2.42943 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 16
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 13.9997 y
+CycleDriver        |  
+CycleDriver        |  Cycle 48: time = 13.9997 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 23 centered at (23.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=7.92639e-20 mol/L max=0.000973709 mol/L, total=2.48369 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/7, the maximum is in cell 16
+Transport-domain   |   cell 23 centered at (23.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=7.78866e-20 mol/L max=0.000967349 mol/L, total=2.48583 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 15
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 14.4997 y
+CycleDriver        |  
+CycleDriver        |  Cycle 49: time = 14.4997 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=7.70959e-20 mol/L max=0.000973709 mol/L, total=2.5395 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 17
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=7.57564e-20 mol/L max=0.000967349 mol/L, total=2.54067 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 17
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 14.9997 y
+CycleDriver        |  
+CycleDriver        |  Cycle 50: time = 14.9997 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 16 centered at (16.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=7.49873e-20 mol/L max=0.000973709 mol/L, total=2.59378 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 17
+Transport-domain   |   cell 16 centered at (16.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=7.36844e-20 mol/L max=0.000967348 mol/L, total=2.594 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 16
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 15.4997 y
+CycleDriver        |  
+CycleDriver        |  Cycle 51: time = 15.4997 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=7.29363e-20 mol/L max=0.000973709 mol/L, total=2.64657 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 18
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=7.16691e-20 mol/L max=0.000967348 mol/L, total=2.64585 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 18
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 15.9997 y
+CycleDriver        |  
+CycleDriver        |  Cycle 52: time = 15.9997 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 14 centered at (14.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=7.09415e-20 mol/L max=0.000973709 mol/L, total=2.6979 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 16
+Transport-domain   |   cell 14 centered at (14.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=6.97089e-20 mol/L max=0.000967348 mol/L, total=2.69629 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 18
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 16.4996 y
+CycleDriver        |  
+CycleDriver        |  Cycle 53: time = 16.4996 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=6.90012e-20 mol/L max=0.000973709 mol/L, total=2.74782 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 19
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=6.78023e-20 mol/L max=0.000967348 mol/L, total=2.74533 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/35, the maximum is in cell 19
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 16.9996 y
+CycleDriver        |  
+CycleDriver        |  Cycle 54: time = 16.9996 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=6.71139e-20 mol/L max=0.000973709 mol/L, total=2.79636 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 19
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=6.59478e-20 mol/L max=0.000967348 mol/L, total=2.79302 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 19
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 17.4996 y
+CycleDriver        |  
+CycleDriver        |  Cycle 55: time = 17.4996 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 19 centered at (19.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=6.52783e-20 mol/L max=0.000973709 mol/L, total=2.84356 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 20
+Transport-domain   |   cell 19 centered at (19.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=6.41441e-20 mol/L max=0.000967348 mol/L, total=2.83939 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/35, the maximum is in cell 20
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 17.9996 y
+CycleDriver        |  
+CycleDriver        |  Cycle 56: time = 17.9996 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 2 centered at (2.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=6.34929e-20 mol/L max=0.000973709 mol/L, total=2.88946 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 20
+Transport-domain   |   cell 2 centered at (2.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=6.23897e-20 mol/L max=0.000967348 mol/L, total=2.88449 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 20
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 18.4996 y
+CycleDriver        |  
+CycleDriver        |  Cycle 57: time = 18.4996 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=6.17563e-20 mol/L max=0.000973709 mol/L, total=2.9341 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 21
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=6.06833e-20 mol/L max=0.000967348 mol/L, total=2.92835 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/7, the maximum is in cell 21
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 18.9996 y
+CycleDriver        |  
+CycleDriver        |  Cycle 58: time = 18.9996 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=6.00673e-20 mol/L max=0.000973709 mol/L, total=2.97751 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 21
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=5.90236e-20 mol/L max=0.000967348 mol/L, total=2.97099 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 21
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 19.4996 y
+CycleDriver        |  
+CycleDriver        |  Cycle 59: time = 19.4996 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 19 centered at (19.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=5.84244e-20 mol/L max=0.000973709 mol/L, total=3.01972 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/35, the maximum is in cell 22
+Transport-domain   |   cell 19 centered at (19.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=5.74092e-20 mol/L max=0.000967348 mol/L, total=3.01247 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 22
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 19.9996 y
+CycleDriver        |  
+CycleDriver        |  Cycle 60: time = 19.9996 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 34 centered at (34.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=5.68264e-20 mol/L max=0.000973709 mol/L, total=3.06077 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 22
+Transport-domain   |   cell 34 centered at (34.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=5.58391e-20 mol/L max=0.000967348 mol/L, total=3.0528 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/30, the maximum is in cell 23
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 20.4996 y
+CycleDriver        |  
+CycleDriver        |  Cycle 61: time = 20.4996 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=5.52722e-20 mol/L max=0.000973709 mol/L, total=3.10069 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 23
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=5.43118e-20 mol/L max=0.000967348 mol/L, total=3.09201 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 23
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 20.9996 y
+CycleDriver        |  
+CycleDriver        |  Cycle 62: time = 20.9996 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 27 centered at (27.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=5.37604e-20 mol/L max=0.000973709 mol/L, total=3.13951 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 23
+Transport-domain   |   cell 27 centered at (27.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=5.28263e-20 mol/L max=0.000967348 mol/L, total=3.13015 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/32, the maximum is in cell 24
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 21.4995 y
+CycleDriver        |  
+CycleDriver        |  Cycle 63: time = 21.4995 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=5.22901e-20 mol/L max=0.000973709 mol/L, total=3.17725 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 24
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=5.13815e-20 mol/L max=0.000967348 mol/L, total=3.16724 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 24
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 21.9995 y
+CycleDriver        |  
+CycleDriver        |  Cycle 64: time = 21.9995 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=5.08599e-20 mol/L max=0.000973709 mol/L, total=3.21396 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 24
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=4.99762e-20 mol/L max=0.000967348 mol/L, total=3.2033 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/32, the maximum is in cell 25
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 22.4995 y
+CycleDriver        |  
+CycleDriver        |  Cycle 65: time = 22.4995 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 17 centered at (17.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=4.94688e-20 mol/L max=0.000973709 mol/L, total=3.24966 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 25
+Transport-domain   |   cell 17 centered at (17.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=4.86093e-20 mol/L max=0.000967348 mol/L, total=3.23837 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 24
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 22.9995 y
+CycleDriver        |  
+CycleDriver        |  Cycle 66: time = 22.9995 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 14 centered at (14.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=4.81158e-20 mol/L max=0.000973709 mol/L, total=3.28437 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 24
+Transport-domain   |   cell 14 centered at (14.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=4.72798e-20 mol/L max=0.000967348 mol/L, total=3.27248 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 26
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 23.4995 y
+CycleDriver        |  
+CycleDriver        |  Cycle 67: time = 23.4995 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=4.67998e-20 mol/L max=0.000973709 mol/L, total=3.31813 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/35, the maximum is in cell 26
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=4.59867e-20 mol/L max=0.000967348 mol/L, total=3.30565 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 25
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 23.9995 y
+CycleDriver        |  
+CycleDriver        |  Cycle 68: time = 23.9995 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=4.55198e-20 mol/L max=0.000973709 mol/L, total=3.35096 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 25
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=4.47289e-20 mol/L max=0.000967348 mol/L, total=3.3379 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 27
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 24.4995 y
+CycleDriver        |  
+CycleDriver        |  Cycle 69: time = 24.4995 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 21 centered at (21.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=4.42748e-20 mol/L max=0.000973709 mol/L, total=3.38288 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/35, the maximum is in cell 27
+Transport-domain   |   cell 21 centered at (21.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=4.35055e-20 mol/L max=0.000967348 mol/L, total=3.36926 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 26
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 24.9995 y
+CycleDriver        |  
+CycleDriver        |  Cycle 70: time = 24.9995 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 13 centered at (13.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=4.30639e-20 mol/L max=0.000973709 mol/L, total=3.41392 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 26
+Transport-domain   |   cell 13 centered at (13.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=4.23156e-20 mol/L max=0.000967348 mol/L, total=3.39976 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/32, the maximum is in cell 28
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 25.4995 y
+CycleDriver        |  
+CycleDriver        |  Cycle 71: time = 25.4995 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=4.1886e-20 mol/L max=0.000973709 mol/L, total=3.44411 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/35, the maximum is in cell 28
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=4.11583e-20 mol/L max=0.000967348 mol/L, total=3.42942 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 28
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 25.9994 y
+CycleDriver        |  
+CycleDriver        |  Cycle 72: time = 25.9994 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 35 centered at (35.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=4.07404e-20 mol/L max=0.000973709 mol/L, total=3.47347 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 27
+Transport-domain   |   cell 35 centered at (35.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=4.00325e-20 mol/L max=0.000967348 mol/L, total=3.45826 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 29
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 26.4994 y
+CycleDriver        |  
+CycleDriver        |  Cycle 73: time = 26.4994 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=3.96261e-20 mol/L max=0.000973709 mol/L, total=3.50201 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 29
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=3.89376e-20 mol/L max=0.000967348 mol/L, total=3.4863 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 29
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 26.9994 y
+CycleDriver        |  
+CycleDriver        |  Cycle 74: time = 26.9994 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 16 centered at (16.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=3.85423e-20 mol/L max=0.000973709 mol/L, total=3.52977 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 28
+Transport-domain   |   cell 16 centered at (16.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=3.78726e-20 mol/L max=0.000967348 mol/L, total=3.51358 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 30
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 27.4994 y
+CycleDriver        |  
+CycleDriver        |  Cycle 75: time = 27.4994 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 3 centered at (3.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=3.74882e-20 mol/L max=0.000973709 mol/L, total=3.55677 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 30
+Transport-domain   |   cell 3 centered at (3.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=3.68368e-20 mol/L max=0.000967348 mol/L, total=3.5401 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 30
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 27.9994 y
+CycleDriver        |  
+CycleDriver        |  Cycle 76: time = 27.9994 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 20 centered at (20.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=3.64628e-20 mol/L max=0.000973709 mol/L, total=3.58302 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 29
+Transport-domain   |   cell 20 centered at (20.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=3.58293e-20 mol/L max=0.000967348 mol/L, total=3.56589 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 31
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 28.4994 y
+CycleDriver        |  
+CycleDriver        |  Cycle 77: time = 28.4994 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=3.54656e-20 mol/L max=0.000973709 mol/L, total=3.60855 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/35, the maximum is in cell 31
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=3.48493e-20 mol/L max=0.000967348 mol/L, total=3.59097 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 30
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 28.9994 y
+CycleDriver        |  
+CycleDriver        |  Cycle 78: time = 28.9994 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=3.44955e-20 mol/L max=0.000973709 mol/L, total=3.63337 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 30
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=3.38962e-20 mol/L max=0.000967348 mol/L, total=3.61536 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 32
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 29.4994 y
+CycleDriver        |  
+CycleDriver        |  Cycle 79: time = 29.4994 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 25 centered at (25.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=3.35521e-20 mol/L max=0.000973709 mol/L, total=3.65752 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/9, the maximum is in cell 32
+Transport-domain   |   cell 25 centered at (25.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=3.29691e-20 mol/L max=0.000967348 mol/L, total=3.63908 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 31
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 29.9994 y
+CycleDriver        |  
+CycleDriver        |  Cycle 80: time = 29.9994 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=3.26344e-20 mol/L max=0.000973709 mol/L, total=3.68099 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/32, the maximum is in cell 33
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=3.20674e-20 mol/L max=0.000967348 mol/L, total=3.66215 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/31, the maximum is in cell 33
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 30.4993 y
+CycleDriver        |  
+CycleDriver        |  Cycle 81: time = 30.4993 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 17 centered at (17.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=3.17418e-20 mol/L max=0.000973709 mol/L, total=3.70382 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/7, the maximum is in cell 33
+Transport-domain   |   cell 17 centered at (17.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=3.11903e-20 mol/L max=0.000967348 mol/L, total=3.68458 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 32
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 30.9993 y
+CycleDriver        |  
+CycleDriver        |  Cycle 82: time = 30.9993 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 2 centered at (2.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=3.08737e-20 mol/L max=0.000973709 mol/L, total=3.72602 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/32, the maximum is in cell 34
+Transport-domain   |   cell 2 centered at (2.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=3.03372e-20 mol/L max=0.000967348 mol/L, total=3.70639 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 34
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 31.4993 y
+CycleDriver        |  
+CycleDriver        |  Cycle 83: time = 31.4993 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 22 centered at (22.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=3.00292e-20 mol/L max=0.000973709 mol/L, total=3.74761 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/7, the maximum is in cell 34
+Transport-domain   |   cell 22 centered at (22.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=2.95075e-20 mol/L max=0.000967348 mol/L, total=3.7276 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 33
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 31.9993 y
+CycleDriver        |  
+CycleDriver        |  Cycle 84: time = 31.9993 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 16 centered at (16.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=2.92079e-20 mol/L max=0.000973709 mol/L, total=3.7686 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 35
+Transport-domain   |   cell 16 centered at (16.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=2.87004e-20 mol/L max=0.000967348 mol/L, total=3.74822 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/32, the maximum is in cell 35
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 32.4993 y
+CycleDriver        |  
+CycleDriver        |  Cycle 85: time = 32.4993 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=2.84091e-20 mol/L max=0.000973709 mol/L, total=3.78902 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/7, the maximum is in cell 35
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=2.79154e-20 mol/L max=0.000967348 mol/L, total=3.76828 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 35
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 32.9993 y
+CycleDriver        |  
+CycleDriver        |  Cycle 86: time = 32.9993 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 14 centered at (14.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=2.7632e-20 mol/L max=0.000973709 mol/L, total=3.80887 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/32, the maximum is in cell 36
+Transport-domain   |   cell 14 centered at (14.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=2.71519e-20 mol/L max=0.000967348 mol/L, total=3.78778 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 36
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 33.4993 y
+CycleDriver        |  
+CycleDriver        |  Cycle 87: time = 33.4993 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 17 centered at (17.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=2.68763e-20 mol/L max=0.000973709 mol/L, total=3.82818 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/7, the maximum is in cell 36
+Transport-domain   |   cell 17 centered at (17.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=2.64093e-20 mol/L max=0.000967348 mol/L, total=3.80675 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 36
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 33.9993 y
+CycleDriver        |  
+CycleDriver        |  Cycle 88: time = 33.9993 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 16 centered at (16.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=2.61412e-20 mol/L max=0.000973709 mol/L, total=3.84695 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 37
+Transport-domain   |   cell 16 centered at (16.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=2.5687e-20 mol/L max=0.000967348 mol/L, total=3.8252 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 37
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 34.4993 y
+CycleDriver        |  
+CycleDriver        |  Cycle 89: time = 34.4993 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=2.54262e-20 mol/L max=0.000973709 mol/L, total=3.86521 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/7, the maximum is in cell 37
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=2.49844e-20 mol/L max=0.000967348 mol/L, total=3.84313 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 37
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 34.9993 y
+CycleDriver        |  
+CycleDriver        |  Cycle 90: time = 34.9993 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 21 centered at (21.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=2.47308e-20 mol/L max=0.000973709 mol/L, total=3.88296 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 38
+Transport-domain   |   cell 21 centered at (21.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=2.43011e-20 mol/L max=0.000967348 mol/L, total=3.86057 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 38
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 35.4992 y
+CycleDriver        |  
+CycleDriver        |  Cycle 91: time = 35.4992 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=2.40544e-20 mol/L max=0.000973709 mol/L, total=3.90022 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 38
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=2.36364e-20 mol/L max=0.000967348 mol/L, total=3.87754 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 38
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 35.9992 y
+CycleDriver        |  
+CycleDriver        |  Cycle 92: time = 35.9992 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=2.33965e-20 mol/L max=0.000973709 mol/L, total=3.91701 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/34, the maximum is in cell 39
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=2.299e-20 mol/L max=0.000967348 mol/L, total=3.89403 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 39
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 36.4992 y
+CycleDriver        |  
+CycleDriver        |  Cycle 93: time = 36.4992 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 14 centered at (14.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=2.27566e-20 mol/L max=0.000973709 mol/L, total=3.93334 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 39
+Transport-domain   |   cell 14 centered at (14.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=2.23612e-20 mol/L max=0.000967348 mol/L, total=3.91007 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 39
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 36.9992 y
+CycleDriver        |  
+CycleDriver        |  Cycle 94: time = 36.9992 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 23 centered at (23.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=2.21342e-20 mol/L max=0.000973709 mol/L, total=3.94921 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/34, the maximum is in cell 40
+Transport-domain   |   cell 23 centered at (23.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=2.17496e-20 mol/L max=0.000967348 mol/L, total=3.92567 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 40
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 37.4992 y
+CycleDriver        |  
+CycleDriver        |  Cycle 95: time = 37.4992 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=2.15288e-20 mol/L max=0.000973709 mol/L, total=3.96465 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 40
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=2.11547e-20 mol/L max=0.000967348 mol/L, total=3.94084 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 40
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 37.9992 y
+CycleDriver        |  
+CycleDriver        |  Cycle 96: time = 37.9992 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 25 centered at (25.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=2.09399e-20 mol/L max=0.000973709 mol/L, total=3.97967 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/34, the maximum is in cell 41
+Transport-domain   |   cell 25 centered at (25.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=2.05761e-20 mol/L max=0.000967348 mol/L, total=3.95559 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/33, the maximum is in cell 41
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 38.4992 y
+CycleDriver        |  
+CycleDriver        |  Cycle 97: time = 38.4992 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 17 centered at (17.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=2.03672e-20 mol/L max=0.000973709 mol/L, total=3.99427 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 39
+Transport-domain   |   cell 17 centered at (17.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=2.00133e-20 mol/L max=0.000967348 mol/L, total=3.96993 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 41
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 38.9992 y
+CycleDriver        |  
+CycleDriver        |  Cycle 98: time = 38.9992 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.98102e-20 mol/L max=0.000973709 mol/L, total=4.00846 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/34, the maximum is in cell 42
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.9466e-20 mol/L max=0.000967348 mol/L, total=3.98388 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 42
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 39.4992 y
+CycleDriver        |  
+CycleDriver        |  Cycle 99: time = 39.4992 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.92683e-20 mol/L max=0.000973709 mol/L, total=4.02227 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 42
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.89336e-20 mol/L max=0.000967348 mol/L, total=3.99744 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 42
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 39.9991 y
+CycleDriver        |  
+CycleDriver        |  Field                                    Min/Max/Avg
+CycleDriver        |  alquimia_aux_data....................... -45.4218 / 1 / -3.98209
+CycleDriver        |  atmospheric_pressure.................... 101325
+CycleDriver        |  const_fluid_density..................... 998.2
+CycleDriver        |  const_fluid_viscosity................... 0.001002
+CycleDriver        |  darcy_velocity.......................... -6.34316e-20 / 7.92745e-09 / 2.64248e-09
+CycleDriver        |  dt...................................... 1.57785e+07
+CycleDriver        |  first_order_decay_constant.............. 1.78577e-09 / 1.78577e-09 / 1.78577e-09
+CycleDriver        |  free_ion_species........................ 1.87751e-20 / 0.000959204 / 0.000199907
+CycleDriver        |  gravity................................. 0 0 -9.80665
+CycleDriver        |  hydraulic_head.......................... 10.716 / 10.7963 / 10.7561 [m]
+CycleDriver        |  mass_density_liquid.bnd_face............ 998.2 / 998.2 / 998.2
+CycleDriver        |  mass_density_liquid.cell................ 998.2 / 998.2 / 998.2
+CycleDriver        |  molar_flow_rate......................... -5.29603e-15 / 0.000439247 / 8.85508e-05
+CycleDriver        |  pH...................................... -100 / -100 / -100
+CycleDriver        |  permeability............................ 1e-12 / 1e-12 / 1e-12 [m^2]
+CycleDriver        |  porosity................................ 0.25 / 0.25 / 0.25 [-]
+CycleDriver        |  pressure.cell........................... 201329 / 202115 / 201722 [Pa]
+CycleDriver        |  pressure.face........................... 196434 / 207010 / 201722 [Pa]
+CycleDriver        |  prev_saturation_liquid.................. 1 / 1 / 1
+CycleDriver        |  prev_water_content...................... 0.25 / 0.25 / 0.25
+CycleDriver        |  prev_water_storage...................... 0 / 0 / 0
+CycleDriver        |  primary_activity_coeff.................. 0 / 0 / 0
+CycleDriver        |  primary_free_ion_concentration.......... 1.87751e-20 / 0.000959204 / 0.000199907
+CycleDriver        |  saturation_liquid....................... 1 / 1 / 1 [-]
+CycleDriver        |  specific_storage........................ 0 / 0 / 0 [m]
+CycleDriver        |  specific_yield.......................... 0 / 0 / 0
+CycleDriver        |  time.................................... 1.26228e+09
+CycleDriver        |  time@current............................ 0
+CycleDriver        |  tortuosity.............................. 1 / 1 / 1
+CycleDriver        |  total_component_concentration........... 1.87413e-20 / 0.000957478 / 0.000199547
+CycleDriver        |  total_component_concentration@copy...... 1.89336e-20 / 0.000967348 / 0.000199547
+CycleDriver        |  volumetric_flow_rate.................... -9.55818e-20 / 7.92745e-09 / 1.59815e-09 [m^3/s]
+CycleDriver        |  water_content........................... 0.25 / 0.25 / 0.25 [-]
+CycleDriver        |  water_storage........................... 0 / 0 / 0
+CycleDriver        |  
+CycleDriver        |  Simulation end time: 1.57785e+09 sec.
+CycleDriver        |  CPU time stamp: [00:00:01]
+CycleDriver        |  
+CycleDriver        |  Cycle 100: time = 39.9991 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 40 centered at (40.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.87413e-20 mol/L max=0.000973709 mol/L, total=4.0357 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/33, the maximum is in cell 43
+Transport-domain   |   cell 40 centered at (40.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.84157e-20 mol/L max=0.000967348 mol/L, total=4.01063 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/34, the maximum is in cell 43
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 40.4991 y
+CycleDriver        |  
+CycleDriver        |  Cycle 101: time = 40.4991 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.82288e-20 mol/L max=0.000973709 mol/L, total=4.04875 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 43
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.7912e-20 mol/L max=0.000967348 mol/L, total=4.02346 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 43
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 40.9991 y
+CycleDriver        |  
+CycleDriver        |  Cycle 102: time = 40.9991 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 17 centered at (17.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.77302e-20 mol/L max=0.000973709 mol/L, total=4.06145 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/34, the maximum is in cell 44
+Transport-domain   |   cell 17 centered at (17.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.74221e-20 mol/L max=0.000967348 mol/L, total=4.03593 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/35, the maximum is in cell 44
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 41.4991 y
+CycleDriver        |  
+CycleDriver        |  Cycle 103: time = 41.4991 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 19 centered at (19.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.72452e-20 mol/L max=0.000973709 mol/L, total=4.07379 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 44
+Transport-domain   |   cell 19 centered at (19.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.69456e-20 mol/L max=0.000967348 mol/L, total=4.04806 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 44
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 41.9991 y
+CycleDriver        |  
+CycleDriver        |  Cycle 104: time = 41.9991 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 2 centered at (2.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.67736e-20 mol/L max=0.000973709 mol/L, total=4.0858 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/34, the maximum is in cell 45
+Transport-domain   |   cell 2 centered at (2.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.64821e-20 mol/L max=0.000967348 mol/L, total=4.05986 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/35, the maximum is in cell 45
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 42.4991 y
+CycleDriver        |  
+CycleDriver        |  Cycle 105: time = 42.4991 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.63148e-20 mol/L max=0.000973709 mol/L, total=4.09748 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 45
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.60313e-20 mol/L max=0.000967348 mol/L, total=4.07133 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/29, the maximum is in cell 46
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 42.9991 y
+CycleDriver        |  
+CycleDriver        |  Cycle 106: time = 42.9991 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 33 centered at (33.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.58686e-20 mol/L max=0.000973709 mol/L, total=4.10883 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/31, the maximum is in cell 46
+Transport-domain   |   cell 33 centered at (33.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.55929e-20 mol/L max=0.000967348 mol/L, total=4.08249 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 46
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 43.4991 y
+CycleDriver        |  
+CycleDriver        |  Cycle 107: time = 43.4991 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.54346e-20 mol/L max=0.000973709 mol/L, total=4.11987 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 46
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.51664e-20 mol/L max=0.000967348 mol/L, total=4.09333 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/31, the maximum is in cell 47
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 43.9991 y
+CycleDriver        |  
+CycleDriver        |  Cycle 108: time = 43.9991 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 18 centered at (18.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.50124e-20 mol/L max=0.000973709 mol/L, total=4.13061 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/32, the maximum is in cell 47
+Transport-domain   |   cell 18 centered at (18.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.47516e-20 mol/L max=0.000967348 mol/L, total=4.10388 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 47
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 44.499 y
+CycleDriver        |  
+CycleDriver        |  Cycle 109: time = 44.499 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.46018e-20 mol/L max=0.000973709 mol/L, total=4.14105 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 47
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.43481e-20 mol/L max=0.000967348 mol/L, total=4.11414 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/32, the maximum is in cell 48
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 44.999 y
+CycleDriver        |  
+CycleDriver        |  Cycle 110: time = 44.999 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.42024e-20 mol/L max=0.000973709 mol/L, total=4.1512 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/32, the maximum is in cell 48
+Transport-domain   |   cell 1 centered at (1.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.39557e-20 mol/L max=0.000967348 mol/L, total=4.12411 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 47
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 45.499 y
+CycleDriver        |  
+CycleDriver        |  Cycle 111: time = 45.499 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.3814e-20 mol/L max=0.000973709 mol/L, total=4.16108 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 48
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.3574e-20 mol/L max=0.000967348 mol/L, total=4.13382 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/32, the maximum is in cell 49
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 45.999 y
+CycleDriver        |  
+CycleDriver        |  Cycle 112: time = 45.999 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 21 centered at (21.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.34362e-20 mol/L max=0.000973709 mol/L, total=4.17068 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/33, the maximum is in cell 49
+Transport-domain   |   cell 21 centered at (21.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.32027e-20 mol/L max=0.000967348 mol/L, total=4.14325 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 49
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 46.499 y
+CycleDriver        |  
+CycleDriver        |  Cycle 113: time = 46.499 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.30687e-20 mol/L max=0.000973709 mol/L, total=4.18001 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 49
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.28416e-20 mol/L max=0.000967348 mol/L, total=4.15242 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/32, the maximum is in cell 50
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 46.999 y
+CycleDriver        |  
+CycleDriver        |  Cycle 114: time = 46.999 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.27112e-20 mol/L max=0.000973709 mol/L, total=4.18909 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/34, the maximum is in cell 50
+Transport-domain   |   cell 15 centered at (15.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.24904e-20 mol/L max=0.000967348 mol/L, total=4.16134 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 50
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 47.499 y
+CycleDriver        |  
+CycleDriver        |  Cycle 115: time = 47.499 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.23636e-20 mol/L max=0.000973709 mol/L, total=4.19792 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 50
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.21488e-20 mol/L max=0.000967348 mol/L, total=4.17002 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/32, the maximum is in cell 51
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 47.999 y
+CycleDriver        |  
+CycleDriver        |  Cycle 116: time = 47.999 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 26 centered at (26.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.20254e-20 mol/L max=0.000973709 mol/L, total=4.20651 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/34, the maximum is in cell 51
+Transport-domain   |   cell 26 centered at (26.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.18165e-20 mol/L max=0.000967348 mol/L, total=4.17845 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 51
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 48.499 y
+CycleDriver        |  
+CycleDriver        |  Cycle 117: time = 48.499 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 3 centered at (3.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.16965e-20 mol/L max=0.000973709 mol/L, total=4.21486 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/6, the maximum is in cell 51
+Transport-domain   |   cell 3 centered at (3.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.14933e-20 mol/L max=0.000967348 mol/L, total=4.18666 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/33, the maximum is in cell 52
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 48.999 y
+CycleDriver        |  
+CycleDriver        |  Cycle 118: time = 48.999 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.13766e-20 mol/L max=0.000973709 mol/L, total=4.22298 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/33, the maximum is in cell 52
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.1179e-20 mol/L max=0.000967348 mol/L, total=4.19463 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 51
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |  New time = 49.4989 y
+CycleDriver        |  
+CycleDriver        |  Cycle 119: time = 49.4989 y, dt = 0.500332 noleap
+DarcyPK            |   pressure solver (AztecOO): ||p,lambda||=4.94577e+06  itrs=3
+DarcyPK            |    boundary head (BCs): min=10.7156 m, max=10.7156 m
+DarcyPK            |    domain head (cells): min=10.716 m, max=10.7963 m
+DarcyPK            |    domain head (cells + faces): min=10.7156 m, max=10.7967 m
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.317098 noleap
+Transport-domain   |   Tritium: min=1.10655e-20 mol/L max=0.000973709 mol/L, total=4.23087 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/1/5, the maximum is in cell 51
+Transport-domain   |   cell 0 centered at (0.5, 0.5, 0.5) has smallest dt=1.5768e+07
+Transport-domain   |   1 sub-cycles, dt_stable=0.5 noleap, dt_MPC=0.183234 noleap
+Transport-domain   |   Tritium: min=1.08732e-20 mol/L max=0.000967348 mol/L, total=4.20239 mol
+Alquimia_PK:domain |  min/avg/max Newton: 1/2/33, the maximum is in cell 53
+TimeStepManager    |   Proposed dT=0.625415 noleap, stability from previous step changes it to 0.847033 noleap
+TimeStepManager    |   Proposed dT=0.847033 noleap, events limit it to 0.500332 noleap
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |   writing checkpoint file
+CycleDriver        |  New time = 49.9989 y
+CycleDriver        |  
+CycleDriver        |  Field                                    Min/Max/Avg
+CycleDriver        |  alquimia_aux_data....................... -45.9764 / 1 / -3.46876
+CycleDriver        |  atmospheric_pressure.................... 101325
+CycleDriver        |  const_fluid_density..................... 998.2
+CycleDriver        |  const_fluid_viscosity................... 0.001002
+CycleDriver        |  darcy_velocity.......................... -3.82327e-20 / 7.92745e-09 / 2.64248e-09
+CycleDriver        |  dt...................................... 1.57785e+07
+CycleDriver        |  first_order_decay_constant.............. 1.78577e-09 / 1.78577e-09 / 1.78577e-09
+CycleDriver        |  free_ion_species........................ 1.07822e-20 / 0.000959204 / 0.000249884
+CycleDriver        |  gravity................................. 0 0 -9.80665
+CycleDriver        |  hydraulic_head.......................... 10.716 / 10.7963 / 10.7561 [m]
+CycleDriver        |  mass_density_liquid.bnd_face............ 998.2 / 998.2 / 998.2
+CycleDriver        |  mass_density_liquid.cell................ 998.2 / 998.2 / 998.2
+CycleDriver        |  molar_flow_rate......................... -5.39232e-15 / 0.000439247 / 8.85508e-05
+CycleDriver        |  pH...................................... -100 / -100 / -100
+CycleDriver        |  permeability............................ 1e-12 / 1e-12 / 1e-12 [m^2]
+CycleDriver        |  porosity................................ 0.25 / 0.25 / 0.25 [-]
+CycleDriver        |  pressure.cell........................... 201329 / 202115 / 201722 [Pa]
+CycleDriver        |  pressure.face........................... 196434 / 207010 / 201722 [Pa]
+CycleDriver        |  prev_saturation_liquid.................. 1 / 1 / 1
+CycleDriver        |  prev_water_content...................... 0.25 / 0.25 / 0.25
+CycleDriver        |  prev_water_storage...................... 0 / 0 / 0
+CycleDriver        |  primary_activity_coeff.................. 0 / 0 / 0
+CycleDriver        |  primary_free_ion_concentration.......... 1.07822e-20 / 0.000959204 / 0.000249884
+CycleDriver        |  saturation_liquid....................... 1 / 1 / 1 [-]
+CycleDriver        |  specific_storage........................ 0 / 0 / 0 [m]
+CycleDriver        |  specific_yield.......................... 0 / 0 / 0
+CycleDriver        |  time.................................... 1.57785e+09
+CycleDriver        |  time@current............................ 0
+CycleDriver        |  tortuosity.............................. 1 / 1 / 1
+CycleDriver        |  total_component_concentration........... 1.07628e-20 / 0.000957478 / 0.000249434
+CycleDriver        |  total_component_concentration@copy...... 1.08732e-20 / 0.000967348 / 0.000249434
+CycleDriver        |  volumetric_flow_rate.................... -9.73197e-20 / 7.92745e-09 / 1.59815e-09 [m^3/s]
+CycleDriver        |  water_content........................... 0.25 / 0.25 / 0.25 [-]
+CycleDriver        |  water_storage........................... 0 / 0 / 0
+CycleDriver        |  ======================================================================
+CycleDriver        |  Simulation made 120 cycles.
+CycleDriver        |  All meshes combined have 100 cells.
+CycleDriver        |  Memory usage (high water mark):
+CycleDriver        |    Maximum per core:     493.4 MBytes,  maximum per cell: 5173575.7 Bytes
+CycleDriver        |    Minumum per core:     493.4 MBytes,  minimum per cell: 5173575.7 Bytes
+CycleDriver        |    Total:                493.4 MBytes,  total per cell:   5173575.7 Bytes
+CycleDriver        |  Doubles allocated in state fields 
+CycleDriver        |    Maximum per core:   0.0473404 MBytes
+CycleDriver        |    Minimum per core:   0.0473404 MBytes
+CycleDriver        |    Total:              0.0473404 MBytes
+================================================================================
+
+                      TimeMonitor results over 1 processor
+
+Timer Name                  Global time (num calls)    
+--------------------------------------------------------------------------------
+Full Simulation             0.7651 (1)                 
+Geometric Model Creation    1e-05 (1)                  
+Mesh Creation               0.004747 (1)               
+================================================================================
+ CrunchJunk0.out          
+
+  Title of simulation: Tritium decay 1D for Amanzi tritium_1d benchmark - S. Molins Sept 26, 20
+
+
+  --> Running in OS3D mode (time splitting of reaction and transport) 
+
+  Unit activity coefficients
+
+   ---> Using database: tritium.dbs                                                                                         
+
+  Number of components:                          2
+
+  Number of secondary species:                   0
+
+  Number of gases:                               0
+
+  Number of kinetic minerals:                    0
+
+  No surface complexation block found
+
+     --> Calling database subroutine
+
+
+  Number of reactions:                              0
+  Number of complexes:                              0
+  Number of minerals:                               0
+  Number of gases:                                  0
+
+     --> Finished reading database
+  No ion exchange block found
+  Fixing porosity at  0.2500
+  No update of porosity
+
+  Current density module: temperature
+
+
+  ---> READING GEOCHEMICAL CONDITIONS  
+
+  Aqueous kinetics block found
+ multipliers for reaction tritium_decay                                                                                                                        add up to:    1.0000000000000000     
+ Using TST rate formulation for reaction: tritium_decay  
+  Retardation parameters not found
+  Assuming NO retardation (Kd = 0) 
+ meta sizes:            2
+Amanzi::SIMULATION_SUCCESSFUL
+

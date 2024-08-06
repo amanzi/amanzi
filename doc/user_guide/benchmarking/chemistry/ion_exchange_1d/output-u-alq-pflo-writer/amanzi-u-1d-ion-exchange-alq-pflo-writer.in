@@ -1,0 +1,46 @@
+CHEMISTRY
+  PRIMARY_SPECIES
+    Na+
+    Ca++
+    Mg++
+    Cl-
+  /
+  SORPTION
+    ION_EXCHANGE_RXN
+      CEC 750
+      CATIONS
+        Na+ 1 REFERENCE
+        Ca++ 3.38639
+        Mg++ 6.0024
+      /
+    /
+  /
+  DATABASE ion-exchange.dat
+  ACTIVITY_COEFFICIENTS OFF
+  LOG_FORMULATION 
+  USE_FULL_GEOCHEMISTRY 
+END
+CONSTRAINT initial
+  CONCENTRATIONS
+    Ca++ 0.0182 T
+    Mg++ 0.0111 T
+    Cl- 0.002 Z
+    Na+ 0.0865 T
+  /
+END
+CONSTRAINT west
+  CONCENTRATIONS
+    Ca++ 0.0005 T
+    Mg++ 0.00213 T
+    Cl- 0.01 Z
+    Na+ 0.0094 T
+  /
+END
+CONSTRAINT east
+  CONCENTRATIONS
+    Ca++ 0.0182 T
+    Mg++ 0.0111 T
+    Cl- 0.002 Z
+    Na+ 0.0865 T
+  /
+END

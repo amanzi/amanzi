@@ -1,0 +1,10 @@
+/Users/elm/Documents/GitHub/amanzi/doc/user_guide/benchmarking/chemistry/surface_complexation_1d/surface_complexation_1d.py:465: MatplotlibDeprecationWarning: The join function was deprecated in Matplotlib 3.6 and will be removed two minor releases later.
+  ax[0].get_shared_x_axes().join(*[ax[i] for i in range(main_rows)])
+/Users/elm/Documents/GitHub/amanzi/doc/user_guide/benchmarking/chemistry/surface_complexation_1d/surface_complexation_1d.py:466: MatplotlibDeprecationWarning: The join function was deprecated in Matplotlib 3.6 and will be removed two minor releases later.
+  bx[0].get_shared_x_axes().join(*[bx[i] for i in range(main_rows)])
+  trying  amanzi-u-1d-surface-complexation.xml
+  trying  amanzi-u-1d-surface-complexation-alq-pflo.xml
+  trying  amanzi-u-1d-surface-complexation-alq-pflo-writer.xml
+  trying  amanzi-u-1d-surface-complexation-alq-crunch.xml
+  trying  amanzi-s-1d-surface-complexation-alq-pflo.xml
+  trying  amanzi-s-1d-surface-complexation-alq-crunch.xml

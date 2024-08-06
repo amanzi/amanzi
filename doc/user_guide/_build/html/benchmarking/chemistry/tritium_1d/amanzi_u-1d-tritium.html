@@ -1,0 +1,684 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>1D Tritium first-order decay &#8212; Amanzi Version 1.6-dev_4296b1813 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/fix_eq_position.css?v=19b1522f" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=fc1b861d"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'benchmarking/chemistry/tritium_1d/amanzi_u-1d-tritium';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="1D Calcite dissolution" href="../calcite_1d/amanzi_u-1d-calcite.html" />
+    <link rel="prev" title="1D Conservative tracer transport" href="../tracer_1d/amanzi_u-1d-tracer.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+<!--<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="../../../index.html"><img src="../../../_static/logo.png" border="0" alt="py4sci"/></a>
+</div>-->
+
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/Amanzi-color.png" class="logo__image only-light" alt="Amanzi Version 1.6-dev_4296b1813 documentation - Home"/>
+    <script>document.write(`<img src="../../../_static/Amanzi-Dark.png" class="logo__image only-dark" alt="Amanzi Version 1.6-dev_4296b1813 documentation - Home"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/index.html">
+    Background
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/getting_started.html">
+    Getting Started with Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../capabilities/index.html">
+    Amanzi Features and Capabilities
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../input/index.html">
+    Amanzi Input Description
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install/index.html">
+    Building Amanzi
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../tutorial/index.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../verification/index.html">
+    Verification Testing
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="../../index.html">
+    Benchmark Testing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/index.html">
+    Background
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/getting_started.html">
+    Getting Started with Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../capabilities/index.html">
+    Amanzi Features and Capabilities
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../input/index.html">
+    Amanzi Input Description
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install/index.html">
+    Building Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorial/index.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../verification/index.html">
+    Verification Testing
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../index.html">
+    Benchmark Testing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">Chemistry</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../tracer_1d/amanzi_u-1d-tracer.html">1D Conservative tracer transport</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">1D Tritium first-order decay</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../calcite_1d/amanzi_u-1d-calcite.html">1D Calcite dissolution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../isotherms_1d/amanzi_u-1d-isotherms.html">1D Sorption Isotherms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ion_exchange_1d/amanzi_u-1d-ion-exchange.html">1D Ion exchange</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../surface_complexation_1d/amanzi_u-1d-surface-complexation.html">1D Surface complexation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../farea_1d/amanzi_u-1d-farea.html">1D F-Area Full Geochemistry</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../transport/index.html">Transport</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/single_fracture/amanzi_single_fracture.html">Coupled Matrix-Fracture Flow and Transport</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/non_grid_aligned/non_grid_aligned.html">Non-grid-aligned transport with calcite precipitation along mixing interface</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Benchmark Testing</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Chemistry</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">1D Tritium...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="d-tritium-first-order-decay">
+<h1>1D Tritium first-order decay<a class="headerlink" href="#d-tritium-first-order-decay" title="Link to this heading">#</a></h1>
+<section id="overview-and-capabilities-tested">
+<h2>Overview and Capabilities tested<a class="headerlink" href="#overview-and-capabilities-tested" title="Link to this heading">#</a></h2>
+<p>This test example performs the simulation of decay of tritium, a radioactive isotope of hydrogen, in a 1D flow domain, testing the following capabilities:</p>
+<ul class="simple">
+<li><p>1D flow</p></li>
+<li><p>1D advective transport</p></li>
+<li><p>geochemical reactions</p>
+<ul>
+<li><p>First order decay (aqueous kinetics)</p></li>
+</ul>
+</li>
+</ul>
+<p>For details on this test, see <a class="reference internal" href="#about-tritium"><span class="std std-ref">About</span></a>.</p>
+</section>
+<section id="background">
+<h2>Background<a class="headerlink" href="#background" title="Link to this heading">#</a></h2>
+<p>Tritium is a radioactive isotope of hydrogen that was added to the atmosphere during the nuclear bomb testing during the 1950’s and 1960’s at well above background concentrations. After the end of widespread nuclear bomb testing, tritium concentrations dropped. Concentrations of tritium in groundwater reflect when the water was in contact with the atmosphere, and they are used as an estimate of the rate of groundwater recharge. Tritium concentrations decay with time according to a first order expression. This first order decay is typically characterized by the half life (
+<span class="math notranslate nohighlight">\(t_{1/2}\)</span>
+).</p>
+</section>
+<section id="model">
+<h2>Model<a class="headerlink" href="#model" title="Link to this heading">#</a></h2>
+<section id="flow-and-transport">
+<h3>Flow and transport<a class="headerlink" href="#flow-and-transport" title="Link to this heading">#</a></h3>
+<p>See the <a class="reference internal" href="../tracer_1d/amanzi_u-1d-tracer.html"><span class="doc">1D Conservative tracer transport</span></a> example.</p>
+</section>
+<section id="first-order-kinetic-decay">
+<h3>First order (kinetic) decay<a class="headerlink" href="#first-order-kinetic-decay" title="Link to this heading">#</a></h3>
+<p>One single reaction is considered: tritium decay. This reaction is homogeneous and is modeled with a first order kinetic rate expression:</p>
+<p><span class="math notranslate nohighlight">\(r = - \lambda c\)</span></p>
+<p>where
+<span class="math notranslate nohighlight">\(c\)</span>
+is the concentration of tritium, and
+<span class="math notranslate nohighlight">\(\lambda\)</span>
+is the first order constant. This is related to the half life of tritium according to:</p>
+<p><span class="math notranslate nohighlight">\(\lambda = \displaystyle\frac{ln(2)}{t_{1/2}}\)</span></p>
+</section>
+</section>
+<section id="problem-specification">
+<h2>Problem Specification<a class="headerlink" href="#problem-specification" title="Link to this heading">#</a></h2>
+<section id="id1">
+<h3>Flow and transport<a class="headerlink" href="#id1" title="Link to this heading">#</a></h3>
+<p>See the <a class="reference internal" href="../tracer_1d/amanzi_u-1d-tracer.html"><span class="doc">1D Conservative tracer transport</span></a> example.  In this example, tritium injected at constant concentration at the left boundary decays as it travels down gradient a 1D flow domain. The simulation is run to 50 years.</p>
+</section>
+<section id="geochemistry">
+<h3>Geochemistry<a class="headerlink" href="#geochemistry" title="Link to this heading">#</a></h3>
+<p>In this example, the half life of tririum is taken as
+<span class="math notranslate nohighlight">\(t_{1/2} = 13.31 \text{ years}\)</span>.
+Thus, <span class="math notranslate nohighlight">\(\lambda = 1.78577 \cdot 10^{-9} \text{ s}^{-1}\)</span></p>
+</section>
+</section>
+<section id="results-and-comparison">
+<h2>Results and Comparison<a class="headerlink" href="#results-and-comparison" title="Link to this heading">#</a></h2>
+<section id="expected-results">
+<h3>Expected results<a class="headerlink" href="#expected-results" title="Link to this heading">#</a></h3>
+<p>Tritium enters the 1D column from the left and as it flows left to right it decays exponentially.</p>
+</section>
+<section id="simulation-results">
+<h3>Simulation results<a class="headerlink" href="#simulation-results" title="Link to this heading">#</a></h3>
+<p>In the figure below, the solution by Amanzi at time 50 years is compared to results obtained with PFloTran along the length of the colum. Agreement is very good overall. Minor differences in the leading edge are attributed to the numerical dispersion added by the different numerical schemes.</p>
+<p>(<a class="reference download internal" download="" href="../../../_downloads/254bbcf258a50c04f8cb723512bf94e8/tritium_1d.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/a6c811670a3c7ecd24af987380914eb5/tritium_1d.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/8dbdc204f230fe20a4099a2eaddf4adf/tritium_1d.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/067fbcc069d4ac52d1a0836c141a2a90/tritium_1d.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="../../../_images/tritium_1d.png" class="plot-directive" src="../../../_images/tritium_1d.png" />
+</figure>
+</section>
+</section>
+<section id="about">
+<span id="about-tritium"></span><h2>About<a class="headerlink" href="#about" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Benchmark simulator: PFlotran</p></li>
+<li><p>Files</p>
+<ul>
+<li><p>Amanzi input file/s (native chemistry): amanzi-1d-tritium.xml</p></li>
+<li><p>Amanzi input file/s (Alquimia chemistry): amanzi-1d-tritium-alq.xml, 1d-tritium.in, tritium.dat</p></li>
+<li><p>Benchmark simulator input file: 1d-tritium.in, tritium.dat, output file = pflotran/1d-tritium.h5</p></li>
+</ul>
+</li>
+<li><p>Location: amanzi/testing/benchmarking/chemistry/tritium_1d</p></li>
+<li><p>Author: B. Andre, G. Hammond</p></li>
+<li><p>Testing and Documentation: S. Molins</p></li>
+<li><p>Last tested on Oct 3, 2013</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../tracer_1d/amanzi_u-1d-tracer.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">1D Conservative tracer transport</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../calcite_1d/amanzi_u-1d-calcite.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">1D Calcite dissolution</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview-and-capabilities-tested">Overview and Capabilities tested</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#background">Background</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model">Model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#flow-and-transport">Flow and transport</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#first-order-kinetic-decay">First order (kinetic) decay</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#problem-specification">Problem Specification</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Flow and transport</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geochemistry">Geochemistry</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#results-and-comparison">Results and Comparison</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#expected-results">Expected results</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simulation-results">Simulation results</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#about">About</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../../../_sources/benchmarking/chemistry/tritium_1d/amanzi_u-1d-tritium.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

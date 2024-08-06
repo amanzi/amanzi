@@ -1,0 +1,12 @@
+units                  mol/kg                                                                                                       
+temperature      25.0                                                                                                               
+pH                      6.0                                                                                                         
+Na+                   charge                                                                                                        
+NO3-                  1.00293346236581d-01                                                                                          
+Zn++                1.00293346236581E-07                                                                                            
+Cl-                      1.0d-20                                                                                                    
+>FeOH_w          7.6355d-2                                                                                                          
+>FeOH_s           1.908d-3                                                                                                          
+Halite                1.0d-5   bulk_surface_area 1.0                                                                                
+
+

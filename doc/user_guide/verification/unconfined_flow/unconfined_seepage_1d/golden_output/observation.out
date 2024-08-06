@@ -1,0 +1,13 @@
+Observation Name, Region, Functional, Variable, Time [s], Value [kg m molar]
+============================================================================
+obl 1, Point25, observation data: point, hydraulic head, 9.4672800000000000e+10, 2.4322253580402094e+01
+obl 2, Point125, observation data: point, hydraulic head, 9.4672800000000000e+10, 2.4024657501694328e+01
+obl 3, Point225, observation data: point, hydraulic head, 9.4672800000000000e+10, 2.3616827207343672e+01
+obl 4, Point325, observation data: point, hydraulic head, 9.4672800000000000e+10, 2.3090132252865150e+01
+obl 5, Point425, observation data: point, hydraulic head, 9.4672800000000000e+10, 2.2433696949943243e+01
+obl 6, Point525, observation data: point, hydraulic head, 9.4672800000000000e+10, 2.1648053787232261e+01
+obl 7, Point625, observation data: point, hydraulic head, 9.4672800000000000e+10, 2.0710521809689261e+01
+obl 8, Point725, observation data: point, hydraulic head, 9.4672800000000000e+10, 1.9597826751564583e+01
+obl 9, Point825, observation data: point, hydraulic head, 9.4672800000000000e+10, 1.8258583015201818e+01
+obl 10, Point925, observation data: point, hydraulic head, 9.4672800000000000e+10, 1.6651834776792327e+01
+obl 11, Point975, observation data: point, hydraulic head, 9.4672800000000000e+10, 1.5734736216504153e+01

@@ -1,0 +1,3 @@
+/Users/elm/Documents/GitHub/amanzi/doc/user_guide/verification/confined_flow/linear_materials_serial_1d/model_linear_materials_serial_1d.py:6: SyntaxWarning: invalid escape sequence '\d'
+  """
+  trying  amanzi_linear_materials_serial_1d-u.xml

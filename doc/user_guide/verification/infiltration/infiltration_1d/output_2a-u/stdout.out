@@ -1,0 +1,1542 @@
+[pn2401379.lanl.gov:71794] shmem: mmap: an error occurred while determining whether or not /var/folders/36/xt3jx8554vj0_03sz682d5_800074q/T//ompi.pn2401379.7319/jf.0/3483303936/sm_segment.pn2401379.7319.cf9f0000.0 could be created.
+InputConverter-u   |   Writing the translated XML to amanzi_infiltration_loam_sand_1d-u_native.xml
+Mesh Output        |  cells, tot/min/max: 200/200/200
+Mesh Output        |  faces, tot/min/max: 1001/1001/1001
+Mesh Output        |  nodes, tot/min/max: 804/804/804
+Mesh Output        |  
+Mesh               |  CPU time stamp: [00:00:01]
+InputAnalysis:doma |  bc: "Top Surface" has 1 faces of 1 [m^2]
+InputAnalysis:doma |  bc: "Bottom Surface" has 1 faces of 1 [m^2]
+InputAnalysis:doma |  obs: "Obs_0" has 1 cells, size: 0.01
+InputAnalysis:doma |  obs: "Obs_150" has 2 cells, size: 0.02
+InputAnalysis:doma |  obs: "Obs_155" has 2 cells, size: 0.02
+InputAnalysis:doma |  obs: "Obs_160" has 2 cells, size: 0.02
+InputAnalysis:doma |  obs: "Obs_165" has 1 cells, size: 0.01
+InputAnalysis:doma |  obs: "Obs_170" has 2 cells, size: 0.02
+InputAnalysis:doma |  obs: "Obs_175" has 2 cells, size: 0.02
+InputAnalysis:doma |  obs: "Obs_180" has 2 cells, size: 0.02
+InputAnalysis:doma |  obs: "Obs_185" has 2 cells, size: 0.02
+InputAnalysis:doma |  obs: "Obs_190" has 1 cells, size: 0.01
+InputAnalysis:doma |  obs: "Obs_195" has 2 cells, size: 0.02
+InputAnalysis:doma |  obs: "Obs_200" has 1 cells, size: 0.01
+CycleDriver        |  Setup is complete.
+State              |  initializing data through initial conditions...
+RichardsPK         |  
+RichardsPK         |  PK initialization started...
+RichardsPK         |   initialized "hydraulic_head" to value 0
+RichardsPK         |  initialized prev_saturation_liquid to saturation_liquid
+RichardsPK         |  initialized prev_water_storage to water_storage
+RichardsPK         |  
+RichardsPK         |  EC:1 Upwind:1 PC:"Hypre AMG" TI:"BDF1"
+RichardsPK         |  matrix: <Diffusion: CELL_FACE+CELL> 
+RichardsPK         |  precon: <Diffusion: CELL_FACE+CELL> <Jacobian FACE_CELL> <CELL_CELL> 
+RichardsPK         |  pressure BC assigned to 1 faces
+RichardsPK         |  default (no-flow) BC assigned to 800 faces
+RichardsPK         |  
+RichardsPK         |   boundary head (BCs): min=-0.173089 m, max=-0.173089 m
+RichardsPK         |   domain head (cells): min=-1.995 m, max=-0.0050004 m
+RichardsPK         |   domain head (cells + faces): min=-1.995 m, max=0.490854 cm
+RichardsPK         |  [1;32mInitialization of PK is complete, T=0 s[0m
+RichardsPK         |  
+CycleDriver        |  writing visualization file: domain
+CycleDriver        |  writing observations... 12
+CycleDriver        |  writing checkpoint file
+CycleDriver        |  
+CycleDriver        |  Simulation end time: 3.15576e+11 sec.
+CycleDriver        |  CPU time stamp: [00:00:01]
+CycleDriver        |  
+CycleDriver        |  Cycle 0: time = 0 s, dt = 2 s
+CycleDriver        |  New time = 2 s
+CycleDriver        |  
+CycleDriver        |  Cycle 1: time = 2 s, dt = 2.5 s
+Solver::NKA        |   Solver is diverging repeatedly, terminating...
+CycleDriver        |  
+CycleDriver        |  Cycle 1: time = 2 s, dt = 2 s
+Solver::NKA        |   Solver is diverging repeatedly, terminating...
+CycleDriver        |  
+CycleDriver        |  Cycle 1: time = 2 s, dt = 1.6 s
+CycleDriver        |  
+CycleDriver        |  Cycle 1: time = 2 s, dt = 1.28 s
+CycleDriver        |  New time = 3.28 s
+CycleDriver        |  
+CycleDriver        |  Cycle 2: time = 3.28 s, dt = 1.28 s
+CycleDriver        |  New time = 4.56 s
+CycleDriver        |  
+CycleDriver        |  Cycle 3: time = 4.56 s, dt = 1.6 s
+CycleDriver        |  New time = 6.16 s
+CycleDriver        |  
+CycleDriver        |  Cycle 4: time = 6.16 s, dt = 2 s
+CycleDriver        |  New time = 0.136 min
+CycleDriver        |  
+CycleDriver        |  Cycle 5: time = 0.136 min, dt = 2.5 s
+CycleDriver        |  New time = 0.177667 min
+CycleDriver        |  
+CycleDriver        |  Cycle 6: time = 0.177667 min, dt = 3.125 s
+CycleDriver        |  New time = 0.22975 min
+CycleDriver        |  
+CycleDriver        |  Cycle 7: time = 0.22975 min, dt = 3.90625 s
+CycleDriver        |  New time = 0.294854 min
+CycleDriver        |  
+CycleDriver        |  Cycle 8: time = 0.294854 min, dt = 4.88281 s
+CycleDriver        |  New time = 0.376234 min
+CycleDriver        |  
+CycleDriver        |  Cycle 9: time = 0.376234 min, dt = 6.10352 s
+CycleDriver        |  New time = 0.47796 min
+CycleDriver        |  
+CycleDriver        |  Cycle 10: time = 0.47796 min, dt = 7.62939 s
+CycleDriver        |  New time = 0.605116 min
+CycleDriver        |  
+CycleDriver        |  Cycle 11: time = 0.605116 min, dt = 0.158946 min
+CycleDriver        |  New time = 0.764062 min
+CycleDriver        |  
+CycleDriver        |  Cycle 12: time = 0.764062 min, dt = 0.198682 min
+CycleDriver        |  New time = 0.962744 min
+CycleDriver        |  
+CycleDriver        |  Cycle 13: time = 0.962744 min, dt = 0.248353 min
+CycleDriver        |  New time = 1.2111 min
+CycleDriver        |  
+CycleDriver        |  Cycle 14: time = 1.2111 min, dt = 0.310441 min
+CycleDriver        |  New time = 1.52154 min
+CycleDriver        |  
+CycleDriver        |  Cycle 15: time = 1.52154 min, dt = 0.388051 min
+CycleDriver        |  New time = 1.90959 min
+CycleDriver        |  
+CycleDriver        |  Cycle 16: time = 1.90959 min, dt = 0.485064 min
+CycleDriver        |  New time = 2.39465 min
+CycleDriver        |  
+CycleDriver        |  Cycle 17: time = 2.39465 min, dt = 0.60633 min
+CycleDriver        |  New time = 3.00098 min
+CycleDriver        |  
+CycleDriver        |  Cycle 18: time = 3.00098 min, dt = 0.757912 min
+CycleDriver        |  New time = 3.75889 min
+CycleDriver        |  
+CycleDriver        |  Cycle 19: time = 3.75889 min, dt = 0.94739 min
+CycleDriver        |  New time = 4.70628 min
+CycleDriver        |  
+CycleDriver        |  Cycle 20: time = 4.70628 min, dt = 1.18424 min
+CycleDriver        |  New time = 5.89052 min
+CycleDriver        |  
+CycleDriver        |  Cycle 21: time = 5.89052 min, dt = 1.4803 min
+CycleDriver        |  New time = 7.37082 min
+CycleDriver        |  
+CycleDriver        |  Cycle 22: time = 7.37082 min, dt = 1.85037 min
+CycleDriver        |  New time = 0.153687 h
+CycleDriver        |  
+CycleDriver        |  Cycle 23: time = 0.153687 h, dt = 2.31296 min
+CycleDriver        |  New time = 0.192236 h
+CycleDriver        |  
+CycleDriver        |  Cycle 24: time = 0.192236 h, dt = 2.89121 min
+CycleDriver        |  New time = 0.240423 h
+CycleDriver        |  
+CycleDriver        |  Cycle 25: time = 0.240423 h, dt = 3.61401 min
+CycleDriver        |  New time = 0.300656 h
+CycleDriver        |  
+CycleDriver        |  Cycle 26: time = 0.300656 h, dt = 4.51751 min
+CycleDriver        |  New time = 0.375948 h
+CycleDriver        |  
+CycleDriver        |  Cycle 27: time = 0.375948 h, dt = 5.64689 min
+CycleDriver        |  New time = 0.470063 h
+CycleDriver        |  
+CycleDriver        |  Cycle 28: time = 0.470063 h, dt = 7.05861 min
+CycleDriver        |  New time = 0.587706 h
+CycleDriver        |  
+CycleDriver        |  Cycle 29: time = 0.587706 h, dt = 0.147054 h
+CycleDriver        |  New time = 0.734761 h
+CycleDriver        |  
+CycleDriver        |  Cycle 30: time = 0.734761 h, dt = 0.183818 h
+CycleDriver        |  New time = 0.918578 h
+CycleDriver        |  
+CycleDriver        |  Cycle 31: time = 0.918578 h, dt = 0.229772 h
+CycleDriver        |  New time = 1.14835 h
+CycleDriver        |  
+CycleDriver        |  Cycle 32: time = 1.14835 h, dt = 0.287215 h
+CycleDriver        |  New time = 1.43557 h
+CycleDriver        |  
+CycleDriver        |  Cycle 33: time = 1.43557 h, dt = 0.359019 h
+CycleDriver        |  New time = 1.79459 h
+CycleDriver        |  
+CycleDriver        |  Cycle 34: time = 1.79459 h, dt = 0.448774 h
+CycleDriver        |  New time = 2.24336 h
+CycleDriver        |  
+CycleDriver        |  Cycle 35: time = 2.24336 h, dt = 0.560968 h
+CycleDriver        |  New time = 2.80433 h
+CycleDriver        |  
+CycleDriver        |  Cycle 36: time = 2.80433 h, dt = 0.560968 h
+CycleDriver        |  New time = 3.3653 h
+CycleDriver        |  
+CycleDriver        |  Cycle 37: time = 3.3653 h, dt = 0.70121 h
+CycleDriver        |  New time = 4.06651 h
+CycleDriver        |  
+CycleDriver        |  Cycle 38: time = 4.06651 h, dt = 0.876512 h
+CycleDriver        |  New time = 0.205959 d
+CycleDriver        |  
+CycleDriver        |  Cycle 39: time = 0.205959 d, dt = 0.876512 h
+CycleDriver        |  New time = 0.24248 d
+CycleDriver        |  
+CycleDriver        |  Cycle 40: time = 0.24248 d, dt = 1.09564 h
+CycleDriver        |  New time = 0.288132 d
+CycleDriver        |  
+CycleDriver        |  Cycle 41: time = 0.288132 d, dt = 1.09564 h
+CycleDriver        |  New time = 0.333784 d
+CycleDriver        |  
+CycleDriver        |  Cycle 42: time = 0.333784 d, dt = 1.36955 h
+CycleDriver        |  New time = 0.390848 d
+CycleDriver        |  
+CycleDriver        |  Cycle 43: time = 0.390848 d, dt = 1.71194 h
+CycleDriver        |  New time = 0.462179 d
+CycleDriver        |  
+CycleDriver        |  Cycle 44: time = 0.462179 d, dt = 1.71194 h
+CycleDriver        |  New time = 0.53351 d
+CycleDriver        |  
+CycleDriver        |  Cycle 45: time = 0.53351 d, dt = 2.13992 h
+CycleDriver        |  New time = 0.622673 d
+CycleDriver        |  
+CycleDriver        |  Cycle 46: time = 0.622673 d, dt = 2.13992 h
+CycleDriver        |  New time = 0.711837 d
+CycleDriver        |  
+CycleDriver        |  Cycle 47: time = 0.711837 d, dt = 2.6749 h
+CycleDriver        |  New time = 0.823291 d
+CycleDriver        |  
+CycleDriver        |  Cycle 48: time = 0.823291 d, dt = 2.6749 h
+CycleDriver        |  New time = 0.934745 d
+CycleDriver        |  
+CycleDriver        |  Cycle 49: time = 0.934745 d, dt = 2.6749 h
+CycleDriver        |  New time = 1.0462 d
+CycleDriver        |  
+CycleDriver        |  Cycle 50: time = 1.0462 d, dt = 3.34363 h
+CycleDriver        |  New time = 1.18552 d
+CycleDriver        |  
+CycleDriver        |  Cycle 51: time = 1.18552 d, dt = 3.34363 h
+CycleDriver        |  New time = 1.32484 d
+CycleDriver        |  
+CycleDriver        |  Cycle 52: time = 1.32484 d, dt = 3.34363 h
+CycleDriver        |  New time = 1.46415 d
+CycleDriver        |  
+CycleDriver        |  Cycle 53: time = 1.46415 d, dt = 4.17954 h
+CycleDriver        |  New time = 1.6383 d
+CycleDriver        |  
+CycleDriver        |  Cycle 54: time = 1.6383 d, dt = 0.217684 d
+CycleDriver        |  New time = 1.85598 d
+CycleDriver        |  
+CycleDriver        |  Cycle 55: time = 1.85598 d, dt = 0.272105 d
+CycleDriver        |  New time = 2.12809 d
+CycleDriver        |  
+CycleDriver        |  Cycle 56: time = 2.12809 d, dt = 0.272105 d
+CycleDriver        |  New time = 2.40019 d
+CycleDriver        |  
+CycleDriver        |  Cycle 57: time = 2.40019 d, dt = 0.272105 d
+CycleDriver        |  New time = 2.6723 d
+CycleDriver        |  
+CycleDriver        |  Cycle 58: time = 2.6723 d, dt = 0.272105 d
+CycleDriver        |  New time = 2.94441 d
+CycleDriver        |  
+CycleDriver        |  Cycle 59: time = 2.94441 d, dt = 0.340131 d
+CycleDriver        |  New time = 3.28454 d
+CycleDriver        |  
+CycleDriver        |  Cycle 60: time = 3.28454 d, dt = 0.340131 d
+CycleDriver        |  New time = 3.62467 d
+CycleDriver        |  
+CycleDriver        |  Cycle 61: time = 3.62467 d, dt = 0.425164 d
+CycleDriver        |  New time = 4.04983 d
+CycleDriver        |  
+CycleDriver        |  Cycle 62: time = 4.04983 d, dt = 0.425164 d
+CycleDriver        |  New time = 4.475 d
+CycleDriver        |  
+CycleDriver        |  Cycle 63: time = 4.475 d, dt = 0.531455 d
+CycleDriver        |  New time = 5.00645 d
+CycleDriver        |  
+CycleDriver        |  Cycle 64: time = 5.00645 d, dt = 0.531455 d
+CycleDriver        |  New time = 5.53791 d
+CycleDriver        |  
+CycleDriver        |  Cycle 65: time = 5.53791 d, dt = 0.664319 d
+Solver::NKA        |   Solver is diverging repeatedly, terminating...
+CycleDriver        |  
+CycleDriver        |  Cycle 65: time = 5.53791 d, dt = 0.531455 d
+CycleDriver        |  New time = 6.06936 d
+CycleDriver        |  
+CycleDriver        |  Cycle 66: time = 6.06936 d, dt = 0.664319 d
+CycleDriver        |  New time = 6.73368 d
+CycleDriver        |  
+CycleDriver        |  Cycle 67: time = 6.73368 d, dt = 0.830399 d
+CycleDriver        |  New time = 7.56408 d
+CycleDriver        |  
+CycleDriver        |  Cycle 68: time = 7.56408 d, dt = 1.038 d
+Solver::NKA        |   terminating due to overflow ||du||=311.574, ||du_prev||=0.211762
+CycleDriver        |  
+CycleDriver        |  Cycle 68: time = 7.56408 d, dt = 0.830399 d
+CycleDriver        |  New time = 8.39448 d
+CycleDriver        |  
+CycleDriver        |  Cycle 69: time = 8.39448 d, dt = 1.038 d
+CycleDriver        |  
+CycleDriver        |  Cycle 69: time = 8.39448 d, dt = 0.830399 d
+CycleDriver        |  New time = 9.22488 d
+CycleDriver        |  
+CycleDriver        |  Cycle 70: time = 9.22488 d, dt = 1.038 d
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=2.36947e+18 ||du_tmp0||=7720.78
+CycleDriver        |  
+CycleDriver        |  Cycle 70: time = 9.22488 d, dt = 0.830399 d
+CycleDriver        |  New time = 10.0553 d
+CycleDriver        |  
+CycleDriver        |  Cycle 71: time = 10.0553 d, dt = 0.830399 d
+CycleDriver        |  New time = 10.8857 d
+CycleDriver        |  
+CycleDriver        |  Cycle 72: time = 10.8857 d, dt = 0.830399 d
+CycleDriver        |  New time = 11.7161 d
+CycleDriver        |  
+CycleDriver        |  Cycle 73: time = 11.7161 d, dt = 0.664319 d
+CycleDriver        |  
+CycleDriver        |  Cycle 73: time = 11.7161 d, dt = 0.531455 d
+CycleDriver        |  New time = 12.2475 d
+CycleDriver        |  
+CycleDriver        |  Cycle 74: time = 12.2475 d, dt = 0.425164 d
+CycleDriver        |  New time = 12.6727 d
+CycleDriver        |  
+CycleDriver        |  Cycle 75: time = 12.6727 d, dt = 0.425164 d
+CycleDriver        |  New time = 13.0979 d
+CycleDriver        |  
+CycleDriver        |  Cycle 76: time = 13.0979 d, dt = 0.340131 d
+CycleDriver        |  
+CycleDriver        |  Cycle 76: time = 13.0979 d, dt = 0.272105 d
+CycleDriver        |  New time = 13.37 d
+CycleDriver        |  
+CycleDriver        |  Cycle 77: time = 13.37 d, dt = 0.217684 d
+CycleDriver        |  New time = 13.5877 d
+CycleDriver        |  
+CycleDriver        |  Cycle 78: time = 13.5877 d, dt = 0.217684 d
+CycleDriver        |  New time = 13.8053 d
+CycleDriver        |  
+CycleDriver        |  Cycle 79: time = 13.8053 d, dt = 0.217684 d
+CycleDriver        |  New time = 14.023 d
+CycleDriver        |  
+CycleDriver        |  Cycle 80: time = 14.023 d, dt = 4.17954 h
+CycleDriver        |  New time = 14.1972 d
+CycleDriver        |  
+CycleDriver        |  Cycle 81: time = 14.1972 d, dt = 4.17954 h
+CycleDriver        |  New time = 14.3713 d
+CycleDriver        |  
+CycleDriver        |  Cycle 82: time = 14.3713 d, dt = 4.17954 h
+CycleDriver        |  New time = 14.5455 d
+CycleDriver        |  
+CycleDriver        |  Cycle 83: time = 14.5455 d, dt = 3.34363 h
+CycleDriver        |  New time = 14.6848 d
+CycleDriver        |  
+CycleDriver        |  Cycle 84: time = 14.6848 d, dt = 2.6749 h
+CycleDriver        |  New time = 14.7962 d
+CycleDriver        |  
+CycleDriver        |  Cycle 85: time = 14.7962 d, dt = 2.6749 h
+CycleDriver        |  New time = 14.9077 d
+CycleDriver        |  
+CycleDriver        |  Cycle 86: time = 14.9077 d, dt = 2.6749 h
+CycleDriver        |  New time = 15.0191 d
+CycleDriver        |  
+CycleDriver        |  Cycle 87: time = 15.0191 d, dt = 2.6749 h
+CycleDriver        |  New time = 15.1306 d
+CycleDriver        |  
+CycleDriver        |  Cycle 88: time = 15.1306 d, dt = 2.6749 h
+CycleDriver        |  New time = 15.242 d
+CycleDriver        |  
+CycleDriver        |  Cycle 89: time = 15.242 d, dt = 2.6749 h
+CycleDriver        |  New time = 15.3535 d
+CycleDriver        |  
+CycleDriver        |  Cycle 90: time = 15.3535 d, dt = 2.6749 h
+CycleDriver        |  New time = 15.465 d
+CycleDriver        |  
+CycleDriver        |  Cycle 91: time = 15.465 d, dt = 2.13992 h
+CycleDriver        |  New time = 15.5541 d
+CycleDriver        |  
+CycleDriver        |  Cycle 92: time = 15.5541 d, dt = 2.13992 h
+CycleDriver        |  New time = 15.6433 d
+CycleDriver        |  
+CycleDriver        |  Cycle 93: time = 15.6433 d, dt = 2.13992 h
+CycleDriver        |  New time = 15.7324 d
+CycleDriver        |  
+CycleDriver        |  Cycle 94: time = 15.7324 d, dt = 2.13992 h
+CycleDriver        |  New time = 15.8216 d
+CycleDriver        |  
+CycleDriver        |  Cycle 95: time = 15.8216 d, dt = 2.13992 h
+CycleDriver        |  New time = 15.9108 d
+CycleDriver        |  
+CycleDriver        |  Cycle 96: time = 15.9108 d, dt = 1.71194 h
+CycleDriver        |  New time = 15.9821 d
+CycleDriver        |  
+CycleDriver        |  Cycle 97: time = 15.9821 d, dt = 2.13992 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=7.6288e+17 ||du_tmp0||=12458.7
+CycleDriver        |  
+CycleDriver        |  Cycle 97: time = 15.9821 d, dt = 1.71194 h
+CycleDriver        |  New time = 16.0534 d
+CycleDriver        |  
+CycleDriver        |  Cycle 98: time = 16.0534 d, dt = 2.13992 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=3.3565e+16 ||du_tmp0||=3830.51
+CycleDriver        |  
+CycleDriver        |  Cycle 98: time = 16.0534 d, dt = 1.71194 h
+CycleDriver        |  New time = 16.1248 d
+CycleDriver        |  
+CycleDriver        |  Cycle 99: time = 16.1248 d, dt = 2.13992 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.66444e+18 ||du_tmp0||=13681.5
+CycleDriver        |  
+CycleDriver        |  Cycle 99: time = 16.1248 d, dt = 1.71194 h
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 16.1961 d
+CycleDriver        |  
+CycleDriver        |  Simulation end time: 3.15576e+11 sec.
+CycleDriver        |  CPU time stamp: [00:00:03]
+CycleDriver        |  
+CycleDriver        |  Cycle 100: time = 16.1961 d, dt = 1.71194 h
+CycleDriver        |  New time = 16.2674 d
+CycleDriver        |  
+CycleDriver        |  Cycle 101: time = 16.2674 d, dt = 1.71194 h
+CycleDriver        |  New time = 16.3388 d
+CycleDriver        |  
+CycleDriver        |  Cycle 102: time = 16.3388 d, dt = 1.71194 h
+CycleDriver        |  New time = 16.4101 d
+CycleDriver        |  
+CycleDriver        |  Cycle 103: time = 16.4101 d, dt = 1.71194 h
+CycleDriver        |  New time = 16.4814 d
+CycleDriver        |  
+CycleDriver        |  Cycle 104: time = 16.4814 d, dt = 1.71194 h
+CycleDriver        |  New time = 16.5528 d
+CycleDriver        |  
+CycleDriver        |  Cycle 105: time = 16.5528 d, dt = 1.71194 h
+CycleDriver        |  New time = 16.6241 d
+CycleDriver        |  
+CycleDriver        |  Cycle 106: time = 16.6241 d, dt = 1.71194 h
+CycleDriver        |  New time = 16.6954 d
+CycleDriver        |  
+CycleDriver        |  Cycle 107: time = 16.6954 d, dt = 1.71194 h
+CycleDriver        |  New time = 16.7667 d
+CycleDriver        |  
+CycleDriver        |  Cycle 108: time = 16.7667 d, dt = 1.71194 h
+CycleDriver        |  New time = 16.8381 d
+CycleDriver        |  
+CycleDriver        |  Cycle 109: time = 16.8381 d, dt = 1.71194 h
+CycleDriver        |  New time = 16.9094 d
+CycleDriver        |  
+CycleDriver        |  Cycle 110: time = 16.9094 d, dt = 1.71194 h
+CycleDriver        |  New time = 16.9807 d
+CycleDriver        |  
+CycleDriver        |  Cycle 111: time = 16.9807 d, dt = 1.71194 h
+CycleDriver        |  New time = 17.0521 d
+CycleDriver        |  
+CycleDriver        |  Cycle 112: time = 17.0521 d, dt = 1.71194 h
+Solver::NKA        |   Solver is diverging repeatedly, terminating...
+CycleDriver        |  
+CycleDriver        |  Cycle 112: time = 17.0521 d, dt = 1.36955 h
+CycleDriver        |  New time = 17.1091 d
+CycleDriver        |  
+CycleDriver        |  Cycle 113: time = 17.1091 d, dt = 1.36955 h
+CycleDriver        |  New time = 17.1662 d
+CycleDriver        |  
+CycleDriver        |  Cycle 114: time = 17.1662 d, dt = 1.71194 h
+CycleDriver        |  New time = 17.2375 d
+CycleDriver        |  
+CycleDriver        |  Cycle 115: time = 17.2375 d, dt = 1.71194 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.31595e+14 ||du_tmp0||=9210.76
+CycleDriver        |  
+CycleDriver        |  Cycle 115: time = 17.2375 d, dt = 1.36955 h
+CycleDriver        |  New time = 17.2946 d
+CycleDriver        |  
+CycleDriver        |  Cycle 116: time = 17.2946 d, dt = 1.36955 h
+CycleDriver        |  New time = 17.3517 d
+CycleDriver        |  
+CycleDriver        |  Cycle 117: time = 17.3517 d, dt = 1.71194 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=3.015e+18 ||du_tmp0||=11004.9
+CycleDriver        |  
+CycleDriver        |  Cycle 117: time = 17.3517 d, dt = 1.36955 h
+CycleDriver        |  New time = 17.4087 d
+CycleDriver        |  
+CycleDriver        |  Cycle 118: time = 17.4087 d, dt = 1.36955 h
+CycleDriver        |  New time = 17.4658 d
+CycleDriver        |  
+CycleDriver        |  Cycle 119: time = 17.4658 d, dt = 1.71194 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=2.03128e+16 ||du_tmp0||=12767.9
+CycleDriver        |  
+CycleDriver        |  Cycle 119: time = 17.4658 d, dt = 1.36955 h
+CycleDriver        |  New time = 17.5229 d
+CycleDriver        |  
+CycleDriver        |  Cycle 120: time = 17.5229 d, dt = 1.36955 h
+CycleDriver        |  New time = 17.5799 d
+CycleDriver        |  
+CycleDriver        |  Cycle 121: time = 17.5799 d, dt = 1.71194 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=6.37794e+15 ||du_tmp0||=13791.3
+CycleDriver        |  
+CycleDriver        |  Cycle 121: time = 17.5799 d, dt = 1.36955 h
+CycleDriver        |  New time = 17.637 d
+CycleDriver        |  
+CycleDriver        |  Cycle 122: time = 17.637 d, dt = 1.36955 h
+CycleDriver        |  New time = 17.694 d
+CycleDriver        |  
+CycleDriver        |  Cycle 123: time = 17.694 d, dt = 1.71194 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=5.15621e+15 ||du_tmp0||=14345.9
+CycleDriver        |  
+CycleDriver        |  Cycle 123: time = 17.694 d, dt = 1.36955 h
+CycleDriver        |  New time = 17.7511 d
+CycleDriver        |  
+CycleDriver        |  Cycle 124: time = 17.7511 d, dt = 1.36955 h
+CycleDriver        |  New time = 17.8082 d
+CycleDriver        |  
+CycleDriver        |  Cycle 125: time = 17.8082 d, dt = 1.71194 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=4.55844e+16 ||du_tmp0||=14582.7
+CycleDriver        |  
+CycleDriver        |  Cycle 125: time = 17.8082 d, dt = 1.36955 h
+CycleDriver        |  New time = 17.8652 d
+CycleDriver        |  
+CycleDriver        |  Cycle 126: time = 17.8652 d, dt = 1.36955 h
+CycleDriver        |  New time = 17.9223 d
+CycleDriver        |  
+CycleDriver        |  Cycle 127: time = 17.9223 d, dt = 1.36955 h
+CycleDriver        |  New time = 17.9794 d
+CycleDriver        |  
+CycleDriver        |  Cycle 128: time = 17.9794 d, dt = 1.36955 h
+CycleDriver        |  New time = 18.0364 d
+CycleDriver        |  
+CycleDriver        |  Cycle 129: time = 18.0364 d, dt = 1.36955 h
+CycleDriver        |  New time = 18.0935 d
+CycleDriver        |  
+CycleDriver        |  Cycle 130: time = 18.0935 d, dt = 1.36955 h
+CycleDriver        |  New time = 18.1506 d
+CycleDriver        |  
+CycleDriver        |  Cycle 131: time = 18.1506 d, dt = 1.36955 h
+CycleDriver        |  New time = 18.2076 d
+CycleDriver        |  
+CycleDriver        |  Cycle 132: time = 18.2076 d, dt = 1.36955 h
+CycleDriver        |  New time = 18.2647 d
+CycleDriver        |  
+CycleDriver        |  Cycle 133: time = 18.2647 d, dt = 1.36955 h
+CycleDriver        |  New time = 18.3218 d
+CycleDriver        |  
+CycleDriver        |  Cycle 134: time = 18.3218 d, dt = 1.71194 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=2.10218e+20 ||du_tmp0||=11412.8
+CycleDriver        |  
+CycleDriver        |  Cycle 134: time = 18.3218 d, dt = 1.36955 h
+CycleDriver        |  New time = 18.3788 d
+CycleDriver        |  
+CycleDriver        |  Cycle 135: time = 18.3788 d, dt = 1.36955 h
+CycleDriver        |  New time = 18.4359 d
+CycleDriver        |  
+CycleDriver        |  Cycle 136: time = 18.4359 d, dt = 1.36955 h
+CycleDriver        |  New time = 18.4929 d
+CycleDriver        |  
+CycleDriver        |  Cycle 137: time = 18.4929 d, dt = 1.36955 h
+CycleDriver        |  New time = 18.55 d
+CycleDriver        |  
+CycleDriver        |  Cycle 138: time = 18.55 d, dt = 1.36955 h
+CycleDriver        |  New time = 18.6071 d
+CycleDriver        |  
+CycleDriver        |  Cycle 139: time = 18.6071 d, dt = 1.36955 h
+CycleDriver        |  New time = 18.6641 d
+CycleDriver        |  
+CycleDriver        |  Cycle 140: time = 18.6641 d, dt = 1.71194 h
+Solver::NKA        |   terminating due to overflow ||du||=3.87348e+09, ||du_prev||=86.8655
+CycleDriver        |  
+CycleDriver        |  Cycle 140: time = 18.6641 d, dt = 1.36955 h
+CycleDriver        |  New time = 18.7212 d
+CycleDriver        |  
+CycleDriver        |  Cycle 141: time = 18.7212 d, dt = 1.36955 h
+CycleDriver        |  New time = 18.7783 d
+CycleDriver        |  
+CycleDriver        |  Cycle 142: time = 18.7783 d, dt = 1.71194 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.06172e+16 ||du_tmp0||=13081.7
+CycleDriver        |  
+CycleDriver        |  Cycle 142: time = 18.7783 d, dt = 1.36955 h
+CycleDriver        |  New time = 18.8353 d
+CycleDriver        |  
+CycleDriver        |  Cycle 143: time = 18.8353 d, dt = 1.36955 h
+CycleDriver        |  New time = 18.8924 d
+CycleDriver        |  
+CycleDriver        |  Cycle 144: time = 18.8924 d, dt = 1.71194 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=4.53365e+26 ||du_tmp0||=13276.6
+CycleDriver        |  
+CycleDriver        |  Cycle 144: time = 18.8924 d, dt = 1.36955 h
+CycleDriver        |  New time = 18.9495 d
+CycleDriver        |  
+CycleDriver        |  Cycle 145: time = 18.9495 d, dt = 1.36955 h
+CycleDriver        |  New time = 19.0065 d
+CycleDriver        |  
+CycleDriver        |  Cycle 146: time = 19.0065 d, dt = 1.71194 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=7.74257e+26 ||du_tmp0||=13409.3
+CycleDriver        |  
+CycleDriver        |  Cycle 146: time = 19.0065 d, dt = 1.36955 h
+CycleDriver        |  New time = 19.0636 d
+CycleDriver        |  
+CycleDriver        |  Cycle 147: time = 19.0636 d, dt = 1.36955 h
+CycleDriver        |  New time = 0.0523854 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 148: time = 0.0523854 noleap, dt = 1.71194 h
+Solver::NKA        |   terminating due to overflow ||du||=8.67933e+11, ||du_prev||=337898
+CycleDriver        |  
+CycleDriver        |  Cycle 148: time = 0.0523854 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0525417 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 149: time = 0.0525417 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.052698 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 150: time = 0.052698 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0528544 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 151: time = 0.0528544 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0530107 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 152: time = 0.0530107 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0531671 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 153: time = 0.0531671 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0533234 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 154: time = 0.0533234 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0534798 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 155: time = 0.0534798 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0536361 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 156: time = 0.0536361 noleap, dt = 1.71194 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.74758e+14 ||du_tmp0||=13334.6
+CycleDriver        |  
+CycleDriver        |  Cycle 156: time = 0.0536361 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0537924 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 157: time = 0.0537924 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0539488 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 158: time = 0.0539488 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0541051 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 159: time = 0.0541051 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0542615 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 160: time = 0.0542615 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0544178 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 161: time = 0.0544178 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0545741 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 162: time = 0.0545741 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0547305 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 163: time = 0.0547305 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0548868 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 164: time = 0.0548868 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0550432 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 165: time = 0.0550432 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0551995 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 166: time = 0.0551995 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0553559 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 167: time = 0.0553559 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0555122 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 168: time = 0.0555122 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0556685 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 169: time = 0.0556685 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0558249 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 170: time = 0.0558249 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0559812 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 171: time = 0.0559812 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0561376 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 172: time = 0.0561376 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0562939 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 173: time = 0.0562939 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0564502 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 174: time = 0.0564502 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0566066 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 175: time = 0.0566066 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0567629 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 176: time = 0.0567629 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0569193 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 177: time = 0.0569193 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0570756 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 178: time = 0.0570756 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0572319 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 179: time = 0.0572319 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0573883 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 180: time = 0.0573883 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0575446 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 181: time = 0.0575446 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.057701 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 182: time = 0.057701 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0578573 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 183: time = 0.0578573 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0580137 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 184: time = 0.0580137 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.05817 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 185: time = 0.05817 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0583263 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 186: time = 0.0583263 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0584827 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 187: time = 0.0584827 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.058639 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 188: time = 0.058639 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0587954 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 189: time = 0.0587954 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0589517 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 190: time = 0.0589517 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0590768 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 191: time = 0.0590768 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0592331 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 192: time = 0.0592331 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=5.41443e+14 ||du_tmp0||=5960.22
+CycleDriver        |  
+CycleDriver        |  Cycle 192: time = 0.0592331 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0593582 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 193: time = 0.0593582 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0595145 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 194: time = 0.0595145 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=5.34027e+15 ||du_tmp0||=7852.09
+CycleDriver        |  
+CycleDriver        |  Cycle 194: time = 0.0595145 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0596396 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 195: time = 0.0596396 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0597647 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 196: time = 0.0597647 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=3.55272e+14 ||du_tmp0||=11366.2
+CycleDriver        |  
+CycleDriver        |  Cycle 196: time = 0.0597647 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0598898 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 197: time = 0.0598898 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0600148 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 198: time = 0.0600148 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=2.18962e+14 ||du_tmp0||=13464.5
+CycleDriver        |  
+CycleDriver        |  Cycle 198: time = 0.0600148 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0601399 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 199: time = 0.0601399 noleap, dt = 1.09564 h
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 0.060265 noleap
+CycleDriver        |  
+CycleDriver        |  Simulation end time: 3.15576e+11 sec.
+CycleDriver        |  CPU time stamp: [00:00:06]
+CycleDriver        |  
+CycleDriver        |  Cycle 200: time = 0.060265 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0604213 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 201: time = 0.0604213 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=5.79593e+16 ||du_tmp0||=8471.57
+CycleDriver        |  
+CycleDriver        |  Cycle 201: time = 0.0604213 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0605464 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 202: time = 0.0605464 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0606715 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 203: time = 0.0606715 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=5.92169e+14 ||du_tmp0||=11594.4
+CycleDriver        |  
+CycleDriver        |  Cycle 203: time = 0.0606715 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0607965 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 204: time = 0.0607965 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0609216 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 205: time = 0.0609216 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.78451e+14 ||du_tmp0||=13540.9
+CycleDriver        |  
+CycleDriver        |  Cycle 205: time = 0.0609216 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0610467 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 206: time = 0.0610467 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0611717 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 207: time = 0.0611717 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0613281 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 208: time = 0.0613281 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=7.32902e+16 ||du_tmp0||=8441.81
+CycleDriver        |  
+CycleDriver        |  Cycle 208: time = 0.0613281 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0614532 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 209: time = 0.0614532 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0615782 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 210: time = 0.0615782 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=6.63748e+14 ||du_tmp0||=11544.5
+CycleDriver        |  
+CycleDriver        |  Cycle 210: time = 0.0615782 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0617033 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 211: time = 0.0617033 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0618284 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 212: time = 0.0618284 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.26486e+15 ||du_tmp0||=13539.3
+CycleDriver        |  
+CycleDriver        |  Cycle 212: time = 0.0618284 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0619535 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 213: time = 0.0619535 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0620785 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 214: time = 0.0620785 noleap, dt = 1.36955 h
+Solver::NKA        |   Solver is diverging repeatedly, terminating...
+CycleDriver        |  
+CycleDriver        |  Cycle 214: time = 0.0620785 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0622036 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 215: time = 0.0622036 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.65426e+15 ||du_tmp0||=10456
+CycleDriver        |  
+CycleDriver        |  Cycle 215: time = 0.0622036 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0623287 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 216: time = 0.0623287 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0624537 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 217: time = 0.0624537 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=5.29155e+14 ||du_tmp0||=13085.2
+CycleDriver        |  
+CycleDriver        |  Cycle 217: time = 0.0624537 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0625788 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 218: time = 0.0625788 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0627039 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 219: time = 0.0627039 noleap, dt = 1.36955 h
+Solver::NKA        |   Solver is diverging repeatedly, terminating...
+CycleDriver        |  
+CycleDriver        |  Cycle 219: time = 0.0627039 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.062829 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 220: time = 0.062829 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=4.98767e+14 ||du_tmp0||=8766.34
+CycleDriver        |  
+CycleDriver        |  Cycle 220: time = 0.062829 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.062954 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 221: time = 0.062954 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0630791 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 222: time = 0.0630791 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=7.91901e+14 ||du_tmp0||=12148.6
+CycleDriver        |  
+CycleDriver        |  Cycle 222: time = 0.0630791 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0632042 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 223: time = 0.0632042 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0633293 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 224: time = 0.0633293 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.57082e+14 ||du_tmp0||=13686.9
+CycleDriver        |  
+CycleDriver        |  Cycle 224: time = 0.0633293 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0634543 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 225: time = 0.0634543 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0635794 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 226: time = 0.0635794 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0637357 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 227: time = 0.0637357 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.40799e+17 ||du_tmp0||=8578.71
+CycleDriver        |  
+CycleDriver        |  Cycle 227: time = 0.0637357 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0638608 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 228: time = 0.0638608 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0639859 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 229: time = 0.0639859 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=7.75331e+16 ||du_tmp0||=11591
+CycleDriver        |  
+CycleDriver        |  Cycle 229: time = 0.0639859 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.064111 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 230: time = 0.064111 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.064236 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 231: time = 0.064236 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=4.5625e+16 ||du_tmp0||=13567.4
+CycleDriver        |  
+CycleDriver        |  Cycle 231: time = 0.064236 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0643611 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 232: time = 0.0643611 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0644862 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 233: time = 0.0644862 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to overflow ||du||=1.80617e+07, ||du_prev||=188.959
+CycleDriver        |  
+CycleDriver        |  Cycle 233: time = 0.0644862 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0646113 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 234: time = 0.0646113 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=8.83655e+14 ||du_tmp0||=10341.5
+CycleDriver        |  
+CycleDriver        |  Cycle 234: time = 0.0646113 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0647363 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 235: time = 0.0647363 noleap, dt = 1.36955 h
+CycleDriver        |  
+CycleDriver        |  Cycle 235: time = 0.0647363 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0648614 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 236: time = 0.0648614 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=3.52998e+17 ||du_tmp0||=13022
+CycleDriver        |  
+CycleDriver        |  Cycle 236: time = 0.0648614 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0649865 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 237: time = 0.0649865 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0651116 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 238: time = 0.0651116 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=5.60126e+24 ||du_tmp0||=13737.7
+CycleDriver        |  
+CycleDriver        |  Cycle 238: time = 0.0651116 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0652366 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 239: time = 0.0652366 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to overflow ||du||=6.0477e+07, ||du_prev||=1098.29
+CycleDriver        |  
+CycleDriver        |  Cycle 239: time = 0.0652366 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0653617 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 240: time = 0.0653617 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.065518 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 241: time = 0.065518 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.8581e+18 ||du_tmp0||=10106.3
+CycleDriver        |  
+CycleDriver        |  Cycle 241: time = 0.065518 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0656431 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 242: time = 0.0656431 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0657682 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 243: time = 0.0657682 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=2.99002e+15 ||du_tmp0||=12525.1
+CycleDriver        |  
+CycleDriver        |  Cycle 243: time = 0.0657682 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0658933 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 244: time = 0.0658933 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0660183 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 245: time = 0.0660183 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=4.14785e+24 ||du_tmp0||=13725.3
+CycleDriver        |  
+CycleDriver        |  Cycle 245: time = 0.0660183 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0661434 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 246: time = 0.0661434 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0662685 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 247: time = 0.0662685 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0664248 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 248: time = 0.0664248 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=6.94999e+17 ||du_tmp0||=9555.58
+CycleDriver        |  
+CycleDriver        |  Cycle 248: time = 0.0664248 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0665499 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 249: time = 0.0665499 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.066675 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 250: time = 0.066675 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=3.58655e+15 ||du_tmp0||=12212.2
+CycleDriver        |  
+CycleDriver        |  Cycle 250: time = 0.066675 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0668 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 251: time = 0.0668 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0669251 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 252: time = 0.0669251 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=2.93993e+14 ||du_tmp0||=13706.8
+CycleDriver        |  
+CycleDriver        |  Cycle 252: time = 0.0669251 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0670502 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 253: time = 0.0670502 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0671753 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 254: time = 0.0671753 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0673316 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 255: time = 0.0673316 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=2.90424e+17 ||du_tmp0||=8988.98
+CycleDriver        |  
+CycleDriver        |  Cycle 255: time = 0.0673316 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0674567 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 256: time = 0.0674567 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0675817 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 257: time = 0.0675817 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.33907e+14 ||du_tmp0||=11855.6
+CycleDriver        |  
+CycleDriver        |  Cycle 257: time = 0.0675817 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0677068 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 258: time = 0.0677068 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0678319 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 259: time = 0.0678319 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.40225e+14 ||du_tmp0||=13644.1
+CycleDriver        |  
+CycleDriver        |  Cycle 259: time = 0.0678319 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.067957 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 260: time = 0.067957 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.068082 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 261: time = 0.068082 noleap, dt = 1.36955 h
+Solver::NKA        |   Solver is diverging repeatedly, terminating...
+CycleDriver        |  
+CycleDriver        |  Cycle 261: time = 0.068082 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0682071 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 262: time = 0.0682071 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.23597e+15 ||du_tmp0||=10611
+CycleDriver        |  
+CycleDriver        |  Cycle 262: time = 0.0682071 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0683322 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 263: time = 0.0683322 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0684573 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 264: time = 0.0684573 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.9125e+15 ||du_tmp0||=13146.6
+CycleDriver        |  
+CycleDriver        |  Cycle 264: time = 0.0684573 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0685823 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 265: time = 0.0685823 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0687074 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 266: time = 0.0687074 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=2.90279e+24 ||du_tmp0||=13733.4
+CycleDriver        |  
+CycleDriver        |  Cycle 266: time = 0.0687074 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0688325 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 267: time = 0.0688325 noleap, dt = 1.36955 h
+Solver::NKA        |   Solver is diverging repeatedly, terminating...
+CycleDriver        |  
+CycleDriver        |  Cycle 267: time = 0.0688325 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0689575 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 268: time = 0.0689575 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0690826 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 269: time = 0.0690826 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.28253e+15 ||du_tmp0||=12084.1
+CycleDriver        |  
+CycleDriver        |  Cycle 269: time = 0.0690826 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0692077 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 270: time = 0.0692077 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0693328 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 271: time = 0.0693328 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.87808e+14 ||du_tmp0||=13693.2
+CycleDriver        |  
+CycleDriver        |  Cycle 271: time = 0.0693328 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0694578 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 272: time = 0.0694578 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0695829 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 273: time = 0.0695829 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=7.63839e+15 ||du_tmp0||=13162.9
+CycleDriver        |  
+CycleDriver        |  Cycle 273: time = 0.0695829 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.069708 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 274: time = 0.069708 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=5.56675e+14 ||du_tmp0||=10513.4
+CycleDriver        |  
+CycleDriver        |  Cycle 274: time = 0.069708 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0698331 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 275: time = 0.0698331 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0699894 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 276: time = 0.0699894 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=2.85501e+20 ||du_tmp0||=11882.5
+CycleDriver        |  
+CycleDriver        |  Cycle 276: time = 0.0699894 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0701145 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 277: time = 0.0701145 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0702395 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 278: time = 0.0702395 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.5742e+15 ||du_tmp0||=13326.2
+CycleDriver        |  
+CycleDriver        |  Cycle 278: time = 0.0702395 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0703646 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 279: time = 0.0703646 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0704897 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 280: time = 0.0704897 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.070646 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 281: time = 0.070646 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0707711 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 282: time = 0.0707711 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0708962 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 283: time = 0.0708962 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=9.14359e+14 ||du_tmp0||=10786
+CycleDriver        |  
+CycleDriver        |  Cycle 283: time = 0.0708962 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0710213 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 284: time = 0.0710213 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0711776 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 285: time = 0.0711776 noleap, dt = 1.36955 h
+Solver::NKA        |   Solver is diverging repeatedly, terminating...
+CycleDriver        |  
+CycleDriver        |  Cycle 285: time = 0.0711776 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0713027 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 286: time = 0.0713027 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0714277 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 287: time = 0.0714277 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=2.30073e+14 ||du_tmp0||=13456.1
+CycleDriver        |  
+CycleDriver        |  Cycle 287: time = 0.0714277 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0715528 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 288: time = 0.0715528 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0716779 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 289: time = 0.0716779 noleap, dt = 1.36955 h
+Solver::NKA        |   Solver is diverging repeatedly, terminating...
+CycleDriver        |  
+CycleDriver        |  Cycle 289: time = 0.0716779 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.071803 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 290: time = 0.071803 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=2.90211e+15 ||du_tmp0||=10487.7
+CycleDriver        |  
+CycleDriver        |  Cycle 290: time = 0.071803 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.071928 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 291: time = 0.071928 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0720531 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 292: time = 0.0720531 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.16159e+15 ||du_tmp0||=13094.3
+CycleDriver        |  
+CycleDriver        |  Cycle 292: time = 0.0720531 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0721782 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 293: time = 0.0721782 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0723033 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 294: time = 0.0723033 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=3.73299e+24 ||du_tmp0||=13751.6
+CycleDriver        |  
+CycleDriver        |  Cycle 294: time = 0.0723033 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0724283 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 295: time = 0.0724283 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to overflow ||du||=8.20827e+07, ||du_prev||=6072.41
+CycleDriver        |  
+CycleDriver        |  Cycle 295: time = 0.0724283 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0725534 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 296: time = 0.0725534 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0726785 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 297: time = 0.0726785 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=2.60542e+20 ||du_tmp0||=11995.6
+CycleDriver        |  
+CycleDriver        |  Cycle 297: time = 0.0726785 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0728035 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 298: time = 0.0728035 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0729286 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 299: time = 0.0729286 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=5.57516e+14 ||du_tmp0||=13673
+CycleDriver        |  
+CycleDriver        |  Cycle 299: time = 0.0729286 noleap, dt = 1.09564 h
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 0.0730537 noleap
+CycleDriver        |  
+CycleDriver        |  Simulation end time: 3.15576e+11 sec.
+CycleDriver        |  CPU time stamp: [00:00:10]
+CycleDriver        |  
+CycleDriver        |  Cycle 300: time = 0.0730537 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0731788 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 301: time = 0.0731788 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to overflow ||du||=4.64147e+08, ||du_prev||=2438.43
+CycleDriver        |  
+CycleDriver        |  Cycle 301: time = 0.0731788 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0733038 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 302: time = 0.0733038 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=3.03449e+16 ||du_tmp0||=10371.3
+CycleDriver        |  
+CycleDriver        |  Cycle 302: time = 0.0733038 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0734289 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 303: time = 0.0734289 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0735853 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 304: time = 0.0735853 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to preconditioner overflow: ||du_tmp||=1.73935e+20 ||du_tmp0||=11747.6
+CycleDriver        |  
+CycleDriver        |  Cycle 304: time = 0.0735853 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0737103 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 305: time = 0.0737103 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0738354 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 306: time = 0.0738354 noleap, dt = 1.36955 h
+Solver::NKA        |   terminating due to overflow ||du||=3.36681e+12, ||du_prev||=1.42374e+07
+CycleDriver        |  
+CycleDriver        |  Cycle 306: time = 0.0738354 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0739605 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 307: time = 0.0739605 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0740855 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 308: time = 0.0740855 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0742419 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 309: time = 0.0742419 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.074367 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 310: time = 0.074367 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.074492 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 311: time = 0.074492 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0746484 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 312: time = 0.0746484 noleap, dt = 1.09564 h
+CycleDriver        |  New time = 0.0747734 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 313: time = 0.0747734 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0749298 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 314: time = 0.0749298 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0750861 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 315: time = 0.0750861 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0752425 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 316: time = 0.0752425 noleap, dt = 1.36955 h
+CycleDriver        |  New time = 0.0753988 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 317: time = 0.0753988 noleap, dt = 1.71194 h
+CycleDriver        |  New time = 0.0755942 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 318: time = 0.0755942 noleap, dt = 1.71194 h
+CycleDriver        |  New time = 0.0757897 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 319: time = 0.0757897 noleap, dt = 1.71194 h
+CycleDriver        |  New time = 0.0759851 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 320: time = 0.0759851 noleap, dt = 2.13992 h
+CycleDriver        |  New time = 0.0762294 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 321: time = 0.0762294 noleap, dt = 2.13992 h
+CycleDriver        |  New time = 0.0764737 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 322: time = 0.0764737 noleap, dt = 1.71194 h
+CycleDriver        |  New time = 0.0766691 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 323: time = 0.0766691 noleap, dt = 2.13992 h
+CycleDriver        |  New time = 0.0769134 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 324: time = 0.0769134 noleap, dt = 2.6749 h
+CycleDriver        |  New time = 0.0772187 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 325: time = 0.0772187 noleap, dt = 2.6749 h
+CycleDriver        |  New time = 0.0775241 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 326: time = 0.0775241 noleap, dt = 3.34363 h
+CycleDriver        |  New time = 0.0779058 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 327: time = 0.0779058 noleap, dt = 3.34363 h
+CycleDriver        |  New time = 0.0782875 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 328: time = 0.0782875 noleap, dt = 4.17954 h
+CycleDriver        |  New time = 0.0787646 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 329: time = 0.0787646 noleap, dt = 0.217684 d
+CycleDriver        |  New time = 0.079361 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 330: time = 0.079361 noleap, dt = 0.272105 d
+CycleDriver        |  New time = 0.0801065 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 331: time = 0.0801065 noleap, dt = 0.340131 d
+CycleDriver        |  New time = 0.0810383 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 332: time = 0.0810383 noleap, dt = 0.425164 d
+CycleDriver        |  New time = 0.0822032 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 333: time = 0.0822032 noleap, dt = 0.531455 d
+CycleDriver        |  New time = 0.0836592 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 334: time = 0.0836592 noleap, dt = 0.664319 d
+CycleDriver        |  New time = 0.0854793 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 335: time = 0.0854793 noleap, dt = 0.830399 d
+CycleDriver        |  New time = 0.0877543 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 336: time = 0.0877543 noleap, dt = 1.038 d
+CycleDriver        |  New time = 0.0905982 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 337: time = 0.0905982 noleap, dt = 1.2975 d
+CycleDriver        |  New time = 0.094153 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 338: time = 0.094153 noleap, dt = 1.62187 d
+CycleDriver        |  New time = 0.0985964 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 339: time = 0.0985964 noleap, dt = 2.02734 d
+CycleDriver        |  New time = 0.104151 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 340: time = 0.104151 noleap, dt = 2.53418 d
+CycleDriver        |  New time = 0.111094 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 341: time = 0.111094 noleap, dt = 3.16772 d
+CycleDriver        |  New time = 0.119772 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 342: time = 0.119772 noleap, dt = 3.95965 d
+CycleDriver        |  New time = 0.130621 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 343: time = 0.130621 noleap, dt = 4.94956 d
+CycleDriver        |  New time = 0.144181 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 344: time = 0.144181 noleap, dt = 6.18696 d
+CycleDriver        |  New time = 0.161132 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 345: time = 0.161132 noleap, dt = 7.73369 d
+CycleDriver        |  New time = 0.18232 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 346: time = 0.18232 noleap, dt = 9.66712 d
+CycleDriver        |  New time = 0.208805 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 347: time = 0.208805 noleap, dt = 12.0839 d
+CycleDriver        |  New time = 0.241912 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 348: time = 0.241912 noleap, dt = 15.1049 d
+CycleDriver        |  New time = 0.283295 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 349: time = 0.283295 noleap, dt = 18.8811 d
+CycleDriver        |  New time = 0.335024 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 350: time = 0.335024 noleap, dt = 0.0646613 noleap
+CycleDriver        |  New time = 0.399685 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 351: time = 0.399685 noleap, dt = 0.0808266 noleap
+CycleDriver        |  New time = 0.480512 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 352: time = 0.480512 noleap, dt = 0.101033 noleap
+CycleDriver        |  New time = 0.581545 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 353: time = 0.581545 noleap, dt = 0.126292 noleap
+CycleDriver        |  New time = 0.707837 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 354: time = 0.707837 noleap, dt = 0.157864 noleap
+CycleDriver        |  New time = 0.865701 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 355: time = 0.865701 noleap, dt = 0.197331 noleap
+CycleDriver        |  New time = 1.0623 y
+CycleDriver        |  
+CycleDriver        |  Cycle 356: time = 1.0623 y, dt = 0.246663 noleap
+CycleDriver        |  New time = 1.3088 y
+CycleDriver        |  
+CycleDriver        |  Cycle 357: time = 1.3088 y, dt = 0.308329 noleap
+CycleDriver        |  New time = 1.61692 y
+CycleDriver        |  
+CycleDriver        |  Cycle 358: time = 1.61692 y, dt = 0.385411 noleap
+CycleDriver        |  New time = 2.00206 y
+CycleDriver        |  
+CycleDriver        |  Cycle 359: time = 2.00206 y, dt = 0.481764 noleap
+CycleDriver        |  New time = 2.4835 y
+CycleDriver        |  
+CycleDriver        |  Cycle 360: time = 2.4835 y, dt = 0.602205 noleap
+CycleDriver        |  New time = 3.08529 y
+CycleDriver        |  
+CycleDriver        |  Cycle 361: time = 3.08529 y, dt = 0.752756 noleap
+CycleDriver        |  New time = 3.83753 y
+CycleDriver        |  
+CycleDriver        |  Cycle 362: time = 3.83753 y, dt = 0.940945 noleap
+CycleDriver        |  New time = 4.77783 y
+CycleDriver        |  
+CycleDriver        |  Cycle 363: time = 4.77783 y, dt = 1.17538 y
+CycleDriver        |  New time = 5.95321 y
+CycleDriver        |  
+CycleDriver        |  Cycle 364: time = 5.95321 y, dt = 1.46922 y
+CycleDriver        |  New time = 7.42243 y
+CycleDriver        |  
+CycleDriver        |  Cycle 365: time = 7.42243 y, dt = 1.83653 y
+CycleDriver        |  New time = 9.25896 y
+CycleDriver        |  
+CycleDriver        |  Cycle 366: time = 9.25896 y, dt = 2.29566 y
+CycleDriver        |  New time = 11.5546 y
+CycleDriver        |  
+CycleDriver        |  Cycle 367: time = 11.5546 y, dt = 2.86957 y
+CycleDriver        |  New time = 14.4242 y
+CycleDriver        |  
+CycleDriver        |  Cycle 368: time = 14.4242 y, dt = 3.58696 y
+CycleDriver        |  New time = 18.0111 y
+CycleDriver        |  
+CycleDriver        |  Cycle 369: time = 18.0111 y, dt = 4.48371 y
+CycleDriver        |  New time = 22.4949 y
+CycleDriver        |  
+CycleDriver        |  Cycle 370: time = 22.4949 y, dt = 5.60463 y
+CycleDriver        |  New time = 28.0995 y
+CycleDriver        |  
+CycleDriver        |  Cycle 371: time = 28.0995 y, dt = 7.00579 y
+CycleDriver        |  New time = 35.1053 y
+CycleDriver        |  
+CycleDriver        |  Cycle 372: time = 35.1053 y, dt = 8.75724 y
+CycleDriver        |  New time = 43.8625 y
+CycleDriver        |  
+CycleDriver        |  Cycle 373: time = 43.8625 y, dt = 10.9465 y
+CycleDriver        |  New time = 54.8091 y
+CycleDriver        |  
+CycleDriver        |  Cycle 374: time = 54.8091 y, dt = 13.6832 y
+CycleDriver        |  New time = 68.4922 y
+CycleDriver        |  
+CycleDriver        |  Cycle 375: time = 68.4922 y, dt = 17.104 y
+CycleDriver        |  New time = 85.5962 y
+CycleDriver        |  
+CycleDriver        |  Cycle 376: time = 85.5962 y, dt = 21.38 y
+CycleDriver        |  New time = 106.976 y
+CycleDriver        |  
+CycleDriver        |  Cycle 377: time = 106.976 y, dt = 26.725 y
+CycleDriver        |  New time = 133.701 y
+CycleDriver        |  
+CycleDriver        |  Cycle 378: time = 133.701 y, dt = 33.4062 y
+CycleDriver        |  New time = 167.107 y
+CycleDriver        |  
+CycleDriver        |  Cycle 379: time = 167.107 y, dt = 41.7578 y
+CycleDriver        |  New time = 208.865 y
+CycleDriver        |  
+CycleDriver        |  Cycle 380: time = 208.865 y, dt = 52.1972 y
+CycleDriver        |  New time = 261.062 y
+CycleDriver        |  
+CycleDriver        |  Cycle 381: time = 261.062 y, dt = 65.2465 y
+CycleDriver        |  New time = 326.309 y
+CycleDriver        |  
+CycleDriver        |  Cycle 382: time = 326.309 y, dt = 81.5581 y
+CycleDriver        |  New time = 407.867 y
+CycleDriver        |  
+CycleDriver        |  Cycle 383: time = 407.867 y, dt = 101.948 y
+CycleDriver        |  New time = 509.815 y
+CycleDriver        |  
+CycleDriver        |  Cycle 384: time = 509.815 y, dt = 127.435 y
+CycleDriver        |  New time = 637.249 y
+CycleDriver        |  
+CycleDriver        |  Cycle 385: time = 637.249 y, dt = 159.293 y
+CycleDriver        |  New time = 796.542 y
+CycleDriver        |  
+CycleDriver        |  Cycle 386: time = 796.542 y, dt = 199.117 y
+CycleDriver        |  New time = 995.659 y
+CycleDriver        |  
+CycleDriver        |  Cycle 387: time = 995.659 y, dt = 248.896 y
+CycleDriver        |  New time = 1244.55 y
+CycleDriver        |  
+CycleDriver        |  Cycle 388: time = 1244.55 y, dt = 311.12 y
+CycleDriver        |  New time = 1555.67 y
+CycleDriver        |  
+CycleDriver        |  Cycle 389: time = 1555.67 y, dt = 388.899 y
+CycleDriver        |  New time = 1944.57 y
+CycleDriver        |  
+CycleDriver        |  Cycle 390: time = 1944.57 y, dt = 486.124 y
+CycleDriver        |  New time = 2430.7 y
+CycleDriver        |  
+CycleDriver        |  Cycle 391: time = 2430.7 y, dt = 607.655 y
+CycleDriver        |  New time = 3038.35 y
+CycleDriver        |  
+CycleDriver        |  Cycle 392: time = 3038.35 y, dt = 759.569 y
+CycleDriver        |  New time = 3797.92 y
+CycleDriver        |  
+CycleDriver        |  Cycle 393: time = 3797.92 y, dt = 949.462 y
+CycleDriver        |   Resetting time step to the maximum allowed of 1000 y
+CycleDriver        |  New time = 4747.38 y
+CycleDriver        |  
+CycleDriver        |  Cycle 394: time = 4747.38 y, dt = 1000 y
+CycleDriver        |   Resetting time step to the maximum allowed of 1000 y
+CycleDriver        |  New time = 5747.38 y
+CycleDriver        |  
+CycleDriver        |  Cycle 395: time = 5747.38 y, dt = 1000 y
+CycleDriver        |   Resetting time step to the maximum allowed of 1000 y
+CycleDriver        |  New time = 6747.38 y
+CycleDriver        |  
+CycleDriver        |  Cycle 396: time = 6747.38 y, dt = 1000 y
+CycleDriver        |   Resetting time step to the maximum allowed of 1000 y
+CycleDriver        |  New time = 7747.38 y
+CycleDriver        |  
+CycleDriver        |  Cycle 397: time = 7747.38 y, dt = 1000 y
+CycleDriver        |  New time = 8747.38 y
+CycleDriver        |  
+CycleDriver        |  Cycle 398: time = 8747.38 y, dt = 626.308 y
+CycleDriver        |  New time = 9373.69 y
+CycleDriver        |  
+CycleDriver        |  Cycle 399: time = 9373.69 y, dt = 626.308 y
+CycleDriver        |   Resetting time step to the maximum allowed of 1000 y
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |   writing observations... 12
+CycleDriver        |   writing checkpoint file
+CycleDriver        |  New time = 10000 y
+CycleDriver        |  ======================================================================
+CycleDriver        |  Simulation made 400 cycles.
+CycleDriver        |  All meshes combined have 200 cells.
+CycleDriver        |  Memory usage (high water mark):
+CycleDriver        |    Maximum per core:     673.4 MBytes,  maximum per cell: 3530506.2 Bytes
+CycleDriver        |    Minumum per core:     673.4 MBytes,  minimum per cell: 3530506.2 Bytes
+CycleDriver        |    Total:                673.4 MBytes,  total per cell:   3530506.2 Bytes
+CycleDriver        |  Doubles allocated in state fields 
+CycleDriver        |    Maximum per core:   0.0916595 MBytes
+CycleDriver        |    Minimum per core:   0.0916595 MBytes
+CycleDriver        |    Total:              0.0916595 MBytes
+================================================================================
+
+                      TimeMonitor results over 1 processor
+
+Timer Name                  Global time (num calls)    
+--------------------------------------------------------------------------------
+Full Simulation             10.9 (1)                   
+Geometric Model Creation    2.4e-05 (1)                
+Mesh Creation               0.00938 (1)                
+================================================================================
+Amanzi::SIMULATION_SUCCESSFUL
+

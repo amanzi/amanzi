@@ -1,0 +1,3 @@
+/Users/elm/Documents/GitHub/amanzi/doc/user_guide/verification/confined_flow/hantush_anisotropic_2d/model_hantush_anisotropic_2d.py:7: SyntaxWarning: invalid escape sequence '\p'
+  """ Solves the system
+  trying  amanzi_hantush_anisotropic_2d-u.xml

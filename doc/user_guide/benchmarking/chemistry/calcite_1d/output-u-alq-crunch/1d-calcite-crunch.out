@@ -1,0 +1,218 @@
+
+  ************************** CRUNCH ******************************
+  ************************ VERSION 1.0 ***************************
+
+                      Author:  C.I. STEEFEL 
+  COPYRIGHT (c) 2000. The Regents of the University of California. 
+                       All Rights Reserved 
+
+  ****************************************************************
+  This work was produced at the University of California, Lawrence 
+  Livermore National Laboratory (UC LLNL) under contract no. W-7405-ENG-48 
+  (Contract 48) between the U.S. Department of Energy (DOE) and The Regents 
+  of the University of California (University) for the operation of UC LLNL. 
+  Copyright is reserved to the University for purposes of controlled dissem- 
+  ination, commercialization through formal licensing, or other disposition 
+  under terms of Contract 48; DOE policies, regulations and orders; and U.S. 
+  statutes. The rights of the Federal Government are reserved under Contract 
+  48 subject to the restrictions agreed upon by the DOE and University as 
+  allowed under DOE Acquisition Letter 97-1. 
+
+                                DISCLAIMER                            
+  This work was prepared as an account of work sponsored by an agency of the
+  United States Government. Neither the United States Government nor the 
+  University of California nor any of their employees, makes any warranty, 
+  express or implied, or assumes any liability or responsibility for the 
+  accuracy, completeness, or usefulness of any information, apparatus, product,
+  or process disclosed, or represents that its use would not infringe 
+  privately-owned rights.  Reference herein to any specific commercial products,
+  process, or service by trade name, trademark, manufacturer or otherwise does 
+  not necessarily constitute or imply its endorsement, recommendation, or 
+  favoring by the United States Government or the University of California. 
+  The views and opinions of authors expressed herein do not necessarily state 
+  or reflect those of the United States Government or the University of 
+  California, and shall not be used for advertising or product endorsement 
+  purposes. 
+  ****************************************************************
+
+
+  Calcite dissolution for Amanzi calcite_1d benchmark - S. Molins Oct 1, 2
+
+
+
+   ---> Using database: calcite.dbs                                                                                         
+
+
+ Number of components =                     3
+
+  1 H+                
+  2 HCO3-             
+  3 Ca++              
+
+ Number of secondary species in input file =            6
+
+  1 OH-               
+  2 CO3--             
+  3 CO2(aq)           
+  4 CaOH+             
+  5 CaHCO3+           
+  6 CaCO3(aq)         
+
+ Number of gases in input file =                1
+
+  1 CO2(g)            
+
+
+ Number of kinetic minerals =            1
+
+
+  Using database file: calcite.dbs
+
+  temperature interpolation coefficients
+                  ln(T+Tk)        1         T+Tk      (T+Tk)**-1   (t+tk)**-2
+
+    HOMOGENEOUS REACTIONS
+
+ Species         log K         Stoichiometric Coefficients
+                            H+     HCO3-  Ca++   
+ OH-           1.3995E+01  -1.00   0.00   0.00
+ CO3--         1.0329E+01  -1.00   1.00   0.00
+ CO2(aq)      -6.3447E+00   1.00   1.00   0.00
+ CaOH+         1.2850E+01  -1.00   0.00   1.00
+ CaHCO3+      -1.0467E+00   0.00   1.00   1.00
+ CaCO3(aq)     7.0017E+00  -1.00   1.00   1.00
+
+      MINERAL REACTIONS
+
+ Mineral         log K         Stoichiometric Coefficients
+                            H+     HCO3-  Ca++   
+ Calcite       1.8487E+00  -1.00   1.00   1.00
+
+     GAS REACTIONS
+
+ Gases           log K         Stoichiometric Coefficients
+                            H+     HCO3-  Ca++   
+ CO2(g)       -7.8136E+00   1.00   1.00   0.00
+
+  ***KINETIC INPUTS***
+
+   MINERAL
+
+
+  ******  GEOCHEMICAL CONDITIONS INPUT  ******
+
+ Number of geochemical conditions specified =            2
+
+  Condition Label: initial
+
+
+  Primary species    itype     guess      Total conc.  Constraint phase
+  H+                   7    9.5852E-09    0.0000E+00                       
+  HCO3-                4    1.0000E-06    1.0133E-03     CO2(g)            
+  Ca++                 3    1.0000E-06    0.0000E+00     Calcite           
+
+  Porosity for this chemical condition =   0.2500
+
+
+
+  Condition Label: west
+
+
+  Primary species    itype     guess      Total conc.  Constraint phase
+  H+                   7    1.0000E-05    0.0000E+00                       
+  HCO3-                1    1.0000E-06    1.0000E-03                       
+  Ca++                 2    1.0000E-06    0.0000E+00                       
+
+  Porosity for this chemical condition =   0.2500
+
+
+
+ *********************************************
+  ---> GEOCHEMICAL CONDITION: initial
+
+  Temperature (C)         =     25.000
+  Porosity                =      0.250
+  Liquid Saturation       =      1.000
+  Liquid Density (kg/m^3) =    997.075
+  Solid Density (kg/m^3)  =   2700.000
+  Solid:Solution Ratio    =   8123.761
+  Ionic Strength          =      0.002
+  Solution pH             =      8.018
+  Total Charge            = -7.107E-04
+
+ Total Aqueous Concentrations of Primary Species  
+ --------------------------------------- 
+
+ Species                Molality     Constraint    Constraint Phase 
+ H+                   1.6651E-05     Activity                        
+ HCO3-                1.7627E-03     Gas           CO2(g)            
+ Ca++                 5.1769E-04     Mineral       Calcite           
+
+ Concentrations of Individual Species, Exchangers, and Surface Complexes 
+ ----------------------------------------------------------------------- 
+
+                           Log        Log                                 Activity
+ Species              Molality   Activity      Molality      Activity   Coefficient    Type
+  H+                    -7.999     -8.018     1.003E-08     9.585E-09     9.560E-01  Aqueous 
+  HCO3-                 -2.769     -2.789     1.704E-03     1.624E-03     9.530E-01  Aqueous 
+  Ca++                  -3.299     -3.380     5.028E-04     4.167E-04     8.288E-01  Aqueous 
+  OH-                   -5.956     -5.977     1.107E-06     1.055E-06     9.527E-01  Aqueous 
+  CO3--                 -5.017     -5.100     9.623E-06     7.945E-06     8.256E-01  Aqueous 
+  CO2(aq)               -4.463     -4.463     3.441E-05     3.442E-05     1.000E+00  Aqueous 
+  CaOH+                 -8.191     -8.212     6.443E-09     6.140E-09     9.530E-01  Aqueous 
+  CaHCO3+               -5.102     -5.123     7.905E-06     7.534E-06     9.530E-01  Aqueous 
+  CaCO3(aq)             -5.153     -5.153     7.028E-06     7.031E-06     1.000E+00  Aqueous 
+
+
+  ****** Partial pressure of gases (bars) *****
+
+ CO2(g)               1.01325000E-03
+
+  ****** Saturation state of minerals (log[Q/K] *****
+
+  Calcite                   0.0000
+
+ *********************************************
+  ---> GEOCHEMICAL CONDITION: west
+
+  Temperature (C)         =     25.000
+  Porosity                =      0.250
+  Liquid Saturation       =      1.000
+  Liquid Density (kg/m^3) =    997.075
+  Solid Density (kg/m^3)  =      0.000
+  Solid:Solution Ratio    =      0.000
+  Ionic Strength          =      0.000
+  Solution pH             =      5.000
+  Total Charge            = -3.388E-20
+
+ Total Aqueous Concentrations of Primary Species  
+ --------------------------------------- 
+
+ Species                Molality     Constraint    Constraint Phase 
+ H+                   9.6644E-04     Activity                        
+ HCO3-                1.0000E-03     Total                           
+ Ca++                 1.6778E-05     Charge                          
+
+ Concentrations of Individual Species, Exchangers, and Surface Complexes 
+ ----------------------------------------------------------------------- 
+
+                           Log        Log                                 Activity
+ Species              Molality   Activity      Molality      Activity   Coefficient    Type
+  H+                    -4.996     -5.000     1.009E-05     1.000E-05     9.911E-01  Aqueous 
+  HCO3-                 -4.360     -4.364     4.364E-05     4.324E-05     9.910E-01  Aqueous 
+  Ca++                  -4.775     -4.791     1.677E-05     1.618E-05     9.646E-01  Aqueous 
+  OH-                   -8.991     -8.995     1.021E-09     1.011E-09     9.910E-01  Aqueous 
+  CO3--                 -9.677     -9.693     2.103E-10     2.028E-10     9.645E-01  Aqueous 
+  CO2(aq)               -3.019     -3.019     9.564E-04     9.564E-04     1.000E+00  Aqueous 
+  CaOH+                -12.637    -12.641     2.306E-13     2.285E-13     9.910E-01  Aqueous 
+  CaHCO3+               -8.105     -8.108     7.861E-09     7.790E-09     9.910E-01  Aqueous 
+  CaCO3(aq)            -11.157    -11.157     6.968E-12     6.968E-12     1.000E+00  Aqueous 
+
+
+  ****** Partial pressure of gases (bars) *****
+
+ CO2(g)               2.81530363E-02
+
+  ****** Saturation state of minerals (log[Q/K] *****
+
+  Calcite                  -6.0039

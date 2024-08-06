@@ -1,0 +1,152 @@
+<Xdmf>
+  <Domain>
+    <Grid Name="Mesh">
+      <Topology Name="mixedtopo" NumberOfElements="100" TopologyType="Mixed">
+        <DataItem DataType="Int" Dimensions="900" Format="HDF">
+          tritium_mesh.h5:/0/Mesh/MixedElements
+        </DataItem>
+      </Topology>
+      <Geometry Name="geo" Type="XYZ">
+        <DataItem DataType="Float" Dimensions="404  3" Format="HDF">
+          tritium_mesh.h5:/0/Mesh/Nodes
+        </DataItem>
+      </Geometry>
+      <Time Value="1.89995942023474527e+01"/>
+      <Attribute Center="Cell" Name="darcy_velocity.0" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:darcy_velocity.0/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="darcy_velocity.1" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:darcy_velocity.1/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="darcy_velocity.2" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:darcy_velocity.2/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="first_order_decay_constant. aq kin rate cnst" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:first_order_decay_constant. aq kin rate cnst/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="free_ion_species.Tritium" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:free_ion_species.Tritium/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="free_ion_species.Daughter" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:free_ion_species.Daughter/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="hydraulic_head" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:hydraulic_head/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="mass_density_liquid" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:mass_density_liquid/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="pH.0" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:pH.0/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="permeability.0" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:permeability.0/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="permeability.1" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:permeability.1/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="permeability.2" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:permeability.2/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="porosity" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:porosity/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="pressure" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:pressure/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="prev_saturation_liquid" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:prev_saturation_liquid/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="primary_activity_coeff.Tritium" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:primary_activity_coeff.Tritium/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="primary_activity_coeff.Daughter" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:primary_activity_coeff.Daughter/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="primary_free_ion_concentration.Tritium" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:primary_free_ion_concentration.Tritium/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="primary_free_ion_concentration.Daughter" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:primary_free_ion_concentration.Daughter/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="saturation_liquid" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:saturation_liquid/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="specific_storage" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:specific_storage/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="specific_yield" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:specific_yield/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="tortuosity" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:tortuosity/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="total_component_concentration.Tritium" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:total_component_concentration.Tritium/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="total_component_concentration.Daughter" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:total_component_concentration.Daughter/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="water_content" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:water_content/58
+        </DataItem>
+      </Attribute>
+      <Attribute Center="Cell" Name="water_storage" Type="Scalar">
+        <DataItem DataType="Float" Dimensions="100" Format="HDF">
+          tritium_data.h5:water_storage/58
+        </DataItem>
+      </Attribute>
+    </Grid>
+  </Domain>
+</Xdmf>

@@ -1,0 +1,20 @@
+<Xdmf Version="2.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <Domain>
+    <Grid CollectionType="Temporal" GridType="Collection">
+      <xi:include href="plot_data.h5.0.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="plot_data.h5.172.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="plot_data.h5.286.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="plot_data.h5.400.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="plot_data.h5.514.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="plot_data.h5.628.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="plot_data.h5.742.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="plot_data.h5.856.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="plot_data.h5.970.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="plot_data.h5.1084.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="plot_data.h5.1198.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="plot_data.h5.1312.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="plot_data.h5.1426.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="plot_data.h5.1437.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+    </Grid>
+  </Domain>
+</Xdmf>

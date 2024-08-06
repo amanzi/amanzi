@@ -42,8 +42,8 @@ ext_sphinx = ['sphinx.ext.todo',
               'sphinx.ext.ifconfig',
               'sphinx.ext.autodoc',
               'sphinx.ext.doctest',
-              #'sphinxcontrib.tikz',
-              #'sphinxcontrib.bibtex',
+              'sphinxcontrib.tikz',
+              'sphinxcontrib.bibtex',
 ]
 
 ext_matplotlib = ['matplotlib.sphinxext.plot_directive']
@@ -94,7 +94,7 @@ decode = lambda x : x.decode(sys.stdout.encoding) if isinstance(x,bytes) else x
 amanzi_branch=decode(subprocess.check_output('git symbolic-ref --short HEAD',shell=True).rstrip())
 amanzi_global_id=decode(subprocess.check_output('git rev-parse --short HEAD',shell=True).rstrip())
 # Tags are different on release branch
-if ( re.search('amanzi-(\d+)\.(\d+)',amanzi_branch) ):
+if ( re.search(r'amanzi-(\d+)\.(\d+)',amanzi_branch) ):
     amanzi_latest_tag=decode(subprocess.check_output('git tag -l \'amanzi-*\' | grep -v dev', shell=True)).split()[-1].rstrip()
     amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-','Version ')
 else:
@@ -148,13 +148,17 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'pydata_sphinx_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
     'logo_only': True,
+    "logo": {
+    "image_light": "_static/Amanzi-color.png",
+    "image_dark": "_static/Amanzi-Dark.png",
+    },
     'prev_next_buttons_location': 'both',
 }
 
@@ -166,11 +170,11 @@ html_theme_options = {
 #html_title = None
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
-#html_short_title = None
+# html_short_title = None
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = '_static/Amanzi-color.png'
+#html_logo: = '_static/Amanzi-color.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32

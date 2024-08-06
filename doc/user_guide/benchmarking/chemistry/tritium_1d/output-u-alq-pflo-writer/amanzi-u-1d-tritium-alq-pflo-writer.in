@@ -1,0 +1,20 @@
+CHEMISTRY
+  PRIMARY_SPECIES
+    Tritium
+  /
+  RADIOACTIVE_DECAY_REACTION
+    REACTION Tritium <-> 
+    RATE_CONSTANT 1.78577e-09
+  /
+  DATABASE tritium.dat
+END
+CONSTRAINT initial
+  CONCENTRATIONS
+    Tritium 1e-20 T
+  /
+END
+CONSTRAINT west
+  CONCENTRATIONS
+    Tritium 0.001 T
+  /
+END

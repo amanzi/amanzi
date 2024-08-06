@@ -1,0 +1,2472 @@
+[pn2401379.lanl.gov:71555] shmem: mmap: an error occurred while determining whether or not /var/folders/36/xt3jx8554vj0_03sz682d5_800074q/T//ompi.pn2401379.7319/jf.0/2602434560/sm_segment.pn2401379.7319.9b1e0000.0 could be created.
+InputConverter-u   |  Amanzi executable tag: 1.6-dev_01c79db22
+InputConverter-u   |  Verify high-level XML structure
+InputConverter-u   |  Liquid phase has 0 solutes
+InputConverter-u   |  AUTHOR: Greg Flach
+InputConverter-u   |  Translating units: m s kg molar K
+InputConverter-u   |  Translating unstructured mesh
+InputConverter-u   |  Translating regions
+InputConverter-u   |   found 14 regions plus region "All".
+InputConverter-u   |  Translating state
+InputConverter-u   |  Translating output
+InputConverter-u   |   Found 1 cycle macros and 1 time macros.
+InputConverter-u   |   Translating output: visualization
+InputConverter-u   |   Translating output: observations
+InputConverter-u   |   Found 22 liquid observations
+InputConverter-u   |   Found 0 gas observations
+InputConverter-u   |  Translating cycle driver
+InputConverter-u   |   Translating time period controls
+InputConverter-u   |   created 0 special times
+InputConverter-u   |  Translating process kernels
+InputConverter-u   |   TP: PK name="steady:flow", factory: "richards"
+InputConverter-u   |   Next PK is "steady:flow"
+InputConverter-u   |   Translating flow, mode=steady domain=matrix
+InputConverter-u   |    Translating optional fracture models, domain=matrix
+InputConverter-u   |    Translating water retension models
+InputConverter-u   |    water retention curve file: wrm_WRM_0.txt
+InputConverter-u   |    Translating porosity models
+InputConverter-u   |    compessibility models: 0
+InputConverter-u   |    Translating multiscale models
+InputConverter-u   |    Translating permeability-porosity models
+InputConverter-u   |    Translating time integrator
+InputConverter-u   |    Translating boundary conditions
+InputConverter-u   |     active BCs: static head, no flow (default)
+InputConverter-u   |  Translating solvers
+InputConverter-u   |   gmres: itrs=100, tol=1e-16, pc=Hypre AMG
+InputConverter-u   |   pcg: itrs=100, tol=1e-16, pc=Hypre AMG
+InputConverter-u   |   pcg: itrs=100, tol=1e-16, pc=Hypre AMG
+InputConverter-u   |   gmres: itrs=100, tol=1e-16, pc=Hypre AMG
+InputConverter-u   |  Translating preconditioners
+InputConverter-u   |  Final comments:
+InputConverter-u   |   found units: y 
+InputConverter-u   |   Writing the translated XML to amanzi_unconfined_no_recharge_1d-u_native.xml
+InputConverter-u   |  CPU time stamp: [00:00:01]
+           | Creating 2D block mesh using format "MSTK"
+Mesh Output        |  cells, tot/min/max: 6000/6000/6000
+Mesh Output        |  faces, tot/min/max: 12160/12160/12160
+Mesh Output        |  nodes, tot/min/max: 6161/6161/6161
+Mesh Output        |  
+Mesh               |  CPU time stamp: [00:00:01]
+InputAnalysis:doma |  bc: "Left" has 60 faces of 18.288 [m^2]
+InputAnalysis:doma |  bc: "Right" has 60 faces of 18.288 [m^2]
+InputAnalysis:doma |  obs: "Point0" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point10" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point20" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point30" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point40" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point50" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point60" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point70" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point80" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point90" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point100" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point0" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point10" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point20" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point30" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point40" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point50" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point60" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point70" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point80" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point90" has 1 cells, size: 0.092903
+InputAnalysis:doma |  obs: "Point100" has 1 cells, size: 0.092903
+State              |  ------------------------------------------
+State              |  Dependency & Structure list for evaluators
+State              |  ------------------------------------------
+State              |  alpha_coef
+State              |    type: secondary
+State              |    dep: relative_permeability, tag=""
+State              |    dep: molar_density_liquid, tag=""
+State              |    dep: viscosity_liquid, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    comp=boundary_face location=13 dofs=1
+State              |    
+State              |  darcy_velocity
+State              |    type: secondary
+State              |    dep: volumetric_flow_rate, tag=""
+State              |    comp=cell location=4 dofs=2
+State              |    
+State              |  mass_density_liquid
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    comp=boundary_face location=13 dofs=1
+State              |    
+State              |  molar_density_liquid
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    comp=boundary_face location=13 dofs=1
+State              |    
+State              |  molar_flow_rate
+State              |    Type: primary
+State              |    comp=face location=3 dofs=1
+State              |    
+State              |  porosity
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  pressure
+State              |    Type: primary
+State              |    comp=cell location=4 dofs=1
+State              |    comp=face location=3 dofs=1
+State              |    
+State              |  relative_permeability
+State              |    type: secondary
+State              |    dep: pressure, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    comp=boundary_face location=13 dofs=1
+State              |    
+State              |  saturation_liquid
+State              |    type: secondary
+State              |    dep: pressure, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  viscosity_liquid
+State              |    Type: independent
+State              |    comp=cell location=4 dofs=1
+State              |    comp=boundary_face location=13 dofs=1
+State              |    
+State              |  volumetric_flow_rate
+State              |    type: secondary
+State              |    dep: molar_flow_rate, tag=""
+State              |    dep: molar_density_liquid, tag=""
+State              |    comp=face location=3 dofs=1
+State              |    
+State              |  water_content
+State              |    type: secondary
+State              |    dep: porosity, tag=""
+State              |    dep: saturation_liquid, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  water_storage
+State              |    type: secondary
+State              |    dep: porosity, tag=""
+State              |    dep: saturation_liquid, tag=""
+State              |    dep: molar_density_liquid, tag=""
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  ------------------------------
+State              |  Structure list for derivatives
+State              |  ------------------------------
+State              |  Dalpha_coef/D{ pressure }
+State              |    comp=cell location=4 dofs=1
+State              |    comp=boundary_face location=13 dofs=1
+State              |    
+State              |  Drelative_permeability/D{ pressure }
+State              |    comp=cell location=4 dofs=1
+State              |    comp=boundary_face location=13 dofs=1
+State              |    
+State              |  Dsaturation_liquid/D{ pressure }
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  Dwater_storage/D{ pressure }
+State              |    comp=cell location=4 dofs=1
+State              |    
+State              |  Setup is complete.
+State              |  
+CycleDriver        |  Setup is complete.
+State              |  initializing data through initial conditions...
+State              |  initializing "alpha_coef" ... skipped
+State              |  initializing "atmospheric_pressure" [ok]
+State              |  initializing "const_fluid_density" [ok]
+State              |  initializing "cycle" ... skipped
+State              |  initializing "darcy_velocity" ... skipped
+State              |  initializing "dt" ... skipped
+State              |  initializing "gravity" [ok]
+State              |  initializing "hydraulic_head" ... skipped
+State              |  initializing "mass_density_liquid" ... skipped
+State              |  initializing "molar_density_liquid" ... skipped
+State              |  initializing "molar_flow_rate" ... skipped
+State              |  initializing "permeability" [ok]
+State              |  initializing "porosity" ... skipped
+State              |  initializing "position" ... skipped
+State              |  initializing "pressure" [ok]
+State              |  initializing "prev_saturation_liquid" ... skipped
+State              |  initializing "prev_water_storage" ... skipped
+State              |  initializing "relative_permeability" ... skipped
+State              |  initializing "saturation_liquid" ... skipped
+State              |  initializing "temperature" [ok]
+State              |  initializing "time" ... skipped
+State              |  initializing "viscosity_liquid" ... skipped
+State              |  initializing "volumetric_flow_rate" ... skipped
+State              |  initializing "water_content" ... skipped
+State              |  initializing "water_storage" ... skipped
+State              |  initializing eval: "alpha_coef" @ ""
+State              |  initializing eval: "darcy_velocity" @ ""
+State              |  initializing eval: "mass_density_liquid" @ ""
+State              |  initializing eval: "molar_density_liquid" @ ""
+State              |  initializing eval: "molar_flow_rate" @ ""
+State              |  initializing eval: "porosity" @ ""
+State              |  initializing eval: "pressure" @ ""
+State              |  initializing eval: "relative_permeability" @ ""
+State              |  initializing eval: "saturation_liquid" @ ""
+State              |  initializing eval: "viscosity_liquid" @ ""
+State              |  initializing eval: "volumetric_flow_rate" @ ""
+State              |  initializing eval: "water_content" @ ""
+State              |  initializing eval: "water_storage" @ ""
+RichardsPK         |  
+RichardsPK         |  PK initialization started...
+RichardsPK         |   initialized "hydraulic_head" to value 0
+RichardsPK         |  saturated solver (ANONYMOUS): ||p,lambda||=1.55211e+07 itr=8 code=1
+RichardsPK         |  true l2 residual: ||r||=9.08964e-11
+RichardsPK         |  constraints solver (ANONYMOUS): ||p,lambda||=1.55211e+07 itr=6 code=1
+RichardsPK         |  initialized prev_saturation_liquid to saturation_liquid
+RichardsPK         |  initialized prev_water_storage to water_storage
+RichardsPK         |  
+RichardsPK         |  EC:1 Upwind:1 PC:"Hypre AMG" TI:"BDF1"
+RichardsPK         |  matrix: <Diffusion: CELL_FACE+CELL> 
+RichardsPK         |  precon: <Diffusion: CELL_FACE+CELL> <Jacobian FACE_CELL> <CELL_CELL> 
+RichardsPK         |  pressure BC assigned to 120 faces
+RichardsPK         |  default (no-flow) BC assigned to 200 faces
+RichardsPK         |  
+RichardsPK         |   boundary head (BCs): min=6.096 m, max=12.192 m
+RichardsPK         |   domain head (cells): min=6.12648 m, max=12.1615 m
+RichardsPK         |   domain head (cells + faces): min=6.096 m, max=12.192 m
+RichardsPK         |  [1;32mInitialization of PK is complete, T=0 s[0m
+RichardsPK         |  
+TimeStepManager    |  Proposed dT=0.01 s, is near equal to next event time remaining 0.01 s.
+TimeStepManager    |  Proposed dT=0.01 s, is near equal to next event time remaining 0.01 s.
+State              |  initializing eval: "alpha_coef" @ ""
+State              |  initializing eval: "darcy_velocity" @ ""
+State              |  initializing eval: "mass_density_liquid" @ ""
+State              |  initializing eval: "molar_density_liquid" @ ""
+State              |  initializing eval: "molar_flow_rate" @ ""
+State              |  initializing eval: "porosity" @ ""
+State              |  initializing eval: "pressure" @ ""
+State              |  initializing eval: "relative_permeability" @ ""
+State              |  initializing eval: "saturation_liquid" @ ""
+State              |  initializing eval: "viscosity_liquid" @ ""
+State              |  initializing eval: "volumetric_flow_rate" @ ""
+State              |  initializing eval: "water_content" @ ""
+State              |  initializing eval: "water_storage" @ ""
+CycleDriver        |  writing visualization file: domain
+CycleDriver        |  
+CycleDriver        |  Field                                    Min/Max/Avg
+CycleDriver        |  alpha_coef.bnd_face..................... 0.492841 / 5.52978e+07 / 2.76509e+07 [kg^-1*m^-2*mol*s]
+CycleDriver        |  alpha_coef.cell......................... 0.512768 / 5.52978e+07 / 2.77525e+07 [kg^-1*m^-2*mol*s]
+CycleDriver        |  atmospheric_pressure.................... 101325
+CycleDriver        |  const_fluid_density..................... 998.2
+CycleDriver        |  darcy_velocity.......................... -4.93092e-16 / 6.09575e-05 / 1.53473e-05
+CycleDriver        |  dt...................................... 0.01
+CycleDriver        |  gravity................................. 0 -9.80665
+CycleDriver        |  hydraulic_head.......................... 6.12648 / 12.1615 / 9.144 [m]
+CycleDriver        |  mass_density_liquid.bnd_face............ 998.2 / 998.2 / 998.2 [kg/m^3]
+CycleDriver        |  mass_density_liquid.cell................ 998.2 / 998.2 / 998.2 [kg/m^3]
+CycleDriver        |  molar_density_liquid.bnd_face........... 55408.4 / 55408.4 / 55408.4 [mol/m^3]
+CycleDriver        |  molar_density_liquid.cell............... 55408.4 / 55408.4 / 55408.4 [mol/m^3]
+CycleDriver        |  molar_flow_rate......................... -1.02948 / 1.02948 / 0.251548
+CycleDriver        |  permeability............................ 3.1198e-11 / 3.1198e-10 / 1.71589e-10 [m^2]
+CycleDriver        |  porosity................................ 0.43 / 0.43 / 0.43 [-]
+CycleDriver        |  pressure.cell........................... -16232.3 / 218882 / 101325 [Pa]
+CycleDriver        |  pressure.face........................... -17724.1 / 220374 / 101325 [Pa]
+CycleDriver        |  prev_saturation_liquid.................. 0.141929 / 1 / 0.61513
+CycleDriver        |  prev_water_storage...................... 3381.53 / 23825.6 / 14655.8
+CycleDriver        |  relative_permeability.bnd_face.......... 8.91249e-09 / 1 / 0.500037 [-]
+CycleDriver        |  relative_permeability.cell.............. 9.27285e-09 / 1 / 0.501874 [-]
+CycleDriver        |  saturation_liquid....................... 0.141929 / 1 / 0.61513 [-]
+CycleDriver        |  temperature.cell........................ 298 / 298 / 298
+CycleDriver        |  temperature.face........................ 298 / 298 / 298
+CycleDriver        |  time.................................... 0
+CycleDriver        |  time@current............................ 0
+CycleDriver        |  viscosity_liquid.bnd_face............... 0.001002 / 0.001002 / 0.001002 [Pa*s]
+CycleDriver        |  viscosity_liquid.cell................... 0.001002 / 0.001002 / 0.001002 [Pa*s]
+CycleDriver        |  volumetric_flow_rate.................... -1.85799e-05 / 1.85799e-05 / 4.5399e-06 [m^3/s]
+CycleDriver        |  water_content........................... 0.0610293 / 0.43 / 0.264506 [-]
+CycleDriver        |  water_storage........................... 3381.53 / 23825.6 / 14655.8 [mol/m^3]
+CycleDriver        |  
+CycleDriver        |  Simulation end time: 3e+09 sec.
+CycleDriver        |  CPU time stamp: [00:00:01]
+CycleDriver        |  
+CycleDriver        |  Cycle 0: time = 0 s, dt = 0.01 s
+TI::BDF1           |  step 0 T = 0 [sec]  dT = 0.01
+TI::BDF1           |  preconditioner lag is 0 out of 5
+Solver::NKA        |   1: error=1.60719e-07  l2-error=0.399587
+Solver::NKA        |   Solver converged: 1 itrs, error=1.60719e-07
+TI::BDF1           |  success: 1 nonlinear itrs error=1.60719e-07
+TI::BDF1           |  TS:0 FS:0 NS:1 PC:1 1 LS:0 dt:1.0000e-02 1.0000e-02
+RichardsPK         |   reservoir water mass=147.175 ton, total influx=3.70848 g
+TimeStepManager    |   Accepted proposed dT=0.012 s
+CycleDriver        |  New time = 0.01 s
+CycleDriver        |  
+CycleDriver        |  Cycle 1: time = 0.01 s, dt = 0.012 s
+TI::BDF1           |  step 1 T = 0.01 [sec]  dT = 0.012
+TI::BDF1           |  preconditioner lag is 1 out of 5
+Solver::NKA        |   1: error=2.04073e-07  l2-error=0.608179
+Solver::NKA        |   Solver converged: 1 itrs, error=2.04073e-07
+TI::BDF1           |  success: 1 nonlinear itrs error=2.04073e-07
+TI::BDF1           |  TS:1 FS:0 NS:2 PC:2 2 LS:0 dt:1.0000e-02 1.2000e-02
+RichardsPK         |   reservoir water mass=147.175 ton, total influx=8.15863 g
+TimeStepManager    |   Accepted proposed dT=0.0144 s
+CycleDriver        |  New time = 0.022 s
+CycleDriver        |  
+CycleDriver        |  Cycle 2: time = 0.022 s, dt = 0.0144 s
+TI::BDF1           |  step 2 T = 0.022 [sec]  dT = 0.0144
+TI::BDF1           |  preconditioner lag is 2 out of 5
+Solver::NKA        |   1: error=1.11302e-07  l2-error=0.330709
+Solver::NKA        |   Solver converged: 1 itrs, error=1.11302e-07
+TI::BDF1           |  success: 1 nonlinear itrs error=1.11302e-07
+TI::BDF1           |  TS:2 FS:0 NS:3 PC:3 3 LS:0 dt:1.0000e-02 1.4400e-02
+RichardsPK         |   reservoir water mass=147.175 ton, total influx=13.4988 g
+TimeStepManager    |   Accepted proposed dT=0.01728 s
+CycleDriver        |  New time = 0.0364 s
+CycleDriver        |  
+CycleDriver        |  Cycle 3: time = 0.0364 s, dt = 0.01728 s
+TI::BDF1           |  step 3 T = 0.0364 [sec]  dT = 0.01728
+TI::BDF1           |  preconditioner lag is 3 out of 5
+Solver::NKA        |   1: error=6.80801e-09  l2-error=0.00209998
+Solver::NKA        |   Solver converged: 1 itrs, error=6.80801e-09
+TI::BDF1           |  success: 1 nonlinear itrs error=6.80801e-09
+TI::BDF1           |  TS:3 FS:0 NS:4 PC:4 4 LS:0 dt:1.0000e-02 1.7280e-02
+RichardsPK         |   reservoir water mass=147.175 ton, total influx=19.907 g
+TimeStepManager    |   Accepted proposed dT=0.020736 s
+CycleDriver        |  New time = 0.05368 s
+CycleDriver        |  
+CycleDriver        |  Cycle 4: time = 0.05368 s, dt = 0.020736 s
+TI::BDF1           |  step 4 T = 0.05368 [sec]  dT = 0.020736
+TI::BDF1           |  preconditioner lag is 4 out of 5
+Solver::NKA        |   1: error=6.92586e-11  l2-error=0.000220723
+Solver::NKA        |   Solver converged: 1 itrs, error=6.92586e-11
+TI::BDF1           |  success: 1 nonlinear itrs error=6.92586e-11
+TI::BDF1           |  TS:4 FS:0 NS:5 PC:5 5 LS:0 dt:1.0000e-02 2.0736e-02
+RichardsPK         |   reservoir water mass=147.175 ton, total influx=0.0608407 lb
+TimeStepManager    |   Accepted proposed dT=0.0248832 s
+CycleDriver        |  New time = 0.074416 s
+CycleDriver        |  
+CycleDriver        |  Cycle 5: time = 0.074416 s, dt = 0.0248832 s
+TI::BDF1           |  step 5 T = 0.074416 [sec]  dT = 0.0248832
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=9.9638e-11  l2-error=0.000282883
+Solver::NKA        |   Solver converged: 1 itrs, error=9.9638e-11
+TI::BDF1           |  success: 1 nonlinear itrs error=9.9638e-11
+TI::BDF1           |  TS:5 FS:0 NS:6 PC:6 6 LS:0 dt:1.0000e-02 2.4883e-02
+RichardsPK         |   reservoir water mass=147.175 ton, total influx=0.0811845 lb
+TimeStepManager    |   Accepted proposed dT=0.0298598 s
+CycleDriver        |  New time = 0.0992992 s
+CycleDriver        |  
+CycleDriver        |  Cycle 6: time = 0.0992992 s, dt = 0.0298598 s
+TI::BDF1           |  step 6 T = 0.0992992 [sec]  dT = 0.0298598
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=1.43316e-10  l2-error=0.000411126
+Solver::NKA        |   Solver converged: 1 itrs, error=1.43316e-10
+TI::BDF1           |  success: 1 nonlinear itrs error=1.43316e-10
+TI::BDF1           |  TS:6 FS:0 NS:7 PC:7 7 LS:0 dt:1.0000e-02 2.9860e-02
+RichardsPK         |   reservoir water mass=147.175 ton, total influx=0.105597 lb
+TimeStepManager    |   Accepted proposed dT=0.0358318 s
+CycleDriver        |  New time = 0.129159 s
+CycleDriver        |  
+CycleDriver        |  Cycle 7: time = 0.129159 s, dt = 0.0358318 s
+TI::BDF1           |  step 7 T = 0.129159 [sec]  dT = 0.0358318
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=2.06094e-10  l2-error=0.000590973
+Solver::NKA        |   Solver converged: 1 itrs, error=2.06094e-10
+TI::BDF1           |  success: 1 nonlinear itrs error=2.06094e-10
+TI::BDF1           |  TS:7 FS:0 NS:8 PC:8 8 LS:0 dt:1.0000e-02 3.5832e-02
+RichardsPK         |   reservoir water mass=147.175 ton, total influx=0.134892 lb
+TimeStepManager    |   Accepted proposed dT=0.0429982 s
+CycleDriver        |  New time = 0.164991 s
+CycleDriver        |  
+CycleDriver        |  Cycle 8: time = 0.164991 s, dt = 0.0429982 s
+TI::BDF1           |  step 8 T = 0.164991 [sec]  dT = 0.0429982
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=2.96291e-10  l2-error=0.000850238
+Solver::NKA        |   Solver converged: 1 itrs, error=2.96291e-10
+TI::BDF1           |  success: 1 nonlinear itrs error=2.96291e-10
+TI::BDF1           |  TS:8 FS:0 NS:9 PC:9 9 LS:0 dt:1.0000e-02 4.2998e-02
+RichardsPK         |   reservoir water mass=147.175 ton, total influx=0.170046 lb
+TimeStepManager    |   Accepted proposed dT=0.0515978 s
+CycleDriver        |  New time = 0.207989 s
+CycleDriver        |  
+CycleDriver        |  Cycle 9: time = 0.207989 s, dt = 0.0515978 s
+TI::BDF1           |  step 9 T = 0.207989 [sec]  dT = 0.0515978
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=4.25823e-10  l2-error=0.00122298
+Solver::NKA        |   Solver converged: 1 itrs, error=4.25823e-10
+TI::BDF1           |  success: 1 nonlinear itrs error=4.25823e-10
+TI::BDF1           |  TS:9 FS:0 NS:10 PC:10 10 LS:0 dt:1.0000e-02 5.1598e-02
+RichardsPK         |   reservoir water mass=147.175 ton, total influx=0.21223 lb
+TimeStepManager    |   Accepted proposed dT=0.0619174 s
+CycleDriver        |  New time = 0.259587 s
+CycleDriver        |  
+CycleDriver        |  Cycle 10: time = 0.259587 s, dt = 0.0619174 s
+TI::BDF1           |  step 10 T = 0.259587 [sec]  dT = 0.0619174
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=6.11745e-10  l2-error=0.00175895
+Solver::NKA        |   Solver converged: 1 itrs, error=6.11745e-10
+TI::BDF1           |  success: 1 nonlinear itrs error=6.11745e-10
+TI::BDF1           |  TS:10 FS:0 NS:11 PC:11 11 LS:0 dt:1.0000e-02 6.1917e-02
+RichardsPK         |   reservoir water mass=147.175 ton, total influx=0.26285 lb
+TimeStepManager    |   Accepted proposed dT=0.0743008 s
+CycleDriver        |  New time = 0.321504 s
+CycleDriver        |  
+CycleDriver        |  Cycle 11: time = 0.321504 s, dt = 0.0743008 s
+TI::BDF1           |  step 11 T = 0.321504 [sec]  dT = 0.0743008
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=8.78431e-10  l2-error=0.00252913
+Solver::NKA        |   Solver converged: 1 itrs, error=8.78431e-10
+TI::BDF1           |  success: 1 nonlinear itrs error=8.78431e-10
+TI::BDF1           |  TS:11 FS:0 NS:12 PC:12 12 LS:0 dt:1.0000e-02 7.4301e-02
+RichardsPK         |   reservoir water mass=147.175 ton, total influx=0.323595 lb
+TimeStepManager    |   Accepted proposed dT=0.089161 s
+CycleDriver        |  New time = 0.395805 s
+CycleDriver        |  
+CycleDriver        |  Cycle 12: time = 0.395805 s, dt = 0.089161 s
+TI::BDF1           |  step 12 T = 0.395805 [sec]  dT = 0.089161
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=1.26067e-09  l2-error=0.00363546
+Solver::NKA        |   Solver converged: 1 itrs, error=1.26067e-09
+TI::BDF1           |  success: 1 nonlinear itrs error=1.26067e-09
+TI::BDF1           |  TS:12 FS:0 NS:13 PC:13 13 LS:0 dt:1.0000e-02 8.9161e-02
+RichardsPK         |   reservoir water mass=147.175 ton, total influx=0.396488 lb
+TimeStepManager    |   Accepted proposed dT=0.106993 s
+CycleDriver        |  New time = 0.484966 s
+CycleDriver        |  
+CycleDriver        |  Cycle 13: time = 0.484966 s, dt = 0.106993 s
+TI::BDF1           |  step 13 T = 0.484966 [sec]  dT = 0.106993
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=1.80801e-09  l2-error=0.00522366
+Solver::NKA        |   Solver converged: 1 itrs, error=1.80801e-09
+TI::BDF1           |  success: 1 nonlinear itrs error=1.80801e-09
+TI::BDF1           |  TS:13 FS:0 NS:14 PC:14 14 LS:0 dt:1.0000e-02 1.0699e-01
+RichardsPK         |   reservoir water mass=147.175 ton, total influx=0.483958 lb
+TimeStepManager    |   Accepted proposed dT=0.128392 s
+CycleDriver        |  New time = 0.591959 s
+CycleDriver        |  
+CycleDriver        |  Cycle 14: time = 0.591959 s, dt = 0.128392 s
+TI::BDF1           |  step 14 T = 0.591959 [sec]  dT = 0.128392
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=2.5909e-09  l2-error=0.00750276
+Solver::NKA        |   Solver converged: 1 itrs, error=2.5909e-09
+TI::BDF1           |  success: 1 nonlinear itrs error=2.5909e-09
+TI::BDF1           |  TS:14 FS:0 NS:15 PC:15 15 LS:0 dt:1.0000e-02 1.2839e-01
+RichardsPK         |   reservoir water mass=147.175 ton, total influx=0.588921 lb
+TimeStepManager    |   Accepted proposed dT=0.15407 s
+CycleDriver        |  New time = 0.720351 s
+CycleDriver        |  
+CycleDriver        |  Cycle 15: time = 0.720351 s, dt = 0.15407 s
+TI::BDF1           |  step 15 T = 0.720351 [sec]  dT = 0.15407
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=3.7092e-09  l2-error=0.0107709
+Solver::NKA        |   Solver converged: 1 itrs, error=3.7092e-09
+TI::BDF1           |  success: 1 nonlinear itrs error=3.7092e-09
+TI::BDF1           |  TS:15 FS:0 NS:16 PC:16 16 LS:0 dt:1.0000e-02 1.5407e-01
+RichardsPK         |   reservoir water mass=147.175 ton, total influx=0.714874 lb
+TimeStepManager    |   Accepted proposed dT=0.184884 s
+CycleDriver        |  New time = 0.874421 s
+CycleDriver        |  
+CycleDriver        |  Cycle 16: time = 0.874421 s, dt = 0.184884 s
+TI::BDF1           |  step 16 T = 0.874421 [sec]  dT = 0.184884
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=5.30403e-09  l2-error=0.0154527
+Solver::NKA        |   Solver converged: 1 itrs, error=5.30403e-09
+TI::BDF1           |  success: 1 nonlinear itrs error=5.30403e-09
+TI::BDF1           |  TS:16 FS:0 NS:17 PC:17 17 LS:0 dt:1.0000e-02 1.8488e-01
+RichardsPK         |   reservoir water mass=147.175 ton, total influx=0.866015 lb
+TimeStepManager    |   Accepted proposed dT=0.221861 s
+CycleDriver        |  New time = 1.05931 s
+CycleDriver        |  
+CycleDriver        |  Cycle 17: time = 1.05931 s, dt = 0.221861 s
+TI::BDF1           |  step 17 T = 1.05931 [sec]  dT = 0.221861
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=7.57407e-09  l2-error=0.0221539
+Solver::NKA        |   Solver converged: 1 itrs, error=7.57407e-09
+TI::BDF1           |  success: 1 nonlinear itrs error=7.57407e-09
+TI::BDF1           |  TS:17 FS:0 NS:18 PC:18 18 LS:0 dt:1.0000e-02 2.2186e-01
+RichardsPK         |   reservoir water mass=147.176 ton, total influx=1.04738 lb
+TimeStepManager    |   Accepted proposed dT=0.266233 s
+CycleDriver        |  New time = 1.28117 s
+CycleDriver        |  
+CycleDriver        |  Cycle 18: time = 1.28117 s, dt = 0.266233 s
+TI::BDF1           |  step 18 T = 1.28117 [sec]  dT = 0.266233
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=1.07977e-08  l2-error=0.0317339
+Solver::NKA        |   Solver converged: 1 itrs, error=1.07977e-08
+TI::BDF1           |  success: 1 nonlinear itrs error=1.07977e-08
+TI::BDF1           |  TS:18 FS:0 NS:19 PC:19 19 LS:0 dt:1.0000e-02 2.6623e-01
+RichardsPK         |   reservoir water mass=147.176 ton, total influx=1.26501 lb
+TimeStepManager    |   Accepted proposed dT=0.31948 s
+CycleDriver        |  New time = 1.5474 s
+CycleDriver        |  
+CycleDriver        |  Cycle 19: time = 1.5474 s, dt = 0.31948 s
+TI::BDF1           |  step 19 T = 1.5474 [sec]  dT = 0.31948
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=1.53628e-08  l2-error=0.0454096
+Solver::NKA        |   Solver converged: 1 itrs, error=1.53628e-08
+TI::BDF1           |  success: 1 nonlinear itrs error=1.53628e-08
+TI::BDF1           |  TS:19 FS:0 NS:20 PC:20 20 LS:0 dt:1.0000e-02 3.1948e-01
+RichardsPK         |   reservoir water mass=147.176 ton, total influx=0.692256 kg
+TimeStepManager    |   Accepted proposed dT=0.383376 s
+CycleDriver        |  New time = 1.86688 s
+CycleDriver        |  
+CycleDriver        |  Cycle 20: time = 1.86688 s, dt = 0.383376 s
+TI::BDF1           |  step 20 T = 1.86688 [sec]  dT = 0.383376
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=2.18062e-08  l2-error=0.0649002
+Solver::NKA        |   Solver converged: 1 itrs, error=2.18062e-08
+TI::BDF1           |  success: 1 nonlinear itrs error=2.18062e-08
+TI::BDF1           |  TS:20 FS:0 NS:21 PC:21 21 LS:0 dt:1.0000e-02 3.8338e-01
+RichardsPK         |   reservoir water mass=147.176 ton, total influx=0.834397 kg
+TimeStepManager    |   Accepted proposed dT=0.460051 s
+CycleDriver        |  New time = 2.25026 s
+CycleDriver        |  
+CycleDriver        |  Cycle 21: time = 2.25026 s, dt = 0.460051 s
+TI::BDF1           |  step 21 T = 2.25026 [sec]  dT = 0.460051
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=3.08645e-08  l2-error=0.0926024
+Solver::NKA        |   Solver converged: 1 itrs, error=3.08645e-08
+TI::BDF1           |  success: 1 nonlinear itrs error=3.08645e-08
+TI::BDF1           |  TS:21 FS:0 NS:22 PC:22 22 LS:0 dt:1.0000e-02 4.6005e-01
+RichardsPK         |   reservoir water mass=147.176 ton, total influx=1.00496 kg
+TimeStepManager    |   Accepted proposed dT=0.552061 s
+CycleDriver        |  New time = 2.71031 s
+CycleDriver        |  
+CycleDriver        |  Cycle 22: time = 2.71031 s, dt = 0.552061 s
+TI::BDF1           |  step 22 T = 2.71031 [sec]  dT = 0.552061
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=4.35382e-08  l2-error=0.131979
+Solver::NKA        |   Solver converged: 1 itrs, error=4.35382e-08
+TI::BDF1           |  success: 1 nonlinear itrs error=4.35382e-08
+TI::BDF1           |  TS:22 FS:0 NS:23 PC:23 23 LS:0 dt:1.0000e-02 5.5206e-01
+RichardsPK         |   reservoir water mass=147.176 ton, total influx=1.20962 kg
+TimeStepManager    |   Accepted proposed dT=0.662474 s
+CycleDriver        |  New time = 3.26237 s
+CycleDriver        |  
+CycleDriver        |  Cycle 23: time = 3.26237 s, dt = 0.662474 s
+TI::BDF1           |  step 23 T = 3.26237 [sec]  dT = 0.662474
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=6.11694e-08  l2-error=0.187701
+Solver::NKA        |   Solver converged: 1 itrs, error=6.11694e-08
+TI::BDF1           |  success: 1 nonlinear itrs error=6.11694e-08
+TI::BDF1           |  TS:23 FS:0 NS:24 PC:24 24 LS:0 dt:1.0000e-02 6.6247e-01
+RichardsPK         |   reservoir water mass=147.177 ton, total influx=1.45519 kg
+TimeStepManager    |   Accepted proposed dT=0.794968 s
+CycleDriver        |  New time = 3.92484 s
+CycleDriver        |  
+CycleDriver        |  Cycle 24: time = 3.92484 s, dt = 0.794968 s
+TI::BDF1           |  step 24 T = 3.92484 [sec]  dT = 0.794968
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=8.55297e-08  l2-error=0.266115
+Solver::NKA        |   Solver converged: 1 itrs, error=8.55297e-08
+TI::BDF1           |  success: 1 nonlinear itrs error=8.55297e-08
+TI::BDF1           |  TS:24 FS:0 NS:25 PC:25 25 LS:0 dt:1.0000e-02 7.9497e-01
+RichardsPK         |   reservoir water mass=147.177 ton, total influx=1.74986 kg
+TimeStepManager    |   Accepted proposed dT=0.953962 s
+CycleDriver        |  New time = 4.71981 s
+CycleDriver        |  
+CycleDriver        |  Cycle 25: time = 4.71981 s, dt = 0.953962 s
+TI::BDF1           |  step 25 T = 4.71981 [sec]  dT = 0.953962
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=1.18913e-07  l2-error=0.376515
+Solver::NKA        |   Solver converged: 1 itrs, error=1.18913e-07
+TI::BDF1           |  success: 1 nonlinear itrs error=1.18913e-07
+TI::BDF1           |  TS:25 FS:0 NS:26 PC:26 26 LS:0 dt:1.0000e-02 9.5396e-01
+RichardsPK         |   reservoir water mass=147.177 ton, total influx=2.10341 kg
+TimeStepManager    |   Accepted proposed dT=1.14475 s
+CycleDriver        |  New time = 5.67377 s
+CycleDriver        |  
+CycleDriver        |  Cycle 26: time = 5.67377 s, dt = 1.14475 s
+TI::BDF1           |  step 26 T = 5.67377 [sec]  dT = 1.14475
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=1.64217e-07  l2-error=0.530983
+Solver::NKA        |   Solver converged: 1 itrs, error=1.64217e-07
+TI::BDF1           |  success: 1 nonlinear itrs error=1.64217e-07
+TI::BDF1           |  TS:26 FS:0 NS:27 PC:27 27 LS:0 dt:1.0000e-02 1.1448e+00
+RichardsPK         |   reservoir water mass=147.178 ton, total influx=2.52762 kg
+TimeStepManager    |   Accepted proposed dT=1.37371 s
+CycleDriver        |  New time = 6.81853 s
+CycleDriver        |  
+CycleDriver        |  Cycle 27: time = 6.81853 s, dt = 1.37371 s
+TI::BDF1           |  step 27 T = 6.81853 [sec]  dT = 1.37371
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=2.24981e-07  l2-error=0.745861
+Solver::NKA        |   Solver converged: 1 itrs, error=2.24981e-07
+TI::BDF1           |  success: 1 nonlinear itrs error=2.24981e-07
+TI::BDF1           |  TS:27 FS:0 NS:28 PC:28 28 LS:0 dt:1.0000e-02 1.3737e+00
+RichardsPK         |   reservoir water mass=147.178 ton, total influx=3.03659 kg
+TimeStepManager    |   Accepted proposed dT=1.64845 s
+CycleDriver        |  New time = 0.136537 min
+CycleDriver        |  
+CycleDriver        |  Cycle 28: time = 0.136537 min, dt = 1.64845 s
+TI::BDF1           |  step 28 T = 8.19223 [sec]  dT = 1.64845
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=3.05355e-07  l2-error=1.04369
+Solver::NKA        |   Solver converged: 1 itrs, error=3.05355e-07
+TI::BDF1           |  success: 1 nonlinear itrs error=3.05355e-07
+TI::BDF1           |  TS:28 FS:0 NS:29 PC:29 29 LS:0 dt:1.0000e-02 1.6484e+00
+RichardsPK         |   reservoir water mass=147.179 ton, total influx=3.64722 kg
+TimeStepManager    |   Accepted proposed dT=1.97814 s
+CycleDriver        |  New time = 0.164011 min
+CycleDriver        |  
+CycleDriver        |  Cycle 29: time = 0.164011 min, dt = 1.97814 s
+TI::BDF1           |  step 29 T = 9.84068 [sec]  dT = 1.97814
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=4.09906e-07  l2-error=1.45267
+Solver::NKA        |   Solver converged: 1 itrs, error=4.09906e-07
+TI::BDF1           |  success: 1 nonlinear itrs error=4.09906e-07
+TI::BDF1           |  TS:29 FS:0 NS:30 PC:30 30 LS:0 dt:1.0000e-02 1.9781e+00
+RichardsPK         |   reservoir water mass=147.179 ton, total influx=4.37979 kg
+TimeStepManager    |   Accepted proposed dT=2.37376 s
+CycleDriver        |  New time = 0.19698 min
+CycleDriver        |  
+CycleDriver        |  Cycle 30: time = 0.19698 min, dt = 2.37376 s
+TI::BDF1           |  step 30 T = 11.8188 [sec]  dT = 2.37376
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=5.64271e-07  l2-error=2.0121
+Solver::NKA        |   Solver converged: 1 itrs, error=5.64271e-07
+TI::BDF1           |  success: 1 nonlinear itrs error=5.64271e-07
+TI::BDF1           |  TS:30 FS:0 NS:31 PC:31 31 LS:0 dt:1.0000e-02 2.3738e+00
+RichardsPK         |   reservoir water mass=147.18 ton, total influx=5.25858 kg
+TimeStepManager    |   Accepted proposed dT=2.84852 s
+CycleDriver        |  New time = 0.236543 min
+CycleDriver        |  
+CycleDriver        |  Cycle 31: time = 0.236543 min, dt = 2.84852 s
+TI::BDF1           |  step 31 T = 14.1926 [sec]  dT = 2.84852
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=7.99314e-07  l2-error=2.76967
+Solver::NKA        |   Solver converged: 1 itrs, error=7.99314e-07
+TI::BDF1           |  success: 1 nonlinear itrs error=7.99314e-07
+TI::BDF1           |  TS:31 FS:0 NS:32 PC:32 32 LS:0 dt:1.0000e-02 2.8485e+00
+RichardsPK         |   reservoir water mass=147.181 ton, total influx=6.31271 kg
+TimeStepManager    |   Accepted proposed dT=3.41822 s
+CycleDriver        |  New time = 0.284018 min
+CycleDriver        |  
+CycleDriver        |  Cycle 32: time = 0.284018 min, dt = 3.41822 s
+TI::BDF1           |  step 32 T = 17.0411 [sec]  dT = 3.41822
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=1.12715e-06  l2-error=3.78451
+Solver::NKA        |   2: error=1.44359e-09  l2-error=0.00240632
+Solver::NKA        |   Solver converged: 2 itrs, error=1.44359e-09
+TI::BDF1           |  success: 2 nonlinear itrs error=1.44359e-09
+TI::BDF1           |  TS:32 FS:0 NS:34 PC:33 34 LS:0 dt:1.0000e-02 3.4182e+00
+RichardsPK         |   reservoir water mass=147.183 ton, total influx=7.57702 kg
+TimeStepManager    |   Accepted proposed dT=4.10186 s
+CycleDriver        |  New time = 0.340989 min
+CycleDriver        |  
+CycleDriver        |  Cycle 33: time = 0.340989 min, dt = 4.10186 s
+TI::BDF1           |  step 33 T = 20.4593 [sec]  dT = 4.10186
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=1.58047e-06  l2-error=5.13815
+Solver::NKA        |   2: error=2.42653e-09  l2-error=0.00420042
+Solver::NKA        |   Solver converged: 2 itrs, error=2.42653e-09
+TI::BDF1           |  success: 2 nonlinear itrs error=2.42653e-09
+TI::BDF1           |  TS:33 FS:0 NS:36 PC:34 36 LS:0 dt:1.0000e-02 4.1019e+00
+RichardsPK         |   reservoir water mass=147.184 ton, total influx=9.09321 kg
+TimeStepManager    |   Accepted proposed dT=4.92224 s
+CycleDriver        |  New time = 0.409353 min
+CycleDriver        |  
+CycleDriver        |  Cycle 34: time = 0.409353 min, dt = 4.92224 s
+TI::BDF1           |  step 34 T = 24.5612 [sec]  dT = 4.92224
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=2.1982e-06  l2-error=6.91818
+Solver::NKA        |   2: error=4.05204e-09  l2-error=0.00776384
+Solver::NKA        |   Solver converged: 2 itrs, error=4.05204e-09
+TI::BDF1           |  success: 2 nonlinear itrs error=4.05204e-09
+TI::BDF1           |  TS:34 FS:0 NS:38 PC:35 38 LS:0 dt:1.0000e-02 4.9222e+00
+RichardsPK         |   reservoir water mass=147.186 ton, total influx=10.9112 kg
+TimeStepManager    |   Accepted proposed dT=5.90668 s
+CycleDriver        |  New time = 0.49139 min
+CycleDriver        |  
+CycleDriver        |  Cycle 35: time = 0.49139 min, dt = 5.90668 s
+TI::BDF1           |  step 35 T = 29.4834 [sec]  dT = 5.90668
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=3.02523e-06  l2-error=9.23352
+Solver::NKA        |   2: error=6.71143e-09  l2-error=0.0136715
+Solver::NKA        |   Solver converged: 2 itrs, error=6.71143e-09
+TI::BDF1           |  success: 2 nonlinear itrs error=6.71143e-09
+TI::BDF1           |  TS:35 FS:0 NS:40 PC:36 40 LS:0 dt:1.0000e-02 5.9067e+00
+RichardsPK         |   reservoir water mass=147.188 ton, total influx=13.0904 kg
+TimeStepManager    |   Accepted proposed dT=7.08802 s
+CycleDriver        |  New time = 0.589835 min
+CycleDriver        |  
+CycleDriver        |  Cycle 36: time = 0.589835 min, dt = 7.08802 s
+TI::BDF1           |  step 36 T = 35.3901 [sec]  dT = 7.08802
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=4.10442e-06  l2-error=12.2093
+Solver::NKA        |   2: error=1.10344e-08  l2-error=0.0263136
+Solver::NKA        |   Solver converged: 2 itrs, error=1.10344e-08
+TI::BDF1           |  success: 2 nonlinear itrs error=1.10344e-08
+TI::BDF1           |  TS:36 FS:0 NS:42 PC:37 42 LS:0 dt:1.0000e-02 7.0880e+00
+RichardsPK         |   reservoir water mass=147.191 ton, total influx=15.7022 kg
+TimeStepManager    |   Accepted proposed dT=0.14176 min
+CycleDriver        |  New time = 0.707969 min
+CycleDriver        |  
+CycleDriver        |  Cycle 37: time = 0.707969 min, dt = 0.14176 min
+TI::BDF1           |  step 37 T = 42.4781 [sec]  dT = 8.50562
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=5.4614e-06  l2-error=15.9709
+Solver::NKA        |   2: error=1.79224e-08  l2-error=0.0455184
+Solver::NKA        |   Solver converged: 2 itrs, error=1.79224e-08
+TI::BDF1           |  success: 2 nonlinear itrs error=1.79224e-08
+TI::BDF1           |  TS:37 FS:0 NS:44 PC:38 44 LS:0 dt:1.0000e-02 8.5056e+00
+RichardsPK         |   reservoir water mass=147.194 ton, total influx=18.831 kg
+TimeStepManager    |   Accepted proposed dT=0.170112 min
+CycleDriver        |  New time = 0.849729 min
+CycleDriver        |  
+CycleDriver        |  Cycle 38: time = 0.849729 min, dt = 0.170112 min
+TI::BDF1           |  step 38 T = 50.9837 [sec]  dT = 10.2067
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=7.07515e-06  l2-error=20.6365
+Solver::NKA        |   2: error=2.87265e-08  l2-error=0.0737068
+Solver::NKA        |   Solver converged: 2 itrs, error=2.87265e-08
+TI::BDF1           |  success: 2 nonlinear itrs error=2.87265e-08
+TI::BDF1           |  TS:38 FS:0 NS:46 PC:39 46 LS:0 dt:1.0000e-02 1.0207e+01
+RichardsPK         |   reservoir water mass=147.198 ton, total influx=22.5778 kg
+TimeStepManager    |   Accepted proposed dT=0.204135 min
+CycleDriver        |  New time = 1.01984 min
+CycleDriver        |  
+CycleDriver        |  Cycle 39: time = 1.01984 min, dt = 0.204135 min
+TI::BDF1           |  step 39 T = 61.1905 [sec]  dT = 12.2481
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=8.82927e-06  l2-error=26.2931
+Solver::NKA        |   2: error=4.52946e-08  l2-error=0.12049
+Solver::NKA        |   Solver converged: 2 itrs, error=4.52946e-08
+TI::BDF1           |  success: 2 nonlinear itrs error=4.52946e-08
+TI::BDF1           |  TS:39 FS:0 NS:48 PC:40 48 LS:0 dt:1.0000e-02 1.2248e+01
+RichardsPK         |   reservoir water mass=147.202 ton, total influx=27.0621 kg
+TimeStepManager    |   Accepted proposed dT=0.244962 min
+CycleDriver        |  New time = 1.22398 min
+CycleDriver        |  
+CycleDriver        |  Cycle 40: time = 1.22398 min, dt = 0.244962 min
+TI::BDF1           |  step 40 T = 73.4386 [sec]  dT = 14.6977
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=1.14394e-05  l2-error=32.9428
+Solver::NKA        |   2: error=6.99849e-08  l2-error=0.193147
+Solver::NKA        |   Solver converged: 2 itrs, error=6.99849e-08
+TI::BDF1           |  success: 2 nonlinear itrs error=6.99849e-08
+TI::BDF1           |  TS:40 FS:0 NS:50 PC:41 50 LS:0 dt:1.0000e-02 1.4698e+01
+RichardsPK         |   reservoir water mass=147.207 ton, total influx=0.0324253 ton
+TimeStepManager    |   Accepted proposed dT=0.293954 min
+CycleDriver        |  New time = 1.46894 min
+CycleDriver        |  
+CycleDriver        |  Cycle 41: time = 1.46894 min, dt = 0.293954 min
+TI::BDF1           |  step 41 T = 88.1363 [sec]  dT = 17.6373
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=1.45813e-05  l2-error=40.4624
+Solver::NKA        |   2: error=1.05522e-07  l2-error=0.310715
+Solver::NKA        |   Solver converged: 2 itrs, error=1.05522e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=1.05522e-07
+TI::BDF1           |  TS:41 FS:0 NS:52 PC:42 52 LS:0 dt:1.0000e-02 1.7637e+01
+RichardsPK         |   reservoir water mass=147.214 ton, total influx=0.0388345 ton
+TimeStepManager    |   Accepted proposed dT=0.352745 min
+CycleDriver        |  New time = 1.76289 min
+CycleDriver        |  
+CycleDriver        |  Cycle 42: time = 1.76289 min, dt = 0.352745 min
+TI::BDF1           |  step 42 T = 105.774 [sec]  dT = 21.1647
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=1.82053e-05  l2-error=48.4992
+Solver::NKA        |   2: error=1.54722e-07  l2-error=0.453385
+Solver::NKA        |   Solver converged: 2 itrs, error=1.54722e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=1.54722e-07
+TI::BDF1           |  TS:42 FS:0 NS:54 PC:43 54 LS:0 dt:1.0000e-02 2.1165e+01
+RichardsPK         |   reservoir water mass=147.221 ton, total influx=0.0464858 ton
+TimeStepManager    |   Accepted proposed dT=0.423294 min
+CycleDriver        |  New time = 2.11564 min
+CycleDriver        |  
+CycleDriver        |  Cycle 43: time = 2.11564 min, dt = 0.423294 min
+TI::BDF1           |  step 43 T = 126.938 [sec]  dT = 25.3977
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=2.22403e-05  l2-error=56.5214
+Solver::NKA        |   2: error=2.19803e-07  l2-error=0.643239
+Solver::NKA        |   Solver converged: 2 itrs, error=2.19803e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=2.19803e-07
+TI::BDF1           |  TS:43 FS:0 NS:56 PC:44 56 LS:0 dt:1.0000e-02 2.5398e+01
+RichardsPK         |   reservoir water mass=147.23 ton, total influx=0.055609 ton
+TimeStepManager    |   Accepted proposed dT=0.507953 min
+CycleDriver        |  New time = 2.53893 min
+CycleDriver        |  
+CycleDriver        |  Cycle 44: time = 2.53893 min, dt = 0.507953 min
+TI::BDF1           |  step 44 T = 152.336 [sec]  dT = 30.4772
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=2.66017e-05  l2-error=63.7255
+Solver::NKA        |   2: error=3.0178e-07  l2-error=0.877705
+Solver::NKA        |   Solver converged: 2 itrs, error=3.0178e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=3.0178e-07
+TI::BDF1           |  TS:44 FS:0 NS:58 PC:45 58 LS:0 dt:1.0000e-02 3.0477e+01
+RichardsPK         |   reservoir water mass=147.241 ton, total influx=0.0664715 ton
+TimeStepManager    |   Accepted proposed dT=0.609544 min
+CycleDriver        |  New time = 3.04688 min
+CycleDriver        |  
+CycleDriver        |  Cycle 45: time = 3.04688 min, dt = 0.609544 min
+TI::BDF1           |  step 45 T = 182.813 [sec]  dT = 36.5726
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=3.12351e-05  l2-error=69.0219
+Solver::NKA        |   2: error=3.99483e-07  l2-error=1.15067
+Solver::NKA        |   Solver converged: 2 itrs, error=3.99483e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=3.99483e-07
+TI::BDF1           |  TS:45 FS:0 NS:60 PC:46 60 LS:0 dt:1.0000e-02 3.6573e+01
+RichardsPK         |   reservoir water mass=147.254 ton, total influx=0.0793833 ton
+TimeStepManager    |   Accepted proposed dT=0.731452 min
+CycleDriver        |  New time = 3.65643 min
+CycleDriver        |  
+CycleDriver        |  Cycle 46: time = 3.65643 min, dt = 0.731452 min
+TI::BDF1           |  step 46 T = 219.386 [sec]  dT = 43.8871
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=3.61283e-05  l2-error=71
+Solver::NKA        |   2: error=5.0829e-07  l2-error=1.45393
+Solver::NKA        |   Solver converged: 2 itrs, error=5.0829e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=5.0829e-07
+TI::BDF1           |  TS:46 FS:0 NS:62 PC:47 62 LS:0 dt:1.0000e-02 4.3887e+01
+RichardsPK         |   reservoir water mass=147.269 ton, total influx=0.0947011 ton
+TimeStepManager    |   Accepted proposed dT=0.877743 min
+CycleDriver        |  New time = 4.38788 min
+CycleDriver        |  
+CycleDriver        |  Cycle 47: time = 4.38788 min, dt = 0.877743 min
+TI::BDF1           |  step 47 T = 263.273 [sec]  dT = 52.6646
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=5.254e-05  l2-error=68.5255
+Solver::NKA        |   2: error=6.17405e-07  l2-error=1.75216
+Solver::NKA        |   Solver converged: 2 itrs, error=6.17405e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=6.17405e-07
+TI::BDF1           |  TS:47 FS:0 NS:64 PC:48 64 LS:0 dt:1.0000e-02 5.2665e+01
+RichardsPK         |   reservoir water mass=147.287 ton, total influx=0.112834 ton
+TimeStepManager    |   Accepted proposed dT=1.05329 min
+CycleDriver        |  New time = 5.26562 min
+CycleDriver        |  
+CycleDriver        |  Cycle 48: time = 5.26562 min, dt = 1.05329 min
+TI::BDF1           |  step 48 T = 315.937 [sec]  dT = 63.1975
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=6.90938e-05  l2-error=64.5389
+Solver::NKA        |   2: error=7.49026e-07  l2-error=2.07014
+Solver::NKA        |   Solver converged: 2 itrs, error=7.49026e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=7.49026e-07
+TI::BDF1           |  TS:48 FS:0 NS:66 PC:49 66 LS:0 dt:1.0000e-02 6.3197e+01
+RichardsPK         |   reservoir water mass=147.308 ton, total influx=0.134247 ton
+TimeStepManager    |   Accepted proposed dT=1.26395 min
+CycleDriver        |  New time = 6.31892 min
+CycleDriver        |  
+CycleDriver        |  Cycle 49: time = 6.31892 min, dt = 1.26395 min
+TI::BDF1           |  step 49 T = 379.135 [sec]  dT = 75.837
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=8.06358e-05  l2-error=82.4661
+Solver::NKA        |   2: error=9.08803e-07  l2-error=2.32343
+Solver::NKA        |   Solver converged: 2 itrs, error=9.08803e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=9.08803e-07
+TI::BDF1           |  TS:49 FS:0 NS:68 PC:50 68 LS:0 dt:1.0000e-02 7.5837e+01
+RichardsPK         |   reservoir water mass=147.333 ton, total influx=0.159471 ton
+TimeStepManager    |   Accepted proposed dT=1.51674 min
+CycleDriver        |  New time = 7.58287 min
+CycleDriver        |  
+CycleDriver        |  Cycle 50: time = 7.58287 min, dt = 1.51674 min
+TI::BDF1           |  step 50 T = 454.972 [sec]  dT = 91.0044
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=8.50849e-05  l2-error=128.021
+Solver::NKA        |   2: error=9.85596e-07  l2-error=2.38831
+Solver::NKA        |   Solver converged: 2 itrs, error=9.85596e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=9.85596e-07
+TI::BDF1           |  TS:50 FS:0 NS:70 PC:51 70 LS:0 dt:1.0000e-02 9.1004e+01
+RichardsPK         |   reservoir water mass=147.362 ton, total influx=0.189117 ton
+TimeStepManager    |   Accepted proposed dT=1.82009 min
+CycleDriver        |  New time = 0.15166 h
+CycleDriver        |  
+CycleDriver        |  Cycle 51: time = 0.15166 h, dt = 1.82009 min
+TI::BDF1           |  step 51 T = 545.976 [sec]  dT = 109.205
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=8.46351e-05  l2-error=197.119
+Solver::NKA        |   2: error=1.20268e-06  l2-error=2.19814
+Solver::NKA        |   3: error=2.00515e-08  l2-error=0.0140746
+Solver::NKA        |   Solver converged: 3 itrs, error=2.00515e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=2.00515e-08
+TI::BDF1           |  TS:51 FS:0 NS:73 PC:52 73 LS:0 dt:1.0000e-02 1.0921e+02
+RichardsPK         |   reservoir water mass=147.396 ton, total influx=0.223886 ton
+TimeStepManager    |   Accepted proposed dT=2.18411 min
+CycleDriver        |  New time = 0.181995 h
+CycleDriver        |  
+CycleDriver        |  Cycle 52: time = 0.181995 h, dt = 2.18411 min
+TI::BDF1           |  step 52 T = 655.182 [sec]  dT = 131.046
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000111442  l2-error=311.481
+Solver::NKA        |   2: error=1.33827e-06  l2-error=1.92411
+Solver::NKA        |   3: error=2.61007e-08  l2-error=0.0404286
+Solver::NKA        |   Solver converged: 3 itrs, error=2.61007e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=2.61007e-08
+TI::BDF1           |  TS:52 FS:0 NS:76 PC:53 76 LS:0 dt:1.0000e-02 1.3105e+02
+RichardsPK         |   reservoir water mass=147.435 ton, total influx=0.264574 ton
+TimeStepManager    |   Accepted proposed dT=2.62093 min
+CycleDriver        |  New time = 0.218397 h
+CycleDriver        |  
+CycleDriver        |  Cycle 53: time = 0.218397 h, dt = 2.62093 min
+TI::BDF1           |  step 53 T = 786.228 [sec]  dT = 157.256
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00018532  l2-error=542.486
+Solver::NKA        |   2: error=5.86395e-06  l2-error=4.58063
+Solver::NKA        |   3: error=2.10452e-07  l2-error=0.252786
+Solver::NKA        |   Solver converged: 3 itrs, error=2.10452e-07
+TI::BDF1           |  success: 3 nonlinear itrs error=2.10452e-07
+TI::BDF1           |  TS:53 FS:0 NS:79 PC:54 79 LS:0 dt:1.0000e-02 1.5726e+02
+RichardsPK         |   reservoir water mass=147.481 ton, total influx=0.312116 ton
+TimeStepManager    |   Accepted proposed dT=3.14511 min
+CycleDriver        |  New time = 0.262079 h
+CycleDriver        |  
+CycleDriver        |  Cycle 54: time = 0.262079 h, dt = 3.14511 min
+TI::BDF1           |  step 54 T = 943.483 [sec]  dT = 188.707
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000313375  l2-error=1687.16
+Solver::NKA        |   2: error=1.74141e-05  l2-error=72.385
+Solver::NKA        |   3: error=1.99991e-06  l2-error=2.3417
+Solver::NKA        |   4: error=3.52092e-08  l2-error=0.140453
+Solver::NKA        |   Solver converged: 4 itrs, error=3.52092e-08
+TI::BDF1           |  success: 4 nonlinear itrs error=3.52092e-08
+TI::BDF1           |  TS:54 FS:0 NS:83 PC:55 83 LS:0 dt:1.0000e-02 1.8871e+02
+RichardsPK         |   reservoir water mass=147.535 ton, total influx=0.367625 ton
+TimeStepManager    |   Accepted proposed dT=3.77413 min
+CycleDriver        |  New time = 0.314497 h
+CycleDriver        |  
+CycleDriver        |  Cycle 55: time = 0.314497 h, dt = 3.77413 min
+TI::BDF1           |  step 55 T = 1132.19 [sec]  dT = 226.448
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000287884  l2-error=509.093
+Solver::NKA        |   2: error=0.000328276  l2-error=282.445
+Solver::NKA        |   3: error=0.000171026  l2-error=138.409
+Solver::NKA        |   4: error=2.95838e-06  l2-error=1.89318
+Solver::NKA        |   5: error=9.4278e-05  l2-error=63.5942
+Solver::NKA        |   6: error=2.08104e-05  l2-error=13.865
+Solver::NKA        |   7: error=4.80278e-05  l2-error=27.1657
+Solver::NKA        |   8: error=1.6041e-05  l2-error=10.3257
+Solver::NKA        |   9: error=5.80219e-06  l2-error=3.51122
+Solver::NKA        |   10: error=6.84872e-07  l2-error=0.236961
+Solver::NKA        |   Solver converged: 10 itrs, error=6.84872e-07
+TI::BDF1           |  success: 10 nonlinear itrs error=6.84872e-07
+TI::BDF1           |  TS:55 FS:0 NS:93 PC:57 93 LS:0 dt:1.0000e-02 2.2645e+02
+RichardsPK         |   reservoir water mass=147.598 ton, total influx=0.43238 ton
+TimeStepManager    |   Accepted proposed dT=3.77413 min
+CycleDriver        |  New time = 0.377399 h
+CycleDriver        |  
+CycleDriver        |  Cycle 56: time = 0.377399 h, dt = 3.77413 min
+TI::BDF1           |  step 56 T = 1358.64 [sec]  dT = 226.448
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000571965  l2-error=1810.59
+Solver::NKA        |   2: error=0.000335516  l2-error=237.386
+Solver::NKA        |   3: error=0.000171035  l2-error=117.519
+Solver::NKA        |   4: error=3.09435e-05  l2-error=9.62316
+Solver::NKA        |   5: error=1.19265e-05  l2-error=9.06866
+Solver::NKA        |   6: error=2.25559e-06  l2-error=1.64391
+Solver::NKA        |   7: error=9.95088e-08  l2-error=0.0797247
+Solver::NKA        |   Solver converged: 7 itrs, error=9.95088e-08
+TI::BDF1           |  success: 7 nonlinear itrs error=9.95088e-08
+TI::BDF1           |  TS:56 FS:0 NS:100 PC:59 100 LS:0 dt:1.0000e-02 2.2645e+02
+RichardsPK         |   reservoir water mass=147.659 ton, total influx=0.495199 ton
+TimeStepManager    |   Accepted proposed dT=4.52896 min
+CycleDriver        |  New time = 0.440302 h
+CycleDriver        |  
+CycleDriver        |  Cycle 57: time = 0.440302 h, dt = 4.52896 min
+TI::BDF1           |  step 57 T = 1585.09 [sec]  dT = 271.738
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000567116  l2-error=558.445
+Solver::NKA        |   2: error=3.78264e-05  l2-error=71.6455
+Solver::NKA        |   3: error=1.51297e-06  l2-error=3.3146
+Solver::NKA        |   4: error=3.76295e-08  l2-error=0.0777052
+Solver::NKA        |   Solver converged: 4 itrs, error=3.76295e-08
+TI::BDF1           |  success: 4 nonlinear itrs error=3.76295e-08
+TI::BDF1           |  TS:57 FS:0 NS:104 PC:60 104 LS:0 dt:1.0000e-02 2.7174e+02
+RichardsPK         |   reservoir water mass=147.73 ton, total influx=0.568342 ton
+TimeStepManager    |   Accepted proposed dT=5.43475 min
+CycleDriver        |  New time = 0.515784 h
+CycleDriver        |  
+CycleDriver        |  Cycle 58: time = 0.515784 h, dt = 5.43475 min
+TI::BDF1           |  step 58 T = 1856.82 [sec]  dT = 326.085
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000593315  l2-error=812.202
+Solver::NKA        |   2: error=4.22664e-05  l2-error=35.7078
+Solver::NKA        |   3: error=1.75383e-06  l2-error=3.71374
+Solver::NKA        |   4: error=7.59163e-08  l2-error=0.0957232
+Solver::NKA        |   Solver converged: 4 itrs, error=7.59163e-08
+TI::BDF1           |  success: 4 nonlinear itrs error=7.59163e-08
+TI::BDF1           |  TS:58 FS:0 NS:108 PC:61 108 LS:0 dt:1.0000e-02 3.2609e+02
+RichardsPK         |   reservoir water mass=147.81 ton, total influx=0.652877 ton
+TimeStepManager    |   Accepted proposed dT=6.5217 min
+CycleDriver        |  New time = 0.606364 h
+CycleDriver        |  
+CycleDriver        |  Cycle 59: time = 0.606364 h, dt = 6.5217 min
+TI::BDF1           |  step 59 T = 2182.91 [sec]  dT = 391.302
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00100771  l2-error=3974.58
+Solver::NKA        |   2: error=0.000772252  l2-error=1928.06
+Solver::NKA        |   3: error=0.000399887  l2-error=857.784
+Solver::NKA        |   4: error=8.99863e-05  l2-error=70.7026
+Solver::NKA        |   5: error=5.71798e-05  l2-error=45.9929
+Solver::NKA        |   6: error=9.78668e-05  l2-error=50.9012
+Solver::NKA        |   7: error=2.00422e-05  l2-error=14.2174
+Solver::NKA        |   8: error=4.2191e-06  l2-error=8.57265
+Solver::NKA        |   9: error=3.73547e-06  l2-error=5.70417
+Solver::NKA        |   10: error=1.64576e-06  l2-error=0.792986
+Solver::NKA        |   11: error=1.7934e-06  l2-error=0.588958
+Solver::NKA        |   12: error=7.05316e-07  l2-error=0.212531
+Solver::NKA        |   Solver converged: 12 itrs, error=7.05316e-07
+TI::BDF1           |  success: 12 nonlinear itrs error=7.05316e-07
+TI::BDF1           |  TS:59 FS:0 NS:120 PC:63 120 LS:0 dt:1.0000e-02 3.9130e+02
+RichardsPK         |   reservoir water mass=147.903 ton, total influx=0.749865 ton
+TimeStepManager    |   Accepted proposed dT=6.5217 min
+CycleDriver        |  New time = 0.715059 h
+CycleDriver        |  
+CycleDriver        |  Cycle 60: time = 0.715059 h, dt = 6.5217 min
+TI::BDF1           |  step 60 T = 2574.21 [sec]  dT = 391.302
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00046167  l2-error=1127.39
+Solver::NKA        |   2: error=0.000375796  l2-error=216.051
+Solver::NKA        |   3: error=0.000192709  l2-error=108.456
+Solver::NKA        |   4: error=4.51762e-06  l2-error=6.95199
+Solver::NKA        |   5: error=5.35272e-06  l2-error=3.13323
+Solver::NKA        |   6: error=1.51396e-06  l2-error=0.951521
+Solver::NKA        |   7: error=3.25372e-07  l2-error=0.1263
+Solver::NKA        |   Solver converged: 7 itrs, error=3.25372e-07
+TI::BDF1           |  success: 7 nonlinear itrs error=3.25372e-07
+TI::BDF1           |  TS:60 FS:0 NS:127 PC:65 127 LS:0 dt:1.0000e-02 3.9130e+02
+RichardsPK         |   reservoir water mass=147.992 ton, total influx=0.842361 ton
+TimeStepManager    |   Accepted proposed dT=0.130434 h
+CycleDriver        |  New time = 0.823754 h
+CycleDriver        |  
+CycleDriver        |  Cycle 61: time = 0.823754 h, dt = 0.130434 h
+TI::BDF1           |  step 61 T = 2965.51 [sec]  dT = 469.563
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00140053  l2-error=1750.25
+Solver::NKA        |   2: error=0.000145842  l2-error=141.04
+Solver::NKA        |   3: error=2.30402e-05  l2-error=70.8097
+Solver::NKA        |   4: error=1.42813e-06  l2-error=2.19942
+Solver::NKA        |   5: error=1.11117e-07  l2-error=0.237559
+Solver::NKA        |   Solver converged: 5 itrs, error=1.11117e-07
+TI::BDF1           |  success: 5 nonlinear itrs error=1.11117e-07
+TI::BDF1           |  TS:61 FS:0 NS:132 PC:66 132 LS:0 dt:1.0000e-02 4.6956e+02
+RichardsPK         |   reservoir water mass=148.093 ton, total influx=0.948708 ton
+TimeStepManager    |   Accepted proposed dT=0.156521 h
+CycleDriver        |  New time = 0.954188 h
+CycleDriver        |  
+CycleDriver        |  Cycle 62: time = 0.954188 h, dt = 0.156521 h
+TI::BDF1           |  step 62 T = 3435.08 [sec]  dT = 563.475
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00126394  l2-error=1563.82
+Solver::NKA        |   2: error=0.000126915  l2-error=171.288
+Solver::NKA        |   3: error=1.1811e-05  l2-error=35.603
+Solver::NKA        |   4: error=5.94786e-06  l2-error=11.085
+Solver::NKA        |   5: error=1.30274e-07  l2-error=0.220586
+Solver::NKA        |   Solver converged: 5 itrs, error=1.30274e-07
+TI::BDF1           |  success: 5 nonlinear itrs error=1.30274e-07
+TI::BDF1           |  TS:62 FS:0 NS:137 PC:67 137 LS:0 dt:1.0000e-02 5.6348e+02
+RichardsPK         |   reservoir water mass=148.206 ton, total influx=1.06993 ton
+TimeStepManager    |   Accepted proposed dT=0.187825 h
+CycleDriver        |  New time = 1.11071 h
+CycleDriver        |  
+CycleDriver        |  Cycle 63: time = 1.11071 h, dt = 0.187825 h
+TI::BDF1           |  step 63 T = 3998.55 [sec]  dT = 676.17
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00131614  l2-error=4735.91
+Solver::NKA        |   2: error=0.000718502  l2-error=520.972
+Solver::NKA        |   3: error=0.000324749  l2-error=197.824
+Solver::NKA        |   4: error=3.72626e-05  l2-error=19.6101
+Solver::NKA        |   5: error=3.74219e-05  l2-error=16.1424
+Solver::NKA        |   6: error=3.05735e-05  l2-error=15.8826
+Solver::NKA        |   7: error=6.93354e-06  l2-error=3.51072
+Solver::NKA        |   8: error=7.28328e-06  l2-error=3.52173
+Solver::NKA        |   9: error=1.34704e-06  l2-error=0.441523
+Solver::NKA        |   10: error=5.07248e-06  l2-error=1.10456
+Solver::NKA        |   11: error=2.04015e-06  l2-error=0.867806
+Solver::NKA        |   12: error=5.029e-07  l2-error=0.256188
+Solver::NKA        |   Solver converged: 12 itrs, error=5.029e-07
+TI::BDF1           |  success: 12 nonlinear itrs error=5.029e-07
+TI::BDF1           |  TS:63 FS:0 NS:149 PC:69 149 LS:0 dt:1.0000e-02 6.7617e+02
+RichardsPK         |   reservoir water mass=148.334 ton, total influx=1.20635 ton
+TimeStepManager    |   Accepted proposed dT=0.187825 h
+CycleDriver        |  New time = 1.29853 h
+CycleDriver        |  
+CycleDriver        |  Cycle 64: time = 1.29853 h, dt = 0.187825 h
+TI::BDF1           |  step 64 T = 4674.72 [sec]  dT = 676.17
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00223142  l2-error=2491.04
+Solver::NKA        |   2: error=0.00032931  l2-error=580.158
+Solver::NKA        |   3: error=4.75795e-05  l2-error=173.824
+Solver::NKA        |   4: error=4.44331e-05  l2-error=140.327
+Solver::NKA        |   5: error=7.49289e-06  l2-error=19.5372
+Solver::NKA        |   6: error=1.46609e-06  l2-error=2.67769
+Solver::NKA        |   7: error=1.24116e-06  l2-error=1.18047
+Solver::NKA        |   8: error=8.08843e-07  l2-error=0.807951
+Solver::NKA        |   Solver converged: 8 itrs, error=8.08843e-07
+TI::BDF1           |  success: 8 nonlinear itrs error=8.08843e-07
+TI::BDF1           |  TS:64 FS:0 NS:157 PC:71 157 LS:0 dt:1.0000e-02 6.7617e+02
+RichardsPK         |   reservoir water mass=148.453 ton, total influx=1.33365 ton
+TimeStepManager    |   Accepted proposed dT=0.22539 h
+CycleDriver        |  New time = 1.48636 h
+CycleDriver        |  
+CycleDriver        |  Cycle 65: time = 1.48636 h, dt = 0.22539 h
+TI::BDF1           |  step 65 T = 5350.89 [sec]  dT = 811.404
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00199314  l2-error=4611.32
+Solver::NKA        |   2: error=0.00111314  l2-error=1948.11
+Solver::NKA        |   3: error=0.000259955  l2-error=476.081
+Solver::NKA        |   4: error=0.000126896  l2-error=71.6816
+Solver::NKA        |   5: error=2.61826e-05  l2-error=68.5182
+Solver::NKA        |   6: error=1.32524e-05  l2-error=25.4075
+Solver::NKA        |   7: error=5.73959e-06  l2-error=12.0308
+Solver::NKA        |   8: error=2.36293e-06  l2-error=5.17559
+Solver::NKA        |   9: error=6.64887e-07  l2-error=0.299426
+Solver::NKA        |   Solver converged: 9 itrs, error=6.64887e-07
+TI::BDF1           |  success: 9 nonlinear itrs error=6.64887e-07
+TI::BDF1           |  TS:65 FS:0 NS:166 PC:73 166 LS:0 dt:1.0000e-02 8.1140e+02
+RichardsPK         |   reservoir water mass=148.585 ton, total influx=1.47658 ton
+TimeStepManager    |   Accepted proposed dT=0.270468 h
+CycleDriver        |  New time = 1.71175 h
+CycleDriver        |  
+CycleDriver        |  Cycle 66: time = 1.71175 h, dt = 0.270468 h
+TI::BDF1           |  step 66 T = 6162.3 [sec]  dT = 973.685
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00203505  l2-error=2412.2
+Solver::NKA        |   2: error=0.000645267  l2-error=394.062
+Solver::NKA        |   3: error=0.00029975  l2-error=197.84
+Solver::NKA        |   4: error=0.000111584  l2-error=58.7634
+Solver::NKA        |   5: error=5.8998e-05  l2-error=36.8442
+Solver::NKA        |   6: error=1.61906e-05  l2-error=7.25642
+Solver::NKA        |   7: error=5.88308e-06  l2-error=2.64049
+Solver::NKA        |   8: error=1.83158e-06  l2-error=0.807232
+Solver::NKA        |   9: error=1.81852e-06  l2-error=0.615042
+Solver::NKA        |   10: error=6.62201e-07  l2-error=0.184646
+Solver::NKA        |   Solver converged: 10 itrs, error=6.62201e-07
+TI::BDF1           |  success: 10 nonlinear itrs error=6.62201e-07
+TI::BDF1           |  TS:66 FS:0 NS:176 PC:75 176 LS:0 dt:1.0000e-02 9.7369e+02
+RichardsPK         |   reservoir water mass=148.729 ton, total influx=1.63497 ton
+TimeStepManager    |   Accepted proposed dT=0.270468 h
+CycleDriver        |  New time = 1.98222 h
+CycleDriver        |  
+CycleDriver        |  Cycle 67: time = 1.98222 h, dt = 0.270468 h
+TI::BDF1           |  step 67 T = 7135.98 [sec]  dT = 973.685
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00264608  l2-error=2498.24
+Solver::NKA        |   2: error=0.00050416  l2-error=1006.02
+Solver::NKA        |   3: error=0.000186219  l2-error=83.3546
+Solver::NKA        |   4: error=4.50993e-05  l2-error=34.2165
+Solver::NKA        |   5: error=1.60321e-05  l2-error=21.5485
+Solver::NKA        |   6: error=5.10392e-06  l2-error=6.64941
+Solver::NKA        |   7: error=1.41117e-06  l2-error=0.339137
+Solver::NKA        |   8: error=1.5646e-06  l2-error=0.67095
+Solver::NKA        |   9: error=4.18797e-07  l2-error=0.223074
+Solver::NKA        |   Solver converged: 9 itrs, error=4.18797e-07
+TI::BDF1           |  success: 9 nonlinear itrs error=4.18797e-07
+TI::BDF1           |  TS:67 FS:0 NS:185 PC:77 185 LS:0 dt:1.0000e-02 9.7369e+02
+RichardsPK         |   reservoir water mass=148.861 ton, total influx=1.77941 ton
+TimeStepManager    |   Accepted proposed dT=0.324562 h
+CycleDriver        |  New time = 2.25268 h
+CycleDriver        |  
+CycleDriver        |  Cycle 68: time = 2.25268 h, dt = 0.324562 h
+TI::BDF1           |  step 68 T = 8109.67 [sec]  dT = 1168.42
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00222731  l2-error=3666.06
+Solver::NKA        |   2: error=0.000743223  l2-error=1206.58
+Solver::NKA        |   3: error=0.000235927  l2-error=402.254
+Solver::NKA        |   4: error=8.63596e-05  l2-error=124.308
+Solver::NKA        |   5: error=8.33742e-05  l2-error=36.5188
+Solver::NKA        |   6: error=3.33865e-05  l2-error=23.6401
+Solver::NKA        |   7: error=2.64233e-05  l2-error=16.497
+Solver::NKA        |   8: error=1.78945e-05  l2-error=7.36096
+Solver::NKA        |   9: error=5.48004e-06  l2-error=4.30713
+Solver::NKA        |   10: error=1.56819e-05  l2-error=7.3058
+Solver::NKA        |   11: error=1.01744e-05  l2-error=4.57861
+Solver::NKA        |   12: error=4.36319e-06  l2-error=2.02117
+Solver::NKA        |   13: error=2.43261e-06  l2-error=0.812467
+Solver::NKA        |   14: error=6.46655e-07  l2-error=0.236753
+Solver::NKA        |   Solver converged: 14 itrs, error=6.46655e-07
+TI::BDF1           |  success: 14 nonlinear itrs error=6.46655e-07
+TI::BDF1           |  TS:68 FS:0 NS:199 PC:80 199 LS:0 dt:1.0000e-02 1.1684e+03
+RichardsPK         |   reservoir water mass=149.004 ton, total influx=1.93766 ton
+TimeStepManager    |   Accepted proposed dT=0.324562 h
+CycleDriver        |  New time = 2.57725 h
+CycleDriver        |  
+CycleDriver        |  Cycle 69: time = 2.57725 h, dt = 0.324562 h
+TI::BDF1           |  step 69 T = 9278.09 [sec]  dT = 1168.42
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.0025928  l2-error=1806.27
+Solver::NKA        |   2: error=0.000545745  l2-error=659.133
+Solver::NKA        |   3: error=0.000352948  l2-error=203.866
+Solver::NKA        |   4: error=0.00017071  l2-error=59.3901
+Solver::NKA        |   5: error=4.20951e-05  l2-error=43.9048
+Solver::NKA        |   6: error=1.73849e-05  l2-error=21.7189
+Solver::NKA        |   7: error=6.13803e-06  l2-error=10.0144
+Solver::NKA        |   8: error=4.95211e-06  l2-error=5.15157
+Solver::NKA        |   9: error=1.57572e-07  l2-error=0.187519
+Solver::NKA        |   Solver converged: 9 itrs, error=1.57572e-07
+TI::BDF1           |  success: 9 nonlinear itrs error=1.57572e-07
+TI::BDF1           |  TS:69 FS:0 NS:208 PC:82 208 LS:0 dt:1.0000e-02 1.1684e+03
+RichardsPK         |   reservoir water mass=149.132 ton, total influx=2.08028 ton
+TimeStepManager    |   Accepted proposed dT=0.389474 h
+CycleDriver        |  New time = 2.90181 h
+CycleDriver        |  
+CycleDriver        |  Cycle 70: time = 2.90181 h, dt = 0.389474 h
+TI::BDF1           |  step 70 T = 10446.5 [sec]  dT = 1402.11
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00241653  l2-error=3563.09
+Solver::NKA        |   2: error=0.000477814  l2-error=562.96
+Solver::NKA        |   3: error=0.000386082  l2-error=172.847
+Solver::NKA        |   4: error=0.000171687  l2-error=69.9306
+Solver::NKA        |   5: error=4.88231e-05  l2-error=29.1931
+Solver::NKA        |   6: error=3.03072e-05  l2-error=17.7766
+Solver::NKA        |   7: error=1.12146e-05  l2-error=7.42414
+Solver::NKA        |   8: error=4.31572e-06  l2-error=3.02338
+Solver::NKA        |   9: error=2.34103e-06  l2-error=1.54273
+Solver::NKA        |   10: error=2.98576e-07  l2-error=0.240404
+Solver::NKA        |   Solver converged: 10 itrs, error=2.98576e-07
+TI::BDF1           |  success: 10 nonlinear itrs error=2.98576e-07
+TI::BDF1           |  TS:70 FS:0 NS:218 PC:84 218 LS:0 dt:1.0000e-02 1.4021e+03
+RichardsPK         |   reservoir water mass=149.269 ton, total influx=2.23435 ton
+TimeStepManager    |   Accepted proposed dT=0.389474 h
+CycleDriver        |  New time = 3.29128 h
+CycleDriver        |  
+CycleDriver        |  Cycle 71: time = 3.29128 h, dt = 0.389474 h
+TI::BDF1           |  step 71 T = 11848.6 [sec]  dT = 1402.11
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00155081  l2-error=2098.05
+Solver::NKA        |   2: error=0.00049183  l2-error=309.882
+Solver::NKA        |   3: error=8.95108e-05  l2-error=88.1954
+Solver::NKA        |   4: error=2.08095e-05  l2-error=28.806
+Solver::NKA        |   5: error=1.08141e-05  l2-error=6.76048
+Solver::NKA        |   6: error=5.17618e-07  l2-error=0.335987
+Solver::NKA        |   Solver converged: 6 itrs, error=5.17618e-07
+TI::BDF1           |  success: 6 nonlinear itrs error=5.17618e-07
+TI::BDF1           |  TS:71 FS:0 NS:224 PC:85 224 LS:0 dt:1.0000e-02 1.4021e+03
+RichardsPK         |   reservoir water mass=149.39 ton, total influx=2.37097 ton
+TimeStepManager    |   Accepted proposed dT=0.467369 h
+CycleDriver        |  New time = 3.68076 h
+CycleDriver        |  
+CycleDriver        |  Cycle 72: time = 3.68076 h, dt = 0.467369 h
+TI::BDF1           |  step 72 T = 13250.7 [sec]  dT = 1682.53
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.0022724  l2-error=3006.37
+Solver::NKA        |   2: error=0.000388959  l2-error=521.315
+Solver::NKA        |   3: error=0.000293286  l2-error=206.901
+Solver::NKA        |   4: error=9.94768e-05  l2-error=61.2218
+Solver::NKA        |   5: error=4.1475e-05  l2-error=37.1431
+Solver::NKA        |   6: error=1.94525e-05  l2-error=12.0026
+Solver::NKA        |   7: error=1.36995e-05  l2-error=17.045
+Solver::NKA        |   8: error=7.65673e-06  l2-error=7.91261
+Solver::NKA        |   9: error=2.13934e-09  l2-error=0.00264685
+Solver::NKA        |   Solver converged: 9 itrs, error=2.13934e-09
+TI::BDF1           |  success: 9 nonlinear itrs error=2.13934e-09
+TI::BDF1           |  TS:72 FS:0 NS:233 PC:87 233 LS:0 dt:1.0000e-02 1.6825e+03
+RichardsPK         |   reservoir water mass=149.516 ton, total influx=2.51618 ton
+TimeStepManager    |   Accepted proposed dT=0.560843 h
+CycleDriver        |  New time = 4.14813 h
+CycleDriver        |  
+CycleDriver        |  Cycle 73: time = 4.14813 h, dt = 0.560843 h
+TI::BDF1           |  step 73 T = 14933.3 [sec]  dT = 2019.03
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00180001  l2-error=2605.44
+Solver::NKA        |   2: error=0.00045541  l2-error=245.048
+Solver::NKA        |   3: error=0.000214304  l2-error=127.031
+Solver::NKA        |   4: error=6.52707e-05  l2-error=51.1677
+Solver::NKA        |   5: error=4.16723e-05  l2-error=29.5673
+Solver::NKA        |   6: error=1.76851e-05  l2-error=11.4088
+Solver::NKA        |   7: error=3.78236e-06  l2-error=2.07432
+Solver::NKA        |   8: error=1.38416e-06  l2-error=0.86521
+Solver::NKA        |   9: error=6.13076e-07  l2-error=0.228653
+Solver::NKA        |   Solver converged: 9 itrs, error=6.13076e-07
+TI::BDF1           |  success: 9 nonlinear itrs error=6.13076e-07
+TI::BDF1           |  TS:73 FS:0 NS:242 PC:89 242 LS:0 dt:1.0000e-02 2.0190e+03
+RichardsPK         |   reservoir water mass=149.644 ton, total influx=2.66762 ton
+TimeStepManager    |   Accepted proposed dT=0.673011 h
+CycleDriver        |  New time = 4.70897 h
+CycleDriver        |  
+CycleDriver        |  Cycle 74: time = 4.70897 h, dt = 0.673011 h
+TI::BDF1           |  step 74 T = 16952.3 [sec]  dT = 2422.84
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00191194  l2-error=4051.69
+Solver::NKA        |   2: error=0.000752758  l2-error=596.138
+Solver::NKA        |   3: error=0.000226545  l2-error=248.658
+Solver::NKA        |   4: error=0.000123791  l2-error=67.815
+Solver::NKA        |   5: error=2.43038e-05  l2-error=51.4401
+Solver::NKA        |   6: error=1.29451e-05  l2-error=9.55827
+Solver::NKA        |   7: error=9.45475e-06  l2-error=10.6076
+Solver::NKA        |   8: error=2.7338e-06  l2-error=1.48013
+Solver::NKA        |   9: error=1.84643e-06  l2-error=1.81025
+Solver::NKA        |   10: error=1.12732e-06  l2-error=0.657345
+Solver::NKA        |   11: error=2.94983e-06  l2-error=1.76355
+Solver::NKA        |   12: error=2.89945e-07  l2-error=0.1614
+Solver::NKA        |   Solver converged: 12 itrs, error=2.89945e-07
+TI::BDF1           |  success: 12 nonlinear itrs error=2.89945e-07
+TI::BDF1           |  TS:74 FS:0 NS:254 PC:91 254 LS:0 dt:1.0000e-02 2.4228e+03
+RichardsPK         |   reservoir water mass=149.771 ton, total influx=2.82158 ton
+TimeStepManager    |   Accepted proposed dT=0.673011 h
+CycleDriver        |  New time = 0.224249 d
+CycleDriver        |  
+CycleDriver        |  Cycle 75: time = 0.224249 d, dt = 0.673011 h
+TI::BDF1           |  step 75 T = 19375.1 [sec]  dT = 2422.84
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00184868  l2-error=2637.45
+Solver::NKA        |   2: error=0.000567889  l2-error=292.95
+Solver::NKA        |   3: error=0.000129808  l2-error=124.706
+Solver::NKA        |   4: error=6.36326e-05  l2-error=79.4242
+Solver::NKA        |   5: error=3.52968e-05  l2-error=19.2699
+Solver::NKA        |   6: error=3.85536e-05  l2-error=19.7306
+Solver::NKA        |   7: error=1.39121e-05  l2-error=8.18664
+Solver::NKA        |   8: error=8.0641e-07  l2-error=0.623258
+Solver::NKA        |   Solver converged: 8 itrs, error=8.0641e-07
+TI::BDF1           |  success: 8 nonlinear itrs error=8.0641e-07
+TI::BDF1           |  TS:75 FS:0 NS:262 PC:93 262 LS:0 dt:1.0000e-02 2.4228e+03
+RichardsPK         |   reservoir water mass=149.877 ton, total influx=2.94886 ton
+TimeStepManager    |   Accepted proposed dT=0.807613 h
+CycleDriver        |  New time = 0.252291 d
+CycleDriver        |  
+CycleDriver        |  Cycle 76: time = 0.252291 d, dt = 0.807613 h
+TI::BDF1           |  step 76 T = 21798 [sec]  dT = 2907.41
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00181322  l2-error=2506.39
+Solver::NKA        |   2: error=0.000114841  l2-error=227.386
+Solver::NKA        |   3: error=2.82742e-05  l2-error=41.6993
+Solver::NKA        |   4: error=5.84319e-06  l2-error=2.86713
+Solver::NKA        |   5: error=1.33428e-06  l2-error=0.535237
+Solver::NKA        |   6: error=1.72988e-07  l2-error=0.0456903
+Solver::NKA        |   Solver converged: 6 itrs, error=1.72988e-07
+TI::BDF1           |  success: 6 nonlinear itrs error=1.72988e-07
+TI::BDF1           |  TS:76 FS:0 NS:268 PC:94 268 LS:0 dt:1.0000e-02 2.9074e+03
+RichardsPK         |   reservoir water mass=149.98 ton, total influx=3.07604 ton
+TimeStepManager    |   Accepted proposed dT=0.969136 h
+CycleDriver        |  New time = 0.285942 d
+CycleDriver        |  
+CycleDriver        |  Cycle 77: time = 0.285942 d, dt = 0.969136 h
+TI::BDF1           |  step 77 T = 24705.4 [sec]  dT = 3488.89
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00173626  l2-error=3734.83
+Solver::NKA        |   2: error=0.000637474  l2-error=261.841
+Solver::NKA        |   3: error=0.000105928  l2-error=70.5808
+Solver::NKA        |   4: error=4.57765e-05  l2-error=33.5374
+Solver::NKA        |   5: error=2.72264e-06  l2-error=3.19539
+Solver::NKA        |   6: error=3.3054e-07  l2-error=0.155067
+Solver::NKA        |   Solver converged: 6 itrs, error=3.3054e-07
+TI::BDF1           |  success: 6 nonlinear itrs error=3.3054e-07
+TI::BDF1           |  TS:77 FS:0 NS:274 PC:95 274 LS:0 dt:1.0000e-02 3.4889e+03
+RichardsPK         |   reservoir water mass=150.077 ton, total influx=3.19908 ton
+TimeStepManager    |   Accepted proposed dT=1.16296 h
+CycleDriver        |  New time = 0.326322 d
+CycleDriver        |  
+CycleDriver        |  Cycle 78: time = 0.326322 d, dt = 1.16296 h
+TI::BDF1           |  step 78 T = 28194.3 [sec]  dT = 4186.67
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00170582  l2-error=3581.29
+Solver::NKA        |   2: error=0.000508527  l2-error=379.453
+Solver::NKA        |   3: error=0.000197851  l2-error=149.397
+Solver::NKA        |   4: error=8.48974e-05  l2-error=41.9081
+Solver::NKA        |   5: error=2.48913e-05  l2-error=23.1715
+Solver::NKA        |   6: error=4.4417e-06  l2-error=3.6787
+Solver::NKA        |   7: error=5.91143e-07  l2-error=0.31329
+Solver::NKA        |   Solver converged: 7 itrs, error=5.91143e-07
+TI::BDF1           |  success: 7 nonlinear itrs error=5.91143e-07
+TI::BDF1           |  TS:78 FS:0 NS:281 PC:97 281 LS:0 dt:1.0000e-02 4.1867e+03
+RichardsPK         |   reservoir water mass=150.166 ton, total influx=3.3152 ton
+TimeStepManager    |   Accepted proposed dT=1.39556 h
+CycleDriver        |  New time = 0.374779 d
+CycleDriver        |  
+CycleDriver        |  Cycle 79: time = 0.374779 d, dt = 1.39556 h
+TI::BDF1           |  step 79 T = 32380.9 [sec]  dT = 5024
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.0016177  l2-error=3188.27
+Solver::NKA        |   2: error=0.000538039  l2-error=344.942
+Solver::NKA        |   3: error=0.000146665  l2-error=101.041
+Solver::NKA        |   4: error=3.56114e-05  l2-error=22.0717
+Solver::NKA        |   5: error=1.89312e-05  l2-error=12.5013
+Solver::NKA        |   6: error=6.93858e-07  l2-error=0.725729
+Solver::NKA        |   Solver converged: 6 itrs, error=6.93858e-07
+TI::BDF1           |  success: 6 nonlinear itrs error=6.93858e-07
+TI::BDF1           |  TS:79 FS:0 NS:287 PC:98 287 LS:0 dt:1.0000e-02 5.0240e+03
+RichardsPK         |   reservoir water mass=150.247 ton, total influx=3.42261 ton
+TimeStepManager    |   Accepted proposed dT=1.67467 h
+CycleDriver        |  New time = 0.432927 d
+CycleDriver        |  
+CycleDriver        |  Cycle 80: time = 0.432927 d, dt = 1.67467 h
+TI::BDF1           |  step 80 T = 37404.9 [sec]  dT = 6028.8
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00175622  l2-error=2900.04
+Solver::NKA        |   2: error=0.000164137  l2-error=239.475
+Solver::NKA        |   3: error=0.000146759  l2-error=58.0995
+Solver::NKA        |   4: error=6.72762e-05  l2-error=29.1671
+Solver::NKA        |   5: error=4.52292e-06  l2-error=1.43711
+Solver::NKA        |   6: error=6.55241e-07  l2-error=0.258647
+Solver::NKA        |   Solver converged: 6 itrs, error=6.55241e-07
+TI::BDF1           |  success: 6 nonlinear itrs error=6.55241e-07
+TI::BDF1           |  TS:80 FS:0 NS:293 PC:99 293 LS:0 dt:1.0000e-02 6.0288e+03
+RichardsPK         |   reservoir water mass=150.317 ton, total influx=3.51909 ton
+TimeStepManager    |   Accepted proposed dT=2.0096 h
+CycleDriver        |  New time = 0.502705 d
+CycleDriver        |  
+CycleDriver        |  Cycle 81: time = 0.502705 d, dt = 2.0096 h
+TI::BDF1           |  step 81 T = 43433.7 [sec]  dT = 7234.56
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00149356  l2-error=2645.48
+Solver::NKA        |   2: error=9.88465e-05  l2-error=203.699
+Solver::NKA        |   3: error=9.66505e-05  l2-error=43.6878
+Solver::NKA        |   4: error=4.91831e-05  l2-error=22.6451
+Solver::NKA        |   5: error=1.94987e-05  l2-error=8.37266
+Solver::NKA        |   6: error=1.90646e-07  l2-error=0.062065
+Solver::NKA        |   Solver converged: 6 itrs, error=1.90646e-07
+TI::BDF1           |  success: 6 nonlinear itrs error=1.90646e-07
+TI::BDF1           |  TS:81 FS:0 NS:299 PC:100 299 LS:0 dt:1.0000e-02 7.2346e+03
+RichardsPK         |   reservoir water mass=150.377 ton, total influx=3.60366 ton
+TimeStepManager    |   Accepted proposed dT=2.41152 h
+CycleDriver        |  New time = 0.586439 d
+CycleDriver        |  
+CycleDriver        |  Cycle 82: time = 0.586439 d, dt = 2.41152 h
+TI::BDF1           |  step 82 T = 50668.3 [sec]  dT = 8681.47
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00150141  l2-error=2408.28
+Solver::NKA        |   2: error=0.000345443  l2-error=318.765
+Solver::NKA        |   3: error=0.000143653  l2-error=129.544
+Solver::NKA        |   4: error=6.07883e-05  l2-error=52.26
+Solver::NKA        |   5: error=7.13129e-06  l2-error=11.8577
+Solver::NKA        |   6: error=3.65552e-06  l2-error=2.92727
+Solver::NKA        |   7: error=7.98271e-06  l2-error=5.96764
+Solver::NKA        |   8: error=1.10438e-05  l2-error=7.52469
+Solver::NKA        |   9: error=1.38417e-06  l2-error=1.21994
+Solver::NKA        |   10: error=3.13091e-07  l2-error=0.373281
+Solver::NKA        |   Solver converged: 10 itrs, error=3.13091e-07
+TI::BDF1           |  success: 10 nonlinear itrs error=3.13091e-07
+TI::BDF1           |  TS:82 FS:0 NS:309 PC:102 309 LS:0 dt:1.0000e-02 8.6815e+03
+RichardsPK         |   reservoir water mass=150.428 ton, total influx=3.67579 ton
+TimeStepManager    |   Accepted proposed dT=2.41152 h
+CycleDriver        |  New time = 0.686919 d
+CycleDriver        |  
+CycleDriver        |  Cycle 83: time = 0.686919 d, dt = 2.41152 h
+TI::BDF1           |  step 83 T = 59349.8 [sec]  dT = 8681.47
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00111704  l2-error=1558.05
+Solver::NKA        |   2: error=0.000391166  l2-error=252.342
+Solver::NKA        |   3: error=0.000207468  l2-error=122.765
+Solver::NKA        |   4: error=6.24565e-05  l2-error=78.6251
+Solver::NKA        |   5: error=1.80224e-05  l2-error=11.2664
+Solver::NKA        |   6: error=3.51624e-06  l2-error=2.15038
+Solver::NKA        |   7: error=1.22818e-06  l2-error=0.905294
+Solver::NKA        |   8: error=4.23314e-07  l2-error=0.299839
+Solver::NKA        |   Solver converged: 8 itrs, error=4.23314e-07
+TI::BDF1           |  success: 8 nonlinear itrs error=4.23314e-07
+TI::BDF1           |  TS:83 FS:0 NS:317 PC:104 317 LS:0 dt:1.0000e-02 8.6815e+03
+RichardsPK         |   reservoir water mass=150.466 ton, total influx=3.72679 ton
+TimeStepManager    |   Accepted proposed dT=2.89382 h
+CycleDriver        |  New time = 0.787399 d
+CycleDriver        |  
+CycleDriver        |  Cycle 84: time = 0.787399 d, dt = 2.89382 h
+TI::BDF1           |  step 84 T = 68031.2 [sec]  dT = 10417.8
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00109029  l2-error=1505.84
+Solver::NKA        |   2: error=0.000265233  l2-error=212.213
+Solver::NKA        |   3: error=0.000140356  l2-error=100.151
+Solver::NKA        |   4: error=6.83388e-05  l2-error=63.7479
+Solver::NKA        |   5: error=3.46719e-05  l2-error=21.0374
+Solver::NKA        |   6: error=4.3408e-06  l2-error=2.91047
+Solver::NKA        |   7: error=1.16214e-06  l2-error=1.57128
+Solver::NKA        |   8: error=3.44669e-07  l2-error=0.345062
+Solver::NKA        |   Solver converged: 8 itrs, error=3.44669e-07
+TI::BDF1           |  success: 8 nonlinear itrs error=3.44669e-07
+TI::BDF1           |  TS:84 FS:0 NS:325 PC:106 325 LS:0 dt:1.0000e-02 1.0418e+04
+RichardsPK         |   reservoir water mass=150.499 ton, total influx=3.77211 ton
+TimeStepManager    |   Accepted proposed dT=3.47259 h
+CycleDriver        |  New time = 0.907975 d
+CycleDriver        |  
+CycleDriver        |  Cycle 85: time = 0.907975 d, dt = 3.47259 h
+TI::BDF1           |  step 85 T = 78449 [sec]  dT = 12501.3
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00107938  l2-error=1501.94
+Solver::NKA        |   2: error=0.000325032  l2-error=173.736
+Solver::NKA        |   3: error=0.00014377  l2-error=89.9011
+Solver::NKA        |   4: error=7.45373e-05  l2-error=82.9549
+Solver::NKA        |   5: error=4.89226e-05  l2-error=34.1707
+Solver::NKA        |   6: error=1.55916e-05  l2-error=8.34923
+Solver::NKA        |   7: error=3.21005e-06  l2-error=6.37032
+Solver::NKA        |   8: error=1.12528e-05  l2-error=10.5026
+Solver::NKA        |   9: error=2.17324e-06  l2-error=4.34215
+Solver::NKA        |   10: error=2.04979e-06  l2-error=4.76122
+Solver::NKA        |   11: error=1.54471e-06  l2-error=3.94308
+Solver::NKA        |   12: error=9.90442e-07  l2-error=2.14516
+Solver::NKA        |   Solver converged: 12 itrs, error=9.90442e-07
+TI::BDF1           |  success: 12 nonlinear itrs error=9.90442e-07
+TI::BDF1           |  TS:85 FS:0 NS:337 PC:108 337 LS:0 dt:1.0000e-02 1.2501e+04
+RichardsPK         |   reservoir water mass=150.53 ton, total influx=3.81236 ton
+TimeStepManager    |   Accepted proposed dT=3.47259 h
+CycleDriver        |  New time = 1.05267 d
+CycleDriver        |  
+CycleDriver        |  Cycle 86: time = 1.05267 d, dt = 3.47259 h
+TI::BDF1           |  step 86 T = 90950.3 [sec]  dT = 12501.3
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000756213  l2-error=1111.99
+Solver::NKA        |   2: error=0.000269718  l2-error=122.317
+Solver::NKA        |   3: error=0.000121706  l2-error=64.3119
+Solver::NKA        |   4: error=0.000294085  l2-error=190.552
+Solver::NKA        |   5: error=0.000193459  l2-error=103.563
+Solver::NKA        |   6: error=4.62622e-05  l2-error=26.9471
+Solver::NKA        |   7: error=5.67755e-05  l2-error=29.5257
+Solver::NKA        |   8: error=4.19744e-05  l2-error=21.891
+Solver::NKA        |   9: error=3.85371e-06  l2-error=2.05599
+Solver::NKA        |   10: error=6.6089e-06  l2-error=3.74631
+Solver::NKA        |   11: error=1.72022e-07  l2-error=0.466413
+Solver::NKA        |   Solver converged: 11 itrs, error=1.72022e-07
+TI::BDF1           |  success: 11 nonlinear itrs error=1.72022e-07
+TI::BDF1           |  TS:86 FS:0 NS:348 PC:110 348 LS:0 dt:1.0000e-02 1.2501e+04
+RichardsPK         |   reservoir water mass=150.553 ton, total influx=3.84252 ton
+TimeStepManager    |   Accepted proposed dT=3.47259 h
+CycleDriver        |  New time = 1.19736 d
+CycleDriver        |  
+CycleDriver        |  Cycle 87: time = 1.19736 d, dt = 3.47259 h
+TI::BDF1           |  step 87 T = 103452 [sec]  dT = 12501.3
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000544209  l2-error=845.491
+Solver::NKA        |   2: error=1.20311e-05  l2-error=38.6871
+Solver::NKA        |   3: error=1.12813e-05  l2-error=40.9991
+Solver::NKA        |   4: error=9.11874e-07  l2-error=2.02069
+Solver::NKA        |   Solver converged: 4 itrs, error=9.11874e-07
+TI::BDF1           |  success: 4 nonlinear itrs error=9.11874e-07
+TI::BDF1           |  TS:87 FS:0 NS:352 PC:111 352 LS:0 dt:1.0000e-02 1.2501e+04
+RichardsPK         |   reservoir water mass=150.572 ton, total influx=3.86608 ton
+TimeStepManager    |   Accepted proposed dT=4.16711 h
+CycleDriver        |  New time = 1.34205 d
+CycleDriver        |  
+CycleDriver        |  Cycle 88: time = 1.34205 d, dt = 4.16711 h
+TI::BDF1           |  step 88 T = 115953 [sec]  dT = 15001.6
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000580351  l2-error=926.08
+Solver::NKA        |   2: error=0.000180053  l2-error=109.887
+Solver::NKA        |   3: error=8.51637e-05  l2-error=56.9042
+Solver::NKA        |   4: error=9.38641e-05  l2-error=67.8107
+Solver::NKA        |   5: error=0.00010651  l2-error=73.32
+Solver::NKA        |   6: error=2.01682e-05  l2-error=14.6695
+Solver::NKA        |   7: error=9.20592e-07  l2-error=0.532471
+Solver::NKA        |   Solver converged: 7 itrs, error=9.20592e-07
+TI::BDF1           |  success: 7 nonlinear itrs error=9.20592e-07
+TI::BDF1           |  TS:88 FS:0 NS:359 PC:113 359 LS:0 dt:1.0000e-02 1.5002e+04
+RichardsPK         |   reservoir water mass=150.591 ton, total influx=3.88895 ton
+TimeStepManager    |   Accepted proposed dT=0.208355 d
+CycleDriver        |  New time = 1.51568 d
+CycleDriver        |  
+CycleDriver        |  Cycle 89: time = 1.51568 d, dt = 0.208355 d
+TI::BDF1           |  step 89 T = 130955 [sec]  dT = 18001.9
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000654055  l2-error=1004.77
+Solver::NKA        |   2: error=0.000121659  l2-error=61.3843
+Solver::NKA        |   3: error=5.72652e-05  l2-error=31.7107
+Solver::NKA        |   4: error=1.36386e-05  l2-error=10.154
+Solver::NKA        |   5: error=0.000108385  l2-error=84.454
+Solver::NKA        |   6: error=9.85519e-05  l2-error=78.5093
+Solver::NKA        |   7: error=2.46451e-05  l2-error=19.3282
+Solver::NKA        |   8: error=4.7559e-05  l2-error=26.3624
+Solver::NKA        |   9: error=1.98495e-05  l2-error=10.5951
+Solver::NKA        |   10: error=2.53427e-05  l2-error=15.2581
+Solver::NKA        |   11: error=1.53361e-07  l2-error=0.0912782
+Solver::NKA        |   Solver converged: 11 itrs, error=1.53361e-07
+TI::BDF1           |  success: 11 nonlinear itrs error=1.53361e-07
+TI::BDF1           |  TS:89 FS:0 NS:370 PC:115 370 LS:0 dt:1.0000e-02 1.8002e+04
+RichardsPK         |   reservoir water mass=150.609 ton, total influx=3.91135 ton
+TimeStepManager    |   Accepted proposed dT=0.208355 d
+CycleDriver        |  New time = 1.72403 d
+CycleDriver        |  
+CycleDriver        |  Cycle 90: time = 1.72403 d, dt = 0.208355 d
+TI::BDF1           |  step 90 T = 148956 [sec]  dT = 18001.9
+TI::BDF1           |  preconditioner lag is 5 out of 5
+RichardsPK         |   [1;32msaturation/pressure clipped in 0/2 cells[0m
+Solver::NKA        |   1: error=0.00050128  l2-error=790.13
+Solver::NKA        |   2: error=3.91099e-06  l2-error=8.8858
+Solver::NKA        |   3: error=5.93814e-06  l2-error=11.325
+Solver::NKA        |   4: error=3.18381e-06  l2-error=3.47492
+Solver::NKA        |   5: error=1.8607e-06  l2-error=3.30586
+Solver::NKA        |   6: error=4.41223e-07  l2-error=0.506333
+Solver::NKA        |   Solver converged: 6 itrs, error=4.41223e-07
+TI::BDF1           |  success: 6 nonlinear itrs error=4.41223e-07
+TI::BDF1           |  TS:90 FS:0 NS:376 PC:116 376 LS:0 dt:1.0000e-02 1.8002e+04
+RichardsPK         |   reservoir water mass=150.625 ton, total influx=3.92979 ton
+TimeStepManager    |   Accepted proposed dT=0.250026 d
+CycleDriver        |  New time = 1.93239 d
+CycleDriver        |  
+CycleDriver        |  Cycle 91: time = 1.93239 d, dt = 0.250026 d
+TI::BDF1           |  step 91 T = 166958 [sec]  dT = 21602.3
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000546308  l2-error=875.507
+Solver::NKA        |   2: error=0.000150055  l2-error=80.6144
+Solver::NKA        |   3: error=7.34793e-05  l2-error=40.6284
+Solver::NKA        |   4: error=7.76232e-05  l2-error=43.1886
+Solver::NKA        |   5: error=5.55897e-05  l2-error=30.7787
+Solver::NKA        |   6: error=1.28716e-05  l2-error=7.29048
+Solver::NKA        |   7: error=1.6952e-05  l2-error=8.93597
+Solver::NKA        |   8: error=1.49627e-05  l2-error=7.9463
+Solver::NKA        |   9: error=9.48298e-07  l2-error=0.525974
+Solver::NKA        |   Solver converged: 9 itrs, error=9.48298e-07
+TI::BDF1           |  success: 9 nonlinear itrs error=9.48298e-07
+TI::BDF1           |  TS:91 FS:0 NS:385 PC:118 385 LS:0 dt:1.0000e-02 2.1602e+04
+RichardsPK         |   reservoir water mass=150.641 ton, total influx=3.9485 ton
+TimeStepManager    |   Accepted proposed dT=0.300032 d
+CycleDriver        |  New time = 2.18241 d
+CycleDriver        |  
+CycleDriver        |  Cycle 92: time = 2.18241 d, dt = 0.300032 d
+TI::BDF1           |  step 92 T = 188561 [sec]  dT = 25922.7
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000574176  l2-error=966.815
+Solver::NKA        |   2: error=0.000103807  l2-error=53.7568
+Solver::NKA        |   3: error=5.02964e-05  l2-error=27.3598
+Solver::NKA        |   4: error=5.3652e-05  l2-error=30.4526
+Solver::NKA        |   5: error=4.2859e-05  l2-error=23.8987
+Solver::NKA        |   6: error=9.41437e-06  l2-error=5.39799
+Solver::NKA        |   7: error=3.30673e-05  l2-error=18.9717
+Solver::NKA        |   8: error=2.55135e-05  l2-error=14.6203
+Solver::NKA        |   9: error=4.65486e-06  l2-error=2.70401
+Solver::NKA        |   10: error=2.02418e-05  l2-error=11.7845
+Solver::NKA        |   11: error=1.70279e-05  l2-error=9.91481
+Solver::NKA        |   12: error=5.73212e-06  l2-error=3.36837
+Solver::NKA        |   13: error=2.67068e-06  l2-error=1.57943
+Solver::NKA        |   14: error=2.0082e-05  l2-error=11.6975
+Solver::NKA        |   15: error=1.68521e-05  l2-error=9.81158
+Solver::NKA        |   16: error=6.04656e-06  l2-error=3.55226
+Solver::NKA        |   17: error=2.78345e-06  l2-error=1.64038
+Solver::NKA        |   18: error=2.01074e-05  l2-error=11.7229
+Solver::NKA        |   19: error=3.45005e-07  l2-error=0.17441
+Solver::NKA        |   Solver converged: 19 itrs, error=3.45005e-07
+TI::BDF1           |  success: 19 nonlinear itrs error=3.45005e-07
+TI::BDF1           |  TS:92 FS:0 NS:404 PC:122 404 LS:0 dt:1.0000e-02 2.5923e+04
+RichardsPK         |   reservoir water mass=150.657 ton, total influx=3.96747 ton
+TimeStepManager    |   Accepted proposed dT=0.240025 d
+CycleDriver        |  New time = 2.48245 d
+CycleDriver        |  
+CycleDriver        |  Cycle 93: time = 2.48245 d, dt = 0.240025 d
+TI::BDF1           |  step 93 T = 214483 [sec]  dT = 20738.2
+TI::BDF1           |  preconditioner lag is 4 out of 5
+Solver::NKA        |   1: error=0.000298783  l2-error=516.99
+Solver::NKA        |   2: error=9.70101e-06  l2-error=5.18517
+Solver::NKA        |   3: error=8.54087e-06  l2-error=4.71578
+Solver::NKA        |   4: error=9.03671e-06  l2-error=5.66681
+Solver::NKA        |   5: error=1.89002e-05  l2-error=10.4945
+Solver::NKA        |   6: error=6.65687e-06  l2-error=3.3948
+Solver::NKA        |   7: error=3.42637e-06  l2-error=5.10333
+Solver::NKA        |   8: error=8.38572e-06  l2-error=4.29631
+Solver::NKA        |   9: error=8.83581e-06  l2-error=5.0406
+Solver::NKA        |   10: error=2.16448e-06  l2-error=1.26875
+Solver::NKA        |   11: error=8.2166e-06  l2-error=4.75269
+Solver::NKA        |   12: error=6.72656e-06  l2-error=3.89098
+Solver::NKA        |   13: error=1.1177e-06  l2-error=0.645683
+Solver::NKA        |   14: error=6.96859e-06  l2-error=4.02388
+Solver::NKA        |   15: error=6.3031e-06  l2-error=3.6423
+Solver::NKA        |   16: error=5.56455e-07  l2-error=0.322793
+Solver::NKA        |   Solver converged: 16 itrs, error=5.56455e-07
+TI::BDF1           |  success: 16 nonlinear itrs error=5.56455e-07
+TI::BDF1           |  TS:93 FS:0 NS:420 PC:126 420 LS:0 dt:1.0000e-02 2.5923e+04
+RichardsPK         |   reservoir water mass=150.668 ton, total influx=3.9803 ton
+TimeStepManager    |   Accepted proposed dT=4.60849 h
+CycleDriver        |  New time = 2.72247 d
+CycleDriver        |  
+CycleDriver        |  Cycle 94: time = 2.72247 d, dt = 4.60849 h
+TI::BDF1           |  step 94 T = 235222 [sec]  dT = 16590.6
+TI::BDF1           |  preconditioner lag is 3 out of 5
+Solver::NKA        |   1: error=0.00015879  l2-error=283.988
+Solver::NKA        |   2: error=2.53018e-07  l2-error=1.74333
+Solver::NKA        |   Solver converged: 2 itrs, error=2.53018e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=2.53018e-07
+TI::BDF1           |  TS:94 FS:0 NS:422 PC:127 422 LS:0 dt:1.0000e-02 2.5923e+04
+RichardsPK         |   reservoir water mass=150.676 ton, total influx=3.98938 ton
+TimeStepManager    |   Accepted proposed dT=0.230424 d
+CycleDriver        |  New time = 2.91449 d
+CycleDriver        |  
+CycleDriver        |  Cycle 95: time = 2.91449 d, dt = 0.230424 d
+TI::BDF1           |  step 95 T = 251812 [sec]  dT = 19908.7
+TI::BDF1           |  preconditioner lag is 4 out of 5
+Solver::NKA        |   1: error=0.000185253  l2-error=342.247
+Solver::NKA        |   2: error=2.89914e-07  l2-error=1.43383
+Solver::NKA        |   Solver converged: 2 itrs, error=2.89914e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=2.89914e-07
+TI::BDF1           |  TS:95 FS:0 NS:424 PC:128 424 LS:0 dt:1.0000e-02 2.5923e+04
+RichardsPK         |   reservoir water mass=150.686 ton, total influx=3.99935 ton
+TimeStepManager    |   Accepted proposed dT=0.276509 d
+CycleDriver        |  New time = 3.14492 d
+CycleDriver        |  
+CycleDriver        |  Cycle 96: time = 3.14492 d, dt = 0.276509 d
+TI::BDF1           |  step 96 T = 271721 [sec]  dT = 23890.4
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000226165  l2-error=415.232
+Solver::NKA        |   2: error=3.9217e-07  l2-error=1.86626
+Solver::NKA        |   Solver converged: 2 itrs, error=3.9217e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=3.9217e-07
+TI::BDF1           |  TS:96 FS:0 NS:426 PC:129 426 LS:0 dt:1.0000e-02 2.5923e+04
+RichardsPK         |   reservoir water mass=150.695 ton, total influx=4.01023 ton
+TimeStepManager    |   Accepted proposed dT=0.331811 d
+CycleDriver        |  New time = 3.42143 d
+CycleDriver        |  
+CycleDriver        |  Cycle 97: time = 3.42143 d, dt = 0.331811 d
+TI::BDF1           |  step 97 T = 295611 [sec]  dT = 28668.5
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000269451  l2-error=496.959
+Solver::NKA        |   2: error=5.29898e-07  l2-error=1.59022
+Solver::NKA        |   Solver converged: 2 itrs, error=5.29898e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=5.29898e-07
+TI::BDF1           |  TS:97 FS:0 NS:428 PC:130 428 LS:0 dt:1.0000e-02 2.8668e+04
+RichardsPK         |   reservoir water mass=150.706 ton, total influx=4.02202 ton
+TimeStepManager    |   Accepted proposed dT=0.398173 d
+CycleDriver        |  New time = 3.75324 d
+CycleDriver        |  
+CycleDriver        |  Cycle 98: time = 3.75324 d, dt = 0.398173 d
+TI::BDF1           |  step 98 T = 324280 [sec]  dT = 34402.2
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000311191  l2-error=586.516
+Solver::NKA        |   2: error=6.57428e-07  l2-error=2.57369
+Solver::NKA        |   Solver converged: 2 itrs, error=6.57428e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=6.57428e-07
+TI::BDF1           |  TS:98 FS:0 NS:430 PC:131 430 LS:0 dt:1.0000e-02 3.4402e+04
+RichardsPK         |   reservoir water mass=150.717 ton, total influx=4.03471 ton
+TimeStepManager    |   Accepted proposed dT=0.477808 d
+CycleDriver        |  New time = 4.15141 d
+CycleDriver        |  
+CycleDriver        |  Cycle 99: time = 4.15141 d, dt = 0.477808 d
+TI::BDF1           |  step 99 T = 358682 [sec]  dT = 41282.6
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000356423  l2-error=683.155
+Solver::NKA        |   2: error=8.08215e-07  l2-error=2.66907
+Solver::NKA        |   Solver converged: 2 itrs, error=8.08215e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=8.08215e-07
+TI::BDF1           |  TS:99 FS:0 NS:432 PC:132 432 LS:0 dt:1.0000e-02 4.1283e+04
+RichardsPK         |   reservoir water mass=150.729 ton, total influx=4.04826 ton
+TimeStepManager    |   Accepted proposed dT=0.57337 d
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |  New time = 4.62922 d
+CycleDriver        |  
+CycleDriver        |  Field                                    Min/Max/Avg
+CycleDriver        |  alpha_coef.bnd_face..................... 0.492842 / 5.52978e+07 / 2.76509e+07 [kg^-1*m^-2*mol*s]
+CycleDriver        |  alpha_coef.cell......................... 0.512769 / 5.52978e+07 / 2.87889e+07 [kg^-1*m^-2*mol*s]
+CycleDriver        |  atmospheric_pressure.................... 101325
+CycleDriver        |  const_fluid_density..................... 998.2
+CycleDriver        |  darcy_velocity.......................... -4.17744e-05 / 9.95144e-05 / 1.38494e-05
+CycleDriver        |  dt...................................... 41282.6
+CycleDriver        |  gravity................................. 0 -9.80665
+CycleDriver        |  hydraulic_head.......................... 6.12649 / 12.1717 / 9.35247 [m]
+CycleDriver        |  mass_density_liquid.bnd_face............ 998.2 / 998.2 / 998.2 [kg/m^3]
+CycleDriver        |  mass_density_liquid.cell................ 998.2 / 998.2 / 998.2 [kg/m^3]
+CycleDriver        |  molar_density_liquid.bnd_face........... 55408.4 / 55408.4 / 55408.4 [mol/m^3]
+CycleDriver        |  molar_density_liquid.cell............... 55408.4 / 55408.4 / 55408.4 [mol/m^3]
+CycleDriver        |  molar_flow_rate......................... -0.79752 / 1.75675 / 0.228267
+CycleDriver        |  permeability............................ 3.1198e-11 / 3.1198e-10 / 1.71589e-10 [m^2]
+CycleDriver        |  porosity................................ 0.43 / 0.43 / 0.43 [-]
+CycleDriver        |  pressure.cell........................... -16232.2 / 218952 / 103366 [Pa]
+CycleDriver        |  pressure.face........................... -17724 / 220444 / 103352 [Pa]
+CycleDriver        |  prev_saturation_liquid.................. 0.141929 / 1 / 0.629985
+CycleDriver        |  prev_water_storage...................... 3381.53 / 23825.6 / 15009.8
+CycleDriver        |  relative_permeability.bnd_face.......... 8.91251e-09 / 1 / 0.500037 [-]
+CycleDriver        |  relative_permeability.cell.............. 9.27287e-09 / 1 / 0.520617 [-]
+CycleDriver        |  saturation_liquid....................... 0.141929 / 1 / 0.629985 [-]
+CycleDriver        |  temperature.cell........................ 298 / 298 / 298
+CycleDriver        |  temperature.face........................ 298 / 298 / 298
+CycleDriver        |  time.................................... 399964
+CycleDriver        |  time@current............................ 0
+CycleDriver        |  viscosity_liquid.bnd_face............... 0.001002 / 0.001002 / 0.001002 [Pa*s]
+CycleDriver        |  viscosity_liquid.cell................... 0.001002 / 0.001002 / 0.001002 [Pa*s]
+CycleDriver        |  volumetric_flow_rate.................... -1.43935e-05 / 3.17055e-05 / 4.11972e-06 [m^3/s]
+CycleDriver        |  water_content........................... 0.0610293 / 0.43 / 0.270894 [-]
+CycleDriver        |  water_storage........................... 3381.53 / 23825.6 / 15009.8 [mol/m^3]
+CycleDriver        |  
+CycleDriver        |  Simulation end time: 3e+09 sec.
+CycleDriver        |  CPU time stamp: [00:00:19]
+CycleDriver        |  
+CycleDriver        |  Cycle 100: time = 4.62922 d, dt = 0.57337 d
+TI::BDF1           |  step 100 T = 399964 [sec]  dT = 49539.1
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000394473  l2-error=785.156
+Solver::NKA        |   2: error=9.74825e-07  l2-error=2.81309
+Solver::NKA        |   Solver converged: 2 itrs, error=9.74825e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=9.74825e-07
+TI::BDF1           |  TS:100 FS:0 NS:434 PC:133 434 LS:0 dt:1.0000e-02 4.9539e+04
+RichardsPK         |   reservoir water mass=150.742 ton, total influx=4.06268 ton
+TimeStepManager    |   Accepted proposed dT=0.688043 d
+CycleDriver        |  New time = 5.20259 d
+CycleDriver        |  
+CycleDriver        |  Cycle 101: time = 5.20259 d, dt = 0.688043 d
+TI::BDF1           |  step 101 T = 449504 [sec]  dT = 59447
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000433189  l2-error=891.324
+Solver::NKA        |   2: error=1.16546e-06  l2-error=2.72151
+Solver::NKA        |   3: error=7.33721e-08  l2-error=0.499429
+Solver::NKA        |   Solver converged: 3 itrs, error=7.33721e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=7.33721e-08
+TI::BDF1           |  TS:101 FS:0 NS:437 PC:134 437 LS:0 dt:1.0000e-02 5.9447e+04
+RichardsPK         |   reservoir water mass=150.755 ton, total influx=4.07792 ton
+TimeStepManager    |   Accepted proposed dT=0.825652 d
+CycleDriver        |  New time = 5.89063 d
+CycleDriver        |  
+CycleDriver        |  Cycle 102: time = 5.89063 d, dt = 0.825652 d
+TI::BDF1           |  step 102 T = 508951 [sec]  dT = 71336.3
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00047003  l2-error=1000.17
+Solver::NKA        |   2: error=1.35512e-06  l2-error=2.79325
+Solver::NKA        |   3: error=9.32185e-08  l2-error=0.598762
+Solver::NKA        |   Solver converged: 3 itrs, error=9.32185e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=9.32185e-08
+TI::BDF1           |  TS:102 FS:0 NS:440 PC:135 440 LS:0 dt:1.0000e-02 7.1336e+04
+RichardsPK         |   reservoir water mass=150.77 ton, total influx=4.09401 ton
+TimeStepManager    |   Accepted proposed dT=0.990783 d
+CycleDriver        |  New time = 6.71628 d
+CycleDriver        |  
+CycleDriver        |  Cycle 103: time = 6.71628 d, dt = 0.990783 d
+TI::BDF1           |  step 103 T = 580287 [sec]  dT = 85603.6
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000519362  l2-error=1112.15
+Solver::NKA        |   2: error=1.52853e-06  l2-error=2.93937
+Solver::NKA        |   3: error=7.83944e-08  l2-error=0.484198
+Solver::NKA        |   Solver converged: 3 itrs, error=7.83944e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=7.83944e-08
+TI::BDF1           |  TS:103 FS:0 NS:443 PC:136 443 LS:0 dt:1.0000e-02 8.5604e+04
+RichardsPK         |   reservoir water mass=150.784 ton, total influx=4.11084 ton
+TimeStepManager    |   Accepted proposed dT=1.18894 d
+CycleDriver        |  New time = 7.70707 d
+CycleDriver        |  
+CycleDriver        |  Cycle 104: time = 7.70707 d, dt = 1.18894 d
+TI::BDF1           |  step 104 T = 665891 [sec]  dT = 102724
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000553197  l2-error=1224.76
+Solver::NKA        |   2: error=1.66098e-06  l2-error=3.17509
+Solver::NKA        |   3: error=6.71577e-08  l2-error=0.425859
+Solver::NKA        |   Solver converged: 3 itrs, error=6.71577e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=6.71577e-08
+TI::BDF1           |  TS:104 FS:0 NS:446 PC:137 446 LS:0 dt:1.0000e-02 1.0272e+05
+RichardsPK         |   reservoir water mass=150.799 ton, total influx=4.12832 ton
+TimeStepManager    |   Accepted proposed dT=1.42673 d
+CycleDriver        |  New time = 8.89601 d
+CycleDriver        |  
+CycleDriver        |  Cycle 105: time = 8.89601 d, dt = 1.42673 d
+TI::BDF1           |  step 105 T = 768615 [sec]  dT = 123269
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000580671  l2-error=1337.16
+Solver::NKA        |   2: error=1.81865e-06  l2-error=3.47135
+Solver::NKA        |   3: error=7.8293e-08  l2-error=0.511092
+Solver::NKA        |   Solver converged: 3 itrs, error=7.8293e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=7.8293e-08
+TI::BDF1           |  TS:105 FS:0 NS:449 PC:138 449 LS:0 dt:1.0000e-02 1.2327e+05
+RichardsPK         |   reservoir water mass=150.815 ton, total influx=4.14635 ton
+TimeStepManager    |   Accepted proposed dT=1.71207 d
+CycleDriver        |  New time = 10.3227 d
+CycleDriver        |  
+CycleDriver        |  Cycle 106: time = 10.3227 d, dt = 1.71207 d
+TI::BDF1           |  step 106 T = 891884 [sec]  dT = 147923
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000602693  l2-error=1448.85
+Solver::NKA        |   2: error=1.99599e-06  l2-error=3.69179
+Solver::NKA        |   3: error=7.11439e-08  l2-error=0.455906
+Solver::NKA        |   Solver converged: 3 itrs, error=7.11439e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=7.11439e-08
+TI::BDF1           |  TS:106 FS:0 NS:452 PC:139 452 LS:0 dt:1.0000e-02 1.4792e+05
+RichardsPK         |   reservoir water mass=150.83 ton, total influx=4.16481 ton
+TimeStepManager    |   Accepted proposed dT=2.05449 d
+CycleDriver        |  New time = 12.0348 d
+CycleDriver        |  
+CycleDriver        |  Cycle 107: time = 12.0348 d, dt = 2.05449 d
+TI::BDF1           |  step 107 T = 1.03981e+06 [sec]  dT = 177508
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000635801  l2-error=1558.27
+Solver::NKA        |   2: error=2.14447e-06  l2-error=3.95257
+Solver::NKA        |   3: error=7.65857e-08  l2-error=0.4757
+Solver::NKA        |   Solver converged: 3 itrs, error=7.65857e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=7.65857e-08
+TI::BDF1           |  TS:107 FS:0 NS:455 PC:140 455 LS:0 dt:1.0000e-02 1.7751e+05
+RichardsPK         |   reservoir water mass=150.846 ton, total influx=4.18362 ton
+TimeStepManager    |   Accepted proposed dT=2.46538 d
+CycleDriver        |  New time = 14.0893 d
+CycleDriver        |  
+CycleDriver        |  Cycle 108: time = 14.0893 d, dt = 2.46538 d
+TI::BDF1           |  step 108 T = 1.21731e+06 [sec]  dT = 213009
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000662194  l2-error=1665.4
+Solver::NKA        |   2: error=2.21007e-06  l2-error=4.14194
+Solver::NKA        |   3: error=6.2917e-08  l2-error=0.38556
+Solver::NKA        |   Solver converged: 3 itrs, error=6.2917e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=6.2917e-08
+TI::BDF1           |  TS:108 FS:0 NS:458 PC:141 458 LS:0 dt:1.0000e-02 2.1301e+05
+RichardsPK         |   reservoir water mass=150.862 ton, total influx=4.20269 ton
+TimeStepManager    |   Accepted proposed dT=2.95846 d
+CycleDriver        |  New time = 16.5547 d
+CycleDriver        |  
+CycleDriver        |  Cycle 109: time = 16.5547 d, dt = 2.95846 d
+TI::BDF1           |  step 109 T = 1.43032e+06 [sec]  dT = 255611
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000676319  l2-error=1768.46
+Solver::NKA        |   2: error=2.25191e-06  l2-error=4.33806
+Solver::NKA        |   3: error=4.82778e-08  l2-error=0.303281
+Solver::NKA        |   Solver converged: 3 itrs, error=4.82778e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=4.82778e-08
+TI::BDF1           |  TS:109 FS:0 NS:461 PC:142 461 LS:0 dt:1.0000e-02 2.5561e+05
+RichardsPK         |   reservoir water mass=150.878 ton, total influx=4.22194 ton
+TimeStepManager    |   Accepted proposed dT=3.55015 d
+CycleDriver        |  New time = 0.0534606 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 110: time = 0.0534606 noleap, dt = 3.55015 d
+TI::BDF1           |  step 110 T = 1.68594e+06 [sec]  dT = 306733
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000686385  l2-error=1868.98
+Solver::NKA        |   2: error=2.35992e-06  l2-error=4.53237
+Solver::NKA        |   3: error=4.47437e-08  l2-error=0.278692
+Solver::NKA        |   Solver converged: 3 itrs, error=4.47437e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=4.47437e-08
+TI::BDF1           |  TS:110 FS:0 NS:464 PC:143 464 LS:0 dt:1.0000e-02 3.0673e+05
+RichardsPK         |   reservoir water mass=150.895 ton, total influx=4.24132 ton
+TimeStepManager    |   Accepted proposed dT=4.26018 d
+CycleDriver        |  New time = 0.0631871 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 111: time = 0.0631871 noleap, dt = 4.26018 d
+TI::BDF1           |  step 111 T = 1.99267e+06 [sec]  dT = 368080
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000703858  l2-error=1965.13
+Solver::NKA        |   2: error=2.37716e-06  l2-error=4.70744
+Solver::NKA        |   3: error=4.18247e-08  l2-error=0.259492
+Solver::NKA        |   Solver converged: 3 itrs, error=4.18247e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=4.18247e-08
+TI::BDF1           |  TS:111 FS:0 NS:467 PC:144 467 LS:0 dt:1.0000e-02 3.6808e+05
+RichardsPK         |   reservoir water mass=150.911 ton, total influx=4.26073 ton
+TimeStepManager    |   Accepted proposed dT=5.11222 d
+CycleDriver        |  New time = 0.0748588 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 112: time = 0.0748588 noleap, dt = 5.11222 d
+TI::BDF1           |  step 112 T = 2.36075e+06 [sec]  dT = 441696
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000711768  l2-error=2057.14
+Solver::NKA        |   2: error=2.32981e-06  l2-error=4.84436
+Solver::NKA        |   3: error=3.23728e-08  l2-error=0.202929
+Solver::NKA        |   Solver converged: 3 itrs, error=3.23728e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=3.23728e-08
+TI::BDF1           |  TS:112 FS:0 NS:470 PC:145 470 LS:0 dt:1.0000e-02 4.4170e+05
+RichardsPK         |   reservoir water mass=150.927 ton, total influx=4.28014 ton
+TimeStepManager    |   Accepted proposed dT=6.13466 d
+CycleDriver        |  New time = 0.0888649 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 113: time = 0.0888649 noleap, dt = 6.13466 d
+TI::BDF1           |  step 113 T = 2.80244e+06 [sec]  dT = 530035
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000713187  l2-error=2144.57
+Solver::NKA        |   2: error=2.37616e-06  l2-error=4.94895
+Solver::NKA        |   3: error=2.02252e-08  l2-error=0.131328
+Solver::NKA        |   Solver converged: 3 itrs, error=2.02252e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=2.02252e-08
+TI::BDF1           |  TS:113 FS:0 NS:473 PC:146 473 LS:0 dt:1.0000e-02 5.3004e+05
+RichardsPK         |   reservoir water mass=150.943 ton, total influx=4.29953 ton
+TimeStepManager    |   Accepted proposed dT=7.3616 d
+CycleDriver        |  New time = 0.105672 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 114: time = 0.105672 noleap, dt = 7.3616 d
+TI::BDF1           |  step 114 T = 3.33248e+06 [sec]  dT = 636042
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000721047  l2-error=2227.59
+Solver::NKA        |   2: error=2.28834e-06  l2-error=5.03508
+Solver::NKA        |   3: error=1.98067e-08  l2-error=0.130922
+Solver::NKA        |   Solver converged: 3 itrs, error=1.98067e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=1.98067e-08
+TI::BDF1           |  TS:114 FS:0 NS:476 PC:147 476 LS:0 dt:1.0000e-02 6.3604e+05
+RichardsPK         |   reservoir water mass=150.959 ton, total influx=4.31894 ton
+TimeStepManager    |   Accepted proposed dT=8.83392 d
+CycleDriver        |  New time = 0.125841 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 115: time = 0.125841 noleap, dt = 8.83392 d
+TI::BDF1           |  step 115 T = 3.96852e+06 [sec]  dT = 763250
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000717389  l2-error=2312.56
+Solver::NKA        |   2: error=2.26321e-06  l2-error=5.11048
+Solver::NKA        |   3: error=1.32578e-08  l2-error=0.0677941
+Solver::NKA        |   Solver converged: 3 itrs, error=1.32578e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=1.32578e-08
+TI::BDF1           |  TS:115 FS:0 NS:479 PC:148 479 LS:0 dt:1.0000e-02 7.6325e+05
+RichardsPK         |   reservoir water mass=150.976 ton, total influx=4.33834 ton
+TimeStepManager    |   Accepted proposed dT=10.6007 d
+CycleDriver        |  New time = 0.150043 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 116: time = 0.150043 noleap, dt = 10.6007 d
+TI::BDF1           |  step 116 T = 4.73177e+06 [sec]  dT = 915901
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000718345  l2-error=2399.81
+Solver::NKA        |   2: error=2.24327e-06  l2-error=5.21094
+Solver::NKA        |   3: error=1.2009e-08  l2-error=0.0736518
+Solver::NKA        |   Solver converged: 3 itrs, error=1.2009e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=1.2009e-08
+TI::BDF1           |  TS:116 FS:0 NS:482 PC:149 482 LS:0 dt:1.0000e-02 9.1590e+05
+RichardsPK         |   reservoir water mass=150.992 ton, total influx=4.35771 ton
+TimeStepManager    |   Accepted proposed dT=12.7208 d
+CycleDriver        |  New time = 0.179087 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 117: time = 0.179087 noleap, dt = 12.7208 d
+TI::BDF1           |  step 117 T = 5.64767e+06 [sec]  dT = 1.09908e+06
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000717647  l2-error=2485.99
+Solver::NKA        |   2: error=2.18213e-06  l2-error=5.29696
+Solver::NKA        |   3: error=1.34255e-08  l2-error=0.0887599
+Solver::NKA        |   Solver converged: 3 itrs, error=1.34255e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=1.34255e-08
+TI::BDF1           |  TS:117 FS:0 NS:485 PC:150 485 LS:0 dt:1.0000e-02 1.0991e+06
+RichardsPK         |   reservoir water mass=151.007 ton, total influx=4.37692 ton
+TimeStepManager    |   Accepted proposed dT=15.265 d
+CycleDriver        |  New time = 0.213938 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 118: time = 0.213938 noleap, dt = 15.265 d
+TI::BDF1           |  step 118 T = 6.74675e+06 [sec]  dT = 1.3189e+06
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000712515  l2-error=2570.88
+Solver::NKA        |   2: error=2.14473e-06  l2-error=5.35118
+Solver::NKA        |   3: error=1.07408e-08  l2-error=0.0478866
+Solver::NKA        |   Solver converged: 3 itrs, error=1.07408e-08
+TI::BDF1           |  success: 3 nonlinear itrs error=1.07408e-08
+TI::BDF1           |  TS:118 FS:0 NS:488 PC:151 488 LS:0 dt:1.0000e-02 1.3189e+06
+RichardsPK         |   reservoir water mass=151.023 ton, total influx=4.39592 ton
+TimeStepManager    |   Accepted proposed dT=18.318 d
+CycleDriver        |  New time = 0.25576 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 119: time = 0.25576 noleap, dt = 18.318 d
+TI::BDF1           |  step 119 T = 8.06565e+06 [sec]  dT = 1.58268e+06
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000711079  l2-error=2651.74
+Solver::NKA        |   2: error=2.06032e-06  l2-error=5.37332
+Solver::NKA        |   3: error=9.77933e-09  l2-error=0.0655426
+Solver::NKA        |   Solver converged: 3 itrs, error=9.77933e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=9.77933e-09
+TI::BDF1           |  TS:119 FS:0 NS:491 PC:152 491 LS:0 dt:1.0000e-02 1.5827e+06
+RichardsPK         |   reservoir water mass=151.039 ton, total influx=4.41473 ton
+TimeStepManager    |   Accepted proposed dT=0.0602236 noleap
+CycleDriver        |  New time = 0.305946 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 120: time = 0.305946 noleap, dt = 0.0602236 noleap
+TI::BDF1           |  step 120 T = 9.64833e+06 [sec]  dT = 1.89921e+06
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000701509  l2-error=2730.51
+Solver::NKA        |   2: error=1.96393e-06  l2-error=5.36568
+Solver::NKA        |   3: error=9.30704e-09  l2-error=0.0577802
+Solver::NKA        |   Solver converged: 3 itrs, error=9.30704e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=9.30704e-09
+TI::BDF1           |  TS:120 FS:0 NS:494 PC:153 494 LS:0 dt:1.0000e-02 1.8992e+06
+RichardsPK         |   reservoir water mass=151.054 ton, total influx=4.43333 ton
+TimeStepManager    |   Accepted proposed dT=0.0722683 noleap
+CycleDriver        |  New time = 0.36617 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 121: time = 0.36617 noleap, dt = 0.0722683 noleap
+TI::BDF1           |  step 121 T = 1.15475e+07 [sec]  dT = 2.27905e+06
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000697621  l2-error=2812.58
+Solver::NKA        |   2: error=1.90988e-06  l2-error=5.36488
+Solver::NKA        |   3: error=8.39888e-09  l2-error=0.0365938
+Solver::NKA        |   Solver converged: 3 itrs, error=8.39888e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=8.39888e-09
+TI::BDF1           |  TS:121 FS:0 NS:497 PC:154 497 LS:0 dt:1.0000e-02 2.2791e+06
+RichardsPK         |   reservoir water mass=151.069 ton, total influx=4.45176 ton
+TimeStepManager    |   Accepted proposed dT=0.086722 noleap
+CycleDriver        |  New time = 0.438438 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 122: time = 0.438438 noleap, dt = 0.086722 noleap
+TI::BDF1           |  step 122 T = 1.38266e+07 [sec]  dT = 2.73486e+06
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000688939  l2-error=2899.88
+Solver::NKA        |   2: error=1.83969e-06  l2-error=5.37939
+Solver::NKA        |   3: error=7.71551e-09  l2-error=0.0328492
+Solver::NKA        |   Solver converged: 3 itrs, error=7.71551e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=7.71551e-09
+TI::BDF1           |  TS:122 FS:0 NS:500 PC:155 500 LS:0 dt:1.0000e-02 2.7349e+06
+RichardsPK         |   reservoir water mass=151.084 ton, total influx=4.47003 ton
+TimeStepManager    |   Accepted proposed dT=0.104066 noleap
+CycleDriver        |  New time = 0.52516 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 123: time = 0.52516 noleap, dt = 0.104066 noleap
+TI::BDF1           |  step 123 T = 1.65615e+07 [sec]  dT = 3.28184e+06
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000683476  l2-error=2984.04
+Solver::NKA        |   2: error=1.76605e-06  l2-error=5.37068
+Solver::NKA        |   3: error=7.15802e-09  l2-error=0.0306092
+Solver::NKA        |   Solver converged: 3 itrs, error=7.15802e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=7.15802e-09
+TI::BDF1           |  TS:123 FS:0 NS:503 PC:156 503 LS:0 dt:1.0000e-02 3.2818e+06
+RichardsPK         |   reservoir water mass=151.099 ton, total influx=4.48803 ton
+TimeStepManager    |   Accepted proposed dT=0.12488 noleap
+CycleDriver        |  New time = 0.629227 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 124: time = 0.629227 noleap, dt = 0.12488 noleap
+TI::BDF1           |  step 124 T = 1.98433e+07 [sec]  dT = 3.9382e+06
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000674868  l2-error=3067.14
+Solver::NKA        |   2: error=1.68742e-06  l2-error=5.35061
+Solver::NKA        |   3: error=6.53541e-09  l2-error=0.0255954
+Solver::NKA        |   Solver converged: 3 itrs, error=6.53541e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=6.53541e-09
+TI::BDF1           |  TS:124 FS:0 NS:506 PC:157 506 LS:0 dt:1.0000e-02 3.9382e+06
+RichardsPK         |   reservoir water mass=151.114 ton, total influx=4.50579 ton
+TimeStepManager    |   Accepted proposed dT=0.149856 noleap
+CycleDriver        |  New time = 0.754106 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 125: time = 0.754106 noleap, dt = 0.149856 noleap
+TI::BDF1           |  step 125 T = 2.37815e+07 [sec]  dT = 4.72585e+06
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000663982  l2-error=3143.17
+Solver::NKA        |   2: error=1.59213e-06  l2-error=5.30299
+Solver::NKA        |   3: error=6.02987e-09  l2-error=0.0252414
+Solver::NKA        |   Solver converged: 3 itrs, error=6.02987e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=6.02987e-09
+TI::BDF1           |  TS:125 FS:0 NS:509 PC:158 509 LS:0 dt:1.0000e-02 4.7258e+06
+RichardsPK         |   reservoir water mass=151.128 ton, total influx=4.52328 ton
+TimeStepManager    |   Accepted proposed dT=0.179827 noleap
+CycleDriver        |  New time = 0.903962 noleap
+CycleDriver        |  
+CycleDriver        |  Cycle 126: time = 0.903962 noleap, dt = 0.179827 noleap
+TI::BDF1           |  step 126 T = 2.85073e+07 [sec]  dT = 5.67101e+06
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000656713  l2-error=3221.36
+Solver::NKA        |   2: error=1.53824e-06  l2-error=5.28469
+Solver::NKA        |   3: error=5.33155e-09  l2-error=0.020091
+Solver::NKA        |   Solver converged: 3 itrs, error=5.33155e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=5.33155e-09
+TI::BDF1           |  TS:126 FS:0 NS:512 PC:159 512 LS:0 dt:1.0000e-02 5.6710e+06
+RichardsPK         |   reservoir water mass=151.142 ton, total influx=4.54053 ton
+TimeStepManager    |   Accepted proposed dT=0.215792 noleap
+CycleDriver        |  New time = 1.08305 y
+CycleDriver        |  
+CycleDriver        |  Cycle 127: time = 1.08305 y, dt = 0.215792 noleap
+TI::BDF1           |  step 127 T = 3.41784e+07 [sec]  dT = 6.80522e+06
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000647565  l2-error=3297.84
+Solver::NKA        |   2: error=1.46179e-06  l2-error=5.27827
+Solver::NKA        |   3: error=4.89928e-09  l2-error=0.0176109
+Solver::NKA        |   Solver converged: 3 itrs, error=4.89928e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=4.89928e-09
+TI::BDF1           |  TS:127 FS:0 NS:515 PC:160 515 LS:0 dt:1.0000e-02 6.8052e+06
+RichardsPK         |   reservoir water mass=151.156 ton, total influx=4.5575 ton
+TimeStepManager    |   Accepted proposed dT=0.25895 noleap
+CycleDriver        |  New time = 1.29869 y
+CycleDriver        |  
+CycleDriver        |  Cycle 128: time = 1.29869 y, dt = 0.25895 noleap
+TI::BDF1           |  step 128 T = 4.09836e+07 [sec]  dT = 8.16626e+06
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00063577  l2-error=3376.89
+Solver::NKA        |   2: error=1.37724e-06  l2-error=5.29439
+Solver::NKA        |   3: error=4.48829e-09  l2-error=0.0174307
+Solver::NKA        |   Solver converged: 3 itrs, error=4.48829e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=4.48829e-09
+TI::BDF1           |  TS:128 FS:0 NS:518 PC:161 518 LS:0 dt:1.0000e-02 8.1663e+06
+RichardsPK         |   reservoir water mass=151.17 ton, total influx=4.57416 ton
+TimeStepManager    |   Accepted proposed dT=0.310741 noleap
+CycleDriver        |  New time = 1.55746 y
+CycleDriver        |  
+CycleDriver        |  Cycle 129: time = 1.55746 y, dt = 0.310741 noleap
+TI::BDF1           |  step 129 T = 4.91498e+07 [sec]  dT = 9.79951e+06
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000623241  l2-error=3467.74
+Solver::NKA        |   2: error=1.29961e-06  l2-error=5.37993
+Solver::NKA        |   3: error=4.00772e-09  l2-error=0.0154232
+Solver::NKA        |   Solver converged: 3 itrs, error=4.00772e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=4.00772e-09
+TI::BDF1           |  TS:129 FS:0 NS:521 PC:162 521 LS:0 dt:1.0000e-02 9.7995e+06
+RichardsPK         |   reservoir water mass=151.183 ton, total influx=4.59046 ton
+TimeStepManager    |   Accepted proposed dT=0.372889 noleap
+CycleDriver        |  New time = 1.86799 y
+CycleDriver        |  
+CycleDriver        |  Cycle 130: time = 1.86799 y, dt = 0.372889 noleap
+TI::BDF1           |  step 130 T = 5.89493e+07 [sec]  dT = 1.17594e+07
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00060919  l2-error=3583.97
+Solver::NKA        |   2: error=1.23448e-06  l2-error=5.58478
+Solver::NKA        |   3: error=3.57849e-09  l2-error=0.0138539
+Solver::NKA        |   Solver converged: 3 itrs, error=3.57849e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=3.57849e-09
+TI::BDF1           |  TS:130 FS:0 NS:524 PC:163 524 LS:0 dt:1.0000e-02 1.1759e+07
+RichardsPK         |   reservoir water mass=151.196 ton, total influx=4.60638 ton
+TimeStepManager    |   Accepted proposed dT=0.447466 noleap
+CycleDriver        |  New time = 2.24063 y
+CycleDriver        |  
+CycleDriver        |  Cycle 131: time = 2.24063 y, dt = 0.447466 noleap
+TI::BDF1           |  step 131 T = 7.07088e+07 [sec]  dT = 1.41113e+07
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000588762  l2-error=3725.61
+Solver::NKA        |   2: error=1.17259e-06  l2-error=5.89259
+Solver::NKA        |   3: error=3.30081e-09  l2-error=0.0136003
+Solver::NKA        |   Solver converged: 3 itrs, error=3.30081e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=3.30081e-09
+TI::BDF1           |  TS:131 FS:0 NS:527 PC:164 527 LS:0 dt:1.0000e-02 1.4111e+07
+RichardsPK         |   reservoir water mass=151.208 ton, total influx=4.62181 ton
+TimeStepManager    |   Accepted proposed dT=0.53696 noleap
+CycleDriver        |  New time = 2.68779 y
+CycleDriver        |  
+CycleDriver        |  Cycle 132: time = 2.68779 y, dt = 0.53696 noleap
+TI::BDF1           |  step 132 T = 8.48201e+07 [sec]  dT = 1.69336e+07
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00062325  l2-error=3894.6
+Solver::NKA        |   2: error=1.41395e-06  l2-error=6.2891
+Solver::NKA        |   3: error=3.16173e-09  l2-error=0.0143298
+Solver::NKA        |   Solver converged: 3 itrs, error=3.16173e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=3.16173e-09
+TI::BDF1           |  TS:132 FS:0 NS:530 PC:165 530 LS:0 dt:1.0000e-02 1.6934e+07
+RichardsPK         |   reservoir water mass=151.22 ton, total influx=4.63665 ton
+TimeStepManager    |   Accepted proposed dT=0.644352 noleap
+CycleDriver        |  New time = 3.22438 y
+CycleDriver        |  
+CycleDriver        |  Cycle 133: time = 3.22438 y, dt = 0.644352 noleap
+TI::BDF1           |  step 133 T = 1.01754e+08 [sec]  dT = 2.03203e+07
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000708351  l2-error=4090
+Solver::NKA        |   2: error=1.66131e-06  l2-error=6.73742
+Solver::NKA        |   3: error=3.2935e-09  l2-error=0.0151996
+Solver::NKA        |   Solver converged: 3 itrs, error=3.2935e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=3.2935e-09
+TI::BDF1           |  TS:133 FS:0 NS:533 PC:166 533 LS:0 dt:1.0000e-02 2.0320e+07
+RichardsPK         |   reservoir water mass=151.231 ton, total influx=4.65077 ton
+TimeStepManager    |   Accepted proposed dT=0.773222 noleap
+CycleDriver        |  New time = 3.86829 y
+CycleDriver        |  
+CycleDriver        |  Cycle 134: time = 3.86829 y, dt = 0.773222 noleap
+TI::BDF1           |  step 134 T = 1.22074e+08 [sec]  dT = 2.43843e+07
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000780278  l2-error=4291.02
+Solver::NKA        |   2: error=1.86596e-06  l2-error=7.12958
+Solver::NKA        |   3: error=4.04075e-09  l2-error=0.0168037
+Solver::NKA        |   Solver converged: 3 itrs, error=4.04075e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=4.04075e-09
+TI::BDF1           |  TS:134 FS:0 NS:536 PC:167 536 LS:0 dt:1.0000e-02 2.4384e+07
+RichardsPK         |   reservoir water mass=151.242 ton, total influx=4.66406 ton
+TimeStepManager    |   Accepted proposed dT=0.927866 noleap
+CycleDriver        |  New time = 4.64098 y
+CycleDriver        |  
+CycleDriver        |  Cycle 135: time = 4.64098 y, dt = 0.927866 noleap
+TI::BDF1           |  step 135 T = 1.46458e+08 [sec]  dT = 2.92612e+07
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000837385  l2-error=4480.06
+Solver::NKA        |   2: error=2.00591e-06  l2-error=7.39356
+Solver::NKA        |   3: error=4.74795e-09  l2-error=0.0182902
+Solver::NKA        |   Solver converged: 3 itrs, error=4.74795e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=4.74795e-09
+TI::BDF1           |  TS:135 FS:0 NS:539 PC:168 539 LS:0 dt:1.0000e-02 2.9261e+07
+RichardsPK         |   reservoir water mass=151.251 ton, total influx=4.67638 ton
+TimeStepManager    |   Accepted proposed dT=1.11268 y
+CycleDriver        |  New time = 5.56821 y
+CycleDriver        |  
+CycleDriver        |  Cycle 136: time = 5.56821 y, dt = 1.11268 y
+TI::BDF1           |  step 136 T = 1.75719e+08 [sec]  dT = 3.51134e+07
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000875729  l2-error=4626.33
+Solver::NKA        |   2: error=2.05699e-06  l2-error=7.43734
+Solver::NKA        |   3: error=5.18837e-09  l2-error=0.019108
+Solver::NKA        |   Solver converged: 3 itrs, error=5.18837e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=5.18837e-09
+TI::BDF1           |  TS:136 FS:0 NS:542 PC:169 542 LS:0 dt:1.0000e-02 3.5113e+07
+RichardsPK         |   reservoir water mass=151.259 ton, total influx=4.68759 ton
+TimeStepManager    |   Accepted proposed dT=1.33521 y
+CycleDriver        |  New time = 6.68089 y
+CycleDriver        |  
+CycleDriver        |  Cycle 137: time = 6.68089 y, dt = 1.33521 y
+TI::BDF1           |  step 137 T = 2.10833e+08 [sec]  dT = 4.21361e+07
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000891582  l2-error=4700.85
+Solver::NKA        |   2: error=2.01349e-06  l2-error=7.22501
+Solver::NKA        |   3: error=5.2289e-09  l2-error=0.0188508
+Solver::NKA        |   Solver converged: 3 itrs, error=5.2289e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=5.2289e-09
+TI::BDF1           |  TS:137 FS:0 NS:545 PC:170 545 LS:0 dt:1.0000e-02 4.2136e+07
+RichardsPK         |   reservoir water mass=151.267 ton, total influx=4.69761 ton
+TimeStepManager    |   Accepted proposed dT=1.60226 y
+CycleDriver        |  New time = 8.0161 y
+CycleDriver        |  
+CycleDriver        |  Cycle 138: time = 8.0161 y, dt = 1.60226 y
+TI::BDF1           |  step 138 T = 2.52969e+08 [sec]  dT = 5.05633e+07
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.0008843  l2-error=4669.13
+Solver::NKA        |   2: error=1.88257e-06  l2-error=6.70748
+Solver::NKA        |   3: error=4.90406e-09  l2-error=0.0175216
+Solver::NKA        |   Solver converged: 3 itrs, error=4.90406e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=4.90406e-09
+TI::BDF1           |  TS:138 FS:0 NS:548 PC:171 548 LS:0 dt:1.0000e-02 5.0563e+07
+RichardsPK         |   reservoir water mass=151.273 ton, total influx=4.70636 ton
+TimeStepManager    |   Accepted proposed dT=1.92271 y
+CycleDriver        |  New time = 9.61836 y
+CycleDriver        |  
+CycleDriver        |  Cycle 139: time = 9.61836 y, dt = 1.92271 y
+TI::BDF1           |  step 139 T = 3.03532e+08 [sec]  dT = 6.0676e+07
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000854796  l2-error=4513.35
+Solver::NKA        |   2: error=1.67514e-06  l2-error=5.92602
+Solver::NKA        |   3: error=4.25089e-09  l2-error=0.0150206
+Solver::NKA        |   Solver converged: 3 itrs, error=4.25089e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=4.25089e-09
+TI::BDF1           |  TS:139 FS:0 NS:551 PC:172 551 LS:0 dt:1.0000e-02 6.0676e+07
+RichardsPK         |   reservoir water mass=151.278 ton, total influx=4.71379 ton
+TimeStepManager    |   Accepted proposed dT=2.30725 y
+CycleDriver        |  New time = 11.5411 y
+CycleDriver        |  
+CycleDriver        |  Cycle 140: time = 11.5411 y, dt = 2.30725 y
+TI::BDF1           |  step 140 T = 3.64208e+08 [sec]  dT = 7.28112e+07
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000803672  l2-error=4225.92
+Solver::NKA        |   2: error=1.41122e-06  l2-error=4.94859
+Solver::NKA        |   3: error=3.38748e-09  l2-error=0.0118061
+Solver::NKA        |   Solver converged: 3 itrs, error=3.38748e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=3.38748e-09
+TI::BDF1           |  TS:140 FS:0 NS:554 PC:173 554 LS:0 dt:1.0000e-02 7.2811e+07
+RichardsPK         |   reservoir water mass=151.282 ton, total influx=4.71992 ton
+TimeStepManager    |   Accepted proposed dT=2.7687 y
+CycleDriver        |  New time = 13.8483 y
+CycleDriver        |  
+CycleDriver        |  Cycle 141: time = 13.8483 y, dt = 2.7687 y
+TI::BDF1           |  step 141 T = 4.3702e+08 [sec]  dT = 8.73734e+07
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000732691  l2-error=3813.29
+Solver::NKA        |   2: error=1.1145e-06  l2-error=3.86258
+Solver::NKA        |   3: error=2.45885e-09  l2-error=0.00842128
+Solver::NKA        |   Solver converged: 3 itrs, error=2.45885e-09
+TI::BDF1           |  success: 3 nonlinear itrs error=2.45885e-09
+TI::BDF1           |  TS:141 FS:0 NS:557 PC:174 557 LS:0 dt:1.0000e-02 8.7373e+07
+RichardsPK         |   reservoir water mass=151.285 ton, total influx=4.7248 ton
+TimeStepManager    |   Accepted proposed dT=3.32244 y
+CycleDriver        |  New time = 16.617 y
+CycleDriver        |  
+CycleDriver        |  Cycle 142: time = 16.617 y, dt = 3.32244 y
+TI::BDF1           |  step 142 T = 5.24393e+08 [sec]  dT = 1.04848e+08
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000645143  l2-error=3298.69
+Solver::NKA        |   2: error=8.20573e-07  l2-error=2.78291
+Solver::NKA        |   Solver converged: 2 itrs, error=8.20573e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=8.20573e-07
+TI::BDF1           |  TS:142 FS:0 NS:559 PC:175 559 LS:0 dt:1.0000e-02 1.0485e+08
+RichardsPK         |   reservoir water mass=151.287 ton, total influx=4.72853 ton
+TimeStepManager    |   Accepted proposed dT=3.98692 y
+CycleDriver        |  New time = 19.9394 y
+CycleDriver        |  
+CycleDriver        |  Cycle 143: time = 19.9394 y, dt = 3.98692 y
+TI::BDF1           |  step 143 T = 6.29241e+08 [sec]  dT = 1.25818e+08
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000546398  l2-error=2721.11
+Solver::NKA        |   2: error=5.59212e-07  l2-error=1.83284
+Solver::NKA        |   Solver converged: 2 itrs, error=5.59212e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=5.59212e-07
+TI::BDF1           |  TS:143 FS:0 NS:561 PC:176 561 LS:0 dt:1.0000e-02 1.2582e+08
+RichardsPK         |   reservoir water mass=151.289 ton, total influx=4.73121 ton
+TimeStepManager    |   Accepted proposed dT=4.78431 y
+CycleDriver        |  New time = 23.9264 y
+CycleDriver        |  
+CycleDriver        |  Cycle 144: time = 23.9264 y, dt = 4.78431 y
+TI::BDF1           |  step 144 T = 7.55059e+08 [sec]  dT = 1.50981e+08
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000442542  l2-error=2132.11
+Solver::NKA        |   2: error=3.46352e-07  l2-error=1.09699
+Solver::NKA        |   Solver converged: 2 itrs, error=3.46352e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=3.46352e-07
+TI::BDF1           |  TS:144 FS:0 NS:563 PC:177 563 LS:0 dt:1.0000e-02 1.5098e+08
+RichardsPK         |   reservoir water mass=151.29 ton, total influx=4.73306 ton
+TimeStepManager    |   Accepted proposed dT=5.74117 y
+CycleDriver        |  New time = 28.7107 y
+CycleDriver        |  
+CycleDriver        |  Cycle 145: time = 28.7107 y, dt = 5.74117 y
+TI::BDF1           |  step 145 T = 9.0604e+08 [sec]  dT = 1.81178e+08
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000338686  l2-error=1575.1
+Solver::NKA        |   2: error=1.9056e-07  l2-error=0.588149
+Solver::NKA        |   Solver converged: 2 itrs, error=1.9056e-07
+TI::BDF1           |  success: 2 nonlinear itrs error=1.9056e-07
+TI::BDF1           |  TS:145 FS:0 NS:565 PC:178 565 LS:0 dt:1.0000e-02 1.8118e+08
+RichardsPK         |   reservoir water mass=151.291 ton, total influx=4.73428 ton
+TimeStepManager    |   Accepted proposed dT=6.88941 y
+CycleDriver        |  New time = 34.4519 y
+CycleDriver        |  
+CycleDriver        |  Cycle 146: time = 34.4519 y, dt = 6.88941 y
+TI::BDF1           |  step 146 T = 1.08722e+09 [sec]  dT = 2.17413e+08
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.000242412  l2-error=1096.02
+Solver::NKA        |   2: error=9.21945e-08  l2-error=0.284725
+Solver::NKA        |   Solver converged: 2 itrs, error=9.21945e-08
+TI::BDF1           |  success: 2 nonlinear itrs error=9.21945e-08
+TI::BDF1           |  TS:146 FS:0 NS:567 PC:179 567 LS:0 dt:1.0000e-02 2.1741e+08
+RichardsPK         |   reservoir water mass=151.291 ton, total influx=4.73502 ton
+TimeStepManager    |   Accepted proposed dT=8.26729 y
+CycleDriver        |  New time = 41.3413 y
+CycleDriver        |  
+CycleDriver        |  Cycle 147: time = 41.3413 y, dt = 8.26729 y
+TI::BDF1           |  step 147 T = 1.30463e+09 [sec]  dT = 2.60896e+08
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=0.00016117  l2-error=717.858
+Solver::NKA        |   2: error=3.93415e-08  l2-error=0.119236
+Solver::NKA        |   Solver converged: 2 itrs, error=3.93415e-08
+TI::BDF1           |  success: 2 nonlinear itrs error=3.93415e-08
+TI::BDF1           |  TS:147 FS:0 NS:569 PC:180 569 LS:0 dt:1.0000e-02 2.6090e+08
+RichardsPK         |   reservoir water mass=151.291 ton, total influx=4.73545 ton
+TimeStepManager    |   Accepted proposed dT=9.92074 y
+CycleDriver        |  New time = 49.6085 y
+CycleDriver        |  
+CycleDriver        |  Cycle 148: time = 49.6085 y, dt = 9.92074 y
+TI::BDF1           |  step 148 T = 1.56553e+09 [sec]  dT = 3.13075e+08
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=9.9901e-05  l2-error=434.416
+Solver::NKA        |   2: error=1.43012e-08  l2-error=0.0404735
+Solver::NKA        |   Solver converged: 2 itrs, error=1.43012e-08
+TI::BDF1           |  success: 2 nonlinear itrs error=1.43012e-08
+TI::BDF1           |  TS:148 FS:0 NS:571 PC:181 571 LS:0 dt:1.0000e-02 3.1307e+08
+RichardsPK         |   reservoir water mass=151.291 ton, total influx=4.73567 ton
+TimeStepManager    |   Accepted proposed dT=11.9049 y
+CycleDriver        |  New time = 59.5293 y
+CycleDriver        |  
+CycleDriver        |  Cycle 149: time = 59.5293 y, dt = 11.9049 y
+TI::BDF1           |  step 149 T = 1.8786e+09 [sec]  dT = 3.7569e+08
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=5.83399e-05  l2-error=236.434
+Solver::NKA        |   2: error=4.05677e-09  l2-error=0.0108732
+Solver::NKA        |   Solver converged: 2 itrs, error=4.05677e-09
+TI::BDF1           |  success: 2 nonlinear itrs error=4.05677e-09
+TI::BDF1           |  TS:149 FS:0 NS:573 PC:182 573 LS:0 dt:1.0000e-02 3.7569e+08
+RichardsPK         |   reservoir water mass=151.291 ton, total influx=4.73578 ton
+TimeStepManager    |   Accepted proposed dT=14.2859 y
+CycleDriver        |  New time = 71.4342 y
+CycleDriver        |  
+CycleDriver        |  Cycle 150: time = 71.4342 y, dt = 14.2859 y
+TI::BDF1           |  step 150 T = 2.25429e+09 [sec]  dT = 4.50828e+08
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=2.95915e-05  l2-error=115.143
+Solver::NKA        |   2: error=8.77191e-10  l2-error=0.00226764
+Solver::NKA        |   Solver converged: 2 itrs, error=8.77191e-10
+TI::BDF1           |  success: 2 nonlinear itrs error=8.77191e-10
+TI::BDF1           |  TS:150 FS:0 NS:575 PC:183 575 LS:0 dt:1.0000e-02 4.5083e+08
+RichardsPK         |   reservoir water mass=151.291 ton, total influx=4.73582 ton
+TimeStepManager    |   Proposed dT=17.143 y, events limit it to 9.34421 y
+CycleDriver        |  New time = 85.72 y
+CycleDriver        |  
+CycleDriver        |  Cycle 151: time = 85.72 y, dt = 9.34421 y
+TI::BDF1           |  step 151 T = 2.70512e+09 [sec]  dT = 2.94881e+08
+TI::BDF1           |  preconditioner lag is 5 out of 5
+Solver::NKA        |   1: error=5.63256e-06  l2-error=21.6015
+Solver::NKA        |   2: error=4.17292e-11  l2-error=0.000103285
+Solver::NKA        |   Solver converged: 2 itrs, error=4.17292e-11
+TI::BDF1           |  success: 2 nonlinear itrs error=4.17292e-11
+TI::BDF1           |  TS:151 FS:0 NS:577 PC:184 577 LS:0 dt:1.0000e-02 4.5083e+08
+RichardsPK         |   reservoir water mass=151.291 ton, total influx=4.73583 ton
+TimeStepManager    |   Proposed dT=11.2131 y, stability from previous step changes it to 17.143 y
+CycleDriver        |   writing visualization file: domain
+CycleDriver        |   writing observations... 22
+CycleDriver        |   writing checkpoint file
+CycleDriver        |  New time = 95.0643 y
+CycleDriver        |  
+CycleDriver        |  Field                                    Min/Max/Avg
+CycleDriver        |  alpha_coef.bnd_face..................... 0.496203 / 5.52978e+07 / 2.76509e+07 [kg^-1*m^-2*mol*s]
+CycleDriver        |  alpha_coef.cell......................... 0.51631 / 5.52978e+07 / 2.87896e+07 [kg^-1*m^-2*mol*s]
+CycleDriver        |  atmospheric_pressure.................... 101325
+CycleDriver        |  const_fluid_density..................... 998.2
+CycleDriver        |  darcy_velocity.......................... -4.18054e-05 / 9.95389e-05 / 1.38477e-05
+CycleDriver        |  dt...................................... 2.94881e+08
+CycleDriver        |  gravity................................. 0 -9.80665
+CycleDriver        |  hydraulic_head.......................... 6.13979 / 12.1726 / 9.50555 [m]
+CycleDriver        |  mass_density_liquid.bnd_face............ 998.2 / 998.2 / 998.2 [kg/m^3]
+CycleDriver        |  mass_density_liquid.cell................ 998.2 / 998.2 / 998.2 [kg/m^3]
+CycleDriver        |  molar_density_liquid.bnd_face........... 55408.4 / 55408.4 / 55408.4 [mol/m^3]
+CycleDriver        |  molar_density_liquid.cell............... 55408.4 / 55408.4 / 55408.4 [mol/m^3]
+CycleDriver        |  molar_flow_rate......................... -0.798113 / 1.7574 / 0.228239
+CycleDriver        |  permeability............................ 3.1198e-11 / 3.1198e-10 / 1.71589e-10 [m^2]
+CycleDriver        |  porosity................................ 0.43 / 0.43 / 0.43 [-]
+CycleDriver        |  pressure.cell........................... -15975 / 218952 / 104864 [Pa]
+CycleDriver        |  pressure.face........................... -17466.9 / 220444 / 104846 [Pa]
+CycleDriver        |  prev_saturation_liquid.................. 0.142019 / 1 / 0.632335
+CycleDriver        |  prev_water_storage...................... 3383.68 / 23825.6 / 15065.8
+CycleDriver        |  relative_permeability.bnd_face.......... 8.97329e-09 / 1 / 0.500037 [-]
+CycleDriver        |  relative_permeability.cell.............. 9.33691e-09 / 1 / 0.520628 [-]
+CycleDriver        |  saturation_liquid....................... 0.142019 / 1 / 0.632335 [-]
+CycleDriver        |  temperature.cell........................ 298 / 298 / 298
+CycleDriver        |  temperature.face........................ 298 / 298 / 298
+CycleDriver        |  time.................................... 3e+09
+CycleDriver        |  time@current............................ 0
+CycleDriver        |  viscosity_liquid.bnd_face............... 0.001002 / 0.001002 / 0.001002 [Pa*s]
+CycleDriver        |  viscosity_liquid.cell................... 0.001002 / 0.001002 / 0.001002 [Pa*s]
+CycleDriver        |  volumetric_flow_rate.................... -1.44042e-05 / 3.17172e-05 / 4.11922e-06 [m^3/s]
+CycleDriver        |  water_content........................... 0.061068 / 0.43 / 0.271904 [-]
+CycleDriver        |  water_storage........................... 3383.68 / 23825.6 / 15065.8 [mol/m^3]
+CycleDriver        |  ======================================================================
+CycleDriver        |  Simulation made 152 cycles.
+CycleDriver        |  All meshes combined have 6000 cells.
+CycleDriver        |  Memory usage (high water mark):
+CycleDriver        |    Maximum per core:     550.6 MBytes,  maximum per cell: 96228.7 Bytes
+CycleDriver        |    Minumum per core:     550.6 MBytes,  minimum per cell: 96228.7 Bytes
+CycleDriver        |    Total:                550.6 MBytes,  total per cell:   96228.7 Bytes
+CycleDriver        |  Doubles allocated in state fields 
+CycleDriver        |    Maximum per core:   1.20728 MBytes
+CycleDriver        |    Minimum per core:   1.20728 MBytes
+CycleDriver        |    Total:              1.20728 MBytes
+================================================================================
+
+                      TimeMonitor results over 1 processor
+
+Timer Name                  Global time (num calls)    
+--------------------------------------------------------------------------------
+Full Simulation             26.76 (1)                  
+Geometric Model Creation    1.8e-05 (1)                
+Mesh Creation               0.07876 (1)                
+================================================================================
+Amanzi::SIMULATION_SUCCESSFUL
+

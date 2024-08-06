@@ -1,0 +1,1646 @@
+ WARNING: Card (NONISOTHERMAL) not found in input file.
+"CHEMISTRY,RADIOACTIVE_DECAY_REACTION,RATE_CONSTANT units" set to default value.
+"Quartz RATE UNITS" set to default value.
+"Goethite RATE UNITS" set to default value.
+"Kaolinite RATE UNITS" set to default value.
+"KaolinitePREFACTOR RATE UNITS" set to default value.
+"Schoepite RATE UNITS" set to default value.
+"Gibbsite RATE UNITS" set to default value.
+"Jurbanite RATE UNITS" set to default value.
+"Basaluminite RATE UNITS" set to default value.
+"Opal RATE UNITS" set to default value.
+
+ ! ************************************************************************** !
+
+ Initial Basis
+
+ Primary Species:
+  H+
+    Charge:   1.00
+    Molar Mass:    1.0079 [g/mol]
+    Debye-Huckel a0:    9.0000 [Angstrom]
+
+  Al+++
+    Charge:   3.00
+    Molar Mass:   26.9815 [g/mol]
+    Debye-Huckel a0:    9.0000 [Angstrom]
+
+  Ca++
+    Charge:   2.00
+    Molar Mass:   40.0780 [g/mol]
+    Debye-Huckel a0:    6.0000 [Angstrom]
+
+  Cl-
+    Charge:  -1.00
+    Molar Mass:   35.4527 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+
+  Fe+++   (redox species)
+    Charge:   3.00
+    Molar Mass:   55.8470 [g/mol]
+    Debye-Huckel a0:    9.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  Fe+++                           
+        -0.5000  H2O                             
+         0.2500  O2(g)                           
+         1.0000  Fe++                            
+         1.0000  H+                              
+      logK:    -9.3541    -7.7654    -5.8970    -4.1507    -2.3795    -0.9223     0.3233     1.4215
+
+  CO2(aq)
+    Charge:   0.00
+    Molar Mass:   44.0098 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  CO2(aq)                         
+        -1.0000  H2O                             
+         1.0000  H+                              
+         1.0000  HCO3-                           
+      logK:    -6.5804    -6.3447    -6.2684    -6.3882    -6.7235    -7.1969    -7.7868    -8.5280
+
+  K+
+    Charge:   1.00
+    Molar Mass:   39.0983 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+
+  Mg++
+    Charge:   2.00
+    Molar Mass:   24.3050 [g/mol]
+    Debye-Huckel a0:    8.0000 [Angstrom]
+
+  Na+
+    Charge:   1.00
+    Molar Mass:   22.9898 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+
+  SiO2(aq)
+    Charge:   0.00
+    Molar Mass:   60.0843 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+
+  SO4--
+    Charge:  -2.00
+    Molar Mass:   96.0636 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+
+  Tritium
+    Charge:   0.00
+    Molar Mass:    1.0080 [g/mol]
+    Debye-Huckel a0:    9.0000 [Angstrom]
+
+  NO3-
+    Charge:  -1.00
+    Molar Mass:   62.0049 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+
+  UO2++
+    Charge:   2.00
+    Molar Mass:  270.0277 [g/mol]
+    Debye-Huckel a0:    4.5000 [Angstrom]
+
+
+ Secondary Species:
+  OH-
+    Charge:  -1.00
+    Molar Mass:   17.0073 [g/mol]
+    Debye-Huckel a0:    3.5000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  OH-                             
+        -1.0000  H+                              
+         1.0000  H2O                             
+      logK:    14.9398    13.9951    13.0272    12.2551    11.6308    11.2836    11.1675    11.3002
+
+  HCO3-
+    Charge:  -1.00
+    Molar Mass:   61.0171 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+
+  CO3--
+    Charge:  -2.00
+    Molar Mass:   60.0092 [g/mol]
+    Debye-Huckel a0:    4.5000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  CO3--                           
+        -1.0000  H+                              
+         1.0000  HCO3-                           
+      logK:    10.6241    10.3288    10.1304    10.0836    10.2003    10.4648    10.8707    11.4638
+
+  NaHCO3(aq)
+    Charge:   0.00
+    Molar Mass:   84.0069 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  NaHCO3(aq)                      
+         1.0000  HCO3-                           
+         1.0000  Na+                             
+      logK:    -0.3734    -0.1541     0.1098     0.4108     0.7926     1.2130   500.0000   500.0000
+
+  NaCO3-
+    Charge:  -1.00
+    Molar Mass:   82.9990 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  NaCO3-                          
+        -1.0000  H+                              
+         1.0000  HCO3-                           
+         1.0000  Na+                             
+      logK:     9.8150     9.8144    10.0745    10.6485    11.5684    12.6320    13.7927    14.9187
+
+  NaOH(aq)
+    Charge:   0.00
+    Molar Mass:   39.9971 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  NaOH(aq)                        
+        -1.0000  H+                              
+         1.0000  H2O                             
+         1.0000  Na+                             
+      logK:    15.6450    14.7948    13.8004    12.8848    11.9708    11.2215    10.5573     9.8847
+
+  AlOH++
+    Charge:   2.00
+    Molar Mass:   43.9889 [g/mol]
+    Debye-Huckel a0:    4.5000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  AlOH++                          
+        -1.0000  H+                              
+         1.0000  Al+++                           
+         1.0000  H2O                             
+      logK:     5.7264     4.9571     4.0033     3.0626     2.0516     1.1673     0.3661    -0.3794
+
+  Al(OH)2+
+    Charge:   1.00
+    Molar Mass:   60.9962 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  Al(OH)2+                        
+        -2.0000  H+                              
+         1.0000  Al+++                           
+         2.0000  H2O                             
+      logK:    12.1394    10.5945     8.7455     6.9818     5.1460     3.5858     2.2019     0.9295
+
+  Al(OH)3(aq)
+    Charge:   0.00
+    Molar Mass:   78.0034 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  Al(OH)3(aq)                     
+        -3.0000  H+                              
+         1.0000  Al+++                           
+         3.0000  H2O                             
+      logK:    18.9826    16.1577    13.0193    10.2731     7.7112     5.8153     4.3824     3.2826
+
+  Al(OH)4-
+    Charge:  -1.00
+    Molar Mass:   95.0107 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  Al(OH)4-                        
+        -4.0000  H+                              
+         1.0000  Al+++                           
+         4.0000  H2O                             
+      logK:    25.7948    22.8833    19.5707    16.5819    13.6762    11.4090     9.5977     8.1671
+
+  CaOH+
+    Charge:   1.00
+    Molar Mass:   57.0853 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  CaOH+                           
+        -1.0000  H+                              
+         1.0000  Ca++                            
+         1.0000  H2O                             
+      logK:   500.0000    12.8500   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  CaHCO3+
+    Charge:   1.00
+    Molar Mass:  101.0951 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  CaHCO3+                         
+         1.0000  Ca++                            
+         1.0000  HCO3-                           
+      logK:    -1.0951    -1.0467    -1.1592    -1.4181    -1.8587    -2.4000    -3.0514    -3.8725
+
+  CaCO3(aq)
+    Charge:   0.00
+    Molar Mass:  100.0872 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  CaCO3(aq)                       
+        -1.0000  H+                              
+         1.0000  Ca++                            
+         1.0000  HCO3-                           
+      logK:     7.5021     7.0017     6.4516     5.9636     5.4683     5.0185     4.5355     3.9118
+
+  MgOH+
+    Charge:   1.00
+    Molar Mass:   41.3123 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  MgOH+                           
+         1.0000  Mg++                            
+         1.0000  OH-                             
+      logK:    -2.1660    -2.2100    -2.3780    -2.6310    -3.0010    -3.4300    -3.9470    -4.6250
+
+  MgHCO3+
+    Charge:   1.00
+    Molar Mass:   85.3221 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  MgHCO3+                         
+         1.0000  HCO3-                           
+         1.0000  Mg++                            
+      logK:    -1.0798    -1.0357    -1.1638    -1.4355    -1.8804    -2.4146    -3.0493    -3.8424
+
+  MgCO3(aq)
+    Charge:   0.00
+    Molar Mass:   84.3142 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  MgCO3(aq)                       
+        -1.0000  H+                              
+         1.0000  HCO3-                           
+         1.0000  Mg++                            
+      logK:     7.7399     7.3499     6.9262     6.5632     6.2045     5.8725     5.4900     4.9530
+
+  (UO2)2(OH)2++
+    Charge:   2.00
+    Molar Mass:  574.0701 [g/mol]
+    Debye-Huckel a0:    4.5000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)2(OH)2++                   
+        -2.0000  H+                              
+         2.0000  H2O                             
+         2.0000  UO2++                           
+      logK:     6.2772     5.6346     4.9999     4.5413     4.2278     4.1102     4.1173     4.2062
+
+  (UO2)2CO3(OH)3-
+    Charge:  -1.00
+    Molar Mass:  651.0866 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)2CO3(OH)3-                 
+        -4.0000  H+                              
+         1.0000  HCO3-                           
+         2.0000  UO2++                           
+         3.0000  H2O                             
+      logK:   500.0000    11.2229   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  (UO2)2OH+++
+    Charge:   3.00
+    Molar Mass:  557.0627 [g/mol]
+    Debye-Huckel a0:    5.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)2OH+++                     
+        -1.0000  H+                              
+         1.0000  H2O                             
+         2.0000  UO2++                           
+      logK:   500.0000     2.7072   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  (UO2)3(CO3)6(6-)
+    Charge:  -6.00
+    Molar Mass: 1170.1383 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)3(CO3)6(6-)                
+        -6.0000  H+                              
+         3.0000  UO2++                           
+         6.0000  HCO3-                           
+      logK:     8.3431     8.0601     7.3190     5.9681     3.6805     0.8685    -2.6241    -7.0853
+
+  (UO2)3(OH)4++
+    Charge:   2.00
+    Molar Mass:  878.1125 [g/mol]
+    Debye-Huckel a0:    4.5000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)3(OH)4++                   
+        -4.0000  H+                              
+         3.0000  UO2++                           
+         4.0000  H2O                             
+      logK:   500.0000    11.9290   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2(OH)4--
+    Charge:  -2.00
+    Molar Mass:  338.0571 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2(OH)4--                      
+        -4.0000  H+                              
+         1.0000  UO2++                           
+         4.0000  H2O                             
+      logK:   500.0000    33.0291   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  (UO2)3(OH)5+
+    Charge:   1.00
+    Molar Mass:  895.1198 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)3(OH)5+                    
+        -5.0000  H+                              
+         3.0000  UO2++                           
+         5.0000  H2O                             
+      logK:    17.2322    15.5862    13.9178    12.6297    11.6179    11.0604    10.7863    10.6975
+
+  (UO2)3(OH)7-
+    Charge:  -1.00
+    Molar Mass:  929.1345 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)3(OH)7-                    
+        -7.0000  H+                              
+         3.0000  UO2++                           
+         7.0000  H2O                             
+      logK:   500.0000    31.0508   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  (UO2)3O(OH)2(HCO3)+
+    Charge:   1.00
+    Molar Mass:  921.1143 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)3O(OH)2(HCO3)+             
+        -4.0000  H+                              
+         1.0000  HCO3-                           
+         3.0000  H2O                             
+         3.0000  UO2++                           
+      logK:   500.0000     9.7129   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  (UO2)4(OH)7+
+    Charge:   1.00
+    Molar Mass: 1199.1622 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)4(OH)7+                    
+        -7.0000  H+                              
+         4.0000  UO2++                           
+         7.0000  H2O                             
+      logK:   500.0000    21.9508   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2NO3+
+    Charge:   1.00
+    Molar Mass:  332.0326 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2NO3+                         
+         1.0000  NO3-                            
+         1.0000  UO2++                           
+      logK:   500.0000    -0.2805   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2OH+
+    Charge:   1.00
+    Molar Mass:  287.0350 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2OH+                          
+        -1.0000  H+                              
+         1.0000  H2O                             
+         1.0000  UO2++                           
+      logK:     5.9118     5.2073     4.4230     3.7193     3.0344     2.5003     2.0625     1.6927
+
+  UO2(OH)2(aq)
+    Charge:   0.00
+    Molar Mass:  304.0424 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2(OH)2(aq)                    
+        -2.0000  H+                              
+         1.0000  UO2++                           
+         2.0000  H2O                             
+      logK:   500.0000    10.3146   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2(OH)3-
+    Charge:  -1.00
+    Molar Mass:  321.0497 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2(OH)3-                       
+        -3.0000  H+                              
+         1.0000  UO2++                           
+         3.0000  H2O                             
+      logK:   500.0000    19.2218   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2CO3(aq)
+    Charge:   0.00
+    Molar Mass:  330.0369 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2CO3(aq)                      
+        -1.0000  H+                              
+         1.0000  HCO3-                           
+         1.0000  UO2++                           
+      logK:     0.9515     0.6634     0.2619    -0.1557    -0.6735    -1.2304   500.0000   500.0000
+
+  Ca2UO2(CO3)3(aq)
+    Charge:   0.00
+    Molar Mass:  530.2150 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  Ca2UO2(CO3)3(aq)                
+         2.0000  Ca++                            
+         1.0000  UO2++                           
+         3.0000  CO3--                           
+      logK:   500.0000   -30.7000   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2(CO3)2--
+    Charge:  -2.00
+    Molar Mass:  390.0461 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2(CO3)2--                     
+        -2.0000  H+                              
+         1.0000  UO2++                           
+         2.0000  HCO3-                           
+      logK:     4.4957     3.7467     2.8158     1.8343     0.6657    -0.4826    -1.7152    -3.1632
+
+  UO2(CO3)3----
+    Charge:  -4.00
+    Molar Mass:  450.0553 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2(CO3)3----                   
+        -3.0000  H+                              
+         1.0000  UO2++                           
+         3.0000  HCO3-                           
+      logK:     9.5017     9.4302     9.2905     9.0025     8.4209     7.6495     6.6200     5.1589
+
+  CaUO2(CO3)3--
+    Charge:  -2.00
+    Molar Mass:  530.2150 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  CaUO2(CO3)3--                   
+         1.0000  Ca++                            
+         1.0000  UO2++                           
+         3.0000  CO3--                           
+      logK:   500.0000   -27.1800   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  MgUO2(CO3)3--
+    Charge:  -2.00
+    Molar Mass:  500.0000 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  MgUO2(CO3)3--                   
+         1.0000  UO2++                           
+         1.0000  Mg++                            
+         3.0000  CO3--                           
+      logK:   500.0000   -26.1100   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2OSi(OH)3+
+    Charge:   1.00
+    Molar Mass:  365.1350 [g/mol]
+    Debye-Huckel a0:    9.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2OSi(OH)3+                    
+        -1.0000  H+                              
+         1.0000  SiO2(aq)                        
+         1.0000  UO2++                           
+         2.0000  H2O                             
+      logK:   500.0000     2.4810   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+ Gas Components:
+  CO2(g)
+    Molar Mass:   44.0098 [g/mol]
+    Gas Reaction: 
+        -1.0000  CO2(g)                          
+        -1.0000  H2O                             
+         1.0000  H+                              
+         1.0000  HCO3-                           
+      logK:    -7.6765    -7.8136    -8.0527    -8.3574    -8.7692    -9.2165    -9.7202   -10.3393
+
+
+ Minerals:
+  Quartz
+    Molar Mass:   60.0843 [g/mol]
+    Molar Volume:  2.2688E-05 [m^3/mol]
+    Mineral Reaction: 
+        -1.0000  Quartz                          
+         1.0000  SiO2(aq)                        
+      logK:   500.0000    -3.7501   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Goethite
+    Molar Mass:   88.8537 [g/mol]
+    Molar Volume:  2.0820E-05 [m^3/mol]
+    Mineral Reaction: 
+        -1.0000  Goethite                        
+        -3.0000  H+                              
+         1.0000  Fe+++                           
+         2.0000  H2O                             
+      logK:   500.0000     0.1758   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Kaolinite
+    Molar Mass:  258.1604 [g/mol]
+    Molar Volume:  9.9520E-05 [m^3/mol]
+    Mineral Reaction: 
+        -1.0000  Kaolinite                       
+        -6.0000  H+                              
+         2.0000  Al+++                           
+         2.0000  SiO2(aq)                        
+         5.0000  H2O                             
+      logK:   500.0000     7.5700   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Schoepite
+    Molar Mass:  322.0577 [g/mol]
+    Molar Volume:  6.6080E-05 [m^3/mol]
+    Mineral Reaction: 
+        -1.0000  Schoepite                       
+        -2.0000  H+                              
+         1.0000  UO2++                           
+         3.0000  H2O                             
+      logK:   500.0000     4.8443   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Gibbsite
+    Molar Mass:   78.0036 [g/mol]
+    Molar Volume:  3.1956E-05 [m^3/mol]
+    Mineral Reaction: 
+        -1.0000  Gibbsite                        
+        -3.0000  H+                              
+         1.0000  Al+++                           
+         3.0000  H2O                             
+      logK:   500.0000     7.7380   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Jurbanite
+    Molar Mass:  230.0640 [g/mol]
+    Molar Volume:  1.2600E-04 [m^3/mol]
+    Mineral Reaction: 
+        -1.0000  Jurbanite                       
+         1.0000  Al+++                           
+        -1.0000  H+                              
+         1.0000  SO4--                           
+         6.0000  H2O                             
+      logK:   500.0000    -3.8000   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Basaluminite
+    Molar Mass:  464.1400 [g/mol]
+    Molar Volume:  2.1893E-04 [m^3/mol]
+    Mineral Reaction: 
+        -1.0000  Basaluminite                    
+         4.0000  Al+++                           
+         1.0000  SO4--                           
+        15.0000  H2O                             
+       -10.0000  H+                              
+      logK:   500.0000    22.2510   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Opal
+    Molar Mass:   60.0840 [g/mol]
+    Molar Volume:  2.9000E-05 [m^3/mol]
+    Mineral Reaction: 
+        -1.0000  Opal                            
+         1.0000  SiO2(aq)                        
+      logK:   500.0000    -3.0050   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+ Surface Complexation Reactions:
+
+   Surface Complexes:
+  (>davis_O)UO2+
+    Charge:   1.00
+    Surface Complex Reaction: 
+        -1.0000  (>davis_O)UO2+                  
+         1.0000  >davis_OH                       
+         1.0000  UO2++                           
+        -1.0000  H+                              
+      logK:   500.0000    -0.4440   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+ Ion Exchange Reactions:
+   Mineral: 
+      CEC:  2.7500E+00
+   Cations:
+      Na+ 1.0000E+00
+      Al+++ 5.8434E-01
+      H+ 3.9811E+01
+      Ca++ 3.1623E+00
+
+
+ ! ************************************************************************** !
+
+ WARNING: No mineral name specified for equilibrium surface complexation reaction: 1
+
+ ! ************************************************************************** !
+
+ Final Basis
+
+ Primary Species:
+  H+
+    Charge:   1.00
+    Molar Mass:    1.0079 [g/mol]
+    Debye-Huckel a0:    9.0000 [Angstrom]
+
+  Al+++
+    Charge:   3.00
+    Molar Mass:   26.9815 [g/mol]
+    Debye-Huckel a0:    9.0000 [Angstrom]
+
+  Ca++
+    Charge:   2.00
+    Molar Mass:   40.0780 [g/mol]
+    Debye-Huckel a0:    6.0000 [Angstrom]
+
+  Cl-
+    Charge:  -1.00
+    Molar Mass:   35.4527 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+
+  Fe+++   (redox species)
+    Charge:   3.00
+    Molar Mass:   55.8470 [g/mol]
+    Debye-Huckel a0:    9.0000 [Angstrom]
+
+  CO2(aq)
+    Charge:   0.00
+    Molar Mass:   44.0098 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+
+  K+
+    Charge:   1.00
+    Molar Mass:   39.0983 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+
+  Mg++
+    Charge:   2.00
+    Molar Mass:   24.3050 [g/mol]
+    Debye-Huckel a0:    8.0000 [Angstrom]
+
+  Na+
+    Charge:   1.00
+    Molar Mass:   22.9898 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+
+  SiO2(aq)
+    Charge:   0.00
+    Molar Mass:   60.0843 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+
+  SO4--
+    Charge:  -2.00
+    Molar Mass:   96.0636 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+
+  Tritium
+    Charge:   0.00
+    Molar Mass:    1.0080 [g/mol]
+    Debye-Huckel a0:    9.0000 [Angstrom]
+
+  NO3-
+    Charge:  -1.00
+    Molar Mass:   62.0049 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+
+  UO2++
+    Charge:   2.00
+    Molar Mass:  270.0277 [g/mol]
+    Debye-Huckel a0:    4.5000 [Angstrom]
+
+
+ Secondary Species:
+  OH-
+    Charge:  -1.00
+    Molar Mass:   17.0073 [g/mol]
+    Debye-Huckel a0:    3.5000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  OH-                             
+         1.0000  H2O                             
+        -1.0000  H+                              
+      logK:    14.9398    13.9951    13.0272    12.2551    11.6308    11.2836    11.1675    11.3002
+
+  HCO3-
+    Charge:  -1.00
+    Molar Mass:   61.0171 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  HCO3-                           
+         1.0000  H2O                             
+        -1.0000  H+                              
+         1.0000  CO2(aq)                         
+      logK:     6.5804     6.3447     6.2684     6.3882     6.7235     7.1969     7.7868     8.5280
+
+  CO3--
+    Charge:  -2.00
+    Molar Mass:   60.0092 [g/mol]
+    Debye-Huckel a0:    4.5000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  CO3--                           
+         1.0000  H2O                             
+        -2.0000  H+                              
+         1.0000  CO2(aq)                         
+      logK:    17.2045    16.6735    16.3988    16.4718    16.9238    17.6617    18.6575    19.9918
+
+  NaHCO3(aq)
+    Charge:   0.00
+    Molar Mass:   84.0069 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  NaHCO3(aq)                      
+         1.0000  H2O                             
+        -1.0000  H+                              
+         1.0000  CO2(aq)                         
+         1.0000  Na+                             
+      logK:     6.2070     6.1906     6.3782     6.7990     7.5161     8.4099   507.7868   508.5280
+
+  NaCO3-
+    Charge:  -1.00
+    Molar Mass:   82.9990 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  NaCO3-                          
+         1.0000  H2O                             
+        -2.0000  H+                              
+         1.0000  CO2(aq)                         
+         1.0000  Na+                             
+      logK:    16.3954    16.1591    16.3429    17.0367    18.2919    19.8289    21.5795    23.4467
+
+  NaOH(aq)
+    Charge:   0.00
+    Molar Mass:   39.9971 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  NaOH(aq)                        
+         1.0000  H2O                             
+        -1.0000  H+                              
+         1.0000  Na+                             
+      logK:    15.6450    14.7948    13.8004    12.8848    11.9708    11.2215    10.5573     9.8847
+
+  AlOH++
+    Charge:   2.00
+    Molar Mass:   43.9889 [g/mol]
+    Debye-Huckel a0:    4.5000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  AlOH++                          
+         1.0000  H2O                             
+        -1.0000  H+                              
+         1.0000  Al+++                           
+      logK:     5.7264     4.9571     4.0033     3.0626     2.0516     1.1673     0.3661    -0.3794
+
+  Al(OH)2+
+    Charge:   1.00
+    Molar Mass:   60.9962 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  Al(OH)2+                        
+         2.0000  H2O                             
+        -2.0000  H+                              
+         1.0000  Al+++                           
+      logK:    12.1394    10.5945     8.7455     6.9818     5.1460     3.5858     2.2019     0.9295
+
+  Al(OH)3(aq)
+    Charge:   0.00
+    Molar Mass:   78.0034 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  Al(OH)3(aq)                     
+         3.0000  H2O                             
+        -3.0000  H+                              
+         1.0000  Al+++                           
+      logK:    18.9826    16.1577    13.0193    10.2731     7.7112     5.8153     4.3824     3.2826
+
+  Al(OH)4-
+    Charge:  -1.00
+    Molar Mass:   95.0107 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  Al(OH)4-                        
+         4.0000  H2O                             
+        -4.0000  H+                              
+         1.0000  Al+++                           
+      logK:    25.7948    22.8833    19.5707    16.5819    13.6762    11.4090     9.5977     8.1671
+
+  CaOH+
+    Charge:   1.00
+    Molar Mass:   57.0853 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  CaOH+                           
+         1.0000  H2O                             
+        -1.0000  H+                              
+         1.0000  Ca++                            
+      logK:   500.0000    12.8500   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  CaHCO3+
+    Charge:   1.00
+    Molar Mass:  101.0951 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  CaHCO3+                         
+         1.0000  H2O                             
+        -1.0000  H+                              
+         1.0000  Ca++                            
+         1.0000  CO2(aq)                         
+      logK:     5.4853     5.2980     5.1092     4.9701     4.8648     4.7969     4.7354     4.6555
+
+  CaCO3(aq)
+    Charge:   0.00
+    Molar Mass:  100.0872 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  CaCO3(aq)                       
+         1.0000  H2O                             
+        -2.0000  H+                              
+         1.0000  Ca++                            
+         1.0000  CO2(aq)                         
+      logK:    14.0825    13.3464    12.7200    12.3518    12.1918    12.2154    12.3223    12.4398
+
+  MgOH+
+    Charge:   1.00
+    Molar Mass:   41.3123 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  MgOH+                           
+         1.0000  H2O                             
+        -1.0000  H+                              
+         1.0000  Mg++                            
+      logK:    12.7738    11.7851    10.6492     9.6241     8.6298     7.8536     7.2205     6.6752
+
+  MgHCO3+
+    Charge:   1.00
+    Molar Mass:   85.3221 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  MgHCO3+                         
+         1.0000  H2O                             
+        -1.0000  H+                              
+         1.0000  CO2(aq)                         
+         1.0000  Mg++                            
+      logK:     5.5006     5.3090     5.1046     4.9527     4.8431     4.7823     4.7375     4.6856
+
+  MgCO3(aq)
+    Charge:   0.00
+    Molar Mass:   84.3142 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  MgCO3(aq)                       
+         1.0000  H2O                             
+        -2.0000  H+                              
+         1.0000  CO2(aq)                         
+         1.0000  Mg++                            
+      logK:    14.3203    13.6946    13.1946    12.9514    12.9280    13.0694    13.2768    13.4810
+
+  (UO2)2(OH)2++
+    Charge:   2.00
+    Molar Mass:  574.0701 [g/mol]
+    Debye-Huckel a0:    4.5000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)2(OH)2++                   
+         2.0000  H2O                             
+        -2.0000  H+                              
+         2.0000  UO2++                           
+      logK:     6.2772     5.6346     4.9999     4.5413     4.2278     4.1102     4.1173     4.2062
+
+  (UO2)2CO3(OH)3-
+    Charge:  -1.00
+    Molar Mass:  651.0866 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)2CO3(OH)3-                 
+         4.0000  H2O                             
+        -5.0000  H+                              
+         1.0000  CO2(aq)                         
+         2.0000  UO2++                           
+      logK:   506.5804    17.5676   506.2684   506.3882   506.7235   507.1969   507.7868   508.5280
+
+  (UO2)2OH+++
+    Charge:   3.00
+    Molar Mass:  557.0627 [g/mol]
+    Debye-Huckel a0:    5.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)2OH+++                     
+         1.0000  H2O                             
+        -1.0000  H+                              
+         2.0000  UO2++                           
+      logK:   500.0000     2.7072   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  (UO2)3(CO3)6(6-)
+    Charge:  -6.00
+    Molar Mass: 1170.1383 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)3(CO3)6(6-)                
+         6.0000  H2O                             
+       -12.0000  H+                              
+         6.0000  CO2(aq)                         
+         3.0000  UO2++                           
+      logK:    47.8255    46.1283    44.9294    44.2973    44.0215    44.0499    44.0967    44.0827
+
+  (UO2)3(OH)4++
+    Charge:   2.00
+    Molar Mass:  878.1125 [g/mol]
+    Debye-Huckel a0:    4.5000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)3(OH)4++                   
+         4.0000  H2O                             
+        -4.0000  H+                              
+         3.0000  UO2++                           
+      logK:   500.0000    11.9290   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2(OH)4--
+    Charge:  -2.00
+    Molar Mass:  338.0571 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2(OH)4--                      
+         4.0000  H2O                             
+        -4.0000  H+                              
+         1.0000  UO2++                           
+      logK:   500.0000    33.0291   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  (UO2)3(OH)5+
+    Charge:   1.00
+    Molar Mass:  895.1198 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)3(OH)5+                    
+         5.0000  H2O                             
+        -5.0000  H+                              
+         3.0000  UO2++                           
+      logK:    17.2322    15.5862    13.9178    12.6297    11.6179    11.0604    10.7863    10.6975
+
+  (UO2)3(OH)7-
+    Charge:  -1.00
+    Molar Mass:  929.1345 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)3(OH)7-                    
+         7.0000  H2O                             
+        -7.0000  H+                              
+         3.0000  UO2++                           
+      logK:   500.0000    31.0508   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  (UO2)3O(OH)2(HCO3)+
+    Charge:   1.00
+    Molar Mass:  921.1143 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)3O(OH)2(HCO3)+             
+         4.0000  H2O                             
+        -5.0000  H+                              
+         1.0000  CO2(aq)                         
+         3.0000  UO2++                           
+      logK:   506.5804    16.0576   506.2684   506.3882   506.7235   507.1969   507.7868   508.5280
+
+  (UO2)4(OH)7+
+    Charge:   1.00
+    Molar Mass: 1199.1622 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  (UO2)4(OH)7+                    
+         7.0000  H2O                             
+        -7.0000  H+                              
+         4.0000  UO2++                           
+      logK:   500.0000    21.9508   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2NO3+
+    Charge:   1.00
+    Molar Mass:  332.0326 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2NO3+                         
+         1.0000  NO3-                            
+         1.0000  UO2++                           
+      logK:   500.0000    -0.2805   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2OH+
+    Charge:   1.00
+    Molar Mass:  287.0350 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2OH+                          
+         1.0000  H2O                             
+        -1.0000  H+                              
+         1.0000  UO2++                           
+      logK:     5.9118     5.2073     4.4230     3.7193     3.0344     2.5003     2.0625     1.6927
+
+  UO2(OH)2(aq)
+    Charge:   0.00
+    Molar Mass:  304.0424 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2(OH)2(aq)                    
+         2.0000  H2O                             
+        -2.0000  H+                              
+         1.0000  UO2++                           
+      logK:   500.0000    10.3146   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2(OH)3-
+    Charge:  -1.00
+    Molar Mass:  321.0497 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2(OH)3-                       
+         3.0000  H2O                             
+        -3.0000  H+                              
+         1.0000  UO2++                           
+      logK:   500.0000    19.2218   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2CO3(aq)
+    Charge:   0.00
+    Molar Mass:  330.0369 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2CO3(aq)                      
+         1.0000  H2O                             
+        -2.0000  H+                              
+         1.0000  CO2(aq)                         
+         1.0000  UO2++                           
+      logK:     7.5319     7.0081     6.5303     6.2325     6.0500     5.9665   507.7868   508.5280
+
+  Ca2UO2(CO3)3(aq)
+    Charge:   0.00
+    Molar Mass:  530.2150 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  Ca2UO2(CO3)3(aq)                
+         3.0000  H2O                             
+        -6.0000  H+                              
+         2.0000  Ca++                            
+         3.0000  CO2(aq)                         
+         1.0000  UO2++                           
+      logK:   551.6135    19.3205   549.1964   549.4154   550.7714   552.9851   555.9725   559.9754
+
+  UO2(CO3)2--
+    Charge:  -2.00
+    Molar Mass:  390.0461 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2(CO3)2--                     
+         2.0000  H2O                             
+        -4.0000  H+                              
+         2.0000  CO2(aq)                         
+         1.0000  UO2++                           
+      logK:    17.6565    16.4361    15.3526    14.6107    14.1127    13.9112    13.8584    13.8928
+
+  UO2(CO3)3----
+    Charge:  -4.00
+    Molar Mass:  450.0553 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2(CO3)3----                   
+         3.0000  H2O                             
+        -6.0000  H+                              
+         3.0000  CO2(aq)                         
+         1.0000  UO2++                           
+      logK:    29.2429    28.4643    28.0957    28.1671    28.5914    29.2402    29.9804    30.7429
+
+  CaUO2(CO3)3--
+    Charge:  -2.00
+    Molar Mass:  530.2150 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  CaUO2(CO3)3--                   
+         3.0000  H2O                             
+        -6.0000  H+                              
+         1.0000  Ca++                            
+         3.0000  CO2(aq)                         
+         1.0000  UO2++                           
+      logK:   551.6135    22.8405   549.1964   549.4154   550.7714   552.9851   555.9725   559.9754
+
+  MgUO2(CO3)3--
+    Charge:  -2.00
+    Molar Mass:  500.0000 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  MgUO2(CO3)3--                   
+         3.0000  H2O                             
+        -6.0000  H+                              
+         3.0000  CO2(aq)                         
+         1.0000  Mg++                            
+         1.0000  UO2++                           
+      logK:   551.6135    23.9105   549.1964   549.4154   550.7714   552.9851   555.9725   559.9754
+
+  UO2OSi(OH)3+
+    Charge:   1.00
+    Molar Mass:  365.1350 [g/mol]
+    Debye-Huckel a0:    9.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  UO2OSi(OH)3+                    
+         2.0000  H2O                             
+        -1.0000  H+                              
+         1.0000  SiO2(aq)                        
+         1.0000  UO2++                           
+      logK:   500.0000     2.4810   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+ Gas Components:
+  CO2(g)
+    Molar Mass:   44.0098 [g/mol]
+    Gas Reaction: 
+        -1.0000  CO2(g)                          
+         1.0000  CO2(aq)                         
+      logK:    -1.0961    -1.4689    -1.7843    -1.9692    -2.0457    -2.0196    -1.9334    -1.8113
+
+
+ Minerals:
+  Quartz
+    Molar Mass:   60.0843 [g/mol]
+    Molar Volume:  2.2688E-05 [m^3/mol]
+    Mineral Reaction: 
+        -1.0000  Quartz                          
+         1.0000  SiO2(aq)                        
+      logK:   500.0000    -3.7501   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Goethite
+    Molar Mass:   88.8537 [g/mol]
+    Molar Volume:  2.0820E-05 [m^3/mol]
+    Mineral Reaction: 
+        -1.0000  Goethite                        
+         2.0000  H2O                             
+        -3.0000  H+                              
+         1.0000  Fe+++                           
+      logK:   500.0000     0.1758   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Kaolinite
+    Molar Mass:  258.1604 [g/mol]
+    Molar Volume:  9.9520E-05 [m^3/mol]
+    Mineral Reaction: 
+        -1.0000  Kaolinite                       
+         5.0000  H2O                             
+        -6.0000  H+                              
+         2.0000  Al+++                           
+         2.0000  SiO2(aq)                        
+      logK:   500.0000     7.5700   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Schoepite
+    Molar Mass:  322.0577 [g/mol]
+    Molar Volume:  6.6080E-05 [m^3/mol]
+    Mineral Reaction: 
+        -1.0000  Schoepite                       
+         3.0000  H2O                             
+        -2.0000  H+                              
+         1.0000  UO2++                           
+      logK:   500.0000     4.8443   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Gibbsite
+    Molar Mass:   78.0036 [g/mol]
+    Molar Volume:  3.1956E-05 [m^3/mol]
+    Mineral Reaction: 
+        -1.0000  Gibbsite                        
+         3.0000  H2O                             
+        -3.0000  H+                              
+         1.0000  Al+++                           
+      logK:   500.0000     7.7380   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Jurbanite
+    Molar Mass:  230.0640 [g/mol]
+    Molar Volume:  1.2600E-04 [m^3/mol]
+    Mineral Reaction: 
+        -1.0000  Jurbanite                       
+         6.0000  H2O                             
+        -1.0000  H+                              
+         1.0000  Al+++                           
+         1.0000  SO4--                           
+      logK:   500.0000    -3.8000   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Basaluminite
+    Molar Mass:  464.1400 [g/mol]
+    Molar Volume:  2.1893E-04 [m^3/mol]
+    Mineral Reaction: 
+        -1.0000  Basaluminite                    
+        15.0000  H2O                             
+       -10.0000  H+                              
+         4.0000  Al+++                           
+         1.0000  SO4--                           
+      logK:   500.0000    22.2510   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Opal
+    Molar Mass:   60.0840 [g/mol]
+    Molar Volume:  2.9000E-05 [m^3/mol]
+    Mineral Reaction: 
+        -1.0000  Opal                            
+         1.0000  SiO2(aq)                        
+      logK:   500.0000    -3.0050   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+ Surface Complexation Reactions:
+
+   Surface Complexes:
+  (>davis_O)UO2+
+    Charge:   1.00
+    Surface Complex Reaction: 
+        -1.0000  (>davis_O)UO2+                  
+         1.0000  >davis_OH                       
+        -1.0000  H+                              
+         1.0000  UO2++                           
+      logK:   500.0000    -0.4440   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+ Ion Exchange Reactions:
+   Mineral: 
+      CEC:  2.7500E+00
+   Cations:
+      Na+ 1.0000E+00
+      Al+++ 5.8434E-01
+      H+ 3.9811E+01
+      Ca++ 3.1623E+00
+
+
+ ! ************************************************************************** !
+
+--------------------------------------------------------------------------------
+
+    14  Primary Species
+
+              H+                    Al+++                 Ca++                
+              Cl-                   Fe+++                 CO2(aq)             
+              K+                    Mg++                  Na+                 
+              SiO2(aq)              SO4--                 Tritium             
+              NO3-                  UO2++               
+
+    37  Secondary Complex Species
+
+              OH-                   HCO3-                 CO3--               
+              NaHCO3(aq)            NaCO3-                NaOH(aq)            
+              AlOH++                Al(OH)2+              Al(OH)3(aq)         
+              Al(OH)4-              CaOH+                 CaHCO3+             
+              CaCO3(aq)             MgOH+                 MgHCO3+             
+              MgCO3(aq)             (UO2)2(OH)2++         (UO2)2CO3(OH)3-     
+              (UO2)2OH+++           (UO2)3(CO3)6(6-)      (UO2)3(OH)4++       
+              UO2(OH)4--            (UO2)3(OH)5+          (UO2)3(OH)7-        
+              (UO2)3O(OH)2(HCO3)+   (UO2)4(OH)7+          UO2NO3+             
+              UO2OH+                UO2(OH)2(aq)          UO2(OH)3-           
+              UO2CO3(aq)            Ca2UO2(CO3)3(aq)      UO2(CO3)2--         
+              UO2(CO3)3----         CaUO2(CO3)3--         MgUO2(CO3)3--       
+              UO2OSi(OH)3+        
+
+     0  Active Gas Species
+
+
+
+     1  Passive Gas Species
+
+              CO2(g)              
+
+     8  Reference Minerals
+
+              Quartz                Goethite              Kaolinite           
+              Schoepite             Gibbsite              Jurbanite           
+              Basaluminite          Opal                
+
+     8  Kinetic Mineral Reactions
+
+              Quartz                Goethite              Kaolinite           
+              Schoepite             Gibbsite              Jurbanite           
+              Basaluminite          Opal                
+
+     1  Surface Complexation Reaction Sites
+
+              >davis_OH           
+
+     1  Surface Complexes
+
+              (>davis_O)UO2+      
+
+     1  Ion Exchange Reactions
+
+     4  Ion Exchange Cations
+--------------------------------------------------------------------------------
+Constraint Species: H+
+Constraint Species: Al+++
+Constraint Species: Tritium
+Constraint Species: NO3-
+Constraint Species: SO4--
+Constraint Species: Na+
+Constraint Species: Fe+++
+Constraint Species: Mg++
+Constraint Species: CO2(aq)
+Constraint Species: Cl-
+Constraint Species: UO2++
+Constraint Species: Ca++
+Constraint Species: SiO2(aq)
+Constraint Species: K+
+Constraint Minerals: Goethite
+"Goethite SPECIFIC SURFACE_AREA UNITS" set to default value.
+Constraint Minerals: Gibbsite
+"Gibbsite SPECIFIC SURFACE_AREA UNITS" set to default value.
+Constraint Minerals: Jurbanite
+"Jurbanite SPECIFIC SURFACE_AREA UNITS" set to default value.
+Constraint Minerals: Basaluminite
+"Basaluminite SPECIFIC SURFACE_AREA UNITS" set to default value.
+Constraint Minerals: Schoepite
+"Schoepite SPECIFIC SURFACE_AREA UNITS" set to default value.
+Constraint Minerals: Opal
+"Opal SPECIFIC SURFACE_AREA UNITS" set to default value.
+Constraint Minerals: Quartz
+"Quartz SPECIFIC SURFACE_AREA UNITS" set to default value.
+Constraint Minerals: Kaolinite
+"Kaolinite SPECIFIC SURFACE_AREA UNITS" set to default value.
+Constraint Species: H+
+Constraint Species: Al+++
+Constraint Species: Tritium
+Constraint Species: NO3-
+Constraint Species: SO4--
+Constraint Species: Na+
+Constraint Species: Fe+++
+Constraint Species: Mg++
+Constraint Species: CO2(aq)
+Constraint Species: Cl-
+Constraint Species: UO2++
+Constraint Species: Ca++
+Constraint Species: SiO2(aq)
+Constraint Species: K+
+Constraint Minerals: Goethite
+"Goethite SPECIFIC SURFACE_AREA UNITS" set to default value.
+Constraint Minerals: Gibbsite
+"Gibbsite SPECIFIC SURFACE_AREA UNITS" set to default value.
+Constraint Minerals: Jurbanite
+"Jurbanite SPECIFIC SURFACE_AREA UNITS" set to default value.
+Constraint Minerals: Basaluminite
+"Basaluminite SPECIFIC SURFACE_AREA UNITS" set to default value.
+Constraint Minerals: Schoepite
+"Schoepite SPECIFIC SURFACE_AREA UNITS" set to default value.
+Constraint Minerals: Opal
+"Opal SPECIFIC SURFACE_AREA UNITS" set to default value.
+Constraint Minerals: Quartz
+"Quartz SPECIFIC SURFACE_AREA UNITS" set to default value.
+Constraint Minerals: Kaolinite
+"Kaolinite SPECIFIC SURFACE_AREA UNITS" set to default value.
+processing : background
+Looking for pflotran constraint : background
+initializing constraint : background
+equilibrate constraint : background
+
+  Constraint: background
+  ----------------------------------------------------------------------------
+        iterations:    13
+                pH:   5.4000
+    ionic strength:   1.6448E-02 [mol/L]
+    charge balance:  -7.7244E-17
+          pressure:   0.0000E+00 [Pa]
+       temperature:    25.00 [C]
+       density H2O:   997.16 [kg/m^3]
+ ln / activity H2O:   0.0000E+00  1.0000E+00    [---]
+ mole fraction H2O:   9.9970E-01    [---]
+ mass fraction H2O:   9.9943E-01    [---]
+  ----------------------------------------------------------------------------
+
+  primary                   free        total
+  species                   molal       molal       act coef     constraint
+  ----------------------------------------------------------------------------
+  H+                        4.4347E-06  2.9693E-06  8.9770E-01    pH
+  Al+++                     5.7851E-09  2.2216E-08  3.7393E-01    Kaolinite
+  Ca++                      1.0018E-05  1.0028E-05  6.1845E-01    total aq
+  Cl-                       1.0007E-02  1.0018E-02  8.7590E-01    chrg
+  Fe+++                     2.5294E-16  2.5320E-16  3.7393E-01    Goethite
+  CO2(aq)                   1.0742E-05  1.2193E-05  1.0000E+00    CO2(g)
+  K+                        3.3260E-05  3.3295E-05  8.7590E-01    total aq
+  Mg++                      5.3596E-03  5.3652E-03  6.3754E-01    total aq
+  Na+                       2.7850E-04  2.7879E-04  8.8014E-01    total aq
+  SiO2(aq)                  1.7779E-04  1.7797E-04  1.0000E+00    Quartz
+  SO4--                     2.2541E-05  2.2564E-05  5.9730E-01    total aq
+  Tritium                   1.0018E-15  1.0028E-15  1.0000E+00    total aq
+  NO3-                      1.0018E-03  1.0028E-03  8.7590E-01    total aq
+  UO2++                     3.0908E-11  1.2536E-10  6.0280E-01    total aq
+
+  complex                   molality    act coef        logK
+  ----------------------------------------------------------------------------
+  HCO3-                     1.3863E-06  8.8014E-01    6.3447E+00
+  MgHCO3+                   5.1426E-08  8.8014E-01    5.3090E+00
+  AlOH++                    9.9501E-09  6.0280E-01    4.9571E+00
+  Al(OH)2+                  3.9450E-09  8.8014E-01    1.0595E+01
+  OH-                       2.8932E-09  8.7806E-01    1.3995E+01
+  Al(OH)3(aq)               2.3845E-09  1.0000E+00    1.6158E+01
+  MgOH+                     1.5995E-09  8.8014E-01    1.1785E+01
+  NaHCO3(aq)                4.2646E-10  1.0000E+00    6.1906E+00
+  Al(OH)4-                  1.2801E-10  8.8014E-01    2.2883E+01
+  CaHCO3+                   9.5637E-11  8.8014E-01    5.2980E+00
+  UO2(OH)2(aq)              5.6969E-11  1.0000E+00    1.0315E+01
+  MgCO3(aq)                 4.6788E-11  1.0000E+00    1.3695E+01
+  UO2OH+                    3.2990E-11  8.8014E-01    5.2073E+00
+  CO3--                     2.3847E-11  6.0280E-01    1.6673E+01
+  UO2OSi(OH)3+              3.0620E-12  8.9770E-01    2.4810E+00
+  UO2CO3(aq)                1.2395E-12  1.0000E+00    7.0081E+00
+  CaOH+                     2.4976E-13  8.8014E-01    1.2850E+01
+  CaCO3(aq)                 1.8914E-13  1.0000E+00    1.3346E+01
+  NaOH(aq)                  9.8760E-14  1.0000E+00    1.4795E+01
+  UO2NO3+                   3.5434E-14  8.8014E-01   -2.8050E-01
+  UO2(OH)3-                 2.0132E-14  8.8014E-01    1.9222E+01
+  NaCO3-                    1.3087E-14  8.8014E-01    1.6159E+01
+  UO2(CO3)2--               5.2499E-16  5.9730E-01    1.6436E+01
+  (UO2)2(OH)2++             8.4277E-17  6.0280E-01    5.6346E+00
+  (UO2)2CO3(OH)3-           1.1466E-17  8.8014E-01    1.7568E+01
+  (UO2)2OH+++               5.2493E-19  3.2597E-01    2.7072E+00
+  MgUO2(CO3)3--             4.1580E-20  5.8585E-01    2.3910E+01
+  (UO2)3(OH)5+              1.9053E-21  8.8014E-01    1.5586E+01
+  UO2(CO3)3----             1.5721E-21  1.2669E-01    2.8464E+01
+  CaUO2(CO3)3--             8.6882E-22  5.9730E-01    2.2841E+01
+  UO2(OH)4--                1.1613E-22  5.9730E-01    3.3029E+01
+  (UO2)3(OH)4++             5.0298E-23  6.0280E-01    1.1929E+01
+  Ca2UO2(CO3)3(aq)          1.0646E-23  1.0000E+00    1.9321E+01
+  (UO2)3(OH)7-              4.1245E-26  8.8014E-01    3.1051E+01
+  (UO2)3O(OH)2(HCO3)+       6.9130E-27  8.8014E-01    1.6058E+01
+  (UO2)4(OH)7+              9.6741E-28  8.8014E-01    2.1951E+01
+  (UO2)3(CO3)6(6-)          4.8829E-42  9.5574E-03    4.6128E+01
+
+
+  NOTE: Only equilibrium surface complexation is considered below
+
+  surf complex              mol/m^3 blk logK
+  ----------------------------------------------------------------------------
+  >davis_OH                 1.5620E-01  free site
+  (>davis_O)UO2+            2.0320E-06 -4.4400E-01
+
+  primary species          retardation
+  ----------------------------------------------------------------------------
+  H+                        9.9725E-01
+  Al+++                     1.0000E+00
+  Ca++                      1.0000E+00
+  Cl-                       1.0000E+00
+  Fe+++                     1.0000E+00
+  CO2(aq)                   1.0000E+00
+  K+                        1.0000E+00
+  Mg++                      1.0000E+00
+  Na+                       1.0000E+00
+  SiO2(aq)                  1.0000E+00
+  SO4--                     1.0000E+00
+  Tritium                   1.0000E+00
+  NO3-                      1.0000E+00
+  UO2++                     6.6022E+01
+
+  ion-exchange reactions
+  ----------------------------------------------------------------------------
+  CEC =   2.7500E+00
+  cation    selectivity coef.   sorbed conc.     Kd
+                              [mol/m^3]
+  ----------------------------------------------------------------------------
+  Na+         1.0000E+00      1.4455E-01      2.0799E+00
+  Al+++       5.8434E-01      1.1427E-02      2.0633E+03
+  H+          3.9811E+01      9.3465E-02      1.2627E+02
+  Ca++        3.1623E+00      1.2388E+00      4.9554E+02
+
+  primary species         total(aq+sorbed)    total retardation
+                             [mol/L]               1+Kd
+  ----------------------------------------------------------------------------
+  H+                        3.7681E-04          1.2726E+02
+  Al+++                     4.5730E-05          2.0643E+03
+  Ca++                      4.9654E-03          4.9654E+02
+  Cl-                       9.9892E-03          1.0000E+00
+  Fe+++                     2.5248E-16          1.0000E+00
+  CO2(aq)                   1.2159E-05          1.0000E+00
+  K+                        3.3200E-05          1.0000E+00
+  Mg++                      5.3500E-03          1.0000E+00
+  Na+                       8.5622E-04          3.0799E+00
+  SiO2(aq)                  1.7747E-04          1.0000E+00
+  SO4--                     2.2500E-05          1.0000E+00
+  Tritium                   1.0000E-15          1.0000E+00
+  NO3-                      1.0000E-03          1.0000E+00
+  UO2++                     8.2528E-09          6.6022E+01
+
+  mineral                             log SI       Affinity     log K
+                                                   [kJ/mol]
+  ----------------------------------------------------------------------------
+  Quartz                                0.0000     -0.0000   -3.7501E+00
+  Goethite                              0.0000     -0.0000    1.7580E-01
+  Kaolinite                            -0.0000      0.0000    7.5700E+00
+  Gibbsite                             -0.2029   1158.1548    7.7380E+00
+  Opal                                 -0.7451   4253.0365   -3.0050E+00
+  Jurbanite                            -4.3357  24748.4494   -3.8000E+00
+  Schoepite                            -4.7741  27250.3655    4.8443E+00
+  Basaluminite                         -7.7814  44416.5315    2.2251E+01
+
+  gas              par pres [bars]  conc [mol/m^3]  log K
+  ----------------------------------------------------------------------------
+  CO2(g)           3.1623E-04       1.2756E-02      -1.4689E+00
+processing : seepage
+Looking for pflotran constraint : seepage
+initializing constraint : seepage
+equilibrate constraint : seepage
+
+  Constraint: seepage
+  ----------------------------------------------------------------------------
+        iterations:    20
+                pH:   2.0500
+    ionic strength:   1.0245E-02 [mol/L]
+    charge balance:   1.4055E-13
+          pressure:   0.0000E+00 [Pa]
+       temperature:    25.00 [C]
+       density H2O:   997.16 [kg/m^3]
+ ln / activity H2O:   0.0000E+00  1.0000E+00    [---]
+ mole fraction H2O:   9.9963E-01    [---]
+ mass fraction H2O:   9.9934E-01    [---]
+  ----------------------------------------------------------------------------
+
+  primary                   free        total
+  species                   molal       molal       act coef     constraint
+  ----------------------------------------------------------------------------
+  H+                        9.7592E-03  9.7693E-03  9.1325E-01    pH
+  Al+++                     1.0010E-08  1.0028E-08  4.3846E-01    total aq
+  Ca++                      1.0018E-05  1.0028E-05  6.7271E-01    total aq
+  Cl-                       3.3961E-05  3.3997E-05  8.9816E-01    total aq
+  Fe+++                     2.4203E-06  2.4229E-06  4.3846E-01    Goethite
+  CO2(aq)                   1.0742E-05  1.0754E-05  1.0000E+00    CO2(g)
+  K+                        1.7231E-06  1.7249E-06  8.9816E-01    total aq
+  Mg++                      2.4745E-06  2.4770E-06  6.8691E-01    total aq
+  Na+                       2.9471E-04  2.9502E-04  9.0103E-01    chrg
+  SiO2(aq)                  1.1821E-04  1.1834E-04  1.0000E+00    total aq
+  SO4--                     4.8087E-05  4.8137E-05  6.5719E-01    total aq
+  Tritium                   2.1739E-09  2.1762E-09  1.0000E+00    total aq
+  NO3-                      1.0018E-02  1.0028E-02  8.9816E-01    total aq
+  UO2++                     2.9763E-05  3.0186E-05  6.6120E-01    total aq
+
+  complex                   molality    act coef        logK
+  ----------------------------------------------------------------------------
+  UO2NO3+                   3.7488E-07  9.0103E-01   -2.8050E-01
+  UO2OH+                    1.5204E-08  9.0103E-01    5.2073E+00
+  UO2OSi(OH)3+              9.4424E-10  9.1325E-01    2.4810E+00
+  HCO3-                     6.0487E-10  9.0103E-01    6.3447E+00
+  (UO2)2OH+++               2.1370E-10  3.9903E-01    2.7072E+00
+  (UO2)2(OH)2++             1.7103E-11  6.6120E-01    5.6346E+00
+  UO2(OH)2(aq)              1.2006E-11  1.0000E+00    1.0315E+01
+  AlOH++                    8.2208E-12  6.6120E-01    4.9571E+00
+  OH-                       1.2614E-12  8.9962E-01    1.3995E+01
+  UO2CO3(aq)                2.6122E-13  1.0000E+00    7.0081E+00
+  NaHCO3(aq)                2.0636E-13  1.0000E+00    6.1906E+00
+  CaHCO3+                   4.5391E-14  9.0103E-01    5.2980E+00
+  MgHCO3+                   1.1162E-14  9.0103E-01    5.3090E+00
+  Al(OH)2+                  1.5600E-15  9.0103E-01    1.0595E+01
+  MgOH+                     3.4717E-16  9.0103E-01    1.1785E+01
+  CaOH+                     1.1854E-16  9.0103E-01    1.2850E+01
+  NaOH(aq)                  4.7790E-17  1.0000E+00    1.4795E+01
+  CO3--                     4.3378E-18  6.6120E-01    1.6673E+01
+  (UO2)3(OH)4++             2.1513E-18  6.6120E-01    1.1929E+01
+  UO2(OH)3-                 1.8513E-18  9.0103E-01    1.9222E+01
+  Al(OH)3(aq)               4.3117E-19  1.0000E+00    1.6158E+01
+  CaCO3(aq)                 4.1050E-20  1.0000E+00    1.3346E+01
+  (UO2)3(OH)5+              3.9002E-20  9.0103E-01    1.5586E+01
+  MgCO3(aq)                 4.6439E-21  1.0000E+00    1.3695E+01
+  NaCO3-                    2.7631E-21  9.0103E-01    1.6159E+01
+  (UO2)2CO3(OH)3-           2.2222E-22  9.0103E-01    1.7568E+01
+  UO2(CO3)2--               2.0064E-23  6.5719E-01    1.6436E+01
+  Al(OH)4-                  1.0100E-23  9.0103E-01    2.2883E+01
+  (UO2)3O(OH)2(HCO3)+       1.4151E-25  9.0103E-01    1.6058E+01
+  (UO2)4(OH)7+              4.1735E-27  9.0103E-01    2.1951E+01
+  UO2(OH)4--                4.4383E-30  6.5719E-01    3.3029E+01
+  (UO2)3(OH)7-              1.6846E-31  9.0103E-01    3.1051E+01
+  UO2(CO3)3----             8.9848E-36  1.8600E-01    2.8464E+01
+  CaUO2(CO3)3--             7.2066E-36  6.5719E-01    2.2841E+01
+  MgUO2(CO3)3--             1.5669E-37  6.4888E-01    2.3910E+01
+  Ca2UO2(CO3)3(aq)          1.0569E-37  1.0000E+00    1.9321E+01
+  (UO2)3(CO3)6(6-)          1.5292E-64  2.2691E-02    4.6128E+01
+
+
+  NOTE: Only equilibrium surface complexation is considered below
+
+  surf complex              mol/m^3 blk logK
+  ----------------------------------------------------------------------------
+  >davis_OH                 1.5525E-01  free site
+  (>davis_O)UO2+            9.5286E-04 -4.4400E-01
+
+  primary species          retardation
+  ----------------------------------------------------------------------------
+  H+                        9.9961E-01
+  Al+++                     1.0000E+00
+  Ca++                      1.0000E+00
+  Cl-                       1.0000E+00
+  Fe+++                     1.0000E+00
+  CO2(aq)                   1.0000E+00
+  K+                        1.0000E+00
+  Mg++                      1.0000E+00
+  Na+                       1.0000E+00
+  SiO2(aq)                  1.0000E+00
+  SO4--                     1.0000E+00
+  Tritium                   1.0000E+00
+  NO3-                      1.0000E+00
+  UO2++                     1.1266E+00
+
+  ion-exchange reactions
+  ----------------------------------------------------------------------------
+  CEC =   2.7500E+00
+  cation    selectivity coef.   sorbed conc.     Kd
+                              [mol/m^3]
+  ----------------------------------------------------------------------------
+  Na+         1.0000E+00      2.0562E-03      2.7959E-02
+  Al+++       5.8434E-01      5.2485E-08      2.0994E-02
+  H+          3.9811E+01      2.7475E+00      1.1281E+00
+  Ca++        3.1623E+00      2.3234E-04      9.2935E-02
+
+  primary species         total(aq+sorbed)    total retardation
+                             [mol/L]               1+Kd
+  ----------------------------------------------------------------------------
+  H+                        2.0728E-02          2.1278E+00
+  Al+++                     1.0210E-08          1.0210E+00
+  Ca++                      1.0929E-05          1.0929E+00
+  Cl-                       3.3900E-05          1.0000E+00
+  Fe+++                     2.4160E-06          1.0000E+00
+  CO2(aq)                   1.0724E-05          1.0000E+00
+  K+                        1.7200E-06          1.0000E+00
+  Mg++                      2.4700E-06          1.0000E+00
+  Na+                       3.0241E-04          1.0280E+00
+  SiO2(aq)                  1.1800E-04          1.0000E+00
+  SO4--                     4.8000E-05          1.0000E+00
+  Tritium                   2.1700E-09          1.0000E+00
+  NO3-                      1.0000E-02          1.0000E+00
+  UO2++                     3.3911E-05          1.1266E+00
+
+  mineral                             log SI       Affinity     log K
+                                                   [kJ/mol]
+  ----------------------------------------------------------------------------
+  Goethite                              0.0000     -0.0000    1.7580E-01
+  Quartz                               -0.1772   1011.6817   -3.7501E+00
+  Opal                                 -0.9223   5264.7183   -3.0050E+00
+  Schoepite                            -5.4503  31110.3042    4.8443E+00
+  Jurbanite                            -7.0079  40001.3407   -3.8000E+00
+  Gibbsite                             -9.9456  56769.8373    7.7380E+00
+  Kaolinite                           -19.8400 113246.7285    7.5700E+00
+  Basaluminite                        -39.6819 226504.4704    2.2251E+01
+
+  gas              par pres [bars]  conc [mol/m^3]  log K
+  ----------------------------------------------------------------------------
+  CO2(g)           3.1623E-04       1.2756E-02      -1.4689E+00

@@ -1,0 +1,9 @@
+Observation Name, Region, Functional, Variable, Time [s], Value [kg m molar K]
+============================================================================
+obl 1, LeftBoundary, observation data: point, aqueous pressure, 1.0000000000000000e+03, 2.4791524549924565e+05
+obl 2, RightBoundary, observation data: point, aqueous pressure, 1.0000000000000000e+03, 2.3861569737074769e+05
+obl 3, Midpoint, observation data: point, aqueous pressure, 1.0000000000000000e+03, 2.4326547143495193e+05
+obl 4, LeftmostCell, observation data: point, aqueous pressure, 1.0000000000000000e+03, 2.4791524549924565e+05
+obl 5, RightmostCell, observation data: point, aqueous pressure, 1.0000000000000000e+03, 2.3861569737074769e+05
+obl 6, LeftMidpointCell, observation data: point, aqueous pressure, 1.0000000000000000e+03, 2.4351019638570060e+05
+obl 7, RightMidpointCell, observation data: point, aqueous pressure, 1.0000000000000000e+03, 2.4302074648420329e+05

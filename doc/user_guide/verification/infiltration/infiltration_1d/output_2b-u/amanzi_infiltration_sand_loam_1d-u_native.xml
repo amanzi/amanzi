@@ -1,0 +1,701 @@
+<ParameterList>
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  <ParameterList name="units">
+    <Parameter isUsed="true" name="length" type="string" value="m"/>
+    <Parameter isUsed="true" name="time" type="string" value="s"/>
+    <Parameter isUsed="true" name="mass" type="string" value="kg"/>
+    <Parameter isUsed="true" name="concentration" type="string" value="molar"/>
+    <Parameter name="amount" type="string" value="mol"/>
+    <Parameter isUsed="true" name="temperature" type="string" value="K"/>
+  </ParameterList>
+  <ParameterList name="mesh">
+    <Parameter name="framework" type="string" value="MSTK"/>
+    <Parameter name="partitioner" type="string" value="metis"/>
+    <ParameterList name="unstructured">
+      <ParameterList name="generate mesh">
+        <Parameter name="number of cells" type="Array(int)" value="{1, 1, 200}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, 0.00000000000000000e+00}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{1.00000000000000000e+00, 1.00000000000000000e+00, 2.00000000000000000e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="medium"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="3"/>
+  </ParameterList>
+  <ParameterList name="regions">
+    <ParameterList name="All">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{-9.99999999999999967e+98, -9.99999999999999967e+98, -9.99999999999999967e+98}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{9.99999999999999967e+98, 9.99999999999999967e+98, 9.99999999999999967e+98}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Top Surface">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, 2.00000000000000000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.00000000000000000e+00, 1.00000000000000000e+00, 2.00000000000000000e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Bottom Surface">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, 0.00000000000000000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.00000000000000000e+00, 1.00000000000000000e+00, 0.00000000000000000e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Top Region">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, 1.50000000000000000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.00000000000000000e+00, 1.00000000000000000e+00, 2.00000000000000000e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Bottom Region">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, 0.00000000000000000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.00000000000000000e+00, 1.00000000000000000e+00, 1.50000000000000000e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs_0">
+      <ParameterList name="region: point">
+        <Parameter name="coordinate" type="Array(double)" value="{5.00000000000000000e-01, 5.00000000000000000e-01, 0.00000000000000000e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs_150">
+      <ParameterList name="region: point">
+        <Parameter name="coordinate" type="Array(double)" value="{5.00000000000000000e-01, 5.00000000000000000e-01, 1.50000000000000000e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs_155">
+      <ParameterList name="region: point">
+        <Parameter name="coordinate" type="Array(double)" value="{5.00000000000000000e-01, 5.00000000000000000e-01, 1.55000000000000004e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs_160">
+      <ParameterList name="region: point">
+        <Parameter name="coordinate" type="Array(double)" value="{5.00000000000000000e-01, 5.00000000000000000e-01, 1.60000000000000009e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs_165">
+      <ParameterList name="region: point">
+        <Parameter name="coordinate" type="Array(double)" value="{5.00000000000000000e-01, 5.00000000000000000e-01, 1.64999999999999991e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs_170">
+      <ParameterList name="region: point">
+        <Parameter name="coordinate" type="Array(double)" value="{5.00000000000000000e-01, 5.00000000000000000e-01, 1.69999999999999996e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs_175">
+      <ParameterList name="region: point">
+        <Parameter name="coordinate" type="Array(double)" value="{5.00000000000000000e-01, 5.00000000000000000e-01, 1.75000000000000000e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs_180">
+      <ParameterList name="region: point">
+        <Parameter name="coordinate" type="Array(double)" value="{5.00000000000000000e-01, 5.00000000000000000e-01, 1.80000000000000004e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs_185">
+      <ParameterList name="region: point">
+        <Parameter name="coordinate" type="Array(double)" value="{5.00000000000000000e-01, 5.00000000000000000e-01, 1.85000000000000009e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs_190">
+      <ParameterList name="region: point">
+        <Parameter name="coordinate" type="Array(double)" value="{5.00000000000000000e-01, 5.00000000000000000e-01, 1.89999999999999991e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs_195">
+      <ParameterList name="region: point">
+        <Parameter name="coordinate" type="Array(double)" value="{5.00000000000000000e-01, 5.00000000000000000e-01, 1.94999999999999996e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs_200">
+      <ParameterList name="region: point">
+        <Parameter name="coordinate" type="Array(double)" value="{5.00000000000000000e-01, 5.00000000000000000e-01, 2.00000000000000000e+00}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="state">
+    <ParameterList name="evaluators">
+      <ParameterList name="mass_density_liquid">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="molar_density_liquid">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="5.54083558451234276e+04"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="viscosity_liquid">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="porosity">
+        <ParameterList name="function">
+          <ParameterList name="Bottom Region">
+            <Parameter name="regions" type="Array(string)" value="{Bottom Region}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="4.29999999999999993e-01"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Top Region">
+            <Parameter name="regions" type="Array(string)" value="{Top Region}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="4.29999999999999993e-01"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="particle_density">
+        <ParameterList name="function">
+          <ParameterList name="Bottom Region">
+            <Parameter name="regions" type="Array(string)" value="{Bottom Region}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.72000000000000000e+03"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Top Region">
+            <Parameter name="regions" type="Array(string)" value="{Top Region}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.72000000000000000e+03"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="temperature">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.98000000000000000e+02"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="initial conditions">
+      <ParameterList name="gravity">
+        <Parameter name="value" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, -9.80664999999999942e+00}"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_viscosity">
+        <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_density">
+        <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
+      </ParameterList>
+      <ParameterList name="permeability">
+        <Parameter name="write checkpoint" type="bool" value="false"/>
+        <ParameterList name="function">
+          <ParameterList name="Bottom Region">
+            <Parameter name="regions" type="Array(string)" value="{Bottom Region}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="5.92360000000000012e-13"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="5.92360000000000012e-13"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 3 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="5.92360000000000012e-13"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Top Region">
+            <Parameter name="regions" type="Array(string)" value="{Top Region}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.18472000000000007e-11"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.18472000000000007e-11"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 3 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.18472000000000007e-11"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="pressure">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="8.17470000000000000e+04"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="temperature">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.98000000000000000e+02"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="1.01325000000000000e+05"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="mesh partitions">
+      <ParameterList name="materials">
+        <Parameter name="region list" type="Array(string)" value="{Bottom Region, Top Region}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="medium"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="visualization data">
+    <Parameter name="file name base" type="string" value="case_2b_plot"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
+  </ParameterList>
+  <ParameterList name="checkpoint data">
+    <Parameter name="file name base" type="string" value="case_2b_checkpoint"/>
+    <Parameter name="file name digits" type="int" value="5"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1000, -1}"/>
+  </ParameterList>
+  <ParameterList name="observation data">
+    <Parameter name="observation output filename" type="string" value="observations_2b.out"/>
+    <ParameterList name="obl 1">
+      <Parameter name="variable" type="string" value="aqueous pressure"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.00000000000000000e+00, 3.15576000000000000e+11, -1.00000000000000000e+00}"/>
+      <Parameter name="region" type="string" value="Obs_0"/>
+    </ParameterList>
+    <ParameterList name="obl 2">
+      <Parameter name="variable" type="string" value="aqueous pressure"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.00000000000000000e+00, 3.15576000000000000e+11, -1.00000000000000000e+00}"/>
+      <Parameter name="region" type="string" value="Obs_150"/>
+    </ParameterList>
+    <ParameterList name="obl 3">
+      <Parameter name="variable" type="string" value="aqueous pressure"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.00000000000000000e+00, 3.15576000000000000e+11, -1.00000000000000000e+00}"/>
+      <Parameter name="region" type="string" value="Obs_155"/>
+    </ParameterList>
+    <ParameterList name="obl 4">
+      <Parameter name="variable" type="string" value="aqueous pressure"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.00000000000000000e+00, 3.15576000000000000e+11, -1.00000000000000000e+00}"/>
+      <Parameter name="region" type="string" value="Obs_160"/>
+    </ParameterList>
+    <ParameterList name="obl 5">
+      <Parameter name="variable" type="string" value="aqueous pressure"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.00000000000000000e+00, 3.15576000000000000e+11, -1.00000000000000000e+00}"/>
+      <Parameter name="region" type="string" value="Obs_165"/>
+    </ParameterList>
+    <ParameterList name="obl 6">
+      <Parameter name="variable" type="string" value="aqueous pressure"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.00000000000000000e+00, 3.15576000000000000e+11, -1.00000000000000000e+00}"/>
+      <Parameter name="region" type="string" value="Obs_170"/>
+    </ParameterList>
+    <ParameterList name="obl 7">
+      <Parameter name="variable" type="string" value="aqueous pressure"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.00000000000000000e+00, 3.15576000000000000e+11, -1.00000000000000000e+00}"/>
+      <Parameter name="region" type="string" value="Obs_175"/>
+    </ParameterList>
+    <ParameterList name="obl 8">
+      <Parameter name="variable" type="string" value="aqueous pressure"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.00000000000000000e+00, 3.15576000000000000e+11, -1.00000000000000000e+00}"/>
+      <Parameter name="region" type="string" value="Obs_180"/>
+    </ParameterList>
+    <ParameterList name="obl 9">
+      <Parameter name="variable" type="string" value="aqueous pressure"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.00000000000000000e+00, 3.15576000000000000e+11, -1.00000000000000000e+00}"/>
+      <Parameter name="region" type="string" value="Obs_185"/>
+    </ParameterList>
+    <ParameterList name="obl 10">
+      <Parameter name="variable" type="string" value="aqueous pressure"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.00000000000000000e+00, 3.15576000000000000e+11, -1.00000000000000000e+00}"/>
+      <Parameter name="region" type="string" value="Obs_190"/>
+    </ParameterList>
+    <ParameterList name="obl 11">
+      <Parameter name="variable" type="string" value="aqueous pressure"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.00000000000000000e+00, 3.15576000000000000e+11, -1.00000000000000000e+00}"/>
+      <Parameter name="region" type="string" value="Obs_195"/>
+    </ParameterList>
+    <ParameterList name="obl 12">
+      <Parameter name="variable" type="string" value="aqueous pressure"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.00000000000000000e+00, 3.15576000000000000e+11, -1.00000000000000000e+00}"/>
+      <Parameter name="region" type="string" value="Obs_200"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="cycle driver">
+    <ParameterList name="time periods">
+      <ParameterList name="TP 0">
+        <ParameterList name="PK tree">
+          <ParameterList name="steady:flow">
+            <Parameter name="PK type" type="string" value="richards"/>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="start period time" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="end period time" type="double" value="3.15576000000000000e+11"/>
+        <Parameter name="initial time step" type="double" value="2.00000000000000000e+00"/>
+        <Parameter name="maximum time step" type="double" value="3.15576000000000000e+10"/>
+        <Parameter name="maximum cycle number" type="int" value="-1"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="time period control">
+      <Parameter name="start times" type="Array(double)" value="{}"/>
+      <Parameter name="initial time step" type="Array(double)" value="{}"/>
+      <Parameter name="maximum time step" type="Array(double)" value="{}"/>
+    </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="medium"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="PKs">
+    <ParameterList name="steady:flow">
+      <Parameter name="domain name" type="string" value="domain"/>
+      <ParameterList name="relative permeability">
+        <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
+        <Parameter name="upwind frequency" type="string" value="every timestep"/>
+        <ParameterList name="upwind parameters">
+          <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
+          <Parameter name="method" type="string" value="cell-based"/>
+          <Parameter name="polynomial order" type="int" value="1"/>
+          <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="water retention models">
+        <ParameterList name="WRM_0">
+          <Parameter name="water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="regions" type="Array(string)" value="{Bottom Region}"/>
+          <Parameter name="van Genuchten m" type="double" value="3.75000000000000000e-01"/>
+          <Parameter name="van Genuchten n" type="double" value="1.60000000000000009e+00"/>
+          <Parameter name="van Genuchten l" type="double" value="5.00000000000000000e-01"/>
+          <Parameter name="van Genuchten alpha" type="double" value="4.08621999999999978e-04"/>
+          <Parameter name="residual saturation liquid" type="double" value="1.86046999999999990e-01"/>
+          <Parameter name="relative permeability model" type="string" value="Mualem"/>
+          <Parameter name="regularization interval" type="double" value="0.00000000000000000e+00"/>
+        </ParameterList>
+        <ParameterList name="WRM_1">
+          <Parameter name="water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="regions" type="Array(string)" value="{Top Region}"/>
+          <Parameter name="van Genuchten m" type="double" value="6.66666699999999945e-01"/>
+          <Parameter name="van Genuchten n" type="double" value="3.00000030000002971e+00"/>
+          <Parameter name="van Genuchten l" type="double" value="5.00000000000000000e-01"/>
+          <Parameter name="van Genuchten alpha" type="double" value="1.53233300000000009e-03"/>
+          <Parameter name="residual saturation liquid" type="double" value="1.04650999999999994e-01"/>
+          <Parameter name="relative permeability model" type="string" value="Mualem"/>
+          <Parameter name="regularization interval" type="double" value="0.00000000000000000e+00"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="absolute permeability">
+        <Parameter name="coordinate system" type="string" value="cartesian"/>
+      </ParameterList>
+      <ParameterList name="operators">
+        <ParameterList name="diffusion operator">
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+          </ParameterList>
+          <ParameterList name="preconditioner">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+          </ParameterList>
+          <ParameterList name="vapor matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="exclude primary terms" type="bool" value="false"/>
+            <Parameter name="scaled constraint equation" type="bool" value="false"/>
+            <Parameter name="Newton correction" type="string" value="none"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="time integrator">
+        <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
+        <Parameter name="linear solver" type="string" value="AztecOO"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <ParameterList name="pressure-lambda constraints">
+          <Parameter name="method" type="string" value="projection"/>
+          <Parameter name="inflow krel correction" type="bool" value="true"/>
+          <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
+        </ParameterList>
+        <Parameter name="time integration method" type="string" value="BDF1"/>
+        <ParameterList name="BDF1">
+          <Parameter name="timestep controller type" type="string" value="standard"/>
+          <ParameterList name="timestep controller standard parameters">
+            <Parameter name="max iterations" type="int" value="15"/>
+            <Parameter name="min iterations" type="int" value="10"/>
+            <Parameter name="time step increase factor" type="double" value="1.25000000000000000e+00"/>
+            <Parameter name="time step reduction factor" type="double" value="8.00000000000000044e-01"/>
+            <Parameter name="max time step" type="double" value="4.32340000000000000e+17"/>
+            <Parameter name="min time step" type="double" value="9.99999999999999955e-07"/>
+          </ParameterList>
+          <Parameter name="solver type" type="string" value="nka"/>
+          <ParameterList name="nka parameters">
+            <Parameter name="nonlinear tolerance" type="double" value="9.99999999999999955e-07"/>
+            <Parameter name="diverged tolerance" type="double" value="1.00000000000000000e+10"/>
+            <Parameter name="diverged l2 tolerance" type="double" value="1.00000000000000000e+10"/>
+            <Parameter name="max du growth factor" type="double" value="1.00000000000000000e+03"/>
+            <Parameter name="max divergent iterations" type="int" value="3"/>
+            <Parameter name="max nka vectors" type="int" value="10"/>
+            <Parameter name="limit iterations" type="int" value="20"/>
+            <Parameter name="modify correction" type="bool" value="false"/>
+          </ParameterList>
+          <Parameter name="max preconditioner lag iterations" type="int" value="1"/>
+          <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+          <Parameter name="restart tolerance relaxation factor" type="double" value="1.00000000000000000e+00"/>
+          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.00000000000000000e+00"/>
+          <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="medium"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="boundary conditions">
+        <ParameterList name="mass flux">
+          <ParameterList name="BC 0">
+            <Parameter name="regions" type="Array(string)" value="{Top Surface}"/>
+            <ParameterList name="outward mass flux">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="-5.77662000000000027e-05"/>
+              </ParameterList>
+            </ParameterList>
+            <Parameter name="use area fractions" type="bool" value="false"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <Parameter name="rainfall" type="bool" value="false"/>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="pressure">
+          <ParameterList name="BC 1">
+            <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
+            <ParameterList name="boundary pressure">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="9.96306336000000010e+04"/>
+              </ParameterList>
+            </ParameterList>
+            <Parameter name="use area fractions" type="bool" value="false"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="medium"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="solvers">
+    <ParameterList name="AztecOO">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
+        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <Parameter name="controller training start" type="int" value="0"/>
+        <Parameter name="controller training end" type="int" value="3"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Dispersion Solver">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
+        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <Parameter name="controller training start" type="int" value="0"/>
+        <Parameter name="controller training end" type="int" value="3"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="PCG with Hypre AMG">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
+        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <Parameter name="controller training start" type="int" value="0"/>
+        <Parameter name="controller training end" type="int" value="3"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="GMRES with Hypre AMG">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
+        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <Parameter name="controller training start" type="int" value="0"/>
+        <Parameter name="controller training end" type="int" value="3"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="AMESOS">
+      <Parameter name="direct method" type="string" value="amesos"/>
+      <ParameterList name="amesos parameters">
+        <Parameter name="solver name" type="string" value="basker"/>
+        <Parameter name="amesos version" type="int" value="2"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="preconditioners">
+    <ParameterList name="Trilinos ML">
+      <Parameter name="preconditioning method" type="string" value="ml"/>
+      <ParameterList name="ml parameters">
+        <Parameter name="ML output" type="int" value="0"/>
+        <Parameter name="max levels" type="int" value="40"/>
+        <Parameter name="prec type" type="string" value="MGV"/>
+        <Parameter name="cycle applications" type="int" value="2"/>
+        <Parameter name="aggregation: type" type="string" value="Uncoupled-MIS"/>
+        <Parameter name="aggregation: damping factor" type="double" value="1.33332999999999990e+00"/>
+        <Parameter name="aggregation: threshold" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="eigen-analysis: type" type="string" value="cg"/>
+        <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
+        <Parameter name="smoother: sweeps" type="int" value="3"/>
+        <Parameter name="smoother: damping factor" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="smoother: pre or post" type="string" value="both"/>
+        <Parameter name="smoother: type" type="string" value="Jacobi"/>
+        <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
+        <Parameter name="coarse: max size" type="int" value="256"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Hypre AMG">
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="smoother sweeps" type="int" value="3"/>
+        <Parameter name="cycle applications" type="int" value="5"/>
+        <Parameter name="strong threshold" type="double" value="5.00000000000000000e-01"/>
+        <Parameter name="cycle type" type="int" value="1"/>
+        <Parameter name="coarsen type" type="int" value="0"/>
+        <Parameter name="verbosity" type="int" value="0"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Block ILU">
+      <Parameter name="preconditioning method" type="string" value="block ilu"/>
+      <ParameterList name="block ilu parameters">
+        <Parameter name="fact: relax value" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="fact: absolute threshold" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="fact: relative threshold" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="fact: level-of-fill" type="int" value="0"/>
+        <Parameter name="overlap" type="int" value="0"/>
+        <Parameter name="schwarz: combine mode" type="string" value="Add"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="analysis">
+    <ParameterList name="domain">
+      <Parameter name="used boundary condition regions" type="Array(string)" value="{Top Surface, Bottom Surface}"/>
+      <Parameter name="used source regions" type="Array(string)" value="{}"/>
+      <Parameter name="used observation regions" type="Array(string)" value="{Obs_0, Obs_150, Obs_155, Obs_160, Obs_165, Obs_170, Obs_175, Obs_180, Obs_185, Obs_190, Obs_195, Obs_200}"/>
+    </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="medium"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="verbose object">
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="medium"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

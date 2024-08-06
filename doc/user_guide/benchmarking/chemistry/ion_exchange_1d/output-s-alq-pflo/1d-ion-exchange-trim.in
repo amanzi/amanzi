@@ -1,0 +1,60 @@
+:Description: trimmed input for use with Alquimia interface to Amanzi
+:             for ion exchange
+
+:=========================== chemistry ========================================
+CHEMISTRY
+  PRIMARY_SPECIES
+    Na+
+    Ca++
+    Mg++
+    Cl-
+  /
+
+  SORPTION
+    ION_EXCHANGE_RXN
+      CEC 750. eq/m^3
+      CATIONS
+        Ca++  3.38638672536d0 ! big K = 1.84
+        Na+   1.d0 REFERENCE
+        Mg++  6.00240096038d0 ! big K = 2.45
+      /
+    /
+  /
+
+  DATABASE ./ion-exchange.dat
+  LOG_FORMULATION
+  ACTIVITY_COEFFICIENTS OFF
+  OUTPUT
+    All
+    TOTAL
+    TOTAL_SORBED
+  /
+END
+
+:=========================== constraints ======================================
+CONSTRAINT initial
+  CONCENTRATIONS
+    Na+     8.65d-2 T
+    Ca++    1.82d-2 T
+    Mg++    1.11d-2 T
+    Cl-     2.d-3   Z
+  /
+END
+
+CONSTRAINT west
+  CONCENTRATIONS
+    Na+     9.4d-3  T
+    Ca++    5.d-4   T 
+    Mg++    2.13d-3 T
+    Cl-     1.d-2  Z
+  /
+END
+
+CONSTRAINT east
+  CONCENTRATIONS
+    Na+     8.65d-2 T
+    Ca++    1.82d-2 T
+    Mg++    1.11d-2 T
+    Cl-     2.d-3   Z
+  /
+END

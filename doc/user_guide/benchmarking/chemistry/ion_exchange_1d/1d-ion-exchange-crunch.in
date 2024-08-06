@@ -1,0 +1,136 @@
+TITLE
+Ion exchange benchmark test for amanzi-alquimia, for CrunchFlow backend
+END
+
+RUNTIME
+time_units      years
+timestep_max    1.0d0
+timestep_init   1.0d-10
+time_tolerance  0.01
+coordinate      rectangular
+correction_max  1.0
+debye-huckel    false
+database        ion-exchange.dbs
+!!master          H+
+speciate_only   false
+database_sweep  false
+screen_output   1
+hindmarsh       false
+gimrt           false
+graphics        tecplot
+RunIsothermal   true
+END
+
+OUTPUT
+time_units             years
+spatial_profile        10 20 30 40 50
+!time_series           ion-exchange-valocchi-crunch-cc.out  1 1 1 
+!time_series_print     Na+  Ca++  Mg++  Cl-
+!time_series_interval  1
+END
+
+PRIMARY_SPECIES
+Na+
+Ca++
+Mg++
+Cl-
+END
+
+SECONDARY_SPECIES 
+END
+
+MINERALS
+!Halite             -label default    -rate  -40.0
+END
+ 
+ION_EXCHANGE
+exchange   X-
+! on Halite
+convention Gaines-Thomas
+END
+
+Condition initial
+units            mol/kg
+temperature      25.0
+Na+              8.65d-2
+Ca++             1.82d-2
+Mg++             1.11d-2
+Cl-              charge
+X-       -cec    3.333333d-4
+!3.46686914E-04
+!                eq / g solid
+SolidDensity     3000
+!                Kg solid / m3 solid
+!Halite           1.0d-5   bulk_surface_area 1.0
+END
+
+Condition west
+units            mol/kg
+temperature      25.0
+Na+              9.40d-3
+Ca++             5.00d-4
+Mg++             2.13d-3
+Cl-              charge
+X-       -cec    3.333333d-44
+!3.46686914E-04
+!                eq / g solid
+SolidDensity     3000
+!                Kg solid / m3 solid
+!Halite           1.0d-5   bulk_surface_area 1.0
+END
+
+Condition east
+units            mol/kg
+temperature      25.0
+Na+              8.65d-2
+Ca++             1.82d-2
+Mg++             1.11d-2
+Cl-              charge
+X-       -cec    3.333333d-4
+!3.46686914E-04
+!                eq / g solid
+SolidDensity     3000
+!                Kg solid / m3 solid
+!Halite           1.0d-5   bulk_surface_area 1.0
+END
+
+POROSITY
+fix_porosity     0.25
+porosity_update  false
+END
+ 
+TEMPERATURE
+set_temperature  25.0
+RunIsothermal   true
+END
+
+DISCRETIZATION
+distance_units  meters
+xzones 100      1.0
+END
+
+INITIAL_CONDITIONS
+initial     1-100
+END
+
+BOUNDARY_CONDITIONS
+X_begin   west     Flux
+X_end     initial  Flux
+END
+
+FLOW
+time_units      seconds
+distance_units  meters 
+constant_flow   7.9274479960d-9  
+! m/s
+END
+
+TRANSPORT
+distance_units meters
+time_units     second
+fix_diffusion  1.E-09 
+! m2/s
+formation_factor  1.0  
+cementation_exponent  1.0
+dispersivity  0.0 0.0
+END
