@@ -1,7 +1,0 @@
-<Xdmf Version="2.0" xmlns:xi="http://www.w3.org/2001/XInclude">
-  <Domain>
-    <Grid CollectionType="Temporal" GridType="Collection">
-      <xi:include href="plot_mesh.h5.0.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
-    </Grid>
-  </Domain>
-</Xdmf>

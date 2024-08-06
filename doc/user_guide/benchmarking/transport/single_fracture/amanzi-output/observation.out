@@ -1,5 +1,0 @@
-Observation Name, Region, Functional, Variable, Time [s], Value [kg m SI K]
-============================================================================
-obl 1, RegionBottom, observation data: integral, tracer aqueous concentration, 0.0000000000000000e+00, 0.0000000000000000e+00
-obl 2, EntireDomain, observation data: integral, tracer aqueous concentration, 0.0000000000000000e+00, 0.0000000000000000e+00
-obl 3, SurfaceOutlet, observation data: integral, tracer volumetric flow rate, 0.0000000000000000e+00, 0.0000000000000000e+00

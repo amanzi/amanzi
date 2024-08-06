@@ -1,3 +1,0 @@
-/Users/elm/Documents/GitHub/amanzi/doc/user_guide/verification/confined_flow/theis_isotropic_1d/model_theis_isotropic_1d.py:7: SyntaxWarning: invalid escape sequence '\p'
-  """ Solves the system
-  trying  amanzi_theis_isotropic_1d-u.xml
