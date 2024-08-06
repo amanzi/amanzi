@@ -230,7 +230,7 @@ InputConverterU::TranslateFlow_(const std::string& mode,
 
   // insert boundary conditions and source terms
   flow_list->sublist("boundary conditions") = TranslateFlowBCs_(domain);
-  flow_list->sublist("source terms") = TranslateSources_(domain, "flow");
+  flow_list->sublist("source terms") = TranslateSources_(domain, "flow", pk_model);
 
   flow_list->sublist("verbose object") = verb_list_.sublist("verbose object");
 
@@ -889,7 +889,7 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
     }
 
     // -- process global and local BC separately
-    double refv;
+    double refv(0.0);
     std::vector<double> grad, refc, data, data_tmp;
     BCs bcs;
 
@@ -1042,7 +1042,8 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
 * Create list of flow sources.
 ****************************************************************** */
 Teuchos::ParameterList
-InputConverterU::TranslateSources_(const std::string& domain, const std::string& pkname)
+InputConverterU::TranslateSources_(const std::string& domain,
+                                   const std::string& pkname, const std::string& pk_model)
 {
   Teuchos::ParameterList out_list;
 
@@ -1101,6 +1102,9 @@ InputConverterU::TranslateSources_(const std::string& domain, const std::string&
     } else if (srctype == "uniform") {
       weight = "none";
       unit = "kg/m^3/s";
+    } else if (srctype == "strain_rate") {
+      weight = "none";
+      unit = "s^-1";
     } else if (srctype == "peaceman_well") {
       weight = "simple well";
       unit = "Pa";
@@ -1115,9 +1119,25 @@ InputConverterU::TranslateSources_(const std::string& domain, const std::string&
       src.set<Teuchos::Array<std::string>>("regions", regions)
         .set<std::string>("spatial distribution method", "field")
         .set<bool>("use volume fractions", false);
-      src.sublist("field")
-        .set<std::string>("field key", bcs.variable)
-        .set<std::string>("component", "cell");
+      if (srctype == "strain_rate" && pk_model == "darcy") {
+        src.sublist("field")
+          .set<std::string>("field key", bcs.variable)
+          .set<std::string>("component", "cell")
+          .set<double>("coefficient", rho_);
+      } else if (srctype == "strain_rate") {
+        src.sublist("field")
+          .set<std::string>("field key", "Q")
+          .set<std::string>("component", "cell");
+
+        glist_->sublist("state").sublist("evaluators").sublist("Q")
+          .set<std::string>("evaluator type", "multiplicative reciprocal")
+          .set<Teuchos::Array<std::string>>("multiplicative dependencies", { "molar_density_liquid", bcs.variable })
+          .set<double>("coefficient", 1.0);
+      } else {
+        src.sublist("field")
+          .set<std::string>("field key", bcs.variable)
+          .set<std::string>("component", "cell");
+      }
 
       auto& field_ev = glist_->sublist("state").sublist("evaluators").sublist(bcs.variable);
       field_ev.set<std::string>("evaluator type", "independent variable from file")

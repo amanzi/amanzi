@@ -16,6 +16,7 @@
 #include <fstream>
 #include <string>
 
+#include "dbc.hh"
 #include "errors.hh"
 #include "LookupTable_Amanzi.hh"
 
@@ -68,6 +69,8 @@ LookupTable_Amanzi::LookupTable_Amanzi(Teuchos::ParameterList& plist) : LookupTa
   } else if (field == "viscosity") {
     scaleF_ = scaleV;
     shiftF_ = shiftV;
+  } else {
+    AMANZI_ASSERT(false);
   }
 
   // data blocks

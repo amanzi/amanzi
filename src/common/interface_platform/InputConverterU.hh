@@ -57,6 +57,8 @@ struct BCs {
 
   std::string filename, xheader, yheader, variable;
   double mol_mass;
+
+  std::string kinematic;
 };
 
 
@@ -187,7 +189,8 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateInitialization_(const std::string& unstr_controls);
 
   // -- general
-  Teuchos::ParameterList TranslateSources_(const std::string& domain, const std::string& pkname);
+  Teuchos::ParameterList TranslateSources_(const std::string& domain,
+                                           const std::string& pkname, const std::string& pk_model);
 
   // -- state
   void TranslateCommonContinuumFields_(const std::string& domain,

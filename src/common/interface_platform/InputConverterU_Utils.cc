@@ -136,6 +136,11 @@ InputConverterU::ParseCondList_(std::vector<DOMNode*>& same_list,
         msg << "Unknown or ill-formed boundary conditions.\"\n";
         Exceptions::amanzi_throw(msg);
       }
+
+      // miscalleneous 
+      if (HasAttribute_(element, "direction")) {
+        bcs.kinematic = GetAttributeValueS_(element, "direction", TYPE_NONE, false, "");
+      }
     }
   }
 

@@ -82,8 +82,7 @@ else()
 endif()
 
 # --- Set the name of the patch
-# set(HYPRE_patch_file hypre-superlu.patch)
-set(HYPRE_patch_file )
+set(HYPRE_patch_file hypre-configure.patch)
 
 # --- Configure the bash patch script
 set(HYPRE_sh_patch ${HYPRE_prefix_dir}/hypre-patch-step.sh)

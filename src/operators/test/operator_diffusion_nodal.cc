@@ -81,7 +81,6 @@ TEST(OPERATOR_DIFFUSION_NODAL)
   }
 
   // create boundary data
-  Point xv(2);
   Teuchos::RCP<BCs> bc =
     Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
@@ -95,7 +94,7 @@ TEST(OPERATOR_DIFFUSION_NODAL)
     auto nodes = mesh->getFaceNodes(f);
     for (int n = 0; n < nodes.size(); ++n) {
       int v = nodes[n];
-      xv = mesh->getNodeCoordinate(v);
+      const auto xv = mesh->getNodeCoordinate(v);
       bc_model[v] = OPERATOR_BC_DIRICHLET;
       bc_value[v] = ana.pressure_exact(xv, 0.0);
     }
@@ -240,14 +239,13 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS)
   AmanziGeometry::Point g(0.0, -1.0);
 
   // create boundary data (no mixed bc)
-  Point xv(2);
   Teuchos::RCP<BCs> bc_v =
     Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model_v = bc_v->bc_model();
   std::vector<double>& bc_value_v = bc_v->bc_value();
 
   for (int v = 0; v < nnodes_wghost; v++) {
-    xv = mesh->getNodeCoordinate(v);
+    const auto xv = mesh->getNodeCoordinate(v);
     if (fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
       bc_model_v[v] = OPERATOR_BC_DIRICHLET;
       bc_value_v[v] = ana.pressure_exact(xv, 0.0);

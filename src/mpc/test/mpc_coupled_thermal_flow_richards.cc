@@ -15,6 +15,7 @@
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
+#include "hdf5.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
@@ -36,6 +37,8 @@
 #include "pks_transport_reg.hh"
 #include "State.hh"
 
+// Amanzi::MPC
+#include "mpc_utils.hh"
 
 TEST(MPC_DRIVER_THERMAL_FLOW_MATRIX_FRACTURE_RICHARDS)
 {
@@ -68,7 +71,7 @@ TEST(MPC_DRIVER_THERMAL_FLOW_MATRIX_FRACTURE_RICHARDS)
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
 
-  //create additional mesh for fracture
+  // create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
   auto mesh_fracture_framework = Teuchos::rcp(new MeshExtractedManifold(
@@ -78,6 +81,15 @@ TEST(MPC_DRIVER_THERMAL_FLOW_MATRIX_FRACTURE_RICHARDS)
 
   S->RegisterMesh("fracture", mesh_fracture);
 
+  // create aperture file on rank 0
+  int ncells_tmp = mesh_fracture->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells(ncells_tmp);
+  comm->SumAll(&ncells_tmp, &ncells, 1);
+
+  if (comm->MyPID() == 0) CreateApertureFile(ncells, 300.0);
+
+  // run simulation
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   cycle_driver.Go();
 }
+

@@ -112,7 +112,6 @@ AnalyticElectromagneticsBase::ComputeNodeError(Epetra_MultiVector& u,
   inf_err = 0.0;
 
   int d = mesh_->getSpaceDimension();
-  Amanzi::AmanziGeometry::Point xv(d);
 
   int ncells = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
                                      Amanzi::AmanziMesh::Parallel_kind::OWNED);
@@ -125,7 +124,7 @@ AnalyticElectromagneticsBase::ComputeNodeError(Epetra_MultiVector& u,
 
     for (int k = 0; k < nnodes; k++) {
       int v = nodes[k];
-      xv = mesh_->getNodeCoordinate(v);
+      const auto& xv = mesh_->getNodeCoordinate(v);
       double tmp = (electric_exact(xv, t))[2];
 
       // std::cout << v << " at " << xv << " error: " << tmp << " " << u[0][v] << std::endl;

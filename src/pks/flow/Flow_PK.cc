@@ -211,12 +211,22 @@ Flow_PK::Setup()
 
         RequireFieldForEvaluator(*S_, name);
         S_->RequireEvaluator(name, Tags::DEFAULT);
+
+        if (spec.isParameter("submodel")) {
+          auto submodel = spec.get<std::string>("submodel");
+	  if (submodel == "poromechanics") {
+            std::string strain("strain_rate");
+            RequireFieldForEvaluator(*S_, strain);
+            S_->RequireEvaluator(strain, Tags::DEFAULT);
+            S_->GetRecordSetW(strain).set_units("s^-1");
+          }
+        }
       }
     }
   }
 
   // set units
-  if (flow_on_manifold_) { S_->GetRecordSetW(aperture_key_).set_units("m"); }
+  if (flow_on_manifold_) S_->GetRecordSetW(aperture_key_).set_units("m");
 }
 
 

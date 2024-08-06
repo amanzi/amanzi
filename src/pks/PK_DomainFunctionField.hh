@@ -21,7 +21,8 @@ the domain function.
 .. admonition:: domain-function-field-spec
 
    * `"field key`" ``[string]`` Field used in the domain function.
-   * `"component`" ``[string]`` **cell** Component of the field.
+   * `"component`" ``[string]`` Component of the field. Default is `"cell`".
+   * `"scaling factor`" ``[double]`` Constant multiplication factor. Default is 1.
 
 */
 
@@ -85,7 +86,6 @@ class PK_DomainFunctionField : public FunctionBase {
   int num_cells_;
   std::vector<Key> field_keys_;
   std::vector<Tag> tags_;
-
 };
 
 

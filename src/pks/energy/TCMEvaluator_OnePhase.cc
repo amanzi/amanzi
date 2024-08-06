@@ -53,8 +53,8 @@ TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::RCP<const AmanziMesh::Mesh
       Teuchos::ParameterList sublist = plist.sublist(name);
       region_list.push_back(sublist.get<Teuchos::Array<std::string>>("regions").toVector());
 
-      tc_.push_back(eos_fac.Create(sublist));
-      k_rock_.push_back(sublist.get<double>("thermal conductivity of rock"));
+      tc_liq_.push_back(eos_fac.Create(sublist.sublist("liquid phase")));
+      tc_solid_.push_back(eos_fac.Create(sublist.sublist("solid phase")));
     }
   }
 
@@ -69,7 +69,8 @@ TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::RCP<const AmanziMesh::Mesh
 ****************************************************************** */
 TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(const TCMEvaluator_OnePhase& other)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-    tc_(other.tc_),
+    tc_liq_(other.tc_liq_),
+    tc_solid_(other.tc_solid_),
     temperature_key_(other.temperature_key_){};
 
 
@@ -98,14 +99,18 @@ TCMEvaluator_OnePhase::Evaluate_(const State& S, const std::vector<CompositeVect
   int ncomp = results[0]->size("cell", false);
   for (int i = 0; i != ncomp; ++i) {
     int id = (*partition_)[i];
-    double k_liq = tc_[id]->ThermalConductivity(temp_c[0][i], 0.0);
-    ierr = std::max(ierr, tc_[id]->error_code());
-
     double phi = poro_c[0][i];
-    result_c[0][i] = phi * k_liq + (1.0 - phi) * k_rock_[id];
+
+    double k_liq = tc_liq_[id]->ThermalConductivity(temp_c[0][i], phi);
+    ierr = std::max(ierr, tc_liq_[id]->error_code());
+
+    double k_solid = tc_solid_[id]->ThermalConductivity(temp_c[0][i], phi);
+    ierr = std::max(ierr, tc_solid_[id]->error_code());
+
+    result_c[0][i] = phi * k_liq + (1.0 - phi) * k_solid;
   }
   AmanziEOS::ErrorAnalysis(
-    S.Get<CompositeVector>(temperature_key_).Comm(), ierr, tc_[0]->error_msg());
+    S.Get<CompositeVector>(temperature_key_).Comm(), ierr, tc_liq_[0]->error_msg());
 }
 
 
@@ -127,14 +132,22 @@ TCMEvaluator_OnePhase::EvaluatePartialDerivative_(const State& S,
     if (wrt_key == porosity_key_) {
       for (int i = 0; i != ncells; ++i) {
         int id = (*partition_)[i];
-        double k_liq = tc_[id]->ThermalConductivity(temp_v[0][i], 0.0);
-        result_v[0][i] = k_liq - k_rock_[id];
+        double T = temp_v[0][i];
+        double phi = poro_v[0][i];
+
+        double k_liq = tc_liq_[id]->ThermalConductivity(T, phi);
+        double k_solid = tc_solid_[id]->ThermalConductivity(T, phi);
+        result_v[0][i] = k_liq - k_solid;
       }
     } else if (wrt_key == temperature_key_) {
       for (int i = 0; i != ncells; ++i) {
         int id = (*partition_)[i];
-        double k_liq = tc_[id]->DThermalConductivityDT(temp_v[0][i], 0.0);
-        result_v[0][i] = poro_v[0][i] * k_liq;
+        double T = temp_v[0][i];
+        double phi = poro_v[0][i];
+
+        double k_liq = tc_liq_[id]->DThermalConductivityDT(T, phi);
+        double k_solid = tc_solid_[id]->DThermalConductivityDT(T, phi);
+        result_v[0][i] = phi * k_liq + (1.0 - phi) * k_solid;
       }
     }
   }

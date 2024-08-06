@@ -39,6 +39,7 @@ set(eos_src_files
     LookupTable_Amanzi.cc
     LookupTable_FEHM.cc
     MolarFractionGasEvaluator.cc
+    NaCl_ThermalConductivity.cc
     VaporInGas_Density.cc
     VaporInGas_Diffusion.cc
     VaporLiquid_Tabular.cc
@@ -83,6 +84,7 @@ set(eos_inc_files
     LookupTable_FEHM.hh
     LookupTableFactory.hh
     MolarFractionGasEvaluator.hh
+    NaCl_ThermalConductivity.hh
     VaporInGas_Density.hh
     VaporInGas_Diffusion.hh
     ViscosityConstant.hh

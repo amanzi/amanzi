@@ -274,9 +274,9 @@ TEST(ENERGY_JACOBIAN)
     // for (int col = mJ; col < nJ; ++col) Jpk(row, col) = Jfd(row, col);
     // for (int col = mJ; col < nJ; ++col) Jpk(col, row) = Jfd(col, row);
   }
-  std::cout << Jfd << std::endl;
-  std::cout << Jpk << std::endl;
-  exit(0);
+  // std::cout << Jfd << std::endl;
+  // std::cout << Jpk << std::endl;
+  // exit(0);
 
   Jdiff = Jfd - Jpk;
   jdiff = Jdiff.Norm2();

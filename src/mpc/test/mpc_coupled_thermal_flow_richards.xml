@@ -315,18 +315,14 @@
       </ParameterList>
 
       <ParameterList name="fracture-aperture">
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="regions" type="Array(string)" value="{RegionBottom,RegionTop}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="4.6416e-4"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable from file"/>
+        <Parameter name="filename" type="string" value="test/aperture_dynamic_test.h5"/>
+        <Parameter name="domain name" type="string" value="fracture"/>
+        <Parameter name="variable name" type="string" value="fracture-aperture"/>
+        <Parameter name="component name" type="string" value="cell"/>
+        <Parameter name="constant in time" type="bool" value="false"/>        
+        <Parameter name="mesh entity" type="string" value="cell"/>
+        <Parameter name="number of dofs" type="int" value="1"/>
       </ParameterList>
 
       <ParameterList name="fracture-heat_diffusion_to_matrix">
@@ -957,12 +953,18 @@
       <ParameterList name="thermal conductivity evaluator">
 	<ParameterList name="All">
 	  <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-	  <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
-	  <Parameter name="thermal conductivity of liquid" type="double" value="0.5"/>
-	  <Parameter name="reference temperature" type="double" value="275.0"/>
-	  <Parameter name="polynomial expansion" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
-	  <Parameter name="eos type" type="string" value="liquid water"/>
 	  <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <ParameterList name="solid phase">
+            <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="0.2"/>
+            <Parameter name="reference temperature" type="double" value="275.0"/>
+          </ParameterList>
+          <ParameterList name="liquid phase">
+	    <Parameter name="eos type" type="string" value="liquid water"/>
+            <Parameter name="reference conductivity" type="double" value="0.5"/>
+            <Parameter name="reference temperature" type="double" value="275.0"/>
+	    <Parameter name="polynomial expansion" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
+	  </ParameterList>
 	</ParameterList>
       </ParameterList>
 
@@ -1030,13 +1032,18 @@
       <ParameterList name="thermal conductivity evaluator">
 	<ParameterList name="All">
 	  <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-	  <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
-	  <Parameter name="thermal conductivity of liquid" type="double" value="2.0"/>
-	  <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
-	  <Parameter name="reference temperature" type="double" value="275.0"/>
-	  <Parameter name="polynomial expansion" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
-	  <Parameter name="eos type" type="string" value="liquid water"/>
 	  <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <ParameterList name="solid phase">
+            <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="0.2"/>
+            <Parameter name="reference temperature" type="double" value="275.0"/>
+          </ParameterList>
+          <ParameterList name="liquid phase">
+	    <Parameter name="eos type" type="string" value="liquid water"/>
+            <Parameter name="reference conductivity" type="double" value="2.0"/>
+            <Parameter name="reference temperature" type="double" value="275.0"/>
+	    <Parameter name="polynomial expansion" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
+	  </ParameterList>
 	</ParameterList>
       </ParameterList>
 

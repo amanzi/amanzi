@@ -133,10 +133,10 @@ PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, double t1)
 
   // get the tcc vector
   const auto& tcc = *S_->Get<CompositeVector>(tcc_key_, tcc_copy_).ViewComponent("cell");
-  const auto& ws_ =
+  const auto& ws =
     *S_->Get<CompositeVector>(saturation_key_, saturation_copy_).ViewComponent("cell");
-  const auto& phi_ = *S_->Get<CompositeVector>(porosity_key_, porosity_copy_).ViewComponent("cell");
-  const auto& mol_dens_ =
+  const auto& phi = *S_->Get<CompositeVector>(porosity_key_, porosity_copy_).ViewComponent("cell");
+  const auto& mol_dens =
     *S_->Get<CompositeVector>(molar_density_key_, molar_density_copy_).ViewComponent("cell");
 
   for (UniqueSpecList::const_iterator uspec = unique_specs_.at(kind_)->begin();
@@ -154,9 +154,9 @@ PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, double t1)
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
+      double tmp = ws[0][*c] * phi[0][*c] * mol_dens[0][*c];
       for (int i = 0; i < nfun; ++i) {
-        val_vec[i] = -(*(*uspec)->first->second)(args)[i] * tcc[i][*c] * ws_[0][*c] * phi_[0][*c] *
-                     mol_dens_[0][*c];
+        val_vec[i] = -(*(*uspec)->first->second)(args)[i] * tcc[i][*c] * tmp;
       }
       value_[*c] = val_vec;
     }

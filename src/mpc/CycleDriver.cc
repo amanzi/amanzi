@@ -311,10 +311,14 @@ CycleDriver::ReportMemory()
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     double global_ncells(0.0);
     double local_ncells(0.0);
+    std::vector<int> counts;
     for (State::mesh_iterator mesh = S_->mesh_begin(); mesh != S_->mesh_end(); ++mesh) {
-      const Epetra_Map& cell_map =
-        (mesh->second.first)->getMap(AmanziMesh::Entity_kind::CELL, false);
-      global_ncells += cell_map.NumGlobalElements();
+      const auto& cell_map = (mesh->second.first)->getMap(AmanziMesh::Entity_kind::CELL, false);
+
+      int ncells = cell_map.NumGlobalElements();
+      counts.push_back(ncells);
+
+      global_ncells += ncells;
       local_ncells += cell_map.NumMyElements();
     }
 
@@ -341,7 +345,8 @@ CycleDriver::ReportMemory()
     *vo_->os() << "======================================================================"
                << std::endl;
     *vo_->os() << "Simulation made " << S_->get_cycle() << " cycles.\n";
-    *vo_->os() << "All meshes combined have " << global_ncells << " cells.\n";
+    *vo_->os() << "All meshes combined have " << global_ncells << " cells (1st mesh has " 
+               << counts[0] << " cells).\n";
     *vo_->os() << "Memory usage (high water mark):\n";
     *vo_->os() << std::fixed << std::setprecision(1);
     *vo_->os() << "  Maximum per core:   " << std::setw(7) << max_mem
