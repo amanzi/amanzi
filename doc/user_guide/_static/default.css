@@ -64,7 +64,7 @@ hr {
 }
 
 tt {
-    background-color: #f2f2f2;
+    background-color: transparent;
     border-bottom: 1px solid #ddd;
     color: #333;
 }
