@@ -29,6 +29,9 @@
 namespace Amanzi {
 namespace AmanziInput {
 
+#define XSTR(s) STR(s)
+#define STR(s) #s
+
 XERCES_CPP_NAMESPACE_USE
 
 /* ******************************************************************
@@ -249,8 +252,6 @@ void
 InputConverterU::VerifyXMLStructure_()
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-#define XSTR(s) STR(s)
-#define STR(s) #s
     *vo_->os() << "Amanzi executable tag: " << XSTR(AMANZI_VERSION) << "\n"
                << "Verify high-level XML structure" << std::endl;
   }

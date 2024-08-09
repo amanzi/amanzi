@@ -37,7 +37,7 @@ class NaCl_ThermalConductivity : public EOS_ThermalConductivity {
 
  protected:
   double kref_, Tref_;
-  bool clipping_;
+  bool include_phi_, clipping_;
 
  private:
   static Utils::RegisteredFactory<EOS_ThermalConductivity, NaCl_ThermalConductivity> reg_;
