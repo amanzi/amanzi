@@ -97,7 +97,7 @@ class FunctionBilinearAndTime : public Function {
  private:
   std::string row_header_, col_header_, val_header_;
   int row_index_, col_index_;
-  std::vector<double> times_;
+  Teuchos::Array<double> times_;
   std::string filename_;
   Form_kind form_;
 

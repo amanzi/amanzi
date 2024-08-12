@@ -42,6 +42,7 @@ add_amanzi_library(atk
                           Formatter.cc
                           ReaderHDF5.cc
                           ReaderNetCDF.cc
+                          Reader.cc
                           IOEvent.cc
                           Key.cc
                           LeastSquare.cc 

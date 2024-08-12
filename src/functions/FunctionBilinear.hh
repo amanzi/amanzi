@@ -49,16 +49,18 @@ Example:
 
 #include <vector>
 
+#include "Teuchos_Array.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+
 #include "Function.hh"
-#include "Epetra_SerialDenseMatrix.h"
 
 namespace Amanzi {
 
 class FunctionBilinear : public Function {
  public:
-  FunctionBilinear(const std::vector<double>& x,
-                   const std::vector<double>& y,
-                   const Epetra_SerialDenseMatrix& v,
+  FunctionBilinear(const Teuchos::Array<double>& x,
+                   const Teuchos::Array<double>& y,
+                   const Teuchos::SerialDenseMatrix<int,double>& v,
                    const int xi,
                    const int yi);
   ~FunctionBilinear(){};
@@ -66,14 +68,14 @@ class FunctionBilinear : public Function {
   double operator()(const std::vector<double>& x) const;
 
  private:
-  std::vector<double> x_, y_;
-  Epetra_SerialDenseMatrix v_;
+  Teuchos::Array<double> x_, y_;
+  Teuchos::SerialDenseMatrix<int, double> v_;
   int xi_, yi_;
 
  private: // helper functions
-  void check_args(const std::vector<double>&,
-                  const std::vector<double>&,
-                  const Epetra_SerialDenseMatrix&) const;
+  void check_args(const Teuchos::Array<double>&,
+                  const Teuchos::Array<double>&,
+                  const Teuchos::SerialDenseMatrix<int,double>&) const;
 };
 
 } // namespace Amanzi

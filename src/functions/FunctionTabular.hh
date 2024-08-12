@@ -110,19 +110,21 @@ Example:
 #include <memory>
 #include <vector>
 
+#include "Teuchos_Array.hpp"
+
 #include "Function.hh"
 
 namespace Amanzi {
 
 class FunctionTabular : public Function {
  public:
-  FunctionTabular(const std::vector<double>& x, const std::vector<double>& y, const int xi);
-  FunctionTabular(const std::vector<double>& x,
-                  const std::vector<double>& y,
+  FunctionTabular(const Teuchos::Array<double>& x, const Teuchos::Array<double>& y, const int xi);
+  FunctionTabular(const Teuchos::Array<double>& x,
+                  const Teuchos::Array<double>& y,
                   const int xi,
                   const std::vector<Form_kind>& form);
-  FunctionTabular(const std::vector<double>& x,
-                  const std::vector<double>& y,
+  FunctionTabular(const Teuchos::Array<double>& x,
+                  const Teuchos::Array<double>& y,
                   const int xi,
                   const std::vector<Form_kind>& form,
                   std::vector<std::unique_ptr<Function>> func);
@@ -133,14 +135,14 @@ class FunctionTabular : public Function {
   double operator()(const std::vector<double>& x) const;
 
  private:
-  std::vector<double> x_, y_;
+  Teuchos::Array<double> x_, y_;
   int xi_;
   std::vector<Form_kind> form_;
   std::vector<std::unique_ptr<Function>> func_;
 
  private: // helper functions
-  void check_args(const std::vector<double>&,
-                  const std::vector<double>&,
+  void check_args(const Teuchos::Array<double>&,
+                  const Teuchos::Array<double>&,
                   const std::vector<Form_kind>&) const;
 };
 

@@ -7,12 +7,13 @@
   Authors:
 */
 
-#include "Epetra_SerialDenseMatrix.h"
+#include <memory>
+
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "errors.hh"
 #include "exceptions.hh"
-#include <memory>
-#include "HDF5Reader.hh"
+#include "Reader.hh"
 #include "FunctionBilinearAndTime.hh"
 
 namespace Amanzi {
@@ -34,8 +35,8 @@ FunctionBilinearAndTime::FunctionBilinearAndTime(const std::string& filename,
     t_after_(-1.0),
     current_interval_(-2)
 {
-  HDF5Reader reader(filename_);
-  reader.ReadData(time_header, times_);
+  auto reader = createReader(filename_);
+  reader->read(time_header, times_);
 
   if (row_coordinate == "x")
     row_index_ = 1;
@@ -130,14 +131,14 @@ FunctionBilinearAndTime::operator()(const std::vector<double>& x) const
 std::unique_ptr<FunctionBilinear>
 FunctionBilinearAndTime::Load_(const int time_index) const
 {
-  HDF5Reader reader(filename_);
+  auto reader = createReader(filename_);
 
-  std::vector<double> row, col;
-  reader.ReadData(row_header_, row);
-  reader.ReadData(col_header_, col);
+  Teuchos::Array<double> row, col;
+  reader->read(row_header_, row);
+  reader->read(col_header_, col);
 
-  Epetra_SerialDenseMatrix values;
-  reader.ReadMatData(val_header_ + "/" + std::to_string(time_index), values);
+  Teuchos::SerialDenseMatrix<int, double> values;
+  reader->read(val_header_, values, time_index);
   return std::make_unique<FunctionBilinear>(row, col, values, row_index_, col_index_);
 }
 

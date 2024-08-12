@@ -7,31 +7,31 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-//! NetCDFReader: simple reader for serial reads of NetCDF files.
-#include "NetCDFReader.hh"
+//! ReaderNetCDF: simple reader for serial reads of NetCDF files.
+#include "ReaderNetCDF.hh"
 
 namespace Amanzi {
 
-NetCDFReader::NetCDFReader(const std::string& filename) : filename_(filename), file_(-1)
+ReaderNetCDF::ReaderNetCDF(const std::string& filename) : filename_(filename), file_(-1)
 {
   int ierr = nc_open(filename.c_str(), NC_NOWRITE, &file_);
   if (ierr) {
     Errors::Message msg;
-    msg << "NetCDFReader: error opening file \"" << filename << "\" with NC_NOWRITE access.";
+    msg << "ReaderNetCDF: error opening file \"" << filename << "\" with NC_NOWRITE access.";
     Exceptions::amanzi_throw(msg);
   }
   AMANZI_ASSERT(file_);
 }
 
 
-NetCDFReader::~NetCDFReader()
+ReaderNetCDF::~ReaderNetCDF()
 {
   if (file_) nc_close(file_);
 }
 
 
 std::pair<int,int>
-NetCDFReader::findVarOrGroup_(std::string lvarname) const
+ReaderNetCDF::findVarOrGroup_(std::string lvarname) const
 {
   int ncid = file_;
   int varid = -1;
@@ -70,7 +70,7 @@ NetCDFReader::findVarOrGroup_(std::string lvarname) const
 
 
 bool
-NetCDFReader::hasVariableOrGroup(const std::string& varname) const
+ReaderNetCDF::hasVariableOrGroup(const std::string& varname) const
 {
   auto ncid = findVarOrGroup_(varname);
   return ncid.first >= 0 || ncid.second >= 0;

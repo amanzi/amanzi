@@ -7,7 +7,7 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-//! NetCDFReader: simple reader for serial reads of netCDF4 files.
+//! ReaderNetCDF: simple reader for serial reads of netCDF4 files.
 #pragma once
 
 #include <string>
@@ -27,17 +27,17 @@ extern "C"
 
 namespace Amanzi {
 
-class NetCDFReader : public Reader {
+class ReaderNetCDF : public Reader {
  public:
-  explicit NetCDFReader(const std::string& filename);
-  ~NetCDFReader();
+  explicit ReaderNetCDF(const std::string& filename);
+  ~ReaderNetCDF();
 
   bool hasVariableOrGroup(const std::string& varname) const override;
 
-  virtual void read(const std::string& varname, Teuchos::SerialDenseVector<int, double>& vec, int index = -1) const override {
+  virtual void read(const std::string& varname, Teuchos::Array<double>& vec, int index = -1) const override {
     read_(varname, vec, index);
   }
-  virtual void read(const std::string& varname, Teuchos::SerialDenseVector<int, int>& vec, int index = -1) const override {
+  virtual void read(const std::string& varname, Teuchos::Array<int>& vec, int index = -1) const override {
     read_(varname, vec, index);
   }
 
@@ -54,7 +54,7 @@ class NetCDFReader : public Reader {
   std::pair<int, int> findVarOrGroup_(std::string varname) const;
 
   template<typename Scalar>
-  void read_(const std::string& varname, Teuchos::SerialDenseVector<int, Scalar>& vec, int index = -1) const;
+  void read_(const std::string& varname, Teuchos::Array<Scalar>& vec, int index = -1) const;
 
   template<typename Scalar>
   void read_(const std::string& varname, Teuchos::SerialDenseMatrix<int, Scalar>& vec, int index = -1) const;
@@ -66,13 +66,13 @@ class NetCDFReader : public Reader {
 
 template<typename Scalar>
 void
-NetCDFReader::read_(const std::string& varname, Teuchos::SerialDenseVector<int, Scalar>& vec, int index) const
+ReaderNetCDF::read_(const std::string& varname, Teuchos::Array<Scalar>& vec, int index) const
 {
   std::cout << "Reading " << varname << " index " << index << std::endl;
   auto [ncid, varid] = findVarOrGroup_(varname);
   if (varid < 0) {
     Errors::Message msg;
-    msg << "NetCDFReader: error opening variable \"" << varname << "\" in file \"" << filename_ << "\"";
+    msg << "ReaderNetCDF: error opening variable \"" << varname << "\" in file \"" << filename_ << "\"";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -90,30 +90,30 @@ NetCDFReader::read_(const std::string& varname, Teuchos::SerialDenseVector<int, 
   if (index < 0) {
     if (ndims != 1) {
       Errors::Message msg;
-      msg << "NetCDFReader: incorrect number of dimensions, " << ndims << ", for variable \"" << varname
+      msg << "ReaderNetCDF: incorrect number of dimensions, " << ndims << ", for variable \"" << varname
           << "\" in file \"" << filename_ << "\" -- expected 1";
       Exceptions::amanzi_throw(msg);
     }
-    vec.sizeUninitialized(dims[0]);
-    ierr = nc_get_var(ncid, varid, vec.values());
+    vec.resize(dims[0]);
+    ierr = nc_get_var(ncid, varid, vec.data());
   } else {
     if (ndims != 2) {
       Errors::Message msg;
-      msg << "NetCDFReader: incorrect number of dimensions, " << ndims << ", for variable \"" << varname
+      msg << "ReaderNetCDF: incorrect number of dimensions, " << ndims << ", for variable \"" << varname
           << "\" in file \"" << filename_ << "\" -- expected 2";
       Exceptions::amanzi_throw(msg);
     }
     if (index >= dims[0]) {
       Errors::Message msg;
-      msg << "NetCDFReader: cannot read index " << index << " for variable \"" << varname
+      msg << "ReaderNetCDF: cannot read index " << index << " for variable \"" << varname
           << "\" in file \"" << filename_ << "\" as dimension is of length " << dims[0];
       Exceptions::amanzi_throw(msg);
     }
-    vec.sizeUninitialized(dims[1]);
+    vec.resize(dims[1]);
 
     size_t start[2] = { (size_t) index, 0 };
     size_t count[2] = { (size_t) 1, dims[1] };
-    ierr = nc_get_vara(ncid, varid, start, count, vec.values());
+    ierr = nc_get_vara(ncid, varid, start, count, vec.data());
     AMANZI_ASSERT(!ierr);
   }
 }
@@ -121,14 +121,14 @@ NetCDFReader::read_(const std::string& varname, Teuchos::SerialDenseVector<int, 
 
 template<typename Scalar>
 void
-NetCDFReader::read_(const std::string& varname, Teuchos::SerialDenseMatrix<int, Scalar>& mat, int index) const
+ReaderNetCDF::read_(const std::string& varname, Teuchos::SerialDenseMatrix<int, Scalar>& mat, int index) const
 {
   std::cout << "Reading Mat " << varname << " index " << index << std::endl;
 
   auto [ncid, varid] = findVarOrGroup_(varname);
   if (varid < 0) {
     Errors::Message msg;
-    msg << "NetCDFReader: error opening variable \"" << varname << "\" in file \"" << filename_ << "\"";
+    msg << "ReaderNetCDF: error opening variable \"" << varname << "\" in file \"" << filename_ << "\"";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -146,7 +146,7 @@ NetCDFReader::read_(const std::string& varname, Teuchos::SerialDenseMatrix<int, 
   if (index < 0) {
     if (ndims != 2) {
       Errors::Message msg;
-      msg << "NetCDFReader: incorrect number of dimensions, " << ndims << ", for variable \"" << varname
+      msg << "ReaderNetCDF: incorrect number of dimensions, " << ndims << ", for variable \"" << varname
           << "\" in file \"" << filename_ << "\" -- expected 2";
       Exceptions::amanzi_throw(msg);
     }
@@ -158,13 +158,13 @@ NetCDFReader::read_(const std::string& varname, Teuchos::SerialDenseMatrix<int, 
   } else {
     if (ndims != 3) {
       Errors::Message msg;
-      msg << "NetCDFReader: incorrect number of dimensions, " << ndims << ", for variable \"" << varname
+      msg << "ReaderNetCDF: incorrect number of dimensions, " << ndims << ", for variable \"" << varname
           << "\" in file \"" << filename_ << "\" -- expected 3";
       Exceptions::amanzi_throw(msg);
     }
     if (index >= dims[0]) {
       Errors::Message msg;
-      msg << "NetCDFReader: cannot read index " << index << " for variable \"" << varname
+      msg << "ReaderNetCDF: cannot read index " << index << " for variable \"" << varname
           << "\" in file \"" << filename_ << "\" as dimension is of length " << dims[0];
       Exceptions::amanzi_throw(msg);
     }

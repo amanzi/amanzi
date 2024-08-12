@@ -13,8 +13,8 @@
 
 using namespace Amanzi;
 
-using Vec = Teuchos::SerialDenseVector<int,double>;
-using IVec = Teuchos::SerialDenseVector<int,int>;
+using Vec = Teuchos::Array<double>;
+using IVec = Teuchos::Array<int>;
 using Mat = Teuchos::SerialDenseMatrix<int,double>;
 
 void test_vec1(const Vec& v) {
