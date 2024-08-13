@@ -23,7 +23,7 @@ bounds.
 .. _function-bilinear-and-time-spec:
 .. admonition:: function-bilinear-and-time-spec
 
-  * `"file`" ``[string]`` HDF5 filename of the data
+  * `"file`" ``[string]`` HDF5 or NetCDF filename of the data
   * `"time header`" ``[string]`` **time** Name of the temporal dimension indices, the :math:`t_i`.
   * `"row header`" ``[string]`` **x** name of the row dataset, the :math:`x_i`
   * `"row coordinate`" ``[string]`` **x** one of `"x`",`"y`",`"z`"
@@ -58,6 +58,14 @@ An example HDF5 file, called head.h5, might then look like:
 |      | 1: array(3,2) = ...   # values at time 60
 |      | 2: array(3,2) = ...   # values at time 120
 |      | 3: array(3,2) = ...   # values at time 180
+
+An example NetCDF file, called head.nc, might look like:
+
+|
+| time: array(4) = [0, 60, 120, 180]
+| x: array(3) = [0, 1, 2]
+| y: array(2) = [0, 1]
+| rain: array(NTIMES, NX, NY) = ...
 
 
 */
@@ -97,7 +105,7 @@ class FunctionBilinearAndTime : public Function {
  private:
   std::string row_header_, col_header_, val_header_;
   int row_index_, col_index_;
-  std::vector<double> times_;
+  Teuchos::Array<double> times_;
   std::string filename_;
   Form_kind form_;
 

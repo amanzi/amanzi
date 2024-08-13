@@ -12,8 +12,8 @@
 
 namespace Amanzi {
 
-FunctionTabular::FunctionTabular(const std::vector<double>& x,
-                                 const std::vector<double>& y,
+FunctionTabular::FunctionTabular(const Teuchos::Array<double>& x,
+                                 const Teuchos::Array<double>& y,
                                  const int xi)
   : x_(x), y_(y), xi_(xi)
 {
@@ -21,8 +21,8 @@ FunctionTabular::FunctionTabular(const std::vector<double>& x,
   check_args(x, y, form_);
 }
 
-FunctionTabular::FunctionTabular(const std::vector<double>& x,
-                                 const std::vector<double>& y,
+FunctionTabular::FunctionTabular(const Teuchos::Array<double>& x,
+                                 const Teuchos::Array<double>& y,
                                  const int xi,
                                  const std::vector<Form_kind>& form)
   : x_(x), y_(y), xi_(xi), form_(form)
@@ -30,8 +30,8 @@ FunctionTabular::FunctionTabular(const std::vector<double>& x,
   check_args(x, y, form);
 }
 
-FunctionTabular::FunctionTabular(const std::vector<double>& x,
-                                 const std::vector<double>& y,
+FunctionTabular::FunctionTabular(const Teuchos::Array<double>& x,
+                                 const Teuchos::Array<double>& y,
                                  const int xi,
                                  const std::vector<Form_kind>& form,
                                  std::vector<std::unique_ptr<Function>> func)
@@ -49,8 +49,8 @@ FunctionTabular::FunctionTabular(const FunctionTabular& other)
 
 
 void
-FunctionTabular::check_args(const std::vector<double>& x,
-                            const std::vector<double>& y,
+FunctionTabular::check_args(const Teuchos::Array<double>& x,
+                            const Teuchos::Array<double>& y,
                             const std::vector<Form_kind>& form) const
 {
   if (x.size() != y.size()) {

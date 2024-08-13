@@ -15,7 +15,7 @@
 // Timestep controller which loads a timestep history from file.
 
 #include "dbc.hh"
-#include "HDF5Reader.hh"
+#include "Reader.hh"
 #include "TimestepControllerFromFile.hh"
 
 namespace Amanzi {
@@ -26,8 +26,13 @@ TimestepControllerFromFile::TimestepControllerFromFile(Teuchos::ParameterList& p
   std::string filename = plist.get<std::string>("file name");
   std::string header = plist.get<std::string>("timestep header", "timesteps");
 
-  HDF5Reader reader(filename);
-  reader.ReadData(header, dt_history_);
+  auto reader = createReader(filename);
+  reader->read(header, dt_history_);
+  if (dt_history_.size() == 0) {
+    Errors::Message m;
+    m << "TimestepController: file \"" << filename << "\" timestep header has 0 times.";
+    Exceptions::amanzi_throw(m);
+  }
   dt_init_ = dt_history_[0];
 }
 
