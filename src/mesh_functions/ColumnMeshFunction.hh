@@ -10,7 +10,7 @@
 /*!
 
 Interpolate a depth-based, 1D column of data onto a mesh.  Values are
-prescribed only to cells.  Expected is an HDF5 file in the format:
+prescribed only to cells.  Expected is an HDF5 or NetCDF file in the format:
 
 Depth coordinates z:
 

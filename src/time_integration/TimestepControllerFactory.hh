@@ -20,7 +20,7 @@ Available types include:
 - `Timestep Controller Standard`_ (type `'standard`"), an adaptive timestep based upon nonlinear iterations
 - `Timestep Controller Smarter`_ (type `'smarter`"), an adaptive timestep based upon nonlinear iterations with more control
 - `Timestep Controller Adaptive`_ (type `"adaptive`"), an adaptive timestep based upon error control.
-- `Timestep Controller From File`_ (type `"from file`"), uses a timestep history loaded from an HDF5 file.  (Usually only used for regression testing.)
+- `Timestep Controller From File`_ (type `"from file`"), uses a timestep history loaded from a file.  (Usually only used for regression testing.)
 
 
 .. _timestep-controller-typed-spec:

@@ -23,7 +23,7 @@ bounds.
 .. _function-bilinear-spec:
 .. admonition:: function-bilinear-spec
 
-   * `"file`" ``[string]`` HDF5 filename of the data
+   * `"file`" ``[string]`` HDF5 or NetCDF filename of the data
    * `"row header`" ``[string]`` name of the row dataset, the :math:`x_i`
    * `"row coordinate`" ``[string]`` one of `"t`",`"x`",`"y`",`"z`"
    * `"column header`" ``[string]`` name of the column dataset, the :math:`y_i`
