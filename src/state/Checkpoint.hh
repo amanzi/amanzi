@@ -68,6 +68,8 @@ every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be 
 #include "ObservationData.hh"
 #include "Key.hh"
 
+#define DEBUG_COMM_HANGS 1
+
 namespace Amanzi {
 class State;
 
@@ -157,6 +159,20 @@ Checkpoint::Read<Epetra_Vector>(const std::string& name, Epetra_Vector& t) const
 {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
   if (!output_.count(domain)) domain = "domain";
+
+#if DEBUG_COMM_HANGS
+  {
+    auto comm_world = getDefaultComm();
+    std::string fname = std::string("./err.") + std::to_string(comm_world->MyPID());
+    std::fstream str(fname, std::fstream::out | std::fstream::app);
+    str << "rank (" << comm_world->MyPID() << "/"
+        << comm_world->NumProc() << ") on comm ("
+        << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
+        << ") reading \"" << name << "\" of type Epetra_Vector from domain \"" << domain << "\" in file \""
+        << output_.at(domain)->H5DataFilename() << std::endl;
+  }
+#endif
+
   return output_.at(domain)->readData(t, name);
 }
 
@@ -166,13 +182,20 @@ Checkpoint::Read<double>(const std::string& name, double& t) const
 {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
   if (!output_.count(domain)) domain = "domain";
-  std::string fname = std::string("./err.") + std::to_string(output_.at("domain")->Comm()->MyPID());
-  std::fstream str(fname);
-  str << "rank (" << output_.at("domain")->Comm()->MyPID() << "/"
-      << output_.at("domain")->Comm()->NumProc() << ") on comm ("
-      << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
-      << ") reading \"" << name << "\" from domain \"" << domain << "\" in file \""
-      << output_.at(domain)->H5DataFilename() << std::endl;
+
+#if DEBUG_COMM_HANGS
+  {
+    auto comm_world = getDefaultComm();
+    std::string fname = std::string("./err.") + std::to_string(comm_world->MyPID());
+    std::fstream str(fname, std::fstream::out | std::fstream::app);
+    str << "rank (" << comm_world->MyPID() << "/"
+        << comm_world->NumProc() << ") on comm ("
+        << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
+        << ") reading \"" << name << "\" of type double from domain \"" << domain << "\" in file \""
+        << output_.at(domain)->H5DataFilename() << std::endl;
+  }
+#endif
+
   output_.at(domain)->readAttrReal(t, name);
   return true; // FIXME
 }
@@ -183,13 +206,20 @@ Checkpoint::Read<int>(const std::string& name, int& t) const
 {
   auto domain = single_file_ ? std::string("domain") : Keys::getDomain(name);
   if (!output_.count(domain)) domain = "domain";
-  std::string fname = std::string("./err.") + std::to_string(output_.at("domain")->Comm()->MyPID());
-  std::fstream str(fname);
-  str << "rank (" << output_.at("domain")->Comm()->MyPID() << "/"
-      << output_.at("domain")->Comm()->NumProc() << ") on comm ("
-      << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
-      << ") reading \"" << name << "\" from domain \"" << domain << "\" in file \""
-      << output_.at(domain)->H5DataFilename() << std::endl;
+
+#if DEBUG_COMM_HANGS
+  {
+    auto comm_world = getDefaultComm();
+    std::string fname = std::string("./err.") + std::to_string(comm_world->MyPID());
+    std::fstream str(fname, std::fstream::out | std::fstream::app);
+    str << "rank (" << comm_world->MyPID() << "/"
+        << comm_world->NumProc() << ") on comm ("
+        << output_.at(domain)->Comm()->MyPID() << "/" << output_.at(domain)->Comm()->NumProc()
+        << ") reading \"" << name << "\" of type int from domain \"" << domain << "\" in file \""
+        << output_.at(domain)->H5DataFilename() << std::endl;
+  }
+#endif
+
   output_.at(domain)->readAttrInt(t, name);
   return true; // FIXME
 }
