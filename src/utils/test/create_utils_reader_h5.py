@@ -1,8 +1,8 @@
-# this is the script used to generate test.h5
+# this is the script used to generate utils_reader.h5
 import h5py
 import numpy as np
 
-f = h5py.File('test.h5', 'w')
+f = h5py.File('utils_reader.h5', 'w')
 
 v1 = f.create_dataset('vec1', data=np.array([0,1,2], 'd'))
 intv1 = f.create_dataset('int_vec1', data=np.array([0,1,2], 'i'))

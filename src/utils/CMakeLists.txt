@@ -27,8 +27,6 @@ include_directories(${Epetra_INCLUDE_DIRS})
 
 include_directories(${DBC_SOURCE_DIR})
 
-message(STATUS "ETC: -- linking NetCDF_C_LIBRARIES = ${NetCDF_C_LIBRARIES}")
-
 set(tpl_link_libs
   ${Epetra_LIBRARIES}
   ${Teuchos_LIBRARIES}

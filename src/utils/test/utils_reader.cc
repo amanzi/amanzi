@@ -135,12 +135,12 @@ void testReader(const Amanzi::Reader& r) {
 
 
 TEST(UTILS_HDF5_READER) {
-  auto r = std::make_shared<ReaderHDF5>("test/test.h5");
+  auto r = std::make_shared<ReaderHDF5>("test/utils_reader.h5");
   testReader(*r);
 }
 
 TEST(UTILS_NETCDF_READER) {
-  auto r = std::make_shared<ReaderNetCDF>("test/test.nc");
+  auto r = std::make_shared<ReaderNetCDF>("test/utils_reader.nc");
   testReader(*r);
 }
 

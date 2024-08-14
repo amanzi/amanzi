@@ -1,8 +1,8 @@
-# this is the script used to generate test.nc
+# this is the script used to generate utils_reader.nc
 import netCDF4
 import numpy as np
 
-f = netCDF4.Dataset('test.nc', 'w')
+f = netCDF4.Dataset('utils_reader.nc', 'w')
 
 f.createDimension('x', 2)
 f.createDimension('y1', 2)
