@@ -131,6 +131,7 @@ Checkpoint::Checkpoint(const std::string& filename,
 {
   int num_procs(-1);
   bool is_num_procs(false);
+
   // if provided a directory, use new style
   if (std::filesystem::is_directory(filename)) {
     Key domain_name = Keys::replace_all(domain, ":", "-");
@@ -138,16 +139,16 @@ Checkpoint::Checkpoint(const std::string& filename,
     single_file_ = false;
     output_[domain] = Teuchos::rcp(new HDF5_MPI(comm, chkp_file.string()));
     output_[domain]->open_h5file(true);
-    for (auto& o : output_) {
-      if (o.first == "domain") {
-        try {
-          Read("mpi_num_procs", num_procs);
-        } catch (const std::out_of_range& e) {
-          Read("mpi_comm_world_rank", num_procs); // old, deprecated name
-        }
-        is_num_procs = true;
+
+    if (domain == "domain") {
+      try {
+        Read("mpi_num_procs", num_procs);
+      } catch (const std::out_of_range& e) {
+        Read("mpi_comm_world_rank", num_procs); // old, deprecated name
       }
+      is_num_procs = true;
     }
+
   } else if (std::filesystem::is_regular_file(filename)) {
     single_file_ = true;
     output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, filename));

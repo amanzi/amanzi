@@ -68,7 +68,7 @@ every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be 
 #include "ObservationData.hh"
 #include "Key.hh"
 
-#define DEBUG_COMM_HANGS 1
+#define DEBUG_COMM_HANGS 0
 
 namespace Amanzi {
 class State;
