@@ -173,7 +173,8 @@ Checkpoint::Read<Epetra_Vector>(const std::string& name, Epetra_Vector& t) const
   }
 #endif
 
-  return output_.at(domain)->readData(t, name);
+  output_.at(domain)->readData(t, name);
+  return true;
 }
 
 template <>

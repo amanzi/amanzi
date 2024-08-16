@@ -110,10 +110,9 @@ State::GetMesh(const Key& key) const
     mesh = GetMesh_(key);
   }
   if (mesh == Teuchos::null) {
-    std::stringstream messagestream;
-    messagestream << "Mesh " << key << " does not exist in the state.";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
+    Errors::Message msg;
+    msg << "Mesh \"" << key << "\" does not exist in the state.";
+    Exceptions::amanzi_throw(msg);
   }
   return mesh;
 };
@@ -129,16 +128,14 @@ State::GetDeformableMesh(Key key)
     if (lb->second.second) {
       return lb->second.first;
     } else {
-      std::stringstream messagestream;
-      messagestream << "Mesh " << key << " is not deformable.";
-      Errors::Message message(messagestream.str());
-      Exceptions::amanzi_throw(message);
+      Errors::Message msg;
+      msg << "Mesh " << key << " is not deformable.";
+      Exceptions::amanzi_throw(msg);
     }
   } else {
-    std::stringstream messagestream;
-    messagestream << "Mesh " << key << " does not exist in the state.";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
+    Errors::Message msg;
+    msg << "Mesh \"" << key << "\" does not exist in the state.";
+    Exceptions::amanzi_throw(msg);
   }
   return Teuchos::null;
 }
@@ -152,7 +149,7 @@ State::IsDeformableMesh(const Key& key) const
     return lb->second.second;
   } else {
     Errors::Message msg;
-    msg << "Mesh " << key << " does not exist in the state.";
+    msg << "Mesh \"" << key << "\" does not exist in the state.";
     Exceptions::amanzi_throw(msg);
   }
   return false;
@@ -388,10 +385,10 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
   }
 
   // cannot find the evaluator, error
-  Errors::Message message;
-  message << "Evaluator \"" << key << "\" @ \"" << tag.get() << "\" cannot be created in State. "
-          << "Verify (1) SetEvaluator is called or (2) name exists in state->evaluators.";
-  Exceptions::amanzi_throw(message);
+  Errors::Message msg;
+  msg << "Evaluator \"" << key << "\" @ \"" << tag.get() << "\" cannot be created in State. "
+      << "Verify (1) SetEvaluator is called or (2) name exists in state->evaluators.";
+  Exceptions::amanzi_throw(msg);
   return *Evaluator_Factory().createEvaluator(fm_plist); // silences warning
 }
 
@@ -412,10 +409,9 @@ State::GetMeshPartition(Key key)
 {
   Teuchos::RCP<const Functions::MeshPartition> mp = GetMeshPartition_(key);
   if (mp == Teuchos::null) {
-    std::stringstream messagestream;
-    messagestream << "Mesh partition " << key << " does not exist in the state.";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
+    Errors::Message msg;
+    msg << "Mesh partition \"" << key << "\" does not exist in the state.";
+    Exceptions::amanzi_throw(msg);
   }
   return mp;
 }
@@ -542,13 +538,6 @@ State::Setup()
     EvaluatorMap evaluators_copy(evaluators_);
     for (auto& e : evaluators_copy) {
       for (auto& r : e.second) {
-        // if (!r.second->ProvidesKey(e.first, r.first)) {
-        //   Errors::Message msg;
-        //   msg << "Evaluator \"" << e.first << "\" with tag \"" << r.first.get()
-        //       << "\" does not provide its own key.";
-        //   Exceptions::amanzi_throw(msg);
-        // }
-
         if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
           Teuchos::OSTab tab1 = vo_->getOSTab();
           *vo_->os() << "verify evaluator (DAG): \"" << e.first << "\" @ \"" << r.first << "\""
@@ -803,10 +792,9 @@ State::CheckAllFieldsInitialized()
   Tag failed;
   for (auto& e : data_) {
     if (!e.second->isInitialized(failed)) {
-      std::stringstream ss;
-      ss << "Variable \"" << e.first << "\" with tag \"" << failed.get()
-         << "\" was not initialized\n";
-      Errors::Message msg(ss.str());
+      Errors::Message msg;
+      msg << "Variable \"" << e.first << "\" with tag \"" << failed.get()
+          << "\" was not initialized\n";
       Exceptions::amanzi_throw(msg);
       return false;
     }
@@ -866,12 +854,13 @@ State::GetEvaluator(const Key& key, const Tag& tag) const
   try {
     return *evaluators_.at(key).at(tag);
   } catch (const std::out_of_range&) {
-    std::stringstream ss;
-    ss << "Evaluator for field \"" << key << "\" at tag \"" << tag
-       << "\" does not exist in the state.";
-    Errors::Message message(ss.str());
-    throw(message);
+    Errors::Message msg;
+    msg << "Evaluator for field \"" << key << "\" at tag \"" << tag
+        << "\" does not exist in the state.";
+    Exceptions::amanzi_throw(msg);
   }
+  // silence warnings
+  return *evaluators_.at(key).at(tag);
 }
 
 
@@ -881,12 +870,13 @@ State::GetEvaluatorPtr(const Key& key, const Tag& tag)
   try {
     return evaluators_.at(key).at(tag);
   } catch (const std::out_of_range&) {
-    std::stringstream ss;
-    ss << "Evaluator for field \"" << key << "\" at tag \"" << tag
-       << "\" does not exist in the state.";
-    Errors::Message message(ss.str());
-    throw(message);
+    Errors::Message msg;
+    msg << "Evaluator for field \"" << key << "\" at tag \"" << tag
+        << "\" does not exist in the state.";
+    Exceptions::amanzi_throw(msg);
   }
+  // silence warnings
+  return evaluators_.at(key).at(tag);
 }
 
 

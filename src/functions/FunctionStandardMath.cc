@@ -26,10 +26,9 @@ FunctionStandardMath::FunctionStandardMath(std::string op,
         (op_ == "ceil") || (op_ == "fabs") || (op_ == "floor") || (op_ == "mod") ||
         (op_ == "pow") || (op_ == "abs") || (op_ == "positive") || (op_ == "negative") ||
         (op_ == "heaviside") || (op_ == "sign"))) {
-    std::stringstream m;
-    m << "Invalid or unknown standard math function " << op_;
-    Errors::Message message(m.str());
-    Exceptions::amanzi_throw(message);
+    Errors::Message msg;
+    msg << "Invalid or unknown standard math function " << op_;
+    Exceptions::amanzi_throw(msg);
   }
 }
 
@@ -87,10 +86,9 @@ FunctionStandardMath::operator()(const std::vector<double>& x) const
   } else if (op_ == "sign") {
     return amplitude_ * (x0 > 0 ? 1 : (x0 < 0 ? -1 : 0));
   } else {
-    std::stringstream m;
-    m << "Invalid or unknown standard math function " << op_;
-    Errors::Message message(m.str());
-    Exceptions::amanzi_throw(message);
+    Errors::Message msg;
+    msg << "Invalid or unknown standard math function " << op_;
+    Exceptions::amanzi_throw(msg);
   }
   return 0.0;
 }
@@ -98,10 +96,9 @@ FunctionStandardMath::operator()(const std::vector<double>& x) const
 void
 FunctionStandardMath::InvalidDomainError_(double x) const
 {
-  std::stringstream m;
-  m << "Value " << x << " is not in the domain of operator " << op_ << ".";
-  Errors::Message message(m.str());
-  Exceptions::amanzi_throw(message);
+  Errors::Message msg;
+  msg << "Value " << x << " is not in the domain of operator " << op_ << ".";
+  Exceptions::amanzi_throw(msg);
 }
 
 } // namespace Amanzi
