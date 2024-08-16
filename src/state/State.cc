@@ -854,6 +854,8 @@ State::GetEvaluator(const Key& key, const Tag& tag) const
         << "\" does not exist in the state.";
     Exceptions::amanzi_throw(msg);
   }
+  // silence warnings
+  return *evaluators_.at(key).at(tag);
 }
 
 
@@ -868,6 +870,8 @@ State::GetEvaluatorPtr(const Key& key, const Tag& tag)
         << "\" does not exist in the state.";
     Exceptions::amanzi_throw(msg);
   }
+  // silence warnings
+  return evaluators_.at(key).at(tag);
 }
 
 
