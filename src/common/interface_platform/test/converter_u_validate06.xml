@@ -102,7 +102,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="5.55082707324418223e+01"/>
+                <Parameter name="value" type="double" value="5.55092978073827368e+01"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -162,7 +162,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="5.55082707324418223e+01"/>
+                <Parameter name="value" type="double" value="5.55092978073827368e+01"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

@@ -186,7 +186,7 @@
   <materials>
     <material name="Facies_1" id="1000">
       <mechanical_properties>
-        <porosity value="0.4082"/>
+        <porosity model="constant" value="0.4082"/>
         <specific_storage model="constant" value="0.0002"/>
         <particle_density model="file" filename="particle_density.h5"/>
         <dispersion_tensor type="bear" alpha_l="0.01 m" alpha_t="0.001 m"/>
@@ -201,7 +201,7 @@
 
     <material name="Facies_2" id="2000">
       <mechanical_properties>
-        <porosity value="0.2206"/>
+        <porosity model="constant" value="0.2206"/>
         <dispersion_tensor type="burnett_frind" alpha_l="0.01 m" alpha_th="0.001 m" alpha_tv="0.002 m"/>
       </mechanical_properties>
       <permeability model="file" filename="mesh_data.exo" attribute="permx,permy"/>
@@ -216,7 +216,7 @@
 
     <material name="Facies_3" id="3000">
       <mechanical_properties>
-        <porosity value="0.234"/>
+        <porosity model="constant" value="0.234"/>
         <dispersion_tensor type="lichtner_kelkar_robinson" alpha_lh="0.01 m" alpha_lv="0.02 m"
                                                            alpha_th="0.001 m" alpha_tv="0.002 m"/>
       </mechanical_properties>

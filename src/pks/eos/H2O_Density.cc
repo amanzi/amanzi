@@ -10,7 +10,7 @@
 /*
   EOS
 
-  EOS for liquid water: rho = q3(T-Tref) * q1(p - pref) where
+  EOS for liquid water: rho = [rho0 + q3 (T-Tref)] * [1 + q1 (p - pref)] where
   q3 and q1 are cubic and linear polynomials, respectively.
 */
 
@@ -19,15 +19,18 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-H2O_Density::H2O_Density(Teuchos::ParameterList& eos_plist)
-  : EOS_Density(eos_plist),
+H2O_Density::H2O_Density(Teuchos::ParameterList& plist)
+  : EOS_Density(plist),
     ka_(999.915),
     kb_(0.0416516),
     kc_(-0.0100836),
     kd_(0.000206355),
     kT0_(273.15),
     kalpha_(5.0e-10),
-    kp0_(1.0e5){};
+    kp0_(1.0e5)
+{
+  kp0_ = plist.get<double>("reference pressure", kp0_); 
+}
 
 
 double

@@ -414,8 +414,10 @@ InputConverterU::TranslatePOM_(const std::string& domain)
   DOMElement* element;
 
   bool flag;
+  double compres, ref_pressure;
+  std::string model;
 
-  compressibility_ = false;
+  use_porosity_model_ = false;
 
   node = (domain == "fracture") ?
            GetUniqueElementByTagsString_("fracture_network, materials", flag) :
@@ -433,35 +435,40 @@ InputConverterU::TranslatePOM_(const std::string& domain)
 
     // get compressibility
     node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
+    model = GetAttributeValueS_(node, "model", "constant, compressible, thermoporoelastic");
+
     std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
     if (type == "h5file") {
-      compressibility_ = false;
+      use_porosity_model_ = false;
       break;
     }
 
     double phi = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0);
-    double compres =
-      GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, 0.0, 1.0, "Pa^-1", false, 0.0);
+    ref_pressure = GetAttributeValueD_(node, "reference_pressure", TYPE_NUMERICAL, 0.0, DBL_MAX, "Pa", false, const_atm_pressure_);
 
-    // get reference pressure
-    double ref_pressure = GetAttributeValueD_(
-      node, "reference_pressure", TYPE_NUMERICAL, 0.0, DBL_MAX, "Pa", false, const_atm_pressure_);
+    // optional thermoporoelasticity
+    double dilation_rock(0.0), dilation_liquid(0.0), biot(1.0);
+    if (model == "thermoporoelastic") {
+      DOMNode* knode;
+      knode = GetUniqueElementByTagsString_(inode, "mechanical_properties, rock_thermal_dilation", flag);
+      if (flag) dilation_rock = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
 
-    // get Biot-Willis coefficient
-    double biot(1.0);
-    node = GetUniqueElementByTagsString_(inode, "mechanical_properties, biot_coefficient", flag);
-    if (flag) biot = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0, "");
+      knode = GetUniqueElementByTagsString_(inode, "mechanical_properties, liquid_thermal_dilation", flag);
+      if (flag) dilation_liquid = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
 
-    // get volumetric thermal dilation coefficients
-    double dilation_rock(0.0), dilation_liquid(0.0);
-    node =
-      GetUniqueElementByTagsString_(inode, "mechanical_properties, rock_thermal_dilation", flag);
-    if (flag) dilation_rock = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
+      // Biot-Willis coefficient
+      knode = GetUniqueElementByTagsString_(inode, "mechanical_properties, biot_coefficient", flag);
+      if (flag) biot = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "");
+    }
 
-    node =
-      GetUniqueElementByTagsString_(inode, "mechanical_properties, liquid_thermal_dilation", flag);
-    if (flag)
-      dilation_liquid = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
+    // optional poroelasticity
+    if (model == "compressible") {
+      compres = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, 0.0, 1.0, "Pa^-1");
+    } else if (model == "thermoporoelastic") {
+      double bulk(0.0);
+      if (flag) bulk = GetAttributeValueD_(node, "solid_bulk_modulus", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
+      compres = (biot - phi) / bulk;
+    }
 
     std::stringstream ss;
     ss << "POM " << i;
@@ -470,7 +477,7 @@ InputConverterU::TranslatePOM_(const std::string& domain)
     pom_list.set<Teuchos::Array<std::string>>("regions", regions);
 
     // we can have either uniform of compressible rock
-    if (compres == 0.0) {
+    if (model == "constant") {
       pom_list.set<std::string>("porosity model", "constant");
       pom_list.set<double>("value", phi);
     } else {
@@ -481,14 +488,11 @@ InputConverterU::TranslatePOM_(const std::string& domain)
         .set<double>("biot coefficient", biot)
         .set<double>("rock thermal dilation", dilation_rock)
         .set<double>("liquid thermal dilation", dilation_liquid);
-      compressibility_ = true;
+      use_porosity_model_ = true;
     }
   }
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os() << "compessibility models: " << compressibility_ << std::endl;
-
-  if (!compressibility_) {
+  if (!use_porosity_model_) {
     Teuchos::ParameterList empty;
     out_list = empty;
   }

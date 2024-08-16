@@ -85,7 +85,7 @@
   <materials>
     <material name="All">
       <mechanical_properties>
-        <porosity value="0.4082"/>
+        <porosity model="constant" value="0.4082"/>
       </mechanical_properties>
       <cap_pressure model="van_genuchten">
         <parameters alpha="1.9467E-04" m="0.2294" sr="0.0"/>

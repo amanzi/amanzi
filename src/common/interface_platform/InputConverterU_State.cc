@@ -107,7 +107,7 @@ InputConverterU::TranslateState_()
   if (eos_model_ == "") {
     AddIndependentFieldEvaluator_(out_ev, "mass_density_liquid", "All", "*", rho_);
     AddIndependentFieldEvaluator_(
-      out_ev, "molar_density_liquid", "All", "*", rho_ / 0.0180153333333);
+      out_ev, "molar_density_liquid", "All", "*", rho_ / molar_mass_);
     AddIndependentFieldEvaluator_(out_ev, "viscosity_liquid", "All", "*", viscosity);
   }
 
@@ -317,7 +317,7 @@ InputConverterU::TranslateState_()
                                   "fracture-molar_density_liquid",
                                   "FRACTURE_NETWORK_INTERNAL",
                                   "*",
-                                  rho_ / 0.0180153333333);
+                                  rho_ / molar_mass_);
     AddIndependentFieldEvaluator_(
       out_ev, "fracture-viscosity_liquid", "FRACTURE_NETWORK_INTERNAL", "*", viscosity);
   }
