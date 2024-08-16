@@ -14,7 +14,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${ASCEMIO_VERSION_MAJOR} ${ASCEMIO_VERSION_MINOR} ${ASCEMIO_VERSION_PATCH})  
 
 # --- Patch the original code
-set(ASCEMIO_patch_file ascemio-2.4-io_header.patch)
+set(ASCEMIO_patch_file ascemio-2.4-all.patch)
 set(ASCEMIO_sh_patch ${ASCEMIO_prefix_dir}/ascemio-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-patch-step.sh.in
               ${ASCEMIO_sh_patch}
