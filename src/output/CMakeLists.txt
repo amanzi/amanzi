@@ -106,7 +106,7 @@ if (BUILD_TESTS)
     
   # Test: gmv_output
   add_amanzi_test(output_gmv output_gmv
-                  SOURCE     test/Main.cc test/test_gmv.cc
+                  SOURCE     test/Main.cc test/output_gmv.cc
                   LINK_LIBS  output mesh_factory ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                   KIND unit)
 
@@ -114,21 +114,21 @@ if (BUILD_TESTS)
 
     # Test: hdf5_mpi_output
     add_amanzi_test(output_hdf5mpi output_hdf5mpi
-                  SOURCE         test/Main.cc test/test_hdf5mpi.cc
+                  SOURCE         test/Main.cc test/output_hdf5mpi.cc
                   LINK_LIBS      output mesh_factory mesh_mstk ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                   NPROCS         2
                   KIND           int)
 
     # Test: uses the Output interface
     add_amanzi_test(output_xdmf output_xdmf
-                  SOURCE         test/Main.cc test/test_xdmf.cc
+                  SOURCE         test/Main.cc test/output_xdmf.cc
                   LINK_LIBS      output mesh_factory mesh_mstk ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                   KIND           int)
 
     if (ENABLE_Silo)
       # Test: uses the Output interface
       add_amanzi_test(output_silo output_silo
-                      SOURCE      test/Main.cc test/test_silo.cc
+                      SOURCE      test/Main.cc test/output_silo.cc
                       LINK_LIBS   output mesh_factory mesh_mstk ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                       KIND        int)
       add_amanzi_test(output_silo_np2 output_silo NPROCS 2 KIND unit)
