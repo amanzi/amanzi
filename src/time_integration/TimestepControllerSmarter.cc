@@ -25,7 +25,7 @@ TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
                                                      const Teuchos::RCP<State>& S)
   : TimestepController(plist),
     plist_(plist),
-    name_(Keys::cleanName(name)),
+    name_(Keys::cleanName(name, true)),
     count_increased_before_increase_(0),
     S_(S),
     successive_increases_(0),
