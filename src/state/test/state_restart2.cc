@@ -57,7 +57,7 @@ SUITE(RESTART2)
     auto S = Teuchos::rcp(new State());
     S->RegisterDomainMesh(domain_mesh);
     std::stringstream serial_dname_ss;
-    serial_dname_ss << "serial_" << rank;
+    serial_dname_ss << "serial:" << rank;
 
     std::string serial_dname = serial_dname_ss.str();
     Key serial_fname = Keys::getKey(serial_dname, "field");
@@ -104,7 +104,7 @@ SUITE(RESTART2)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S2.Require<CompositeVector, CompositeVectorSpace>(serial_fname, Tags::DEFAULT, serial_fname)
-      .SetMesh(domain_mesh)
+      .SetMesh(serial_mesh)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S2.Setup();
