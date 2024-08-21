@@ -321,16 +321,25 @@ State::HasDerivative(const Key& key, const Key& wrt_key) const
 Evaluator&
 State::RequireEvaluator(const Key& key, const Tag& tag)
 {
-  CheckIsDebugEval_(key, tag);
+  bool debug = CheckIsDebugEval_(key, tag);
+  Teuchos::OSTab tab = vo_->getOSTab();
 
   // does it already exist?
-  if (HasEvaluator(key, tag)) return GetEvaluator(key, tag);
+  if (HasEvaluator(key, tag)) {
+    if (debug && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      *vo_->os() << "  ... evaluator exists" << std::endl;
+    }
+    return GetEvaluator(key, tag);
+  }
 
   // See if the key is provided by another existing evaluator.
   for (auto& e : evaluators_) {
     if (Keys::hasKey(e.second, tag) && e.second.at(tag)->ProvidesKey(key, tag)) {
+      if (debug && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo_->os() << "  ... evaluator is provided by evaluator for \"" << Keys::getKey(e.first, tag) << "\"" << std::endl;
+      }
       auto& evaluator = e.second.at(tag);
-      SetEvaluator(key, tag, evaluator);
+      SetEvaluator_(key, tag, evaluator);
       evaluator->EnsureEvaluators(*this);
       return *evaluator;
     }
@@ -347,8 +356,11 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
   if (tag == Tags::NEXT && evaluators_.count(key)) {
     for (const auto& other_tag : evaluators_.at(key)) {
       if (Keys::in(other_tag.first.get(), "next")) {
+        if (debug && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+          *vo_->os() << "  ... evaluator aliased to \"" << other_tag.first << "\"" << std::endl;
+        }
         // alias!
-        SetEvaluator(key, tag, other_tag.second);
+        SetEvaluator_(key, tag, other_tag.second);
         return *other_tag.second;
       }
     }
@@ -357,24 +369,38 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
   // Create the evaluator from State's plist
   // -- Get the Field Evaluator plist
   Teuchos::ParameterList& fm_plist = state_plist_.sublist("evaluators");
-
-  if (HasEvaluatorList(key)) {
-    // -- Get this evaluator's plist.
-    Teuchos::ParameterList sublist = GetEvaluatorList(key);
-    sublist.setName(key);
+  Teuchos::ParameterList fe_plist;
+  bool found = false;
+  if (HasEvaluatorList(Keys::getKey(key, tag))) {
+    // -- evaluator for just this key@tag combination
+    fe_plist = GetEvaluatorList(Keys::getKey(key, tag));
+    found = true;
+    if (debug && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      *vo_->os() << "  ... evaluator being created by tag-specific list" << std::endl;
+    }
+  } else if (HasEvaluatorList(key)) {
+    // -- general evaluator for all tags
+    fe_plist = GetEvaluatorList(key);
+    found = true;
+    if (debug && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      *vo_->os() << "  ... evaluator being created by tag-generic list" << std::endl;
+    }
+  }
+  if (found) {
+    fe_plist.setName(key);
     // -- Insert any model parameters.
-    if (sublist.isParameter("model parameters") &&
-        sublist.isType<std::string>("model parameters")) {
-      std::string modelname = sublist.get<std::string>("model parameters");
+    if (fe_plist.isParameter("model parameters") &&
+        fe_plist.isType<std::string>("model parameters")) {
+      std::string modelname = fe_plist.get<std::string>("model parameters");
       Teuchos::ParameterList modellist = GetModelParameters(modelname);
-      sublist.set(modelname, modellist);
+      fe_plist.set(modelname, modellist);
     }
 
     // -- Create and set the evaluator.
     Evaluator_Factory evaluator_factory;
     sublist.set("tag", tag.get());
     auto evaluator = evaluator_factory.createEvaluator(sublist);
-    SetEvaluator(key, tag, evaluator);
+    SetEvaluator_(key, tag, evaluator);
     evaluator->EnsureEvaluators(*this);
     return *evaluator;
   }
@@ -384,6 +410,9 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
     Teuchos::ParameterList& cv_list = GetEvaluatorList(key);
     cv_list.set("evaluator type", "cell volume");
     // recursive call will result in the above, HasEvaluatorList() branch being taken.
+    if (debug && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      *vo_->os() << "  ... evaluator created as cell volume" << std::endl;
+    }
     return RequireEvaluator(key, tag);
   }
 
@@ -571,6 +600,10 @@ State::Setup()
       r.second->EnsureCompatibility(*this);
     }
   }
+
+  // // If there are fields that exist at some tag, but not at NEXT, alias them to
+  // // NEXT for vis, obs, etc.
+  // for (auto
 
   // Create the data for all fields.
   for (auto& r : data_) {
@@ -894,6 +927,18 @@ State::GetEvaluatorPtr(const Key& key, const Tag& tag)
 void
 State::SetEvaluator(const Key& key, const Tag& tag, const Teuchos::RCP<Evaluator>& evaluator)
 {
+  bool debug = CheckIsDebugEval_(key, tag);
+  if (debug && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "  ... evaluator manually set" << std::endl;
+  }
+  SetEvaluator_(key, tag, evaluator);
+}
+
+
+void
+State::SetEvaluator_(const Key& key, const Tag& tag, const Teuchos::RCP<Evaluator>& evaluator)
+{
   evaluators_[key][tag] = evaluator;
 //   evaluator->EnsureEvaluators(*this);
 }
@@ -934,15 +979,18 @@ State::HasEvaluatorList(const Key& key) const
 }
 
 
-void
+bool
 State::CheckIsDebugEval_(const Key& key, const Tag& tag)
 {
   // check for debugging.  This provides a line for setting breakpoints for
   // debugging PK and Evaluator dependencies.
 #ifdef ENABLE_DBC
+  if (!state_plist_.isSublist("debug")) return false;
+
   Teuchos::Array<Key> debug_evals = state_plist_.sublist("debug").get<Teuchos::Array<std::string>>(
     "evaluators", Teuchos::Array<Key>());
   if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
+    Teuchos::OSTab tab = vo_->getOSTab();
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << "State: Evaluator for debug field \"" << key << "@" << tag << "\" was required."
                  << std::endl;
@@ -950,19 +998,24 @@ State::CheckIsDebugEval_(const Key& key, const Tag& tag)
     if (tag == Tags::DEFAULT) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) { *vo_->os() << " -- default tag" << std::endl; }
     }
+    return true;
   }
 #endif
+  return false;
 }
 
-void
+bool
 State::CheckIsDebugData_(const Key& key, const Tag& tag)
 {
   // check for debugging.  This provides a line for setting breakpoints for
   // debugging PK and Evaluator dependencies.
 #ifdef ENABLE_DBC
+  if (!state_plist_.isSublist("debug")) return false;
+
   Teuchos::Array<Key> debug_evals =
     state_plist_.sublist("debug").get<Teuchos::Array<std::string>>("data", Teuchos::Array<Key>());
   if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
+    Teuchos::OSTab tab = vo_->getOSTab();
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << "State: data for debug field \"" << key << "@" << tag << "\" was required."
                  << std::endl;
@@ -970,8 +1023,10 @@ State::CheckIsDebugData_(const Key& key, const Tag& tag)
     if (tag == Tags::DEFAULT) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) { *vo_->os() << " -- default tag" << std::endl; }
     }
+    return true;
   }
 #endif
+  return false;
 }
 
 } // namespace Amanzi
