@@ -79,6 +79,7 @@ set(state_inc_files
   evaluators/EvaluatorPrimary.hh
   evaluators/EvaluatorSecondary.hh
   evaluators/EvaluatorSecondaryMonotype.hh
+  evaluators/EvaluatorTemporalInterpolation.hh
   evaluators/EvaluatorSecondaryMonotypeFromFunction.hh
   IO.hh
   Observable.hh
@@ -107,6 +108,7 @@ add_amanzi_library(state
                           evaluators/EvaluatorPrimary.cc
                           evaluators/EvaluatorSecondary.cc
                           evaluators/EvaluatorSecondaryMonotype.cc
+                          evaluators/EvaluatorTemporalInterpolation.cc
                           evaluators/EvaluatorSecondaryMonotypeFromFunction.cc
                           IO.cc
                           Observable.cc
