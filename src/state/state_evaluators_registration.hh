@@ -21,6 +21,7 @@
 #include "EvaluatorMultiplicativeReciprocal.hh"
 #include "EvaluatorSecondaryMonotypeFromFunction.hh"
 #include "EvaluatorPrimary.hh"
+#include "EvaluatorTemporalInterpolation.hh"
 
 namespace Amanzi {
 
@@ -44,5 +45,8 @@ Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction>
 template<>
 Utils::RegisteredFactory<Evaluator, EvaluatorPrimaryCV>
   EvaluatorPrimaryCV::fac_("primary variable");
+
+Utils::RegisteredFactory<Evaluator, EvaluatorTemporalInterpolation>
+  EvaluatorTemporalInterpolation::fac_("temporal interpolation");
 
 } // namespace Amanzi
