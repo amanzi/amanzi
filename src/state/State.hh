@@ -101,6 +101,7 @@ Example:
 namespace Amanzi {
 
 class Evaluator;
+class EvaluatorAlias;
 
 enum StateConstructMode { STATE_CONSTRUCT_MODE_COPY_POINTERS, STATE_CONSTRUCT_MODE_COPY_DATA };
 
@@ -204,8 +205,16 @@ class State {
   //
   // This Require call will not compile for factories F that do not have a
   // default constructor (e.g. Epetra_Map).
+  //
+  // Note, aliases are created for tag == NEXT when:
+  //  1. there is no record at NEXT
+  //  2. there _is_ a record at another tag including next in the name
+  //  3. alias_ok is true
+  // This allows e.g. observations to use aliases for variables that would not
+  // otherwise exist, because they are only used in subcycled PKs, rather than
+  // forcing the creation and update of a true NEXT variable.
   template <typename T, typename F>
-  F& Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = true)
+  F& Require(const Key& fieldname, const Tag& tag, const Key& owner = "", bool alias_ok = false)
   {
     CheckIsDebugData_(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
@@ -496,7 +505,7 @@ class State {
   Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
 
   // Evaluator interface
-  Evaluator& RequireEvaluator(const Key& key, const Tag& tag);
+  Evaluator& RequireEvaluator(const Key& key, const Tag& tag, bool alias_ok = true);
 
 #ifndef DISABLE_DEFAULT_TAG
   // -- get/set
@@ -585,10 +594,11 @@ class State {
   // Accessors that return null if the Key does not exist.
   Teuchos::RCP<AmanziMesh::Mesh> GetMesh_(const Key& key) const;
   Teuchos::RCP<const Functions::MeshPartition> GetMeshPartition_(Key);
+  void SetEvaluator_(const Key& key, const Tag& tag, const Teuchos::RCP<Evaluator>& evaluator);
 
   // a hook to allow debuggers to connect
-  void CheckIsDebugEval_(const Key& key, const Tag& tag);
-  void CheckIsDebugData_(const Key& key, const Tag& tag);
+  bool CheckIsDebugEval_(const Key& key, const Tag& tag);
+  bool CheckIsDebugData_(const Key& key, const Tag& tag);
 
  private:
   Teuchos::RCP<VerboseObject> vo_;

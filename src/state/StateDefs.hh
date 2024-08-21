@@ -37,7 +37,7 @@ static const Tag NEXT(""); // an alias used by ATS
 static const Tag COPY("copy");
 } // namespace Tags
 
-enum class EvaluatorType { PRIMARY, SECONDARY, INDEPENDENT, OTHER };
+enum class EvaluatorType { PRIMARY, SECONDARY, INDEPENDENT, ALIAS, OTHER };
 
 } // namespace Amanzi
 

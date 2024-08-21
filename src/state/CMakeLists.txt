@@ -47,12 +47,6 @@ if(ENABLE_Silo)
   add_definitions(-DENABLE_Silo)
 endif(ENABLE_Silo)
 
-# This state library will move to a new location 
-# once Markus has created the data manager.
-# I use global properties since all the PROJECT_NAME
-# variables in this directory are tied to the MPC.
-# These properties will be replaced with the appropriate
-# directory project name once it is moved.
 #
 # Library: state
 #
@@ -82,6 +76,7 @@ set(state_inc_files
   evaluators/EvaluatorSecondaryMonotype.hh
   evaluators/EvaluatorTemporalInterpolation.hh
   evaluators/EvaluatorSecondaryMonotypeFromFunction.hh
+  evaluators/EvaluatorAlias.hh
   IO.hh
   Observable.hh
   StateDefs.hh
@@ -112,6 +107,7 @@ add_amanzi_library(state
                           evaluators/EvaluatorSecondaryMonotype.cc
                           evaluators/EvaluatorTemporalInterpolation.cc
                           evaluators/EvaluatorSecondaryMonotypeFromFunction.cc
+                          evaluators/EvaluatorAlias.cc
                           IO.cc
                           Observable.cc
                           UnstructuredObservations.cc
