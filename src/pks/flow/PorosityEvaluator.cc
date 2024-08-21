@@ -81,6 +81,7 @@ PorosityEvaluator::InitializeFromPlist_()
 
   thermoelasticity_ = plist_.get<bool>("thermoelasticity");
   if (thermoelasticity_) {
+    biot_key_ = Keys::getKey(domain, "biot_coefficient");
     temperature_key_ = plist_.get<std::string>("temperature key");
     dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
   }
@@ -111,9 +112,11 @@ PorosityEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>
 
   if (thermoelasticity_) {
     const auto& temp_c = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
+    const auto& b_c = *S.Get<CompositeVector>(biot_key_).ViewComponent("cell");
     for (int c = 0; c != ncells; ++c) {
-      double a = pom_->second[(*pom_->first)[c]]->getThermalCoefficients().first;
-      phi_c[0][c] -= a * (temp_c[0][c] - 273.15);
+      double phi0 = pom_->second[(*pom_->first)[c]]->PorosityValueReference();
+      double as = pom_->second[(*pom_->first)[c]]->getThermalCoefficients().second;
+      phi_c[0][c] -= (b_c[0][c] - phi0) * as * (temp_c[0][c] - 273.15);
     }
   }
 

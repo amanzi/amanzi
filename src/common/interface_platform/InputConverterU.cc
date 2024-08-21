@@ -22,12 +22,15 @@
 // Amanzi
 #include "amanzi_version.hh"
 #include "errors.hh"
-#include "HDF5Reader.hh"
+#include "Reader.hh"
 
 #include "InputConverterU.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
+
+#define XSTR(s) STR(s)
+#define STR(s) #s
 
 XERCES_CPP_NAMESPACE_USE
 
@@ -249,8 +252,6 @@ void
 InputConverterU::VerifyXMLStructure_()
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-#define XSTR(s) STR(s)
-#define STR(s) #s
     *vo_->os() << "Amanzi executable tag: " << XSTR(AMANZI_VERSION) << "\n"
                << "Verify high-level XML structure" << std::endl;
   }
@@ -769,8 +770,8 @@ InputConverterU::PrintStatistics_()
 bool
 InputConverterU::CheckVariableName_(const std::string& filename, const std::string& varname)
 {
-  HDF5Reader reader(filename);
-  return reader.CheckVariableName(varname);
+  auto reader = createReader(filename);
+  return reader->hasVariableOrGroup(varname);
 }
 
 } // namespace AmanziInput

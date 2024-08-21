@@ -138,6 +138,10 @@ TCMEvaluator_OnePhase::EvaluatePartialDerivative_(const State& S,
         double k_liq = tc_liq_[id]->ThermalConductivity(T, phi);
         double k_solid = tc_solid_[id]->ThermalConductivity(T, phi);
         result_v[0][i] = k_liq - k_solid;
+
+        k_liq = tc_liq_[id]->DThermalConductivityDPhi(T, phi);
+        k_solid = tc_solid_[id]->DThermalConductivityDPhi(T, phi);
+        result_v[0][i] += phi * k_liq + (1.0 - phi) * k_solid;
       }
     } else if (wrt_key == temperature_key_) {
       for (int i = 0; i != ncells; ++i) {

@@ -94,7 +94,7 @@
   <materials>
     <material name="All">
       <mechanical_properties>
-        <porosity value="0.1" compressibility="3.0e-9"/>
+        <porosity model="compressible" value="0.1" compressibility="3.0e-9"/>
       </mechanical_properties>
       <cap_pressure model="saturated"/>
       <permeability model="power law" x="1e-21" y="1e-21" z="1e-21" exponent="3" reference_porosity="0.1" />
@@ -138,7 +138,7 @@
     <materials>
       <material name="All">
         <mechanical_properties>
-          <porosity value="1.0"/>
+          <porosity model="constant" value="1.0"/>
         </mechanical_properties>
 
         <cap_pressure model="saturated"/>

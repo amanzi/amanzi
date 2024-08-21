@@ -2129,6 +2129,13 @@ Coupled matrix-fracture Darcy flow PK
 -------------------------------------
 { FlowMatrixFracture_PK }
 
+
+Aperture models
+...............
+{ ApertureModel_BartonBandis }
+{ ApertureModel_ExponentialLaw }
+
+
 Thermo-poroelasticity PK
 ------------------------
 { FlowMechanics_PK }

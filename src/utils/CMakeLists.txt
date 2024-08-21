@@ -30,13 +30,17 @@ include_directories(${DBC_SOURCE_DIR})
 set(tpl_link_libs
   ${Epetra_LIBRARIES}
   ${Teuchos_LIBRARIES}
-  ${HDF5_LIBRARIES})
+  ${HDF5_LIBRARIES}
+  ${NetCDF_C_LIBRARIES}
+)
 
 add_amanzi_library(atk
                    SOURCE AmanziComm.cc
                           ExprTK.cc
                           Formatter.cc
-                          HDF5Reader.cc
+                          ReaderHDF5.cc
+                          ReaderNetCDF.cc
+                          Reader.cc
                           IOEvent.cc
                           Key.cc
                           LeastSquare.cc 
@@ -54,7 +58,9 @@ add_amanzi_library(atk
                            Factory.hh
                            FIFO_Set.hh
                            Formatter.hh
-                           HDF5Reader.hh
+                           Reader.hh
+                           ReaderHDF5.hh
+                           ReaderNetCDF.hh
                            IOEvent.hh
                            Iterators.hh
                            Key.hh
@@ -98,8 +104,8 @@ if (BUILD_TESTS)
 
     # Copy test directory files if an out of source build
     if (NOT (${ATK_SOURCE_DIR} EQUAL ${ATK_BINARY_DIR}))
-      # file(GLOB DataFiles "${ATK_SOURCE_DIR}/test/*.xml")
-      # file(COPY ${DataFiles} DESTINATION ${ATK_BINARY_DIR}/test/)
+      file(GLOB DataFiles "${ATK_SOURCE_DIR}/test/*")
+      file(COPY ${DataFiles} DESTINATION ${ATK_BINARY_DIR}/test/)
     endif()
 
     # Add the utils directory to the include paths
@@ -143,6 +149,11 @@ if (BUILD_TESTS)
     add_amanzi_test(utils_exprtk utils_exprtk
                     KIND unit
                     SOURCE test/Main.cc test/utils_exprtk.cc
+                    LINK_LIBS atk ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(utils_reader utils_reader
+                    KIND unit
+                    SOURCE test/Main.cc test/utils_reader.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
 
     add_amanzi_test(utils_reducer utils_reducer

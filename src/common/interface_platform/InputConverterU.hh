@@ -73,7 +73,7 @@ class InputConverterU : public InputConverter {
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
       fracture_network_(false),
       flow_single_phase_(false),
-      compressibility_(false),
+      use_porosity_model_(false),
       beta_(0.0),
       mesh_rectangular_(false),
       use_transport_porosity_(false),
@@ -99,7 +99,7 @@ class InputConverterU : public InputConverter {
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
       fracture_network_(false),
       flow_single_phase_(false),
-      compressibility_(false),
+      use_porosity_model_(false),
       beta_(0.0),
       mesh_rectangular_(false),
       use_transport_porosity_(false),
@@ -364,7 +364,7 @@ class InputConverterU : public InputConverter {
   // global flow constants
   std::string flow_model_; // global value
   bool flow_single_phase_; // runtime value
-  bool compressibility_, linearized_aperture_;
+  bool use_porosity_model_, linearized_aperture_;
   double rho_, molar_mass_, beta_, ref_mu_, ref_temp_, ref_sutherland_;
 
   // global mesh data

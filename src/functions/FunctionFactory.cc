@@ -11,8 +11,8 @@
 #include "Epetra_SerialDenseMatrix.h"
 
 #include "errors.hh"
-#include "HDF5Reader.hh"
 #include "Key.hh"
+#include "Reader.hh"
 
 #include "FunctionAdditive.hh"
 #include "FunctionBilinear.hh"
@@ -152,7 +152,7 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
   if (params.isParameter("file")) {
     //    try {
     std::string filename = params.get<std::string>("file");
-    HDF5Reader reader(filename);
+    auto reader = createReader(filename);
 
     int xi = 0;
     std::string x = params.get<std::string>("x header");
@@ -167,10 +167,10 @@ FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
       xi = 3;
     std::string y = params.get<std::string>("y header");
 
-    std::vector<double> vec_x;
-    std::vector<double> vec_y;
-    reader.ReadData(x, vec_x);
-    reader.ReadData(y, vec_y);
+    Teuchos::Array<double> vec_x;
+    Teuchos::Array<double> vec_y;
+    reader->read(x, vec_x);
+    reader->read(y, vec_y);
     if (params.isParameter("forms")) {
       std::vector<Form_kind> form;
       if (params.isType<Teuchos::Array<std::string>>("forms")) {
@@ -551,7 +551,7 @@ FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
   if (params.isParameter("file")) {
     try {
       std::string filename = params.get<std::string>("file");
-      HDF5Reader reader(filename);
+      auto reader = createReader(filename);
 
       int xi, yi(0); // input indices
       std::string x = params.get<std::string>("row header");
@@ -590,13 +590,13 @@ FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
         yi = 0;
       }
 
-      std::vector<double> vec_x;
-      std::vector<double> vec_y;
+      Teuchos::Array<double> vec_x;
+      Teuchos::Array<double> vec_y;
       std::string v = params.get<std::string>("value header");
-      Epetra_SerialDenseMatrix mat_v;
-      reader.ReadData(x, vec_x);
-      reader.ReadData(y, vec_y);
-      reader.ReadMatData(v, mat_v);
+      Teuchos::SerialDenseMatrix<int, double> mat_v;
+      reader->read(x, vec_x);
+      reader->read(y, vec_y);
+      reader->read(v, mat_v);
       f = std::make_unique<FunctionBilinear>(vec_x, vec_y, mat_v, xi, yi);
     } catch (Teuchos::Exceptions::InvalidParameter& msg) {
       Errors::Message m;

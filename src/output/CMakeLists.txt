@@ -54,13 +54,10 @@ if (ENABLE_Silo)
 endif(ENABLE_Silo)
 
 # HDF5 serial test, HDF5 now required so always enables
-file(GLOB hdf5_source "HDF5Mesh*.cc")
-list(APPEND output_source_files "${hdf5_source}")
-list(APPEND output_tpl_list ${HDF5_LIBRARIES})
-
 file(GLOB hdf5mpi_source "HDF5_MPI*.cc")
 list(APPEND output_source_files "${hdf5mpi_source}")
 list(APPEND output_source_files "OutputXDMF.cc")
+list(APPEND output_tpl_list ${HDF5_LIBRARIES})
 list(APPEND output_tpl_list ${ASCEMIO_LIBRARIES})
 
 file(GLOB output_inc_files "*.h*")
@@ -112,14 +109,6 @@ if (BUILD_TESTS)
                   SOURCE     test/Main.cc test/test_gmv.cc
                   LINK_LIBS  output mesh_factory ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                   KIND unit)
-
-  # Test: hdf5_output
-  add_amanzi_test(output_hdf5 output_hdf5
-                  SOURCE      test/Main.cc test/test_hdf5.cc
-                  LINK_LIBS   output mesh_factory ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
-                  KIND int)
-
-
 
   if (ENABLE_MESH_MSTK)
 
