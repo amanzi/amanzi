@@ -81,7 +81,7 @@ class PK_DomainFunctionField : public FunctionBase {
  private:
   std::string submodel_;
   Teuchos::RCP<MeshIDs> entity_ids_;
-  AmanziMesh::Entity_kind kind_;  
+  AmanziMesh::Entity_kind kind_;
   Key component_key_;
   int num_cells_;
   std::vector<Key> field_keys_;
@@ -105,9 +105,9 @@ PK_DomainFunctionField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
   std::vector<std::string> regions = plist.get<Teuchos::Array<std::string>>("regions").toVector();
 
   try {
-    Teuchos::ParameterList flist = plist.sublist(keyword);    
+    Teuchos::ParameterList flist = plist.sublist(keyword);
     if (flist.isParameter("number of fields")) {
-      // for multiple (>1) field evaluators. This requires "number of fields" sublist 
+      // for multiple (>1) field evaluators. This requires "number of fields" sublist
       if (flist.isType<int>("number of fields")) {
         int num_fields = flist.get<int>("number of fields");
         if (num_fields < 2) { // ERROR -- invalid number of fields
@@ -120,19 +120,19 @@ PK_DomainFunctionField<FunctionBase>::Init(const Teuchos::ParameterList& plist,
           std::stringstream sublist_name;
           sublist_name << "field " << lcv << " info";
           Key field_key_ = flist.sublist(sublist_name.str()).get<std::string>("field key");
-          Tag tag_ = Keys::readTag(flist.sublist(sublist_name.str()), "tag");
+          Tag tag = Keys::readTag(flist.sublist(sublist_name.str()), "tag");
           field_keys_.push_back(field_key_);
-          tags_.push_back(tag_);
+          tags_.push_back(tag);
         }
       }
     } else { // for only ONE field evaluator (without number of fields sublist)
       Key field_key_ = flist.get<std::string>("field key");
       field_keys_.push_back(field_key_);
-      Tag tag_ = Keys::readTag(flist, "tag");
-      tags_.push_back(tag_);
+      Tag tag = Keys::readTag(flist, "tag");
+      tags_.push_back(tag);
       // component_key_ = flist.get<std::string>("component", "cell");
     }
-    num_cells_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);    
+    num_cells_ = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "error in source sublist : " << msg.what();
@@ -174,17 +174,17 @@ PK_DomainFunctionField<FunctionBase>::Compute(double t0, double t1)
   // Finally, update the source values (value_) for each cell.
   for (size_t ife = 0; ife < num_fields; ++ife) { // fe counter
     Key field_key_ = field_keys_[ife];
-    Tag tag_ = tags_[ife];
+    Tag tag = tags_[ife];
 
-    if (S_->HasEvaluator(field_key_, tag_)) {
-      S_->GetEvaluator(field_key_, tag_).Update(*S_, field_key_);
+    if (S_->HasEvaluator(field_key_, tag)) {
+      S_->GetEvaluator(field_key_, tag).Update(*S_, field_key_);
     }
     // reference to coressponding fe
-    const Epetra_MultiVector& field_vec = *S_->Get<CompositeVector>(field_key_, tag_).ViewComponent("cell", false);    
+    const Epetra_MultiVector& field_vec = *S_->Get<CompositeVector>(field_key_, tag).ViewComponent("cell", false);
 
     // loop through every cell to update the intermediate variables
     for (auto c : *entity_ids_) {
-      field_all[ife][c] = field_vec[0][c];       
+      field_all[ife][c] = field_vec[0][c];
     }
   }
 
