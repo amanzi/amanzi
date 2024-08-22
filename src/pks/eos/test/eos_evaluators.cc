@@ -36,8 +36,7 @@ TEST(DensityEOS)
   using namespace Amanzi::AmanziEOS;
 
   Teuchos::ParameterList plist;
-  plist.set<double>("molar mass", 18.0153e-03)
-       .set<double>("density", 997.0);
+  plist.set<double>("molar mass", 18.0153e-03).set<double>("density", 997.0);
   H2O_Density eos(plist);
 
   double p(101325.0), T0(273.15), d0, d1;
@@ -86,8 +85,7 @@ TEST(ViscosityEOS)
   using namespace Amanzi::AmanziEOS;
 
   Teuchos::ParameterList plist;
-  plist.set<double>("molar mass", 18.0153e-03)
-       .set<double>("density", 997.0);
+  plist.set<double>("molar mass", 18.0153e-03).set<double>("density", 997.0);
   H2O_ViscosityFEHM eos(plist);
 
   double p(101325.0), T0(273.15), nu0, nu1;

@@ -290,6 +290,10 @@ PDE_DiffusionMFDwithGravity::UpdateFluxManifold_(const Teuchos::Ptr<const Compos
   // Calculate diffusive part of the flux.
   PDE_DiffusionMFD::UpdateFluxManifold_(u, flux);
 
+  // vector or scalar rho?
+  const Epetra_MultiVector* rho_c = NULL;
+  if (!is_scalar_) rho_c = &*rho_cv_->ViewComponent("cell", false);
+
   // preparing little-k data
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
@@ -336,6 +340,8 @@ PDE_DiffusionMFDwithGravity::UpdateFluxManifold_(const Teuchos::Ptr<const Compos
     if (K_.get()) Kc = (*K_)[c];
     AmanziGeometry::Point Kcg(Kc * g_);
 
+    double rho = rho_c ? (*rho_c)[0][c] : rho_;
+
     for (int n = 0; n < nfaces; n++) {
       int dir, f = faces[n];
       AmanziGeometry::Point normal = mesh_->getFaceNormal(f, c, &dir);
@@ -349,9 +355,9 @@ PDE_DiffusionMFDwithGravity::UpdateFluxManifold_(const Teuchos::Ptr<const Compos
         const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
         double sign = normal * xcc;
         double tmp = copysign(norm(normal) / norm(xcc), sign);
-        grav_data[0][g] += (Kcg * xcc) * rho_ * kf[n] * tmp;
+        grav_data[0][g] += (Kcg * xcc) * rho * kf[n] * tmp;
       } else {
-        grav_data[0][g] += (Kcg * normal) * rho_ * kf[n];
+        grav_data[0][g] += (Kcg * normal) * rho * kf[n];
       }
     }
   }

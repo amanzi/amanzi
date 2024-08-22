@@ -315,7 +315,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
   std::map<std::string, Teuchos::RCP<Operators::BCs>> op_bcs_;
 
   // physical parameters
-  double  mol_mass_H2O_;
+  double mol_mass_H2O_;
   std::vector<WhetStone::Tensor> K_;
   std::vector<double> mol_diff_l_, mol_diff_g_, mol_mass_;
 

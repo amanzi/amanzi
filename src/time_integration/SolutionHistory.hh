@@ -146,7 +146,7 @@ SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec)
         name_ = name_ + "_000";
       } else {
         char i[4];
-        snprintf(i, sizeof(i), "%03i", counter%1000u);
+        snprintf(i, sizeof(i), "%03i", counter % 1000u);
         name_ = name_.substr(0, name_.size() - 4) + "_" + i;
       }
       counter++;

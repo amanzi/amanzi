@@ -583,10 +583,11 @@ Richards_PK::Initialize()
       oplist_matrix.set<bool>("use manifold flux", true);
   }
 
-  // auto rho_cv = S_->GetPtr<CV_t>(mass_density_liquid, Tags::DEFAULT);
-
   Operators::PDE_DiffusionFactory opfactory(oplist_matrix, mesh_);
-  opfactory.SetConstantGravitationalTerm(gravity_, rho_);
+
+  auto rho_cv = S_->GetPtr<CV_t>(mass_density_liquid_key_, Tags::DEFAULT);
+  // opfactory.SetConstantGravitationalTerm(gravity_, rho_);
+  opfactory.SetVariableGravitationalTerm(gravity_, rho_cv);
 
   if (!flow_on_manifold_) {
     SetAbsolutePermeabilityTensor();
@@ -842,6 +843,7 @@ Richards_PK::Initialize()
   // Verbose output of initialization statistics.
   InitializeStatistics_();
 }
+
 
 
 /* ****************************************************************

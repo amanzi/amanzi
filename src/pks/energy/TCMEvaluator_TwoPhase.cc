@@ -39,7 +39,8 @@ TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(Teuchos::ParameterList& plist)
   dependencies_.insert(std::make_pair(saturation_key_, Tags::DEFAULT));
 
   AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));
-  Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters").sublist("TCM_0");
+  Teuchos::ParameterList sublist =
+    plist_.sublist("thermal conductivity parameters").sublist("TCM_0");
   TCMFactory_TwoPhase fac;
   tc_ = fac.CreateTCM(sublist);
 }

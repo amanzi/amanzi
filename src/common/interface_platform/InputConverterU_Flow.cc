@@ -444,17 +444,22 @@ InputConverterU::TranslatePOM_(const std::string& domain)
     }
 
     double phi = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0);
-    ref_pressure = GetAttributeValueD_(node, "reference_pressure", TYPE_NUMERICAL, 0.0, DBL_MAX, "Pa", false, const_atm_pressure_);
+    ref_pressure = GetAttributeValueD_(
+      node, "reference_pressure", TYPE_NUMERICAL, 0.0, DBL_MAX, "Pa", false, const_atm_pressure_);
 
     // optional thermoporoelasticity
     double dilation_rock(0.0), dilation_liquid(0.0), biot(1.0);
     if (model == "thermoporoelastic") {
       DOMNode* knode;
-      knode = GetUniqueElementByTagsString_(inode, "mechanical_properties, rock_thermal_dilation", flag);
-      if (flag) dilation_rock = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
+      knode =
+        GetUniqueElementByTagsString_(inode, "mechanical_properties, rock_thermal_dilation", flag);
+      if (flag)
+        dilation_rock = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
 
-      knode = GetUniqueElementByTagsString_(inode, "mechanical_properties, liquid_thermal_dilation", flag);
-      if (flag) dilation_liquid = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
+      knode = GetUniqueElementByTagsString_(
+        inode, "mechanical_properties, liquid_thermal_dilation", flag);
+      if (flag)
+        dilation_liquid = GetAttributeValueD_(knode, "value", TYPE_NUMERICAL, 0.0, 1.0, "K^-1");
 
       // Biot-Willis coefficient
       knode = GetUniqueElementByTagsString_(inode, "mechanical_properties, biot_coefficient", flag);
@@ -466,7 +471,8 @@ InputConverterU::TranslatePOM_(const std::string& domain)
       compres = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, 0.0, 1.0, "Pa^-1");
     } else if (model == "thermoporoelastic") {
       double bulk(0.0);
-      if (flag) bulk = GetAttributeValueD_(node, "solid_bulk_modulus", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
+      if (flag)
+        bulk = GetAttributeValueD_(node, "solid_bulk_modulus", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa");
       compres = (biot - phi) / bulk;
     }
 
@@ -1047,7 +1053,8 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
 ****************************************************************** */
 Teuchos::ParameterList
 InputConverterU::TranslateSources_(const std::string& domain,
-                                   const std::string& pkname, const std::string& pk_model)
+                                   const std::string& pkname,
+                                   const std::string& pk_model)
 {
   Teuchos::ParameterList out_list;
 
@@ -1133,9 +1140,12 @@ InputConverterU::TranslateSources_(const std::string& domain,
           .set<std::string>("field key", "Q")
           .set<std::string>("component", "cell");
 
-        glist_->sublist("state").sublist("evaluators").sublist("Q")
+        glist_->sublist("state")
+          .sublist("evaluators")
+          .sublist("Q")
           .set<std::string>("evaluator type", "multiplicative reciprocal")
-          .set<Teuchos::Array<std::string>>("multiplicative dependencies", { "molar_density_liquid", bcs.variable })
+          .set<Teuchos::Array<std::string>>("multiplicative dependencies",
+                                            { "molar_density_liquid", bcs.variable })
           .set<double>("coefficient", 1.0);
       } else {
         src.sublist("field")

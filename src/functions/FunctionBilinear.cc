@@ -16,7 +16,7 @@ namespace Amanzi {
 
 FunctionBilinear::FunctionBilinear(const Teuchos::Array<double>& x,
                                    const Teuchos::Array<double>& y,
-                                   const Teuchos::SerialDenseMatrix<int,double>& v,
+                                   const Teuchos::SerialDenseMatrix<int, double>& v,
                                    const int xi,
                                    const int yi)
   : x_(x), y_(y), v_(v), xi_(xi), yi_(yi)
@@ -28,7 +28,7 @@ FunctionBilinear::FunctionBilinear(const Teuchos::Array<double>& x,
 void
 FunctionBilinear::check_args(const Teuchos::Array<double>& x,
                              const Teuchos::Array<double>& y,
-                             const Teuchos::SerialDenseMatrix<int,double>& v) const
+                             const Teuchos::SerialDenseMatrix<int, double>& v) const
 {
   if (x.size() != v.numCols()) {
     Errors::Message m;

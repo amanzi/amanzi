@@ -26,9 +26,7 @@ namespace AmanziEOS {
 * may be useful for unit tests.
 ******************************************************************* */
 NaCl_ThermalConductivity::NaCl_ThermalConductivity(Teuchos::ParameterList& plist)
-  : EOS_ThermalConductivity(plist),
-    kref_(5.4),
-    Tref_(300.00)
+  : EOS_ThermalConductivity(plist), kref_(5.4), Tref_(300.00)
 {
   kref_ = plist_.get<double>("reference conductivity", kref_);
   include_phi_ = plist_.get<bool>("include porosity dependence", true);

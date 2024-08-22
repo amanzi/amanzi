@@ -345,7 +345,7 @@ CycleDriver::ReportMemory()
     *vo_->os() << "======================================================================"
                << std::endl;
     *vo_->os() << "Simulation made " << S_->get_cycle() << " cycles.\n";
-    *vo_->os() << "All meshes combined have " << global_ncells << " cells (1st mesh has " 
+    *vo_->os() << "All meshes combined have " << global_ncells << " cells (1st mesh has "
                << counts[0] << " cells).\n";
     *vo_->os() << "Memory usage (high water mark):\n";
     *vo_->os() << std::fixed << std::setprecision(1);

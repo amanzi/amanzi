@@ -100,13 +100,13 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
     controller.set<double>("relative tolerance", 1e-4).set<double>("absolute tolerance", 10.0);
 
   // nonlinear solver
-  int max_divergent_itrs(MAX_DIVERG_ITERATIONS), max_total_itrs(NKA_LIMIT_ITERATIONS);  
+  int max_divergent_itrs(MAX_DIVERG_ITERATIONS), max_total_itrs(NKA_LIMIT_ITERATIONS);
   std::string options("numerical_controls, unstructured_controls, unstr_nonlinear_solver");
   node = GetUniqueElementByTagsString_(options + ", max_divergent_iterations", flag);
-  if (flag) max_divergent_itrs= std::atoi(mm.transcode(node->getTextContent()));
+  if (flag) max_divergent_itrs = std::atoi(mm.transcode(node->getTextContent()));
 
   node = GetUniqueElementByTagsString_(options + ", max_total_iterations", flag);
-  if (flag) max_total_itrs= std::atoi(mm.transcode(node->getTextContent()));
+  if (flag) max_total_itrs = std::atoi(mm.transcode(node->getTextContent()));
 
   Teuchos::ParameterList* solver;
 
@@ -277,6 +277,10 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   if (flag)
     out_list.set<int>("maximum number of iterations",
                       std::stoi(mm.transcode(node->getTextContent())));
+
+  node = GetUniqueElementByTagsString_(controls + ", sequential_tolerance", flag);
+  if (flag)
+    out_list.set<double>("error tolerance", std::stod(mm.transcode(node->getTextContent())));
 
   node = GetUniqueElementByTagsString_(controls + ", preconditioner", flag);
   if (flag) {

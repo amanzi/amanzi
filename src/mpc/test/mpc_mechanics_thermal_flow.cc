@@ -69,7 +69,7 @@ RunTest(const std::string xmlInFileName)
   std::string label = obs_data.observationLabels()[0];
   int nobs = obs_data[label].size();
 
-  for (int i = 0; i < nobs; ++i) CHECK(obs_data[label][i].value > 1.0e+6);
+  for (int i = 0; i < nobs; ++i) CHECK(obs_data[label][i].value > 9.8e+5);
   CHECK(obs_data[label][0].value < obs_data[label][nobs / 2].value);
   CHECK(obs_data[label][nobs - 1].value < obs_data[label][nobs / 2].value);
 }

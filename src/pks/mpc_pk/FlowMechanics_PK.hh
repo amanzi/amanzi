@@ -15,13 +15,13 @@ The conceptual PDE model of the coupled flow and mechanics equations is
 
 .. math::
   \begin{array}{l}
-  -\boldsymbol{\nabla} \cdot (C \varepsilon(\boldsymbol{d}))/2 + \alpha \nabla p + \beta_r \nabla T
+  -\boldsymbol{\nabla} \cdot (C \varepsilon(\boldsymbol{d})) + \alpha \nabla p + \beta_r \nabla T
   =
-  \rho \boldsymbol{g} \\
+  \rho \boldsymbol{g} \\[1ex]
   %
   \displaystyle\frac{\partial (\eta \phi)}{\partial t}
   =
-  - \boldsymbol{\nabla} \cdot (\eta \boldsymbol{q}) + Q_1,\\
+  - \boldsymbol{\nabla} \cdot (\eta \boldsymbol{q}) + Q_1\\[1ex]
   %
   \displaystyle\frac{\partial (\phi\, \eta\, U_l + (1 - \phi) \rho_r U_r)}{\partial t}
   =
@@ -50,7 +50,7 @@ and
 The porosity model is
 
 .. math::
-  \phi = \phi_0 + \alpha\, {\rm div}\, \varepsilon + c_0\,(p - p_0) + \beta_l (T - T_0).
+  \phi = \phi_0 + \alpha\, {\rm div}\, \varepsilon + c_0\,(p - p_0) - \beta_l (T - T_0).
 
 where
 :math:`\beta_l` is thermal dilation coefficient [:math:`Pa/K`],

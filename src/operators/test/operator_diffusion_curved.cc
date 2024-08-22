@@ -51,7 +51,8 @@ RunTestDiffusionCurved(const std::string& filename)
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: elliptic solver, mesh with curved faces: " << filename << "\n";
+  if (MyPID == 0)
+    std::cout << "\nTest: elliptic solver, mesh with curved faces: " << filename << "\n";
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_curved.xml";

@@ -214,7 +214,7 @@ Flow_PK::Setup()
 
         if (spec.isParameter("submodel")) {
           auto submodel = spec.get<std::string>("submodel");
-	  if (submodel == "poromechanics") {
+          if (submodel == "poromechanics") {
             std::string strain("strain_rate");
             RequireFieldForEvaluator(*S_, strain);
             S_->RequireEvaluator(strain, Tags::DEFAULT);
@@ -416,10 +416,10 @@ Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
     *vo_->os() << "Secondary fields: hydraulic head, darcy_velocity, etc." << std::endl;
   }
 
-  auto& hydraulic_head =
-    *S->GetW<CompositeVector>(hydraulic_head_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
-  const auto& pressure = *S->Get<CompositeVector>(pressure_key_).ViewComponent("cell");
-  double rho = S->Get<double>("const_fluid_density");
+  auto tag = Tags::DEFAULT;
+  auto& head_c = *S->GetW<CV_t>(hydraulic_head_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+  const auto& pressure_c = *S->Get<CV_t>(pressure_key_).ViewComponent("cell");
+  const auto& rho_c = *S_->Get<CV_t>(mass_density_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
   // calculate hydraulic head
   double g = fabs(gravity_[dim - 1]);
@@ -427,15 +427,16 @@ Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
   for (int c = 0; c != ncells_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     double z = xc[dim - 1];
-    hydraulic_head[0][c] = z + (pressure[0][c] - atm_pressure_) / (g * rho);
+    head_c[0][c] = z + (pressure_c[0][c] - atm_pressure_) / (g * rho_c[0][c]);
   }
 
   // calculate optional fields
   Key optional_key = Keys::getKey(domain_, "pressure_head");
   if (S->HasRecord(optional_key)) {
-    auto& field_c =
-      *S->GetW<CompositeVector>(optional_key, Tags::DEFAULT, passwd_).ViewComponent("cell");
-    for (int c = 0; c != ncells_owned; ++c) { field_c[0][c] = pressure[0][c] / (g * rho); }
+    auto& field_c = *S->GetW<CV_t>(optional_key, Tags::DEFAULT, passwd_).ViewComponent("cell");
+    for (int c = 0; c != ncells_owned; ++c) {
+      field_c[0][c] = pressure_c[0][c] / (g * rho_c[0][c]);
+    }
   }
 
   // calculate full velocity vector

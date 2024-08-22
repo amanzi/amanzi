@@ -82,7 +82,8 @@ TEST(MPC_DRIVER_THERMAL_FLOW_MATRIX_FRACTURE_RICHARDS)
   S->RegisterMesh("fracture", mesh_fracture);
 
   // create aperture file on rank 0
-  int ncells_tmp = mesh_fracture->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
+  int ncells_tmp =
+    mesh_fracture->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int ncells(ncells_tmp);
   comm->SumAll(&ncells_tmp, &ncells, 1);
 
@@ -92,4 +93,3 @@ TEST(MPC_DRIVER_THERMAL_FLOW_MATRIX_FRACTURE_RICHARDS)
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   cycle_driver.Go();
 }
-

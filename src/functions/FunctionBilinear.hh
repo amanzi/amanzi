@@ -60,7 +60,7 @@ class FunctionBilinear : public Function {
  public:
   FunctionBilinear(const Teuchos::Array<double>& x,
                    const Teuchos::Array<double>& y,
-                   const Teuchos::SerialDenseMatrix<int,double>& v,
+                   const Teuchos::SerialDenseMatrix<int, double>& v,
                    const int xi,
                    const int yi);
   ~FunctionBilinear(){};
@@ -75,7 +75,7 @@ class FunctionBilinear : public Function {
  private: // helper functions
   void check_args(const Teuchos::Array<double>&,
                   const Teuchos::Array<double>&,
-                  const Teuchos::SerialDenseMatrix<int,double>&) const;
+                  const Teuchos::SerialDenseMatrix<int, double>&) const;
 };
 
 } // namespace Amanzi

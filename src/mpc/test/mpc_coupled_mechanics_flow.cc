@@ -47,7 +47,6 @@ void
 RunTest(const std::string xmlInFileName)
 {
   Comm_ptr_type comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
 
   // setup a piecewice linear solution with a jump
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);

@@ -56,6 +56,8 @@ InputConverterU::TranslateState_()
   // --- EOS and supporting parameters
   bool flag;
   DOMNode* node = GetUniqueElementByTagsString_("phases, liquid_phase, eos", flag, true);
+
+  ref_sutherland_ = 0.0;
   if (flag) {
     eos_model_ = GetAttributeValueS_(node, "model", TYPE_NONE);
     if (eos_model_ == "constant") {
@@ -65,7 +67,8 @@ InputConverterU::TranslateState_()
     } else if (eos_model_ == "ideal gas") {
       ref_mu_ = GetAttributeValueD_(node, "ref_viscosity", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa*s");
       ref_temp_ = GetAttributeValueD_(node, "ref_temperature", TYPE_NUMERICAL, 0.0, DVAL_MAX, "K");
-      ref_sutherland_ = GetAttributeValueD_(node, "sutherland_constant", TYPE_NUMERICAL, 0.0, DVAL_MAX, "K");
+      ref_sutherland_ =
+        GetAttributeValueD_(node, "sutherland_constant", TYPE_NUMERICAL, 0.0, DVAL_MAX, "K");
     } else {
       eos_model_ = "liquid water " + eos_model_;
     }
@@ -106,8 +109,7 @@ InputConverterU::TranslateState_()
 
   if (eos_model_ == "") {
     AddIndependentFieldEvaluator_(out_ev, "mass_density_liquid", "All", "*", rho_);
-    AddIndependentFieldEvaluator_(
-      out_ev, "molar_density_liquid", "All", "*", rho_ / molar_mass_);
+    AddIndependentFieldEvaluator_(out_ev, "molar_density_liquid", "All", "*", rho_ / molar_mass_);
     AddIndependentFieldEvaluator_(out_ev, "viscosity_liquid", "All", "*", viscosity);
   }
 

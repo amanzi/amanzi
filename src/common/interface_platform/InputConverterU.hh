@@ -190,7 +190,8 @@ class InputConverterU : public InputConverter {
 
   // -- general
   Teuchos::ParameterList TranslateSources_(const std::string& domain,
-                                           const std::string& pkname, const std::string& pk_model);
+                                           const std::string& pkname,
+                                           const std::string& pk_model);
 
   // -- state
   void TranslateCommonContinuumFields_(const std::string& domain,

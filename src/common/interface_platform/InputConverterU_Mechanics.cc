@@ -186,8 +186,7 @@ InputConverterU::TranslateMechanicsBCs_(const std::string& domain)
     } else if (bcs.type == "kinematic") {
       Teuchos::ParameterList& bcfn = bc.sublist("kinematic");
       bcfn.sublist("function-constant").set<double>("value", bcs.values[0]);
-      if (bcs.kinematic != "")
-        bc.set<std::string>("plane strain direction", bcs.kinematic);
+      if (bcs.kinematic != "") bc.set<std::string>("plane strain direction", bcs.kinematic);
     }
   }
 

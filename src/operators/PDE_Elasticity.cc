@@ -460,25 +460,41 @@ PDE_Elasticity::ApplyBCs_Kinematic_(const BCs& bc, bool primary, bool eliminate,
           // AMANZI_ASSERT(false);
         }
 
-      // plane strain boundary condition fixed displacement in one or more
-      // directions, hense value = 0.
-      } else if (bc_model[v] == OPERATOR_BC_PLANE_STRAIN_X ||
-                 bc_model[v] == OPERATOR_BC_PLANE_STRAIN_Y ||
-                 bc_model[v] == OPERATOR_BC_PLANE_STRAIN_Z) {
-        int k(0);
-        if (bc_model[v] == OPERATOR_BC_PLANE_STRAIN_Y) k = 1;
-        if (bc_model[v] == OPERATOR_BC_PLANE_STRAIN_Z) k = 2;
-
-        int noff = d * n + k;
-
-        if (eliminate) {
-          for (int m = 0; m < ncols; m++) {
-            Acell(m, noff) = 0.0;
-            Acell(noff, m) = 0.0;
+        // plane strain boundary condition fixed displacement in one or more
+        // directions, hense value = 0.
+      } else {
+        if (bc_model[v] & OPERATOR_BC_PLANE_STRAIN_X) {
+          int noff = d * n;
+          if (eliminate) {
+            for (int m = 0; m < ncols; m++) {
+              Acell(m, noff) = 0.0;
+              Acell(noff, m) = 0.0;
+            }
           }
+          if (essential_eqn) Acell(noff, noff) = 1.0;
         }
 
-        if (essential_eqn) Acell(noff, noff) = 1.0;
+        if (bc_model[v] & OPERATOR_BC_PLANE_STRAIN_Y) {
+          int noff = d * n + 1;
+          if (eliminate) {
+            for (int m = 0; m < ncols; m++) {
+              Acell(m, noff) = 0.0;
+              Acell(noff, m) = 0.0;
+            }
+          }
+          if (essential_eqn) Acell(noff, noff) = 1.0;
+        }
+
+        if (bc_model[v] & OPERATOR_BC_PLANE_STRAIN_Z) {
+          int noff = d * n + 2;
+          if (eliminate) {
+            for (int m = 0; m < ncols; m++) {
+              Acell(m, noff) = 0.0;
+              Acell(noff, m) = 0.0;
+            }
+          }
+          if (essential_eqn) Acell(noff, noff) = 1.0;
+        }
       }
     }
   }

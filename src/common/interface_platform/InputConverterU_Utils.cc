@@ -137,7 +137,7 @@ InputConverterU::ParseCondList_(std::vector<DOMNode*>& same_list,
         Exceptions::amanzi_throw(msg);
       }
 
-      // miscalleneous 
+      // miscalleneous
       if (HasAttribute_(element, "direction")) {
         bcs.kinematic = GetAttributeValueS_(element, "direction", TYPE_NONE, false, "");
       }

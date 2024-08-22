@@ -522,7 +522,7 @@ ________________________________________________________
 The ``unstr_steady-state_controls`` and ``unstr_transient_controls`` have the same set of elements.
 The difference lies in the values of parameters.
 The state state controls are typically more relaxed, since we are intereted only in the quality
-of the converged solution.
+of the converged solution. 
 
 +-------------------------------------------------------+---------------+------------------------------------------+
 | Element Names                                         | Content Type  | Content Value                            |
@@ -562,8 +562,15 @@ of the converged solution.
 +-------------------------------------------------------+---------------+------------------------------------------+
 | unstr_initialization                                  | element block |                                          |
 +-------------------------------------------------------+---------------+------------------------------------------+
+| sequential_tolerance                                  | double        | *default = 1.0e-5*                       |
++-------------------------------------------------------+---------------+------------------------------------------+
+| max_sequential_iterations                             | int           | *default = 100*                          |
++-------------------------------------------------------+---------------+------------------------------------------+
 
 Specifics about each ``preconditioner`` is defined in the `Unstr_preconditioners`_ section.
+
+The ``sequential_tolerance`` and ``max_sequential_iterations`` control convergence of nonlinear solvers
+in operator spliting methods.
 
 The ``unstr_initialization`` is used to calculate an initial pressure or a good guess for the initial pressure (for
 the steady state execution period).

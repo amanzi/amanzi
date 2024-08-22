@@ -133,7 +133,7 @@ TEST(LIMITER_LINEAR_FUNCTION_2D)
       bc_model.assign(nnodes_wghost, 0);
       bc_value.assign(nnodes_wghost, 0.0);
 
-      for (int v =0; v < nnodes_wghost; v++) {
+      for (int v = 0; v < nnodes_wghost; v++) {
         const auto& xv = mesh->getNodeCoordinate(v);
         if (fabs(xv[0]) < 1e-6 || fabs(1.0 - xv[0]) < 1e-6 || fabs(xv[1]) < 1e-6 ||
             fabs(1.0 - xv[1]) < 1e-6) {

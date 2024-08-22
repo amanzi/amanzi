@@ -183,7 +183,7 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
   tmp.sublist("EOS parameters")
     .set<std::string>("eos type", "ideal gas")
     .set<double>("molar mass", 28.9647e-03) // dry air (not used ?)
-    .set<double>("density", 1.0); // not used ? 
+    .set<double>("density", 1.0);           // not used ?
 
   fev.sublist(mol_density_liquid_key).set<std::string>("pressure key", pressure_liquid_key);
 
@@ -346,15 +346,17 @@ InputConverterU::TranslateMultiphase_(const std::string& domain, Teuchos::Parame
     node = GetUniqueElementByTagsString_("materials", flag);
     std::vector<DOMNode*> materials = GetChildren_(node, "material", flag);
 
-    node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, liquid_conductivity", flag);
-    if (flag) cv_f = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX,  "W/m/K");
+    node =
+      GetUniqueElementByTagsString_(materials[0], "thermal_properties, liquid_conductivity", flag);
+    if (flag) cv_f = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "W/m/K");
 
-    node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, solid_conductivity", flag);
-    if (flag) cv_r = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX,  "W/m/K");
+    node =
+      GetUniqueElementByTagsString_(materials[0], "thermal_properties, solid_conductivity", flag);
+    if (flag) cv_r = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "W/m/K");
 
     thermal.set<double>("thermal conductivity of liquid", cv_f);
     thermal.set<double>("thermal conductivity of rock", cv_r);
-    thermal.set<double>("reference temperature", 298.15);
+    thermal.set<double>("reference temperature", 273.15);
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
       Teuchos::OSTab tab = vo_->getOSTab();

@@ -28,8 +28,8 @@
 #include "AmanziComm.hh"
 
 #ifdef ENABLE_Unstructured
-#include "state_evaluators_registration.hh"
-#include "AmanziUnstructuredGridSimulationDriver.hh"
+#  include "state_evaluators_registration.hh"
+#  include "AmanziUnstructuredGridSimulationDriver.hh"
 #endif
 
 #include "tpl_versions.h"

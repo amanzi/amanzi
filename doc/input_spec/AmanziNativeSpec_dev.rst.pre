@@ -2136,8 +2136,8 @@ Aperture models
 { ApertureModel_ExponentialLaw }
 
 
-Thermo-poroelasticity PK
-------------------------
+Thermoporoelasticty PK
+----------------------
 { FlowMechanics_PK }
 
 

@@ -29,7 +29,7 @@ H2O_Density::H2O_Density(Teuchos::ParameterList& plist)
     kalpha_(5.0e-10),
     kp0_(1.0e5)
 {
-  kp0_ = plist.get<double>("reference pressure", kp0_); 
+  kp0_ = plist.get<double>("reference pressure", kp0_);
 }
 
 
