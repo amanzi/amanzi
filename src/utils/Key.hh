@@ -227,11 +227,12 @@ matchesDomainSet(const Key& domain_set, const Key& name);
 //
 // Working with tags
 // -----------------------------------------------------------------------------
-// Tag'd variables are of the form VARNAME:TAG
+// Tag'd variables are of the form VARNAME@TAG -- force_delimiter requires @
+// even for empty tags.
 Key
-getKey(const Key& var, const Tag& tag);
+getKey(const Key& var, const Tag& tag, bool force_delimiter=false);
 Key
-getKey(const KeyTag& var_tag);
+getKey(const KeyTag& var_tag, bool force_delimiter=false);
 
 KeyTag
 splitKeyTag(const Key& name);

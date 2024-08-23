@@ -99,7 +99,8 @@ RecordSet::GetRecord(const Tag& tag) const
 void
 RecordSet::AliasRecord(const Tag& target, const Tag& alias)
 {
-  records_[alias] = std::make_shared<Record>(*records_[target], &alias);
+  if (!HasRecord(target)) RequireRecord(target, "", false);
+  records_[alias] = std::make_shared<Record>(*records_.at(target), &alias);
   aliases_[alias] = target;
 }
 

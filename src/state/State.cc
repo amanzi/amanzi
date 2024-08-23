@@ -37,6 +37,7 @@
 #include "Evaluator_Factory.hh"
 #include "EvaluatorCellVolume.hh"
 #include "EvaluatorPrimary.hh"
+#include "EvaluatorAlias.hh"
 #include "StateDefs.hh"
 #include "State.hh"
 #include "Checkpoint.hh"
@@ -319,7 +320,7 @@ State::HasDerivative(const Key& key, const Key& wrt_key) const
 // State handles data evaluation.
 // -----------------------------------------------------------------------------
 Evaluator&
-State::RequireEvaluator(const Key& key, const Tag& tag)
+State::RequireEvaluator(const Key& key, const Tag& tag, bool alias_ok)
 {
   bool debug = CheckIsDebugEval_(key, tag);
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -345,23 +346,32 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
     }
   }
 
-  // Check if this should be an aliased evaluator
-  //
-  // NOTE: rather than a pointer to the other evaluator, likely this should be
-  // a special class that puts some guardrails on to make sure this evaluator
-  // is ONLY used when the times match, or some data is valid, or some other
-  // constraint.  This should not be used during this tag's subcycling, only
-  // after subcycling/during syncronization/during another tag's
-  // subcycling. --ETC
-  if (tag == Tags::NEXT && evaluators_.count(key)) {
-    for (const auto& other_tag : evaluators_.at(key)) {
-      if (Keys::in(other_tag.first.get(), "next")) {
-        if (debug && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-          *vo_->os() << "  ... evaluator aliased to \"" << other_tag.first << "\"" << std::endl;
+  if (alias_ok) {
+    // Check if this should be an aliased evaluator
+    //
+    // NOTE: This branch gets used, for example, when an evaluator is created
+    // to do an observation, which uses (or is) a variable only computed at a
+    // subcycled tag.
+    //
+    if (tag == Tags::NEXT && evaluators_.count(key)) {
+      std::vector<Tag> other_nexts;
+      for (const auto& other_tag : evaluators_.at(key)) {
+        // can only auto-alias when there is only one other next tag
+        if (Keys::in(other_tag.first.get(), "next")) {
+          // BROKEN -- don't alias to something that depends upon this! --ETC
+          other_nexts.push_back(other_tag.first);
         }
-        // alias!
-        SetEvaluator_(key, tag, other_tag.second);
-        return *other_tag.second;
+      }
+      if (other_nexts.size() == 1) {
+        Tag other_next = other_nexts[0];
+        if (debug && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+          *vo_->os() << "  ... evaluator aliased to \"" << other_next << "\"" << std::endl;
+        }
+        // alias!  Note the EvaluatorAlias makes sure that the data is shared
+        // as well as the evaluator during its EnsureCompatibility()
+        auto evaluator = Teuchos::rcp(new EvaluatorAlias(key, tag, other_next));
+        SetEvaluator_(key, tag, evaluator);
+        return *evaluator;
       }
     }
   }
@@ -371,7 +381,7 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
   Teuchos::ParameterList& fm_plist = state_plist_.sublist("evaluators");
   Teuchos::ParameterList fe_plist;
   bool found = false;
-  if (HasEvaluatorList(Keys::getKey(key, tag))) {
+  if (HasEvaluatorList(Keys::getKey(key, tag, true))) {
     // -- evaluator for just this key@tag combination
     fe_plist = GetEvaluatorList(Keys::getKey(key, tag));
     found = true;
@@ -388,6 +398,23 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
   }
   if (found) {
     fe_plist.setName(key);
+    // -- Check for special case -- alias
+    if (fe_plist.isParameter("evaluator type") &&
+        fe_plist.isType<std::string>("evaluator type") &&
+        fe_plist.get<std::string>("evaluator type") == "alias") {
+      KeyTag target = Keys::splitKeyTag(fe_plist.get<std::string>("target"));
+      if (target.first != key) {
+        Errors::Message msg;
+        msg << "Aliased evaluators may only alias across tags, not across keys.  Evaluator for \""
+            << key << "\" does not match target key \"" << target.first << "\"";
+        Exceptions::amanzi_throw(msg);
+      }
+
+      auto evaluator = Teuchos::rcp(new EvaluatorAlias(key, tag, target.second));
+      SetEvaluator_(key, tag, evaluator);
+      return *evaluator;
+    }
+
     // -- Insert any model parameters.
     if (fe_plist.isParameter("model parameters") &&
         fe_plist.isType<std::string>("model parameters")) {
@@ -600,10 +627,6 @@ State::Setup()
       r.second->EnsureCompatibility(*this);
     }
   }
-
-  // // If there are fields that exist at some tag, but not at NEXT, alias them to
-  // // NEXT for vis, obs, etc.
-  // for (auto
 
   // Create the data for all fields.
   for (auto& r : data_) {
@@ -940,7 +963,14 @@ void
 State::SetEvaluator_(const Key& key, const Tag& tag, const Teuchos::RCP<Evaluator>& evaluator)
 {
   evaluators_[key][tag] = evaluator;
-//   evaluator->EnsureEvaluators(*this);
+  // NOTE: specifically NOT doing this here, because Amanzi tends to construct
+  // its DAG manually, evaluator by evaluator, in a hard-coded way.  Calling
+  // this here would mean that Amanzi's PKs would have to always build their
+  // DAG from the bottom up, which is not currently the case.  Therefore
+  // calling EnsureEvaluators() while setting evaluators (which ensures that
+  // the sub-graph rooted at this evaluator is always valid) is only done when
+  // calling RequireEvaluator().
+  //   evaluator->EnsureEvaluators(*this);
 }
 
 
