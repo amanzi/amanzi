@@ -127,6 +127,12 @@ class PK {
   // Virtual destructor
   virtual ~PK() = default;
 
+  // call to allow a PK to modify its own list or lists of its children.
+  virtual void modifyParameterList() {}
+
+  // read said list
+  virtual void parseParameterList() {}
+
   // Setup
   virtual void Setup() = 0;
 
