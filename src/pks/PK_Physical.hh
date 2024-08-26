@@ -38,7 +38,7 @@ class PK_Physical : virtual public PK {
               const Teuchos::RCP<TreeVector>& soln)
     : PK(pk_tree, glist, S, soln)
   {
-    domain_ = Keys::readDomain(*plist_);
+    domain_ = Keys::readDomain(*plist_, "domain", "domain");
     mesh_ = S_->GetMesh(domain_);
   };
 
