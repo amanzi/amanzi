@@ -95,6 +95,7 @@ class Chemistry_PK : public PK_Physical {
   virtual ~Chemistry_PK() = default;
 
   // required members for PK interface
+  virtual void parseParameterList() override;
   virtual void Setup() override;
   virtual void Initialize() override;
 

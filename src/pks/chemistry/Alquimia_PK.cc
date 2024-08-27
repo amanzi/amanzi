@@ -52,8 +52,12 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
     chem_initialized_(false),
     current_time_(0.0),
     saved_time_(0.0)
+{}
+
+void
+Alquimia_PK::parseParameterList()
 {
-  domain_ = plist_->get<std::string>("domain name", "domain");
+  Chemistry_PK::parseParameterList();
 
   // obtain key of fields
   tcc_key_ = Keys::readKey(

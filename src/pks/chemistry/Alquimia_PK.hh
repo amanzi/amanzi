@@ -79,12 +79,13 @@ class Alquimia_PK : public Chemistry_PK {
   ~Alquimia_PK();
 
   // members required by PK interface
-  virtual void Setup() final;
-  virtual void Initialize() final;
+  virtual void parseParameterList() override;
+  virtual void Setup() override final;
+  virtual void Initialize() override final;
 
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) final;
-  virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
-  virtual void CalculateDiagnostics(const Tag& tag) final { extra_chemistry_output_data(); }
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override final;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override final;
+  virtual void CalculateDiagnostics(const Tag& tag) override final { extra_chemistry_output_data(); }
 
   // Ben: the following routine provides the interface for
   // output of auxillary cellwise data from chemistry

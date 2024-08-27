@@ -47,6 +47,10 @@ if(ENABLE_Silo)
   add_definitions(-DENABLE_Silo)
 endif(ENABLE_Silo)
 
+if(ENABLE_ATSPhysicsModule)
+  add_definitions(-DATS_DAG_POLICY)
+endif(ENABLE_ATSPhysicsModule)
+
 # This state library will move to a new location 
 # once Markus has created the data manager.
 # I use global properties since all the PROJECT_NAME
