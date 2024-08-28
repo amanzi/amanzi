@@ -139,13 +139,8 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
 ENV HDF5_DIR=/home/amanzi_user/install/tpls
 
 # Note this installs numpy as well
-RUN if [ "$TARGETARCH" = "arm64" ]; then \
-  pip3 install --no-cache-dir --upgrade pip && \
-  pip3 install --no-cache-dir --no-binary=h5py h5py ; \
-  else \
-  pip3 install --no-cache-dir --upgrade pip && \
-  pip3 install --no-cache-dir h5py ; \
-  fi
+RUN pip3 install --no-cache-dir --upgrade pip \
+  && pip3 install --no-cache-dir --no-binary=h5py h5py
 
 # Set the LD_LIBRARY_PATH for Amanzi builds in the next stage
 ENV LD_LIBRARY_PATH=${AMANZI_TPLS_DIR}/lib:${AMANZI_PETSC_LIBS}:${AMANZI_TRILINOS_LIBS}:${AMANZI_SEACAS_LIBS}
