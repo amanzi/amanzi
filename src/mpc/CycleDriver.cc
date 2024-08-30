@@ -228,6 +228,7 @@ CycleDriver::Setup()
     }
   }
 
+  pk_->parseParameterList();
   pk_->Setup();
   S_->Require<double>("dt", Tags::NEXT, "dt");
   S_->Setup();
@@ -1055,8 +1056,9 @@ CycleDriver::ResetDriver(int time_pr_id)
   //if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_);
 
   // Setup
-  pk_->Setup();
   pk_->set_tags(Tags::CURRENT, Tags::NEXT);
+  pk_->parseParameterList();
+  pk_->Setup();
 
   S_->Require<double>("dt", Tags::NEXT, "dt");
   S_->Setup();

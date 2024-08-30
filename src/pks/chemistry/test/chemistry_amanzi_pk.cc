@@ -141,6 +141,7 @@ SUITE(GeochemistryTestsChemistryPK)
     // object correctly based on the xml input....
     try {
       cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
+      cpk_->parseParameterList();
       cpk_->Setup();
       state_->Setup();
       state_->InitializeFields();
@@ -159,6 +160,7 @@ SUITE(GeochemistryTestsChemistryPK)
   {
     try {
       cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
+      cpk_->parseParameterList();
       cpk_->Setup();
       state_->Setup();
       state_->InitializeFields();
