@@ -228,6 +228,7 @@ CycleDriver::Setup()
     }
   }
 
+  pk_->parseParameterList();
   pk_->Setup();
   S_->Require<double>("dt", Tags::NEXT, "dt");
   S_->Setup();
