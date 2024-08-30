@@ -36,11 +36,6 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 
-if(ENABLE_ATSPhysicsModule)
-  add_definitions(-DATS_DAG_POLICY)
-endif(ENABLE_ATSPhysicsModule)
-
-
 #
 # Library: pks
 #
