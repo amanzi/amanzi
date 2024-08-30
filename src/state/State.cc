@@ -331,6 +331,7 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
     if (Keys::hasKey(e.second, tag) && e.second.at(tag)->ProvidesKey(key, tag)) {
       auto& evaluator = e.second.at(tag);
       SetEvaluator(key, tag, evaluator);
+      evaluator->EnsureEvaluators(*this);
       return *evaluator;
     }
   }
@@ -374,6 +375,7 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
     sublist.set("tag", tag.get());
     auto evaluator = evaluator_factory.createEvaluator(sublist);
     SetEvaluator(key, tag, evaluator);
+    evaluator->EnsureEvaluators(*this);
     return *evaluator;
   }
 
@@ -533,7 +535,9 @@ State::Setup()
   // Note that the first pass may modify the graph, but since it is a DAG, and
   // this is called recursively, we can just call it on the nodes that appear
   // initially.
-#ifndef ATS_DAG_POLICY
+  //
+  // Note this is done only because EnsureEvaluators() is called only in
+  // RequireEvaluators(), and not in SetEvaluators().  See #654
   { // scope for copy
     EvaluatorMap evaluators_copy(evaluators_);
     for (auto& e : evaluators_copy) {
@@ -554,7 +558,6 @@ State::Setup()
       }
     }
   }
-#endif
 
   // Second pass calls EnsureCompatibility, which checks data consistency.
   // This pass does not modify the graph.
@@ -892,9 +895,7 @@ void
 State::SetEvaluator(const Key& key, const Tag& tag, const Teuchos::RCP<Evaluator>& evaluator)
 {
   evaluators_[key][tag] = evaluator;
-#ifdef ATS_DAG_POLICY
-  evaluator->EnsureEvaluators(*this);
-#endif
+//   evaluator->EnsureEvaluators(*this);
 }
 
 
