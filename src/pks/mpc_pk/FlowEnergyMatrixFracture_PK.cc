@@ -117,15 +117,6 @@ FlowEnergyMatrixFracture_PK::Setup()
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
-  if (!S_->HasRecord(heat_diffusion_to_matrix_key_)) {
-    S_->Require<CV_t, CVS_t>(
-        heat_diffusion_to_matrix_key_, Tags::DEFAULT, heat_diffusion_to_matrix_key_)
-      .SetMesh(mesh_fracture_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 2);
-    S_->RequireEvaluator(heat_diffusion_to_matrix_key_, Tags::DEFAULT);
-  }
-
   // inform dependent PKs about coupling
   // -- flow
   auto pks0 = plist_->get<Teuchos::Array<std::string>>("PKs order").toVector();
@@ -155,6 +146,16 @@ FlowEnergyMatrixFracture_PK::Setup()
 
   // process other PKs
   PK_MPCStrong<PK_BDF>::Setup();
+
+  // coupling evaluators
+  if (!S_->HasRecord(heat_diffusion_to_matrix_key_)) {
+    S_->Require<CV_t, CVS_t>(
+        heat_diffusion_to_matrix_key_, Tags::DEFAULT, heat_diffusion_to_matrix_key_)
+      .SetMesh(mesh_fracture_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 2);
+    S_->RequireEvaluator(heat_diffusion_to_matrix_key_, Tags::DEFAULT);
+  }
 }
 
 

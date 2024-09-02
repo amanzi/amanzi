@@ -218,6 +218,16 @@ Run(const std::string& xmlFileName, int dim, const std::vector<double>& dt, int 
   // WriteStateStatistics(*S[1]);
 }
 
+TEST(MPC_RECOVERY_COUPLED_THERMAL_FLOW)
+{
+  CreateApertureFile(144, 300.0);
+
+  ::Run<FlowEnergyMatrixFracture_PK>(
+    "test/mpc_coupled_thermal_flow_richards.xml", 3, { 10.0, 10.0, 10.0 }, 1);
+    // round-off errors are observed between two states/two runs
+    // "test/mpc_coupled_thermal_flow_richards.xml", 3, { 0.1, 0.1, 0.1 }, 1);
+}
+
 TEST(MPC_RECOVERY_FLOW_RICHARDS)
 {
   ::Run<Flow::Richards_PK>("test/mpc_flow.xml", 2, { 15.0, 15.0, 15.0 }, 0);
@@ -231,15 +241,6 @@ TEST(MPC_RECOVERY_THERMAL_FLOW)
 TEST(MPC_RECOVERY_COUPLED_FLOW)
 {
   ::Run<FlowMatrixFracture_PK>("test/mpc_coupled_flow.xml", 3, { 1.0e+6, 1.0e+6, 1.0e+6 }, 0);
-}
-
-TEST(MPC_RECOVERY_COUPLED_THERMAL_FLOW)
-{
-  // ::Run<FlowEnergyMatrixFracture_PK>("test/mpc_coupled_thermal_flow.xml", 3, { 100.0, 100.0, 100.0 }, 1);
-  CreateApertureFile(144, 300.0);
-
-  ::Run<FlowEnergyMatrixFracture_PK>(
-    "test/mpc_coupled_thermal_flow_richards.xml", 3, { 10.0, 10.0, 10.0 }, 1);
 }
 
 TEST(MPC_RECOVERY_MULTIPHASE_FRACTURES)

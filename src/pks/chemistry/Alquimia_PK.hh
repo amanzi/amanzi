@@ -89,7 +89,7 @@ class Alquimia_PK : public Chemistry_PK {
 
   // Ben: the following routine provides the interface for
   // output of auxillary cellwise data from chemistry
-  Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data();
+  Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data() override final;
 
   // Copies the chemistry state in the given cell to the given Alquimia containers.
   void CopyToAlquimia(int cell_id,

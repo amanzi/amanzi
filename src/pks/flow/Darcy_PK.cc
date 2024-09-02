@@ -300,6 +300,7 @@ Darcy_PK::Setup()
   S_->GetRecordSetW(porosity_key_).set_units("-");
   S_->GetRecordSetW(saturation_liquid_key_).set_units("-");
   S_->GetRecordSetW(hydraulic_head_key_).set_units("m");
+  S_->GetRecordSetW(mass_density_liquid_key_).set_units("kg/m^3");
 }
 
 

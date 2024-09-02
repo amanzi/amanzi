@@ -43,6 +43,9 @@
 namespace Amanzi {
 namespace Transport {
 
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
+
 /* ******************************************************************
 * New constructor compatible with new MPC framework.
 ****************************************************************** */
@@ -184,12 +187,11 @@ TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   double dt_MPC = t_new - t_old;
 
   // We use original tcc and make a copy of it later if needed.
-  tcc = S_->GetPtrW<CompositeVector>(tcc_key_, Tags::DEFAULT, passwd_);
+  tcc = S_->GetPtrW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
-  auto wc = S_->GetW<CompositeVector>(wc_key_, Tags::DEFAULT, wc_key_).ViewComponent("cell");
-  auto wc_prev =
-    S_->GetW<CompositeVector>(prev_wc_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
+  auto wc = S_->GetW<CV_t>(wc_key_, Tags::DEFAULT, wc_key_).ViewComponent("cell");
+  auto wc_prev = S_->GetW<CV_t>(prev_wc_key_, Tags::DEFAULT, passwd_).ViewComponent("cell");
 
   *wc_prev = *wc;
   S_->GetEvaluator(wc_key_).Update(*S_, "transport");

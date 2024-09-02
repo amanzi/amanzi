@@ -121,7 +121,7 @@ EnergyMatrixFracture_PK::Setup()
   // process other PKs.
   PK_MPCStrong<PK_BDF>::Setup();
 
-  // additional fields and evaluators related to matrix-frcature coupling
+  // additional fields and evaluators related to matrix-fracture coupling
   if (!S_->HasRecord(heat_diffusion_to_matrix_key_)) {
     S_->Require<CV_t, CVS_t>(
         heat_diffusion_to_matrix_key_, Tags::DEFAULT, heat_diffusion_to_matrix_key_)

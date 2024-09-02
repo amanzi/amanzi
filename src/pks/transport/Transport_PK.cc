@@ -91,8 +91,10 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
 
   subcycling_ = tp_list_->get<bool>("transport subcycling", true);
 
-  // domain name
+  // domain and primary evaluators
   domain_ = tp_list_->template get<std::string>("domain name", "domain");
+  tcc_key_ = Keys::getKey(domain_, "total_component_concentration");
+  AddDefaultPrimaryEvaluator(S_, tcc_key_);
 
   // other variables
   dt_prev_ = 1e+91;
@@ -124,8 +126,10 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   linear_solver_list_ = Teuchos::sublist(glist, "solvers");
   nonlinear_solver_list_ = Teuchos::sublist(glist, "nonlinear solvers");
 
-  // domain name
+  // domain and primary evaluators
   domain_ = tp_list_->template get<std::string>("domain name", "domain");
+  tcc_key_ = Keys::getKey(domain_, "total_component_concentration");
+  AddDefaultPrimaryEvaluator(S_, tcc_key_);
 
   // other variables
   dt_prev_ = 1e+91;
@@ -188,8 +192,6 @@ Transport_PK::Setup()
   use_dispersion_ = physical_models->get<bool>("use dispersion solver", true);
 
   // generate keys here to be available for setup of the base class
-  tcc_key_ = Keys::getKey(domain_, "total_component_concentration");
-
   permeability_key_ = Keys::getKey(domain_, "permeability");
   porosity_key_ = Keys::getKey(domain_, "porosity");
   transport_porosity_key_ = Keys::getKey(domain_, "transport_porosity");
@@ -317,6 +319,24 @@ Transport_PK::Setup()
     S_->GetRecordW(prev_wc_key_, passwd_).set_io_vis(false);
   }
 
+  // optional addtional fields
+  if (tp_list_->isParameter("auxiliary data")) {
+    std::string aux_key = Keys::getKey(domain_, "molal_concentration");
+
+    S_->Require<CV_t, CVS_t>(aux_key, Tags::DEFAULT, aux_key)
+      .SetMesh(mesh_)
+      ->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, ncomponents);
+
+    Teuchos::ParameterList elist(aux_key);
+    elist.set<std::string>("my key", aux_key)
+      .set<Teuchos::Array<std::string>>("multiplicative dependencies", { "total_component_concentration" })
+      .set<Teuchos::Array<std::string>>("reciprocal dependencies", { "mass_density_liquid" })
+      .set<std::string>("tag", "");
+    auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
+    S_->SetEvaluator(aux_key, Tags::DEFAULT, eval);
+  }
+
   // require multiscale fields
   multiscale_porosity_ = false;
   if (multiscale_model == "dual continuum discontinuous matrix") {
@@ -374,6 +394,7 @@ Transport_PK::Setup()
 #endif
 
   // set units
+  S_->GetRecordSetW(tcc_key_).set_units("mol/m^3");
   S_->GetRecordSetW(porosity_key_).set_units("-");
   S_->GetRecordSetW(saturation_liquid_key_).set_units("-");
   if (transport_on_manifold_) { S_->GetRecordSetW(aperture_key_).set_units("m"); }
@@ -878,6 +899,8 @@ Transport_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   dt_prev_ = std::min(dt_, t_new - t_old);
   S_->GetW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_) = *tcc_tmp;
+  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+    S_->GetEvaluatorPtr(tcc_key_, Tags::DEFAULT))->SetChanged();
 }
 
 
@@ -971,6 +994,12 @@ Transport_PK::ComputeBCs_(std::vector<int>& bc_model, std::vector<double>& bc_va
             flag = true;
           }
         }
+      }
+    }
+    else if (bcs_[m]->get_location() == "interface") {
+      for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+        int f = it->first;
+        bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
       }
     }
   }

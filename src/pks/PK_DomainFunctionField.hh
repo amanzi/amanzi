@@ -56,7 +56,7 @@ class PK_DomainFunctionField : public FunctionBase {
                          const Teuchos::RCP<State>& S,
                          const Teuchos::ParameterList& plist,
                          AmanziMesh::Entity_kind kind)
-    : S_(S), mesh_(mesh), FunctionBase(plist), kind_(kind){};
+    : FunctionBase(plist), S_(S), mesh_(mesh), kind_(kind){};
 
   ~PK_DomainFunctionField(){};
 

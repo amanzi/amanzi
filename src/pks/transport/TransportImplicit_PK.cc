@@ -46,6 +46,9 @@
 namespace Amanzi {
 namespace Transport {
 
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
+
 /* ******************************************************************
 * New constructor compatible with new MPC framework.
 ****************************************************************** */
@@ -141,7 +144,7 @@ TransportImplicit_PK::Initialize()
   // refresh data BC and source data
   UpdateBoundaryData(t_physics_, t_physics_, 0);
 
-  auto flux = S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT);
+  auto flux = S_->GetPtr<CV_t>(vol_flowrate_key_, Tags::DEFAULT);
   op_adv_->Setup(*flux);
   op_adv_->UpdateMatrices(flux.ptr());
 
@@ -230,12 +233,11 @@ TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_itrs)
   tcc->ScatterMasterToGhosted("cell");
 
   S_->GetEvaluator(wc_key_).Update(*S_, "transport");
-  const auto& wc = S_->Get<CompositeVector>(wc_key_, Tags::DEFAULT);
-  const auto& wc_prev = S_->Get<CompositeVector>(prev_wc_key_, Tags::DEFAULT);
+  const auto& wc = S_->Get<CV_t>(wc_key_, Tags::DEFAULT);
+  const auto& wc_prev = S_->Get<CV_t>(prev_wc_key_, Tags::DEFAULT);
 
   const auto& wc_c = *wc.ViewComponent("cell");
-  const auto& sat_c =
-    *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& sat_c = *S_->Get<CV_t>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
   *tot_itrs = 0;
   CompositeVector tcc_aux(wc);
@@ -253,7 +255,7 @@ TransportImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_itrs)
     Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
 
     // apply boundary conditions
-    op_adv_->UpdateMatrices(S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT).ptr());
+    op_adv_->UpdateMatrices(S_->GetPtr<CV_t>(vol_flowrate_key_, Tags::DEFAULT).ptr());
     op_adv_->ApplyBCs(true, true, true);
 
     if (use_dispersion_) {
@@ -333,12 +335,11 @@ void
 TransportImplicit_PK::UpdateLinearSystem(double t_old, double t_new, int component)
 {
   S_->GetEvaluator(wc_key_).Update(*S_, "transport");
-  const auto& wc = S_->Get<CompositeVector>(wc_key_, Tags::DEFAULT);
-  const auto& wc_prev = S_->Get<CompositeVector>(prev_wc_key_, Tags::DEFAULT);
+  const auto& wc = S_->Get<CV_t>(wc_key_, Tags::DEFAULT);
+  const auto& wc_prev = S_->Get<CV_t>(prev_wc_key_, Tags::DEFAULT);
 
   const auto& wc_c = *wc.ViewComponent("cell");
-  const auto& sat_c =
-    *S_->Get<CompositeVector>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
+  const auto& sat_c = *S_->Get<CV_t>(saturation_liquid_key_, Tags::DEFAULT).ViewComponent("cell");
 
   CompositeVector tcc_aux(wc);
   *(*tcc_aux.ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(component);
@@ -350,7 +351,8 @@ TransportImplicit_PK::UpdateLinearSystem(double t_old, double t_new, int compone
 
   UpdateBoundaryData(t_old, t_new, component);
 
-  op_adv_->UpdateMatrices(S_->GetPtr<CompositeVector>(vol_flowrate_key_, Tags::DEFAULT).ptr());
+  op_adv_->Setup(S_->Get<CV_t>(vol_flowrate_key_, Tags::DEFAULT));
+  op_adv_->UpdateMatrices(S_->GetPtr<CV_t>(vol_flowrate_key_, Tags::DEFAULT).ptr());
   op_adv_->ApplyBCs(true, true, true);
 
   if (use_dispersion_) {

@@ -876,7 +876,7 @@ CycleDriver::Go()
                 (S_->get_cycle() - start_cycle_num < tp_max_cycle_[time_period_id_]))) {
           if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
             if (S_->get_cycle() % io_frequency_ == 0 && S_->get_cycle() > 0) {
-              WriteStateStatistics(*S_, *vo_);
+              WriteStateStatistics_();
               if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
                 Teuchos::OSTab tab = vo_->getOSTab();
                 *vo_->os() << "\nSimulation end time: " << tp_end_[time_period_id_] << " sec."
@@ -1097,6 +1097,21 @@ CycleDriver::ResetDriver(int time_pr_id)
   if (fields_old != fields) Visualize(true, make_tag("ic"));
 
   S_old_ = Teuchos::null;
+}
+
+
+/* ******************************************************************
+* Auxiliary function: update all evaluators
+****************************************************************** */
+void
+CycleDriver::WriteStateStatistics_()
+{
+  for (auto r = S_->data_begin(); r != S_->data_end(); ++r) {
+    if (S_->HasEvaluator(r->first, Tags::DEFAULT)) {
+      S_->GetEvaluator(r->first, Tags::DEFAULT).Update(*S_, "cycle driver");
+    }
+  }
+  WriteStateStatistics(*S_, *vo_);
 }
 
 } // namespace Amanzi

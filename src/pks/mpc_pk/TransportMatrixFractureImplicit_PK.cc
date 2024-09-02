@@ -324,6 +324,9 @@ TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new, bool
 bool
 TransportMatrixFractureImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_itrs)
 {
+  S_->Get<CV_t>(matrix_vol_flowrate_key_, Tags::DEFAULT).ScatterMasterToGhosted("face");
+  S_->Get<CV_t>(fracture_vol_flowrate_key_, Tags::DEFAULT).ScatterMasterToGhosted("face");
+
   auto& tcc_m = *pk_matrix_->total_component_concentration();
   auto& tcc_f = *pk_fracture_->total_component_concentration();
 

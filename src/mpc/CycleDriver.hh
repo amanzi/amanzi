@@ -165,6 +165,7 @@ class CycleDriver {
  private:
   void CoordinatorInit_();
   void ReadParameterList_();
+  void WriteStateStatistics_();
 
  private:
   // PK container and factory
