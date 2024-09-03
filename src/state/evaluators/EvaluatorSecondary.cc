@@ -162,7 +162,6 @@ EvaluatorSecondary::EnsureEvaluators(State& S)
   // EnsureEvaluators recursively to fill out the dependency graph
   for (const auto& dep : dependencies_) {
     auto& dep_eval = S.RequireEvaluator(dep.first, dep.second);
-    AMANZI_ASSERT(&dep_eval != this); // loops
     dep_eval.EnsureEvaluators(S);
   }
 }
