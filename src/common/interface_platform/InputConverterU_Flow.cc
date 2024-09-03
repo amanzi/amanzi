@@ -1138,7 +1138,8 @@ InputConverterU::TranslateSources_(const std::string& domain,
       } else if (srctype == "strain_rate") {
         src.sublist("field")
           .set<std::string>("field key", "Q")
-          .set<std::string>("component", "cell");
+          .set<std::string>("component", "cell")
+          .set<std::string>("submodel", "poromechanics");
 
         glist_->sublist("state")
           .sublist("evaluators")
