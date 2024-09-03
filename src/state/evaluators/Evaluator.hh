@@ -29,6 +29,7 @@ class Evaluator {
  public:
   Evaluator() : type_(EvaluatorType::OTHER){};
   Evaluator(const EvaluatorType& type) : type_(type){};
+
   virtual ~Evaluator(){};
   virtual Teuchos::RCP<Evaluator> Clone() const = 0;
   virtual Evaluator& operator=(const Evaluator& other) = 0;

@@ -425,8 +425,8 @@ State::RequireEvaluator(const Key& key, const Tag& tag, bool alias_ok)
 
     // -- Create and set the evaluator.
     Evaluator_Factory evaluator_factory;
-    sublist.set("tag", tag.get());
-    auto evaluator = evaluator_factory.createEvaluator(sublist);
+    fe_plist.set("tag", tag.get());
+    auto evaluator = evaluator_factory.createEvaluator(fe_plist);
     SetEvaluator_(key, tag, evaluator);
     evaluator->EnsureEvaluators(*this);
     return *evaluator;
