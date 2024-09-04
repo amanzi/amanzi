@@ -56,9 +56,11 @@ The IOEvent is used for multiple objects that need to indicate simulation times 
 
 */
 
-#ifndef AMANZI_STATE_IO_EVENT_HH_
-#define AMANZI_STATE_IO_EVENT_HH_
+#pragma once
 
+#include <vector>
+
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
@@ -67,6 +69,7 @@ The IOEvent is used for multiple objects that need to indicate simulation times 
 namespace Amanzi {
 
 class TimeStepManager;
+template<typename T> struct Event;
 
 class IOEvent : public Teuchos::VerboseObject<IOEvent> {
  public:
@@ -77,7 +80,7 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
   bool is_disabled() const;
 
   // public interface for coordinator clients
-  void RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm);
+  void RegisterWithTimeStepManager(const TimeStepManager& tsm);
   bool DumpRequested(int cycle, double time) const;
   bool DumpRequested(int cycle) const;
   bool DumpRequested(double time) const;
@@ -91,10 +94,8 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
   Utils::Units units_;
 
   // Time step control -- when to do this i/o?
-  Teuchos::Array<int> cycles_;
-  Teuchos::Array<Teuchos::Array<int>> cycles_sps_;
-  Teuchos::Array<double> times_;
-  Teuchos::Array<Teuchos::Array<double>> times_sps_;
+  std::vector<Teuchos::RCP<Event<int>>> cycle_events_;
+  std::vector<Teuchos::RCP<Event<double>>> time_events_;
 
   // disable visualization dumps alltogether
   bool disabled_;
@@ -102,4 +103,3 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
 
 } // namespace Amanzi
 
-#endif
