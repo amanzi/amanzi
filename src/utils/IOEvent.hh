@@ -67,6 +67,7 @@ The IOEvent is used for multiple objects that need to indicate simulation times 
 #include "Units.hh"
 
 namespace Amanzi {
+namespace Utils {
 
 class TimeStepManager;
 template<typename T> struct Event;
@@ -80,7 +81,7 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
   bool is_disabled() const;
 
   // public interface for coordinator clients
-  void RegisterWithTimeStepManager(const TimeStepManager& tsm);
+  void RegisterWithTimeStepManager(TimeStepManager& tsm);
   bool DumpRequested(int cycle, double time) const;
   bool DumpRequested(int cycle) const;
   bool DumpRequested(double time) const;
@@ -101,5 +102,6 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
   bool disabled_;
 };
 
+} // namespace Utils
 } // namespace Amanzi
 

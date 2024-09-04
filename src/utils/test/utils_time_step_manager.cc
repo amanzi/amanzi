@@ -16,7 +16,7 @@
 
 TEST(TIME_STEP_MANAGER)
 {
-  Amanzi::TimeStepManager TSM;
+  Amanzi::Utils::TimeStepManager TSM;
 
   std::vector<double> times;
   times.push_back(5.5);
@@ -27,7 +27,7 @@ TEST(TIME_STEP_MANAGER)
   {
     std::stringstream ss;
     TSM.print(ss, 0.0, 10.0);
-    CHECK_EQUAL(ss.str(), std::string("1 5.5 "));
+    CHECK_EQUAL(std::string("1 5.5 "), ss.str());
   }
 
 
@@ -36,7 +36,7 @@ TEST(TIME_STEP_MANAGER)
   {
     std::stringstream ss;
     TSM.print(ss, 0.0, 10.0);
-    CHECK_EQUAL(ss.str(), std::string("1 1.2 2.7 4.2 5.5 5.7 7.2 8.7 "));
+    CHECK_EQUAL(std::string("1 1.2 2.7 4.2 5.5 5.7 7.2 8.7 "), ss.str());
   }
 
   TSM.RegisterTimeEvent(4.0, 0.5, 6.0);
@@ -44,7 +44,7 @@ TEST(TIME_STEP_MANAGER)
   {
     std::stringstream ss;
     TSM.print(ss, 0.0, 10.0);
-    CHECK_EQUAL(ss.str(), std::string("1 1.2 2.7 4 4.2 4.5 5 5.5 5.7 6 7.2 8.7 "));
+    CHECK_EQUAL(std::string("1 1.2 2.7 4 4.2 4.5 5 5.5 5.7 6 7.2 8.7 "), ss.str());
   }
 
   TSM.RegisterTimeEvent(5.0);
@@ -52,7 +52,7 @@ TEST(TIME_STEP_MANAGER)
   {
     std::stringstream ss;
     TSM.print(ss, 0.0, 10.0);
-    CHECK_EQUAL(ss.str(), std::string("1 1.2 2.7 4 4.2 4.5 5 5.5 5.7 6 7.2 8.7 "));
+    CHECK_EQUAL(std::string("1 1.2 2.7 4 4.2 4.5 5 5.5 5.7 6 7.2 8.7 "), ss.str());
   }
 
   // test the time step lmiiter for a time that
