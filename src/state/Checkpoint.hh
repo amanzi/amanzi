@@ -73,7 +73,7 @@ every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be 
 namespace Amanzi {
 class State;
 
-class Checkpoint : public IOEvent {
+class Checkpoint : public Utils::IOEvent {
  public:
   enum class WriteType { STANDARD = 0, FINAL, POST_MORTEM };
 

@@ -9,6 +9,11 @@
 
 #pragma once
 
+#include <functional>
+
+#include "exceptions.hh"
+#include "errors.hh"
+
 namespace Amanzi {
 namespace Utils {
 
@@ -17,12 +22,12 @@ namespace Utils {
 //
 template<typename Scalar>
 struct Event_EPS {
-  static const int value = 0;
+  static constexpr int value = 0;
 };
 
 template<>
 struct Event_EPS<double> {
-  static const double value = 1.e-12;
+  static constexpr double value = 1.e-12;
 };
 
 
@@ -52,12 +57,13 @@ struct Event {
 //
 template<typename Scalar>
 struct EventList : public Event<Scalar> {
-  EventTimes(const std::vector<Scalar>& times)
+  EventList(const std::vector<Scalar>& times)
     : times_(times)
   {
     // make sure we only admit sorted arrays with unique entries
     std::sort(times_.begin(), times_.end());
-    times_.erase(std::unique(times_.begin(), times_.end(), isNearEqual), times_.end());
+    times_.erase(std::unique(times_.begin(), times_.end(),
+                             [](Scalar a, Scalar b) { return isNearEqual<Scalar>(a,b); }), times_.end());
   }
 
   Scalar getNext(Scalar time) const override {
@@ -71,7 +77,7 @@ struct EventList : public Event<Scalar> {
 
   bool contains(Scalar time) const override {
     return std::find_if(times_.begin(), times_.end(),
-                        [=](Scalar j) { return isNearEqual(time, j) }) != times_.end();
+                        [=](Scalar j) { return isNearEqual(time, j); }) != times_.end();
   }
 
  private:
@@ -83,7 +89,7 @@ struct EventList : public Event<Scalar> {
 // Events by (potentially open-ended) start, period, and stop
 //
 template<typename Scalar>
-class EventSPS : public Event<Scalar> {
+struct EventSPS : public Event<Scalar> {
   EventSPS(Scalar start, Scalar period, Scalar stop)
     : start_(start),
       period_(period),
@@ -124,7 +130,12 @@ class EventSPS : public Event<Scalar> {
   }
 
   bool contains(Scalar time) const override {
-    return isNearEqual((double)(time - start_) / period_, 0.);
+    if (time < start_) return isNearEqual(time, start_);
+    if (stop_ > 0 && time > stop_) return isNearEqual(time, stop_);
+
+    double res = fmod(time - start_, period_);
+    return isNearEqual(res, 0.0) ||
+      isNearEqual(res, (double) period_);
   }
 
 private:

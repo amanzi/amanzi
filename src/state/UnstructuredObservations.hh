@@ -54,7 +54,7 @@ observed in this file.
 
 namespace Amanzi {
 
-class UnstructuredObservations : public IOEvent {
+class UnstructuredObservations : public Utils::IOEvent {
  public:
   UnstructuredObservations(Teuchos::ParameterList& obs_list);
 

@@ -72,7 +72,7 @@ Example:
 
 namespace Amanzi {
 
-class Visualization : public IOEvent {
+class Visualization : public Utils::IOEvent {
  public:
   Visualization(Teuchos::ParameterList& plist);
   Visualization();

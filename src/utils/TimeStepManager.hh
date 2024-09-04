@@ -35,9 +35,12 @@ regression testing.
 #include <ostream>
 #include <vector>
 
-#include "VerboseObject.hh"
+#include "Teuchos_ParameterList.hpp"
 
 namespace Amanzi {
+
+class VerboseObject;
+
 namespace Utils {
 
 template<typename T> class Event;
@@ -47,12 +50,12 @@ class TimeStepManager {
   TimeStepManager();
   TimeStepManager(Teuchos::ParameterList& plist);
   TimeStepManager(Teuchos::RCP<VerboseObject> vo_cd);
-  void RegisterEvent(double start, double period, double stop, bool phys = true);
-  void RegisterEvent(std::vector<double> times, bool phys = true);
-  void RegisterEvent(double time, bool phys = true) {
-    RegisterEvent(std::vector<double>{time});
+  void RegisterTimeEvent(double start, double period, double stop, bool phys = true);
+  void RegisterTimeEvent(const std::vector<double>& times, bool phys = true);
+  void RegisterTimeEvent(double time, bool phys = true) {
+    RegisterTimeEvent(std::vector<double>{time});
   }
-  void RegisterEvent(const Teuchos::RCP<const Event<double>>& te) {
+  void RegisterTimeEvent(const Teuchos::RCP<const Event<double>>& te) {
     time_events_.emplace_back(te);
   }
 

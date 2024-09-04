@@ -61,6 +61,7 @@ add_amanzi_library(atk
                            Reader.hh
                            ReaderHDF5.hh
                            ReaderNetCDF.hh
+                           Event.hh
                            IOEvent.hh
                            Iterators.hh
                            Key.hh
