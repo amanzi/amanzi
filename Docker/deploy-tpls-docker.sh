@@ -21,6 +21,7 @@ Help()
     echo "  --multiarch         Build for both linux/amd64 and linux/arm64 instead of only local system architecture"
     echo "                      Assumes your already have Docker configured to build multiarchitecture images"
     echo "  --push              Push resulting image to Dockerhub (Requires caution!!)"
+    echo "  --use_proxy         Passes https_proxy and http_proxy environment variables to docker build"
     exit 0
 }
 
@@ -81,7 +82,7 @@ case $i in
     shift
     ;;
     --use_proxy)
-    use_proxy="--build-arg http_proxy=proxyout.lanl.gov:8080 --build-arg https_proxy=proxyout.lanl.gov:8080"
+    use_proxy="--build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy}"
     shift
     ;;
     --output_style=*)

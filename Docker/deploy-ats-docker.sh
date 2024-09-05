@@ -19,6 +19,7 @@ Help()
     echo "                      Assumes your already have Docker configured to build multiarchitecture images"
     echo "  --mpi_flavor        Which MPI implementation does the TPL image you want to build from use? (Default: mpich)"
     echo "  --push              Push resulting image to Dockerhub (Requires caution!!)"
+    echo "  --use_proxy         Passes https_proxy and http_proxy environment variables to docker build"
     exit 0
 }
 
@@ -58,7 +59,7 @@ case $i in
     shift
     ;;
     --use_proxy)
-    use_proxy="--build-arg http_proxy=proxyout.lanl.gov:8080 --build-arg https_proxy=proxyout.lanl.gov:8080"
+    use_proxy="--build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy}"
     shift
     ;;
     --output_style=*)
