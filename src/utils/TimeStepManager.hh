@@ -19,13 +19,11 @@ regression testing.
 .. _time-step-manager-spec:
 .. admonition:: time-step-manager-spec
 
-   * `"constant timestep [s]`" ``[double]`` **optional** If provided, ignore the
-     PK and all events and take a uniform, prescribed time step.
-   * `"prescribed time history [s]`" ``Array(string)`` **optional** Array
+   * `"prescribed timesteps [s]`" ``Array(string)`` **optional** Array
      of timesteps to take, ignores the PK and all events.
-   * `"prescribed time history file name`" ``[string]`` **optional** Path to an h5 file
+   * `"prescribed timesteps file name`" ``[string]`` **optional** Path to an h5 file
      containing a list of dts, ignores the PK and all events.
-   * `"prescribed time history header`" ``[string]`` **"timesteps"** Name of the
+   * `"prescribed timesteps header`" ``[string]`` **"timesteps"** Name of the
      dataset containing the dts.
 
 */

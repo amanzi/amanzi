@@ -36,25 +36,30 @@ TimeStepManager::TimeStepManager(Teuchos::ParameterList& plist)
   : manual_override_(false)
 {
   // manual override
-  if (plist.isParameter("constant timestep [s]")) {
-    double dt = plist.get<double>("constant timestep [s]");
-    double t0 = plist.get<double>("constant timestep start time [s]", 0.0);
-    RegisterTimeEvent(t0, dt, -1., false);
+  if (plist.isParameter("prescribed timesteps [s]")) {
+    auto dt_manual = plist.get<Teuchos::Array<double>>("prescribed timesteps [s]");
+    std::vector<double> times(dt_manual.size()+1);
+    times[0] = 0.;
+    for (int i = 0; i != dt_manual.size(); ++i) {
+      times[i+1] = times[i] + dt_manual[i];
+    }
+    RegisterTimeEvent(times, false);
     manual_override_ = true;
 
-  } else if (plist.isParameter("prescribed time history [s]")) {
-    auto dt_manual = plist.get<Teuchos::Array<double>>("prescribed time history [s]");
-    RegisterTimeEvent(dt_manual.toVector(), false);
-    manual_override_ = true;
-
-  } else if (plist.isParameter("prescribed time file name")) {
-    std::string filename = plist.get<std::string>("prescribed time history file name");
-    std::string header = plist.get<std::string>("prescribed time history header", "timesteps");
+  } else if (plist.isParameter("prescribed timesteps file name")) {
+    std::string filename = plist.get<std::string>("prescribed timesteps file name");
+    std::string header = plist.get<std::string>("prescribed timesteps header", "timesteps");
     auto reader = createReader(filename);
 
-    Teuchos::Array<double> dts;
+    Teuchos::Array<double> dt_manual;
     reader->read(header, dts);
-    RegisterTimeEvent(dts.toVector(), false);
+
+    std::vector<double> times(dt_manual.size()+1);
+    times[0] = 0.;
+    for (int i = 0; i != dt_manual.size(); ++i) {
+      times[i+1] = times[i] + dt_manual[i];
+    }
+    RegisterTimeEvent(times, false);
     manual_override_ = true;
   }
 
