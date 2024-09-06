@@ -1010,9 +1010,10 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   if (dt_ <= dt_recommended && dt_ <= dt_next_ && dt_next_ < dt_recommended) {
     // If we took a smaller step than we recommended, likely due to constraints
-    // from other PKs or events like vis (dt <= dt_), and it worked well enough
-    // that the newly recommended step size didn't decrease (dt <= dt_next_),
-    // then we don't want to reduce our recommendation.
+    // from other PKs or events like vis (dt_ <= dt_recommended), and it worked
+    // well enough that the newly recommended step size didn't decrease (dt_ <=
+    // dt_next_), then we don't want to reduce our recommendation for the next
+    // step.
     dt_ = dt_recommended;
   } else {
     dt_ = dt_next_;
