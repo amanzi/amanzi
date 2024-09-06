@@ -952,7 +952,7 @@ bool
 Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   AMANZI_ASSERT(bdf1_dae_ != Teuchos::null);
-
+  double dt_recommended(dt_);
   dt_ = t_new - t_old;
 
   // save a copy of primary and conservative fields
@@ -1008,7 +1008,15 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) { VV_ReportSeepageOutflow(S_.ptr(), dt_); }
 
-  dt_ = dt_next_;
+  if (dt_ <= dt_recommended && dt_ <= dt_next_ && dt_next_ < dt_recommended) {
+    // If we took a smaller step than we recommended, likely due to constraints
+    // from other PKs or events like vis (dt <= dt_), and it worked well enough
+    // that the newly recommended step size didn't decrease (dt <= dt_next_),
+    // then we don't want to reduce our recommendation.
+    dt_ = dt_recommended;
+  } else {
+    dt_ = dt_next_;
+  }
 
   return failed;
 }
