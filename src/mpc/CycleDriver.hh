@@ -122,7 +122,9 @@ Process kernel *chemistry* can susbcycle with respect to *transport*.
 
 namespace Amanzi {
 
+namespace Utils {
 class TimeStepManager;
+}
 class Visualization;
 class Checkpoint;
 class State;
@@ -176,7 +178,7 @@ class CycleDriver {
   Teuchos::RCP<TreeVector> soln_;
 
   // time step manager
-  Teuchos::RCP<TimeStepManager> tsm_;
+  Teuchos::RCP<Utils::TimeStepManager> tsm_;
 
   // misc setup information
   Teuchos::RCP<Teuchos::ParameterList> glist_;

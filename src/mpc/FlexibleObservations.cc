@@ -241,7 +241,7 @@ FlexibleObservations::DumpRequested(const int cycle, const double time)
 * step manager.
 ******************************************************************/
 void
-FlexibleObservations::RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm)
+FlexibleObservations::RegisterWithTimeStepManager(Utils::TimeStepManager& tsm)
 {
   for (std::map<std::string, Teuchos::RCP<Observable>>::iterator i = observations.begin();
        i != observations.end();
