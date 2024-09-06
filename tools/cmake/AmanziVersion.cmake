@@ -89,7 +89,7 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
   if(err_occurred)
     message(WARNING "Error executing git:\n ${cmd}\n${cmd_output}\n${err}")
     set(cmd_output cmd_output-NOTFOUND)
-    #exit()
+    exit()
   endif()
     
   # Get the latest amanzi-* version number tag    
