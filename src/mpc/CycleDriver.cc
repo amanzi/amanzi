@@ -234,17 +234,17 @@ CycleDriver::Setup()
   S_->Setup();
 
   // create the time step manager
-  tsm_ = Teuchos::rcp(new TimeStepManager(glist_->sublist("cycle driver")));
+  tsm_ = Teuchos::rcp(new Utils::TimeStepManager(glist_->sublist("cycle driver")));
 
   // set up the TSM
   // -- register visualization times
   for (auto vis = visualization_.begin(); vis != visualization_.end(); ++vis) {
-    (*vis)->RegisterWithTimeStepManager(tsm_.ptr());
+    (*vis)->RegisterWithTimeStepManager(*tsm_);
   }
   // -- register checkpoint times
-  if (checkpoint_ != Teuchos::null) checkpoint_->RegisterWithTimeStepManager(tsm_.ptr());
+  if (checkpoint_ != Teuchos::null) checkpoint_->RegisterWithTimeStepManager(*tsm_);
   // -- register observation times
-  if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_.ptr());
+  if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(*tsm_);
   // -- register reset_times
   for (auto it = reset_info_.begin(); it != reset_info_.end(); ++it)
     tsm_->RegisterTimeEvent(it->first);
