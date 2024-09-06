@@ -21,6 +21,7 @@ Help()
     echo "  --multiarch         Build for both linux/amd64 and linux/arm64 instead of only local system architecture"
     echo "                      Assumes your already have Docker configured to build multiarchitecture images"
     echo "  --push              Push resulting image to Dockerhub (Requires caution!!)"
+    echo "  --use_proxy         Passes https_proxy and http_proxy environment variables to docker build"
     exit 0
 }
 
@@ -81,7 +82,7 @@ case $i in
     shift
     ;;
     --use_proxy)
-    use_proxy="--build-arg http_proxy=proxyout.lanl.gov:8080 --build-arg https_proxy=proxyout.lanl.gov:8080"
+    use_proxy="--build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy}"
     shift
     ;;
     --output_style=*)
@@ -111,7 +112,7 @@ build_mpi="${build_mpi:-True}"
 mpi_distro="${mpi_distro:-mpich}"
 mpi_version="${mpi_version:-4.0.3}"
 petsc_ver="${petsc_ver:-3.20}"
-trilinos_ver="${trilnos_ver:-15-1-6af5f44}"
+trilinos_ver="${trilnos_ver:-15-1-0}"
 amanzi_branch="${amanzi_branch:-master}"
 amanzi_src_dir="${amanzi_src_dir:-/ascem/amanzi/repos/amanzi-master}"
 amanzi_tpls_ver="${amanzi_tpls_ver:-`get_tpl_version`}"

@@ -46,14 +46,6 @@ RUN apt-get -q update -y && apt-get install -y tzdata && apt-get -q install -y \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-# Note this installs numpy as well
-RUN if [ "$TARGETARCH" = "arm64" ]; then \
-  pip3 install --no-cache-dir --upgrade pip && \
-  pip3 install --no-cache-dir --no-binary=h5py install h5py ; \
-  else \
-  pip3 install --no-cache-dir --upgrade pip && \
-  pip3 install --no-cache-dir install h5py ; \
-  fi
 
 # install MPI - if mpich, custom compile; if openmpi, install precompiled binary
 RUN if [ "$build_mpi" = "True" ]; then \
@@ -143,6 +135,12 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
   && find . -type f -name '*.pdf' -exec rm {} \; \
   && find . -type f -name '*.png' -exec rm {} \; \
   && find . -type f -name '*.html' -exec rm {} \;
+
+ENV HDF5_DIR=/home/amanzi_user/install/tpls
+
+# Note this installs numpy as well
+RUN pip3 install --no-cache-dir --upgrade pip \
+  && pip3 install --no-cache-dir --no-binary=h5py h5py
 
 # Set the LD_LIBRARY_PATH for Amanzi builds in the next stage
 ENV LD_LIBRARY_PATH=${AMANZI_TPLS_DIR}/lib:${AMANZI_PETSC_LIBS}:${AMANZI_TRILINOS_LIBS}:${AMANZI_SEACAS_LIBS}
