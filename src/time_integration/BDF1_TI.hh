@@ -258,7 +258,8 @@ BDF1_TI<Vector, VectorSpace>::CommitSolution(const double h,
     state_->hmin = std::min<double>(h, state_->hmin);
     state_->hmax = std::max<double>(h, state_->hmax);
   } else {
-    ts_control_->get_timestep(h, -1); // register that we failed
+    // register that we failed
+    ts_control_->get_timestep(h, -1);
   }
 }
 

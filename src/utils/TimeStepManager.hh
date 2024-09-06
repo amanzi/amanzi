@@ -48,14 +48,11 @@ class TimeStepManager {
   TimeStepManager();
   TimeStepManager(Teuchos::ParameterList& plist);
   TimeStepManager(Teuchos::RCP<VerboseObject> vo_cd);
+
   void RegisterTimeEvent(double start, double period, double stop, bool phys = true);
   void RegisterTimeEvent(const std::vector<double>& times, bool phys = true);
-  void RegisterTimeEvent(double time, bool phys = true) {
-    RegisterTimeEvent(std::vector<double>{time});
-  }
-  void RegisterTimeEvent(const Teuchos::RCP<const Event<double>>& te) {
-    time_events_.emplace_back(te);
-  }
+  void RegisterTimeEvent(double time, bool phys = true);
+  void RegisterTimeEvent(const Teuchos::RCP<const Event<double>>& te);
 
   double TimeStep(const double T, const double dT, bool after_failure = false);
   void print(std::ostream& os, double start, double end) const;
@@ -63,6 +60,8 @@ class TimeStepManager {
  protected:
   std::vector<Teuchos::RCP<const Event<double>>> time_events_;
   bool manual_override_;
+  std::vector<double> manual_dts_;
+  int manual_dts_i_;
   Teuchos::RCP<VerboseObject> vo_;
 };
 
