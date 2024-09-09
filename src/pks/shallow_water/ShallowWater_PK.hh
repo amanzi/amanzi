@@ -206,9 +206,12 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   double cfl_, cfl_positivity_;
   int iters_, max_iters_;
 
+  Tag tag_int1_, tag_int2_;
+  
   // control of PK
   int temporal_disc_order_;
   double cell_area2_max_;
+  std::string temporal_disc_method_;
 
  private:
   // factory registration

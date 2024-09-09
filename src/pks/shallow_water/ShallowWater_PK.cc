@@ -25,6 +25,7 @@
 #include "HydrostaticPressureEvaluator.hh"
 #include "NumericalFluxFactory.hh"
 #include "ShallowWater_PK.hh"
+#include "pk_helpers.hh"
 
 namespace Amanzi {
 namespace ShallowWater {
@@ -84,6 +85,11 @@ ShallowWater_PK::Setup()
   SetupPrimaryVariableKeys();
   SetupExtraEvaluatorsKeys();
 
+
+  // temporal discretization order
+  temporal_disc_order_ = sw_list_->get<int>("temporal discretization order", 1);
+  temporal_disc_method_ = sw_list_->get<std::string>("temporal discretization method", "");
+  
   //-------------------------------
   // constant fields
   //-------------------------------
@@ -110,6 +116,22 @@ ShallowWater_PK::Setup()
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     AddDefaultPrimaryEvaluator_(primary_variable_key_);
+
+    if (temporal_disc_order_==3 && temporal_disc_method_=="Gottlieb"){
+      Tag  tmp1(Keys::cleanName(name() + "pipe_flow_int1"));
+      tag_int1_ = tmp1;
+      S_->Require<CV_t, CVS_t>(primary_variable_key_, tag_int1_, passwd_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+      Tag  tmp2(Keys::cleanName(name() + "pipe_flow_int2"));
+      tag_int2_ = tmp2;
+      S_->Require<CV_t, CVS_t>(primary_variable_key_, tag_int2_, passwd_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);                                                             
+    }
   }
 
   // -- velocity
@@ -132,6 +154,20 @@ ShallowWater_PK::Setup()
     elist.set<std::string>("my key", discharge_key_).set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new DischargeEvaluator(elist));
     S_->SetEvaluator(discharge_key_, Tags::DEFAULT, eval);
+
+    if (temporal_disc_order_==3 && temporal_disc_method_=="Gottlieb"){
+      
+      S_->Require<CV_t, CVS_t>(discharge_key_, tag_int1_, passwd_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+      S_->Require<CV_t, CVS_t>(discharge_key_, tag_int2_, passwd_)
+        .SetMesh(mesh_)
+        ->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);                                                             
+    }
+    
   }
 
   //-------------------------------
@@ -399,9 +435,6 @@ ShallowWater_PK::Initialize()
   soln_->SubVector(0)->SetData(soln_h);
   soln_->SubVector(1)->SetData(soln_q);
 
-  // temporal discretization order
-  temporal_disc_order_ = sw_list_->get<int>("temporal discretization order", 1);
-
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -508,6 +541,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // initialize time integrator
   auto ti_method = Explicit_TI::forward_euler;
+
   if (temporal_disc_order_ == 2) {
     ti_method = Explicit_TI::midpoint;
   } else if (temporal_disc_order_ == 3) {
@@ -516,6 +550,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     ti_method = Explicit_TI::runge_kutta_4th_order;
   }
 
+
   // To use evaluators, we need to overwrite state variables. Since,
   // soln_ is a shallow copy of state variables, we cannot use it.
   // Instead, we need its deep copy. This is by design of the DAG.
@@ -523,9 +558,41 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   try {
     auto soln_old = Teuchos::rcp(new TreeVector(*soln_));
     auto soln_new = Teuchos::rcp(new TreeVector(*soln_));
+    auto sol_int1 = Teuchos::rcp(new TreeVector(*soln_));
+    auto sol_int2 = Teuchos::rcp(new TreeVector(*soln_));
+    auto fn = Teuchos::rcp(new TreeVector(*soln_));
+    
 
-    Explicit_TI::RK<TreeVector> rk1(*this, ti_method, *soln_old);
-    rk1.TimeStep(t_old, dt, *soln_old, *soln_new);
+    if (temporal_disc_order_==3 && temporal_disc_method_=="Gottlieb"){
+
+      assign(primary_variable_key_, tag_int1_, tag_current_, *S_);
+      assign(primary_variable_key_, tag_int2_, tag_current_, *S_);
+              
+      auto sol_h_int1  = S_->GetPtrW<CV_t>(primary_variable_key_, tag_int1_, passwd_);
+      auto sol_h_int2  = S_->GetPtrW<CV_t>(primary_variable_key_, tag_int2_, passwd_);
+      auto sol_q_int1  = S_->GetPtrW<CV_t>(discharge_key_, tag_int1_, passwd_);
+      auto sol_q_int2  = S_->GetPtrW<CV_t>(discharge_key_, tag_int2_, passwd_);
+
+      sol_int1->SubVector(0)->SetData(sol_h_int1);
+      sol_int2->SubVector(0)->SetData(sol_h_int2);
+      sol_int1->SubVector(1)->SetData(sol_q_int1);
+      sol_int2->SubVector(1)->SetData(sol_q_int2);
+
+      FunctionalTimeDerivative(t_old, *soln_old, *fn);      
+      sol_int1->Update(dt, *fn, 1.0);
+
+      FunctionalTimeDerivative(t_old, *sol_int1, *fn);
+      sol_int2->Update(0.25, *sol_int1, 3./4.);
+      sol_int2->Update(0.25*dt, *fn, 1.0);
+
+      FunctionalTimeDerivative(t_old, *sol_int2, *fn);
+      soln_new->Update(2./3., *sol_int2, 1./3.);
+      soln_new->Update(dt*(2./3.), *fn, 1.0);
+      
+    }else{
+      Explicit_TI::RK<TreeVector> rk1(*this, ti_method, *soln_old);
+      rk1.TimeStep(t_old, dt, *soln_old, *soln_new);
+    }
 
     *soln_ = *soln_new;
     VerifySolution_(*soln_);

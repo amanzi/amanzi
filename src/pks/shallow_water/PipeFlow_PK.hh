@@ -36,6 +36,8 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual void FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector& f) override;
 
+protected:
+  
   double NumericalSourceFriction(double h,
                                  double qx,
                                  double qy,

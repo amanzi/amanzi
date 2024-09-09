@@ -89,7 +89,7 @@ PipeFlow_PK::Setup()
 
   // -- pressure head
   if (!S_->HasRecord(pressure_head_key_)) {
-    S_->Require<CV_t, CVS_t>(pressure_head_key_, Tags::DEFAULT, pressure_head_key_)
+    S_->Require<CV_t, CVS_t>(pressure_head_key_, tag_next_, pressure_head_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -98,10 +98,10 @@ PipeFlow_PK::Setup()
       .set<std::string>("tag", Tags::DEFAULT.get())
       .set<double>("celerity", celerity_);
     auto eval = Teuchos::rcp(new PressureHeadEvaluator(elist));
-    S_->SetEvaluator(pressure_head_key_, Tags::DEFAULT, eval);
+    S_->SetEvaluator(pressure_head_key_, tag_next_, eval);
 
 
-    requireAtCurrent(pressure_head_key_, Tags::CURRENT, *S_, pressure_head_key_);
+    requireAtCurrent(pressure_head_key_, tag_current_, *S_, pressure_head_key_);
   }
 
 
@@ -168,7 +168,8 @@ void PipeFlow_PK::CommitStep(double t_old, double t_new, const Tag& tag_next) {
   Tag tag_current = tag_next == tag_next_ ? tag_current_ : Tags::CURRENT;
   
   // also save pressure_head
-  if (tag_next == Tags::NEXT)  assign(pressure_head_key_, Tags::CURRENT, tag_next, *S_);
+  //if (tag_next == Tags::NEXT)
+    assign(pressure_head_key_, Tags::CURRENT, tag_next, *S_);
   
   ShallowWater_PK::CommitStep(t_old, t_new, tag_next);
 
