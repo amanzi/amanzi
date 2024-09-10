@@ -454,7 +454,7 @@ InputConverterU::TranslateRegions_()
         std::vector<double> low = GetAttributeVectorD_(reg_elem, "corner_coordinates", dim_, "m");
         std::vector<double> high =
           GetAttributeVectorD_(reg_elem, "opposite_corner_coordinates", dim_, "m");
-        std::vector<double> normals = GetAttributeVectorD_(reg_elem, "normals", dim_, "", false);
+        std::vector<double> normals = GetAttributeVectorD_(reg_elem, "normals", dim_ * dim_, "", false);
 
         out_list.sublist(reg_name)
           .sublist("region: box volume fractions")

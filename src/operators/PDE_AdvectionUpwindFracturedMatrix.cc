@@ -125,7 +125,7 @@ PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Comp
     matrix[f] = Aface;
   }
 
-  // removed matrices fof faces where fracture is located
+  // removed matrices for faces where fracture is located
   for (int i = 0; i < fractures_.size(); ++i) {
     auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
       fractures_[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
@@ -184,7 +184,7 @@ PDE_AdvectionUpwindFracturedMatrix::ApplyBCs(bool primary, bool eliminate, bool 
     }
     // coupling fluxes are separate object
     else if (ndofs == 2) {
-      matrix[f] = 0.0;
+      matrix[f] *= 0.0;
     }
     // treat as essential inflow BC for pure advection
     else if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {

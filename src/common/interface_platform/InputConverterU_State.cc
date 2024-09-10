@@ -1345,8 +1345,9 @@ InputConverterU::TranslateStateICsAmanziGeochemistry_(Teuchos::ParameterList& ou
       Exceptions::amanzi_throw(msg);
     }
 
+    std::string reg_str = CreateNameFromVector_(regions);
     Key tcc_key = Keys::getKey(domain, "total_component_concentration");
-    Teuchos::ParameterList& ic_list = out_list.sublist(tcc_key).sublist("function").sublist("All");
+    Teuchos::ParameterList& ic_list = out_list.sublist(tcc_key).sublist("function").sublist(reg_str);
 
     ic_list.set<Teuchos::Array<std::string>>("regions", regions)
       .set<std::string>("component", "cell");
