@@ -266,6 +266,11 @@ PreconditionerHypre::InitILU_()
     HYPRE_ILUSetLevelOfFill(method_, plist_.get<int>("ilu(k) fill level"));
   HYPRE_ILUSetTol(method_, 0.0);
 
+  // Default is 1 (suggested preconditioner value) for now FIXME
+  // if (plist_.isParameter("maximum number of iterations"))
+  //  HYPRE_ILUSetMaxIter(method_, plist_.get<int>("maximum number of iterations"));
+  HYPRE_ILUSetMaxIter(method_, 1);
+
 #else
   Errors::Message msg("Hypre (ILU) is not available in this installation of Amanzi.  To use "
                       "Hypre, please reconfigure.");
