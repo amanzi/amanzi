@@ -366,7 +366,7 @@ FlowEnergyMatrixFracture_PK::FunctionalResidual(double t_old,
   op_tree_matrix_->Apply(*u_new, *f, 1.0);
 
   // convergence control
-  f->NormInf(&residual_norm_);
+  f->SubVector(1)->SubVector(1)->NormInf(&residual_norm_);
 }
 
 
@@ -553,7 +553,7 @@ FlowEnergyMatrixFracture_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   const auto& energy_fc = *S_->Get<CV_t>("fracture-energy").ViewComponent("cell");
 
   int ncells = energy_fc.MyLength();
-  double mean_energy, error_r(0.0), energy(0.0);
+  double mean_energy(0.0), error_r(0.0), energy(0.0);
 
   for (int c = 0; c < ncells; ++c) {
     energy += energy_fc[0][c] * mesh_f->getCellVolume(c); // reference cell energy
@@ -563,7 +563,8 @@ FlowEnergyMatrixFracture_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     error_r = (residual_norm_ * dt_) / mean_energy;
   }
 
-  error = std::max(error, error_r);
+  // removed since coupling fluxes are ignored
+  // error = std::max(error, error_r);
 
 #ifdef HAVE_MPI
   double tmp = error;
