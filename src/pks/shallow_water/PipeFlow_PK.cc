@@ -158,7 +158,8 @@ PipeFlow_PK::NumericalSourceFriction(double h,
     }
   }
 
-  return S1;
+  return 0.0;
+  //return S1;
 }
 
 
