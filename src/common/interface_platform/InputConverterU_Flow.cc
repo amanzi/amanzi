@@ -893,6 +893,8 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
       unit = "kg/s/m^2";
     } else if (bctype_in == "inward_mass_flux_distributed") {
       unit = "kg/s";
+    } else if (bctype_in == "field_pressure") {
+      unit = "Pa";
     } else { // not flow BCs
       inode = inode->getNextSibling();
       continue;
@@ -957,6 +959,9 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
       bcname = "outward mass flux";
       bcs.values = bcs.fluxes;
       for (int k = 0; k < bcs.values.size(); k++) bcs.values[k] *= -1;
+    } else if (bctype_in == "field_pressure") {
+      bctype = "coupling";
+      bcname = "boundary pressure";
     } else {
       ThrowErrorIllformed_("boundary_conditions", "element", bctype_in);
     }
@@ -984,6 +989,8 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
         .set<std::string>("file", bcs.filename)
         .set<std::string>("x header", bcs.xheader)
         .set<std::string>("y header", bcs.yheader);
+    } else if (bcs.coupling) {
+      // pass
     } else {
       TranslateGenericMath_(bcs, bcfn);
     }
@@ -1027,8 +1034,14 @@ InputConverterU::TranslateFlowBCs_(const std::string& domain)
 
       tmp = GetAttributeValueS_(element, "submodel", TYPE_NONE, false, "none");
       bc.set<bool>("no flow above water table", (tmp == "no_flow_above_water_table"));
+    } else if (bctype == "coupling") {
+      bc.set<std::string>("spatial distribution method", "parent mesh field")
+        .sublist("boundary pressure")
+        .set<std::string>("external field key", "pressure")
+        .set<std::string>("external field tag", "");
     }
 
+    // internal BC should be handled differently in analysis FIXME
     vv_bc_regions_.insert(vv_bc_regions_.end(), regions.begin(), regions.end());
 
     inode = inode->getNextSibling();

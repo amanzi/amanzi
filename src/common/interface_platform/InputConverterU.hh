@@ -47,7 +47,7 @@ typedef std::map<std::string, Phase> PhaseTree;
 
 struct BCs {
  public:
-  BCs() : mol_mass(-1.0){};
+  BCs() : mol_mass(-1.0), coupling(false){};
   BCs(double value) : mol_mass(value){};
 
   std::string type;
@@ -59,6 +59,8 @@ struct BCs {
   double mol_mass;
 
   std::string kinematic;
+
+  bool coupling;
 };
 
 

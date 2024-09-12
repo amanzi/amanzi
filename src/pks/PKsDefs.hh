@@ -30,7 +30,8 @@ enum class DomainFunction_kind {
   SUBGRID_RETURN,
   WEIGHT,
   WEIGHT_BY_FIELD,
-  ALQUIMIA
+  ALQUIMIA,
+  PARENT_MESH_FIELD
 };
 
 } // namespace Amanzi

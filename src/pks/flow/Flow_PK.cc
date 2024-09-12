@@ -543,6 +543,27 @@ Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
     }
   }
 
+  // -- coupling
+  if (bc_list.isSublist("coupling")) {
+    PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_, S_);
+
+    Teuchos::ParameterList& tmp_list = bc_list.sublist("coupling");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+        bc = bc_factory.Create(spec,
+                               "boundary pressure",
+                               AmanziMesh::Entity_kind::FACE,
+                               Teuchos::null,
+                               Tags::DEFAULT,
+                               true);
+        bc->set_bc_name("coupling");
+        bcs_.push_back(bc);
+      }
+    }
+  }
+
   VV_ValidateBCs();
 
   // Create source objects
@@ -762,6 +783,14 @@ Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
         int f = it->first;
         bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value[f] = it->second[0] * flux_units_;
+      }
+    }
+
+    if (bcs_[i]->get_bc_name() == "coupling") {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value[f] = it->second[0];
       }
     }
   }
