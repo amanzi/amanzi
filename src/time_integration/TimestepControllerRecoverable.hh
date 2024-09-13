@@ -58,7 +58,6 @@ class TimestepControllerRecoverable : public TimestepController
   std::string name_, dt_name_;
   Teuchos::RCP<State> S_;
   Teuchos::RCP<double> dt_internal_;
-  double dt_init_;
   double dt_min_;
   double dt_max_;
 };
