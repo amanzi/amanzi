@@ -177,11 +177,6 @@ class PK {
   // Tag the primary variable as changed in the DAG
   virtual void ChangedSolutionPK(const Tag& tag) { AMANZI_ASSERT(false); }
 
-  // When including ValidStep() in Advance(), make this protected!  refs
-  // amanzi/ats#110
-  // Check whether the solution calculated for the new step is valid.
-  virtual bool ValidStep() { return true; }
-
  protected:
   Teuchos::RCP<Teuchos::ParameterList> plist_;
   std::string name_;
