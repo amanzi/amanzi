@@ -121,25 +121,26 @@ class BDF1_TI {
   BDF1_TI(const std::string& name,
           Teuchos::ParameterList& plist,
           BDFFnBase<Vector>& fn,
-          const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<const Vector>& initvec);
+          const Teuchos::RCP<const VectorSpace>& space,
+          const Teuchos::RCP<State>& S = Teuchos::null);
 
   // initializes the state
   void
-  SetInitialState(const double h, const Teuchos::RCP<Vector>& x, const Teuchos::RCP<Vector>& xdot);
+  SetInitialState(const double h, const Teuchos::RCP<const Vector>& u, const Teuchos::RCP<const Vector>& udot);
 
   // After a successful step, this method commits the new
   // solution to the solution history
-  void CommitSolution(const double h, const Teuchos::RCP<Vector>& u);
+  void CommitSolution(const double h, const Teuchos::RCP<const Vector>& u);
 
   // Computes a step and returns true whan it fails.
   bool AdvanceStep(double dt,
-                const Teuchos::RCP<Vector>& u_prev,
+                const Teuchos::RCP<const Vector>& u_prev,
                 const Teuchos::RCP<Vector>& u,
                 double& dt_next);
+
   bool AdvanceStep(double dt, double& dt_next, const Teuchos::RCP<Vector>& x)
   {
-    return AdvanceStep(dt, Teuchos::rcp(new Vector(*x)), x, dt_next);
+    return AdvanceStep(dt, state_->uhist->MostRecentSolution(), x, dt_next);
   }
 
   // Reset the memory of the time integrator
@@ -161,7 +162,7 @@ class BDF1_TI {
 
  protected:
   Teuchos::RCP<TimestepController> ts_control_; // timestep controller
-  Teuchos::RCP<BDF1_State<Vector>> state_;
+  Teuchos::RCP<BDF1_State<Vector, VectorSpace>> state_;
 
   Teuchos::RCP<AmanziSolvers::Solver<Vector, VectorSpace>> solver_;
   Teuchos::RCP<BDF1_SolverFnBase<Vector>> solver_fn_;
@@ -184,18 +185,17 @@ template <class Vector, class VectorSpace>
 BDF1_TI<Vector, VectorSpace>::BDF1_TI(const std::string& name,
         Teuchos::ParameterList& plist,
         BDFFnBase<Vector>& fn,
-        const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<const Vector>& initvec)
+        const Teuchos::RCP<const VectorSpace>& space,
+        const Teuchos::RCP<State>& S)
 {
   fn_ = Teuchos::rcpFromRef(fn);
 
   // update the verbose options
-  vo_ = Teuchos::rcp(new VerboseObject(initvec->Comm(), name, plist));
+  vo_ = Teuchos::rcp(new VerboseObject(space->Comm(), name, plist));
   db_ = Teuchos::rcp(new AmanziSolvers::ResidualDebugger(plist.sublist("residual debugger"), S));
 
   // Create the state.
-  state_ = Teuchos::rcp(new BDF1_State<Vector>());
-  state_->InitializeFromPlist(plist, initvec, S);
+  state_ = Teuchos::rcp(new BDF1_State<Vector, VectorSpace>(name, plist, space, S));
 
   // Set up the nonlinear solver
   // -- initialized the SolverFnBase interface
@@ -204,13 +204,13 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(const std::string& name,
   AmanziSolvers::SolverFactory<Vector, VectorSpace> factory;
   solver_ = factory.Create(plist);
   solver_->set_db(db_);
-  solver_->Init(solver_fn_, initvec->Map());
+  solver_->Init(solver_fn_, *space);
 
   // Allocate memory for adaptive timestep controll
-  udot_ = Teuchos::rcp(new Vector(*initvec));
-  udot_prev_ = Teuchos::rcp(new Vector(*initvec));
+  udot_ = Teuchos::rcp(new Vector(*space));
+  udot_prev_ = Teuchos::rcp(new Vector(*space));
 
-  // timestep controller
+  // timestep controller (note, pointer copy)
   Teuchos::RCP<const Vector> udot_c(udot_);
   Teuchos::RCP<const Vector> udot_prev_c(udot_prev_);
   ts_control_ = createTimestepController(name, plist, S, udot_c, udot_prev_c);
@@ -226,8 +226,8 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(const std::string& name,
 template <class Vector, class VectorSpace>
 void
 BDF1_TI<Vector, VectorSpace>::SetInitialState(const double t,
-                                              const Teuchos::RCP<Vector>& x,
-                                              const Teuchos::RCP<Vector>& xdot)
+                                              const Teuchos::RCP<const Vector>& x,
+                                              const Teuchos::RCP<const Vector>& xdot)
 {
   // set a clean initial state for when the time integrator is reinitialized
   state_->uhist->FlushHistory(t, *x, xdot.get());
@@ -242,7 +242,7 @@ BDF1_TI<Vector, VectorSpace>::SetInitialState(const double t,
 template <class Vector, class VectorSpace>
 void
 BDF1_TI<Vector, VectorSpace>::CommitSolution(const double h,
-                                             const Teuchos::RCP<Vector>& u)
+                                             const Teuchos::RCP<const Vector>& u)
 {
   double t = h + state_->uhist->MostRecentTime();
 
@@ -276,7 +276,7 @@ BDF1_TI<Vector, VectorSpace>::time()
 template <class Vector, class VectorSpace>
 bool
 BDF1_TI<Vector, VectorSpace>::AdvanceStep(double dt,
-        const Teuchos::RCP<Vector>& u_prev,
+        const Teuchos::RCP<const Vector>& u_prev,
         const Teuchos::RCP<Vector>& u,
         double& dt_next)
 {

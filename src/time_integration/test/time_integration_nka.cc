@@ -89,10 +89,7 @@ SUITE(ODEIntegrationTests)
     nonlinearODE NF(1., 1., true);
 
     // create the timestepper
-    auto S = Teuchos::rcp(new State());
-    Teuchos::RCP<Amanzi::BDF1_TI<Epetra_Vector, Epetra_BlockMap>> TS =
-      Teuchos::rcp(new BDF1_TI<Epetra_Vector, Epetra_BlockMap>("bdf1", plist, NF, S, init));
-    S->Setup();
+    auto TS = Teuchos::rcp(new BDF1_TI<Epetra_Vector, Epetra_BlockMap>("bdf1", plist, NF, map));
 
     // initial value
     u->PutScalar(-1.0);
@@ -173,10 +170,8 @@ SUITE(ODEIntegrationTests)
     nonlinearODE NF(1., 1., false);
 
     // create the timestepper
-    auto S = Teuchos::rcp(new State());
     Teuchos::RCP<Amanzi::BDF1_TI<Epetra_Vector, Epetra_BlockMap>> TS =
-      Teuchos::rcp(new BDF1_TI<Epetra_Vector, Epetra_BlockMap>("bdf1", plist, NF, S, init));
-    S->Setup();
+      Teuchos::rcp(new BDF1_TI<Epetra_Vector, Epetra_BlockMap>("bdf1", plist, NF, map));
 
     // initial value
     u->PutScalar(-1.0);

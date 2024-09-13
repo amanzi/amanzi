@@ -27,7 +27,7 @@ class BDFFnBase {
   // computes the non-linear functional f = f(t,u,udot)
   virtual void FunctionalResidual(double t_old,
                                   double t_new,
-                                  Teuchos::RCP<Vector> u_old,
+                                  Teuchos::RCP<const Vector> u_old,
                                   Teuchos::RCP<Vector> u_new,
                                   Teuchos::RCP<Vector> f) = 0;
 
