@@ -71,7 +71,7 @@ class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
     h_ = t_new - t_old;
   }
 
-  void SetPreviousTimeSolution(const Teuchos::RCP<Vector>& u_old) { u_old_ = u_old; }
+  void SetPreviousTimeSolution(const Teuchos::RCP<const Vector>& u_old) { u_old_ = u_old; }
 
  protected:
   Teuchos::ParameterList plist_;
@@ -79,7 +79,7 @@ class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
   double t_new_;
   double t_old_;
   double h_;
-  Teuchos::RCP<Vector> u_old_;
+  Teuchos::RCP<const Vector> u_old_;
 
   Teuchos::RCP<BDFFnBase<Vector>> bdf_fn_;
 };

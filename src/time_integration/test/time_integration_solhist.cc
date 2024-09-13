@@ -20,21 +20,22 @@
 #include "SolutionHistory.hh"
 
 using namespace Amanzi;
+using SolutionHistory_type = Amanzi::SolutionHistory<Epetra_Vector, Epetra_Map>;
 
 SUITE(SolutionHistoryTests)
 {
   // data structures for testing
   struct test_data {
-    Epetra_MpiComm* comm;
+    Comm_ptr_type comm;
+    Teuchos::RCP<Epetra_Map> map;
     Teuchos::RCP<Epetra_Vector> x;
 
     test_data()
     {
-      comm = new Epetra_MpiComm(MPI_COMM_SELF);
-      Epetra_Map map(2, 0, *comm);
-      x = Teuchos::rcp(new Epetra_Vector(map));
+      comm = getDefaultComm();
+      map = Teuchos::rcp(new Epetra_Map(2, 0, *comm));
+      x = Teuchos::rcp(new Epetra_Vector(*map));
     }
-    ~test_data() { delete comm; }
   };
 
   TEST_FIXTURE(test_data, SolutionHistory_1)
@@ -42,9 +43,10 @@ SUITE(SolutionHistoryTests)
     std::cout << "Test: SolutionHistory_1" << std::endl;
 
     // create a solution history of size three
-    Teuchos::RCP<Amanzi::SolutionHistory<Epetra_Vector>> SH =
-      Teuchos::rcp(new Amanzi::SolutionHistory<Epetra_Vector>("myhist", 3, 0.0, *x));
+    auto SH = Teuchos::rcp(new SolutionHistory_type("myhist", 3, 0.0, map));
     x->PutScalar(1.0);
+    SH->FlushHistory(0., *x);
+
     CHECK_EQUAL(SH->history_size(), 1);
     CHECK_EQUAL(SH->MostRecentTime(), 0.0);
 
@@ -67,26 +69,25 @@ SUITE(SolutionHistoryTests)
 
     // check that the most recent vector in fact is the
     // one that contains  9.0
-    Teuchos::RCP<Epetra_Vector> y = Teuchos::rcp(new Epetra_Vector(*x));
-    SH->MostRecentSolution(*y);
-
-    double* norminf = new double[1];
+    auto y = Teuchos::rcp(new Epetra_Vector(*x));
+    *y = *SH->MostRecentSolution();
+    double norminf[1];
     y->NormInf(norminf); // compute the max norm of the computed difference
-    CHECK_EQUAL(*norminf, 9.0);
+    CHECK_EQUAL(9.0, *norminf);
 
     std::vector<double> h;
     SH->TimeDeltas(h);
 
     CHECK_EQUAL(h.size(), SH->history_size() - 1);
-    CHECK_EQUAL(h[0], 1.0);
-    CHECK_EQUAL(h[1], 2.0);
+    CHECK_EQUAL(1.0, h[0]);
+    CHECK_EQUAL(2.0, h[1]);
 
     // interpolate 1st order
     SH->InterpolateSolution(2.5, *y, 1);
 
     // we should get 6.5
     y->NormInf(norminf);
-    CHECK_EQUAL(norminf[0], 6.5);
+    CHECK_EQUAL(6.5, norminf[0]);
 
     // interpolate 2nd order
     SH->InterpolateSolution(2.5, *y, 2);
@@ -96,7 +97,7 @@ SUITE(SolutionHistoryTests)
     // x->PutScalar(6.25);
     // x->Update(-1.0, *y, 1.0);
     y->NormInf(norminf);
-    CHECK_EQUAL(norminf[0], 6.25);
+    CHECK_EQUAL(6.25, norminf[0]);
 
     // interpolate maximum order (should be 2nd)
     SH->InterpolateSolution(2.5, *y);
@@ -104,7 +105,7 @@ SUITE(SolutionHistoryTests)
     // from the quadratic through (1,1),(2,4),(3,9)
     // we should get 6.25
     y->NormInf(norminf);
-    CHECK_EQUAL(norminf[0], 6.25);
+    CHECK_EQUAL(6.25, norminf[0]);
   }
 
   TEST_FIXTURE(test_data, SolutionHistory_2)
@@ -115,8 +116,8 @@ SUITE(SolutionHistoryTests)
     x->PutScalar(0.0);
     xdot->PutScalar(0.0);
     // create a solution history of size three
-    Teuchos::RCP<Amanzi::SolutionHistory<Epetra_Vector>> SH =
-      Teuchos::rcp(new Amanzi::SolutionHistory<Epetra_Vector>("myhist", 4, 0.0, *x, xdot.get()));
+    auto SH = Teuchos::rcp(new SolutionHistory_type("myhist", 4, 0.0, map));
+    SH->FlushHistory(0., *x, xdot.get());
 
     x->PutScalar(1.0);
     xdot->PutScalar(2.0);

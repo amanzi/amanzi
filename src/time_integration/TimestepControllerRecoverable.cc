@@ -19,8 +19,6 @@ TimestepControllerRecoverable::TimestepControllerRecoverable(const std::string& 
     S_(S),
     dt_name_(Keys::cleanName(name, true) + "_dt_internal")
 {
-  AMANZI_ASSERT(S_ != Teuchos::null); // fix tests that don't use S!
-
   if (plist.isParameter("initial timestep [s]")) {
     dt_init_ = plist.get<double>("initial timestep [s]");
   } else {
@@ -39,17 +37,22 @@ TimestepControllerRecoverable::TimestepControllerRecoverable(const std::string& 
     dt_min_ = plist.get<double>("min timestep", 10*std::numeric_limits<double>::min());
   }
 
-  S_->Require<double>(dt_name_, Tags::DEFAULT, name_);
-  S_->GetRecordSetW(dt_name_).CreateData();
-  S_->Assign(dt_name_, Tags::DEFAULT, name_, dt_init_);
-  S_->GetRecordW(dt_name_, Tags::DEFAULT, name_).set_initialized();
+  // create state memory for internal dt and give it to state
+  dt_internal_ = Teuchos::rcp(new double(dt_init_));
+  if (S_.get()) {
+    S_->Require<double>(dt_name_, Tags::DEFAULT, name_);
+    S_->SetPtr<double>(dt_name_, Tags::DEFAULT, name_, dt_internal_);
+    S_->GetRecordW(dt_name_, Tags::DEFAULT, name_).set_initialized();
+    S_->GetRecordW(dt_name_, Tags::DEFAULT, name_).set_io_checkpoint();
+    S_->GetRecordW(dt_name_, Tags::DEFAULT, name_).set_io_vis(false);
+  }
 }
 
 
 double
 TimestepControllerRecoverable::getTimestep(double dt, int iterations, bool valid)
 {
-  double dt_prev_recommended = S_->Get<double>(dt_name_, Tags::DEFAULT);
+  double dt_prev_recommended = *dt_internal_;
   double dt_recommended = getTimestep_(dt, iterations, valid);
 
   if (dt <= dt_prev_recommended &&
@@ -71,7 +74,7 @@ TimestepControllerRecoverable::getTimestep(double dt, int iterations, bool valid
     Exceptions::amanzi_throw(msg);
   }
 
-  S_->Assign(dt_name_, Tags::DEFAULT, name_, dt_recommended);
+  *dt_internal_ = dt_recommended;
   std::cout << "getTimestep: dt = " << dt << ", dt_prev_recommended = " << dt_prev_recommended << ", dt_recommended = " << dt_recommended << std::endl;
   return dt_recommended;
 }
