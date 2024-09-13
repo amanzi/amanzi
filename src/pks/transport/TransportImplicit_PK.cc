@@ -160,7 +160,7 @@ TransportImplicit_PK::Initialize()
 
       for (int i = 0; i < num_aqueous; i++) {
         bdf1_dae_.push_back(
-          Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_)));
+          Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(name_, bdf1_list, *this, S_, soln_)));
         bdf1_dae_[i]->SetInitialState(0.0, soln_, udot);
       }
     } else {
@@ -306,7 +306,7 @@ TransportImplicit_PK::AdvanceStepHO_(double t_old, double t_new, int* tot_itrs)
     int num_itrs = bdf1_dae_[i]->number_nonlinear_steps();
     *(*solution_->ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(i);
 
-    failed = bdf1_dae_[i]->TimeStep(dt_, dt_next, soln_);
+    failed = bdf1_dae_[i]->AdvanceStep(dt_, dt_next, soln_);
     dt_ = dt_next;
     if (failed) return failed;
 

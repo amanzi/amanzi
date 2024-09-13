@@ -10,6 +10,7 @@
 #pragma once
 
 #include <functional>
+#include <cmath>
 
 #include "exceptions.hh"
 #include "errors.hh"

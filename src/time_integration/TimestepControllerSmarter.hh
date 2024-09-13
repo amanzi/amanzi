@@ -19,43 +19,47 @@ nonlinearities.
 .. _timestep-controller-smarter-spec:
 .. admonition:: timestep-controller-smarter-spec
 
-    * `"max iterations`" ``[int]`` :math:`N^{max}`, decrease the timestep if the previous step took more than this.
-    * `"min iterations`" ``[int]`` :math:`N^{min}`, increase the timestep if the previous step took less than this.
-    * `"time step reduction factor`" ``[double]`` :math:`f_{reduction}`, reduce the previous timestep by this multiple.
-    * `"time step increase factor`" ``[double]`` :math:`f_{increase}`, increase the previous timestep by this multiple.  Note that this can be modified geometrically in the case of repeated successful steps.
-    * `"max time step increase factor`" ``[double]`` **10.** The max :math:`f_{increase}` will ever get.
-    * `"growth wait after fail`" ``[int]`` Wait at least this many timesteps before attempting to grow the timestep after a failed timestep.
-    * `"count before increasing increase factor`" ``[int]`` Require this many successive increasions before multiplying :math:`f_{increase}` by itself.
+   * `"max iterations`" ``[int]`` :math:`N^{max}`, decrease the timestep if the
+      previous step took more than this.
+   * `"min iterations`" ``[int]`` :math:`N^{min}`, increase the timestep if the
+      previous step took less than this.
+   * `"timestep reduction factor`" ``[double]`` :math:`f_{reduction}`, reduce
+     the previous timestep by this multiple.
+   * `"timestep increase factor`" ``[double]`` :math:`f_{increase}`, increase
+     the previous timestep by this multiple.  Note that this can be modified
+     geometrically in the case of repeated successful steps.
+   * `"max timestep increase factor`" ``[double]`` **10.** The max
+     :math:`f_{increase}` will ever get.
+   * `"growth wait after fail`" ``[int]`` Wait at least this many timesteps
+     before attempting to grow the timestep after a failed timestep.
+   * `"count before increasing increase factor`" ``[int]`` Require this many
+     successive increasions before multiplying :math:`f_{increase}` by itself.
 
 
 */
 
-
-#ifndef AMANZI_SMARTER_TIMESTEP_CONTROLLER_HH_
-#define AMANZI_SMARTER_TIMESTEP_CONTROLLER_HH_
+#pragma once
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "TimestepController.hh"
+#include "TimestepControllerRecoverable.hh"
 
 namespace Amanzi {
 
 class State;
 
-class TimestepControllerSmarter : public TimestepController {
+class TimestepControllerSmarter : public TimestepControllerRecoverable {
  public:
   TimestepControllerSmarter(const std::string& name,
                             Teuchos::ParameterList& plist,
-                            const Teuchos::RCP<State>& S = Teuchos::null);
-
-  // single method for timestep control
-  double get_timestep(double dt, int iterations);
+                            const Teuchos::RCP<State>& S);
 
  protected:
-  Teuchos::ParameterList plist_;
-  std::string name_;
+  // single method for timestep control
+  double getTimestep_(double dt, int iterations, bool valid) override;
 
+ protected:
   int max_its_;
   int min_its_;
 
@@ -64,14 +68,9 @@ class TimestepControllerSmarter : public TimestepController {
   double increase_factor0_;
   double max_increase_factor_;
   int count_increased_before_increase_;
-
-  double max_dt_;
-  double min_dt_;
-
   int growth_wait_after_fail0_;
 
   // State variables stored in RCP to keep in state for checkpointing
-  Teuchos::RCP<State> S_;
   Teuchos::RCP<double> increase_factor_;
   Teuchos::RCP<int> successive_increases_;
   Teuchos::RCP<int> last_fail_;
@@ -80,4 +79,4 @@ class TimestepControllerSmarter : public TimestepController {
 
 } // namespace Amanzi
 
-#endif
+

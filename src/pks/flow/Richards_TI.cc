@@ -301,7 +301,7 @@ Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Composite
 
   // identify convergence failure
   if (max_itrs >= 100) {
-    Errors::CutTimeStep e("GDPM did not converge");
+    Errors::CutTimestep e("GDPM did not converge");
     amanzi_throw(e);
   }
 }

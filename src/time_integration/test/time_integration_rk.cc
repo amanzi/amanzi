@@ -54,7 +54,7 @@ TEST(Explicit_RK_Euler)
 
   // initial time
   double t = 0.0;
-  // time step
+  // timestep
   double h = 0.1;
 
   // integrate to t=1.0
@@ -83,7 +83,7 @@ TEST(Explicit_RK_Heun)
   // initial value
   y.PutScalar(1.0);
 
-  // initial time and time step
+  // initial time and timestep
   double t(0.0), h(0.1);
 
   // integrate to t=1.0
@@ -114,7 +114,7 @@ TEST(Explicit_RK_Midpoint)
 
   // initial time
   double t = 0.0;
-  // time step
+  // timestep
   double h = 0.1;
 
   // integrate to t=1.0
@@ -145,7 +145,7 @@ TEST(Explicit_RK_Ralston)
 
   // initial time
   double t = 0.0;
-  // time step
+  // timestep
   double h = 0.1;
 
   // integrate to t=1.0
@@ -234,7 +234,7 @@ TEST(Explicit_RK_Kutta3D)
 
   // initial time
   double t = 0.0;
-  // time step
+  // timestep
   double h = 0.1;
 
   // integrate to t=1.0
@@ -277,7 +277,7 @@ TEST(Explicit_RK_UserDefined)
 
   // initial time
   double t = 0.0;
-  // time step
+  // timestep
   double h = 0.1;
 
   // integrate to t=1.0
@@ -308,7 +308,7 @@ TEST(Explicit_RK_RK4)
 
   // initial time
   double t = 0.0;
-  // time step
+  // timestep
   double h = 0.1;
 
   // integrate to t=1.0
