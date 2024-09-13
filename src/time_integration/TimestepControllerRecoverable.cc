@@ -19,10 +19,11 @@ TimestepControllerRecoverable::TimestepControllerRecoverable(const std::string& 
     S_(S),
     dt_name_(Keys::cleanName(name, true) + "_dt_internal")
 {
+  double dt_init(-1.0);
   if (plist.isParameter("initial timestep [s]")) {
-    dt_init_ = plist.get<double>("initial timestep [s]");
+    dt_init = plist.get<double>("initial timestep [s]");
   } else {
-    dt_init_ = plist.get<double>("initial timestep");
+    dt_init = plist.get<double>("initial timestep");
   }
 
   if (plist.isParameter("max timestep")) {
@@ -38,7 +39,7 @@ TimestepControllerRecoverable::TimestepControllerRecoverable(const std::string& 
   }
 
   // create state memory for internal dt and give it to state
-  dt_internal_ = Teuchos::rcp(new double(dt_init_));
+  dt_internal_ = Teuchos::rcp(new double(dt_init));
   if (S_.get()) {
     S_->Require<double>(dt_name_, Tags::DEFAULT, name_);
     S_->SetPtr<double>(dt_name_, Tags::DEFAULT, name_, dt_internal_);
@@ -83,7 +84,7 @@ TimestepControllerRecoverable::getTimestep(double dt, int iterations, bool valid
 double
 TimestepControllerRecoverable::getInitialTimestep()
 {
-  return dt_init_;
+  return *dt_internal_;
 }
 
 

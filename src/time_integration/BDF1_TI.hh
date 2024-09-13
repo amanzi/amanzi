@@ -126,7 +126,7 @@ class BDF1_TI {
 
   // initializes the state
   void
-  SetInitialState(const double h, const Teuchos::RCP<const Vector>& u, const Teuchos::RCP<const Vector>& udot);
+  SetInitialState(const double h, const Teuchos::RCP<const Vector>& u, const Teuchos::RCP<const Vector>& udot = Teuchos::null);
 
   // After a successful step, this method commits the new
   // solution to the solution history
