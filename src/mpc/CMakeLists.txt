@@ -232,6 +232,12 @@ if (BUILD_TESTS)
                       SOURCE    test/Main.cc test/mpc_coupled_flow_transport_implicit.cc
                       LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+      add_amanzi_test(mpc_coupled_flow_transport_gas mpc_coupled_flow_transport_gas
+                      KIND      int
+                      NPROCS    3
+                      SOURCE    test/Main.cc test/mpc_coupled_flow_transport_gas.cc
+                      LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
       add_amanzi_test(mpc_coupled_reactive_transport mpc_coupled_reactive_transport
                       KIND      int
                       SOURCE    test/Main.cc test/mpc_coupled_reactive_transport.cc
