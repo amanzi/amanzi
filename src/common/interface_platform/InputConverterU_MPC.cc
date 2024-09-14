@@ -1142,7 +1142,8 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       mesh_list_u.sublist("submesh")
         .set<Teuchos::Array<std::string>>("regions", aux)
         .set<std::string>("extraction method", "manifold mesh")
-        .set<std::string>("domain name", "fracture");
+        .set<std::string>("domain name", "fracture")
+        .set<bool>("extract all faces", true);
 
       if (dim_ == 3) mesh_list.set<bool>("request edges", true);
     }
@@ -1184,7 +1185,8 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       mesh_list_u.sublist("submesh")
         .set<Teuchos::Array<std::string>>("regions", aux)
         .set<std::string>("extraction method", "manifold mesh")
-        .set<std::string>("domain name", "fracture");
+        .set<std::string>("domain name", "fracture")
+        .set<bool>("extract all faces", true);
 
       if (dim_ == 3) mesh_list.set<bool>("request edges", true);
     }
@@ -1194,7 +1196,8 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       mesh_list_u.sublist("submesh")
         .set<Teuchos::Array<std::string>>("regions", aux)
         .set<std::string>("extraction method", "manifold mesh")
-        .set<std::string>("domain name", "fracture");
+        .set<std::string>("domain name", "fracture")
+        .set<bool>("extract all faces", true);
 
       if (dim_ == 3) mesh_list.set<bool>("request edges", true);
     }
@@ -1247,7 +1250,8 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       mesh_list_u.sublist("submesh")
         .set<Teuchos::Array<std::string>>("regions", aux)
         .set<std::string>("extraction method", "manifold mesh")
-        .set<std::string>("domain name", "fracture");
+        .set<std::string>("domain name", "fracture")
+        .set<bool>("extract all faces", true);
 
       if (dim_ == 3) mesh_list.set<bool>("request edges", true);
     }

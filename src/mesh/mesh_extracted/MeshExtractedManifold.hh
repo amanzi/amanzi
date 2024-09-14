@@ -165,6 +165,7 @@ class MeshExtractedManifold : public MeshFramework {
   mutable std::map<Entity_kind, Teuchos::RCP<const Epetra_Map>> ent_map_wghost_;
 
   mutable bool flattened_;
+  mutable bool extract_all_faces_;
 };
 
 } // namespace AmanziMesh

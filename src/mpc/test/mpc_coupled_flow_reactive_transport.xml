@@ -23,6 +23,7 @@
       <ParameterList name="submesh">
         <Parameter name="regions" type="Array(string)" value="{FRACTURE_NETWORK_INTERNAL}"/>
         <Parameter name="extraction method" type="string" value="manifold mesh"/>
+        <Parameter name="extract all faces" type="bool" value="true"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">

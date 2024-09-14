@@ -85,6 +85,7 @@
         <Parameter name="regions" type="Array(string)" value="{fracture}"/>
         <Parameter name="extraction method" type="string" value="none"/>
         <Parameter name="domain name" type="string" value="surface"/>
+        <Parameter name="extract all faces" type="bool" value="true"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">

@@ -7,9 +7,16 @@
   Authors: Konstantin Lipnikov
 */
 
-/*
-  Mesh Extracted
+//!  Mesh Extracted
+/*!
 
+Extract a manifold mesh defined by a region associated with *setname*.
+
+.. _region-box-spec:
+.. admonition:: region-box-spec
+
+  * `"extract all_faces`" extract all ghost faces existing in the parent mesh.
+  
 */
 
 #include <set>
@@ -45,8 +52,15 @@ MeshExtractedManifold::MeshExtractedManifold(
   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
   const Teuchos::RCP<Teuchos::ParameterList>& plist,
   bool flattened)
-  : MeshFramework(comm, gm, plist), parent_mesh_(parent_mesh), flattened_(flattened)
+  : MeshFramework(comm, gm, plist),
+    parent_mesh_(parent_mesh),
+    flattened_(flattened),
+    extract_all_faces_(false)
 {
+  if (plist_.get()) extract_all_faces_ = plist_->sublist("unstructured")
+                                                .sublist("submesh")
+                                                .get<bool>("extract all faces", false);
+
   vo_ = Teuchos::rcp(new VerboseObject(comm_, "MeshExtractedManifold", *plist_));
 
   int d = parent_mesh_->getSpaceDimension();
@@ -100,7 +114,7 @@ MeshExtractedManifold::InitEpetraMaps()
     auto subset_map_wghost = Teuchos::rcp(new Epetra_Map(-1, nents_wghost, gids, 0, *comm_));
     delete[] gids;
 
-    // create continuous maps
+    // create contiguous maps
     auto mymesh = Teuchos::rcpFromRef(*this);
     auto tmp = createContiguousMaps(mymesh,
                                     std::make_pair(parent_map, parent_map_wghost),
@@ -109,6 +123,7 @@ MeshExtractedManifold::InitEpetraMaps()
     ent_map_wghost_[kind_d] = tmp.second;
   }
 }
+
 
 /* ******************************************************************
 * Number of OWNED, GHOST or ALL entities of different types
@@ -126,6 +141,7 @@ MeshExtractedManifold::getNumEntities(const Entity_kind kind, const Parallel_kin
 
   return nents_ghost_[kind];
 }
+
 
 /* ******************************************************************
 * Connectivity list: cell -> faces. Base routine for getCellFaces().
@@ -387,6 +403,7 @@ MeshExtractedManifold::InitParentMaps(const std::string& setname)
   }
 }
 
+
 /* ******************************************************************
 * Exception due to limitations of the base mesh framework.
 ****************************************************************** */
@@ -478,6 +495,8 @@ MeshExtractedManifold::EnforceOneLayerOfGhosts_(const std::string& setname,
     int f = fullset[n];
     if (f >= nfaces_owned) {
       bool found(false);
+      if (extract_all_faces_) found = true;
+
       parent_mesh_->getFaceNodes(f, nodes);
       for (int i = 0; i < nodes.size(); ++i) {
         if (nodeset0.find(nodes[i]) != nodeset0.end()) {
