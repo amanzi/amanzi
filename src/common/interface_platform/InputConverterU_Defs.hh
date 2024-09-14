@@ -82,7 +82,6 @@
 #  define NKA_NUM_VECTORS 10
 
 // nonlinear solver: Picard
-#  define PICARD_SOLVER "AztecOO"
 #  define PICARD_TOLERANCE 1.0e-8
 #  define PICARD_MAX_ITERATIONS 400
 #  define PIC_PRECONDITIONER "Hypre AMG"

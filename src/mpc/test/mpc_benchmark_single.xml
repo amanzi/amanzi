@@ -540,30 +540,9 @@
         <!--Parameter name="relaxation type" type="int" value="6"/-->
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Block ILU">
-      <Parameter name="preconditioning method" type="string" value="block ilu"/>
-      <ParameterList name="block ilu parameters">
-        <Parameter name="fact: relax value" type="double" value="1.0e+00"/>
-        <Parameter name="fact: absolute threshold" type="double" value="0.0e+00"/>
-        <Parameter name="fact: relative threshold" type="double" value="1.0e+00"/>
-        <Parameter name="fact: level-of-fill" type="int" value="0"/>
-        <Parameter name="overlap" type="int" value="0"/>
-        <Parameter name="schwarz: combine mode" type="string" value="Add"/>
-      </ParameterList>
-    </ParameterList>
   </ParameterList>
 
   <ParameterList name="solvers">
-    <ParameterList name="AztecOO">
-      <Parameter name="iterative method" type="string" value="gmres"/>
-      <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
-        <Parameter name="maximum number of iterations" type="int" value="10"/>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="extreme"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="PCG with Hypre AMG">
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
