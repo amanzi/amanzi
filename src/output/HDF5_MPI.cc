@@ -983,12 +983,7 @@ HDF5_MPI::readAttrString(std::string& value, const std::string attrname)
                               data_file_,
                               loc_h5path,
                               &IOgroup_);
-  if (ierr) {
-    Errors::Message msg;
-    msg << "Unable to read variable \"" << attrname << "\" from file \"" << H5DataFilename_ << "\"";
-    Exceptions::amanzi_throw(msg);
-  }
-
+  checkThrow_(ierr, attrname, H5DataFilename_);
   value = std::string(loc_value);
 
   free(loc_value);
@@ -1016,11 +1011,7 @@ HDF5_MPI::readAttrReal(double& value, const std::string attrname)
                               data_file_,
                               loc_h5path,
                               &IOgroup_);
-  if (ierr) {
-    Errors::Message msg;
-    msg << "Unable to read variable \"" << attrname << "\" from file \"" << H5DataFilename_ << "\"";
-    Exceptions::amanzi_throw(msg);
-  }
+  checkThrow_(ierr, attrname, H5DataFilename_);
 
   value = *loc_value;
 
@@ -1053,12 +1044,7 @@ HDF5_MPI::readAttrReal(double** value, int* ndim, const std::string attrname)
                        data_file_,
                        loc_h5path,
                        &IOgroup_);
-
-  if (ierr) {
-    Errors::Message msg;
-    msg << "Unable to read variable \"" << attrname << "\" from file \"" << H5DataFilename_ << "\"";
-    Exceptions::amanzi_throw(msg);
-  }
+  checkThrow_(ierr, attrname, H5DataFilename_);
 
   *value = loc_value;
   *ndim = pdims[0]; // works only for one-dimensional vectors.
@@ -1088,12 +1074,7 @@ HDF5_MPI::readAttrInt(int& value, const std::string attrname)
                               data_file_,
                               loc_h5path,
                               &IOgroup_);
-
-  if (ierr) {
-    Errors::Message msg;
-    msg << "Unable to read variable \"" << attrname << "\" from file \"" << H5DataFilename_ << "\"";
-    Exceptions::amanzi_throw(msg);
-  }
+  checkThrow_(ierr, attrname, H5DataFilename_);
 
   value = *loc_value;
 
@@ -1125,11 +1106,7 @@ HDF5_MPI::readAttrInt(int** value, int* ndim, const std::string attrname)
                        data_file_,
                        loc_h5path,
                        &IOgroup_);
-  if (ierr) {
-    Errors::Message msg;
-    msg << "Unable to read variable \"" << attrname << "\" from file \"" << H5DataFilename_ << "\"";
-    Exceptions::amanzi_throw(msg);
-  }
+  checkThrow_(ierr, attrname, H5DataFilename_);
 
   *value = loc_value;
   *ndim = pdims[0]; // works only for one-dimensional vectors.
@@ -1298,10 +1275,12 @@ HDF5_MPI::writeDatasetReal(double* data, int nloc, int nglb, const std::string& 
 }
 
 
-bool
+void
 HDF5_MPI::readData(Epetra_Vector& x, const std::string varname)
 {
-  return readFieldData_(x, varname, PIO_DOUBLE);
+  int ierr = readFieldData_(x, varname, PIO_DOUBLE);
+  checkThrow_(ierr, varname, H5DataFilename_);
+  return;
 }
 
 
@@ -1332,39 +1311,40 @@ HDF5_MPI::checkFieldData_(const std::string& varname)
 }
 
 
-bool
+int
 HDF5_MPI::readFieldData_(Epetra_Vector& x, const std::string& varname, datatype_t type)
 {
-  if (!checkFieldData_(varname)) return false;
+  if (!checkFieldData_(varname)) return -1;
 
   char* h5path = new char[varname.size() + 1];
   strcpy(h5path, varname.c_str());
 
   int ndims;
   parallelIO_get_dataset_ndims(&ndims, data_file_, h5path, &IOgroup_);
-
-  if (ndims < 0) {
-    if (viz_comm_->MyPID() == 0) {
-      std::cout << "Dimension of the field " << h5path << " is negative.\n";
-    }
-    return false;
-  }
+  if (ndims < 0) return -3;
+  if (ndims > 2) return -3;
 
   int globaldims[ndims], localdims[ndims];
   parallelIO_get_dataset_dims(globaldims, data_file_, h5path, &IOgroup_);
   localdims[0] = x.MyLength();
-  localdims[1] = globaldims[1];
+  if (ndims == 2) {
+    // note, could be 1D array or 2D array where second dim is 1
+    localdims[1] = globaldims[1];
+    if (localdims[1] != 1) return -3;
+  }
+  if (globaldims[0] != x.GlobalLength()) return -3;
 
-  double* data = new double[localdims[0] * localdims[1]];
-  parallelIO_read_dataset(data,
-                          type,
-                          ndims,
-                          globaldims,
-                          localdims,
-                          data_file_,
-                          h5path,
-                          &IOgroup_,
-                          NONUNIFORM_CONTIGUOUS_READ);
+  double* data = new double[localdims[0]];
+  int ierr = parallelIO_read_dataset(data,
+          type,
+          ndims,
+          globaldims,
+          localdims,
+          data_file_,
+          h5path,
+          &IOgroup_,
+          NONUNIFORM_CONTIGUOUS_READ);
+  if (ierr) return -4;
 
   // Trilinos' ReplaceMyValues() works with elements only and cannot
   // be used here for points
@@ -1373,7 +1353,7 @@ HDF5_MPI::readFieldData_(Epetra_Vector& x, const std::string& varname, datatype_
   delete[] data;
   delete[] h5path;
 
-  return true;
+  return 0;
 }
 
 
@@ -1729,6 +1709,28 @@ HDF5_MPI::stripFilename_(std::string filename)
   // while(std::getline(ss, name, delim)) {}
 
   return name;
+}
+
+void
+HDF5_MPI::checkThrow_(int ierr, const std::string& varname, const std::string& filename)
+{
+  if (ierr == -1) {
+    Errors::Message msg;
+    msg << "No such variable \"" << varname << "\" in file \"" << filename << "\"";
+    Exceptions::amanzi_throw(msg);
+  } else if (ierr == -2) {
+    Errors::Message msg;
+    msg << "Incorrect type of variable \"" << varname << "\" in file \"" << filename << "\"";
+    Exceptions::amanzi_throw(msg);
+  } else if (ierr == -3) {
+    Errors::Message msg;
+    msg << "Incorrect dimension of field \"" << varname << "\" in file \"" << filename << "\"";
+    Exceptions::amanzi_throw(msg);
+  } else if (ierr != 0) {
+    Errors::Message msg;
+    msg << "Unable to read variable \"" << varname << "\" in file \"" << filename << "\" (unknown reason)";
+    Exceptions::amanzi_throw(msg);
+  }
 }
 
 std::string HDF5_MPI::xdmfHeader_ =
