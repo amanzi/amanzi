@@ -886,7 +886,7 @@ Multiphase_PK::Initialize()
   if (!bdf1_list.isSublist("verbose object"))
     bdf1_list.sublist("verbose object") = mp_list_->sublist("verbose object");
 
-  bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1_TI", bdf1_list, *this, soln_->get_map(), S_));
+  bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1_TI", bdf1_list, *this, soln_->get_map()));
 
   // upwind operator with a face model (FIXME)
   Operators::UpwindFactory upwfact;

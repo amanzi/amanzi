@@ -89,7 +89,7 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="1.5778463e+09"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.57680e+05"/>
+        <Parameter name="initial timestep" type="double" value="1.57680e+05"/>
       </ParameterList>
 
       <ParameterList name="TP 1">

@@ -91,7 +91,7 @@
 	</ParameterList>
 	<Parameter name="start period time" type="double" value="0.0"/>
 	<Parameter name="end period time" type="double" value="1.0e+04"/>
-        <Parameter name="initial time step" type="double" value="100.0"/>
+        <Parameter name="initial timestep" type="double" value="100.0"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -113,7 +113,7 @@
       </ParameterList>
       <Parameter name="primary variable key" type="string" value="pressure"/>
       <Parameter name="PK type" type="string" value="richards flow"/>
-      <Parameter name="initial time step" type="double" value="100.0"/>
+      <Parameter name="initial timestep" type="double" value="100.0"/>
       <Parameter name="relative permeability method" type="string" value="upwind with Darcy flux"/>
       <Parameter name="modify predictor for flux BCs" type="bool" value="true"/>
       <Parameter name="permeability rescaling" type="double" value="1.0"/>
@@ -196,10 +196,10 @@
         <ParameterList name="timestep controller standard parameters">
           <Parameter name="max iterations" type="int" value="15"/>
           <Parameter name="min iterations" type="int" value="10"/>
-          <Parameter name="time step increase factor" type="double" value="1.0"/>
-          <Parameter name="time step reduction factor" type="double" value="8.00000000000000044e-01"/>
-          <Parameter name="max time step" type="double" value="6.00000e+10"/>
-          <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
+          <Parameter name="timestep increase factor" type="double" value="1.0"/>
+          <Parameter name="timestep reduction factor" type="double" value="8.00000000000000044e-01"/>
+          <Parameter name="max timestep" type="double" value="6.00000e+10"/>
+          <Parameter name="min timestep" type="double" value="9.99999999999999945e-21"/>
         </ParameterList>
 
         <Parameter name="solver type" type="string" value="nka"/>

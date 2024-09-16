@@ -351,7 +351,7 @@ Darcy_PK::Initialize()
     error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE; // usually 1e-4;
 
     // time step controller
-    ts_control_ = createTimestepController<Epetra_MultiVector>("BDF1_TI", bdf1_list, S_, pdot_cells, pdot_cells_prev);
+    ts_control_ = createTimestepController<Epetra_MultiVector>("BDF1_TI", bdf1_list, Teuchos::null, pdot_cells, pdot_cells_prev);
   } else {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "WARNING: BDF1 time integration list is missing..." << std::endl;

@@ -77,7 +77,7 @@ TimestepControllerRecoverable<Vector>::TimestepControllerRecoverable(const std::
   if (plist.isParameter("initial timestep [s]")) {
     dt_init = plist.get<double>("initial timestep [s]");
   } else {
-    dt_init = plist.get<double>("initial timestep");
+    dt_init = plist.get<double>("initial timestep", 1.0);
   }
 
   if (plist.isParameter("max timestep")) {

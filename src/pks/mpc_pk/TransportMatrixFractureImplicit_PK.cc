@@ -249,7 +249,7 @@ TransportMatrixFractureImplicit_PK::Initialize()
   // time integrators
   if (nspace_m_ == 2 && nspace_f_ == 2) {
     Teuchos::ParameterList& bdf1_list = ti_list.sublist("BDF1");
-    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1_TI", bdf1_list, *this, soln_->get_map(), S_));
+    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1_TI", bdf1_list, *this, soln_->get_map()));
   }
 
   // Test SPD properties of the matrix.

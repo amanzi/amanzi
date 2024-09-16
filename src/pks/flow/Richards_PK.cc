@@ -669,7 +669,7 @@ Richards_PK::Initialize()
       bdf1_list.sublist("verbose object") = fp_list_->sublist("verbose object");
 
     bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1_TI", bdf1_list, *this,
-            soln_->get_map(), S_));
+            soln_->get_map()));
   } else {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "WARNING: BDF1 time integration list is missing..." << std::endl;

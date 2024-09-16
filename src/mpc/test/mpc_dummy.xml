@@ -89,7 +89,7 @@
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="4.0e+4"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1000.0"/>
+        <Parameter name="initial timestep" type="double" value="1000.0"/>
       </ParameterList>
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
@@ -100,13 +100,13 @@
         <Parameter name="start period time" type="double" value="4.0e+4"/>
         <Parameter name="end period time" type="double" value="9.0e+4"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="10.0"/>
+        <Parameter name="initial timestep" type="double" value="10.0"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{ 6.0e+4, 6.5e+4, 6.9e+4}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{100.0, 50, 50}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{1e+10, 1e+10, 1e+10 }"/>
+      <Parameter name="initial timestep" type="Array(double)" value="{100.0, 50, 50}"/>
+      <Parameter name="maximum timestep" type="Array(double)" value="{1e+10, 1e+10, 1e+10 }"/>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{}"/>
     <ParameterList name="verbose object">
