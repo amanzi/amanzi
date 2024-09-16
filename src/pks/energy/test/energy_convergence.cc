@@ -178,7 +178,7 @@ TEST(ENERGY_CONVERGENCE)
         EPK->UpdatePreconditioner(t, soln, dt);
       }
 
-      bool failed = EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
+      bool failed = EPK->bdf1_dae()->AdvanceStep(dt, dt_next, soln);
       CHECK(!failed);
       CHECK(dt_next >= dt);
       EPK->bdf1_dae()->CommitSolution(dt, soln);
@@ -300,7 +300,7 @@ TEST(ENERGY_PRECONDITIONER)
         EPK->UpdatePreconditioner(t, soln, dt);
       }
 
-      EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
+      EPK->bdf1_dae()->AdvanceStep(dt, dt_next, soln);
       CHECK(dt_next >= dt);
       EPK->bdf1_dae()->CommitSolution(dt, soln);
       Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(

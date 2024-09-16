@@ -180,7 +180,7 @@ TEST(ENERGY_CONVERGENCE_SRC)
         EPK->UpdatePreconditioner(t, soln, dt);
       }
 
-      EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
+      EPK->bdf1_dae()->AdvanceStep(dt, dt_next, soln);
       CHECK(dt_next >= dt);
       EPK->bdf1_dae()->CommitSolution(dt, soln);
       Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(

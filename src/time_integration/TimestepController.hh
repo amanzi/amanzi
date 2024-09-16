@@ -52,6 +52,7 @@ namespace Amanzi {
 
 class State;
 
+template <typename Vector>
 class TimestepController {
  public:
   // virtual destructor
@@ -70,6 +71,10 @@ class TimestepController {
   virtual double getInitialTimestep() {
     return getTimestep(-1.0, 0, true);
   }
+
+  virtual bool requiresState() const { return false; }
+  virtual void setState(const Teuchos::RCP<const Vector>& udot,
+                        const Teuchos::RCP<const Vector>& udot_prev) {}
 };
 
 } // namespace Amanzi

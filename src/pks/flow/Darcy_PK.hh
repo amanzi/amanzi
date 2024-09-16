@@ -64,7 +64,7 @@ class Darcy_PK : public Flow_PK {
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
   virtual void FunctionalResidual(const double t_old,
                                   double t_new,
-                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<const TreeVector> u_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
   virtual double
@@ -148,7 +148,7 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<CompositeVector> solution;      // next pressure state
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev; // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
-  Teuchos::RCP<TimestepController> ts_control_;
+  Teuchos::RCP<TimestepController<Epetra_MultiVector>> ts_control_;
 
   Teuchos::RCP<CompositeVector> specific_yield_copy_;
 

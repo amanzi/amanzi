@@ -64,11 +64,15 @@ The timestep will be cut twice if the number of nonlinear iterations exceeds 15.
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "errors.hh"
+#include "dbc.hh"
 #include "TimestepControllerRecoverable.hh"
 
 namespace Amanzi {
 
-class TimestepControllerStandard : public TimestepControllerRecoverable {
+
+template <class Vector>
+class TimestepControllerStandard : public TimestepControllerRecoverable<Vector> {
  public:
   TimestepControllerStandard(const std::string& name,
                              Teuchos::ParameterList& plist,
@@ -84,6 +88,42 @@ class TimestepControllerStandard : public TimestepControllerRecoverable {
   double reduction_factor_;
   double increase_factor_;
 };
+
+
+template <class Vector>
+TimestepControllerStandard<Vector>::TimestepControllerStandard(const std::string& name,
+                             Teuchos::ParameterList& plist,
+                             const Teuchos::RCP<State>& S)
+  : TimestepControllerRecoverable<Vector>(name, plist, S)
+{
+  max_its_ = plist.get<int>("max iterations");
+  min_its_ = plist.get<int>("min iterations");
+  AMANZI_ASSERT(max_its_ > min_its_);
+  AMANZI_ASSERT(min_its_ >= 0);
+
+  reduction_factor_ = plist.get<double>("timestep reduction factor");
+  AMANZI_ASSERT(reduction_factor_ >= 0.0);
+  AMANZI_ASSERT(reduction_factor_ <= 1.0);
+
+  increase_factor_ = plist.get<double>("timestep increase factor");
+  AMANZI_ASSERT(increase_factor_ >= 1.0);
+}
+
+
+template <class Vector>
+double
+TimestepControllerStandard<Vector>::getTimestep_(double dt, int iterations, bool valid)
+{
+  double dt_next(dt);
+  // iterations < 0 implies failed timestep
+  if (iterations < 0 || iterations > max_its_ || !valid) {
+    dt_next = dt * reduction_factor_;
+  } else if (iterations < min_its_) {
+    dt_next = dt * increase_factor_;
+  }
+  return dt_next;
+}
+
 
 } // namespace Amanzi
 

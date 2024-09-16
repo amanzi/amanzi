@@ -37,11 +37,14 @@ cause doubt over their correctness.
 #include "Teuchos_ParameterList.hpp"
 
 #include "errors.hh"
+#include "dbc.hh"
+#include "Reader.hh"
 #include "TimestepController.hh"
 
 namespace Amanzi {
 
-class TimestepControllerFromFile : public TimestepController {
+template<typename Vector>
+class TimestepControllerFromFile : public TimestepController<Vector> {
  public:
   TimestepControllerFromFile(Teuchos::ParameterList& plist);
 
@@ -52,5 +55,50 @@ class TimestepControllerFromFile : public TimestepController {
   std::vector<double> dt_history_;
   int current_;
 };
+
+
+template<typename Vector>
+TimestepControllerFromFile<Vector>::TimestepControllerFromFile(Teuchos::ParameterList& plist)
+  : TimestepController<Vector>(), current_(0)
+{
+  std::string filename = plist.get<std::string>("file name");
+  std::string header = plist.get<std::string>("timestep header", "timesteps");
+
+  auto reader = createReader(filename);
+  reader->read(header, dt_history_);
+  if (dt_history_.size() == 0) {
+    Errors::Message m;
+    m << "TimestepController: file \"" << filename << "\" timestep header has 0 times.";
+    Exceptions::amanzi_throw(m);
+  }
+}
+
+
+// single method for timestep control
+template<typename Vector>
+double
+TimestepControllerFromFile<Vector>::getTimestep(double dt, int iterations, bool valid)
+{
+  double new_dt = -1.0;
+  // iterations < 0 implies failed timestep
+  if (iterations < 0 || !valid) {
+    Errors::TimestepCrash m("TimestepController: prescribed timestep size failed.");
+    Exceptions::amanzi_throw(m);
+  } else if (current_ < dt_history_.size()) {
+    new_dt = dt_history_[current_];
+    current_++;
+  } else if (current_ == dt_history_.size()) {
+    // the last step of the simulation still asks for a "next" dt prior to
+    // finding out that the simulation is done.  Delay for a step and hope
+    // the run ends.
+    new_dt = dt_history_[current_ - 1];
+    current_++;
+  } else {
+    Errors::Message m(
+      "TimestepController: file contains insufficient number of timestep values.");
+    Exceptions::amanzi_throw(m);
+  }
+  return new_dt;
+}
 
 } // namespace Amanzi

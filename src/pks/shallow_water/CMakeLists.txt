@@ -55,7 +55,7 @@ list(REVERSE sw_tpl_libs)
 list(REMOVE_DUPLICATES sw_tpl_libs)
 list(REVERSE sw_tpl_libs)
 add_amanzi_library(shallow_water SOURCE ${sw_src_files}
-                   LINK_LIBS functions mesh_functions time_integration data_structures state
+                   LINK_LIBS functions mesh_functions data_structures state
                              pks operators ${sw_tpl_libs})
 
 #

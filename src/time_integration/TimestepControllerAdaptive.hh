@@ -31,6 +31,7 @@ working as intended or not... --ETC
 #include "Teuchos_ParameterList.hpp"
 
 #include "CompositeVector.hh"
+#include "TreeVector.hh"
 
 #include "TimestepController.hh"
 #include "TimeIntegrationDefs.hh"
@@ -43,13 +44,15 @@ static const double DT_CONTROLLER_ADAPTIVE_SAFETY_FACTOR = 0.9;
 static const double DT_CONTROLLER_ADAPTIVE_ERROR_TOLERANCE = 1e-10;
 
 template <class Vector>
-class TimestepControllerAdaptive : public TimestepControllerRecoverable {
+class TimestepControllerAdaptive : public TimestepControllerRecoverable<Vector> {
  public:
   TimestepControllerAdaptive(const std::string& name,
                              Teuchos::ParameterList& plist,
-                             const Teuchos::RCP<State>& S,
-                             const Teuchos::RCP<const Vector>& udot,
-                             const Teuchos::RCP<const Vector>& udot_prev);
+                             const Teuchos::RCP<State>& S);
+
+  virtual bool requiresState() const { return true; }
+  virtual void setState(const Teuchos::RCP<const Vector>& udot,
+                        const Teuchos::RCP<const Vector>& udot_prev) override;
 
  protected:
   double getTimestep_(double dt, int iterations, bool valid) override;
@@ -103,12 +106,8 @@ getTimestepBase_(double dt,
 template <class Vector>
 TimestepControllerAdaptive<Vector>::TimestepControllerAdaptive(const std::string& name,
         Teuchos::ParameterList& plist,
-        const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<const Vector>& udot,
-        const Teuchos::RCP<const Vector>& udot_prev)
-  : TimestepControllerRecoverable(name, plist, S),
-    udot_prev_(udot_prev),
-    udot_(udot)
+        const Teuchos::RCP<State>& S)
+  : TimestepControllerRecoverable<Vector>(name, plist, S)
 {
   max_its_ = plist.get<int>("max iterations");
   min_its_ = plist.get<int>("min iterations");
@@ -127,6 +126,18 @@ TimestepControllerAdaptive<Vector>::TimestepControllerAdaptive(const std::string
   rtol_ = plist.get<double>("relative tolerance", 1.0e-4);
   atol_ = plist.get<double>("absolute tolerance", 10.0);
 }
+
+
+template <class Vector>
+void
+TimestepControllerAdaptive<Vector>::setState(const Teuchos::RCP<const Vector>& udot,
+        const Teuchos::RCP<const Vector>& udot_prev)
+{
+  udot_ = udot;
+  udot_prev_ = udot_prev;
+}
+
+
 
 
 /* ******************************************************************

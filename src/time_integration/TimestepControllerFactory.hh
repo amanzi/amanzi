@@ -50,12 +50,10 @@ Available types include:
 namespace Amanzi {
 
 template <class Vector>
-Teuchos::RCP<TimestepController>
+Teuchos::RCP<TimestepController<Vector>>
 createTimestepController(const std::string& name,
                          Teuchos::ParameterList& slist,
-                         const Teuchos::RCP<State>& S,
-                         const Teuchos::RCP<const Vector>& udot,
-                         const Teuchos::RCP<const Vector>& udot_prev)
+                         const Teuchos::RCP<State>& S)
 {
   if (slist.isParameter("timestep controller type")) {
     std::string type = slist.get<std::string>("timestep controller type");
@@ -67,7 +65,7 @@ createTimestepController(const std::string& name,
         Exceptions::amanzi_throw(msg);
       }
       Teuchos::ParameterList& tslist = slist.sublist("timestep controller fixed parameters");
-      return Teuchos::rcp(new TimestepControllerFixed(tslist));
+      return Teuchos::rcp(new TimestepControllerFixed<Vector>(tslist));
 
     } else if (type == "standard") {
       if (!slist.isSublist("timestep controller standard parameters")) {
@@ -76,7 +74,7 @@ createTimestepController(const std::string& name,
         Exceptions::amanzi_throw(msg);
       }
       Teuchos::ParameterList& tslist = slist.sublist("timestep controller standard parameters");
-      return Teuchos::rcp(new TimestepControllerStandard(name, tslist, S));
+      return Teuchos::rcp(new TimestepControllerStandard<Vector>(name, tslist, S));
 
     } else if (type == "smarter") {
       if (!slist.isSublist("timestep controller smarter parameters")) {
@@ -85,7 +83,7 @@ createTimestepController(const std::string& name,
         Exceptions::amanzi_throw(msg);
       }
       Teuchos::ParameterList& tslist = slist.sublist("timestep controller smarter parameters");
-      return Teuchos::rcp(new TimestepControllerSmarter(name, tslist, S));
+      return Teuchos::rcp(new TimestepControllerSmarter<Vector>(name, tslist, S));
 
     } else if (type == "adaptive") {
       if (!slist.isSublist("timestep controller adaptive parameters")) {
@@ -94,7 +92,7 @@ createTimestepController(const std::string& name,
         Exceptions::amanzi_throw(msg);
       }
       Teuchos::ParameterList& tslist = slist.sublist("timestep controller adaptive parameters");
-      return Teuchos::rcp(new TimestepControllerAdaptive<Vector>(name, tslist, S, udot, udot_prev));
+      return Teuchos::rcp(new TimestepControllerAdaptive<Vector>(name, tslist, S));
 
     } else if (type == "from file") {
       if (!slist.isSublist("timestep controller from file parameters")) {
@@ -103,7 +101,7 @@ createTimestepController(const std::string& name,
         Exceptions::amanzi_throw(msg);
       }
       Teuchos::ParameterList& tslist = slist.sublist("timestep controller from file parameters");
-      return Teuchos::rcp(new TimestepControllerFromFile(tslist));
+      return Teuchos::rcp(new TimestepControllerFromFile<Vector>(tslist));
 
     } else {
       Errors::Message msg(
@@ -117,6 +115,21 @@ createTimestepController(const std::string& name,
   }
   return Teuchos::null;
 }
+
+
+template <class Vector>
+Teuchos::RCP<TimestepController<Vector>>
+createTimestepController(const std::string& name,
+                         Teuchos::ParameterList& slist,
+                         const Teuchos::RCP<State>& S,
+                         const Teuchos::RCP<const Vector>& udot,
+                         const Teuchos::RCP<const Vector>& udot_prev)
+{
+  auto tc = createTimestepController<Vector>(name, slist, S);
+  tc->setState(udot, udot_prev);
+  return tc;
+}
+
 
 } // namespace Amanzi
 

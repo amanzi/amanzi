@@ -31,7 +31,8 @@ A fixed timestep controller simply sets a constant timestep size.
 
 namespace Amanzi {
 
-class TimestepControllerFixed : public TimestepController {
+template<typename Vector>
+class TimestepControllerFixed : public TimestepController<Vector> {
  public:
   TimestepControllerFixed(Teuchos::ParameterList& plist);
 
@@ -42,5 +43,36 @@ class TimestepControllerFixed : public TimestepController {
   double dt_;
 };
 
+
+template<typename Vector>
+TimestepControllerFixed<Vector>::TimestepControllerFixed(Teuchos::ParameterList& plist)
+  : TimestepController<Vector>()
+{
+  if (plist.isParameter("initial timestep [s]")) {
+    Errors::Message msg("Deprecated parameter \"initial timestep [s]\" provided to TimestepControllerFixed, use \"timestep [s]\" instead.");
+    Exceptions::amanzi_throw(msg);
+  }
+  if (plist.isParameter("timestep [s]")) {
+    dt_ = plist.get<double>("timestep [s]");
+  } else {
+    dt_ = plist.get<double>("timestep");
+  }
+}
+
+
+// single method for timestep control
+template<typename Vector>
+double
+TimestepControllerFixed<Vector>::getTimestep(double dt, int iterations, bool valid)
+{
+  if (dt > 0 && (iterations < 0 || !valid)) {
+    // note that dt < 0 --> initial step, where iterations < 0 is valid.
+    Errors::TimestepCrash msg("Timestep failed: fixed timestep size failed.");
+    Exceptions::amanzi_throw(msg);
+  }
+  return dt_;
+}
+
 } // namespace Amanzi
+
 

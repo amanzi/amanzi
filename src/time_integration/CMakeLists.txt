@@ -54,10 +54,10 @@ list(REVERSE time_int_new_tpl_libs)
 
 set(time_integration_link_libs solvers state data_structures output mesh geometry error_handling whetstone atk )
 
-add_amanzi_library(time_integration
-                   SOURCE ${time_int_new_source_files}
-		           HEADERS ${time_int_new_inc_files}
-		           LINK_LIBS ${time_integration_link_libs} ${time_int_new_tpl_libs})
+# add_amanzi_library(time_integration
+#                    SOURCE ${time_int_new_source_files}
+# 		           HEADERS ${time_int_new_inc_files}
+# 		           LINK_LIBS ${time_integration_link_libs} ${time_int_new_tpl_libs})
 
 if (BUILD_TESTS)
 
@@ -82,7 +82,7 @@ if (BUILD_TESTS)
 		          test/Main.cc
 			  test/time_integration_solhist.cc
 		    LINK_LIBS
-		          time_integration
+		          #time_integration
 			  ${time_integration_link_libs}
 			  ${UnitTest_LIBRARIES}	  
 			  ${time_integration_tpl_libs})
@@ -93,7 +93,7 @@ if (BUILD_TESTS)
 		          test/Main.cc
 			  test/time_integration_nka.cc
 		    LINK_LIBS
-		          time_integration
+		          #time_integration
 			  ${time_integration_link_libs}
 			  ${UnitTest_LIBRARIES}
 			  ${time_int_new_tpl_libs})
@@ -104,7 +104,7 @@ if (BUILD_TESTS)
 		          test/Main.cc
 			  test/time_integration_rk.cc
 		    LINK_LIBS
-		          time_integration
+		          #time_integration
 			  ${time_integration_link_libs}
 			  ${UnitTest_LIBRARIES}
 			  ${Teuchos_LIBRARIES}

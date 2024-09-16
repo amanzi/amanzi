@@ -50,7 +50,7 @@ list(REVERSE ns_tpl_libs)
 list(REMOVE_DUPLICATES ns_tpl_libs)
 list(REVERSE ns_tpl_libs)
 add_amanzi_library(navier_stokes SOURCE ${ns_src_files}
-                   LINK_LIBS functions mesh_functions time_integration data_structures state
+                   LINK_LIBS functions mesh_functions data_structures state
                              pks operators ${ns_tpl_libs})
 
 #

@@ -161,7 +161,7 @@ class BDF1_TI {
   int number_solver_iterations() { return solver_->num_itrs(); }
 
  protected:
-  Teuchos::RCP<TimestepController> ts_control_; // timestep controller
+  Teuchos::RCP<TimestepController<Vector>> ts_control_; // timestep controller
   Teuchos::RCP<BDF1_State<Vector, VectorSpace>> state_;
 
   Teuchos::RCP<AmanziSolvers::Solver<Vector, VectorSpace>> solver_;
@@ -206,14 +206,13 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(const std::string& name,
   solver_->set_db(db_);
   solver_->Init(solver_fn_, *space);
 
-  // Allocate memory for adaptive timestep controll
-  udot_ = Teuchos::rcp(new Vector(*space));
-  udot_prev_ = Teuchos::rcp(new Vector(*space));
-
-  // timestep controller (note, pointer copy)
-  Teuchos::RCP<const Vector> udot_c(udot_);
-  Teuchos::RCP<const Vector> udot_prev_c(udot_prev_);
-  ts_control_ = createTimestepController(name, plist, S, udot_c, udot_prev_c);
+  ts_control_ = createTimestepController<Vector>(name, plist, S);
+  if (ts_control_->requiresState()) {
+    // Allocate memory for adaptive timestep control
+    udot_ = Teuchos::rcp(new Vector(*space));
+    udot_prev_ = Teuchos::rcp(new Vector(*space));
+    ts_control_->setState(udot_, udot_prev_);
+  }
 
   // misc internal parameters
   tol_solver_ = solver_->tolerance();
@@ -387,7 +386,7 @@ BDF1_TI<Vector, VectorSpace>::AdvanceStep(double dt,
     state_->hmax = std::max(state_->hmax, dt);
     state_->hmin = std::min(state_->hmin, dt);
 
-    if (state_->uhist->history_size() > 1) {
+    if (ts_control_->requiresState() && state_->uhist->history_size() > 1) {
       *udot_prev_ = *udot_;
       double tmp = 1.0 / dt;
       *udot_ = *u;
