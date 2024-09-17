@@ -267,7 +267,6 @@ class Multiphase_PK : public PK_PhysicalBDF {
   std::vector<std::string> component_names_;
   int num_primary_, num_phases_;
 
-  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> saturation_liquid_eval_;
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>> x_gas_eval_;
 
   // variable evaluators

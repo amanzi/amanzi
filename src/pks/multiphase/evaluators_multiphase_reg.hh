@@ -20,6 +20,7 @@
 #include "NCP_MoleFractions.hh"
 #include "ProductEvaluator.hh"
 #include "SaturationGasEvaluator.hh"
+#include "SaturationLiquidEvaluator.hh"
 #include "TccGas.hh"
 #include "TccLiquid.hh"
 #include "TotalComponentStorage.hh"
@@ -41,6 +42,8 @@ Utils::RegisteredFactory<Evaluator, NCP_MoleFractions>
 Utils::RegisteredFactory<Evaluator, ProductEvaluator> ProductEvaluator::fac_("product");
 Utils::RegisteredFactory<Evaluator, SaturationGasEvaluator>
   SaturationGasEvaluator::fac_("saturation gas");
+Utils::RegisteredFactory<Evaluator, SaturationLiquidEvaluator>
+  SaturationLiquidEvaluator::fac_("saturation liquid");
 
 Utils::RegisteredFactory<Evaluator, TotalComponentStorage>
   TotalComponentStorage::fac_("storage component");

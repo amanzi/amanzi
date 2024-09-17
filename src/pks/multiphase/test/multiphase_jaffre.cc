@@ -106,7 +106,7 @@ run_test(const std::string& domain, const std::string& filename)
   auto io = Teuchos::rcp(new OutputXDMF(iolist, mesh, true, false));
 
   // loop
-  int iloop(0);
+  int iloop(0), nhit0(0), nhit1(0);
   double t(0.0), tend(3.14e+13), dt(1.57e+11),
     dt_max(1.57e+11); // Tend = 1000,000 years, dt = 5000 years
   // store Newton iterations and time step size (after successful iteration)
@@ -148,9 +148,15 @@ run_test(const std::string& domain, const std::string& filename)
 
       WriteStateStatistics(*S, *vo);
     }
-  }
 
+    // observation
+    const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
+    // std::cout << "OBS: " << t << " " << u0[0][0] << std::endl;
+    if (std::fabs(t - 3.2342e+12) < 0.05e+12) { nhit0++; CHECK_CLOSE(u0[0][0], 1.14164e+06, 0.01e+06); }
+    if (std::fabs(t - 1.7521e+13) < 0.01e+13) { nhit1++; CHECK_CLOSE(u0[0][0], 766137, 0.005e+06); }
+  }
   WriteStateStatistics(*S, *vo);
+  CHECK(nhit0 > 0 && nhit1 > 0);
 
   // write iteration output to text file
   int mean(0);
@@ -178,8 +184,12 @@ run_test(const std::string& domain, const std::string& filename)
   CHECK(dmin >= 0.0);
 }
 
-
-TEST(MULTIPHASE_JAFFRE)
+TEST(MULTIPHASE_JAFFRE_LIQUID)
 {
   run_test("2D", "test/multiphase_jaffre.xml");
+}
+
+TEST(MULTIPHASE_JAFFRE_GAS)
+{
+  run_test("2D", "test/multiphase_jaffre_gas.xml");
 }

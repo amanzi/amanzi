@@ -239,18 +239,15 @@ Multiphase_PK::Setup()
   // conserved quantities
   // -- total water storage
 
-  // water saturation is the primary solution
-  if (!S_->HasRecord(saturation_liquid_key_)) {
-    auto elist = MyRequire_(saturation_liquid_key_, passwd_);
-    saturation_liquid_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S_->SetEvaluator(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_eval_);
+  // water saturation 
+  for (const auto& name : soln_names_) {
+    if (!S_->HasRecord(name)) {
+      auto elist = MyRequire_(name, passwd_);
+      auto eval = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
+      S_->SetEvaluator(name, Tags::DEFAULT, eval);
 
-    S_->RequireDerivative<CV_t, CVS_t>(saturation_liquid_key_,
-                                       Tags::DEFAULT,
-                                       saturation_liquid_key_,
-                                       Tags::DEFAULT,
-                                       saturation_liquid_key_)
-      .SetGhosted();
+      S_->RequireDerivative<CV_t, CVS_t>(name, Tags::DEFAULT, name, Tags::DEFAULT, name).SetGhosted();
+    }
   }
 
   // total pressure gas
@@ -809,6 +806,7 @@ Multiphase_PK::Initialize()
       new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
     op_bcs_[name] = op_bc;
   }
+  secondary_names_.insert(saturation_liquid_key_);
   for (const auto& name : secondary_names_) {
     auto op_bc = Teuchos::rcp(
       new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
