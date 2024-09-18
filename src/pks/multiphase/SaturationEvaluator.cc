@@ -12,7 +12,7 @@
 
 */
 
-#include "SaturationGasEvaluator.hh"
+#include "SaturationEvaluator.hh"
 
 namespace Amanzi {
 namespace Multiphase {
@@ -20,14 +20,14 @@ namespace Multiphase {
 /* ******************************************************************
 * Simple constructor
 ****************************************************************** */
-SaturationGasEvaluator::SaturationGasEvaluator(Teuchos::ParameterList& plist)
+SaturationEvaluator::SaturationEvaluator(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
   }
-  saturation_liquid_key_ = plist_.get<std::string>("saturation liquid key");
-  dependencies_.insert(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
+  saturation_complement_key_ = plist_.get<std::string>("saturation complement key");
+  dependencies_.insert(std::make_pair(saturation_complement_key_, Tags::DEFAULT));
 }
 
 
@@ -35,9 +35,9 @@ SaturationGasEvaluator::SaturationGasEvaluator(Teuchos::ParameterList& plist)
 * Copy constructor.
 ****************************************************************** */
 Teuchos::RCP<Evaluator>
-SaturationGasEvaluator::Clone() const
+SaturationEvaluator::Clone() const
 {
-  return Teuchos::rcp(new SaturationGasEvaluator(*this));
+  return Teuchos::rcp(new SaturationEvaluator(*this));
 }
 
 
@@ -45,9 +45,9 @@ SaturationGasEvaluator::Clone() const
 * Required member function.
 ****************************************************************** */
 void
-SaturationGasEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
+SaturationEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
+  const auto& sl = *S.Get<CompositeVector>(saturation_complement_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
@@ -59,15 +59,15 @@ SaturationGasEvaluator::Evaluate_(const State& S, const std::vector<CompositeVec
 * Required member function.
 ****************************************************************** */
 void
-SaturationGasEvaluator::EvaluatePartialDerivative_(const State& S,
-                                                   const Key& wrt_key,
-                                                   const Tag& wrt_tag,
-                                                   const std::vector<CompositeVector*>& results)
+SaturationEvaluator::EvaluatePartialDerivative_(const State& S,
+                                                const Key& wrt_key,
+                                                const Tag& wrt_tag,
+                                                const std::vector<CompositeVector*>& results)
 {
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
-  if (wrt_key == saturation_liquid_key_) {
+  if (wrt_key == saturation_complement_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = -1.0;
   }
 }

@@ -474,8 +474,8 @@
       </ParameterList>
 
       <ParameterList name="saturation_gas">
-        <Parameter name="evaluator type" type="string" value="saturation gas"/>
-        <Parameter name="saturation liquid key" type="string" value="saturation_liquid"/>
+        <Parameter name="evaluator type" type="string" value="saturation"/>
+        <Parameter name="saturation complement key" type="string" value="saturation_liquid"/>
       </ParameterList>
 
       <ParameterList name="mole_fraction_vapor">

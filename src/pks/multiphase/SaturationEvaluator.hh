@@ -12,8 +12,8 @@
 
 */
 
-#ifndef AMANZI_MULTIPHASE_SATURATION_LIQUID_EVALUATOR_HH_
-#define AMANZI_MULTIPHASE_SATURATION_LIQUID_EVALUATOR_HH_
+#ifndef AMANZI_MULTIPHASE_SATURATION_EVALUATOR_HH_
+#define AMANZI_MULTIPHASE_SATURATION_EVALUATOR_HH_
 
 #include <string>
 
@@ -27,10 +27,10 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class SaturationLiquidEvaluator
+class SaturationEvaluator
   : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  SaturationLiquidEvaluator(Teuchos::ParameterList& plist);
+  SaturationEvaluator(Teuchos::ParameterList& plist);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -43,9 +43,9 @@ class SaturationLiquidEvaluator
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
-  std::string saturation_gas_key_;
+  std::string saturation_complement_key_;
 
-  static Utils::RegisteredFactory<Evaluator, SaturationLiquidEvaluator> fac_;
+  static Utils::RegisteredFactory<Evaluator, SaturationEvaluator> fac_;
 };
 
 } // namespace Multiphase

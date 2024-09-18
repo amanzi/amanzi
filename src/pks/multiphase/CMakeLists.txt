@@ -52,7 +52,7 @@ set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          MultiphaseBoundaryFunction.cc
                          Multiphase_Utils.cc Multiphase_BCs.cc
                          NCP_F.cc NCP_HenryLaw.cc NCP_MoleFractions.cc NCP_MolarDensities.cc
-                         SaturationGasEvaluator.cc SaturationLiquidEvaluator.cc
+                         SaturationEvaluator.cc
                          TotalWaterStorage.cc 
                          TotalComponentStorage.cc TotalComponentStorage_Tcc.cc
                          TotalComponentStorage_Jaffre.cc
@@ -83,7 +83,7 @@ set(multiphase_inc_files
   NCP_F.hh NCP_HenryLaw.hh NCP_MoleFractions.hh NCP_MolarDensities.hh
   PressureGasEvaluator.hh
   RelPermEvaluator.hh ProductEvaluator.hh
-  SaturationGasEvaluator.hh SaturationLiquidEvaluator.hh
+  SaturationEvaluator.hh
   VaporPressureEvaluator.hh
   TotalWaterStorage.hh
   TotalComponentStorage.hh TotalComponentStorage_Tcc.hh

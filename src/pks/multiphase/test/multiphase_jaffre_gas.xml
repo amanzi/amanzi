@@ -444,8 +444,8 @@
       </ParameterList>
 
       <ParameterList name="saturation_liquid">
-        <Parameter name="evaluator type" type="string" value="saturation liquid"/>
-        <Parameter name="saturation gas key" type="string" value="saturation_gas"/>
+        <Parameter name="evaluator type" type="string" value="saturation"/>
+        <Parameter name="saturation complement key" type="string" value="saturation_gas"/>
       </ParameterList>
 
       <ParameterList name="ncp_g">
