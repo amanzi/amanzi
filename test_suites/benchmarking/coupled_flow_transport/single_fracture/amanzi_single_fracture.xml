@@ -55,9 +55,8 @@
 
   <phases>
     <liquid_phase name="water">
-      <eos>false</eos>
-      <viscosity>0.001</viscosity>
-      <density>1000.0</density>
+      <eos model="constant" viscosity="0.001" density="1000.0"/> 
+      <molar_mass>0.018015</molar_mass>
       <dissolved_components>
         <solutes>
           <solute coefficient_of_diffusion="0.0">tracer</solute>

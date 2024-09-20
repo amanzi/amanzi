@@ -128,7 +128,7 @@ class PK {
   virtual ~PK() = default;
 
   // call to allow a PK to modify its own list or lists of its children.
-  virtual void parseParameterList() {}
+  virtual void parseParameterList() = 0;
 
   // Setup
   virtual void Setup() = 0;

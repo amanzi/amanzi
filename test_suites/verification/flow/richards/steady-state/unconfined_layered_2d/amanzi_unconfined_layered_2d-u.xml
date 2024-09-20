@@ -33,9 +33,8 @@
 
     <phases>
       <liquid_phase name="water">
-        <eos>false</eos>
-        <viscosity>1.002E-03</viscosity>
-        <density>998.2</density>
+        <eos model="constant" viscosity="1.002e-03" density="998.2"/> 
+        <molar_mass>0.018</molar_mass>
       </liquid_phase>
     </phases>
 
@@ -299,7 +298,7 @@
       <material name="Confined Aquifer">
         <comments>Confined Aquifer</comments>
         <mechanical_properties>
-          <porosity value="0.25" />
+          <porosity model="constant" value="0.25" />
         </mechanical_properties>
         <permeability x="3.6109e-13" y="3.6109e-13" z="3.6109e-12" />
         <cap_pressure model="van_genuchten">
@@ -311,7 +310,7 @@
       <material name="Unconfined Aquifer">
         <comments>Unconfined Aquifer</comments>
         <mechanical_properties>
-          <porosity value="0.25" />
+          <porosity model="constant" value="0.25" />
         </mechanical_properties>
         <permeability x="3.6109e-13" y="3.6109e-13" z="3.6109e-12" />
         <cap_pressure model="van_genuchten">
@@ -323,7 +322,7 @@
       <material name="Confining Unit">
         <comments>Confining Unit</comments>
         <mechanical_properties>
-          <porosity value="0.25" />
+          <porosity model="constant" value="0.25" />
         </mechanical_properties>
         <permeability x="4.1059e-17" y="4.1059e-17" z="4.1059e-16" />
         <cap_pressure model="van_genuchten">

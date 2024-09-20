@@ -272,6 +272,7 @@ class Flow_PK : public PK_PhysicalBDF {
   virtual ~Flow_PK(){};
 
   // members required by PK interface
+  virtual void parseParameterList() override {};
   virtual void Setup() override;
   virtual void Initialize() override;
   virtual void CalculateDiagnostics(const Tag& tag) override { UpdateLocalFields_(S_.ptr()); }

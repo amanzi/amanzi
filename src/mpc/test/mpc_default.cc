@@ -119,6 +119,7 @@ class ImplicitPK : public Amanzi::PK_PhysicalBDF {
       cfl_(1.0),
       soln_(soln){};
 
+  virtual void parseParameterList() override {};
   virtual void Setup() override;
   virtual void Initialize() override;
 

@@ -389,7 +389,7 @@ State::RequireEvaluator(const Key& key, const Tag& tag)
 
   // cannot find the evaluator, error
   Errors::Message message;
-  message << "Evaluator \"" << key << "@" << tag.get() << "\" cannot be created in State. "
+  message << "Evaluator \"" << key << "\" @ \"" << tag.get() << "\" cannot be created in State. "
           << "Verify (1) SetEvaluator is called or (2) name exists in state->evaluators.";
   Exceptions::amanzi_throw(message);
   return *Evaluator_Factory().createEvaluator(fm_plist); // silences warning

@@ -54,6 +54,10 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
     saved_time_(0.0)
 {}
 
+
+/* *******************************************************************
+* Parser
+******************************************************************* */
 void
 Alquimia_PK::parseParameterList()
 {

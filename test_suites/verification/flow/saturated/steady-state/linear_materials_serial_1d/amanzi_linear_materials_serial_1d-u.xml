@@ -25,9 +25,8 @@
     </process_kernels>
     <phases>
       <liquid_phase name="water">
-        <eos>false</eos>
-        <viscosity>1.002E-03</viscosity>
-        <density>998.2</density>
+        <eos model="constant" viscosity="1.002E-03" density="998.2"/> 
+        <molar_mass>0.018</molar_mass>
       </liquid_phase>
     </phases>
     <execution_controls>
@@ -93,7 +92,7 @@
       <material name="Left half">
         <comments>K = 1 m/d</comments>
         <mechanical_properties>
-          <porosity value="0.25" />
+          <porosity model="constant" value="0.25" />
           <specific_storage model="constant" value="0.0"/>
         </mechanical_properties>
         <permeability x="1.1847e-12" y="1.1847e-12" z="1.1847e-12" />
@@ -102,7 +101,7 @@
       <material name="Right half">
         <comments>K = 10 m/d</comments>
         <mechanical_properties>
-          <porosity value="0.25" />
+          <porosity model="constant" value="0.25" />
           <specific_storage model="constant" value="0.0"/>
         </mechanical_properties>
         <permeability x="1.1847e-11" y="1.1847e-11" z="1.1847e-11" />

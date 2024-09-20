@@ -102,6 +102,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   ~NavierStokes_PK(){};
 
   // methods required for PK interface
+  virtual void parseParameterList() final {};
   virtual void Setup() final;
   virtual void Initialize() final;
 

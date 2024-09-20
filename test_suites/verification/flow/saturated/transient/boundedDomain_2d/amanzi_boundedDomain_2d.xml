@@ -117,9 +117,8 @@
     </regions>
     <phases>
       <liquid_phase name="water">
-        <eos>false</eos>
-        <viscosity>1.002E-03</viscosity>
-        <density>1000.0</density>
+        <eos model="constant" viscosity="1.002E-03" density="1000.0"/> 
+        <molar_mass>0.018</molar_mass>
       </liquid_phase>
     </phases>
     <materials>

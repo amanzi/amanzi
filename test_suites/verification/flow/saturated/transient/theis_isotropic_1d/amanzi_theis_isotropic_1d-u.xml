@@ -106,9 +106,8 @@
 
     <phases>
       <liquid_phase name="water">
-        <eos>false</eos>
-        <viscosity>1.002E-03</viscosity>
-        <density>1000.0</density>
+        <eos model="constant" viscosity="1.002E-03" density="1000.0"/> 
+        <molar_mass>0.018</molar_mass>
       </liquid_phase>
     </phases>
 
@@ -117,7 +116,7 @@
         <comments>Homogeneous material properties throughout the entire domain</comments>
         <assigned_regions>Entire Domain</assigned_regions>
         <mechanical_properties>
-          <porosity value="0.2" />
+          <porosity model="constant" value="0.2" />
           <specific_storage model="constant" value="7.5e-5" />
         </mechanical_properties>
         <permeability x="2.35E-11" y="2.35E-11" z="2.35E-11" />

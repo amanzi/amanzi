@@ -106,6 +106,7 @@ class Energy_PK : public PK_PhysicalBDF {
   virtual ~Energy_PK(){};
 
   // methods required by PK interface
+  virtual void parseParameterList() override {};
   virtual void Setup() override;
   virtual void Initialize() override;
   virtual std::string name() override { return passwd_; }

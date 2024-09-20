@@ -162,6 +162,7 @@ class Multiphase_PK : public PK_PhysicalBDF {
   ~Multiphase_PK(){};
 
   // method required for abstract PK interface
+  virtual void parseParameterList() override {};
   virtual void Setup() override;
   virtual void Initialize() override;
 
