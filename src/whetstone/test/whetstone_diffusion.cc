@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
+#include <utility>
 #include <vector>
 
 #include "Teuchos_ParameterList.hpp"
@@ -27,6 +28,21 @@
 #include "MFD3D_GeneralizedDiffusion.hh"
 #include "MFD3D_Lagrange.hh"
 #include "Tensor.hh"
+
+std::pair<double, double> EigenvaluesSVD(Amanzi::WhetStone::DenseMatrix& M) 
+{
+  int n(M.NumRows()), lwork(100), info;
+  double U[n*n], V[n*n], S[100], work[lwork];
+
+  Amanzi::WhetStone::DGESVD_F77("A", "A", &n, &n, M.Values(), &n, S, U, &n, V, &n, work, &lwork, &info);
+
+  double emin(1e+10), emax(0.0);
+  for (int i = 0; i < n; ++i) {
+    emin = std::min(emin, S[i]);
+    emax = std::max(emax, S[i]);
+  }
+  return std::pair<double, double>(emin, emax);
+}
 
 
 /* **************************************************************** */
@@ -861,3 +877,54 @@ TEST(DARCY_INVERSE_MASS_2D)
     CHECK_CLOSE(mfd.simplex_functional(), 60.0, 1e-2);
   }
 }
+
+
+/* **************************************************************** */
+TEST(DARCY_MASS__DEGERATE_3D)
+{
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\n\nTest: Sequence of degenerate mass matrices" << std::endl;
+  auto comm = Amanzi::getDefaultComm();
+
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+
+  Tensor T(3, 2);
+  T(0, 0) = T(1, 1) = T(2, 2) = 1.0;
+  T(0, 1) = T(1, 0) = 0.3;
+  T(0, 2) = T(2, 0) = 0.4;
+  T(1, 2) = T(2, 1) = 0.5;
+
+  double z(0.1);
+
+  for (int loop = 0; loop < 10; ++loop) {
+    Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, z, 1, 1, 1);
+    z /= 4;
+
+    MFD3D_Diffusion mfd(mesh);
+    DenseMatrix M0, M1, M2;
+
+    mfd.MassMatrix(0, T, M0); // not used by Amanzi
+    mfd.MassMatrixInverse(0, T, M1);
+    mfd.MassMatrixInverseOptimized(0, T, M2);
+    for (int i = 0; i < 4; ++i) CHECK(M1(i, i) > 0.0 && M2(i, i) > 0.0);
+
+    // eigenvalues
+    auto e0 = EigenvaluesSVD(M0);
+    std::cout << "eig(M0): " << e0.first << " " << e0.second << " " << e0.first / e0.second << std::endl;
+
+    auto e1 = EigenvaluesSVD(M1);
+    double cond1 = e1.second / e1.first;
+    std::cout << "eig(M1): " << e1.first << " " << e1.second << " " << cond1 << std::endl;
+
+    auto e2 = EigenvaluesSVD(M2);
+    double cond2 = e2.second / e2.first;
+    std::cout << "eig(M2): " << e2.first << " " << e2.second << " " << cond2 << std::endl;
+    CHECK(cond1 / cond2 < 2.0 && cond1 / cond2 > 0.5);
+  }
+}
+
+
