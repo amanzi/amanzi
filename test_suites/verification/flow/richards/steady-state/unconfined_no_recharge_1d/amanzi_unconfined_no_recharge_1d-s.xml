@@ -126,7 +126,7 @@
       <assigned_regions>All</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <uniform_pressure value="101325.0"/>
+          <uniform_pressure value="90325.0"/>
         </liquid_component>
       </liquid_phase>
     </initial_condition>
