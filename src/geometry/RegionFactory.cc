@@ -36,6 +36,7 @@
 #include "RegionFunctionColor.hh"
 #include "RegionHalfSpace.hh"
 #include "RegionLabeledSet.hh"
+#include "RegionLevelSet.hh"
 #include "RegionLineSegment.hh"
 #include "RegionLogical.hh"
 #include "RegionPlane.hh"
@@ -194,6 +195,11 @@ createRegion(const std::string& reg_name,
 
   } else if (shape == "boundary") {
     region = Teuchos::rcp(new RegionBoundary(reg_name, reg_id, lifecycle));
+
+  } else if (shape == "level set") {
+    int dim = plist.get<int>("dimension");
+    std::string formula = plist.get<std::string>("formula");
+    region = Teuchos::rcp(new RegionLevelSet(reg_name, reg_id, dim, formula, lifecycle));
 
   } else if (shape == "box volume fractions") {
     auto p0_vec = plist.get<Teuchos::Array<double>>("corner coordinate");

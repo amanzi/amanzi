@@ -360,6 +360,18 @@ InputConverterU::TranslateRegions_()
           .set<Teuchos::Array<double>>("coordinate", coord);
       }
 
+      else if (strcmp(node_name, "level_set") == 0) {
+        tree_["regions"].push_back(reg_name);
+
+        int dim = GetAttributeValueL_(reg_elem, "dimension");
+        std::string formula = GetAttributeValueS_(reg_elem, "formula");
+
+        out_list.sublist(reg_name)
+          .sublist("region: level set")
+          .set<int>("dimension", dim)
+          .set<std::string>("formula", formula);
+      }
+
       else if (strcmp(node_name, "polygonal_surface") == 0) {
         tree_["regions"].push_back(reg_name);
 

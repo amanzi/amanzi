@@ -40,6 +40,7 @@ enum class RegionType {
   BOX_VOF,
   LINE_SEGMENT,
   CYLINDER,
+  LEVELSET,
   ALL
 };
 
