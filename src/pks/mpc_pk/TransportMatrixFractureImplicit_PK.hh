@@ -53,7 +53,7 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
   // interface to time integrator
   virtual void FunctionalResidual(double t_old,
                                   double t_new,
-                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<const TreeVector> u_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
 
@@ -89,7 +89,7 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling00d_, op_coupling01d_;
   Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling10d_, op_coupling11d_;
 
-  Teuchos::RCP<TimestepController> ts_control_;
+  Teuchos::RCP<TimestepController<TreeVector>> ts_control_;
 
   // factory registration
   static RegisteredPKFactory<TransportMatrixFractureImplicit_PK> reg_;

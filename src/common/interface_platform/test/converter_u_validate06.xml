@@ -449,8 +449,8 @@
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="0.0"/>
-        <Parameter name="initial time step" type="double" value="1.0"/>
-        <Parameter name="maximum time step" type="double" value="1.0"/>
+        <Parameter name="initial timestep" type="double" value="1.0"/>
+        <Parameter name="maximum timestep" type="double" value="1.0"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
       </ParameterList>
       <ParameterList name="TP 1">
@@ -480,8 +480,8 @@
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="1.0e+09"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.0e+04"/>
-        <Parameter name="maximum time step" type="double" value="1.0e+07"/>
+        <Parameter name="initial timestep" type="double" value="1.0e+04"/>
+        <Parameter name="maximum timestep" type="double" value="1.0e+07"/>
       </ParameterList>
     </ParameterList>
 
@@ -490,8 +490,8 @@
     <Parameter name="component molar masses" type="Array(double)" value="{1.0}"/>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{}"/>
+      <Parameter name="initial timestep" type="Array(double)" value="{}"/>
+      <Parameter name="maximum timestep" type="Array(double)" value="{}"/>
     </ParameterList>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
@@ -515,10 +515,10 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.0"/>
-            <Parameter name="time step reduction factor" type="double" value="0.8"/>
-            <Parameter name="max time step" type="double" value="4.3234e+17"/>
-            <Parameter name="min time step" type="double" value="9.99999999999999955e-07"/>
+            <Parameter name="timestep increase factor" type="double" value="1.0"/>
+            <Parameter name="timestep reduction factor" type="double" value="0.8"/>
+            <Parameter name="max timestep" type="double" value="4.3234e+17"/>
+            <Parameter name="min timestep" type="double" value="9.99999999999999955e-07"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
@@ -712,14 +712,14 @@
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="1.0e-12"/>
-      <Parameter name="max time step (s)" type="double" value="1.0e+10"/>
-      <Parameter name="min time step (s)" type="double" value="1.0e+10"/>
-      <Parameter name="initial time step (s)" type="double" value="1.0e+07"/>
-      <Parameter name="time step cut threshold" type="int" value="8"/>
-      <Parameter name="time step cut factor" type="double" value="2.0"/>
-      <Parameter name="time step increase threshold" type="int" value="4"/>
-      <Parameter name="time step increase factor" type="double" value="1.2"/>
-      <Parameter name="time step control method" type="string" value="fixed"/>
+      <Parameter name="max timestep (s)" type="double" value="1.0e+10"/>
+      <Parameter name="min timestep (s)" type="double" value="1.0e+10"/>
+      <Parameter name="initial timestep (s)" type="double" value="1.0e+07"/>
+      <Parameter name="timestep cut threshold" type="int" value="8"/>
+      <Parameter name="timestep cut factor" type="double" value="2.0"/>
+      <Parameter name="timestep increase threshold" type="int" value="4"/>
+      <Parameter name="timestep increase factor" type="double" value="1.2"/>
+      <Parameter name="timestep control method" type="string" value="fixed"/>
       <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
       <Parameter name="log formulation" type="bool" value="false"/>
@@ -739,14 +739,14 @@
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="1.0e-12"/>
-      <Parameter name="max time step (s)" type="double" value="1.0e+10"/>
-      <Parameter name="min time step (s)" type="double" value="1.0e+10"/>
-      <Parameter name="initial time step (s)" type="double" value="1.0e+07"/>
-      <Parameter name="time step cut threshold" type="int" value="8"/>
-      <Parameter name="time step cut factor" type="double" value="2.0e+00"/>
-      <Parameter name="time step increase threshold" type="int" value="4"/>
-      <Parameter name="time step increase factor" type="double" value="1.2"/>
-      <Parameter name="time step control method" type="string" value="fixed"/>
+      <Parameter name="max timestep (s)" type="double" value="1.0e+10"/>
+      <Parameter name="min timestep (s)" type="double" value="1.0e+10"/>
+      <Parameter name="initial timestep (s)" type="double" value="1.0e+07"/>
+      <Parameter name="timestep cut threshold" type="int" value="8"/>
+      <Parameter name="timestep cut factor" type="double" value="2.0e+00"/>
+      <Parameter name="timestep increase threshold" type="int" value="4"/>
+      <Parameter name="timestep increase factor" type="double" value="1.2"/>
+      <Parameter name="timestep control method" type="string" value="fixed"/>
       <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
       <Parameter name="log formulation" type="bool" value="false"/>

@@ -234,17 +234,17 @@ CycleDriver::Setup()
   S_->Setup();
 
   // create the time step manager
-  tsm_ = Teuchos::rcp(new TimeStepManager(glist_->sublist("cycle driver")));
+  tsm_ = Teuchos::rcp(new Utils::TimeStepManager(glist_->sublist("cycle driver")));
 
   // set up the TSM
   // -- register visualization times
   for (auto vis = visualization_.begin(); vis != visualization_.end(); ++vis) {
-    (*vis)->RegisterWithTimeStepManager(tsm_.ptr());
+    (*vis)->RegisterWithTimeStepManager(*tsm_);
   }
   // -- register checkpoint times
-  if (checkpoint_ != Teuchos::null) checkpoint_->RegisterWithTimeStepManager(tsm_.ptr());
+  if (checkpoint_ != Teuchos::null) checkpoint_->RegisterWithTimeStepManager(*tsm_);
   // -- register observation times
-  if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_.ptr());
+  if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(*tsm_);
   // -- register reset_times
   for (auto it = reset_info_.begin(); it != reset_info_.end(); ++it)
     tsm_->RegisterTimeEvent(it->first);
@@ -364,7 +364,8 @@ CycleDriver::ReportMemory()
 
   double doubles_count(0.0);
   for (auto it = S_->data_begin(); it != S_->data_end(); ++it) {
-    if (S_->GetRecord(it->first).ValidType<CompositeVector>()) {
+    if (S_->HasRecord(it->first, Tags::DEFAULT) &&
+        S_->GetRecord(it->first, Tags::DEFAULT).ValidType<CompositeVector>()) {
       doubles_count +=
         static_cast<double>(S_->Get<CompositeVector>(it->first).GetLocalElementCount());
     }
@@ -414,7 +415,7 @@ CycleDriver::ReadParameterList_()
     const std::string& tp_name = time_periods_list.name(item);
     tp_start_[i] = time_periods_list.sublist(tp_name).get<double>("start period time");
     tp_end_[i] = time_periods_list.sublist(tp_name).get<double>("end period time");
-    tp_dt_[i] = time_periods_list.sublist(tp_name).get<double>("initial time step", 1.0);
+    tp_dt_[i] = time_periods_list.sublist(tp_name).get<double>("initial timestep", 1.0);
     tp_max_dt_[i] = time_periods_list.sublist(tp_name).get<double>("maximum time step", 1.0e+99);
     tp_max_cycle_[i] = time_periods_list.sublist(tp_name).get<int>("maximum cycle number", -1);
     i++;
@@ -445,7 +446,7 @@ CycleDriver::ReadParameterList_()
     Teuchos::ParameterList& tpc_list = coordinator_list_->sublist("time period control");
     Teuchos::Array<double> reset_times = tpc_list.get<Teuchos::Array<double>>("start times");
     Teuchos::Array<double> reset_times_dt =
-      tpc_list.get<Teuchos::Array<double>>("initial time step");
+      tpc_list.get<Teuchos::Array<double>>("initial timestep");
     AMANZI_ASSERT(reset_times.size() == reset_times_dt.size());
 
     {

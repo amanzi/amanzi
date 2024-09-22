@@ -108,7 +108,7 @@ if (ENABLE_AmanziPhysicsModule)
       WaterStorageDarcyStressSplit.cc
       WaterStorageStressSplit.cc)
 
-  set(mpc_tree_link_libs pks flow transport multiphase shallow_water time_integration data_structures state)
+  set(mpc_tree_link_libs pks flow transport multiphase shallow_water data_structures state)
 
 else()
 
@@ -129,7 +129,7 @@ else()
       TransportMatrixFracture_PK.cc        
       ReactiveTransport_PK.cc)
 
-   set(mpc_tree_link_libs pks transport time_integration data_structures state)
+   set(mpc_tree_link_libs pks transport data_structures state)
 
 endif()
 

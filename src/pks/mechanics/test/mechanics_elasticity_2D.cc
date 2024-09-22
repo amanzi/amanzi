@@ -71,7 +71,7 @@ TEST(ELASTIC_2D)
   int itrs(0);
   int max_itrs = plist->get<int>("max iterations", 50);
   double T1 = plist->get<double>("end time", 100.0);
-  double dT = plist->get<double>("initial time step", 1.0);
+  double dT = plist->get<double>("initial timestep", 1.0);
   double T(0.0);
 
   while (T < T1 && itrs < max_itrs) {

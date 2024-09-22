@@ -63,7 +63,7 @@ if (Ifpack_ENABLE_HYPRE)
 endif()
 add_amanzi_library(energy SOURCE ${energy_src_files}
                    LINK_LIBS operators eos pks functions mesh_functions
-                             time_integration data_structures
+                             data_structures
                              ${energy_tpl_libs})
 
 #

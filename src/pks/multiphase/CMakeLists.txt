@@ -66,7 +66,7 @@ set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
 add_amanzi_library(multiphase 
                    SOURCE ${multiphase_src_files}
                    LINK_LIBS pks operators state functions 
-                             mesh_functions time_integration data_structures
+                             mesh_functions data_structures
                              eos energy)
 
 #

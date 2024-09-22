@@ -18,9 +18,11 @@
 #include "dbc.hh"
 #include "errors.hh"
 #include "TimeStepManager.hh"
+#include "Event.hh"
 #include "IOEvent.hh"
 
 namespace Amanzi {
+namespace Utils {
 
 // -----------------------------------------------------------------------------
 // Standard constructor.
@@ -56,16 +58,9 @@ IOEvent::disable(bool disabled)
 // Place vis times in the manager.
 // -----------------------------------------------------------------------------
 void
-IOEvent::RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm)
+IOEvent::RegisterWithTimeStepManager(TimeStepManager& tsm)
 {
-  if (times_.size() != 0) { tsm->RegisterTimeEvent(times_.toVector(), false); }
-  if (times_sps_.size() != 0) {
-    for (Teuchos::Array<Teuchos::Array<double>>::const_iterator sps = times_sps_.begin();
-         sps != times_sps_.end();
-         ++sps) {
-      tsm->RegisterTimeEvent((*sps)[0], (*sps)[1], (*sps)[2], false);
-    }
-  }
+  for (const auto& te : time_events_) tsm.RegisterTimeEvent(te);
 }
 
 
@@ -86,25 +81,10 @@ bool
 IOEvent::DumpRequested(int cycle) const
 {
   if (!is_disabled()) {
-    if (cycles_.size() > 0) {
-      for (Teuchos::Array<int>::const_iterator i = cycles_.begin(); i != cycles_.end(); ++i) {
-        if (cycle == *i) { return true; }
-      }
-    }
-    if (cycles_sps_.size() != 0) {
-      for (Teuchos::Array<Teuchos::Array<int>>::const_iterator sps = cycles_sps_.begin();
-           sps != cycles_sps_.end();
-           ++sps) {
-        if ((((*sps)[2] < 0) || (cycle <= (*sps)[2])) && ((*sps)[1] > 0)) {
-          if ((*sps)[0] <= cycle) {
-            int cycle_loc = cycle - (*sps)[0];
-            if (cycle_loc % (*sps)[1] == 0) return true;
-          }
-        }
-      }
+    for (const auto& ce : cycle_events_) {
+      if (ce->contains(cycle)) return true;
     }
   }
-  // if none of the conditions apply we do not write a visualization dump
   return false;
 }
 
@@ -115,22 +95,8 @@ bool
 IOEvent::DumpRequested(double time) const
 {
   if (!is_disabled()) {
-    if (times_.size() > 0) {
-      for (Teuchos::Array<double>::const_iterator i = times_.begin(); i != times_.end(); ++i) {
-        if (Amanzi::near_equal(*i, time)) return true;
-      }
-    }
-    if (times_sps_.size() != 0) {
-      for (Teuchos::Array<Teuchos::Array<double>>::const_iterator sps = times_sps_.begin();
-           sps != times_sps_.end();
-           ++sps) {
-        if (Amanzi::near_equal(time, (*sps)[0])) return true;
-        if ((time > (*sps)[0]) && (((*sps)[2] == -1.0) || (time <= (*sps)[2]))) {
-          double n_periods = round((time - (*sps)[0]) / (*sps)[1]);
-          double next_time = (*sps)[0] + n_periods * (*sps)[1];
-          if (Amanzi::near_equal(time, next_time)) return true;
-        }
-      }
+    for (const auto& te : time_events_) {
+      if (te->contains(time)) return true;
     }
   }
   return false;
@@ -143,8 +109,14 @@ IOEvent::DumpRequested(double time) const
 void
 IOEvent::ReadParameters_()
 {
+  // cycle-based events
   if (plist_.isParameter("cycles start period stop")) {
-    cycles_sps_.push_back(plist_.get<Teuchos::Array<int>>("cycles start period stop"));
+    auto c_sps = plist_.get<Teuchos::Array<int>>("cycles start period stop");
+    if (c_sps.size() != 3) {
+      Errors::Message msg("Array of incorrect length provided to IOEvent \"cycles start period stop\"");
+      Exceptions::amanzi_throw(msg);
+    }
+    cycle_events_.push_back(Teuchos::rcp(new EventSPS<int>(c_sps[0], c_sps[1], c_sps[2])));
   }
 
   bool done(false);
@@ -153,27 +125,42 @@ IOEvent::ReadParameters_()
     std::stringstream pname;
     pname << "cycles start period stop " << count;
     if (plist_.isParameter(pname.str())) {
-      cycles_sps_.push_back(plist_.get<Teuchos::Array<int>>(pname.str()));
+      auto c_sps = plist_.get<Teuchos::Array<int>>(pname.str());
+      if (c_sps.size() != 3) {
+        Errors::Message msg;
+        msg << "Array of incorrect length provided to IOEvent \""
+            << pname.str() << "\"";
+        Exceptions::amanzi_throw(msg);
+      }
+      cycle_events_.push_back(Teuchos::rcp(new EventSPS<int>(c_sps[0], c_sps[1], c_sps[2])));
       count++;
     } else {
       done = true;
     }
   }
 
-  if (plist_.isParameter("cycles")) { cycles_ = plist_.get<Teuchos::Array<int>>("cycles"); }
+  if (plist_.isParameter("cycles")) {
+    auto cycles = plist_.get<Teuchos::Array<int>>("cycles");
+    cycle_events_.push_back(Teuchos::rcp(new EventList<int>(cycles.toVector())));
+  }
 
+  // time-based events
   if (plist_.isParameter("times start period stop")) {
-    auto times_sps = plist_.get<Teuchos::Array<double>>("times start period stop");
+    auto t_sps = plist_.get<Teuchos::Array<double>>("times start period stop");
+    if (t_sps.size() != 3) {
+      Errors::Message msg("Array of incorrect length provided to IOEvent \"times start period stop\"");
+      Exceptions::amanzi_throw(msg);
+    }
 
     // convert units
     auto my_units = plist_.get<std::string>("times start period stop units", "s");
     ValidUnitOrThrow_(my_units);
     bool success;
-    for (auto& time : times_sps)
+    for (auto& time : t_sps)
       time = time >= 0. ? units_.ConvertTime(time, my_units, "s", success) : -1.;
     AMANZI_ASSERT(success);
 
-    times_sps_.push_back(times_sps);
+    time_events_.push_back(Teuchos::rcp(new EventSPS<double>(t_sps[0], t_sps[1], t_sps[2])));
   }
 
   done = false;
@@ -182,18 +169,18 @@ IOEvent::ReadParameters_()
     std::stringstream pname;
     pname << "times start period stop " << count;
     if (plist_.isParameter(pname.str())) {
-      auto times_sps = plist_.get<Teuchos::Array<double>>(pname.str());
+      auto t_sps = plist_.get<Teuchos::Array<double>>(pname.str());
 
       // convert units
       pname << " units";
       auto my_units = plist_.get<std::string>(pname.str(), "s");
       ValidUnitOrThrow_(my_units);
       bool success;
-      for (auto& time : times_sps)
+      for (auto& time : t_sps)
         time = time >= 0. ? units_.ConvertTime(time, my_units, "s", success) : -1.;
       AMANZI_ASSERT(success);
 
-      times_sps_.push_back(times_sps);
+      time_events_.push_back(Teuchos::rcp(new EventSPS<double>(t_sps[0], t_sps[1], t_sps[2])));
       count++;
     } else {
       done = true;
@@ -201,14 +188,16 @@ IOEvent::ReadParameters_()
   }
 
   if (plist_.isParameter("times")) {
-    times_ = plist_.get<Teuchos::Array<double>>("times");
+    auto times = plist_.get<Teuchos::Array<double>>("times");
 
     // convert units
     auto my_units = plist_.get<std::string>("times units", "s");
     ValidUnitOrThrow_(my_units);
     bool success;
-    for (auto& time : times_) time = units_.ConvertTime(time, my_units, "s", success);
+    for (auto& time : times) time = units_.ConvertTime(time, my_units, "s", success);
     AMANZI_ASSERT(success);
+
+    time_events_.push_back(Teuchos::rcp(new EventList<double>(times.toVector())));
   }
 }
 
@@ -228,4 +217,5 @@ IOEvent::ValidUnitOrThrow_(const std::string& my_units)
 }
 
 
+} // namespace Utils
 } // namespace Amanzi

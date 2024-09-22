@@ -34,14 +34,16 @@ SUITE(IOEVENT)
     csps[2] = 10;
     plist.set<Teuchos::Array<int>>("cycles start period stop", csps);
 
-    Amanzi::IOEvent V(plist);
+    Amanzi::Utils::IOEvent V(plist);
 
     // test the cycle stuff, the expected result is in cycles_ and
     // we store the computed result in cycles
     int cycles_[31] = { 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     int cycles[31];
-    for (int ic = 0; ic <= 30; ic++) { cycles[ic] = V.DumpRequested(ic); }
+    for (int ic = 0; ic <= 30; ic++) {
+      cycles[ic] = V.DumpRequested(ic);
+    }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
   }
 
@@ -61,7 +63,7 @@ SUITE(IOEVENT)
     times[1] = 3.0;
     plist.set<Teuchos::Array<double>>("times", times);
 
-    Amanzi::IOEvent V(plist);
+    Amanzi::Utils::IOEvent V(plist);
 
     // test the time sps stuff
     CHECK_EQUAL(true, V.DumpRequested(0.0));
@@ -96,7 +98,7 @@ SUITE(IOEVENT)
     plist.set<Teuchos::Array<double>>("times", times);
     plist.set<std::string>("times units", "d");
 
-    Amanzi::IOEvent V(plist);
+    Amanzi::Utils::IOEvent V(plist);
 
     // test the time sps stuff
     double y_s = 365. * 86400.;
@@ -134,7 +136,7 @@ SUITE(IOEVENT)
     plist.set<Teuchos::Array<double>>("times", times);
     plist.set<std::string>("times units", "d");
 
-    Amanzi::IOEvent V(plist);
+    Amanzi::Utils::IOEvent V(plist);
 
     // test the time sps stuff
     double y_s = 365. * 86400.;

@@ -60,7 +60,7 @@ list(REMOVE_DUPLICATES mechanics_tpl_libs)
 list(REVERSE mechanics_tpl_libs)
 
 add_amanzi_library(mechanics SOURCE ${mechanics_src_files}
-                   LINK_LIBS functions mesh_functions time_integration data_structures state
+                   LINK_LIBS functions mesh_functions data_structures state
                              pks flow operators ${mechanics_tpl_libs})
 
 #

@@ -89,7 +89,7 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="1.5778463e+09"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.57680e+05"/>
+        <Parameter name="initial timestep" type="double" value="1.57680e+05"/>
       </ParameterList>
 
       <ParameterList name="TP 1">
@@ -122,7 +122,9 @@ Process kernel *chemistry* can susbcycle with respect to *transport*.
 
 namespace Amanzi {
 
+namespace Utils {
 class TimeStepManager;
+}
 class Visualization;
 class Checkpoint;
 class State;
@@ -176,7 +178,7 @@ class CycleDriver {
   Teuchos::RCP<TreeVector> soln_;
 
   // time step manager
-  Teuchos::RCP<TimeStepManager> tsm_;
+  Teuchos::RCP<Utils::TimeStepManager> tsm_;
 
   // misc setup information
   Teuchos::RCP<Teuchos::ParameterList> glist_;

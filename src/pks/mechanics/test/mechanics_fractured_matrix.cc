@@ -84,7 +84,7 @@ TEST(MECHANICS_FRACTURED_MATRIX)
   // solve the problem
   int itrs(0), max_itrs(1);
   double T1 = plist->get<double>("end time", 100.0);
-  double dT = plist->get<double>("initial time step", 1.0);
+  double dT = plist->get<double>("initial timestep", 1.0);
   double T(0.0);
 
   while (T < T1 && itrs < max_itrs) {

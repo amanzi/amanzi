@@ -90,7 +90,7 @@ add_amanzi_library(mpc
                           ObservableFactory.cc
                           ObservableAqueous.cc ObservableSolute.cc
                    HEADERS ${mpc_inc_files}
-                   LINK_LIBS time_integration solvers output mpc_tree state mesh dbg
+                   LINK_LIBS solvers output mpc_tree state mesh dbg
                              flow mechanics ${mpc_tpl_libs})
 
 if (BUILD_TESTS)
