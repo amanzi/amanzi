@@ -136,6 +136,7 @@ class PreconditionerHypre : public Preconditioner {
   {
     HYPRE_IJVectorDestroy(XHypre_);
     HYPRE_IJVectorDestroy(YHypre_);
+    HYPRE_IJMatrixDestroy(HypreA_);
     if (PrecondType == Boomer) {
       HYPRE_BoomerAMGDestroy(HyprePrecond_);
     } else if (PrecondType == ILU) {

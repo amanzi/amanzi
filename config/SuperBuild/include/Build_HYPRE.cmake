@@ -23,7 +23,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 #   find_package(OpenMP)
 
 if (ENABLE_OpenMP)
-  set(hypre_openmp_opt "--with-openmp" "--with-LDFLAGS=${OpenMP_C_LIBRARIES}")
+  set(hypre_openmp_opt "--with-openmp" "--with-LDFLAGS=-fopenmp")
 else()
   set(hypre_openmp_opt)
 endif()

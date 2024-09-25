@@ -55,7 +55,7 @@ if (ENABLE_Unstructured)
     # MueLu   - multilevel preconditioner
     # Ifpack2 - wrappers to external solvers (Hypre) and also block
     #           solvers (block ILU, additive Schwarz, etc)
-    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Ifpack2 Amesos2 Basker MueLu)
+    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Ifpack2 Amesos2 Basker MueLu ShyLU ShyLU_Node ShyLU_NodeFastILU)
     # Xpetra?
   endif()
 endif()
@@ -120,7 +120,7 @@ if (ENABLE_Tpetra)
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_CUSPARSE:BOOL=ON")
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_CUDA:BOOL=ON")
     # This needs to be handled better, maybe a user option?
-    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_ASSUME_CUDA_AWARE_MPI:BOOL=OFF")
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_ASSUME_CUDA_AWARE_MPI:BOOL=ON")
 
   else()
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_CUDA:BOOL=OFF")

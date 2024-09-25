@@ -174,6 +174,10 @@ PreconditionerHypre::InitBoomer_()
     HYPRE_BoomerAMGSetRelaxType(HyprePrecond_, plist_.get<int>("relaxation type"));
   } else {
     // use Hypre's defaults
+#ifdef KOKKOS_ENABLE_CUDA
+    // HYPRE defaults to CPU only relaxation methods, 6 is supported on GPU  
+    HYPRE_BoomerAMGSetRelaxType(HyprePrecond_, 6);
+#endif 
   }
 
   if (plist_.isParameter("coarsening type"))
