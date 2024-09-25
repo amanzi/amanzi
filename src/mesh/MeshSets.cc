@@ -603,6 +603,12 @@ resolveMeshSetLabeledSet(const AmanziGeometry::RegionLabeledSet& region,
                          const Parallel_kind ptype,
                          const Mesh& mesh)
 {
+  if (kind != createEntityKind(region.entity_str())) {
+    Errors::Message msg;
+    msg << "Incompatible request for entities of kind " << to_string(kind) << " from a labeled set region that labels " << region.entity_str();
+    Exceptions::amanzi_throw(msg);
+  }
+
   if (!mesh.getMeshFramework().get()) {
     Errors::Message msg;
     msg << "Developer Error: Mesh::getSetEntities() on region \"" << region.get_name()
