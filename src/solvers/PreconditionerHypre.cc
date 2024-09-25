@@ -37,7 +37,6 @@ PreconditionerHypre::copy_matrix_()
 
   LO nrows = Matrix->getLocalNumRows();
 
-#if 1
   Kokkos::View<LO*, Kokkos::DefaultExecutionSpace> colsperrow("ColsPerRow", nrows);
   auto rowPtrs = Matrix->getCrsGraph()->getLocalGraphDevice().row_map;
   Kokkos::parallel_for(
@@ -57,24 +56,6 @@ PreconditionerHypre::copy_matrix_()
   Kokkos::deep_copy(dge, ge);
   Kokkos::parallel_for(
     "", colindices.size(), KOKKOS_LAMBDA(const int i) { nci[i] = dge(colindices[i]); });
-#else
-  Kokkos::View<LO*, Kokkos::HostSpace> colsperrow("ColsPerRow", nrows);
-  auto rowPtrs = Matrix->getCrsGraph()->getLocalGraphHost().row_map;
-  for (int i = 0; i < nrows; ++i) { colsperrow(i) = rowPtrs[i + 1] - rowPtrs[i]; }
-  auto rowindices = Matrix->getRowMap()->getMyGlobalIndices();
-
-  Kokkos::View<GO*, Kokkos::LayoutLeft, Kokkos::HostSpace> rid("", rowindices.size());
-  Kokkos::deep_copy(rid, rowindices);
-
-  auto values = Matrix->getLocalValuesHost(Tpetra::Access::ReadOnly);
-  auto colindices = Matrix->getCrsGraph()->getLocalGraphHost().entries;
-  decltype(colindices) nci("", colindices.size());
-  auto ge = GloballyContiguousColMap_->getMyGlobalIndices();
-
-  Kokkos::View<GO*, Kokkos::HostSpace> dge("", ge.size());
-  Kokkos::deep_copy(dge, ge);
-  for (int i = 0; i < colindices.size(); ++i) { nci[i] = dge(colindices[i]); }
-#endif
 
   HYPRE_IJMatrixSetValues(HypreA_, nrows, colsperrow.data(), rid.data(), nci.data(), values.data());
   HYPRE_IJMatrixAssemble(HypreA_);
