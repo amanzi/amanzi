@@ -492,10 +492,10 @@ InputConverterU::TranslateState_()
   // initialization of fields via the initial_conditions list.
   // We have to move most fields to evaluaton list
   // ---------------------------------------------------------
-  node_list = doc_->getElementsByTagName(mm.transcode("initial_conditions"));
   int nchildren(0);
-  if (node_list->getLength() != 0) {
-    children = node_list->item(0)->getChildNodes();
+  node = GetUniqueElementByTagsString_("initial_conditions", flag);
+  if (flag) {
+    children = node->getChildNodes();
     nchildren = children->getLength();
   }
 
