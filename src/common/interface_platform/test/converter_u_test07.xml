@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.5-dev">
+<amanzi_input type="unstructured" version="1.6-dev">
   <model_description name="Fractured Rock 3D">
     <comments>Example input file</comments>
     <author>Konstantin Lipnikov (TEST 7)</author>
@@ -44,9 +44,8 @@
 
   <phases>
     <liquid_phase name="water">
-      <eos>h2o.eos</eos>
-      <viscosity>1.002E-03</viscosity>
-      <density>998.2</density>
+      <eos model="tabular" filename="h2o.eos" format="Amanzi"/>
+      <molar_mass>0.018015</molar_mass>
       <dissolved_components>
         <solutes>
           <solute coefficient_of_diffusion="1.0e-9">Tc-99</solute>
@@ -137,7 +136,7 @@
   <materials>
     <material name="MAT1">
       <mechanical_properties>
-        <porosity value="0.2206"/>
+        <porosity model="constant" value="0.2206"/>
       </mechanical_properties>
       <cap_pressure model="brooks_corey">
         <parameters alpha="2.0260E-03 Pa^-1" lambda="0.2136" sr="0.0"/>
@@ -146,13 +145,13 @@
       <permeability x="6.9365E-11 m^2" z="6.9365E-12 m^2" />
       <thermal_properties model="constant">
         <liquid_heat_capacity cv="76.1" model="linear"/>
-        <rock_heat_capacity cv="620.1 J/K/kg" model="linear"/>
+        <solid_heat_capacity cv="620.1 J/K/kg" model="linear"/>
       </thermal_properties>
       <assigned_regions>TopRegion</assigned_regions>
     </material>
     <material name="MAT2">
       <mechanical_properties>
-        <porosity value="0.3"/>
+        <porosity model="constant" value="0.3"/>
       </mechanical_properties>
       <permeability x="6.9E-13 m^2" z="6.9E-32 m^2" />
       <cap_pressure model="brooks_corey">
@@ -161,7 +160,7 @@
       <rel_perm model="mualem"/>
       <thermal_properties model="constant">
         <liquid_heat_capacity cv="76.2" model="linear"/>
-        <rock_heat_capacity cv="620.2 J/K/kg" model="linear"/>
+        <solid_heat_capacity cv="620.2 J/K/kg" model="linear"/>
       </thermal_properties>
       <assigned_regions>BottomRegion</assigned_regions>
     </material>
@@ -213,7 +212,7 @@
     <materials>
       <material name="Uniform">
         <mechanical_properties>
-          <porosity value="0.004"/>
+          <porosity model="constant" value="0.004"/>
         </mechanical_properties>
 
         <permeability model="cubic law"/>

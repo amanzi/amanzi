@@ -28,29 +28,20 @@ namespace Amanzi {
 
 class ParallelCommunication {
  public:
-  ParallelCommunication(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh)
-  {
-    importer_cell_initialized_ = false;
-    importer_face_initialized_ = false;
-  }
+  ParallelCommunication(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh){};
   ~ParallelCommunication(){};
 
   // data management
-  void CopyMasterCell2GhostCell(Epetra_IntVector& vhost);
-  void CopyMasterCell2GhostCell(const Epetra_IntVector& v, Epetra_IntVector& vhost);
-  void CopyMasterFace2GhostFace(Epetra_IntVector& vhost);
-  void CopyMasterFace2GhostFace(const Epetra_IntVector& v, Epetra_IntVector& vhost);
-  void CombineGhostFace2MasterFace(Epetra_IntVector& v, Epetra_CombineMode mode = Insert);
-  void CombineGhostCell2MasterCell(Epetra_IntVector& v, Epetra_CombineMode mode = Insert);
+  void CopyMasterEntity2GhostEntity(const AmanziMesh::Entity_kind& kind, Epetra_IntVector& vhost);
+  void CombineGhostEntity2MasterEntity(const AmanziMesh::Entity_kind& kind,
+                                       Epetra_IntVector& vghost,
+                                       Epetra_CombineMode mode);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  Teuchos::RCP<Epetra_Import> importer_cell_;
-  bool importer_cell_initialized_;
-
-  Teuchos::RCP<Epetra_Import> importer_face_;
-  bool importer_face_initialized_;
+  std::map<AmanziMesh::Entity_kind, Teuchos::RCP<Epetra_Import>> importer_;
+  std::map<AmanziMesh::Entity_kind, bool> importer_initialized_;
 };
 
 } // namespace Amanzi

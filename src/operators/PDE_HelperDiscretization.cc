@@ -21,6 +21,7 @@
 #include "SchemaUtils.hh"
 #include "ParallelCommunication.hh"
 #include "PDE_HelperDiscretization.hh"
+#include "UniqueLocalIndex.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -173,7 +174,7 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(const BCs& bc,
   AmanziMesh::Entity_kind kind = bc.kind();
   Teuchos::RCP<Epetra_MultiVector> rhs_kind;
   if (primary) {
-    std::string name = schema_row.KindToString(kind);
+    std::string name = AmanziMesh::to_string(kind);
     if (!rhs.HasComponent(name)) return;
     rhs_kind = rhs.ViewComponent(name, true);
   }
@@ -412,7 +413,7 @@ PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(const BCs& bc,
   AmanziMesh::Entity_kind kind = bc.kind();
   AMANZI_ASSERT(kind == AmanziMesh::Entity_kind::FACE || kind == AmanziMesh::Entity_kind::EDGE);
   Teuchos::RCP<Epetra_MultiVector> rhs_kind;
-  if (primary) rhs_kind = rhs.ViewComponent(schema_row.KindToString(kind), true);
+  if (primary) rhs_kind = rhs.ViewComponent(AmanziMesh::to_string(kind), true);
 
   for (int c = 0; c != ncells_owned; ++c) {
     WhetStone::DenseMatrix& Acell = op->matrices[c];
@@ -542,8 +543,7 @@ PDE_HelperDiscretization::EnforceBCs(CompositeVector& field)
 
 
 /* ******************************************************************
-* Composite vector space with one face component having multiple DOFs
-* and one regular cell component
+* Composite vector space with multiple face components on fractures.
 ****************************************************************** */
 Teuchos::RCP<CompositeVectorSpace>
 CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
@@ -558,12 +558,12 @@ CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 
   for (int c = 0; c < ncells_f; ++c) {
     int f = fracture->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
-    auto cells = mesh->getFaceCells(f);
+    const auto& cells = mesh->getFaceCells(f);
     (*points)[f] = cells.size();
   }
 
   ParallelCommunication pp(mesh);
-  pp.CopyMasterFace2GhostFace(*points);
+  pp.CopyMasterEntity2GhostEntity(AmanziMesh::Entity_kind::FACE, *points);
 
   // create ghosted map with two points on each fracture face
   auto& gfmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
@@ -594,16 +594,124 @@ CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 
 
 /* ******************************************************************
+* Composite vector space with multiple node components on fractures.
+****************************************************************** */
+Teuchos::RCP<CompositeVectorSpace>
+CreateFracturedMatrixCVS_Node(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                              const Teuchos::RCP<const AmanziMesh::Mesh>& fracture,
+                              const std::string& region)
+{
+  auto points =
+    Teuchos::rcp(new Epetra_IntVector(mesh->getMap(AmanziMesh::Entity_kind::NODE, true)));
+  points->PutValue(1);
+
+  // number of simply-connected regions in a vertex superelement equals
+  // to the number of node duplicates, i.e. "points" in a nodal block map
+  std::set<AmanziMesh::Entity_ID> setents;
+  auto faces =
+    mesh->getSetEntities(region, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
+  for (int f : faces) setents.insert(f);
+
+  int nnodes_owned =
+    mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::OWNED);
+  for (int v = 0; v < nnodes_owned; ++v) {
+    const auto& faces = mesh->getNodeFaces(v);
+    int nfaces = faces.size();
+
+    // extract subset of fracture faces
+    std::set<int> faces_int;
+    for (int n = 0; n < nfaces; ++n) {
+      int f = faces[n];
+      if (setents.find(f) != setents.end()) faces_int.insert(f);
+    }
+
+    if (faces_int.size() > 0) {
+      const auto& shifts = UniqueIndexNodeToCells(*mesh, faces_int, v, -1);
+      (*points)[v] = *std::max_element(shifts.begin(), shifts.end()) + 1;
+    }
+  }
+
+  ParallelCommunication pp(mesh);
+  pp.CopyMasterEntity2GhostEntity(AmanziMesh::Entity_kind::NODE, *points);
+
+  // create ghosted map with two points on each fracture face
+  auto& gnmap = mesh->getMap(AmanziMesh::Entity_kind::NODE, true);
+  int nlocal = gnmap.NumMyElements();
+
+  std::vector<int> gids(nlocal);
+  gnmap.MyGlobalElements(&gids[0]);
+
+  int* data;
+  points->ExtractView(&data);
+  auto gmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], data, 0, gnmap.Comm()));
+
+  // create master map with two points on each fracture face
+  auto& mnmap = mesh->getMap(AmanziMesh::Entity_kind::NODE, false);
+  nlocal = mnmap.NumMyElements();
+
+  auto mmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], data, 0, mnmap.Comm()));
+
+  // create meta data
+  std::string compname("node");
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh)->SetGhosted(true);
+  cvs->AddComponent(compname, AmanziMesh::Entity_kind::NODE, mmap, gmap, 1);
+
+  return cvs;
+}
+
+
+/* ******************************************************************
+* Composite vector space with multiple components on fracture network.
+****************************************************************** */
+Teuchos::RCP<CompositeVectorSpace>
+CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                         const Teuchos::RCP<const AmanziMesh::Mesh>& fracture,
+                         const std::string& region,
+                         const std::vector<WhetStone::SchemaItem>& items)
+{
+  bool flag_face(false), flag_node(false);
+
+  for (auto it = items.begin(); it != items.end(); ++it) {
+    int num;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
+
+    std::string name(AmanziMesh::to_string(kind));
+    if (name == "face") flag_face = true;
+    if (name == "node") flag_node = true;
+  }
+
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh)->SetGhosted(true);
+
+  if (flag_face) {
+    auto tmp = CreateFracturedMatrixCVS(mesh, fracture);
+    auto mmap = tmp->Map("face", false);
+    auto gmap = tmp->Map("face", true);
+    cvs->AddComponent("face", AmanziMesh::Entity_kind::FACE, mmap, gmap, 1);
+  }
+
+  if (flag_node) {
+    auto tmp = CreateFracturedMatrixCVS_Node(mesh, fracture, region);
+    auto mmap = tmp->Map("node", false);
+    auto gmap = tmp->Map("node", true);
+    cvs->AddComponent("node", AmanziMesh::Entity_kind::NODE, mmap, gmap, 3);
+  }
+
+  return cvs;
+}
+
+
+/* ******************************************************************
 * Composite vector space with some faces having multiple DOFs
 ****************************************************************** */
 Teuchos::RCP<CompositeVectorSpace>
 CreateManifoldCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
-  int nfaces =
-    mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
-
-  auto points =
-    Teuchos::rcp(new Epetra_IntVector(mesh->getMap(AmanziMesh::Entity_kind::FACE, true)));
+  const AmanziMesh::Entity_kind kind = AmanziMesh::Entity_kind::FACE;
+  int nfaces = mesh->getNumEntities(kind, AmanziMesh::Parallel_kind::OWNED);
+  auto points = Teuchos::rcp(new Epetra_IntVector(mesh->getMap(kind, true)));
   points->PutValue(1);
 
   for (int f = 0; f < nfaces; ++f) {
@@ -612,7 +720,7 @@ CreateManifoldCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   }
 
   ParallelCommunication pp(mesh);
-  pp.CopyMasterFace2GhostFace(*points);
+  pp.CopyMasterEntity2GhostEntity(kind, *points);
 
   // create ghosted map with multiple points on each fracture face
   auto& gfmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
@@ -635,7 +743,7 @@ CreateManifoldCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   std::string compname("face");
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh)->SetGhosted(true);
-  cvs->AddComponent(compname, AmanziMesh::Entity_kind::FACE, mmap, gmap, 1);
+  cvs->AddComponent(compname, kind, mmap, gmap, 1);
 
   return cvs;
 }

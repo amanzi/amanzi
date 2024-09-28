@@ -261,7 +261,7 @@ namespace Amanzi {
       }
       struc_out_list.set<bool>("echo_inputs",echo_inputs);
 
-      int prob_v, mg_v, cg_v, amr_v, diffuse_v, io_v, fab_v;
+      int prob_v, mg_v, cg_v, amr_v, io_v, fab_v;
       //
       // Set flow model
       //
@@ -702,19 +702,19 @@ namespace Amanzi {
       // Verbosity implementation
       //
       if (lc(v_val) == "none") {
-        prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0; io_v = 0; fab_v = 0;
+        prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; io_v = 0; fab_v = 0;
       }
       else if (lc(v_val) == "low") {
-        prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0; io_v = 0; fab_v = 0;
+        prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1; io_v = 0; fab_v = 0;
       }
       else if (lc(v_val) == "medium") {
-        prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 0; io_v = 0; fab_v = 0;
+        prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2; io_v = 0; fab_v = 0;
       }
       else if (lc(v_val) == "high") {
-        prob_v = 2; mg_v = 0; cg_v = 0; amr_v = 3;  diffuse_v = 0; io_v = 0; fab_v = 0;
+        prob_v = 2; mg_v = 0; cg_v = 0; amr_v = 3; io_v = 0; fab_v = 0;
       }
       else if (lc(v_val) == "extreme") {
-        prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1; io_v = 1; fab_v = 1;
+        prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3; io_v = 1; fab_v = 1;
       }
       //
       // Optional lists
@@ -2528,7 +2528,6 @@ namespace Amanzi {
             const std::string& p=pit->first;
             StateDef::CompMap& comps = state[p];
             for (StateDef::CompMap::iterator cit=comps.begin(); cit!=comps.end(); ++cit) {
-              const std::string& c=cit->first;
               const Array<TRACER>& solutes = cit->second.getTracerArray();
               for (int i=0; i<solutes.size(); ++i) {
                 const std::string& s=solutes[i].name;
@@ -3009,7 +3008,6 @@ namespace Amanzi {
                                         int             do_chem)
     {
       const ParameterList& fPLin = solute_ic.PList();
-      const std::string& solute_ic_Amanzi_type = solute_ic.Amanzi_Type();
       const std::string& solute_ic_label = solute_ic.Label();
 
       const std::string geo_name="Geochemical Condition";
@@ -3337,7 +3335,6 @@ namespace Amanzi {
                                         ParameterList&     fPLout)
     {
       const ParameterList& fPLin = solute_bc.PList();
-      const std::string& solute_bc_Amanzi_type = solute_bc.Amanzi_Type();
       const std::string& solute_bc_label = solute_bc.Label();
 
       const std::string geo_name="Geochemical Condition";
@@ -3570,7 +3567,6 @@ namespace Amanzi {
         for (int i=0; i<regions.size(); ++i) {
           _regions.push_back(underscore(regions[i]));
         }
-        const std::string& Amanzi_type = state_bc.Amanzi_Type();
 
         //
         // Scan through all phases, comps to find solute BCs organized by solute
@@ -3587,7 +3583,6 @@ namespace Amanzi {
 
               ICBCFunc& solute_bc = state_bc[phaseName][compName][soluteName];
 
-              const ParameterList& fPLin = solute_bc.PList();
               const std::string& solute_bc_Amanzi_type = solute_bc.Amanzi_Type();
               const std::string& solute_bc_label = solute_bc.Label();
               //const std::string& solute_bc_units = solute_bc.Units();
@@ -3674,7 +3669,7 @@ namespace Amanzi {
         for (int i=0; i<regions.size(); ++i) {
           _regions.push_back(regions[i]);
         }
-        const std::string& Amanzi_type = state_ic.Amanzi_Type();
+
         //
         // Scan through all phases, comps to find solute ICs organized by solute
         //
@@ -3913,7 +3908,6 @@ namespace Amanzi {
         for (StateDef::Phases::const_iterator pit = phases.begin(); pit!=phases.end() && !found_solute; ++pit)
         {
           const std::string& phaseLabel = pit->first;
-          PHASE& phase = stateDef.getPhases()[phaseLabel];
           const CompMap comp_map = stateDef[phaseLabel];
           for (CompMap::const_iterator cit = comp_map.begin(); cit!=comp_map.end() && !found_solute; ++cit)
           {

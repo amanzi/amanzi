@@ -30,7 +30,7 @@
 /* ******************************************************************
   TreeOperator is the block analogue of Operators -- it provides a
   linear operator acting on a TreeVectorSpace (TVS). This class
-  flattens a TVS by creting as many blocks as there are copies of
+  flattens a TVS by creating as many blocks as there are copies of
   a CompositeVectorSpace in the TVS.
 ****************************************************************** */
 

@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.5-dev">
+<amanzi_input type="unstructured" version="1.6-dev">
   <model_description name="Terzaghi problem">
     <author>Konstantin Lipnikov</author>
     <units>
@@ -47,9 +47,8 @@
 
   <phases>
     <liquid_phase name="water">
-      <eos>false</eos>
-      <viscosity>0.001</viscosity>
-      <density>1000.0</density>
+      <eos model="constant" viscosity="0.001" density="1000.0"/> 
+      <molar_mass>0.018</molar_mass>
     </liquid_phase>
   </phases>
 
@@ -114,7 +113,7 @@
   <materials>
     <material name="All">
       <mechanical_properties>
-        <porosity value="0.1" compressibility="1e-10" reference_pressure="10.0e+6"/>
+        <porosity model="compressible" value="0.1" compressibility="1e-10" reference_pressure="10.0e+6"/>
         <particle_density value="2716.0"/>
         <poisson_ratio value="0.0"/>
         <!--specific_storage model="constant" value="2.943e-7"/-->

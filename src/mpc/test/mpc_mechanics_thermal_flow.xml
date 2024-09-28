@@ -133,6 +133,8 @@
         <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water FEHM"/>
+          <Parameter name="molar mass" type="double" value="0.018015"/>
+          <Parameter name="density" type="double" value="1000.0"/>
         </ParameterList>
         <Parameter name="eos basis" type="string" value="both"/>
         <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
@@ -165,11 +167,8 @@
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
       </ParameterList>
-      <ParameterList name="const_fluid_viscosity">
-        <Parameter name="value" type="double" value="1.0e-03"/>
-      </ParameterList>
-      <ParameterList name="const_fluid_density">
-        <Parameter name="value" type="double" value="1.0e+03"/>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="poisson_ratio">
         <ParameterList name="function">
@@ -476,7 +475,7 @@
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -562,13 +561,19 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="thermal conductivity evaluator">
-        <ParameterList name="thermal conductivity parameters">
+        <ParameterList name="All">
           <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-          <Parameter name="thermal conductivity of liquid" type="double" value="5.97999999999999976e-01"/>
-          <Parameter name="thermal conductivity of rock" type="double" value="0.5"/>
-          <Parameter name="reference temperature" type="double" value="298.15"/>
-          <Parameter name="eos type" type="string" value="constant"/>
-          <Parameter name="thermal conductivity" type="double" value="1.09799999999999986e+00"/>
+	  <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+          <ParameterList name="solid phase">
+            <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="0.5"/>
+            <Parameter name="reference temperature" type="double" value="298.15"/>
+          </ParameterList>
+          <ParameterList name="liquid phase">
+	    <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="0.598"/>
+            <Parameter name="reference temperature" type="double" value="298.15"/>
+	  </ParameterList>
         </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">

@@ -105,16 +105,6 @@ EnergyMatrixFracture_PK::Setup()
     AddDefaultPrimaryEvaluator(S_, "fracture-molar_flow_rate", Tags::DEFAULT);
   }
 
-  // additional fields and evaluators related to matrix-frcature coupling
-  if (!S_->HasRecord(heat_diffusion_to_matrix_key_)) {
-    S_->Require<CV_t, CVS_t>(
-        heat_diffusion_to_matrix_key_, Tags::DEFAULT, heat_diffusion_to_matrix_key_)
-      .SetMesh(mesh_fracture_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 2);
-    S_->RequireEvaluator(heat_diffusion_to_matrix_key_, Tags::DEFAULT);
-  }
-
   // inform dependent PKs about coupling
   std::vector<std::string> pks = plist_->get<Teuchos::Array<std::string>>("PKs order").toVector();
 
@@ -130,6 +120,16 @@ EnergyMatrixFracture_PK::Setup()
 
   // process other PKs.
   PK_MPCStrong<PK_BDF>::Setup();
+
+  // additional fields and evaluators related to matrix-fracture coupling
+  if (!S_->HasRecord(heat_diffusion_to_matrix_key_)) {
+    S_->Require<CV_t, CVS_t>(
+        heat_diffusion_to_matrix_key_, Tags::DEFAULT, heat_diffusion_to_matrix_key_)
+      .SetMesh(mesh_fracture_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 2);
+    S_->RequireEvaluator(heat_diffusion_to_matrix_key_, Tags::DEFAULT);
+  }
 }
 
 
@@ -372,8 +372,7 @@ EnergyMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
                                              Teuchos::RCP<TreeVector> Y)
 {
   Y->PutScalar(0.0);
-  int ok = op_tree_pc_->ApplyInverse(*X, *Y);
-  return ok;
+  return op_tree_pc_->ApplyInverse(*X, *Y);
 }
 
 } // namespace Amanzi

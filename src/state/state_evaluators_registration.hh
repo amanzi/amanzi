@@ -20,6 +20,7 @@
 #include "EvaluatorIndependentConstant.hh"
 #include "EvaluatorMultiplicativeReciprocal.hh"
 #include "EvaluatorSecondaryMonotypeFromFunction.hh"
+#include "EvaluatorPrimary.hh"
 
 namespace Amanzi {
 
@@ -39,5 +40,9 @@ Utils::RegisteredFactory<Evaluator, EvaluatorMultiplicativeReciprocal>
 
 Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction>
   EvaluatorSecondaryMonotypeFromFunction::fac_("secondary variable from function");
+
+template<>
+Utils::RegisteredFactory<Evaluator, EvaluatorPrimaryCV>
+  EvaluatorPrimaryCV::fac_("primary variable");
 
 } // namespace Amanzi

@@ -428,7 +428,6 @@ TensorOp::applyBC (MultiFab&      inout,
   //
   // Fill boundary cells.
   //
-  const int N = inout.IndexArray().size();
 
 // #ifdef _OPENMP
 // #pragma omp parallel for

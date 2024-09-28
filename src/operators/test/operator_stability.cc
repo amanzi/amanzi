@@ -247,14 +247,13 @@ TEST(OPERATOR_NODAL_DIFFUSION)
   }
 
   // create boundary data (no mixed bc)
-  Point xv(2);
   Teuchos::RCP<BCs> bc =
     Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   for (int v = 0; v < nnodes_wghost; v++) {
-    xv = mesh->getNodeCoordinate(v);
+    const auto& xv = mesh->getNodeCoordinate(v);
     if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1]) < 1e-6 ||
         fabs(xv[1] - 1.0) < 1e-6) {
       bc_value[v] = ana.pressure_exact(xv, 0.0);
@@ -277,7 +276,7 @@ TEST(OPERATOR_NODAL_DIFFUSION)
 
   Epetra_MultiVector& src = *source.ViewComponent("node", true);
   for (int v = 0; v < nnodes_wghost; v++) {
-    xv = mesh->getNodeCoordinate(v);
+    const auto& xv = mesh->getNodeCoordinate(v);
     src[0][v] = ana.source_exact(xv, 0.0);
   }
 

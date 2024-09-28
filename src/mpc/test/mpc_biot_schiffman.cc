@@ -84,9 +84,10 @@ RunTest(const std::string xmlInFileName)
   // compute analytic solution
   double g(10.0), p0(1e+7), rho(1e+3), mu(1e-3), k(3e-15), phi_cp(1e-11);
   double E(3e+10), nu(0.0), t(50.0), t0(100.0), biot(0.9);
-  double Ss = rho * g * (phi_cp + biot * biot / E);
+  double Ks = E / (1 - nu * nu);
+  double Ss = rho * g * (phi_cp + biot * biot / Ks);
   double cv = rho * g / mu * k / Ss; // effective consolidation coefficient
-  double p0eff = biot * p0 / (phi_cp * E + biot * biot);
+  double p0eff = biot * p0 / (phi_cp * Ks + biot * biot);
   double p0t = (p0 / t0) * t;
 
   std::vector<double> pex(nx, 0.0), eex(nx, 0.0);
@@ -105,7 +106,7 @@ RunTest(const std::string xmlInFileName)
   }
   for (int c = 0; c < nx; ++c) {
     pex[c] *= 16 * p0eff * L * L / cv / M_PI / M_PI / M_PI / t0;
-    eex[c] = (biot * pex[c] - p0t) * (1 + nu) / E;
+    eex[c] = (biot * pex[c] - p0t) / Ks;
   }
 
   // compute error
@@ -123,6 +124,7 @@ RunTest(const std::string xmlInFileName)
   }
   perr = std::sqrt(perr) / pnorm;
   eerr = std::sqrt(eerr) / enorm;
+  std::cout << "Errors: " << perr << " " << eerr << std::endl;
   CHECK(perr < 0.0025);
   CHECK(eerr < 0.005);
 }

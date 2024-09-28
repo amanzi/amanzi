@@ -175,6 +175,28 @@ ObservableAqueous::ComputeObservation(State& S,
       *value += pressure[0][c] * vol;
     }
     unit = "Pa";
+  } else if (variable_ == "pressure liquid") {
+    Key key = Keys::getKey(domain_, "pressure_liquid");
+    const auto& pressure = *S.Get<CompositeVector>(key).ViewComponent("cell");
+
+    for (int i = 0; i < region_size_; i++) {
+      int c = entity_ids_[i];
+      double vol = mesh_->getCellVolume(c);
+      *volume += vol;
+      *value += pressure[0][c] * vol;
+    }
+    unit = "Pa";
+  } else if (variable_ == "pressure gas") {
+    Key key = Keys::getKey(domain_, "pressure_gas");
+    const auto& pressure = *S.Get<CompositeVector>(key).ViewComponent("cell");
+
+    for (int i = 0; i < region_size_; i++) {
+      int c = entity_ids_[i];
+      double vol = mesh_->getCellVolume(c);
+      *volume += vol;
+      *value += pressure[0][c] * vol;
+    }
+    unit = "Pa";
   } else if (variable_ == "water table") {
     *value = CalculateWaterTable_(S, entity_ids_);
     *volume = 1.0;

@@ -23,6 +23,7 @@
 #include "PK_DomainFunctionCoupling.hh"
 #include "PK_DomainFunctionField.hh"
 #include "PK_DomainFunctionFirstOrderExchange.hh"
+#include "PK_DomainFunctionParentMeshField.hh"
 #include "PK_DomainFunctionSimple.hh"
 #include "PK_DomainFunctionSimpleWell.hh"
 #include "PK_DomainFunctionSubgrid.hh"
@@ -123,8 +124,13 @@ PK_DomainFunctionFactory<FunctionBase>::Create(Teuchos::ParameterList& plist,
     return func;
   } else if (model == "field") {
     Teuchos::RCP<PK_DomainFunctionField<FunctionBase>> func =
-      Teuchos::rcp(new PK_DomainFunctionField<FunctionBase>(mesh_, S_, kind));
+      Teuchos::rcp(new PK_DomainFunctionField<FunctionBase>(mesh_, S_, plist, kind));
     func->Init(plist, keyword);
+    return func;
+  } else if (model == "parent mesh field") {
+    Teuchos::RCP<PK_DomainFunctionParentMeshField<FunctionBase>> func =
+      Teuchos::rcp(new PK_DomainFunctionParentMeshField<FunctionBase>(mesh_, S_));
+    func->Init(plist, keyword, kind);
     return func;
   } else if (model == "first order exchange") {
     AMANZI_ASSERT(kind == AmanziMesh::Entity_kind::CELL);

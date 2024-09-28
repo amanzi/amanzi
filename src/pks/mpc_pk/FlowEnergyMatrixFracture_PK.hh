@@ -53,14 +53,14 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
 
-  // updates the preconditioner
+  // -- preconditioner
   virtual void
   UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) override;
 
-  // preconditioner application
   virtual int
   ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
 
+  // -- error norm for coupled system
   virtual double
   ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
 

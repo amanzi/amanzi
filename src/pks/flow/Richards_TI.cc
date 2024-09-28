@@ -542,12 +542,13 @@ Richards_PK::ModifyCorrection(double dt,
   Epetra_MultiVector& duc = *du->Data()->ViewComponent("cell");
 
   AmanziGeometry::Point face_centr, cell_cntr;
-  double max_sat_pert(0.25), damping_factor(0.5);
+  double max_sat_pert(0.25), damping_factor(0.5), max_change(-1.0);
 
   if (fp_list_->isSublist("clipping parameters")) {
     Teuchos::ParameterList& clip_list = fp_list_->sublist("clipping parameters");
     max_sat_pert = clip_list.get<double>("maximum saturation change", 0.25);
     damping_factor = clip_list.get<double>("pressure damping factor", 0.5);
+    max_change = clip_list.get<double>("maximum correction change", -1.0);
   }
 
   int nsat_clipped(0), npre_clipped(0);
@@ -586,6 +587,23 @@ Richards_PK::ModifyCorrection(double dt,
       // std::cout << "pressure change: " << uc[0][c] << " -> " << unew << std::endl;
       duc[0][c] = tmp * damping_factor;
       npre_clipped++;
+    }
+  }
+
+  // clipping grow rate
+  if (max_change > 0.0) {
+    for (auto comp = u->Data()->begin(); comp != u->Data()->end(); ++comp) {
+      const auto& pc = *u->Data()->ViewComponent(*comp);
+      auto& dpc = *du->Data()->ViewComponent(*comp);
+
+      int ncomp = u->Data()->size(*comp, false);
+      for (int i = 0; i < ncomp; ++i) {
+        double tmp0 = pc[0][i] * max_change;
+        if (dpc[0][i] < -tmp0) {
+          npre_clipped++;
+          dpc[0][i] = -tmp0;
+        }
+      }
     }
   }
 

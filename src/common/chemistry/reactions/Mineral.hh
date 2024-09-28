@@ -16,23 +16,25 @@ The class for mineral reaction, should be written with the mineral as the reacta
 The `"mineral kinetics`" section includes at the moment both thermodynamic and kinetic data.
 The list of parameters for each reaction includes
 
-* `"rate model`" [string] is the model name for reaction rate [mol/s]. Available option is *TST*.
+.. admonition:: mineral-spec
 
-* `"equilibrium constant`" [double] is logarithm of the equilibrium constant.
+  * `"rate model`" ``[string]`` is the model name for reaction rate [mol/s]. Available option is *TST*.
 
-* `"rate constant`" [double] is log10 of the reaction rate constant.
+  * `"equilibrium constant`" ``[double]`` is logarithm of the equilibrium constant.
 
-* `"modifiers`" [string] is the list of pairs: species name and value of modyfying exponent,
-  so that the string has always even number of words.
+  * `"rate constant`" ``[double]`` is log10 of the reaction rate constant.
 
-* `"gram molecular weight`" [double] is amount of a molecular substance whose weight,
-  in grams, is numerically equal to the molecular weight of that substance.
+  * `"modifiers`" ``[string]`` is the list of pairs: species name and value of modyfying exponent,
+    so that the string has always even number of words.
 
-* `"reaction`" [string] is the mineral reaction equation.
+  * `"gram molecular weight`" ``[double]`` is amount of a molecular substance whose weight,
+    in grams, is numerically equal to the molecular weight of that substance.
 
-* `"molar volume`" [double] is the molar volume, [m^3 / mol].
+  * `"reaction`" ``[string]`` is the mineral reaction equation.
 
-* `"specific surface area`" [double] is the specific mineral surface area.
+  * `"molar volume`" ``[double]`` is the molar volume, [m^3 / mol].
+
+  * `"specific surface area`" ``[double]`` is the specific mineral surface area.
 
 The reaction rate is the dissolution rate for the mineral, so it is positive
 for dissolution and negative for precipitation.

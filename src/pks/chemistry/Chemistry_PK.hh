@@ -11,8 +11,10 @@
 
 The chemistry header includes three parameters:
 
-* `"chemistry model`" [string] defines chemical model. The available options are `"Alquimia`"
-  and `"Amanzi`" (default).
+.. admonition:: chemistry_pk-spec
+
+  * `"chemistry model`" ``[string]`` defines chemical model. The available options are `"Alquimia`"
+    and `"Amanzi`" (default).
 
 .. code-block:: xml
 
@@ -29,32 +31,34 @@ Common parameters
 `````````````````
 The following parameters are common for all supported engines.
 
-* `"time step control method`" [string] specifies time step control method for chemistry subcycling.
-  Choose either "fixed" (default) or "simple".  For option "fixed", time step is fixed.
-  For option "simple", the time step is adjusted in response to stiffness of system of equations
-  based on a simple scheme. This option require the following parameters: `"time step cut threshold`",
-  `"time step cut factor`", `"time step increase threshold`", and `"time step increase factor`".
+.. admonition:: chemistry_params-spec
 
-* `"time step cut threshold`" [int] is the number of Newton iterations that if exceeded
-  will trigger a time step cut. Default is 8.
+  * `"time step control method`" ``[string]`` specifies time step control method for chemistry subcycling.
+    Choose either "fixed" (default) or "simple".  For option "fixed", time step is fixed.
+    For option "simple", the time step is adjusted in response to stiffness of system of equations
+    based on a simple scheme. This option require the following parameters: `"time step cut threshold`",
+    `"time step cut factor`", `"time step increase threshold`", and `"time step increase factor`".
 
-* `"max time step (s)`" [double] is the maximum time step that chemistry will allow the MPC to take.
+  * `"time step cut threshold`" ``[int]`` is the number of Newton iterations that if exceeded
+    will trigger a time step cut. Default is 8.
 
-* `"initial time step (s)`" [double] is the initial time step that chemistry will ask the MPC to take.
+  * `"max time step (s)`" ``[double]`` is the maximum time step that chemistry will allow the MPC to take.
 
-* `"time step cut factor`" [double] is the factor by which the time step is cut. Default is 2.0
+  * `"initial time step (s)`" ``[double]`` is the initial time step that chemistry will ask the MPC to take.
 
-* `"time step increase threshold`" [int] is the number of consecutive successful time steps that
-  will trigger a time step increase. Default is 4.
+  * `"time step cut factor`" ``[double]`` is the factor by which the time step is cut. Default is 2.0
 
-* `"time step increase factor`" [double] is the factor by which the time step is increased. Default is 1.2
+  * `"time step increase threshold`" ``[int]`` is the number of consecutive successful time steps that
+    will trigger a time step increase. Default is 4.
 
-* `"free ion initial guess`" [double] provides an estimate of the free ion concentration for solutes.
-  It used to help convergence of the initial solution of the chemistry. If this parameter is absent,
-  a fraction (10%) of the total component concentration is used.
+  * `"time step increase factor`" ``[double]`` is the factor by which the time step is increased. Default is 1.2
 
-* `"initial conditions time`" [double] specifies time for applying initial conditions. This parameter
-  is useful for simulation restart. Default value is the state time when chemistry PK is instantiated.
+  * `"free ion initial guess`" ``[double]`` provides an estimate of the free ion concentration for solutes.
+    It used to help convergence of the initial solution of the chemistry. If this parameter is absent,
+    a fraction (10%) of the total component concentration is used.
+
+  * `"initial conditions time`" ``[double]`` specifies time for applying initial conditions. This parameter
+    is useful for simulation restart. Default value is the state time when chemistry PK is instantiated.
 
 */
 
@@ -91,6 +95,7 @@ class Chemistry_PK : public PK_Physical {
   virtual ~Chemistry_PK() = default;
 
   // required members for PK interface
+  virtual void parseParameterList() override;
   virtual void Setup() override;
   virtual void Initialize() override;
 

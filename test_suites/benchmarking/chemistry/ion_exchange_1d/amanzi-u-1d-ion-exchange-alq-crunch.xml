@@ -1,4 +1,4 @@
-<amanzi_input version="1.5-dev" type="unstructured">
+<amanzi_input version="1.6-dev" type="unstructured">
 
   <model_description name="1D Flow and Transport w/ ion exchange">
     <units>
@@ -33,9 +33,8 @@
 
   <phases>
     <liquid_phase name="water">
-      <eos>False</eos>
-      <viscosity>1.002e-3</viscosity>
-      <density>9.998676E+02</density>
+      <eos model="constant" viscosity="1.002e-03" density="9.998676E+02"/> 
+      <molar_mass>0.018015</molar_mass>
       <dissolved_components>
         <primaries>
           <primary>Na+</primary>
@@ -145,7 +144,7 @@
   <materials>
     <material name="soil">
       <mechanical_properties>
-        <porosity value="0.25"/>
+        <porosity model="constant" value="0.25"/>
         <specific_storage value="0.0" model="constant"/>
       </mechanical_properties>
       <permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"/>

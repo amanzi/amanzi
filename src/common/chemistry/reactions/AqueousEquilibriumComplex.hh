@@ -12,31 +12,34 @@
 The `"aqueous equilibrium complexes`" section is a list of aqueous equiliblium reactions.
 Each sublist is named after a secondary species and contains the following parameters:
 
-* `"ion size parameter`" [double] is an empirical parameter that provides agreement
-  between measured activity coefficients and ionic strength. In theory, it is the diameter
-  of the hydrated ion.
+.. admonition:: aqueous_complex-spec
 
-* `"charge`" [int] is the ion charge. The net charge of an ion is non-zero since the
-  total number of electrons is unequal to the total number of protons.
+  * `"ion size parameter`" ``[double]`` is an empirical parameter that provides agreement
+    between measured activity coefficients and ionic strength. In theory, it is the diameter
+    of the hydrated ion.
 
-* `"gram molecular weight`" [double] is amount of a molecular substance whose weight,
-  in grams, is numerically equal to the molecular weight of that substance.
+  * `"charge`" ``[int]`` is the ion charge. The net charge of an ion is non-zero since the
+    total number of electrons is unequal to the total number of protons.
 
-* `"reaction`" [string] is the equilibrium reaction equation.
+  * `"gram molecular weight`" ``[double]`` is amount of a molecular substance whose weight,
+    in grams, is numerically equal to the molecular weight of that substance.
 
-* `"equilibrium constant`" [double] is the value of reaction quotient at chemical equilibrium.
-  The reaction quotient is defined mathematically as the ratio of the activities of the product
-  species to that of the reactant species. The stoichiometric coefficients are taken into account
-  as exponents of activities.
+  * `"reaction`" ``[string]`` is the equilibrium reaction equation.
+
+  * `"equilibrium constant`" ``[double]`` is the value of reaction quotient at chemical equilibrium.
+    The reaction quotient is defined mathematically as the ratio of the activities of the product
+    species to that of the reactant species. The stoichiometric coefficients are taken into account
+    as exponents of activities.
 
 In a non-isothermal simulation, the equlibrium constant is a function of temperature.
 In such a case we have one additional parameter `"temperature`" and  parameter
 `"equilibrium constant`" becomes a list that defines a piecewice linear function logK(T).
 This is the `tabular function`_ with linear forms.
 
-* `"T`" [Array(double)] is the array of temperature points.
+.. admonition:: aqueous_complex_temprerature-spec
 
-* `"Keq`" [Array(double)] is the matching array of equilibroum constant values.
+  * `"T`" ``[Array(double)]`` is the array of temperature points.
+  * `"Keq`" ``[Array(double)]`` is the matching array of equilibrium constant values.
 
 .. code-block:: xml
 

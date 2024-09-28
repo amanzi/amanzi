@@ -631,7 +631,7 @@ Mesh_simple::getEdgeFaces(
   unsigned int nfaces = edge_to_face_[offset];
   Entity_ID_View lfaceids("lfaceids", nfaces);
 
-  if (nfaces > 4) exit(0);
+  AMANZI_ASSERT(nfaces < 5);
   for (int i = 0; i < nfaces; i++) lfaceids[i] = edge_to_face_[offset + i + 1];
   faceids = lfaceids;
 }

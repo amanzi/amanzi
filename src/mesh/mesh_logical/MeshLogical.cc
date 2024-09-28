@@ -130,9 +130,9 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
   }
 
   // geometric info that must get set later
-  Kokkos::resize(cell_volumes_, num_cells);
+  Kokkos::realloc(cell_volumes_, num_cells);
   Kokkos::deep_copy(cell_volumes_, -1.);
-  Kokkos::resize(face_areas_, face_cell_ids_.size<MemSpace_kind::HOST>());
+  Kokkos::realloc(face_areas_, face_cell_ids_.size<MemSpace_kind::HOST>());
   Kokkos::deep_copy(face_areas_, -1.);
 
   std::vector<Entity_ID_List> cell_face_ids_v(num_cells);

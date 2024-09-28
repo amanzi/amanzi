@@ -48,6 +48,7 @@ class Porosity_Compressible : public Porosity {
     return factor_ * std::exp(c_ * dp);
   }
 
+  virtual double PorosityValueReference() override { return porosity_; }
   virtual std::pair<double, double> getThermalCoefficients() override
   {
     return std::make_pair(a_liquid_, a_rock_);

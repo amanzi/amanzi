@@ -8,8 +8,7 @@
 */
 
 /*
-  WhetStone, Version 2.2
-  Release name: naka-to.
+  Geometry
 
   Useful tools for local surface coordinate system.
 */

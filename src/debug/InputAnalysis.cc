@@ -171,14 +171,14 @@ InputAnalysis::RegionAnalysis()
         *vo_->os() << std::endl;
       }
 
-      if (nblock == 0) {
-        msg << "Used boundary region is empty.";
-        Exceptions::amanzi_throw(msg);
-      }
-      if (bc_flag == 0) {
-        msg << "Used boundary region has non-boundary entries.";
-        Exceptions::amanzi_throw(msg);
-      }
+      // if (nblock == 0) {
+      //   msg << "Used boundary region is empty.";
+      //   Exceptions::amanzi_throw(msg);
+      // }
+      // if (bc_flag == 0) {
+      //   msg << "Used boundary region has non-boundary entries.";
+      //   Exceptions::amanzi_throw(msg);
+      // }
     }
   }
 

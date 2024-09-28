@@ -43,14 +43,14 @@ UpdateEnthalpyCouplingFluxes(
   const auto& H_f = *S->Get<CompositeVector>(enthalpy_key_f).ViewComponent("cell", true);
   const auto& T_f = *S->Get<CompositeVector>(temperature_key_f).ViewComponent("cell", true);
 
-  Teuchos::RCP<Epetra_MultiVector> dHdT_m, dHdT_f;
+  Teuchos::RCP<const Epetra_MultiVector> dHdT_m, dHdT_f;
   if (!flag) {
-    auto tmp1 = S->GetDerivative<CompositeVector>(
+    const auto& tmp1 = S->GetDerivative<CompositeVector>(
       enthalpy_key_m, Tags::DEFAULT, temperature_key_m, Tags::DEFAULT);
     tmp1.ScatterMasterToGhosted("cell");
     dHdT_m = tmp1.ViewComponent("cell");
 
-    auto tmp2 = S->GetDerivative<CompositeVector>(
+    const auto& tmp2 = S->GetDerivative<CompositeVector>(
       enthalpy_key_f, Tags::DEFAULT, temperature_key_f, Tags::DEFAULT);
     tmp2.ScatterMasterToGhosted("cell");
     dHdT_f = tmp2.ViewComponent("cell");

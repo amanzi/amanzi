@@ -28,6 +28,9 @@ its functionality.
 #include "Key.hh"
 #include "PKsDefs.hh"
 
+#include "CompositeVector.hh"
+
+
 namespace Amanzi {
 
 class PK_DomainFunction {

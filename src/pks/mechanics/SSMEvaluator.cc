@@ -76,8 +76,7 @@ SSMEvaluator::EvaluatePartialDerivative_(const State& S,
                                          const Key& wrt_key,
                                          const Tag& wrt_tag,
                                          const std::vector<CompositeVector*>& results)
-{
-}
+{}
 
 } // namespace Mechanics
 } // namespace Amanzi

@@ -32,11 +32,14 @@ set(eos_src_files
     H2O_ViscosityFEHM.cc
     Henry_Solubility.cc
     IdealGas_Density.cc
+    IdealGas_ThermalConductivity.cc
+    IdealGas_Viscosity.cc
     IsobaricEOSEvaluator.cc
     LookupTable.cc
     LookupTable_Amanzi.cc
     LookupTable_FEHM.cc
     MolarFractionGasEvaluator.cc
+    NaCl_ThermalConductivity.cc
     VaporInGas_Density.cc
     VaporInGas_Diffusion.cc
     VaporLiquid_Tabular.cc
@@ -73,12 +76,15 @@ set(eos_inc_files
     H2O_ViscosityFEHM.hh
     Henry_Solubility.hh
     IdealGas_Density.hh
+    IdealGas_ThermalConductivity.hh
+    IdealGas_Viscosity.hh
     IsobaricEOSEvaluator.hh
     LookupTable.hh
     LookupTable_Amanzi.hh
     LookupTable_FEHM.hh
     LookupTableFactory.hh
     MolarFractionGasEvaluator.hh
+    NaCl_ThermalConductivity.hh
     VaporInGas_Density.hh
     VaporInGas_Diffusion.hh
     ViscosityConstant.hh

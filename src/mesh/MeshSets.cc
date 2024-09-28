@@ -73,7 +73,6 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
                               View_type<double, MemSpace_kind::HOST>& vol_fracs,
                               const MeshCache<MemSpace_kind::HOST>& mesh)
 {
-  Kokkos::resize(vol_fracs, 0);
   MeshCache<MemSpace_kind::HOST>::cEntity_ID_View ret_ents;
   auto ents_cpt = 0;
   auto vol_fracs_cpt = 0;
@@ -85,8 +84,8 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
 
     if (kind == Entity_kind::CELL) {
       auto ncells = mesh.getNumEntities(Entity_kind::CELL, ptype);
-      Kokkos::resize(vol_fracs, ncells);
-      Kokkos::resize(ents, ncells);
+      Kokkos::realloc(vol_fracs, ncells);
+      Kokkos::realloc(ents, ncells);
 
       for (int c = 0; c != ncells; ++c) {
         auto polytope_nodes = mesh.getCellCoordinates(c);
@@ -126,8 +125,8 @@ resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
     } else {
       // ind == FACE
       int nfaces = mesh.getNumEntities(Entity_kind::FACE, ptype);
-      Kokkos::resize(vol_fracs, nfaces);
-      Kokkos::resize(ents, nfaces);
+      Kokkos::realloc(vol_fracs, nfaces);
+      Kokkos::realloc(ents, nfaces);
 
       for (int f = 0; f != nfaces; ++f) {
         auto polygon = mesh.getFaceCoordinates(f);
@@ -600,6 +599,26 @@ resolveMeshSetLabeledSet(const AmanziGeometry::RegionLabeledSet& region,
   }
   View_type<const Entity_ID, MemSpace_kind::HOST> ents;
   mesh.getMeshFramework()->getSetEntities(region, kind, ptype, ents);
+
+  // if not supported by mesh framework, we extract entities here
+  if (ents.size() == 0 && region.entity_str() == "CELL") {
+    if (kind == AmanziMesh::Entity_kind::FACE) {
+      View_type<const Entity_ID, MemSpace_kind::HOST> cells;
+      mesh.getMeshFramework()->getSetEntities(region, AmanziMesh::Entity_kind::CELL, ptype, cells);
+
+      std::set<Entity_ID> faces;
+      for (Entity_ID c : cells) {
+        auto tmp = mesh.getCellFaces(c);
+        for (const auto& f : tmp) faces.insert(f);
+      }
+
+      MeshCache<MemSpace_kind::HOST>::Entity_ID_View ents2("entities", faces.size());
+      int lcv(0);
+      for (const auto& f : faces) ents2[lcv++] = f;
+      Kokkos::resize(ents2, lcv);
+      return ents2;
+    }
+  }
   return ents;
 }
 

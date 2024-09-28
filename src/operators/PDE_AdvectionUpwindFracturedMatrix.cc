@@ -22,6 +22,7 @@
 #include "Op_Face_Cell.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"
 #include "PDE_AdvectionUpwindFracturedMatrix.hh"
+#include "UniqueLocalIndex.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -47,18 +48,17 @@ PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Comp
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 
   const Epetra_MultiVector& uf = *u->ViewComponent("face");
-  const auto& gmap = uf.Map();
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    int c1 = (*upwind_cell_)[f];
-    int c2 = (*downwind_cell_)[f];
+    int g = gmap_->FirstPointInElement(f);
+    int c1 = (*upwind_cell_)[g];
+    int c2 = (*downwind_cell_)[g];
 
     auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
 
-    int g = gmap.FirstPointInElement(f);
     double umod = fabs(uf[0][g]);
     if (c1 < 0) {
       Aface(0, 0) = umod;
@@ -97,21 +97,20 @@ PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Comp
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 
   const Epetra_MultiVector& uf = *u->ViewComponent("face");
-  const auto& gmap = uf.Map();
 
   dhdT->ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& dh = *dhdT->ViewComponent("cell", true);
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    int c1 = (*upwind_cell_)[f];
-    int c2 = (*downwind_cell_)[f];
+    int g = gmap_->FirstPointInElement(f);
+    int c1 = (*upwind_cell_)[g];
+    int c2 = (*downwind_cell_)[g];
 
     auto cells = mesh_->getFaceCells(f);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
 
-    int g = gmap.FirstPointInElement(f);
     double umod = fabs(uf[0][g]);
     if (c1 < 0) {
       Aface(0, 0) = umod * dh[0][c2];
@@ -126,12 +125,86 @@ PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(const Teuchos::Ptr<const Comp
     matrix[f] = Aface;
   }
 
-  // removed matrices fof faces where fracture is located
+  // removed matrices for faces where fracture is located
   for (int i = 0; i < fractures_.size(); ++i) {
     auto [block, vofs] = mesh_->getSetEntitiesAndVolumeFractions(
       fractures_[i], AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
     for (int n = 0; n < block.size(); ++n) { matrix[block[n]] *= 0.0; }
+  }
+}
+
+
+/* *******************************************************************
+* Apply boundary condition to the local matrices
+* Recommended options: primary=true, eliminate=false, essential_eqn=true
+*  - must deal with Dirichlet BC on inflow boundary
+*  - Dirichlet on outflow boundary is ill-posed
+*  - Neumann on inflow boundary is typically not used, since it is
+*    equivalent to Dirichlet BC. We perform implicit conversion to
+*    Dirichlet BC.
+*
+* Advection-diffusion problem.
+* Recommended options: primary=false, eliminate=true, essential_eqn=true
+*  - Dirichlet BC is treated as usual
+*  - Neuman on inflow boundary: If diffusion takes care of the total
+*    flux, then TOTAL_FLUX model must be used. If diffusion deals
+*    with the diffusive flux only (NEUMANN model), value of the
+*    advective flux is in general not available and negative value
+*    is added to matrix diagonal. The discrete system may lose SPD
+*    property.
+*  - Neuman on outflow boundary: If diffusion takes care of the total
+*    flux, then TOTAL_FLUX model must be used. Otherwise, do nothing.
+*
+* FIXME: So far we support the case bc_test = bc_trial
+******************************************************************* */
+void
+PDE_AdvectionUpwindFracturedMatrix::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
+{
+  std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
+  Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
+
+  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+  const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    int g = gmap_->FirstPointInElement(f);
+    int ndofs = gmap_->ElementSize(f);
+
+    int c1 = (*upwind_cell_)[g];
+    int c2 = (*downwind_cell_)[g];
+    if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+      if (c2 < 0) {
+        // pass, the upwind cell is internal to the domain, so all is good
+      } else if (c1 < 0) {
+        // downwind cell is internal to the domain
+        rhs_cell[0][c2] += matrix[f](0, 0) * bc_value[f];
+        matrix[f] = 0.0;
+      }
+    }
+    // coupling fluxes are separate object
+    else if (ndofs == 2) {
+      matrix[f] *= 0.0;
+    }
+    // treat as essential inflow BC for pure advection
+    else if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {
+      if (c1 < 0) {
+        rhs_cell[0][c2] += mesh_->getFaceArea(f) * bc_value[f];
+        matrix[f] = 0.0;
+      }
+    }
+    // leave in matrix for composite operator
+    else if (bc_model[f] == OPERATOR_BC_NEUMANN && !primary) {
+      if (c1 < 0) matrix[f] *= -1.0;
+    }
+    // total flux was processed by another operator -> remove here
+    else if (bc_model[f] == OPERATOR_BC_TOTAL_FLUX && !primary) {
+      matrix[f] = 0.0;
+    }
+    // do not know what to do
+    else if (bc_model[f] != OPERATOR_BC_NONE) {
+      AMANZI_ASSERT(false);
+    }
   }
 }
 
@@ -145,28 +218,28 @@ PDE_AdvectionUpwindFracturedMatrix::IdentifyUpwindCells_(const CompositeVector& 
 {
   u.ScatterMasterToGhosted("face");
   const Epetra_MultiVector& uf = *u.ViewComponent("face", true);
-  const auto& gmap = uf.Map();
+  gmap_ = u.ComponentMap("face", true);
 
-  const Epetra_Map& fmap_wghost = mesh_->getMap(AmanziMesh::Entity_kind::FACE, true);
-  upwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap_wghost));
-  downwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap_wghost));
+  upwind_cell_ = Teuchos::rcp(new Epetra_IntVector(*gmap_));
+  downwind_cell_ = Teuchos::rcp(new Epetra_IntVector(*gmap_));
 
-  for (int f = 0; f < nfaces_wghost; f++) {
-    (*upwind_cell_)[f] = -1; // negative value indicates boundary
-    (*downwind_cell_)[f] = -1;
-  }
+  upwind_cell_->PutValue(-1); // negative value indicates boundary
+  downwind_cell_->PutValue(-1);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const auto& [faces, fdirs] = mesh_->getCellFacesAndDirections(c);
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
-      int g = gmap.FirstPointInElement(f);
+      int g = gmap_->FirstPointInElement(f);
+
+      int ndofs = gmap_->ElementSize(f);
+      if (ndofs == 2) g += UniqueIndexFaceToCells(*mesh_, f, c);
 
       if (uf[0][g] * fdirs[i] >= 0) {
-        (*upwind_cell_)[f] = c;
+        (*upwind_cell_)[g] = c;
       } else {
-        (*downwind_cell_)[f] = c;
+        (*downwind_cell_)[g] = c;
       }
     }
   }

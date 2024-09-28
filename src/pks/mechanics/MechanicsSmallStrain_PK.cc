@@ -14,7 +14,9 @@
 
 #include <vector>
 
+// Amanzi
 #include "InverseFactory.hh"
+#include "PDE_ElasticityFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PorosityEvaluator.hh"
 #include "StateArchive.hh"
@@ -55,8 +57,10 @@ MechanicsSmallStrain_PK::MechanicsSmallStrain_PK(Teuchos::ParameterList& pk_tree
   linear_solver_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(ec_list_, "time integrator", true);
 
-  // domain name
+  // domain and primary evaluators
   domain_ = ec_list_->get<std::string>("domain name", "domain");
+  displacement_key_ = Keys::getKey(domain_, "displacement");
+  AddDefaultPrimaryEvaluator(S_, displacement_key_);
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = ec_list_->sublist("verbose object");
@@ -139,11 +143,13 @@ MechanicsSmallStrain_PK::Initialize()
   // Initialize matrix and preconditioner
   // -- create elastic block
   auto tmp1 = ec_list_->sublist("operators").sublist("elasticity operator");
-  op_matrix_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
-  op_matrix_ = op_matrix_elas_->global_operator();
+  Operators::PDE_ElasticityFactory factory;
+  op_matrix_elas_ = factory.Create(tmp1, mesh_);
 
+  op_matrix_ = op_matrix_elas_->global_operator();
   // For a quasi-static problem, we update PC every non-linear iteration.
   // op_preconditioner_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
+  // op_preconditioner_elas_->Init(tmp1);
 
   // -- extensions: The undrained split method add another operator which has
   //    the grad-div structure. It is critical that it uses a separate global
@@ -152,110 +158,13 @@ MechanicsSmallStrain_PK::Initialize()
   if (split_undrained_) {
     std::string method = tmp1.sublist("schema").get<std::string>("method");
     tmp1.sublist("schema").set<std::string>("method", method + " graddiv");
-    op_matrix_graddiv_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
+    op_matrix_graddiv_ = factory.Create(tmp1, mesh_);
+
     op_matrix_->OpPushBack(op_matrix_graddiv_->local_op());
   }
 
   // Create BC objects
-  Teuchos::RCP<Teuchos::ParameterList> bc_list =
-    Teuchos::rcp(new Teuchos::ParameterList(ec_list_->sublist("boundary conditions", true)));
-
-  bcs_.clear();
-
-  // -- displacement
-  if (bc_list->isSublist("displacement")) {
-    PK_DomainFunctionFactory<MechanicsBoundaryFunction> bc_factory(mesh_, S_);
-
-    Teuchos::ParameterList& tmp_list = bc_list->sublist("displacement");
-    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
-      std::string name = it->first;
-      if (tmp_list.isSublist(name)) {
-        Teuchos::ParameterList& spec = tmp_list.sublist(name);
-
-        // nodal dofs
-        auto bc =
-          bc_factory.Create(spec, "no slip", AmanziMesh::NODE, Teuchos::null, Tags::DEFAULT, true);
-        bc->set_bc_name("no slip");
-        bc->set_type(WhetStone::DOF_Type::POINT);
-        bc->set_kind(AmanziMesh::NODE);
-        bcs_.push_back(bc);
-
-        // bubble dofs
-        auto bc2 =
-          bc_factory.Create(spec, "no slip", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
-        bc2->set_bc_name("no slip");
-        bc2->set_type(WhetStone::DOF_Type::POINT);
-        bc2->set_kind(AmanziMesh::FACE);
-        bcs_.push_back(bc2);
-      }
-    }
-  }
-
-  if (bc_list->isSublist("kinematic")) {
-    PK_DomainFunctionFactory<MechanicsBoundaryFunction> bc_factory(mesh_, S_);
-
-    Teuchos::ParameterList& tmp_list = bc_list->sublist("kinematic");
-    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
-      std::string name = it->first;
-      if (tmp_list.isSublist(name)) {
-        Teuchos::ParameterList& spec = tmp_list.sublist(name);
-
-        // nodal dofs
-        auto bc = bc_factory.Create(
-          spec, "kinematic", AmanziMesh::NODE, Teuchos::null, Tags::DEFAULT, true);
-        bc->set_bc_name("kinematic");
-        bc->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
-        bc->set_kind(AmanziMesh::NODE);
-        bcs_.push_back(bc);
-
-        // bubble dofs
-        auto bc2 = bc_factory.Create(
-          spec, "kinematic", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
-        bc2->set_bc_name("kinematic");
-        bc2->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
-        bc2->set_kind(AmanziMesh::FACE);
-        bcs_.push_back(bc2);
-      }
-    }
-  }
-
-  if (bc_list->isSublist("traction")) {
-    PK_DomainFunctionFactory<MechanicsBoundaryFunction> bc_factory(mesh_, S_);
-
-    Teuchos::ParameterList& tmp_list = bc_list->sublist("traction");
-    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
-      std::string name = it->first;
-      if (tmp_list.isSublist(name)) {
-        Teuchos::ParameterList& spec = tmp_list.sublist(name);
-
-        auto bc =
-          bc_factory.Create(spec, "traction", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
-        bc->set_bc_name("traction");
-        bc->set_type(WhetStone::DOF_Type::POINT);
-        bc->set_kind(AmanziMesh::FACE);
-        bcs_.push_back(bc);
-      }
-    }
-  }
-
-  if (bc_list->isSublist("normal traction")) {
-    PK_DomainFunctionFactory<MechanicsBoundaryFunction> bc_factory(mesh_, S_);
-
-    Teuchos::ParameterList& tmp_list = bc_list->sublist("normal traction");
-    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
-      std::string name = it->first;
-      if (tmp_list.isSublist(name)) {
-        Teuchos::ParameterList& spec = tmp_list.sublist(name);
-
-        auto bc = bc_factory.Create(
-          spec, "normal traction", AmanziMesh::FACE, Teuchos::null, Tags::DEFAULT, true);
-        bc->set_bc_name("normal traction");
-        bc->set_type(WhetStone::DOF_Type::NORMAL_COMPONENT);
-        bc->set_kind(AmanziMesh::FACE);
-        bcs_.push_back(bc);
-      }
-    }
-  }
+  InitializeBCs();
 
   // Populate matrix and preconditioner
   // -- setup phase
@@ -264,23 +173,6 @@ MechanicsSmallStrain_PK::Initialize()
 
   op_matrix_->Init();
   op_matrix_elas_->SetTensorCoefficientGK(G, K);
-
-  // -- initialize boundary conditions (memory allocation)
-  auto bc = Teuchos::rcp(
-    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::POINT));
-  op_bcs_.push_back(bc);
-
-  bc = Teuchos::rcp(
-    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::NODE, WhetStone::DOF_Type::SCALAR));
-  op_bcs_.push_back(bc);
-
-  bc = Teuchos::rcp(
-    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::POINT));
-  op_bcs_.push_back(bc);
-
-  bc = Teuchos::rcp(
-    new Operators::BCs(mesh_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
-  op_bcs_.push_back(bc);
 
   for (auto bc : op_bcs_) op_matrix_elas_->AddBCs(bc, bc);
 
@@ -368,8 +260,7 @@ MechanicsSmallStrain_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 
 /* *******************************************************************
-* Performs one time step from time t_old to time t_new either for
-* steady-state or transient simulation.
+* Updates after successful time steps
 ******************************************************************* */
 void
 MechanicsSmallStrain_PK::CommitStep(double t_old, double t_new, const Tag& tag)

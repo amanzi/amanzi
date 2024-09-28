@@ -15,9 +15,12 @@ single-porosity model correspond now to the fracture continuum.
 Example: tcc = total component concentration in the fracture continuum;
 tcc_matrix = total component concentration in the matrix continuum.
 
-* `"Warren Root parameter`" [list] scales diffusive solute transport due to
-  concentration gradient.
-* `"tortousity`" [double] defines tortuosity to correct diffusivity of a liquid solute.
+.. admonition:: transport_dual_porosity-spec
+
+  * `"Warren Root parameter`" ``[list]`` scales diffusive solute transport due to
+    concentration gradient.
+  * `"tortousity`" ``[double]`` defines tortuosity to correct diffusivity of 
+    a liquid solute.
 
 */
 

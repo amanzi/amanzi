@@ -78,6 +78,12 @@
       <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>
       </ParameterList>
+      <ParameterList name="submesh">
+        <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+        <Parameter name="extraction method" type="string" value="none"/>
+        <Parameter name="domain name" type="string" value="surface"/>
+        <Parameter name="extract all faces" type="bool" value="true"/>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 
@@ -278,6 +284,8 @@
         <Parameter name="eos basis" type="string" value="both"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water FEHM"/>
+          <Parameter name="molar mass" type="double" value="0.018015"/>
+          <Parameter name="density" type="double" value="998.2"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-molar_density_liquid">
@@ -287,6 +295,8 @@
         <Parameter name="eos basis" type="string" value="both"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water FEHM"/>
+          <Parameter name="molar mass" type="double" value="0.018015"/>
+          <Parameter name="density" type="double" value="998.2"/>
         </ParameterList>
       </ParameterList>
 
@@ -306,18 +316,14 @@
       </ParameterList>
 
       <ParameterList name="fracture-aperture">
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="regions" type="Array(string)" value="{RegionBottom,RegionTop}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="4.6416e-4"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable from file"/>
+        <Parameter name="filename" type="string" value="test/aperture_dynamic_test.h5"/>
+        <Parameter name="domain name" type="string" value="fracture"/>
+        <Parameter name="variable name" type="string" value="fracture-aperture"/>
+        <Parameter name="component name" type="string" value="cell"/>
+        <Parameter name="constant in time" type="bool" value="false"/>        
+        <Parameter name="mesh entity" type="string" value="cell"/>
+        <Parameter name="number of dofs" type="int" value="1"/>
       </ParameterList>
 
       <ParameterList name="fracture-heat_diffusion_to_matrix">
@@ -374,6 +380,9 @@
       </ParameterList>
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.2"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="0.001"/>
@@ -618,10 +627,6 @@
       <Parameter name="PKs order" type="Array(string)" value="{flow matrix, flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
 
-      <ParameterList name="verbose object">
-        <Parameter name="verbosity level" type="string" value="high"/>
-      </ParameterList>
-
       <ParameterList name="time integrator">
         <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
@@ -662,6 +667,10 @@
     <ParameterList name="coupled thermal flow">
       <Parameter name="PKs order" type="Array(string)" value="{thermal flow matrix, thermal flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
+
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
 
       <ParameterList name="time integrator">
         <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
@@ -943,16 +952,20 @@
 	<Parameter name="include work term" type="bool" value="false"/>
       </ParameterList>
       <ParameterList name="thermal conductivity evaluator">
-	<ParameterList name="thermal conductivity parameters">
+	<ParameterList name="All">
 	  <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-	  <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
-	  <Parameter name="thermal conductivity of liquid" type="double" value="0.5"/>
-	  <Parameter name="reference temperature" type="double" value="275.0"/>
-	  <Parameter name="polynomial expansion" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
-	  <Parameter name="eos type" type="string" value="liquid water"/>
-	</ParameterList>
-	<ParameterList name="verbose object">
-	  <Parameter name="verbosity level" type="string" value="high"/>
+	  <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <ParameterList name="solid phase">
+            <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="0.2"/>
+            <Parameter name="reference temperature" type="double" value="275.0"/>
+          </ParameterList>
+          <ParameterList name="liquid phase">
+	    <Parameter name="eos type" type="string" value="liquid water"/>
+            <Parameter name="reference conductivity" type="double" value="0.5"/>
+            <Parameter name="reference temperature" type="double" value="275.0"/>
+	    <Parameter name="polynomial expansion" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
+	  </ParameterList>
 	</ParameterList>
       </ParameterList>
 
@@ -999,7 +1012,7 @@
 	<Parameter name="error control options" type="Array(string)" value="{temperature}"/>
 	<Parameter name="linear solver" type="string" value="none"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<ParameterList name="pressure-lambda constraints">
+	<ParameterList name="dae constraint">
 	  <Parameter name="method" type="string" value="none"/>
 	  <Parameter name="inflow krel correction" type="bool" value="true"/>
 	  <Parameter name="linear solver" type="string" value="AztecOO"/>
@@ -1018,14 +1031,20 @@
 	<Parameter name="include work term" type="bool" value="false"/>
       </ParameterList>
       <ParameterList name="thermal conductivity evaluator">
-	<ParameterList name="thermal conductivity parameters">
+	<ParameterList name="All">
 	  <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-	  <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
-	  <Parameter name="thermal conductivity of liquid" type="double" value="2.0"/>
-	  <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
-	  <Parameter name="reference temperature" type="double" value="275.0"/>
-	  <Parameter name="polynomial expansion" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
-	  <Parameter name="eos type" type="string" value="liquid water"/>
+	  <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <ParameterList name="solid phase">
+            <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="0.2"/>
+            <Parameter name="reference temperature" type="double" value="275.0"/>
+          </ParameterList>
+          <ParameterList name="liquid phase">
+	    <Parameter name="eos type" type="string" value="liquid water"/>
+            <Parameter name="reference conductivity" type="double" value="2.0"/>
+            <Parameter name="reference temperature" type="double" value="275.0"/>
+	    <Parameter name="polynomial expansion" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
+	  </ParameterList>
 	</ParameterList>
       </ParameterList>
 
@@ -1069,7 +1088,7 @@
 	<Parameter name="error control options" type="Array(string)" value="{temperature}"/>
 	<Parameter name="linear solver" type="string" value="none"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<ParameterList name="pressure-lambda constraints">
+	<ParameterList name="dae constraint">
 	  <Parameter name="method" type="string" value="none"/>
 	  <Parameter name="inflow krel correction" type="bool" value="true"/>
 	  <Parameter name="linear solver" type="string" value="AztecOO"/>

@@ -47,7 +47,7 @@ typedef std::map<std::string, Phase> PhaseTree;
 
 struct BCs {
  public:
-  BCs() : mol_mass(-1.0){};
+  BCs() : mol_mass(-1.0), coupling(false){};
   BCs(double value) : mol_mass(value){};
 
   std::string type;
@@ -57,6 +57,10 @@ struct BCs {
 
   std::string filename, xheader, yheader, variable;
   double mol_mass;
+
+  std::string kinematic;
+
+  bool coupling;
 };
 
 
@@ -71,8 +75,7 @@ class InputConverterU : public InputConverter {
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
       fracture_network_(false),
       flow_single_phase_(false),
-      compressibility_(false),
-      compliance_(false),
+      use_porosity_model_(false),
       beta_(0.0),
       mesh_rectangular_(false),
       use_transport_porosity_(false),
@@ -98,8 +101,7 @@ class InputConverterU : public InputConverter {
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
       fracture_network_(false),
       flow_single_phase_(false),
-      compressibility_(false),
-      compliance_(false),
+      use_porosity_model_(false),
       beta_(0.0),
       mesh_rectangular_(false),
       use_transport_porosity_(false),
@@ -130,6 +132,7 @@ class InputConverterU : public InputConverter {
   void ParseFractureNetwork_();
   void ModifyDefaultPhysicalConstants_();
   void ParseGlobalNumericalControls_();
+  void ParseMisc_();
 
   BCs ParseCondList_(DOMNode* node,
                      double vmin,
@@ -188,7 +191,9 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateInitialization_(const std::string& unstr_controls);
 
   // -- general
-  Teuchos::ParameterList TranslateSources_(const std::string& domain, const std::string& pkname);
+  Teuchos::ParameterList TranslateSources_(const std::string& domain,
+                                           const std::string& pkname,
+                                           const std::string& pk_model);
 
   // -- state
   void TranslateCommonContinuumFields_(const std::string& domain,
@@ -223,7 +228,8 @@ class InputConverterU : public InputConverter {
                                    const Key& field,
                                    const Key& key,
                                    const std::string& type,
-                                   const std::string& eos_table_name);
+                                   const std::string& eos_table_name,
+                                   const std::vector<KeyPair>& deps = {});
 
   void AddConstantFieldInitialization_(Teuchos::ParameterList& out_ev,
                                        const std::string& field,
@@ -361,8 +367,8 @@ class InputConverterU : public InputConverter {
   // global flow constants
   std::string flow_model_; // global value
   bool flow_single_phase_; // runtime value
-  bool compressibility_, compliance_;
-  double rho_, beta_;
+  bool use_porosity_model_, linearized_aperture_;
+  double rho_, molar_mass_, beta_, ref_mu_, ref_temp_, ref_sutherland_;
 
   // global mesh data
   bool mesh_rectangular_;

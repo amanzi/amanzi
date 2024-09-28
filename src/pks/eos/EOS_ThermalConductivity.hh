@@ -10,7 +10,7 @@
 /*
   EOS
 
-  Equation of state for thermal conductivity = f(T)
+  Equation of state for thermal conductivity = f(T, phi)
 */
 
 #ifndef AMANZI_EOS_THERMAL_CONDUCTIVITY_HH_
@@ -26,9 +26,9 @@ class EOS_ThermalConductivity {
   EOS_ThermalConductivity(Teuchos::ParameterList& plist) : plist_(plist), ierr_(0){};
   virtual ~EOS_ThermalConductivity(){};
 
-  virtual double ThermalConductivity(double T, double p) = 0;
-  virtual double DThermalConductivityDT(double T, double p) = 0;
-  virtual double DThermalConductivityDP(double T, double p) = 0;
+  virtual double ThermalConductivity(double T, double phi) = 0;
+  virtual double DThermalConductivityDT(double T, double phi) = 0;
+  virtual double DThermalConductivityDPhi(double T, double phi) = 0;
 
   // error messages
   int error_code() { return ierr_; }

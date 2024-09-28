@@ -228,6 +228,7 @@ CycleDriver::Setup()
     }
   }
 
+  pk_->parseParameterList();
   pk_->Setup();
   S_->Require<double>("dt", Tags::NEXT, "dt");
   S_->Setup();
@@ -311,10 +312,14 @@ CycleDriver::ReportMemory()
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     double global_ncells(0.0);
     double local_ncells(0.0);
+    std::vector<int> counts;
     for (State::mesh_iterator mesh = S_->mesh_begin(); mesh != S_->mesh_end(); ++mesh) {
-      const Epetra_Map& cell_map =
-        (mesh->second.first)->getMap(AmanziMesh::Entity_kind::CELL, false);
-      global_ncells += cell_map.NumGlobalElements();
+      const auto& cell_map = (mesh->second.first)->getMap(AmanziMesh::Entity_kind::CELL, false);
+
+      int ncells = cell_map.NumGlobalElements();
+      counts.push_back(ncells);
+
+      global_ncells += ncells;
       local_ncells += cell_map.NumMyElements();
     }
 
@@ -341,7 +346,8 @@ CycleDriver::ReportMemory()
     *vo_->os() << "======================================================================"
                << std::endl;
     *vo_->os() << "Simulation made " << S_->get_cycle() << " cycles.\n";
-    *vo_->os() << "All meshes combined have " << global_ncells << " cells.\n";
+    *vo_->os() << "All meshes combined have " << global_ncells << " cells (1st mesh has "
+               << counts[0] << " cells).\n";
     *vo_->os() << "Memory usage (high water mark):\n";
     *vo_->os() << std::fixed << std::setprecision(1);
     *vo_->os() << "  Maximum per core:   " << std::setw(7) << max_mem
@@ -472,6 +478,9 @@ CycleDriver::ReadParameterList_()
 
   // verification (move this to state ?)
   S_->GetMeshPartition("materials");
+
+  // io
+  io_frequency_ = coordinator_list_->get<int>("io frequency", 100);
 }
 
 
@@ -664,8 +673,10 @@ CycleDriver::Observations(bool force, bool integrate)
     if (observations_->DumpRequested(S_->get_cycle(), S_->get_time()) || force) {
       // continuous observations are not updated here
       int n = observations_->MakeObservations(*S_);
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "writing observations... " << n << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "writing observations... " << n << std::endl;
+      }
     }
   }
 }
@@ -689,8 +700,10 @@ CycleDriver::Visualize(bool force, const Tag& tag)
   for (const auto& vis : visualization_) {
     if (force || vis->DumpRequested(S_->get_cycle(), S_->get_time())) {
       WriteVis(*vis, *S_);
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "writing visualization file: " << vis->get_name() << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "writing visualization file: " << vis->get_name() << std::endl;
+      }
     }
   }
 }
@@ -862,12 +875,14 @@ CycleDriver::Go()
                ((tp_max_cycle_[time_period_id_] == -1) ||
                 (S_->get_cycle() - start_cycle_num < tp_max_cycle_[time_period_id_]))) {
           if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-            if (S_->get_cycle() % 100 == 0 && S_->get_cycle() > 0) {
-              WriteStateStatistics(*S_, *vo_);
-              Teuchos::OSTab tab = vo_->getOSTab();
-              *vo_->os() << "\nSimulation end time: " << tp_end_[time_period_id_] << " sec."
-                         << std::endl;
-              *vo_->os() << "CPU time stamp: " << vo_->clock() << std::endl;
+            if (S_->get_cycle() % io_frequency_ == 0 && S_->get_cycle() > 0) {
+              WriteStateStatistics_();
+              if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+                Teuchos::OSTab tab = vo_->getOSTab();
+                *vo_->os() << "\nSimulation end time: " << tp_end_[time_period_id_] << " sec."
+                           << std::endl;
+                *vo_->os() << "CPU time stamp: " << vo_->clock() << std::endl;
+              }
             }
             Utils::Units units("molar");
             Teuchos::OSTab tab = vo_->getOSTab();
@@ -969,7 +984,9 @@ CycleDriver::Go(double t_old, double t_new, double* dt0)
          ((tp_max_cycle_[time_period_id_] == -1) ||
           (S_->get_cycle() - start_cycle_num < tp_max_cycle_[time_period_id_]))) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      if (S_->get_cycle() % 100 == 0 && S_->get_cycle() > 0) { WriteStateStatistics(*S_, *vo_); }
+      if (S_->get_cycle() % io_frequency_ == 0 && S_->get_cycle() > 0) {
+        WriteStateStatistics(*S_, *vo_);
+      }
       Utils::Units units("molar");
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "\nCycle " << S_->get_cycle() << ": time = " << units.OutputTime(S_->get_time())
@@ -1039,8 +1056,9 @@ CycleDriver::ResetDriver(int time_pr_id)
   //if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_);
 
   // Setup
-  pk_->Setup();
   pk_->set_tags(Tags::CURRENT, Tags::NEXT);
+  pk_->parseParameterList();
+  pk_->Setup();
 
   S_->Require<double>("dt", Tags::NEXT, "dt");
   S_->Setup();
@@ -1079,6 +1097,21 @@ CycleDriver::ResetDriver(int time_pr_id)
   if (fields_old != fields) Visualize(true, make_tag("ic"));
 
   S_old_ = Teuchos::null;
+}
+
+
+/* ******************************************************************
+* Auxiliary function: update all evaluators
+****************************************************************** */
+void
+CycleDriver::WriteStateStatistics_()
+{
+  for (auto r = S_->data_begin(); r != S_->data_end(); ++r) {
+    if (S_->HasEvaluator(r->first, Tags::DEFAULT)) {
+      S_->GetEvaluator(r->first, Tags::DEFAULT).Update(*S_, "cycle driver");
+    }
+  }
+  WriteStateStatistics(*S_, *vo_);
 }
 
 } // namespace Amanzi

@@ -138,6 +138,7 @@ TEST(ENERGY_CONVERGENCE_SRC)
     Teuchos::ParameterList ev_list;
     ev_list.set<std::string>("enthalpy key", "enthalpy")
       .set<bool>("include work term", false)
+      .set<double>("liquid molar mass", 0.018015)
       .set<std::string>("tag", "");
     ev_list.setName("enthalpy");
 

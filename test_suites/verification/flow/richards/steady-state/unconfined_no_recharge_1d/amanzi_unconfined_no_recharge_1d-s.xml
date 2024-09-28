@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<amanzi_input type="structured" version="1.5-dev">
+<amanzi_input type="structured" version="1.6-dev">
   <model_description name="unconfined_no_recharge_1d-str-2D">
     <comments>unconfined_no_recharge_1d-str-2D	Tue Sep 22 14:17:05 PDT 2015</comments>
   </model_description>
@@ -126,7 +126,7 @@
       <assigned_regions>All</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <uniform_pressure value="101325.0"/>
+          <uniform_pressure value="90325.0"/>
         </liquid_component>
       </liquid_phase>
     </initial_condition>

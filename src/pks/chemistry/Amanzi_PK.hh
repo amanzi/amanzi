@@ -11,28 +11,30 @@
 
 The Amanzi chemistry process kernel uses the following parameters.
 
-* `"thermodynamic database`" [list]
+.. admonition:: chemistry_amanzi-spec
 
-  * `"file`" [string] is the name of the chemistry database file, relative to the execution directory.
+  * `"thermodynamic database`" ``[list]``
 
-  * `"format`" [string] is the format of the database file. Actual database format is not XML and
-    is the same as described for the 2010 demo with additions for the new chemical processes.
-    Valid values: "simple".
+    * `"file`" ``[string]`` is the name of the chemistry database file, relative to the execution directory.
 
-* `"minerals`" [Array(string)] is the list of mineral names.
+    * `"format`" ``[string]`` is the format of the database file. Actual database format is not XML and
+      is the same as described for the 2010 demo with additions for the new chemical processes.
+      Valid values: "simple".
 
-* `"sorption sites`" [Array(string)] is the list of sorption sites.
+  * `"minerals`" ``[Array(string)]`` is the list of mineral names.
 
-* `"activity model`" [string] is the type of model used for activity corrections.
-  Valid options are `"unit`", `"debye-huckel`", and `"pitzer-hwm`",
+  * `"sorption sites`" ``[Array(string)]`` is the list of sorption sites.
 
-* `"tolerance`" [double] defines tolerance in Newton solves inside the chemistry library.
+  * `"activity model`" ``[string]`` is the type of model used for activity corrections.
+    Valid options are `"unit`", `"debye-huckel`", and `"pitzer-hwm`",
 
-* `"maximum Newton iterations`" [int] is the maximum number of iteration the chemistry
-  library can take.
+  * `"tolerance`" ``[double]`` defines tolerance in Newton solves inside the chemistry library.
 
-* `"auxiliary data`" [Array(string)] defines additional chemistry related data that the user
-  can request be saved to vis files. Currently `"pH`" is the only variable supported.
+  * `"maximum Newton iterations`" ``[int]`` is the maximum number of iteration the chemistry
+    library can take.
+
+  * `"auxiliary data`" ``[Array(string)]`` defines additional chemistry related data that the user
+    can request be saved to vis files. Currently `"pH`" is the only variable supported.
 
 .. code-block:: xml
 

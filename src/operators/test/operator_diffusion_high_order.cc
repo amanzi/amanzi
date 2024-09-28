@@ -357,7 +357,7 @@ RunHighOrderLagrange3D(const std::string& vem_name)
 
   Analytic00b ana(mesh, 1.0, 2.0, 3.0, order);
 
-  Point xv(3), x0(3), x1(3);
+  Point x0(3), x1(3);
 
   // -- nodes
   Teuchos::RCP<BCs> bc_v =
@@ -366,7 +366,7 @@ RunHighOrderLagrange3D(const std::string& vem_name)
   std::vector<double>& bc_value_v = bc_v->bc_value();
 
   for (int v = 0; v < nnodes_wghost; v++) {
-    xv = mesh->getNodeCoordinate(v);
+    const auto& xv = mesh->getNodeCoordinate(v);
     if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1]) < 1e-6 ||
         fabs(xv[1] - 1.0) < 1e-6 || fabs(xv[2]) < 1e-6 || fabs(xv[2] - 1.0) < 1e-6) {
       bc_model_v[v] = OPERATOR_BC_DIRICHLET;

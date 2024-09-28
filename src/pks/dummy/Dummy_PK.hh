@@ -30,6 +30,9 @@ class Dummy_PK : public PK_PhysicalBDF {
            const Teuchos::RCP<State>& S,
            const Teuchos::RCP<TreeVector>& soln);
 
+  // Initial parser
+  virtual void parseParameterList() {};
+  
   // Setup
   virtual void Setup()
   {

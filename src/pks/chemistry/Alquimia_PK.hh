@@ -13,14 +13,17 @@ The Alquimia chemistry process kernel only requires the *Engine* and *Engine Inp
 entries, but will also accept and respect the value given for *max time step (s)*.
 Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
 
-* `"minerals`" [Array(string)] is the list of mineral names.
+.. admonition:: alquimia-spec
 
-* `"sorption sites`" [Array(string)] is the list of sorption sites.
+  * `"minerals`" ``[Array(string)]`` is the list of mineral names.
 
-* `"auxiliary data`" [Array(string)] defines additional chemistry related data that the user
-  can request be saved to vis files.
+  * `"sorption sites`" ``[Array(string)]`` is the list of sorption sites.
 
-* `"min time step (s)`" [double] is the minimum time step that chemistry will allow the MPC to take.
+  * `"auxiliary data`" ``[Array(string)]`` defines additional chemistry related data that the user
+    can request be saved to vis files.
+
+  * `"min time step (s)`" ``[double]`` is the minimum time step that chemistry will allow 
+    the MPC to take.
 
 .. code-block:: xml
 
@@ -76,16 +79,17 @@ class Alquimia_PK : public Chemistry_PK {
   ~Alquimia_PK();
 
   // members required by PK interface
-  virtual void Setup() final;
-  virtual void Initialize() final;
+  virtual void parseParameterList() override;
+  virtual void Setup() override final;
+  virtual void Initialize() override final;
 
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) final;
-  virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
-  virtual void CalculateDiagnostics(const Tag& tag) final { extra_chemistry_output_data(); }
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override final;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override final;
+  virtual void CalculateDiagnostics(const Tag& tag) override final { extra_chemistry_output_data(); }
 
   // Ben: the following routine provides the interface for
   // output of auxillary cellwise data from chemistry
-  Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data();
+  Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data() override final;
 
   // Copies the chemistry state in the given cell to the given Alquimia containers.
   void CopyToAlquimia(int cell_id,

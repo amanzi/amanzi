@@ -60,7 +60,6 @@ class Schema {
   // local converters operators/strings/mesh
   int OldSchema() const;
 
-  std::string KindToString(AmanziMesh::Entity_kind kind) const;
   AmanziMesh::Entity_kind StringToKind(const std::string& name) const;
   WhetStone::DOF_Type StringToType(const std::string& name) const;
 
@@ -70,6 +69,7 @@ class Schema {
   // accessers and modifiers
   void set_base(AmanziMesh::Entity_kind base) { base_ = base; }
   AmanziMesh::Entity_kind get_base() const { return base_; }
+  const std::vector<WhetStone::SchemaItem>& get_items() { return items_; }
 
   std::vector<WhetStone::SchemaItem>::const_iterator begin() const { return items_.begin(); }
   std::vector<WhetStone::SchemaItem>::const_iterator end() const { return items_.end(); }
@@ -81,9 +81,9 @@ class Schema {
   // output
   friend std::ostream& operator<<(std::ostream& os, const Schema& s)
   {
-    os << "base=" << s.KindToString(s.get_base()) << "\n";
+    os << "base=" << AmanziMesh::to_string(s.get_base()) << "\n";
     for (auto it = s.begin(); it != s.end(); ++it) {
-      os << " item: kind=" << s.KindToString(std::get<0>(*it)) << ", num=" << std::get<2>(*it)
+      os << " item: kind=" << AmanziMesh::to_string(std::get<0>(*it)) << ", num=" << std::get<2>(*it)
          << ", type=" << (int)std::get<1>(*it) << "\n";
     }
     return os;

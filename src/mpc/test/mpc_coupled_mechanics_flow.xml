@@ -1,0 +1,916 @@
+<ParameterList>
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  <ParameterList name="units">
+    <Parameter isUsed="true" name="length" type="string" value="m"/>
+    <Parameter isUsed="true" name="time" type="string" value="s"/>
+    <Parameter isUsed="true" name="mass" type="string" value="kg"/>
+    <Parameter isUsed="true" name="concentration" type="string" value="SI"/>
+    <Parameter name="amount" type="string" value="mol"/>
+    <Parameter isUsed="true" name="temperature" type="string" value="K"/>
+  </ParameterList>
+
+  <ParameterList name="mesh">
+    <Parameter name="framework" type="string" value="MSTK"/>
+    <Parameter name="partitioner" type="string" value="metis"/>
+    <Parameter name="request edges" type="bool" value="true"/>
+    <ParameterList name="unstructured">
+      <ParameterList name="generate mesh">
+        <Parameter name="number of cells" type="Array(int)" value="{10, 10, 10}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{ 0.0, 0.0, 0.0}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
+      </ParameterList>
+      <ParameterList name="submesh">
+        <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+        <Parameter name="extraction method" type="string" value="manifold mesh"/>
+        <Parameter name="domain name" type="string" value="fracture"/>
+        <Parameter name="extract all faces" type="bool" value="true"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="3"/>
+  </ParameterList>
+
+  <ParameterList name="regions">
+    <ParameterList name="EntireDomain">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0, 0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="SurfaceInlet">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0, 0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.0, 1.0, 1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="SurfaceOutlet">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 1.0, 0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="fracture">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0, 0.0, 0.5}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0, 0.5}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="All">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0, 0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="state">
+    <ParameterList name="evaluators">
+      <ParameterList name="specific_storage">
+        <Parameter name="evaluator type" type="string" value="specific storage"/>
+        <ParameterList name="specific storage parameters">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="model" type="string" value="constant"/>
+            <Parameter name="value" type="double" value="1e-6"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-specific_storage">
+        <Parameter name="evaluator type" type="string" value="specific storage"/>
+        <ParameterList name="specific storage parameters">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="model" type="string" value="constant"/>
+            <Parameter name="value" type="double" value="1e-3"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-aperture">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0e-5"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-compliance">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="porosity">
+        <ParameterList name="function">
+          <ParameterList name="EntireDomain">
+            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.1"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="particle_density">
+        <ParameterList name="function">
+          <ParameterList name="EntireDomain">
+            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2757.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="fracture-porosity">
+        <ParameterList name="function">
+          <ParameterList name="fracture">
+            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="fracture-particle_density">
+        <ParameterList name="function">
+          <ParameterList name="fracture">
+            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2757.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="fracture-internal_energy_liquid">
+        <Parameter name="evaluator type" type="string" value="iem"/>
+        <Parameter name="internal energy key" type="string" value="fracture-internal_energy_liquid"/>
+        <ParameterList name="IEM parameters">
+          <ParameterList name="fracture">
+            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="heat capacity" type="double" value="76.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-heat_diffusion_to_matrix">
+        <Parameter name="evaluator type" type="string" value="heat diffusion to matrix"/>
+        <Parameter name="thermal conductivity key" type="string" value="fracture-thermal_conductivity"/>
+        <Parameter name="aperture key" type="string" value="fracture-aperture"/>
+      </ParameterList>
+      <ParameterList name="fracture-internal_energy_rock">
+        <Parameter name="evaluator type" type="string" value="iem"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
+        <ParameterList name="IEM parameters">
+          <ParameterList name="fracture">
+            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="heat capacity" type="double" value="1180.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-molar_density_liquid">
+        <Parameter name="evaluator type" type="string" value="eos"/>
+        <Parameter name="molar density key" type="string" value="fracture-molar_density_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water FEHM"/>
+        </ParameterList>
+        <Parameter name="eos basis" type="string" value="both"/>
+        <Parameter name="mass density key" type="string" value="fracture-mass_density_liquid"/>
+      </ParameterList>
+      <ParameterList name="temperature">
+        <ParameterList name="function">
+          <ParameterList name="EntireDomain">
+            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+            <ParameterList name="function">
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="4"/>
+                <Parameter name="formula" type="string" value="298.15"/>
+              </ParameterList>
+            </ParameterList>
+            <Parameter name="component" type="string" value="*"/>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="fracture-temperature">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.98149999999999977e+02"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="saturation_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-saturation_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="initial conditions">
+      <ParameterList name="gravity">
+        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.80665}"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_viscosity">
+        <Parameter name="value" type="double" value="1.0e-03"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_density">
+        <Parameter name="value" type="double" value="1000.0"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
+      </ParameterList>
+      <ParameterList name="poisson_ratio">
+        <ParameterList name="function">
+          <ParameterList name="EntireDomain">
+            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.1"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="young_modulus">
+        <ParameterList name="function">
+          <ParameterList name="EntireDomain">
+            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="6.0e+06"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="permeability">
+        <Parameter name="write checkpoint" type="bool" value="false"/>
+        <ParameterList name="function">
+          <ParameterList name="EntireDomain">
+            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.0e-21"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.0e-21"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 3 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.0e-21"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="bulk_modulus">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.1e+9"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-ref_aperture">
+        <ParameterList name="function">
+          <ParameterList name="ALL">
+            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-fracture_stiffness">
+        <ParameterList name="function">
+          <ParameterList name="ALL">
+            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="6.0e+8"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-diffusion_to_matrix">
+        <ParameterList name="function">
+          <ParameterList name="fracture">
+            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.0e-17"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="pressure">
+        <ParameterList name="function">
+          <ParameterList name="EntireDomain">
+            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-linear">
+                <Parameter name="y0" type="double" value="1.19e+07"/>
+                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9.81e+03}"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="temperature">
+        <ParameterList name="function">
+          <ParameterList name="EntireDomain">
+            <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+            <ParameterList name="function">
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="4"/>
+                <Parameter name="formula" type="string" value="298.15"/>
+              </ParameterList>
+            </ParameterList>
+            <Parameter name="component" type="string" value="*"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-pressure">
+        <ParameterList name="function">
+          <ParameterList name="fracture">
+            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+            <Parameter name="component" type="string" value="*"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.1e+07"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-temperature">
+        <ParameterList name="function">
+          <ParameterList name="fracture">
+            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+            <ParameterList name="function">
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="4"/>
+                <Parameter name="formula" type="string" value="298.15"/>
+              </ParameterList>
+            </ParameterList>
+            <Parameter name="component" type="string" value="*"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="1.01325e+05"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="mesh partitions">
+      <ParameterList name="materials">
+        <Parameter name="region list" type="Array(string)" value="{EntireDomain}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="cycle driver">
+    <Parameter name="io frequency" type="int" value="10"/>
+    <ParameterList name="time periods">
+      <ParameterList name="TP 0">
+        <ParameterList name="PK tree">
+          <ParameterList name="transient:mechanics and coupled flow">
+            <Parameter name="PK type" type="string" value="mechanics and coupled flow"/>
+            <ParameterList name="mechanics">
+              <Parameter name="PK type" type="string" value="mechanics matrix fracture"/>
+            </ParameterList>
+            <ParameterList name="transient:coupled flow">
+              <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
+              <ParameterList name="transient:flow matrix">
+                <Parameter name="PK type" type="string" value="darcy"/>
+              </ParameterList>
+              <ParameterList name="transient:flow fracture">
+                <Parameter name="PK type" type="string" value="darcy"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="start period time" type="double" value="0.0"/>
+        <Parameter name="end period time" type="double" value="1000.0"/>
+        <Parameter name="maximum cycle number" type="int" value="-1"/>
+        <Parameter name="initial time step" type="double" value="100.0"/>
+        <Parameter name="maximum time step" type="double" value="300.0"/>
+      </ParameterList>
+    </ParameterList>
+    <Parameter name="component names" type="Array(string)" value="{}"/>
+    <Parameter name="component molar masses" type="Array(double)" value="{}"/>
+    <ParameterList name="time period control">
+      <Parameter name="start times" type="Array(double)" value="{}"/>
+      <Parameter name="initial time step" type="Array(double)" value="{}"/>
+      <Parameter name="maximum time step" type="Array(double)" value="{}"/>
+    </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="PKs">
+    <ParameterList name="mechanics">
+      <Parameter name="domain name" type="string" value=""/>
+      <ParameterList name="time integrator">
+        <Parameter name="error control options" type="Array(string)" value="{displacement}"/>
+        <Parameter name="linear solver" type="string" value="PCG"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <Parameter name="time integration method" type="string" value="BDF1"/>
+        <ParameterList name="BDF1">
+          <Parameter name="timestep controller type" type="string" value="standard"/>
+          <ParameterList name="timestep controller standard parameters">
+            <Parameter name="max iterations" type="int" value="15"/>
+            <Parameter name="min iterations" type="int" value="10"/>
+            <Parameter name="time step increase factor" type="double" value="1.2"/>
+            <Parameter name="time step reduction factor" type="double" value="0.8"/>
+            <Parameter name="max time step" type="double" value="4.32340e+17"/>
+            <Parameter name="min time step" type="double" value="1.0e-6"/>
+          </ParameterList>
+          <Parameter name="solver type" type="string" value="nka"/>
+          <ParameterList name="nka parameters">
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+            <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+            <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
+            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+            <Parameter name="max divergent iterations" type="int" value="3"/>
+            <Parameter name="max nka vectors" type="int" value="10"/>
+            <Parameter name="limit iterations" type="int" value="20"/>
+            <Parameter name="modify correction" type="bool" value="false"/>
+          </ParameterList>
+          <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+          <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+          <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
+          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
+          <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="operators">
+        <ParameterList name="elasticity operator">
+          <Parameter name="matrix type" type="string" value="stiffness"/>
+          <ParameterList name="schema">
+            <Parameter name="base" type="string" value="cell"/>
+            <Parameter name="method" type="string" value="BernardiRaugel"/>
+            <Parameter name="method order" type="int" value="1"/>
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="small strain models">
+        <ParameterList name="All">
+          <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <Parameter name="model" type="string" value="Hardin Drnevich"/>
+          <Parameter name="reference shear strain" type="double" value="0.8e+6"/>
+          <Parameter name="maximum shear stress" type="double" value="70.0e+6"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="use gravity" type="bool" value="true"/>
+        <Parameter name="biot scheme: undrained split" type="bool" value="false"/>
+        <Parameter name="biot scheme: fixed stress split" type="bool" value="false"/>
+      </ParameterList>
+      <ParameterList name="boundary conditions">
+        <ParameterList name="displacement">
+          <ParameterList name="BC 0">
+            <Parameter name="regions" type="Array(string)" value="{SurfaceInlet}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="no slip">
+              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.001"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.0"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 3 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.0"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="transient:mechanics and coupled flow">
+      <Parameter isUsed="true" name="PK type" type="string" value="mechanics and coupled flow"/>
+      <Parameter name="PKs order" type="Array(string)" value="{mechanics, transient:coupled flow}"/>
+      <Parameter name="domain name" type="string" value=""/>
+      <ParameterList name="time integrator">
+        <Parameter name="error control options" type="Array(string)" value="{residual}"/>
+        <Parameter name="linear solver" type="string" value="GMRES"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <Parameter name="time integration method" type="string" value="BDF1"/>
+        <Parameter name="maximum number of iterations" type="int" value="200"/>
+        <ParameterList name="BDF1">
+          <Parameter name="timestep controller type" type="string" value="standard"/>
+          <ParameterList name="timestep controller standard parameters">
+            <Parameter name="max iterations" type="int" value="15"/>
+            <Parameter name="min iterations" type="int" value="10"/>
+            <Parameter name="time step increase factor" type="double" value="1.2"/>
+            <Parameter name="time step reduction factor" type="double" value="0.8"/>
+            <Parameter name="max time step" type="double" value="4.3234e+17"/>
+            <Parameter name="min time step" type="double" value="1.0e-06"/>
+          </ParameterList>
+          <Parameter name="solver type" type="string" value="nka"/>
+          <ParameterList name="nka parameters">
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-07"/>
+            <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+            <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
+            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+            <Parameter name="max divergent iterations" type="int" value="3"/>
+            <Parameter name="max nka vectors" type="int" value="10"/>
+            <Parameter name="limit iterations" type="int" value="20"/>
+            <Parameter name="modify correction" type="bool" value="false"/>
+          </ParameterList>
+          <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+          <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+          <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="transient:coupled flow">
+      <Parameter isUsed="true" name="PK type" type="string" value="darcy matrix fracture"/>
+      <Parameter name="PKs order" type="Array(string)" value="{transient:flow matrix, transient:flow fracture}"/>
+      <Parameter name="master PK index" type="int" value="0"/>
+      <ParameterList name="time integrator">
+        <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+        <Parameter name="linear solver" type="string" value="GMRES"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <Parameter name="time integration method" type="string" value="BDF1"/>
+        <ParameterList name="BDF1">
+          <Parameter name="timestep controller type" type="string" value="standard"/>
+          <ParameterList name="timestep controller standard parameters">
+            <Parameter name="max iterations" type="int" value="15"/>
+            <Parameter name="min iterations" type="int" value="10"/>
+            <Parameter name="time step increase factor" type="double" value="1.2"/>
+            <Parameter name="time step reduction factor" type="double" value="0.8"/>
+            <Parameter name="max time step" type="double" value="4.3234e+17"/>
+            <Parameter name="min time step" type="double" value="1.0e-06"/>
+          </ParameterList>
+          <Parameter name="solver type" type="string" value="nka"/>
+          <ParameterList name="nka parameters">
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-07"/>
+            <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+            <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
+            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+            <Parameter name="max divergent iterations" type="int" value="3"/>
+            <Parameter name="max nka vectors" type="int" value="10"/>
+            <Parameter name="limit iterations" type="int" value="20"/>
+            <Parameter name="modify correction" type="bool" value="false"/>
+            <Parameter name="monitor" type="string" value="monitor l2 residual"/>
+          </ParameterList>
+          <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+          <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+          <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
+          <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
+          <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="transient:flow matrix">
+      <Parameter name="domain name" type="string" value="domain"/>
+      <ParameterList name="relative permeability">
+        <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
+        <Parameter name="upwind frequency" type="string" value="every timestep"/>
+        <ParameterList name="upwind parameters">
+          <Parameter name="tolerance" type="double" value="1.0e-12"/>
+          <Parameter name="method" type="string" value="cell-based"/>
+          <Parameter name="polynomial order" type="int" value="1"/>
+          <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="water retention models">
+        <ParameterList name="WRM_0">
+          <Parameter name="water retention model" type="string" value="saturated"/>
+          <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="porosity models">
+        <ParameterList name="POM 0">
+          <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+          <Parameter name="porosity model" type="string" value="compressible"/>
+          <Parameter name="undeformed soil porosity" type="double" value="0.1"/>
+          <Parameter name="reference pressure" type="double" value="1.01325e+05"/>
+          <Parameter name="pore compressibility" type="double" value="3.0e-09"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="porosity model" type="string" value="compressible"/>
+        <Parameter name="permeability porosity model" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="permeability porosity models">
+        <ParameterList name="PPM 0">
+          <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+          <Parameter name="permeability porosity model" type="string" value="power law"/>
+          <Parameter name="undeformed soil porosity" type="double" value="0.1"/>
+          <Parameter name="power law exponent" type="double" value="3.0"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="absolute permeability">
+        <Parameter name="coordinate system" type="string" value="cartesian"/>
+      </ParameterList>
+      <ParameterList name="operators">
+        <ParameterList name="diffusion operator">
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="time integrator">
+        <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+        <Parameter name="linear solver" type="string" value="GMRES"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <Parameter name="time integration method" type="string" value="none"/>
+      </ParameterList>
+      <ParameterList name="boundary conditions">
+        <ParameterList name="pressure">
+          <ParameterList name="BC 0">
+            <Parameter name="regions" type="Array(string)" value="{SurfaceInlet}"/>
+            <ParameterList name="boundary pressure">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.19e+07"/>
+              </ParameterList>
+            </ParameterList>
+            <Parameter name="use area fractions" type="bool" value="false"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+          </ParameterList>
+          <ParameterList name="BC 1">
+            <Parameter name="regions" type="Array(string)" value="{SurfaceOutlet}"/>
+            <ParameterList name="boundary pressure">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.10e+07"/>
+              </ParameterList>
+            </ParameterList>
+            <Parameter name="use area fractions" type="bool" value="false"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="transient:flow fracture">
+      <Parameter name="domain name" type="string" value="fracture"/>
+      <ParameterList name="fracture permeability models">
+        <ParameterList name="FPM for fracture">
+          <Parameter name="region" type="string" value="fracture"/>
+          <Parameter name="model" type="string" value="cubic law"/>
+          <Parameter name="aperture" type="double" value="0.0"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="flow and transport in fractures" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="relative permeability">
+        <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
+        <Parameter name="upwind frequency" type="string" value="every timestep"/>
+        <ParameterList name="upwind parameters">
+          <Parameter name="tolerance" type="double" value="1.0e-12"/>
+          <Parameter name="method" type="string" value="cell-based"/>
+          <Parameter name="polynomial order" type="int" value="1"/>
+          <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="water retention models">
+        <ParameterList name="WRM_0">
+          <Parameter name="water retention model" type="string" value="saturated"/>
+          <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="absolute permeability">
+        <Parameter name="coordinate system" type="string" value="cartesian"/>
+      </ParameterList>
+      <ParameterList name="operators">
+        <ParameterList name="diffusion operator">
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="time integrator">
+        <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+        <Parameter name="linear solver" type="string" value="GMRES"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <Parameter name="time integration method" type="string" value="none"/>
+      </ParameterList>
+      <ParameterList name="boundary conditions">
+        <ParameterList name="pressure">
+          <ParameterList name="BC 0">
+            <Parameter name="regions" type="Array(string)" value="{SurfaceInlet}"/>
+            <Parameter name="use area fractions" type="bool" value="false"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="boundary pressure">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.19e+07"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="BC 1">
+            <Parameter name="regions" type="Array(string)" value="{SurfaceOutlet}"/>
+            <Parameter name="use area fractions" type="bool" value="false"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="boundary pressure">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.10e+07"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="solvers">
+    <ParameterList name="GMRES">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="error tolerance" type="double" value="1.0e-14"/>
+        <Parameter name="maximum number of iterations" type="int" value="20"/>
+        <Parameter name="controller training start" type="int" value="0"/>
+        <Parameter name="controller training end" type="int" value="3"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="PCG">
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        <Parameter name="error tolerance" type="double" value="1.0e-10"/>
+        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, relative residual, make one iteration}"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="medium"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="preconditioners">
+    <ParameterList name="Hypre AMG">
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="tolerance" type="double" value="0.0"/>
+        <Parameter name="smoother sweeps" type="int" value="2"/>
+        <Parameter name="cycle applications" type="int" value="2"/>
+        <Parameter name="strong threshold" type="double" value="0.5"/>
+        <Parameter name="cycle type" type="int" value="1"/>
+        <Parameter name="coarsen type" type="int" value="0"/>
+        <Parameter name="verbosity" type="int" value="0"/>
+        <!--Parameter name="relaxation type" type="int" value="3"/-->
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  <!--ParameterList name="visualization data">
+    <Parameter name="file name base" type="string" value="plot_matrix"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 100.0, -1.0}"/>
+  </ParameterList>
+  <ParameterList name="visualization data fracture">
+    <Parameter name="file name base" type="string" value="plot_fracture"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 100.0, -1.0}"/>
+  </ParameterList-->
+  <ParameterList name="verbose object">
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

@@ -34,28 +34,25 @@ class VaporInGas_Density : public EOS_Density {
  public:
   VaporInGas_Density(Teuchos::ParameterList& eos_plist);
 
-  double Density(double T, double p)
+  virtual double Density(double T, double p) override
   {
     AMANZI_ASSERT(0);
     return 0.0;
   }
-  double DDensityDT(double T, double p)
+  virtual double DDensityDT(double T, double p) override
   {
     AMANZI_ASSERT(0);
     return 0.0;
   }
-  double DDensityDp(double T, double p)
+  virtual double DDensityDp(double T, double p) override
   {
     AMANZI_ASSERT(0);
     return 0.0;
   }
 
-  double MolarDensity(double T, double p) { return gas_eos_->MolarDensity(T, p); }
-  double DMolarDensityDT(double T, double p) { return gas_eos_->DMolarDensityDT(T, p); }
-  double DMolarDensityDp(double T, double p) { return gas_eos_->DMolarDensityDp(T, p); }
-
- protected:
-  virtual void InitializeFromPlist_();
+  virtual double MolarDensity(double T, double p) override { return gas_eos_->MolarDensity(T, p); }
+  virtual double DMolarDensityDT(double T, double p) override { return gas_eos_->DMolarDensityDT(T, p); }
+  virtual double DMolarDensityDp(double T, double p) override { return gas_eos_->DMolarDensityDp(T, p); }
 
  protected:
   Teuchos::RCP<EOS_Density> gas_eos_;

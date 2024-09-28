@@ -94,8 +94,9 @@ TEST(RICHARDS_TWO_FRACTURES)
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
+  Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, "flow", S, soln));
+  Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(pk_tree, plist, S, soln));
   RPK->Setup();
 
   S->Setup();

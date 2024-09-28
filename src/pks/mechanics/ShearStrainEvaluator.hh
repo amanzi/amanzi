@@ -10,7 +10,8 @@
 /*
   Mechanics PK
 
-  Evaluator for computing shear modulus.
+  Evaluator for computing shear modulus. Currently, the only available
+  option is the Hardin-Drnevich model.
 */
 
 #ifndef AMANZI_MECHANICS_SHEAR_MODULUS_EVALUATOR_

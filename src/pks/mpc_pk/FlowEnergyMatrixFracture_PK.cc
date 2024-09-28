@@ -19,6 +19,7 @@
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "TreeOperator.hh"
+#include "StateArchive.hh"
 #include "SuperMap.hh"
 #include "UniqueLocalIndex.hh"
 
@@ -46,8 +47,6 @@ FlowEnergyMatrixFracture_PK::FlowEnergyMatrixFracture_PK(
     Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln),
     glist_(glist)
 {
-  Teuchos::ParameterList vlist;
-  vo_ = Teuchos::rcp(new VerboseObject("CoupledThermalFlow_PK", vlist));
   Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(glist, "PKs");
   if (pks_list->isSublist(name_)) {
     plist_ = Teuchos::sublist(pks_list, name_);
@@ -61,6 +60,10 @@ FlowEnergyMatrixFracture_PK::FlowEnergyMatrixFracture_PK(
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(plist_, "time integrator", true);
+
+  Teuchos::ParameterList vlist;
+  vlist.sublist("verbose object") = plist_->sublist("verbose object");
+  vo_ = Teuchos::rcp(new VerboseObject("CoupledThermalFlow_PK", vlist));
 }
 
 
@@ -114,15 +117,6 @@ FlowEnergyMatrixFracture_PK::Setup()
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
-  if (!S_->HasRecord(heat_diffusion_to_matrix_key_)) {
-    S_->Require<CV_t, CVS_t>(
-        heat_diffusion_to_matrix_key_, Tags::DEFAULT, heat_diffusion_to_matrix_key_)
-      .SetMesh(mesh_fracture_)
-      ->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 2);
-    S_->RequireEvaluator(heat_diffusion_to_matrix_key_, Tags::DEFAULT);
-  }
-
   // inform dependent PKs about coupling
   // -- flow
   auto pks0 = plist_->get<Teuchos::Array<std::string>>("PKs order").toVector();
@@ -152,6 +146,16 @@ FlowEnergyMatrixFracture_PK::Setup()
 
   // process other PKs
   PK_MPCStrong<PK_BDF>::Setup();
+
+  // coupling evaluators
+  if (!S_->HasRecord(heat_diffusion_to_matrix_key_)) {
+    S_->Require<CV_t, CVS_t>(
+        heat_diffusion_to_matrix_key_, Tags::DEFAULT, heat_diffusion_to_matrix_key_)
+      .SetMesh(mesh_fracture_)
+      ->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 2);
+    S_->RequireEvaluator(heat_diffusion_to_matrix_key_, Tags::DEFAULT);
+  }
 }
 
 
@@ -316,19 +320,17 @@ FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
   auto counter = Teuchos::TimeMonitor::getNewCounter("Flow-Energy MPC PK");
   Teuchos::TimeMonitor tm(*counter);
 
-  // make copy of evaluators
-  std::vector<Key> names = { "saturation_liquid", "water_storage", "energy" };
-  Teuchos::RCP<CompositeVector> copies[6];
-
-  int k(0), nnames(names.size());
-  for (int i = 0; i < nnames; ++i) {
-    SwapEvaluatorField_(names[i], copies[k], copies[k + 1]);
-    k += 2;
-  }
-
-  // make copy of primary unknowns
-  // save a copy of solution, i.e. primary variables
-  TreeVector solution_copy(*solution_);
+  // make copy of conservative fields
+  std::vector<Key> names = {
+    "pressure", "temperature", "fracture-pressure", "fracture-temperature"
+  };
+  std::vector<Key> fields = {
+    "saturation_liquid",          "water_storage",          "energy",
+    "fracture-saturation_liquid", "fracture-water_storage", "fracture-energy"
+  };
+  StateArchive archive(S_, vo_);
+  archive.Add(names, Tags::DEFAULT);
+  archive.CopyFieldsToPrevFields(fields, "", true);
 
   bool fail;
   try {
@@ -340,26 +342,7 @@ FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
     }
     fail = false;
   }
-
-  if (fail) {
-    std::string passwd("");
-    k = 0;
-    for (int i = 0; i < nnames; ++i) {
-      if (S_->HasRecord(names[i])) {
-        S_->GetW<CV_t>("prev_" + names[i], passwd) = *(copies[k]);
-        S_->GetW<CV_t>("fracture-prev_" + names[i], passwd) = *(copies[k + 1]);
-      }
-      k += 2;
-    }
-
-    // recover the original solution
-    *solution_ = solution_copy;
-    ChangedSolution();
-
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Step failed. Restored [fracture-]{ " << names[0] << ", " << names[1] << ", "
-               << names[2] << ", pressure, temperature }" << std::endl;
-  }
+  if (fail) archive.Restore("");
 
   return fail;
 }
@@ -383,7 +366,7 @@ FlowEnergyMatrixFracture_PK::FunctionalResidual(double t_old,
   op_tree_matrix_->Apply(*u_new, *f, 1.0);
 
   // convergence control
-  f->NormInf(&residual_norm_);
+  f->SubVector(1)->SubVector(1)->NormInf(&residual_norm_);
 }
 
 
@@ -570,7 +553,7 @@ FlowEnergyMatrixFracture_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   const auto& energy_fc = *S_->Get<CV_t>("fracture-energy").ViewComponent("cell");
 
   int ncells = energy_fc.MyLength();
-  double mean_energy, error_r(0.0), energy(0.0);
+  double mean_energy(0.0), error_r(0.0), energy(0.0);
 
   for (int c = 0; c < ncells; ++c) {
     energy += energy_fc[0][c] * mesh_f->getCellVolume(c); // reference cell energy
@@ -580,7 +563,8 @@ FlowEnergyMatrixFracture_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     error_r = (residual_norm_ * dt_) / mean_energy;
   }
 
-  error = std::max(error, error_r);
+  // removed since coupling fluxes are ignored
+  // error = std::max(error, error_r);
 
 #ifdef HAVE_MPI
   double tmp = error;

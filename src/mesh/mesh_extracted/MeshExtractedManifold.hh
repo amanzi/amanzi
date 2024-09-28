@@ -96,7 +96,11 @@ class MeshExtractedManifold : public MeshFramework {
 
   // -- faces of type 'ptype' connected to a node - The order of faces is not guaranteed
   //    to be the same for corresponding nodes on different processors
-  virtual void getNodeFaces(const Entity_ID n, cEntity_ID_View& nfaces) const override;
+  virtual void getNodeFaces(const Entity_ID n, cEntity_ID_View& faces) const override;
+
+  // -- cells of type 'ptype' connected to a node - The order of faces is not guaranteed
+  //    to be the same for corresponding nodes on different processors
+  virtual void getNodeCells(const Entity_ID n, cEntity_ID_View& cells) const override;
 
   // -- cells of type 'ptype' connected to an edge - The order of cells is not guaranteed
   //    to be the same for corresponding edges on different processors
@@ -157,11 +161,11 @@ class MeshExtractedManifold : public MeshFramework {
   // owned ids are enforced to be first in the child -> parent map
   mutable std::map<Entity_kind, Entity_ID> nents_owned_, nents_ghost_;
   mutable std::map<Entity_kind, Entity_ID_View> entid_to_parent_;
-  mutable std::map<Entity_kind, std::map<Entity_ID, Entity_ID>>
-    parent_to_entid_; // reverse to previous map
+  mutable std::map<Entity_kind, std::map<Entity_ID, Entity_ID>> parent_to_entid_; // reverse map
   mutable std::map<Entity_kind, Teuchos::RCP<const Epetra_Map>> ent_map_wghost_;
 
   mutable bool flattened_;
+  mutable bool extract_all_faces_;
 };
 
 } // namespace AmanziMesh

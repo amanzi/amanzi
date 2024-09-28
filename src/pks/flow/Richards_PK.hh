@@ -48,11 +48,6 @@ class Richards_PK : public Flow_PK {
               const Teuchos::RCP<State>& S,
               const Teuchos::RCP<TreeVector>& soln);
 
-  Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-              const std::string& pk_list_name,
-              Teuchos::RCP<State> S,
-              const Teuchos::RCP<TreeVector>& soln);
-
   ~Richards_PK(){};
 
   // methods required for PK interface
@@ -91,10 +86,10 @@ class Richards_PK : public Flow_PK {
   virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override { return true; }
 
   // -- possibly modifies the predictor that is going to be used as a
-  //    starting value for the nonlinear solve in the time integrator,
+  //    starting value for the nonlinear solve in the time integrator;
   //    the time integrator will pass the predictor that is computed
   //    using extrapolation and the time step that is used to compute
-  //    this predictor this function returns true if the predictor was
+  //    this predictor; this function returns true if the predictor was
   //    modified, false if not
   virtual bool ModifyPredictor(double dt,
                                Teuchos::RCP<const TreeVector> u0,
@@ -151,7 +146,7 @@ class Richards_PK : public Flow_PK {
     return op_matrix_diff_;
   }
 
-  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> get_bdf1_dae() { return bdf1_dae_; }
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>>& get_bdf1_dae() { return bdf1_dae_; }
 
   // -- verbose output and visualization methods
   void PlotWRMcurves(Teuchos::ParameterList& plist);
@@ -195,7 +190,7 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
   Teuchos::RCP<Operators::Upwind> upwind_;
-  std::string solver_name_, solver_name_constraint_;
+  std::string solver_name_;
 
   // coupling with energy
   Teuchos::RCP<Operators::Operator> op_vapor_;

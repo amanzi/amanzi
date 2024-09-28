@@ -46,6 +46,7 @@
             <ParameterList name="field">
               <Parameter name="field key" type="string" value="source_constant"/>
               <Parameter name="component" type="string" value="cell"/>
+              <Parameter name="scaling factor" type="double" value="1.0"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -130,6 +131,9 @@
     <ParameterList name="initial conditions">
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1000.0"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="0.0"/>

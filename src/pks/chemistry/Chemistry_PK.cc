@@ -58,12 +58,21 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList& pk_tree,
 
 
 /* ******************************************************************
+* Parser
+******************************************************************* */
+void
+Chemistry_PK::parseParameterList()
+{
+  saturation_tolerance_ = plist_->get<double>("saturation tolerance", 1e-14);
+}
+
+
+/* ******************************************************************
 * Register fields and evaluators with the State
 ******************************************************************* */
 void
 Chemistry_PK::Setup()
 {
-  saturation_tolerance_ = plist_->get<double>("saturation tolerance", 1e-14);
   bool amanzi_physics = plist_->isSublist("physical models and assumptions");
 
   // require flow fields

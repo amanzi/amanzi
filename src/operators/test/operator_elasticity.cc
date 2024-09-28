@@ -26,7 +26,6 @@
 
 // Amanzi
 #include "MeshFactory.hh"
-#include "GMVMesh.hh"
 #include "Tensor.hh"
 #include "WhetStoneMeshUtils.hh"
 
@@ -97,8 +96,7 @@ RunTest(int icase,
   // boundary conditions
   Analytic ana(mesh, mu, lambda, flag);
 
-  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
-    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells_owned; c++) {
     const Point& xc = mesh->getCellCentroid(c);
     const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
@@ -109,6 +107,7 @@ RunTest(int icase,
   // -- XML list speficies discretization method and location of degrees of freedom
   // -- (called schema). This seems redundant but only when use a low-order method.
   Teuchos::RCP<PDE_Elasticity> op = Teuchos::rcp(new PDE_Elasticity(op_list, mesh));
+  op->Init(op_list);
 
   // populate boundary conditions: type (called model) and value
   // -- normal component of velocity on boundary faces (a scalar)

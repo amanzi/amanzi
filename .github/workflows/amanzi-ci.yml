@@ -26,7 +26,7 @@ jobs:
       run:
         echo "Amanzi Branch = ${{env.AMANZI_BRANCH}}"
     - name: Get TPLs version
-      id: version 
+      id: version
       working-directory: Docker
       run:
         echo "AMANZI_TPLS_VER=$(./get_tpls_version.sh)" >> $GITHUB_ENV
@@ -49,7 +49,7 @@ jobs:
         docker push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest
   serial-tests:
     runs-on: ubuntu-latest
-    name: serial tests 
+    name: serial tests
     needs: build
     steps:
     - name: Check out the Amanzi repo
@@ -60,11 +60,11 @@ jobs:
     - name: Run tests
       id: tests
       working-directory: Docker
-      run: 
-        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L SERIAL"
+      run:
+        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L SERIAL --output-on-failure"
   parallel-tests:
     runs-on: ubuntu-latest
-    name: parallel tests 
+    name: parallel tests
     needs: build
     steps:
     - name: Check out the Amanzi repo
@@ -75,6 +75,6 @@ jobs:
     - name: Run tests
       id: tests
       working-directory: Docker
-      run: 
-        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L PARALLEL"
-  
+      run:
+        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{env.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest -L PARALLEL --output-on-failure"
+

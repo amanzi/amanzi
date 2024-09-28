@@ -10,7 +10,7 @@
 /*
   Mechanics PK
 
-  Evaluator for computing hydrostatic stress.
+  Evaluator for computing shear modulus.
 */
 
 #include "PDE_Elasticity.hh"
@@ -63,7 +63,6 @@ ShearStrainEvaluator::Evaluate_(const State& S, const std::vector<CompositeVecto
 
     auto& shear_c = *results[0]->ViewComponent("cell");
     int ncells = shear_c.MyLength();
-
 
     for (int c = 0; c < ncells; ++c) {
       auto Tc = op_->ComputeCellStrain(u, c);

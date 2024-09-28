@@ -76,10 +76,11 @@ TEST(FLOW_BOUNDARY_SOLVER)
   S1->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh1));
   S2->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh2));
 
+  Teuchos::ParameterList pk_tree("flow");
   Teuchos::RCP<TreeVector> soln1 = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Richards_PK> RPK1 = Teuchos::rcp(new Richards_PK(plist, "flow", S1, soln1));
+  Teuchos::RCP<Richards_PK> RPK1 = Teuchos::rcp(new Richards_PK(pk_tree, plist, S1, soln1));
   Teuchos::RCP<TreeVector> soln2 = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Richards_PK> RPK2 = Teuchos::rcp(new Richards_PK(plist, "flow", S2, soln2));
+  Teuchos::RCP<Richards_PK> RPK2 = Teuchos::rcp(new Richards_PK(pk_tree, plist, S2, soln2));
 
   RPK1->Setup();
   S1->Setup();

@@ -7,9 +7,7 @@ Capabilities Tested
 This one-dimensional, steady-state flow problem tests the Amanzi saturated flow process kernel to
 simulate flow through a homogeneous, saturated porous medium with constant properties. The analytical solutions for hydraulic head and Darcy velocity can be used to test the Amanzi implementation
 of prescribed hydraulic head boundary conditions, Darcy's law :cite:`linhh-Darcy_1856`, and mass conservation for an 
-elementary problem. 
-
-Capabilties tested include:
+elementary problem.  Capabilties tested include:
 
   * steady-state, one-dimensional flow
   * saturated flow conditions

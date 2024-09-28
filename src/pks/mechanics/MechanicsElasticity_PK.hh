@@ -17,11 +17,15 @@ The conceptual PDE model for the quasi-static elastic deformation is
   \rho \boldsymbol{g}
 
 where 
-:math:`\boldsymbol{\d}` is the displacement [m],
+:math:`\boldsymbol{d}` is the displacement [m],
 :math:`\rho` is the rock density [kg/m^3],
 :math:`\boldsymbol{\varepsilon}` is the strain tensor,
 and
 :math:`\boldsymbol{g}` is the gravity vector [:math:`m/s^2`].
+
+For a linear elasticity problem, the stress tensor :math:`C` is a linear operator 
+acting on the strain tensor.
+In general, the stress tensor is a nonlinear operator. 
 
 
 Global parameters
@@ -29,8 +33,10 @@ Global parameters
 Global parameters are placed in the sublist `"mechanics`".
 The list of global parameters include:
 
-* `"domain name`" [string] specifies mesh name that defined domain of this PK.
-  Default is `"domain`".
+.. admonition:: mechanics_pk-spec
+
+  * `"domain name`" ``[string]`` specifies mesh name that defined domain of this PK.
+    Default is `"domain`".
 
 
 Physical models and assumptions
@@ -39,13 +45,15 @@ This list is used to summarize physical models and assumptions, such as
 coupling with other PKs.
 This list is often generated or extended by a high-level MPC PK.
 
-* `"use gravity`" [bool] defines non-zero source term. Default is *false*.
+.. admonition:: mechanics_assumptions-spec
 
-* `"biot scheme: undrained split`" [bool] defines iterative coupling with 
-  a flow PK where mechanics is solved first.
+  * `"use gravity`" ``[bool]`` defines non-zero source term. Default is *false*.
 
-* `"biot scheme: fixed-stress split`" [bool] defines iterative coupling with 
-  a flow PK where flow is solved first.
+  * `"biot scheme: undrained split`" ``[bool]`` defines iterative coupling with 
+    a flow PK where mechanics is solved first.
+
+  * `"biot scheme: fixed-stress split`" ``[bool]`` defines iterative coupling with 
+    a flow PK where flow is solved first.
 
 .. code-block:: xml
 
@@ -139,8 +147,13 @@ class MechanicsElasticity_PK : public Mechanics_PK {
 
   // -- access
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae() { return bdf1_dae_; }
-  virtual Teuchos::RCP<Operators::Operator> my_operator(const Operators::OperatorType& type) override;
-  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization> my_pde(const Operators::PDEType& type) override { return op_matrix_elas_; }
+  virtual Teuchos::RCP<Operators::Operator>
+  my_operator(const Operators::OperatorType& type) override;
+  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
+  my_pde(const Operators::PDEType& type) override
+  {
+    return op_matrix_elas_;
+  }
 
  public:
   Teuchos::RCP<Operators::Operator> op_matrix_;

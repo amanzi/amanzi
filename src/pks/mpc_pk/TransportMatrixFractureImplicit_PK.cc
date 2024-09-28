@@ -277,6 +277,7 @@ TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new, bool
 
   num_aqueous_ = pk_matrix_->total_component_concentration()->ViewComponent("cell")->NumVectors();
 
+  S_->Get<CV_t>(matrix_vol_flowrate_key_, Tags::DEFAULT).ScatterMasterToGhosted("face");
   fia_->SetValues(S_->Get<CV_t>(matrix_vol_flowrate_key_));
 
   // fork between low-order and high-order
@@ -363,7 +364,6 @@ TransportMatrixFractureImplicit_PK::AdvanceStepLO_(double t_old, double t_new, i
     }
 
     // create solver
-    op_tree_matrix_->AssembleMatrix();
     op_tree_matrix_->ComputeInverse();
 
     auto& tvs = op_tree_matrix_->DomainMap();

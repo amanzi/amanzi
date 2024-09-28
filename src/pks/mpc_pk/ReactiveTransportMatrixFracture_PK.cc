@@ -79,20 +79,22 @@ ReactiveTransportMatrixFracture_PK::Setup()
   tcc_fracture_key_ = "fracture-total_component_concentration";
 
   // evaluators in fracture
-  Teuchos::ParameterList& elist = S_->FEList();
-  Teuchos::ParameterList& ilist = S_->ICList();
+  if (!S_->HasRecord("fracture-mass_density_liquid")) {
+    Teuchos::ParameterList& elist = S_->FEList();
+    Teuchos::ParameterList& ilist = S_->ICList();
 
-  double rho = ilist.sublist("const_fluid_density").get<double>("value");
-  elist.sublist("fracture-mass_density_liquid")
-    .sublist("function")
-    .sublist("All")
-    .set<std::string>("region", "All")
-    .set<std::string>("component", "cell")
-    .sublist("function")
-    .sublist("function-constant")
-    .set<double>("value", rho);
-  elist.sublist("fracture-mass_density_liquid")
-    .set<std::string>("evaluator type", "independent variable");
+    double rho = ilist.sublist("const_fluid_density").get<double>("value");
+    elist.sublist("fracture-mass_density_liquid")
+      .sublist("function")
+      .sublist("All")
+      .set<std::string>("region", "All")
+      .set<std::string>("component", "cell")
+      .sublist("function")
+      .sublist("function-constant")
+      .set<double>("value", rho);
+    elist.sublist("fracture-mass_density_liquid")
+      .set<std::string>("evaluator type", "independent variable");
+  }
 
   // copies
   S_->Require<CV_t, CVS_t>(tcc_matrix_key_, Tags::COPY, "state");

@@ -100,6 +100,9 @@ Flow_PK::VV_ValidateBCs() const
   std::set<int> pressure_faces, head_faces, flux_faces;
 
   for (int i = 0; i < bcs_.size(); i++) {
+    bcs_[i]->Compute(0.0, 0.0);
+    bcs_[i]->ComputeSubmodel(mesh_);
+
     if (bcs_[i]->get_bc_name() == "pressure") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         pressure_faces.insert(it->first);
@@ -112,6 +115,12 @@ Flow_PK::VV_ValidateBCs() const
 
     if (bcs_[i]->get_bc_name() == "head") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) { head_faces.insert(it->first); }
+    }
+
+    if (bcs_[i]->get_bc_name() == "coupling") {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        pressure_faces.insert(it->first);
+      }
     }
   }
 

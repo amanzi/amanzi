@@ -19,7 +19,6 @@
 #include "Teuchos_RCP.hpp"
 
 // Operators
-#include "UniqueLocalIndex.hh"
 #include "UpwindFluxManifolds.hh"
 
 namespace Amanzi {
@@ -74,28 +73,37 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
     // volume-weigthed average over downwind cells
     if (ncells > 1) {
       int dir;
-      double utvol(0.0), umean(0.0), dtvol(0.0), dmean(0.0), vol;
+      double uvol(0.0), umean(0.0), tvol(0.0), tmean(0.0), vol;
 
       for (int i = 0; i < ncells; ++i) {
         int c = cells[i];
         mesh_->getFaceNormal(f, c, &dir);
         vol = mesh_->getCellVolume(c);
 
-        if (flux_f[0][g + i] * dir > tol) {
-          utvol += vol;
+        tvol += vol;
+        tmean += vol * field_c[0][c];
+
+        if (flux_f[0][g + i] * dir >= tol) {
+          uvol += vol;
           umean += vol * field_c[0][c];
-        } else {
-          dtvol += vol;
-          dmean += vol * field_c[0][c];
         }
       }
 
-      if (utvol > 0.0) {
-        umean /= utvol;
-        for (int i = 0; i < ncells; ++i) field_f[0][g + i] = umean;
+      // average upwind cell values and use them for all downwind faces
+      if (uvol > 0.0) {
+        umean /= uvol;
+        for (int i = 0; i < ncells; ++i) {
+          int c = cells[i];
+          mesh_->getFaceNormal(f, c, &dir);
+          if (flux_f[0][g + i] * dir >= tol)
+            field_f[0][g + i] = field_c[0][c];
+          else
+            field_f[0][g + i] = umean;
+        }
+        // flow is negligent, use average all cell values
       } else {
-        dmean /= dtvol;
-        for (int i = 0; i < ncells; ++i) field_f[0][g + i] = dmean;
+        tmean /= tvol;
+        for (int i = 0; i < ncells; ++i) field_f[0][g + i] = tmean;
       }
 
       // upwind only on inflow Dirichlet faces

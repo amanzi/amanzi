@@ -18,9 +18,10 @@
 namespace Amanzi {
 namespace AmanziEOS {
 
-IdealGas_Density::IdealGas_Density(Teuchos::ParameterList& eos_plist) : EOS_Density(eos_plist)
+IdealGas_Density::IdealGas_Density(Teuchos::ParameterList& plist) : EOS_Density(plist)
 {
-  InitializeFromPlist_();
+  R_ = plist.get<double>("ideal gas constant", 8.31446261815324);
+  M_ = plist.get<double>("molar mass");
 };
 
 
@@ -42,14 +43,6 @@ double
 IdealGas_Density::DMolarDensityDp(double T, double p)
 {
   return 1.0 / (R_ * T);
-};
-
-
-void
-IdealGas_Density::InitializeFromPlist_()
-{
-  R_ = eos_plist_.get<double>("ideal gas constant", 8.31446261815324);
-  M_ = eos_plist_.get<double>("molar mass of gas");
 };
 
 } // namespace AmanziEOS

@@ -94,6 +94,7 @@ PDE_DiffusionNLFVwithBndFaces::Init_(Teuchos::ParameterList& plist)
 
   // other data
   dim_ = mesh_->getSpaceDimension();
+  manifold_dim_ = mesh_->getManifoldDimension();
 }
 
 
@@ -247,7 +248,7 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
       const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
       conormal = (Kc * normal) * dirs[n];
 
-      ierr = nlfv.PositiveDecomposition(n, tau, conormal, ws, ids);
+      ierr = nlfv.PositiveDecomposition(n, tau, conormal, manifold_dim_, ws, ids);
       AMANZI_ASSERT(ierr == 0);
 
       auto cells = mesh_->getFaceCells(f);
@@ -296,7 +297,7 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
       int ierr, ids[dim_];
       double ws[dim_];
 
-      ierr = nlfv.PositiveDecomposition(face_itself, tau, conormal, ws, ids);
+      ierr = nlfv.PositiveDecomposition(face_itself, tau, conormal, manifold_dim_, ws, ids);
       AMANZI_ASSERT(ierr == 0);
 
       weight[dim_][f] = ws[0];
@@ -311,20 +312,20 @@ PDE_DiffusionNLFVwithBndFaces::InitStencils_()
     }
   }
 
-
   // distribute stencils
   stencil_data_->GatherGhostedToMaster("weight");
   stencil_data_->ScatterMasterToGhosted("weight");
 
   ParallelCommunication pp(mesh_);
   for (int i = 0; i < 2 * dim_; ++i) {
-    pp.CombineGhostFace2MasterFace(*stencil_faces_[i], (Epetra_CombineMode)Add);
-    pp.CombineGhostFace2MasterFace(*stencil_cells_[i], (Epetra_CombineMode)Add);
+    pp.CombineGhostEntity2MasterEntity(
+      AmanziMesh::Entity_kind::FACE, *stencil_faces_[i], (Epetra_CombineMode)Add);
+    pp.CombineGhostEntity2MasterEntity(
+      AmanziMesh::Entity_kind::FACE, *stencil_cells_[i], (Epetra_CombineMode)Add);
 
-    pp.CopyMasterFace2GhostFace(*stencil_faces_[i]);
-    pp.CopyMasterFace2GhostFace(*stencil_cells_[i]);
+    pp.CopyMasterEntity2GhostEntity(AmanziMesh::Entity_kind::FACE, *stencil_faces_[i]);
+    pp.CopyMasterEntity2GhostEntity(AmanziMesh::Entity_kind::FACE, *stencil_cells_[i]);
   }
-
 
   stencil_initialized_ = true;
 }
@@ -840,7 +841,7 @@ PDE_DiffusionNLFVwithBndFaces::ApplyBCs(bool primary, bool eliminate, bool essen
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
-  Epetra_MultiVector& rhs_bnd = *global_op_->rhs()->ViewComponent("boundary_face", true);
+  Epetra_MultiVector& rhs_bnd = *global_op_->rhs()->ViewComponent("boundary_face");
   Epetra_MultiVector& hap = *stencil_data_->ViewComponent("hap", true);
 
   // un-rolling little-k data

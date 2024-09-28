@@ -12,43 +12,47 @@
 A user may request periodic dumps of Walkabout data. Output controls for Walkabout data are
 limited to file name generation and writing frequency, by numerical cycle number or time.
 
-* `"walkabout data`" [list] can accept a file name base [string] and cycle data [list]
-  used to generate the file base name or directory base name that is used in writing Walkabout data.
+.. admonition:: walkabout-spec
 
-  * `"file name base`" [string] The file name can contain relative or absolute path to an *existing*
-    directory only.  Default is `"walkabout`".
+  * `"walkabout data`" ``[list]`` can accept a file name base ``[string]`` and cycle data [list]
+    used to generate the file base name or directory base name that is used in writing Walkabout data.
 
-  * `"file name digits`" [int] specify the number of digits that should be appended to the file
-    name for the cycle number. Default is 5.
+    * `"file name base`" ``[string]`` The file name can contain relative or absolute path to an *existing*
+      directory only.  Default is `"walkabout`".
 
-  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle,
-    the second is the cycle period, and the third is the stop cycle or -1 in which case
-    there is no stop cycle. A visualization dump shall be written at such cycles that
-    satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
+    * `"file name digits`" ``[int]`` specify the number of digits that should be appended to the file
+      name for the cycle number. Default is 5.
 
-  * `"cycles start period stop n`" [Array(int)] if multiple cycles start-period-stop parameters
-    are needed, then use these parameters with n=0,1,2,..., and not the single
-    `"cycles start period stop`" parameter.
+    * `"cycles start period stop`" ``[Array(int)]`` the first entry is the start cycle,
+      the second is the cycle period, and the third is the stop cycle or -1 in which case
+      there is no stop cycle. A visualization dump shall be written at such cycles that
+      satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
 
-  * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written.
+    * `"cycles start period stop n`" ``[Array(int)]`` if multiple cycles start-period-stop parameters
+      are needed, then use these parameters with n=0,1,2,..., and not the single
+      `"cycles start period stop`" parameter.
 
-  * `"times start period stop`" [Array(double)] the first entry is the start time,
-    the second is the time period, and the third is the stop time or -1 in which case
-    there is no stop time. A visualization dump shall be written at such times that
-    satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+    * `"cycles`" ``[Array(int)]`` an array of discrete cycles that at which a visualization dump shall be written.
 
-  * `"times start period stop n`" [Array(double) if multiple start-period-stop parameters
-    are needed, then use this these parameters with n=0,1,2,..., and not the single
-    `"times start period stop`" parameter.
+    * `"times start period stop`" ``[Array(double)]`` the first entry is the start time,
+      the second is the time period, and the third is the stop time or -1 in which case
+      there is no stop time. A visualization dump shall be written at such times that
+      satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
 
-  * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
+    * `"times start period stop n`" ``[Array(double)]`` if multiple start-period-stop parameters
+      are needed, then use this these parameters with n=0,1,2,..., and not the single
+      `"times start period stop`" parameter.
 
-  * `"write regions`" [list] contains three lists of equal size with region names,
-    material names, and material ids to write into the output file.
+    * `"times`" ``[Array(double)]`` an array of discrete times that at which a visualization dump shall be written.
 
-    * `"region names`" [Array(string)] specifies names of regions.
-    * `"material names`" [Array(int)] specifies names of materials.
-    * `"material ids`" [Array(int)] specifies material ids.
+    * `"write regions`" ``[list]`` contains three lists of equal size with region names,
+      material names, and material ids to write into the output file.
+
+      * `"region names`" ``[Array(string)]`` specifies names of regions.
+      * `"material names`" ``[Array(int)]`` specifies names of materials.
+      * `"material ids`" ``[Array(int)]`` specifies material ids.
+
+Example:
 
 .. code-block:: xml
 

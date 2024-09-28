@@ -11,6 +11,9 @@
   EOS
 
   Tabulated equations of state.
+
+  The underlying assumption is that all intersections of saturation 
+  line with non-uniform mesh are of type 6, i.e. through mesh vertices.
 */
 
 #ifndef AMANZI_LOOKUP_TABLE_FEHM_HH_
@@ -29,11 +32,21 @@ class LookupTable_FEHM : public LookupTable {
   LookupTable_FEHM(Teuchos::ParameterList& plist);
   ~LookupTable_FEHM(){};
 
- private:
-  std::string ReadBlock_(std::ifstream& ifs, int nP, int nT);
+  virtual double Function(double T, double p, int* ierr) override;
+  virtual int Location(double T, double p, int* ierr) override;
 
  private:
-  double M_;
+  std::string ReadBlock_(std::ifstream& ifs, int nP, int nT, bool flag);
+  void ReadBlockSat_(std::ifstream& ifs, int nS, std::vector<std::vector<double>>& satF);
+
+  void ComputeDownwardMap_(int nP, int nT, int nS);
+
+ private:
+  std::string field_;
+
+  std::vector<std::vector<int>> map_;
+  std::vector<double> satT_, satP_;
+  std::vector<std::vector<double>> satFl_, satFg_;
 };
 
 } // namespace AmanziEOS

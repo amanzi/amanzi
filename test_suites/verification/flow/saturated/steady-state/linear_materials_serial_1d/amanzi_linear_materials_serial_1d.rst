@@ -120,7 +120,7 @@ The domain is shown in the following schematic.
 
 Mesh
 ~~~~
-A steady-flow mesh is applied.
+A fixed mesh with resolution 1 m is applied.
 
 
 Variables

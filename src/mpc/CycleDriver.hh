@@ -18,42 +18,47 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 The new multi-processor cycle driver provides more flexibility
 to handle multiphysics process kernels (PKs) and multiple time periods.
 
-* `"component names`" [Array(string)] provides the list of species names.
-  It is required for reactive transport.
+.. _cycle_driver-spec:
+.. admonition:: cycle_driver-spec
 
-* `"component molar masses`" [Array(string)] provides the list of
-  molar masses of species. It is required for proper conversion to and from
-  dimensionless units. Default is 1.
+   * `"component names`" ``[Array(string)]`` provides the list of species names.
+     It is required for reactive transport.
 
-* `"number of liquid components`" [int] is the number of liquid components.
+   * `"component molar masses`" ``[Array(string)]`` provides the list of
+     molar masses of species. It is required for proper conversion to and from
+     dimensionless units. Default is 1.
 
-* `"time periods`" [list] contains the list of time periods involved in the simulation.
-  The number of time periods is not limited.
+   * `"number of liquid components`" ``[int]`` is the number of liquid components.
 
-  * `"TP #`" [list] defines a particular time period. The numbering
-    should be sequential starting with 0.
+   * `"time periods`" ``[list]`` contains the list of time periods involved in the simulation.
+     The number of time periods is not limited.
 
-    * `"PK tree`" [list] describes a hierarchical structure of the process kernels
-      that reflect their weak and strong coupling.
+     * `"TP #`" ``[list]`` defines a particular time period. The numbering
+       should be sequential starting with 0.
 
-      * `"PKNAME`"  [list] name of PK which is used in the
-        simulation. Name can be arbitrary but the sublist with the same name
-        should exist in the list of PKs (see below).
+       * `"PK tree`" ``[list]`` describes a hierarchical structure of the process kernels
+         that reflect their weak and strong coupling.
 
-      * `"PK type`" [string] specifies the type of PK supported by Amanzi. At the moment
-        available options are (`"darcy`", `"richards`", `"transport`", `"one-phase energy`",
-        `"two-phase energy`", `"reactive transport`", `"flow reactive transport`",
-        `"thermal richards`", `"chemistry`", `"transport implicit`", `"transport matrix fracture`",
-        `"transport matrix fracture implicit`", `"flow`", and `"darcy matrix fracture`").
+         * `"PKNAME`"  ``[list]`` name of PK which is used in the
+           simulation. Name can be arbitrary but the sublist with the same name
+           should exist in the list of PKs (see below).
 
-      * `"start period time`" [double] is the start time of the current time period.
+         * `"PK type`" ``[string]`` specifies the type of PK supported by Amanzi. At the moment
+           available options are (`"darcy`", `"richards`", `"transport`", `"one-phase energy`",
+           `"two-phase energy`", `"reactive transport`", `"flow reactive transport`",
+           `"thermal richards`", `"chemistry`", `"transport implicit`", `"transport matrix fracture`",
+           `"transport matrix fracture implicit`", `"flow`", and `"darcy matrix fracture`").
 
-      * `"end period time`" [double] is the end time of the current time period.
+         * `"start period time`" ``[double]`` is the start time of the current time period.
 
-      * `"maximum cycle number`" [int] is the maximum allowed number of cycles in
-        the current time period. Special value -1 means unlimited number of cycles.
+         * `"end period time`" ``[double]`` is the end time of the current time period.
+ 
+         * `"maximum cycle number`" ``[int]`` is the maximum allowed number of cycles in
+           the current time period. Special value -1 means unlimited number of cycles.
 
-      * `"initial time step`" is the initial time step for the current time period.
+         * `"initial time step`" ``[double]`` is the initial time step for the current time period.
+
+   * `"io frequency`" ``[int]`` defines frequency of printing field statistics.
 
 .. code-block:: xml
 
@@ -160,6 +165,7 @@ class CycleDriver {
  private:
   void CoordinatorInit_();
   void ReadParameterList_();
+  void WriteStateStatistics_();
 
  private:
   // PK container and factory
@@ -205,6 +211,7 @@ class CycleDriver {
   Teuchos::RCP<Amanzi::WalkaboutCheckpoint> walkabout_;
 
   // fancy OS
+  int io_frequency_;
   Teuchos::RCP<VerboseObject> vo_;
 };
 

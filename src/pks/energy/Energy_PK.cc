@@ -56,6 +56,8 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
 
   // domain name
   domain_ = ep_list_->get<std::string>("domain name", "domain");
+  temperature_key_ = Keys::getKey(domain_, "temperature");
+  AddDefaultPrimaryEvaluator(S_, temperature_key_);
 
   // create verbosity object
   S_ = S;
@@ -84,8 +86,6 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
 void
 Energy_PK::Setup()
 {
-  temperature_key_ = Keys::getKey(domain_, "temperature");
-
   energy_key_ = Keys::getKey(domain_, "energy");
   prev_energy_key_ = Keys::getKey(domain_, "prev_energy");
   enthalpy_key_ = Keys::getKey(domain_, "enthalpy");
@@ -108,11 +108,11 @@ Energy_PK::Setup()
 
   mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
-  Key pressure_key = Keys::getKey(domain_, "pressure");
+  pressure_key_ = Keys::getKey(domain_, "pressure");
 
   // require constant fields
   S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
-  S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
+  S_->Require<double>("const_fluid_molar_mass", Tags::DEFAULT, "state");
 
   // require primary state variables
   std::vector<std::string> names({ "cell", "face" });
@@ -125,15 +125,8 @@ Energy_PK::Setup()
     ->SetGhosted(true)
     ->AddComponents(names, locations, ndofs);
 
-  if (!S_->HasEvaluator(temperature_key_, Tags::DEFAULT)) {
-    Teuchos::ParameterList elist(temperature_key_);
-    elist.set<std::string>("evaluator name", temperature_key_);
-    temperature_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S_->SetEvaluator(temperature_key_, Tags::DEFAULT, temperature_eval_);
-  } else {
-    temperature_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
-      S_->GetEvaluatorPtr(temperature_key_, Tags::DEFAULT));
-  }
+  temperature_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
+    S_->GetEvaluatorPtr(temperature_key_, Tags::DEFAULT));
 
   // conserved quantity from the last time step.
   if (!S_->HasRecord(prev_energy_key_)) {
@@ -215,7 +208,7 @@ Energy_PK::Setup()
     *S_->Require<CV_t, CVS_t>(mol_flowrate_key_, Tags::DEFAULT, passwd_)
        .SetMesh(mesh_)
        ->SetGhosted(true) = cvs;
-    S_->RequireEvaluator(mol_flowrate_key_, Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_, Tags::DEFAULT);
   }
 
   // -- effective fracture conductivity
@@ -252,13 +245,13 @@ Energy_PK::Setup()
   }
 
   // -- pressure
-  if (!S_->HasRecord(pressure_key)) {
-    S_->Require<CV_t, CVS_t>(pressure_key, Tags::DEFAULT, pressure_key)
+  if (!S_->HasRecord(pressure_key_)) {
+    S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, pressure_key_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-    // AddDefaultIndependentEvaluator(S_, pressure_key, Tags::DEFAULT, 101325.0);
-    S_->RequireEvaluator(pressure_key, Tags::DEFAULT);
+    // S_->RequireEvaluator(pressure_key_, Tags::DEFAULT);
+    AddDefaultPrimaryEvaluator(S_, pressure_key_);
   }
 
   // -- fracture aperture

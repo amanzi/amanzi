@@ -74,6 +74,7 @@
         <Parameter name="regions" type="Array(string)" value="{FRACTURE_NETWORK_INTERNAL}"/>
         <Parameter name="extraction method" type="string" value="manifold mesh"/>
         <Parameter name="domain name" type="string" value="fracture"/>
+        <Parameter name="extract all faces" type="bool" value="true"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">
@@ -199,7 +200,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="5.55082707324418223e+01"/>
+                <Parameter name="value" type="double" value="5.55092978073827368e+01"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -274,7 +275,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="5.55082707324418223e+01"/>
+                <Parameter name="value" type="double" value="5.55092978073827368e+01"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -383,6 +384,9 @@
       </ParameterList>
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1.0"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.0"/>
@@ -693,6 +697,10 @@
 	<Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
 
+      <ParameterList name="clipping parameters">
+        <Parameter name="maximum correction change" type="double" value="-1.0"/>
+      </ParameterList>
+
       <ParameterList name="operators">
 	<ParameterList name="diffusion operator">
 	  <ParameterList name="matrix">
@@ -768,10 +776,15 @@
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="physical models and assumptions">
 	<Parameter name="flow and transport in fractures" type="bool" value="true"/>
+        <Parameter name="external aperture" type="bool" value="false"/>
       </ParameterList>
 
       <ParameterList name="absolute permeability">
 	<Parameter name="coordinate system" type="string" value="cartesian"/>
+      </ParameterList>
+
+      <ParameterList name="clipping parameters">
+        <Parameter name="maximum correction change" type="double" value="-1.0"/>
       </ParameterList>
 
       <ParameterList name="fracture permeability models">

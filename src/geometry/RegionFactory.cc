@@ -24,7 +24,7 @@
 #include "dbc.hh"
 #include "errors.hh"
 
-#include "HDF5Reader.hh"
+#include "Reader.hh"
 
 #include "Region.hh"
 #include "RegionAll.hh"
@@ -36,6 +36,7 @@
 #include "RegionFunctionColor.hh"
 #include "RegionHalfSpace.hh"
 #include "RegionLabeledSet.hh"
+#include "RegionLevelSet.hh"
 #include "RegionLineSegment.hh"
 #include "RegionLogical.hh"
 #include "RegionPlane.hh"
@@ -167,18 +168,17 @@ createRegion(const std::string& reg_name,
 
   } else if (shape == "enumerated set") {
     std::string entity_str = plist.get<std::string>("entity");
-    std::vector<int> gids;
+    Teuchos::Array<int> gids;
 
     if (plist.isParameter("file")) {
       std::string filename = plist.get<std::string>("file");
-      HDF5Reader reader(filename);
-      reader.ReadData(reg_name, gids);
+      auto reader = createReader(filename);
+      reader->read(reg_name, gids);
     } else {
-      auto entity_list = plist.get<Teuchos::Array<int>>("entity gids");
-      gids = entity_list.toVector();
+      gids = plist.get<Teuchos::Array<int>>("entity gids");
     }
 
-    region = Teuchos::rcp(new RegionEnumerated(reg_name, reg_id, entity_str, gids, lifecycle));
+    region = Teuchos::rcp(new RegionEnumerated(reg_name, reg_id, entity_str, gids.toVector(), lifecycle));
 
   } else if (shape == "enumerated set from file") {
     std::string filename = plist.get<std::string>("read from file");
@@ -195,6 +195,11 @@ createRegion(const std::string& reg_name,
 
   } else if (shape == "boundary") {
     region = Teuchos::rcp(new RegionBoundary(reg_name, reg_id, lifecycle));
+
+  } else if (shape == "level set") {
+    int dim = plist.get<int>("dimension");
+    std::string formula = plist.get<std::string>("formula");
+    region = Teuchos::rcp(new RegionLevelSet(reg_name, reg_id, dim, formula, lifecycle));
 
   } else if (shape == "box volume fractions") {
     auto p0_vec = plist.get<Teuchos::Array<double>>("corner coordinate");

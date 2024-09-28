@@ -140,13 +140,11 @@ MagneticDiffusion2D(double dt,
   Epetra_MultiVector& Ee = *E.ViewComponent("node");
   Epetra_MultiVector& Bf = *B.ViewComponent("face");
 
-  AmanziGeometry::Point xv(2);
-
   Ee.PutScalar(0.0);
   Bf.PutScalar(0.0);
 
   for (int v = 0; v < nnodes_owned; ++v) {
-    xv = mesh->getNodeCoordinate(v);
+    const auto& xv = mesh->getNodeCoordinate(v);
     Ee[0][v] = (ana.electric_exact(xv, told))[2];
   }
 
@@ -184,7 +182,7 @@ MagneticDiffusion2D(double dt,
     std::vector<double>& bc_value = bc1->bc_value();
 
     for (int v = 0; v < nnodes_wghost; ++v) {
-      xv = mesh->getNodeCoordinate(v);
+      const auto& xv = mesh->getNodeCoordinate(v);
 
       if (fabs(xv[0] - Xa) < 1e-6 || fabs(xv[0] - Xb) < 1e-6 || fabs(xv[1] - Ya) < 1e-6 ||
           fabs(xv[1] - Yb) < 1e-6) {

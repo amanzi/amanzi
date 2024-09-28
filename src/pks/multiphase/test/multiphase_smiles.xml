@@ -58,26 +58,49 @@
     <ParameterList name="system">
       <ParameterList name="pressure eqn">
         <Parameter name="primary unknown" type="string" value="pressure_liquid"/>
-        <Parameter name="advection liquid" type="Array(string)" value="{ advection_water, pressure_liquid }"/>
-        <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
-
-        <!--Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_vapor, mole_fraction_vapor }"/-->
-        <Parameter name="diffusion factors" type="Array(double)" value="{ 0.0, 0.0 }"/>
-
         <Parameter name="accumulation" type="string" value="total_water_storage"/>
+
+        <ParameterList name="terms">
+          <ParameterList name="advection">
+            <Parameter name="coefficient" type="string" value="advection_water"/>
+            <Parameter name="argument" type="string" value="pressure_liquid"/>
+            <Parameter name="scaling factor" type="double" value="1.0"/>
+            <Parameter name="phase" type="int" value="0"/>
+          </ParameterList>
+          <!--Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_vapor, mole_fraction_vapor }"/-->
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="solute eqn">
         <Parameter name="primary unknown" type="string" value="total_component_concentration_liquid"/>
-        <Parameter name="advection liquid" type="Array(string)" value="{ advection_liquid, pressure_liquid }"/>
-        <Parameter name="advection gas" type="Array(string)" value="{ advection_gas, pressure_gas }"/>
-        <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 0.0 }"/>
-
-        <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_liquid, total_component_concentration_liquid }"/>
-        <Parameter name="diffusion gas" type="Array(string)" value="{ diffusion_gas, total_component_concentration_gas }"/>
-        <Parameter name="diffusion factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
-
         <Parameter name="accumulation" type="string" value="total_component_storage"/>
+
+        <ParameterList name="terms">
+          <ParameterList name="advection 0">
+            <Parameter name="coefficient" type="string" value="advection_liquid"/>
+            <Parameter name="argument" type="string" value="pressure_liquid"/>
+            <Parameter name="scaling factor" type="double" value="1.0"/>
+            <Parameter name="phase" type="int" value="0"/>
+          </ParameterList>
+          <ParameterList name="advection 1">
+            <Parameter name="coefficient" type="string" value="advection_gas"/>
+            <Parameter name="argument" type="string" value="pressure_gas"/>
+            <Parameter name="scaling factor" type="double" value="1.0"/>
+            <Parameter name="phase" type="int" value="1"/>
+          </ParameterList>
+          <ParameterList name="diffusion 0">
+            <Parameter name="coefficient" type="string" value="diffusion_liquid"/>
+            <Parameter name="argument" type="string" value="total_component_concentration_liquid"/>
+            <Parameter name="scaling factor" type="double" value="1.0"/>
+            <Parameter name="phase" type="int" value="0"/>
+          </ParameterList>
+          <ParameterList name="diffusion 1">
+            <Parameter name="coefficient" type="string" value="diffusion_gas"/>
+            <Parameter name="argument" type="string" value="total_component_concentration_gas"/>
+            <Parameter name="scaling factor" type="double" value="1.0"/>
+            <Parameter name="phase" type="int" value="1"/>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
 
@@ -267,15 +290,6 @@
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0}"/>
       </ParameterList>
-      <ParameterList name="const_fluid_density">
-        <Parameter name="value" type="double" value="1000.0"/>
-      </ParameterList>
-      <ParameterList name="const_fluid_viscosity">
-        <Parameter name="value" type="double" value="1.0e-3"/>
-      </ParameterList>
-      <ParameterList name="const_gas_viscosity">
-        <Parameter name="value" type="double" value="9.0e-6"/>
-      </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
@@ -288,20 +302,6 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.0e+5"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="saturation_liquid">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.01"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -374,6 +374,21 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="293.15"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="saturation_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.01"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -459,8 +474,8 @@
       </ParameterList>
 
       <ParameterList name="saturation_gas">
-        <Parameter name="evaluator type" type="string" value="saturation gas"/>
-        <Parameter name="saturation liquid key" type="string" value="saturation_liquid"/>
+        <Parameter name="evaluator type" type="string" value="saturation"/>
+        <Parameter name="saturation complement key" type="string" value="saturation_liquid"/>
       </ParameterList>
 
       <ParameterList name="mole_fraction_vapor">
@@ -554,7 +569,8 @@
         <Parameter name="pressure key" type="string" value="pressure_gas"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="ideal gas"/>
-          <Parameter name="molar mass of gas" type="double" value="3.016e-3"/>
+          <Parameter name="molar mass" type="double" value="3.016e-3"/>
+          <Parameter name="density" type="double" value="1.0"/>
         </ParameterList>
       </ParameterList>
 

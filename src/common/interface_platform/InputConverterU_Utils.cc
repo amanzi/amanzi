@@ -95,6 +95,12 @@ InputConverterU::ParseCondList_(std::vector<DOMNode*>& same_list,
       if (name != filter_name) continue;
     }
 
+    // special bc 
+    if (bctype == "field_pressure") {
+      bcs.coupling = true;
+      continue;
+    }
+
     // allowed attributes
     if (HasAttribute_(element, "filename") && nlist == 1) {
       bcs.filename = GetAttributeValueS_(element, "filename", TYPE_NONE, false);
@@ -135,6 +141,11 @@ InputConverterU::ParseCondList_(std::vector<DOMNode*>& same_list,
         Errors::Message msg;
         msg << "Unknown or ill-formed boundary conditions.\"\n";
         Exceptions::amanzi_throw(msg);
+      }
+
+      // miscalleneous
+      if (HasAttribute_(element, "direction")) {
+        bcs.kinematic = GetAttributeValueS_(element, "direction", TYPE_NONE, false, "");
       }
     }
   }

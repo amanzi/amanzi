@@ -360,6 +360,18 @@ InputConverterU::TranslateRegions_()
           .set<Teuchos::Array<double>>("coordinate", coord);
       }
 
+      else if (strcmp(node_name, "level_set") == 0) {
+        tree_["regions"].push_back(reg_name);
+
+        int dim = GetAttributeValueL_(reg_elem, "dimension");
+        std::string formula = GetAttributeValueS_(reg_elem, "formula");
+
+        out_list.sublist(reg_name)
+          .sublist("region: level set")
+          .set<int>("dimension", dim)
+          .set<std::string>("formula", formula);
+      }
+
       else if (strcmp(node_name, "polygonal_surface") == 0) {
         tree_["regions"].push_back(reg_name);
 
@@ -454,7 +466,7 @@ InputConverterU::TranslateRegions_()
         std::vector<double> low = GetAttributeVectorD_(reg_elem, "corner_coordinates", dim_, "m");
         std::vector<double> high =
           GetAttributeVectorD_(reg_elem, "opposite_corner_coordinates", dim_, "m");
-        std::vector<double> normals = GetAttributeVectorD_(reg_elem, "normals", dim_, "", false);
+        std::vector<double> normals = GetAttributeVectorD_(reg_elem, "normals", dim_ * dim_, "", false);
 
         out_list.sublist(reg_name)
           .sublist("region: box volume fractions")

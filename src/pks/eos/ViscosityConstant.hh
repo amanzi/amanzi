@@ -34,9 +34,6 @@ class ViscosityConstant : public EOS_Viscosity {
   virtual double DViscosityDT(double T, double p) override { return 0.0; }
   virtual double DViscosityDp(double T, double p) override { return 0.0; }
 
- protected:
-  virtual void InitializeFromPlist_();
-
   double visc_;
 
  private:

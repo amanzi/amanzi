@@ -13,14 +13,16 @@ Internal energy model is function of temperature only. Units are J/{mol/kg}.
 Internal energy list has a few parameters that allows us to run this PK
 in a variety of regimes, e.g. with or without gas phase.
 
-* `"energy key`" [string] specifies name for the internal energy field.
-  The default value is `"energy`".
+.. admonition:: iem-spec
 
-* `"evaluator type`" [string] changes the evaluator for internal energy.
-  Available options are `"generic`" and `"constant liquid density`" (default).
+  * `"energy key`" ``[string]`` specifies name for the internal energy field.
+    The default value is `"energy`".
 
-* `"vapor diffusion`" [bool] specifies presence of a gas phase.
-  The default value is `"true`".
+  * `"evaluator type`" ``[string]`` changes the evaluator for internal energy.
+    Available options are `"generic`" and `"constant liquid density`" (default).
+
+  * `"vapor diffusion`" ``[bool]`` specifies presence of a gas phase.
+    The default value is `"true`".
 
 .. code-block:: xml
 

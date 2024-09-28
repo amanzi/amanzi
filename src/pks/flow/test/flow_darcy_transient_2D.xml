@@ -175,6 +175,9 @@
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1000.0"/>
       </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
+      </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="0.0"/>
       </ParameterList>

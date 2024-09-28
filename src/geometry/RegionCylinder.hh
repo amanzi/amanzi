@@ -8,16 +8,16 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-//! RegionHalfSpace: A planar (infinite) region in space, defined by a point and a normal.
+//! RegionCylinder: A cylinder
 /*!
 List *region: cylinder* defines an infinite cylinder determined by
 a symmetry axis, point on this axis and radius.
 
-* `"axis`" ``[Array(double)]`` symmetry axis
+.. admonition:: region_cylinder-spec
 
-* `"point`" ``[Array(double)]`` point on a symmetry axis
-
-* `"radius`" ``[double]`` cylinder radius
+  * `"axis`" ``[Array(double)]`` symmetry axis
+  * `"point`" ``[Array(double)]`` point on a symmetry axis
+  * `"radius`" ``[double]`` cylinder radius
 
 Example:
 

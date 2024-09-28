@@ -115,22 +115,44 @@ class MeshMaps {
   // rank 0 with 0...num_owned_entities and continuing through the ranks.
   void initialize(const MeshFramework& mesh, bool renumber = false);
 
+  // The list of local face IDs for each boundary_face, owned or ghosted.
   template <MemSpace_kind MEM>
-  decltype(auto) // Entity_ID_View - nonconst!
-  getBoundaryFaces() const
+  View_type<const Entity_ID, MEM>
+  getBoundaryFaces(const Parallel_kind ptype = Parallel_kind::ALL) const
   {
-    return view<MEM>(boundary_faces_);
+    if (ptype == Parallel_kind::ALL) {
+      return view<MEM>(boundary_faces_);
+    } else if (ptype == Parallel_kind::OWNED) {
+      return Kokkos::subview(view<MEM>(boundary_faces_),
+                             Kokkos::pair{ (int)0, (int)getNBoundaryFaces(Parallel_kind::OWNED) });
+    } else if (ptype == Parallel_kind::GHOST) {
+      return Kokkos::subview(view<MEM>(boundary_faces_),
+                             Kokkos::pair{ (int)getNBoundaryFaces(Parallel_kind::OWNED),
+                                           (int)getNBoundaryFaces(Parallel_kind::ALL) });
+    }
+    return View_type<const Entity_ID, MEM>();
   }
 
+  // The list of local node IDs for each boundary_face, owned or ghosted.
   template <MemSpace_kind MEM>
-  decltype(auto) // Entity_ID_View - nonconst!
-  getBoundaryNodes() const
+  View_type<const Entity_ID, MEM>
+  getBoundaryNodes(const Parallel_kind ptype = Parallel_kind::ALL) const
   {
-    return view<MEM>(boundary_nodes_);
+    if (ptype == Parallel_kind::ALL) {
+      return view<MEM>(boundary_nodes_);
+    } else if (ptype == Parallel_kind::OWNED) {
+      return Kokkos::subview(view<MEM>(boundary_nodes_),
+                             Kokkos::pair{ (int)0, (int)getNBoundaryNodes(Parallel_kind::OWNED) });
+    } else if (ptype == Parallel_kind::GHOST) {
+      return Kokkos::subview(view<MEM>(boundary_nodes_),
+                             Kokkos::pair{ (int)getNBoundaryNodes(Parallel_kind::OWNED),
+                                           (int)getNBoundaryNodes(Parallel_kind::ALL) });
+    }
+    return View_type<const Entity_ID, MEM>();
   }
 
-  std::size_t getNBoundaryFaces(Parallel_kind ptype);
-  std::size_t getNBoundaryNodes(Parallel_kind ptype);
+  std::size_t getNBoundaryFaces(Parallel_kind ptype) const;
+  std::size_t getNBoundaryNodes(Parallel_kind ptype) const;
 
   const Map_type& getMap(Entity_kind kind, bool include_ghost) const;
   const Import_type& getImporter(Entity_kind kind) const;

@@ -1059,11 +1059,17 @@ InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
 
       // add time integrator to PKs that have no transport and chemistry sub-PKs.
       if (pk.find("transport") == std::string::npos && pk.find("chemistry") == std::string::npos) {
+        bool modify_correction(false);
+        node = GetUniqueElementByTagsString_(
+          "numerical_controls, unstructured_controls, unstr_nonlinear_solver, modify_correction",
+          flag);
+        if (flag) modify_correction = GetTextContentL_(node);
+
         if (!out_list.sublist(pk).isSublist("time integrator")) {
           out_list.sublist(pk).sublist("time integrator") =
             TranslateTimeIntegrator_(err_options,
                                      "nka",
-                                     false,
+                                     modify_correction,
                                      "unstructured_controls, unstr_transient_controls",
                                      TI_SOLVER,
                                      dt_cut_[mode],
@@ -1136,7 +1142,8 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       mesh_list_u.sublist("submesh")
         .set<Teuchos::Array<std::string>>("regions", aux)
         .set<std::string>("extraction method", "manifold mesh")
-        .set<std::string>("domain name", "fracture");
+        .set<std::string>("domain name", "fracture")
+        .set<bool>("extract all faces", true);
 
       if (dim_ == 3) mesh_list.set<bool>("request edges", true);
     }
@@ -1178,7 +1185,8 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       mesh_list_u.sublist("submesh")
         .set<Teuchos::Array<std::string>>("regions", aux)
         .set<std::string>("extraction method", "manifold mesh")
-        .set<std::string>("domain name", "fracture");
+        .set<std::string>("domain name", "fracture")
+        .set<bool>("extract all faces", true);
 
       if (dim_ == 3) mesh_list.set<bool>("request edges", true);
     }
@@ -1188,7 +1196,8 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       mesh_list_u.sublist("submesh")
         .set<Teuchos::Array<std::string>>("regions", aux)
         .set<std::string>("extraction method", "manifold mesh")
-        .set<std::string>("domain name", "fracture");
+        .set<std::string>("domain name", "fracture")
+        .set<bool>("extract all faces", true);
 
       if (dim_ == 3) mesh_list.set<bool>("request edges", true);
     }
@@ -1220,7 +1229,7 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
         }
 
         if (!fracture_network_ && (pk == "flow" || pk == "flow fracture")) {
-          tmp.sublist("pressure-lambda constraints").set<std::string>("method", "projection");
+          tmp.sublist("dae constraint").set<std::string>("method", "projection");
         }
 
         // cannot upwind nonlinear coefficient at the moment
@@ -1241,7 +1250,8 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       mesh_list_u.sublist("submesh")
         .set<Teuchos::Array<std::string>>("regions", aux)
         .set<std::string>("extraction method", "manifold mesh")
-        .set<std::string>("domain name", "fracture");
+        .set<std::string>("domain name", "fracture")
+        .set<bool>("extract all faces", true);
 
       if (dim_ == 3) mesh_list.set<bool>("request edges", true);
     }

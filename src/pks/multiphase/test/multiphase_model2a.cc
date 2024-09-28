@@ -117,7 +117,7 @@ TEST(MULTIPHASE_MODEL_I)
     iloop++;
 
     // output solution
-    if (iloop % 5 == 0) {
+    if (iloop % 10 == 0) {
       io->InitializeCycle(t, iloop, "");
       const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");

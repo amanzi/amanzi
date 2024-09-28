@@ -16,7 +16,6 @@
 #include <string>
 
 #include "PK_BDF.hh"
-#include "PorosityEvaluator.hh"
 #include "StateArchive.hh"
 #include "StateHelpers.hh"
 #include "Transport_PK.hh"
@@ -188,11 +187,15 @@ FlowMechanics_PK::CommitSequentialStep(Teuchos::RCP<const TreeVector> u_old,
                                        Teuchos::RCP<const TreeVector> u_new)
 {
   // access to pressures, depends on PK
+  std::string name;
   Teuchos::RCP<const Epetra_MultiVector> u0_c, u1_c;
   if (thermal_flow_) {
+    auto mpc = Teuchos::rcp_dynamic_cast<PK_MPC<PK_BDF>>(sub_pks_[0]);
+    name = Keys::getVarName((*mpc->begin())->name());
     u0_c = u_old->SubVector(0)->SubVector(0)->Data()->ViewComponent("cell");
     u1_c = u_new->SubVector(0)->SubVector(0)->Data()->ViewComponent("cell");
   } else {
+    name = Keys::getVarName(sub_pks_[0]->name());
     u0_c = u_old->SubVector(0)->Data()->ViewComponent("cell");
     u1_c = u_new->SubVector(0)->Data()->ViewComponent("cell");
   }
@@ -205,7 +208,7 @@ FlowMechanics_PK::CommitSequentialStep(Teuchos::RCP<const TreeVector> u_old,
   Key prev = Keys::getKey(domain_, "prev_water_storage");
   auto& ws_c = *S_->GetW<CV_t>(prev, Tags::DEFAULT, "").ViewComponent("cell");
 
-  if (Keys::getVarName(sub_pks_[0]->name()) == "richards") {
+  if (name == "richards") {
     const auto& eta_c = *S_->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
     for (int c = 0; c != ncells; ++c) {
       double stability = FixedStressStability(E[0][c], nu[0][c], b[0][c]);

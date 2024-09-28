@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.5-dev">
+<amanzi_input type="unstructured" version="1.6-dev">
     <model_description name="unconfined_seepaged_2d">
       <comments>Steady-State Richards: unconfined seepage_2d</comments>
       <model_id>??</model_id>
@@ -25,9 +25,8 @@
     </process_kernels>
     <phases>
       <liquid_phase name="water">
-        <eos>false</eos>
-        <viscosity>1.002E-03</viscosity>
-        <density>998.2</density>
+        <eos model="constant" viscosity="1.002e-03" density="998.2"/> 
+        <molar_mass>0.018</molar_mass>
       </liquid_phase>
     </phases>
     <execution_controls>
@@ -101,7 +100,7 @@
       <material name="Aquifer">
         <comments>Aquifer</comments>
         <mechanical_properties>
-          <porosity value="0.3" />
+          <porosity model="constant" value="0.3" />
         </mechanical_properties>
         <permeability x="3.6098e-13" y="3.6098e-13" />
         <cap_pressure model="van_genuchten">

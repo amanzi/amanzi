@@ -317,7 +317,7 @@ point_in_polygon(const Point testpnt, const PVT& coords)
     }
   } else {
     return point_in_polygon_flat(testpnt, coords, 0, 1);
-  } 
+  }
 
   return false;
 }

@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.5-dev">
+<amanzi_input type="unstructured" version="1.6-dev">
   <model_description name="DVZ 3layer 2D">
     <comments>Example input file</comments>
     <author>Konstantin Lipnikov (TEST 2)</author>
@@ -44,9 +44,8 @@
 
   <phases>
     <liquid_phase name="water">
-      <eos>0-30C</eos>
-      <viscosity>1.002E-03</viscosity>
-      <density>998.2</density>
+      <eos model="0-30C"/>
+      <molar_mass>0.018015</molar_mass>
       <dissolved_components>
         <solutes>
           <solute coefficient_of_diffusion="1.0e-9">Tc-99</solute>
@@ -154,7 +153,7 @@
   <materials>
     <material name="Facies_1">
       <mechanical_properties>
-        <porosity value="0.4082"/>
+        <porosity model="constant" value="0.4082"/>
         <particle_density value="2600.0"/>
       </mechanical_properties>
       <hydraulic_conductivity x="1.9976E-5 m/s" y="1.9976E-6 m/s" />
@@ -167,7 +166,7 @@
 
     <material name="Facies_2">
       <mechanical_properties>
-        <porosity value="0.2206"/>
+        <porosity model="constant" value="0.2206"/>
       </mechanical_properties>
       <permeability x="6.9365E-11 m^2" z="6.9365E-12 m^2" />
       <cap_pressure model="van_genuchten">
@@ -179,7 +178,7 @@
 
     <material name="Facies_3">
       <mechanical_properties>
-        <porosity value="0.2340"/>
+        <porosity model="constant" value="0.2340"/>
       </mechanical_properties>
       <permeability x="2.0706E-09 m^2" z="2.0706E-10 m^2" />
       <cap_pressure model="tabular">

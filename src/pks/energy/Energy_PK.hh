@@ -49,10 +49,12 @@ This list is used to summarize physical models and assumptions, such as
 coupling with other PKs.
 This list is often generated on a fly by a high-level MPC PK.
 
-* `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
-  e.g. by EnergyFlow PK. The default value is `"false`".
+.. admonition:: energy_pk-spec
 
-* `"eos lookup table`" [string] provides the name for optional EOS lookup table.
+  * `"vapor diffusion`" ``[bool]`` is set up automatically by a high-level PK,
+    e.g. by EnergyFlow PK. The default value is `"false`".
+
+  * `"eos lookup table`" ``[string]`` provides the name for optional EOS lookup table.
 
 .. code-block:: xml
 
@@ -104,6 +106,7 @@ class Energy_PK : public PK_PhysicalBDF {
   virtual ~Energy_PK(){};
 
   // methods required by PK interface
+  virtual void parseParameterList() override {};
   virtual void Setup() override;
   virtual void Initialize() override;
   virtual std::string name() override { return passwd_; }
@@ -186,7 +189,7 @@ class Energy_PK : public PK_PhysicalBDF {
   Key energy_key_, prev_energy_key_;
   Key enthalpy_key_, aperture_key_;
   Key ie_liquid_key_, ie_gas_key_, ie_rock_key_;
-  Key mol_flowrate_key_, particle_density_key_, sat_liquid_key_;
+  Key pressure_key_, mol_flowrate_key_, particle_density_key_, sat_liquid_key_;
   Key mol_density_liquid_key_, mass_density_liquid_key_;
   Key mol_density_gas_key_, x_gas_key_;
   Key conductivity_gen_key_, conductivity_key_, conductivity_eff_key_;

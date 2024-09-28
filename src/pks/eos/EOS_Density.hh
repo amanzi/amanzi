@@ -23,9 +23,14 @@ namespace AmanziEOS {
 
 class EOS_Density {
  public:
-  EOS_Density(Teuchos::ParameterList& eos_plist) : eos_plist_(eos_plist), ierr_(0)
+  EOS_Density(Teuchos::ParameterList& eos_plist) : ierr_(0)
   {
-    InitializeFromPlist_();
+    M_ = eos_plist.get<double>("molar mass");
+
+    if (eos_plist.isParameter("molar density"))
+      rho_ = eos_plist.get<double>("molar density") * M_;
+    else
+      rho_ = eos_plist.get<double>("density");
   }
   virtual ~EOS_Density(){};
 
@@ -45,18 +50,6 @@ class EOS_Density {
   std::string error_msg() { return error_msg_; }
 
  protected:
-  virtual void InitializeFromPlist_()
-  {
-    M_ = eos_plist_.get<double>("molar mass", 18.0153e-03);
-
-    if (eos_plist_.isParameter("molar density"))
-      rho_ = eos_plist_.get<double>("molar density") * M_;
-    else
-      rho_ = eos_plist_.get<double>("density", 997.07);
-  }
-
- protected:
-  Teuchos::ParameterList eos_plist_;
   double M_, rho_;
 
   int ierr_;

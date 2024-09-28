@@ -25,6 +25,7 @@
         <Parameter name="regions" type="Array(string)" value="{FRACTURE_NETWORK_INTERNAL}"/>
         <Parameter name="extraction method" type="string" value="manifold mesh"/>
         <Parameter name="domain name" type="string" value="fracture"/>
+        <Parameter name="extract all faces" type="bool" value="true"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">
@@ -110,7 +111,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="5.55082707324418225e+04"/>
+                <Parameter name="value" type="double" value="55509.29780738274"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -295,7 +296,7 @@
             <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="5.55082707324418225e+04"/>
+                <Parameter name="value" type="double" value="55509.29780738274"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -373,6 +374,9 @@
       </ParameterList>
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1000.0"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="permeability">
         <Parameter name="write checkpoint" type="bool" value="false"/>
@@ -585,7 +589,7 @@
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -671,7 +675,7 @@
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -751,7 +755,7 @@
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -797,7 +801,7 @@
         <Parameter name="error control options" type="Array(string)" value="{energy}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -863,20 +867,26 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="thermal conductivity evaluator">
-        <ParameterList name="thermal conductivity parameters">
+        <ParameterList name="All">
           <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-          <Parameter name="thermal conductivity of liquid" type="double" value="0.0"/>
-          <Parameter name="thermal conductivity of rock" type="double" value="2.59399999999999986e+00"/>
-          <Parameter name="reference temperature" type="double" value="2.98149999999999977e+02"/>
-          <Parameter name="eos type" type="string" value="constant"/>
-          <Parameter name="thermal conductivity" type="double" value="2.59399999999999986e+00"/>
+	  <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <ParameterList name="solid phase">
+            <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="2.594"/>
+            <Parameter name="reference temperature" type="double" value="298.15"/>
+          </ParameterList>
+          <ParameterList name="liquid phase">
+	    <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="2.594"/>
+            <Parameter name="reference temperature" type="double" value="298.15"/>
+	  </ParameterList>
         </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{energy}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -929,20 +939,26 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="thermal conductivity evaluator">
-        <ParameterList name="thermal conductivity parameters">
+        <ParameterList name="All">
           <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-          <Parameter name="thermal conductivity of liquid" type="double" value="0.0"/>
-          <Parameter name="thermal conductivity of rock" type="double" value="0.0"/>
-          <Parameter name="reference temperature" type="double" value="2.98149999999999977e+02"/>
-          <Parameter name="eos type" type="string" value="constant"/>
-          <Parameter name="thermal conductivity" type="double" value="0.0"/>
+	  <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <ParameterList name="solid phase">
+            <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="0.0"/>
+            <Parameter name="reference temperature" type="double" value="298.15"/>
+          </ParameterList>
+          <ParameterList name="liquid phase">
+	    <Parameter name="eos type" type="string" value="constant"/>
+            <Parameter name="reference conductivity" type="double" value="0.0"/>
+            <Parameter name="reference temperature" type="double" value="298.15"/>
+	  </ParameterList>
         </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{energy}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -1010,8 +1026,8 @@
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.0"/>
-        <Parameter name="smoother sweeps" type="int" value="3"/>
-        <Parameter name="cycle applications" type="int" value="5"/>
+        <Parameter name="smoother sweeps" type="int" value="2"/>
+        <Parameter name="cycle applications" type="int" value="4"/>
         <Parameter name="strong threshold" type="double" value="5.0e-01"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>

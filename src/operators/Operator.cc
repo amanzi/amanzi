@@ -306,7 +306,6 @@ Operator::AssembleMatrix()
   // std::stringstream filename_s2;
   // filename_s2 << "assembled_matrix" << 0 << ".txt";
   // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
-  // exit(0);
 }
 
 

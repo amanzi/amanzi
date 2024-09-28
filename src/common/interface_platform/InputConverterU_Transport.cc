@@ -300,6 +300,10 @@ InputConverterU::TranslateTransport_(const std::string& domain)
   out_list.sublist("operators") =
     TranslateDiffusionOperator_(disc_methods, "diffusion_operator", "", "", "", domain, false);
 
+  // auxiliary fields
+  node = GetUniqueElementByTagsString_(tags_default + ", auxiliary_data", flag);
+  if (flag) out_list.set<std::string>("auxiliary data", "molar_concentration");
+
   // multiscale models sublist
   out_list.sublist("multiscale models") = TranslateTransportMSM_();
   if (out_list.sublist("multiscale models").numParams() > 0) {

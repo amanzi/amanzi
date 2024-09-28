@@ -40,6 +40,7 @@
 #include "MFD3D_Lagrange.hh"
 #include "Mesh.hh"
 #include "NumericalIntegration.hh"
+#include "UniqueLocalIndex.hh"
 #include "WhetStoneFunction.hh"
 
 class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
@@ -177,25 +178,34 @@ AnalyticBase::ComputeFaceError(Epetra_MultiVector& u,
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int nfaces = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,
+  const auto& fmap = u.Map();
+
+  int ncells = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
                                      Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
-  for (int f = 0; f < nfaces; f++) {
-    // we need the cell-based normal for this utility to work on manifolds
-    const auto& cells = mesh_->getFaceCells(f);
+  int dir;
+  for (int c = 0; c < ncells; ++c) {
+    const auto& faces = mesh_->getCellFaces(c);
+    int nfaces = faces.size();
 
-    int dir;
-    double area = mesh_->getFaceArea(f);
-    const auto& xf = mesh_->getFaceCentroid(f);
-    const auto& normal = mesh_->getFaceNormal(f, cells[0], &dir);
+    for (int n = 0; n < nfaces; ++n) {
+      int f = faces[n];
+      double area = mesh_->getFaceArea(f);
+      const auto& xf = mesh_->getFaceCentroid(f);
+      const auto& normal = mesh_->getFaceNormal(f, c, &dir);
 
-    const auto& velocity = velocity_exact(xf, t);
-    double tmp = (velocity * normal) * dir;
+      const auto& velocity = velocity_exact(xf, t);
+      double tmp = (velocity * normal) * dir;
 
-    l2_err += std::pow((tmp - u[0][f]) / area, 2.0);
-    inf_err = std::max(inf_err, fabs(tmp - u[0][f]) / area);
-    unorm += std::pow(tmp / area, 2.0);
-    // std::cout << f << " xf=" << xf << " u=" << u[0][f] << " u_ex=" << tmp << std::endl;
+      int g = fmap.FirstPointInElement(f);
+      int k =
+        (fmap.ElementSize() == 1) ? 0 : Amanzi::Operators::UniqueIndexFaceToCells(*mesh_, f, c);
+
+      l2_err += std::pow((tmp - u[0][g + k]) / area, 2.0);
+      inf_err = std::max(inf_err, fabs(tmp - u[0][g + k]) / area);
+      unorm += std::pow(tmp / area, 2.0);
+      // std::cout << f << " xf=" << xf << " u=" << u[0][g + k] << " u_ex=" << tmp << " err=" << inf_err << std::endl;
+    }
   }
 #ifdef HAVE_MPI
   GlobalOp("sum", &unorm, 1);
@@ -225,7 +235,6 @@ AnalyticBase::ComputeNodeError(Epetra_MultiVector& p,
   hnorm = 0.0;
   h1_err = 0.0;
 
-  Amanzi::AmanziGeometry::Point xv(d_);
   Amanzi::AmanziGeometry::Point grad(d_);
 
   Teuchos::ParameterList plist;
@@ -248,7 +257,7 @@ AnalyticBase::ComputeNodeError(Epetra_MultiVector& p,
       cell_solution[k].Reshape(d_, 0);
       cell_solution[k](0) = p[0][v];
 
-      xv = mesh_->getNodeCoordinate(v);
+      const auto xv = mesh_->getNodeCoordinate(v);
       double tmp = pressure_exact(xv, t);
 
       if (std::abs(tmp - p[0][v]) > .01) {

@@ -117,18 +117,19 @@ SUITE(SOLVERS)
     for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
 
     for (const auto& prec_name : {
-           "identity", "diagonal", "block ilu", "boomer amg", "ILU", "ml"
+           "identity", "diagonal", "block ilu", "boomer amg", "ILU", "ml", "MGR"
 #if defined(HAVE_MUELU_EPETRA)
              ,
              "muelu"
 #endif
          }) {
-      auto solver = get_solver(prec_name, m);
-      v.PutScalar(0.0);
-
       std::cout << "Preconditioner: " << prec_name << std::endl
                 << "-------------------------------------------" << std::endl;
+
+      auto solver = get_solver(prec_name, m);
+      v.PutScalar(0.0);
       solver->ApplyInverse(u, v);
+
       CHECK_CLOSE(11.03249773994628, v[0], 1e-6);
       CHECK_CLOSE(10.53249773994628, v[1], 1e-6);
     }

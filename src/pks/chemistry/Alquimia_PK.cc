@@ -52,8 +52,16 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
     chem_initialized_(false),
     current_time_(0.0),
     saved_time_(0.0)
+{}
+
+
+/* *******************************************************************
+* Parser
+******************************************************************* */
+void
+Alquimia_PK::parseParameterList()
 {
-  domain_ = plist_->get<std::string>("domain name", "domain");
+  Chemistry_PK::parseParameterList();
 
   // obtain key of fields
   tcc_key_ = Keys::readKey(
@@ -837,8 +845,14 @@ Alquimia_PK::AdvanceSingleCell(double dt,
 
   int num_iterations = 0;
   if (alq_mat_props_.saturation > saturation_tolerance_) {
-    bool success = chem_engine_->Advance(
-     dt, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_, num_iterations, mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).GID(cell) );
+    bool success =
+      chem_engine_->Advance(dt,
+                            alq_mat_props_,
+                            alq_state_,
+                            alq_aux_data_,
+                            alq_aux_output_,
+                            num_iterations,
+                            mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).GID(cell));
     if (not success) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
         Teuchos::OSTab tab = vo_->getOSTab();

@@ -52,7 +52,7 @@ set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          MultiphaseBoundaryFunction.cc
                          Multiphase_Utils.cc Multiphase_BCs.cc
                          NCP_F.cc NCP_HenryLaw.cc NCP_MoleFractions.cc NCP_MolarDensities.cc
-                         SaturationGasEvaluator.cc
+                         SaturationEvaluator.cc
                          TotalWaterStorage.cc 
                          TotalComponentStorage.cc TotalComponentStorage_Tcc.cc
                          TotalComponentStorage_Jaffre.cc
@@ -83,7 +83,7 @@ set(multiphase_inc_files
   NCP_F.hh NCP_HenryLaw.hh NCP_MoleFractions.hh NCP_MolarDensities.hh
   PressureGasEvaluator.hh
   RelPermEvaluator.hh ProductEvaluator.hh
-  SaturationGasEvaluator.hh
+  SaturationEvaluator.hh
   VaporPressureEvaluator.hh
   TotalWaterStorage.hh
   TotalComponentStorage.hh TotalComponentStorage_Tcc.hh
@@ -114,10 +114,15 @@ if (BUILD_TESTS)
   set(amanzi_libs multiphase state mesh_factory whetstone operators 
                   geometry mesh_functions functions eos pks)
 
-  # Unit tests: Jaffre
+  # Unit tests: Jaffre 
   add_amanzi_test(multiphase_jaffre multiphase_jaffre
                   KIND      int
                   SOURCE    test/Main.cc test/multiphase_jaffre.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+  add_amanzi_test(multiphase_jaffre_nlfv multiphase_jaffre_nlfv
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_jaffre_nlfv.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
   # Jaffre model with fractures

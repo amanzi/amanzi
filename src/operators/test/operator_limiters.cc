@@ -132,10 +132,9 @@ TEST(LIMITER_LINEAR_FUNCTION_2D)
     } else {
       bc_model.assign(nnodes_wghost, 0);
       bc_value.assign(nnodes_wghost, 0.0);
-      AmanziGeometry::Point xv(2);
 
       for (int v = 0; v < nnodes_wghost; v++) {
-        xv = mesh->getNodeCoordinate(v);
+        const auto& xv = mesh->getNodeCoordinate(v);
         if (fabs(xv[0]) < 1e-6 || fabs(1.0 - xv[0]) < 1e-6 || fabs(xv[1]) < 1e-6 ||
             fabs(1.0 - xv[1]) < 1e-6) {
           bc_model[v] = OPERATOR_BC_DIRICHLET;
@@ -271,10 +270,9 @@ TEST(LIMITER_LINEAR_FUNCTION_3D)
     } else {
       bc_model.assign(nnodes_wghost, 0);
       bc_value.assign(nnodes_wghost, 0.0);
-      AmanziGeometry::Point xv(3);
 
       for (int v = 0; v < nnodes_wghost; v++) {
-        xv = mesh->getNodeCoordinate(v);
+        const auto& xv = mesh->getNodeCoordinate(v);
         if (fabs(xv[0]) < 1e-6 || fabs(1.0 - xv[0]) < 1e-6 || fabs(xv[1]) < 1e-6 ||
             fabs(1.0 - xv[1]) < 1e-6 || fabs(xv[2]) < 1e-6 || fabs(1.0 - xv[2]) < 1e-6) {
           bc_model[v] = OPERATOR_BC_DIRICHLET;
@@ -410,10 +408,9 @@ TEST(LIMITER_SMOOTH_FIELD_2D)
       } else {
         bc_model.assign(nnodes_wghost, 0);
         bc_value.assign(nnodes_wghost, 0.0);
-        AmanziGeometry::Point xv(2);
 
         for (int v = 0; v < nnodes_wghost; v++) {
-          xv = mesh->getNodeCoordinate(v);
+          const auto& xv = mesh->getNodeCoordinate(v);
           double x = xv[0], y = xv[1];
           if (fabs(xv[0]) < 1e-6 || fabs(1.0 - xv[0]) < 1e-6 || fabs(xv[1]) < 1e-6 ||
               fabs(1.0 - xv[1]) < 1e-6) {
@@ -540,10 +537,9 @@ TEST(LIMITER_SMOOTH_FIELD_3D)
       } else {
         bc_model.assign(nnodes_wghost, 0);
         bc_value.assign(nnodes_wghost, 0.0);
-        AmanziGeometry::Point xv(3);
 
         for (int v = 0; v < nnodes_wghost; v++) {
-          xv = mesh->getNodeCoordinate(v);
+          const auto& xv = mesh->getNodeCoordinate(v);
           double x = xv[0], y = xv[1], z = xv[2];
           if (fabs(xv[0]) < 1e-6 || fabs(1.0 - xv[0]) < 1e-6 || fabs(xv[1]) < 1e-6 ||
               fabs(1.0 - xv[1]) < 1e-6 || fabs(xv[2]) < 1e-6 || fabs(1.0 - xv[2]) < 1e-6) {
@@ -699,10 +695,9 @@ SmoothField2DPoly(double extension)
     } else {
       bc_model.assign(nnodes_wghost, 0);
       bc_value.assign(nnodes_wghost, 0.0);
-      AmanziGeometry::Point xv(2);
 
       for (int v = 0; v < nnodes_wghost; v++) {
-        xv = mesh->getNodeCoordinate(v);
+        const auto& xv = mesh->getNodeCoordinate(v);
         double x = xv[0], y = xv[1];
         if (fabs(xv[0]) < 1e-6 || fabs(1.0 - xv[0]) < 1e-6 || fabs(xv[1]) < 1e-6 ||
             fabs(1.0 - xv[1]) < 1e-6) {

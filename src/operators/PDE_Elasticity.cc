@@ -231,7 +231,7 @@ PDE_Elasticity::ComputeVolumetricStrain(const CompositeVector& u, CompositeVecto
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
 void
-PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
+PDE_Elasticity::Init(Teuchos::ParameterList& plist)
 {
   // generate schema for the mimetic discretization method
   Teuchos::ParameterList& schema_list = plist.sublist("schema");
@@ -258,7 +258,7 @@ PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
       AmanziMesh::Entity_kind kind;
       std::tie(kind, std::ignore, num) = *it;
 
-      std::string name(my_schema.KindToString(kind));
+      std::string name(AmanziMesh::to_string(kind));
       cvs->AddComponent(name, kind, num);
     }
 
@@ -419,8 +419,9 @@ PDE_Elasticity::ApplyBCs_Kinematic_(const BCs& bc, bool primary, bool eliminate,
   const auto& bc_value = bc.bc_value();
 
   auto rhs = global_op_->rhs();
-  Teuchos::RCP<Epetra_MultiVector> rhs_node;
+  Teuchos::RCP<Epetra_MultiVector> rhs_node, rhs_face;
   if (rhs()->HasComponent("node")) rhs_node = rhs->ViewComponent("node", true);
+  if (rhs()->HasComponent("face")) rhs_face = rhs->ViewComponent("face", true);
 
   rhs->PutScalarGhosted(0.0);
 
@@ -457,6 +458,42 @@ PDE_Elasticity::ApplyBCs_Kinematic_(const BCs& bc, bool primary, bool eliminate,
 
         if (eliminate) {
           // AMANZI_ASSERT(false);
+        }
+
+        // plane strain boundary condition fixed displacement in one or more
+        // directions, hense value = 0.
+      } else {
+        if (bc_model[v] & OPERATOR_BC_PLANE_STRAIN_X) {
+          int noff = d * n;
+          if (eliminate) {
+            for (int m = 0; m < ncols; m++) {
+              Acell(m, noff) = 0.0;
+              Acell(noff, m) = 0.0;
+            }
+          }
+          if (essential_eqn) Acell(noff, noff) = 1.0;
+        }
+
+        if (bc_model[v] & OPERATOR_BC_PLANE_STRAIN_Y) {
+          int noff = d * n + 1;
+          if (eliminate) {
+            for (int m = 0; m < ncols; m++) {
+              Acell(m, noff) = 0.0;
+              Acell(noff, m) = 0.0;
+            }
+          }
+          if (essential_eqn) Acell(noff, noff) = 1.0;
+        }
+
+        if (bc_model[v] & OPERATOR_BC_PLANE_STRAIN_Z) {
+          int noff = d * n + 2;
+          if (eliminate) {
+            for (int m = 0; m < ncols; m++) {
+              Acell(m, noff) = 0.0;
+              Acell(noff, m) = 0.0;
+            }
+          }
+          if (essential_eqn) Acell(noff, noff) = 1.0;
         }
       }
     }
@@ -549,7 +586,7 @@ PDE_Elasticity::computeElasticityTensorGK_(int c)
   for (int i = 0; i < d; ++i) {
     for (int j = 0; j < d; ++j) Cc(i, j) += lambda;
   }
- 
+
   return Cc;
 }
 

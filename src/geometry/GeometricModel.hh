@@ -8,8 +8,22 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
-/*
-  Collection of Regions which decompose the domain into subdomains.
+/*!
+
+It is not always possible to extract space dimension from provided data.
+Therefore, we require the user to provide simple list *domain* with only 
+one parameter *spatial dimension*.
+
+.. admonition:: geometric_model-spec
+
+  * `"spatial dimension`" ``[int]`` defined space dimension. The available 
+    values are 2 or 3.
+
+.. code-block:: xml
+
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="2"/>
+  </ParameterList>
 
 */
 

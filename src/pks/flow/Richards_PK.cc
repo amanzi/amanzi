@@ -78,37 +78,14 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator");
 
-  // domain name
+  // domain and primary evaluators
   domain_ = fp_list_->template get<std::string>("domain name", "domain");
+  pressure_key_ = Keys::getKey(domain_, "pressure");
+  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
 
-  vo_ = Teuchos::null;
-}
+  AddDefaultPrimaryEvaluator(S_, pressure_key_);
+  AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_);
 
-
-/* ******************************************************************
-* Old constructor for unit tests.
-****************************************************************** */
-Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                         const std::string& pk_list_name,
-                         Teuchos::RCP<State> S,
-                         const Teuchos::RCP<TreeVector>& soln)
-  : Flow_PK(), glist_(glist), soln_(soln)
-{
-  S_ = S;
-
-  // We need the flow list
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  fp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
-
-  // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
-  linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
-  ti_list_ = Teuchos::sublist(fp_list_, "time integrator");
-
-  // domain name
-  domain_ = fp_list_->template get<std::string>("domain name", "domain");
-
-  ms_itrs_ = 0;
   vo_ = Teuchos::null;
 }
 
@@ -175,12 +152,11 @@ Richards_PK::Setup()
     ndofs.push_back(1);
   }
 
-  if (!S_->HasRecord(pressure_key_)) {
+  {
     S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponents(names, locations, ndofs);
-    AddDefaultPrimaryEvaluator(S_, pressure_key_);
+      ->AddComponents(names, locations, ndofs);
   }
 
   // Require conserved quantity.
@@ -607,10 +583,11 @@ Richards_PK::Initialize()
       oplist_matrix.set<bool>("use manifold flux", true);
   }
 
-  // auto rho_cv = S_->GetPtr<CV_t>(mass_density_liquid, Tags::DEFAULT);
-
   Operators::PDE_DiffusionFactory opfactory(oplist_matrix, mesh_);
-  opfactory.SetConstantGravitationalTerm(gravity_, rho_);
+
+  auto rho_cv = S_->GetPtr<CV_t>(mass_density_liquid_key_, Tags::DEFAULT);
+  // opfactory.SetConstantGravitationalTerm(gravity_, rho_);
+  opfactory.SetVariableGravitationalTerm(gravity_, rho_cv);
 
   if (!flow_on_manifold_) {
     SetAbsolutePermeabilityTensor();
@@ -654,7 +631,7 @@ Richards_PK::Initialize()
   // Conditional initialization of lambdas from pressures.
   auto& pressure = S_->GetW<CV_t>(pressure_key_, Tags::DEFAULT, passwd_);
 
-  if (ti_list_->isSublist("pressure-lambda constraints") && pressure.HasComponent("face")) {
+  if (ti_list_->isSublist("dae constraint") && pressure.HasComponent("face")) {
     DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
                                    *pressure.ViewComponent("face"));
     S_->GetRecordW(pressure_key_, passwd_).set_initialized(true);
@@ -810,11 +787,8 @@ Richards_PK::Initialize()
   }
 
   // Subspace entering: re-initialize lambdas.
-  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face") &&
+  if (ti_list_->isSublist("dae constraint") && solution->HasComponent("face") &&
       !flow_on_manifold_) {
-    solver_name_constraint_ =
-      ti_list_->sublist("pressure-lambda constraints").get<std::string>("linear solver");
-
     if (S_->get_position() == Amanzi::TIME_PERIOD_START) {
       EnforceConstraints(t_ini, solution);
       pressure_eval_->SetChanged();
@@ -869,6 +843,7 @@ Richards_PK::Initialize()
   // Verbose output of initialization statistics.
   InitializeStatistics_();
 }
+
 
 
 /* ****************************************************************

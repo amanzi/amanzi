@@ -12,7 +12,7 @@
 
   Non-polynomial solution and a full non-constant tensor:
   Solution: p = x^3y^2 + x sin(2 PI xy) sin(2 PI y) - gy * y
-  Diffusion: K = [(x+1)^2 + y^y   -xy  ]
+  Diffusion: K = [(x+1)^2 + y^2   -xy  ]
                  [     -xy      (x+1)^2]
   Velocity: v = [0, 0]
   Source: f = -div(K grad(p))

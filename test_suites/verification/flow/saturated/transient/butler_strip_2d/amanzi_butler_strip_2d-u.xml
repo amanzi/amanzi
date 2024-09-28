@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.5-dev">
+<amanzi_input type="unstructured" version="1.6-dev">
   <model_description name="SR Test Problem">
     <comments>Confined aquifer transient drawdown (Butler and Liu, 1991)</comments>
     <model_id>Butler</model_id>
@@ -115,9 +115,8 @@
 
   <phases>
     <liquid_phase name="water">
-      <eos>false</eos>
-      <viscosity>1.002E-03</viscosity>
-      <density>1000.0</density>
+      <eos model="constant" viscosity="1.002E-03" density="1000.0"/> 
+      <molar_mass>0.018</molar_mass>
     </liquid_phase>
   </phases>
 
@@ -126,7 +125,7 @@
       <comments>Material properties for zone 1</comments>
       <assigned_regions>Zone_1</assigned_regions>
       <mechanical_properties>
-        <porosity value="0.25" />
+        <porosity model="constant" value="0.25" />
         <specific_storage model="constant" value="5.0e-4" />
       </mechanical_properties>
       <permeability x="1.187E-8" y="1.187E-8" z="1.187E-8" />
@@ -135,7 +134,7 @@
       <comments>Material properties for zone 2</comments>
       <assigned_regions>Zone_2</assigned_regions>
       <mechanical_properties>
-        <porosity value="0.25" />
+        <porosity model="constant" value="0.25" />
         <specific_storage model="constant" value="2.0e-4" />
       </mechanical_properties>
       <permeability x="1.187E-9" y="1.187E-9" z="1.187E-9" />
@@ -144,7 +143,7 @@
       <comments>Material properties for zone 3</comments>
       <assigned_regions>Zone_3</assigned_regions>
       <mechanical_properties>
-        <porosity value="0.25" />
+        <porosity model="constant" value="0.25" />
         <specific_storage model="constant" value="2.0e-5" />
       </mechanical_properties>
       <permeability x="1.187E-10" y="1.187E-10" z="1.187E-10" />

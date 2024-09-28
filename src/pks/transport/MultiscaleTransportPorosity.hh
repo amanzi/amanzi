@@ -14,12 +14,15 @@ be mixed and matched.
 Its ordered by materials and includes parameters for the assigned multiscale model
 This list is optional.
 
-* `"multiscale model`" [string] is the model name. Available option is `"dual porosity`"
-  and `"generalized dual porosity`".
+.. admonition:: transport_multiscale-spec
 
-* `"regions`" [Array(string)] is the list of regions where this model should be applied.
+  * `"multiscale model`" ``[string]`` is the model name. Available option is `"dual porosity`"
+    and `"generalized dual porosity`".
 
-* `"xxx parameters`" [sublist] provides parameters for the model specified by variable `"multiscale model`".
+  * `"regions`" ``[Array(string)]`` is the list of regions where this model should be applied.
+
+  * `"xxx parameters`" ``[list]`` provides parameters for the model specified by variable 
+    `"multiscale model`".
 
 */
 

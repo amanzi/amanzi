@@ -9,31 +9,31 @@
 
 /*!
 
-This provide coupling of fields located on matching manifold and
-space meshes. For the space, the coupling creates a list of boundary
-conditions. For the manifold, the coupling creates a list of sources.
+This provides coupling of fields located on conforming manifold and 3D meshes. 
+For the 3D mesh, the coupling generates a list of boundary conditions. 
+For the manifold mesh, the coupling creates a list of sources. The manifold 
+mesh has a child to parent map, e.g. a manifold cell to a 3D mesh face.
+For the 3D mesh, we need the reverse map.
+There are a few coupling submodels:
 
-Typically, the manifold mesh provides map manifold (cell) -> space (face).
-In space, we need the reverse map.
+ * `"rate`" computes data using the following formulas:
 
-There are three submodels.
-(A) submodel="rate". The computed data are given by formulas:
+   .. math::
+      \begin{array}{l}
+        value[i][c] = value[i][c] + flux[f] * external\_field[i][cc] / V_c \\
+        value[N][c] = value[N][c] - \Delta t * flux[f]
+      \end{array}
 
-      value[i][c] += flux[f] * external_field[i][cc] / V_c
+   where cc is a space cell incident to face f, and N is the auxiliary
+   value added to the result. Note that an internal face f (resp., boundary
+   face f) is shared by two (resp. one) space cells.
 
-      value[N][c] -= dt * flux[f]
+ * `"field`" computes data using the following formula:
 
-where cc is the space cell attached to face f, and N is the auxiliary
-value added to the result. Note that internal face f (resp., boundary
-face f) is shared by two (resp. one) space cells.
+   .. math::
+      value[i][f] = external\_field[i][c]
 
-  (B) submodel="field". The computed data are given by the formula:
-
-      value[i][f] = external_field[i][c];
-
-  (C) submodel="conserved quantity". Not used in Amanzi.
-
-  (D) submodel="".
+ * `"conserved quantity`" is **not** used in Amanzi.
 
 */
 

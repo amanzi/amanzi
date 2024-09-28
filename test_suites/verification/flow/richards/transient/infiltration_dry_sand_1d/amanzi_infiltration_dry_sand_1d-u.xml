@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<amanzi_input type="unstructured" version="1.5-dev">
+<amanzi_input type="unstructured" version="1.6-dev">
     <misc>
         <echo_translated_input format="unstructured_native"/>
     </misc>
@@ -22,8 +22,8 @@
     </process_kernels>
     <phases>
         <liquid_phase name="water">
-            <viscosity>1.002e-3</viscosity>
-            <density>998.2</density>
+            <eos model="constant" viscosity="1.002e-03" density="998.2"/> 
+            <molar_mass>0.018015</molar_mass>
         </liquid_phase>
     </phases>
     <execution_controls>
@@ -109,7 +109,7 @@
     <materials>
         <material name="sand">
             <mechanical_properties>
-                <porosity value=".43"/>
+                <porosity model="constant" value=".43"/>
                 <particle_density value="2560.0"/>
             </mechanical_properties>
             <permeability x="1.18472E-11" y="1.18472E-11" z="1.18472E-11"/>

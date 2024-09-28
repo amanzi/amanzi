@@ -548,14 +548,9 @@ template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 MeshCache<MEM>::getFaceCentroid(const Entity_ID f) const
 {
-  auto cf = Impl::ComputeFunction<MEM>::template hostOnly<
-    std::function<AmanziGeometry::Point(const Entity_ID)>>();
-  if constexpr (MEM == MemSpace_kind::HOST) {
-    cf = [&](const int i) { return algorithms_->computeFaceCentroid(*this, i); };
-  }
-
   return Impl::Getter<MEM, AP>::get(
-    data_.face_geometry_cached, data_.face_centroids, framework_mesh_, nullptr, cf, f);
+    data_.face_geometry_cached, data_.face_centroids, framework_mesh_, nullptr,
+    [&](const int i) { return algorithms_->computeFaceCentroid(*this, i); }, f);
 }
 
 
@@ -606,13 +601,9 @@ template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION double
 MeshCache<MEM>::getFaceArea(const Entity_ID f) const
 {
-  auto cf = Impl::ComputeFunction<MEM>::template hostOnly<std::function<double(const Entity_ID)>>();
-  if constexpr (MEM == MemSpace_kind::HOST) {
-    cf = [&](const Entity_ID i) { return algorithms_->computeFaceArea(*this, i); };
-  }
-
   return Impl::Getter<MEM, AP>::get(
-    data_.face_geometry_cached, data_.face_areas, framework_mesh_, nullptr, cf, f);
+    data_.face_geometry_cached, data_.face_areas, framework_mesh_, nullptr,
+    [&](const Entity_ID i) { return algorithms_->computeFaceArea(*this, i); }, f);
 }
 
 template <MemSpace_kind MEM>
@@ -693,13 +684,9 @@ template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION double
 MeshCache<MEM>::getCellVolume(const Entity_ID c) const
 {
-  auto cf = Impl::ComputeFunction<MEM>::template hostOnly<std::function<double(const Entity_ID)>>();
-  if constexpr (MEM == MemSpace_kind::HOST) {
-    cf = [&](const int i) { return algorithms_->computeCellVolume(*this, i); };
-  }
-
   return Impl::Getter<MEM, AP>::get(
-    data_.cell_geometry_cached, data_.cell_volumes, framework_mesh_, nullptr, cf, c);
+    data_.cell_geometry_cached, data_.cell_volumes, framework_mesh_, nullptr,
+    [&](const int i) { return algorithms_->computeCellVolume(*this, i); }, c);
 }
 
 template <MemSpace_kind MEM>
@@ -844,14 +831,9 @@ template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 MeshCache<MEM>::getCellCentroid(const Entity_ID c) const
 {
-  auto cf = Impl::ComputeFunction<MEM>::template hostOnly<
-    std::function<AmanziGeometry::Point(const Entity_ID)>>();
-  if constexpr (MEM == MemSpace_kind::HOST) {
-    cf = [&](const int i) { return algorithms_->computeCellCentroid(*this, i); };
-  }
-
   return Impl::Getter<MEM, AP>::get(
-    data_.cell_geometry_cached, data_.cell_centroids, framework_mesh_, nullptr, cf, c);
+    data_.cell_geometry_cached, data_.cell_centroids, framework_mesh_, nullptr,
+    [&](const int i) { return algorithms_->computeCellCentroid(*this, i); }, c);
 }
 
 
@@ -1083,13 +1065,11 @@ MeshCache<MEM>::setNodeCoordinates(const cEntity_ID_View& nodes, const cPoint_Vi
       nodes_on_host = nodes;
       coords_on_host = new_coords;
     } else {
-      View_type<Entity_ID, MemSpace_kind::HOST> nc_nodes_on_host;
-      View_type<AmanziGeometry::Point, MemSpace_kind::HOST> nc_coords_on_host;
-      Kokkos::resize(nc_nodes_on_host, nodes.size());
+      View_type<Entity_ID, MemSpace_kind::HOST> nc_nodes_on_host("", nodes.size());
       Kokkos::deep_copy(nc_nodes_on_host, nodes);
       nodes_on_host = nc_nodes_on_host;
 
-      Kokkos::resize(nc_coords_on_host, nodes.size());
+      View_type<AmanziGeometry::Point, MemSpace_kind::HOST> nc_coords_on_host("", nodes.size());
       Kokkos::deep_copy(nc_coords_on_host, new_coords);
       coords_on_host = nc_coords_on_host;
     }
@@ -1278,14 +1258,9 @@ template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 MeshCache<MEM>::getEdgeCentroid(const Entity_ID c) const
 {
-  auto cf = Impl::ComputeFunction<MEM>::template hostOnly<
-    std::function<AmanziGeometry::Point(const Entity_ID)>>();
-  if constexpr (MEM == MemSpace_kind::HOST) {
-    cf = [&](const int i) { return algorithms_->computeEdgeCentroid(*this, i); };
-  }
-
   return Impl::Getter<MEM, AP>::get(
-    data_.edge_geometry_cached, data_.edge_centroids, framework_mesh_, nullptr, cf, c);
+    data_.edge_geometry_cached, data_.edge_centroids, framework_mesh_, nullptr,
+    [&](const int i) { return algorithms_->computeEdgeCentroid(*this, i); }, c);
 }
 
 template <MemSpace_kind MEM>
@@ -1293,14 +1268,9 @@ template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
 MeshCache<MEM>::getEdgeVector(const Entity_ID e) const
 {
-  auto cf = Impl::ComputeFunction<MEM>::template hostOnly<
-    std::function<AmanziGeometry::Point(const Entity_ID)>>();
-  if constexpr (MEM == MemSpace_kind::HOST) {
-    cf = [&](const int i) { return algorithms_->computeEdgeVector(*this, i, -1, nullptr); };
-  }
-
   return Impl::Getter<MEM, AP>::get(
-    data_.edge_geometry_cached, data_.edge_vectors, framework_mesh_, nullptr, cf, e);
+    data_.edge_geometry_cached, data_.edge_vectors, framework_mesh_, nullptr,
+    [&](const int i) { return algorithms_->computeEdgeVector(*this, i, -1, nullptr); }, e);
 }
 
 
@@ -1309,13 +1279,9 @@ template <AccessPattern_kind AP>
 KOKKOS_INLINE_FUNCTION double
 MeshCache<MEM>::getEdgeLength(const Entity_ID e) const
 {
-  auto cf = Impl::ComputeFunction<MEM>::template hostOnly<std::function<double(const Entity_ID)>>();
-  if constexpr (MEM == MemSpace_kind::HOST) {
-    cf = [&](const int i) { return algorithms_->computeEdgeLength(*this, i); };
-  }
-
   return Impl::Getter<MEM, AP>::get(
-    data_.edge_lengths_cached, data_.edge_lengths, framework_mesh_, nullptr, cf, e);
+    data_.edge_lengths_cached, data_.edge_lengths, framework_mesh_, nullptr,
+    [&](const int i) { return algorithms_->computeEdgeLength(*this, i); }, e);
 }
 
 template <MemSpace_kind MEM>
@@ -1495,11 +1461,10 @@ MeshCache<MEM>::cacheFaceGeometry()
   //     space_dim != manifold_dim and ncells == 2
   auto lambda2 = [&, this](const Entity_ID& f,
                            View_type<const Direction_type, MemSpace_kind::HOST>& dirs) {
-    Direction_View ldirs;
     // This NEEDS to call the framework or be passed an host mesh to call the function on the host.
     View_type<const Entity_ID, MemSpace_kind::HOST> fcells;
     framework_mesh_->getFaceCells(f, fcells);
-    Kokkos::resize(ldirs, fcells.size());
+    Direction_View ldirs("", fcells.size());
     for (int i = 0; i != fcells.size(); ++i) {
       if ((getSpaceDimension() == getManifoldDimension()) || (fcells.size() != 2)) {
         ldirs(i) = Impl::getFaceDirectionInCell(*this, f, fcells(i));

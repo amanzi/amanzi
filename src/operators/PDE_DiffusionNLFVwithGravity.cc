@@ -37,10 +37,14 @@ PDE_DiffusionNLFVwithGravity::UpdateMatrices(const Teuchos::Ptr<const CompositeV
   Epetra_MultiVector& hh_c = *hh->ViewComponent("cell");
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
 
-  double rho_g = rho_ * norm(g_);
+  Teuchos::RCP<const Epetra_MultiVector> rho_c;
+  if (!is_scalar_) rho_c = rho_cv_->ViewComponent("cell", false);
+  double gnorm = norm(g_);
+
   for (int c = 0; c < ncells_owned; ++c) {
     double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
-    hh_c[0][c] = u_c[0][c] + rho_g * zc;
+    double rho = (is_scalar_) ? rho_ : (*rho_c)[0][c];
+    hh_c[0][c] = u_c[0][c] + rho * gnorm * zc;
   }
 
   PDE_DiffusionNLFV::UpdateMatrices(flux, hh.ptr());
@@ -62,7 +66,8 @@ PDE_DiffusionNLFVwithGravity::UpdateMatrices(const Teuchos::Ptr<const CompositeV
       for (int n = 0; n < ncells; n++) {
         int c = cells[n];
         double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
-        v(n) = zc * rho_g;
+        double rho = (is_scalar_) ? rho_ : (*rho_c)[0][c];
+        v(n) = zc * rho * gnorm;
       }
 
       Aface.Multiply(v, av, false);
@@ -72,7 +77,8 @@ PDE_DiffusionNLFVwithGravity::UpdateMatrices(const Teuchos::Ptr<const CompositeV
       int c = cells[0];
       double zf = (mesh_->getFaceCentroid(f))[dim_ - 1];
       double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
-      rhs_cell[0][c] -= Aface(0, 0) * (zc - zf) * rho_g;
+      double rho = (is_scalar_) ? rho_ : (*rho_c)[0][c];
+      rhs_cell[0][c] -= Aface(0, 0) * (zc - zf) * rho * gnorm;
     }
   }
 
@@ -93,10 +99,14 @@ PDE_DiffusionNLFVwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVecto
   Epetra_MultiVector& hh_c = *hh->ViewComponent("cell");
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
 
-  double rho_g = rho_ * norm(g_);
+  Teuchos::RCP<const Epetra_MultiVector> rho_c;
+  if (!is_scalar_) rho_c = rho_cv_->ViewComponent("cell", false);
+  double gnorm = norm(g_);
+
   for (int c = 0; c < ncells_owned; ++c) {
     double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
-    hh_c[0][c] = u_c[0][c] + rho_g * zc;
+    double rho = (is_scalar_) ? rho_ : (*rho_c)[0][c];
+    hh_c[0][c] = u_c[0][c] + rho * gnorm * zc;
   }
 
   PDE_DiffusionNLFV::UpdateFlux(hh.ptr(), flux);
@@ -109,9 +119,12 @@ PDE_DiffusionNLFVwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVecto
 double
 PDE_DiffusionNLFVwithGravity::MapBoundaryValue_(int f, double u)
 {
-  double rho_g = rho_ * fabs(g_[dim_ - 1]);
+  int c = getFaceOnBoundaryInternalCell(*mesh_, f);
+  double rho = (is_scalar_) ? rho_ : (*rho_cv_->ViewComponent("cell"))[0][c];
+  double g = fabs(g_[dim_ - 1]);
   double zf = (mesh_->getFaceCentroid(f))[dim_ - 1];
-  return u + rho_g * zf;
+
+  return u + rho * g * zf;
 }
 
 } // namespace Operators

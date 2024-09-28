@@ -48,6 +48,7 @@ typedef enum {
   PDE_ADVECTION,
   PDE_ACCUMULATION,
   PDE_ELASTICITY,
+  PDE_ELASTICITY_FRACTURED_MATRIX,
   PDE_ELECTROMAGNETICS,
   PDE_MAGNETIC_DIFFUSION
 } PDEType;
@@ -100,6 +101,9 @@ const int OPERATOR_BC_KINEMATIC = 6;
 const int OPERATOR_BC_NORMAL_STRESS = 7;
 const int OPERATOR_BC_SHEAR_STRESS = 8;
 const int OPERATOR_BC_REMOVE = 9;
+const int OPERATOR_BC_PLANE_STRAIN_X = 16; // must be power of 2
+const int OPERATOR_BC_PLANE_STRAIN_Y = 32;
+const int OPERATOR_BC_PLANE_STRAIN_Z = 64;
 
 // memory allocation
 const int OPERATOR_HEX_FACES = 6; // Hexahedron is the common element

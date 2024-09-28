@@ -25,30 +25,8 @@ its type and its children.  The second is the spec for the base class PK, which
 is inherited and included by each actual PK, lives in the "PKs" sublist of
 "main", and has all needed parameters.
 
-.. _pk-typed-spec:
-.. admonition:: pk-typed-spec
-
-    * `"PK type`" ``[string]`` One of the registered PK types
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="PK tree">
-    <ParameterList name="Top level MPC">
-      <Parameter name="PK type" type="string" value="strong MPC"/>
-      <ParameterList name="sub PK 1">
-        ...
-      </ParameterList>
-      <ParameterList name="sub PK 2">
-        ...
-      </ParameterList>
-      ...
-    </ParameterList>
-  </ParameterList>
-
-
 .. _pk-spec:
+.. _pk-typed-spec:
 .. admonition:: pk-spec
 
     * `"PK type`" ``[string]`` One of the registered PK types.  Note this must
@@ -59,10 +37,16 @@ Example:
 
 .. code-block:: xml
 
-  <ParameterList name="PKs">
-    <ParameterList name="my cool PK">
-      <Parameter name="PK type" type="string" value="my cool PK"/>
-       ...
+  <ParameterList name="PK tree">
+    <ParameterList name="my cool MPC PK">
+      <Parameter name="PK type" type="string" value="my cool MPC PK"/>
+      <ParameterList name="sub PK 1">
+        ...
+      </ParameterList>
+      <ParameterList name="sub PK 2">
+        ...
+      </ParameterList>
+      ...
     </ParameterList>
   </ParameterList>
 
@@ -77,6 +61,13 @@ Developer's note:
   interface as well, and should add the private static member
   (following the Usage notes in src/pks/PK_Factory.hh) to register the
   derived PK with the PK factory.
+
+  By desing, modifications to the “state->evaluators” list should be done 
+  on construction of a PK. For instance, Energy PK should write 
+  state->evaluators->temperature->evaluator type=primary,
+  after having read its domain name and assorted keys, see also ATS 
+  issue 167.
+
 */
 
 #ifndef AMANZI_PK_HH_
@@ -135,6 +126,9 @@ class PK {
 
   // Virtual destructor
   virtual ~PK() = default;
+
+  // call to allow a PK to modify its own list or lists of its children.
+  virtual void parseParameterList() = 0;
 
   // Setup
   virtual void Setup() = 0;

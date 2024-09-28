@@ -19,7 +19,7 @@
 #include "NCP_MolarDensities.hh"
 #include "NCP_MoleFractions.hh"
 #include "ProductEvaluator.hh"
-#include "SaturationGasEvaluator.hh"
+#include "SaturationEvaluator.hh"
 #include "TccGas.hh"
 #include "TccLiquid.hh"
 #include "TotalComponentStorage.hh"
@@ -39,8 +39,7 @@ Utils::RegisteredFactory<Evaluator, NCP_MolarDensities>
 Utils::RegisteredFactory<Evaluator, NCP_MoleFractions>
   NCP_MoleFractions::fac_("ncp mole fraction gas");
 Utils::RegisteredFactory<Evaluator, ProductEvaluator> ProductEvaluator::fac_("product");
-Utils::RegisteredFactory<Evaluator, SaturationGasEvaluator>
-  SaturationGasEvaluator::fac_("saturation gas");
+Utils::RegisteredFactory<Evaluator, SaturationEvaluator> SaturationEvaluator::fac_("saturation");
 
 Utils::RegisteredFactory<Evaluator, TotalComponentStorage>
   TotalComponentStorage::fac_("storage component");

@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="1.5-dev">
+<amanzi_input type="unstructured" version="1.6-dev">
   <model_description name="DVZ 3layer 2D">
     <author>Konstantin Lipnikov</author>
     <!-- default SI units -->
@@ -46,8 +46,8 @@
 
   <phases>
     <liquid_phase name="water">
-      <viscosity>1.002E-03</viscosity>
-      <density>998.2</density>
+      <eos model="ideal gas" ref_viscosity="1.716e-5" ref_temperature="273.0" sutherland_constant="111.0"/>
+      <molar_mass>0.018015</molar_mass>
       <dissolved_components>
         <primaries>
           <primary coefficient_of_diffusion="1.0e-9  m^2/s " molar_mass="98.906255e-3 kg/mol">Tc-99</primary>
@@ -186,7 +186,7 @@
   <materials>
     <material name="Facies_1" id="1000">
       <mechanical_properties>
-        <porosity value="0.4082"/>
+        <porosity model="constant" value="0.4082"/>
         <specific_storage model="constant" value="0.0002"/>
         <particle_density model="file" filename="particle_density.h5"/>
         <dispersion_tensor type="bear" alpha_l="0.01 m" alpha_t="0.001 m"/>
@@ -201,7 +201,7 @@
 
     <material name="Facies_2" id="2000">
       <mechanical_properties>
-        <porosity value="0.2206"/>
+        <porosity model="constant" value="0.2206"/>
         <dispersion_tensor type="burnett_frind" alpha_l="0.01 m" alpha_th="0.001 m" alpha_tv="0.002 m"/>
       </mechanical_properties>
       <permeability model="file" filename="mesh_data.exo" attribute="permx,permy"/>
@@ -216,7 +216,7 @@
 
     <material name="Facies_3" id="3000">
       <mechanical_properties>
-        <porosity value="0.234"/>
+        <porosity model="constant" value="0.234"/>
         <dispersion_tensor type="lichtner_kelkar_robinson" alpha_lh="0.01 m" alpha_lv="0.02 m"
                                                            alpha_th="0.001 m" alpha_tv="0.002 m"/>
       </mechanical_properties>

@@ -40,6 +40,7 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type& comm, bool include_io_set)
   NumNodes_ = 0;
   NumElems_ = 0;
   ConnLength_ = 0;
+  Iteration_ = 0;
 }
 
 
@@ -976,12 +977,17 @@ HDF5_MPI::readAttrString(std::string& value, const std::string attrname)
 
   char* loc_value;
 
-  parallelIO_read_simple_attr(loc_attrname,
+  int ierr = parallelIO_read_simple_attr(loc_attrname,
                               reinterpret_cast<void**>(&loc_value),
                               PIO_STRING,
                               data_file_,
                               loc_h5path,
                               &IOgroup_);
+  if (ierr) {
+    Errors::Message msg;
+    msg << "Unable to read variable \"" << attrname << "\" from file \"" << H5DataFilename_ << "\"";
+    Exceptions::amanzi_throw(msg);
+  }
 
   value = std::string(loc_value);
 
@@ -1004,12 +1010,17 @@ HDF5_MPI::readAttrReal(double& value, const std::string attrname)
 
   double* loc_value;
 
-  parallelIO_read_simple_attr(loc_attrname,
+  int ierr = parallelIO_read_simple_attr(loc_attrname,
                               reinterpret_cast<void**>(&loc_value),
                               PIO_DOUBLE,
                               data_file_,
                               loc_h5path,
                               &IOgroup_);
+  if (ierr) {
+    Errors::Message msg;
+    msg << "Unable to read variable \"" << attrname << "\" from file \"" << H5DataFilename_ << "\"";
+    Exceptions::amanzi_throw(msg);
+  }
 
   value = *loc_value;
 
@@ -1034,7 +1045,7 @@ HDF5_MPI::readAttrReal(double** value, int* ndim, const std::string attrname)
   int* pdims;
   int ndims;
 
-  parallelIO_read_attr(loc_attrname,
+  int ierr = parallelIO_read_attr(loc_attrname,
                        reinterpret_cast<void**>(&loc_value),
                        PIO_DOUBLE,
                        &ndims,
@@ -1042,6 +1053,12 @@ HDF5_MPI::readAttrReal(double** value, int* ndim, const std::string attrname)
                        data_file_,
                        loc_h5path,
                        &IOgroup_);
+
+  if (ierr) {
+    Errors::Message msg;
+    msg << "Unable to read variable \"" << attrname << "\" from file \"" << H5DataFilename_ << "\"";
+    Exceptions::amanzi_throw(msg);
+  }
 
   *value = loc_value;
   *ndim = pdims[0]; // works only for one-dimensional vectors.
@@ -1065,12 +1082,18 @@ HDF5_MPI::readAttrInt(int& value, const std::string attrname)
 
   int* loc_value;
 
-  parallelIO_read_simple_attr(loc_attrname,
+  int ierr = parallelIO_read_simple_attr(loc_attrname,
                               reinterpret_cast<void**>(&loc_value),
                               PIO_INTEGER,
                               data_file_,
                               loc_h5path,
                               &IOgroup_);
+
+  if (ierr) {
+    Errors::Message msg;
+    msg << "Unable to read variable \"" << attrname << "\" from file \"" << H5DataFilename_ << "\"";
+    Exceptions::amanzi_throw(msg);
+  }
 
   value = *loc_value;
 
@@ -1094,7 +1117,7 @@ HDF5_MPI::readAttrInt(int** value, int* ndim, const std::string attrname)
   int *loc_value, *pdims;
   int ndims;
 
-  parallelIO_read_attr(loc_attrname,
+  int ierr = parallelIO_read_attr(loc_attrname,
                        reinterpret_cast<void**>(&loc_value),
                        PIO_INTEGER,
                        &ndims,
@@ -1102,6 +1125,11 @@ HDF5_MPI::readAttrInt(int** value, int* ndim, const std::string attrname)
                        data_file_,
                        loc_h5path,
                        &IOgroup_);
+  if (ierr) {
+    Errors::Message msg;
+    msg << "Unable to read variable \"" << attrname << "\" from file \"" << H5DataFilename_ << "\"";
+    Exceptions::amanzi_throw(msg);
+  }
 
   *value = loc_value;
   *ndim = pdims[0]; // works only for one-dimensional vectors.

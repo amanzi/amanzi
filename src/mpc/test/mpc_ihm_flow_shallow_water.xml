@@ -159,7 +159,7 @@
             <Parameter name="components" type="Array(string)" value="{cell, boundary_face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="55397.25419097694"/>
+                <Parameter name="value" type="double" value="55409.38107132945"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -191,6 +191,9 @@
       </ParameterList>
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="998.2"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="permeability">
         <Parameter name="write checkpoint" type="bool" value="false"/>
@@ -355,7 +358,7 @@
         <Parameter name="error control options" type="Array(string)" value="{residual}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -456,7 +459,7 @@
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>

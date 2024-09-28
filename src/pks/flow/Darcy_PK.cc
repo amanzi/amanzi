@@ -71,33 +71,13 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
 
-  // computational domain
+  // domain and primary evaluators
   domain_ = fp_list_->template get<std::string>("domain name", "domain");
-}
+  pressure_key_ = Keys::getKey(domain_, "pressure");
+  mol_flowrate_key_ = Keys::getKey(domain_, "molar_flow_rate");
 
-
-/* ******************************************************************
-* Old constructor for unit tests.
-****************************************************************** */
-Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                   const std::string& pk_list_name,
-                   Teuchos::RCP<State> S,
-                   const Teuchos::RCP<TreeVector>& soln)
-  : Flow_PK(), soln_(soln)
-{
-  S_ = S;
-
-  // We need the flow list
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  fp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
-
-  // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
-  linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
-  ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
-
-  // domain name
-  domain_ = fp_list_->template get<std::string>("domain name", "domain");
+  AddDefaultPrimaryEvaluator(S_, pressure_key_);
+  AddDefaultPrimaryEvaluator(S_, mol_flowrate_key_);
 }
 
 
@@ -141,14 +121,12 @@ Darcy_PK::Setup()
   std::string name = list3->get<std::string>("discretization primary");
 
   // primary field: pressure
-  if (!S_->HasRecord(pressure_key_)) {
-    std::vector<std::string> names;
-    std::vector<AmanziMesh::Entity_kind> locations;
-    std::vector<int> ndofs;
-
-    names.push_back("cell");
-    locations.push_back(AmanziMesh::Entity_kind::CELL);
-    ndofs.push_back(1);
+  // A new component is NOT added if its name and number of dofs are the same.
+  // Face components for matrix and fractured matrix are considered the same.
+  {
+    std::vector<std::string> names({ "cell" });
+    std::vector<AmanziMesh::Entity_kind> locations({ AmanziMesh::Entity_kind::CELL });
+    std::vector<int> ndofs({ 1 });
 
     if (name != "fv: default" && name != "nlfv: default") {
       names.push_back("face");
@@ -159,12 +137,11 @@ Darcy_PK::Setup()
     S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
       ->SetGhosted(true)
-      ->SetComponents(names, locations, ndofs);
-    AddDefaultPrimaryEvaluator(S_, pressure_key_);
+      ->AddComponents(names, locations, ndofs);
   }
 
   // require additional fields and evaluators
-  // Many fields/evaluators have a simple struncture. They are ghosted
+  // Many fields/evaluators have a simple structure. They are ghosted
   //   cell-based fields. We use a helper function that reruires a field
   //   and returns a parameter list populated with standard values.
   // -- water storage
@@ -232,7 +209,8 @@ Darcy_PK::Setup()
 
   // -- molar and volumetric flow rates
   double rho = S_->ICList().sublist("const_fluid_density").get<double>("value");
-  double molar_rho = rho / CommonDefs::MOLAR_MASS_H2O;
+  molar_mass_ = S_->ICList().sublist("const_fluid_molar_mass").get<double>("value");
+  double molar_rho = rho / molar_mass_;
   Setup_FlowRates_(true, molar_rho);
 
   // -- fracture dynamics
@@ -253,16 +231,9 @@ Darcy_PK::Setup()
         ->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
       S_->GetRecordW(ref_pressure_key_, passwd_).set_io_vis(false);
+      S_->GetRecordW(ref_pressure_key_, passwd_).set_io_checkpoint(false);
 
-      Teuchos::ParameterList elist(aperture_key_);
-      elist.set<std::string>("reference aperture key", ref_aperture_key_)
-        .set<std::string>("reference pressure key", ref_pressure_key_)
-        .set<std::string>("pressure key", pressure_key_)
-        .set<std::string>("compliance key", compliance_key_)
-        .set<std::string>("tag", "");
-
-      auto eval = Teuchos::rcp(new ApertureDarcyEvaluator(elist));
-      S_->SetEvaluator(aperture_key_, Tags::DEFAULT, eval);
+      S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
     } else {
       S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
     }
@@ -329,6 +300,7 @@ Darcy_PK::Setup()
   S_->GetRecordSetW(porosity_key_).set_units("-");
   S_->GetRecordSetW(saturation_liquid_key_).set_units("-");
   S_->GetRecordSetW(hydraulic_head_key_).set_units("m");
+  S_->GetRecordSetW(mass_density_liquid_key_).set_units("kg/m^3");
 }
 
 
@@ -393,9 +365,8 @@ Darcy_PK::Initialize()
   // Initialize lambdas. It may be used by boundary conditions.
   auto& pressure = S_->GetW<CompositeVector>(pressure_key_, Tags::DEFAULT, passwd_);
 
-  if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")) {
-    std::string method =
-      ti_list_->sublist("pressure-lambda constraints").get<std::string>("method");
+  if (ti_list_->isSublist("dae constraint") && solution->HasComponent("face")) {
+    std::string method = ti_list_->sublist("dae constraint").get<std::string>("method");
     if (method == "projection") {
       Epetra_MultiVector& p = *solution->ViewComponent("cell");
       Epetra_MultiVector& lambda = *solution->ViewComponent("face");

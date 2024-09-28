@@ -25,6 +25,7 @@
         <Parameter name="regions" type="Array(string)" value="{FRACTURE_NETWORK_INTERNAL}"/>
         <Parameter name="extraction method" type="string" value="manifold mesh"/>
         <Parameter name="domain name" type="string" value="fracture"/>
+        <Parameter name="extract all faces" type="bool" value="true"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">
@@ -144,6 +145,8 @@
         <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water FEHM"/>
+          <Parameter name="molar mass" type="double" value="0.018015"/>
+          <Parameter name="density" type="double" value="1000.0"/>
         </ParameterList>
         <Parameter name="eos basis" type="string" value="both"/>
         <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
@@ -203,6 +206,8 @@
         <Parameter name="molar density key" type="string" value="fracture-molar_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water FEHM"/>
+          <Parameter name="molar mass" type="double" value="0.018015"/>
+          <Parameter name="density" type="double" value="1000.0"/>
         </ParameterList>
         <Parameter name="eos basis" type="string" value="both"/>
         <Parameter name="mass density key" type="string" value="fracture-mass_density_liquid"/>
@@ -254,6 +259,9 @@
       </ParameterList>
       <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1000.0"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_molar_mass">
+        <Parameter name="value" type="double" value="0.018015"/>
       </ParameterList>
       <ParameterList name="permeability">
         <Parameter name="write checkpoint" type="bool" value="false"/>
@@ -480,7 +488,7 @@
         <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
         <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
@@ -556,7 +564,7 @@
         <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
         <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <ParameterList name="pressure-lambda constraints">
+        <ParameterList name="dae constraint">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
           <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>

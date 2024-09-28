@@ -16,6 +16,7 @@
 #include <fstream>
 #include <string>
 
+#include "dbc.hh"
 #include "errors.hh"
 #include "LookupTable_Amanzi.hh"
 
@@ -37,6 +38,9 @@ LookupTable_Amanzi::LookupTable_Amanzi(Teuchos::ParameterList& plist) : LookupTa
   Errors::Message msg;
   msg << "\nFailed to open/read data from file: " << filename;
   if (ifs.fail()) Exceptions::amanzi_throw(msg);
+
+  char line[100];
+  ifs.getline(line, 100);
 
   // primary variables are T and p
   ReadMetaData_(ifs, "temperature", &nT, &scaleT_, &shiftT_);
@@ -65,6 +69,8 @@ LookupTable_Amanzi::LookupTable_Amanzi(Teuchos::ParameterList& plist) : LookupTa
   } else if (field == "viscosity") {
     scaleF_ = scaleV;
     shiftF_ = shiftV;
+  } else {
+    AMANZI_ASSERT(false);
   }
 
   // data blocks

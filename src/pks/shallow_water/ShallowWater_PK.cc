@@ -53,8 +53,13 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   sw_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
-  // domain name
+  // domain and primary evaluators
   domain_ = sw_list_->template get<std::string>("domain name", "surface");
+
+  ponded_depth_key_ = Keys::getKey(domain_, "ponded_depth");
+  velocity_key_ = Keys::getKey(domain_, "velocity");
+  AddDefaultPrimaryEvaluator(S_, ponded_depth_key_);
+  AddDefaultPrimaryEvaluator(S_, velocity_key_);
 
   cfl_ = sw_list_->get<double>("cfl", 0.1);
   max_iters_ = sw_list_->get<int>("number of reduced cfl cycles", 10);
@@ -79,7 +84,6 @@ ShallowWater_PK::Setup()
   dim_ = mesh_->getSpaceDimension();
 
   // domain name
-  velocity_key_ = Keys::getKey(domain_, "velocity");
   discharge_key_ = Keys::getKey(domain_, "discharge");
   total_depth_key_ = Keys::getKey(domain_, "total_depth");
   bathymetry_key_ = Keys::getKey(domain_, "bathymetry");
@@ -122,7 +126,6 @@ ShallowWater_PK::Setup()
       .SetMesh(mesh_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 2);
-    AddDefaultPrimaryEvaluator(S_, velocity_key_);
   }
 
   // -- discharge

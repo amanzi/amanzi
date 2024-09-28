@@ -41,11 +41,6 @@ class Darcy_PK : public Flow_PK {
            const Teuchos::RCP<State>& S,
            const Teuchos::RCP<TreeVector>& soln);
 
-  Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-           const std::string& pk_list_name,
-           Teuchos::RCP<State> S,
-           const Teuchos::RCP<TreeVector>& soln);
-
   ~Darcy_PK(){};
 
   // methods required for PK interface
@@ -86,12 +81,10 @@ class Darcy_PK : public Flow_PK {
   virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> u) override { return true; }
 
   // -- possibly modifies the predictor that is going to be used as a
-  //    starting value for the nonlinear solve in the time integrator,
-  virtual bool
-  ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) override
-  {
-    return false;
-  }
+  //    starting value for the nonlinear solve in the time integrator
+  virtual bool ModifyPredictor(double dt,
+                               Teuchos::RCP<const TreeVector> u0,
+                               Teuchos::RCP<TreeVector> u) override;
 
   // -- possibly modifies the correction, after the nonlinear solver (i.e., NKA)
   //    has computed it, will return true if it did change the correction,
@@ -101,10 +94,7 @@ class Darcy_PK : public Flow_PK {
   ModifyCorrection(double dt,
                    Teuchos::RCP<const TreeVector> res,
                    Teuchos::RCP<const TreeVector> u,
-                   Teuchos::RCP<TreeVector> du) override
-  {
-    return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
-  }
+                   Teuchos::RCP<TreeVector> du) override;
 
   // -- experimental approach -- calling this indicates that the time
   //    integration scheme is changing the value of the solution in state.
