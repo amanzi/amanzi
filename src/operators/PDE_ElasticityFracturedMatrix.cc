@@ -395,7 +395,6 @@ PDE_ElasticityFracturedMatrix::ComputeCellStrain(const CompositeVector& u, int c
   int nrows = local_op_->matrices[c].NumRows();
   WhetStone::DenseVector dofs(nrows);
 
-  u.ScatterMasterToGhosted();
   const auto& u_n = *u.ViewComponent("node", true);
   const auto& nmap = *u.ComponentMap("node", true);
 

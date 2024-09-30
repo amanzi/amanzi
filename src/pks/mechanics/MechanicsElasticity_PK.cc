@@ -17,6 +17,7 @@
 #include "InverseFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PorosityEvaluator.hh"
+#include "PDE_ElasticityFactory.hh"
 #include "StateArchive.hh"
 
 #include "HydrostaticStressEvaluator.hh"
@@ -110,10 +111,11 @@ MechanicsElasticity_PK::Initialize()
   }
 
   // Initialize matrix and preconditioner
+  Operators::PDE_ElasticityFactory opfactory;
+
   // -- create elastic block
   auto tmp1 = ec_list_->sublist("operators").sublist("elasticity operator");
-  op_matrix_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
-  op_matrix_elas_->Init(tmp1);
+  op_matrix_elas_ = opfactory.Create(tmp1, mesh_);
 
   op_matrix_ = op_matrix_elas_->global_operator();
 
@@ -124,8 +126,7 @@ MechanicsElasticity_PK::Initialize()
   if (split_undrained_) {
     std::string method = tmp1.sublist("schema").get<std::string>("method");
     tmp1.sublist("schema").set<std::string>("method", method + " graddiv");
-    op_matrix_graddiv_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
-    op_matrix_graddiv_->Init(tmp1);
+    op_matrix_graddiv_ = opfactory.Create(tmp1, mesh_);
     op_matrix_->OpPushBack(op_matrix_graddiv_->local_op());
   }
 

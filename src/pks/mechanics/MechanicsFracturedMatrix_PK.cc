@@ -74,7 +74,7 @@ MechanicsFracturedMatrix_PK::Setup()
 
   aperture_key_ = Keys::getKey("fracture", "aperture");
   ref_aperture_key_ = Keys::getKey("fracture", "ref_aperture");
-  fracture_stiffness_key_ = Keys::getKey("fracture", "fracture_stiffness");
+  compliance_key_ = Keys::getKey("fracture", "compliance");
   pressure_key_ = Keys::getKey("fracture", "pressure");
 
   // displacement field
@@ -116,11 +116,13 @@ MechanicsFracturedMatrix_PK::Setup()
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
-  if (!S_->HasRecord(fracture_stiffness_key_)) {
-    S_->Require<CV_t, CVS_t>(fracture_stiffness_key_, Tags::DEFAULT)
+  if (!S_->HasRecord(compliance_key_)) {
+    S_->Require<CV_t, CVS_t>(compliance_key_, Tags::DEFAULT)
       .SetMesh(mesh_fracture_)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+
+    S_->RequireEvaluator(compliance_key_, Tags::DEFAULT);
   }
 
   if (!S_->HasRecord(pressure_key_)) {
@@ -131,6 +133,18 @@ MechanicsFracturedMatrix_PK::Setup()
   }
 
   MechanicsSmallStrain_PK::Setup();
+}
+
+
+/* ******************************************************************
+* PK initialization
+****************************************************************** */
+void
+MechanicsFracturedMatrix_PK::Initialize()
+{
+  MechanicsSmallStrain_PK::Initialize();
+
+  InitializeCVField(S_, *vo_, ref_aperture_key_, Tags::DEFAULT, "", 1.0);
 }
 
 
@@ -206,7 +220,7 @@ MechanicsFracturedMatrix_PK::CommitStep(double t_old, double t_new, const Tag& t
 void
 MechanicsFracturedMatrix_PK::AddFractureMatrices_(CompositeVector& rhs)
 {
-  const auto& E_c = *S_->Get<CV_t>(fracture_stiffness_key_).ViewComponent("cell");
+  const auto& compliance_c = *S_->Get<CV_t>(compliance_key_).ViewComponent("cell");
   const auto& a0_c = *S_->Get<CV_t>(ref_aperture_key_).ViewComponent("cell");
   const auto& p_c = *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
   const auto& rhs_f = *rhs.ViewComponent("face");
@@ -243,7 +257,7 @@ MechanicsFracturedMatrix_PK::AddFractureMatrices_(CompositeVector& rhs)
     i2 = i1 + 1;
 
     double area = mesh_fracture_->getCellVolume(c);
-    double force = area * E_c[0][c] / a0_c[0][c];
+    double force = area / compliance_c[0][c] / a0_c[0][c];
     Acell(i1, i1) += force;
     Acell(i2, i2) += force;
 

@@ -87,7 +87,7 @@ class MechanicsSmallStrain_PK : public Mechanics_PK {
 
   // methods required for PK interface
   virtual void Setup() override;
-  virtual void Initialize() final;
+  virtual void Initialize() override;
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) final;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;

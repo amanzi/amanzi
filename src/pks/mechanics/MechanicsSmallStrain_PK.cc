@@ -100,10 +100,11 @@ MechanicsSmallStrain_PK::Setup()
     S_->SetEvaluator(shear_modulus_key_, Tags::DEFAULT, eval);
   }
 
-  S_->Require<CV_t, CVS_t>(bulk_modulus_key_, Tags::DEFAULT, passwd_)
+  S_->Require<CV_t, CVS_t>(bulk_modulus_key_, Tags::DEFAULT, bulk_modulus_key_)
     .SetMesh(mesh_)
     ->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S_->RequireEvaluator(bulk_modulus_key_, Tags::DEFAULT);
 }
 
 
