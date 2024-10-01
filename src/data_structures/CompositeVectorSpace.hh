@@ -156,7 +156,8 @@ class CompositeVectorSpace {
   {
     for (int i = 0; i != names_.size(); ++i) {
       os << "comp=" << names_[i] << " location=" << locations_[i] << " dofs=" << num_dofs_[i]
-         << std::endl;
+         << " size=" << mastermaps_.at(names_[i])->NumMyElements()
+         << " points=" << mastermaps_.at(names_[i])->NumMyPoints() << std::endl;
     }
   }
 
