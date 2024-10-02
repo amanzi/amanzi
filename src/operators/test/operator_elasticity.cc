@@ -289,14 +289,14 @@ RunTest(int icase,
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
   if (icase == 1 || icase == 2) {
-    // ver.CheckMatrixSPD(true, true);
-    // ver.CheckPreconditionerSPD(1e-12, true, true);
+    ver.CheckMatrixSPD(true, true);
+    ver.CheckPreconditionerSPD(1e-12, true, true);
   }
 
   CompositeVector& rhs = *global_op->rhs();
   global_op->ApplyInverse(rhs, solution);
 
-  // if (icase == 1 || icase == 2) { ver.CheckResidual(solution, 1.0e-13); }
+  if (icase == 1 || icase == 2) { ver.CheckResidual(solution, 1.0e-13); }
 
   if (MyPID == 0) {
     std::cout << ana.Tensor(mesh->getCellCentroid(0), 0.0) << std::endl;
