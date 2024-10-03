@@ -32,7 +32,7 @@ namespace ShallowWater {
 
 class ShallowWaterBoundaryFunction : public PK_DomainFunction {
  public:
-  ShallowWaterBoundaryFunction() : bc_name_("undefined"){};
+  ShallowWaterBoundaryFunction() : bc_name_("undefined") {};
   ShallowWaterBoundaryFunction(const Teuchos::ParameterList& plist);
 
   // modifiers and access

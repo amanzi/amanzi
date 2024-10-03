@@ -107,22 +107,28 @@ TEST(PIPE_FLOW_1D)
 
   int iter = 0;
   double Tend = 1.0;
-  
+
   // for mass calculation
-  double total_mass_initial_tmp = 0.0, total_mass_final_tmp = 0.0, total_mass_initial, total_mass_final;
+  double total_mass_initial_tmp = 0.0, total_mass_final_tmp = 0.0, total_mass_initial,
+         total_mass_final;
 
   int ncells_owned = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
                                           Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
-  auto& wac_init = *S->GetW<CompositeVector>("pipe-wetted_area", Tags::DEFAULT, "").ViewComponent("cell"); // wetted area
-  auto& htc_init = *S->GetW<CompositeVector>("pipe-total_depth", Tags::DEFAULT, "").ViewComponent("cell"); // total depth for junction
-  auto& Bc = *S->GetW<CompositeVector>("pipe-bathymetry", Tags::DEFAULT, "").ViewComponent("cell"); // bathymetry for junction
-  const auto& dirc = *S->Get<CompositeVector>("pipe-direction").ViewComponent("cell"); // direction to identify junction
+  auto& wac_init = *S->GetW<CompositeVector>("pipe-wetted_area", Tags::DEFAULT, "")
+                      .ViewComponent("cell"); // wetted area
+  auto& htc_init = *S->GetW<CompositeVector>("pipe-total_depth", Tags::DEFAULT, "")
+                      .ViewComponent("cell"); // total depth for junction
+  auto& Bc = *S->GetW<CompositeVector>("pipe-bathymetry", Tags::DEFAULT, "")
+                .ViewComponent("cell"); // bathymetry for junction
+  const auto& dirc = *S->Get<CompositeVector>("pipe-direction")
+                        .ViewComponent("cell"); // direction to identify junction
 
   for (int c = 0; c < ncells_owned; ++c) {
-    if (std::abs(dirc[0][c] - 1.0) < 1.e-12) { 
-      total_mass_initial_tmp += wac_init[0][c] * mesh->getCellVolume(c); // length of cell = volume of cell
-    } else if (std::abs(dirc[0][c] - 0.0) < 1.e-12) { 
+    if (std::abs(dirc[0][c] - 1.0) < 1.e-12) {
+      total_mass_initial_tmp +=
+        wac_init[0][c] * mesh->getCellVolume(c); // length of cell = volume of cell
+    } else if (std::abs(dirc[0][c] - 0.0) < 1.e-12) {
       total_mass_initial_tmp += (htc_init[0][c] - Bc[0][c]) * mesh->getCellVolume(c);
     }
   }
@@ -130,7 +136,6 @@ TEST(PIPE_FLOW_1D)
   mesh->getComm()->SumAll(&total_mass_initial_tmp, &total_mass_initial, 1);
 
   while (t_new < Tend) {
-
     // cycle 1, time t
     double t_out = t_new;
 
@@ -145,9 +150,9 @@ TEST(PIPE_FLOW_1D)
     iter++;
 
     // output data
-    if (iter % 10 == 0) { 
+    if (iter % 10 == 0) {
       io->InitializeCycle(t_new, iter, "");
-    
+
       const auto& u0 = *S->Get<CompositeVector>("pipe-total_depth").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("pipe-velocity").ViewComponent("cell");
       const auto& u2 = *S->Get<CompositeVector>("pipe-bathymetry").ViewComponent("cell");
@@ -160,33 +165,35 @@ TEST(PIPE_FLOW_1D)
       io->WriteVector(*u1(1), "pipe-velocity y", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u2(0), "pipe-bathymetry", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u3(0), "pipe-discharge x", AmanziMesh::Entity_kind::CELL);
-      io->WriteVector(*u3(1), "pipe-discharge y", AmanziMesh::Entity_kind::CELL);    
+      io->WriteVector(*u3(1), "pipe-discharge y", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u4(0), "pipe-wetted_area", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u5(0), "pipe-direction", AmanziMesh::Entity_kind::CELL);
       io->FinalizeCycle();
     }
   }
-    
-  auto& wac = *S->GetW<CompositeVector>("pipe-wetted_area", Tags::DEFAULT, "").ViewComponent("cell"); // wetted area
-  auto& htc = *S->GetW<CompositeVector>("pipe-total_depth", Tags::DEFAULT, "").ViewComponent("cell"); // total depth for junction
+
+  auto& wac = *S->GetW<CompositeVector>("pipe-wetted_area", Tags::DEFAULT, "")
+                 .ViewComponent("cell"); // wetted area
+  auto& htc = *S->GetW<CompositeVector>("pipe-total_depth", Tags::DEFAULT, "")
+                 .ViewComponent("cell"); // total depth for junction
 
   for (int c = 0; c < ncells_owned; ++c) {
-    if (std::abs(dirc[0][c] - 1.0) < 1.e-12) { 
+    if (std::abs(dirc[0][c] - 1.0) < 1.e-12) {
       total_mass_final_tmp += wac[0][c] * mesh->getCellVolume(c); // length of cell = volume of cell
-    } else if (std::abs(dirc[0][c] - 0.0) < 1.e-12) { 
+    } else if (std::abs(dirc[0][c] - 0.0) < 1.e-12) {
       total_mass_final_tmp += (htc[0][c] - Bc[0][c]) * mesh->getCellVolume(c);
     }
   }
 
   mesh->getComm()->SumAll(&total_mass_final_tmp, &total_mass_final, 1);
 
-  std::cout.precision(14);  
+  std::cout.precision(14);
 
-  if (MyPID == 0) { 
-    std::cout<<"Calculated total initial mass = "<<total_mass_initial<<std::endl;
-    std::cout<<"Calculated total final mass = "<<total_mass_final<<std::endl;
-    std::cout<<"Difference = "<<total_mass_final - total_mass_initial<<std::endl;
-    std::cout<<"Calculated mass through BCs = "<<0.0<<std::endl;
+  if (MyPID == 0) {
+    std::cout << "Calculated total initial mass = " << total_mass_initial << std::endl;
+    std::cout << "Calculated total final mass = " << total_mass_final << std::endl;
+    std::cout << "Difference = " << total_mass_final - total_mass_initial << std::endl;
+    std::cout << "Calculated mass through BCs = " << 0.0 << std::endl;
 
     CHECK(std::abs((total_mass_final - total_mass_initial) - 0.0) < 1.e-12);
   }
