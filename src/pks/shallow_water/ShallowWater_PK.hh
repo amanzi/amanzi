@@ -89,14 +89,14 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
                   const Teuchos::RCP<Teuchos::ParameterList>& glist,
                   const Teuchos::RCP<State>& S,
                   const Teuchos::RCP<TreeVector>& soln);
-  ~ShallowWater_PK(){};
+  ~ShallowWater_PK() {};
 
   virtual void parseParameterList() override {};
   virtual void Setup() override;
   virtual void Initialize() override;
 
   virtual double get_dt() override;
-  virtual void set_dt(double dt) override{};
+  virtual void set_dt(double dt) override {};
 
   // Advance PK by step size dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
@@ -107,17 +107,17 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual void SetupPrimaryVariableKeys();
 
-  virtual void SetupExtraEvaluatorsKeys(){};
+  virtual void SetupExtraEvaluatorsKeys() {};
 
-  virtual void ScatterMasterToGhostedExtraEvaluators(){};
+  virtual void ScatterMasterToGhostedExtraEvaluators() {};
 
-  virtual void UpdateExtraEvaluators(){};
+  virtual void UpdateExtraEvaluators() {};
 
   virtual void SetPrimaryVariableBC(Teuchos::RCP<Teuchos::ParameterList>& bc_list);
 
   virtual void InitializeFields();
 
-  virtual void ComputeCellArrays(){};
+  virtual void ComputeCellArrays() {};
 
   virtual void ComputeExternalForcingOnCells(std::vector<double>& forcing);
 
@@ -125,7 +125,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
 
   // Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics(const Tag& tag) override{};
+  virtual void CalculateDiagnostics(const Tag& tag) override {};
 
   virtual std::string name() override { return "shallow water"; }
 
