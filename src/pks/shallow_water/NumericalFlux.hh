@@ -22,7 +22,7 @@ namespace ShallowWater {
 
 class NumericalFlux {
  public:
-  virtual ~NumericalFlux(){};
+  virtual ~NumericalFlux() {};
 
   std::vector<double> PhysicalFlux(const std::vector<double>& U, double HydrostaticPressureForce);
   double minmod(double a, double b);
