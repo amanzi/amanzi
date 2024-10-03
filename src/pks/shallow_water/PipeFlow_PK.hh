@@ -26,7 +26,7 @@ class PipeFlow_PK : public ShallowWater_PK {
               const Teuchos::RCP<State>& S,
               const Teuchos::RCP<TreeVector>& soln);
 
-  ~PipeFlow_PK(){};
+  ~PipeFlow_PK() {};
 
   virtual void Setup() override;
 

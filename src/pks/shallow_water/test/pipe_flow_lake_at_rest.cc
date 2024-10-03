@@ -35,7 +35,6 @@
 #include "Evaluator.hh"
 
 
-
 using namespace Amanzi;
 
 //--------------------------------------------------------------
@@ -136,7 +135,6 @@ TEST(PIPE_FLOW_1D)
   double TEini, TEfin;
 
   while (t_new < 5.) {
-
     Epetra_MultiVector hh_ex(ht);
     Epetra_MultiVector vel_ex(vel);
 
@@ -154,9 +152,9 @@ TEST(PIPE_FLOW_1D)
     iter++;
 
     // output data
-    if (iter % 10 == 0) { 
+    if (iter % 10 == 0) {
       io->InitializeCycle(t_new, iter, "");
-    
+
       const auto& u0 = *S->Get<CompositeVector>("pipe-total_depth").ViewComponent("cell");
       const auto& u1 = *S->Get<CompositeVector>("pipe-velocity").ViewComponent("cell");
       const auto& u2 = *S->Get<CompositeVector>("pipe-bathymetry").ViewComponent("cell");
@@ -169,7 +167,7 @@ TEST(PIPE_FLOW_1D)
       io->WriteVector(*u1(1), "pipe-velocity y", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u2(0), "pipe-bathymetry", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u3(0), "pipe-discharge x", AmanziMesh::Entity_kind::CELL);
-      io->WriteVector(*u3(1), "pipe-discharge y", AmanziMesh::Entity_kind::CELL);    
+      io->WriteVector(*u3(1), "pipe-discharge y", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u4(0), "pipe-direction", AmanziMesh::Entity_kind::CELL);
       io->WriteVector(*u5(0), "pipe-water_depth", AmanziMesh::Entity_kind::CELL);
 
@@ -185,9 +183,9 @@ TEST(PIPE_FLOW_1D)
   double err_L1_vx = 0.0, err_L1_vy = 0.0, err_Linf_v_tmp = 0.0, err_L1_v_tmp, err_L1_v, err_Linf_v;
 
   for (int c = 0; c < ncells_owned; ++c) {
-    err_L1_vx += std::abs(vc[0][c]) *  mesh->getCellVolume(c);
+    err_L1_vx += std::abs(vc[0][c]) * mesh->getCellVolume(c);
     err_L1_vy += std::abs(vc[1][c]) * mesh->getCellVolume(c);
-    err_Linf_v_tmp = std::max(err_Linf_v, std::max(std::abs(vc[0][c]), std::abs(vc[1][c]))); 
+    err_Linf_v_tmp = std::max(err_Linf_v, std::max(std::abs(vc[0][c]), std::abs(vc[1][c])));
   }
 
   err_L1_v_tmp = err_L1_vx + err_L1_vy;
@@ -196,8 +194,8 @@ TEST(PIPE_FLOW_1D)
   mesh->getComm()->MaxAll(&err_Linf_v_tmp, &err_Linf_v, 1);
 
   std::cout.precision(6);
-  if (MyPID == 0) { 
-    std::cout<<"Error velocity L1 = "<<err_L1_v<<"; Linf = "<<err_Linf_v<<std::endl;
+  if (MyPID == 0) {
+    std::cout << "Error velocity L1 = " << err_L1_v << "; Linf = " << err_Linf_v << std::endl;
   }
 
   CHECK(err_L1_v < 1.e-12 && err_Linf_v < 1.e-12);

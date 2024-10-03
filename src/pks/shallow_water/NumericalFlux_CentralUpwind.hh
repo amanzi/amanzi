@@ -26,7 +26,7 @@ namespace ShallowWater {
 class NumericalFlux_CentralUpwind : public NumericalFlux {
  public:
   explicit NumericalFlux_CentralUpwind(Teuchos::ParameterList& plist);
-  ~NumericalFlux_CentralUpwind(){};
+  ~NumericalFlux_CentralUpwind() {};
 
   virtual std::vector<double> Compute(const std::vector<double>& UL,
                                       const std::vector<double>& UR,
