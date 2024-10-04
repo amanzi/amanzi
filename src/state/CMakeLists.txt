@@ -134,18 +134,18 @@ endif()
 #
 add_install_include_file(${state_inc_files})
 
+if (BUILD_TESTS)
     # Add State include directory. 
     include_directories(${STATE_SOURCE_DIR})
 
     # Mesh factory includes
     include_directories(${MESH_FACTORY_SOURCE_DIR})
+    include_directories(${MESH_LOGICAL_SOURCE_DIR})
+    include_directories(${MESH_LOGICAL_SOURCE_DIR}/test)
     include_directories(${MESH_EXTRACTED_SOURCE_DIR})
-
-if (BUILD_TESTS)
 
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
-
 
     # Copy test subdirectory for out of source builds
     if (NOT ("${STATE_SOURCE_DIR}" STREQUAL "${STATE_BINARY_DIR}"))
@@ -234,7 +234,7 @@ if (BUILD_TESTS)
                     KIND int
                     SOURCE test/Main.cc
                            test/state_vis.cc
-                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions
+                    LINK_LIBS state mesh_factory mesh mesh_logical data_structures mesh_functions functions
                               ${state_tpl_list} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_container state_container
