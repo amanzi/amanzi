@@ -30,6 +30,8 @@
 #include "State.hh"
 #include "Visualization.hh"
 
+#include "demo_mesh.hh"
+
 SUITE(VISUALIZATION)
 {
   TEST(VIZ_DUMP_REQUIRED)
@@ -120,9 +122,43 @@ SUITE(VISUALIZATION)
 
     Teuchos::ParameterList visualization_list = plist.get<Teuchos::ParameterList>("visualization");
     Amanzi::Visualization V(visualization_list);
+    V.set_name("domain");
     V.set_mesh(Mesh);
     V.CreateFiles();
 
+    WriteVis(V, S0);
+  }
+
+  TEST(DUMP_MESH_AND_DATA_LOGICAL)
+  {
+    // here we just check that the code does not crash when
+    // the mesh and data files are written
+    Teuchos::ParameterList plist;
+    Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh_fw = Amanzi::Testing::demoMeshLogicalYManual();
+    auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshCache<Amanzi::MemSpace_kind::HOST>(
+                               mesh_fw, Teuchos::rcp(new Amanzi::AmanziMesh::MeshLogicalAlgorithms()), Teuchos::null));
+
+    Teuchos::ParameterList state_list("state");
+    Amanzi::State S0(state_list);
+
+    S0.RegisterMesh("domain", mesh);
+    S0.Require<Amanzi::CompositeVector, Amanzi::CompositeVectorSpace>("celldata",
+                                                                      Amanzi::Tags::DEFAULT)
+      .SetMesh(mesh)
+      ->SetGhosted(false)
+      ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
+    S0.Setup();
+    S0.InitializeFields();
+
+    S0.set_time(1.02);
+
+    Teuchos::ParameterList visualization_list("domain");
+    visualization_list.set<Teuchos::Array<int>>("cycles", Teuchos::Array<int>{0,1,-1});
+    visualization_list.set<std::string>("file name base", "amanzi_vis_logical");
+    Amanzi::Visualization V(visualization_list);
+    V.set_name("domain");
+    V.set_mesh(mesh);
+    V.CreateFiles();
     WriteVis(V, S0);
   }
 }
