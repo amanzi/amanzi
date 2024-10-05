@@ -195,6 +195,8 @@ class InputConverterU : public InputConverter {
                                            const std::string& pkname,
                                            const std::string& pk_model);
 
+  void CreateSubmesh_(Teuchos::ParameterList& mesh_list, bool all_faces);
+
   // -- state
   void TranslateCommonContinuumFields_(const std::string& domain,
                                        Teuchos::ParameterList& out_ic,
@@ -269,6 +271,7 @@ class InputConverterU : public InputConverter {
 
   // -- mechanics
   Teuchos::ParameterList TranslateMechanics_(const std::string& domain);
+  Teuchos::ParameterList TranslateMechanicsSSM_();
   Teuchos::ParameterList TranslateMechanicsBCs_(const std::string& domain);
 
   // -- backward compatibility

@@ -252,6 +252,8 @@ InputConverterU::TranslateCycleDriverNew_()
         model = GetAttributeValueS_(jnode, "model");
         pk_model_["mechanics"].push_back(model);
         pk_master_["mechanics"] = true;
+        pk_domain_["mechanics"] = "domain";
+
         GetAttributeValueS_(jnode, "state", "on");
         transient_model += 64;
       }
@@ -1099,7 +1101,6 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
 {
   auto& pk_list = glist.sublist("PKs");
   auto& mesh_list = glist.sublist("mesh");
-  auto& mesh_list_u = glist.sublist("mesh").sublist("unstructured");
 
   for (auto it = pk_list.begin(); it != pk_list.end(); ++it) {
     std::string name = it->first;
@@ -1137,22 +1138,14 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       tmp_f.remove("BDF1", false);
       tmp_f.remove("initialization", false);
 
-      // Teuchos::Array<std::string> aux(1, CreateUniqueName_(fracture_regions_));
-      Teuchos::Array<std::string> aux(1, "FRACTURE_NETWORK_INTERNAL");
-      mesh_list_u.sublist("submesh")
-        .set<Teuchos::Array<std::string>>("regions", aux)
-        .set<std::string>("extraction method", "manifold mesh")
-        .set<std::string>("domain name", "fracture")
-        .set<bool>("extract all faces", true);
-
-      if (dim_ == 3) mesh_list.set<bool>("request edges", true);
+      CreateSubmesh_(mesh_list, true);
     }
 
     if (basename == "flow and shallow water") {
       mesh_list.set<bool>("request edges", true);
 
       Teuchos::Array<std::string> aux(1, pk_region_["shallow_water"]);
-      mesh_list_u.sublist("submesh")
+      mesh_list.sublist("unstructured").sublist("submesh")
         .set<Teuchos::Array<std::string>>("regions", aux)
         .set<std::string>("extraction method", "manifold mesh")
         .set<std::string>("domain name", "surface");
@@ -1181,25 +1174,11 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
           .set<Teuchos::Array<std::string>>("fracture", fracture_regions_);
       }
 
-      Teuchos::Array<std::string> aux(1, "FRACTURE_NETWORK_INTERNAL");
-      mesh_list_u.sublist("submesh")
-        .set<Teuchos::Array<std::string>>("regions", aux)
-        .set<std::string>("extraction method", "manifold mesh")
-        .set<std::string>("domain name", "fracture")
-        .set<bool>("extract all faces", true);
-
-      if (dim_ == 3) mesh_list.set<bool>("request edges", true);
+      CreateSubmesh_(mesh_list, true);
     }
 
     if (basename == "coupled multiphase") {
-      Teuchos::Array<std::string> aux(1, "FRACTURE_NETWORK_INTERNAL");
-      mesh_list_u.sublist("submesh")
-        .set<Teuchos::Array<std::string>>("regions", aux)
-        .set<std::string>("extraction method", "manifold mesh")
-        .set<std::string>("domain name", "fracture")
-        .set<bool>("extract all faces", true);
-
-      if (dim_ == 3) mesh_list.set<bool>("request edges", true);
+      CreateSubmesh_(mesh_list, true);
     }
 
     if (basename == "coupled flow and energy") {
@@ -1246,14 +1225,11 @@ InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
         }
       }
 
-      Teuchos::Array<std::string> aux(1, "FRACTURE_NETWORK_INTERNAL");
-      mesh_list_u.sublist("submesh")
-        .set<Teuchos::Array<std::string>>("regions", aux)
-        .set<std::string>("extraction method", "manifold mesh")
-        .set<std::string>("domain name", "fracture")
-        .set<bool>("extract all faces", true);
+      CreateSubmesh_(mesh_list, true);
+    }
 
-      if (dim_ == 3) mesh_list.set<bool>("request edges", true);
+    if (basename == "mechanics") {
+      if (fracture_network_) CreateSubmesh_(mesh_list, true);
     }
   }
 }

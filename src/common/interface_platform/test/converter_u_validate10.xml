@@ -160,7 +160,7 @@
   </ParameterList>
   <ParameterList name="PKs">
     <ParameterList name="steady:mechanics">
-      <Parameter name="domain name" type="string" value=""/>
+      <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="use gravity" type="bool" value="true"/>
         <Parameter name="biot scheme: undrained split" type="bool" value="false"/>

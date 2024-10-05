@@ -104,20 +104,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="fracture-compliance">
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
@@ -277,6 +263,34 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="bulk_modulus">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.1e+9"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-compliance">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="ALL">
+            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.66e-9"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
@@ -346,19 +360,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="bulk_modulus">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.1e+9"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
       <ParameterList name="fracture-ref_aperture">
         <ParameterList name="function">
           <ParameterList name="ALL">
@@ -367,19 +368,6 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="fracture-fracture_stiffness">
-        <ParameterList name="function">
-          <ParameterList name="ALL">
-            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="6.0e+8"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

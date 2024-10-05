@@ -525,5 +525,22 @@ InputConverterU::CreateRegionAll_()
   return out_list;
 }
 
+
+/* ******************************************************************
+* Create global region.
+****************************************************************** */
+void
+InputConverterU::CreateSubmesh_(Teuchos::ParameterList& mesh_list, bool all_faces)
+{
+  Teuchos::Array<std::string> aux(1, "FRACTURE_NETWORK_INTERNAL");
+  mesh_list.sublist("unstructured").sublist("submesh")
+    .set<Teuchos::Array<std::string>>("regions", aux)
+    .set<std::string>("extraction method", "manifold mesh")
+    .set<std::string>("domain name", "fracture")
+    .set<bool>("extract all faces", all_faces);
+
+  if (dim_ == 3) mesh_list.set<bool>("request edges", true);
+}
+
 } // namespace AmanziInput
 } // namespace Amanzi

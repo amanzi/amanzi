@@ -41,7 +41,7 @@
 ***************************************************************** */
 template <class Analytic>
 double
-RunTest(double mu, double lambda, double tol = 1e-10)
+RunTest(int icase, double mu, double lambda, double tol = 1e-10)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -51,7 +51,7 @@ RunTest(double mu, double lambda, double tol = 1e-10)
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
   if (MyPID == 0)
-    std::cout << "TEST: 3D elasticity: exactness test\n" << std::endl;
+    std::cout << "\nTEST: 3D elasticity: exactness test" << std::endl;
 
   // read parameter list
   // -- it specifies details of the mesh, elasticity operator, and solver
@@ -59,6 +59,11 @@ RunTest(double mu, double lambda, double tol = 1e-10)
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
   Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("elasticity operator");
+
+  if (icase == 3) {
+    plist.sublist("regions").sublist("fracture").sublist("region: plane")
+      .set<Teuchos::Array<double>>("normal", { 1.0, 1.0, 1.0 });
+  }
 
   Teuchos::ParameterList region_list = plist.sublist("regions");
   auto gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
@@ -70,7 +75,11 @@ RunTest(double mu, double lambda, double tol = 1e-10)
 
   MeshFactory meshfactory(comm, gm, mesh_list);
   meshfactory.set_preference(Preference({ Framework::MSTK }));
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 6, 6, 6);
+  Teuchos::RCP<const Mesh> mesh;
+  if (icase == 1)
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 6, 6, 6);
+  else 
+    mesh = meshfactory.create("test/tetrahedra.exo");
 
   // -- general information about mesh
   int ncells_owned =
@@ -79,6 +88,10 @@ RunTest(double mu, double lambda, double tol = 1e-10)
     mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL);
   int nnodes_wghost =
     mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_kind::ALL);
+
+  int nfaces_fracture = mesh->getSetEntities(
+    "fracture", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::ALL).size();
+  std::cout << "Mesh: cells=" << ncells_owned << " fracture faces=" << nfaces_fracture << std::endl;
 
   // select an analytic solution for error calculations and setup of
   // boundary conditions
@@ -165,6 +178,9 @@ RunTest(double mu, double lambda, double tol = 1e-10)
   op->SetTensorCoefficient(K);
   op->UpdateMatrices();
 
+  VerificationCV ver(global_op);
+  ver.CheckMatrixSPD(true, true);
+
   // get and assemble the global operator
   global_op->UpdateRHS(source, true); // FIXME volume is missing but RHS is zero
   op->ApplyBCs(true, true, true);
@@ -174,6 +190,8 @@ RunTest(double mu, double lambda, double tol = 1e-10)
     "Hypre AMG", plist.sublist("preconditioners"), "PCG", plist.sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
+
+  ver.CheckPreconditionerSPD(1e-12, true, true);
 
   CompositeVector& rhs = *global_op->rhs();
   global_op->ApplyInverse(rhs, solution);
@@ -185,9 +203,11 @@ RunTest(double mu, double lambda, double tol = 1e-10)
   }
 
   // verify shear strain
-  for (int c = 0; c < ncells_owned; ++c) {
-    auto Tc = op->ComputeCellStrain(solution, c);
-    CHECK_CLOSE(Tc.Trace(), -1.0, 1e-12);
+  if (icase < 3) {
+    for (int c = 0; c < ncells_owned; ++c) {
+      auto Tc = op->ComputeCellStrain(solution, c);
+      CHECK_CLOSE(Tc.Trace(), -1.0, 1e-12);
+    }
   }
 
   // compute displacement error
@@ -208,6 +228,15 @@ RunTest(double mu, double lambda, double tol = 1e-10)
 
 TEST(OPERATOR_ELASTICITY_FRACTURED_MATRIX_EXACTNESS)
 {
-  RunTest<AnalyticElasticity01>(1.0, 0.0, 0.5);
+  RunTest<AnalyticElasticity01>(1, 1.0, 0.0);
 }
 
+TEST(OPERATOR_ELASTICITY_FRACTURED_MATRIX_TETRAHEDRA)
+{
+  RunTest<AnalyticElasticity01>(2, 1.0, 0.0);
+}
+
+TEST(OPERATOR_ELASTICITY_FRACTURED_MATRIX_SYMMETRY)
+{
+  RunTest<AnalyticElasticity01>(3, 1.0, 0.0, 0.1);
+}
