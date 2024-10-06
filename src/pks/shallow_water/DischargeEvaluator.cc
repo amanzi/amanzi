@@ -31,11 +31,19 @@ DischargeEvaluator::DischargeEvaluator(Teuchos::ParameterList& plist)
   }
   std::string domain = Keys::getDomain(my_keys_[0].first);
 
-  ponded_depth_key_ =
-    plist_.get<std::string>("ponded depth key", Keys::getKey(domain, "ponded_depth"));
+  if (domain == "surface" || domain == "street" || domain == "domain") {
+    primary_variable_key_ =
+      plist_.get<std::string>("ponded depth key", Keys::getKey(domain, "ponded_depth"));
+  } else if (domain == "pipe" || domain == "network") {
+    primary_variable_key_ =
+      plist_.get<std::string>("wetted area key", Keys::getKey(domain, "wetted_area"));
+  } else {
+    std::cout << "Unknown domain in discharge evaluator" << std::endl;
+    AMANZI_ASSERT(false);
+  }
   velocity_key_ = plist_.get<std::string>("velocity key", Keys::getKey(domain, "velocity"));
 
-  dependencies_.insert(std::make_pair(ponded_depth_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(primary_variable_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(velocity_key_, Tags::DEFAULT));
 }
 
@@ -56,7 +64,7 @@ DischargeEvaluator::Clone() const
 void
 DischargeEvaluator::Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& h_c = *S.Get<CompositeVector>(ponded_depth_key_).ViewComponent("cell");
+  const auto& h_c = *S.Get<CompositeVector>(primary_variable_key_).ViewComponent("cell");
   const auto& u_c = *S.Get<CompositeVector>(velocity_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
@@ -80,7 +88,7 @@ DischargeEvaluator::EvaluatePartialDerivative_(const State& S,
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
-  if (wrt_key == ponded_depth_key_) {
+  if (wrt_key == primary_variable_key_) {
     for (int c = 0; c != ncells; ++c) {
       for (int i = 0; i < 2; ++i) { result_c[i][c] = u_c[i][c]; }
     }

@@ -4,10 +4,10 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Svetlana Tokareva (tokareva@lanl.gov)
-*/
 
-/*!
+ Authors: Svetlana Tokareva (tokareva@lanl.gov)
+          Giacomo Capodaglio (gcapodaglio@lanl.gov)
+          Naren Vohra (vohra@lanl.gov)
 
 The mathematical model describing two-dimensional shallow water flow is
 
@@ -66,6 +66,7 @@ The list of global parameters include:
 #include "LimiterCell.hh"
 #include "NumericalFlux.hh"
 #include "PK.hh"
+#include "PK_Utils.hh"
 #include "PK_Explicit.hh"
 #include "PK_Factory.hh"
 #include "PK_Physical.hh"
@@ -82,24 +83,20 @@ The list of global parameters include:
 namespace Amanzi {
 namespace ShallowWater {
 
-// inversion operation protected for small values
-double
-inverse_with_tolerance(double h, double tol);
-
 class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
  public:
   ShallowWater_PK(Teuchos::ParameterList& pk_tree,
                   const Teuchos::RCP<Teuchos::ParameterList>& glist,
                   const Teuchos::RCP<State>& S,
                   const Teuchos::RCP<TreeVector>& soln);
-  ~ShallowWater_PK(){};
+  ~ShallowWater_PK() {};
 
   virtual void parseParameterList() override {};
   virtual void Setup() override;
   virtual void Initialize() override;
 
   virtual double get_dt() override;
-  virtual void set_dt(double dt) override{};
+  virtual void set_dt(double dt) override {};
 
   // Advance PK by step size dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
@@ -108,11 +105,27 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual void ModifySolution(double t, TreeVector& A) override { VerifySolution_(A); }
 
+  virtual void SetupPrimaryVariableKeys();
+
+  virtual void SetupExtraEvaluatorsKeys() {};
+
+  virtual void ScatterMasterToGhostedExtraEvaluators() {};
+
+  virtual void UpdateExtraEvaluators() {};
+
+  virtual void SetPrimaryVariableBC(Teuchos::RCP<Teuchos::ParameterList>& bc_list);
+
+  virtual void InitializeFields();
+
+  virtual void ComputeCellArrays() {};
+
+  virtual void ComputeExternalForcingOnCells(std::vector<double>& forcing);
+
   // Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
 
   // Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics(const Tag& tag) override{};
+  virtual void CalculateDiagnostics(const Tag& tag) override {};
 
   virtual std::string name() override { return "shallow water"; }
 
@@ -127,6 +140,14 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
                              double Bmax,
                              const Epetra_MultiVector& B_n);
 
+  double ComputeFieldOnEdge(int c,
+                            int e,
+                            double htc,
+                            double Bc,
+                            double Bmax,
+                            const Epetra_MultiVector& B_n);
+
+
   // due to rotational invariance of SW equations, we need flux in the
   // x-direction only.
   std::vector<double> PhysicalFlux_x(const std::vector<double>&);
@@ -138,16 +159,33 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   NumericalFlux_x_CentralUpwind(const std::vector<double>&, const std::vector<double>&);
 
   std::vector<double>
-  NumericalSource(int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n);
+  NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n);
+
+  double ComputeTotalDepth(double PrimaryVar, double Bathymetry)
+  {
+    return PrimaryVar + Bathymetry;
+  };
+
+  virtual void UpdateSecondaryFields();
+
+  virtual double ComputeHydrostaticPressureForce(std::vector<double> Data)
+  {
+    return g_ * 0.5 * Data[0] * Data[0];
+  };
+
+  double inverse_with_tolerance(double h, double tol);
 
   // access
   double get_total_source() const { return total_source_; }
 
- private:
-  void VerifySolution_(TreeVector& A);
-  int ErrorDiagnostics_(double t, int c, double h, double B, double ht);
-
  protected:
+  void InitializeFieldFromField_(const std::string& field0,
+                                 const std::string& field1,
+                                 bool call_evaluator);
+
+  void VerifySolution_(TreeVector& A);
+  int ErrorDiagnostics_(double t, int c, double h);
+
   Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> sw_list_;
   Teuchos::RCP<TreeVector> soln_;
@@ -160,10 +198,14 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   // names of state fields
   Key velocity_key_, discharge_key_;
-  Key ponded_depth_key_, prev_ponded_depth_key_;
+  // the primary variable is:
+  // ponded depth for shallow water
+  // wetted area for pipe flow
+  Key primary_variable_key_, prev_primary_variable_key_;
   Key total_depth_key_, bathymetry_key_;
   Key hydrostatic_pressure_key_;
   Key riemann_flux_key_;
+  Key source_key_;
 
   std::string passwd_;
 
@@ -174,17 +216,18 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   std::vector<Teuchos::RCP<PK_DomainFunction>> srcs_;
   double total_source_;
 
- private:
+  // gravity magnitude
+  double g_;
+
+  double velocity_desingularization_eps_;
+
   // boundary conditions
   std::vector<Teuchos::RCP<ShallowWaterBoundaryFunction>> bcs_;
   std::vector<Teuchos::RCP<Operators::BCs>> op_bcs_;
 
-  // gravity magnitude
-  double g_;
-
   // limited reconstruction
   bool use_limiter_;
-  Teuchos::RCP<Operators::ReconstructionCellLinear> total_depth_grad_, bathymetry_grad_;
+  Teuchos::RCP<Operators::ReconstructionCellLinear> total_depth_grad_;
   Teuchos::RCP<Operators::ReconstructionCellLinear> discharge_x_grad_, discharge_y_grad_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
 
