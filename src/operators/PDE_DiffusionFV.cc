@@ -368,14 +368,12 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 
   u.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
-  double dkdp[2], pres[2];
+  double dkdp[2] = {0., 0.};
+  double pres[2] = {0., 0.};
 
   dkdp_->ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& dKdP_cell = *dkdp_->ViewComponent("cell", true);
   AMANZI_ASSERT(dKdP_cell.MyLength() == ncells_wghost);
-
-  Teuchos::RCP<const Epetra_MultiVector> dKdP_face;
-  if (dkdp_->HasComponent("face")) { dKdP_face = dkdp_->ViewComponent("face", true); }
 
   for (int f = 0; f != nfaces_owned; ++f) {
     auto cells = mesh_->getFaceCells(f);
@@ -387,8 +385,6 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
       pres[n] = uc[0][c1];
       dkdp[n] = dKdP_cell[0][c1];
     }
-
-    if (mcells == 1) dkdp[1] = dKdP_face.get() ? (*dKdP_face)[0][f] : 0.;
 
     // find the face direction from cell 0 to cell 1
     const auto& [cfaces, fdirs] = mesh_->getCellFacesAndDirections(cells[0]);
@@ -421,8 +417,7 @@ PDE_DiffusionFV::ComputeJacobianLocal_(int mcells,
   if (mcells == 2) {
     dpres = pres[0] - pres[1]; // + grn;
     if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
-      double flux0to1;
-      flux0to1 = trans_face[0][f] * dpres;
+      double flux0to1 = trans_face[0][f] * dpres;
       if (flux0to1 > OPERATOR_UPWIND_RELATIVE_TOLERANCE) { // Upwind
         dKrel_dp[0] = dkdp_cell[0];
         dKrel_dp[1] = 0.0;
@@ -447,12 +442,23 @@ PDE_DiffusionFV::ComputeJacobianLocal_(int mcells,
     Jpp(1, 1) = -Jpp(0, 1);
 
   } else if (mcells == 1) {
+    Jpp(0, 0) = 0.0;
     if (bc_model_f == OPERATOR_BC_DIRICHLET) {
       pres[1] = bc_value_f;
       dpres = pres[0] - pres[1];
-      Jpp(0, 0) = trans_face[0][f] * dpres * dkdp_cell[0];
-    } else {
-      Jpp(0, 0) = 0.0;
+
+      if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
+        double flux0to1 = trans_face[0][f] * dpres;
+        if (flux0to1 > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {
+          Jpp(0, 0) = trans_face[0][f] * dpres * dkdp_cell[0];
+        } else if (flux0to1 < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) {
+          Jpp(0, 0) = 0.;
+        } else {
+          Jpp(0, 0) = 0.5 * trans_face[0][f] * dpres * dkdp_cell[0];
+        }
+      } else if (little_k_ == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
+        Jpp(0, 0) = 0.5 * trans_face[0][f] * dpres * dkdp_cell[0];
+      }
     }
   }
 }

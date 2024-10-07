@@ -274,7 +274,7 @@ Teuchos::RCP<const Epetra_MultiVector>
 CompositeVector::ViewComponent(const std::string& name, bool ghosted) const
 {
   if (name == "boundary_face") {
-    if (!HasComponent("boundary_face") && HasComponent("face")) {
+    if (HasComponent("face")) {
       ApplyVandelay_();
       return ghosted ? vandelay_vector_all_ : vandelay_vector_owned_;
     }
@@ -292,7 +292,7 @@ Teuchos::RCP<Epetra_MultiVector>
 CompositeVector::ViewComponent(const std::string& name, bool ghosted)
 {
   if (name == "boundary_face") {
-    if (!HasComponent("boundary_face") && HasComponent("face")) {
+    if (HasComponent("face")) {
       ApplyVandelay_();
       ChangedValue("face");
       return ghosted ? vandelay_vector_all_ : vandelay_vector_owned_;
