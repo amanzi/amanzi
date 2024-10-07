@@ -163,15 +163,11 @@ Debugger::WriteVector(const std::string& vname,
   }
 
   Teuchos::RCP<const Epetra_MultiVector> vec_f;
-  int nfaces_valid = 0;
+  Teuchos::RCP<const Epetra_MultiVector> vec_bf;
   if (vec->HasComponent("face")) {
     vec_f = vec->ViewComponent("face", true);
-    nfaces_valid = vec_f->MyLength();
     n_vecs = vec_f->NumVectors();
-  }
-
-  Teuchos::RCP<const Epetra_MultiVector> vec_bf;
-  if (vec_f == Teuchos::null && vec->HasComponent("boundary_face")) {
+  } else if (vec->HasComponent("boundary_face")) {
     vec_bf = vec->ViewComponent("boundary_face", true);
     n_vecs = vec_bf->NumVectors();
   }
@@ -191,8 +187,7 @@ Debugger::WriteVector(const std::string& vname,
           auto [fnums0, dirs] = mesh_->getCellFacesAndDirections(c0);
 
           for (unsigned int n = 0; n != fnums0.size(); ++n)
-            if (fnums0[n] < nfaces_valid)
-              *dcvo_[i]->os() << " " << formatter_.format((*vec_f)[j][fnums0[n]]);
+            *dcvo_[i]->os() << " " << formatter_.format((*vec_f)[j][fnums0[n]]);
         }
 
         if (include_faces && vec_bf != Teuchos::null) {
@@ -256,13 +251,11 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
         }
 
         Teuchos::RCP<const Epetra_MultiVector> vec_f;
+        Teuchos::RCP<const Epetra_MultiVector> vec_bf;
         if (vec->HasComponent("face")) {
           vec_f = vec->ViewComponent("face", false);
           n_vec = vec_f->NumVectors();
-        }
-
-        Teuchos::RCP<const Epetra_MultiVector> vec_bf;
-        if (vec_f == Teuchos::null && vec->HasComponent("boundary_face")) {
+        } else if (vec->HasComponent("boundary_face")) {
           vec_bf = vec->ViewComponent("boundary_face", false);
           n_vec = vec_bf->NumVectors();
         }

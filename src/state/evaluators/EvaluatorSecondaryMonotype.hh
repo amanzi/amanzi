@@ -408,7 +408,7 @@ EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::Update_(State& S)
           vecs.emplace_back(dep_ptr.ptr());
         }
       }
-      db_->WriteVectors(names, vecs, true);
+      db_->WriteVectors(names, vecs);
       db_->WriteDivider();
 
       names.clear();
@@ -421,7 +421,7 @@ EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::Update_(State& S)
           vecs.emplace_back(my_ptr.ptr());
         }
       }
-      db_->WriteVectors(names, vecs, true);
+      db_->WriteVectors(names, vecs);
       db_->WriteDivider();
     }
   }
