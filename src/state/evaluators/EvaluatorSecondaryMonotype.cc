@@ -153,7 +153,7 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivat
         vecs.emplace_back(my_ptr.ptr());
       }
     }
-    db_->WriteVectors(names, vecs);
+    db_->WriteVectors(names, vecs, true);
     db_->WriteDivider();
   }
 }
