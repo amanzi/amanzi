@@ -85,7 +85,7 @@ class CompositeVectorSpace {
   {
     return indexmap_.find(name) != indexmap_.end();
   }
-  bool ProvidesComponent(const std::string& name) const
+  bool HasImportedComponent(const std::string& name) const
   {
     return HasComponent(name) || (name == "boundary_face" && HasComponent("face"));
   }
