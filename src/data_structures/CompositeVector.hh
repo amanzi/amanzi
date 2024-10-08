@@ -174,7 +174,12 @@ class CompositeVector {
 
   Comm_ptr_type Comm() const { return map_->Comm(); }
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return map_->Mesh(); }
+
+  // note, HasComponent() indicates that a _writable_ view may be obtained.
   bool HasComponent(const std::string& name) const { return map_->HasComponent(name); }
+  // note, ProvidesComponent() indicates that a _readable_ view may be obtained.
+  bool ProvidesComponent(const std::string& name) const { return map_->ProvidesComponent(name); }
+
   int NumComponents() const { return size(); }
   AmanziMesh::Entity_kind Location(const std::string& name) const { return map_->Location(name); }
 
