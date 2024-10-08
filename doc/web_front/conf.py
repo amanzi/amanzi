@@ -182,6 +182,7 @@ html_theme_options = {
     },
     "navbar_start": ["navbar-logo"],
     'prev_next_buttons_location': 'both',
+    "secondary_sidebar_items": [],
     "switcher": {
         "json_url": "_static/versions.json",
         "version_match": 'v1.5',
