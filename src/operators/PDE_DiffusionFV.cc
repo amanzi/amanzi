@@ -457,7 +457,8 @@ PDE_DiffusionFV::ComputeJacobianLocal_(int mcells,
           Jpp(0, 0) = 0.5 * trans_face[0][f] * dpres * dkdp_cell[0];
         }
       } else if (little_k_ == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
-        Jpp(0, 0) = 0.5 * trans_face[0][f] * dpres * dkdp_cell[0];
+        // arithmetic average takes full value from interior cell
+        Jpp(0, 0) = trans_face[0][f] * dpres * dkdp_cell[0];
       }
     }
   }
