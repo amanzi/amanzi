@@ -62,7 +62,7 @@ UpwindGravity::Compute(const CompositeVector& flux,
 
   field.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& field_c = *field.ViewComponent("cell", true);
-  const Epetra_MultiVector& field_bf = *field.ViewComponent("boundary_face");
+  const Epetra_MultiVector& field_bf = *std::as_const(field).ViewComponent("boundary_face");
   Epetra_MultiVector& field_f = *field.ViewComponent(face_comp_, true);
 
   int nfaces_owned =

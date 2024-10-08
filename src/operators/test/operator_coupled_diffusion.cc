@@ -350,9 +350,8 @@ struct Problem {
         u_f[0][f] = ana->exact0(xf, 0);
         v_f[0][f] = ana->exact1(xf, 0);
       }
-    }
 
-    if (u.HasComponent("boundary_face")) {
+    } else if (u.HasComponent("boundary_face")) {
       int nboundary_faces = mesh->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE,
                                                  AmanziMesh::Parallel_kind::OWNED);
       Epetra_MultiVector& u_f = *u.ViewComponent("boundary_face", false);

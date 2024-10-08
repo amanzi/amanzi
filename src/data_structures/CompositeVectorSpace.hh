@@ -85,6 +85,10 @@ class CompositeVectorSpace {
   {
     return indexmap_.find(name) != indexmap_.end();
   }
+  bool HasImportedComponent(const std::string& name) const
+  {
+    return HasComponent(name) || (name == "boundary_face" && HasComponent("face"));
+  }
   int NumComponents() const { return size(); }
 
   // Each component has a number of Degrees of Freedom.

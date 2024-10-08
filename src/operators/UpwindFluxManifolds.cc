@@ -51,7 +51,7 @@ UpwindFluxManifolds::Compute(const CompositeVector& flux,
 
   const auto& flux_f = *flux.ViewComponent("face", true);
   const auto& field_c = *field.ViewComponent("cell", true);
-  const auto& field_bf = *field.ViewComponent("boundary_face", true);
+  const auto& field_bf = *std::as_const(field).ViewComponent("boundary_face", true);
   auto& field_f = *field.ViewComponent("face", true);
 
   double flxmin, flxmax, tol;
