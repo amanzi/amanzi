@@ -58,13 +58,15 @@ Record::WriteCheckpoint(const Checkpoint& chkp,
   if (post_mortem || io_checkpoint()) data_.WriteCheckpoint(chkp, attrs);
 }
 
-void
+bool
 Record::ReadCheckpoint(const Checkpoint& chkp, Teuchos::ParameterList& attrs)
 {
   if (io_checkpoint()) {
     data_.ReadCheckpoint(chkp, attrs);
     set_initialized();
+    return true;
   }
+  return false;
 }
 
 bool

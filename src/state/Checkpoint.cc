@@ -26,6 +26,8 @@ Checkpointing for state.
 #include "Input.hh"
 #include "InputFactory.hh"
 #include "State.hh"
+#include "Evaluator.hh"
+#include "EvaluatorPrimary.hh"
 #include "Checkpoint.hh"
 
 namespace Amanzi {
@@ -347,7 +349,19 @@ Checkpoint::read(State& S)
 
   // load the data
   for (auto data = S.data_begin(); data != S.data_end(); ++data) {
-    data->second->ReadCheckpoint(*this);
+    for (const auto& record : *data->second) {
+      bool read = data->second->ReadCheckpoint(*this, &record.first);
+
+      // if we read the data and it's a primary variable, mark the evaluator as changed
+      if (read && S.HasEvaluator(data->first, record.first)) {
+        Teuchos::RCP<Evaluator> evaluator = S.GetEvaluatorPtr(data->first, record.first);
+        if (evaluator->getType() == "primary") {
+          auto evaluator_primary = Teuchos::rcp_dynamic_cast<EvaluatorPrimary_>(evaluator);
+          AMANZI_ASSERT(evaluator_primary != Teuchos::null);
+          evaluator_primary->SetChanged();
+        }
+      }
+    }
   }
 }
 

@@ -400,57 +400,58 @@ PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 
         auto Aface = A[f];
 
-        double k_rel[2], dkdp[2], pres[2], dist;
+        double dkdp_cells[2] = {0., 0.};
+        double pres[2] = {0., 0.};
         for (int n = 0; n < mcells; n++) {
           pres[n] = uc(cells(n), 0);
-          dkdp[n] = dKdP_cell(cells(n), 0);
+          dkdp_cells[n] = dKdP_cell(cells(n), 0);
         }
-
-        if (mcells == 1) {
-          dkdp[1] = 0.;
-          //dkdp[1] = dKdP_face.get() ? (*dKdP_face)[0][f] : 0.;
-        }
-
-        // Old virtual call... yuck
-        // ComputeJacobianLocal_(mcells, f, fdirs[f_index], bc_model[f], bc_value[f],
-        //         pres, dkdp, Aface);
-        double dKrel_dp[2];
-        double dpres;
 
         if (mcells == 2) {
-          dpres = pres[0] - pres[1];
+          double dkface_dp[2] = {0., 0.};
+          double dpres = pres[0] - pres[1];
           if (little_k_type == OPERATOR_LITTLE_K_UPWIND) {
-            double flux0to1;
-            flux0to1 = trans_face(f, 0) * dpres;
+            double flux0to1 = trans_face(f, 0) * dpres;
             if (flux0to1 > OPERATOR_UPWIND_RELATIVE_TOLERANCE) { // Upwind
-              dKrel_dp[0] = dkdp[0];
-              dKrel_dp[1] = 0.0;
+              dkface_dp[0] = dkdp_cells[0];
+              dkface_dp[1] = 0.0;
             } else if (flux0to1 < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) { // Upwind
-              dKrel_dp[0] = 0.0;
-              dKrel_dp[1] = dkdp[1];
+              dkface_dp[0] = 0.0;
+              dkface_dp[1] = dkdp_cells[1];
             } else if (fabs(flux0to1) < OPERATOR_UPWIND_RELATIVE_TOLERANCE) { // Upwind
-              dKrel_dp[0] = 0.5 * dkdp[0];
-              dKrel_dp[1] = 0.5 * dkdp[1];
+              dkface_dp[0] = 0.5 * dkdp_cells[0];
+              dkface_dp[1] = 0.5 * dkdp_cells[1];
             }
           } else if (little_k_type == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
-            dKrel_dp[0] = 0.5 * dkdp[0];
-            dKrel_dp[1] = 0.5 * dkdp[1];
+            dkface_dp[0] = 0.5 * dkdp_cells[0];
+            dkface_dp[1] = 0.5 * dkdp_cells[1];
           } else {
             assert(false);
           }
 
-          Aface(0, 0) = trans_face(f, 0) * dpres * dKrel_dp[0];
-          Aface(0, 1) = trans_face(f, 0) * dpres * dKrel_dp[1];
+          Aface(0, 0) = trans_face(f, 0) * dpres * dkface_dp[0];
+          Aface(0, 1) = trans_face(f, 0) * dpres * dkface_dp[1];
           Aface(1, 0) = -Aface(0, 0);
           Aface(1, 1) = -Aface(0, 1);
 
         } else if (mcells == 1) {
+          Aface(0, 0) = 0.0;
           if (bc_model(f) == OPERATOR_BC_DIRICHLET) {
-            pres[1] = bc_value(f);
-            dpres = pres[0] - pres[1];
-            Aface(0, 0) = trans_face(f, 0) * dpres * dkdp[0];
-          } else {
-            Aface(0, 0) = 0.0;
+            double dpres = pres[0] - bc_value(f);
+
+            if (little_k_type == OPERATOR_LITTLE_K_UPWIND) {
+              double flux0to1 = trans_face(f,0) * dpres;
+              if (flux0to1 > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {
+                Aface(0, 0) = trans_face(f, 0) * dpres * dkdp_cells[0];
+              } else if (flux0to1 < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) {
+                Aface(0, 0) = 0.;
+              } else {
+                Aface(0, 0) = 0.5 * trans_face(f, 0) * dpres * dkdp_cells[0];
+              }
+            } else if (little_k_type == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
+              // arithmetic average takes full value from interior cell
+              Aface(0, 0) = trans_face(f, 0) * dpres * dkdp_cells[0];
+            }
           }
         }
       });

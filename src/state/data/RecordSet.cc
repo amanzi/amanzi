@@ -66,18 +66,20 @@ RecordSet::WriteCheckpoint(const Checkpoint& chkp, bool post_mortem) const
   }
 }
 
-void
+bool
 RecordSet::ReadCheckpoint(const Checkpoint& chkp, Tag const* const tag)
 {
+  bool read = false;
   if (tag && HasRecord(*tag)) {
     auto attrs = attributes(tag);
-    GetRecord(*tag).ReadCheckpoint(chkp, attrs);
+    read = GetRecord(*tag).ReadCheckpoint(chkp, attrs);
   } else {
     for (auto& e : records_) {
       auto attrs = attributes(&e.first);
-      e.second->ReadCheckpoint(chkp, attrs);
+      read |= e.second->ReadCheckpoint(chkp, attrs);
     }
   }
+  return read;
 }
 
 bool

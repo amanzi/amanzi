@@ -59,7 +59,7 @@ class Record {
   void WriteCheckpoint(const Checkpoint& chkp,
                        Teuchos::ParameterList& attrs,
                        bool post_mortem = false) const;
-  void ReadCheckpoint(const Checkpoint& chkp, Teuchos::ParameterList& attrs);
+  bool ReadCheckpoint(const Checkpoint& chkp, Teuchos::ParameterList& attrs);
   bool Initialize(Teuchos::ParameterList& plist, bool force = false);
 
   // Data setters/getters
