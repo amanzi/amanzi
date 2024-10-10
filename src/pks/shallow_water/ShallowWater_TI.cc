@@ -286,8 +286,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
       }
       if (bc_model_vector[f] == Operators::OPERATOR_BC_DIRICHLET) {
         if (outward_discharge_flag == true) {
-          UR[1] = bc_value_qx
-            [f]; // This assumes that the BC value is specified after taking the dot product with the normal
+          UR[1] = bc_value_qx[f]; // This assumes that BC value is specified by taking the dot product with face normal
           UR[2] = bc_value_qy[f]; // This should probably be 0.
         } else {
           UR[1] = bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];

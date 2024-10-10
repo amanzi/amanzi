@@ -105,8 +105,6 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual void ModifySolution(double t, TreeVector& A) override { VerifySolution_(A); }
 
-  virtual void SetupPrimaryVariableKeys();
-
   virtual void SetupExtraEvaluatorsKeys() {};
 
   virtual void ScatterMasterToGhostedExtraEvaluators() {};

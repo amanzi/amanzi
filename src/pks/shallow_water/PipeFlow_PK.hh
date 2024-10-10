@@ -73,8 +73,6 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   double ComputePressureHead(double WettedAngle, double PipeD);
 
-  virtual void SetupPrimaryVariableKeys() override;
-
   virtual void SetupExtraEvaluatorsKeys() override;
 
   virtual void ScatterMasterToGhostedExtraEvaluators() override;

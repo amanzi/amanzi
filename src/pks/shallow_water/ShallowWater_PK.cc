@@ -52,9 +52,13 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   sw_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
-  // domain name
+  // domain name and primary evaluators
   domain_ = sw_list_->template get<std::string>("domain name", "surface");
 
+  primary_variable_key_ = Keys::getKey(domain_, "ponded_depth");
+  prev_primary_variable_key_ = Keys::getKey(domain_, "prev_ponded_depth");
+
+  // other parameters
   cfl_ = sw_list_->get<double>("cfl", 0.1);
   max_iters_ = sw_list_->get<int>("number of reduced cfl cycles", 10);
   cfl_positivity_ = sw_list_->get<double>("depth positivity cfl", 0.95);
@@ -84,7 +88,6 @@ ShallowWater_PK::Setup()
   bathymetry_key_ = Keys::getKey(domain_, "bathymetry");
   hydrostatic_pressure_key_ = Keys::getKey(domain_, "ponded_pressure");
   riemann_flux_key_ = Keys::getKey(domain_, "riemann_flux");
-  SetupPrimaryVariableKeys();
   SetupExtraEvaluatorsKeys();
 
   //-------------------------------
@@ -849,15 +852,6 @@ ShallowWater_PK::BathymetryEdgeValue(int e, const Epetra_MultiVector& B_n)
   return (B_n[0][nodes[0]] + B_n[0][nodes[1]]) / 2.0;
 }
 
-//--------------------------------------------------------------
-// Setup primary variable keys
-//--------------------------------------------------------------
-void
-ShallowWater_PK::SetupPrimaryVariableKeys()
-{
-  primary_variable_key_ = Keys::getKey(domain_, "ponded_depth");
-  prev_primary_variable_key_ = Keys::getKey(domain_, "prev_ponded_depth");
-}
 
 //--------------------------------------------------------------
 // Set primary variable BC

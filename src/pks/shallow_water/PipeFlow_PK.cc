@@ -29,6 +29,13 @@ PipeFlow_PK::PipeFlow_PK(Teuchos::ParameterList& pk_tree,
                          const Teuchos::RCP<TreeVector>& soln)
   : ShallowWater_PK(pk_tree, glist, S, soln), PK(pk_tree, glist, S, soln)
 {
+  // primary variables
+  primary_variable_key_ = Keys::getKey(domain_, "wetted_area");
+  prev_primary_variable_key_ = Keys::getKey(domain_, "prev_wetted_area");
+  wetted_angle_key_ = Keys::getKey(domain_, "wetted_angle");
+  direction_key_ = sw_list_->get<std::string>("direction key", "");
+
+  // other parameters
   Manning_coeff_ = sw_list_->get<double>("Manning coefficient", 0.005);
   celerity_ = sw_list_->get<double>("celerity", 2); // m/s
   diameter_key_ = Keys::readKey(*sw_list_, domain_, "diameter", "diameter");
@@ -762,17 +769,6 @@ PipeFlow_PK::ComputeWettedAngleNewton(double WettedArea, double PipeD)
   return WettedAngle;
 }
 
-//--------------------------------------------------------------
-// Setup Primary Variable Keys
-//--------------------------------------------------------------
-void
-PipeFlow_PK::SetupPrimaryVariableKeys()
-{
-  primary_variable_key_ = Keys::getKey(domain_, "wetted_area");
-  prev_primary_variable_key_ = Keys::getKey(domain_, "prev_wetted_area");
-  wetted_angle_key_ = Keys::getKey(domain_, "wetted_angle");
-  direction_key_ = sw_list_->get<std::string>("direction key", "");
-}
 
 //--------------------------------------------------------------
 // Setup Extra Evaluators Keys
@@ -901,6 +897,7 @@ PipeFlow_PK::ComputeCellArrays()
       mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
     int ncells_wghost =
       mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
+
     auto& dir_c =
       *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, direction_key_).ViewComponent("cell", true);
     auto& PrimaryVar_c =
@@ -1031,7 +1028,7 @@ PipeFlow_PK::ComputeExternalForcingOnCells(std::vector<double>& forcing)
 void
 PipeFlow_PK::ProjectNormalOntoMeshDirection(int c, AmanziGeometry::Point& normal)
 {
-  //the mesh direction is the pipe direction
+  // the mesh direction is the pipe direction
   auto& dir_c =
     *S_->GetW<CV_t>(direction_key_, Tags::DEFAULT, direction_key_).ViewComponent("cell", true);
   bool counterClockwise = (dir_c[1][c] < 0.0) ? false : true;

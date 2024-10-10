@@ -323,6 +323,8 @@ RunTest(int icase)
     L1error.push_back(err_L1);
 
     IO_Fields(t_out, iter, MyPID, io, *S, &hh_ex, &vel_ex);
+
+    WriteStateStatistics(*S);
   } // NN
 
   double L1_order = Amanzi::Utils::bestLSfit(dx, L1error);
