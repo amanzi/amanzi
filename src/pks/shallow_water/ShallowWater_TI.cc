@@ -57,7 +57,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
     double factor = inverse_with_tolerance(h_temp[0][c], cell_area2_max_);
     vel_c[0][c] = factor * q_temp[0][c];
     vel_c[1][c] = factor * q_temp[1][c];
-    ht_c[0][c] = ComputeTotalDepth(h_temp[0][c], B_c[0][c]);
+    ht_c[0][c] = h_temp[0][c] + B_c[0][c];
   }
 
   // allocate memory for temporary fields
@@ -117,7 +117,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
           bc_value_qy[f] = bc_value_h[f] * it->second[1];
           bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
           bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
-          bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], bc_value_b[f]);
+          bc_value_ht[f] = bc_value_h[f] + bc_value_b[f];
         }
       }
     }
@@ -133,7 +133,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
           bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
           bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
           bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
-          bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], bc_value_b[f]);
+          bc_value_ht[f] = bc_value_h[f] + bc_value_b[f];
         }
       }
     }
@@ -151,7 +151,7 @@ ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVec
           bc_model_scalar[f] = Operators::OPERATOR_BC_DIRICHLET;
           bc_value_h[f] = (bc_value_hn[n0] + bc_value_hn[n1]) / 2.0;
           bc_value_b[f] = (B_n[0][n0] + B_n[0][n1]) / 2.0;
-          bc_value_ht[f] = ComputeTotalDepth(bc_value_h[f], bc_value_b[f]);
+          bc_value_ht[f] = bc_value_h[f] + bc_value_b[f];
         }
       }
     }

@@ -251,7 +251,6 @@ TEST(SHALLOW_WATER_1D)
   double TEini, TEfin;
 
   while (t_new < 10.) {
-    // cycle 1, time t
     double t_out = t_new;
 
     Epetra_MultiVector hh_ex(hh);
@@ -259,7 +258,7 @@ TEST(SHALLOW_WATER_1D)
 
     dam_break_1D_exact_field(mesh, hh_ex, vel_ex, t_out);
 
-    if (iter % 50 == 0) { IO_Fields(t_out, iter, MyPID, io, *S, &hh_ex, &vel_ex); }
+    if (iter % 100 == 0) { IO_Fields(t_out, iter, MyPID, io, *S, &hh_ex, &vel_ex); }
 
     dt = SWPK.get_dt();
 

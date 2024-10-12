@@ -71,10 +71,6 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   virtual double ComputeHydrostaticPressureForce(std::vector<double> Data) override;
 
-  double ComputePressureHead(double WettedAngle, double PipeD);
-
-  virtual void SetupExtraEvaluatorsKeys() override;
-
   virtual void ScatterMasterToGhostedExtraEvaluators() override;
 
   virtual void UpdateExtraEvaluators() override;
@@ -89,11 +85,7 @@ class PipeFlow_PK : public ShallowWater_PK {
 
   void GetDx(const int& cell, double& dx);
 
-  virtual void ComputeCellArrays() override;
-
   void ProjectNormalOntoMeshDirection(int c, AmanziGeometry::Point& normal);
-
-  bool IsJunction(const int& cell);
 
   std::vector<double> ComputeFieldsOnEdge(int c,
                                           int e,
@@ -102,6 +94,11 @@ class PipeFlow_PK : public ShallowWater_PK {
                                           double Bmax,
                                           const Epetra_MultiVector& B_n,
                                           double PipeD);
+
+ private:
+  void ComputeCellArrays_();
+  double ComputePressureHead_(double WettedAngle, double PipeD);
+  bool IsJunction_(int c);
 
  private:
   static RegisteredPKFactory<PipeFlow_PK> reg_;

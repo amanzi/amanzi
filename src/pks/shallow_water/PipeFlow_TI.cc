@@ -71,7 +71,7 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector&
     double factor = inverse_with_tolerance(h_temp[0][cell], cell_area2_max_);
     vel_c[0][cell] = factor * q_temp[0][cell];
     vel_c[1][cell] = factor * q_temp[1][cell];
-    ht_c[0][cell] = ShallowWater_PK::ComputeTotalDepth(h_temp[0][cell], B_c[0][cell]);
+    ht_c[0][cell] = h_temp[0][cell] + B_c[0][cell];
   }
 
   // allocate memory for temporary fields
@@ -276,13 +276,13 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector&
     if (c2 > ncells_owned) std::swap(c1, c2);
     int cDiamJnct = c1;
 
-    if (IsJunction(c1)) {
+    if (IsJunction_(c1)) {
       c1IsJunction = true;
       // this also implies
       // c2 is next to the junction
     }
 
-    if (c2 != -1 && IsJunction(c2)) {
+    if (c2 != -1 && IsJunction_(c2)) {
       c2IsJunction = true;
       // this also implies
       // c1 is next to the junction
@@ -303,7 +303,7 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector&
     normalNotRotated /= farea;
     normalRotated /= farea;
 
-    if (!IsJunction(c1)) {
+    if (!IsJunction_(c1)) {
       // c1 is NOT a junction:
       ProjectNormalOntoMeshDirection(c1, normal);
       ProjectNormalOntoMeshDirection(c1, normalRotated);

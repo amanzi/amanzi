@@ -37,13 +37,9 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
     Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln),
     glist_(glist)
 {
-  std::string pk_name = pk_tree.name();
-  auto found = pk_name.rfind("->");
-  if (found != std::string::npos) pk_name.erase(0, found + 2);
-
   // we will use a few parameter lists
   auto pk_list = Teuchos::sublist(glist, "PKs", true);
-  my_list_ = Teuchos::sublist(pk_list, pk_name, true);
+  my_list_ = Teuchos::sublist(pk_list, name_, true);
   domain_ = my_list_->template get<std::string>("domain name", "domain");
 
   vo_ = Teuchos::rcp(new VerboseObject("FlowEnergy-" + domain_, *my_list_));

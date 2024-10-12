@@ -343,7 +343,7 @@ RunTest(int icase)
   while (t_new < 1.0) {
     double t_out = t_new;
 
-    if (iter % 30 == 0) {
+    if (iter % 100 == 0) {
       Epetra_MultiVector ht_ex(ht);
       Epetra_MultiVector vel_ex(vel);
       lake_at_rest_exact_field(mesh, ht_ex, vel_ex, t_out);

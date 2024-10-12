@@ -246,7 +246,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH)
 
       vortex_2D_exact_field(mesh, hh_ex, vel_ex, t_out);
 
-      if (iter % 5 == 0) { IO_Fields(t_out, iter, MyPID, io, *S, &hh_ex, &vel_ex); }
+      if (iter % 100 == 0) { IO_Fields(t_out, iter, MyPID, io, *S, &hh_ex, &vel_ex); }
 
       dt = SWPK.get_dt();
 

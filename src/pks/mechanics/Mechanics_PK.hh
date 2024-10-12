@@ -70,7 +70,9 @@ class Mechanics_PK : public PK_PhysicalBDF {
                const Teuchos::RCP<Teuchos::ParameterList>& glist,
                const Teuchos::RCP<State>& S,
                const Teuchos::RCP<TreeVector>& soln)
-    : soln_(soln), passwd_(""){};
+    : PK(pk_tree, glist, S, soln),
+      PK_PhysicalBDF(pk_tree, glist, S, soln),
+      passwd_(""){};
   ~Mechanics_PK(){};
 
   // methods required for PK interface

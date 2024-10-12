@@ -43,12 +43,8 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
                      const Teuchos::RCP<TreeVector>& soln)
   : PK_PhysicalBDF(pk_tree, glist, S, soln), glist_(glist), passwd_(""), flow_on_manifold_(false)
 {
-  std::string pk_name = pk_tree.name();
-  auto found = pk_name.rfind("->");
-  if (found != std::string::npos) pk_name.erase(0, found + 2);
-
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  ep_list_ = Teuchos::sublist(pk_list, pk_name, true);
+  ep_list_ = Teuchos::sublist(pk_list, name_, true);
 
   // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
@@ -60,7 +56,6 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
   AddDefaultPrimaryEvaluator(S_, temperature_key_);
 
   // create verbosity object
-  S_ = S;
   mesh_ = S->GetMesh(domain_);
   dim = mesh_->getSpaceDimension();
 

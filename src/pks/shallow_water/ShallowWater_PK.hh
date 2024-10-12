@@ -105,8 +105,6 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   virtual void ModifySolution(double t, TreeVector& A) override { VerifySolution_(A); }
 
-  virtual void SetupExtraEvaluatorsKeys() {};
-
   virtual void ScatterMasterToGhostedExtraEvaluators() {};
 
   virtual void UpdateExtraEvaluators() {};
@@ -114,8 +112,6 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   virtual void SetPrimaryVariableBC(Teuchos::RCP<Teuchos::ParameterList>& bc_list);
 
   virtual void InitializeFields();
-
-  virtual void ComputeCellArrays() {};
 
   virtual void ComputeExternalForcingOnCells(std::vector<double>& forcing);
 
@@ -146,23 +142,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
                             const Epetra_MultiVector& B_n);
 
 
-  // due to rotational invariance of SW equations, we need flux in the
-  // x-direction only.
-  std::vector<double> PhysicalFlux_x(const std::vector<double>&);
-
-  std::vector<double> NumericalFlux_x(std::vector<double>&, std::vector<double>&);
-  std::vector<double>
-  NumericalFlux_x_Rusanov(const std::vector<double>&, const std::vector<double>&);
-  std::vector<double>
-  NumericalFlux_x_CentralUpwind(const std::vector<double>&, const std::vector<double>&);
-
   std::vector<double>
   NumericalSourceBedSlope(int c, double htc, double Bc, double Bmax, const Epetra_MultiVector& B_n);
-
-  double ComputeTotalDepth(double PrimaryVar, double Bathymetry)
-  {
-    return PrimaryVar + Bathymetry;
-  };
 
   virtual void UpdateSecondaryFields();
 
@@ -184,10 +165,8 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   void VerifySolution_(TreeVector& A);
   int ErrorDiagnostics_(double t, int c, double h);
 
-  Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> sw_list_;
   Teuchos::RCP<TreeVector> soln_;
-  Teuchos::RCP<State> S_;
 
   Key domain_;
 
@@ -209,6 +188,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim_;
+  int ncells_owned_;
 
   // source terms
   std::vector<Teuchos::RCP<PK_DomainFunction>> srcs_;

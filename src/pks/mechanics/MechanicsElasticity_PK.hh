@@ -159,6 +159,9 @@ class MechanicsElasticity_PK : public Mechanics_PK {
   Teuchos::RCP<Operators::Operator> op_matrix_;
   Teuchos::RCP<Operators::PDE_Elasticity> op_matrix_elas_, op_matrix_graddiv_;
 
+ protected:
+  Teuchos::RCP<TreeVector> soln_;
+
  private:
   static RegisteredPKFactory<MechanicsElasticity_PK> reg_;
 };

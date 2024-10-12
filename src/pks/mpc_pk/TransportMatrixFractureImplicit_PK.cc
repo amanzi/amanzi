@@ -41,13 +41,9 @@ TransportMatrixFractureImplicit_PK::TransportMatrixFractureImplicit_PK(
     glist_(glist),
     soln_(soln)
 {
-  std::string pk_name = pk_tree.name();
-  auto found = pk_name.rfind("->");
-  if (found != std::string::npos) pk_name.erase(0, found + 2);
-
   // We need the flow list
   auto pk_list = Teuchos::sublist(glist, "PKs", true);
-  tp_list_ = Teuchos::sublist(pk_list, pk_name, true);
+  tp_list_ = Teuchos::sublist(pk_list, name_, true);
 
   vo_ = Teuchos::rcp(new VerboseObject("TranCoupledImplicit_PK", *tp_list_));
 }

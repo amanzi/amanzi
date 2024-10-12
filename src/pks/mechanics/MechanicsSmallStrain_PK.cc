@@ -40,17 +40,10 @@ MechanicsSmallStrain_PK::MechanicsSmallStrain_PK(Teuchos::ParameterList& pk_tree
                                                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                                  const Teuchos::RCP<State>& S,
                                                  const Teuchos::RCP<TreeVector>& soln)
-  : Mechanics_PK(pk_tree, glist, S, soln)
+  : PK(pk_tree, glist, S, soln), Mechanics_PK(pk_tree, glist, S, soln), soln_(soln)
 {
-  S_ = S;
-
-  std::string pk_name = pk_tree.name();
-  auto found = pk_name.rfind("->");
-  if (found != std::string::npos) pk_name.erase(0, found + 2);
-
-  // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  ec_list_ = Teuchos::sublist(pk_list, pk_name, true);
+  ec_list_ = Teuchos::sublist(pk_list, name_, true);
 
   // We also need iscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);

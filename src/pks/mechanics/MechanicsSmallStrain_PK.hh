@@ -120,6 +120,8 @@ class MechanicsSmallStrain_PK : public Mechanics_PK {
   double dt_next_;
   Key shear_strain_key_, shear_modulus_key_, bulk_modulus_key_;
 
+  Teuchos::RCP<TreeVector> soln_;
+
  private:
   static RegisteredPKFactory<MechanicsSmallStrain_PK> reg_;
 };

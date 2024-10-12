@@ -150,7 +150,7 @@ TEST(PIPE_FLOW_1D)
     iter++;
 
     // output data
-    if (iter % 10 == 0) {
+    if (iter % 200 == 0) {
       io->InitializeCycle(t_new, iter, "");
 
       const auto& u0 = *S->Get<CompositeVector>("pipe-total_depth").ViewComponent("cell");
