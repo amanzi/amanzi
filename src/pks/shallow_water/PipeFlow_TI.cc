@@ -27,8 +27,6 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector&
   auto& f_temp0 = *fun.SubVector(0)->Data()->ViewComponent("cell");
   auto& f_temp1 = *fun.SubVector(1)->Data()->ViewComponent("cell");
 
-  int ncells_owned =
-    mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::OWNED);
   int ncells_wghost =
     mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_kind::ALL);
   int nfaces_wghost =
@@ -54,8 +52,6 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector&
     *S_->GetW<CompositeVector>(wetted_angle_key_, passwd_).ViewComponent("cell", true);
   auto& PipeD_c =
     *S_->GetW<CompositeVector>(diameter_key_, diameter_key_).ViewComponent("cell", true);
-  auto& dir_c =
-    *S_->GetW<CompositeVector>(direction_key_, direction_key_).ViewComponent("cell", true);
 
   for (int c = 0; c < model_cells_wghost_.size(); ++c) {
     int cell = model_cells_wghost_[c];
@@ -243,14 +239,14 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector&
   // compute source (external) values
   // coupling submodel="rate" returns volumetric flux [m^3/s] integrated over
   // the time step in the last (the second) component of local data vector
-  std::vector<double> ext_S_cell(ncells_owned, 0.0);
+  std::vector<double> ext_S_cell(ncells_owned_, 0.0);
   ComputeExternalForcingOnCells(ext_S_cell);
 
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
 
   int dir, c1, c2, ierr;
-  double h, qx, qy, factor, dx;
+  double h, qx, qy, factor;
 
   std::vector<double> FNum_rot(3, 0.0);       // fluxes
   std::vector<double> FNum_rotTmp(3, 0.0);    // fluxes
@@ -272,8 +268,8 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector&
     auto cells = mesh_->getFaceCells(f);
     c1 = cells[0];
     c2 = (cells.size() == 2) ? cells[1] : -1;
-    if (c1 > ncells_owned && c2 == -1) continue;
-    if (c2 > ncells_owned) std::swap(c1, c2);
+    if (c1 > ncells_owned_ && c2 == -1) continue;
+    if (c2 > ncells_owned_) std::swap(c1, c2);
     int cDiamJnct = c1;
 
     if (IsJunction_(c1)) {

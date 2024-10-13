@@ -165,6 +165,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   void VerifySolution_(TreeVector& A);
   int ErrorDiagnostics_(double t, int c, double h);
 
+ protected:
   Teuchos::RCP<Teuchos::ParameterList> sw_list_;
   Teuchos::RCP<TreeVector> soln_;
 
@@ -179,7 +180,7 @@ class ShallowWater_PK : public PK_Physical, public PK_Explicit<TreeVector> {
   // ponded depth for shallow water
   // wetted area for pipe flow
   Key primary_variable_key_, prev_primary_variable_key_;
-  Key total_depth_key_, bathymetry_key_;
+  Key water_depth_key_, total_depth_key_, bathymetry_key_;
   Key hydrostatic_pressure_key_;
   Key riemann_flux_key_;
   Key source_key_;

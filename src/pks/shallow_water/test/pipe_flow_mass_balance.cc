@@ -83,10 +83,6 @@ TEST(PIPE_FLOW_1D)
 
   S->CheckAllFieldsInitialized();
 
-  const auto& ht = *S->Get<CompositeVector>("pipe-total_depth").ViewComponent("cell");
-  const auto& vel = *S->Get<CompositeVector>("pipe-velocity").ViewComponent("cell");
-  const auto& B = *S->Get<CompositeVector>("pipe-bathymetry").ViewComponent("cell");
-
   S->Get<CompositeVector>("pipe-bathymetry").ScatterMasterToGhosted("cell");
   S->Get<CompositeVector>("pipe-velocity").ScatterMasterToGhosted("cell");
   S->Get<CompositeVector>("pipe-total_depth").ScatterMasterToGhosted("cell");
@@ -137,8 +133,6 @@ TEST(PIPE_FLOW_1D)
 
   while (t_new < Tend) {
     // cycle 1, time t
-    double t_out = t_new;
-
     dt = PFPK.get_dt();
 
     t_new = t_old + dt;

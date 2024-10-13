@@ -30,17 +30,7 @@ HydrostaticPressureEvaluator::HydrostaticPressureEvaluator(Teuchos::ParameterLis
       std::make_pair(plist_.get<std::string>("my key", "surface-ponded_pressure"), Tags::DEFAULT));
   }
   std::string domain = Keys::getDomain(my_keys_[0].first);
-
-  if (domain == "surface" || domain == "street" || domain == "domain") {
-    primary_variable_key_ =
-      plist_.get<std::string>("ponded depth key", Keys::getKey(domain, "ponded_depth"));
-  } else if (domain == "pipe" || domain == "network") {
-    primary_variable_key_ =
-      plist_.get<std::string>("water depth key", Keys::getKey(domain, "water_depth"));
-  } else {
-    std::cout << "Unknown domain in hydrostatic pressure evaluator" << std::endl;
-    AMANZI_ASSERT(false);
-  }
+  primary_variable_key_ = plist_.get<std::string>("primary variable key");
 
   dependencies_.insert(std::make_pair(primary_variable_key_, Tags::DEFAULT));
 }

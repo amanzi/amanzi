@@ -229,7 +229,7 @@ InputConverterU::TranslateCycleDriverNew_()
         transient_model += 8;
 
       } else if (strcmp(tagname, "shallow_water") == 0) {
-        model = GetAttributeValueS_(jnode, "model", "Rusanov, central upwind");
+        model = GetAttributeValueS_(jnode, "model", "shallow water, pipe flow");
         pk_model_["shallow_water"].push_back(model);
 
         std::string region = GetAttributeValueS_(jnode, "domain");
@@ -420,7 +420,7 @@ InputConverterU::PopulatePKTree_(Teuchos::ParameterList& pk_tree, const std::str
   } else if (basename == "energy") {
     tmp.set<std::string>("PK type", *pk_model_["energy"].rbegin());
   } else if (basename == "shallow water") {
-    tmp.set<std::string>("PK type", "shallow water");
+    tmp.set<std::string>("PK type", *pk_model_["shallow_water"].rbegin());
   } else if (basename == "multiphase") {
     tmp.set<std::string>("PK type", *pk_model_["multiphase"].rbegin());
   } else if (basename == "mechanics") {

@@ -27,7 +27,7 @@
     </pk>
     <pk mode="transient">
       <flow model="richards" state="on" />
-      <shallow_water model="Rusanov" state="on" domain="TopSurface"/>
+      <shallow_water model="shallow water" state="on" domain="TopSurface"/>
       <weakly_coupled name="mpc2">flow,shallow_water</weakly_coupled>
     </pk>
   </process_kernels>
@@ -61,6 +61,7 @@
       <unstr_shallow_water_controls>
         <cfl>0.5</cfl>
         <algorithm>explicit second-order</algorithm>
+        <numerical_flux>Rusanov</numerical_flux>
       </unstr_shallow_water_controls>
     </unstructured_controls>
   </numerical_controls>

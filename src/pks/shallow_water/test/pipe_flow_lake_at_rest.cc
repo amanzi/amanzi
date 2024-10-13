@@ -115,7 +115,6 @@ TEST(PIPE_FLOW_1D)
 
   const auto& ht = *S->Get<CompositeVector>("pipe-total_depth").ViewComponent("cell");
   const auto& vel = *S->Get<CompositeVector>("pipe-velocity").ViewComponent("cell");
-  const auto& B = *S->Get<CompositeVector>("pipe-bathymetry").ViewComponent("cell");
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("PipeFlow", pf_list));
@@ -132,15 +131,12 @@ TEST(PIPE_FLOW_1D)
   std::string passwd("state");
 
   int iter = 0;
-  double TEini, TEfin;
 
   while (t_new < 5.) {
     Epetra_MultiVector hh_ex(ht);
     Epetra_MultiVector vel_ex(vel);
 
     // cycle 1, time t
-    double t_out = t_new;
-
     dt = PFPK.get_dt();
 
     t_new = t_old + dt;
@@ -180,7 +176,7 @@ TEST(PIPE_FLOW_1D)
                                           Amanzi::AmanziMesh::Parallel_kind::OWNED);
 
   const auto& vc = *S->Get<CompositeVector>("pipe-velocity").ViewComponent("cell");
-  double err_L1_vx = 0.0, err_L1_vy = 0.0, err_Linf_v_tmp = 0.0, err_L1_v_tmp, err_L1_v, err_Linf_v;
+  double err_L1_vx(0.0), err_L1_vy(0.0), err_Linf_v_tmp(0.0), err_L1_v_tmp, err_L1_v, err_Linf_v(0.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
     err_L1_vx += std::abs(vc[0][c]) * mesh->getCellVolume(c);

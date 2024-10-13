@@ -27,12 +27,13 @@ PipeFlow_PK::PipeFlow_PK(Teuchos::ParameterList& pk_tree,
                          const Teuchos::RCP<Teuchos::ParameterList>& glist,
                          const Teuchos::RCP<State>& S,
                          const Teuchos::RCP<TreeVector>& soln)
-  : ShallowWater_PK(pk_tree, glist, S, soln), PK(pk_tree, glist, S, soln)
+  : PK(pk_tree, glist, S, soln), ShallowWater_PK(pk_tree, glist, S, soln)
 {
   // primary variables
   primary_variable_key_ = Keys::getKey(domain_, "wetted_area");
   prev_primary_variable_key_ = Keys::getKey(domain_, "prev_wetted_area");
   wetted_angle_key_ = Keys::getKey(domain_, "wetted_angle");
+  water_depth_key_ = Keys::getKey(domain_, "water_depth");
   direction_key_ = sw_list_->get<std::string>("direction key", "");
 
   // other parameters
@@ -54,7 +55,6 @@ PipeFlow_PK::Setup()
 {
   ShallowWater_PK::Setup();
 
-  water_depth_key_ = Keys::getKey(domain_, "water_depth");
   pressure_head_key_ = Keys::getKey(domain_, "pressure_head");
 
   // -- wetted angle
@@ -653,12 +653,10 @@ PipeFlow_PK::ComputeTotalDepth(double PrimaryVar,
 
   if (PrimaryVar >= 0.0 && PrimaryVar < PipeCrossSection) {
     TotalDepth = ComputeWaterDepth(WettedAngle, PipeD) + Bathymetry;
-
   }
 
   else if (PrimaryVar >= PipeCrossSection) {
     TotalDepth = PipeD + Bathymetry + ComputePressureHead_(PrimaryVar, PipeD);
-
   }
 
   else {
@@ -743,7 +741,7 @@ PipeFlow_PK::ComputeWettedAngleNewton(double WettedArea, double PipeD)
 {
   double tol = 1.e-15;
   unsigned max_iter = 10000;
-  double WettedAngle;
+  double WettedAngle = 0.0;
   double PipeCrossSection = M_PI * 0.25 * PipeD * PipeD;
 
   if (std::fabs(WettedArea) < 1.e-15) { //cell is dry
@@ -752,8 +750,7 @@ PipeFlow_PK::ComputeWettedAngleNewton(double WettedArea, double PipeD)
     WettedAngle = 2.0 * M_PI;
   } else { //cell is partially flooded
     unsigned iter = 0;
-    if (std::fabs(WettedAngle) < 1.e-15)
-      WettedAngle = M_PI; // change initial guess to pi if was zero
+    if (std::fabs(WettedAngle) < 1.e-15) WettedAngle = M_PI; // change initial guess if was zero
     double err = WettedAngle - sin(WettedAngle) - 8.0 * WettedArea / (PipeD * PipeD);
     while (iter < max_iter && std::fabs(err) > tol) {
       WettedAngle = WettedAngle - err / (1.0 - cos(WettedAngle));
@@ -962,10 +959,8 @@ PipeFlow_PK::SkipFace(AmanziGeometry::Point normal, bool& skipFace)
 void
 PipeFlow_PK::GetDx(const int& cell, double& dx)
 {
-  dx = 0.0;
-  auto cfaces = mesh_->getCellFaces(cell);
-  AmanziGeometry::Point x1;
-  AmanziGeometry::Point x2;
+  const auto& cfaces = mesh_->getCellFaces(cell);
+  AmanziGeometry::Point x1, x2;
   for (int n = 0; n < cfaces.size(); ++n) {
     int f = cfaces[n];
     int dir;
@@ -977,11 +972,9 @@ PipeFlow_PK::GetDx(const int& cell, double& dx)
       x2 = mesh_->getFaceCentroid(f);
     }
   }
-  for (int iSize = 0; iSize < x1.dim(); iSize++) {
-    dx += (x1[iSize] - x2[iSize]) * (x1[iSize] - x2[iSize]);
-  }
-  dx = sqrt(dx);
+  dx = norm(x1 - x2);
 }
+
 
 //--------------------------------------------------------------
 // Compute external forcing on cells

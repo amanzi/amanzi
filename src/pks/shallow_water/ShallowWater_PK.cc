@@ -53,6 +53,7 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
 
   primary_variable_key_ = Keys::getKey(domain_, "ponded_depth");
   prev_primary_variable_key_ = Keys::getKey(domain_, "prev_ponded_depth");
+  water_depth_key_ = Keys::getKey(domain_, "ponded_depth");
 
   // other parameters
   cfl_ = sw_list_->get<double>("cfl", 0.1);
@@ -127,7 +128,9 @@ ShallowWater_PK::Setup()
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 2);
 
     Teuchos::ParameterList elist(discharge_key_);
-    elist.set<std::string>("my key", discharge_key_).set<std::string>("tag", "");
+    elist.set<std::string>("my key", discharge_key_)
+         .set<std::string>("primary variable key", primary_variable_key_)
+         .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new DischargeEvaluator(elist));
     S_->SetEvaluator(discharge_key_, Tags::DEFAULT, eval);
   }
@@ -170,7 +173,10 @@ ShallowWater_PK::Setup()
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
     Teuchos::ParameterList elist(hydrostatic_pressure_key_);
-    elist.set<std::string>("my key", hydrostatic_pressure_key_).set<std::string>("tag", "");
+    elist.set<std::string>("my key", hydrostatic_pressure_key_)
+         .set<std::string>("primary variable key", water_depth_key_)
+         .set<std::string>("tag", "");
+
     auto eval = Teuchos::rcp(new HydrostaticPressureEvaluator(elist));
     S_->SetEvaluator(hydrostatic_pressure_key_, Tags::DEFAULT, eval);
   }
@@ -429,11 +435,8 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   ScatterMasterToGhostedExtraEvaluators();
 
   // save a copy of primary and conservative fields
-  auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   auto& h_c =
     *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  auto& ht_c =
-    *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   auto& vel_c = *S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
 
   S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
@@ -525,11 +528,8 @@ ShallowWater_PK::CommitStep(double t_old, double t_new, const Tag& tag)
   int nfaces_owned =
     mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_kind::OWNED);
 
-  auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   auto& h_c =
     *S_->GetW<CV_t>(primary_variable_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  auto& ht_c =
-    *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   auto& q_c =
     *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
   auto& vel_c = *S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
@@ -734,7 +734,6 @@ ShallowWater_PK::NumericalSourceBedSlope(int c,
 double
 ShallowWater_PK::get_dt()
 {
-  int dir;
   double d, d_min = 1.e10, vn, dt = 1.e10, dt_dry = 1.e-1;
   double h, vx, vy;
   double vnMax = 0.0;

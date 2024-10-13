@@ -104,11 +104,10 @@ class PipeFlow_PK : public ShallowWater_PK {
   static RegisteredPKFactory<PipeFlow_PK> reg_;
 
   double Manning_coeff_;
-
   double celerity_;
 
  protected:
-  Key water_depth_key_, pressure_head_key_;
+  Key pressure_head_key_;
   // unit vector that defines the pipe direction
   // (both components are zero for junction cell)
   Key direction_key_;
