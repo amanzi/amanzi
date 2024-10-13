@@ -127,7 +127,9 @@ ShallowWater_PK::Setup()
       ->SetComponent("cell", AmanziMesh::Entity_kind::CELL, 2);
 
     Teuchos::ParameterList elist(discharge_key_);
-    elist.set<std::string>("my key", discharge_key_).set<std::string>("tag", "");
+    elist.set<std::string>("my key", discharge_key_)
+         .set<std::string>("primary variable key", primary_variable_key_)
+         .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new DischargeEvaluator(elist));
     S_->SetEvaluator(discharge_key_, Tags::DEFAULT, eval);
   }

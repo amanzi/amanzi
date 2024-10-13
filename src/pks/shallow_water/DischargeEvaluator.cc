@@ -31,16 +31,7 @@ DischargeEvaluator::DischargeEvaluator(Teuchos::ParameterList& plist)
   }
   std::string domain = Keys::getDomain(my_keys_[0].first);
 
-  if (domain == "surface" || domain == "street" || domain == "domain") {
-    primary_variable_key_ =
-      plist_.get<std::string>("ponded depth key", Keys::getKey(domain, "ponded_depth"));
-  } else if (domain == "pipe" || domain == "network") {
-    primary_variable_key_ =
-      plist_.get<std::string>("wetted area key", Keys::getKey(domain, "wetted_area"));
-  } else {
-    std::cout << "Unknown domain in discharge evaluator" << std::endl;
-    AMANZI_ASSERT(false);
-  }
+  primary_variable_key_ = plist_.get<std::string>("primary variable key");
   velocity_key_ = plist_.get<std::string>("velocity key", Keys::getKey(domain, "velocity"));
 
   dependencies_.insert(std::make_pair(primary_variable_key_, Tags::DEFAULT));

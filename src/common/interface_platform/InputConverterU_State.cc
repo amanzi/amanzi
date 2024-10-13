@@ -757,6 +757,41 @@ InputConverterU::TranslateState_()
                           "",
                           { "cell", "node" });
       }
+
+      // pipe fields
+      // -- diameter
+      node = GetUniqueElementByTagsString_(inode, "pipe_diameter", flag);
+      if (flag) {
+        TranslateFieldEvaluator_(
+          node, Keys::getKey(domain, "diameter"), "-", reg_str, regions, out_ic, out_ev);
+      }
+
+      // -- direction
+      node = GetUniqueElementByTagsString_(inode, "pipe_direction", flag);
+      if (flag) {
+        std::vector<double> direction;
+        direction.push_back(GetAttributeValueD_(node, coords_[0].c_str()));
+        direction.push_back(GetAttributeValueD_(node, coords_[1].c_str()));
+
+        Teuchos::ParameterList& direction_ev = out_ev.sublist("direction");
+        Teuchos::ParameterList& tmp_list =
+          direction_ev.set<std::string>("evaluator type", "independent variable")
+            .sublist("function")
+            .sublist(reg_str)
+            .set<Teuchos::Array<std::string>>("regions", regions)
+            .set<std::string>("component", "face")
+            .sublist("function")
+            .set<int>("number of dofs", dim_)
+            .set<std::string>("function type", "composite function");
+
+        for (int k = 0; k != 2; ++k) {
+          std::stringstream dof_str;
+          dof_str << "dof " << k + 1 << " function";
+          tmp_list.sublist(dof_str.str())
+            .sublist("function-constant")
+            .set<double>("value", direction[k]);
+        }
+      }
     }
   }
 
