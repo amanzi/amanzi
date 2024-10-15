@@ -74,18 +74,23 @@ namespace Operators {
 
 class PDE_DiffusionCurvedFace : public virtual PDE_Diffusion {
  public:
-  PDE_DiffusionCurvedFace(Teuchos::ParameterList& plist, const Teuchos::RCP<Operator>& global_op)
+  PDE_DiffusionCurvedFace(Teuchos::ParameterList& plist,
+                          const Teuchos::RCP<Operator>& global_op,
+                          std::shared_ptr<const CompositeVector> weight = nullptr)
     : PDE_Diffusion(global_op), plist_(plist), factor_(1.0)
   {
     pde_type_ = PDE_DIFFUSION_MFD_CURVED_FACE;
+    weight_ = weight;
     Init_(plist);
   }
 
   PDE_DiffusionCurvedFace(Teuchos::ParameterList& plist,
-                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                          std::shared_ptr<const CompositeVector> weight = nullptr)
     : PDE_Diffusion(mesh), plist_(plist), factor_(1.0)
   {
     pde_type_ = PDE_DIFFUSION_MFD_CURVED_FACE;
+    weight_ = weight;
     Init_(plist);
   }
 
@@ -164,6 +169,7 @@ class PDE_DiffusionCurvedFace : public virtual PDE_Diffusion {
   double factor_;
 
   std::shared_ptr<std::vector<AmanziGeometry::Point>> bf_;
+  std::shared_ptr<const CompositeVector> weight_;
 
   int schema_prec_dofs_;
 };

@@ -40,7 +40,7 @@
 * Exactness test for diffusion solver on meshes with curved faces.
 ***************************************************************** */
 void
-RunTestDiffusionCurved(int d, const std::string& filename, int icase)
+RunTestDiffusionCurved(int d, const std::string& filename, int icase, bool use_weight = false)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -50,7 +50,8 @@ RunTestDiffusionCurved(int d, const std::string& filename, int icase)
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: elliptic solver, mesh with curved faces, new algorithm\n";
+  if (MyPID == 0) std::cout << "\nTest: elliptic solver, mesh with curved faces, new algorithm: " 
+                            << filename << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_curved_face.xml";
@@ -80,9 +81,27 @@ RunTestDiffusionCurved(int d, const std::string& filename, int icase)
     K->push_back(Kc);
   }
 
+  // set optional weights
+  std::shared_ptr<CompositeVector> weight = nullptr;
+  if (use_weight) {
+    auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+    cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
+    weight = std::make_shared<CompositeVector>(*cvs);
+
+    auto& weight_f = *weight->ViewComponent("face");
+    const auto fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
+    const auto bfmap = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
+
+    weight_f.PutScalar(1.0);
+    for (int n = 0; n < bfmap.NumMyElements(); ++n) {
+      int f = fmap.LID(bfmap.GID(n));
+      weight_f[0][f] = 5.0;
+    }
+  }
+
   // create diffusion operator
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion curved face");
-  auto op = Teuchos::rcp(new PDE_DiffusionCurvedFace(op_list, mesh));
+  auto op = Teuchos::rcp(new PDE_DiffusionCurvedFace(op_list, mesh, weight));
 
   // -- boundary data
   int nneu(0);
@@ -179,7 +198,7 @@ RunTestDiffusionCurved(int d, const std::string& filename, int icase)
 TEST(OPERATOR_DIFFUSION_CURVED_2D)
 {
   RunTestDiffusionCurved(2, "test/median15x16.exo", 0);
-  RunTestDiffusionCurved(2, "test/random10.exo", 0);
+  RunTestDiffusionCurved(2, "test/random10.exo", 0, true);
 }
 
 
@@ -187,5 +206,5 @@ TEST(OPERATOR_DIFFUSION_CURVED_3D)
 {
   RunTestDiffusionCurved(3, "test/random3D_05.exo", 1);
   RunTestDiffusionCurved(3, "test/hexes.exo", 1);
-  RunTestDiffusionCurved(3, "test/sphere.exo", 0);
+  RunTestDiffusionCurved(3, "test/sphere.exo", 0, true);
 }

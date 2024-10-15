@@ -320,6 +320,11 @@ PDE_DiffusionCurvedFace::Init_(Teuchos::ParameterList& plist)
   int ncells_all = mesh_->getMap(AmanziMesh::Entity_kind::CELL, false).NumGlobalElements();
   AMANZI_ASSERT(nfaces_all > d * ncells_all);
 
+  if (weight_.get()) {
+    AMANZI_ASSERT(weight_->HasComponent("face"));
+    weight_->ScatterMasterToGhosted("face");
+  }
+
   if (global_op_ == Teuchos::null) { // create operator
     global_op_schema_ = OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE;
 
@@ -445,6 +450,12 @@ PDE_DiffusionCurvedFace::LSProblemSetupMatrix_(std::vector<WhetStone::DenseMatri
 
     matrices[f] = Aface;
   }
+
+  // optional weighted l2-norm
+  if (weight_.get()) {
+    const auto& weight_f = *weight_->ViewComponent("face");
+    for (int f = 0; f < nfaces_owned; ++f) matrices[f] /= weight_f[0][f]; 
+  }
 }
 
 
@@ -497,8 +508,12 @@ PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol, i
     bf_f[0][f] = xf[i0];
   }
 
-  // add correction to generalized face centroid
+  // optional weighted l2-norm
+  Teuchos::RCP<const Epetra_MultiVector> weight_f;
+  if (weight_.get()) weight_f = weight_->ViewComponent("face", true);
 
+  // save to a vector which could be shared with WhetStone
+  // add correction to generalized face centroid
   for (int c = 0; c < ncells_wghost; ++c) {
     const auto& [faces, dirs] = mesh_->getCellFacesAndDirections(c);
     int nfaces = faces.size();
@@ -507,13 +522,17 @@ PDE_DiffusionCurvedFace::LSProblemPrimarySolution_(const CompositeVector& sol, i
       int f = faces[n];
       const auto& normal = mesh_->getFaceNormal(f);
 
-      for (int j = 0; j < d; ++j) bf_f[0][f] += sol_c[j][c] * normal[j] * dirs[n];
+      if (weight_.get()) {
+        double s = (*weight_f)[0][f];
+        for (int j = 0; j < d; ++j) bf_f[0][f] += sol_c[j][c] * normal[j] * dirs[n] / s;
+      } else {
+        for (int j = 0; j < d; ++j) bf_f[0][f] += sol_c[j][c] * normal[j] * dirs[n];
+      }
     }
   }
 
   bf->ScatterMasterToGhosted();
 
-  // save to a vector which could be shared with WhetStone
   for (int f = 0; f < nfaces_wghost; ++f) { (*bf_)[f][i0] = bf_f[0][f]; }
 }
 
