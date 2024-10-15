@@ -245,7 +245,7 @@ CompositeVector::operator=(const CompositeVector& other)
       // If both are ghosted, copy the ghosted vector.
       // Exception: boundary_face component created on a fly is not ghosted
       for (name_iterator name = begin(); name != end(); ++name) {
-        bool ghosted = (*name == "boundary_face" && other.HasComponent("face")) ? false : true;
+        bool ghosted = (*name == "boundary_face" && other.HasImportedComponent("face")) ? false : true;
         Teuchos::RCP<Epetra_MultiVector> comp = ViewComponent(*name, ghosted);
         Teuchos::RCP<const Epetra_MultiVector> othercomp = other.ViewComponent(*name, ghosted);
         *comp = *othercomp;
@@ -273,6 +273,7 @@ CompositeVector::operator=(const CompositeVector& other)
 Teuchos::RCP<const Epetra_MultiVector>
 CompositeVector::ViewComponent(const std::string& name, bool ghosted) const
 {
+  AMANZI_ASSERT(HasImportedComponent(name));
   if (name == "boundary_face") {
     if (!HasComponent("boundary_face") && HasComponent("face")) {
       ApplyVandelay_();
@@ -291,14 +292,7 @@ CompositeVector::ViewComponent(const std::string& name, bool ghosted) const
 Teuchos::RCP<Epetra_MultiVector>
 CompositeVector::ViewComponent(const std::string& name, bool ghosted)
 {
-  if (name == "boundary_face") {
-    if (!HasComponent("boundary_face") && HasComponent("face")) {
-      ApplyVandelay_();
-      ChangedValue("face");
-      return ghosted ? vandelay_vector_all_ : vandelay_vector_owned_;
-    }
-  }
-
+  AMANZI_ASSERT(HasComponent(name));
   ChangedValue(name);
   if (ghosted) {
     return ghostvec_->ViewComponent(name);
@@ -501,7 +495,7 @@ CompositeVector::Dot(const CompositeVector& other, double* result) const
 {
   double tmp_result = 0.0;
   for (name_iterator lcv = begin(); lcv != end(); ++lcv) {
-    if (other.HasComponent(*lcv)) {
+    if (other.HasImportedComponent(*lcv)) {
       std::vector<double> intermediate_result(ViewComponent(*lcv, false)->NumVectors(), 0.0);
       int ierr =
         ViewComponent(*lcv, false)->Dot(*other.ViewComponent(*lcv, false), &intermediate_result[0]);
@@ -524,7 +518,7 @@ CompositeVector::Update(double scalarA, const CompositeVector& A, double scalarT
   //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
   ChangedValue();
   for (name_iterator lcv = begin(); lcv != end(); ++lcv) {
-    if (A.HasComponent(*lcv))
+    if (A.HasImportedComponent(*lcv))
       ViewComponent(*lcv, false)->Update(scalarA, *A.ViewComponent(*lcv, false), scalarThis);
   }
   return *this;
@@ -539,11 +533,9 @@ CompositeVector::Update(double scalarA,
                         const CompositeVector& B,
                         double scalarThis)
 {
-  //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
-  //  AMANZI_ASSERT(map_->SubsetOf(*B.map_));
   ChangedValue();
   for (name_iterator lcv = begin(); lcv != end(); ++lcv) {
-    if (A.HasComponent(*lcv) && B.HasComponent(*lcv))
+    if (A.HasImportedComponent(*lcv) && B.HasImportedComponent(*lcv))
       ViewComponent(*lcv, false)
         ->Update(scalarA,
                  *A.ViewComponent(*lcv, false),
@@ -567,7 +559,7 @@ CompositeVector::Multiply(double scalarAB,
   ChangedValue();
   int ierr = 0;
   for (name_iterator lcv = begin(); lcv != end(); ++lcv) {
-    if (A.HasComponent(*lcv) && B.HasComponent(*lcv))
+    if (A.HasImportedComponent(*lcv) && B.HasImportedComponent(*lcv))
       ierr |=
         ViewComponent(*lcv, false)
           ->Multiply(
@@ -589,7 +581,7 @@ CompositeVector::ReciprocalMultiply(double scalarAB,
   ChangedValue();
   int ierr = 0;
   for (name_iterator lcv = begin(); lcv != end(); ++lcv) {
-    if (A.HasComponent(*lcv) && B.HasComponent(*lcv))
+    if (A.HasImportedComponent(*lcv) && B.HasImportedComponent(*lcv))
       ierr |=
         ViewComponent(*lcv, false)
           ->ReciprocalMultiply(

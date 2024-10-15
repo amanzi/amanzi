@@ -174,7 +174,15 @@ class CompositeVector {
 
   Comm_ptr_type Comm() const { return map_->Comm(); }
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return map_->Mesh(); }
+
+  // note, HasComponent() indicates that a non-const view may be obtained via ViewComponent()
   bool HasComponent(const std::string& name) const { return map_->HasComponent(name); }
+
+  // HasImportedComponent() indicates that only a const view may be obtained
+  // via a call to the const version of ViewComponent(), as the component may
+  // be imported (e.g. boundary_face imported from face).
+  bool HasImportedComponent(const std::string& name) const { return map_->HasImportedComponent(name); }
+
   int NumComponents() const { return size(); }
   AmanziMesh::Entity_kind Location(const std::string& name) const { return map_->Location(name); }
 

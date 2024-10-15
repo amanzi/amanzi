@@ -143,9 +143,8 @@ RunForwardProblem(const std::string& discretization, int nx, int ny)
       const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
       u_f[0][f] = ana.pressure_exact(xf, 0.0);
     }
-  }
 
-  if (u.HasComponent("boundary_face")) {
+  } else if (u.HasComponent("boundary_face")) {
     int nboundary_faces = mesh->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE,
                                                AmanziMesh::Parallel_kind::OWNED);
     Epetra_MultiVector& u_f = *u.ViewComponent("boundary_face", false);
@@ -278,9 +277,8 @@ RunInverseProblem(const std::string& discretization, int nx, int ny, bool write_
       const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
       u_f[0][f] = ana.pressure_exact(xf, 0.0);
     }
-  }
 
-  if (u.HasComponent("boundary_face")) {
+  } else if (u.HasComponent("boundary_face")) {
     int nboundary_faces = mesh->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE,
                                                AmanziMesh::Parallel_kind::OWNED);
     Epetra_MultiVector& u_f = *u.ViewComponent("boundary_face", false);
