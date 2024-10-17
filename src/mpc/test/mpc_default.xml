@@ -238,7 +238,6 @@
             <Parameter name="timestep reduction factor" type="double" value="0.5"/>
             <Parameter name="max timestep" type="double" value="1.0"/>
             <Parameter name="min timestep" type="double" value="1.0e-10"/>
-	    <Parameter name="initial timestep" type="double" value="0.002"/>
           </ParameterList>
 
           <Parameter name="solver type" type="string" value="nka"/>
@@ -268,7 +267,6 @@
             <Parameter name="timestep reduction factor" type="double" value="0.5"/>
             <Parameter name="max timestep" type="double" value="1.0"/>
             <Parameter name="min timestep" type="double" value="1.0e-10"/>
-	    <Parameter name="initial timestep" type="double" value="0.002"/>
           </ParameterList>
 
           <Parameter name="solver type" type="string" value="nka"/>
