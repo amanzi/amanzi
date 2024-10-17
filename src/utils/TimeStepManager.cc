@@ -41,6 +41,11 @@ TimeStepManager::TimeStepManager(Teuchos::ParameterList& plist)
     manual_dts_i_ = 0;
     manual_override_ = true;
 
+  } else if (plist.isParameter("prescribed timesteps")) {
+    manual_dts_ = plist.get<Teuchos::Array<double>>("prescribed timesteps").toVector();
+    manual_dts_i_ = 0;
+    manual_override_ = true;
+
   } else if (plist.isParameter("prescribed timesteps file name")) {
     std::string filename = plist.get<std::string>("prescribed timesteps file name");
     std::string header = plist.get<std::string>("prescribed timesteps header", "timesteps");
