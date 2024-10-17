@@ -100,14 +100,6 @@ struct EventSPS : public Event<Scalar> {
       Errors::Message msg("EventSPS provided invalid period.");
       Exceptions::amanzi_throw(msg);
     }
-    if (stop_ > (Scalar)0 && stop_ <= start_) {
-      Errors::Message msg("EventSPS provided invalid start/stop.");
-      Exceptions::amanzi_throw(msg);
-    }
-    if (start_ < (Scalar)0) {
-      Errors::Message msg("EventSPS provided invalid start.");
-      Exceptions::amanzi_throw(msg);
-    }
   }
 
   Scalar getNext(Scalar time) const override {
