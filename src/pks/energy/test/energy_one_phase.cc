@@ -100,7 +100,7 @@ TEST(ENERGY_ONE_PHASE)
   AMANZI_ASSERT(n0 < n1);
   AMANZI_ASSERT(n1 == n2);
 
-  // constant time stepping
+  // constant timestepping
   std::string passwd("");
   int itrs(0);
   double t(0.0), dt(0.1), t1(5.5), dt_next;

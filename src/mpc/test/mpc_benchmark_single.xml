@@ -158,8 +158,8 @@
         <Parameter name="start period time" type="double" value="-100.0"/>
         <Parameter name="end period time" type="double" value="0"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.0e"/>
-        <Parameter name="maximum time step" type="double" value="1.0e+9"/>
+        <Parameter name="initial timestep" type="double" value="1.0e"/>
+        <Parameter name="maximum timestep" type="double" value="1.0e+9"/>
       </ParameterList>
       <ParameterList name="TP 1">
 	<ParameterList name="PK tree">
@@ -175,15 +175,15 @@
 	</ParameterList>
 	<Parameter name="start period time" type="double" value="0.00000000000000000e+8"/>
 	<Parameter name="end period time" type="double" value="1.000000000000e+9"/>
-	<Parameter name="initial time step" type="double" value="1.00000000000000000e+04"/>        
-        <Parameter name="maximum time step" type="double" value="1e+7"/>
+	<Parameter name="initial timestep" type="double" value="1.00000000000000000e+04"/>        
+        <Parameter name="maximum timestep" type="double" value="1e+7"/>
         <Parameter name="maximum cycle number" type="int" value="20"/>        
       </ParameterList>      
     </ParameterList>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{0.0}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{1.0e+7}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{1.0e+7}"/>
+      <Parameter name="initial timestep" type="Array(double)" value="{1.0e+7}"/>
+      <Parameter name="maximum timestep" type="Array(double)" value="{1.0e+7}"/>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{tracer}"/>
     <Parameter name="component molar masses" type="Array(double)" value="{1.0e-3}"/>

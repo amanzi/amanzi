@@ -64,7 +64,7 @@ TEST(XDMF)
     fake_pressure->ReplaceGlobalValues(4, fake_values, cell_index_list);
     node_quantity->ReplaceGlobalValues(12, node_values, node_index_list);
 
-    // write time step data
+    // write timestep data
     io.InitializeCycle(time, i, "");
     io.WriteVector(*cell_quantity, "cell_quantity", Amanzi::AmanziMesh::Entity_kind::CELL);
     io.WriteVector(*fake_pressure, "pressure", Amanzi::AmanziMesh::Entity_kind::CELL);

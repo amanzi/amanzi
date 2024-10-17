@@ -77,7 +77,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
   // functional in dy/dt = F(y)
   void FunctionalTimeDerivative(double t, const CompositeVector& u, CompositeVector& f) override;
 
-  // modify time step
+  // modify timestep
   void set_dt(double dt) { dt_ = dt; }
 
   // calculate cell-center and face-centered velocities using analytic formulas

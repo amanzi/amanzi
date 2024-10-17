@@ -167,7 +167,7 @@ MagneticDiffusion2D(double dt,
     op_mag->SetTensorCoefficient(K);
     op_mag->UpdateMatrices();
 
-    // Add an accumulation term using dt=1 since time step is taken into
+    // Add an accumulation term using dt=1 since timestep is taken into
     // account in the system modification routine. Kc=constant FIXME
     CompositeVector phi(cvs_e);
     phi.PutScalar(1.0 / Kc(0, 0));

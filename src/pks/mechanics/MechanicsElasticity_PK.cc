@@ -176,7 +176,7 @@ MechanicsElasticity_PK::Initialize()
 
 
 /* *******************************************************************
-* Performs one time step from time t_old to time t_new either for
+* Performs one timestep from time t_old to time t_new either for
 * steady-state or transient simulation.
 ******************************************************************* */
 bool
@@ -235,7 +235,7 @@ MechanicsElasticity_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 
 /* *******************************************************************
-* Performs one time step from time t_old to time t_new either for
+* Performs one timestep from time t_old to time t_new either for
 * steady-state or transient simulation.
 ******************************************************************* */
 void

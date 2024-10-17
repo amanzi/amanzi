@@ -103,7 +103,7 @@ TransportMatrixFractureImplicit_PK::Initialize()
 {
   PK_MPCStrong<PK_BDF>::Initialize();
 
-  // set a huge time step that will be limited by advance step
+  // set a huge timestep that will be limited by advance step
   set_dt(1e+98);
 
   auto ts_list = tp_list_->sublist("time integrator").sublist("BDF1");
@@ -315,7 +315,7 @@ TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new, bool
 
 
 /* *******************************************************************
-* One time step for aqueous components only
+* One timestep for aqueous components only
 ******************************************************************* */
 bool
 TransportMatrixFractureImplicit_PK::AdvanceStepLO_(double t_old, double t_new, int* tot_itrs)

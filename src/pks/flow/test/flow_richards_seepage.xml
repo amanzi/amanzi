@@ -72,7 +72,7 @@
       <ParameterList name="time integrator">
 	<Parameter name="linear solver" type="string" value="AztecOO"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<Parameter name="initial time step" type="double" value="10.0"/>
+	<Parameter name="initial timestep" type="double" value="10.0"/>
 	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 
 	<ParameterList name="initialization">

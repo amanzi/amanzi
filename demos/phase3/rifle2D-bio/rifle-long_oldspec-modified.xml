@@ -966,7 +966,7 @@
     <Parameter name="Engine Input File" type="string" value="rifle-arora-spycher.in"/>
     <Parameter name="Verbosity" type="string" value="high"/>
 
-    <!-- time step control -->
+    <!-- timestep control -->
     <Parameter name="Initial Time Step (s)" type="double" value="5.0"/>
     <Parameter name="Time Step Control Method" type="string" value="simple"/>  <!-- default is fixed -->
     <Parameter name="Time Step Cut Threshold" type="int" value="8"/>           <!-- default is 8     -->

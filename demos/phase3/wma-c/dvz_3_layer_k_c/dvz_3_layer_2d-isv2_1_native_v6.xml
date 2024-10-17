@@ -98,7 +98,7 @@
         <Parameter name="start period time" type="double" value="0.00000000000000000e+00"/>
         <Parameter name="end period time" type="double" value="6.17266656000000000e+0"/>
         <Parameter name="maximum cycle number" type="int" value="1"/>
-        <Parameter name="initial time step" type="double" value="1.00000000000000000e+02"/>
+        <Parameter name="initial timestep" type="double" value="1.00000000000000000e+02"/>
       </ParameterList>
       <ParameterList name="TP 1">
         <ParameterList name="PK Tree">
@@ -115,7 +115,7 @@
         <Parameter name="start period time" type="double" value="6.17266656000000000e+10"/>
         <Parameter name="end period time" type="double" value="9.46728000000000000e+10"/>
         <Parameter name="maximum cycle number" type="int" value="1"/>
-        <Parameter name="initial time step" type="double" value="1.00000000000000000e+01"/>
+        <Parameter name="initial timestep" type="double" value="1.00000000000000000e+01"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>

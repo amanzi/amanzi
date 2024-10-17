@@ -210,7 +210,7 @@ FlowEnergy_PK::Initialize()
 
 
 /* *******************************************************************
-* Performs one time step.
+* Performs one timestep.
 ******************************************************************* */
 bool
 FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
@@ -223,7 +223,7 @@ FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   StateArchive archive(S_, vo_);
   archive.Add(fields, Tags::DEFAULT);
 
-  // try time step
+  // try timestep
   bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
   if (fail) archive.Restore("");
 
@@ -232,7 +232,7 @@ FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 
 /* *******************************************************************
-* Performs one time step.
+* Performs one timestep.
 ******************************************************************* */
 void
 FlowEnergy_PK::FunctionalResidual(double t_old,

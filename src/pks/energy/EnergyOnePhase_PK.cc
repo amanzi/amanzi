@@ -275,7 +275,7 @@ EnergyOnePhase_PK::InitializeFields_()
 
 
 /* *******************************************************************
-* Performs one time step of size dt_ either for steady-state or
+* Performs one timestep of size dt_ either for steady-state or
 * transient sumulation.
 ******************************************************************* */
 bool

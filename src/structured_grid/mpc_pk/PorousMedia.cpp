@@ -642,7 +642,7 @@ PorousMedia::restart (Amr&          papa,
   is >> dt_eig;
 
   if (verbose>2 && ParallelDescriptor::IOProcessor()) {
-    std::cout << "Estimated time step from level " << level << " = " << dt_eig << '\n';
+    std::cout << "Estimated timestep from level " << level << " = " << dt_eig << '\n';
   }
 
   aofs = new MultiFab(grids,NUM_SCALARS,0);
@@ -1425,7 +1425,7 @@ PorousMedia::solve_for_initial_flow_field()
 	    for (int i = 0; i < num_state_type; i++) {
 	      MultiFab& od = pm.get_old_data(i);
 	      MultiFab& nd = pm.get_new_data(i);
-	      MultiFab::Copy(nd,od,0,0,od.nComp(),0);  // Guess for next time step
+	      MultiFab::Copy(nd,od,0,0,od.nComp(),0);  // Guess for next timestep
 	    }
 	  }
 
@@ -2476,7 +2476,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 		      << std::endl;
 	  }
 	  else {
-	    std::cout << "TRAN: time stepping bust!! # substeps required for dt interval surpassed "
+	    std::cout << "TRAN: timestepping bust!! # substeps required for dt interval surpassed "
 		      << "max_n_subcycle_transport (= " << max_n_subcycle_transport << ")." << std::endl;
 	  }
 	}
@@ -4975,7 +4975,7 @@ PorousMedia::okToContinue ()
 
     int max_step = PMParent()->MaxStep();
     if (parent->levelSteps(0) >= max_step) {
-      ret = false; reason_for_stopping = "Hit maximum allowed time steps";
+      ret = false; reason_for_stopping = "Hit maximum allowed timesteps";
     }
 
     Real stop_time = PMParent()->StopTime();

@@ -136,7 +136,7 @@ richards = flow.add_sublist("Richards Problem")
 # Steady State Parameters --- Should be a parameter list
 richards.add_parameter("Steady state calculation initial time", 0.0)
 richards.add_parameter("Steady state calculation final time", 3e10)
-richards.add_parameter("Steady state calculation initial time step", 1.0e-7)
+richards.add_parameter("Steady state calculation initial timestep", 1.0e-7)
 richards.add_parameter("Steady state calculation initial hydrostatic pressure height", 103.2 )
 richards.add_parameter("Atmospheric pressure", 101325.0)
 

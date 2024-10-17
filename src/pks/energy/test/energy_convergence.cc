@@ -161,7 +161,7 @@ TEST(ENERGY_CONVERGENCE)
     EPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    // constant time stepping
+    // constant timestepping
     std::string passwd("");
     int itrs(0);
     double t(0.0), t1(0.5), dt_next;
@@ -283,7 +283,7 @@ TEST(ENERGY_PRECONDITIONER)
     EPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    // constant time stepping
+    // constant timestepping
     std::string passwd("");
     int itrs(0);
     double t(0.0), t1(0.5), dt(0.02), dt_next;

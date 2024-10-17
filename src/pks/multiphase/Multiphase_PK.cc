@@ -524,7 +524,7 @@ Multiphase_PK::Setup()
     }
   }
 
-  // fields from previous time step
+  // fields from previous timestep
   if (!S_->HasRecord(prev_tws_key_)) {
     S_->Require<CV_t, CVS_t>(prev_tws_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
@@ -958,7 +958,7 @@ Multiphase_PK::InitializeFields_()
 
 
 /* *******************************************************************
-* Performs one time step from time t_old to time t_new.
+* Performs one timestep from time t_old to time t_new.
 ******************************************************************* */
 bool
 Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
@@ -985,7 +985,7 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     num_ns_itrs_++;
   }
 
-  // update fields from previous time step
+  // update fields from previous timestep
   // KL: calling Update here may lead to an incorrect prev_field when the
   //     field has dependencies on fields handled by other weakly coupled PKs.
   S_->GetEvaluator(tws_key_).Update(*S_, passwd_);

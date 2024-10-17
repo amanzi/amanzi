@@ -79,7 +79,7 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
     plamb.set<std::string>("linear solver", TI_PLAMBDA_SOLVER);
   }
 
-  // time stepping method for high-level PK only
+  // timestepping method for high-level PK only
   out_list.set<std::string>("time integration method", "BDF1");
   Teuchos::ParameterList& bdf1 = out_list.sublist("BDF1");
 

@@ -163,7 +163,7 @@ TEST(ENERGY_CONVERGENCE_SRC)
     EPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    // constant time stepping
+    // constant timestepping
     std::string passwd("");
     int itrs(0);
     double t(0.0), t1(100), dt_next;

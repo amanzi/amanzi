@@ -56,7 +56,7 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
          * `"maximum cycle number`" ``[int]`` is the maximum allowed number of cycles in
            the current time period. Special value -1 means unlimited number of cycles.
 
-         * `"initial time step`" ``[double]`` is the initial time step for the current time period.
+         * `"initial timestep`" ``[double]`` is the initial timestep for the current time period.
 
    * `"io frequency`" ``[int]`` defines frequency of printing field statistics.
 
@@ -89,7 +89,7 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="1.5778463e+09"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.57680e+05"/>
+        <Parameter name="initial timestep" type="double" value="1.57680e+05"/>
       </ParameterList>
 
       <ParameterList name="TP 1">
@@ -177,7 +177,7 @@ class CycleDriver {
   Teuchos::RCP<State> S_, S_old_;
   Teuchos::RCP<TreeVector> soln_;
 
-  // time step manager
+  // timestep manager
   Teuchos::RCP<Utils::TimeStepManager> tsm_;
 
   // misc setup information

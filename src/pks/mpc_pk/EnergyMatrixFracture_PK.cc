@@ -311,7 +311,7 @@ EnergyMatrixFracture_PK::Initialize()
 
 
 /* *******************************************************************
-* Performs one time step.
+* Performs one timestep.
 ******************************************************************* */
 bool
 EnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)

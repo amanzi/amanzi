@@ -233,7 +233,7 @@ CycleDriver::Setup()
   S_->Require<double>("dt", Tags::NEXT, "dt");
   S_->Setup();
 
-  // create the time step manager
+  // create the timestep manager
   tsm_ = Teuchos::rcp(new Utils::TimeStepManager(glist_->sublist("cycle driver")));
 
   // set up the TSM
@@ -399,8 +399,8 @@ CycleDriver::ReportMemory()
 void
 CycleDriver::ReadParameterList_()
 {
-  max_dt_ = coordinator_list_->get<double>("max time step size", 1.0e+99);
-  min_dt_ = coordinator_list_->get<double>("min time step size", 1.0e-12);
+  max_dt_ = coordinator_list_->get<double>("max timestep size", 1.0e+99);
+  min_dt_ = coordinator_list_->get<double>("min timestep size", 1.0e-12);
   cycle0_ = coordinator_list_->get<int>("start cycle", 0);
   cycle1_ = coordinator_list_->get<int>("end cycle", -1);
 
@@ -418,8 +418,8 @@ CycleDriver::ReadParameterList_()
     const std::string& tp_name = time_periods_list.name(item);
     tp_start_[i] = time_periods_list.sublist(tp_name).get<double>("start period time");
     tp_end_[i] = time_periods_list.sublist(tp_name).get<double>("end period time");
-    tp_dt_[i] = time_periods_list.sublist(tp_name).get<double>("initial time step", 1.0);
-    tp_max_dt_[i] = time_periods_list.sublist(tp_name).get<double>("maximum time step", 1.0e+99);
+    tp_dt_[i] = time_periods_list.sublist(tp_name).get<double>("initial timestep", 1.0);
+    tp_max_dt_[i] = time_periods_list.sublist(tp_name).get<double>("maximum timestep", 1.0e+99);
     tp_max_cycle_[i] = time_periods_list.sublist(tp_name).get<int>("maximum cycle number", -1);
     i++;
   }
@@ -449,7 +449,7 @@ CycleDriver::ReadParameterList_()
     Teuchos::ParameterList& tpc_list = coordinator_list_->sublist("time period control");
     Teuchos::Array<double> reset_times = tpc_list.get<Teuchos::Array<double>>("start times");
     Teuchos::Array<double> reset_times_dt =
-      tpc_list.get<Teuchos::Array<double>>("initial time step");
+      tpc_list.get<Teuchos::Array<double>>("initial timestep");
     AMANZI_ASSERT(reset_times.size() == reset_times_dt.size());
 
     {
@@ -462,9 +462,9 @@ CycleDriver::ReadParameterList_()
       }
     }
 
-    if (tpc_list.isParameter("maximum time step")) {
+    if (tpc_list.isParameter("maximum timestep")) {
       Teuchos::Array<double> reset_max_dt =
-        tpc_list.get<Teuchos::Array<double>>("maximum time step");
+        tpc_list.get<Teuchos::Array<double>>("maximum timestep");
       AMANZI_ASSERT(reset_times.size() == reset_max_dt.size());
 
       Teuchos::Array<double>::const_iterator it_tim;
@@ -546,7 +546,7 @@ CycleDriver::get_dt(bool after_failure)
     dt = max_dt_;
     Utils::Units units("molar");
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Resetting time step to the maximum allowed of " << units.OutputTime(dt) << "\n";
+    *vo_->os() << "Resetting timestep to the maximum allowed of " << units.OutputTime(dt) << "\n";
   }
 
   return dt;
@@ -785,7 +785,7 @@ CycleDriver::Go()
     max_dt_ = tp_max_dt_[time_period_id_];
     dt = tsm_->TimeStep(S_->get_time(), dt);
     pk_->set_dt(dt);
-    dt = get_dt(); // pk may reset the time step
+    dt = get_dt(); // pk may reset the timestep
 
   } else {
     // Read restart file
@@ -1056,7 +1056,7 @@ CycleDriver::ResetDriver(int time_pr_id)
   // create new pk
   Init_PK(time_pr_id);
 
-  // register observation times with the time step manager
+  // register observation times with the timestep manager
   //if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_);
 
   // Setup

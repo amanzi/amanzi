@@ -33,25 +33,25 @@ The following parameters are common for all supported engines.
 
 .. admonition:: chemistry_params-spec
 
-  * `"time step control method`" ``[string]`` specifies time step control method for chemistry subcycling.
-    Choose either "fixed" (default) or "simple".  For option "fixed", time step is fixed.
-    For option "simple", the time step is adjusted in response to stiffness of system of equations
-    based on a simple scheme. This option require the following parameters: `"time step cut threshold`",
-    `"time step cut factor`", `"time step increase threshold`", and `"time step increase factor`".
+  * `"timestep control method`" ``[string]`` specifies timestep control method for chemistry subcycling.
+    Choose either "fixed" (default) or "simple".  For option "fixed", timestep is fixed.
+    For option "simple", the timestep is adjusted in response to stiffness of system of equations
+    based on a simple scheme. This option require the following parameters: `"timestep cut threshold`",
+    `"timestep cut factor`", `"timestep increase threshold`", and `"timestep increase factor`".
 
-  * `"time step cut threshold`" ``[int]`` is the number of Newton iterations that if exceeded
-    will trigger a time step cut. Default is 8.
+  * `"timestep cut threshold`" ``[int]`` is the number of Newton iterations that if exceeded
+    will trigger a timestep cut. Default is 8.
 
-  * `"max time step (s)`" ``[double]`` is the maximum time step that chemistry will allow the MPC to take.
+  * `"max timestep (s)`" ``[double]`` is the maximum timestep that chemistry will allow the MPC to take.
 
-  * `"initial time step (s)`" ``[double]`` is the initial time step that chemistry will ask the MPC to take.
+  * `"initial timestep (s)`" ``[double]`` is the initial timestep that chemistry will ask the MPC to take.
 
-  * `"time step cut factor`" ``[double]`` is the factor by which the time step is cut. Default is 2.0
+  * `"timestep cut factor`" ``[double]`` is the factor by which the timestep is cut. Default is 2.0
 
-  * `"time step increase threshold`" ``[int]`` is the number of consecutive successful time steps that
-    will trigger a time step increase. Default is 4.
+  * `"timestep increase threshold`" ``[int]`` is the number of consecutive successful timesteps that
+    will trigger a timestep increase. Default is 4.
 
-  * `"time step increase factor`" ``[double]`` is the factor by which the time step is increased. Default is 1.2
+  * `"timestep increase factor`" ``[double]`` is the factor by which the timestep is increased. Default is 1.2
 
   * `"free ion initial guess`" ``[double]`` provides an estimate of the free ion concentration for solutes.
     It used to help convergence of the initial solution of the chemistry. If this parameter is absent,

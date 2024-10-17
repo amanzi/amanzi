@@ -55,7 +55,7 @@ TEST(TIME_STEP_MANAGER)
     CHECK_EQUAL(std::string("1 1.2 2.7 4 4.2 4.5 5 5.5 5.7 6 7.2 8.7 "), ss.str());
   }
 
-  // test the time step lmiiter for a time that
+  // test the timestep lmiiter for a time that
   // is related to a time event defined by start-period-stop
   CHECK_CLOSE(0.1, TSM.TimeStep(4.1, .5), 1e-12);
   CHECK_CLOSE(0.05, TSM.TimeStep(1.0, 0.05), 1e-12);
@@ -63,7 +63,7 @@ TEST(TIME_STEP_MANAGER)
   CHECK_CLOSE(0.149, TSM.TimeStep(1.0, 0.149), 1e-12);
   CHECK_CLOSE(0.1, TSM.TimeStep(1.0, 0.151), 1e-12);
 
-  // test the time step lmiiter for a time that
+  // test the timestep lmiiter for a time that
   // is related to a time event defined by and array of times
   CHECK_CLOSE(0.1, TSM.TimeStep(4.4, .5), 1e-12);
   CHECK_CLOSE(0.05, TSM.TimeStep(5.3, 0.05), 1e-12);
@@ -71,11 +71,11 @@ TEST(TIME_STEP_MANAGER)
   CHECK_CLOSE(0.149, TSM.TimeStep(5.3, 0.149), 1e-12);
   CHECK_CLOSE(0.1, TSM.TimeStep(5.3, 0.151), 1e-12);
 
-  // test the time step limiter for a time that is larger than
+  // test the timestep limiter for a time that is larger than
   // any time specified in time events
   CHECK_CLOSE(100.0, TSM.TimeStep(200.0, 100.0), 1e-12);
 
-  // test the time step limiter for a time that is equal to
+  // test the timestep limiter for a time that is equal to
   // the largest time specified in time events
   CHECK_CLOSE(50.0, TSM.TimeStep(100.0, 50.0), 1e-12);
 }

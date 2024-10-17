@@ -148,7 +148,7 @@ The second code uses the multi-point flux approximation method.
 Recall that Amanzi employes the mimetic finite difference method for flow.
 The results are in excellent agreement.
 
-The benchmark setup is to use the fixed time step of :math:`10^7` seconds and run simulation 
+The benchmark setup is to use the fixed timestep of :math:`10^7` seconds and run simulation 
 for 100 times steps.
 For this problem, the conventional two-point flux approximation method underestimates
 the solute flux by about 20%.

@@ -286,16 +286,16 @@
         <Parameter name="start period time" type="double" value="0.00000000000000000e+00"/>
         <Parameter name="end period time" type="double" value="1.57784630000000000e+06"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.57680000000000000e+05"/>
-        <Parameter name="maximum time step" type="double" value="6.00000000000000000e+10"/>
+        <Parameter name="initial timestep" type="double" value="1.57680000000000000e+05"/>
+        <Parameter name="maximum timestep" type="double" value="6.00000000000000000e+10"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{H+, HCO3-, Ca++}"/>
     <Parameter name="number of liquid components" type="int" value="3"/>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{}"/>
+      <Parameter name="initial timestep" type="Array(double)" value="{}"/>
+      <Parameter name="maximum timestep" type="Array(double)" value="{}"/>
     </ParameterList>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
@@ -366,12 +366,12 @@
       <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
       <Parameter name="max timestep (s)" type="double" value="1.0e+10"/>
       <Parameter name="min timestep (s)" type="double" value="1.0e+10"/>
-      <Parameter name="initial time step (s)" type="double" value="1.0e+05"/>
-      <Parameter name="time step cut threshold" type="int" value="8"/>
-      <Parameter name="time step cut factor" type="double" value="2.00000000000000000e+00"/>
-      <Parameter name="time step increase threshold" type="int" value="4"/>
+      <Parameter name="initial timestep (s)" type="double" value="1.0e+05"/>
+      <Parameter name="timestep cut threshold" type="int" value="8"/>
+      <Parameter name="timestep cut factor" type="double" value="2.00000000000000000e+00"/>
+      <Parameter name="timestep increase threshold" type="int" value="4"/>
       <Parameter name="timestep increase factor" type="double" value="1.19999999999999996e+00"/>
-      <Parameter name="time step control method" type="string" value="fixed"/>
+      <Parameter name="timestep control method" type="string" value="fixed"/>
       <Parameter name="number of component concentrations" type="int" value="3"/>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>

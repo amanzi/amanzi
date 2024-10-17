@@ -139,10 +139,10 @@ class PK {
   // Return PK's name
   virtual std::string name() { return name_; }
 
-  // Choose a time step compatible with physics.
+  // Choose a timestep compatible with physics.
   virtual double get_dt() = 0;
 
-  // Set a time step for a PK.
+  // Set a timestep for a PK.
   virtual void set_dt(double dt) = 0;
 
   // Set a tag interval for advancing

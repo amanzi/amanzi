@@ -254,7 +254,7 @@
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0e+00"/>
         <Parameter name="end period time" type="double" value="6.172666560e+10"/>
-        <Parameter name="initial time step" type="double" value="1.0e+04"/>
+        <Parameter name="initial timestep" type="double" value="1.0e+04"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{}"/>

@@ -268,7 +268,7 @@ FlowMatrixFracture_PK::Initialize()
 
 
 /* *******************************************************************
-* Performs one time step.
+* Performs one timestep.
 ******************************************************************* */
 bool
 FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)

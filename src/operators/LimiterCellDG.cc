@@ -12,7 +12,7 @@
 
   Implementation of different limiters uses a few common rules:
   1. Dirichlet boundary data are used to update limiter bounds.
-  2. Limiters are modified optionally so the the stable time step
+  2. Limiters are modified optionally so the the stable timestep
      of first-order scheme is reduce not more than twice. This
      step requires to specify a face-based flux field.
   3. At the moment, we require the input field and boundary data

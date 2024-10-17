@@ -177,7 +177,7 @@ PK_MPCStrong<PK_Base>::Initialize()
 
   // set up the timestepping algorithm if this is not strongly coupled
   if (!my_list_->template get<bool>("strongly coupled PK", false)) {
-    // -- instantiate time stepper
+    // -- instantiate timestepper
     Teuchos::ParameterList& ts_plist = my_list_->sublist("time integrator").sublist("BDF1");
     ts_plist.set("initial time", S_->get_time());
     time_stepper_ =
@@ -194,7 +194,7 @@ PK_MPCStrong<PK_Base>::Initialize()
 
 
 // -----------------------------------------------------------------------------
-// Make one time step
+// Make one timestep
 // -----------------------------------------------------------------------------
 template <class PK_Base>
 bool

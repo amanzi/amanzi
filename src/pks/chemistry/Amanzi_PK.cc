@@ -368,14 +368,14 @@ Amanzi_PK::XMLParameters()
   }
 
   // misc other chemistry flags
-  dt_control_method_ = plist_->get<std::string>("time step control method", "fixed");
-  dt_max_ = plist_->get<double>("max time step (s)", 9.9e+9);
-  dt_next_ = plist_->get<double>("initial time step (s)", dt_max_);
-  dt_cut_factor_ = plist_->get<double>("time step cut factor", 2.0);
-  dt_increase_factor_ = plist_->get<double>("time step increase factor", 1.2);
+  dt_control_method_ = plist_->get<std::string>("timestep control method", "fixed");
+  dt_max_ = plist_->get<double>("max timestep (s)", 9.9e+9);
+  dt_next_ = plist_->get<double>("initial timestep (s)", dt_max_);
+  dt_cut_factor_ = plist_->get<double>("timestep cut factor", 2.0);
+  dt_increase_factor_ = plist_->get<double>("timestep increase factor", 1.2);
 
-  dt_cut_threshold_ = plist_->get<int>("time step cut threshold", 8);
-  dt_increase_threshold_ = plist_->get<int>("time step increase threshold", 4);
+  dt_cut_threshold_ = plist_->get<int>("timestep cut threshold", 8);
+  dt_increase_threshold_ = plist_->get<int>("timestep increase threshold", 4);
 
   num_successful_steps_ = 0;
 }
@@ -738,7 +738,7 @@ Amanzi_PK::InitializeBeakerFields_()
 
 
 /* ******************************************************************
-* We estimate stable time step and report it to CD via get_dt()
+* We estimate stable timestep and report it to CD via get_dt()
 ******************************************************************* */
 void
 Amanzi_PK::EstimateNextTimeStep_(double t_old, double t_new)
@@ -765,7 +765,7 @@ Amanzi_PK::EstimateNextTimeStep_(double t_old, double t_new)
       *vo_->os() << "controller changed dt_next to " << dt_next_ << std::endl;
     }
   } else if (dt_control_method_ == "fixed") {
-    // dt_next could be reduced by the base PK. To avoid small time step, we reset it here.
+    // dt_next could be reduced by the base PK. To avoid small timestep, we reset it here.
     dt_next_ = std::max(dt_, t_new - t_old); // due to subcycling
     dt_next_ = std::min(dt_next_, dt_max_);
   }

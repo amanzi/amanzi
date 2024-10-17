@@ -156,7 +156,7 @@ Darcy_PK::Setup()
     S_->SetEvaluator(water_storage_key_, Tags::DEFAULT, eval);
   }
 
-  // -- water storage from the previous time step
+  // -- water storage from the previous timestep
   if (!S_->HasRecord(prev_water_storage_key_)) {
     S_->Require<CV_t, CVS_t>(prev_water_storage_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
@@ -324,7 +324,7 @@ Darcy_PK::Initialize()
   // -- times
   double t_ini = S_->get_time();
   dt_next_ = dt_;
-  dt_desirable_ = dt_; // The minimum desirable time step from now on.
+  dt_desirable_ = dt_; // The minimum desirable timestep from now on.
   dt_history_.clear();
 
   // Initialize local fields and evaluators.
@@ -345,7 +345,7 @@ Darcy_PK::Initialize()
 
     error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE; // usually 1e-4;
 
-    // time step controller
+    // timestep controller
     auto pdot_cells_prev_c = Teuchos::RCP<const Epetra_Vector>(pdot_cells_prev);
     auto pdot_cells_c = Teuchos::RCP<const Epetra_Vector>(pdot_cells);
     ts_control_ = createTimestepController("BDF1", bdf1_list, S_, pdot_cells_c, pdot_cells_prev_c);
@@ -522,7 +522,7 @@ Darcy_PK::InitializeStatistics_(bool init_darcy)
 
 
 /* *******************************************************************
-* Performs one time step from t_old to t_new. The boundary conditions
+* Performs one timestep from t_old to t_new. The boundary conditions
 * are calculated only once, during the initialization step.
 ******************************************************************* */
 bool
@@ -611,7 +611,7 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // estimate time multiplier
   dt_desirable_ = ts_control_->getTimestep(dt_MPC, 1, true);
 
-  // Darcy_PK always takes the suggested time step and cannot fail
+  // Darcy_PK always takes the suggested timestep and cannot fail
   dt_tuple times(t_new, dt_MPC);
   dt_history_.push_back(times);
 

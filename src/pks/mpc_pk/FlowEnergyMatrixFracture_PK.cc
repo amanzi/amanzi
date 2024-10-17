@@ -312,7 +312,7 @@ FlowEnergyMatrixFracture_PK::Initialize()
 
 
 /* *******************************************************************
-* Performs one time step.
+* Performs one timestep.
 ******************************************************************* */
 bool
 FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)

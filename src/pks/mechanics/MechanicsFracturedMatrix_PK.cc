@@ -175,7 +175,7 @@ MechanicsFracturedMatrix_PK::FunctionalResidual(double t_old,
 
 
 /* *******************************************************************
-* Updates after successful time steps
+* Updates after successful timesteps
 ******************************************************************* */
 void
 MechanicsFracturedMatrix_PK::CommitStep(double t_old, double t_new, const Tag& tag)

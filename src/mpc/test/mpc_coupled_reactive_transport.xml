@@ -117,8 +117,8 @@
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="3.0e+6"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.0e+5"/>
-        <Parameter name="maximum time step" type="double" value="1.0e+10"/>        
+        <Parameter name="initial timestep" type="double" value="1.0e+5"/>
+        <Parameter name="maximum timestep" type="double" value="1.0e+10"/>        
       </ParameterList>
     </ParameterList>
 
@@ -128,8 +128,8 @@
     
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{6.153732e+10, 6.15688776e+10}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{10.0, 10.0}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{4.3234e+4, 4.3234e+4}"/>
+      <Parameter name="initial timestep" type="Array(double)" value="{10.0, 10.0}"/>
+      <Parameter name="maximum timestep" type="Array(double)" value="{4.3234e+4, 4.3234e+4}"/>
     </ParameterList>
 
     <ParameterList name="verbose object">
@@ -600,12 +600,12 @@
       <Parameter name="tolerance" type="double" value="1.0e-12"/>
       <Parameter name="max timestep (s)" type="double" value="1.0e+6"/>
       <Parameter name="min timestep (s)" type="double" value="1.0e+5"/>
-      <Parameter name="initial time step (s)" type="double" value="2.0e+5"/>
-      <Parameter name="time step cut threshold" type="int" value="8"/>
-      <Parameter name="time step cut factor" type="double" value="2.0"/>
-      <Parameter name="time step increase threshold" type="int" value="4"/>
+      <Parameter name="initial timestep (s)" type="double" value="2.0e+5"/>
+      <Parameter name="timestep cut threshold" type="int" value="8"/>
+      <Parameter name="timestep cut factor" type="double" value="2.0"/>
+      <Parameter name="timestep increase threshold" type="int" value="4"/>
       <Parameter name="timestep increase factor" type="double" value="1.20"/>
-      <Parameter name="time step control method" type="string" value="fixed"/>
+      <Parameter name="timestep control method" type="string" value="fixed"/>
       <Parameter name="initial conditions time" type="double" value="0.00000000000000000e+00"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
       <Parameter name="log formulation" type="bool" value="true"/>
@@ -623,12 +623,12 @@
       <Parameter name="tolerance" type="double" value="1.0e-12"/>
       <Parameter name="max timestep (s)" type="double" value="1.0e+10"/>
       <Parameter name="min timestep (s)" type="double" value="1.0e+4"/>
-      <Parameter name="initial time step (s)" type="double" value="2.0e+05"/>
-      <Parameter name="time step cut threshold" type="int" value="8"/>
-      <Parameter name="time step cut factor" type="double" value="2.0"/>
-      <Parameter name="time step increase threshold" type="int" value="4"/>
+      <Parameter name="initial timestep (s)" type="double" value="2.0e+05"/>
+      <Parameter name="timestep cut threshold" type="int" value="8"/>
+      <Parameter name="timestep cut factor" type="double" value="2.0"/>
+      <Parameter name="timestep increase threshold" type="int" value="4"/>
       <Parameter name="timestep increase factor" type="double" value="1.2"/>
-      <Parameter name="time step control method" type="string" value="fixed"/>
+      <Parameter name="timestep control method" type="string" value="fixed"/>
       <Parameter name="initial conditions time" type="double" value="0.0"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
       <Parameter name="log formulation" type="bool" value="true"/>

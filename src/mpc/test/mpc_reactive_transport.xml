@@ -99,7 +99,7 @@
     <ParameterList name="chemistry">
       <Parameter name="PK type" type="string" value="chemistry pk"/>
       <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
-      <Parameter name="initial time step (s)" type="double" value="20.0"/>
+      <Parameter name="initial timestep (s)" type="double" value="20.0"/>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="50"/>
       <Parameter name="log formulation" type="bool" value="true"/>

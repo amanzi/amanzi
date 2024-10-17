@@ -200,7 +200,7 @@ RunTestMarshak(std::string op_list_name, double TemperatureFloor)
              dt);
     }
 
-    // Change time step based on solution change.
+    // Change timestep based on solution change.
     // We use empiric algorithm insired by Levenberg-Marquardt
     Epetra_MultiVector sol_diff(sol_old);
     sol_diff.Update(1.0, sol_new, -1.0);

@@ -31,7 +31,7 @@ propagation of tracer down the flow stream.  Dispersion results in the
 spreading of the released mass in all directions including upstream 
 of the source location. 
 Accuracy of the break-through curve at a distant point down the stream
-is sensitive to the time step in Amanzi's operator split approach.
+is sensitive to the timestep in Amanzi's operator split approach.
 
 Model
 -----

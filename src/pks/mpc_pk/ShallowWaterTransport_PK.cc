@@ -59,7 +59,7 @@ ShallowWaterTransport_PK::Setup()
 
 
 /* ******************************************************************
-* Extended treatment of time step in transport PK.
+* Extended treatment of timestep in transport PK.
 ****************************************************************** */
 bool
 ShallowWaterTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
@@ -84,7 +84,7 @@ ShallowWaterTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     return fail;
   }
 
-  // Typically transport has bigger time step; however, numerics may
+  // Typically transport has bigger timestep; however, numerics may
   // brings challenges. FIXME
   double dt1 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[1])->StableTimeStep(1);
   if (dt1 < dt0 / 100) {

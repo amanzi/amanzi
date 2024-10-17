@@ -154,7 +154,7 @@ Transport_PK::InitializeAll_()
   internal_tests_ = tp_list_->get<bool>("enable internal tests", false);
   internal_tests_tol_ =
     tp_list_->get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
-  dt_debug_ = tp_list_->get<double>("maximum time step", TRANSPORT_LARGE_TIME_STEP);
+  dt_debug_ = tp_list_->get<double>("maximum timestep", TRANSPORT_LARGE_TIME_STEP);
 
   if (spatial_disc_order < 1 || spatial_disc_order > 2 || temporal_disc_order < 1 ||
       temporal_disc_order > 4) {

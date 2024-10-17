@@ -91,7 +91,7 @@
 	</ParameterList>
 	<Parameter name="start period time" type="double" value="0.0"/>
 	<Parameter name="end period time" type="double" value="1.0e+04"/>
-        <Parameter name="initial time step" type="double" value="100.0"/>
+        <Parameter name="initial timestep" type="double" value="100.0"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -113,7 +113,7 @@
       </ParameterList>
       <Parameter name="primary variable key" type="string" value="pressure"/>
       <Parameter name="PK type" type="string" value="richards flow"/>
-      <Parameter name="initial time step" type="double" value="100.0"/>
+      <Parameter name="initial timestep" type="double" value="100.0"/>
       <Parameter name="relative permeability method" type="string" value="upwind with Darcy flux"/>
       <Parameter name="modify predictor for flux BCs" type="bool" value="true"/>
       <Parameter name="permeability rescaling" type="double" value="1.0"/>

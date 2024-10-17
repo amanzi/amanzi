@@ -181,7 +181,7 @@ EnergyTwoPhase_PK::Initialize()
 {
   // times, initialization could be done on any non-zero interval.
   double t_old = S_->get_time();
-  dt_ = ti_list_->get<double>("initial time step", 1.0);
+  dt_ = ti_list_->get<double>("initial timestep", 1.0);
 
   // Call the base class initialize.
   Energy_PK::Initialize();
@@ -322,7 +322,7 @@ EnergyTwoPhase_PK::InitializeFields_()
 
 
 /* *******************************************************************
-* Performs one time step of size dt_ either for steady-state or
+* Performs one timestep of size dt_ either for steady-state or
 * transient sumulation.
 ******************************************************************* */
 bool

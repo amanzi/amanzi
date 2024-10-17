@@ -410,7 +410,7 @@ RunTest(int test, double dt)
   plist->sublist("cycle driver")
     .sublist("time periods")
     .sublist("TP 0")
-    .set<double>("initial time step", dt);
+    .set<double>("initial timestep", dt);
 
   Amanzi::ObservationData obs_data;
   CycleDriver cd(plist, S, comm, obs_data);

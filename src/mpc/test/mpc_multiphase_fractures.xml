@@ -660,15 +660,15 @@
            </ParameterList>
            <Parameter name="start period time" type="double" value="0.0"/>
            <Parameter name="end period time" type="double" value="3.14e+13"/>
-           <Parameter name="initial time step" type="double" value="1.57e+6"/>
-           <Parameter name="maximum time step" type="double" value="1.57e+11"/>
+           <Parameter name="initial timestep" type="double" value="1.57e+6"/>
+           <Parameter name="maximum timestep" type="double" value="1.57e+11"/>
            <Parameter name="maximum cycle number" type="int" value="200"/>
          </ParameterList>
        </ParameterList>
        <ParameterList name="time period control">
          <Parameter name="start times" type="Array(double)" value="{}"/>
-         <Parameter name="initial time step" type="Array(double)" value="{}"/>
-         <Parameter name="maximum time step" type="Array(double)" value="{}"/>
+         <Parameter name="initial timestep" type="Array(double)" value="{}"/>
+         <Parameter name="maximum timestep" type="Array(double)" value="{}"/>
        </ParameterList>
        <ParameterList name="verbose object">
          <Parameter name="verbosity level" type="string" value="extreme"/>

@@ -70,13 +70,13 @@
 	</ParameterList>
 	<Parameter name="start period time" type="double" value="0.0"/>
 	<Parameter name="end period time" type="double" value="1.0"/>
-	<Parameter name="initial time step" type="double" value="1.0"/>
+	<Parameter name="initial timestep" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{0.0}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{1.0}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{1.0}"/>		 
+      <Parameter name="initial timestep" type="Array(double)" value="{1.0}"/>
+      <Parameter name="maximum timestep" type="Array(double)" value="{1.0}"/>		 
     </ParameterList>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="none"/>
@@ -259,8 +259,8 @@
       </ParameterList>
       <ParameterList name="time integrator">
 	<Parameter name="start interval time" type="double" value="0.0"/>
-	<Parameter name="initial time step" type="double" value="1.0"/>
-	<Parameter name="maximal time step" type="double" value="1.0e+07"/>
+	<Parameter name="initial timestep" type="double" value="1.0"/>
+	<Parameter name="maximal timestep" type="double" value="1.0e+07"/>
       	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
       	<Parameter name="linear solver" type="string" value="AztecOO"/>
       	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
