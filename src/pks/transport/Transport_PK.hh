@@ -274,7 +274,7 @@ class Transport_PK : public PK_Physical {
   virtual std::string name() override { return "transport"; }
 
   // main transport members
-  // -- calculation of a stable time step needs saturations and darcy flux
+  // -- calculation of a stable timestep needs saturations and darcy flux
   double StableTimeStep(int n);
 
   // -- coupling with chemistry

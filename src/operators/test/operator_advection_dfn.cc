@@ -156,7 +156,7 @@ RunTest(double gravity)
   iolist.get<std::string>("file name base", "plot");
   OutputXDMF io(iolist, mesh, true, false);
 
-  // time stepping
+  // timestepping
   double t(0.0);
   for (int nstep = 0; nstep < 5; ++nstep) {
     CompositeVector& rhs = *global_op->rhs();

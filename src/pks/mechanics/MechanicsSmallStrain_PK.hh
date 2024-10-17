@@ -98,7 +98,7 @@ class MechanicsSmallStrain_PK : public Mechanics_PK {
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
   void FunctionalResidual(const double t_old,
                           double t_new,
-                          Teuchos::RCP<TreeVector> u_old,
+                          Teuchos::RCP<const TreeVector> u_old,
                           Teuchos::RCP<TreeVector> u_new,
                           Teuchos::RCP<TreeVector> f) override;
   double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;

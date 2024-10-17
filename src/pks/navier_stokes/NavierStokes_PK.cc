@@ -198,7 +198,7 @@ NavierStokes_PK::Initialize()
   if (!bdf1_list.isSublist("verbose object"))
     bdf1_list.sublist("verbose object") = ns_list_->sublist("verbose object");
 
-  bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+  bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
 
   // Initialize matrix and preconditioner
   // -- create elastic block
@@ -360,7 +360,7 @@ NavierStokes_PK::Initialize()
 
 
 /* *******************************************************************
-* Performs one time step from time t_old to time t_new either for
+* Performs one timestep from time t_old to time t_new either for
 * steady-state or transient simulation.
 ******************************************************************* */
 bool
@@ -384,7 +384,7 @@ NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // trying to make a step
   bool failed(false);
-  failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
+  failed = bdf1_dae_->AdvanceStep(dt_, dt_next_, soln_);
   if (failed) {
     dt_ = dt_next_;
 
@@ -414,7 +414,7 @@ NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 
 /* *******************************************************************
-* Performs one time step from time t_old to time t_new either for
+* Performs one timestep from time t_old to time t_new either for
 * steady-state or transient simulation.
 ******************************************************************* */
 void

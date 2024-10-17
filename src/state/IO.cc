@@ -42,7 +42,7 @@ void
 WriteVis(Visualization& vis, State& S)
 {
   if (!vis.is_disabled()) {
-    // Create the new time step
+    // Create the new timestep
     Tag tag;
     vis.CreateTimestep(S.get_time(), S.get_cycle(), tag.get());
 

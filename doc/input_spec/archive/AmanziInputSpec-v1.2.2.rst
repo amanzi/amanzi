@@ -217,7 +217,7 @@ Usage:
 
    * [SU] `"End`" [double]: Time that defines a steady solution.  (stopping criteria may be generalized in future releases).
 
-   * [SU] `"Initial Time Step`" [double]: The initial time step for the steady calculation.
+   * [SU] `"Initial Time Step`" [double]: The initial timestep for the steady calculation.
 
   * [SU] `"Transient`" [list] - A time-accurate evolution is desired
 
@@ -225,12 +225,12 @@ Usage:
 
    * [SU] `"End`" [double]: End of integration period
    
-   * [SU] `"Initial Time Step`" [double] (Optional) The intitial time step for the transient calculation. (see S Note below)
+   * [SU] `"Initial Time Step`" [double] (Optional) The intitial timestep for the transient calculation. (see S Note below)
 
 
    * [SU] `"Maximum Cycle Number`" [int]: (Optional) The maximum allowed cycle number.
 
-  * [SU] `"Transient with Static Flow`" [list] - The flow field is static so no flow solver is called during time stepping. During initialization the flow 
+  * [SU] `"Transient with Static Flow`" [list] - The flow field is static so no flow solver is called during timestepping. During initialization the flow 
     field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; 
     (2) Boundary conditions for the flow    (e.g., pressure), along with the initial condition for the pressure field are used to solve for the 
     Darcy velocity.  At present this mode only supports the "Single Phase" flow model.
@@ -239,7 +239,7 @@ Usage:
 
    * [SU] `"End`" [double]: End of integration period
    
-   * [SU] `"Initial Time Step`" [double]  (Optional) The intitial time step for the transient calculation. (see S Note below)
+   * [SU] `"Initial Time Step`" [double]  (Optional) The intitial timestep for the transient calculation. (see S Note below)
 
    * [SU] `"Maximum Cycle Number`" [int]: (Optional) The maximum allowed cycle number.
 
@@ -251,24 +251,24 @@ Usage:
 
    * [SU] `"End`" [double]: The end of the time-integration period
     
-   * [SU] `"Steady Initial Time Step`" [double]: (Optional) The intitial time step for the steady state initialization calculation.
+   * [SU] `"Steady Initial Time Step`" [double]: (Optional) The intitial timestep for the steady state initialization calculation.
 
-   * [SU] `"Transient Initial Time Step`" [double]: (Optional)  The intitial time step for the transient calculation after "Switch" time.  (see S Note below)
+   * [SU] `"Transient Initial Time Step`" [double]: (Optional)  The intitial timestep for the transient calculation after "Switch" time.  (see S Note below)
 
 S Note: If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
 
  * [SU] `"Time Period Control`" (Optional)
 
   * [SU] `"Start Times`" [Array(double)]: List of times at which the current time-integrator will be reinitialized.
-  * [SU] `"Initial Time Step`"[Array(double)]: The initial time step for each time period. If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
-  * [SU] `"Maximum Time Step`"[Array(double)]: (Optional) The maximum time step for each time period. 
-  * [SU] `"Default Initial Time Step`" [double]: (Optional) set the default initial time step, this is used for time integrator restarts that are required by boundary conditions and sources, but are not specified in this list under Start Times, the default value is 1.0. 
+  * [SU] `"Initial Time Step`"[Array(double)]: The initial timestep for each time period. If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
+  * [SU] `"Maximum Time Step`"[Array(double)]: (Optional) The maximum timestep for each time period. 
+  * [SU] `"Default Initial Time Step`" [double]: (Optional) set the default initial timestep, this is used for time integrator restarts that are required by boundary conditions and sources, but are not specified in this list under Start Times, the default value is 1.0. 
 
  * [SU] `"Verbosity`" [string]: (default: `"Medium`") Choose one of `"None"`, `"Low"`, `"Medium"`, `"High`", or `"Extreme`".
 
   * [SU] `"None`": No output is written to run log
 
-  * [SU] `"Low`": Minimal logging output, includes information about time stepsizes attempted, and notification of I/O operations
+  * [SU] `"Low`": Minimal logging output, includes information about timestepsizes attempted, and notification of I/O operations
 
   * [SU] `"Medium`": Includes summary-level activity of each process kernel
 
@@ -308,37 +308,37 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"CFL`" [double]: Time step limiter, a number less than 1 with default of 1.
 
-     * [U] `"transport subcycling`" [bool]: Accepts `"true`" or `"false`" which corresponds to transport subcycling on or off, respectively. (default: `"true`") Note that setting this parameter to false does not always preclude transport from subcycling. Since the estimate for the transport time step is based on velocities from the previous time step, the actual time step that transport can take after the current flow step might be different from its initial estimate.
+     * [U] `"transport subcycling`" [bool]: Accepts `"true`" or `"false`" which corresponds to transport subcycling on or off, respectively. (default: `"true`") Note that setting this parameter to false does not always preclude transport from subcycling. Since the estimate for the transport timestep is based on velocities from the previous timestep, the actual timestep that transport can take after the current flow step might be different from its initial estimate.
 
    * [U] `"Chemistry Process Kernel`" [list]: Control parameters for the reactive transport methods
 
-     * [U] `"max chemistry to transport timestep ratio`" [double] when both chemistry and transport process kernels are on, the chemistry time step will be limited such that the ratio of (chemistry time step)/(transport time step) < this parameter. By default this parameter equals 1.0. If this parameter is set for example to 10.0, then we limit the chemistry time step to 10 times what the current transport time step is, such that for each chemistry sub-cycle, there will be at most 10 transport sub cycles. (default: `"1.0`", suggested range: 0.2 ... 10.0)
+     * [U] `"max chemistry to transport timestep ratio`" [double] when both chemistry and transport process kernels are on, the chemistry timestep will be limited such that the ratio of (chemistry timestep)/(transport timestep) < this parameter. By default this parameter equals 1.0. If this parameter is set for example to 10.0, then we limit the chemistry timestep to 10 times what the current transport timestep is, such that for each chemistry sub-cycle, there will be at most 10 transport sub cycles. (default: `"1.0`", suggested range: 0.2 ... 10.0)
 
    * [U] `"Steady-State Implicit Time Integration`" [list] Parameters for BDF1 time integration to reach steady-state
 
-     * [U] `"steady max iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced by the factor specified in `"steady time step reduction factor"`. (default: `"15`", suggested range: 10 ... 20)
+     * [U] `"steady max iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent timestep is reduced by the factor specified in `"steady timestep reduction factor"`. (default: `"15`", suggested range: 10 ... 20)
 
-     * [U] `"steady min iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased by the factor specified in `"steady time step increase factor"`. (default: `"10`", suggested range: 5 ... 15)
+     * [U] `"steady min iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent timestep is increased by the factor specified in `"steady timestep increase factor"`. (default: `"10`", suggested range: 5 ... 15)
 
-     * [U] `"steady limit iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is cut in half and the current time step is repeated. (default: `"20`", suggested range: 20 ... 50)
+     * [U] `"steady limit iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current timestep is cut in half and the current timestep is repeated. (default: `"20`", suggested range: 20 ... 50)
 
      * [U] `"steady nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the steady state computation. (default: `"1.0e-5`", suggested range: 1.0e-8 ... 1.0e-6)
 
      * [U] `"steady nonlinear iteration damping factor"` [double] Damp the nonlinear iteration (fixed point iteration) by this factor, the default is 1.0 (no damping). (default: `"1.0`", suggested range: 0.1 ... 1.0)
  
-     * [U] `"steady time step reduction factor"` [double] When time step reduction is necessary during the steady calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
+     * [U] `"steady timestep reduction factor"` [double] When timestep reduction is necessary during the steady calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
 
-     * [U] `"steady time step increase factor"` [double] When time step increase is possible during the steady calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0)
+     * [U] `"steady timestep increase factor"` [double] When timestep increase is possible during the steady calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0)
 
-     * [U] `"steady max time step"` [double] During the steady state solve, the time step is limited to the value specified here. (default: `"1.0e+10`", suggested range: 1.0e+8 ... 1.0e+10)
+     * [U] `"steady max timestep"` [double] During the steady state solve, the timestep is limited to the value specified here. (default: `"1.0e+10`", suggested range: 1.0e+8 ... 1.0e+10)
 
      * [U] `"steady max preconditioner lag iterations"` [int] During the steady state solve, the preconditioner is lagged this amount of iterations during the nonlinear solve. For example, if a value of 4 is specified here, the preconditioner is updated at the beginning of each nonlinear solve and then in each fourth iteration during each nonlinear solve. To force a preconditioner in each iteration of each nonlinear solve, set this parameter to one (very expensive, but also very robust), and to disable updates of the preconditioner, except at the beginning of each nonlinear solve, set this parameter to a value larger than `"steady limit iterations"`. (default: `"5`", suggested range: 0 ... 10)
 
-     * [U] `"steady max divergent iterations`" [int] the BDF1 time integrator will tolerate one less than that many subsequent divergent nonlinear iterations. if there are `"steady max divergent iterations`" then the time iterator will give up on this time step and will cause the current time step to be cut by 50% and the current time step to be repeated. (default: `"3`", suggested range: 3 ... 8)
+     * [U] `"steady max divergent iterations`" [int] the BDF1 time integrator will tolerate one less than that many subsequent divergent nonlinear iterations. if there are `"steady max divergent iterations`" then the time iterator will give up on this timestep and will cause the current timestep to be cut by 50% and the current timestep to be repeated. (default: `"3`", suggested range: 3 ... 8)
 
-     * [U] `"steady nonlinear iteration divergence factor`" [double] If during the nonlinear solve, the inf norm of the nonlinear update is larger by this factor than the inf norm of the update in the prior iteration, we abort the nonlinear solve to protect against a runaway divergent iteration that causes numerical overflow. As a result the current time step will repeated with a smaller delta T. (default: `"1000.0`", suggested range: 100.0 ... 10000.0)
+     * [U] `"steady nonlinear iteration divergence factor`" [double] If during the nonlinear solve, the inf norm of the nonlinear update is larger by this factor than the inf norm of the update in the prior iteration, we abort the nonlinear solve to protect against a runaway divergent iteration that causes numerical overflow. As a result the current timestep will repeated with a smaller delta T. (default: `"1000.0`", suggested range: 100.0 ... 10000.0)
 
-     * [U] `"steady restart tolerance relaxation factor`" [double] when the time integrator is started, it may be beneficial to set this parameter to something > 1.0 to loosen the nonlinear tolerance on the first several time steps. The parameter `"steady restart tolerance relaxation factor damping`" controls how fast the this loosened nonlinear tolerance will revert back to the one specified in  `"steady nonlinear tolerance"`: If the nonlinear tolerance is ntol, the initial timestep factor is ntol_factor, and the damping is ntol_damping, then the actual nonlinear tolerance is ntol*ntol_factor, and after every time step, ntol_factor = max(1.0,ntol_factor*ntol_damping), such that a few iterations after a time integrator start, the actual tolerance equals ntol, again. The default for this paramameter is 1.0, while reasonable values are > 1.0, maybe as large as 1000.0. The default for the damping factor is 1.0, while reasonable values are between 0 and 1. (default: `"1.0`", suggested range: 1.0 ... 1000.0)
+     * [U] `"steady restart tolerance relaxation factor`" [double] when the time integrator is started, it may be beneficial to set this parameter to something > 1.0 to loosen the nonlinear tolerance on the first several timesteps. The parameter `"steady restart tolerance relaxation factor damping`" controls how fast the this loosened nonlinear tolerance will revert back to the one specified in  `"steady nonlinear tolerance"`: If the nonlinear tolerance is ntol, the initial timestep factor is ntol_factor, and the damping is ntol_damping, then the actual nonlinear tolerance is ntol*ntol_factor, and after every timestep, ntol_factor = max(1.0,ntol_factor*ntol_damping), such that a few iterations after a time integrator start, the actual tolerance equals ntol, again. The default for this paramameter is 1.0, while reasonable values are > 1.0, maybe as large as 1000.0. The default for the damping factor is 1.0, while reasonable values are between 0 and 1. (default: `"1.0`", suggested range: 1.0 ... 1000.0)
 
      * [U] `"steady restart tolerance relaxation factor damping`" [double] see `"steady nonlinear iteration initial timestep factor`" for a detailed explanation of this parameter. (default: `"1.0`", suggested range: 0.001 ... 1.0)
 
@@ -346,33 +346,33 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"steady initialize with darcy`" [bool] Initialize the flow field using a Darcy solve. (default `"true`")  
 
-     * [U] `"steady nonlinear iteration initial guess extrapolation order`" [int] defines how the initial guess (predictor) for a new time step is calculated. If set to zero, the previous solution is used as the initial guess. (default: 1)  
+     * [U] `"steady nonlinear iteration initial guess extrapolation order`" [int] defines how the initial guess (predictor) for a new timestep is calculated. If set to zero, the previous solution is used as the initial guess. (default: 1)  
 
    * [U] `"Transient Implicit Time Integration`" [list] Parameters for BDF1 transient time integration 
 
-     * [U] `"transient max iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced by the factor specified in `"transient time step reduction factor"`. (default: `"15`", suggested range: 10 ... 20)
+     * [U] `"transient max iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent timestep is reduced by the factor specified in `"transient timestep reduction factor"`. (default: `"15`", suggested range: 10 ... 20)
 
-     * [U] `"transient min iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased by the factor specified in `"transient time step increase factor"`. (default: `"10`", suggested range: 5 ... 15)
+     * [U] `"transient min iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent timestep is increased by the factor specified in `"transient timestep increase factor"`. (default: `"10`", suggested range: 5 ... 15)
 
-     * [U] `"transient limit iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is cut in half and the current time step is repeated. (default: `"20`", suggested range: 20 ... 50)
+     * [U] `"transient limit iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the current timestep is cut in half and the current timestep is repeated. (default: `"20`", suggested range: 20 ... 50)
 
      * [U] `"transient nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the transient computation. (default: `"1.0e-5`", suggested range: 1.0e-6 ... 1.0e-5)
 
      * [U] `"transient nonlinear iteration damping factor"` [double] Damp the nonlinear iteration (fixed point iteration) by this factor, the default is 1.0 (no damping). (default: `"1.0`", suggested range: 0.1 ... 1.0)
 
-     * [U] `"transient time step reduction factor"` [double] When time step reduction is necessary during the transient calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
+     * [U] `"transient timestep reduction factor"` [double] When timestep reduction is necessary during the transient calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
 
-     * [U] `"transient time step increase factor"` [double] When time step increase is possible during the transient calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0) Note that this paramter also works in the case where the flow mode `"Single Phase`" was selected. In that case, the default is `"1.0`".
+     * [U] `"transient timestep increase factor"` [double] When timestep increase is possible during the transient calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0) Note that this paramter also works in the case where the flow mode `"Single Phase`" was selected. In that case, the default is `"1.0`".
 
-     * [U] `"transient max time step"` [double] During the transient solve, the time step is limited to the value specified here. (default: `"1.0e+8`", suggested range: 1.0e+8 ... 10e+10)
+     * [U] `"transient max timestep"` [double] During the transient solve, the timestep is limited to the value specified here. (default: `"1.0e+8`", suggested range: 1.0e+8 ... 10e+10)
 
      * [U] `"transient max preconditioner lag iterations"` [int] During the transient solve, the preconditioner is lagged this amount of iterations during the nonlinear solve. For example, if a value of 4 is specified here, the preconditioner is updated at the beginning of each nonlinear solve and then in each fourth iteration during each nonlinear solve. To force a preconditioner in each iteration of each nonlinear solve, set this parameter to one (very expensive, but also very robust), and to disable updates of the preconditioner, except at the beginning of each nonlinear solve, set this parameter to a value larger than `"transient limit iterations"`. (default: `"5`", suggested range: 0 ... 10)
 
-     * [U] `"transient max divergent iterations`" [int] the BDF1 time integrator will tolerate one less than that many subsequent divergent nonlinear iterations. if there are `"transient max divergent iterations`" then the time iterator will give up on this time step and will cause the current time step to be cut by 50% and the current time step to be repeated. (default: `"3`", suggested range: 3 ... 8)
+     * [U] `"transient max divergent iterations`" [int] the BDF1 time integrator will tolerate one less than that many subsequent divergent nonlinear iterations. if there are `"transient max divergent iterations`" then the time iterator will give up on this timestep and will cause the current timestep to be cut by 50% and the current timestep to be repeated. (default: `"3`", suggested range: 3 ... 8)
 
-     * [U] `"transient nonlinear iteration divergence factor`" [double] If during the nonlinear solve, the inf norm of the nonlinear update is larger by this factor than the inf norm of the update in the prior iteration, we abort the nonlinear solve to protect against a runaway divergent iteration that causes numerical overflow. As a result the current time step will repeated with a smaller delta T. (default: `"1000.0`", suggested range: 100.0 ... 10000.0)
+     * [U] `"transient nonlinear iteration divergence factor`" [double] If during the nonlinear solve, the inf norm of the nonlinear update is larger by this factor than the inf norm of the update in the prior iteration, we abort the nonlinear solve to protect against a runaway divergent iteration that causes numerical overflow. As a result the current timestep will repeated with a smaller delta T. (default: `"1000.0`", suggested range: 100.0 ... 10000.0)
 
-     * [U] `"transient restart tolerance relaxation factor`" [double] when the time integrator is restarted, at a time when a boundary condition drastically changes, it may be beneficial to set this parameter to something > 1.0 to loosen the nonlinear tolerance on the first several time steps after the time integrator restart. The parameter `"transient restart tolerance relaxation factor damping`" controls how fast the this loosened nonlinear tolerance will revert back to the one specified in  `"transient nonlinear tolerance"`: If the nonlinear tolerance is ntol, the initial timestep factor is ntol_factor, and the damping is ntol_damping, then the actual nonlinear tolerance is ntol*ntol_factor, and after every time step, ntol_factor = max(1.0,ntol_factor*ntol_damping), such that a few iterations after a time integrator restart, the actual tolerance equals ntol, again. The default for this paramameter is 1.0, while reasonable values are > 1.0, maybe as large as 1000.0. The default for the damping factor is 1.0, while reasonable values are between 0 and 1. (default: `"1.0`", suggested range: 1.0 ... 1000.0)
+     * [U] `"transient restart tolerance relaxation factor`" [double] when the time integrator is restarted, at a time when a boundary condition drastically changes, it may be beneficial to set this parameter to something > 1.0 to loosen the nonlinear tolerance on the first several timesteps after the time integrator restart. The parameter `"transient restart tolerance relaxation factor damping`" controls how fast the this loosened nonlinear tolerance will revert back to the one specified in  `"transient nonlinear tolerance"`: If the nonlinear tolerance is ntol, the initial timestep factor is ntol_factor, and the damping is ntol_damping, then the actual nonlinear tolerance is ntol*ntol_factor, and after every timestep, ntol_factor = max(1.0,ntol_factor*ntol_damping), such that a few iterations after a time integrator restart, the actual tolerance equals ntol, again. The default for this paramameter is 1.0, while reasonable values are > 1.0, maybe as large as 1000.0. The default for the damping factor is 1.0, while reasonable values are between 0 and 1. (default: `"1.0`", suggested range: 1.0 ... 1000.0)
 
      * [U] `"transient restart tolerance relaxation factor damping`" [double] see `"transient nonlinear iteration initial timestep factor`" for a detailed explanation of this parameter. (default: `"1.0`", suggested range: 0.001 ... 1.0)
 
@@ -380,7 +380,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"transient initialize with darcy`" [bool] Initialize the flow field using a Darcy solve. (default `"false`") 
 
-     * [U] `"transient nonlinear iteration initial guess extrapolation order`" [int] defines how the initial guess (predictor) for a new time step is calculated. If set to zero, the previous solution is used as the initial guess. (default: 1)  
+     * [U] `"transient nonlinear iteration initial guess extrapolation order`" [int] defines how the initial guess (predictor) for a new timestep is calculated. If set to zero, the previous solution is used as the initial guess. (default: 1)  
 
 
    * [U] `"Steady-State Pseudo-Time Implicit Solver`" [list] Parameters for Damped Picard iteration to reach steady-state
@@ -413,7 +413,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
    * [U] `"MPC`" [list] Parameters for the multiprocess coordinator
 
-     * [U] `"time integration rescue reduction factor`" [double] when the time integrator threatens to fail, for example, due to exceeding the number of limit iterations, or by threatening to diverge, the multiprocess coordinator will repeat the current time step with a time step that is reduced by this factor (default: `"0.5`").
+     * [U] `"time integration rescue reduction factor`" [double] when the time integrator threatens to fail, for example, due to exceeding the number of limit iterations, or by threatening to diverge, the multiprocess coordinator will repeat the current timestep with a timestep that is reduced by this factor (default: `"0.5`").
 
    * [U] `"Nonlinear Solver`" [list] Parameters for the nonlinear solver used in time-integration.
 
@@ -466,21 +466,21 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
    * [S] `"Expert Settings`" [int] Options passed to Amanzi that are not specifically checked for validity/relevance
 
-     * [S] `"steady_limit_iterations"` [int] Maximum number of Newton iterations to attempt when solving for a single time step evolution of Richards equation. (default: "20", suggested range: 5 ... 200)
+     * [S] `"steady_limit_iterations"` [int] Maximum number of Newton iterations to attempt when solving for a single timestep evolution of Richards equation. (default: "20", suggested range: 5 ... 200)
 
-     * [S] `"steady_time_step_reduction_factor"` [double] When time step reduction is necessary during the steady calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
+     * [S] `"steady_time_step_reduction_factor"` [double] When timestep reduction is necessary during the steady calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
 
-     * [S] `"steady_min_iterations"` [int] Maximum iteration count of successful Newton solve leading to time step increase of "steady_time_increase_factor". (default: "10", suggested range: 5 ... 100)
+     * [S] `"steady_min_iterations"` [int] Maximum iteration count of successful Newton solve leading to timestep increase of "steady_time_increase_factor". (default: "10", suggested range: 5 ... 100)
 
-     * [S] `"steady_time_step_increase_factor"` [double] When time step increase is possible during the steady calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0)
+     * [S] `"steady_time_step_increase_factor"` [double] When timestep increase is possible during the steady calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0)
 
-     * [S] `"transient_time_step_reduction_factor"` [double] When time step reduction is necessary during the transient calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
+     * [S] `"transient_time_step_reduction_factor"` [double] When timestep reduction is necessary during the transient calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
 
-     * [S] `"transient_time_step_increase_factor"` [double] When time step increase is possible during the steady calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0)
+     * [S] `"transient_time_step_increase_factor"` [double] When timestep increase is possible during the steady calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0)
 
-     * [S] `"maximum_time_step_size`" [double]: The maximum time step size allowed.
+     * [S] `"maximum_time_step_size`" [double]: The maximum timestep size allowed.
 
-     * [S] `"initial_time_step_multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
+     * [S] `"initial_time_step_multiplier`" [double] (Optional) If internally computed timestep used, it will be scaled by this factor (default value: 1)
 
      * [S] `"do_richard_init_to_steady`" [int]  If 1, triggers a psuedo-transient time-evolution of the initial data, prior to entering the `"Execution Mode`" phases descussed above.  (default: `"0`", suggested range: 0 ... 1)
 
@@ -488,33 +488,33 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [S] `"steady_max_pseudo_time`" [double]  Stopping time for the psuedo-transient time-evolution of the initial data, prior to entering the `"Execution Mode`" phases descussed above.  (default: `"1.e10`", suggested range: 0 ... 1.e12)
 
-     * [S] `"steady_time_step_reduction_factor`" [double]  Scale factor to reduce time step size for retry if Newton iterations fail.  (default: `"0.8`", suggested range: 0.1 ... 0.99)
+     * [S] `"steady_time_step_reduction_factor`" [double]  Scale factor to reduce timestep size for retry if Newton iterations fail.  (default: `"0.8`", suggested range: 0.1 ... 0.99)
 
      * [S] `"steady_time_step_increase_factor`" [double]  Scale factor to increase next step after successful solve with less than `"steady_min_iterations`" newton iterations.  (default: `"1.25`", suggested range: 1.1 ... 10)
 
-     * [S] `"steady_min_iterations_2`" [int]  Iteration count of successful Newton solve leading to time step increase of `"steady_time_increase_factor_2`".  (default: `"0`", suggested range: 5 ... 100)
+     * [S] `"steady_min_iterations_2`" [int]  Iteration count of successful Newton solve leading to timestep increase of `"steady_time_increase_factor_2`".  (default: `"0`", suggested range: 5 ... 100)
 
      * [S] `"steady_time_step_increase_factor_2`" [double]  Scale factor to increase next step after successful solve if iteration count of successful Newton solve is less than `"steady_min_iterations_2`".  (default: `"10`", suggested range: 1.1 ... 10)
 
-     * [S] `"steady_max_consecutive_failures_1`" [int]  Number of failed time step attempts before reducing time step size by factor of `"steady_time_step_retry_factor_1`" (default: `"3`", suggested range: 5 ... 10)
+     * [S] `"steady_max_consecutive_failures_1`" [int]  Number of failed timestep attempts before reducing timestep size by factor of `"steady_time_step_retry_factor_1`" (default: `"3`", suggested range: 5 ... 10)
 
-     * [S] `"steady_time_step_retry_factor_1`" [double]  Scale factor to decrease time step after `"steady_max_consecutive_failures_1`" failed time steps.  (default: `"0.5`", suggested range: 0.1 ... 0.5)
+     * [S] `"steady_time_step_retry_factor_1`" [double]  Scale factor to decrease timestep after `"steady_max_consecutive_failures_1`" failed timesteps.  (default: `"0.5`", suggested range: 0.1 ... 0.5)
 
-     * [S] `"steady_max_consecutive_failures_2`" [int]  Number of failed time step attempts before reducing time step size by factor of `"steady_time_step_retry_factor_2`" (default: `"4`", suggested range: 5 ... 10)
+     * [S] `"steady_max_consecutive_failures_2`" [int]  Number of failed timestep attempts before reducing timestep size by factor of `"steady_time_step_retry_factor_2`" (default: `"4`", suggested range: 5 ... 10)
 
-     * [S] `"steady_time_step_retry_factor_2`" [double]  Scale factor to decrease time step after `"steady_max_consecutive_failures_2`" failed time steps.  (default: `"0.01`", suggested range: 0.01 ... 0.1)
+     * [S] `"steady_time_step_retry_factor_2`" [double]  Scale factor to decrease timestep after `"steady_max_consecutive_failures_2`" failed timesteps.  (default: `"0.01`", suggested range: 0.01 ... 0.1)
 
-     * [S] `"steady_time_step_retry_factor_f`" [double]  Scale factor to decrease time step after `"steady_max_consecutive_failures_2`" + 1 failed time steps.  (default: `"0.001`", suggested range: 0.001 ... 0.01)
+     * [S] `"steady_time_step_retry_factor_f`" [double]  Scale factor to decrease timestep after `"steady_max_consecutive_failures_2`" + 1 failed timesteps.  (default: `"0.001`", suggested range: 0.001 ... 0.01)
 
-     * [S] `"steady_max_num_consecutive_success`" [int]  Number of consecutive successful time step attempts, after which the time step will be increased by factor of `"steady_extra_time_step_increase_factor`" (default: `"15`", suggested range: 5 ... 100)
+     * [S] `"steady_max_num_consecutive_success`" [int]  Number of consecutive successful timestep attempts, after which the timestep will be increased by factor of `"steady_extra_time_step_increase_factor`" (default: `"15`", suggested range: 5 ... 100)
 
-     * [S] `"steady_extra_time_step_increase_factor`" [double]  Scale factor to increase time step after `"steady_max_num_consecutive_success`" successful time steps.  (default: `"10`", suggested range: 5 ... 100)
+     * [S] `"steady_extra_time_step_increase_factor`" [double]  Scale factor to increase timestep after `"steady_max_num_consecutive_success`" successful timesteps.  (default: `"10`", suggested range: 5 ... 100)
 
-     * [S] `"steady_abort_on_psuedo_timestep_failure`" [int]  If > 0, abort the run when the solver fails to successfully complete a time step.  (default: `"0`", suggested values: 0, 1)
+     * [S] `"steady_abort_on_psuedo_timestep_failure`" [int]  If > 0, abort the run when the solver fails to successfully complete a timestep.  (default: `"0`", suggested values: 0, 1)
 
      * [S] `"steady_use_PETSc_snes`" [bool]  If true, use a backward Euler discretization of Richards equation, and use the PETSC SNES software to drive the solution of the system.  (default: `"True`")
 
-     * [S] `"steady_limit_function_evals`" [int]  If > 0, the maximum number of function evaluations during a single PETSC SNES time step solve.  Aborts if more are attempted.  (default: `"-1`", suggested values: -1, 1 ... 1.e10)
+     * [S] `"steady_limit_function_evals`" [int]  If > 0, the maximum number of function evaluations during a single PETSC SNES timestep solve.  Aborts if more are attempted.  (default: `"-1`", suggested values: -1, 1 ... 1.e10)
 
      * [S] `"richard_solver_verbose`" [int]  Verbosity of Richard solve. (default: `"1`", suggested values: 0 ... 3)
 
@@ -546,11 +546,11 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [S] `"steady_do_grid_sequence`" [bool] If True and richard_init_to_steady, psuedo-evolve coarsest only level solution, then interpolate solution to next finer level and repeat.  (default: `"True`")
 
-     * [S] `"steady_grid_sequence_new_level_dt_factor`" [Array(double)] Factor by which to scale final psuedo time step from previous (coarser) steady solve in order to compute initial psuedo time step for next steady solve.  If more than one value given, each will be used in successive solves.
+     * [S] `"steady_grid_sequence_new_level_dt_factor`" [Array(double)] Factor by which to scale final psuedo timestep from previous (coarser) steady solve in order to compute initial psuedo timestep for next steady solve.  If more than one value given, each will be used in successive solves.
 
-     * [S] `"max_n_subcycle_transport`" [int] Maximum number of level-0 subcycled transport time steps for each flow step.  Transport will be limited by an advective CFL stability constriant, so this will contribute to limiting the over step size taken. (default: `"10`", suggested values: 1 ... 20)
+     * [S] `"max_n_subcycle_transport`" [int] Maximum number of level-0 subcycled transport timesteps for each flow step.  Transport will be limited by an advective CFL stability constriant, so this will contribute to limiting the over step size taken. (default: `"10`", suggested values: 1 ... 20)
 
-     * [S] `"cfl`" [double]: Fraction of stability-limited maximum time step allowed by the advective transport scheme. (default: "1", suggested values: .01 ... 1)
+     * [S] `"cfl`" [double]: Fraction of stability-limited maximum timestep allowed by the advective transport scheme. (default: "1", suggested values: .01 ... 1)
 
    * [S] `"Adaptive Mesh Refinement Control`" [list] (Optional) Additional details related to the adaptive mesh refinement algorithm. 
 
@@ -558,9 +558,9 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [S] `"Refinement Ratio`" [Array(int)] Grid spacing ratio between adjacent refinement levels.  One value required for each coarse level. Only values of 2 or 4 are supported.
 
-     * [S] `"Do AMR Subcycling`" [bool] For integration of transport and chemistry, AMR subcycling time-steps each level with the same ratio of dx/dt, the levels are integrated and synchronized recursively.  If "`False"`, the time step is identical across levels.
+     * [S] `"Do AMR Subcycling`" [bool] For integration of transport and chemistry, AMR subcycling time-steps each level with the same ratio of dx/dt, the levels are integrated and synchronized recursively.  If "`False"`, the timestep is identical across levels.
 
-     * [S] `"Regrid Interval`" [Array(int)] Number of base (coarse) grid time steps between regrid operations (one value > 0 required for each coarse level)
+     * [S] `"Regrid Interval`" [Array(int)] Number of base (coarse) grid timesteps between regrid operations (one value > 0 required for each coarse level)
 
      * [S] `"Blocking Factor`" [Array(int)] Number by which each grid per level is evenly divisable in each dimension (typically used to guarantee multigrid hierachy depth).  A single value implies that the same is to be used for all levels, otherwise one value is required for each fine level.
 
@@ -1495,7 +1495,7 @@ The chemistry list is needed if the Chemistry model is set to `"Alquimia`" or `"
 
   * [SU] `"Engine`" [string] The name of the backend chemistry engine (e.g. `"PFloTran`").
   * [SU] `"Engine Input File`" [string] The file specifying the input for the backend chemistry engine.
-  * [SU] `"Max Time Step (s)`" [double] The maximum time step that chemistry will allow the MPC to take.
+  * [SU] `"Max Time Step (s)`" [double] The maximum timestep that chemistry will allow the MPC to take.
 
   * [SU] `"Geochemical Conditions`" [list] (*optional*, allows definition of geochemical conditions within XML.)
 
@@ -1527,7 +1527,7 @@ The chemistry list is needed if the Chemistry model is set to `"Alquimia`" or `"
   * [SU] `"Output File Name`" [string] (Optional) A file name that the chemistry library should use to write simulation information and debugging info. An empty string (default) indicates that the chemistry library should not write to a file.
   * [SU] `"Use Standard Out`" [bool] A flag indicating whether the chemistry library can write simulation information and debugging info to standard out. Default is true, so the amanzi u/s drivers will need to set this appropriately on mpi/openmp processes.
   * [SU] `"Auxiliary Data`" [string array] Additional chemistry related data that the user can request be saved to vis files. Currently "pH" is the only variable supported.
-  * [SU] `"Max Time Step (s)`" [double] The maximum time step that chemistry will allow the MPC to take.
+  * [SU] `"Max Time Step (s)`" [double] The maximum timestep that chemistry will allow the MPC to take.
 
 
 Output
@@ -1698,7 +1698,7 @@ Visualization Data
 ---------------------------------
 
 A user may request periodic writes of field data for the purposes of visualization.  The user will specify explicitly what is to be included in the file at each snapshot.  Visualization files can only be written 
-at intervals corresponding to the numerical time step values; writes are controlled by timestep cycle number.
+at intervals corresponding to the numerical timestep values; writes are controlled by timestep cycle number.
 
 * [SU] `"Visualization Data`" [list] can accept a file name base [string] and cycle data [list] that is used to generate the file base name or directory base name that is used in writing visualization data.  It can also accept a set of lists to specify which field quantities to write
 
@@ -2454,7 +2454,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              2. Water saturation, water pressure and Tc-99 concentration throughout space at specified times (plot file)
              3. Water saturation, water pressure and Tc-99 concentration over time at points in space (breakthrough)
              4. Integrate Tc-99 mass crossing the cribs and bottom boundaries over time (flux)
-             5. Checkpoint files every N time steps
+             5. Checkpoint files every N timesteps
        
              I will attempt these calculations based on the "Observation Data" section of the input spec.
              -->

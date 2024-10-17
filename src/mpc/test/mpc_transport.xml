@@ -70,8 +70,8 @@
 	    <Parameter name="PK type" type="string" value="transport"/>
 	  </ParameterList>
 	</ParameterList>
-	<Parameter name="initial time step" type="double" value="1.00000000000000000e+00"/>
-	<Parameter name="maximal time step" type="double" value="1.00000000000000000e+07"/>
+	<Parameter name="initial timestep" type="double" value="1.00000000000000000e+00"/>
+	<Parameter name="maximal timestep" type="double" value="1.00000000000000000e+07"/>
 	<Parameter name="start period time" type="double" value="0.00000000000000000e+00"/>
 	<Parameter name="end period time" type="double" value="1.00000000000000000e+03"/>
       </ParameterList>

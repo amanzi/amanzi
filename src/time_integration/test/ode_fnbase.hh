@@ -22,7 +22,7 @@ class nonlinearODE : public Amanzi::BDFFnBase<Epetra_Vector> {
 
   void FunctionalResidual(double told,
                           double tnew,
-                          Teuchos::RCP<Epetra_Vector> uold,
+                          Teuchos::RCP<const Epetra_Vector> uold,
                           Teuchos::RCP<Epetra_Vector> unew,
                           Teuchos::RCP<Epetra_Vector> f)
   {

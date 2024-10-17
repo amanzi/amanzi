@@ -39,7 +39,7 @@ using CV_t = CompositeVector;
 void
 Richards_PK::FunctionalResidual(double t_old,
                                 double t_new,
-                                Teuchos::RCP<TreeVector> u_old,
+                                Teuchos::RCP<const TreeVector> u_old,
                                 Teuchos::RCP<TreeVector> u_new,
                                 Teuchos::RCP<TreeVector> f)
 {
@@ -301,7 +301,7 @@ Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Composite
 
   // identify convergence failure
   if (max_itrs >= 100) {
-    Errors::CutTimeStep e("GDPM did not converge");
+    Errors::CutTimestep e("GDPM did not converge");
     amanzi_throw(e);
   }
 }

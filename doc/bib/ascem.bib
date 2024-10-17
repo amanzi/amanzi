@@ -543,7 +543,7 @@ quadrilateral grids},
  "operator-split" fashion. In the first method,
  diffusive effects are computed with a linearized
  implicit technique that does not converge
- nonlinearities within a computational time step. In the
+ nonlinearities within a computational timestep. In the
  other two methods, a Jacobian-free Newton-Krylov
  procedure is used to converge the nonlinearities, and
  improved accuracy (but not always greater efficiency)
@@ -1398,7 +1398,7 @@ quadrilateral grids},
  techniques. Such reformulation (parabolization) aims
  to render the modified system block diagonally
  dominant (unlike the original MHD system, which is
- diagonally submissive for implicit time steps Delta t
+ diagonally submissive for implicit timesteps Delta t
  larger than the explicit Courant-Friedrichs-Lewy time
  step). The algorithm has been tested on a variety of
  2D and 3D configurations which demonstrate its
@@ -3332,17 +3332,17 @@ anisotropic tensors on structured and unstructured grids},
   Volume                   = {70},
 
   Abstract                 = {We study the interaction between converging the
- nonlinearities within a time step and time step
+ nonlinearities within a timestep and timestep
  control, on the accuracy of nonequilibrium radiation
  diffusion calculations. Typically, this type of
  calculation is performed using operator-splitting where
- the nonlinearities are lagged one time step. This
+ the nonlinearities are lagged one timestep. This
  method of integrating the nonlinear system results in
  an "effective" time-step constraint to obtain
  accuracy. A time-step control that limits the change in
- dependent variables (usually energy) per time step is
+ dependent variables (usually energy) per timestep is
  used. We investigate the possibility that converging
- the nonlinearities within a time step may allow
+ the nonlinearities within a timestep may allow
  significantly larger time-step sizes and improved
  accuracy as well. The previously described
  Jacobian-free Newton-Krylov method (JQSRT 63 (1999) 15)
@@ -3350,11 +3350,11 @@ anisotropic tensors on structured and unstructured grids},
  step. In addition, a new time-step control method,
  based on the hyperbolic model of a thermal wave
  (J. Comput. Phys. 152 (1999) 790), is employed. The
- benefits and cost of a second-order accurate time step
+ benefits and cost of a second-order accurate timestep
  are considered. It is demonstrated that for a chosen
  accuracy, significant increases in solution efficiency
  can be obtained by converging nonlinearities within a
- time step.}
+ timestep.}
 }
 
 @Article{DAKnoll_WJRider_GOLlson_1999a,
@@ -4313,7 +4313,7 @@ quadrilateral $r-z$ meshes},
   Abstract                 = {An implicit and nonlinearly consistent (INC) solution
  technique is presented for the two-dimensional
  shallow-water equations. Since the method is implicit,
- and therefore unconditionally stable, time steps may be
+ and therefore unconditionally stable, timesteps may be
  used that result in both gravity wave
  Courant-Friedrichs-Lewy (CFL) numbers and advection CFL
  numbers being larger than one. By nonlinearly
@@ -4326,7 +4326,7 @@ quadrilateral $r-z$ meshes},
  stability constraint. Results are presented that show
  that the second-order-in-time INC method can maintain a
  high level of accuracy if the dynamical timescale of
- the system is resolved by the time step. To investigate
+ the system is resolved by the timestep. To investigate
  this difference in temporal integration accuracy
  between the nonlinearly consistent method and the
  semi-implicit method an approximate modified equation
@@ -4964,7 +4964,7 @@ anisotropic diffusion operators},
  equations plus a highly simplified and differentiable
  microphysics parameterization package. Because the
  method is fully implicit, the approach is able to
- employ time steps that result in
+ employ timesteps that result in
  Courant-Friedrichs-Lewy (CFL) numbers greater than one
  for advection, gravity, and sound waves; however, the
  dynamical time scale of the problem must still be
@@ -4972,7 +4972,7 @@ anisotropic diffusion operators},
  via the Jacobian-free Newton-Krylov (JFNK) method. The
  JFNK approach typically requires the approximate
  solution of a large linear system several times per
- time step. To increase the efficiency of the linear
+ timestep. To increase the efficiency of the linear
  system solves, a physics-based preconditioner has been
  employed. To quantify the accuracy and efficiency of
  the new approach against traditional approaches, the
@@ -4987,7 +4987,7 @@ anisotropic diffusion operators},
  illustrated in first-of-a-kind three-dimensional
  implicitly balanced hurricane simulations that reveal
  the first-order-in-time semi-implicit algorithm needs
- to take a time step at least 60 times smaller than the
+ to take a timestep at least 60 times smaller than the
  implicitly balanced algorithm to produce a comparable
  accuracy.}
 }
@@ -5024,29 +5024,29 @@ anisotropic diffusion operators},
   Pages                    = {790--805},
   Volume                   = {152},
 
-  Abstract                 = {The purpose of this note is to describe a time step
+  Abstract                 = {The purpose of this note is to describe a timestep
  control technique as applied to radiation
  diffusion. Standard practice only provides a heuristic
  criteria related to the relative change in the
  dependent variables. We propose an alternative based on
- relatively simple physical principles. This time step
+ relatively simple physical principles. This timestep
  control applies to methods of solution that are
  unconditionally stable and converges nonlinearities
- within a time step in the governing
+ within a timestep in the governing
  equations. Commonly, nonlinearities in the governing
  equations are evaluated using existing (old time) data,
  We refer to this as the semi-implicit method. When a
- method converges nonlinearities within a time step, the
+ method converges nonlinearities within a timestep, the
  entire governing equation including all nonlinearities
  is self-consistently evaluated using advance time data
  (with appropriate time centring for accuracy). This
  criteria grew out of our work using Newton-Krylov
  methods to solve radiation diffusion problems. We
- observed that standard time step control ideas were
+ observed that standard timestep control ideas were
  poorly correlated to our results with regards to
  efficiency and accuracy. Our results indicated that
  using a method that converged nonlinearities allows
- much larger time step sizes with acceptable accuracy.}
+ much larger timestep sizes with acceptable accuracy.}
 }
 
 @Article{WJRider_DAKnoll_GLOlson_1999a,
@@ -5078,7 +5078,7 @@ anisotropic diffusion operators},
  to precondition a Newton-Krylov (GMRES) method provides
  a robust, scalable solution for the nonlinear
  system. Also only through converging the nonlinearities
- within a time step does the solution method achieve its
+ within a timestep does the solution method achieve its
  design accuracy.}
 }
 

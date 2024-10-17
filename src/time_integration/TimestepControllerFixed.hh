@@ -7,49 +7,40 @@
   Authors: Ethan Coon
 */
 
-//! Timestep controller providing constant timestep size.
 /*!
 
-``TimestepControllerFixed`` is a simple timestep control mechanism which sets
-a constant timestep size.  Note that the actual timestep size is given by the
-minimum of PK's initial timestep sizes.
+A fixed timestep controller simply sets a constant timestep size.
 
-No parameters are required.
+`"timestep controller type`" = `"fixed`"
+
+.. _timestep-controller-fixed-spec:
+.. admonition:: timestep-controller-fixed-spec
+
+   * `"initial timestep [s]`" ``[double]`` The fixed timestep size.
 
 */
 
-
-#ifndef AMANZI_FIXED_TIMESTEP_CONTROLLER_HH_
-#define AMANZI_FIXED_TIMESTEP_CONTROLLER_HH_
+#pragma once
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 #include "errors.hh"
+#include "State.hh"
 #include "TimestepController.hh"
 
 namespace Amanzi {
 
 class TimestepControllerFixed : public TimestepController {
  public:
-  TimestepControllerFixed(Teuchos::ParameterList& plist) : TimestepController(plist), plist_(plist)
-  {}
+  TimestepControllerFixed(Teuchos::ParameterList& plist);
 
   // single method for timestep control
-  double get_timestep(double dt, int iterations)
-  {
-    if (iterations < 0) {
-      Errors::TimeStepCrash msg("Timestep failed: fixed time step size failed.");
-      Exceptions::amanzi_throw(msg);
-    }
-
-    return dt;
-  }
+  double getTimestep(double dt, int iterations, bool valid) override;
 
  protected:
-  Teuchos::ParameterList plist_;
+  double dt_;
 };
 
 } // namespace Amanzi
 
-#endif

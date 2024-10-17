@@ -172,7 +172,7 @@ Richards_PK::Setup()
     S_->SetEvaluator(water_storage_key_, Tags::DEFAULT, eval);
   }
 
-  // -- water storage from the previous time step
+  // -- water storage from the previous timestep
   if (!S_->HasRecord(prev_water_storage_key_)) {
     S_->Require<CV_t, CVS_t>(prev_water_storage_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
@@ -662,7 +662,7 @@ Richards_PK::Initialize()
     if (!bdf1_list.isSublist("verbose object"))
       bdf1_list.sublist("verbose object") = fp_list_->sublist("verbose object");
 
-    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
   } else {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "WARNING: BDF1 time integration list is missing..." << std::endl;
@@ -944,7 +944,7 @@ Richards_PK::InitializeStatistics_()
 
 
 /* *******************************************************************
-* Performs one time step from time t_old to time t_new either for
+* Performs one timestep from time t_old to time t_new either for
 * steady-state or transient simulation. If reinit=true, enforce
 * p-lambda constraints.
 ******************************************************************* */
@@ -952,7 +952,7 @@ bool
 Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   AMANZI_ASSERT(bdf1_dae_ != Teuchos::null);
-
+  double dt_recommended(dt_);
   dt_ = t_new - t_old;
 
   // save a copy of primary and conservative fields
@@ -984,7 +984,7 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // trying to make a step
   bool failed(false);
-  failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
+  failed = bdf1_dae_->AdvanceStep(dt_, dt_next_, soln_);
   if (failed) {
     dt_ = dt_next_;
 
@@ -1008,7 +1008,16 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) { VV_ReportSeepageOutflow(S_.ptr(), dt_); }
 
-  dt_ = dt_next_;
+  if (dt_ <= dt_recommended && dt_ <= dt_next_ && dt_next_ < dt_recommended) {
+    // If we took a smaller step than we recommended, likely due to constraints
+    // from other PKs or events like vis (dt_ <= dt_recommended), and it worked
+    // well enough that the newly recommended step size didn't decrease (dt_ <=
+    // dt_next_), then we don't want to reduce our recommendation for the next
+    // step.
+    dt_ = dt_recommended;
+  } else {
+    dt_ = dt_next_;
+  }
 
   return failed;
 }

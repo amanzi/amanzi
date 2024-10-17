@@ -165,7 +165,7 @@ RunTest(const std::string xmlInFileName)
   cd.Observations();
   WriteStateStatistics(*S);
 
-  // iterate time stepping
+  // iterate timestepping
   while (S->get_time() < 2.0) {
     Utils::Units units("molar");
     std::cout << "\nCYCLE " << S->get_cycle() << ": time = " << units.OutputTime(S->get_time())

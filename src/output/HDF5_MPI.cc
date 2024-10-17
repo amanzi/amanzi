@@ -791,7 +791,7 @@ HDF5_MPI::endTimestep()
 
     xmlStep_prev_ = xmlStep_;
 
-    // add a new time step to global VisIt xdmf files
+    // add a new timestep to global VisIt xdmf files
     // TODO(barker): how to get to grid collection node, rather than root???
     std::string record = H5DataFilename() + "." + std::to_string(Iteration()) + tag_ + ".xmf";
     writeXdmfVisitGrid_(record);

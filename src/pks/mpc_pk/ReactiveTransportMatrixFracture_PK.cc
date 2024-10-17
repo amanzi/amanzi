@@ -230,7 +230,7 @@ ReactiveTransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool
 
       // no state recovery is made, so the only option is to fail
       if (dt_next < min_dt_)
-        Exceptions::amanzi_throw("Failure in coupled reactive transport PK: small time step.");
+        Exceptions::amanzi_throw("Failure in coupled reactive transport PK: small timestep.");
 
       // check for subcycling condition
       done = std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1 * min_dt_;

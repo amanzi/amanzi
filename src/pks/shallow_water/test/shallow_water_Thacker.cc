@@ -337,9 +337,9 @@ RunTest(int icase)
   }
 
   if (icase == 1) {
-    CHECK(L1_order > 0.9); // first order scheme (first order time stepping)
+    CHECK(L1_order > 0.9); // first order scheme (first order timestepping)
   } else {
-    CHECK(L1_order > 1.8); //second order scheme (second/third order time stepping)
+    CHECK(L1_order > 1.8); //second order scheme (second/third order timestepping)
   }
 }
 

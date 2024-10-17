@@ -245,8 +245,8 @@ InputConverterU::TranslateCycleDriver_()
     }
     tmp_list.set<double>("start period time", t0_steady);
     tmp_list.set<double>("end period time", t1_steady);
-    tmp_list.set<double>("initial time step", dt0_steady);
-    tmp_list.set<double>("maximum time step", dt_max_steady);
+    tmp_list.set<double>("initial timestep", dt0_steady);
+    tmp_list.set<double>("maximum timestep", dt_max_steady);
     tmp_list.set<int>("maximum cycle number", max_cycles_steady);
 
     tp_id++;
@@ -313,8 +313,8 @@ InputConverterU::TranslateCycleDriver_()
     tmp_list.set<double>("start period time", it->first);
     tmp_list.set<double>("end period time", tp_t1[it->first]);
     tmp_list.set<int>("maximum cycle number", tp_max_cycles[it->first]);
-    tmp_list.set<double>("initial time step", tp_dt0[it->first]);
-    tmp_list.set<double>("maximum time step", tp_dt_max[it->first]);
+    tmp_list.set<double>("initial timestep", tp_dt0[it->first]);
+    tmp_list.set<double>("maximum timestep", tp_dt_max[it->first]);
 
     tp_id++;
     it++;

@@ -1070,13 +1070,13 @@ protected:
   static Real dt_grow_max;    // maximum change in dt over a timestep
   static Real dt_shrink_max;    // maximum change in dt over a timestep
   static Real fixed_dt;      // set > 0 to specify dt
-  static Real steady_max_dt; // define maximum time step taken in steady solver mode
-  static Real transient_max_dt; // define maximum time step taken in the transient solver mode
+  static Real steady_max_dt; // define maximum timestep taken in steady solver mode
+  static Real transient_max_dt; // define maximum timestep taken in the transient solver mode
   static int  initial_iter;  // flag for initial pressure iterations
   static int  initial_step;  // flag for initial iterations
   static Real dt_cutoff;     // minimum dt allowed
   static int  sum_interval;  // number of timesteps for conservation stats
-  static Real dt_init; // if >0, initial time step size
+  static Real dt_init; // if >0, initial timestep size
   static int max_n_subcycle_transport; // maximum number of subcycled transport steps
   static int max_dt_iters_flow; // maximum number of tries to reduce dt and retry to solve Richards flow
   static bool abort_on_chem_fail; // do not recover from chemistry failure

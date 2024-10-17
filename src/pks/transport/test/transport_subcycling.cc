@@ -103,7 +103,7 @@ TEST(ADVANCE_WITH_SUBCYCLING)
   double t_old(0.0), t_new(0.0), dt;
   int iter = 0;
   while (t_new < 1.0) {
-    // imitation of a small time step relative to flow time step
+    // imitation of a small timestep relative to flow timestep
     dt = TPK.StableTimeStep(-1);
     double dt_MPC = dt * 7.7;
     t_new = t_old + dt_MPC;

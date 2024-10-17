@@ -87,7 +87,7 @@ class HDF5_MPI {
 
   // Create h5 file for data output, create accompanying Xdmf files for Visit
   void createDataFile(const std::string& data_filename);
-  // Adds time step attributes to VisIt Xdmf files.  Creates
+  // Adds timestep attributes to VisIt Xdmf files.  Creates
   // individual Xdmf for the current step.
   // TODO(barker): Consolidate into a singel Xdmf file, after VisIt updates.
   void createTimestep(double time, int iteration, const std::string& tag);

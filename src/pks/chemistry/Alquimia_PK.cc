@@ -502,9 +502,9 @@ Alquimia_PK::XMLParameters()
   }
 
   // Other settings.
-  dt_max_ = plist_->get<double>("max time step (s)", 9.9e9);
-  dt_min_ = plist_->get<double>("min time step (s)", 9.9e9);
-  dt_prev_ = plist_->get<double>("initial time step (s)", std::min(dt_min_, dt_max_));
+  dt_max_ = plist_->get<double>("max timestep (s)", 9.9e9);
+  dt_min_ = plist_->get<double>("min timestep (s)", 9.9e9);
+  dt_prev_ = plist_->get<double>("initial timestep (s)", std::min(dt_min_, dt_max_));
 
   if (dt_prev_ > dt_max_) {
     msg << "Alquimia_PK::XMLParameters(): \n";
@@ -513,30 +513,30 @@ Alquimia_PK::XMLParameters()
   }
 
   dt_next_ = dt_prev_;
-  dt_control_method_ = plist_->get<std::string>("time step control method", "fixed");
-  dt_cut_threshold_ = plist_->get<int>("time step cut threshold", 8);
+  dt_control_method_ = plist_->get<std::string>("timestep control method", "fixed");
+  dt_cut_threshold_ = plist_->get<int>("timestep cut threshold", 8);
   if (dt_cut_threshold_ <= 0) {
     msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  Invalid \"time step cut threshold\": " << dt_cut_threshold_ << " (must be > 1).\n";
+    msg << "  Invalid \"timestep cut threshold\": " << dt_cut_threshold_ << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
-  dt_increase_threshold_ = plist_->get<int>("time step increase threshold", 4);
+  dt_increase_threshold_ = plist_->get<int>("timestep increase threshold", 4);
   if (dt_increase_threshold_ <= 0) {
     msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  Invalid \"time step increase threshold\": " << dt_increase_threshold_
+    msg << "  Invalid \"timestep increase threshold\": " << dt_increase_threshold_
         << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
-  dt_cut_factor_ = plist_->get<double>("time step cut factor", 2.0);
+  dt_cut_factor_ = plist_->get<double>("timestep cut factor", 2.0);
   if (dt_cut_factor_ <= 1.0) {
     msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  Invalid \"time step cut factor\": " << dt_cut_factor_ << " (must be > 1).\n";
+    msg << "  Invalid \"timestep cut factor\": " << dt_cut_factor_ << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
-  dt_increase_factor_ = plist_->get<double>("time step increase factor", 1.2);
+  dt_increase_factor_ = plist_->get<double>("timestep increase factor", 1.2);
   if (dt_increase_factor_ <= 1.0) {
     msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  Invalid \"time step increase factor\": " << dt_increase_factor_
+    msg << "  Invalid \"timestep increase factor\": " << dt_increase_factor_
         << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
@@ -921,7 +921,7 @@ Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       min_itrs = std::min(min_itrs, num_itrs);
       avg_itrs += num_itrs;
     } else {
-      // Convergence failure. Compute the next time step size.
+      // Convergence failure. Compute the next timestep size.
       convergence_failure = 1;
       break;
     }
@@ -949,7 +949,7 @@ Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   num_iterations_ = recv[1];
   imax = recv[2];
 
-  // Compute the next time step.
+  // Compute the next timestep.
   ComputeNextTimeStep();
 
   if (recv[0] != 0) {
@@ -990,14 +990,14 @@ Alquimia_PK::ComputeNextTimeStep()
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
         Teuchos::OSTab tab = vo_->getOSTab();
         *vo_->os() << "Number of Newton iterations exceeds threshold (" << dt_cut_threshold_
-                   << ") for time step cut, cutting dT by " << dt_cut_factor_ << std::endl;
+                   << ") for timestep cut, cutting dT by " << dt_cut_factor_ << std::endl;
       }
       dt_next_ = dt_prev_ / dt_cut_factor_;
     } else if (num_successful_steps_ >= dt_increase_threshold_) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
         Teuchos::OSTab tab = vo_->getOSTab();
         *vo_->os() << "Number of successful steps exceeds threshold (" << dt_increase_threshold_
-                   << ") for time step increase, growing dT by " << dt_increase_factor_
+                   << ") for timestep increase, growing dT by " << dt_increase_factor_
                    << std::endl;
       }
       dt_next_ = dt_prev_ * dt_increase_factor_;

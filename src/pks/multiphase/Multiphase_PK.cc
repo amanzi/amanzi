@@ -524,7 +524,7 @@ Multiphase_PK::Setup()
     }
   }
 
-  // fields from previous time step
+  // fields from previous timestep
   if (!S_->HasRecord(prev_tws_key_)) {
     S_->Require<CV_t, CVS_t>(prev_tws_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)
@@ -884,7 +884,7 @@ Multiphase_PK::Initialize()
   if (!bdf1_list.isSublist("verbose object"))
     bdf1_list.sublist("verbose object") = mp_list_->sublist("verbose object");
 
-  bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+  bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
 
   // upwind operator with a face model (FIXME)
   Operators::UpwindFactory upwfact;
@@ -958,7 +958,7 @@ Multiphase_PK::InitializeFields_()
 
 
 /* *******************************************************************
-* Performs one time step from time t_old to time t_new.
+* Performs one timestep from time t_old to time t_new.
 ******************************************************************* */
 bool
 Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
@@ -985,7 +985,7 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     num_ns_itrs_++;
   }
 
-  // update fields from previous time step
+  // update fields from previous timestep
   // KL: calling Update here may lead to an incorrect prev_field when the
   //     field has dependencies on fields handled by other weakly coupled PKs.
   S_->GetEvaluator(tws_key_).Update(*S_, passwd_);
@@ -1001,7 +1001,7 @@ Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // trying to make a step
   bool failed(false);
-  failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
+  failed = bdf1_dae_->AdvanceStep(dt_, dt_next_, soln_);
   if (failed) {
     dt_ = dt_next_;
 

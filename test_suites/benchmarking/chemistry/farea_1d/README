@@ -38,7 +38,7 @@ cfg2xml-farea-1d.py!
 
 ./amanzi --xml_file=amanzi-u-1d-farea-full.xml 2>/dev/null
 
-Note, chemistry requires a very small time step, ~0.01 year. This
+Note, chemistry requires a very small timestep, ~0.01 year. This
 simulation is fairly slow on a single processor. If you run in
 parallel the hdf5 output get jumbled; you have to run some other post
 processing tool from the output group to unscrable the hdf5 file

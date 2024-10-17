@@ -692,7 +692,7 @@ PrintSimulationParameters(const SimulationParameters& params,
   message << "\tsaturation: " << params.saturation << std::endl;
   message << "\tvolume: " << params.volume << std::endl;
   message << "\tdelta time: " << params.delta_time << std::endl;
-  message << "\tnum time steps: " << params.num_time_steps << std::endl;
+  message << "\tnum timesteps: " << params.num_time_steps << std::endl;
   message << "\toutput interval: " << params.output_interval << std::endl;
   message << "\tmax iterations: " << params.max_iterations << std::endl;
   message << "\ttolerance: " << params.tolerance << std::endl;

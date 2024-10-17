@@ -107,8 +107,8 @@ run_test(const std::string& domain, const std::string& filename)
   // loop
   int iloop(0);
   double t(0.0), tend(1.577e+07), dt(8.64e+05),
-    dt_max(17.28e+05); // 0.5 year time period; 10 day time step
-  // store Newton iterations and time step size (after successful iteration)
+    dt_max(17.28e+05); // 0.5 year time period; 10 day timestep
+  // store Newton iterations and timestep size (after successful iteration)
   std::vector<int> newton_iterations_per_step;
   std::vector<double> time_step_size;
 
@@ -136,10 +136,10 @@ run_test(const std::string& domain, const std::string& filename)
 
     MPK->CommitStep(t, t + dt, Tags::DEFAULT);
 
-    // store number of Newton iterations taken (only successful iterations after possible time step reduction)
+    // store number of Newton iterations taken (only successful iterations after possible timestep reduction)
     double iter = MPK->bdf1_dae()->number_solver_iterations();
     newton_iterations_per_step.push_back(iter);
-    // store time step size
+    // store timestep size
     time_step_size.push_back(dt);
 
     S->advance_cycle();

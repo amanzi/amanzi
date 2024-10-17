@@ -215,7 +215,7 @@ class FlexibleObservations {
   bool DumpRequested(const double);
   bool DumpRequested(const int, const double);
 
-  void RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm);
+  void RegisterWithTimeStepManager(Utils::TimeStepManager& tsm);
 
   void FlushObservations();
 

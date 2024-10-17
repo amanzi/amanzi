@@ -464,7 +464,7 @@ PipeFlow_PK::NumericalSourceBedSlope(int c,
 
 
 //--------------------------------------------------------------
-// Calculation of time step limited by the CFL condition
+// Calculation of timestep limited by the CFL condition
 //--------------------------------------------------------------
 double
 PipeFlow_PK::get_dt()
@@ -503,7 +503,7 @@ PipeFlow_PK::get_dt()
         vx = vel_c[0][c];
         vy = vel_c[1][c];
 
-        // computing local (cell, face) time step using Kurganov's estimate d / (2a)
+        // computing local (cell, face) timestep using Kurganov's estimate d / (2a)
         vn = (vx * normal[0] + vy * normal[1]);
         d = norm(xc - xf);
         d_min = std::min(d_min, d);
@@ -534,7 +534,7 @@ PipeFlow_PK::get_dt()
       vx = vel_c[0][c];
       vy = vel_c[1][c];
 
-      // computing local (cell, face) time step using Kurganov's estimate d / (2a)
+      // computing local (cell, face) timestep using Kurganov's estimate d / (2a)
       vn = (vx * normal[0] + vy * normal[1]);
       d = norm(xc - xf);
       d_min = std::min(d_min, d);

@@ -51,7 +51,7 @@ Mineral::Mineral(int id,
 *
 * TODO(bandre): Right now we are just setting volume fraction to
 * zero if they go negative, introducing mass balance errors! Need
-* to adjust time step or reaction rate in the N-R solve!
+* to adjust timestep or reaction rate in the N-R solve!
 ******************************************************************* */
 void
 Mineral::UpdateVolumeFraction(double rate, double dt)

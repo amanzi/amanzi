@@ -30,7 +30,7 @@ ComputeL2Error(hid_t output,
                int step,
                double time)
 {
-  // The name of the dataset for the Amanzi file is the time step number, and datasets
+  // The name of the dataset for the Amanzi file is the timestep number, and datasets
   // are stored in groups that are named after the component.
   char output_dataset_name[128];
   snprintf(output_dataset_name, 128, "%d", step);

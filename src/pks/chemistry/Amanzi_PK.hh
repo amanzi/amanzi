@@ -47,10 +47,10 @@ The Amanzi chemistry process kernel uses the following parameters.
     <Parameter name="activity model" type="string" value="unit"/>
     <Parameter name="tolerance" type="double" value="1.5e-12"/>
     <Parameter name="maximum Newton iterations" type="int" value="25"/>
-    <Parameter name="max time step (s)" type="double" value="1.5e+07"/>
+    <Parameter name="max timestep (s)" type="double" value="1.5e+07"/>
     <Parameter name="auxiliary data" type="Array(string)" value="{pH}"/>
     <Parameter name="number of component concentrations" type="int" value="1"/>
-    <Parameter name="time step control method" type="string" value="simple"/>
+    <Parameter name="timestep control method" type="string" value="simple"/>
   </ParameterList>
   </ParameterList>
 

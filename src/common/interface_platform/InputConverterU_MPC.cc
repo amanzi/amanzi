@@ -370,8 +370,8 @@ InputConverterU::TranslateCycleDriverNew_()
     tmp_list.set<double>("start period time", tp_t0[mode]);
     tmp_list.set<double>("end period time", tp_t1[mode]);
     tmp_list.set<int>("maximum cycle number", tp_max_cycles[mode]);
-    tmp_list.set<double>("initial time step", tp_dt0[mode]);
-    tmp_list.set<double>("maximum time step", tp_max_dt[mode]);
+    tmp_list.set<double>("initial timestep", tp_dt0[mode]);
+    tmp_list.set<double>("maximum timestep", tp_max_dt[mode]);
 
     tp_id++;
   }
@@ -578,7 +578,7 @@ InputConverterU::TranslateTimePeriodControls_()
   DOMNodeList *node_list, *children;
   DOMNode* node;
 
-  // get the default time steps
+  // get the default timesteps
   bool flag;
   node = GetUniqueElementByTagsString_("execution_controls, execution_control_defaults", flag);
 
@@ -702,8 +702,8 @@ InputConverterU::TranslateTimePeriodControls_()
   }
 
   out_list.set<Teuchos::Array<double>>("start times", times);
-  out_list.set<Teuchos::Array<double>>("initial time step", dt_init);
-  out_list.set<Teuchos::Array<double>>("maximum time step", dt_max);
+  out_list.set<Teuchos::Array<double>>("initial timestep", dt_init);
+  out_list.set<Teuchos::Array<double>>("maximum timestep", dt_max);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "created " << dt_max.size() << " special times" << std::endl;

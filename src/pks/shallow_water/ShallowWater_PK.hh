@@ -38,7 +38,7 @@ The list of global parameters include:
     Default is `"domain`".
 
   * `"cfl`" ``[double]`` is a safety factor (less than 1) applied to a stable
-    time step estimate. Default value is 1.
+    timestep estimate. Default value is 1.
 
   * `"use limiter`" ``[bool]`` turns on/off limiters on all linear constructions.
     Default value is *false*.

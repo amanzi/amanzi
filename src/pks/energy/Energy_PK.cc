@@ -123,7 +123,7 @@ Energy_PK::Setup()
   temperature_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t>>(
     S_->GetEvaluatorPtr(temperature_key_, Tags::DEFAULT));
 
-  // conserved quantity from the last time step.
+  // conserved quantity from the last timestep.
   if (!S_->HasRecord(prev_energy_key_)) {
     S_->Require<CV_t, CVS_t>(prev_energy_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)

@@ -312,7 +312,7 @@ FlowEnergyMatrixFracture_PK::Initialize()
 
 
 /* *******************************************************************
-* Performs one time step.
+* Performs one timestep.
 ******************************************************************* */
 bool
 FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
@@ -335,7 +335,7 @@ FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
   bool fail;
   try {
     fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
-  } catch (Errors::CutTimeStep& e) {
+  } catch (Errors::CutTimestep& e) {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << e.what() << std::endl;
@@ -354,7 +354,7 @@ FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
 void
 FlowEnergyMatrixFracture_PK::FunctionalResidual(double t_old,
                                                 double t_new,
-                                                Teuchos::RCP<TreeVector> u_old,
+                                                Teuchos::RCP<const TreeVector> u_old,
                                                 Teuchos::RCP<TreeVector> u_new,
                                                 Teuchos::RCP<TreeVector> f)
 {

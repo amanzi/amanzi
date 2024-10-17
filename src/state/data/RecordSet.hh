@@ -90,8 +90,8 @@ class RecordSet {
   typedef RecordMap::const_iterator tag_iterator;
   tag_iterator begin() const { return records_.begin(); }
   tag_iterator end() const { return records_.end(); }
-  RecordMap::size_type count() { return records_.size(); }
-  RecordMap::size_type size() { return records_.size(); }
+  RecordMap::size_type count() const { return records_.size(); }
+  RecordMap::size_type size() const { return records_.size(); }
 
   // Data creation
   void CreateData()

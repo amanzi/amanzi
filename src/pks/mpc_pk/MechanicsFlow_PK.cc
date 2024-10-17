@@ -110,7 +110,7 @@ MechanicsFlow_PK::Initialize()
 
 
 /* ******************************************************************
-* Extended treatment of time step in transport PK.
+* Extended treatment of timestep in transport PK.
 ****************************************************************** */
 bool
 MechanicsFlow_PK::AdvanceStep(double t_old, double t_new, bool reinit)

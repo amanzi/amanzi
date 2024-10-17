@@ -123,7 +123,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
   void FunctionalResidual(const double t_old,
                           double t_new,
-                          Teuchos::RCP<TreeVector> u_old,
+                          Teuchos::RCP<const TreeVector> u_old,
                           Teuchos::RCP<TreeVector> u_new,
                           Teuchos::RCP<TreeVector> f);
   double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
@@ -139,7 +139,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   // -- possibly modifies the predictor that is going to be used as a
   //    starting value for the nonlinear solve in the time integrator,
   //    the time integrator will pass the predictor that is computed
-  //    using extrapolation and the time step that is used to compute
+  //    using extrapolation and the timestep that is used to compute
   //    this predictor this function returns true if the predictor was
   //    modified, false if not
   bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u)

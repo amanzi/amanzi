@@ -277,7 +277,7 @@ TEST(NATIVE_CALCITE_KINETICS_VOLUME_FRACTIONS)
                  1.0,       // porosity, saturation, cell volume
                  997.16,    // density
                  2592000.0, // dt
-                 60);       // dt, max time steps
+                 60);       // dt, max timesteps
 }
 
 

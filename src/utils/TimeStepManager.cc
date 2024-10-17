@@ -16,109 +16,113 @@
 #include <algorithm>
 #include <iostream>
 
+#include "dbc.hh"
 #include "TimeStepManager.hh"
 #include "Units.hh"
+#include "Event.hh"
+#include "Reader.hh"
 #include "VerboseObject.hh"
 
 namespace Amanzi {
+namespace Utils {
 
 TimeStepManager::TimeStepManager()
+  : manual_override_(false)
 {
-  dt_stable_storage = -1.;
   vo_ = Teuchos::rcp(new VerboseObject("TimeStepManager", Teuchos::ParameterList()));
 }
 
-TimeStepManager::TimeStepManager(Teuchos::ParameterList& verb_list)
+TimeStepManager::TimeStepManager(Teuchos::ParameterList& plist)
+  : manual_override_(false)
 {
-  dt_stable_storage = -1.;
-  vo_ = Teuchos::rcp(new VerboseObject("TimeStepManager", verb_list));
+  // manual override
+  if (plist.isParameter("prescribed timesteps [s]")) {
+    manual_dts_ = plist.get<Teuchos::Array<double>>("prescribed timesteps [s]").toVector();
+    manual_dts_i_ = 0;
+    manual_override_ = true;
+
+  } else if (plist.isParameter("prescribed timesteps")) {
+    manual_dts_ = plist.get<Teuchos::Array<double>>("prescribed timesteps").toVector();
+    manual_dts_i_ = 0;
+    manual_override_ = true;
+
+  } else if (plist.isParameter("prescribed timesteps file name")) {
+    std::string filename = plist.get<std::string>("prescribed timesteps file name");
+    std::string header = plist.get<std::string>("prescribed timesteps header", "timesteps");
+    auto reader = createReader(filename);
+
+    reader->read(header, manual_dts_);
+    manual_dts_i_ = 0;
+    manual_override_ = true;
+  }
+
+  vo_ = Teuchos::rcp(new VerboseObject("TimeStepManager", plist));
 }
 
+
 TimeStepManager::TimeStepManager(Teuchos::RCP<VerboseObject> vo_cd)
-{
-  dt_stable_storage = -1.;
-  vo_ = vo_cd;
-}
+  : manual_override_(false),
+    vo_(vo_cd)
+{}
+
 
 void
 TimeStepManager::RegisterTimeEvent(double start, double period, double stop, bool phys)
 {
-  timeEvents_.push_back(TimeEvent(start, period, stop, phys));
+  time_events_.emplace_back(Teuchos::rcp(new EventSPS<double>(start, period, stop)));
 }
 
+
 void
-TimeStepManager::RegisterTimeEvent(std::vector<double> times, bool phys)
+TimeStepManager::RegisterTimeEvent(const std::vector<double>& times, bool phys)
 {
-  // make sure we only admit sorted arrays with unique entries
-  std::vector<double> loc_times;
-  loc_times = times;
-  std::sort(loc_times.begin(), loc_times.end());
-  loc_times.erase(std::unique(loc_times.begin(), loc_times.end(), near_equal), loc_times.end());
-  timeEvents_.push_back(TimeEvent(loc_times, phys));
+  time_events_.emplace_back(Teuchos::rcp(new EventList<double>(times)));
 }
 
 void
 TimeStepManager::RegisterTimeEvent(double time, bool phys)
 {
-  timeEvents_.push_back(TimeEvent(time, phys));
+  RegisterTimeEvent(std::vector<double>{time});
 }
+
+void
+TimeStepManager::RegisterTimeEvent(const Teuchos::RCP<const Event<double>>& te)
+{
+  time_events_.emplace_back(te);
+}
+
 
 double
 TimeStepManager::TimeStep(double T, double dT, bool after_failure)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
   Utils::Units units("molar");
-  double next_T_all_events(1e99);
-  bool physical = true;
 
-  if (after_failure) dt_stable_storage = -1.;
-
-  if ((dt_stable_storage > 0) && (!after_failure)) {
-    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      *vo_->os() << "Proposed dT=" << units.OutputTime(dT)
-                 << ", stability from previous step changes it to "
-                 << units.OutputTime(dt_stable_storage) << std::endl;
+  if (manual_override_) {
+    // under manual override, the PK dt is prescribed
+    if (after_failure) {
+      Errors::Message msg("TimeStepManager: manually prescribed timestep failed.");
+      Exceptions::amanzi_throw(msg);
     }
-    dT = dt_stable_storage;
-    dt_stable_storage = -1.;
+    if (manual_dts_i_ != manual_dts_.size()) {
+      dT = manual_dts_[manual_dts_i_++];
+    }
   }
 
   // loop over all events to find the next event time
-  for (std::list<TimeEvent>::const_iterator i = timeEvents_.begin(); i != timeEvents_.end(); ++i) {
-    double next_T_this_event(1e99);
-    // there are two possible types of events
-    switch (i->Type()) {
-    case TimeEvent::SPS: {
-      if (T < i->start_ && !Amanzi::near_equal(T, i->start_)) {
-        next_T_this_event = i->start_;
-      } else if ((i->stop_ == -1.0) || (T <= i->stop_ || Amanzi::near_equal(T, i->stop_))) {
-        double n_periods = floor((T - i->start_) / i->period_);
-        if (Amanzi::near_equal(n_periods + 1.0, (T - i->start_) / i->period_)) n_periods += 1.0;
-        double tmp = i->start_ + (n_periods + 1.0) * i->period_;
-        if (i->stop_ == -1.0 || tmp <= i->stop_) next_T_this_event = tmp;
-      }
-    }
-    case TimeEvent::TIMES: {
-      // we assume that i->times_ is ordered with unique elements
-      for (std::vector<double>::const_iterator j = i->times_.begin(); j != i->times_.end(); ++j) {
-        if (*j > T) {
-          next_T_this_event = *j;
-          break;
-        }
-      }
-    }
-    }
-    //next_T_all_events = std::min(next_T_all_events, next_T_this_event);
-    if (next_T_this_event < next_T_all_events) {
-      physical = i->isPhysical();
+  double next_T_all_events(std::numeric_limits<double>::max());
+  for (auto i : time_events_) {
+    double next_T_this_event = i->getNext(T);
+    if (next_T_this_event >= 0. && next_T_this_event < next_T_all_events) {
       next_T_all_events = next_T_this_event;
     }
   }
 
-  if (next_T_all_events == 1e99) return dT;
+  if (next_T_all_events == std::numeric_limits<double>::max()) return dT;
+
   double time_remaining(next_T_all_events - T);
 
-  if (close(dT, time_remaining, 1.e-8)) {
+  if (isNearEqual(dT, time_remaining, 1e4 * Event_EPS<double>::value)) {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "Proposed dT=" << units.OutputTime(dT)
                  << ", is near equal to next event time remaining "
@@ -127,7 +131,6 @@ TimeStepManager::TimeStep(double T, double dT, bool after_failure)
     return time_remaining;
 
   } else if (dT > time_remaining) {
-    if (!physical) dt_stable_storage = dT;
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "Proposed dT=" << units.OutputTime(dT) << ", events limit it to "
                  << units.OutputTime(time_remaining) << std::endl;
@@ -135,7 +138,6 @@ TimeStepManager::TimeStep(double T, double dT, bool after_failure)
     return time_remaining;
 
   } else if (dT > 0.75 * time_remaining) {
-    if (!physical) dt_stable_storage = dT;
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "Proposed dT=" << units.OutputTime(dT) << ", events limit it to "
                  << units.OutputTime(0.5 * time_remaining) << std::endl;
@@ -150,33 +152,28 @@ TimeStepManager::TimeStep(double T, double dT, bool after_failure)
   }
 }
 
+
 void
 TimeStepManager::print(std::ostream& os, double start, double end) const
 {
   // create a sorted array of the times between start and end and print it
   std::vector<double> print_times;
-  for (std::list<TimeEvent>::const_iterator i = timeEvents_.begin(); i != timeEvents_.end(); ++i) {
-    switch (i->Type()) {
-    case TimeEvent::SPS: {
-      double time = i->start_;
-      while (time <= end && (i->stop_ == -1.0 || time <= i->stop_)) {
-        print_times.push_back(time);
-        time += i->period_;
-      }
-    }
-    case TimeEvent::TIMES: {
-      for (std::vector<double>::const_iterator j = i->times_.begin(); j != i->times_.end(); ++j) {
-        if (*j >= start && *j <= end) { print_times.push_back(*j); }
-      }
-    }
+  for (auto i : time_events_) {
+    if (i->contains(start)) print_times.push_back(start);
+
+    double time = i->getNext(start);
+    while (time >= 0 && time < end) {
+      print_times.push_back(time);
+      time = i->getNext(time);
     }
   }
+
   std::sort(print_times.begin(), print_times.end());
-  print_times.erase(std::unique(print_times.begin(), print_times.end(), near_equal),
+  print_times.erase(std::unique(print_times.begin(), print_times.end(),
+          [=](double a, double b) { return isNearEqual<double>(a,b); }),
                     print_times.end());
-  for (std::vector<double>::const_iterator i = print_times.begin(); i != print_times.end(); ++i) {
-    os << *i << " ";
-  }
+  for (auto t : print_times) os << t << " ";
 }
 
+} // namespace Utils
 } // namespace Amanzi

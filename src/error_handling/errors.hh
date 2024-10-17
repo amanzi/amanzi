@@ -43,10 +43,10 @@ operator<<(Message& message, int datum);
 Message&
 operator<<(Message& message, std::size_t datum);
 
-class CutTimeStep : public Message {
+class CutTimestep : public Message {
   using Message::Message;
 };
-class TimeStepCrash : public Message {
+class TimestepCrash : public Message {
   using Message::Message;
 };
 

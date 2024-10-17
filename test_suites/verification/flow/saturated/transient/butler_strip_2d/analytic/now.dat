@@ -16,8 +16,8 @@ during integration
    if the rel. error (tlimit1) is much greater than 1.e-10, errors approaching 
 the significant level may appear.
 	npump is the zone in which the pumping well is located.  tau is
-the initial time step, tauinc is the time step acceleration factor, and
-ntau is the number of time steps.
+the initial timestep, tauinc is the timestep acceleration factor, and
+ntau is the number of timesteps.
 	the number of terms to be used for the stehfest algorithm (n) should
 be between 10 and 20 for double precision calculations. the smaller the
 n value, the faster the calculation.  a smaller value of n will result

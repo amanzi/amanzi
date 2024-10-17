@@ -10,7 +10,7 @@
 /*!
 
 The Alquimia chemistry process kernel only requires the *Engine* and *Engine Input File*
-entries, but will also accept and respect the value given for *max time step (s)*.
+entries, but will also accept and respect the value given for *max timestep (s)*.
 Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
 
 .. admonition:: alquimia-spec
@@ -22,7 +22,7 @@ Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
   * `"auxiliary data`" ``[Array(string)]`` defines additional chemistry related data that the user
     can request be saved to vis files.
 
-  * `"min time step (s)`" ``[double]`` is the minimum time step that chemistry will allow 
+  * `"min timestep (s)`" ``[double]`` is the minimum timestep that chemistry will allow 
     the MPC to take.
 
 .. code-block:: xml
@@ -32,14 +32,14 @@ Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
     <Parameter name="engine" type="string" value="PFloTran"/>
     <Parameter name="engine input file" type="string" value="_TRITIUM.in"/>
     <Parameter name="minerals" type="Array(string)" value="{quartz, kaolinite, goethite, opal}"/>
-    <Parameter name="min time step (s)" type="double" value="1.5778463e-07"/>
-    <Parameter name="max time step (s)" type="double" value="1.5778463e+07"/>
-    <Parameter name="initial time step (s)" type="double" value="1.0e-02"/>
-    <Parameter name="time step control method" type="string" value="simple"/>
-    <Parameter name="time step cut threshold" type="int" value="8"/>
-    <Parameter name="time step cut factor" type="double" value="2.0"/>
-    <Parameter name="time step increase threshold" type="int" value="4"/>
-    <Parameter name="time step increase factor" type="double" value="1.2"/>
+    <Parameter name="min timestep (s)" type="double" value="1.5778463e-07"/>
+    <Parameter name="max timestep (s)" type="double" value="1.5778463e+07"/>
+    <Parameter name="initial timestep (s)" type="double" value="1.0e-02"/>
+    <Parameter name="timestep control method" type="string" value="simple"/>
+    <Parameter name="timestep cut threshold" type="int" value="8"/>
+    <Parameter name="timestep cut factor" type="double" value="2.0"/>
+    <Parameter name="timestep increase threshold" type="int" value="4"/>
+    <Parameter name="timestep increase factor" type="double" value="1.2"/>
   </ParameterList>
   </ParameterList>
 

@@ -2,7 +2,7 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
   <Parameter name="end time" type="double" value="5000.0"/>
-  <Parameter name="initial time step" type="double" value="1000.0"/>
+  <Parameter name="initial timestep" type="double" value="1000.0"/>
   <Parameter name="max iterations" type="int" value="50"/>
   <Parameter name="mesh resolution" type="int" value="20"/>
 
@@ -56,10 +56,10 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="min iterations" type="int" value="10"/>
             <Parameter name="max iterations" type="int" value="20"/>
-            <Parameter name="time step increase factor" type="double" value="1.2"/>
-            <Parameter name="time step reduction factor" type="double" value="0.5"/>
-            <Parameter name="max time step" type="double" value="1e+8"/>
-            <Parameter name="min time step" type="double" value="0.0"/>
+            <Parameter name="timestep increase factor" type="double" value="1.2"/>
+            <Parameter name="timestep reduction factor" type="double" value="0.5"/>
+            <Parameter name="max timestep" type="double" value="1e+8"/>
+            <Parameter name="min timestep" type="double" value="0.0"/>
             <Parameter name="monitor" type="string" value="monitor update"/>
           </ParameterList>
 

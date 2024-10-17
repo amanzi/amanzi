@@ -78,7 +78,7 @@
  ----> No update of porosity
  --> Extended Debye-Huckel activity model used
  --> Activity coefficients only computed
-     at beginning of time step 
+     at beginning of timestep 
  
    Running in batch mode
  

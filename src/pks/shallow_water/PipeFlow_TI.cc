@@ -238,7 +238,7 @@ PipeFlow_PK::FunctionalTimeDerivative(double t, const TreeVector& A, TreeVector&
 
   // compute source (external) values
   // coupling submodel="rate" returns volumetric flux [m^3/s] integrated over
-  // the time step in the last (the second) component of local data vector
+  // the timestep in the last (the second) component of local data vector
   std::vector<double> ext_S_cell(ncells_owned_, 0.0);
   ComputeExternalForcingOnCells(ext_S_cell);
 

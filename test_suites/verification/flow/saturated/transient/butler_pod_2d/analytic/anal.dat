@@ -3,7 +3,7 @@
     0.001157   2.00e-04      1.0000e+02   /t, s, & rpod
     0.01157   2.00e-04      1.0000e+50   /t, s, and rbnd(1)
 0.01157      .1000d-02  3.00d0                / q, tau, tauinc
-  25                                       / ntau -- # of time steps
+  25                                       / ntau -- # of timesteps
 1.e-06,300, 1.e+300, 1.e-300               /given,ibgn,bbsl,bbsmin
 1.e-06                                     /tlimit
 1.e-10,.01, .05                            /start1,ending1,aplus
@@ -20,9 +20,9 @@ note:
 	 that radial and angular position of observation well(s) is read in
 	 from obs.dat file.
    q: pumpage
-   tau, tauinc, ntau: initial time, time increment and # of time steps.
+   tau, tauinc, ntau: initial time, time increment and # of timesteps.
 		      tau(i) = tau(i-1) + tau*(tauinc**(i-1))
-	  where tau(i) is the ith time step.
+	  where tau(i) is the ith timestep.
    given: overall convergence criterion for summation and integration series
    ibgn: max. # of terms to be used in the summation series. if unsure about 
 	 this number, input a large number (300 to 1000).  cannot exceed the

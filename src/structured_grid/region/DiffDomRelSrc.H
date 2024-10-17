@@ -31,7 +31,7 @@
   this (nonlinear) form:
 
   (1) If a first-order time integration is used, a pointwise evaluation of Q will lead to an
-  integral of the source term != M, where the discrepancy is a function of the time stepsize.
+  integral of the source term != M, where the discrepancy is a function of the timestepsize.
   Thus, if used with temporal subcycling, we must formulate to guarantee consistent sources.
 
   (2) The form is not defined as time -> 0, and thus will not interact properly with a

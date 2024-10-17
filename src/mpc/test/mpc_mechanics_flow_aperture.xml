@@ -442,8 +442,8 @@
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="1.0e-03"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.0e-03"/>
-        <Parameter name="maximum time step" type="double" value="300.0"/>
+        <Parameter name="initial timestep" type="double" value="1.0e-03"/>
+        <Parameter name="maximum timestep" type="double" value="300.0"/>
       </ParameterList>
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
@@ -466,16 +466,16 @@
         <Parameter name="start period time" type="double" value="1.0e-03"/>
         <Parameter name="end period time" type="double" value="1000.0"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.0e-03"/>
-        <Parameter name="maximum time step" type="double" value="300.0"/>
+        <Parameter name="initial timestep" type="double" value="1.0e-03"/>
+        <Parameter name="maximum timestep" type="double" value="300.0"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{}"/>
     <Parameter name="component molar masses" type="Array(double)" value="{}"/>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{}"/>
+      <Parameter name="initial timestep" type="Array(double)" value="{}"/>
+      <Parameter name="maximum timestep" type="Array(double)" value="{}"/>
     </ParameterList>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
@@ -494,10 +494,10 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.2"/>
-            <Parameter name="time step reduction factor" type="double" value="0.8"/>
-            <Parameter name="max time step" type="double" value="4.32340e+17"/>
-            <Parameter name="min time step" type="double" value="1.0e-6"/>
+            <Parameter name="timestep increase factor" type="double" value="1.2"/>
+            <Parameter name="timestep reduction factor" type="double" value="0.8"/>
+            <Parameter name="max timestep" type="double" value="4.32340e+17"/>
+            <Parameter name="min timestep" type="double" value="1.0e-6"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
@@ -605,10 +605,10 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.2"/>
-            <Parameter name="time step reduction factor" type="double" value="0.8"/>
-            <Parameter name="max time step" type="double" value="4.3234e+17"/>
-            <Parameter name="min time step" type="double" value="1.0e-06"/>
+            <Parameter name="timestep increase factor" type="double" value="1.2"/>
+            <Parameter name="timestep reduction factor" type="double" value="0.8"/>
+            <Parameter name="max timestep" type="double" value="4.3234e+17"/>
+            <Parameter name="min timestep" type="double" value="1.0e-06"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
@@ -649,10 +649,10 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.2"/>
-            <Parameter name="time step reduction factor" type="double" value="0.8"/>
-            <Parameter name="max time step" type="double" value="4.3234e+17"/>
-            <Parameter name="min time step" type="double" value="1.0e-06"/>
+            <Parameter name="timestep increase factor" type="double" value="1.2"/>
+            <Parameter name="timestep reduction factor" type="double" value="0.8"/>
+            <Parameter name="max timestep" type="double" value="4.3234e+17"/>
+            <Parameter name="min timestep" type="double" value="1.0e-06"/>
           </ParameterList>
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">

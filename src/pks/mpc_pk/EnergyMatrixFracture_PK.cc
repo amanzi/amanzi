@@ -311,7 +311,7 @@ EnergyMatrixFracture_PK::Initialize()
 
 
 /* *******************************************************************
-* Performs one time step.
+* Performs one timestep.
 ******************************************************************* */
 bool
 EnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
@@ -340,7 +340,7 @@ EnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 EnergyMatrixFracture_PK::FunctionalResidual(double t_old,
                                             double t_new,
-                                            Teuchos::RCP<TreeVector> u_old,
+                                            Teuchos::RCP<const TreeVector> u_old,
                                             Teuchos::RCP<TreeVector> u_new,
                                             Teuchos::RCP<TreeVector> f)
 {

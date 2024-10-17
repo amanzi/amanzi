@@ -107,7 +107,7 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   // -- computes non-linear functional f = f(t,u)
   virtual void FunctionalResidual(double t_old,
                                   double t_new,
-                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<const TreeVector> u_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
 

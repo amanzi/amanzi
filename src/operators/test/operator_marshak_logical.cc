@@ -213,7 +213,7 @@ RunTestMarshakLogical(std::string op_list_name)
              dT);
     }
 
-    // change time step
+    // change timestep
     Epetra_MultiVector sol_diff(sol_old);
     sol_diff.Update(1.0, sol_new, -1.0);
 

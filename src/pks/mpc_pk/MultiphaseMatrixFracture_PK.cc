@@ -212,7 +212,7 @@ MultiphaseMatrixFracture_PK::Initialize()
 
 
 /* *******************************************************************
-* Performs one time step.
+* Performs one timestep.
 ******************************************************************* */
 bool
 MultiphaseMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
@@ -247,7 +247,7 @@ MultiphaseMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit
 void
 MultiphaseMatrixFracture_PK::FunctionalResidual(double t_old,
                                                 double t_new,
-                                                Teuchos::RCP<TreeVector> u_old,
+                                                Teuchos::RCP<const TreeVector> u_old,
                                                 Teuchos::RCP<TreeVector> u_new,
                                                 Teuchos::RCP<TreeVector> f)
 {

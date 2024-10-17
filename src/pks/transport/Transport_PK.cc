@@ -688,7 +688,7 @@ Transport_PK::InitializeFields_()
 
 
 /* *******************************************************************
-* Estimation of the time step based on T.Barth (Lecture Notes
+* Estimation of the timestep based on T.Barth (Lecture Notes
 * presented at VKI Lecture Series 1994-05, Theorem 4.2.2.
 * Routine must be called every time we update a flow field.
 *
@@ -744,7 +744,7 @@ Transport_PK::StableTimeStep(int n)
     }
   }
 
-  // loop over wet cells and calculate minimal time step
+  // loop over wet cells and calculate minimal timestep
   // -- to avoid FPEs, we skip calculation for extremely small flux
   double vol, outflux, dt_cell;
   dt_ = dt_cell = TRANSPORT_LARGE_TIME_STEP;
@@ -766,12 +766,12 @@ Transport_PK::StableTimeStep(int n)
     }
   }
 
-  // correct time step for high-order schemes
+  // correct timestep for high-order schemes
   if (spatial_disc_order == 2) dt_ /= 2;
 
   // no CFL update forsinks, since their are flow dependent.
 
-  // communicate global time step
+  // communicate global timestep
   double dt_tmp = dt_;
   wc_prev.Comm().MinAll(&dt_tmp, &dt_, 1);
 
@@ -800,7 +800,7 @@ Transport_PK::StableTimeStep(int n)
 
 
 /* *******************************************************************
-* Estimate returns last time step unless it is zero.
+* Estimate returns last timestep unless it is zero.
 ******************************************************************* */
 double
 Transport_PK::get_dt()

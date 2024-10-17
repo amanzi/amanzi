@@ -37,22 +37,22 @@
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
         <ParameterList name="Steady-State Implicit Time Integration">
-          <Parameter name="steady time step reduction factor" type="double" value="1.00000000000000006e-01"/>
-          <Parameter name="steady time step increase factor" type="double" value="1.25000000000000000e+00"/>
+          <Parameter name="steady timestep reduction factor" type="double" value="1.00000000000000006e-01"/>
+          <Parameter name="steady timestep increase factor" type="double" value="1.25000000000000000e+00"/>
           <Parameter name="steady min iterations" type="int" value="10"/>
           <Parameter name="steady max iterations" type="int" value="15"/>
           <Parameter name="steady max preconditioner lag iterations" type="int" value="30"/>
           <Parameter name="steady nonlinear tolerance" type="double" value="1.00000000000000008e-05"/>
-          <Parameter name="steady max time step" type="double" value="3.15575999999999953e+06"/>
+          <Parameter name="steady max timestep" type="double" value="3.15575999999999953e+06"/>
           <Parameter name="steady preconditioner" type="string" value="Hypre AMG"/>
         </ParameterList>
         <ParameterList name="Transient Implicit Time Integration">
           <Parameter name="transient min iterations" type="int" value="10"/>
           <Parameter name="transient max iterations" type="int" value="15"/>
           <Parameter name="transient max preconditioner lag iterations" type="int" value="5"/>
-          <Parameter name="transient time step increase factor" type="double" value="1.25000000000000000e+00"/>
-          <Parameter name="transient time step reduction factor" type="double" value="5.00000000000000000e-01"/>
-          <Parameter name="transient max time step" type="double" value="1.00000000000000000e+07"/>
+          <Parameter name="transient timestep increase factor" type="double" value="1.25000000000000000e+00"/>
+          <Parameter name="transient timestep reduction factor" type="double" value="5.00000000000000000e-01"/>
+          <Parameter name="transient max timestep" type="double" value="1.00000000000000000e+07"/>
         </ParameterList>
         <ParameterList name="Linear Solver">
           <Parameter name="linear solver preconditioner" type="string" value="gmres"/>
@@ -966,7 +966,7 @@
     <Parameter name="Engine Input File" type="string" value="rifle-arora-spycher.in"/>
     <Parameter name="Verbosity" type="string" value="high"/>
 
-    <!-- time step control -->
+    <!-- timestep control -->
     <Parameter name="Initial Time Step (s)" type="double" value="5.0"/>
     <Parameter name="Time Step Control Method" type="string" value="simple"/>  <!-- default is fixed -->
     <Parameter name="Time Step Cut Threshold" type="int" value="8"/>           <!-- default is 8     -->

@@ -23,11 +23,8 @@ namespace Amanzi {
 TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
                                                      Teuchos::ParameterList& plist,
                                                      const Teuchos::RCP<State>& S)
-  : TimestepController(plist),
-    plist_(plist),
-    name_(Keys::cleanName(name, true)),
+  : TimestepControllerRecoverable(name, plist, S),
     count_increased_before_increase_(0),
-    S_(S),
     successive_increases_(0),
     last_fail_(0)
 {
@@ -71,39 +68,28 @@ TimestepControllerSmarter::TimestepControllerSmarter(const std::string& name,
     growth_wait_after_fail_ = Teuchos::rcp(new int(0));
   }
 
-  max_its_ = plist_.get<int>("max iterations");
-  min_its_ = plist_.get<int>("min iterations");
+  max_its_ = plist.get<int>("max iterations");
+  min_its_ = plist.get<int>("min iterations");
   AMANZI_ASSERT(max_its_ > min_its_);
   AMANZI_ASSERT(min_its_ >= 0);
 
-  reduction_factor_ = plist_.get<double>("time step reduction factor");
+  reduction_factor_ = plist.get<double>("timestep reduction factor");
   AMANZI_ASSERT(reduction_factor_ >= 0.0);
   AMANZI_ASSERT(reduction_factor_ <= 1.0);
 
-  (*increase_factor_) = plist_.get<double>("time step increase factor");
+  (*increase_factor_) = plist.get<double>("timestep increase factor");
   increase_factor0_ = (*increase_factor_);
-  max_increase_factor_ = plist_.get<double>("max time step increase factor", 10.);
+  max_increase_factor_ = plist.get<double>("max timestep increase factor", 10.);
   AMANZI_ASSERT((*increase_factor_) >= 1.0);
 
-  if (plist_.isParameter("max time step [s]")) {
-    max_dt_ = plist_.get<double>("max time step [s]");
-  } else {
-    max_dt_ = plist_.get<double>("max time step");
-  }
-  if (plist_.isParameter("min time step [s]")) {
-    min_dt_ = plist_.get<double>("min time step [s]");
-  } else {
-    min_dt_ = plist_.get<double>("min time step");
-  }
-
-  (*growth_wait_after_fail_) = plist_.get<int>("growth wait after fail");
+  (*growth_wait_after_fail_) = plist.get<int>("growth wait after fail");
   growth_wait_after_fail0_ = (*growth_wait_after_fail_);
-  count_increased_before_increase_ = plist_.get<int>("count before increasing increase factor");
+  count_increased_before_increase_ = plist.get<int>("count before increasing increase factor");
 }
 
 
 double
-TimestepControllerSmarter::get_timestep(double dt, int iterations)
+TimestepControllerSmarter::getTimestep_(double dt, int iterations, bool valid)
 {
   double dt_next(dt);
 
@@ -147,35 +133,11 @@ TimestepControllerSmarter::get_timestep(double dt, int iterations)
       (*successive_increases_) = 0;
       (*increase_factor_) = std::min(increase_factor0_, max_increase_factor_);
 
-      if (iterations > max_its_) { // decrease the timestep
+      if (iterations > max_its_ || !valid) { // decrease the timestep
         dt_next = dt * reduction_factor_;
       }
     }
   }
-
-  // check max step size
-  if (dt_next > max_dt_) dt_next = max_dt_;
-
-  // check min step size
-  if (dt_next < min_dt_) {
-    if (iterations < 0) {
-      Errors::TimeStepCrash msg;
-      msg << "Timestep failed: dT less than minimum (" << min_dt_ << ").";
-      Exceptions::amanzi_throw(msg);
-    } else {
-      dt_next = min_dt_;
-    }
-  }
-
-  // check that if we have failed, our step size has decreased.
-  if (iterations < 0) {
-    if (dt - dt_next < 1.e-10) {
-      Errors::TimeStepCrash msg(
-        "Timestep failed: dT change is too small (check reduction_factor).");
-      Exceptions::amanzi_throw(msg);
-    }
-  }
-
   return dt_next;
 }
 

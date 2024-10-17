@@ -20,7 +20,7 @@ boundary conditions, van Genuchten saturation function, and Mualem relative
 permeability function. Infiltration into a dry coarse-grained sediment such as sand
 is numerically challenging because of the highly nonlinear behavior of the relative 
 permeability function, which leads to a large pressure drop across a sharp wetting 
-front. Computational efficiency is also being tested because small time steps are 
+front. Computational efficiency is also being tested because small timesteps are 
 typically required when the infiltration begins. 
 
 The analytical solution is based on the one-dimensional Richards (1931) equation
