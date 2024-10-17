@@ -182,7 +182,7 @@ html_theme_options = {
     'prev_next_buttons_location': 'both',
     "secondary_sidebar_items": [],
     "switcher": {
-        "json_url": "_static/versions.json",
+        "json_url": "https://raw.githubusercontent.com/amanzi/ats/master/docs/documentation/source/_static/versions.json",
         "version_match": 'v1.5',
     },
 #    "navbar_start" : ["navbar-logo", ],

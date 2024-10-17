@@ -6,7 +6,8 @@
 Amanzi
 $$$$$$
 
-.. image:: images/amanzi.png
+..
+   image:: images/amanzi.png
 
 Amanzi provides a flexible and extensible parallel flow and reactive transport simulation 
 capability for environmental applications. 
@@ -25,19 +26,19 @@ contaminant migration under partially saturated, nonisothermal conditions in fra
 
 .. toctree::
    :maxdepth: 2
-   :caption: User Guide:
+   :caption: User Guides:
 
    input_specs
 
 ..   
-.. toctree::
-   :maxdepth: 2
-   :caption: Developers Guide:
+   .. toctree::
+      :maxdepth: 2
+      :caption: Developers Guide:
              
 
-Indices and tables
-%%%%%%%%%%%%%%%%%%
+.. Indices and tables
+.. %%%%%%%%%%%%%%%%%%
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. * :ref:`genindex`
+.. * :ref:`modindex`
+.. * :ref:`search`

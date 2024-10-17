@@ -21,7 +21,7 @@ guides = {}
 guides['index'] = {
     'index_title': 'Guides',
     'index_file': 'guides/index.rst',
-    'index_list': ['developer_guide', 'theory_guide']
+    'index_list': ['developer_guide', 'theory_guide', 'input_spec_s', 'input_spec_u']
 }
 
 guides['developer_guide'] = {
@@ -35,6 +35,18 @@ guides['theory_guide'] = {
     'dest_file': 'guides/theory.pdf',
     'index_entry': 'theory.pdf'
 }
+
+# guides['input_spec_s'] = {
+#     'from_file': '../input_spec/AmanziInputSpec-s.pdf',
+#     'dest_file': 'guides/AmanziInputSpec-s.pdf',
+#     'index_entry': 'AmanziInputSpec-s.pdf'
+# }
+
+# guides['input_spec_u'] = {
+#     'from_file': '../input_spec/AmanziInputSpec-u.pdf',
+#     'dest_file': 'guides/AmanziInputSpec-u.pdf',
+#     'index_entry': 'AmanziInputSpec-u.pdf'
+# }
 
 # =======================================================================================
 
@@ -60,7 +72,7 @@ def copy_developer_guide():
     else:
         print(f"\nSource file {src} does not exist! Not copied to {dest}\n")
 
-# Function to copy the developer guide PDF
+# Function to copy the theory guide PDF
 def copy_theory_guide():
     src = guides['theory_guide']['from_file']
     dest = guides['theory_guide']['dest_file']
@@ -76,8 +88,43 @@ def copy_theory_guide():
     else:
         print(f"\nSource file {src} does not exist! Not copied to {dest}\n")
 
+# # Function to copy the input guide PDF
+# def copy_input_guide_s():
+#     src = guides['input_spec_s']['from_file']
+#     dest = guides['input_spec_s']['dest_file']
+    
+#     # Check if source file exists before copying
+#     if os.path.exists(src):
+#         # Ensure the destination directory exists
+#         os.makedirs(os.path.dirname(dest), exist_ok=True)
+        
+#         # Copy the file from src to dest
+#         shutil.copyfile(src, dest)
+#         print(f"Copied {src} to {dest}")
+#     else:
+#         print(f"\nSource file {src} does not exist! Not copied to {dest}\n")
+
+# # Function to copy the input guide PDF
+# def copy_input_guide_u():
+#     src = guides['input_spec_u']['from_file']
+#     dest = guides['input_spec_u']['dest_file']
+    
+#     # Check if source file exists before copying
+#     if os.path.exists(src):
+#         # Ensure the destination directory exists
+#         os.makedirs(os.path.dirname(dest), exist_ok=True)
+        
+#         # Copy the file from src to dest
+#         shutil.copyfile(src, dest)
+#         print(f"Copied {src} to {dest}")
+#     else:
+#         print(f"\nSource file {src} does not exist! Not copied to {dest}\n")
+
+
 # Main execution starts here
 if opts.full_guide:
     # Call function to copy the developer guide if the --full-guide option is passed
     copy_developer_guide()
     copy_theory_guide()
+    # copy_input_guide_s()
+    # copy_input_guide_u()

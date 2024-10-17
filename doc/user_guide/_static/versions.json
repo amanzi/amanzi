@@ -2,23 +2,11 @@
     {
         "name": "1.5 (stable)",
         "version": "1.5",
-        "url": "https://github.com/amanzi/amanzi/",
+        "url": "https://amanzi.github.io/ats/stable/",
         "preferred": "1.5"
-    },
-    {
-        "name": "1.5",
-        "version": "1.5",
-        "url": "https://github.com/amanzi/amanzi/",
-        "preferred": "1.5"
-    },
-    {
-        "name": "1.4",
-        "version": "1.4",
-        "url": "https://github.com/amanzi/amanzi/",
-        "preferred": "1.4"
     },
     {
         "version": "dev",
-        "url": "https://github.com/amanzi/amanzi/"
+        "url": "https://amanzi.github.io/ats/dev/"
     }
 ]

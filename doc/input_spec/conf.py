@@ -47,7 +47,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon',
-    'sphinx_rtd_theme',
+    'pydata_sphinx_theme',
     # 'nbsphinx',
 ]
 
@@ -84,13 +84,22 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'pydata_sphinx_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {
+    "logo": {
+    "image_light": "../web_front/_static/Amanzi-color.png",
+    "image_dark": "../web_front/_static/Amanzi-Dark.png",
+    },
+    "navbar_start": ["navbar-logo"],
+    'prev_next_buttons_location': 'both',
+    "secondary_sidebar_items": [],
+#    "navbar_start" : ["navbar-logo", ],
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

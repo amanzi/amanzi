@@ -60,6 +60,8 @@ clean:
 	-rm -rf $(BUILDDIR)/*
 	cd ../developer_guide && $(MAKE) distclean
 	cd ../theory_guide && $(MAKE) distclean
+	cd ../input_spec && $(MAKE) clean
+	-rm -rf guides/*
 
 
 html-ssl-set:
@@ -74,8 +76,9 @@ html:
 	@echo "Setting up guide indexes, and running any tests for this build ..."
 	@echo "Building Documentation and Theory Guides."
 	export PYTHONPATH=$(NEW_PYTHONPATH);\
-	cd ../developer_guide && $(MAKE)
-	cd ../theory_guide && $(MAKE)
+	cd ../developer_guide && $(MAKE) first
+	cd ../theory_guide && $(MAKE) first
+	cd ../input_spec && $(MAKE) all
 	python collect.py --full-guide
 	make MATHJAX_SSL=0 html-ssl-set
 
