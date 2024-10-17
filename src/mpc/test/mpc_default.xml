@@ -234,10 +234,11 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.0"/>
-            <Parameter name="time step reduction factor" type="double" value="0.5"/>
-            <Parameter name="max time step" type="double" value="1.0"/>
-            <Parameter name="min time step" type="double" value="1.0e-10"/>
+            <Parameter name="timestep increase factor" type="double" value="1.0"/>
+            <Parameter name="timestep reduction factor" type="double" value="0.5"/>
+            <Parameter name="max timestep" type="double" value="1.0"/>
+            <Parameter name="min timestep" type="double" value="1.0e-10"/>
+	    <Parameter name="initial timestep" type="double" value="0.002"/>
           </ParameterList>
 
           <Parameter name="solver type" type="string" value="nka"/>
@@ -263,10 +264,11 @@
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.0"/>
-            <Parameter name="time step reduction factor" type="double" value="0.5"/>
-            <Parameter name="max time step" type="double" value="1.0"/>
-            <Parameter name="min time step" type="double" value="1.0e-10"/>
+            <Parameter name="timestep increase factor" type="double" value="1.0"/>
+            <Parameter name="timestep reduction factor" type="double" value="0.5"/>
+            <Parameter name="max timestep" type="double" value="1.0"/>
+            <Parameter name="min timestep" type="double" value="1.0e-10"/>
+	    <Parameter name="initial timestep" type="double" value="0.002"/>
           </ParameterList>
 
           <Parameter name="solver type" type="string" value="nka"/>

@@ -251,7 +251,7 @@ FlowMatrixFracture_PK::Initialize()
   if (ti_list_->isSublist("initialization")) {
     // bool wells_on = ti_list_->sublist("initialization").get<bool>("active wells", false);
     double dt(-1e+98), dt_solver;
-    bool fail = time_stepper_->TimeStep(dt, dt_solver, solution_);
+    bool fail = time_stepper_->AdvanceStep(dt, dt_solver, solution_);
     if (fail) Exceptions::amanzi_throw("Solver for coupled flow did not converge.");
   }
 
@@ -306,7 +306,7 @@ FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void
 FlowMatrixFracture_PK::FunctionalResidual(double t_old,
                                           double t_new,
-                                          Teuchos::RCP<TreeVector> u_old,
+                                          Teuchos::RCP<const TreeVector> u_old,
                                           Teuchos::RCP<TreeVector> u_new,
                                           Teuchos::RCP<TreeVector> f)
 {

@@ -25,13 +25,13 @@ namespace NavierStokes {
 void
 NavierStokes_PK::FunctionalResidual(double t_old,
                                     double t_new,
-                                    Teuchos::RCP<TreeVector> u_old,
+                                    Teuchos::RCP<const TreeVector> u_old,
                                     Teuchos::RCP<TreeVector> u_new,
                                     Teuchos::RCP<TreeVector> f)
 {
   double dtp = t_new - t_old;
 
-  Teuchos::RCP<CompositeVector> uu = u_old->SubVector(0)->Data();
+  Teuchos::RCP<const CompositeVector> uu = u_old->SubVector(0)->Data();
   Teuchos::RCP<CompositeVector> fu = f->SubVector(0)->Data();
   Teuchos::RCP<CompositeVector> fp = f->SubVector(1)->Data();
 

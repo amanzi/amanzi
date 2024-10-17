@@ -62,7 +62,7 @@
   </ParameterList>
 
   <ParameterList name="cycle driver">
-    <Parameter name="max time step size" type="double" value="1.0e+6"/>    
+    <Parameter name="max timestep size" type="double" value="1.0e+6"/>    
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
 	<ParameterList name="PK tree">

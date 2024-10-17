@@ -662,7 +662,7 @@ Richards_PK::Initialize()
     if (!bdf1_list.isSublist("verbose object"))
       bdf1_list.sublist("verbose object") = fp_list_->sublist("verbose object");
 
-    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
   } else {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "WARNING: BDF1 time integration list is missing..." << std::endl;
@@ -984,7 +984,7 @@ Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // trying to make a step
   bool failed(false);
-  failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
+  failed = bdf1_dae_->AdvanceStep(dt_, dt_next_, soln_);
   if (failed) {
     dt_ = dt_next_;
 

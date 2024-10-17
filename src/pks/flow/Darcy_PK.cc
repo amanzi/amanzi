@@ -27,6 +27,7 @@
 #include "MeshAlgorithms.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PK_Utils.hh"
+#include "TreeVector.hh"
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
 
@@ -345,8 +346,10 @@ Darcy_PK::Initialize()
     error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE; // usually 1e-4;
 
     // time step controller
-    TimestepControllerFactory<Epetra_MultiVector> fac;
-    ts_control_ = fac.Create(bdf1_list, pdot_cells, pdot_cells_prev);
+    auto pdot_cells_prev_c = Teuchos::RCP<const Epetra_Vector>(pdot_cells_prev);
+    auto pdot_cells_c = Teuchos::RCP<const Epetra_Vector>(pdot_cells);
+    ts_control_ = createTimestepController("BDF1", bdf1_list, S_, pdot_cells_c, pdot_cells_prev_c);
+
   } else {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "WARNING: BDF1 time integration list is missing..." << std::endl;
@@ -606,7 +609,7 @@ Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // estimate time multiplier
-  dt_desirable_ = ts_control_->get_timestep(dt_MPC, 1);
+  dt_desirable_ = ts_control_->getTimestep(dt_MPC, 1, true);
 
   // Darcy_PK always takes the suggested time step and cannot fail
   dt_tuple times(t_new, dt_MPC);

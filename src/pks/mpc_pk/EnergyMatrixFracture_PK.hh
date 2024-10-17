@@ -46,7 +46,7 @@ class EnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
 
   virtual void FunctionalResidual(double t_old,
                                   double t_new,
-                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<const TreeVector> u_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> f) override;
 

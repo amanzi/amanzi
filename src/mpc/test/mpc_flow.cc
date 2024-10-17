@@ -69,16 +69,16 @@ TEST(MPC_DRIVER_FLOW)
 
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
-    try {
+    // try {
       cycle_driver.Go();
       S->Get<CompositeVector>("saturation_liquid").MeanValue(&avg1);
-    } catch (const std::exception& e) {
-      std::cerr << e.what() << "\n\n";
-      ;
-      CHECK(false);
-    } catch (...) {
-      CHECK(false);
-    }
+    // } catch (const std::exception& e) {
+    //   std::cerr << e.what() << "\n\n";
+    //   ;
+    //   CHECK(false);
+    // } catch (...) {
+    //   CHECK(false);
+    // }
   }
   WriteStateStatistics(*S);
   S = Teuchos::null;
@@ -102,6 +102,7 @@ TEST(MPC_DRIVER_FLOW)
   }
   WriteStateStatistics(*S);
 
+  std::cout << "avg = " << avg1 << "," << avg2 << std::endl;
   CHECK_CLOSE(avg1, avg2, 1e-6 * avg1);
 
   // checking that we created only two pks

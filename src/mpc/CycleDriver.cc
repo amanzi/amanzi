@@ -364,9 +364,13 @@ CycleDriver::ReportMemory()
 
   double doubles_count(0.0);
   for (auto it = S_->data_begin(); it != S_->data_end(); ++it) {
-    if (S_->GetRecord(it->first).ValidType<CompositeVector>()) {
-      doubles_count +=
-        static_cast<double>(S_->Get<CompositeVector>(it->first).GetLocalElementCount());
+    auto n_tags = std::size(*it->second);
+    if (n_tags > 0) {
+      const Tag& tag = it->second->begin()->first;
+      if (S_->GetRecord(it->first, tag).ValidType<CompositeVector>()) {
+        doubles_count +=
+          n_tags * static_cast<double>(S_->Get<CompositeVector>(it->first, tag).GetLocalElementCount());
+      }
     }
   }
   double global_doubles_count(0.0);

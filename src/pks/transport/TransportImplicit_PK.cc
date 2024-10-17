@@ -307,12 +307,15 @@ TransportImplicit_PK::AdvanceStepHO_(double t_old, double t_new, int* tot_itrs)
     *(*solution_->ViewComponent("cell"))(0) = *(*tcc->ViewComponent("cell"))(i);
 
     failed = bdf1_dae_[i]->AdvanceStep(dt_, dt_next, soln_);
-    dt_ = dt_next;
-    if (failed) return failed;
+    if (failed) {
+      dt_ = dt_next;
+      return failed;
+    }
 
     *(*tcc_tmp->ViewComponent("cell"))(i) = *(*solution_->ViewComponent("cell"))(0);
     *tot_itrs += bdf1_dae_[i]->number_nonlinear_steps() - num_itrs;
   }
+  dt_ = dt_next;
 
   // if we reach this point, we can commit solution
   for (int i = 0; i < num_aqueous; i++) {

@@ -23,7 +23,8 @@ TimestepControllerRecoverable::TimestepControllerRecoverable(const std::string& 
   if (plist.isParameter("initial timestep [s]")) {
     dt_init = plist.get<double>("initial timestep [s]");
   } else {
-    dt_init = plist.get<double>("initial timestep");
+    // by default, allow the driver's initial timestep
+    dt_init = plist.get<double>("initial timestep", -1.0);
   }
 
   if (plist.isParameter("max timestep")) {
@@ -53,6 +54,10 @@ TimestepControllerRecoverable::TimestepControllerRecoverable(const std::string& 
 double
 TimestepControllerRecoverable::getTimestep(double dt, int iterations, bool valid)
 {
+  // negative dt is used by some steady-state PKs in Amanzi, but a second step
+  // is never taken.  Just don't error.
+  if (dt < 0) return dt;
+
   double dt_prev_recommended = *dt_internal_;
   double dt_recommended = getTimestep_(dt, iterations, valid);
 
@@ -76,7 +81,6 @@ TimestepControllerRecoverable::getTimestep(double dt, int iterations, bool valid
   }
 
   *dt_internal_ = dt_recommended;
-  std::cout << "getTimestep: dt = " << dt << ", dt_prev_recommended = " << dt_prev_recommended << ", dt_recommended = " << dt_recommended << std::endl;
   return dt_recommended;
 }
 

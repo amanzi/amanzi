@@ -90,7 +90,7 @@ TEST(NAVIER_STOKES_2D)
       NSPK->UpdatePreconditioner(T0, soln, dT0);
     }
 
-    while (NSPK->bdf1_dae()->TimeStep(dT, dTnext, soln)) { dT = dTnext; }
+    while (NSPK->bdf1_dae()->AdvanceStep(dT, dTnext, soln)) { dT = dTnext; }
     NSPK->bdf1_dae()->CommitSolution(dT, soln);
 
     T = NSPK->bdf1_dae()->time();

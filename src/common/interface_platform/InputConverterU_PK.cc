@@ -92,10 +92,10 @@ InputConverterU::TranslateTimeIntegrator_(const std::string& err_options,
   Teuchos::ParameterList& controller = bdf1.sublist("timestep controller " + name + " parameters");
   controller.set<int>("max iterations", TI_MAX_ITERATIONS)
     .set<int>("min iterations", TI_MIN_ITERATIONS)
-    .set<double>("time step increase factor", dt_inc_default)
-    .set<double>("time step reduction factor", dt_cut_default)
-    .set<double>("max time step", MAXIMUM_TIMESTEP)
-    .set<double>("min time step", MINIMUM_TIMESTEP);
+    .set<double>("timestep increase factor", dt_inc_default)
+    .set<double>("timestep reduction factor", dt_cut_default)
+    .set<double>("max timestep", MAXIMUM_TIMESTEP)
+    .set<double>("min timestep", MINIMUM_TIMESTEP);
   if (name == "adaptive")
     controller.set<double>("relative tolerance", 1e-4).set<double>("absolute tolerance", 10.0);
 

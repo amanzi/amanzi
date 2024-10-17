@@ -27,20 +27,20 @@
             <Parameter name="steady min iterations" type="int" value="10"/>
             <Parameter name="steady limit iterations" type="int" value="20"/>
             <Parameter name="steady nonlinear tolerance" type="double" value="1e-6"/>
-            <Parameter name="steady max time step" type="double" value="3.16E11"  units="s"/>
+            <Parameter name="steady max timestep" type="double" value="3.16E11"  units="s"/>
             <Parameter name="steady max preconditioner lag iterations" type="int" value="1"/>
-            <Parameter name="steady time step reduction factor" type="double" value="0.5"/>
-            <Parameter name="steady time step increase factor" type="double" value="1.25"/>
+            <Parameter name="steady timestep reduction factor" type="double" value="0.5"/>
+            <Parameter name="steady timestep increase factor" type="double" value="1.25"/>
           </ParameterList>
           <ParameterList name="Transient Implicit Time Integration">
             <Parameter name="transient max iterations" type="int" value="15"/>
             <Parameter name="transient min iterations" type="int" value="10"/>
             <Parameter name="transient limit iterations" type="int" value="20"/>
             <Parameter name="transient nonlinear tolerance" type="double" value="1e-6"/>
-            <Parameter name="transient max time step" type="double" value="8.64E3"  units="s"/>
+            <Parameter name="transient max timestep" type="double" value="8.64E3"  units="s"/>
             <Parameter name="transient max preconditioner lag iterations" type="int" value="0"/>
-            <Parameter name="transient time step reduction factor" type="double" value="0.5"/>
-            <Parameter name="transient time step increase factor" type="double" value="1.25"/>
+            <Parameter name="transient timestep reduction factor" type="double" value="0.5"/>
+            <Parameter name="transient timestep increase factor" type="double" value="1.25"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>

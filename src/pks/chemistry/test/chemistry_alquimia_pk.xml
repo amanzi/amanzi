@@ -206,13 +206,13 @@
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
-      <Parameter name="max time step (s)" type="double" value="1.57784630000000000e+07"/>
-      <Parameter name="min time step (s)" type="double" value="1.00000000000000000e+10"/>
+      <Parameter name="max timestep (s)" type="double" value="1.57784630000000000e+07"/>
+      <Parameter name="min timestep (s)" type="double" value="1.00000000000000000e+10"/>
       <Parameter name="initial time step (s)" type="double" value="1.57784630000000000e+07"/>
       <Parameter name="time step cut threshold" type="int" value="8"/>
       <Parameter name="time step cut factor" type="double" value="2.00000000000000000e+00"/>
       <Parameter name="time step increase threshold" type="int" value="4"/>
-      <Parameter name="time step increase factor" type="double" value="1.19999999999999996e+00"/>
+      <Parameter name="timestep increase factor" type="double" value="1.19999999999999996e+00"/>
       <Parameter name="time step control method" type="string" value="fixed"/>
       <Parameter name="initial conditions time" type="double" value="0.00000000000000000e+00"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>

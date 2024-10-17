@@ -63,7 +63,7 @@ class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF {
   //    By default this just calls each sub pk FunctionalResidual().
   virtual void FunctionalResidual(double t_old,
                                   double t_new,
-                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<const TreeVector> u_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> g);
 
@@ -181,7 +181,7 @@ PK_MPCStrong<PK_Base>::Initialize()
     Teuchos::ParameterList& ts_plist = my_list_->sublist("time integrator").sublist("BDF1");
     ts_plist.set("initial time", S_->get_time());
     time_stepper_ =
-      Teuchos::rcp(new Amanzi::BDF1_TI<TreeVector, TreeVectorSpace>(*this, ts_plist, solution_));
+      Teuchos::rcp(new Amanzi::BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", ts_plist, *this, solution_->get_map(), S_));
 
     // -- initialize time derivative
     Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp(new TreeVector(*solution_));
@@ -211,7 +211,7 @@ PK_MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new, bool reinit)
   if (true) { // this is here simply to create a context for timer,
               // which stops the clock when it is destroyed at the
               // closing brace.
-    fail = time_stepper_->TimeStep(dt_, dt_solver, solution_);
+    fail = time_stepper_->AdvanceStep(dt_, dt_solver, solution_);
   }
 
   if (!fail) {
@@ -238,14 +238,14 @@ template <class PK_Base>
 void
 PK_MPCStrong<PK_Base>::FunctionalResidual(double t_old,
                                           double t_new,
-                                          Teuchos::RCP<TreeVector> u_old,
+                                          Teuchos::RCP<const TreeVector> u_old,
                                           Teuchos::RCP<TreeVector> u_new,
                                           Teuchos::RCP<TreeVector> g)
 {
   // loop over sub-PKs
   for (unsigned int i = 0; i != sub_pks_.size(); ++i) {
     // pull out the old solution sub-vector
-    Teuchos::RCP<TreeVector> pk_u_old(Teuchos::null);
+    Teuchos::RCP<const TreeVector> pk_u_old(Teuchos::null);
     if (u_old != Teuchos::null) {
       pk_u_old = u_old->SubVector(i);
       if (pk_u_old == Teuchos::null) {
