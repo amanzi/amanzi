@@ -1,7 +1,7 @@
 [
     {
         "name": "1.5.1 (stable)",
-        "version": "1.5",
+        "version": "1.5.1",
         "url": "https://github.com/amanzi/amanzi/blob/ehinrichs/testing-gh/1.5.1/user_guide/_build/html/index.html",
         "preferred": "1.5.1"
     },
