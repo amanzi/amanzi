@@ -196,7 +196,7 @@ TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   *wc_prev = *wc;
   S_->GetEvaluator(wc_key_).Update(*S_, "transport");
 
-  // calculate stable time step
+  // calculate stable timestep
   double dt_shift = 0.0, dt_global = dt_MPC;
   double time = S_->intermediate_time();
   if (time >= 0.0) {
@@ -295,7 +295,7 @@ TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // output of selected statistics
   VV_PrintLimiterStatistics();
 
-  dt_ = dt_original; // restore the original time step (just in case)
+  dt_ = dt_original; // restore the original timestep (just in case)
 
   // Dispersion/diffusion solver
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", false);

@@ -53,7 +53,7 @@ class EnergyOnePhase_PK : public Energy_PK {
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
   virtual void FunctionalResidual(const double t_old,
                                   double t_new,
-                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<const TreeVector> u_old,
                                   Teuchos::RCP<TreeVector> u_new,
                                   Teuchos::RCP<TreeVector> g) final;
   virtual double
@@ -73,7 +73,7 @@ class EnergyOnePhase_PK : public Energy_PK {
   const Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<CompositeVector> solution;
 
-  // time stepping
+  // timestepping
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace>> bdf1_dae_;
   int num_itrs_;
   double dt_, dt_next_;

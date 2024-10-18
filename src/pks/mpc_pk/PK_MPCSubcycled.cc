@@ -29,7 +29,7 @@ PK_MPCSubcycled::PK_MPCSubcycled(Teuchos::ParameterList& pk_tree,
                                  const Teuchos::RCP<TreeVector>& soln)
   : PK_MPC<PK>(pk_tree, global_list, S, soln)
 {
-  // Master PK is the PK whose time step size sets the size, the slave is subcycled.
+  // Master PK is the PK whose timestep size sets the size, the slave is subcycled.
   master_ = my_list_->get<int>("master PK index", 0);
   slave_ = (master_ == 1) ? 0 : 1;
 

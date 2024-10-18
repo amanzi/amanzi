@@ -1,4 +1,4 @@
-# plots cation concentration along x at last time step 
+# plots cation concentration along x at last timestep 
 # benchmark: compares to pflotran simulation results
 # author: S.Molins - Sept. 2013
 

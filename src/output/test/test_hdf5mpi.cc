@@ -73,7 +73,7 @@ TEST(HDF5_MPI)
     fake_pressure->ReplaceGlobalValues(4, fake_values, cell_index_list);
     node_quantity->ReplaceGlobalValues(12, node_values, node_index_list);
 
-    // write time step data
+    // write timestep data
     viz_output->open_h5file();
     viz_output->createTimestep(time, i, "");
     viz_output->writeCellDataReal(*cell_quantity, "cell_quantity");

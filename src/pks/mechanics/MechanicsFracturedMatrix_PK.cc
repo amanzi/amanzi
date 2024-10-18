@@ -147,7 +147,7 @@ MechanicsFracturedMatrix_PK::Initialize()
 void
 MechanicsFracturedMatrix_PK::FunctionalResidual(double t_old,
                                                 double t_new,
-                                                Teuchos::RCP<TreeVector> u_old,
+                                                Teuchos::RCP<const TreeVector> u_old,
                                                 Teuchos::RCP<TreeVector> u_new,
                                                 Teuchos::RCP<TreeVector> f)
 {
@@ -175,7 +175,7 @@ MechanicsFracturedMatrix_PK::FunctionalResidual(double t_old,
 
 
 /* *******************************************************************
-* Updates after successful time steps
+* Updates after successful timesteps
 ******************************************************************* */
 void
 MechanicsFracturedMatrix_PK::CommitStep(double t_old, double t_new, const Tag& tag)

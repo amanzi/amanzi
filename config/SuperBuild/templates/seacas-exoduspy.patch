@@ -41,14 +41,14 @@
 +
 +* The results are optional and include five types of variables -- nodal,
 +element, nodeset, sideset, and global -- each of which is stored
-+through time. Nodal results are output (at each time step) for all the
++through time. Nodal results are output (at each timestep) for all the
 +nodes in the model. An example of a nodal variable is displacement in
 +the X direction. Element, nodeset, and sideset results are output (at
-+each time step) for all entities (elements, nodes, sides) in one or
++each timestep) for all entities (elements, nodes, sides) in one or
 +more entity block. For example, stress may be an element
 +variable. Another use of element variables is to record element status
 +(a binary flag indicating whether each element is "alive" or "dead")
-+through time. Global results are output (at each time step) for a
++through time. Global results are output (at each timestep) for a
 +single element or node, or for a single property. Linear momentum of a
 +structure and the acceleration at a particular point are both examples
 +of global variables. Although these examples correspond to typical FE
@@ -343,7 +343,7 @@
 -    'EX_INQ_SS_ELEM_LEN': 13,                 # inquire length of side set element list
 -    'EX_INQ_QA': 14,                          # inquire number of QA records
 -    'EX_INQ_INFO': 15,                        # inquire number of info records
--    'EX_INQ_TIME': 16,                        # inquire number of time steps in the database
+-    'EX_INQ_TIME': 16,                        # inquire number of timesteps in the database
 -    'EX_INQ_EB_PROP': 17,                     # inquire number of element block properties
 -    'EX_INQ_NS_PROP': 18,                     # inquire number of node set properties
 -    'EX_INQ_SS_PROP': 19,                     # inquire number of side set properties
@@ -618,7 +618,7 @@
 +        EX_INQ_SS_ELEM_LEN = 13                 # inquire length of side set element list
 +        EX_INQ_QA = 14                          # inquire number of QA records
 +        EX_INQ_INFO = 15                        # inquire number of info records
-+        EX_INQ_TIME = 16                        # inquire number of time steps in the database
++        EX_INQ_TIME = 16                        # inquire number of timesteps in the database
 +        EX_INQ_EB_PROP = 17                     # inquire number of element block properties
 +        EX_INQ_NS_PROP = 18                     # inquire number of node set properties
 +        EX_INQ_SS_PROP = 19                     # inquire number of side set properties
@@ -1208,7 +1208,7 @@
 +        Number of element side sets  = 3	 Length of element sides      =   300	 Number of sideset variables    =  3
 +        Number of assemblies         = 4         	                              	 Number of assembly variables   = 10
 +        Number of blobs              = 0         	                              	 Number of blob     variables   =  0
-+        Number of time steps         = 5
++        Number of timesteps         = 5
 +        ```
 +        """
 +
@@ -1253,7 +1253,7 @@
 +              " Number of blobs              = {20:3n}\t"
 +              "                                   {2:11s}\t"
 +              " Number of blob red vars        = {21:6d}\n"
-+              " Number of time steps         = {16:3n}\n"
++              " Number of timesteps         = {16:3n}\n"
 +              .format(self.fileName,
 +                      self.num_dimensions(), "",
 +                      self.num_nodes(),
@@ -1567,7 +1567,7 @@
 -      return sierra_inp
 -
 -  #
--  # time steps
+-  # timesteps
 -  #
 -  # --------------------------------------------------------------------
 -
@@ -1575,7 +1575,7 @@
 -    """
 -    num_times = exo.num_times()
 -
--      -> get the number of time steps
+-      -> get the number of timesteps
 -
 -      return value(s):
 -        <int>  num_times
@@ -1658,13 +1658,13 @@
 +        return sierra_inp
 +
 +    #
-+    # time steps
++    # timesteps
 +    #
 +    # --------------------------------------------------------------------
 +
 +    def num_times(self):
 +        """
-+        get the number of time steps
++        get the number of timesteps
 +
 +        >>> num_times = exo.num_times()
 +
@@ -1709,7 +1709,7 @@
 +        Parameters
 +        ----------
 +        time_step : int
-+            time step index (1-based)
++            timestep index (1-based)
 +        time_val : float
 +            time value for this step
 +
@@ -1814,7 +1814,7 @@
 +        >>> x_coords, y_coords, z_coords = exo.get_coords()
  
 -      input value(s):
--        <int>    time_step  time step index (1-based)
+-        <int>    time_step  timestep index (1-based)
 -        <float>  time_val   time value for this step
 +        Returns
 +        -------
@@ -2080,7 +2080,7 @@
 +    def get_node_variable_values(self, name, step):
 +        """
 +        get list of nodal variable values for a nodal variable name
-+        and time step
++        and timestep
  
 -  def num_nodes(self):
 -    """
@@ -2091,7 +2091,7 @@
 +        Parameters
 +        ----------
 +            <string>  nvar_name  name of nodal variable
-+            <int>     time_step  1-based index of time step
++            <int>     time_step  1-based index of timestep
 +
 +        Returns
 +        -------
@@ -2115,7 +2115,7 @@
 +    def get_partial_node_variable_values(self, name, step, start_index, num_nodes):
 +        """
 +        get partial list of nodal variable values for a nodal variable name
-+        and time step.  Start at node `node_index` (1-based) and return `num_nodes`
++        and timestep.  Start at node `node_index` (1-based) and return `num_nodes`
 +        from that point.
 +
 +        >>> nvar_vals = exo.get_partial_node_variable_values(nvar_name, time_step, 10, 100)
@@ -2123,7 +2123,7 @@
 +        Parameters
 +        ----------
 +            <string>  nvar_name   name of nodal variable
-+            <int>     time_step   1-based index of time step
++            <int>     time_step   1-based index of timestep
 +            <int>     start_index 1-based index of node to start returning data
 +            <int>     num_nodes   number of nodes to return data for.
 +
@@ -2148,7 +2148,7 @@
 +    def put_node_variable_values(self, name, step, values):
 +        """
 +        store a list of nodal variable values for a nodal variable
-+        name and time step
++        name and timestep
  
 -      return value(s):
 -        <int>  num_nodes
@@ -2160,7 +2160,7 @@
 +        Parameters
 +        ----------
 +            <string>       nvar_name  name of nodal variable
-+            <int>          time_step  1-based index of time step
++            <int>          time_step  1-based index of timestep
 +            <list<float>>  nvar_vals
 +
 +        Returns
@@ -2567,7 +2567,7 @@
 +    def get_reduction_variable_values(self, objType, id, step):
 +        """
 +        get list of reduction variable values for a specified entity type and
-+        id, and time step
++        id, and timestep
 +
 +        >>> evar_vals = exo.get_reduction_variable_values('EX_ELEM_BLOCK', elem_blk_id, time_step)
 +
@@ -2578,7 +2578,7 @@
 +        id        : int
 +            entity *ID* (not *INDEX*)
 +        time_step : int
-+            1-based index of time step
++            1-based index of timestep
 +
 +        Returns
 +        -------
@@ -2601,7 +2601,7 @@
 +    def put_reduction_variable_values(self, objType, id, step, values):
 +        """
 +        store a list of 'objType' variable values for a specified entity,
-+        and time step
++        and timestep
  
 -      -> get the list of nodal variable names in the model
 +        >>> status = exo.put_redcution_variable_values('EX_ELEM_BLOCK', elem_blk_id,
@@ -2619,7 +2619,7 @@
 +            type of object begin queried
 +        id : int
 +            element block *ID* (not *INDEX*)
-+            <int>          time_step    1-based index of time step
++            <int>          time_step    1-based index of timestep
 +            <list<float>>  evar_vals
 +
 +        Returns
@@ -2925,7 +2925,7 @@
 +    def get_variable_values(self, objType, entityId, name, step):
 +        """
 +        get list of `objType` variable values for a specified object id
-+        block, variable name, and time step
++        block, variable name, and timestep
 +
 +        >>> evar_vals = exo.get_variable_values('EX_ELEM_BLOCK', elem_blk_id,
 +        ...                                            evar_name, time_step)
@@ -2939,7 +2939,7 @@
 +        name : string
 +            name of variable
 +        time_step : int
-+            1-based index of time step
++            1-based index of timestep
 +
 +        Returns
 +        -------
@@ -2976,7 +2976,7 @@
 +    def put_variable_values(self, objType, entityId, name, step, values):
 +        """
 +        store a list of element variable values for a specified element
-+        block, element variable name, and time step
++        block, element variable name, and timestep
  
 -      -> update the number of nodal variables in the model
 +        >>> status = exo.put_variable_values('EX_ELEM_BLOCK', elem_blk_id,
@@ -2988,7 +2988,7 @@
 +        ----------
 +        entityId : int  entity *ID* (not *INDEX*)
 +            <string>    name    name of variable
-+            <int>          time_step    1-based index of time step
++            <int>          time_step    1-based index of timestep
 +            <list<float>>  values the variable values to be output
 +
 +        Returns
@@ -3241,12 +3241,12 @@
 +        return self.__ex_get_name('EX_ELEM_BLOCK', object_id)
  
 -      -> get list of nodal variable values for a nodal variable name
--        and time step
+-        and timestep
 +    # --------------------------------------------------------------------
  
 -      input value(s):
 -        <string>  nvar_name  name of nodal variable
--        <int>     time_step  1-based index of time step
+-        <int>     time_step  1-based index of timestep
 +    def put_elem_blk_name(self, object_id, name):
 +        """
 +        store the element block name
@@ -3286,7 +3286,7 @@
 +    # --------------------------------------------------------------------
  
 -      -> store a list of nodal variable values for a nodal variable
--        name and time step
+-        name and timestep
 +    def get_elem_blk_names(self):
 +        """
 +        get a list of all element block names ordered by block *INDEX*;
@@ -3295,7 +3295,7 @@
  
 -      input value(s):
 -        <string>       nvar_name  name of nodal variable
--        <int>          time_step  1-based index of time step
+-        <int>          time_step  1-based index of timestep
 -        <list<float>>  nvar_vals
 +        >>> elem_blk_names = exo.get_elem_blk_names()
  
@@ -3708,7 +3708,7 @@
 +    def get_element_variable_values(self, blockId, name, step):
 +        """
 +        get list of element variable values for a specified element
-+        block, element variable name, and time step
++        block, element variable name, and timestep
  
 -      -> **DEPRECATED** use: exo.get_elem_id_map()
 +        >>> evar_vals = exo.get_element_variable_values(elem_blk_id,
@@ -3729,7 +3729,7 @@
 +        evar_name : string
 +            name of element variable
 +        time_step : int
-+            1-based index of time step
++            1-based index of timestep
 +
 +        Returns
 +        -------
@@ -3748,7 +3748,7 @@
 +    def get_partial_element_variable_values(self, blockId, name, step, start_index, num_elements):
 +        """
 +        get list of element variable values for a specified element
-+        block, element variable name, and time step
++        block, element variable name, and timestep
  
 -      return value(s):
 -        <list<c_int>>  elem_id_map
@@ -4348,12 +4348,12 @@
 -        time_step)
 -
 -      -> get list of element variable values for a specified element
--        block, element variable name, and time step
+-        block, element variable name, and timestep
 -
 -      input value(s):
 -        <int>     elem_blk_id  element block *ID* (not *INDEX*)
 -        <string>  evar_name    name of element variable
--        <int>     time_step    1-based index of time step
+-        <int>     time_step    1-based index of timestep
 -
 -      return value(s):
 +        >>> evar_vals = exo.get_element_variable_values(elem_blk_id,
@@ -4392,7 +4392,7 @@
 +        evar_name : string
 +            name of element variable
 +        time_step : int
-+            1-based index of time step
++            1-based index of timestep
 +        start_index: int
 +            1-based index of element in block to start returning data
 +        num_elements: int
@@ -4419,12 +4419,12 @@
 +    def put_element_variable_values(self, blockId, name, step, values):
 +        """
 +        store a list of element variable values for a specified element
-         block, element variable name, and time step
+         block, element variable name, and timestep
  
 -      input value(s):
 -        <int>          elem_blk_id  element block *ID* (not *INDEX*)
 -        <string>       evar_name    name of element variable
--        <int>          time_step    1-based index of time step
+-        <int>          time_step    1-based index of timestep
 -        <list<float>>  evar_vals
 -
 -      return value(s):
@@ -4493,7 +4493,7 @@
 +        elem_blk_id : int
 +            element block *ID* (not *INDEX*)
 +            <string>       evar_name    name of element variable
-+            <int>          time_step    1-based index of time step
++            <int>          time_step    1-based index of timestep
 +            <list<float>>  evar_vals
 +
 +        Returns
@@ -5230,13 +5230,13 @@
 -        time_step)
 -
 -      -> get list of node set variable values for a specified node
--        set, node set variable name, and time step; the list has
+-        set, node set variable name, and timestep; the list has
 -        one variable value per node in the set
 -
 -      input value(s):
 -        <int>     node_set_id  node set *ID* (not *INDEX*)
 -        <string>  nsvar_name   name of node set variable
--        <int>     time_step    1-based index of time step
+-        <int>     time_step    1-based index of timestep
 -
 -      return value(s):
 -
@@ -5264,13 +5264,13 @@
 -        nsvar_vals)
 -
 -      -> store a list of node set variable values for a specified node
--        set, node set variable name, and time step; the list has one
+-        set, node set variable name, and timestep; the list has one
 -        variable value per node in the set
 -
 -      input value(s):
 -        <int>          node_set_id  node set *ID* (not *INDEX*)
 -        <string>       nsvar_name   name of node set variable
--        <int>          time_step    1-based index of time step
+-        <int>          time_step    1-based index of timestep
 -        <list<float>>  nsvar_vals
 -
 -      return value(s):
@@ -5902,13 +5902,13 @@
 -        time_step)
 -
 -      -> get list of side set variable values for a specified side
--        set, side set variable name, and time step; the list has
+-        set, side set variable name, and timestep; the list has
 -        one variable value per side in the set
 -
 -      input value(s):
 -        <int>     side_set_id  side set *ID* (not *INDEX*)
 -        <string>  ssvar_name   name of side set variable
--        <int>     time_step    1-based index of time step
+-        <int>     time_step    1-based index of timestep
 -
 -      return value(s):
 -
@@ -5937,7 +5937,7 @@
 +        >>> exo.put_node_set_name(node_set_id, node_set_name)
  
 -      -> store a list of side set variable values for a specified side
--        set, side set variable name, and time step; the list has one
+-        set, side set variable name, and timestep; the list has one
 -        variable value per side in the set
 +        Parameters
 +        ----------
@@ -5949,7 +5949,7 @@
 -      input value(s):
 -        <int>          side_set_id  side set *ID* (not *INDEX*)
 -        <string>       ssvar_name   name of side set variable
--        <int>          time_step    1-based index of time step
+-        <int>          time_step    1-based index of timestep
 -        <list<float>>  ssvar_vals
 +    # --------------------------------------------------------------------
  
@@ -6260,7 +6260,7 @@
 +    def get_node_set_variable_values(self, object_id, name, step):
 +        """
 +        get list of node set variable values for a specified node
-+        set, node set variable name, and time step; the list has
++        set, node set variable name, and timestep; the list has
 +        one variable value per node in the set
  
 -  #
@@ -6275,7 +6275,7 @@
 +        ----------
 +            <int>     node_set_id  node set *ID* (not *INDEX*)
 +            <string>  nsvar_name   name of node set variable
-+            <int>     time_step    1-based index of time step
++            <int>     time_step    1-based index of timestep
 +
 +        Returns
 +        -------
@@ -6294,7 +6294,7 @@
 +    def get_partial_node_set_variable_values(self, object_id, name, step, start_index, num_nodes):
 +        """
 +        get list of node set variable values for a specified node
-+        set, node set variable name, and time step; the list has
++        set, node set variable name, and timestep; the list has
 +        one variable value per node in the set
  
 -  def get_global_variable_number(self):
@@ -6308,7 +6308,7 @@
 +        ----------
 +            <int>     node_set_id  node set *ID* (not *INDEX*)
 +            <string>  nsvar_name   name of node set variable
-+            <int>     time_step    1-based index of time step
++            <int>     time_step    1-based index of timestep
 +            <int>     start_index 1-based index of node to start returning data
 +            <int>     num_nodes   number of nodes to return data for.
 +
@@ -6333,7 +6333,7 @@
 +    def put_node_set_variable_values(self, object_id, name, step, values):
 +        """
 +        store a list of node set variable values for a specified node
-+        set, node set variable name, and time step; the list has one
++        set, node set variable name, and timestep; the list has one
 +        variable value per node in the set
  
 -      -> get the number of global variables in the model
@@ -6345,7 +6345,7 @@
 +        ----------
 +            <int>          node_set_id  node set *ID* (not *INDEX*)
 +            <string>       nsvar_name   name of node set variable
-+            <int>          time_step    1-based index of time step
++            <int>          time_step    1-based index of timestep
 +            <list<float>>  nsvar_vals
 +
 +        Returns
@@ -6630,14 +6630,14 @@
 +    # --------------------------------------------------------------------
  
 -      -> get a global variable value for a specified global variable
--        name and time step
+-        name and timestep
 +    def put_side_set_name(self, object_id, name):
 +        """
 +        store the name of a side set
  
 -      input value(s):
 -        <string>  gvar_name  name of global variable
--        <int>     time_step  1-based index of time step
+-        <int>     time_step  1-based index of timestep
 +        >>> exo.put_side_set_name(side_set_id, side_set_name)
  
 -      return value(s):
@@ -6670,11 +6670,11 @@
  
 -      -> get all global variable values (one for each global variable
 -        name, and in the order given by exo.get_global_variable_names())
--        at a specified time step
+-        at a specified timestep
 +        >>> side_set_names = exo.get_side_set_names()
  
 -      input value(s):
--        <int>     time_step  1-based index of time step
+-        <int>     time_step  1-based index of timestep
 +        Returns
 +        -------
 +            <list<string>>  side_set_names
@@ -6754,7 +6754,7 @@
 +        ...          exo.get_all_side_set_params()
  
 -      -> store a global variable value for a specified global variable
--        name and time step
+-        name and timestep
 +        Returns
 +        -------
 +            <int>  tot_num_ss_sides
@@ -6763,7 +6763,7 @@
  
 -      input value(s):
 -        <string>  gvar_name  name of global variable
--        <int>     time_step  1-based index of time step
+-        <int>     time_step  1-based index of timestep
 -        <float>   gvar_val
 -
 -      return value(s):
@@ -6823,7 +6823,7 @@
  
 -      -> store all global variable values (one for each global variable
 -        name, and in the order given by exo.get_global_variable_names())
--        at a specified time step
+-        at a specified timestep
 +        Note:
 +        -----
 +        The number of nodes (and distribution factors) in a side set is
@@ -6849,7 +6849,7 @@
 +              (e.g. nodal 'weights')
  
 -      input value(s):
--        <int>          time_step  1-based index of time step
+-        <int>          time_step  1-based index of timestep
 -        <list<float>>  gvar_vals
 -
 -      return value(s):
@@ -6884,7 +6884,7 @@
 +        two lists correspond: together, ss_elems[i] and ss_sides[i]
 +        define the face of an element
  
--      -> get global variable values over all time steps for one global
+-      -> get global variable values over all timesteps for one global
 -        variable name
 +        >>> ss_elems, ss_sides = exo.get_side_set(side_set_id)
  
@@ -7208,7 +7208,7 @@
 +    def get_side_set_variable_values(self, object_id, name, step):
 +        """
 +        get list of side set variable values for a specified side
-+        set, side set variable name, and time step; the list has
++        set, side set variable name, and timestep; the list has
 +        one variable value per side in the set
  
 -      -> put in a count of faces in for each polyhedra in an elem block
@@ -7221,7 +7221,7 @@
 +        ----------
 +            <int>     side_set_id  side set *ID* (not *INDEX*)
 +            <string>  ssvar_name   name of side set variable
-+            <int>     time_step    1-based index of time step
++            <int>     time_step    1-based index of timestep
 +
 +        Returns
 +        -------
@@ -7240,7 +7240,7 @@
 +    def get_partial_side_set_variable_values(self, object_id, name, step, start_index, num_sides):
 +        """
 +        get list of side set variable values for a specified side
-+        set, side set variable name, and time step; the list has
++        set, side set variable name, and timestep; the list has
 +        one variable value per side in the set
  
 -        if array_type == 'ctype':
@@ -7254,7 +7254,7 @@
 +        ----------
 +            <int>     side_set_id  side set *ID* (not *INDEX*)
 +            <string>  ssvar_name   name of side set variable
-+            <int>     time_step    1-based index of time step
++            <int>     time_step    1-based index of timestep
 +            <int>     start_index 1-based index of side to start returning data
 +            <int>     num_nodes   number of sides to return data for.
 +
@@ -7279,7 +7279,7 @@
 +    def put_side_set_variable_values(self, object_id, name, step, values):
 +        """
 +        store a list of side set variable values for a specified side
-+        set, side set variable name, and time step; the list has one
++        set, side set variable name, and timestep; the list has one
 +        variable value per side in the set
  
 -      return value(s):
@@ -7299,7 +7299,7 @@
 +        ----------
 +            <int>          side_set_id  side set *ID* (not *INDEX*)
 +            <string>       ssvar_name   name of side set variable
-+            <int>          time_step    1-based index of time step
++            <int>          time_step    1-based index of timestep
 +            <list<float>>  ssvar_vals
 +
 +        Returns
@@ -7691,7 +7691,7 @@
 +    def get_global_variable_value(self, name, step):
 +        """
 +        get a global variable value for a specified global variable
-+        name and time step
++        name and timestep
  
 -      return value(s):
 -        <bool>  status  True = successful execution
@@ -7708,7 +7708,7 @@
 +        Parameters
 +        ----------
 +            <string>  gvar_name  name of global variable
-+            <int>     time_step  1-based index of time step
++            <int>     time_step  1-based index of timestep
 +
 +        Returns
 +        -------
@@ -7726,7 +7726,7 @@
 +        """
 +        get all global variable values (one for each global variable
 +        name, and in the order given by exo.get_global_variable_names())
-+        at a specified time step
++        at a specified timestep
  
 -  def put_face_node_conn(self,blkId,faceNodeConn):
 -    """
@@ -7736,7 +7736,7 @@
 -      -> put in connectivity information from faces to nodes
 +        Parameters
 +        ----------
-+            <int>     time_step  1-based index of time step
++            <int>     time_step  1-based index of timestep
 +
 +        Returns
 +        -------
@@ -7761,7 +7761,7 @@
 +    def put_global_variable_value(self, name, step, value):
 +        """
 +        store a global variable value for a specified global variable
-+        name and time step
++        name and timestep
  
 -      input values:
 -        <int>     blkID               id of the face block to be added
@@ -7772,7 +7772,7 @@
 +        Parameters
 +        ----------
 +            <string>  gvar_name  name of global variable
-+            <int>     time_step  1-based index of time step
++            <int>     time_step  1-based index of timestep
 +            <float>   gvar_val
 +
 +        Returns
@@ -7804,7 +7804,7 @@
 +        """
 +        store all global variable values (one for each global variable
 +        name, and in the order given by exo.get_global_variable_names())
-+        at a specified time step
++        at a specified timestep
  
 -        if array_type == 'numpy':
 -          <np_array<double>>  faceNodeConn  (raveled/flat array)
@@ -7821,7 +7821,7 @@
 -    return True
 +        Parameters
 +        ----------
-+            <int>          time_step  1-based index of time step
++            <int>          time_step  1-based index of timestep
 +            <list<float>>  gvar_vals
 +
 +        Returns
@@ -7843,7 +7843,7 @@
 +
 +    def get_global_variable_values(self, name):
 +        """
-+        get global variable values over all time steps for one global
++        get global variable values over all timesteps for one global
 +        variable name
  
 -  # --------------------------------------------------------------------

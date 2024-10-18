@@ -8,69 +8,63 @@
            Daniil Svyatskiy
 */
 
-#ifndef TIME_STEP_MANAGER__
-#define TIME_STEP_MANAGER__
+/*!
 
-#include <cmath>
-#include <list>
+Manages time events, along with PK timestep selections, to determine the
+step size taken by the simulation.
+
+Note that most options provided to this class are only used in unit or
+regression testing.
+
+.. _time-step-manager-spec:
+.. admonition:: time-step-manager-spec
+
+   * `"prescribed timesteps [s]`" ``Array(string)`` **optional** Array
+     of timesteps to take, ignores the PK and all events.
+   * `"prescribed timesteps file name`" ``[string]`` **optional** Path to an h5 file
+     containing a list of dts, ignores the PK and all events.
+   * `"prescribed timesteps header`" ``[string]`` **"timesteps"** Name of the
+     dataset containing the dts.
+
+*/
+
+#pragma once
+
 #include <ostream>
 #include <vector>
 
-#include "VerboseObject.hh"
+#include "Teuchos_ParameterList.hpp"
 
 namespace Amanzi {
 
-bool inline near_equal(double x, double y)
-{
-  return (fabs(x - y) < 1e-12 * std::max(1.0, std::max(fabs(x), fabs(y))));
-}
+class VerboseObject;
 
-bool inline close(double x, double y, double eps)
-{
-  return (fabs(x - y) < eps * std::max(1.0, std::max(fabs(x), fabs(y))));
-}
+namespace Utils {
+
+template<typename T> class Event;
 
 class TimeStepManager {
-  struct TimeEvent {
-    enum TimeType { SPS, TIMES };
-    TimeEvent() {}
-    TimeEvent(double start, double period, double stop, bool phys)
-      : start_(start), period_(period), stop_(stop), type_(SPS), physical_(phys)
-    {}
-    TimeEvent(const std::vector<double>& times, bool phys)
-      : times_(times), type_(TIMES), physical_(phys)
-    {}
-    explicit TimeEvent(double time, bool phys) : type_(TIMES), physical_(phys)
-    {
-      times_.push_back(time);
-    }
-    TimeType Type() const { return type_; }
-    bool isPhysical() const { return physical_; }
-
-    double start_, period_, stop_;
-    std::vector<double> times_;
-    TimeType type_;
-    bool physical_; // physical means that this event effects time step due to change in physics
-  };
-
  public:
   TimeStepManager();
-  TimeStepManager(Teuchos::ParameterList& verb_list);
+  TimeStepManager(Teuchos::ParameterList& plist);
   TimeStepManager(Teuchos::RCP<VerboseObject> vo_cd);
+
   void RegisterTimeEvent(double start, double period, double stop, bool phys = true);
-  void RegisterTimeEvent(std::vector<double> times, bool phys = true);
+  void RegisterTimeEvent(const std::vector<double>& times, bool phys = true);
   void RegisterTimeEvent(double time, bool phys = true);
+  void RegisterTimeEvent(const Teuchos::RCP<const Event<double>>& te);
+
   double TimeStep(const double T, const double dT, bool after_failure = false);
   void print(std::ostream& os, double start, double end) const;
 
- private:
-  std::list<TimeEvent> timeEvents_;
-  double dt_stable_storage;
-
  protected:
+  std::vector<Teuchos::RCP<const Event<double>>> time_events_;
+  bool manual_override_;
+  std::vector<double> manual_dts_;
+  int manual_dts_i_;
   Teuchos::RCP<VerboseObject> vo_;
 };
 
+} // namespace Utils
 } // namespace Amanzi
 
-#endif // TIME_STEP_MANAGER__

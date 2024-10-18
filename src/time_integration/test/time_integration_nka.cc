@@ -40,6 +40,7 @@ SUITE(ODEIntegrationTests)
     Teuchos::RCP<Epetra_Vector> u;
     Teuchos::RCP<Epetra_Vector> u_dot;
     Teuchos::RCP<Epetra_Vector> u_ex;
+    Teuchos::RCP<Epetra_BlockMap> map;
 
     Teuchos::ParameterList plist;
 
@@ -47,8 +48,8 @@ SUITE(ODEIntegrationTests)
     {
       // comm and mesh for maps
       comm = new Epetra_MpiComm(MPI_COMM_SELF);
-      Epetra_Map map(2, 0, *comm);
-      init = Teuchos::rcp(new Epetra_Vector(map));
+      map = Teuchos::rcp(new Epetra_Map(2, 0, *comm));
+      init = Teuchos::rcp(new Epetra_Vector(*map));
 
       // u, u_dot, and exact soln
       u = Teuchos::rcp(new Epetra_Vector(*init));
@@ -74,21 +75,21 @@ SUITE(ODEIntegrationTests)
 
     // set up time integrator params
     plist.set("timestep controller type", "standard");
-    plist.sublist("timestep controller standard parameters").set("time step reduction factor", 0.9);
-    plist.sublist("timestep controller standard parameters").set("time step increase factor", 1.1);
-    plist.sublist("timestep controller standard parameters").set("max time step", 5e-3);
-    plist.sublist("timestep controller standard parameters").set("min time step", 1e-20);
+    plist.sublist("timestep controller standard parameters").set("timestep reduction factor", 0.9);
+    plist.sublist("timestep controller standard parameters").set("timestep increase factor", 1.1);
+    plist.sublist("timestep controller standard parameters").set("max timestep", 5e-3);
+    plist.sublist("timestep controller standard parameters").set("min timestep", 1e-20);
     plist.sublist("timestep controller standard parameters").set("min iterations", 5);
     plist.sublist("timestep controller standard parameters").set("max iterations", 10);
+    plist.sublist("timestep controller standard parameters").set("initial timestep [s]", 1.0e-5);
     plist.sublist("timestep controller standard parameters")
       .set("preconditioner lag iterations", 2);
 
     // create the PDE problem
     nonlinearODE NF(1., 1., true);
 
-    // create the time stepper
-    Teuchos::RCP<Amanzi::BDF1_TI<Epetra_Vector, Epetra_BlockMap>> TS =
-      Teuchos::rcp(new BDF1_TI<Epetra_Vector, Epetra_BlockMap>(NF, plist, init));
+    // create the timestepper
+    auto TS = Teuchos::rcp(new BDF1_TI<Epetra_Vector, Epetra_BlockMap>("bdf1", plist, NF, map));
 
     // initial value
     u->PutScalar(-1.0);
@@ -100,10 +101,10 @@ SUITE(ODEIntegrationTests)
     // final time
     double tout = 2.0;
 
-    // initial time step
+    // initial timestep
     double h = 1.0e-5;
     double hnext;
-    // initialize the state of the time stepper
+    // initialize the state of the timestepper
     TS->SetInitialState(t, u, u_dot);
 
     // iterate until the final time
@@ -118,7 +119,7 @@ SUITE(ODEIntegrationTests)
 
       bool redo(false);
       do {
-        redo = TS->TimeStep(h, hnext, u);
+        redo = TS->AdvanceStep(h, hnext, u);
       } while (redo);
 
       u->Print(std::cout);
@@ -155,21 +156,22 @@ SUITE(ODEIntegrationTests)
 
     // set up time integrator params
     plist.set("timestep controller type", "standard");
-    plist.sublist("timestep controller standard parameters").set("time step reduction factor", 0.9);
-    plist.sublist("timestep controller standard parameters").set("time step increase factor", 1.1);
-    plist.sublist("timestep controller standard parameters").set("max time step", 5e-3);
-    plist.sublist("timestep controller standard parameters").set("min time step", 1e-20);
+    plist.sublist("timestep controller standard parameters").set("timestep reduction factor", 0.9);
+    plist.sublist("timestep controller standard parameters").set("timestep increase factor", 1.1);
+    plist.sublist("timestep controller standard parameters").set("max timestep", 5e-3);
+    plist.sublist("timestep controller standard parameters").set("min timestep", 1e-20);
     plist.sublist("timestep controller standard parameters").set("min iterations", 5);
     plist.sublist("timestep controller standard parameters").set("max iterations", 10);
+    plist.sublist("timestep controller standard parameters").set("initial timestep [s]", 1.0e-5);
     plist.sublist("timestep controller standard parameters")
       .set("preconditioner lag iterations", 2);
 
     // create the PDE problem
     nonlinearODE NF(1., 1., false);
 
-    // create the time stepper
+    // create the timestepper
     Teuchos::RCP<Amanzi::BDF1_TI<Epetra_Vector, Epetra_BlockMap>> TS =
-      Teuchos::rcp(new BDF1_TI<Epetra_Vector, Epetra_BlockMap>(NF, plist, init));
+      Teuchos::rcp(new BDF1_TI<Epetra_Vector, Epetra_BlockMap>("bdf1", plist, NF, map));
 
     // initial value
     u->PutScalar(-1.0);
@@ -181,10 +183,10 @@ SUITE(ODEIntegrationTests)
     // final time
     double tout = 2.0;
 
-    // initial time step
+    // initial timestep
     double h = 1.0e-5;
     double hnext;
-    // initialize the state of the time stepper
+    // initialize the state of the timestepper
     TS->SetInitialState(t, u, u_dot);
 
     // iterate until the final time
@@ -199,7 +201,7 @@ SUITE(ODEIntegrationTests)
 
       bool redo(false);
       do {
-        redo = TS->TimeStep(h, hnext, u);
+        redo = TS->AdvanceStep(h, hnext, u);
       } while (redo);
 
       u->Print(std::cout);

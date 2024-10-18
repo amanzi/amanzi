@@ -176,7 +176,7 @@ About
   * Input Files:
 
     * obs.dat,  specifying parameters for observation wells.
-    * anal.dat, specifying other parameters such as the number of time steps, and so on.
+    * anal.dat, specifying other parameters such as the number of timesteps, and so on.
 
   * Output Files:
 

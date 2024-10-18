@@ -12,7 +12,7 @@
 
   Implementation of different limiters uses a few common rules:
   1. Dirichlet boundary data are used to update limiter bounds.
-  2. Limiters are modified optionally so the the stable time step
+  2. Limiters are modified optionally so the the stable timestep
      of first-order scheme is reduce not more than twice. This
      step requires to specify a face-based flux field.
   3. At the moment, we require the input field and boundary data
@@ -338,7 +338,7 @@ LimiterCell::LimiterTensorial_(const AmanziMesh::cEntity_ID_View& ids,
     for (int i = 0; i < dim; i++) grad[i][c] = gradient_c1[i];
   }
 
-  // Step 3: enforce a priori time step estimate (division of dT by 2).
+  // Step 3: enforce a priori timestep estimate (division of dT by 2).
   if (limiter_correction_) {
     bounds_ = BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_CLOSEST);
     LimiterExtensionTransportTensorial_();
@@ -359,7 +359,7 @@ LimiterCell::LimiterTensorial_(const AmanziMesh::cEntity_ID_View& ids,
 
 /* *******************************************************************
 * Extension of the tensorial limiter. Routine changes gradient to
-* satisfy an a prioty estimate of the stable time step. That estimate
+* satisfy an a prioty estimate of the stable timestep. That estimate
 * assumes that the weigthed flux is smaller than the first-order flux.
 ******************************************************************* */
 void
@@ -417,7 +417,7 @@ LimiterCell::LimiterExtensionTransportTensorial_()
 * First, it limits face-centered value of a reconstracted function
 * by min-max of two or more cell-centered values.
 * Second, it limits outflux values which gives factor 0.5 in the
-* time step estimate.
+* timestep estimate.
 ******************************************************************* */
 void
 LimiterCell::LimiterScalar_(const AmanziMesh::cEntity_ID_View& ids,
@@ -486,7 +486,7 @@ LimiterCell::LimiterScalar_(const AmanziMesh::cEntity_ID_View& ids,
     }
   }
 
-  // enforce an a priori time step estimate (dT / 2).
+  // enforce an a priori timestep estimate (dT / 2).
   if (limiter_correction_) {
     if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
       bounds_ = BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_CLOSEST);
@@ -497,7 +497,7 @@ LimiterCell::LimiterScalar_(const AmanziMesh::cEntity_ID_View& ids,
 
 /* *******************************************************************
 * Extension of the scalarlimiter. Routine changes gradient to
-* satisfy an a prioty estimate of the stable time step. That estimate
+* satisfy an a prioty estimate of the stable timestep. That estimate
 * assumes that the weigthed flux is smaller that the first-order flux.
 ******************************************************************* */
 void
@@ -598,7 +598,7 @@ LimiterCell::LimiterKuzmin_(const AmanziMesh::cEntity_ID_View& ids,
     for (int i = 0; i < dim; i++) grad[i][c] = gradient_c[i];
   }
 
-  // enforce an a priori time step estimate (dT / 2).
+  // enforce an a priori timestep estimate (dT / 2).
   if (limiter_correction_) {
     AmanziMesh::Entity_ID_View cells;
     std::vector<double> field_local_min(ncells_wghost_);
@@ -686,7 +686,7 @@ LimiterCell::LimiterKuzminCell_(int c,
 
 /* *******************************************************************
 * Extension of Kuzmin's limiter. Routine changes gradient to
-* satisfy an a prioty estimate of the stable time step. That estimate
+* satisfy an a prioty estimate of the stable timestep. That estimate
 * assumes that the weigthed flux is smaller that the first-order flux.
 ******************************************************************* */
 void

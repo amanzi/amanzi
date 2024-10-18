@@ -319,7 +319,7 @@ Beaker::ReactionStep(BeakerState* state, const BeakerParameters& parameters, dou
   int max_rel_index = -1;
   unsigned int num_iterations = 0;
 
-  // lagging activity coefficients by a time step in this case
+  // lagging activity coefficients by a timestep in this case
   // UpdateActivityCoefficients_();
 
   // calculate portion of residual at time level t
@@ -387,7 +387,7 @@ Beaker::ReactionStep(BeakerState* state, const BeakerParameters& parameters, dou
   // UpdateEquilibriumChemistry()? But that changes the numerical
   // results and I need to look more closely at what is going on.
 
-  // lagging activity coefficients by a time step
+  // lagging activity coefficients by a timestep
   UpdateActivityCoefficients_();
 
   CopyBeakerToState(state);
@@ -1035,7 +1035,7 @@ Beaker::UpdateTemperatureDependentCoefs_()
 
 /* ******************************************************************
 * Need to move this into the N-R loop and cut the reaction rate or
-* time step if volume fractions go negative. Right now we are just
+* timestep if volume fractions go negative. Right now we are just
 * setting volume fraction to zero and introducing mass balance errors!
 ****************************************************************** */
 void

@@ -79,7 +79,7 @@ TEST(DARCY_TWO_FRACTURES)
   S->CheckAllFieldsInitialized();
   WriteStateStatistics(*S);
 
-  // time stepping
+  // timestepping
   double t_old(0.0), t_new, dt(1.0);
   for (int n = 0; n < 100; n++) {
     t_new = t_old + dt;

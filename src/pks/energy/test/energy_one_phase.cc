@@ -100,7 +100,7 @@ TEST(ENERGY_ONE_PHASE)
   AMANZI_ASSERT(n0 < n1);
   AMANZI_ASSERT(n1 == n2);
 
-  // constant time stepping
+  // constant timestepping
   std::string passwd("");
   int itrs(0);
   double t(0.0), dt(0.1), t1(5.5), dt_next;
@@ -117,7 +117,7 @@ TEST(ENERGY_ONE_PHASE)
       EPK->UpdatePreconditioner(t, soln, dt);
     }
 
-    EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
+    EPK->bdf1_dae()->AdvanceStep(dt, dt_next, soln);
     CHECK(dt_next >= dt);
     EPK->bdf1_dae()->CommitSolution(dt, soln);
     Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(

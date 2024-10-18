@@ -102,7 +102,7 @@ SurfaceSubsurface_PK::set_dt(double dt)
 
 
 // -----------------------------------------------------------------------------
-// Make necessary operatios by the end of the time steps.
+// Make necessary operatios by the end of the timesteps.
 // -----------------------------------------------------------------------------
 void
 SurfaceSubsurface_PK::CommitStep(double t_old, double t_new, const Tag& tag)
@@ -168,7 +168,7 @@ SurfaceSubsurface_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     // dt_next = sub_pks_[slave_]->get_dt();
     // no state recovery (e.g. pressure) is made, so the only option is to fail.
     if (dt_next < min_dt_)
-      Exceptions::amanzi_throw("Failure in SurfaceSubsurface_PK: small time step.");
+      Exceptions::amanzi_throw("Failure in SurfaceSubsurface_PK: small timestep.");
 
     // check for subcycling condition
     done = std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1 * min_dt_;

@@ -76,33 +76,33 @@ if (BUILD_TESTS)
     include_directories(${SOLVERS_SOURCE_DIR})
     include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 
-    add_amanzi_test(time_integration test_time_integration
+    add_amanzi_test(time_integration_solhist time_integration_solhist
                     KIND unit
 		    SOURCE
 		          test/Main.cc
-			  test/test_solhist.cc
+			  test/time_integration_solhist.cc
 		    LINK_LIBS
 		          time_integration
 			  ${time_integration_link_libs}
 			  ${UnitTest_LIBRARIES}	  
 			  ${time_integration_tpl_libs})
 
-    add_amanzi_test(time_integration_nka test_nka_time_integration
+    add_amanzi_test(time_integration_nka time_integration_nka
                     KIND unit
 		    SOURCE
 		          test/Main.cc
-			  test/test_ode_nka.cc
+			  test/time_integration_nka.cc
 		    LINK_LIBS
 		          time_integration
 			  ${time_integration_link_libs}
 			  ${UnitTest_LIBRARIES}
 			  ${time_int_new_tpl_libs})
 
-    add_amanzi_test(time_integration_rk test_rk_time_integration
+    add_amanzi_test(time_integration_rk time_integration_rk
                     KIND unit
 		    SOURCE
 		          test/Main.cc
-			      test/test_Explicit_RK.cc
+			  test/time_integration_rk.cc
 		    LINK_LIBS
 		          time_integration
 			  ${time_integration_link_libs}

@@ -181,7 +181,7 @@ EnergyTwoPhase_PK::Initialize()
 {
   // times, initialization could be done on any non-zero interval.
   double t_old = S_->get_time();
-  dt_ = ti_list_->get<double>("initial time step", 1.0);
+  dt_ = ti_list_->get<double>("initial timestep", 1.0);
 
   // Call the base class initialize.
   Energy_PK::Initialize();
@@ -269,7 +269,7 @@ EnergyTwoPhase_PK::Initialize()
     if (!bdf1_list.isSublist("verbose object"))
       bdf1_list.sublist("verbose object") = ep_list_->sublist("verbose object");
 
-    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+    bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>("BDF1", bdf1_list, *this, soln_->get_map(), S_));
   }
 
   // initialize boundary conditions
@@ -322,7 +322,7 @@ EnergyTwoPhase_PK::InitializeFields_()
 
 
 /* *******************************************************************
-* Performs one time step of size dt_ either for steady-state or
+* Performs one timestep of size dt_ either for steady-state or
 * transient sumulation.
 ******************************************************************* */
 bool
@@ -347,7 +347,7 @@ EnergyTwoPhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // trying to make a step
   bool failed(false);
-  failed = bdf1_dae_->TimeStep(dt_, dt_next_, soln_);
+  failed = bdf1_dae_->AdvanceStep(dt_, dt_next_, soln_);
   if (failed) {
     dt_ = dt_next_;
 

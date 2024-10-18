@@ -68,7 +68,7 @@ TEST(HYDROSTATIC_STRESS)
   S->CheckAllFieldsInitialized();
 
   // solve the problem
-  double dT = plist->get<double>("initial time step", 1.0);
+  double dT = plist->get<double>("initial timestep", 1.0);
 
   MPK->AdvanceStep(0.0, dT);
   MPK->CommitStep(0.0, dT, Tags::DEFAULT);

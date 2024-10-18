@@ -163,7 +163,7 @@ TEST(ENERGY_CONVERGENCE_SRC)
     EPK->Initialize();
     S->CheckAllFieldsInitialized();
 
-    // constant time stepping
+    // constant timestepping
     std::string passwd("");
     int itrs(0);
     double t(0.0), t1(100), dt_next;
@@ -180,7 +180,7 @@ TEST(ENERGY_CONVERGENCE_SRC)
         EPK->UpdatePreconditioner(t, soln, dt);
       }
 
-      EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
+      EPK->bdf1_dae()->AdvanceStep(dt, dt_next, soln);
       CHECK(dt_next >= dt);
       EPK->bdf1_dae()->CommitSolution(dt, soln);
       Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(

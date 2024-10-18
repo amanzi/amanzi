@@ -100,7 +100,7 @@ class Data {
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     return p_->Get<T>();
@@ -112,7 +112,7 @@ class Data {
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     return p_->GetW<T>();
@@ -124,7 +124,7 @@ class Data {
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     return p_->GetPtr<T>();
@@ -136,7 +136,7 @@ class Data {
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     return p_->GetPtrW<T>();
@@ -156,7 +156,7 @@ class Data {
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     p_->Assign(t);
@@ -175,7 +175,7 @@ class Data {
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     p_->WriteVis(vis, fieldname, subfieldnames);
@@ -187,7 +187,7 @@ class Data {
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     p_->WriteCheckpoint(chkp, fieldname, subfieldnames);
@@ -199,7 +199,7 @@ class Data {
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     return p_->ReadCheckpoint(chkp, fieldname, subfieldnames);
@@ -211,7 +211,7 @@ class Data {
   {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreateData()";
+      msg << " data not created through RecordSet::CreateData() or State::CreateData()";
       throw(msg);
     }
     return p_->Initialize(plist, fieldname, subfieldnames);

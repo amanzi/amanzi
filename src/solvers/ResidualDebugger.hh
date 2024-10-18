@@ -50,13 +50,13 @@ class State;
 
 namespace AmanziSolvers {
 
-class ResidualDebugger : public IOEvent {
+class ResidualDebugger : public Utils::IOEvent {
  public:
   // Constructor
   ResidualDebugger(Teuchos::ParameterList& plist,
                    const Teuchos::RCP<State>& S = Teuchos::null,
                    const Tag& tag = Tags::DEFAULT)
-    : IOEvent(plist), S_(S), tag_(tag)
+    : Utils::IOEvent(plist), S_(S), tag_(tag)
   {
     filebasename_ = plist_.get<std::string>("file name base", "amanzi_dbg");
     additional_vars_ = plist_.get<Teuchos::Array<std::string>>("additional variables", {});

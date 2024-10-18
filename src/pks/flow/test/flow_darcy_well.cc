@@ -35,7 +35,7 @@
 
 
 /* *********************************************************************
-* Two tests with different time step controllers.
+* Two tests with different timestep controllers.
 ********************************************************************* */
 void
 RunTestDarcyWell(std::string controller, bool fit)

@@ -464,7 +464,7 @@ ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // update source (external) terms
   for (int i = 0; i < srcs_.size(); ++i) { srcs_[i]->Compute(t_old, t_new); }
 
-  // compute total source value for each time step
+  // compute total source value for each timestep
   total_source_ = 0.0;
   for (int i = 0; i < srcs_.size(); ++i) {
     for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
@@ -729,7 +729,7 @@ ShallowWater_PK::NumericalSourceBedSlope(int c,
 
 
 //--------------------------------------------------------------
-// Calculation of time step limited by the CFL condition
+// Calculation of timestep limited by the CFL condition
 //--------------------------------------------------------------
 double
 ShallowWater_PK::get_dt()
@@ -757,7 +757,7 @@ ShallowWater_PK::get_dt()
       vx = vel_c[0][c];
       vy = vel_c[1][c];
 
-      // computing local (cell, face) time step using Kurganov's estimate d / (2a)
+      // computing local (cell, face) timestep using Kurganov's estimate d / (2a)
       vn = (vx * normal[0] + vy * normal[1]) / farea;
       d = norm(xc - xf);
       d_min = std::min(d_min, d);
