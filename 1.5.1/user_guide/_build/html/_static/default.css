@@ -1,0 +1,42 @@
+/* Customize the size of the logo in the navbar */
+.navbar-brand img {
+    height: 5rem;  /* Adjust the height to your desired size */
+    width: auto;   /* Keep the aspect ratio intact */
+}
+
+/* Increase the navbar height to fit a larger logo */
+.navbar {
+    height: auto;  /* Set to auto or specify a height value */
+    padding-top: 30px;  /* Optional: adjust the padding */
+    padding-bottom: 30px;
+}
+
+/* Optional: Customize blockquote styling */
+blockquote {
+    padding: 1em;
+    color: var(--pst-color-text-muted);
+    border-left: 0em solid var(--pst-color-blockquote-notch);
+    border-radius: var(--admonition-border-radius, 8px);
+    position: relative;
+    background-color: var(--pst-color-surface);
+
+    p {
+        color: var(--pst-color-text-base);
+    }
+
+    .line-block {
+        margin: 0;
+    }
+
+    p:last-child {
+        margin-bottom: 0;
+    }
+
+    a {
+        color: var(--pst-color-inline-code-links);
+    }
+
+    &::before {
+        z-index: -1;
+    }
+}

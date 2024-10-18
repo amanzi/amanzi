@@ -1,0 +1,791 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="auto">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Infiltration 1D &#8212; Amanzi</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "auto";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "auto";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/fix_eq_position.css?v=19b1522f" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/default.css?v=f6536f91" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=da87a0f1"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'verification/infiltration/infiltration_1d/amanzi_infiltration_1d';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://raw.githubusercontent.com/amanzi/ats/master/docs/documentation/source/_static/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v1.5';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = false;
+        </script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Transport of Solutes: Advection, Dispersion and Diffusion" href="../../transport/index.html" />
+    <link rel="prev" title="Infiltration Flow Tests" href="../index.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="auto">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+
+
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/Amanzi-color.png" class="logo__image only-light" alt="Amanzi - Home"/>
+    <script>document.write(`<img src="../../../_static/Amanzi-Dark.png" class="logo__image only-dark" alt="Amanzi - Home"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/index.html">
+    Background
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/getting_started.html">
+    Getting Started with Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../capabilities/index.html">
+    Amanzi Features and Capabilities
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../input/index.html">
+    Amanzi Input Description
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install/index.html">
+    Building Amanzi
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../tutorial/index.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="../../index.html">
+    Verification Testing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../benchmarking/index.html">
+    Benchmark Testing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/index.html">
+    Background
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/getting_started.html">
+    Getting Started with Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../capabilities/index.html">
+    Amanzi Features and Capabilities
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../input/index.html">
+    Amanzi Input Description
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install/index.html">
+    Building Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorial/index.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../index.html">
+    Verification Testing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../benchmarking/index.html">
+    Benchmark Testing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><!-- This will display the version of the docs -->
+Version  1.5.1</div>
+        <div class="sidebar-primary-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../confined_flow/index.html">Confined Flow Tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/linear_head_head_1d/amanzi_linear_head_head_1d.html">Steady-State One-Dimensional Flow with Head Boundary Conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/linear_flux_head_1d/amanzi_linear_flux_head_1d.html">Steady-State One-Dimensional Flow with Flux and Head Boundary Conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/linear_materials_serial_1d/amanzi_linear_materials_serial_1d.html">Steady-State One-Dimensional Flow: Materials in Serial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/linear_materials_parallel_1d/amanzi_linear_materials_parallel_1d.html">Steady-State One-Dimensional Flow: Materials in Parallel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/theis_isotropic_1d/amanzi_theis_isotropic_1d.html">Transient One-Dimensional Confined Flow to a Pumping Well (Theis)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/butler_pod_2d/amanzi_butler_pod_2d.html">Transient Flow in a 2D Confined Aquifer with a Disc Embedded in A Matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/butler_strip_2d/amanzi_butler_strip_2d.html">Transient Flow in a 2D Confined Aquifer with a Linear Strip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.html">Transient Flow to a Pumping Well in an Anisotropic Aquifer (Hantush)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/boundedDomain_2d/amanzi_boundedDomain_2d.html">Transient Drawdown due to Pumping Wells in a Bounded Domain</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../unconfined_flow/index.html">Unconfined Flow Tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../unconfined_flow/unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d.html">Steady-State Flow in an Unconfined Aquifer: Head, and Flux Boundary Conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../unconfined_flow/unconfined_seepage_1d/amanzi_unconfined_seepage_1d.html">Steady-State Unconfined Flow with a Seepage Boundary Condition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../unconfined_flow/unconfined_layered_2d/amanzi_unconfined_layered_2d.html">Steady-State Flow in an Unconfined Multi-Aquifer System</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">Infiltration Flow Tests</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Infiltration 1D</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../transport/index.html">Transport of Solutes: Advection, Dispersion and Diffusion</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/dispersion_aligned_point_2d/amanzi_dispersion_aligned_point_2d.html">2D Dispersive Transport in a Uniform Flow Field (aligned)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/dispersion_45_point_2d/amanzi_dispersion_45_point_2d.html">2D Dispersive Transport in a Uniform Flow Field (diagonal)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/dual_porosity_1d/amanzi_dual_porosity_1d.html">1D Dispersive Transport with Dual Porosity Model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../mechanics/index.html">Mechanics</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../mechanics/consolidation_1d/amanzi_consolidation_1d.html">Soil Consolidation</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+        <div class="sidebar-primary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#capabilities-tested">Capabilities Tested</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#background">Background</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model">Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#problem-specification">Problem Specification</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mesh">Mesh</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#case-1-sand-clay-layers">Case #1: Sand Clay Layers</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#results-and-comparison">Results and Comparison</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#case-2-loam-sand-layers">Case #2 Loam Sand Layers</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">Results and Comparison</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#case-3-sand-loam-layers">Case #3: Sand Loam Layers</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Results and Comparison</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#about">About</a></li>
+</ul>
+  </nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Verification Testing</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Infiltration Flow Tests</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Infiltration 1D</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="infiltration-1d">
+<h1>Infiltration 1D<a class="headerlink" href="#infiltration-1d" title="Link to this heading">#</a></h1>
+<section id="capabilities-tested">
+<h2>Capabilities Tested<a class="headerlink" href="#capabilities-tested" title="Link to this heading">#</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>partially saturated one-dimensional flow</p></li>
+<li><p>steady-state flow</p></li>
+<li><p>pressure and flux boundary conditions</p></li>
+<li><p>porous medium with discontinuous properties (permeability, van Genuchten parameters)</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="background">
+<h2>Background<a class="headerlink" href="#background" title="Link to this heading">#</a></h2>
+<p>Verification problems from the literature have been identified to test
+isothermal, single-phase, variably saturated flow.  We initially focus
+on test problems that address the two most widely used k-s-p
+functions, Mualem-van Genuchten <span id="id1">[<a class="reference internal" href="#id33" title="Y. Mualem. A new model for predicting the hydraulic conductivity of unsaturated porous media. Water Resour. Res, 12(3):513–522, 1976.">Mua76</a>]</span> <span id="id2">[<a class="reference internal" href="#id35" title="M.T. van Genuchten. A closed-form equation for predicting the hydraulic conductivity of unsaturated soils. Soil Sci. Soc. Am. J, 44(5):892–898, 1980.">vG80</a>]</span> and Brooks-Corey <span id="id3">[<a class="reference internal" href="#id32" title="R.H. Brooks and A.T. Corey. Hydraulic properties of porous media. Hydrology Papers, Colorado State University, 1964.">BC64</a>]</span>.  These include
+steady-state and transient tests with Dirichlet and Neumann boundary
+conditions.</p>
+<p>This documentation is intended to compare
+the results from Amanzi against the semi-analytical results documented
+in “A set of Analytical Benchmarks to Test Numerical Models of Flow
+and Transport in Soils.” by J. Vanderborght,
+et. al. <a class="reference external" href="http://vzj.geoscienceworld.org/content/4/1/206.abstract">http://vzj.geoscienceworld.org/content/4/1/206.abstract</a> <span id="id4">[<a class="reference internal" href="#id38" title="J. Vanderborght, R. Kasteel, M. Herbst, M. Javaux, D. Thiery, M. Vanclooster, C. Mouvet, and H. Vereecken. A set of analytical benchmarks to test numerical models of flow and transport in soils. Vadose Zone J., 4(1):206–221, 2005.">VKH+05</a>]</span>,
+see the first line in Table 3 of that paper.
+We consider three cases of the steady-state flux in a layered soil profile.
+The presure profiles should match that in the Vanderborght paper.
+The difference between the cases is as follows:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>case #1 is 0.5 m of clay and 1.5 m of sand;</p></li>
+<li><p>case #2 is 0.5 m of loam and 1.5 m of sand;</p></li>
+<li><p>case #3 is 1.5 m of loam and 0.5 m of sand.</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="model">
+<h2>Model<a class="headerlink" href="#model" title="Link to this heading">#</a></h2>
+<p>Initial condition.
+Pressure <span class="math notranslate nohighlight">\(p\)</span> as the function of depths z and time t=0 is 81747 Pa.</p>
+<p>Boundary conditions.
+The pressure at z=0m, the left end in the Figures below, is 99630.6336 Pa.
+The outflow at the opposite end, z=2m, is fixed at 0.5 cm/d = 5.78703704E-8 m/s.</p>
+<p>The absolute permeability tensor is isotropic but discontinuous.
+The porosity is constant in all tests, <span class="math notranslate nohighlight">\(\phi=0.43\)</span>.</p>
+<a class="reference internal image-reference" href="../../../_images/geometry.png"><img alt="../../../_images/geometry.png" class="align-center" src="../../../_images/geometry.png" style="width: 200px;" />
+</a>
+</section>
+<section id="problem-specification">
+<h2>Problem Specification<a class="headerlink" href="#problem-specification" title="Link to this heading">#</a></h2>
+<p>The problem is solved in a box domain with hight 2 m. The other box dimenstions are equal to 1 m.</p>
+<section id="mesh">
+<h3>Mesh<a class="headerlink" href="#mesh" title="Link to this heading">#</a></h3>
+<p>We consider a column mesh with 200 cells in the vertical direction.</p>
+</section>
+</section>
+<section id="case-1-sand-clay-layers">
+<h2>Case #1: Sand Clay Layers<a class="headerlink" href="#case-1-sand-clay-layers" title="Link to this heading">#</a></h2>
+<p>The steady-state solution is shown below.
+The sand region corresponds to the left part of the pressure profile.
+The van Genuchten parameters are <span class="math notranslate nohighlight">\(\alpha=1.532333\cdot 10^{-3}\)</span>, <span class="math notranslate nohighlight">\(m=0.6666667\)</span>, and
+residual saturation is <span class="math notranslate nohighlight">\(s_r=0.104651\)</span>.
+The absolute permeability is given by the isotropic tensor <span class="math notranslate nohighlight">\(K=1.18472\cdot 10^{-11} [m^2]\)</span>.</p>
+<p>The clay region corresponds to the right part of the pressure profile.
+The van Genuchten parameters are <span class="math notranslate nohighlight">\(\alpha=1.02 \cdot 10^{-4}\)</span>, <span class="math notranslate nohighlight">\(m=0.0909\)</span>, and
+residual saturation is <span class="math notranslate nohighlight">\(s_r=0.25\)</span>.
+The absolute permeability is given by the isotropic tensor <span class="math notranslate nohighlight">\(K=1.18\cdot 10^{-13} [m^2]\)</span>.</p>
+<section id="results-and-comparison">
+<h3>Results and Comparison<a class="headerlink" href="#results-and-comparison" title="Link to this heading">#</a></h3>
+<p>We compare with the Amanzi’s golden data that were verified against the Vanderborght paper.</p>
+<p>(<a class="reference download internal" download="" href="../../../_downloads/fbc36481a6f8aa95287373180f60c1c8/amanzi_infiltration_1d-c.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/0841741581cdd0d3bd5a4f1487be35d7/amanzi_infiltration_1d-c.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/0aa2c66f6702642269b4dc457885148d/amanzi_infiltration_1d-c.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/89d7489098fbb38bb59aa8b54d1419e2/amanzi_infiltration_1d-c.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-center">
+<img alt="../../../_images/amanzi_infiltration_1d-c.png" class="plot-directive" src="../../../_images/amanzi_infiltration_1d-c.png" />
+</figure>
+</section>
+</section>
+<section id="case-2-loam-sand-layers">
+<h2>Case #2 Loam Sand Layers<a class="headerlink" href="#case-2-loam-sand-layers" title="Link to this heading">#</a></h2>
+<p>The steady-state solution is shown below.
+The sand region corresponds to the left part of the pressure profile.
+The van Genuchten parameters are <span class="math notranslate nohighlight">\(\alpha=1.532333\cdot 10^{-3}\)</span>, <span class="math notranslate nohighlight">\(m=0.6666667\)</span>, and
+residual saturation is <span class="math notranslate nohighlight">\(s_r=0.104651\)</span>.
+The absolute permeability is given by the isotropic tensor <span class="math notranslate nohighlight">\(K=1.18472E-11 [m^2]\)</span>.</p>
+<p>The loam region corresponds to the right part of the pressure profile.
+The van Genuchten parameters are <span class="math notranslate nohighlight">\(\alpha=4.08622\cdot 10^{-4}\)</span>, <span class="math notranslate nohighlight">\(m=0.375\)</span>, and
+residual saturation is <span class="math notranslate nohighlight">\(s_r=0.186047\)</span>.
+The absolute permeability is given by the isotropic tensor <span class="math notranslate nohighlight">\(K=5.9236 \cdot 10^{-13} [m^2]\)</span>.</p>
+<section id="id5">
+<h3>Results and Comparison<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
+<p>We compare with the Amanzi’s golden data that were verified against the Vanderborght paper.</p>
+<p>(<a class="reference download internal" download="" href="../../../_downloads/d221e64f931a7daada59808b57a03ca0/amanzi_infiltration_1d-a.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/b8311a85ddea73c3d18bc0334ba0910b/amanzi_infiltration_1d-a.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/1185b6251ab28f6e8890e1e7c5f0faa6/amanzi_infiltration_1d-a.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/2aff56a79150871fd85538720da774b1/amanzi_infiltration_1d-a.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-center">
+<img alt="../../../_images/amanzi_infiltration_1d-a.png" class="plot-directive" src="../../../_images/amanzi_infiltration_1d-a.png" />
+</figure>
+</section>
+</section>
+<section id="case-3-sand-loam-layers">
+<h2>Case #3: Sand Loam Layers<a class="headerlink" href="#case-3-sand-loam-layers" title="Link to this heading">#</a></h2>
+<p>The steady-state solution is shown below.
+Now, we swap the sand is loam regions.
+The van Genuchten parameters are <span class="math notranslate nohighlight">\(\alpha=4.08622\cdot 10^{-4}\)</span>, <span class="math notranslate nohighlight">\(m=0.375\)</span>, and
+residual saturation is <span class="math notranslate nohighlight">\(s_r=0.186047\)</span>.
+The absolute permeability is given by the isotropic tensor <span class="math notranslate nohighlight">\(K=5.9236 \cdot 10^{-13} [m^2]\)</span>.</p>
+<p>The sand region corresponds to the right part of the pressure profile.
+The van Genuchten parameters are <span class="math notranslate nohighlight">\(\alpha=1.532333\cdot 10^{-3}\)</span>, <span class="math notranslate nohighlight">\(m=0.6666667\)</span>, and
+residual saturation is <span class="math notranslate nohighlight">\(s_r=0.104651\)</span>.
+The absolute permeability is given by the isotropic tensor <span class="math notranslate nohighlight">\(K=1.18472 \cdot 10^{-11} [m^2]\)</span>.</p>
+<section id="id6">
+<h3>Results and Comparison<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<p>We compare with the Amanzi’s golden data that were verified against the Vanderborght paper.</p>
+<p>(<a class="reference download internal" download="" href="../../../_downloads/3705b15ea55e4e6cba3e7795f5bd13d4/amanzi_infiltration_1d-b.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/4073ccdbafa76b96fa721ea23e8286cc/amanzi_infiltration_1d-b.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/eb8b7e92f617b557c4614e3f3c698df6/amanzi_infiltration_1d-b.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/04bade6d1b797557a7784bea15d65150/amanzi_infiltration_1d-b.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-center">
+<img alt="../../../_images/amanzi_infiltration_1d-b.png" class="plot-directive" src="../../../_images/amanzi_infiltration_1d-b.png" />
+</figure>
+</section>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h2>
+<div class="docutils container" id="id7">
+<div role="list" class="citation-list">
+<div class="citation" id="id32" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">BC64</a><span class="fn-bracket">]</span></span>
+<p>R.H. Brooks and A.T. Corey. Hydraulic properties of porous media. <em>Hydrology Papers, Colorado State University</em>, 1964.</p>
+</div>
+<div class="citation" id="id33" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">Mua76</a><span class="fn-bracket">]</span></span>
+<p>Y. Mualem. A new model for predicting the hydraulic conductivity of unsaturated porous media. <em>Water Resour. Res</em>, 12(3):513–522, 1976.</p>
+</div>
+<div class="citation" id="id35" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">vG80</a><span class="fn-bracket">]</span></span>
+<p>M.T. van Genuchten. A closed-form equation for predicting the hydraulic conductivity of unsaturated soils. <em>Soil Sci. Soc. Am. J</em>, 44(5):892–898, 1980.</p>
+</div>
+<div class="citation" id="id38" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id4">VKH+05</a><span class="fn-bracket">]</span></span>
+<p>J. Vanderborght, R. Kasteel, M. Herbst, M. Javaux, D. Thiery, M. Vanclooster, C. Mouvet, and H. Vereecken. A set of analytical benchmarks to test numerical models of flow and transport in soils. <em>Vadose Zone J.</em>, 4(1):206–221, 2005.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="about">
+<span id="about-sand-clay"></span><h2>About<a class="headerlink" href="#about" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Directory:  testing/verification/flow/richards/steady-state/infiltration_1d</p></li>
+<li><p>Author:</p></li>
+<li><p>Maintainer:  David Moulton (<a class="reference external" href="mailto:moulton&#37;&#52;&#48;lanl&#46;gov">moulton<span>&#64;</span>lanl<span>&#46;</span>gov</a>)</p></li>
+<li><p>Input Files:</p>
+<ul>
+<li><p>amanzi_infiltration_clay_sand_1d-u.xml</p></li>
+<li><p>amanzi_infiltration_loam_sand_1d-u.xml</p></li>
+<li><p>amanzi_infiltration_sand_loam_1d-u.xml</p>
+<ul>
+<li><p>Spec 2.3, unstructured mesh framework</p></li>
+<li><p>mesh is generated internally</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Infiltration Flow Tests</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../../transport/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Transport of Solutes: Advection, Dispersion and Diffusion</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

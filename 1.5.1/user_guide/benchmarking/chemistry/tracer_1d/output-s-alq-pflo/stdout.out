@@ -1,0 +1,3 @@
+[pn2401379.lanl.gov:86859] shmem: mmap: an error occurred while determining whether or not /var/folders/36/xt3jx8554vj0_03sz682d5_800074q/T//ompi.pn2401379.7319/jf.0/3786080256/sm_segment.pn2401379.7319.e1ab0000.0 could be created.
+Structured not supported in current build
+Amanzi::SIMULATION_FAILED

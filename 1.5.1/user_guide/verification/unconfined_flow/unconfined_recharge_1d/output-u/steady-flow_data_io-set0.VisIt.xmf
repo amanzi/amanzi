@@ -1,0 +1,15 @@
+<Xdmf Version="2.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <Domain>
+    <Grid CollectionType="Temporal" GridType="Collection">
+      <xi:include href="steady-flow_data.h5.0.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="steady-flow_data.h5.20.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="steady-flow_data.h5.40.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="steady-flow_data.h5.60.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="steady-flow_data.h5.80.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="steady-flow_data.h5.100.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="steady-flow_data.h5.120.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="steady-flow_data.h5.140.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+      <xi:include href="steady-flow_data.h5.157.xmf" xpointer="xpointer(//Xdmf/Domain/Grid)"/>
+    </Grid>
+  </Domain>
+</Xdmf>

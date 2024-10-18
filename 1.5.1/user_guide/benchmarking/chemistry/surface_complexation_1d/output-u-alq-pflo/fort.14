@@ -1,0 +1,540 @@
+ WARNING: Card (NONISOTHERMAL) not found in input file.
+
+ ! ************************************************************************** !
+
+ Initial Basis
+
+ Primary Species:
+  H+
+    Charge:   1.00
+    Molar Mass:    1.0079 [g/mol]
+    Debye-Huckel a0:    9.0000 [Angstrom]
+
+  Na+
+    Charge:   1.00
+    Molar Mass:   22.9898 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+
+  NO3-
+    Charge:  -1.00
+    Molar Mass:   62.0049 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+
+  Zn++
+    Charge:   2.00
+    Molar Mass:   65.3900 [g/mol]
+    Debye-Huckel a0:    6.0000 [Angstrom]
+
+
+ Secondary Species:
+  OH-
+    Charge:  -1.00
+    Molar Mass:   17.0073 [g/mol]
+    Debye-Huckel a0:    3.5000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  OH-                             
+        -1.0000  H+                              
+         1.0000  H2O                             
+      logK:    14.9398    13.9951    13.0272    12.2551    11.6308    11.2836    11.1675    11.3002
+
+  Zn(OH)2(aq)
+    Charge:   0.00
+    Molar Mass:   99.4047 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  Zn(OH)2(aq)                     
+        -2.0000  H+                              
+         1.0000  Zn++                            
+         2.0000  H2O                             
+      logK:   500.0000    17.3282   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Zn(OH)3-
+    Charge:  -1.00
+    Molar Mass:  116.4120 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  Zn(OH)3-                        
+        -3.0000  H+                              
+         1.0000  Zn++                            
+         3.0000  H2O                             
+      logK:   500.0000    28.8369   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Zn(OH)4--
+    Charge:  -2.00
+    Molar Mass:  133.4194 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  Zn(OH)4--                       
+        -4.0000  H+                              
+         1.0000  Zn++                            
+         4.0000  H2O                             
+      logK:   500.0000    41.6052   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  ZnOH+
+    Charge:   1.00
+    Molar Mass:   82.3973 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  ZnOH+                           
+        -1.0000  H+                              
+         1.0000  H2O                             
+         1.0000  Zn++                            
+      logK:   500.0000     8.9600     7.9300     6.9900     6.0600     5.3300     4.7400     4.2500
+
+
+ Gas Components: None
+
+ Minerals: None
+
+ Surface Complexation Reactions:
+
+   Surface Complexes:
+  >FeOH2+_w
+    Charge:   1.00
+    Surface Complex Reaction: 
+        -1.0000  >FeOH2+_w                       
+         1.0000  >FeOH_w                         
+         1.0000  H+                              
+      logK:   500.0000    -7.1800   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >FeO-_w
+    Charge:  -1.00
+    Surface Complex Reaction: 
+        -1.0000  >FeO-_w                         
+         1.0000  >FeOH_w                         
+        -1.0000  H+                              
+      logK:   500.0000     8.8200   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >FeOHZn+_w
+    Charge:   1.00
+    Surface Complex Reaction: 
+        -1.0000  >FeOHZn+_w                      
+         1.0000  >FeOH_w                         
+        -1.0000  H+                              
+         1.0000  Zn++                            
+      logK:   500.0000     2.3200   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+   Surface Complexes:
+  >FeOH2+_s
+    Charge:   1.00
+    Surface Complex Reaction: 
+        -1.0000  >FeOH2+_s                       
+         1.0000  >FeOH_s                         
+         1.0000  H+                              
+      logK:   500.0000    -7.1800   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >FeO-_s
+    Charge:  -1.00
+    Surface Complex Reaction: 
+        -1.0000  >FeO-_s                         
+         1.0000  >FeOH_s                         
+        -1.0000  H+                              
+      logK:   500.0000     8.8200   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >FeOHZn+_s
+    Charge:   1.00
+    Surface Complex Reaction: 
+        -1.0000  >FeOHZn+_s                      
+         1.0000  >FeOH_s                         
+        -1.0000  H+                              
+         1.0000  Zn++                            
+      logK:   500.0000    -0.6600   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+ Ion Exchange Reactions: None
+
+ ! ************************************************************************** !
+
+ WARNING: No mineral name specified for equilibrium surface complexation reaction: 1
+ WARNING: No mineral name specified for equilibrium surface complexation reaction: 2
+
+ ! ************************************************************************** !
+
+ Final Basis
+
+ Primary Species:
+  H+
+    Charge:   1.00
+    Molar Mass:    1.0079 [g/mol]
+    Debye-Huckel a0:    9.0000 [Angstrom]
+
+  Na+
+    Charge:   1.00
+    Molar Mass:   22.9898 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+
+  NO3-
+    Charge:  -1.00
+    Molar Mass:   62.0049 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+
+  Zn++
+    Charge:   2.00
+    Molar Mass:   65.3900 [g/mol]
+    Debye-Huckel a0:    6.0000 [Angstrom]
+
+
+ Secondary Species:
+  OH-
+    Charge:  -1.00
+    Molar Mass:   17.0073 [g/mol]
+    Debye-Huckel a0:    3.5000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  OH-                             
+         1.0000  H2O                             
+        -1.0000  H+                              
+      logK:    14.9398    13.9951    13.0272    12.2551    11.6308    11.2836    11.1675    11.3002
+
+  Zn(OH)2(aq)
+    Charge:   0.00
+    Molar Mass:   99.4047 [g/mol]
+    Debye-Huckel a0:    3.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  Zn(OH)2(aq)                     
+         2.0000  H2O                             
+        -2.0000  H+                              
+         1.0000  Zn++                            
+      logK:   500.0000    17.3282   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Zn(OH)3-
+    Charge:  -1.00
+    Molar Mass:  116.4120 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  Zn(OH)3-                        
+         3.0000  H2O                             
+        -3.0000  H+                              
+         1.0000  Zn++                            
+      logK:   500.0000    28.8369   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  Zn(OH)4--
+    Charge:  -2.00
+    Molar Mass:  133.4194 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  Zn(OH)4--                       
+         4.0000  H2O                             
+        -4.0000  H+                              
+         1.0000  Zn++                            
+      logK:   500.0000    41.6052   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  ZnOH+
+    Charge:   1.00
+    Molar Mass:   82.3973 [g/mol]
+    Debye-Huckel a0:    4.0000 [Angstrom]
+    Equilibrium Aqueous Reaction: 
+        -1.0000  ZnOH+                           
+         1.0000  H2O                             
+        -1.0000  H+                              
+         1.0000  Zn++                            
+      logK:   500.0000     8.9600     7.9300     6.9900     6.0600     5.3300     4.7400     4.2500
+
+
+ Gas Components: None
+
+ Minerals: None
+
+ Surface Complexation Reactions:
+
+   Surface Complexes:
+  >FeOH2+_w
+    Charge:   1.00
+    Surface Complex Reaction: 
+        -1.0000  >FeOH2+_w                       
+         1.0000  >FeOH_w                         
+         1.0000  H+                              
+      logK:   500.0000    -7.1800   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >FeO-_w
+    Charge:  -1.00
+    Surface Complex Reaction: 
+        -1.0000  >FeO-_w                         
+         1.0000  >FeOH_w                         
+        -1.0000  H+                              
+      logK:   500.0000     8.8200   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >FeOHZn+_w
+    Charge:   1.00
+    Surface Complex Reaction: 
+        -1.0000  >FeOHZn+_w                      
+         1.0000  >FeOH_w                         
+        -1.0000  H+                              
+         1.0000  Zn++                            
+      logK:   500.0000     2.3200   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+   Surface Complexes:
+  >FeOH2+_s
+    Charge:   1.00
+    Surface Complex Reaction: 
+        -1.0000  >FeOH2+_s                       
+         1.0000  >FeOH_s                         
+         1.0000  H+                              
+      logK:   500.0000    -7.1800   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >FeO-_s
+    Charge:  -1.00
+    Surface Complex Reaction: 
+        -1.0000  >FeO-_s                         
+         1.0000  >FeOH_s                         
+        -1.0000  H+                              
+      logK:   500.0000     8.8200   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >FeOHZn+_s
+    Charge:   1.00
+    Surface Complex Reaction: 
+        -1.0000  >FeOHZn+_s                      
+         1.0000  >FeOH_s                         
+        -1.0000  H+                              
+         1.0000  Zn++                            
+      logK:   500.0000    -0.6600   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+ Ion Exchange Reactions: None
+
+ ! ************************************************************************** !
+
+--------------------------------------------------------------------------------
+
+     4  Primary Species
+
+              H+                    Na+                   NO3-                
+              Zn++                
+
+     5  Secondary Complex Species
+
+              OH-                   Zn(OH)2(aq)           Zn(OH)3-            
+              Zn(OH)4--             ZnOH+               
+
+     0  Active Gas Species
+
+
+
+     0  Passive Gas Species
+
+
+
+     0  Reference Minerals
+
+
+
+     0  Kinetic Mineral Reactions
+
+
+
+     2  Surface Complexation Reaction Sites
+
+              >FeOH_w               >FeOH_s             
+
+     6  Surface Complexes
+
+              >FeOH2+_w             >FeO-_w               >FeOHZn+_w          
+              >FeOH2+_s             >FeO-_s               >FeOHZn+_s          
+
+
+     0  Ion Exchange Reactions
+
+     0  Ion Exchange Cations
+--------------------------------------------------------------------------------
+Constraint Species: H+
+Constraint Species: Na+
+Constraint Species: NO3-
+Constraint Species: Zn++
+Constraint Species: H+
+Constraint Species: Na+
+Constraint Species: NO3-
+Constraint Species: Zn++
+Constraint Species: H+
+Constraint Species: Na+
+Constraint Species: NO3-
+Constraint Species: Zn++
+processing : initial
+Looking for pflotran constraint : initial
+initializing constraint : initial
+equilibrate constraint : initial
+
+  Constraint: initial
+  ----------------------------------------------------------------------------
+        iterations:    12
+                pH:   5.0000
+    ionic strength:   1.0018E-01 [mol/L]
+    charge balance:  -7.5140E-17
+          pressure:   2.1220-314 [Pa]
+       temperature:    25.00 [C]
+       density H2O:   997.16 [kg/m^3]
+ ln / activity H2O:   0.0000E+00  1.0000E+00    [---]
+ mole fraction H2O:   9.9640E-01    [---]
+ mass fraction H2O:   9.9156E-01    [---]
+  ----------------------------------------------------------------------------
+
+  primary                   free        total
+  species                   molal       molal       act coef     constraint
+  ----------------------------------------------------------------------------
+  H+                        1.2008E-05  1.2019E-05  8.3277E-01    pH
+  Na+                       1.0017E-01  1.0027E-01  7.7592E-01    chrg
+  NO3-                      1.0018E-01  1.0028E-01  7.5990E-01    total aq
+  Zn++                      1.0017E-07  1.0028E-07  4.0321E-01    total aq
+
+  complex                   molality    act coef        logK
+  ----------------------------------------------------------------------------
+  OH-                       1.3166E-09  7.6817E-01    1.3995E+01
+  ZnOH+                     5.7078E-12  7.7592E-01    8.9600E+00
+  Zn(OH)2(aq)               1.8971E-15  1.0000E+00    1.7328E+01
+  Zn(OH)3-                  7.5782E-22  7.7592E-01    2.8837E+01
+  Zn(OH)4--                 2.8453E-29  3.5233E-01    4.1605E+01
+
+
+  NOTE: Only equilibrium surface complexation is considered below
+
+  surf complex              mol/m^3 blk logK
+  ----------------------------------------------------------------------------
+  >FeOH2+_w                 7.5854E-02 -7.1800E+00
+  >FeOH2+_s                 1.8952E-03 -7.1800E+00
+  >FeOH_w                   5.0116E-04  free site
+  >FeOH_s                   1.2522E-05  free site
+  >FeOHZn+_s                2.3118E-07 -6.6000E-01
+  >FeO-_w                   7.5854E-08  8.8200E+00
+  >FeOHZn+_w                9.6886E-09  2.3200E+00
+  >FeO-_s                   1.8952E-09  8.8200E+00
+
+  primary species          retardation
+  ----------------------------------------------------------------------------
+  H+                        2.6948E+01
+  Na+                       1.0000E+00
+  NO3-                      1.0000E+00
+  Zn++                      1.0096E+00
+
+  primary species         total(aq+sorbed)    total retardation
+                             [mol/L]               1+Kd
+  ----------------------------------------------------------------------------
+  H+                        3.2298E-04          2.6948E+01
+  Na+                       9.9988E-02          1.0000E+00
+  NO3-                      1.0000E-01          1.0000E+00
+  Zn++                      1.0096E-07          1.0096E+00
+processing : west
+Looking for pflotran constraint : west
+initializing constraint : west
+equilibrate constraint : west
+
+  Constraint: west
+  ----------------------------------------------------------------------------
+        iterations:     9
+                pH:   6.0000
+    ionic strength:   1.0018E-01 [mol/L]
+    charge balance:   4.4403E-13
+          pressure:   0.0000E+00 [Pa]
+       temperature:    25.00 [C]
+       density H2O:   997.16 [kg/m^3]
+ ln / activity H2O:   0.0000E+00  1.0000E+00    [---]
+ mole fraction H2O:   9.9640E-01    [---]
+ mass fraction H2O:   9.9156E-01    [---]
+  ----------------------------------------------------------------------------
+
+  primary                   free        total
+  species                   molal       molal       act coef     constraint
+  ----------------------------------------------------------------------------
+  H+                        1.2008E-06  1.1883E-06  8.3277E-01    pH
+  Na+                       1.0018E-01  1.0028E-01  7.7592E-01    chrg
+  NO3-                      1.0018E-01  1.0028E-01  7.5990E-01    total aq
+  Zn++                      1.0012E-06  1.0028E-06  4.0321E-01    total aq
+
+  complex                   molality    act coef        logK
+  ----------------------------------------------------------------------------
+  OH-                       1.3166E-08  7.6817E-01    1.3995E+01
+  ZnOH+                     5.7048E-10  7.7592E-01    8.9600E+00
+  Zn(OH)2(aq)               1.8961E-12  1.0000E+00    1.7328E+01
+  Zn(OH)3-                  7.5743E-18  7.7592E-01    2.8837E+01
+  Zn(OH)4--                 2.8439E-24  3.5233E-01    4.1605E+01
+
+
+  NOTE: Only equilibrium surface complexation is considered below
+
+  surf complex              mol/m^3 blk logK
+  ----------------------------------------------------------------------------
+  >FeOH2+_w                 7.1608E-02 -7.1800E+00
+  >FeOH_w                   4.7311E-03  free site
+  >FeOH2+_s                 1.6059E-03 -7.1800E+00
+  >FeOHZn+_s                1.9579E-04 -6.6000E-01
+  >FeOH_s                   1.0610E-04  free site
+  >FeOHZn+_w                9.1416E-06  2.3200E+00
+  >FeO-_w                   7.1608E-06  8.8200E+00
+  >FeO-_s                   1.6059E-07  8.8200E+00
+
+  primary species          retardation
+  ----------------------------------------------------------------------------
+  H+                        2.4743E+02
+  Na+                       1.0000E+00
+  NO3-                      1.0000E+00
+  Zn++                      1.8197E+00
+
+  primary species         total(aq+sorbed)    total retardation
+                             [mol/L]               1+Kd
+  ----------------------------------------------------------------------------
+  H+                        2.9319E-04          2.4743E+02
+  Na+                       9.9997E-02          1.0000E+00
+  NO3-                      1.0000E-01          1.0000E+00
+  Zn++                      1.8197E-06          1.8197E+00
+processing : east
+Looking for pflotran constraint : east
+initializing constraint : east
+equilibrate constraint : east
+
+  Constraint: east
+  ----------------------------------------------------------------------------
+        iterations:    10
+                pH:   5.0000
+    ionic strength:   1.0018E-01 [mol/L]
+    charge balance:  -1.9629E-17
+          pressure:   0.0000E+00 [Pa]
+       temperature:    25.00 [C]
+       density H2O:   997.16 [kg/m^3]
+ ln / activity H2O:   0.0000E+00  1.0000E+00    [---]
+ mole fraction H2O:   9.9640E-01    [---]
+ mass fraction H2O:   9.9156E-01    [---]
+  ----------------------------------------------------------------------------
+
+  primary                   free        total
+  species                   molal       molal       act coef     constraint
+  ----------------------------------------------------------------------------
+  H+                        1.2008E-05  1.2019E-05  8.3277E-01    pH
+  Na+                       1.0017E-01  1.0027E-01  7.7592E-01    chrg
+  NO3-                      1.0018E-01  1.0028E-01  7.5990E-01    total aq
+  Zn++                      1.0017E-07  1.0028E-07  4.0321E-01    total aq
+
+  complex                   molality    act coef        logK
+  ----------------------------------------------------------------------------
+  OH-                       1.3166E-09  7.6817E-01    1.3995E+01
+  ZnOH+                     5.7078E-12  7.7592E-01    8.9600E+00
+  Zn(OH)2(aq)               1.8971E-15  1.0000E+00    1.7328E+01
+  Zn(OH)3-                  7.5782E-22  7.7592E-01    2.8837E+01
+  Zn(OH)4--                 2.8453E-29  3.5233E-01    4.1605E+01
+
+
+  NOTE: Only equilibrium surface complexation is considered below
+
+  surf complex              mol/m^3 blk logK
+  ----------------------------------------------------------------------------
+  >FeOH2+_w                 7.5854E-02 -7.1800E+00
+  >FeOH2+_s                 1.8952E-03 -7.1800E+00
+  >FeOH_w                   5.0116E-04  free site
+  >FeOH_s                   1.2522E-05  free site
+  >FeOHZn+_s                2.3118E-07 -6.6000E-01
+  >FeO-_w                   7.5854E-08  8.8200E+00
+  >FeOHZn+_w                9.6886E-09  2.3200E+00
+  >FeO-_s                   1.8952E-09  8.8200E+00
+
+  primary species          retardation
+  ----------------------------------------------------------------------------
+  H+                        2.6948E+01
+  Na+                       1.0000E+00
+  NO3-                      1.0000E+00
+  Zn++                      1.0096E+00
+
+  primary species         total(aq+sorbed)    total retardation
+                             [mol/L]               1+Kd
+  ----------------------------------------------------------------------------
+  H+                        3.2298E-04          2.6948E+01
+  Na+                       9.9988E-02          1.0000E+00
+  NO3-                      1.0000E-01          1.0000E+00
+  Zn++                      1.0096E-07          1.0096E+00

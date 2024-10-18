@@ -1,0 +1,907 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="auto">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Steady-State Flow in an Unconfined Aquifer: Head, and Flux Boundary Conditions &#8212; Amanzi</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "auto";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "auto";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/fix_eq_position.css?v=19b1522f" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/default.css?v=f6536f91" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=da87a0f1"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'verification/unconfined_flow/unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.15.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://raw.githubusercontent.com/amanzi/ats/master/docs/documentation/source/_static/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v1.5';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner = false;
+        </script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Steady-State Unconfined Flow with a Seepage Boundary Condition" href="../unconfined_seepage_1d/amanzi_unconfined_seepage_1d.html" />
+    <link rel="prev" title="Unconfined Flow Tests" href="../index.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="auto">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+
+
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/Amanzi-color.png" class="logo__image only-light" alt="Amanzi - Home"/>
+    <script>document.write(`<img src="../../../_static/Amanzi-Dark.png" class="logo__image only-dark" alt="Amanzi - Home"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/index.html">
+    Background
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/getting_started.html">
+    Getting Started with Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../capabilities/index.html">
+    Amanzi Features and Capabilities
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../input/index.html">
+    Amanzi Input Description
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install/index.html">
+    Building Amanzi
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../tutorial/index.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="../../index.html">
+    Verification Testing
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../benchmarking/index.html">
+    Benchmark Testing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/index.html">
+    Background
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../background/getting_started.html">
+    Getting Started with Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../capabilities/index.html">
+    Amanzi Features and Capabilities
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../input/index.html">
+    Amanzi Input Description
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install/index.html">
+    Building Amanzi
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorial/index.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../index.html">
+    Verification Testing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../benchmarking/index.html">
+    Benchmark Testing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><!-- This will display the version of the docs -->
+Version  1.5.1</div>
+        <div class="sidebar-primary-item">
+<script>
+document.write(`
+  <div class="version-switcher__container dropdown">
+    <button id="pst-version-switcher-button-2"
+      type="button"
+      class="version-switcher__button btn btn-sm dropdown-toggle"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="pst-version-switcher-list-2"
+      aria-label="Version switcher list"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </button>
+    <div id="pst-version-switcher-list-2"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="pst-version-switcher-button-2">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+`);
+</script></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../confined_flow/index.html">Confined Flow Tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/linear_head_head_1d/amanzi_linear_head_head_1d.html">Steady-State One-Dimensional Flow with Head Boundary Conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/linear_flux_head_1d/amanzi_linear_flux_head_1d.html">Steady-State One-Dimensional Flow with Flux and Head Boundary Conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/linear_materials_serial_1d/amanzi_linear_materials_serial_1d.html">Steady-State One-Dimensional Flow: Materials in Serial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/linear_materials_parallel_1d/amanzi_linear_materials_parallel_1d.html">Steady-State One-Dimensional Flow: Materials in Parallel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/theis_isotropic_1d/amanzi_theis_isotropic_1d.html">Transient One-Dimensional Confined Flow to a Pumping Well (Theis)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/butler_pod_2d/amanzi_butler_pod_2d.html">Transient Flow in a 2D Confined Aquifer with a Disc Embedded in A Matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/butler_strip_2d/amanzi_butler_strip_2d.html">Transient Flow in a 2D Confined Aquifer with a Linear Strip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.html">Transient Flow to a Pumping Well in an Anisotropic Aquifer (Hantush)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/boundedDomain_2d/amanzi_boundedDomain_2d.html">Transient Drawdown due to Pumping Wells in a Bounded Domain</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">Unconfined Flow Tests</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Steady-State Flow in an Unconfined Aquifer: Head, and Flux Boundary Conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../unconfined_seepage_1d/amanzi_unconfined_seepage_1d.html">Steady-State Unconfined Flow with a Seepage Boundary Condition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../unconfined_layered_2d/amanzi_unconfined_layered_2d.html">Steady-State Flow in an Unconfined Multi-Aquifer System</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../infiltration/index.html">Infiltration Flow Tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../infiltration/infiltration_1d/amanzi_infiltration_1d.html">Infiltration 1D</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../transport/index.html">Transport of Solutes: Advection, Dispersion and Diffusion</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/dispersion_aligned_point_2d/amanzi_dispersion_aligned_point_2d.html">2D Dispersive Transport in a Uniform Flow Field (aligned)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/dispersion_45_point_2d/amanzi_dispersion_45_point_2d.html">2D Dispersive Transport in a Uniform Flow Field (diagonal)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/dual_porosity_1d/amanzi_dual_porosity_1d.html">1D Dispersive Transport with Dual Porosity Model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../mechanics/index.html">Mechanics</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../mechanics/consolidation_1d/amanzi_consolidation_1d.html">Soil Consolidation</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+        <div class="sidebar-primary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#capabilities-tested">Capabilities Tested</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#background">Background</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analytic-solution-1-prescribed-head-at-boundaries">Analytic solution #1: Prescribed head at boundaries</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analytic-solution-2-prescribed-head-and-no-flow-boundaries">Analytic solution #2: Prescribed head and no-flow boundaries</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#amanzi-verification-test-problem-1">Amanzi verification test problem #1</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#amanzi-verification-test-problem-2">Amanzi verification test problem #2</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#amanzi-verification-test-results">Amanzi verification test results</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#about">About</a></li>
+</ul>
+  </nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Verification Testing</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Unconfined Flow Tests</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Steady-State...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="steady-state-flow-in-an-unconfined-aquifer-head-and-flux-boundary-conditions">
+<span id="amanzi-unconfined-no-recharge-1d"></span><h1>Steady-State Flow in an Unconfined Aquifer: Head, and Flux Boundary Conditions<a class="headerlink" href="#steady-state-flow-in-an-unconfined-aquifer-head-and-flux-boundary-conditions" title="Link to this heading">#</a></h1>
+<section id="capabilities-tested">
+<h2>Capabilities Tested<a class="headerlink" href="#capabilities-tested" title="Link to this heading">#</a></h2>
+</section>
+<section id="background">
+<h2>Background<a class="headerlink" href="#background" title="Link to this heading">#</a></h2>
+<p>Flow in an unconfined aquifer is inherently multi-dimensional, which generally
+precludes simple closed-form analytic solutions. In many practical applications however,
+vertical gradients and velocities are small relative to their horizontal counterparts
+and can be neglected following Dupuit <span id="id1">[<a class="reference internal" href="#id35" title="J. Dupuit. Études théoriques et pratiques sur le mouvement des eaux dans les canaux découverts et à travers les terrains perméables. Dunod, Paris, 1863.">Dup63</a>]</span> and Forchheimer <span id="id2">[<a class="reference internal" href="#id36" title="P. Forchheimer. Hydraulik. Teubner, Leipzig, Berlin, third edition, 1930.">For30</a>]</span>.
+The Dupuit-Forchheimer theory of free-surface flow assumes that <span id="id3">[<a class="reference internal" href="#id40" title="R. A. Freeze and J. A. Cherry. Groundwater. Prentice-Hall, Inc., Englewood Cliffs, NJ, 1979.">FC79</a>]</span>:</p>
+<ol class="arabic simple">
+<li><p>flow is horizontal and equipotential lines are vertical, and</p></li>
+<li><p>hydraulic gradient is equal to the slope of the free surface.</p></li>
+</ol>
+<p>With these assumptions and
+assuming the Cartesian <span class="math notranslate nohighlight">\(x\)</span>- and <span class="math notranslate nohighlight">\(y\)</span>-coordinates align with the
+principal axes of the hydraulic conductivity tensor,
+the general expression for saturated flow in an unconfined aquifer becomes (e.g., <span id="id4">[<a class="reference internal" href="#id46" title="G. de Marsily. Quantitative Hydrology. Academic Press, London, 1986.">dM86</a>]</span>)</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-generalode">
+<span class="eqno">(1)<a class="headerlink" href="#equation-generalode" title="Link to this equation">#</a></span>\[\frac{\partial}{\partial x} \left[\int_\sigma^h K_{xx}dz\frac{\partial h}{\partial x}\right]
++ \frac{\partial}{\partial y} \left[\int_\sigma^h K_{yy}dz\frac{\partial h}{\partial y}\right]
+= \omega_d \frac{\partial h}{\partial t} + Q\]</div>
+</div></blockquote>
+<p>where <span class="math notranslate nohighlight">\(h\)</span> = hydraulic head (and elevation of the water table) [L],
+<span class="math notranslate nohighlight">\(t\)</span> = time [T],
+<span class="math notranslate nohighlight">\(K\)</span> = saturated hydraulic conductivity tensor [L/T],
+<span class="math notranslate nohighlight">\(\sigma\)</span> = elevation of aquifer base [L],
+<span class="math notranslate nohighlight">\(\omega_d\)</span> = specific yield or drainage porosity [-], and
+<span class="math notranslate nohighlight">\(Q\)</span> = volumetric flow rate per unit area withdrawn from the aquifer (sink) [L/T].
+The hydraulic or total head (<span class="math notranslate nohighlight">\(h\)</span>, [L]) is the sum of pressure head (<span class="math notranslate nohighlight">\(P/\rho g\)</span>, [L])
+and elevation (<span class="math notranslate nohighlight">\(z\)</span>, [L])</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[h = \frac{P}{\rho g}+z\]</div>
+</div></blockquote>
+<p>where <span class="math notranslate nohighlight">\(\rho\)</span> = density [M/L<sup>3</sup>], and <span class="math notranslate nohighlight">\(g\)</span> = gravitational acceleration [L/T<sup>2</sup>].
+For constant, isotropic, hydraulic conductivity, a horizontal aquifer base at
+<span class="math notranslate nohighlight">\(\sigma = z = 0\)</span>, and one-dimensional flow in the <span class="math notranslate nohighlight">\(x\)</span>-direction, Equation <a class="reference internal" href="#equation-generalode">(1)</a> becomes simply</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-ode">
+<span class="eqno">(2)<a class="headerlink" href="#equation-ode" title="Link to this equation">#</a></span>\[\frac{d^2h^2}{dx^2} = \frac{2Q}{K}\]</div>
+</div></blockquote>
+<p>The ordinary differential equation <a class="reference internal" href="#equation-ode">(2)</a> is linear in <span class="math notranslate nohighlight">\(h^2\)</span> and easily solved by
+direct integration as</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-generalsoln">
+<span class="eqno">(3)<a class="headerlink" href="#equation-generalsoln" title="Link to this equation">#</a></span>\[h^2 = C_1 x + C_2\]</div>
+</div></blockquote>
+<p>where the integration constants <span class="math notranslate nohighlight">\(C_1\)</span> and <span class="math notranslate nohighlight">\(C_2\)</span> depend on the boundary conditions
+and volumetric sink <span class="math notranslate nohighlight">\(Q\)</span>.
+Following <span id="id5">[<a class="reference internal" href="#id28" title="S. Aleman. Porflow testing and verification. Technical Report, Savannah River National Laboratory, 2007.">Ale07</a>]</span>, Section 4.2), two particular solutions are considered
+for testing <em>Amanzi</em> implementation of prescribed hydraulic head, no-flow, and recharge boundary conditions,
+Darcy’s law, and mass conservation on a problem involving variably saturated conditions and quasi 2D flow
+(approximately horizontal in the saturated zone and approximately vertical in the unsaturated zone).</p>
+<section id="analytic-solution-1-prescribed-head-at-boundaries">
+<h3>Analytic solution #1: Prescribed head at boundaries<a class="headerlink" href="#analytic-solution-1-prescribed-head-at-boundaries" title="Link to this heading">#</a></h3>
+<p>When hydraulic head is prescribed at both boundaries as</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-bcs1">
+<span class="eqno">(4)<a class="headerlink" href="#equation-bcs1" title="Link to this equation">#</a></span>\[\begin{split}h(0) &amp;= h_0\\
+h(L) &amp;= h_L\end{split}\]</div>
+</div></blockquote>
+<p>the analytic solution <a class="reference internal" href="#equation-generalsoln">(3)</a> for hydraulic head becomes</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-specificsoln1">
+<span class="eqno">(5)<a class="headerlink" href="#equation-specificsoln1" title="Link to this equation">#</a></span>\[h^2 = h_0^2 + (h_L^2 - h_0^2) \frac{x}{L} + \frac{Q_{src}L^2}{K}\left( \frac{x}{L} \right) \left(1 - \frac{x}{L} \right)\]</div>
+</div></blockquote>
+<p>where <span class="math notranslate nohighlight">\(L\)</span> = domain length [L], and <span class="math notranslate nohighlight">\(Q_{src} \equiv -Q\)</span>.</p>
+</section>
+<section id="analytic-solution-2-prescribed-head-and-no-flow-boundaries">
+<h3>Analytic solution #2: Prescribed head and no-flow boundaries<a class="headerlink" href="#analytic-solution-2-prescribed-head-and-no-flow-boundaries" title="Link to this heading">#</a></h3>
+<p>For the alternative boundary conditions</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-bcs2">
+<span class="eqno">(6)<a class="headerlink" href="#equation-bcs2" title="Link to this equation">#</a></span>\[\begin{split}h(0) &amp;= h_0\\
+h'(L) &amp;= 0 \text{ (no-flow)}\end{split}\]</div>
+</div></blockquote>
+<p>the analytic solution <a class="reference internal" href="#equation-generalsoln">(3)</a> becomes</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-specificsoln2">
+<span class="eqno">(7)<a class="headerlink" href="#equation-specificsoln2" title="Link to this equation">#</a></span>\[h^2 = h_0^2 + \frac{Q_{src}L^2}{K}\left( \frac{x}{L} \right) \left(2 - \frac{x}{L} \right)\]</div>
+</div></blockquote>
+<p>where again <span class="math notranslate nohighlight">\(Q_{src} \equiv -Q\)</span>.</p>
+</section>
+<section id="amanzi-verification-test-problem-1">
+<h3>Amanzi verification test problem #1<a class="headerlink" href="#amanzi-verification-test-problem-1" title="Link to this heading">#</a></h3>
+<p>To generate numerical results the following specifications are considered for
+analytic solution #1 (<span id="id6">[<a class="reference internal" href="#id28" title="S. Aleman. Porflow testing and verification. Technical Report, Savannah River National Laboratory, 2007.">Ale07</a>]</span>, Figure 4.2.1):</p>
+<blockquote>
+<div><a class="reference internal image-reference" href="../../../_images/porflow_4.2.1.png"><img alt="../../../_images/porflow_4.2.1.png" class="align-center" src="../../../_images/porflow_4.2.1.png" style="width: 623.3499999999999px; height: 180.95px;" />
+</a>
+</div></blockquote>
+<p>With the Dupuit approximation the analytic solution given by Equation <a class="reference internal" href="#equation-specificsoln1">(5)</a>
+is one-dimensional in the horizontal coordinate and describes only the saturated zone.
+Because <em>Amanzi</em> does not directly solve a reduced governing equation set
+equivalent to Equation <a class="reference internal" href="#equation-generalode">(1)</a>, a two-dimensional <span class="math notranslate nohighlight">\((x,z)\)</span> simulation of the combined
+saturated and unsaturated zones using the Richards (1931) equation is required.
+Thus a vertical hydraulic conductivity and parameters defining moisture characteristic
+curves for the unsaturated zone are required beyond the material properties implied by
+Equation <a class="reference internal" href="#equation-specificsoln1">(5)</a>. To minimize vertical gradients consistent with the Dupuit
+assumption, the vertical hydraulic conductivity is set 10x higher than the
+horizontal conductivity. To minimize non-vertical flow in the unsaturated zone
+(and preserve the uniform distribution of recharge applied to the top of the model domain),
+van Genuchten (1980) - Mualem (1976) parameters consistent with a gravel
+are selected. Input parameters for the numerical simulation are summarized as:</p>
+<ul>
+<li><p>Domain (2D)</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(x_{min} = z_{min} = 0\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(x_{max} = L = 100 ft, z_{max} = 60 ft\)</span></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Boundary conditions</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>no-flow prescribed at the <span class="math notranslate nohighlight">\(z_{min}, z_{max}\)</span> boundaries (<span class="math notranslate nohighlight">\(Q_{src} = 0\)</span>)</p></li>
+<li><p>prescribed hydraulic head at the x-coordinate boundaries: <span class="math notranslate nohighlight">\(h(0) = 40 ft, h(L) = 20 ft\)</span></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Material properties</p>
+<blockquote>
+<div><ul>
+<li><p><span class="math notranslate nohighlight">\(\rho = 998.2 \: kg/m^3, \mu = 1.002e-3 \: Pa\cdot s, g = 9.807 \: m/s^2\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(K_{xx} = 10^{-3} ft/s\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(K_{zz} = 10 \cdot K_{xx}\)</span></p></li>
+<li><p>van Genuchten <span id="id7">[<a class="reference internal" href="#id41" title="M.T. van Genuchten. A closed-form equation for predicting the hydraulic conductivity of unsaturated soils. Soil Sci. Soc. Am. J, 44(5):892–898, 1980.">vG80</a>]</span> - Mualem <span id="id8">[<a class="reference internal" href="#id39" title="Y. Mualem. A new model for predicting the hydraulic conductivity of unsaturated porous media. Water Resour. Res, 12(3):513–522, 1976.">Mua76</a>]</span> parameters for
+a gravel based on <span id="id9">[<a class="reference internal" href="#id47" title="M. A. Phifer, M. R. Millings, and G. P. Flach. Hydraulic property data package for the e-area and z-area soils, cementitious materials, and waste zones. Technical Report, Savannah River National Laboratory, 2006.">PMF06</a>]</span>:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\alpha = 0.143 cm^{-1} (1.46e-3 Pa^{-1})\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(S_r = 0.052\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(m = 0.314\)</span></p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Model discretization</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\Delta x = 1 ft, \Delta z = 1 ft\)</span></p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<p>For these input specifications, <em>Amanzi</em> simulation output is expected to closely match</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-expectedh1">
+<span class="eqno">(8)<a class="headerlink" href="#equation-expectedh1" title="Link to this equation">#</a></span>\[h [ft] = \sqrt{1600 - 12 x}\]</div>
+</div></blockquote>
+<p>from Equation <a class="reference internal" href="#equation-specificsoln1">(5)</a>. This is demonstrated with the next figure.</p>
+<p>(<a class="reference download internal" download="" href="../../../_downloads/4c2068489601c027b5ab9f5eaabb0454/amanzi_unconfined_no_recharge_1d.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/10f6a906c02951e61317c7221f9977a1/amanzi_unconfined_no_recharge_1d.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/861b7c51fca1501c532a9c80cb95692b/amanzi_unconfined_no_recharge_1d.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="../../../_downloads/06caaba9c1fd121ad49558bddfc4272c/amanzi_unconfined_no_recharge_1d.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-center">
+<img alt="../../../_images/amanzi_unconfined_no_recharge_1d.png" class="plot-directive" src="../../../_images/amanzi_unconfined_no_recharge_1d.png" />
+</figure>
+<p>(TBD) somehow insert table comparing analytic and Amanzi hydraulic head</p>
+</section>
+<section id="amanzi-verification-test-problem-2">
+<h3>Amanzi verification test problem #2<a class="headerlink" href="#amanzi-verification-test-problem-2" title="Link to this heading">#</a></h3>
+<p>Similarly, to generate numerical results for analytic solution #2
+the following specifications are considered (Aleman 2007, Figure 4.2.2):</p>
+<a class="reference internal image-reference" href="../../../_images/porflow_4.2.2.png"><img alt="../../../_images/porflow_4.2.2.png" class="align-center" src="../../../_images/porflow_4.2.2.png" style="width: 614.5999999999999px; height: 195.64999999999998px;" />
+</a>
+<p>Input parameters for the numerical simulation are summarized as:</p>
+<ul>
+<li><p>Domain (2D)</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(x_{min} = z_{min} = 0\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(x_{max} = L = 1640 ft, z_{max} = 240 ft\)</span></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Boundary conditions</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>no-flow prescribed at the <span class="math notranslate nohighlight">\(x_{max}, z_{min}\)</span> boundaries</p></li>
+<li><p>recharge at <span class="math notranslate nohighlight">\(z_{max}\)</span> boundary, <span class="math notranslate nohighlight">\(Q_{src} = 0.0328 ft/d\)</span></p></li>
+<li><p>prescribed hydraulic head at the x-coordinate boundary: <span class="math notranslate nohighlight">\(h(0) = 164 ft\)</span></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Material properties</p>
+<blockquote>
+<div><ul>
+<li><p><span class="math notranslate nohighlight">\(\rho = 998.2 \: kg/m^3, \mu = 1.002e-3 \: Pa\cdot s, g = 9.807 \: m/s^2\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(K_{xx} = 3.28 ft/d\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(K_{zz} = 10 \cdot K_{xx}\)</span></p></li>
+<li><p>van Genuchten <span id="id10">[<a class="reference internal" href="#id41" title="M.T. van Genuchten. A closed-form equation for predicting the hydraulic conductivity of unsaturated soils. Soil Sci. Soc. Am. J, 44(5):892–898, 1980.">vG80</a>]</span> - Mualem <span id="id11">[<a class="reference internal" href="#id39" title="Y. Mualem. A new model for predicting the hydraulic conductivity of unsaturated porous media. Water Resour. Res, 12(3):513–522, 1976.">Mua76</a>]</span> parameters for
+a gravel based on <span id="id12">[<a class="reference internal" href="#id47" title="M. A. Phifer, M. R. Millings, and G. P. Flach. Hydraulic property data package for the e-area and z-area soils, cementitious materials, and waste zones. Technical Report, Savannah River National Laboratory, 2006.">PMF06</a>]</span>:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\alpha = 0.143 cm^{-1} (1.46e-3 Pa^{-1})\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(S_r = 0.052\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(m = 0.314\)</span></p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Model discretization</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\Delta x = 1 ft, \Delta z = 2 ft\)</span></p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<p>For these input specifications, <em>Amanzi</em> simulation output is expected to closely match</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-expectedh2">
+<span class="eqno">(9)<a class="headerlink" href="#equation-expectedh2" title="Link to this equation">#</a></span>\[h [ft] = 164 \sqrt{1 + \left( \frac{x}{1640} \right) \left( 2 - \frac{x}{1640} \right)}\]</div>
+</div></blockquote>
+<p>from Equation <a class="reference internal" href="#equation-specificsoln2">(7)</a>.</p>
+</section>
+<section id="amanzi-verification-test-results">
+<h3>Amanzi verification test results<a class="headerlink" href="#amanzi-verification-test-results" title="Link to this heading">#</a></h3>
+<p>The presented results show good match of numerical data with semi-analytic solution.</p>
+<a class="reference internal image-reference" href="../../../_images/hydraulic_head.png"><img alt="../../../_images/hydraulic_head.png" class="align-center" src="../../../_images/hydraulic_head.png" style="width: 480.0px; height: 360.0px;" />
+</a>
+</section>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h2>
+<div class="docutils container" id="id13">
+<div role="list" class="citation-list">
+<div class="citation" id="id28" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>Ale07<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id5">1</a>,<a role="doc-backlink" href="#id6">2</a>)</span>
+<p>S. Aleman. Porflow testing and verification. Technical Report, Savannah River National Laboratory, 2007.</p>
+</div>
+<div class="citation" id="id46" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id4">dM86</a><span class="fn-bracket">]</span></span>
+<p>G. de Marsily. <em>Quantitative Hydrology</em>. Academic Press, London, 1986.</p>
+</div>
+<div class="citation" id="id35" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">Dup63</a><span class="fn-bracket">]</span></span>
+<p>J. Dupuit. <em>Études théoriques et pratiques sur le mouvement des eaux dans les canaux découverts et à travers les terrains perméables</em>. Dunod, Paris, 1863.</p>
+</div>
+<div class="citation" id="id36" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">For30</a><span class="fn-bracket">]</span></span>
+<p>P. Forchheimer. <em>Hydraulik</em>. Teubner, Leipzig, Berlin, third edition, 1930.</p>
+</div>
+<div class="citation" id="id40" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">FC79</a><span class="fn-bracket">]</span></span>
+<p>R. A. Freeze and J. A. Cherry. <em>Groundwater</em>. Prentice-Hall, Inc., Englewood Cliffs, NJ, 1979.</p>
+</div>
+<div class="citation" id="id39" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>Mua76<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id8">1</a>,<a role="doc-backlink" href="#id11">2</a>)</span>
+<p>Y. Mualem. A new model for predicting the hydraulic conductivity of unsaturated porous media. <em>Water Resour. Res</em>, 12(3):513–522, 1976.</p>
+</div>
+<div class="citation" id="id47" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>PMF06<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id9">1</a>,<a role="doc-backlink" href="#id12">2</a>)</span>
+<p>M. A. Phifer, M. R. Millings, and G. P. Flach. Hydraulic property data package for the e-area and z-area soils, cementitious materials, and waste zones. Technical Report, Savannah River National Laboratory, 2006.</p>
+</div>
+<div class="citation" id="id41" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>vG80<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id7">1</a>,<a role="doc-backlink" href="#id10">2</a>)</span>
+<p>M.T. van Genuchten. A closed-form equation for predicting the hydraulic conductivity of unsaturated soils. <em>Soil Sci. Soc. Am. J</em>, 44(5):892–898, 1980.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="about">
+<span id="about-unconfined-no-recharge"></span><h2>About<a class="headerlink" href="#about" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Directory: testing/verification/flow/richards/steady-state/unconfined_no_recharge_1d</p></li>
+<li><p>Authors:</p></li>
+<li><p>Maintainer(s): David Moulton (<a class="reference external" href="mailto:moulton&#37;&#52;&#48;lanl&#46;gov">moulton<span>&#64;</span>lanl<span>&#46;</span>gov</a>)</p></li>
+<li><p>Input Files:</p>
+<ul>
+<li><p>amanzi_unconfined_no_recharge_1d.xml, Spec 2.3</p></li>
+<li><p>auto generated structured mesh</p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Unconfined Flow Tests</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../unconfined_seepage_1d/amanzi_unconfined_seepage_1d.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Steady-State Unconfined Flow with a Seepage Boundary Condition</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
