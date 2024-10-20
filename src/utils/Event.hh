@@ -48,6 +48,7 @@ bool inline isNearEqual(Scalar x, Scalar y, Scalar eps = Event_EPS<Scalar>::valu
 template<typename Scalar>
 struct Event {
   Event() {}
+  virtual ~Event() = default;
   virtual Scalar getNext(Scalar time) const = 0;
   virtual bool contains(Scalar time) const = 0;
 };

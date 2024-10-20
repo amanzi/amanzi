@@ -16,8 +16,8 @@ TimestepControllerRecoverable::TimestepControllerRecoverable(const std::string& 
         Teuchos::ParameterList& plist,
         const Teuchos::RCP<State>& S)
   : name_(Keys::cleanName(name, true)),
-    S_(S),
-    dt_name_(Keys::cleanName(name, true) + "_dt_internal")
+    dt_name_(Keys::cleanName(name, true) + "_dt_internal"),
+    S_(S)
 {
   double dt_init(-1.0);
   if (plist.isParameter("initial timestep [s]")) {

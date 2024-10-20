@@ -41,7 +41,7 @@ class VerboseObject;
 
 namespace Utils {
 
-template<typename T> class Event;
+template<typename T> struct Event;
 
 class TimeStepManager {
  public:

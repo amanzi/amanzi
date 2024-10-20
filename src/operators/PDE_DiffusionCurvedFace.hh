@@ -75,12 +75,11 @@ namespace Operators {
 class PDE_DiffusionCurvedFace : public virtual PDE_Diffusion {
  public:
   PDE_DiffusionCurvedFace(Teuchos::ParameterList& plist,
-                          const Teuchos::RCP<Operator>& global_op,
-                          std::shared_ptr<const CompositeVector> weight = nullptr)
+                          const Teuchos::RCP<Operator>& global_op)
     : PDE_Diffusion(global_op), plist_(plist), factor_(1.0)
   {
     pde_type_ = PDE_DIFFUSION_MFD_CURVED_FACE;
-    weight_ = weight;
+    weight_ = nullptr;
     Init_(plist);
   }
 

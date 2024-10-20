@@ -2,6 +2,11 @@
 
   <!--  REGIONS  -->
   <ParameterList name="regions">
+    <ParameterList name="Boundary">
+      <ParameterList name="region: boundary">
+        <Parameter name="entity" type="string" value="node"/>
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="Top side">
       <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{1.0,1.0,1.0}"/>

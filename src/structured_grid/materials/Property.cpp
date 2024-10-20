@@ -238,8 +238,7 @@ GSLibProperty::BuildDataFile(const Array<Geometry>& geom_array,
     // This check can be loosened up, but for now we assume the match is exact
     const AmrData* amr_data = GetAmrData();
     num_comps = amr_data->NComp();
-    int num_comps_check = (crule == ComponentHarmonic  ?  BL_SPACEDIM : 1);
-    BL_ASSERT(num_comps == num_comps_check);
+    BL_ASSERT(num_comps == (crule == ComponentHarmonic  ?  BL_SPACEDIM : 1));
     varnames.resize(num_comps);
     const Array<string>& plotVarNames = amr_data->PlotVarNames();
     for (int n=0; n<num_comps; ++n) {
