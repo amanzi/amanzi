@@ -116,7 +116,7 @@ TimestepControllerSmarter::getTimestep_(double dt, int iterations, bool valid)
       (*growth_wait_after_fail_) = growth_wait_after_fail0_;
     }
 
-    if (iterations < min_its_) {
+    if (iterations < min_its_ && valid) {
       if ((*last_fail_) > (*growth_wait_after_fail_)) { // grow the timestep
         (*successive_increases_)++;
 
