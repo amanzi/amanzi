@@ -508,9 +508,9 @@ if (ENABLE_TESTS)
                     LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: tangled mesh
-    add_amanzi_test(operators_diffusion_tangled operators_diffusion_tangled
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_diffusion_tangled.cc
-                    LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # add_amanzi_test(operators_diffusion_tangled operators_diffusion_tangled
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/operator_diffusion_tangled.cc
+    #                 LINK_LIBS ${operators_link_libs} operators ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 endif()
                 

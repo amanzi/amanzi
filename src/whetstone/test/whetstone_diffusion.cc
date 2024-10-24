@@ -946,8 +946,8 @@ TEST(INVERTED_CELL_2D)
   AmanziGeometry::Point x3(-0.5, 1.0);
   mesh->setNodeCoordinate(3, x3);
   mesh->recacheGeometry();
-std::cout << mesh->getCellVolume(0) << std::endl;
-std::cout << mesh->getCellCentroid(0) << std::endl;
+  std::cout << mesh->getCellVolume(0) << std::endl;
+  std::cout << mesh->getCellCentroid(0) << std::endl;
 
   MFD3D_Diffusion mfd(mesh);
   DeRham_Face drc(mfd);
