@@ -48,7 +48,6 @@ polyhed_get_vol_centroid(PVT& ccoords,
                          double* volume,
                          Point* centroid)
 {
-  using namespace std;
   Point v1(3), v2(3), v3(3);
   bool negvol = false;
 
@@ -61,7 +60,7 @@ polyhed_get_vol_centroid(PVT& ccoords,
 
   int np = ccoords.size();
   if (np < 4) {
-    cout << "Not a polyhedron" << std::endl;
+    std::cout << "Not a polyhedron" << std::endl;
     return;
   }
 

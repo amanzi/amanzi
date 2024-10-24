@@ -149,10 +149,10 @@ AnalyticBase::ComputeCellError(Epetra_MultiVector& p,
     double tmp = pressure_exact(xc, t);
     double volume = mesh_->getCellVolume(c);
 
-    // std::cout << c << " xc=" << xc << " p: " << tmp << " " << p[0][c] << std::endl;
     l2_err += std::pow(tmp - p[0][c], 2.0) * volume;
     inf_err = std::max(inf_err, fabs(tmp - p[0][c]));
     pnorm += std::pow(tmp, 2.0) * volume;
+    // std::cout << c << " xc=" << xc << " p: " << tmp << " " << p[0][c] << " err=" << inf_err << std::endl;
   }
 #ifdef HAVE_MPI
   GlobalOp("sum", &pnorm, 1);
@@ -160,7 +160,7 @@ AnalyticBase::ComputeCellError(Epetra_MultiVector& p,
   GlobalOp("max", &inf_err, 1);
 #endif
   pnorm = sqrt(pnorm);
-  l2_err = sqrt(l2_err);
+  l2_err = sqrt(std::fabs(l2_err));
 }
 
 
