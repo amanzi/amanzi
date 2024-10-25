@@ -34,7 +34,7 @@
 ###  Insert required lines in top-level index automatically
 ###  Correct paths in the .. plot:: directives
 
-import shutil, distutils.dir_util, os, sys, glob
+import shutil, os, sys, glob
 
 def IndexCreate(amanzi_home,data,logfile):
 
@@ -155,7 +155,7 @@ def RecurseCopy(amanzi_home,content,level,logfile):
         content_from=amanzi_home+os.sep+content['from_dir']
         content_dest=amanzi_home+os.sep+content['dest_dir']
         logfile.write('  %s\n  %s\n' % (content_from, content_dest) )
-        distutils.dir_util.copy_tree(content_from, content_dest)
+        shutil.copytree(content_from, content_dest)
 
         level=level-1
 
