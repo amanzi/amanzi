@@ -18,10 +18,11 @@ if ( PYTHON_FOUND )
 
   # Define the install location
   get_filename_component(real_install_prefix ${CMAKE_INSTALL_PREFIX} REALPATH)
-  execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_path('platlib', vars={'base': '${real_install_prefix}'}))"
+  execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_path('purelib', vars={'base': '${real_install_prefix}'}))"
                   OUTPUT_VARIABLE AmanziPython_INSTALL_PREFIX
                   RESULT_VARIABLE prefix_err
                   OUTPUT_STRIP_TRAILING_WHITESPACE)
+  
   if(prefix_err)
     message(SEND_ERROR "Failed to define the python from sysconfig. Set to ${real_install_prefix}/python.")
     set(AmanziPython_INSTALL_PREFIX ${real_install_prefix}/python)
