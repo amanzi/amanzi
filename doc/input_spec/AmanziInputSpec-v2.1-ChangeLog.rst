@@ -1,5 +1,5 @@
 =============================================================
-Change Log for Amanzi XML Input Specification (Version 2.x.x)
+Change Log for Amanzi XML Input Specification |version|
 =============================================================
 
 .. contents:: **Table of Contents**

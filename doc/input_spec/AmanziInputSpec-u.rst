@@ -1,6 +1,6 @@
-===================================================
-Unstructured Input Specification for Amanzi 1.6-dev
-===================================================
+======================================================
+Unstructured Input Specification for Amanzi |version|
+======================================================
 
 .. contents:: **Table of Contents**
 

@@ -1,6 +1,6 @@
-=============================================
-Structured Input Specification for Amanzi 1.5
-=============================================
+====================================================
+Structured Input Specification for Amanzi |version|
+====================================================
 
 .. contents:: **Table of Contents**
 
