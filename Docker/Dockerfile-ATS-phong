@@ -22,6 +22,9 @@ ARG https_proxy=
 ARG http_proxy=
 
 FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_flavor}
+# Set the default shell to Bash
+SHELL ["/bin/bash", "-c"]
+
 LABEL Description="ATS CI: Build ATS in a Docker image."
 
 # Switch to amanzi_user and set up env
@@ -31,6 +34,20 @@ ENV https_proxy=$https_proxy \
 
 RUN echo "${AMANZI_PREFIX}"
 RUN echo "${AMANZI_TPLS_DIR}"
+
+# Install Miniconda
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -b -p /home/amanzi_user/miniconda3 && \
+    rm ~/miniconda.sh
+
+# Add conda to path
+ENV PATH="/home/amanzi_user/miniconda3/bin:${PATH}"
+
+# Initialize Conda and create environment
+RUN /bin/bash -c "source /home/amanzi_user/miniconda3/etc/profile.d/conda.sh && conda create -n ideas_env python=3.13 -y"
+
+# Install packages into the environment
+RUN conda run -n ideas_env conda install -y -c conda-forge numpy scipy matplotlib h5py colorcet geopandas pyvista ipywidgets shapely vtk pyproj netcdf4 jupyter ipykernel
 
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
