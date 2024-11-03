@@ -42,7 +42,7 @@ ext_sphinx = ['sphinx.ext.todo',
               'sphinx.ext.ifconfig',
               'sphinx.ext.autodoc',
               'sphinx.ext.doctest',
-              #'sphinxcontrib.tikz',
+              'sphinxcontrib.tikz',
               'sphinxcontrib.bibtex',
 ]
 

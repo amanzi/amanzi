@@ -257,9 +257,9 @@ The ``execution_control_defaults`` element has the following attributes.
 +------------------+----------------+----------------------------------+
 | max_dt           | time           | time value(,unit)                |
 +------------------+----------------+----------------------------------+
-| reduction_factor | exponential    | factor for reducing timestep    |
+| reduction_factor | exponential    | factor for reducing timestep     |
 +------------------+----------------+----------------------------------+
-| increase_factor  | exponential    | factor for increasing timestep  |
+| increase_factor  | exponential    | factor for increasing timestep   |
 +------------------+----------------+----------------------------------+
 | mode             | string         | ``steady, transient``            |
 +------------------+----------------+----------------------------------+
@@ -284,9 +284,9 @@ The ``execution_control`` element has the following attributes.
 +------------------+----------------+-----------------------------------------------------+
 | max_dt           | time           | time value(,unit)                                   |
 +------------------+----------------+-----------------------------------------------------+
-| reduction_factor | exponential    | factor for reducing timestep                       |
+| reduction_factor | exponential    | factor for reducing timestep                        |
 +------------------+----------------+-----------------------------------------------------+
-| increase_factor  | exponential    | factor for increasing timestep                     |
+| increase_factor  | exponential    | factor for increasing timestep                      |
 +------------------+----------------+-----------------------------------------------------+
 | mode             | string         | ``steady, transient``                               |
 +------------------+----------------+-----------------------------------------------------+
