@@ -114,7 +114,8 @@ if (BUILD_TESTS)
     # Test: matrices for diffusion
     add_amanzi_test(whetstone_diffusion whetstone_diffusion
                     KIND unit
-                    SOURCE test/Main.cc test/whetstone_diffusion.cc
+                    SOURCE test/Main.cc test/whetstone_diffusion.cc 
+                           test/whetstone_diffusion_tangled.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for elasticity
